@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
@@ -18,62 +18,62 @@ def _make_api() -> tuple[TemplatesAPI, MagicMock]:
 
 
 class TestTemplatesAPIList:
-    def test_list(self):
+    async def test_list(self):
         api, mock_client = _make_api()
         # The route answers with a bare JSON array; the SDK wraps it.
-        mock_client._request_list.return_value = []
-        result = api.list()
+        mock_client._request_list = AsyncMock(return_value=[])
+        result = await api.list()
         mock_client._request_list.assert_called_once_with("GET", "/workspaces/2/templates")
         assert result == {"templates": []}
 
 
 class TestTemplatesAPIGet:
-    def test_get(self):
+    async def test_get(self):
         api, mock_client = _make_api()
-        mock_client._request_json.return_value = {"id": 5}
-        result = api.get(5)
+        mock_client._request_json = AsyncMock(return_value={"id": 5})
+        result = await api.get(5)
         mock_client._request_json.assert_called_once_with("GET", "/workspaces/2/templates/5")
         assert result == {"id": 5}
 
-    def test_get_invalid_id(self):
+    async def test_get_invalid_id(self):
         api, _ = _make_api()
         with pytest.raises(MammothValidationError, match="template_id"):
-            api.get(0)
+            await api.get(0)
 
 
 class TestTemplatesAPICreate:
-    def test_create(self):
+    async def test_create(self):
         api, mock_client = _make_api()
-        mock_client._request_json.return_value = {"id": 1}
-        api.create(body={"name": "Sales starter"})
+        mock_client._request_json = AsyncMock(return_value={"id": 1})
+        await api.create(body={"name": "Sales starter"})
         mock_client._request_json.assert_called_once_with(
             "POST", "/workspaces/2/templates", json={"name": "Sales starter"}
         )
 
 
 class TestTemplatesAPIUpdate:
-    def test_update(self):
+    async def test_update(self):
         api, mock_client = _make_api()
-        mock_client._request_json.return_value = {}
-        api.update(5, body={"name": "renamed"})
+        mock_client._request_json = AsyncMock(return_value={})
+        await api.update(5, body={"name": "renamed"})
         mock_client._request_json.assert_called_once_with(
             "PATCH", "/workspaces/2/templates/5", json={"name": "renamed"}
         )
 
-    def test_update_invalid_id(self):
+    async def test_update_invalid_id(self):
         api, _ = _make_api()
         with pytest.raises(MammothValidationError):
-            api.update(-1, body={})
+            await api.update(-1, body={})
 
 
 class TestTemplatesAPIDelete:
-    def test_delete(self):
+    async def test_delete(self):
         api, mock_client = _make_api()
-        mock_client._request_json.return_value = {}
-        api.delete(5)
+        mock_client._request_json = AsyncMock(return_value={})
+        await api.delete(5)
         mock_client._request_json.assert_called_once_with("DELETE", "/workspaces/2/templates/5")
 
-    def test_delete_invalid_id(self):
+    async def test_delete_invalid_id(self):
         api, _ = _make_api()
         with pytest.raises(MammothValidationError):
-            api.delete(0)
+            await api.delete(0)

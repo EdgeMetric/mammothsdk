@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
@@ -12,13 +12,13 @@ from mammoth.client import MammothClient
 class TestClientInit:
     """Test MammothClient constructor."""
 
-    def test_default_base_url(self):
-        with patch("mammoth.client.requests.Session"):
+    async def test_default_base_url(self):
+        with patch("mammoth.client.httpx.AsyncClient"):
             client = MammothClient(api_key="key", api_secret="secret", workspace_id=1)
         assert client.base_url == "https://app.mammoth.io/api/v2"
 
-    def test_custom_base_url(self):
-        with patch("mammoth.client.requests.Session"):
+    async def test_custom_base_url(self):
+        with patch("mammoth.client.httpx.AsyncClient"):
             client = MammothClient(
                 api_key="key",
                 api_secret="secret",
@@ -27,8 +27,8 @@ class TestClientInit:
             )
         assert client.base_url == "https://custom.example.com/api/v2"
 
-    def test_base_url_normalization(self):
-        with patch("mammoth.client.requests.Session"):
+    async def test_base_url_normalization(self):
+        with patch("mammoth.client.httpx.AsyncClient"):
             client = MammothClient(
                 api_key="key",
                 api_secret="secret",
@@ -37,8 +37,8 @@ class TestClientInit:
             )
         assert client.base_url.endswith("/api/v2")
 
-    def test_session_headers_set(self):
-        with patch("mammoth.client.requests.Session") as mock_session_cls:
+    async def test_session_headers_set(self):
+        with patch("mammoth.client.httpx.AsyncClient") as mock_session_cls:
             mock_session = MagicMock()
             mock_session.headers = MagicMock()
             mock_session_cls.return_value = mock_session
@@ -53,8 +53,8 @@ class TestClientInit:
         assert headers["X-API-SECRET"] == "my-secret"
         assert headers["X-WORKSPACE-ID"] == "42"
 
-    def test_bearer_token_headers(self):
-        with patch("mammoth.client.requests.Session") as mock_session_cls:
+    async def test_bearer_token_headers(self):
+        with patch("mammoth.client.httpx.AsyncClient") as mock_session_cls:
             mock_session = MagicMock()
             mock_session.headers = MagicMock()
             mock_session_cls.return_value = mock_session
@@ -75,25 +75,25 @@ class TestClientInit:
             {"api_token": "mm_x"},
         ],
     )
-    def test_credential_combinations_are_validated(self, kwargs):
+    async def test_credential_combinations_are_validated(self, kwargs):
         with pytest.raises(ValueError):
             MammothClient(**kwargs)
 
-    def test_set_project_id(self):
-        with patch("mammoth.client.requests.Session"):
+    async def test_set_project_id(self):
+        with patch("mammoth.client.httpx.AsyncClient"):
             client = MammothClient(api_key="key", api_secret="secret", workspace_id=1)
         assert client.project_id is None
         client.set_project_id(100)
         assert client.project_id == 100
 
-    def test_timeout_defaults(self):
-        with patch("mammoth.client.requests.Session"):
+    async def test_timeout_defaults(self):
+        with patch("mammoth.client.httpx.AsyncClient"):
             client = MammothClient(api_key="key", api_secret="secret", workspace_id=1)
         assert client.timeout == 30
         assert client.job_timeout == 60
 
-    def test_custom_timeouts(self):
-        with patch("mammoth.client.requests.Session"):
+    async def test_custom_timeouts(self):
+        with patch("mammoth.client.httpx.AsyncClient"):
             client = MammothClient(
                 api_key="key",
                 api_secret="secret",
@@ -108,8 +108,8 @@ class TestClientInit:
 class TestClientSubClients:
     """Test that all sub-clients are registered."""
 
-    def test_all_sub_clients_exist(self):
-        with patch("mammoth.client.requests.Session"):
+    async def test_all_sub_clients_exist(self):
+        with patch("mammoth.client.httpx.AsyncClient"):
             client = MammothClient(api_key="key", api_secret="secret", workspace_id=1)
         attrs = [
             "files",
@@ -144,14 +144,15 @@ class TestClientSubClients:
 class TestClientContextManager:
     """Test context manager usage."""
 
-    def test_context_manager(self):
-        with patch("mammoth.client.requests.Session") as mock_session_cls:
+    async def test_context_manager(self):
+        with patch("mammoth.client.httpx.AsyncClient") as mock_session_cls:
             mock_session = MagicMock()
             mock_session.headers = MagicMock()
+            mock_session.aclose = AsyncMock()
             mock_session_cls.return_value = mock_session
-            with MammothClient(api_key="key", api_secret="secret", workspace_id=1) as client:
+            async with MammothClient(api_key="key", api_secret="secret", workspace_id=1) as client:
                 assert client is not None
-            mock_session.close.assert_called_once()
+            mock_session.aclose.assert_called_once()
 
 
 class TestViewsResource:
@@ -159,15 +160,15 @@ class TestViewsResource:
 
     @pytest.fixture
     def client(self):
-        with patch("mammoth.client.requests.Session"):
+        with patch("mammoth.client.httpx.AsyncClient"):
             c = MammothClient(api_key="key", api_secret="secret", workspace_id=1)
         c.set_project_id(100)
         return c
 
-    def test_get_auto_detects_dataset(self, client):
-        """views.get(view_id) auto-detects dataset_id via pipeline API."""
-        client.pipeline._find_dataset_for_dataview = MagicMock(return_value=500)
-        client.dataviews.get = MagicMock(
+    async def test_get_auto_detects_dataset(self, client):
+        """await views.get(view_id) auto-detects dataset_id via pipeline API."""
+        client.pipeline._find_dataset_for_dataview = AsyncMock(return_value=500)
+        client.dataviews.get = AsyncMock(
             return_value={
                 "id": 42,
                 "name": "Test View",
@@ -178,15 +179,15 @@ class TestViewsResource:
                 },
             }
         )
-        view = client.views.get(42)
+        view = await client.views.get(42)
         client.pipeline._find_dataset_for_dataview.assert_called_once_with(42)
         client.dataviews.get.assert_called_once_with(dataset_id=500, dataview_id=42)
         assert view.id == 42
 
-    def test_get_with_parent_dataset_never_probes_other_datasets(self, client):
+    async def test_get_with_parent_dataset_never_probes_other_datasets(self, client):
         """A known parent is part of the resource identity, not a hint to scan."""
-        client.pipeline.find_dataset_for_dataview = MagicMock(side_effect=AssertionError)
-        client.dataviews.get = MagicMock(
+        client.pipeline.find_dataset_for_dataview = AsyncMock(side_effect=AssertionError)
+        client.dataviews.get = AsyncMock(
             return_value={
                 "id": 42,
                 "name": "Test View",
@@ -198,42 +199,42 @@ class TestViewsResource:
             }
         )
 
-        view = client.views.get(42, dataset_id=700)
+        view = await client.views.get(42, dataset_id=700)
 
         assert view.dataset_id == 700
         client.dataviews.get.assert_called_once_with(dataset_id=700, dataview_id=42)
 
-    def test_delete_auto_detects_dataset(self, client):
-        """views.delete(view_id) auto-detects dataset_id."""
-        client.pipeline._find_dataset_for_dataview = MagicMock(return_value=500)
-        client.dataviews.delete = MagicMock(return_value={"status": "deleted"})
-        result = client.views.delete(42)
+    async def test_delete_auto_detects_dataset(self, client):
+        """await views.delete(view_id) auto-detects dataset_id."""
+        client.pipeline._find_dataset_for_dataview = AsyncMock(return_value=500)
+        client.dataviews.delete = AsyncMock(return_value={"status": "deleted"})
+        result = await client.views.delete(42)
         client.pipeline._find_dataset_for_dataview.assert_called_once_with(42)
         client.dataviews.delete.assert_called_once_with(dataset_id=500, dataview_id=42)
         assert result["status"] == "deleted"
 
-    def test_delete_with_parent_skips_discovery(self, client):
+    async def test_delete_with_parent_skips_discovery(self, client):
         """A known parent is used exactly and never falls back to discovery."""
-        client.pipeline.find_dataset_for_dataview = MagicMock(side_effect=AssertionError)
-        client.dataviews.delete = MagicMock(return_value={"status": "deleted"})
+        client.pipeline.find_dataset_for_dataview = AsyncMock(side_effect=AssertionError)
+        client.dataviews.delete = AsyncMock(return_value={"status": "deleted"})
 
-        result = client.views.delete(42, dataset_id=700)
+        result = await client.views.delete(42, dataset_id=700)
 
         client.dataviews.delete.assert_called_once_with(dataset_id=700, dataview_id=42)
         assert result["status"] == "deleted"
 
-    def test_bulk_delete_auto_detects_dataset(self, client):
-        """views.bulk_delete(view_ids) auto-detects dataset_id from first view."""
-        client.pipeline._find_dataset_for_dataview = MagicMock(return_value=500)
-        client.dataviews.bulk_delete = MagicMock(return_value={"status": "deleted"})
-        result = client.views.bulk_delete([42, 43])
+    async def test_bulk_delete_auto_detects_dataset(self, client):
+        """await views.bulk_delete(view_ids) auto-detects dataset_id from first view."""
+        client.pipeline._find_dataset_for_dataview = AsyncMock(return_value=500)
+        client.dataviews.bulk_delete = AsyncMock(return_value={"status": "deleted"})
+        result = await client.views.bulk_delete([42, 43])
         client.pipeline._find_dataset_for_dataview.assert_called_once_with(42)
         client.dataviews.bulk_delete.assert_called_once_with(dataset_id=500, dataview_ids=[42, 43])
         assert result["status"] == "deleted"
 
-    def test_list_with_dataset_id(self, client):
-        """views.list(dataset_id) lists views from a specific dataset."""
-        client.dataviews.list = MagicMock(
+    async def test_list_with_dataset_id(self, client):
+        """await views.list(dataset_id) lists views from a specific dataset."""
+        client.dataviews.list = AsyncMock(
             return_value={
                 "dataviews": [
                     {
@@ -252,20 +253,20 @@ class TestViewsResource:
                 ]
             }
         )
-        views = client.views.list(dataset_id=500)
+        views = await client.views.list(dataset_id=500)
         assert len(views) == 1
         assert views[0].id == 10
         client.dataviews.list.assert_called_once_with(dataset_id=500)
 
-    def test_create_requires_dataset_id(self, client):
-        """views.create() still requires dataset_id."""
-        client.dataviews.create = MagicMock(
+    async def test_create_requires_dataset_id(self, client):
+        """await views.create() still requires dataset_id."""
+        client.dataviews.create = AsyncMock(
             return_value={
                 "dataview_id": 99,
                 "id": 99,
             }
         )
-        client.dataviews.get = MagicMock(
+        client.dataviews.get = AsyncMock(
             return_value={
                 "id": 99,
                 "name": "New View",
@@ -274,7 +275,7 @@ class TestViewsResource:
                 },
             }
         )
-        view = client.views.create(dataset_id=500, name="New View")
+        view = await client.views.create(dataset_id=500, name="New View")
         client.dataviews.create.assert_called_once_with(
             dataset_id=500, name="New View", clone_config_from=None
         )

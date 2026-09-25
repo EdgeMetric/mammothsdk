@@ -4,6 +4,8 @@ Jobs API client for tracking job status in Mammoth.
 
 from __future__ import annotations
 
+import asyncio
+
 import logging
 import time
 from collections.abc import Callable
@@ -30,7 +32,7 @@ class JobsAPI:
     def __init__(self, client: MammothClient) -> None:
         self._client = client
 
-    def get_job(self, job_id: int, timeout: float | None = None) -> dict[str, Any]:
+    async def get_job(self, job_id: int, timeout: float | None = None) -> dict[str, Any]:
         """
         Get job status by ID.
 
@@ -50,12 +52,14 @@ class JobsAPI:
         headers = {"x-workspace-id": str(workspace_id)}
 
         request_timeout = self._observation_timeout(timeout)
-        response = self._client._request_json(
+        response = await self._client._request_json(
             "GET", f"/jobs/{job_id}", headers=headers, **request_timeout
         )
         return response
 
-    def get_jobs(self, job_ids: list[int] | str, timeout: float | None = None) -> dict[str, Any]:
+    async def get_jobs(
+        self, job_ids: list[int] | str, timeout: float | None = None
+    ) -> dict[str, Any]:
         """
         Track multiple job IDs.
 
@@ -81,7 +85,7 @@ class JobsAPI:
         headers = {"x-workspace-id": str(workspace_id)}
 
         request_timeout = self._observation_timeout(timeout)
-        response = self._client._request_json(
+        response = await self._client._request_json(
             "GET", "/jobs", params=params, headers=headers, **request_timeout
         )
         return response
@@ -95,7 +99,7 @@ class JobsAPI:
             raise ValueError("observation timeout must be positive")
         return {"timeout": timeout}
 
-    def wait_for_job(
+    async def wait_for_job(
         self,
         job_id: int,
         timeout: float | None = None,
@@ -134,9 +138,9 @@ class JobsAPI:
             if remaining <= 0:
                 break
             job_response = (
-                fetch(job_id, remaining)
+                await fetch(job_id, remaining)
                 if fetch is not None
-                else self.get_job(job_id, timeout=remaining)
+                else await self.get_job(job_id, timeout=remaining)
             )
 
             # Extract job from response
@@ -187,10 +191,10 @@ class JobsAPI:
                 )
             elif status == "processing":
                 # Job still running, continue polling
-                time.sleep(min(poll_interval, max(0.0, deadline - time.monotonic())))
+                await asyncio.sleep(min(poll_interval, max(0.0, deadline - time.monotonic())))
             else:
                 # Unknown status, continue polling
-                time.sleep(min(poll_interval, max(0.0, deadline - time.monotonic())))
+                await asyncio.sleep(min(poll_interval, max(0.0, deadline - time.monotonic())))
 
         # Timeout reached
         timeout_phase = "polling"
@@ -202,7 +206,7 @@ class JobsAPI:
             job_id, timeout, observed_job=last_observed, phase=timeout_phase
         )
 
-    def wait_for_jobs(
+    async def wait_for_jobs(
         self, job_ids: list[int] | str, timeout: int | None = None, poll_interval: int = 2
     ) -> dict[str, Any]:
         """
@@ -247,7 +251,7 @@ class JobsAPI:
                 break
             # get_jobs is a read-only observation.  Supplying its remaining
             # budget prevents one poll from overrunning the public wait limit.
-            jobs_response = self.get_jobs(job_ids_list, timeout=remaining)
+            jobs_response = await self.get_jobs(job_ids_list, timeout=remaining)
             jobs = jobs_response.get("jobs", [])
             if not isinstance(jobs, list):
                 raise MammothAPIError(
@@ -301,7 +305,7 @@ class JobsAPI:
             if requested_ids <= set(completed_jobs):
                 return {"jobs": [completed_jobs[job_id] for job_id in job_ids_list]}
 
-            time.sleep(min(poll_interval, max(0.0, deadline - time.monotonic())))
+            await asyncio.sleep(min(poll_interval, max(0.0, deadline - time.monotonic())))
 
         # Timeout reached — use first pending job ID for error
         pending_ids = [jid for jid in job_ids_list if jid not in completed_jobs]

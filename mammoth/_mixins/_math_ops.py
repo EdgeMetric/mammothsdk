@@ -17,7 +17,7 @@ else:
 class MathOpsMixin(ViewHost):
     """Mixin for arithmetic operations on a View."""
 
-    def math(
+    async def math(
         self,
         expression: str,
         new_column: str | None = None,
@@ -53,13 +53,9 @@ class MathOpsMixin(ViewHost):
         # that valid display reference with the internal ``B`` alias.
         expression_columns = dict(self.columns)
         expression_columns.update(
-            {
-                name: name
-                for name in self._internal_names
-                if name not in expression_columns
-            }
+            {name: name for name in self._internal_names if name not in expression_columns}
         )
-        return self._add_task(
+        return await self._add_task(
             build_math_params(
                 expression,
                 expression_columns,
@@ -73,7 +69,7 @@ class MathOpsMixin(ViewHost):
             )
         )
 
-    def small_large(
+    async def small_large(
         self,
         function: SmallLargeFunction,
         columns: list[str],
@@ -129,7 +125,7 @@ class MathOpsMixin(ViewHost):
             )
         """
         values: list[str | int | float] = list(columns) + list(constants or [])
-        return self._add_task(
+        return await self._add_task(
             build_small_large_params(
                 function,
                 values,

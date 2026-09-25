@@ -21,7 +21,7 @@ else:
 class DateOpsMixin(ViewHost):
     """Mixin for date transformation operations on a View."""
 
-    def extract_date(
+    async def extract_date(
         self,
         column: str,
         component: DateComponent,
@@ -43,7 +43,7 @@ class DateOpsMixin(ViewHost):
 
             view.extract_date("Order Date", DateComponent.YEAR, new_column="Order Year")
         """
-        return self._add_task(
+        return await self._add_task(
             build_extract_date_params(
                 column,
                 component,
@@ -55,7 +55,7 @@ class DateOpsMixin(ViewHost):
             )
         )
 
-    def date_diff(
+    async def date_diff(
         self,
         component: DateDiffUnit,
         start: str,
@@ -80,7 +80,7 @@ class DateOpsMixin(ViewHost):
             view.date_diff(DateDiffUnit.DAY, start="Start Date", end="End Date",
                            new_column="Duration")
         """
-        return self._add_task(
+        return await self._add_task(
             build_date_diff_params(
                 component,
                 start,
@@ -93,7 +93,7 @@ class DateOpsMixin(ViewHost):
             )
         )
 
-    def increment_date(
+    async def increment_date(
         self,
         column: str,
         delta: DateDelta,
@@ -137,7 +137,7 @@ class DateOpsMixin(ViewHost):
                 condition=Condition("Priority", Operator.EQ, "Low"),
             )
         """
-        return self._add_task(
+        return await self._add_task(
             build_increment_date_params(
                 column,
                 delta,

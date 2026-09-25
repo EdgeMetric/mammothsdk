@@ -58,23 +58,23 @@ class SupportAPI:
 
     # -- Plans ----------------------------------------------------------------
 
-    def plan_list(self) -> dict[str, Any]:
+    async def plan_list(self) -> dict[str, Any]:
         """List all subscription plans.
 
         Returns:
             Dict with the ``plans`` list.
         """
-        return self._client._request_json("GET", "/subscription/plans")
+        return await self._client._request_json("GET", "/subscription/plans")
 
-    def plan_self_serve_list(self) -> dict[str, Any]:
+    async def plan_self_serve_list(self) -> dict[str, Any]:
         """List self-serve subscription plans.
 
         Returns:
             Dict with the ``plans`` list.
         """
-        return self._client._request_json("GET", "/subscription/self-serve-plans")
+        return await self._client._request_json("GET", "/subscription/self-serve-plans")
 
-    def plan_chargebee_list(self, resource: str = "plans") -> dict[str, Any]:
+    async def plan_chargebee_list(self, resource: str = "plans") -> dict[str, Any]:
         """List available Chargebee plans/resources.
 
         Args:
@@ -83,9 +83,11 @@ class SupportAPI:
         Returns:
             Dict with the available Chargebee resources.
         """
-        return self._client._request_json("GET", "/support/sms", params={"resource": resource})
+        return await self._client._request_json(
+            "GET", "/support/sms", params={"resource": resource}
+        )
 
-    def plan_get(self, plan_id: int) -> dict[str, Any]:
+    async def plan_get(self, plan_id: int) -> dict[str, Any]:
         """Get details of a subscription plan.
 
         Args:
@@ -98,9 +100,9 @@ class SupportAPI:
             MammothValidationError: If *plan_id* is not a positive integer.
         """
         _check_id("plan_id", plan_id)
-        return self._client._request_json("GET", f"/subscription/plans/{plan_id}")
+        return await self._client._request_json("GET", f"/subscription/plans/{plan_id}")
 
-    def plan_create(
+    async def plan_create(
         self,
         name: str,
         monthly_price: float,
@@ -179,9 +181,9 @@ class SupportAPI:
             body["connector_profile_id"] = connector_profile_id
         if feature_profile_id is not None:
             body["feature_profile_id"] = feature_profile_id
-        return self._client._request_json("POST", "/subscription/plans", json=body)
+        return await self._client._request_json("POST", "/subscription/plans", json=body)
 
-    def plan_update(
+    async def plan_update(
         self,
         plan_id: int,
         *,
@@ -254,9 +256,9 @@ class SupportAPI:
             "feature_profile_id": feature_profile_id,
         }
         body = {k: v for k, v in fields.items() if v is not None}
-        return self._client._request_json("PUT", f"/subscription/plans/{plan_id}", json=body)
+        return await self._client._request_json("PUT", f"/subscription/plans/{plan_id}", json=body)
 
-    def plan_update_storage_tiers(
+    async def plan_update_storage_tiers(
         self, plan_id: int, storage_tiers: list[dict[str, Any]]
     ) -> dict[str, Any]:
         """Replace a plan's storage pricing tiers.
@@ -275,13 +277,13 @@ class SupportAPI:
         _check_id("plan_id", plan_id)
         if not storage_tiers:
             raise MammothValidationError(ERR_STORAGE_TIERS_EMPTY)
-        return self._client._request_json(
+        return await self._client._request_json(
             "PUT",
             f"/subscription/plans/{plan_id}/storage-tiers",
             json={"storage_tiers": storage_tiers},
         )
 
-    def plan_delete(self, plan_id: int) -> dict[str, Any]:
+    async def plan_delete(self, plan_id: int) -> dict[str, Any]:
         """Delete a subscription plan.
 
         Args:
@@ -294,9 +296,9 @@ class SupportAPI:
             MammothValidationError: If *plan_id* is not a positive integer.
         """
         _check_id("plan_id", plan_id)
-        return self._client._request_json("DELETE", f"/subscription/plans/{plan_id}")
+        return await self._client._request_json("DELETE", f"/subscription/plans/{plan_id}")
 
-    def plan_archive(self, plan_id: int) -> dict[str, Any]:
+    async def plan_archive(self, plan_id: int) -> dict[str, Any]:
         """Archive a subscription plan.
 
         Args:
@@ -309,19 +311,19 @@ class SupportAPI:
             MammothValidationError: If *plan_id* is not a positive integer.
         """
         _check_id("plan_id", plan_id)
-        return self._client._request_json("POST", f"/subscription/plans/{plan_id}/archive")
+        return await self._client._request_json("POST", f"/subscription/plans/{plan_id}/archive")
 
     # -- Features ---------------------------------------------------------------
 
-    def feature_list(self) -> dict[str, Any]:
+    async def feature_list(self) -> dict[str, Any]:
         """List all subscription features.
 
         Returns:
             Dict with the ``features`` list.
         """
-        return self._client._request_json("GET", "/subscription/features")
+        return await self._client._request_json("GET", "/subscription/features")
 
-    def feature_create(
+    async def feature_create(
         self,
         name: str,
         *,
@@ -351,9 +353,9 @@ class SupportAPI:
             body["description"] = description
         if values is not None:
             body["values"] = values
-        return self._client._request_json("POST", "/subscription/features", json=body)
+        return await self._client._request_json("POST", "/subscription/features", json=body)
 
-    def feature_update(
+    async def feature_update(
         self,
         feature_id: int,
         *,
@@ -388,9 +390,11 @@ class SupportAPI:
             "values": values,
         }
         body = {k: v for k, v in fields.items() if v is not None}
-        return self._client._request_json("PUT", f"/subscription/features/{feature_id}", json=body)
+        return await self._client._request_json(
+            "PUT", f"/subscription/features/{feature_id}", json=body
+        )
 
-    def feature_delete(self, feature_id: int) -> dict[str, Any]:
+    async def feature_delete(self, feature_id: int) -> dict[str, Any]:
         """Delete a subscription feature.
 
         Args:
@@ -403,19 +407,19 @@ class SupportAPI:
             MammothValidationError: If *feature_id* is not a positive integer.
         """
         _check_id("feature_id", feature_id)
-        return self._client._request_json("DELETE", f"/subscription/features/{feature_id}")
+        return await self._client._request_json("DELETE", f"/subscription/features/{feature_id}")
 
     # -- Feature profiles ---------------------------------------------------------
 
-    def feature_profile_list(self) -> dict[str, Any]:
+    async def feature_profile_list(self) -> dict[str, Any]:
         """List all feature profiles.
 
         Returns:
             Dict with the ``feature_profiles`` list.
         """
-        return self._client._request_json("GET", "/subscription/feature-profiles")
+        return await self._client._request_json("GET", "/subscription/feature-profiles")
 
-    def feature_profile_create(
+    async def feature_profile_create(
         self,
         name: str,
         *,
@@ -438,9 +442,9 @@ class SupportAPI:
             body["description"] = description
         if features is not None:
             body["features"] = features
-        return self._client._request_json("POST", "/subscription/feature-profiles", json=body)
+        return await self._client._request_json("POST", "/subscription/feature-profiles", json=body)
 
-    def feature_profile_update(
+    async def feature_profile_update(
         self,
         profile_id: int,
         *,
@@ -466,11 +470,11 @@ class SupportAPI:
         _check_id("profile_id", profile_id)
         fields = {"name": name, "description": description, "features": features}
         body = {k: v for k, v in fields.items() if v is not None}
-        return self._client._request_json(
+        return await self._client._request_json(
             "PUT", f"/subscription/feature-profiles/{profile_id}", json=body
         )
 
-    def feature_profile_delete(self, profile_id: int) -> dict[str, Any]:
+    async def feature_profile_delete(self, profile_id: int) -> dict[str, Any]:
         """Delete a feature profile.
 
         Args:
@@ -483,9 +487,11 @@ class SupportAPI:
             MammothValidationError: If *profile_id* is not a positive integer.
         """
         _check_id("profile_id", profile_id)
-        return self._client._request_json("DELETE", f"/subscription/feature-profiles/{profile_id}")
+        return await self._client._request_json(
+            "DELETE", f"/subscription/feature-profiles/{profile_id}"
+        )
 
-    def feature_profile_add_feature(
+    async def feature_profile_add_feature(
         self,
         profile_id: int,
         feature_id: int,
@@ -517,21 +523,21 @@ class SupportAPI:
         }
         if value is not None:
             body["value"] = value
-        return self._client._request_json(
+        return await self._client._request_json(
             "POST", f"/subscription/feature-profiles/{profile_id}/features", json=body
         )
 
     # -- Connectors -----------------------------------------------------------
 
-    def connector_list(self) -> dict[str, Any]:
+    async def connector_list(self) -> dict[str, Any]:
         """List all subscription connectors.
 
         Returns:
             Dict with the ``connectors`` list.
         """
-        return self._client._request_json("GET", "/subscription/connectors")
+        return await self._client._request_json("GET", "/subscription/connectors")
 
-    def connector_create(
+    async def connector_create(
         self,
         name: str,
         *,
@@ -557,9 +563,9 @@ class SupportAPI:
         }
         if description is not None:
             body["description"] = description
-        return self._client._request_json("POST", "/subscription/connectors", json=body)
+        return await self._client._request_json("POST", "/subscription/connectors", json=body)
 
-    def connector_update(
+    async def connector_update(
         self,
         connector_id: int,
         *,
@@ -591,11 +597,11 @@ class SupportAPI:
             "enabled": enabled,
         }
         body = {k: v for k, v in fields.items() if v is not None}
-        return self._client._request_json(
+        return await self._client._request_json(
             "PUT", f"/subscription/connectors/{connector_id}", json=body
         )
 
-    def connector_delete(self, connector_id: int) -> dict[str, Any]:
+    async def connector_delete(self, connector_id: int) -> dict[str, Any]:
         """Delete a subscription connector.
 
         Args:
@@ -608,19 +614,21 @@ class SupportAPI:
             MammothValidationError: If *connector_id* is not a positive integer.
         """
         _check_id("connector_id", connector_id)
-        return self._client._request_json("DELETE", f"/subscription/connectors/{connector_id}")
+        return await self._client._request_json(
+            "DELETE", f"/subscription/connectors/{connector_id}"
+        )
 
     # -- Connector profiles -----------------------------------------------------
 
-    def connector_profile_list(self) -> dict[str, Any]:
+    async def connector_profile_list(self) -> dict[str, Any]:
         """List all connector profiles.
 
         Returns:
             Dict with the ``connector_profiles`` list.
         """
-        return self._client._request_json("GET", "/subscription/connector-profiles")
+        return await self._client._request_json("GET", "/subscription/connector-profiles")
 
-    def connector_profile_create(
+    async def connector_profile_create(
         self,
         name: str,
         *,
@@ -643,9 +651,11 @@ class SupportAPI:
             body["description"] = description
         if connectors is not None:
             body["connectors"] = connectors
-        return self._client._request_json("POST", "/subscription/connector-profiles", json=body)
+        return await self._client._request_json(
+            "POST", "/subscription/connector-profiles", json=body
+        )
 
-    def connector_profile_update(
+    async def connector_profile_update(
         self,
         profile_id: int,
         *,
@@ -671,11 +681,11 @@ class SupportAPI:
         _check_id("profile_id", profile_id)
         fields = {"name": name, "description": description, "connectors": connectors}
         body = {k: v for k, v in fields.items() if v is not None}
-        return self._client._request_json(
+        return await self._client._request_json(
             "PUT", f"/subscription/connector-profiles/{profile_id}", json=body
         )
 
-    def connector_profile_delete(self, profile_id: int) -> dict[str, Any]:
+    async def connector_profile_delete(self, profile_id: int) -> dict[str, Any]:
         """Delete a connector profile.
 
         Args:
@@ -688,11 +698,11 @@ class SupportAPI:
             MammothValidationError: If *profile_id* is not a positive integer.
         """
         _check_id("profile_id", profile_id)
-        return self._client._request_json(
+        return await self._client._request_json(
             "DELETE", f"/subscription/connector-profiles/{profile_id}"
         )
 
-    def connector_profile_add_connector(
+    async def connector_profile_add_connector(
         self,
         profile_id: int,
         connector_id: int,
@@ -720,13 +730,15 @@ class SupportAPI:
             "price_per_month": price_per_month,
             "enabled": enabled,
         }
-        return self._client._request_json(
+        return await self._client._request_json(
             "POST", f"/subscription/connector-profiles/{profile_id}/connectors", json=body
         )
 
     # -- Workspace subscriptions ------------------------------------------------
 
-    def subscription_get(self, workspace_id: int, fields: str | None = None) -> dict[str, Any]:
+    async def subscription_get(
+        self, workspace_id: int, fields: str | None = None
+    ) -> dict[str, Any]:
         """Get the Chargebee subscription details for a workspace.
 
         Args:
@@ -743,11 +755,11 @@ class SupportAPI:
         params: dict[str, Any] = {}
         if fields is not None:
             params["fields"] = fields
-        return self._client._request_json(
+        return await self._client._request_json(
             "GET", f"/support/workspaces/{workspace_id}/sms", params=params or None
         )
 
-    def subscription_create(
+    async def subscription_create(
         self,
         workspace_id: int,
         plan_id: str,
@@ -795,11 +807,11 @@ class SupportAPI:
             body["email"] = email
         if company_name is not None:
             body["company_name"] = company_name
-        return self._client._request_json(
+        return await self._client._request_json(
             "POST", f"/support/workspaces/{workspace_id}/sms", json=body
         )
 
-    def subscription_update(self, workspace_id: int, subscription_id: str) -> dict[str, Any]:
+    async def subscription_update(self, workspace_id: int, subscription_id: str) -> dict[str, Any]:
         """Update a workspace's Chargebee subscription id.
 
         Args:
@@ -814,13 +826,13 @@ class SupportAPI:
         """
         _check_id("workspace_id", workspace_id)
         body = {"patch": [{"op": "replace", "path": "subscription_id", "value": subscription_id}]}
-        return self._client._request_json(
+        return await self._client._request_json(
             "PATCH", f"/support/workspaces/{workspace_id}/sms", json=body
         )
 
     # -- Users (global) -----------------------------------------------------------
 
-    def user_register(
+    async def user_register(
         self,
         email: str,
         first_name: str,
@@ -848,9 +860,9 @@ class SupportAPI:
         }
         if is_registration is not None:
             body["is_registration"] = is_registration
-        return self._client._request_json("POST", "/support/users", json=body)
+        return await self._client._request_json("POST", "/support/users", json=body)
 
-    def user_update(
+    async def user_update(
         self, email: str, verified: bool, is_registration: bool | None = None
     ) -> dict[str, Any]:
         """Update a user's verification status.
@@ -867,9 +879,9 @@ class SupportAPI:
         if is_registration is not None:
             value["is_registration"] = is_registration
         body = {"patch": [{"op": "replace", "path": "verified", "value": value}]}
-        return self._client._request_json("PATCH", "/support/users", json=body)
+        return await self._client._request_json("PATCH", "/support/users", json=body)
 
-    def user_list_all(
+    async def user_list_all(
         self,
         fields: str | None = None,
         sort: str | None = None,
@@ -896,11 +908,11 @@ class SupportAPI:
             params["offset"] = offset
         if limit is not None:
             params["limit"] = limit
-        return self._client._request_json("GET", "/settings/users", params=params or None)
+        return await self._client._request_json("GET", "/settings/users", params=params or None)
 
     # -- Ownership transfer (settings) -------------------------------------------
 
-    def ownership_transfer(
+    async def ownership_transfer(
         self,
         workspace_id: int,
         user_id: int,
@@ -930,11 +942,11 @@ class SupportAPI:
         if remove_role is not None:
             value["remove_role"] = remove_role
         body = {"patches": [{"op": "replace", "path": "role", "value": value}]}
-        return self._client._request_json("PATCH", "/settings/users", json=body)
+        return await self._client._request_json("PATCH", "/settings/users", json=body)
 
     # -- Workspaces (support/admin) -----------------------------------------------
 
-    def workspace_list(self) -> dict[str, Any]:
+    async def workspace_list(self) -> dict[str, Any]:
         """List all workspaces visible to the current admin/support user.
 
         Returns:
@@ -943,14 +955,14 @@ class SupportAPI:
             route with a bare JSON array, which is wrapped as ``{"workspaces":
             [...]}`` so callers get the usual dict shape.
         """
-        result = self._client._request(
+        result = await self._client._request(
             "GET", "/support/workspaces", expected_response_shape="list_or_dict"
         )
         if isinstance(result, list):
             return {"workspaces": result}
         return result
 
-    def workspace_get(self, workspace_id: int, fields: str | None = None) -> dict[str, Any]:
+    async def workspace_get(self, workspace_id: int, fields: str | None = None) -> dict[str, Any]:
         """Get details of a workspace.
 
         Args:
@@ -967,11 +979,11 @@ class SupportAPI:
         params: dict[str, Any] = {}
         if fields is not None:
             params["fields"] = fields
-        return self._client._request_json(
+        return await self._client._request_json(
             "GET", f"/support/workspaces/{workspace_id}", params=params or None
         )
 
-    def workspace_create(
+    async def workspace_create(
         self,
         name: str,
         user_email: str,
@@ -1021,9 +1033,9 @@ class SupportAPI:
             body["table_number"] = table_number
         if plan_create is not None:
             body["plan_create"] = plan_create
-        return self._client._request_json("POST", "/support/workspaces", json=body)
+        return await self._client._request_json("POST", "/support/workspaces", json=body)
 
-    def workspace_update(
+    async def workspace_update(
         self,
         workspace_id: int,
         name: str,
@@ -1063,9 +1075,11 @@ class SupportAPI:
             body["plan_create"] = plan_create
         if plan_update is not None:
             body["plan_update"] = plan_update
-        return self._client._request_json("PATCH", f"/support/workspaces/{workspace_id}", json=body)
+        return await self._client._request_json(
+            "PATCH", f"/support/workspaces/{workspace_id}", json=body
+        )
 
-    def workspace_delete(self, workspace_id: int) -> dict[str, Any]:
+    async def workspace_delete(self, workspace_id: int) -> dict[str, Any]:
         """Delete a workspace.
 
         Args:
@@ -1078,9 +1092,9 @@ class SupportAPI:
             MammothValidationError: If *workspace_id* is not a positive integer.
         """
         _check_id("workspace_id", workspace_id)
-        return self._client._request_json("DELETE", f"/support/workspaces/{workspace_id}")
+        return await self._client._request_json("DELETE", f"/support/workspaces/{workspace_id}")
 
-    def workspace_suspend_access(
+    async def workspace_suspend_access(
         self, workspace_id: int, reason: str | None = None
     ) -> dict[str, Any]:
         """Suspend user access to a workspace.
@@ -1099,11 +1113,11 @@ class SupportAPI:
         body: dict[str, Any] = {}
         if reason is not None:
             body["reason"] = reason
-        return self._client._request_json(
+        return await self._client._request_json(
             "POST", f"/support/workspaces/{workspace_id}/suspend-access", json=body
         )
 
-    def workspace_restore_access(self, workspace_id: int) -> dict[str, Any]:
+    async def workspace_restore_access(self, workspace_id: int) -> dict[str, Any]:
         """Restore user access to a suspended workspace.
 
         Args:
@@ -1116,13 +1130,13 @@ class SupportAPI:
             MammothValidationError: If *workspace_id* is not a positive integer.
         """
         _check_id("workspace_id", workspace_id)
-        return self._client._request_json(
+        return await self._client._request_json(
             "POST", f"/support/workspaces/{workspace_id}/restore-access"
         )
 
     # -- Workspace users (support/admin) ------------------------------------------
 
-    def workspace_user_list(
+    async def workspace_user_list(
         self,
         workspace_id: int,
         limit: int | None = None,
@@ -1155,11 +1169,11 @@ class SupportAPI:
             params["fields"] = fields
         if sort is not None:
             params["sort"] = sort
-        return self._client._request_json(
+        return await self._client._request_json(
             "GET", f"/support/workspaces/{workspace_id}/users", params=params or None
         )
 
-    def workspace_user_add(
+    async def workspace_user_add(
         self,
         workspace_id: int,
         email: str,
@@ -1189,11 +1203,11 @@ class SupportAPI:
             body["first_name"] = first_name
         if last_name is not None:
             body["last_name"] = last_name
-        return self._client._request_json(
+        return await self._client._request_json(
             "POST", f"/support/workspaces/{workspace_id}/users", json=body
         )
 
-    def workspace_user_remove(self, workspace_id: int, user_id: int) -> dict[str, Any]:
+    async def workspace_user_remove(self, workspace_id: int, user_id: int) -> dict[str, Any]:
         """Remove a user from a workspace.
 
         Args:
@@ -1207,11 +1221,11 @@ class SupportAPI:
             MammothValidationError: If *workspace_id* is not a positive integer.
         """
         _check_id("workspace_id", workspace_id)
-        return self._client._request_json(
+        return await self._client._request_json(
             "DELETE", f"/support/workspaces/{workspace_id}/users/{user_id}"
         )
 
-    def workspace_user_transfer(
+    async def workspace_user_transfer(
         self,
         workspace_id: int,
         user_id: int,
@@ -1236,6 +1250,6 @@ class SupportAPI:
         _check_id("workspace_id", workspace_id)
         value = {"user_id": user_id, "role": role, "remove_role": remove_role}
         body = {"patch": [{"op": "replace", "path": "role", "value": value}]}
-        return self._client._request_json(
+        return await self._client._request_json(
             "PATCH", f"/support/workspaces/{workspace_id}/users", json=body
         )

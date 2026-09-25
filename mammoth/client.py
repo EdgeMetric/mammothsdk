@@ -27,6 +27,7 @@ from __future__ import annotations
 
 import base64
 import hashlib
+import asyncio
 import logging
 import math
 import time
@@ -35,7 +36,7 @@ from ipaddress import ip_address
 from typing import Any, cast
 from urllib.parse import urljoin, urlsplit
 
-import requests
+import httpx
 
 from mammoth.api.activity_logs import ActivityLogsAPI
 from mammoth.api.addons import AddonsAPI
@@ -157,7 +158,7 @@ class ViewsResource:
     def __init__(self, client: MammothClient) -> None:
         self._client = client
 
-    def get(self, view_id: int, dataset_id: int | None = None) -> View:
+    async def get(self, view_id: int, dataset_id: int | None = None) -> View:
         """Get a rich View object for a dataview.
 
         Args:
@@ -171,15 +172,15 @@ class ViewsResource:
         from mammoth.view import View
 
         if dataset_id is None:
-            dataset_id = self._client.pipeline.find_dataset_for_dataview(view_id)
+            dataset_id = await self._client.pipeline.find_dataset_for_dataview(view_id)
 
-        data = self._client.dataviews.get(
+        data = await self._client.dataviews.get(
             dataset_id=dataset_id,
             dataview_id=view_id,
         )
         return View(self._client, data, dataset_id)
 
-    def list(self, dataset_id: int) -> _list[View]:
+    async def list(self, dataset_id: int) -> _list[View]:
         """List all dataviews in a dataset as View objects.
 
         Args:
@@ -190,13 +191,13 @@ class ViewsResource:
         """
         from mammoth.view import View
 
-        dv_resp = self._client.dataviews.list(dataset_id=dataset_id)
+        dv_resp = await self._client.dataviews.list(dataset_id=dataset_id)
         views: _list[View] = []
         for dv in dv_resp.get("dataviews", []):
             views.append(View(self._client, dv, dataset_id))
         return views
 
-    def create(
+    async def create(
         self,
         dataset_id: int,
         name: str = "View",
@@ -214,21 +215,21 @@ class ViewsResource:
         """
         from mammoth.view import View
 
-        data = self._client.dataviews.create(
+        data = await self._client.dataviews.create(
             dataset_id=dataset_id,
             name=name,
             clone_config_from=clone_from,
         )
         view_id = data.get("dataview_id") or data.get("id")
         if view_id:
-            full_data = self._client.dataviews.get(
+            full_data = await self._client.dataviews.get(
                 dataset_id=dataset_id,
                 dataview_id=view_id,
             )
             return View(self._client, full_data, dataset_id)
         return View(self._client, data, dataset_id)
 
-    def delete(self, view_id: int, dataset_id: int | None = None) -> dict[str, Any]:
+    async def delete(self, view_id: int, dataset_id: int | None = None) -> dict[str, Any]:
         """Delete a dataview.
 
         Args:
@@ -241,10 +242,12 @@ class ViewsResource:
             Dict with deletion result.
         """
         if dataset_id is None:
-            dataset_id = self._client.pipeline.find_dataset_for_dataview(view_id)
-        return self._client.dataviews.delete(dataset_id=dataset_id, dataview_id=view_id)
+            dataset_id = await self._client.pipeline.find_dataset_for_dataview(view_id)
+        return await self._client.dataviews.delete(dataset_id=dataset_id, dataview_id=view_id)
 
-    def bulk_delete(self, view_ids: _list[int], dataset_id: int | None = None) -> dict[str, Any]:
+    async def bulk_delete(
+        self, view_ids: _list[int], dataset_id: int | None = None
+    ) -> dict[str, Any]:
         """Delete multiple dataviews.
 
         Args:
@@ -256,8 +259,10 @@ class ViewsResource:
         if not view_ids:
             raise ValueError("view_ids must contain at least one dataview ID")
         if dataset_id is None:
-            dataset_id = self._client.pipeline.find_dataset_for_dataview(view_ids[0])
-        return self._client.dataviews.bulk_delete(dataset_id=dataset_id, dataview_ids=view_ids)
+            dataset_id = await self._client.pipeline.find_dataset_for_dataview(view_ids[0])
+        return await self._client.dataviews.bulk_delete(
+            dataset_id=dataset_id, dataview_ids=view_ids
+        )
 
 
 #: Artifact media types returned as text rather than base64.
@@ -375,7 +380,7 @@ class MammothClient:
 
         self.project_id: int | None = None
 
-        self.session = requests.Session()
+        self.session = httpx.AsyncClient(timeout=self.timeout, follow_redirects=False)
         if self.api_token is not None:
             credential_headers = {"Authorization": f"Bearer {self.api_token}"}
         else:
@@ -393,7 +398,7 @@ class MammothClient:
         # Signed export URLs are commonly served from a storage origin rather
         # than the API origin.  Keep that traffic on a separate session so API
         # credentials are never attached to a signed URL (or its redirects).
-        self.download_session = requests.Session()
+        self.download_session = httpx.AsyncClient(timeout=self.timeout)
 
         # ── Sub-clients ──
         self.files = FilesAPI(self)
@@ -442,7 +447,9 @@ class MammothClient:
         # workspace-collection, membership, invite, usage, and AI operations.
         self.workspace = WorkspacesAPI(self)
 
-    def find_dataset_for_dataview(self, dataview_id: int, dataset_id: int | None = None) -> int:
+    async def find_dataset_for_dataview(
+        self, dataview_id: int, dataset_id: int | None = None
+    ) -> int:
         """Find the parent dataset ID for a given dataview.
 
         Searches all datasets in the current project to locate which
@@ -464,10 +471,10 @@ class MammothClient:
             dataset_id = client.find_dataset_for_dataview(1039)
         """
         if dataset_id is None:
-            return self.pipeline.find_dataset_for_dataview(dataview_id)
-        return self.pipeline.find_dataset_for_dataview(dataview_id, dataset_id)
+            return await self.pipeline.find_dataset_for_dataview(dataview_id)
+        return await self.pipeline.find_dataset_for_dataview(dataview_id, dataset_id)
 
-    def _request(
+    async def _request(
         self,
         method: str,
         endpoint: str,
@@ -512,10 +519,9 @@ class MammothClient:
 
         request_kwargs: dict[str, Any] = {
             "timeout": self.timeout,
-            # ``requests`` otherwise follows redirects and preserves these
+            # httpx otherwise follows redirects and preserves these
             # custom session headers across origins.  API credentials must
             # never leave the authenticated API request's original URL.
-            "allow_redirects": False,
             **kwargs,
         }
 
@@ -546,8 +552,8 @@ class MammothClient:
 
         started = time.perf_counter()
         try:
-            response = self.session.request(method, url, **request_kwargs)
-        except requests.exceptions.Timeout as e:
+            response = await self.session.request(method, url, **request_kwargs)
+        except httpx.TimeoutException as e:
             _log_http(request_method, endpoint, started=started, status=None, outcome="timeout")
             raise MammothAPIError(
                 "Request timed out",
@@ -557,7 +563,7 @@ class MammothClient:
                 phase="request",
                 endpoint=endpoint,
             ) from e
-        except requests.exceptions.ConnectionError as e:
+        except httpx.ConnectError as e:
             _log_http(
                 request_method, endpoint, started=started, status=None, outcome="connection_error"
             )
@@ -569,7 +575,7 @@ class MammothClient:
                 phase="request",
                 endpoint=endpoint,
             ) from e
-        except requests.exceptions.RequestException as e:
+        except httpx.HTTPError as e:
             _log_http(
                 request_method, endpoint, started=started, status=None, outcome="request_failed"
             )
@@ -751,7 +757,7 @@ class MammothClient:
             endpoint=endpoint,
         )
 
-    def _request_json(
+    async def _request_json(
         self,
         method: str,
         endpoint: str,
@@ -762,7 +768,7 @@ class MammothClient:
         **kwargs: Any,
     ) -> dict[str, Any]:
         """Make an authenticated request expecting a dict response."""
-        result = self._request(
+        result = await self._request(
             method,
             endpoint,
             params=params,
@@ -776,7 +782,7 @@ class MammothClient:
         # response before it reaches this typed wrapper.
         return cast(dict[str, Any], result)
 
-    def _request_binary(
+    async def _request_binary(
         self,
         method: str,
         endpoint: str,
@@ -788,13 +794,13 @@ class MammothClient:
         Returns ``{"content_type", "size_bytes", "sha256"}`` plus ``"text"``
         for HTML/plain-text bodies or ``"content_base64"`` for binary ones.
         """
-        result = self._request(
+        result = await self._request(
             method, endpoint, params=params, expected_response_shape="binary", **kwargs
         )
         assert isinstance(result, dict)
         return result
 
-    def _request_list(
+    async def _request_list(
         self,
         method: str,
         endpoint: str,
@@ -804,7 +810,7 @@ class MammothClient:
         **kwargs: Any,
     ) -> list[dict[str, Any]]:
         """Make an authenticated request expecting a list response."""
-        result = self._request(
+        result = await self._request(
             method,
             endpoint,
             params=params,
@@ -820,7 +826,7 @@ class MammothClient:
             return [result]
         return result
 
-    def _wait_if_job(
+    async def _wait_if_job(
         self,
         response: dict[str, Any],
         timeout: int | None = None,
@@ -868,14 +874,14 @@ class MammothClient:
 
         if job_id:
             t = timeout if timeout is not None else self.job_timeout
-            completed = self.jobs.wait_for_job(
+            completed = await self.jobs.wait_for_job(
                 job_id, timeout=t, poll_interval=poll_interval, fetch=fetch
             )
             return completed.get("response", completed)
 
         return response
 
-    def wait_if_job(
+    async def wait_if_job(
         self,
         response: dict[str, Any],
         timeout: int | None = None,
@@ -891,7 +897,7 @@ class MammothClient:
         ``client.dashboards.job_by_url`` for published-dashboard jobs, which
         ``GET /jobs/{id}`` refuses with ``4PERM002``.
         """
-        return self._wait_if_job(
+        return await self._wait_if_job(
             response, timeout=timeout, poll_interval=poll_interval, fetch=fetch
         )
 
@@ -910,7 +916,7 @@ class MammothClient:
         """
         self.project_id = project_id
 
-    def test_connection(self) -> bool:
+    async def test_connection(self) -> bool:
         """Test the connection to the Mammoth API.
 
         Makes a lightweight API call to verify credentials and network
@@ -922,11 +928,11 @@ class MammothClient:
 
         Example::
 
-            if client.test_connection():
+            if await client.test_connection():
                 print("Connected!")
         """
         try:
-            self._request(
+            await self._request(
                 "GET",
                 f"/workspaces/{self.workspace_id}/projects",
                 params={"fields": "id", "limit": 1},
@@ -939,7 +945,7 @@ class MammothClient:
 
     # ── Top-level Convenience Methods ──────────────────────────
 
-    def get_view(self, view_id: int) -> View:
+    async def get_view(self, view_id: int) -> View:
         """Get a rich View object by dataview ID.
 
         Shortcut for ``client.views.get(view_id)``. Automatically finds
@@ -957,9 +963,9 @@ class MammothClient:
             view = client.get_view(1039)
             print(view.display_names)
         """
-        return self.views.get(view_id)
+        return await self.views.get(view_id)
 
-    def branch_out(
+    async def branch_out(
         self,
         view_id: int,
         dataset_name: str,
@@ -983,12 +989,12 @@ class MammothClient:
             The id of the dataset written to (new when ``target_ds_id`` is None,
             otherwise ``target_ds_id``).
         """
-        view = self.views.get(view_id)
+        view = await self.views.get(view_id)
         return view.branch_out(
             dataset_name, target_ds_id=target_ds_id, column_mapping=column_mapping, **kwargs
         )
 
-    def close(self) -> None:
+    async def close(self) -> None:
         """Close the owned HTTP session.
 
         Safe to call more than once. After a CLI command completes, the caller
@@ -999,21 +1005,21 @@ class MammothClient:
         for name in ("session", "download_session"):
             session = getattr(self, name, None)
             if session is not None and id(session) not in closed_sessions:
-                session.close()
+                await session.aclose()
                 closed_sessions.add(id(session))
 
-    def __enter__(self) -> MammothClient:
+    async def __aenter__(self) -> MammothClient:
         """Context manager entry."""
         return self
 
-    def __exit__(
+    async def __aexit__(
         self,
         exc_type: type[BaseException] | None,
         exc_val: BaseException | None,
         exc_tb: Any,
     ) -> None:
         """Context manager exit."""
-        self.close()
+        await self.close()
 
 
 # Type alias for forward references

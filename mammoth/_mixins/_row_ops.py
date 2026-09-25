@@ -21,7 +21,7 @@ else:
 class RowOpsMixin(ViewHost):
     """Mixin for row-level operations on a View."""
 
-    def fill_missing(
+    async def fill_missing(
         self,
         column: str,
         direction: FillDirection,
@@ -58,7 +58,7 @@ class RowOpsMixin(ViewHost):
                 order_by=[["Date", SortDirection.ASC]],
             )
         """
-        return self._add_task(
+        return await self._add_task(
             build_fill_params(
                 column,
                 direction,
@@ -69,7 +69,7 @@ class RowOpsMixin(ViewHost):
             )
         )
 
-    def limit_rows(
+    async def limit_rows(
         self,
         n: int,
         bottom: bool = False,
@@ -96,9 +96,11 @@ class RowOpsMixin(ViewHost):
             view.limit_rows(10, order_by=[["Sales", SortDirection.DESC]])
             view.limit_rows(5, bottom=True)
         """
-        return self._add_task(build_limit_params(n, self.columns, bottom=bottom, order_by=order_by))
+        return await self._add_task(
+            build_limit_params(n, self.columns, bottom=bottom, order_by=order_by)
+        )
 
-    def discard_duplicates(
+    async def discard_duplicates(
         self,
         ignore_columns: list[str] | None = None,
     ) -> dict[str, Any]:
@@ -116,11 +118,11 @@ class RowOpsMixin(ViewHost):
             view.discard_duplicates()
             view.discard_duplicates(ignore_columns=["Notes", "Timestamp"])
         """
-        return self._add_task(
+        return await self._add_task(
             build_discard_duplicates_params(self.columns, self._internal_names, ignore_columns)
         )
 
-    def unnest(
+    async def unnest(
         self,
         columns: list[str],
         label_column: str = "Label",
@@ -153,7 +155,7 @@ class RowOpsMixin(ViewHost):
             view.unnest(["Q1", "Q2", "Q3", "Q4"],
                         label_column="Quarter", value_column="Revenue")
         """
-        return self._add_task(
+        return await self._add_task(
             build_unnest_params(
                 columns,
                 self.columns,

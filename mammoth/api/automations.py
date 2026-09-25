@@ -300,18 +300,18 @@ class AutomationsAPI:
 
     # ── Automations ──────────────────────────────────────────────
 
-    def list(self) -> _list[dict[str, Any]]:
+    async def list(self) -> _list[dict[str, Any]]:
         """List all automations.
 
         Returns:
             List of automation dicts.
         """
-        response = self._client._request_json(
+        response = await self._client._request_json(
             "GET", f"/workspaces/{self._ws()}/projects/{self._proj()}/automations"
         )
         return response.get("automations", response if isinstance(response, _list) else [])
 
-    def create(
+    async def create(
         self,
         name: str,
         description: str,
@@ -355,11 +355,11 @@ class AutomationsAPI:
             "conditions": [_condition_to_dict(c) for c in conditions or []],
             "condition_mode": condition_mode.value,
         }
-        return self._client._request_json(
+        return await self._client._request_json(
             "POST", f"/workspaces/{self._ws()}/projects/{self._proj()}/automations", json=body
         )
 
-    def get(self, automation_id: int) -> dict[str, Any]:
+    async def get(self, automation_id: int) -> dict[str, Any]:
         """Get automation details.
 
         Args:
@@ -368,11 +368,11 @@ class AutomationsAPI:
         Returns:
             Dict with automation details.
         """
-        return self._client._request_json(
+        return await self._client._request_json(
             "GET", f"/workspaces/{self._ws()}/projects/{self._proj()}/automations/{automation_id}"
         )
 
-    def update(
+    async def update(
         self,
         automation_id: int,
         patch: _list[AutomationPatchItem],
@@ -419,13 +419,13 @@ class AutomationsAPI:
             ops.append(op_dict)
 
         body: dict[str, Any] = {"patch": ops}
-        return self._client._request_json(
+        return await self._client._request_json(
             "PATCH",
             f"/workspaces/{self._ws()}/projects/{self._proj()}/automations/{automation_id}",
             json=body,
         )
 
-    def delete(self, automation_id: int) -> dict[str, Any]:
+    async def delete(self, automation_id: int) -> dict[str, Any]:
         """Delete an automation.
 
         Args:
@@ -434,12 +434,12 @@ class AutomationsAPI:
         Returns:
             Dict with deletion result.
         """
-        return self._client._request_json(
+        return await self._client._request_json(
             "DELETE",
             f"/workspaces/{self._ws()}/projects/{self._proj()}/automations/{automation_id}",
         )
 
-    def restore(self, automation_id: int) -> dict[str, Any]:
+    async def restore(self, automation_id: int) -> dict[str, Any]:
         """Restore a trashed automation.
 
         Args:
@@ -448,12 +448,12 @@ class AutomationsAPI:
         Returns:
             Dict with the restored automation info.
         """
-        return self._client._request_json(
+        return await self._client._request_json(
             "POST",
             f"/workspaces/{self._ws()}/projects/{self._proj()}/automations/{automation_id}/restore",
         )
 
-    def trash(self, automation_id: int) -> dict[str, Any]:
+    async def trash(self, automation_id: int) -> dict[str, Any]:
         """Move an automation to trash.
 
         Args:
@@ -462,25 +462,25 @@ class AutomationsAPI:
         Returns:
             Dict with the trashed automation info.
         """
-        return self._client._request_json(
+        return await self._client._request_json(
             "POST",
             f"/workspaces/{self._ws()}/projects/{self._proj()}/automations/{automation_id}/trash",
         )
 
     # ── Schedules ────────────────────────────────────────────────
 
-    def list_schedules(self) -> _list[dict[str, Any]]:
+    async def list_schedules(self) -> _list[dict[str, Any]]:
         """List all schedules.
 
         Returns:
             List of schedule dicts.
         """
-        response = self._client._request_json(
+        response = await self._client._request_json(
             "GET", f"/workspaces/{self._ws()}/projects/{self._proj()}/schedules"
         )
         return response.get("schedules", response if isinstance(response, _list) else [])
 
-    def create_schedule(self, spec: ScheduleCreateSpec) -> dict[str, Any]:
+    async def create_schedule(self, spec: ScheduleCreateSpec) -> dict[str, Any]:
         """Create a new schedule.
 
         Args:
@@ -495,11 +495,11 @@ class AutomationsAPI:
         """
         _validate_schedule_create(spec)
         body = _rrule_spec_to_dict(spec)
-        return self._client._request_json(
+        return await self._client._request_json(
             "POST", f"/workspaces/{self._ws()}/projects/{self._proj()}/schedules", json=body
         )
 
-    def update_schedule(
+    async def update_schedule(
         self,
         schedule_id: int,
         patch: _list[SchedulePatchItem],
@@ -532,13 +532,13 @@ class AutomationsAPI:
 
         ops = build_schedule_patch_ops(patch)
         body: dict[str, Any] = {"patch": ops}
-        return self._client._request_json(
+        return await self._client._request_json(
             "PATCH",
             f"/workspaces/{self._ws()}/projects/{self._proj()}/schedules/{schedule_id}",
             json=body,
         )
 
-    def delete_schedule(self, schedule_id: int) -> dict[str, Any]:
+    async def delete_schedule(self, schedule_id: int) -> dict[str, Any]:
         """Delete a schedule.
 
         Args:
@@ -547,6 +547,6 @@ class AutomationsAPI:
         Returns:
             Dict with deletion result.
         """
-        return self._client._request_json(
+        return await self._client._request_json(
             "DELETE", f"/workspaces/{self._ws()}/projects/{self._proj()}/schedules/{schedule_id}"
         )

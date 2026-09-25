@@ -59,15 +59,15 @@ def last_crosstab(mock_view):
 
 
 class TestAddColumn:
-    def test_basic(self, mock_view):
-        mock_view.add_column("New Col")
+    async def test_basic(self, mock_view):
+        await mock_view.add_column("New Col")
         p = last_payload(mock_view)
         assert "ADD_COLUMN" in p
         assert p["ADD_COLUMN"][0]["COLUMN"] == "New Col"
         assert p["ADD_COLUMN"][0]["TYPE"] == "TEXT"
 
-    def test_with_enum(self, mock_view):
-        mock_view.add_column("Amount", column_type=ColumnType.NUMERIC)
+    async def test_with_enum(self, mock_view):
+        await mock_view.add_column("Amount", column_type=ColumnType.NUMERIC)
         p = last_payload(mock_view)
         assert p["ADD_COLUMN"][0]["TYPE"] == ColumnType.NUMERIC
         # Verify serializable
@@ -75,29 +75,29 @@ class TestAddColumn:
 
 
 class TestDeleteColumns:
-    def test_basic(self, mock_view):
-        mock_view.delete_columns(["gender"])
+    async def test_basic(self, mock_view):
+        await mock_view.delete_columns(["gender"])
         p = last_payload(mock_view)
         assert "DELETE" in p
         assert p["DELETE"] == ["column_stu1234567"]
 
-    def test_multiple(self, mock_view):
-        mock_view.delete_columns(["gender", "emp_id"])
+    async def test_multiple(self, mock_view):
+        await mock_view.delete_columns(["gender", "emp_id"])
         p = last_payload(mock_view)
         assert len(p["DELETE"]) == 2
 
 
 class TestCopyColumns:
-    def test_basic(self, mock_view):
-        mock_view.copy_columns([CopySpec(source="emp_id", as_name="emp_id_copy")])
+    async def test_basic(self, mock_view):
+        await mock_view.copy_columns([CopySpec(source="emp_id", as_name="emp_id_copy")])
         p = last_payload(mock_view)
         assert "COPY" in p
         assert p["VERSION"] == 2
         assert p["COPY"][0]["SOURCE"] == "column_abc1234567"
         assert p["COPY"][0]["AS"]["COLUMN"] == "emp_id_copy"
 
-    def test_multiple_copies(self, mock_view):
-        mock_view.copy_columns(
+    async def test_multiple_copies(self, mock_view):
+        await mock_view.copy_columns(
             [
                 CopySpec(source="emp_id", as_name="id_copy"),
                 CopySpec(source="base_salary", as_name="salary_copy", type=ColumnType.NUMERIC),
@@ -108,9 +108,9 @@ class TestCopyColumns:
         assert p["COPY"][0]["SOURCE"] == "column_abc1234567"
         assert p["COPY"][1]["SOURCE"] == "column_jkl1234567"
 
-    def test_with_condition_per_item(self, mock_view):
+    async def test_with_condition_per_item(self, mock_view):
         cond = Condition("department", Operator.EQ, "Engineering")
-        mock_view.copy_columns(
+        await mock_view.copy_columns(
             [
                 CopySpec(source="emp_id", as_name="id_copy", condition=cond),
             ]
@@ -121,8 +121,8 @@ class TestCopyColumns:
 
 
 class TestCombineColumns:
-    def test_basic(self, mock_view):
-        mock_view.combine_columns(
+    async def test_basic(self, mock_view):
+        await mock_view.combine_columns(
             sources=["full_name", "department"],
             separator=" - ",
             new_column="combined",
@@ -134,8 +134,8 @@ class TestCombineColumns:
         assert src[1] == {"STRING": " - "}
         assert src[2] == {"COLUMN": "column_ghi1234567"}
 
-    def test_three_columns(self, mock_view):
-        mock_view.combine_columns(
+    async def test_three_columns(self, mock_view):
+        await mock_view.combine_columns(
             sources=["emp_id", "full_name", "department"],
             separator=", ",
             new_column="all",
@@ -145,8 +145,8 @@ class TestCombineColumns:
         # 3 cols + 2 separators = 5 items
         assert len(src) == 5
 
-    def test_existing_column(self, mock_view):
-        mock_view.combine_columns(
+    async def test_existing_column(self, mock_view):
+        await mock_view.combine_columns(
             sources=["full_name", "department"],
             separator=" ",
             existing_column="full_name",
@@ -155,9 +155,9 @@ class TestCombineColumns:
         assert p["COMBINE"]["DESTINATION"] == "column_def1234567"
         assert "AS" not in p["COMBINE"]
 
-    def test_with_condition(self, mock_view):
+    async def test_with_condition(self, mock_view):
         cond = Condition("department", Operator.EQ, "Engineering")
-        mock_view.combine_columns(
+        await mock_view.combine_columns(
             sources=["full_name", "department"],
             separator=" - ",
             new_column="combined",
@@ -169,15 +169,15 @@ class TestCombineColumns:
 
 
 class TestConvertType:
-    def test_basic(self, mock_view):
-        mock_view.convert_type([ConversionSpec(column="emp_id", to=ColumnType.NUMERIC)])
+    async def test_basic(self, mock_view):
+        await mock_view.convert_type([ConversionSpec(column="emp_id", to=ColumnType.NUMERIC)])
         p = last_payload(mock_view)
         assert "CONVERT" in p
         assert p["CONVERT"][0]["SOURCE"] == "column_abc1234567"
         assert p["CONVERT"][0]["TO_TYPE"] == "NUMERIC"
 
-    def test_multiple_conversions(self, mock_view):
-        mock_view.convert_type(
+    async def test_multiple_conversions(self, mock_view):
+        await mock_view.convert_type(
             [
                 ConversionSpec(column="emp_id", to=ColumnType.NUMERIC),
                 ConversionSpec(column="joining_date", to=ColumnType.DATE),
@@ -187,8 +187,8 @@ class TestConvertType:
         assert len(p["CONVERT"]) == 2
         assert p["CONVERT"][1]["TO_TYPE"] == "DATE"
 
-    def test_with_date_format(self, mock_view):
-        mock_view.convert_type(
+    async def test_with_date_format(self, mock_view):
+        await mock_view.convert_type(
             [
                 ConversionSpec(column="joining_date", to=ColumnType.DATE, format="MM/DD/YYYY"),
             ]
@@ -201,91 +201,91 @@ class TestConvertType:
 
 
 class TestFilterRows:
-    def test_basic(self, mock_view):
+    async def test_basic(self, mock_view):
         cond = Condition("department", Operator.EQ, "Engineering")
-        mock_view.filter_rows(cond)
+        await mock_view.filter_rows(cond)
         p = last_payload(mock_view)
         assert p["SELECT"] == "ALL"
         assert "CONDITION" in p
         assert p["CONDITION"]["FILTER_TYPE"] == FilterType.SHOW
 
-    def test_remove(self, mock_view):
+    async def test_remove(self, mock_view):
         cond = Condition("department", Operator.EQ, "Engineering")
-        mock_view.filter_rows(cond, filter_type=FilterType.REMOVE)
+        await mock_view.filter_rows(cond, filter_type=FilterType.REMOVE)
         p = last_payload(mock_view)
         assert p["CONDITION"]["FILTER_TYPE"] == FilterType.REMOVE
 
-    def test_compound_and(self, mock_view):
+    async def test_compound_and(self, mock_view):
         cond = Condition("department", Operator.EQ, "Eng") & Condition(
             "base_salary", Operator.GTE, 100000
         )
-        mock_view.filter_rows(cond)
+        await mock_view.filter_rows(cond)
         p = last_payload(mock_view)
         assert "AND" in p["CONDITION"]
         assert len(p["CONDITION"]["AND"]) == 2
 
-    def test_compound_or(self, mock_view):
+    async def test_compound_or(self, mock_view):
         cond = Condition("department", Operator.EQ, "Eng") | Condition(
             "department", Operator.EQ, "Sales"
         )
-        mock_view.filter_rows(cond)
+        await mock_view.filter_rows(cond)
         p = last_payload(mock_view)
         assert "OR" in p["CONDITION"]
         assert len(p["CONDITION"]["OR"]) == 2
 
-    def test_not(self, mock_view):
+    async def test_not(self, mock_view):
         cond = ~Condition("department", Operator.EQ, "Engineering")
-        mock_view.filter_rows(cond)
+        await mock_view.filter_rows(cond)
         p = last_payload(mock_view)
         assert "NOT" in p["CONDITION"]
 
-    def test_nested(self, mock_view):
+    async def test_nested(self, mock_view):
         cond = (
             Condition("department", Operator.EQ, "Eng")
             & Condition("base_salary", Operator.GTE, 100000)
         ) | Condition("gender", Operator.EQ, "F")
-        mock_view.filter_rows(cond)
+        await mock_view.filter_rows(cond)
         p = last_payload(mock_view)
         assert "OR" in p["CONDITION"]
         assert "AND" in p["CONDITION"]["OR"][0]
 
-    def test_case_insensitive(self, mock_view):
+    async def test_case_insensitive(self, mock_view):
         cond = Condition("department", Operator.EQ, "engineering", case_sensitive=False)
-        mock_view.filter_rows(cond)
+        await mock_view.filter_rows(cond)
         p = last_payload(mock_view)
         assert p["CONDITION"]["STRING_PROP"] == {"CASE": "CASE-INSENSITIVE"}
 
-    def test_with_prompt(self, mock_view):
+    async def test_with_prompt(self, mock_view):
         cond = Condition("department", Operator.EQ, "Engineering")
-        mock_view.filter_rows(cond, prompt="Show only engineering")
+        await mock_view.filter_rows(cond, prompt="Show only engineering")
         p = last_payload(mock_view)
         assert p["CONDITION"]["PROMPT"] == "Show only engineering"
 
-    def test_value_is_column(self, mock_view):
+    async def test_value_is_column(self, mock_view):
         cond = Condition("base_salary", Operator.GT, "bonus_pct", value_is_column=True)
-        mock_view.filter_rows(cond)
+        await mock_view.filter_rows(cond)
         p = last_payload(mock_view)
         inner = p["CONDITION"]["column_jkl1234567"]["GT"]
         assert inner == {"COLUMN": "column_vwx1234567"}
 
-    def test_date_component(self, mock_view):
+    async def test_date_component(self, mock_view):
         cond = Condition("joining_date", Operator.EQ, "October", component="month_text")
-        mock_view.filter_rows(cond)
+        await mock_view.filter_rows(cond)
         p = last_payload(mock_view)
         inner = p["CONDITION"]["column_mno1234567"]["EQ"]
         assert inner == {"VALUE": {"COMPONENT": "month_text", "VALUE": "October"}}
 
-    def test_date_truncate(self, mock_view):
+    async def test_date_truncate(self, mock_view):
         cond = Condition("joining_date", Operator.GT, "2021-02-28", truncate="DAY")
-        mock_view.filter_rows(cond)
+        await mock_view.filter_rows(cond)
         p = last_payload(mock_view)
         inner = p["CONDITION"]["column_mno1234567"]["GT"]
         assert inner == {"VALUE": {"TRUNCATE": "DAY", "VALUE": "2021-02-28"}}
 
 
 class TestSetValues:
-    def test_with_set_value_objects(self, mock_view):
-        mock_view.set_values(
+    async def test_with_set_value_objects(self, mock_view):
+        await mock_view.set_values(
             new_column="tier",
             values=[
                 SetValue("High", condition=Condition("base_salary", Operator.GTE, 100000)),
@@ -301,8 +301,8 @@ class TestSetValues:
         assert vals[1]["PROVIDER"] == "Low"
         assert "CONDITION" not in vals[1]
 
-    def test_existing_column(self, mock_view):
-        mock_view.set_values(
+    async def test_existing_column(self, mock_view):
+        await mock_view.set_values(
             existing_column="department",
             values=[SetValue("All")],
         )
@@ -310,8 +310,8 @@ class TestSetValues:
         assert "DESTINATION" in p["SET"]
         assert p["SET"]["DESTINATION"] == "column_ghi1234567"
 
-    def test_multiple_conditional_values(self, mock_view):
-        mock_view.set_values(
+    async def test_multiple_conditional_values(self, mock_view):
+        await mock_view.set_values(
             new_column="tier",
             values=[
                 SetValue("High", condition=Condition("base_salary", Operator.GTE, 100000)),
@@ -326,11 +326,11 @@ class TestSetValues:
         assert "CONDITION" in vals[1]
         assert "CONDITION" not in vals[2]
 
-    def test_compound_condition_in_value(self, mock_view):
+    async def test_compound_condition_in_value(self, mock_view):
         cond = Condition("base_salary", Operator.GTE, 100000) & Condition(
             "department", Operator.EQ, "Eng"
         )
-        mock_view.set_values(
+        await mock_view.set_values(
             new_column="tier",
             values=[
                 SetValue("Top Eng", condition=cond),
@@ -346,8 +346,8 @@ class TestSetValues:
 
 
 class TestMath:
-    def test_string_expression(self, mock_view):
-        mock_view.math("base_salary * bonus_pct", new_column="bonus")
+    async def test_string_expression(self, mock_view):
+        await mock_view.math("base_salary * bonus_pct", new_column="bonus")
         p = last_payload(mock_view)
         assert "MATH" in p
         expr = p["MATH"]["EXPRESSION"]
@@ -368,10 +368,10 @@ _DEFAULT_NUMBER_FORMAT = {
 
 
 class TestSmallLarge:
-    def test_large_two_columns_one_constant_new_column(self, mock_view):
+    async def test_large_two_columns_one_constant_new_column(self, mock_view):
         """LARGE: two columns + one numeric constant + index=1 → full AS dict."""
         mock_view._next_internal_name = lambda: "gen_sl_001"
-        mock_view.small_large(
+        await mock_view.small_large(
             SmallLargeFunction.LARGE,
             columns=["base_salary", "bonus_pct"],
             index=1,
@@ -395,9 +395,9 @@ class TestSmallLarge:
         }
         assert "DESTINATION" not in sl
 
-    def test_small_columns_only_existing_column(self, mock_view):
+    async def test_small_columns_only_existing_column(self, mock_view):
         """SMALL: columns only + existing_column → DESTINATION, no AS."""
-        mock_view.small_large(
+        await mock_view.small_large(
             SmallLargeFunction.SMALL,
             columns=["base_salary", "bonus_pct"],
             existing_column="base_salary",
@@ -413,67 +413,67 @@ class TestSmallLarge:
         assert sl["DESTINATION"] == "column_jkl1234567"
         assert "AS" not in sl
 
-    def test_error_empty_values(self, mock_view):
+    async def test_error_empty_values(self, mock_view):
         """Empty columns + no constants raises MammothValidationError."""
         with pytest.raises(MammothValidationError, match="at least one value source"):
-            mock_view.small_large(
+            await mock_view.small_large(
                 SmallLargeFunction.LARGE,
                 columns=[],
                 new_column="Result",
             )
 
-    def test_error_index_zero(self, mock_view):
+    async def test_error_index_zero(self, mock_view):
         """index=0 raises MammothValidationError."""
         with pytest.raises(MammothValidationError, match="1-based"):
-            mock_view.small_large(
+            await mock_view.small_large(
                 SmallLargeFunction.LARGE,
                 columns=["base_salary"],
                 index=0,
                 new_column="Result",
             )
 
-    def test_error_index_negative(self, mock_view):
+    async def test_error_index_negative(self, mock_view):
         """index=-1 raises MammothValidationError."""
         with pytest.raises(MammothValidationError, match="1-based"):
-            mock_view.small_large(
+            await mock_view.small_large(
                 SmallLargeFunction.SMALL,
                 columns=["base_salary"],
                 index=-1,
                 new_column="Result",
             )
 
-    def test_error_both_new_and_existing_column(self, mock_view):
+    async def test_error_both_new_and_existing_column(self, mock_view):
         """Providing both new_column and existing_column raises MammothValidationError."""
         with pytest.raises(MammothValidationError, match="exactly one"):
-            mock_view.small_large(
+            await mock_view.small_large(
                 SmallLargeFunction.LARGE,
                 columns=["base_salary"],
                 new_column="New",
                 existing_column="bonus_pct",
             )
 
-    def test_error_neither_new_nor_existing_column(self, mock_view):
+    async def test_error_neither_new_nor_existing_column(self, mock_view):
         """Providing neither new_column nor existing_column raises MammothValidationError."""
         with pytest.raises(MammothValidationError, match="exactly one"):
-            mock_view.small_large(
+            await mock_view.small_large(
                 SmallLargeFunction.LARGE,
                 columns=["base_salary"],
             )
 
-    def test_error_bool_in_constants(self, mock_view):
+    async def test_error_bool_in_constants(self, mock_view):
         """A bool in constants raises MammothValidationError (bool is not a number)."""
         with pytest.raises(MammothValidationError, match="numeric constant"):
-            mock_view.small_large(
+            await mock_view.small_large(
                 SmallLargeFunction.LARGE,
                 columns=["base_salary"],
                 constants=[True],  # type: ignore[list-item]
                 new_column="Result",
             )
 
-    def test_error_dict_in_values(self, mock_view):
+    async def test_error_dict_in_values(self, mock_view):
         """A dict passed as a column name raises MammothValidationError."""
         with pytest.raises(MammothValidationError, match="numeric constant"):
-            mock_view.small_large(
+            await mock_view.small_large(
                 SmallLargeFunction.LARGE,
                 columns=[{"col": "base_salary"}],  # type: ignore[list-item]
                 new_column="Result",
@@ -484,41 +484,41 @@ class TestSmallLarge:
 
 
 class TestTextTransform:
-    def test_upper(self, mock_view):
-        mock_view.text_transform(["department"], case=TextCase.UPPER)
+    async def test_upper(self, mock_view):
+        await mock_view.text_transform(["department"], case=TextCase.UPPER)
         p = last_payload(mock_view)
         assert "TEXT_TRANSFORM" in p
         assert p["TEXT_TRANSFORM"]["CASE"] == TextCase.UPPER
 
-    def test_trim(self, mock_view):
-        mock_view.text_transform(["full_name"], trim=True)
+    async def test_trim(self, mock_view):
+        await mock_view.text_transform(["full_name"], trim=True)
         p = last_payload(mock_view)
         assert p["TEXT_TRANSFORM"]["TRIM"] is True
 
 
 class TestReplaceValues:
-    def test_basic(self, mock_view):
-        mock_view.replace_values(columns=["department"], find="Eng", replace="Engineering")
+    async def test_basic(self, mock_view):
+        await mock_view.replace_values(columns=["department"], find="Eng", replace="Engineering")
         p = last_payload(mock_view)
         assert "REPLACE" in p
         assert p["REPLACE"]["VALUE_PAIR"][0]["SEARCH_VALUE"] == "Eng"
         assert p["REPLACE"]["VALUE_PAIR"][0]["REPLACE_VALUE"] == "Engineering"
 
-    def test_multiple_columns(self, mock_view):
-        mock_view.replace_values(columns=["department", "full_name"], find="X", replace="Y")
+    async def test_multiple_columns(self, mock_view):
+        await mock_view.replace_values(columns=["department", "full_name"], find="X", replace="Y")
         p = last_payload(mock_view)
         assert len(p["REPLACE"]["SOURCE"]) == 2
 
-    def test_with_condition(self, mock_view):
+    async def test_with_condition(self, mock_view):
         cond = Condition("gender", Operator.EQ, "F")
-        mock_view.replace_values(
+        await mock_view.replace_values(
             columns=["department"], find="Eng", replace="Engineering", condition=cond
         )
         p = last_payload(mock_view)
         assert "CONDITION" in p
 
-    def test_match_options(self, mock_view):
-        mock_view.replace_values(
+    async def test_match_options(self, mock_view):
+        await mock_view.replace_values(
             columns=["department"],
             find="eng",
             replace="Engineering",
@@ -531,8 +531,8 @@ class TestReplaceValues:
 
 
 class TestBulkReplace:
-    def test_basic(self, mock_view):
-        mock_view.bulk_replace(
+    async def test_basic(self, mock_view):
+        await mock_view.bulk_replace(
             columns=["department"],
             mapping=[BulkReplaceMapping(search=["Eng", "Engineering"], replace="ENGINEERING")],
         )
@@ -542,9 +542,9 @@ class TestBulkReplace:
         assert p["REPLACE"]["MAPPING"][0]["SEARCH_VALUE"] == ["Eng", "Engineering"]
         assert p["REPLACE"]["MAPPING"][0]["REPLACE_VALUE"] == "ENGINEERING"
 
-    def test_with_condition(self, mock_view):
+    async def test_with_condition(self, mock_view):
         cond = Condition("gender", Operator.EQ, "M")
-        mock_view.bulk_replace(
+        await mock_view.bulk_replace(
             columns=["department"],
             mapping=[BulkReplaceMapping(search=["Eng"], replace="Engineering")],
             condition=cond,
@@ -552,8 +552,8 @@ class TestBulkReplace:
         p = last_payload(mock_view)
         assert "CONDITION" in p
 
-    def test_multiple_mappings(self, mock_view):
-        mock_view.bulk_replace(
+    async def test_multiple_mappings(self, mock_view):
+        await mock_view.bulk_replace(
             columns=["department"],
             mapping=[
                 BulkReplaceMapping(search=["Eng"], replace="Engineering"),
@@ -565,8 +565,8 @@ class TestBulkReplace:
 
 
 class TestSplitColumn:
-    def test_basic(self, mock_view):
-        mock_view.split_column(
+    async def test_basic(self, mock_view):
+        await mock_view.split_column(
             column="full_name",
             delimiter=" ",
             new_columns=[
@@ -580,8 +580,8 @@ class TestSplitColumn:
         assert p["SPLIT"]["DELIMITER"] == " "
         assert len(p["SPLIT"]["AS"]) == 2
 
-    def test_three_columns(self, mock_view):
-        mock_view.split_column(
+    async def test_three_columns(self, mock_view):
+        await mock_view.split_column(
             column="full_name",
             delimiter=" ",
             new_columns=[
@@ -595,8 +595,8 @@ class TestSplitColumn:
 
 
 class TestSubstring:
-    def test_direction_start(self, mock_view):
-        mock_view.substring(
+    async def test_direction_start(self, mock_view):
+        await mock_view.substring(
             column="full_name",
             direction=SubstringDirection.START,
             num_char=5,
@@ -607,8 +607,8 @@ class TestSubstring:
         assert p["SUBSTRING"]["DIRECTION"] == SubstringDirection.START
         assert p["SUBSTRING"]["NUM_CHAR"] == 5
 
-    def test_direction_left(self, mock_view):
-        mock_view.substring(
+    async def test_direction_left(self, mock_view):
+        await mock_view.substring(
             column="full_name",
             direction=SubstringDirection.LEFT,
             char_position=3,
@@ -618,8 +618,8 @@ class TestSubstring:
         assert p["SUBSTRING"]["DIRECTION"] == SubstringDirection.LEFT
         assert p["SUBSTRING"]["CHAR_POSITION"] == 3
 
-    def test_existing_column(self, mock_view):
-        mock_view.substring(
+    async def test_existing_column(self, mock_view):
+        await mock_view.substring(
             column="full_name",
             direction=SubstringDirection.START,
             num_char=5,
@@ -629,9 +629,9 @@ class TestSubstring:
         assert p["SUBSTRING"]["DESTINATION"] == "column_def1234567"
         assert "AS" not in p["SUBSTRING"]
 
-    def test_with_condition(self, mock_view):
+    async def test_with_condition(self, mock_view):
         cond = Condition("department", Operator.EQ, "Eng")
-        mock_view.substring(
+        await mock_view.substring(
             column="full_name",
             direction=SubstringDirection.START,
             num_char=3,
@@ -641,8 +641,8 @@ class TestSubstring:
         p = last_payload(mock_view)
         assert "CONDITION" in p
 
-    def test_regex(self, mock_view):
-        mock_view.substring(
+    async def test_regex(self, mock_view):
+        await mock_view.substring(
             column="full_name",
             regex_pattern="[A-Z]+",
             new_column="caps",
@@ -651,8 +651,8 @@ class TestSubstring:
         assert p["SUBSTRING"]["REGEX"]["EXPRESSION"] == "[A-Z]+"
         assert p["SUBSTRING"]["REGEX"]["INVERT"] is False
 
-    def test_regex_invert(self, mock_view):
-        mock_view.substring(
+    async def test_regex_invert(self, mock_view):
+        await mock_view.substring(
             column="full_name",
             regex_pattern="[0-9]+",
             regex_invert=True,
@@ -666,8 +666,8 @@ class TestSubstring:
 
 
 class TestExtractDate:
-    def test_year(self, mock_view):
-        mock_view.extract_date(
+    async def test_year(self, mock_view):
+        await mock_view.extract_date(
             column="joining_date",
             component=DateComponent.YEAR,
             new_column="year",
@@ -677,8 +677,8 @@ class TestExtractDate:
         assert p["EXTRACT_DATE"]["COMPONENT"] == "year"
         assert p["EXTRACT_DATE"]["AS"]["TYPE"] == "NUMERIC"
 
-    def test_text_component(self, mock_view):
-        mock_view.extract_date(
+    async def test_text_component(self, mock_view):
+        await mock_view.extract_date(
             column="joining_date",
             component=DateComponent.WEEKDAY_TEXT,
             new_column="day_name",
@@ -686,14 +686,14 @@ class TestExtractDate:
         p = last_payload(mock_view)
         assert p["EXTRACT_DATE"]["AS"]["TYPE"] == "TEXT"
 
-    def test_year_month_day_as_date(self, mock_view):
+    async def test_year_month_day_as_date(self, mock_view):
         """REVISED: asserted TEXT, which encoded the very defect this component is named
         for — ``..._AS_DATE`` produced a TEXT column, so the result sorted and filtered as
         a string. Two independent sources say DATE: the executor lists it as the sole
         member of ``EXTRACT_DATE_OPS_DATE`` (DBAdapter/adapters/duckdb/constants.py), and
         all 5 production rows using this component store ``AS.TYPE == "DATE"``.
         """
-        mock_view.extract_date(
+        await mock_view.extract_date(
             column="joining_date",
             component=DateComponent.YEAR_MONTH_DAY_AS_DATE,
             new_column="date_only",
@@ -701,8 +701,8 @@ class TestExtractDate:
         p = last_payload(mock_view)
         assert p["EXTRACT_DATE"]["AS"]["TYPE"] == "DATE"
 
-    def test_existing_column(self, mock_view):
-        mock_view.extract_date(
+    async def test_existing_column(self, mock_view):
+        await mock_view.extract_date(
             column="joining_date",
             component=DateComponent.YEAR,
             existing_column="exit_date",
@@ -711,7 +711,7 @@ class TestExtractDate:
         assert p["EXTRACT_DATE"]["DESTINATION"] == "column_pqr1234567"
         assert "AS" not in p["EXTRACT_DATE"]
 
-    def test_all_numeric_components(self, mock_view):
+    async def test_all_numeric_components(self, mock_view):
         for comp in [
             DateComponent.YEAR,
             DateComponent.MONTH,
@@ -720,14 +720,14 @@ class TestExtractDate:
             DateComponent.QUARTER,
             DateComponent.WEEK,
         ]:
-            mock_view.extract_date(column="joining_date", component=comp, new_column="x")
+            await mock_view.extract_date(column="joining_date", component=comp, new_column="x")
             p = last_payload(mock_view)
             assert p["EXTRACT_DATE"]["AS"]["TYPE"] == "NUMERIC"
 
 
 class TestDateDiff:
-    def test_basic(self, mock_view):
-        mock_view.date_diff(
+    async def test_basic(self, mock_view):
+        await mock_view.date_diff(
             component=DateDiffUnit.DAY,
             start="joining_date",
             end="exit_date",
@@ -739,8 +739,8 @@ class TestDateDiff:
         assert p["DATE_DIFF"]["MINUEND"]["VALUE"] == "column_pqr1234567"
         assert p["DATE_DIFF"]["SUBTRAHEND"]["VALUE"] == "column_mno1234567"
 
-    def test_existing_column(self, mock_view):
-        mock_view.date_diff(
+    async def test_existing_column(self, mock_view):
+        await mock_view.date_diff(
             component=DateDiffUnit.DAY,
             start="joining_date",
             end="exit_date",
@@ -752,8 +752,8 @@ class TestDateDiff:
 
 
 class TestIncrementDate:
-    def test_basic(self, mock_view):
-        mock_view.increment_date(
+    async def test_basic(self, mock_view):
+        await mock_view.increment_date(
             column="joining_date",
             delta=DateDelta(days=30),
             new_column="plus_30",
@@ -762,8 +762,8 @@ class TestIncrementDate:
         assert "INCREMENT_DATE" in p
         assert p["INCREMENT_DATE"]["DELTA"] == {"DAY": 30}
 
-    def test_multiple_deltas(self, mock_view):
-        mock_view.increment_date(
+    async def test_multiple_deltas(self, mock_view):
+        await mock_view.increment_date(
             column="joining_date",
             delta=DateDelta(years=1, months=-3, days=15),
             new_column="adjusted",
@@ -771,8 +771,8 @@ class TestIncrementDate:
         p = last_payload(mock_view)
         assert p["INCREMENT_DATE"]["DELTA"] == {"YEAR": 1, "MONTH": -3, "DAY": 15}
 
-    def test_negative_deltas(self, mock_view):
-        mock_view.increment_date(
+    async def test_negative_deltas(self, mock_view):
+        await mock_view.increment_date(
             column="joining_date",
             delta=DateDelta(months=-6),
             new_column="six_months_ago",
@@ -780,9 +780,9 @@ class TestIncrementDate:
         p = last_payload(mock_view)
         assert p["INCREMENT_DATE"]["DELTA"]["MONTH"] == -6
 
-    def test_with_condition(self, mock_view):
+    async def test_with_condition(self, mock_view):
         cond = Condition("department", Operator.EQ, "Eng")
-        mock_view.increment_date(
+        await mock_view.increment_date(
             column="joining_date",
             delta=DateDelta(days=30),
             new_column="plus_30",
@@ -791,8 +791,8 @@ class TestIncrementDate:
         p = last_payload(mock_view)
         assert "CONDITION" in p
 
-    def test_existing_column(self, mock_view):
-        mock_view.increment_date(
+    async def test_existing_column(self, mock_view):
+        await mock_view.increment_date(
             column="joining_date",
             delta=DateDelta(days=1),
             existing_column="exit_date",
@@ -806,14 +806,14 @@ class TestIncrementDate:
 
 
 class TestFillMissing:
-    def test_basic(self, mock_view):
-        mock_view.fill_missing(column="exit_date", direction=FillDirection.LAST_VALUE)
+    async def test_basic(self, mock_view):
+        await mock_view.fill_missing(column="exit_date", direction=FillDirection.LAST_VALUE)
         p = last_payload(mock_view)
         assert "FILL" in p
         assert p["FILL"]["WITH"] == FillDirection.LAST_VALUE
 
-    def test_with_partition_and_order(self, mock_view):
-        mock_view.fill_missing(
+    async def test_with_partition_and_order(self, mock_view):
+        await mock_view.fill_missing(
             column="exit_date",
             direction=FillDirection.LAST_VALUE,
             partition_by="department",
@@ -823,8 +823,8 @@ class TestFillMissing:
         assert p["FILL"]["PARTITION_BY"] == "column_ghi1234567"
         assert p["FILL"]["ORDER_BY"][0][0] == "column_mno1234567"
 
-    def test_order_by_only(self, mock_view):
-        mock_view.fill_missing(
+    async def test_order_by_only(self, mock_view):
+        await mock_view.fill_missing(
             column="exit_date",
             direction=FillDirection.FIRST_VALUE,
             order_by=[["emp_id", SortDirection.ASC]],
@@ -835,44 +835,44 @@ class TestFillMissing:
 
 
 class TestLimitRows:
-    def test_basic(self, mock_view):
-        mock_view.limit_rows(n=10)
+    async def test_basic(self, mock_view):
+        await mock_view.limit_rows(n=10)
         p = last_payload(mock_view)
         assert "LIMIT" in p
         assert p["LIMIT"]["LIMIT"] == 10
         assert p["LIMIT"]["BOTTOM"] is False
 
-    def test_with_order(self, mock_view):
-        mock_view.limit_rows(n=5, order_by=[["base_salary", SortDirection.DESC]])
+    async def test_with_order(self, mock_view):
+        await mock_view.limit_rows(n=5, order_by=[["base_salary", SortDirection.DESC]])
         p = last_payload(mock_view)
         assert "ORDER_BY" in p
 
-    def test_bottom_true(self, mock_view):
-        mock_view.limit_rows(n=10, bottom=True)
+    async def test_bottom_true(self, mock_view):
+        await mock_view.limit_rows(n=10, bottom=True)
         p = last_payload(mock_view)
         assert p["LIMIT"]["BOTTOM"] is True
 
-    def test_bottom_with_order(self, mock_view):
-        mock_view.limit_rows(n=3, bottom=True, order_by=[["base_salary", SortDirection.ASC]])
+    async def test_bottom_with_order(self, mock_view):
+        await mock_view.limit_rows(n=3, bottom=True, order_by=[["base_salary", SortDirection.ASC]])
         p = last_payload(mock_view)
         assert p["LIMIT"]["BOTTOM"] is True
         assert "ORDER_BY" in p
 
 
 class TestDiscardDuplicates:
-    def test_all_columns(self, mock_view):
-        mock_view.discard_duplicates()
+    async def test_all_columns(self, mock_view):
+        await mock_view.discard_duplicates()
         p = last_payload(mock_view)
         assert p["DISCARD_DUPLICATES"] is True
         assert p["IGNORE_COLUMNS"] == []
 
-    def test_ignore_columns(self, mock_view):
-        mock_view.discard_duplicates(ignore_columns=["emp_id"])
+    async def test_ignore_columns(self, mock_view):
+        await mock_view.discard_duplicates(ignore_columns=["emp_id"])
         p = last_payload(mock_view)
         assert p["IGNORE_COLUMNS"] == ["column_abc1234567"]
 
-    def test_multiple_ignore_columns(self, mock_view):
-        mock_view.discard_duplicates(ignore_columns=["emp_id", "gender"])
+    async def test_multiple_ignore_columns(self, mock_view):
+        await mock_view.discard_duplicates(ignore_columns=["emp_id", "gender"])
         p = last_payload(mock_view)
         assert len(p["IGNORE_COLUMNS"]) == 2
         assert "column_abc1234567" in p["IGNORE_COLUMNS"]
@@ -880,8 +880,8 @@ class TestDiscardDuplicates:
 
 
 class TestUnnest:
-    def test_basic(self, mock_view):
-        mock_view.unnest(columns=["base_salary", "bonus_pct"])
+    async def test_basic(self, mock_view):
+        await mock_view.unnest(columns=["base_salary", "bonus_pct"])
         p = last_payload(mock_view)
         assert "UNNEST" in p
         assert len(p["UNNEST"]["COLUMNS"]) == 2
@@ -890,8 +890,8 @@ class TestUnnest:
         assert p["UNNEST"]["LABEL"]["COLUMN"] == "Label"
         assert p["UNNEST"]["VALUE"]["COLUMN"] == "Value"
 
-    def test_custom_names(self, mock_view):
-        mock_view.unnest(
+    async def test_custom_names(self, mock_view):
+        await mock_view.unnest(
             columns=["base_salary", "bonus_pct"],
             label_column="Metric",
             value_column="Amount",
@@ -900,39 +900,39 @@ class TestUnnest:
         assert p["UNNEST"]["LABEL"]["COLUMN"] == "Metric"
         assert p["UNNEST"]["VALUE"]["COLUMN"] == "Amount"
 
-    def test_single_column(self, mock_view):
-        mock_view.unnest(columns=["base_salary"])
+    async def test_single_column(self, mock_view):
+        await mock_view.unnest(columns=["base_salary"])
         p = last_payload(mock_view)
         assert len(p["UNNEST"]["COLUMNS"]) == 1
 
-    def test_value_type_derived_from_uniform_numeric_columns(self, mock_view):
+    async def test_value_type_derived_from_uniform_numeric_columns(self, mock_view):
         """VALUE.TYPE used to be the literal "TEXT" with no way to change it, so melting
         numeric columns produced a value column that would not sum or sort numerically.
         Both of these are NUMERIC in the fixture, so nothing needs to be passed."""
-        mock_view.unnest(columns=["base_salary", "bonus_pct"])
+        await mock_view.unnest(columns=["base_salary", "bonus_pct"])
         assert last_payload(mock_view)["UNNEST"]["VALUE"]["TYPE"] == "NUMERIC"
 
-    def test_value_type_falls_back_to_text_when_columns_disagree(self, mock_view):
+    async def test_value_type_falls_back_to_text_when_columns_disagree(self, mock_view):
         """A value column holding both numbers and free text can only be TEXT, so the
         fallback is the right answer here rather than a failure to derive."""
-        mock_view.unnest(columns=["base_salary", "gender"])
+        await mock_view.unnest(columns=["base_salary", "gender"])
         assert last_payload(mock_view)["UNNEST"]["VALUE"]["TYPE"] == "TEXT"
 
-    def test_value_type_explicit_override_wins(self, mock_view):
-        mock_view.unnest(columns=["base_salary", "bonus_pct"], value_type="TEXT")
+    async def test_value_type_explicit_override_wins(self, mock_view):
+        await mock_view.unnest(columns=["base_salary", "bonus_pct"], value_type="TEXT")
         assert last_payload(mock_view)["UNNEST"]["VALUE"]["TYPE"] == "TEXT"
 
-    def test_unknown_column_type_does_not_raise(self, mock_view):
+    async def test_unknown_column_type_does_not_raise(self, mock_view):
         """Derivation is a convenience; it must never fail a call that used to work.
         ``unnest`` resolves internal names, so passing one (absent from the display-keyed
         ``column_types``) must degrade to TEXT rather than KeyError."""
-        mock_view.unnest(columns=["column_jkl1234567"])
+        await mock_view.unnest(columns=["column_jkl1234567"])
         assert last_payload(mock_view)["UNNEST"]["VALUE"]["TYPE"] == "TEXT"
 
-    def test_label_type_is_always_text(self, mock_view):
+    async def test_label_type_is_always_text(self, mock_view):
         """LABEL holds the melted column NAMES — TEXT is correct and deliberately not
         configurable, so a numeric derivation must not leak into it."""
-        mock_view.unnest(columns=["base_salary", "bonus_pct"])
+        await mock_view.unnest(columns=["base_salary", "bonus_pct"])
         assert last_payload(mock_view)["UNNEST"]["LABEL"]["TYPE"] == "TEXT"
 
 
@@ -940,8 +940,8 @@ class TestUnnest:
 
 
 class TestPivot:
-    def test_basic(self, mock_view):
-        mock_view.pivot(
+    async def test_basic(self, mock_view):
+        await mock_view.pivot(
             group_by=["department"],
             aggregations=[
                 AggregationSpec(
@@ -959,8 +959,8 @@ class TestPivot:
         assert sel["FUNCTION"] == "AVG"
         assert sel["AS"] == "avg_salary"
 
-    def test_multiple_group_by(self, mock_view):
-        mock_view.pivot(
+    async def test_multiple_group_by(self, mock_view):
+        await mock_view.pivot(
             group_by=["department", "gender"],
             aggregations=[
                 AggregationSpec(
@@ -973,8 +973,8 @@ class TestPivot:
         assert p["PIVOT"]["GROUP_BY"][0]["ORDER"] == 0
         assert p["PIVOT"]["GROUP_BY"][1]["ORDER"] == 1
 
-    def test_multiple_aggregations(self, mock_view):
-        mock_view.pivot(
+    async def test_multiple_aggregations(self, mock_view):
+        await mock_view.pivot(
             group_by=["department"],
             aggregations=[
                 AggregationSpec(
@@ -994,9 +994,9 @@ class TestPivot:
         assert sels[0]["ORDER"] == 1
         assert sels[1]["ORDER"] == 2
 
-    def test_with_condition(self, mock_view):
+    async def test_with_condition(self, mock_view):
         cond = Condition("gender", Operator.EQ, "F")
-        mock_view.pivot(
+        await mock_view.pivot(
             group_by=["department"],
             aggregations=[
                 AggregationSpec(
@@ -1008,8 +1008,8 @@ class TestPivot:
         p = last_payload(mock_view)
         assert "CONDITION" in p["PIVOT"]
 
-    def test_concat_with_delimiter(self, mock_view):
-        mock_view.pivot(
+    async def test_concat_with_delimiter(self, mock_view):
+        await mock_view.pivot(
             group_by=["department"],
             aggregations=[
                 AggregationSpec(
@@ -1027,8 +1027,8 @@ class TestPivot:
 
 
 class TestWindow:
-    def test_row_number(self, mock_view):
-        mock_view.window(
+    async def test_row_number(self, mock_view):
+        await mock_view.window(
             function=WindowFunction.ROW_NUMBER,
             new_column="rn",
             partition_by=["department"],
@@ -1040,8 +1040,8 @@ class TestWindow:
         assert p["WINDOW"]["RANGE"] == WindowRange.UNBOUNDED
         assert len(p["WINDOW"]["GROUP_BY"]) == 1
 
-    def test_running_range(self, mock_view):
-        mock_view.window(
+    async def test_running_range(self, mock_view):
+        await mock_view.window(
             function=WindowFunction.SUM,
             column="base_salary",
             new_column="running",
@@ -1050,8 +1050,8 @@ class TestWindow:
         p = last_payload(mock_view)
         assert p["WINDOW"]["RANGE"] == WindowRange.RUNNING
 
-    def test_partition_and_order(self, mock_view):
-        mock_view.window(
+    async def test_partition_and_order(self, mock_view):
+        await mock_view.window(
             function=WindowFunction.SUM,
             column="base_salary",
             new_column="running",
@@ -1062,8 +1062,8 @@ class TestWindow:
         assert len(p["WINDOW"]["GROUP_BY"]) == 2
         assert len(p["WINDOW"]["ORDER_BY"]) == 2
 
-    def test_existing_column(self, mock_view):
-        mock_view.window(
+    async def test_existing_column(self, mock_view):
+        await mock_view.window(
             function=WindowFunction.RANK,
             existing_column="bonus_pct",
             order_by=[["base_salary", SortDirection.DESC]],
@@ -1072,8 +1072,8 @@ class TestWindow:
         assert p["WINDOW"]["DESTINATION"] == "column_vwx1234567"
         assert "AS" not in p["WINDOW"]
 
-    def test_aggregate_with_sources(self, mock_view):
-        mock_view.window(
+    async def test_aggregate_with_sources(self, mock_view):
+        await mock_view.window(
             function=WindowFunction.SUM,
             column="base_salary",
             new_column="total",
@@ -1085,8 +1085,8 @@ class TestWindow:
 
 
 class TestCrosstab:
-    def test_count_no_column(self, mock_view):
-        mock_view.crosstab(
+    async def test_count_no_column(self, mock_view):
+        await mock_view.crosstab(
             rows=["department"],
             pivot_column="gender",
             select=CrosstabSpec(function=AggregateFunction.COUNT),
@@ -1099,8 +1099,8 @@ class TestCrosstab:
         # SELECT is a LIST; COUNT carries no value column.
         assert ct["SELECT"] == [{"FUNCTION": "COUNT"}]
 
-    def test_with_column_aggregate(self, mock_view):
-        mock_view.crosstab(
+    async def test_with_column_aggregate(self, mock_view):
+        await mock_view.crosstab(
             rows=["department"],
             pivot_column="gender",
             select=CrosstabSpec(column="base_salary", function=AggregateFunction.SUM),
@@ -1110,8 +1110,8 @@ class TestCrosstab:
         # SUM resolves base_salary to its internal name in the single SELECT item.
         assert ct["SELECT"] == [{"FUNCTION": "SUM", "COLUMN": "column_jkl1234567"}]
 
-    def test_multiple_rows(self, mock_view):
-        mock_view.crosstab(
+    async def test_multiple_rows(self, mock_view):
+        await mock_view.crosstab(
             rows=["department", "full_name"],
             pivot_column="gender",
             select=CrosstabSpec(function=AggregateFunction.COUNT),
@@ -1129,8 +1129,8 @@ class TestCrosstab:
 
 
 class TestJoin:
-    def test_with_int_id(self, mock_view):
-        mock_view.join(
+    async def test_with_int_id(self, mock_view):
+        await mock_view.join(
             foreign_view=2000,
             join_type=JoinType.LEFT,
             on=[JoinKeySpec(left="emp_id", right="column_xxx")],
@@ -1143,8 +1143,8 @@ class TestJoin:
         assert p["JOIN"]["ON"][0]["LEFT"] == "column_abc1234567"
         assert p["JOIN"]["ON"][0]["RIGHT"] == "column_xxx"
 
-    def test_with_view_object(self, mock_view, mock_foreign_view):
-        mock_view.join(
+    async def test_with_view_object(self, mock_view, mock_foreign_view):
+        await mock_view.join(
             foreign_view=mock_foreign_view,
             join_type=JoinType.LEFT,
             on=[JoinKeySpec(left="emp_id", right="cust_id")],
@@ -1158,8 +1158,8 @@ class TestJoin:
         assert p["JOIN"]["SELECT"][0]["ALIAS"] == "category"
         assert p["JOIN"]["SELECT"][1]["COLUMN"] == "column_f_ghi12345"
 
-    def test_multiple_on_keys(self, mock_view):
-        mock_view.join(
+    async def test_multiple_on_keys(self, mock_view):
+        await mock_view.join(
             foreign_view=2000,
             join_type=JoinType.INNER,
             on=[
@@ -1172,8 +1172,8 @@ class TestJoin:
         assert len(p["JOIN"]["ON"]) == 2
         assert p["JOIN"]["ON"][1]["LEFT"] == "column_ghi1234567"
 
-    def test_column_prefix(self, mock_view):
-        mock_view.join(
+    async def test_column_prefix(self, mock_view):
+        await mock_view.join(
             foreign_view=2000,
             join_type=JoinType.LEFT,
             on=[JoinKeySpec(left="emp_id", right="col_x")],
@@ -1183,8 +1183,8 @@ class TestJoin:
         p = last_payload(mock_view)
         assert p["JOIN"]["COLUMN_PREFIX"] == "fk_"
 
-    def test_outer_type(self, mock_view):
-        mock_view.join(
+    async def test_outer_type(self, mock_view):
+        await mock_view.join(
             foreign_view=2000,
             join_type=JoinType.OUTER,
             on=[JoinKeySpec(left="emp_id", right="col_x")],
@@ -1195,8 +1195,8 @@ class TestJoin:
 
 
 class TestLookup:
-    def test_new_column(self, mock_view):
-        mock_view.lookup(
+    async def test_new_column(self, mock_view):
+        await mock_view.lookup(
             source="emp_id",
             lookup_view_id=3000,
             key="col_key",
@@ -1211,12 +1211,12 @@ class TestLookup:
         assert p["LOOKUP"]["VALUE"] == "col_val"
         assert p["LOOKUP"]["AS"]["COLUMN"] == "looked_up"
 
-    def test_new_column_type_defaults_to_text(self, mock_view):
+    async def test_new_column_type_defaults_to_text(self, mock_view):
         """Unchanged behaviour, pinned deliberately: TEXT stays the default so existing
         callers are unaffected, even though it is the wrong type about half the time in
         production. The fix is that it is now OVERRIDABLE, not that the default moved —
         moving it would silently change the column type of every existing caller's lookup."""
-        mock_view.lookup(
+        await mock_view.lookup(
             source="emp_id",
             lookup_view_id=3000,
             key="col_key",
@@ -1226,10 +1226,10 @@ class TestLookup:
         assert last_payload(mock_view)["LOOKUP"]["AS"]["TYPE"] == "TEXT"
 
     @pytest.mark.parametrize("column_type", ["NUMERIC", "DATE"])
-    def test_new_column_type_override(self, mock_view, column_type):
+    async def test_new_column_type_override(self, mock_view, column_type):
         """The type belongs to the FOREIGN view's value column, which this call does not
         fetch — so it is a parameter, not a derivation."""
-        mock_view.lookup(
+        await mock_view.lookup(
             source="emp_id",
             lookup_view_id=3000,
             key="col_key",
@@ -1239,8 +1239,8 @@ class TestLookup:
         )
         assert last_payload(mock_view)["LOOKUP"]["AS"]["TYPE"] == column_type
 
-    def test_existing_column(self, mock_view):
-        mock_view.lookup(
+    async def test_existing_column(self, mock_view):
+        await mock_view.lookup(
             source="emp_id",
             lookup_view_id=3000,
             key="col_key",
@@ -1253,8 +1253,8 @@ class TestLookup:
 
 
 class TestJsonExtract:
-    def test_keys(self, mock_view):
-        mock_view.json_extract(
+    async def test_keys(self, mock_view):
+        await mock_view.json_extract(
             column="department",
             keys=["name", "code"],
         )
@@ -1267,8 +1267,8 @@ class TestJsonExtract:
         assert p["JSON_HANDLE"]["TYPE"] == "JSON_OBJECT"
         assert p["JSON_HANDLE"]["JSON_OBJECT_OP_TYPE"] == "JSON_OBJECT_TO_COLUMNS"
 
-    def test_list_type(self, mock_view):
-        mock_view.json_extract(
+    async def test_list_type(self, mock_view):
+        await mock_view.json_extract(
             column="department",
             json_type=JsonType.LIST,
             keys=["item"],
@@ -1277,8 +1277,8 @@ class TestJsonExtract:
         assert p["JSON_HANDLE"]["TYPE"] == "JSON_LIST"
         assert p["JSON_HANDLE"]["JSON_LIST_OP_TYPE"] == "JSON_LIST_TO_ROWS"
 
-    def test_advanced_extractions(self, mock_view):
-        mock_view.json_extract(
+    async def test_advanced_extractions(self, mock_view):
+        await mock_view.json_extract(
             column="department",
             extractions=[
                 JsonExtractionSpec(key="name", as_name="Name"),
@@ -1292,8 +1292,8 @@ class TestJsonExtract:
         assert extracts[1]["COLUMN"] == "Age"
         assert extracts[1]["TYPE"] == "NUMERIC"
 
-    def test_keep_source(self, mock_view):
-        mock_view.json_extract(
+    async def test_keep_source(self, mock_view):
+        await mock_view.json_extract(
             column="department",
             keys=["name"],
             keep_source=True,
@@ -1303,8 +1303,8 @@ class TestJsonExtract:
 
 
 class TestGenAI:
-    def test_basic(self, mock_view):
-        mock_view.gen_ai(
+    async def test_basic(self, mock_view):
+        await mock_view.gen_ai(
             prompt="Classify sentiment",
             context_columns=["full_name"],
             new_column="Sentiment",
@@ -1315,8 +1315,8 @@ class TestGenAI:
         assert p["GEN_AI"]["context_columns"] == ["column_def1234567"]
         assert p["GEN_AI"]["AS"]["COLUMN"] == "Sentiment"
 
-    def test_with_assistant_data(self, mock_view):
-        mock_view.gen_ai(
+    async def test_with_assistant_data(self, mock_view):
+        await mock_view.gen_ai(
             prompt="Classify",
             context_columns=["full_name"],
             assistant_data=["example1", "example2"],
@@ -1324,16 +1324,16 @@ class TestGenAI:
         p = last_payload(mock_view)
         assert p["GEN_AI"]["ASSISTANT_DATA"] == ["example1", "example2"]
 
-    def test_default_column_name(self, mock_view):
-        mock_view.gen_ai(
+    async def test_default_column_name(self, mock_view):
+        await mock_view.gen_ai(
             prompt="Classify",
             context_columns=["full_name"],
         )
         p = last_payload(mock_view)
         assert p["GEN_AI"]["AS"]["COLUMN"] == "AI Result"
 
-    def test_context_columns_derivation(self, mock_view):
-        mock_view.gen_ai(
+    async def test_context_columns_derivation(self, mock_view):
+        await mock_view.gen_ai(
             prompt="Classify",
             context_columns=["full_name"],
             context_columns_derivation=True,
@@ -1341,8 +1341,8 @@ class TestGenAI:
         p = last_payload(mock_view)
         assert p["GEN_AI"]["context_columns_derivation"] is True
 
-    def test_context_columns_derivation_false(self, mock_view):
-        mock_view.gen_ai(
+    async def test_context_columns_derivation_false(self, mock_view):
+        await mock_view.gen_ai(
             prompt="Classify",
             context_columns=["full_name"],
             context_columns_derivation=False,
@@ -1350,8 +1350,8 @@ class TestGenAI:
         p = last_payload(mock_view)
         assert p["GEN_AI"]["context_columns_derivation"] is False
 
-    def test_context_columns_derivation_omitted(self, mock_view):
-        mock_view.gen_ai(
+    async def test_context_columns_derivation_omitted(self, mock_view):
+        await mock_view.gen_ai(
             prompt="Classify",
             context_columns=["full_name"],
         )
@@ -1365,27 +1365,27 @@ class TestGenAI:
 class TestPayloadSerialization:
     """Verify all payloads are JSON-serializable (enums serialize correctly)."""
 
-    def test_add_column_serializes(self, mock_view):
-        mock_view.add_column("X", ColumnType.NUMERIC)
+    async def test_add_column_serializes(self, mock_view):
+        await mock_view.add_column("X", ColumnType.NUMERIC)
         json.dumps(last_payload(mock_view))
 
-    def test_filter_serializes(self, mock_view):
-        mock_view.filter_rows(
+    async def test_filter_serializes(self, mock_view):
+        await mock_view.filter_rows(
             Condition("department", Operator.EQ, "Eng"),
             filter_type=FilterType.SHOW,
         )
         json.dumps(last_payload(mock_view))
 
-    def test_window_serializes(self, mock_view):
-        mock_view.window(
+    async def test_window_serializes(self, mock_view):
+        await mock_view.window(
             function=WindowFunction.ROW_NUMBER,
             new_column="rn",
             range_type=WindowRange.UNBOUNDED,
         )
         json.dumps(last_payload(mock_view))
 
-    def test_pivot_serializes(self, mock_view):
-        mock_view.pivot(
+    async def test_pivot_serializes(self, mock_view):
+        await mock_view.pivot(
             group_by=["department"],
             aggregations=[
                 AggregationSpec(
@@ -1397,12 +1397,12 @@ class TestPayloadSerialization:
         )
         json.dumps(last_payload(mock_view))
 
-    def test_fill_direction_serializes(self, mock_view):
-        mock_view.fill_missing(column="exit_date", direction=FillDirection.LAST_VALUE)
+    async def test_fill_direction_serializes(self, mock_view):
+        await mock_view.fill_missing(column="exit_date", direction=FillDirection.LAST_VALUE)
         json.dumps(last_payload(mock_view))
 
-    def test_join_type_serializes(self, mock_view):
-        mock_view.join(
+    async def test_join_type_serializes(self, mock_view):
+        await mock_view.join(
             foreign_view=2000,
             join_type=JoinType.LEFT,
             on=[JoinKeySpec(left="emp_id", right="col_x")],
@@ -1410,36 +1410,38 @@ class TestPayloadSerialization:
         )
         json.dumps(last_payload(mock_view))
 
-    def test_text_case_serializes(self, mock_view):
-        mock_view.text_transform(["department"], case=TextCase.UPPER)
+    async def test_text_case_serializes(self, mock_view):
+        await mock_view.text_transform(["department"], case=TextCase.UPPER)
         json.dumps(last_payload(mock_view))
 
-    def test_date_component_serializes(self, mock_view):
-        mock_view.extract_date(column="joining_date", component=DateComponent.YEAR, new_column="y")
+    async def test_date_component_serializes(self, mock_view):
+        await mock_view.extract_date(
+            column="joining_date", component=DateComponent.YEAR, new_column="y"
+        )
         json.dumps(last_payload(mock_view))
 
-    def test_date_diff_unit_serializes(self, mock_view):
-        mock_view.date_diff(
+    async def test_date_diff_unit_serializes(self, mock_view):
+        await mock_view.date_diff(
             component=DateDiffUnit.DAY, start="joining_date", end="exit_date", new_column="d"
         )
         json.dumps(last_payload(mock_view))
 
-    def test_substring_direction_serializes(self, mock_view):
-        mock_view.substring(
+    async def test_substring_direction_serializes(self, mock_view):
+        await mock_view.substring(
             column="full_name", direction=SubstringDirection.START, num_char=3, new_column="s"
         )
         json.dumps(last_payload(mock_view))
 
-    def test_sort_direction_serializes(self, mock_view):
-        mock_view.limit_rows(n=5, order_by=[["base_salary", SortDirection.DESC]])
+    async def test_sort_direction_serializes(self, mock_view):
+        await mock_view.limit_rows(n=5, order_by=[["base_salary", SortDirection.DESC]])
         json.dumps(last_payload(mock_view))
 
-    def test_json_type_serializes(self, mock_view):
-        mock_view.json_extract(column="department", json_type=JsonType.OBJECT, keys=["k"])
+    async def test_json_type_serializes(self, mock_view):
+        await mock_view.json_extract(column="department", json_type=JsonType.OBJECT, keys=["k"])
         json.dumps(last_payload(mock_view))
 
-    def test_aggregate_function_serializes(self, mock_view):
-        mock_view.pivot(
+    async def test_aggregate_function_serializes(self, mock_view):
+        await mock_view.pivot(
             group_by=["department"],
             aggregations=[
                 AggregationSpec(column="base_salary", function=AggregateFunction.COUNT, as_name="c")
@@ -1447,8 +1449,8 @@ class TestPayloadSerialization:
         )
         json.dumps(last_payload(mock_view))
 
-    def test_small_large_function_serializes(self, mock_view):
-        mock_view.small_large(
+    async def test_small_large_function_serializes(self, mock_view):
+        await mock_view.small_large(
             SmallLargeFunction.LARGE,
             columns=["base_salary"],
             new_column="Max",
@@ -1463,8 +1465,8 @@ class TestPayloadSerialization:
 class TestGoldenReference:
     """Assert payload structures match backend's expected format exactly."""
 
-    def test_golden_set_new_column(self, mock_view):
-        mock_view.set_values(
+    async def test_golden_set_new_column(self, mock_view):
+        await mock_view.set_values(
             new_column="status",
             values=[SetValue("Active")],
         )
@@ -1478,8 +1480,8 @@ class TestGoldenReference:
         assert p["SET"]["VALUES"][0]["PROVIDER"] == "Active"
         assert p["VERSION"] == 2
 
-    def test_golden_set_existing_column(self, mock_view):
-        mock_view.set_values(
+    async def test_golden_set_existing_column(self, mock_view):
+        await mock_view.set_values(
             existing_column="department",
             values=[SetValue("All")],
         )
@@ -1490,8 +1492,8 @@ class TestGoldenReference:
         assert "AS" not in p["SET"]
         assert p["VERSION"] == 2
 
-    def test_golden_set_conditional(self, mock_view):
-        mock_view.set_values(
+    async def test_golden_set_conditional(self, mock_view):
+        await mock_view.set_values(
             new_column="tier",
             values=[
                 SetValue("High", condition=Condition("base_salary", Operator.GTE, 100000)),
@@ -1505,17 +1507,17 @@ class TestGoldenReference:
         assert vals[1]["PROVIDER"] == "Low"
         assert "CONDITION" not in vals[1]
 
-    def test_golden_select(self, mock_view):
+    async def test_golden_select(self, mock_view):
         cond = Condition("department", Operator.EQ, "Eng")
-        mock_view.filter_rows(cond, prompt="Show engineering")
+        await mock_view.filter_rows(cond, prompt="Show engineering")
         p = last_payload(mock_view)
         assert p["SELECT"] == "ALL"
         assert "CONDITION" in p
         assert p["CONDITION"]["FILTER_TYPE"] == FilterType.SHOW
         assert p["CONDITION"]["PROMPT"] == "Show engineering"
 
-    def test_golden_fill(self, mock_view):
-        mock_view.fill_missing(
+    async def test_golden_fill(self, mock_view):
+        await mock_view.fill_missing(
             column="exit_date",
             direction=FillDirection.LAST_VALUE,
             partition_by="department",
@@ -1528,8 +1530,8 @@ class TestGoldenReference:
         assert fill["PARTITION_BY"] == "column_ghi1234567"
         assert fill["ORDER_BY"] == [["column_mno1234567", "ASC"]]
 
-    def test_golden_replace(self, mock_view):
-        mock_view.replace_values(
+    async def test_golden_replace(self, mock_view):
+        await mock_view.replace_values(
             columns=["department"],
             find="Eng",
             replace="Engineering",
@@ -1544,8 +1546,8 @@ class TestGoldenReference:
         assert r["MATCH_CASE"] is True
         assert r["MATCH_WORDS"] is False
 
-    def test_golden_bulk_replace(self, mock_view):
-        mock_view.bulk_replace(
+    async def test_golden_bulk_replace(self, mock_view):
+        await mock_view.bulk_replace(
             columns=["department"],
             mapping=[BulkReplaceMapping(search=["Eng", "Engineering"], replace="ENGINEERING")],
         )
@@ -1554,8 +1556,8 @@ class TestGoldenReference:
         assert isinstance(m["SEARCH_VALUE"], list)
         assert m["REPLACE_VALUE"] == "ENGINEERING"
 
-    def test_golden_increment_date(self, mock_view):
-        mock_view.increment_date(
+    async def test_golden_increment_date(self, mock_view):
+        await mock_view.increment_date(
             column="joining_date",
             delta=DateDelta(years=1, months=-3),
             new_column="adjusted",
@@ -1567,8 +1569,8 @@ class TestGoldenReference:
         assert "AS" in inc
         assert inc["AS"]["COLUMN"] == "adjusted"
 
-    def test_golden_extract_date(self, mock_view):
-        mock_view.extract_date(
+    async def test_golden_extract_date(self, mock_view):
+        await mock_view.extract_date(
             column="joining_date",
             component=DateComponent.YEAR,
             new_column="year",
@@ -1579,8 +1581,8 @@ class TestGoldenReference:
         assert ed["SOURCE"] == "column_mno1234567"
         assert ed["AS"]["TYPE"] == "NUMERIC"
 
-    def test_golden_date_diff(self, mock_view):
-        mock_view.date_diff(
+    async def test_golden_date_diff(self, mock_view):
+        await mock_view.date_diff(
             component=DateDiffUnit.MONTH,
             start="joining_date",
             end="exit_date",
@@ -1593,8 +1595,8 @@ class TestGoldenReference:
         assert dd["SUBTRAHEND"]["TYPE"] == "COLUMN"
         assert "AS" in dd
 
-    def test_golden_math(self, mock_view):
-        mock_view.math("base_salary * bonus_pct", new_column="bonus")
+    async def test_golden_math(self, mock_view):
+        await mock_view.math("base_salary * bonus_pct", new_column="bonus")
         p = last_payload(mock_view)
         m = p["MATH"]
         assert isinstance(m["EXPRESSION"], list)
@@ -1603,8 +1605,8 @@ class TestGoldenReference:
         assert m["EXPRESSION"][1]["VALUE"] == "*"
         assert "AS" in m
 
-    def test_golden_window(self, mock_view):
-        mock_view.window(
+    async def test_golden_window(self, mock_view):
+        await mock_view.window(
             function=WindowFunction.SUM,
             column="base_salary",
             new_column="running",
@@ -1621,16 +1623,16 @@ class TestGoldenReference:
         assert w["ORDER_BY"] == [["column_jkl1234567", "ASC"]]
         assert "AS" in w
 
-    def test_golden_text_transform(self, mock_view):
-        mock_view.text_transform(["department"], case=TextCase.UPPER, trim=True)
+    async def test_golden_text_transform(self, mock_view):
+        await mock_view.text_transform(["department"], case=TextCase.UPPER, trim=True)
         p = last_payload(mock_view)
         tt = p["TEXT_TRANSFORM"]
         assert tt["SOURCE"] == ["column_ghi1234567"]
         assert tt["TRIM"] is True
         assert tt["CASE"] == "UPPER"
 
-    def test_golden_pivot(self, mock_view):
-        mock_view.pivot(
+    async def test_golden_pivot(self, mock_view):
+        await mock_view.pivot(
             group_by=["department"],
             aggregations=[
                 AggregationSpec(
@@ -1646,16 +1648,16 @@ class TestGoldenReference:
         assert pv["SELECT"][0]["COLUMN"] == "column_jkl1234567"
         assert pv["SELECT"][0]["AS"] == "total"
 
-    def test_golden_add_column(self, mock_view):
-        mock_view.add_column("Notes", column_type=ColumnType.TEXT)
+    async def test_golden_add_column(self, mock_view):
+        await mock_view.add_column("Notes", column_type=ColumnType.TEXT)
         p = last_payload(mock_view)
         col = p["ADD_COLUMN"][0]
         assert col["COLUMN"] == "Notes"
         assert col["TYPE"] == "TEXT"
         assert "INTERNAL_NAME" in col
 
-    def test_golden_copy(self, mock_view):
-        mock_view.copy_columns(
+    async def test_golden_copy(self, mock_view):
+        await mock_view.copy_columns(
             [
                 CopySpec(source="emp_id", as_name="emp_copy"),
             ]
@@ -1665,8 +1667,8 @@ class TestGoldenReference:
         assert p["COPY"][0]["SOURCE"] == "column_abc1234567"
         assert p["COPY"][0]["AS"]["COLUMN"] == "emp_copy"
 
-    def test_golden_combine(self, mock_view):
-        mock_view.combine_columns(
+    async def test_golden_combine(self, mock_view):
+        await mock_view.combine_columns(
             sources=["full_name", "department"],
             separator=" - ",
             new_column="combined",
@@ -1678,21 +1680,21 @@ class TestGoldenReference:
         assert src[2] == {"COLUMN": "column_ghi1234567"}
         assert "AS" in p["COMBINE"]
 
-    def test_golden_convert(self, mock_view):
-        mock_view.convert_type([ConversionSpec(column="emp_id", to=ColumnType.NUMERIC)])
+    async def test_golden_convert(self, mock_view):
+        await mock_view.convert_type([ConversionSpec(column="emp_id", to=ColumnType.NUMERIC)])
         p = last_payload(mock_view)
         assert p["CONVERT"][0]["SOURCE"] == "column_abc1234567"
         assert p["CONVERT"][0]["TO_TYPE"] == "NUMERIC"
 
-    def test_golden_delete(self, mock_view):
-        mock_view.delete_columns(["gender", "bonus_pct"])
+    async def test_golden_delete(self, mock_view):
+        await mock_view.delete_columns(["gender", "bonus_pct"])
         p = last_payload(mock_view)
         assert isinstance(p["DELETE"], list)
         assert "column_stu1234567" in p["DELETE"]
         assert "column_vwx1234567" in p["DELETE"]
 
-    def test_golden_split(self, mock_view):
-        mock_view.split_column(
+    async def test_golden_split(self, mock_view):
+        await mock_view.split_column(
             column="full_name",
             delimiter=" ",
             new_columns=[
@@ -1707,8 +1709,8 @@ class TestGoldenReference:
         assert len(s["AS"]) == 2
         assert s["AS"][0]["COLUMN"] == "First"
 
-    def test_golden_substring_regex(self, mock_view):
-        mock_view.substring(
+    async def test_golden_substring_regex(self, mock_view):
+        await mock_view.substring(
             column="full_name",
             regex_pattern="[A-Z]+",
             regex_invert=True,
@@ -1720,8 +1722,8 @@ class TestGoldenReference:
         assert ss["REGEX"]["INVERT"] is True
         assert "AS" in ss
 
-    def test_golden_json_object(self, mock_view):
-        mock_view.json_extract(
+    async def test_golden_json_object(self, mock_view):
+        await mock_view.json_extract(
             column="department",
             json_type=JsonType.OBJECT,
             keys=["name"],
@@ -1732,8 +1734,8 @@ class TestGoldenReference:
         assert jh["JSON_OBJECT_OP_TYPE"] == "JSON_OBJECT_TO_COLUMNS"
         assert jh["JSON_EXTRACT"][0]["KEY"] == "name"
 
-    def test_golden_json_list(self, mock_view):
-        mock_view.json_extract(
+    async def test_golden_json_list(self, mock_view):
+        await mock_view.json_extract(
             column="department",
             json_type=JsonType.LIST,
             keys=["item"],
@@ -1743,8 +1745,8 @@ class TestGoldenReference:
         assert jh["TYPE"] == "JSON_LIST"
         assert jh["JSON_LIST_OP_TYPE"] == "JSON_LIST_TO_ROWS"
 
-    def test_golden_join(self, mock_view, mock_foreign_view):
-        mock_view.join(
+    async def test_golden_join(self, mock_view, mock_foreign_view):
+        await mock_view.join(
             foreign_view=mock_foreign_view,
             join_type=JoinType.LEFT,
             on=[JoinKeySpec(left="emp_id", right="cust_id")],
@@ -1760,8 +1762,8 @@ class TestGoldenReference:
         assert j["SELECT"][0]["COLUMN"] == "column_f_def12345"
         assert j["SELECT"][0]["ALIAS"] == "category"
 
-    def test_golden_lookup(self, mock_view):
-        mock_view.lookup(
+    async def test_golden_lookup(self, mock_view):
+        await mock_view.lookup(
             source="emp_id",
             lookup_view_id=3000,
             key="col_key",
@@ -1776,8 +1778,8 @@ class TestGoldenReference:
         assert lk["VALUE"] == "col_val"
         assert lk["AS"]["COLUMN"] == "looked_up"
 
-    def test_golden_unnest(self, mock_view):
-        mock_view.unnest(columns=["base_salary", "bonus_pct"])
+    async def test_golden_unnest(self, mock_view):
+        await mock_view.unnest(columns=["base_salary", "bonus_pct"])
         p = last_payload(mock_view)
         u = p["UNNEST"]
         assert u["COLUMNS"][0]["COLUMN"] == "column_jkl1234567"
@@ -1786,21 +1788,23 @@ class TestGoldenReference:
         assert u["LABEL"]["TYPE"] == "TEXT"
         assert u["VALUE"]["COLUMN"] == "Value"
 
-    def test_golden_discard_duplicates(self, mock_view):
-        mock_view.discard_duplicates(ignore_columns=["emp_id"])
+    async def test_golden_discard_duplicates(self, mock_view):
+        await mock_view.discard_duplicates(ignore_columns=["emp_id"])
         p = last_payload(mock_view)
         assert p["DISCARD_DUPLICATES"] is True
         assert p["IGNORE_COLUMNS"] == ["column_abc1234567"]
 
-    def test_golden_limit(self, mock_view):
-        mock_view.limit_rows(n=10, bottom=True, order_by=[["base_salary", SortDirection.DESC]])
+    async def test_golden_limit(self, mock_view):
+        await mock_view.limit_rows(
+            n=10, bottom=True, order_by=[["base_salary", SortDirection.DESC]]
+        )
         p = last_payload(mock_view)
         assert p["LIMIT"]["LIMIT"] == 10
         assert p["LIMIT"]["BOTTOM"] is True
         assert "ORDER_BY" in p
 
-    def test_golden_gen_ai(self, mock_view):
-        mock_view.gen_ai(
+    async def test_golden_gen_ai(self, mock_view):
+        await mock_view.gen_ai(
             prompt="Classify sentiment",
             context_columns=["full_name"],
             new_column="Sentiment",
@@ -1812,8 +1816,8 @@ class TestGoldenReference:
         assert ga["AS"]["COLUMN"] == "Sentiment"
         assert isinstance(ga["ASSISTANT_DATA"], list)
 
-    def test_golden_crosstab(self, mock_view):
-        mock_view.crosstab(
+    async def test_golden_crosstab(self, mock_view):
+        await mock_view.crosstab(
             rows=["department"],
             pivot_column="gender",
             select=CrosstabSpec(column="base_salary", function=AggregateFunction.SUM),
@@ -1828,27 +1832,27 @@ class TestGoldenReference:
         assert ct["COLUMNS"] == [{"COLUMN": "column_stu1234567", "TYPE": "TEXT"}]
         assert ct["SELECT"] == [{"FUNCTION": "SUM", "COLUMN": "column_jkl1234567"}]
 
-    def test_golden_text_eq_remaps_to_in_list(self, mock_view):
+    async def test_golden_text_eq_remaps_to_in_list(self, mock_view):
         """TEXT column + EQ condition emits IN_LIST (backend workaround)."""
         cond = Condition("department", Operator.EQ, "Engineering")
-        mock_view.filter_rows(cond)
+        await mock_view.filter_rows(cond)
         p = last_payload(mock_view)
         inner = p["CONDITION"]["column_ghi1234567"]
         assert "IN_LIST" in inner, "TEXT + EQ should be remapped to IN_LIST"
         assert inner["IN_LIST"]["VALUE"] == ["Engineering"]
 
-    def test_golden_text_ne_remaps_to_not_in_list(self, mock_view):
+    async def test_golden_text_ne_remaps_to_not_in_list(self, mock_view):
         """TEXT column + NE condition emits NOT_IN_LIST (backend workaround)."""
         cond = Condition("gender", Operator.NE, "M")
-        mock_view.filter_rows(cond)
+        await mock_view.filter_rows(cond)
         p = last_payload(mock_view)
         inner = p["CONDITION"]["column_stu1234567"]
         assert "NOT_IN_LIST" in inner, "TEXT + NE should be remapped to NOT_IN_LIST"
         assert inner["NOT_IN_LIST"]["VALUE"] == ["M"]
 
-    def test_golden_set_with_text_eq_condition(self, mock_view):
+    async def test_golden_set_with_text_eq_condition(self, mock_view):
         """SET VALUES with TEXT EQ condition uses IN_LIST workaround."""
-        mock_view.set_values(
+        await mock_view.set_values(
             new_column="label",
             values=[
                 SetValue("Eng", condition=Condition("department", Operator.EQ, "Engineering")),
@@ -1860,18 +1864,18 @@ class TestGoldenReference:
         assert "IN_LIST" in cond["column_ghi1234567"]
         assert cond["column_ghi1234567"]["IN_LIST"]["VALUE"] == ["Engineering"]
 
-    def test_golden_numeric_eq_unchanged(self, mock_view):
+    async def test_golden_numeric_eq_unchanged(self, mock_view):
         """NUMERIC column + EQ stays EQ (remap only for TEXT)."""
         cond = Condition("base_salary", Operator.EQ, 50000)
-        mock_view.filter_rows(cond)
+        await mock_view.filter_rows(cond)
         p = last_payload(mock_view)
         inner = p["CONDITION"]["column_jkl1234567"]
         assert "EQ" in inner
         assert inner["EQ"]["VALUE"] == 50000
 
-    def test_golden_small_large_large_new_column(self, mock_view):
+    async def test_golden_small_large_large_new_column(self, mock_view):
         mock_view._next_internal_name = lambda: "gen_golden_sl"
-        mock_view.small_large(
+        await mock_view.small_large(
             SmallLargeFunction.LARGE,
             columns=["base_salary", "bonus_pct"],
             index=2,
@@ -1891,8 +1895,8 @@ class TestGoldenReference:
         assert sl["AS"]["INTERNAL_NAME"] == "gen_golden_sl"
         assert sl["AS"]["FORMAT"] == _DEFAULT_NUMBER_FORMAT
 
-    def test_golden_small_large_small_existing_column(self, mock_view):
-        mock_view.small_large(
+    async def test_golden_small_large_small_existing_column(self, mock_view):
+        await mock_view.small_large(
             SmallLargeFunction.SMALL,
             columns=["base_salary", "bonus_pct"],
             existing_column="bonus_pct",
@@ -1910,7 +1914,7 @@ class TestGoldenReference:
 class TestParamTemplates:
     """Test standalone _param_templates builders directly."""
 
-    def test_set_params_structure(self):
+    async def test_set_params_structure(self):
         from mammoth._param_templates import set_params
 
         result = set_params(
@@ -1924,7 +1928,7 @@ class TestParamTemplates:
         assert result["SET"]["AS"]["COLUMN"] == "Status"
         assert result["VERSION"] == 2
 
-    def test_set_params_no_list_wrap(self):
+    async def test_set_params_no_list_wrap(self):
         """Ensure a dict input stays as a dict, not wrapped in a list."""
         from mammoth._param_templates import set_params
 
@@ -1932,14 +1936,14 @@ class TestParamTemplates:
         result = set_params(set_values=single, version=2)
         assert result["SET"] is single
 
-    def test_copy_params_has_version(self):
+    async def test_copy_params_has_version(self):
         from mammoth._param_templates import copy_params
 
         result = copy_params([{"SOURCE": "col_1", "AS": {"COLUMN": "Copy", "TYPE": "TEXT"}}])
         assert result["VERSION"] == 2
         assert result["COPY"][0]["SOURCE"] == "col_1"
 
-    def test_all_templates_json_serializable(self):
+    async def test_all_templates_json_serializable(self):
         from mammoth import _param_templates as pt
 
         payloads = [

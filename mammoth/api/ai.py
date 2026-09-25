@@ -42,15 +42,15 @@ class AIAPI:
             raise ValueError("project_id must be set on the client using client.set_project_id()")
         return proj
 
-    def _find_dataset(self, dataview_id: int, dataset_id: int | None = None) -> int:
+    async def _find_dataset(self, dataview_id: int, dataset_id: int | None = None) -> int:
         """Find dataset for a dataview."""
         if dataset_id is not None:
             return dataset_id
-        return self._client.pipeline.find_dataset_for_dataview(dataview_id)
+        return await self._client.pipeline.find_dataset_for_dataview(dataview_id)
 
     PROFILE_ACTIONS: tuple[str, ...] = ("stats", "insights", "data_quality", "join_recommendation")
 
-    def generate_profile(
+    async def generate_profile(
         self,
         dataview_id: int,
         dataset_id: int | None = None,
@@ -80,15 +80,15 @@ class AIAPI:
             )
         ws = self._ws()
         proj = self._proj()
-        ds = self._find_dataset(dataview_id, dataset_id)
-        response = self._client._request_json(
+        ds = await self._find_dataset(dataview_id, dataset_id)
+        response = await self._client._request_json(
             "POST",
             f"/workspaces/{ws}/projects/{proj}/datasets/{ds}/dataviews/{dataview_id}/profile_generation",
             json={"params": {"action": action}},
         )
-        return self._client._wait_if_job(response)
+        return await self._client._wait_if_job(response)
 
-    def generate_data(
+    async def generate_data(
         self,
         dataview_id: int,
         prompt: str,
@@ -121,18 +121,18 @@ class AIAPI:
             raise MammothValidationError(ERR_GENAI_ROWS_RANGE.format(no_of_rows))
         ws = self._ws()
         proj = self._proj()
-        ds = self._find_dataset(dataview_id, dataset_id)
+        ds = await self._find_dataset(dataview_id, dataset_id)
         body: dict[str, Any] = {"prompt": prompt, "no_of_rows": no_of_rows}
         if columns is not None:
             body["columns"] = columns
-        response = self._client._request_json(
+        response = await self._client._request_json(
             "POST",
             f"/workspaces/{ws}/projects/{proj}/datasets/{ds}/dataviews/{dataview_id}/data/generate",
             json=body,
         )
-        return self._client._wait_if_job(response)
+        return await self._client._wait_if_job(response)
 
-    def get_data_gen_info(
+    async def get_data_gen_info(
         self,
         dataview_id: int,
         dataset_id: int | None = None,
@@ -148,13 +148,13 @@ class AIAPI:
         """
         ws = self._ws()
         proj = self._proj()
-        ds = self._find_dataset(dataview_id, dataset_id)
-        return self._client._request_json(
+        ds = await self._find_dataset(dataview_id, dataset_id)
+        return await self._client._request_json(
             "GET",
             f"/workspaces/{ws}/projects/{proj}/datasets/{ds}/dataviews/{dataview_id}/data/generate",
         )
 
-    def generate_sql(
+    async def generate_sql(
         self,
         intent: str,
         sequence_number: int = 0,
@@ -182,13 +182,13 @@ class AIAPI:
         params: dict[str, Any] = {"dataset_id": dataset_id}
         if dataview_id is not None:
             params["dataview_id"] = dataview_id
-        response = self._client._request_json(
+        response = await self._client._request_json(
             "POST",
             f"/workspaces/{ws}/projects/{proj}/sql_generation",
             params=params,
             json={"params": {"intent": intent, "sequence_number": sequence_number}},
         )
-        return self._client._wait_if_job(response)
+        return await self._client._wait_if_job(response)
 
     SUGGESTION_TYPES: tuple[str, ...] = (
         "extract_text",
@@ -199,7 +199,7 @@ class AIAPI:
         "derivative_fuzzy_bucket",
     )
 
-    def get_suggestions(
+    async def get_suggestions(
         self,
         suggestion_type: str | None = None,
         params: dict[str, Any] | None = None,
@@ -249,15 +249,15 @@ class AIAPI:
             query["dataset_id"] = dataset_id
         if dataview_id is not None:
             query["dataview_id"] = dataview_id
-        response = self._client._request_json(
+        response = await self._client._request_json(
             "POST",
             f"/workspaces/{ws}/projects/{proj}/suggestions",
             params=query or None,
             json={"suggestion_type": suggestion_type, "params": params},
         )
-        return self._client._wait_if_job(response)
+        return await self._client._wait_if_job(response)
 
-    def query_gen(
+    async def query_gen(
         self,
         connector_key: str,
         connection_key: str,
@@ -285,14 +285,14 @@ class AIAPI:
         body: dict[str, Any] = {"query": query}
         if profile is not None:
             body["profile"] = profile
-        response = self._client._request_json(
+        response = await self._client._request_json(
             "POST",
             f"/workspaces/{ws}/projects/{proj}/connectors/{connector_key}/connections/{connection_key}/chat",
             json=body,
         )
-        return self._client._wait_if_job(response)
+        return await self._client._wait_if_job(response)
 
-    def status(
+    async def status(
         self,
         connector_key: str,
         connection_key: str,
@@ -310,13 +310,13 @@ class AIAPI:
         """
         ws = self._ws()
         proj = project_id if project_id is not None else self._proj()
-        return self._client._request_json(
+        return await self._client._request_json(
             "GET",
             f"/workspaces/{ws}/projects/{proj}/connectors/{connector_key}"
             f"/connections/{connection_key}/chat",
         )
 
-    def condition_generate(
+    async def condition_generate(
         self,
         intent: str,
         dataset_id: int,
@@ -347,15 +347,15 @@ class AIAPI:
         body_params: dict[str, Any] = {"intent": intent}
         if sequence_number is not None:
             body_params["sequence_number"] = sequence_number
-        response = self._client._request_json(
+        response = await self._client._request_json(
             "POST",
             f"/workspaces/{ws}/projects/{proj}/sql_generation/condition",
             params=params,
             json={"params": body_params},
         )
-        return self._client._wait_if_job(response)
+        return await self._client._wait_if_job(response)
 
-    def expression_generate(
+    async def expression_generate(
         self,
         intent: str,
         mode: str,
@@ -394,15 +394,15 @@ class AIAPI:
         body_params: dict[str, Any] = {"intent": intent, "mode": mode}
         if sequence_number is not None:
             body_params["sequence_number"] = sequence_number
-        response = self._client._request_json(
+        response = await self._client._request_json(
             "POST",
             f"/workspaces/{ws}/projects/{proj}/sql_generation/expression",
             params=params,
             json={"params": body_params},
         )
-        return self._client._wait_if_job(response)
+        return await self._client._wait_if_job(response)
 
-    def retention_condition(
+    async def retention_condition(
         self,
         dataset_id: int,
         mode: str,
@@ -438,10 +438,10 @@ class AIAPI:
         ):
             raise MammothValidationError("`project_id` must be an integer >= 1.")
         proj = project_id if project_id is not None else self._proj()
-        response = self._client._request_json(
+        response = await self._client._request_json(
             "POST",
             f"/workspaces/{ws}/projects/{proj}/sql_generation/retention_policy",
             params={"dataset_id": dataset_id},
             json={"mode": mode, "intent": intent, "condition_sql": condition_sql},
         )
-        return self._client._wait_if_job(response)
+        return await self._client._wait_if_job(response)

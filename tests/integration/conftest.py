@@ -63,7 +63,7 @@ def _client_from_env(
 
 def _upload(client: MammothClient, csv_path: Path) -> int:
     assert csv_path.exists(), f"Test CSV not found: {csv_path}"
-    ds_id = client.files.upload(str(csv_path))
+    ds_id = await client.files.upload(str(csv_path))
     assert isinstance(ds_id, int), f"upload did not return a single dataset id: {ds_id!r}"
     return ds_id
 
@@ -83,13 +83,13 @@ def uploaded_dataset_id(client: MammothClient):
     ds_id = _upload(client, CSV_PATH)
     yield ds_id
     with contextlib.suppress(Exception):
-        client.datasets.delete(ds_id)
+        await client.datasets.delete(ds_id)
 
 
 @pytest.fixture(scope="session")
 def base_view_id(client: MammothClient, uploaded_dataset_id: int) -> int:
     """Get the default view created by the upload."""
-    views = client.views.list(uploaded_dataset_id)
+    views = await client.views.list(uploaded_dataset_id)
     assert len(views) > 0, "No views found for uploaded dataset"
     return views[0].id
 
@@ -97,10 +97,10 @@ def base_view_id(client: MammothClient, uploaded_dataset_id: int) -> int:
 @pytest.fixture
 def view(client: MammothClient, uploaded_dataset_id: int):
     """Create a fresh view for each test, delete after."""
-    v = client.views.create(dataset_id=uploaded_dataset_id, name="pytest_temp")
+    v = await client.views.create(dataset_id=uploaded_dataset_id, name="pytest_temp")
     yield v
     with contextlib.suppress(Exception):
-        client.views.delete(v.id)
+        await client.views.delete(v.id)
 
 
 # ── Advanced / exhaustive transform tests (MAMMOTH_*) ─────────
@@ -119,16 +119,16 @@ def adv_uploaded_dataset_id(adv_client: MammothClient):
     ds_id = _upload(adv_client, csv)
     yield ds_id
     with contextlib.suppress(Exception):
-        adv_client.datasets.delete(ds_id)
+        await adv_client.datasets.delete(ds_id)
 
 
 @pytest.fixture
 def adv_view(adv_client: MammothClient, adv_uploaded_dataset_id: int):
     """Create a fresh view for each advanced test, delete after."""
-    v = adv_client.views.create(dataset_id=adv_uploaded_dataset_id, name="pytest_adv_temp")
+    v = await adv_client.views.create(dataset_id=adv_uploaded_dataset_id, name="pytest_adv_temp")
     yield v
     with contextlib.suppress(Exception):
-        adv_client.views.delete(v.id)
+        await adv_client.views.delete(v.id)
 
 
 @pytest.fixture(scope="session")
@@ -137,16 +137,16 @@ def adv_second_dataset_id(adv_client: MammothClient):
     ds_id = _upload(adv_client, EMPLOYEE_CSV_PATH)
     yield ds_id
     with contextlib.suppress(Exception):
-        adv_client.datasets.delete(ds_id)
+        await adv_client.datasets.delete(ds_id)
 
 
 @pytest.fixture
 def adv_second_view(adv_client: MammothClient, adv_second_dataset_id: int):
     """Create a fresh view on the second (employee) dataset."""
-    v = adv_client.views.create(dataset_id=adv_second_dataset_id, name="pytest_adv_second")
+    v = await adv_client.views.create(dataset_id=adv_second_dataset_id, name="pytest_adv_second")
     yield v
     with contextlib.suppress(Exception):
-        adv_client.views.delete(v.id)
+        await adv_client.views.delete(v.id)
 
 
 # ── Full validation tests (VAL_*) ────────────────────────────
@@ -164,16 +164,16 @@ def val_uploaded_dataset_id(val_client: MammothClient):
     ds_id = _upload(val_client, CSV_PATH)
     yield ds_id
     with contextlib.suppress(Exception):
-        val_client.datasets.delete(ds_id)
+        await val_client.datasets.delete(ds_id)
 
 
 @pytest.fixture
 def val_view(val_client: MammothClient, val_uploaded_dataset_id: int):
     """Create a fresh view for each validation test, delete after."""
-    v = val_client.views.create(dataset_id=val_uploaded_dataset_id, name="pytest_val_temp")
+    v = await val_client.views.create(dataset_id=val_uploaded_dataset_id, name="pytest_val_temp")
     yield v
     with contextlib.suppress(Exception):
-        val_client.views.delete(v.id)
+        await val_client.views.delete(v.id)
 
 
 @pytest.fixture(scope="session")
@@ -182,4 +182,4 @@ def val_second_dataset_id(val_client: MammothClient):
     ds_id = _upload(val_client, EMPLOYEE_CSV_PATH)
     yield ds_id
     with contextlib.suppress(Exception):
-        val_client.datasets.delete(ds_id)
+        await val_client.datasets.delete(ds_id)

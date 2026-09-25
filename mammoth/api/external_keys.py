@@ -34,16 +34,16 @@ class ExternalKeysAPI:
     def _ws(self) -> int:
         return self._client.workspace_id
 
-    def list(self) -> dict[str, Any]:
+    async def list(self) -> dict[str, Any]:
         """List all external API keys.
 
         Returns:
             Dict with API keys list.
         """
         ws = self._ws()
-        return self._client._request_json("GET", f"/workspaces/{ws}/external_keys")
+        return await self._client._request_json("GET", f"/workspaces/{ws}/external_keys")
 
-    def get(self, key_id: int) -> dict[str, Any]:
+    async def get(self, key_id: int) -> dict[str, Any]:
         """Get external key details.
 
         Args:
@@ -53,9 +53,9 @@ class ExternalKeysAPI:
             Dict with key details.
         """
         ws = self._ws()
-        return self._client._request_json("GET", f"/workspaces/{ws}/external_keys/{key_id}")
+        return await self._client._request_json("GET", f"/workspaces/{ws}/external_keys/{key_id}")
 
-    def create(
+    async def create(
         self,
         key_type: ExternalKeyType,
         key_name: str,
@@ -112,9 +112,11 @@ class ExternalKeysAPI:
             body["model_config"] = model_settings.model_dump(exclude_none=True)
 
         ws = self._ws()
-        return self._client._request_json("POST", f"/workspaces/{ws}/external_keys", json=body)
+        return await self._client._request_json(
+            "POST", f"/workspaces/{ws}/external_keys", json=body
+        )
 
-    def delete(self, key_id: int) -> dict[str, Any]:
+    async def delete(self, key_id: int) -> dict[str, Any]:
         """Delete an external API key.
 
         Args:
@@ -124,4 +126,6 @@ class ExternalKeysAPI:
             Dict with deletion result.
         """
         ws = self._ws()
-        return self._client._request_json("DELETE", f"/workspaces/{ws}/external_keys/{key_id}")
+        return await self._client._request_json(
+            "DELETE", f"/workspaces/{ws}/external_keys/{key_id}"
+        )

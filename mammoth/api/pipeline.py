@@ -7,6 +7,8 @@ Not intended for direct use — use client.views.get(id) to get a View object in
 
 from __future__ import annotations
 
+import asyncio
+
 import logging
 import time
 from collections.abc import Mapping
@@ -74,7 +76,7 @@ class PipelineAPI:
         # switches project or workspace never returns a stale dataset.
         self._dataview_dataset_cache: dict[tuple[int, int, int], int] = {}
 
-    def _resolve_ids(
+    async def _resolve_ids(
         self, dataview_id: int, dataset_id: int | None = None
     ) -> tuple[int, int, int, int]:
         """Resolve workspace, project, dataset IDs for a dataview.
@@ -92,11 +94,13 @@ class PipelineAPI:
             raise ValueError("project_id must be set on the client using client.set_project_id()")
 
         if dataset_id is None:
-            dataset_id = self._find_dataset_for_dataview(dataview_id)
+            dataset_id = await self._find_dataset_for_dataview(dataview_id)
 
         return workspace_id, project_id, dataset_id, dataview_id
 
-    def find_dataset_for_dataview(self, dataview_id: int, dataset_id: int | None = None) -> int:
+    async def find_dataset_for_dataview(
+        self, dataview_id: int, dataset_id: int | None = None
+    ) -> int:
         """Public typed resolver: find the dataset that contains a dataview.
 
         This is the supported public seam for dataview-to-dataset resolution.
@@ -114,9 +118,9 @@ class PipelineAPI:
         """
         if dataset_id is not None:
             return dataset_id
-        return self._find_dataset_for_dataview(dataview_id)
+        return await self._find_dataset_for_dataview(dataview_id)
 
-    def _find_dataset_for_dataview(self, dataview_id: int) -> int:
+    async def _find_dataset_for_dataview(self, dataview_id: int) -> int:
         """Find which dataset contains the specified dataview.
 
         Uses the browse API to discover datasets (including those nested
@@ -142,7 +146,7 @@ class PipelineAPI:
             return cached
 
         # Use workspace browse to get project's children (datasets + folders)
-        browse_response = self._client.browse.workspace_resources(
+        browse_response = await self._client.browse.workspace_resources(
             workspace_id=workspace_id, level=2
         )
         project_children: _list[dict[str, Any]] = []
@@ -152,7 +156,7 @@ class PipelineAPI:
                 break
 
         # DFS through folders to collect all dataset IDs
-        dataset_ids = self._collect_dataset_ids(project_children, project_id, workspace_id)
+        dataset_ids = await self._collect_dataset_ids(project_children, project_id, workspace_id)
 
         # Check each dataset for the dataview
         for dataset_id in dataset_ids:
@@ -161,7 +165,7 @@ class PipelineAPI:
                 # ``sequence=0`` to skip the latest-task-sequence resolution the
                 # default would trigger — one saved round trip per dataset
                 # scanned, which matters when a project holds many datasets.
-                self._client.dataviews.get(
+                await self._client.dataviews.get(
                     dataset_id=dataset_id,
                     dataview_id=dataview_id,
                     workspace_id=workspace_id,
@@ -177,7 +181,7 @@ class PipelineAPI:
                 if exc.status_code == 404:
                     continue
                 if exc.status_code == 403:
-                    listing = self._client.dataviews.list(
+                    listing = await self._client.dataviews.list(
                         dataset_id=dataset_id,
                         workspace_id=workspace_id,
                         project_id=project_id,
@@ -204,7 +208,7 @@ class PipelineAPI:
 
         raise ValueError(f"Dataview {dataview_id} not found in any dataset in project {project_id}")
 
-    def _collect_dataset_ids(
+    async def _collect_dataset_ids(
         self,
         children: _list[dict[str, Any]],
         project_id: int,
@@ -238,8 +242,8 @@ class PipelineAPI:
         if not folders:
             return dataset_ids
 
-        def _browse_folder(folder_id: int) -> _list[dict[str, Any]]:
-            resp = self._client.browse.folder_resources(
+        async def _browse_folder(folder_id: int) -> _list[dict[str, Any]]:
+            resp = await self._client.browse.folder_resources(
                 folder_id=folder_id,
                 project_id=project_id,
                 workspace_id=workspace_id,
@@ -256,7 +260,7 @@ class PipelineAPI:
                 try:
                     sub_children = future.result()
                     dataset_ids.extend(
-                        self._collect_dataset_ids(sub_children, project_id, workspace_id)
+                        await self._collect_dataset_ids(sub_children, project_id, workspace_id)
                     )
                 except MammothAPIError as exc:
                     # A vanished or inaccessible-as-missing folder (404) is
@@ -275,7 +279,7 @@ class PipelineAPI:
     def _dv_url(self, ws_id: int, proj_id: int, ds_id: int, dv_id: int) -> str:
         return f"/workspaces/{ws_id}/projects/{proj_id}/datasets/{ds_id}/dataviews/{dv_id}"
 
-    def get_pipeline(self, dataview_id: int, dataset_id: int | None = None) -> dict[str, Any]:
+    async def get_pipeline(self, dataview_id: int, dataset_id: int | None = None) -> dict[str, Any]:
         """Get pipeline state for a dataview.
 
         Args:
@@ -285,10 +289,10 @@ class PipelineAPI:
         Returns:
             Pipeline state dict.
         """
-        ws, proj, ds, dv = self._resolve_ids(dataview_id, dataset_id)
-        return self._client._request_json("GET", self._base_url(ws, proj, ds, dv))
+        ws, proj, ds, dv = await self._resolve_ids(dataview_id, dataset_id)
+        return await self._client._request_json("GET", self._base_url(ws, proj, ds, dv))
 
-    def list_tasks(self, dataview_id: int, dataset_id: int | None = None) -> dict[str, Any]:
+    async def list_tasks(self, dataview_id: int, dataset_id: int | None = None) -> dict[str, Any]:
         """List all pipeline tasks for a dataview.
 
         Args:
@@ -298,10 +302,10 @@ class PipelineAPI:
         Returns:
             Dict with tasks list.
         """
-        ws, proj, ds, dv = self._resolve_ids(dataview_id, dataset_id)
-        return self._client._request_json("GET", f"{self._base_url(ws, proj, ds, dv)}/tasks")
+        ws, proj, ds, dv = await self._resolve_ids(dataview_id, dataset_id)
+        return await self._client._request_json("GET", f"{self._base_url(ws, proj, ds, dv)}/tasks")
 
-    def add_task(
+    async def add_task(
         self, dataview_id: int, task_spec: dict[str, Any], dataset_id: int | None = None
     ) -> dict[str, Any]:
         """Add a new transformation task to the pipeline.
@@ -314,14 +318,14 @@ class PipelineAPI:
         Returns:
             Dict with created task info or job info.
         """
-        ws, proj, ds, dv = self._resolve_ids(dataview_id, dataset_id)
+        ws, proj, ds, dv = await self._resolve_ids(dataview_id, dataset_id)
         payload = {"DATAVIEW_ID": dv, **task_spec}
-        response = self._client._request_json(
+        response = await self._client._request_json(
             "POST", f"{self._base_url(ws, proj, ds, dv)}/tasks", json=payload
         )
-        return self._client._wait_if_job(response)
+        return await self._client._wait_if_job(response)
 
-    def get_task(
+    async def get_task(
         self, dataview_id: int, task_id: int, dataset_id: int | None = None
     ) -> dict[str, Any]:
         """Get a specific pipeline task.
@@ -334,12 +338,12 @@ class PipelineAPI:
         Returns:
             Task details dict.
         """
-        ws, proj, ds, dv = self._resolve_ids(dataview_id, dataset_id)
-        return self._client._request_json(
+        ws, proj, ds, dv = await self._resolve_ids(dataview_id, dataset_id)
+        return await self._client._request_json(
             "GET", f"{self._base_url(ws, proj, ds, dv)}/tasks/{task_id}"
         )
 
-    def update_task(
+    async def update_task(
         self,
         dataview_id: int,
         task_id: int,
@@ -372,17 +376,17 @@ class PipelineAPI:
             operations.append({"op": "replace", "path": "params", "value": task_spec})
         if not operations:
             raise MammothValidationError("Provide `task_spec` or `patches` to update a task.")
-        ws, proj, ds, dv = self._resolve_ids(dataview_id, dataset_id)
+        ws, proj, ds, dv = await self._resolve_ids(dataview_id, dataset_id)
         params = {"skip_validation": skip_validation} if skip_validation is not None else None
-        response = self._client._request_json(
+        response = await self._client._request_json(
             "PATCH",
             f"{self._base_url(ws, proj, ds, dv)}/tasks/{task_id}",
             params=params,
             json={"patches": operations},
         )
-        return self._client._wait_if_job(response)
+        return await self._client._wait_if_job(response)
 
-    def delete_task(
+    async def delete_task(
         self, dataview_id: int, task_id: int, dataset_id: int | None = None
     ) -> dict[str, Any]:
         """Delete a pipeline task.
@@ -395,13 +399,13 @@ class PipelineAPI:
         Returns:
             Delete confirmation dict.
         """
-        ws, proj, ds, dv = self._resolve_ids(dataview_id, dataset_id)
-        response = self._client._request_json(
+        ws, proj, ds, dv = await self._resolve_ids(dataview_id, dataset_id)
+        response = await self._client._request_json(
             "DELETE", f"{self._base_url(ws, proj, ds, dv)}/tasks/{task_id}"
         )
-        return self._client._wait_if_job(response)
+        return await self._client._wait_if_job(response)
 
-    def preview_task(
+    async def preview_task(
         self, dataview_id: int, task_spec: dict[str, Any], dataset_id: int | None = None
     ) -> dict[str, Any]:
         """Preview task results without adding to pipeline.
@@ -414,13 +418,13 @@ class PipelineAPI:
         Returns:
             Preview result dict with sample data.
         """
-        ws, proj, ds, dv = self._resolve_ids(dataview_id, dataset_id)
-        response = self._client._request_json(
+        ws, proj, ds, dv = await self._resolve_ids(dataview_id, dataset_id)
+        response = await self._client._request_json(
             "POST", f"{self._base_url(ws, proj, ds, dv)}/task_preview", json=task_spec
         )
-        return self._client._wait_if_job(response)
+        return await self._client._wait_if_job(response)
 
-    def draft_mode(
+    async def draft_mode(
         self, dataview_id: int, command: str, dataset_id: int | None = None
     ) -> dict[str, Any]:
         """Manage draft mode for a dataview pipeline.
@@ -435,15 +439,17 @@ class PipelineAPI:
         """
         if command not in {"enter", "exit", "submit", "discard"}:
             raise ValueError("command must be one of: enter, exit, submit, discard")
-        ws, proj, ds, dv = self._resolve_ids(dataview_id, dataset_id)
-        response = self._client._request_json(
+        ws, proj, ds, dv = await self._resolve_ids(dataview_id, dataset_id)
+        response = await self._client._request_json(
             "POST",
             f"{self._dv_url(ws, proj, ds, dv)}/draft-mode",
             json={"draft_operation": command},
         )
-        return self._client._wait_if_job(response)
+        return await self._client._wait_if_job(response)
 
-    def get_draft_status(self, dataview_id: int, dataset_id: int | None = None) -> dict[str, Any]:
+    async def get_draft_status(
+        self, dataview_id: int, dataset_id: int | None = None
+    ) -> dict[str, Any]:
         """Read server-backed draft state for a dataview pipeline.
 
         Draft state must be read from the server so it is consistent across
@@ -459,7 +465,7 @@ class PipelineAPI:
             A dict with ``dataview_id``, ``is_draft``, and the raw pipeline
             ``draft`` section when the server provides one.
         """
-        pipeline = self.get_pipeline(dataview_id, dataset_id)
+        pipeline = await self.get_pipeline(dataview_id, dataset_id)
         # Some API revisions wrap the pipeline resource in a top-level
         # ``pipeline`` object.  Normalize that shape once and use the same
         # resource for state and draft fields; reading state from the outer
@@ -511,7 +517,7 @@ class PipelineAPI:
             "pipeline": pipeline,
         }
 
-    def reconcile_draft_submission(
+    async def reconcile_draft_submission(
         self, dataview_id: int, dataset_id: int | None = None
     ) -> dict[str, Any]:
         """Read the server state after an interrupted draft submission.
@@ -519,7 +525,7 @@ class PipelineAPI:
         This performs no mutation. A caller can safely invoke it from a fresh
         process before deciding whether another SUBMIT is necessary.
         """
-        status = self.get_draft_status(dataview_id, dataset_id)
+        status = await self.get_draft_status(dataview_id, dataset_id)
         state = status.get("pipeline_state")
         mode = status.get("mode")
         is_draft = status.get("is_draft") is True
@@ -551,7 +557,7 @@ class PipelineAPI:
             )
         return result
 
-    def edit_pipeline(
+    async def edit_pipeline(
         self,
         dataview_id: int,
         patches: _list[dict[str, Any]],
@@ -567,12 +573,12 @@ class PipelineAPI:
         Returns:
             Updated pipeline state dict.
         """
-        ws, proj, ds, dv = self._resolve_ids(dataview_id, dataset_id)
-        return self._client._request_json(
+        ws, proj, ds, dv = await self._resolve_ids(dataview_id, dataset_id)
+        return await self._client._request_json(
             "PATCH", self._base_url(ws, proj, ds, dv), json={"patches": patches}
         )
 
-    def wait_for_pipeline(
+    async def wait_for_pipeline(
         self,
         dataview_id: int,
         dataset_id: int | None = None,
@@ -605,12 +611,12 @@ class PipelineAPI:
             timeout if timeout is not None else getattr(self._client, "pipeline_timeout", 3600)
         )
 
-        ws, proj, ds, dv = self._resolve_ids(dataview_id, dataset_id)
+        ws, proj, ds, dv = await self._resolve_ids(dataview_id, dataset_id)
         url = self._base_url(ws, proj, ds, dv)
         deadline = time.monotonic() + effective_timeout
 
         while True:
-            pipeline = self._client._request_json("GET", url)
+            pipeline = await self._client._request_json("GET", url)
             state = pipeline.get("state", "").lower()
 
             if state in PIPELINE_TERMINAL_STATES:
@@ -627,9 +633,9 @@ class PipelineAPI:
                 raise MammothJobTimeoutError(job_id=dataview_id, timeout_seconds=effective_timeout)
 
             logger.debug("Pipeline state for dataview %d: %s — waiting...", dataview_id, state)
-            time.sleep(poll_interval)
+            await asyncio.sleep(poll_interval)
 
-    def command(
+    async def command(
         self, dataview_id: int, command: str, dataset_id: int | None = None
     ) -> dict[str, Any]:
         """Execute a draft-mode command on a dataview's pipeline.
@@ -645,9 +651,9 @@ class PipelineAPI:
         Returns:
             Draft mode state dict.
         """
-        return self.draft_mode(dataview_id, command, dataset_id)
+        return await self.draft_mode(dataview_id, command, dataset_id)
 
-    def items(
+    async def items(
         self,
         dataview_id: int,
         dataset_id: int | None = None,
@@ -673,7 +679,7 @@ class PipelineAPI:
         Returns:
             Dict with the pipeline items list.
         """
-        ws, proj, ds, dv = self._resolve_ids(dataview_id, dataset_id)
+        ws, proj, ds, dv = await self._resolve_ids(dataview_id, dataset_id)
         params: dict[str, Any] = {}
         if fields is not None:
             params["fields"] = fields
@@ -687,11 +693,11 @@ class PipelineAPI:
             params["sequence"] = sequence
         if status is not None:
             params["status"] = status
-        return self._client._request_json(
+        return await self._client._request_json(
             "GET", f"{self._base_url(ws, proj, ds, dv)}/items", params=params or None
         )
 
-    def items_all(
+    async def items_all(
         self,
         dataview_id: int,
         dataset_id: int,
@@ -724,11 +730,11 @@ class PipelineAPI:
             or not 1 <= max_pages <= 1000
         ):
             raise MammothValidationError("`max_pages` must be an integer from 1 through 1000")
-        ws, proj, ds, dv = self._resolve_ids(dataview_id, dataset_id)
+        ws, proj, ds, dv = await self._resolve_ids(dataview_id, dataset_id)
         expected_path = f"{self._base_url(ws, proj, ds, dv)}/items"
 
-        def fetch(offset: int) -> dict[str, Any]:
-            page = self.items(
+        async def fetch(offset: int) -> dict[str, Any]:
+            page = await self.items(
                 dataview_id=dataview_id,
                 dataset_id=dataset_id,
                 fields=fields,
@@ -753,14 +759,14 @@ class PipelineAPI:
                     )
             return page
 
-        return collect_offset_pages(
+        return await collect_offset_pages(
             fetch,
             item_key=_ITEMS_KEY,
             limit=limit,
             max_pages=max_pages,
         )
 
-    def latest_task_sequence(self, dataview_id: int, dataset_id: int | None = None) -> int:
+    async def latest_task_sequence(self, dataview_id: int, dataset_id: int | None = None) -> int:
         """Return the highest non-deleted task sequence in the pipeline.
 
         Data and metadata reads are scoped to a task *sequence*. Sequence 0 is
@@ -776,7 +782,7 @@ class PipelineAPI:
         Returns:
             The highest task sequence, or ``0`` when the view has no tasks.
         """
-        page = self.items(dataview_id, dataset_id, fields=_ITEMS_FIELDS_STANDARD)
+        page = await self.items(dataview_id, dataset_id, fields=_ITEMS_FIELDS_STANDARD)
         sequences = [
             item.get(_ITEM_SEQUENCE_KEY)
             for item in page.get(_ITEMS_KEY) or []
@@ -786,7 +792,7 @@ class PipelineAPI:
         ]
         return max(sequences) if sequences else 0
 
-    def rerun(
+    async def rerun(
         self,
         dataview_id: int,
         from_sequence: int | None = None,
@@ -812,11 +818,11 @@ class PipelineAPI:
         """
         if from_sequence is not None and from_sequence < 0:
             raise MammothValidationError(ERR_FROM_SEQUENCE_NON_NEGATIVE.format(from_sequence))
-        ws, proj, ds, dv = self._resolve_ids(dataview_id, dataset_id)
+        ws, proj, ds, dv = await self._resolve_ids(dataview_id, dataset_id)
         body: dict[str, Any] = {}
         if from_sequence is not None:
             body["from_sequence"] = from_sequence
-        response = self._client._request_json(
+        response = await self._client._request_json(
             "POST", f"{self._base_url(ws, proj, ds, dv)}/rerun", json=body
         )
-        return self._client._wait_if_job(response)
+        return await self._client._wait_if_job(response)

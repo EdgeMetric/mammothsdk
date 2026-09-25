@@ -56,16 +56,16 @@ class AddonsAPI:
     def _ws(self) -> int:
         return self._client.workspace_id
 
-    def list(self) -> dict[str, Any]:
+    async def list(self) -> dict[str, Any]:
         """List active addons for the workspace.
 
         Returns:
             Dict with addon information.
         """
         ws = self._ws()
-        return self._client._request_json("GET", f"/workspaces/{ws}/addons")
+        return await self._client._request_json("GET", f"/workspaces/{ws}/addons")
 
-    def add_connector(
+    async def add_connector(
         self,
         connector_id: int | None = None,
         connector_ids: _list[int] | None = None,
@@ -87,9 +87,11 @@ class AddonsAPI:
         """
         ws = self._ws()
         body = _connector_body(connector_id, connector_ids)
-        return self._client._request_json("POST", f"/workspaces/{ws}/addons/connectors", json=body)
+        return await self._client._request_json(
+            "POST", f"/workspaces/{ws}/addons/connectors", json=body
+        )
 
-    def remove_connector(
+    async def remove_connector(
         self,
         connector_id: int | None = None,
         connector_ids: _list[int] | None = None,
@@ -111,11 +113,11 @@ class AddonsAPI:
         """
         ws = self._ws()
         body = _connector_body(connector_id, connector_ids)
-        return self._client._request_json(
+        return await self._client._request_json(
             "DELETE", f"/workspaces/{ws}/addons/connectors", json=body
         )
 
-    def add_storage(self, additional_storage_gb: int) -> dict[str, Any]:
+    async def add_storage(self, additional_storage_gb: int) -> dict[str, Any]:
         """Add storage capacity to the workspace.
 
         Args:
@@ -134,13 +136,13 @@ class AddonsAPI:
                 )
             )
         ws = self._ws()
-        return self._client._request_json(
+        return await self._client._request_json(
             "POST",
             f"/workspaces/{ws}/addons/storage",
             json={"additional_storage_gb": additional_storage_gb},
         )
 
-    def remove_storage(self, removal_storage_gb: int) -> dict[str, Any]:
+    async def remove_storage(self, removal_storage_gb: int) -> dict[str, Any]:
         """Remove storage capacity from the workspace.
 
         Args:
@@ -157,13 +159,13 @@ class AddonsAPI:
                 ERR_STORAGE_GB_POSITIVE.format(field="removal_storage_gb", value=removal_storage_gb)
             )
         ws = self._ws()
-        return self._client._request_json(
+        return await self._client._request_json(
             "DELETE",
             f"/workspaces/{ws}/addons/storage",
             json={"removal_storage_gb": removal_storage_gb},
         )
 
-    def add_users(self, user_count: int = 1) -> dict[str, Any]:
+    async def add_users(self, user_count: int = 1) -> dict[str, Any]:
         """Add user seats to the workspace.
 
         Args:
@@ -178,11 +180,11 @@ class AddonsAPI:
         if user_count <= 0:
             raise MammothValidationError(ERR_USER_COUNT_POSITIVE.format(value=user_count))
         ws = self._ws()
-        return self._client._request_json(
+        return await self._client._request_json(
             "POST", f"/workspaces/{ws}/addons/users", json={"user_count": user_count}
         )
 
-    def remove_users(self, user_count: int) -> dict[str, Any]:
+    async def remove_users(self, user_count: int) -> dict[str, Any]:
         """Remove user seats from the workspace.
 
         Args:
@@ -197,6 +199,6 @@ class AddonsAPI:
         if user_count <= 0:
             raise MammothValidationError(ERR_USER_COUNT_POSITIVE.format(value=user_count))
         ws = self._ws()
-        return self._client._request_json(
+        return await self._client._request_json(
             "DELETE", f"/workspaces/{ws}/addons/users", json={"user_count": user_count}
         )

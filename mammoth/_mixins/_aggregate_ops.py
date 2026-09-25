@@ -29,7 +29,7 @@ else:
 class AggregateOpsMixin(ViewHost):
     """Mixin for aggregation operations on a View."""
 
-    def pivot(
+    async def pivot(
         self,
         group_by: list[str],
         aggregations: list[AggregationSpec],
@@ -62,7 +62,7 @@ class AggregateOpsMixin(ViewHost):
                 )],
             )
         """
-        return self._add_task(
+        return await self._add_task(
             build_pivot_params(
                 group_by,
                 aggregations,
@@ -73,7 +73,7 @@ class AggregateOpsMixin(ViewHost):
             )
         )
 
-    def window(
+    async def window(
         self,
         function: WindowFunction,
         column: str | None = None,
@@ -111,7 +111,7 @@ class AggregateOpsMixin(ViewHost):
                 order_by=[["Sales", SortDirection.DESC]],
             )
         """
-        return self._add_task(
+        return await self._add_task(
             build_window_params(
                 function,
                 self.columns,
@@ -127,7 +127,7 @@ class AggregateOpsMixin(ViewHost):
             )
         )
 
-    def crosstab(
+    async def crosstab(
         self,
         rows: list[str],
         pivot_column: str,
@@ -189,4 +189,4 @@ class AggregateOpsMixin(ViewHost):
             save_as_mode=save_as_mode,
             target_ds_id=target_ds_id,
         )
-        return self._run_internal_dataset_export(target_properties, timeout, condition)
+        return await self._run_internal_dataset_export(target_properties, timeout, condition)

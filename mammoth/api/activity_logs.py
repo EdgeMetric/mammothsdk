@@ -23,7 +23,7 @@ class ActivityLogsAPI:
     def _ws(self) -> int:
         return self._client.workspace_id
 
-    def list(
+    async def list(
         self,
         limit: int = 50,
         offset: int = 0,
@@ -46,9 +46,9 @@ class ActivityLogsAPI:
         if sort:
             body["sort"] = sort
         body.update(filters)
-        return self._client._request_json("POST", f"/workspaces/{ws}/activity_log", json=body)
+        return await self._client._request_json("POST", f"/workspaces/{ws}/activity_log", json=body)
 
-    def export(self, format: str = "csv", **filters: Any) -> dict[str, Any]:
+    async def export(self, format: str = "csv", **filters: Any) -> dict[str, Any]:
         """Export activity logs.
 
         Args:
@@ -61,6 +61,6 @@ class ActivityLogsAPI:
         ws = self._ws()
         body: dict[str, Any] = {"format": format}
         body.update(filters)
-        return self._client._request_json(
+        return await self._client._request_json(
             "POST", f"/workspaces/{ws}/activity_log/export", json=body
         )

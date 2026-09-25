@@ -37,6 +37,8 @@ Exports are accessed via ``view.export``::
 
 from __future__ import annotations
 
+import asyncio
+
 import datetime
 import random
 import string
@@ -120,20 +122,20 @@ class _DraftContext:
     def __init__(self, view: View) -> None:
         self._view = view
 
-    def __enter__(self) -> View:
-        self._view.enter_draft_mode()
+    async def __aenter__(self) -> View:
+        await self._view.enter_draft_mode()
         return self._view
 
-    def __exit__(
+    async def __aexit__(
         self,
         exc_type: type[BaseException] | None,
         exc_val: BaseException | None,
         exc_tb: Any,
     ) -> None:
         if exc_type is not None:
-            self._view.discard_draft()
+            await self._view.discard_draft()
         else:
-            self._view.submit_draft()
+            await self._view.submit_draft()
 
 
 class View(
@@ -302,7 +304,7 @@ class View(
         _validate_condition_columns(condition, self.columns, self._internal_names)
         return condition.build(self.columns, self.column_types)
 
-    def _add_task(self, task_spec: dict[str, Any]) -> dict[str, Any]:
+    async def _add_task(self, task_spec: dict[str, Any]) -> dict[str, Any]:
         """Add a task to the pipeline, wait for completion, and refresh metadata.
 
         In draft mode, skips waiting and metadata refresh — tasks are queued
@@ -326,8 +328,8 @@ class View(
         # The server owns draft state.  The local flag is retained only as a
         # compatibility fallback for older injected clients that do not return
         # a status mapping; it is never authoritative for a real transport.
-        in_draft = self.is_draft_mode
-        result = self._client.pipeline.add_task(self.id, task_spec, self.dataset_id)
+        in_draft = await self.is_draft_mode
+        result = await self._client.pipeline.add_task(self.id, task_spec, self.dataset_id)
         if isinstance(result, dict) and result.get("has_error") is True:
             # The task was stored but cannot bind to the view (the pipeline is
             # now in ref_error and every read of it fails until the task is
@@ -344,8 +346,8 @@ class View(
             )
         if not in_draft:
             try:
-                pipeline = self._client.pipeline.wait_for_pipeline(self.id, self.dataset_id)
-                self.refresh()
+                pipeline = await self._client.pipeline.wait_for_pipeline(self.id, self.dataset_id)
+                await self.refresh()
             except Exception as exc:
                 # The POST has already returned successfully.  A timeout or
                 # failed readback must not be reported as a clean retryable
@@ -381,7 +383,7 @@ class View(
                 result = {**result, "status": "done", "pipeline_state": state or "ready"}
         return result
 
-    def _run_internal_dataset_export(
+    async def _run_internal_dataset_export(
         self,
         target_properties: dict[str, Any],
         timeout: int | None = None,
@@ -418,16 +420,18 @@ class View(
             validate_only=False,
             end_of_pipeline=True,
         )
-        result = self._client.exports.create(self.id, spec, self.dataset_id)
+        result = await self._client.exports.create(self.id, spec, self.dataset_id)
         if isinstance(result, JobResponse):
-            self._client.jobs.wait_for_job(result.job.id, timeout)
+            await self._client.jobs.wait_for_job(result.job.id, timeout)
 
         existing_id = target_properties.get("TARGET_DS_ID")
         if existing_id is not None:
             return int(existing_id)
-        return self._resolve_exported_dataset_id(target_properties["DS_NAME"], timeout)
+        return await self._resolve_exported_dataset_id(target_properties["DS_NAME"], timeout)
 
-    def _resolve_exported_dataset_id(self, dataset_name: str, timeout: int | None = None) -> int:
+    async def _resolve_exported_dataset_id(
+        self, dataset_name: str, timeout: int | None = None
+    ) -> int:
         """Resolve the id of the dataset a new internal-dataset export created.
 
         Polls this dataview's ``internal_dataset`` export triggers for the one
@@ -437,7 +441,9 @@ class View(
         deadline = time.monotonic() + (timeout or getattr(self._client, "job_timeout", 60) or 60)
         poll_interval = 2.0
         while time.monotonic() < deadline:
-            page = self._client.exports.list(self.id, handler_type=HandlerType.INTERNAL_DATASET)
+            page = await self._client.exports.list(
+                self.id, handler_type=HandlerType.INTERNAL_DATASET
+            )
             matches = [
                 e
                 for e in page.exports
@@ -448,7 +454,7 @@ class View(
                 target_id = (export.target_properties or {}).get("TARGET_DS_ID")
                 if export.status == ExportStatus.EXECUTED and target_id is not None:
                     return int(target_id)
-            time.sleep(poll_interval)
+            await asyncio.sleep(poll_interval)
         raise MammothExportError(
             ERR_EXPORT_DATASET_UNRESOLVED.format(name=dataset_name),
             {"dataset_name": dataset_name, "timeout": timeout},
@@ -456,7 +462,7 @@ class View(
 
     # ── Data Access ─────────────────────────────────────────────
 
-    def data(
+    async def data(
         self,
         limit: int = 400,
         offset: int = 1,
@@ -493,7 +499,7 @@ class View(
         resolved_cols = self._resolve_columns(columns) if columns else None
         built_condition = self._build_condition(condition)
 
-        return self._client.dataviews.query_data(
+        return await self._client.dataviews.query_data(
             dataset_id=self.dataset_id,
             dataview_id=self.id,
             sequence=sequence,
@@ -504,7 +510,7 @@ class View(
             sort=sort,
         )
 
-    def refresh(self) -> View:
+    async def refresh(self) -> View:
         """Re-fetch metadata from the API and update local state.
 
         Updates ``columns``, ``display_names``, ``column_types``, and ``raw``
@@ -530,7 +536,7 @@ class View(
         if proj is None:
             raise ValueError("project_id must be set on the client using client.set_project_id()")
 
-        data = self._client.dataviews.get(
+        data = await self._client.dataviews.get(
             dataset_id=self.dataset_id,
             dataview_id=self.id,
         )
@@ -565,7 +571,7 @@ class View(
 
     # ── Pipeline Management ─────────────────────────────────────
 
-    def list_tasks(self) -> list[dict[str, Any]]:
+    async def list_tasks(self) -> list[dict[str, Any]]:
         """List all pipeline tasks on this dataview.
 
         Returns:
@@ -578,10 +584,10 @@ class View(
             for t in tasks:
                 print(f"#{t['sequence']} {t['task_key']}")
         """
-        result = self._client.pipeline.list_tasks(self.id, self.dataset_id)
+        result = await self._client.pipeline.list_tasks(self.id, self.dataset_id)
         return result.get("tasks", result if isinstance(result, list) else [])
 
-    def delete_task(self, task_id: int) -> dict[str, Any]:
+    async def delete_task(self, task_id: int) -> dict[str, Any]:
         """Delete a pipeline task and re-run the pipeline.
 
         Removes the task, waits for the pipeline to settle, then refreshes
@@ -598,12 +604,12 @@ class View(
             tasks = view.list_tasks()
             view.delete_task(tasks[-1]["id"])  # remove last task
         """
-        result = self._client.pipeline.delete_task(self.id, task_id, self.dataset_id)
-        self._client.pipeline.wait_for_pipeline(self.id, self.dataset_id)
-        self.refresh()
+        result = await self._client.pipeline.delete_task(self.id, task_id, self.dataset_id)
+        await self._client.pipeline.wait_for_pipeline(self.id, self.dataset_id)
+        await self.refresh()
         return result
 
-    def preview_task(self, task_spec: dict[str, Any]) -> dict[str, Any]:
+    async def preview_task(self, task_spec: dict[str, Any]) -> dict[str, Any]:
         """Preview the result of a task without applying it to the pipeline.
 
         Args:
@@ -617,12 +623,12 @@ class View(
 
             preview = view.preview_task({"DELETE": ["column_abc123"]})
         """
-        return self._client.pipeline.preview_task(self.id, task_spec, self.dataset_id)
+        return await self._client.pipeline.preview_task(self.id, task_spec, self.dataset_id)
 
     # ── Draft Mode ───────────────────────────────────────────────
 
     @property
-    def is_draft_mode(self) -> bool:
+    async def is_draft_mode(self) -> bool:
         """Whether the server says this view is currently in draft mode.
 
         Every read goes through the pipeline status endpoint, which makes a
@@ -632,12 +638,12 @@ class View(
         """
         getter = getattr(self._client.pipeline, "get_draft_status", None)
         if callable(getter):
-            status = getter(self.id, self.dataset_id)
+            status = await getter(self.id, self.dataset_id)
             if isinstance(status, dict) and "is_draft" in status:
                 return bool(status["is_draft"])
         return self._draft_mode
 
-    def enter_draft_mode(self) -> dict[str, Any]:
+    async def enter_draft_mode(self) -> dict[str, Any]:
         """Enter draft mode — tasks are queued without pipeline execution.
 
         If already in draft mode, returns immediately without making an API call.
@@ -646,14 +652,16 @@ class View(
             Draft mode state dict from the API, or a status dict if already in
             draft mode.
         """
-        if self.is_draft_mode:
+        if await self.is_draft_mode:
             return {"status": "already_in_draft_mode"}
 
-        result = self._client.pipeline.draft_mode(self.id, DraftCommand.ENTER, self.dataset_id)
+        result = await self._client.pipeline.draft_mode(
+            self.id, DraftCommand.ENTER, self.dataset_id
+        )
         self._draft_mode = True
         return result
 
-    def submit_draft(self) -> dict[str, Any]:
+    async def submit_draft(self) -> dict[str, Any]:
         """Submit queued draft tasks, run the pipeline, and exit draft mode.
 
         Executes all queued tasks, refreshes column metadata, then
@@ -665,7 +673,7 @@ class View(
         # Re-read state before mutating.  This is what prevents a new process
         # from replaying SUBMIT after an earlier process committed it but lost
         # its response.
-        status = self._draft_status_for_lifecycle()
+        status = await self._draft_status_for_lifecycle()
         if status is not None:
             # Only a fully verified pending draft (ready + dirty) authorizes
             # SUBMIT.  In particular, an unknown/malformed readback must not
@@ -682,13 +690,13 @@ class View(
                 return status.get("pipeline") or status
             state = str(status.get("pipeline_state") or "").lower()
             if status.get("outcome") == "running":
-                pipeline = self._client.pipeline.wait_for_pipeline(self.id, self.dataset_id)
-                return self._complete_draft_after_pipeline(pipeline)
+                pipeline = await self._client.pipeline.wait_for_pipeline(self.id, self.dataset_id)
+                return await self._complete_draft_after_pipeline(pipeline)
             if status.get("outcome") == "succeeded":
                 # The submit already committed; only the explicit supported
                 # EXIT transition remains.
                 pipeline = status.get("pipeline") or {"state": state}
-                return self._complete_draft_after_pipeline(pipeline)
+                return await self._complete_draft_after_pipeline(pipeline)
             # ``pending`` is the only remaining state that can authorize a
             # new SUBMIT.  Failed or otherwise unclassified states are
             # blocked conservatively.
@@ -701,17 +709,19 @@ class View(
                     "recovery_action": "re-read draft status before replaying SUBMIT",
                 }
 
-        self._client.pipeline.draft_mode(self.id, DraftCommand.SUBMIT, self.dataset_id)
+        await self._client.pipeline.draft_mode(self.id, DraftCommand.SUBMIT, self.dataset_id)
         try:
-            pipeline = self._client.pipeline.wait_for_pipeline(self.id, self.dataset_id)
+            pipeline = await self._client.pipeline.wait_for_pipeline(self.id, self.dataset_id)
         except (KeyboardInterrupt, MammothJobTimeoutError) as exc:
             # A lost wait response does not prove that SUBMIT failed. Read the
             # server state once and complete only if it is already terminal;
             # otherwise preserve the original interruption/timeout for the
             # caller to resume with a fresh process.
-            reconciled = self._reconcile_draft_submission()
+            reconciled = await self._reconcile_draft_submission()
             if reconciled is not None and reconciled.get("outcome") == "succeeded":
-                completed = self._complete_draft_after_pipeline(reconciled.get("pipeline") or {})
+                completed = await self._complete_draft_after_pipeline(
+                    reconciled.get("pipeline") or {}
+                )
                 # SIGINT remains an interruption contract even when the
                 # reconciliation read proves the remote work had completed;
                 # timeout, however, is no longer a failure once readback is
@@ -719,30 +729,30 @@ class View(
                 if not isinstance(exc, KeyboardInterrupt):
                     return completed
             raise exc
-        return self._complete_draft_after_pipeline(pipeline)
+        return await self._complete_draft_after_pipeline(pipeline)
 
-    def _draft_status_for_lifecycle(self) -> dict[str, Any] | None:
+    async def _draft_status_for_lifecycle(self) -> dict[str, Any] | None:
         getter = getattr(self._client.pipeline, "reconcile_draft_submission", None)
         if not callable(getter):
             return None
-        status = getter(self.id, self.dataset_id)
+        status = await getter(self.id, self.dataset_id)
         return status if isinstance(status, dict) else None
 
-    def _reconcile_draft_submission(self) -> dict[str, Any] | None:
+    async def _reconcile_draft_submission(self) -> dict[str, Any] | None:
         reconciler = getattr(self._client.pipeline, "reconcile_draft_submission", None)
         if not callable(reconciler):
             return None
-        status = reconciler(self.id, self.dataset_id)
+        status = await reconciler(self.id, self.dataset_id)
         return status if isinstance(status, dict) else None
 
-    def _complete_draft_after_pipeline(self, pipeline: dict[str, Any]) -> dict[str, Any]:
+    async def _complete_draft_after_pipeline(self, pipeline: dict[str, Any]) -> dict[str, Any]:
         """Refresh and perform the supported explicit draft EXIT transition."""
-        self.refresh()
-        self._client.pipeline.draft_mode(self.id, DraftCommand.EXIT, self.dataset_id)
+        await self.refresh()
+        await self._client.pipeline.draft_mode(self.id, DraftCommand.EXIT, self.dataset_id)
         self._draft_mode = False
         return pipeline
 
-    def discard_draft(self) -> dict[str, Any]:
+    async def discard_draft(self) -> dict[str, Any]:
         """Discard queued draft tasks and exit draft mode.
 
         Reverts all tasks added since ``enter_draft_mode()``, refreshes
@@ -751,13 +761,15 @@ class View(
         Returns:
             Draft mode state dict from the discard call.
         """
-        result = self._client.pipeline.draft_mode(self.id, DraftCommand.DISCARD, self.dataset_id)
-        self._client.pipeline.draft_mode(self.id, DraftCommand.EXIT, self.dataset_id)
-        self.refresh()
+        result = await self._client.pipeline.draft_mode(
+            self.id, DraftCommand.DISCARD, self.dataset_id
+        )
+        await self._client.pipeline.draft_mode(self.id, DraftCommand.EXIT, self.dataset_id)
+        await self.refresh()
         self._draft_mode = False
         return result
 
-    def set_auto_run(self, enabled: bool) -> dict[str, Any]:
+    async def set_auto_run(self, enabled: bool) -> dict[str, Any]:
         """Toggle auto-run on the pipeline.
 
         When auto-run is enabled (default), each transformation triggers
@@ -770,7 +782,7 @@ class View(
         Returns:
             Updated pipeline state dict.
         """
-        result = self._client.pipeline.edit_pipeline(
+        result = await self._client.pipeline.edit_pipeline(
             self.id,
             [{"op": "command", "path": "auto_run", "value": enabled}],
             self.dataset_id,
@@ -805,7 +817,7 @@ class View(
         """
         return dict(self.columns)
 
-    def branch_out(
+    async def branch_out(
         self,
         dataset_name: str,
         *,
@@ -872,7 +884,7 @@ class ViewExport:
         self._view = view
         self._client = view._client
 
-    def _create_export(
+    async def _create_export(
         self, handler_type: HandlerType, target_properties: dict[str, Any], **kwargs: Any
     ) -> ExportResult:
         """Internal helper to create an export."""
@@ -887,13 +899,13 @@ class ViewExport:
             validate_only=kwargs.get("validate_only", False),
             end_of_pipeline=kwargs.get("end_of_pipeline", True),
         )
-        return self._client.exports.create(
+        return await self._client.exports.create(
             dataview_id=self._view.id,
             export_spec=spec,
             dataset_id=self._view.dataset_id,
         )
 
-    def to_postgres(
+    async def to_postgres(
         self,
         host: str,
         port: int,
@@ -929,7 +941,7 @@ class ViewExport:
                 username="user", password="pass",
             )
         """
-        return self._create_export(
+        return await self._create_export(
             HandlerType.POSTGRES,
             {
                 _K.HOST: host,
@@ -942,7 +954,7 @@ class ViewExport:
             **kwargs,
         )
 
-    def to_mysql(
+    async def to_mysql(
         self,
         host: str,
         port: int,
@@ -969,7 +981,7 @@ class ViewExport:
         Returns:
             Export result dict.
         """
-        return self._create_export(
+        return await self._create_export(
             HandlerType.MYSQL,
             {
                 _K.HOST: host,
@@ -982,7 +994,7 @@ class ViewExport:
             **kwargs,
         )
 
-    def to_s3(
+    async def to_s3(
         self,
         file_name: str | None = None,
         file_type: ExportFileType = ExportFileType.CSV,
@@ -1011,7 +1023,7 @@ class ViewExport:
             ts = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
             file_name = f"view_{self._view.id}_export_{ts}.{file_type.value}"
 
-        return self._create_export(
+        return await self._create_export(
             HandlerType.S3,
             {
                 _K.FILE: file_name,
@@ -1023,7 +1035,7 @@ class ViewExport:
             **kwargs,
         )
 
-    def to_dataset(
+    async def to_dataset(
         self,
         dataset_name: str,
         *,
@@ -1065,7 +1077,7 @@ class ViewExport:
         """
         cross_project: dict[str, Any] = {}
         if target_project_id is not None:
-            profile = self._client.user_profile.get()
+            profile = await self._client.user_profile.get()
             user = profile.get("user", profile) if isinstance(profile, dict) else {}
             cross_project = {
                 "target_project_id": target_project_id,
@@ -1080,9 +1092,9 @@ class ViewExport:
             label_ids=label_ids,
             **cross_project,
         )
-        return self._view._run_internal_dataset_export(target_properties, timeout, condition)
+        return await self._view._run_internal_dataset_export(target_properties, timeout, condition)
 
-    def to_csv(self, output_path: str | None = None, timeout: int = 300) -> Path:
+    async def to_csv(self, output_path: str | None = None, timeout: int = 300) -> Path:
         """Download dataview data as a local CSV file.
 
         Args:
@@ -1098,14 +1110,14 @@ class ViewExport:
             path = view.export.to_csv("output.csv")
             print(f"Downloaded to {path}")
         """
-        return self._client.exports.to_csv(
+        return await self._client.exports.to_csv(
             dataview_id=self._view.id,
             output_path=output_path,
             timeout=timeout,
             dataset_id=self._view.dataset_id,
         )
 
-    def to_ftp(
+    async def to_ftp(
         self,
         domain: str,
         directory: str,
@@ -1139,7 +1151,7 @@ class ViewExport:
                 file="sales.csv", username="user", password="pass",
             )
         """
-        return self._create_export(
+        return await self._create_export(
             HandlerType.FTP,
             {
                 _K.DOMAIN: domain,
@@ -1152,7 +1164,7 @@ class ViewExport:
             **kwargs,
         )
 
-    def to_sftp(
+    async def to_sftp(
         self,
         host: str,
         username: str,
@@ -1212,9 +1224,9 @@ class ViewExport:
             target[_K.PASSPHRASE] = passphrase
         else:
             target[_K.PASSWORD] = password
-        return self._create_export(HandlerType.SFTP, target, **kwargs)
+        return await self._create_export(HandlerType.SFTP, target, **kwargs)
 
-    def to_email(
+    async def to_email(
         self,
         emails: list[str],
         subject: str = "",
@@ -1253,9 +1265,9 @@ class ViewExport:
             target[_K.MESSAGE] = message
         if resource:
             target[_K.RESOURCE] = resource
-        return self._create_export(HandlerType.EMAIL, target, **kwargs)
+        return await self._create_export(HandlerType.EMAIL, target, **kwargs)
 
-    def to_mssql(
+    async def to_mssql(
         self,
         host: str,
         port: int,
@@ -1282,7 +1294,7 @@ class ViewExport:
         Returns:
             The created export trigger record or its tracking job.
         """
-        return self._create_export(
+        return await self._create_export(
             HandlerType.MSSQL,
             {
                 _K.HOST: host,
@@ -1295,7 +1307,7 @@ class ViewExport:
             **kwargs,
         )
 
-    def to_redshift(
+    async def to_redshift(
         self,
         host: str,
         port: int,
@@ -1325,7 +1337,7 @@ class ViewExport:
         Returns:
             The created export trigger record or its tracking job.
         """
-        return self._create_export(
+        return await self._create_export(
             HandlerType.REDSHIFT,
             {
                 _K.HOST: host,
@@ -1338,7 +1350,7 @@ class ViewExport:
             **kwargs,
         )
 
-    def to_bigquery(
+    async def to_bigquery(
         self,
         selected_profile: dict[str, Any],
         selected_identity: dict[str, Any],
@@ -1391,9 +1403,9 @@ class ViewExport:
             target[_K.UPSERT_KEYS] = upsert_keys
         if partition is not None:
             target[_K.PARTITION] = partition
-        return self._create_export(HandlerType.BIGQUERY, target, **kwargs)
+        return await self._create_export(HandlerType.BIGQUERY, target, **kwargs)
 
-    def to_elasticsearch(
+    async def to_elasticsearch(
         self,
         host: str,
         username: str,
@@ -1422,7 +1434,7 @@ class ViewExport:
         Returns:
             The created export trigger record or its tracking job.
         """
-        return self._create_export(
+        return await self._create_export(
             HandlerType.ELASTICSEARCH,
             {
                 _K.HOST: host,
@@ -1436,7 +1448,7 @@ class ViewExport:
             **kwargs,
         )
 
-    def to_azure_blob(
+    async def to_azure_blob(
         self,
         storage_account_name: str,
         tenant_id: str,
@@ -1476,9 +1488,9 @@ class ViewExport:
             target[_K.FOLDER_PATH] = folder_path
         if file_name:
             target[_K.FILE_NAME] = file_name
-        return self._create_export(HandlerType.AZURE_BLOB, target, **kwargs)
+        return await self._create_export(HandlerType.AZURE_BLOB, target, **kwargs)
 
-    def to_sharepoint(
+    async def to_sharepoint(
         self,
         tenant_id: str,
         client_id: str,
@@ -1518,9 +1530,9 @@ class ViewExport:
             target[_K.FOLDER_PATH] = folder_path
         if file_name:
             target[_K.FILE_NAME] = file_name
-        return self._create_export(HandlerType.SHAREPOINT, target, **kwargs)
+        return await self._create_export(HandlerType.SHAREPOINT, target, **kwargs)
 
-    def to_onedrive(
+    async def to_onedrive(
         self,
         tenant_id: str,
         client_id: str,
@@ -1557,9 +1569,9 @@ class ViewExport:
             target[_K.FOLDER_PATH] = folder_path
         if file_name:
             target[_K.FILE_NAME] = file_name
-        return self._create_export(HandlerType.ONEDRIVE, target, **kwargs)
+        return await self._create_export(HandlerType.ONEDRIVE, target, **kwargs)
 
-    def to_tableau(
+    async def to_tableau(
         self,
         server_url: str,
         token_name: str,
@@ -1601,9 +1613,9 @@ class ViewExport:
         }
         if ca_bundle_path:
             target[_K.CA_BUNDLE_PATH] = ca_bundle_path
-        return self._create_export(HandlerType.TABLEAU_SERVER, target, **kwargs)
+        return await self._create_export(HandlerType.TABLEAU_SERVER, target, **kwargs)
 
-    def to_powerbi(
+    async def to_powerbi(
         self,
         username: str,
         password: str,
@@ -1628,7 +1640,7 @@ class ViewExport:
         Returns:
             The created export trigger record or its tracking job.
         """
-        return self._create_export(
+        return await self._create_export(
             HandlerType.POWERBI,
             {
                 _K.USERNAME: username,
@@ -1641,7 +1653,7 @@ class ViewExport:
             **kwargs,
         )
 
-    def to_rest_api(
+    async def to_rest_api(
         self,
         base_url: str,
         endpoint_path: str,
@@ -1716,9 +1728,11 @@ class ViewExport:
             target[_K.QUERY_PARAMS] = query_params
         if extra_body_fields is not None:
             target[_K.EXTRA_BODY_FIELDS] = extra_body_fields
-        return self._create_export(HandlerType.GENERIC_REST_API_EXPORT, target, **kwargs)
+        return await self._create_export(HandlerType.GENERIC_REST_API_EXPORT, target, **kwargs)
 
-    def publish_to_db(self, table: str, odbc_type: OdbcType = OdbcType.POSTGRES) -> dict[str, Any]:
+    async def publish_to_db(
+        self, table: str, odbc_type: OdbcType = OdbcType.POSTGRES
+    ) -> dict[str, Any]:
         """Publish this view to a Mammoth-managed database for dashboards.
 
         Unlike the other export helpers, publish-to-db uses
@@ -1743,14 +1757,14 @@ class ViewExport:
         if proj is None:
             raise ValueError("project_id must be set on the client using client.set_project_id()")
 
-        return self._client._request_json(
+        return await self._client._request_json(
             "POST",
             f"/workspaces/{ws}/projects/{proj}/datasets/{self._view.dataset_id}"
             f"/dataviews/{self._view.id}/publish-to-db",
             json={_K.ODBC_TYPE: odbc_type.value, "target_properties": {_K.TABLE: table}},
         )
 
-    def list(self) -> _list[dict[str, Any]]:
+    async def list(self) -> _list[dict[str, Any]]:
         """List all exports configured for this dataview.
 
         Returns:
@@ -1763,12 +1777,12 @@ class ViewExport:
             for exp in exports:
                 print(f"{exp['id']}: {exp['handler_type']}")
         """
-        result = self._client.exports.list(dataview_id=self._view.id)
+        result = await self._client.exports.list(dataview_id=self._view.id)
         if hasattr(result, "exports"):
             return result.exports
         return result.get("exports", []) if isinstance(result, dict) else []
 
-    def delete(self, export_id: int) -> dict[str, Any]:
+    async def delete(self, export_id: int) -> dict[str, Any]:
         """Delete an export configuration.
 
         Args:
@@ -1787,7 +1801,7 @@ class ViewExport:
         if proj is None:
             raise ValueError("project_id must be set on the client using client.set_project_id()")
 
-        return self._client._request_json(
+        return await self._client._request_json(
             "DELETE",
             f"/workspaces/{ws}/projects/{proj}/datasets/{self._view.dataset_id}"
             f"/dataviews/{self._view.id}/pipeline/exports/{export_id}",

@@ -22,15 +22,15 @@ class UserProfileAPI:
     def __init__(self, client: MammothClient) -> None:
         self._client = client
 
-    def get(self) -> dict[str, Any]:
+    async def get(self) -> dict[str, Any]:
         """Get current user profile.
 
         Returns:
             Dict with user profile information.
         """
-        return self._client._request_json("GET", "/self")
+        return await self._client._request_json("GET", "/self")
 
-    def update(self, **fields: Any) -> dict[str, Any]:
+    async def update(self, **fields: Any) -> dict[str, Any]:
         """Update current user profile.
 
         Args:
@@ -39,9 +39,9 @@ class UserProfileAPI:
         Returns:
             Dict with updated profile.
         """
-        return self._client._request_json("PATCH", "/self", json=fields)
+        return await self._client._request_json("PATCH", "/self", json=fields)
 
-    def change_password(self, current_password: str, new_password: str) -> dict[str, Any]:
+    async def change_password(self, current_password: str, new_password: str) -> dict[str, Any]:
         """Change user password.
 
         Note: This endpoint is not documented in the public OpenAPI spec.
@@ -53,7 +53,7 @@ class UserProfileAPI:
         Returns:
             Dict with result.
         """
-        return self._client._request_json(
+        return await self._client._request_json(
             "POST",
             "/user/change_password",
             json={
@@ -62,15 +62,15 @@ class UserProfileAPI:
             },
         )
 
-    def get_preferences(self) -> dict[str, Any]:
+    async def get_preferences(self) -> dict[str, Any]:
         """Get user preferences.
 
         Returns:
             Dict with user preferences.
         """
-        return self._client._request_json("GET", "/preferences")
+        return await self._client._request_json("GET", "/preferences")
 
-    def update_preferences(
+    async def update_preferences(
         self, patch: list[dict[str, Any]] | None = None, **prefs: Any
     ) -> dict[str, Any]:
         """Update user preferences.
@@ -94,4 +94,4 @@ class UserProfileAPI:
         )
         if not operations:
             raise MammothValidationError("Provide `patch` operations or path=value preferences.")
-        return self._client._request_json("PATCH", "/preferences", json={"patch": operations})
+        return await self._client._request_json("PATCH", "/preferences", json={"patch": operations})

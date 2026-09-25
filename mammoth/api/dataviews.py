@@ -39,7 +39,7 @@ class DataviewsAPI:
             raise ValueError("project_id must be set on the client using client.set_project_id()")
         return proj
 
-    def list(
+    async def list(
         self,
         dataset_id: int,
         workspace_id: int | None = None,
@@ -62,13 +62,13 @@ class DataviewsAPI:
         ws = workspace_id or self._ws()
         proj = project_id or self._proj()
         params = {"limit": limit, "sort": sort}
-        return self._client._request_json(
+        return await self._client._request_json(
             "GET",
             f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/dataviews",
             params=params,
         )
 
-    def get(
+    async def get(
         self,
         dataset_id: int,
         dataview_id: int,
@@ -98,17 +98,17 @@ class DataviewsAPI:
         ws = workspace_id or self._ws()
         proj = project_id or self._proj()
         if sequence is None:
-            sequence = self._client.pipeline.latest_task_sequence(dataview_id, dataset_id)
+            sequence = await self._client.pipeline.latest_task_sequence(dataview_id, dataset_id)
         params: dict[str, Any] = {"sequence": sequence}
         if fields is not None:
             params["fields"] = fields
-        return self._client._request_json(
+        return await self._client._request_json(
             "GET",
             f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/dataviews/{dataview_id}",
             params=params,
         )
 
-    def create(
+    async def create(
         self,
         dataset_id: int,
         name: str | None = "View",
@@ -133,14 +133,14 @@ class DataviewsAPI:
         payload: dict[str, Any] = {"name": name}
         if clone_config_from is not None:
             payload["clone_config_from"] = clone_config_from
-        response = self._client._request_json(
+        response = await self._client._request_json(
             "POST",
             f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/dataviews",
             json=payload,
         )
-        return self._client._wait_if_job(response)
+        return await self._client._wait_if_job(response)
 
-    def update(
+    async def update(
         self,
         dataset_id: int,
         dataview_id: int,
@@ -172,13 +172,13 @@ class DataviewsAPI:
         """
         ws = workspace_id or self._ws()
         proj = project_id or self._proj()
-        return self._client._request_json(
+        return await self._client._request_json(
             "PATCH",
             f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/dataviews/{dataview_id}",
             json={"patch": patch_data},
         )
 
-    def delete(
+    async def delete(
         self,
         dataset_id: int,
         dataview_id: int,
@@ -198,12 +198,12 @@ class DataviewsAPI:
         """
         ws = workspace_id or self._ws()
         proj = project_id or self._proj()
-        return self._client._request_json(
+        return await self._client._request_json(
             "DELETE",
             f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/dataviews/{dataview_id}",
         )
 
-    def bulk_delete(
+    async def bulk_delete(
         self,
         dataset_id: int,
         dataview_ids: _list[int] | str,
@@ -227,13 +227,13 @@ class DataviewsAPI:
             ids_str = ",".join(str(id) for id in dataview_ids)
         else:
             ids_str = str(dataview_ids)
-        return self._client._request_json(
+        return await self._client._request_json(
             "DELETE",
             f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/dataviews",
             params={"ids": ids_str},
         )
 
-    def get_data(
+    async def get_data(
         self,
         dataset_id: int,
         dataview_id: int,
@@ -264,15 +264,17 @@ class DataviewsAPI:
         ws = workspace_id or self._ws()
         proj = project_id or self._proj()
         if sequence is None:
-            sequence = self._client.pipeline.latest_task_sequence(dataview_id, dataset_id)
-        response = self._client._request_json(
+            sequence = await self._client.pipeline.latest_task_sequence(dataview_id, dataset_id)
+        response = await self._client._request_json(
             "GET",
             f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/dataviews/{dataview_id}/data",
             params={"sequence": sequence},
         )
-        return self._client._wait_if_job(response, timeout=timeout, poll_interval=poll_interval)
+        return await self._client._wait_if_job(
+            response, timeout=timeout, poll_interval=poll_interval
+        )
 
-    def query_data(
+    async def query_data(
         self,
         dataset_id: int,
         dataview_id: int,
@@ -307,7 +309,7 @@ class DataviewsAPI:
         ws = workspace_id or self._ws()
         proj = project_id or self._proj()
         if sequence is None:
-            sequence = self._client.pipeline.latest_task_sequence(dataview_id, dataset_id)
+            sequence = await self._client.pipeline.latest_task_sequence(dataview_id, dataset_id)
         payload: dict[str, Any] = {"sequence": sequence, "offset": offset, "limit": limit}
         if columns is not None:
             payload["columns"] = columns
@@ -315,14 +317,14 @@ class DataviewsAPI:
             payload["condition"] = condition
         if sort is not None:
             payload["sort"] = sort
-        response = self._client._request_json(
+        response = await self._client._request_json(
             "POST",
             f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/dataviews/{dataview_id}/data",
             json=payload,
         )
-        return self._client._wait_if_job(response)
+        return await self._client._wait_if_job(response)
 
-    def get_exportable_config(
+    async def get_exportable_config(
         self,
         dataset_id: int,
         dataview_id: int,
@@ -332,13 +334,13 @@ class DataviewsAPI:
         """Get the pipeline/export configuration for a dataview."""
         ws = workspace_id or self._ws()
         proj = project_id or self._proj()
-        response = self._client._request_json(
+        response = await self._client._request_json(
             "GET",
             f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/dataviews/{dataview_id}/exportable-config",
         )
-        return self._client._wait_if_job(response)
+        return await self._client._wait_if_job(response)
 
-    def apply_exportable_config(
+    async def apply_exportable_config(
         self,
         dataset_id: int,
         dataview_id: int,
@@ -360,14 +362,14 @@ class DataviewsAPI:
             payload["is_paste_mode"] = True
         ws = workspace_id or self._ws()
         proj = project_id or self._proj()
-        response = self._client._request_json(
+        response = await self._client._request_json(
             "POST",
             f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/dataviews/{dataview_id}/exportable-config",
             json=payload,
         )
-        return self._client._wait_if_job(response)
+        return await self._client._wait_if_job(response)
 
-    def active_users(
+    async def active_users(
         self,
         dataset_id: int,
         dataview_id: int,
@@ -387,12 +389,12 @@ class DataviewsAPI:
         """
         ws = workspace_id or self._ws()
         proj = project_id or self._proj()
-        return self._client._request_json(
+        return await self._client._request_json(
             "GET",
             f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/dataviews/{dataview_id}/activities",
         )
 
-    def mark_active(
+    async def mark_active(
         self,
         dataset_id: int,
         dataview_id: int,
@@ -412,12 +414,12 @@ class DataviewsAPI:
         """
         ws = workspace_id or self._ws()
         proj = project_id or self._proj()
-        return self._client._request_json(
+        return await self._client._request_json(
             "POST",
             f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/dataviews/{dataview_id}/activities",
         )
 
-    def conditional_format_list(
+    async def conditional_format_list(
         self,
         dataset_id: int,
         dataview_id: int,
@@ -440,7 +442,7 @@ class DataviewsAPI:
         """
         ws = workspace_id or self._ws()
         proj = project_id or self._proj()
-        response = self._client._request_json(
+        response = await self._client._request_json(
             "GET",
             f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/dataviews/{dataview_id}/conditional-format",
         )
@@ -456,7 +458,7 @@ class DataviewsAPI:
             if isinstance(rule, dict) and "cf_type" in rule
         ]
 
-    def conditional_format_create(
+    async def conditional_format_create(
         self,
         dataset_id: int,
         dataview_id: int,
@@ -478,13 +480,13 @@ class DataviewsAPI:
         """
         ws = workspace_id or self._ws()
         proj = project_id or self._proj()
-        return self._client._request_json(
+        return await self._client._request_json(
             "POST",
             f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/dataviews/{dataview_id}/conditional-format",
             json=rule,
         )
 
-    def conditional_format_update(
+    async def conditional_format_update(
         self,
         dataset_id: int,
         dataview_id: int,
@@ -506,13 +508,13 @@ class DataviewsAPI:
         """
         ws = workspace_id or self._ws()
         proj = project_id or self._proj()
-        return self._client._request_json(
+        return await self._client._request_json(
             "PATCH",
             f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/dataviews/{dataview_id}/conditional-format",
             json=rule,
         )
 
-    def conditional_format_delete(
+    async def conditional_format_delete(
         self,
         dataset_id: int,
         dataview_id: int,
@@ -541,13 +543,13 @@ class DataviewsAPI:
             )
         ws = workspace_id or self._ws()
         proj = project_id or self._proj()
-        return self._client._request_json(
+        return await self._client._request_json(
             "DELETE",
             f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/dataviews/{dataview_id}/conditional-format",
             params={"rule_id": rule_id},
         )
 
-    def draft_mode(
+    async def draft_mode(
         self,
         dataset_id: int,
         dataview_id: int,
@@ -569,13 +571,13 @@ class DataviewsAPI:
         """
         ws = workspace_id or self._ws()
         proj = project_id or self._proj()
-        return self._client._request_json(
+        return await self._client._request_json(
             "POST",
             f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/dataviews/{dataview_id}/draft-mode",
             json={"draft_operation": command},
         )
 
-    def parameter_context(
+    async def parameter_context(
         self,
         dataset_id: int,
         dataview_id: int,
@@ -600,13 +602,13 @@ class DataviewsAPI:
             raise MammothValidationError(ERR_DATAVIEW_ID_POSITIVE.format(dataview_id))
         ws = workspace_id or self._ws()
         proj = project_id or self._proj()
-        return self._client._request_json(
+        return await self._client._request_json(
             "GET",
             f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/dataviews/{dataview_id}"
             "/parameter-context",
         )
 
-    def preview(
+    async def preview(
         self,
         dataset_id: int,
         dataview_id: int,
@@ -640,14 +642,14 @@ class DataviewsAPI:
             params["rows"] = rows
         if cols is not None:
             params["cols"] = cols
-        return self._client._request_json(
+        return await self._client._request_json(
             "GET",
             f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/dataviews/{dataview_id}"
             "/preview",
             params=params or None,
         )
 
-    def restore(
+    async def restore(
         self,
         dataset_id: int,
         dataview_id: int,
@@ -672,13 +674,13 @@ class DataviewsAPI:
             raise MammothValidationError(ERR_DATAVIEW_ID_POSITIVE.format(dataview_id))
         ws = workspace_id or self._ws()
         proj = project_id or self._proj()
-        return self._client._request_json(
+        return await self._client._request_json(
             "POST",
             f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/dataviews/{dataview_id}"
             "/restore",
         )
 
-    def trash(
+    async def trash(
         self,
         dataset_id: int,
         dataview_id: int,
@@ -703,7 +705,7 @@ class DataviewsAPI:
             raise MammothValidationError(ERR_DATAVIEW_ID_POSITIVE.format(dataview_id))
         ws = workspace_id or self._ws()
         proj = project_id or self._proj()
-        return self._client._request_json(
+        return await self._client._request_json(
             "POST",
             f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/dataviews/{dataview_id}"
             "/trash",

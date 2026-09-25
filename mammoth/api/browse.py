@@ -32,7 +32,7 @@ class BrowseAPI:
             return proj
         raise ValueError("project_id must be set on the client using client.set_project_id()")
 
-    def root(
+    async def root(
         self,
         fields: str | None = None,
         name: str | None = None,
@@ -93,17 +93,17 @@ class BrowseAPI:
             params["level"] = level
         if permissions is not None:
             params["permissions"] = permissions
-        return self._client._request_json("GET", "/browse", params=params or None)
+        return await self._client._request_json("GET", "/browse", params=params or None)
 
-    def workspaces(self) -> dict[str, Any]:
+    async def workspaces(self) -> dict[str, Any]:
         """Browse available workspaces.
 
         Returns:
             Dict with workspace resources.
         """
-        return self._client._request_json("GET", "/workspaces")
+        return await self._client._request_json("GET", "/workspaces")
 
-    def projects(self, workspace_id: int | None = None) -> dict[str, Any]:
+    async def projects(self, workspace_id: int | None = None) -> dict[str, Any]:
         """Browse projects in a workspace.
 
         Args:
@@ -113,9 +113,9 @@ class BrowseAPI:
             Dict with project resources.
         """
         ws = workspace_id or self._ws()
-        return self._client._request_json("GET", f"/workspaces/{ws}/projects")
+        return await self._client._request_json("GET", f"/workspaces/{ws}/projects")
 
-    def datasets(
+    async def datasets(
         self,
         project_id: int | None = None,
         workspace_id: int | None = None,
@@ -131,9 +131,9 @@ class BrowseAPI:
         """
         ws = workspace_id or self._ws()
         proj = self._proj(project_id)
-        return self._client._request_json("GET", f"/workspaces/{ws}/projects/{proj}/datasets")
+        return await self._client._request_json("GET", f"/workspaces/{ws}/projects/{proj}/datasets")
 
-    def dataviews(
+    async def dataviews(
         self,
         dataset_id: int,
         project_id: int | None = None,
@@ -151,12 +151,12 @@ class BrowseAPI:
         """
         ws = workspace_id or self._ws()
         proj = self._proj(project_id)
-        return self._client._request_json(
+        return await self._client._request_json(
             "GET",
             f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/dataviews",
         )
 
-    def workspace_resources(
+    async def workspace_resources(
         self,
         workspace_id: int | None = None,
         level: int = 2,
@@ -176,9 +176,9 @@ class BrowseAPI:
         """
         ws = workspace_id or self._ws()
         params: dict[str, Any] = {"level": level, "fields": fields, "limit": limit}
-        return self._client._request_json("GET", f"/workspaces/{ws}/browse", params=params)
+        return await self._client._request_json("GET", f"/workspaces/{ws}/browse", params=params)
 
-    def folder_resources(
+    async def folder_resources(
         self,
         folder_id: int,
         project_id: int | None = None,
@@ -201,7 +201,7 @@ class BrowseAPI:
         ws = workspace_id or self._ws()
         proj = self._proj(project_id)
         params: dict[str, Any] = {"level": level, "fields": fields}
-        return self._client._request_json(
+        return await self._client._request_json(
             "GET",
             f"/workspaces/{ws}/projects/{proj}/folders/{folder_id}/browse",
             params=params,

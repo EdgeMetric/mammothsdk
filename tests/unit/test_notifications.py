@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
@@ -18,17 +18,17 @@ def _make_api() -> tuple[NotificationsAPI, MagicMock]:
 
 
 class TestNotificationsAPIList:
-    def test_list_no_filters(self):
+    async def test_list_no_filters(self):
         api, mock_client = _make_api()
-        mock_client._request_json.return_value = {"notifications": []}
-        result = api.list()
+        mock_client._request_json = AsyncMock(return_value={"notifications": []})
+        result = await api.list()
         mock_client._request_json.assert_called_once_with("GET", "/notifications", params=None)
         assert result == {"notifications": []}
 
-    def test_list_with_filters(self):
+    async def test_list_with_filters(self):
         api, mock_client = _make_api()
-        mock_client._request_json.return_value = {"notifications": []}
-        api.list(
+        mock_client._request_json = AsyncMock(return_value={"notifications": []})
+        await api.list(
             fields="__standard",
             workspace_id=2,
             project_id=100,
@@ -59,29 +59,29 @@ class TestNotificationsAPIList:
 
 
 class TestNotificationsAPIDelete:
-    def test_delete(self):
+    async def test_delete(self):
         api, mock_client = _make_api()
-        mock_client._request_json.return_value = {}
-        api.delete(5)
+        mock_client._request_json = AsyncMock(return_value={})
+        await api.delete(5)
         mock_client._request_json.assert_called_once_with("DELETE", "/notifications/5")
 
-    def test_delete_non_positive_id(self):
+    async def test_delete_non_positive_id(self):
         api, _ = _make_api()
         with pytest.raises(MammothValidationError, match="notification_id"):
-            api.delete(0)
+            await api.delete(0)
 
 
 class TestNotificationsAPIDeleteBatch:
-    def test_delete_batch_no_filters(self):
+    async def test_delete_batch_no_filters(self):
         api, mock_client = _make_api()
-        mock_client._request_json.return_value = {}
-        api.delete_batch()
+        mock_client._request_json = AsyncMock(return_value={})
+        await api.delete_batch()
         mock_client._request_json.assert_called_once_with("DELETE", "/notifications", params=None)
 
-    def test_delete_batch_with_filters(self):
+    async def test_delete_batch_with_filters(self):
         api, mock_client = _make_api()
-        mock_client._request_json.return_value = {}
-        api.delete_batch(
+        mock_client._request_json = AsyncMock(return_value={})
+        await api.delete_batch(
             workspace_id=2,
             ids=[1, 2, 3],
             last_updated_at__lt="2026-01-01",
@@ -100,48 +100,48 @@ class TestNotificationsAPIDeleteBatch:
 
 
 class TestNotificationsAPIUpdate:
-    def test_update(self):
+    async def test_update(self):
         api, mock_client = _make_api()
-        mock_client._request_json.return_value = {"id": 5, "is_read": True}
+        mock_client._request_json = AsyncMock(return_value={"id": 5, "is_read": True})
         patch = [{"op": "replace", "path": "isRead", "value": True}]
-        result = api.update(5, patch=patch)
+        result = await api.update(5, patch=patch)
         mock_client._request_json.assert_called_once_with(
             "PATCH", "/notifications/5", json={"patch": patch}
         )
         assert result["is_read"] is True
 
-    def test_update_non_positive_id(self):
+    async def test_update_non_positive_id(self):
         api, _ = _make_api()
         with pytest.raises(MammothValidationError, match="notification_id"):
-            api.update(0, patch=[{"op": "replace", "path": "isRead", "value": True}])
+            await api.update(0, patch=[{"op": "replace", "path": "isRead", "value": True}])
 
-    def test_update_empty_patch(self):
+    async def test_update_empty_patch(self):
         api, _ = _make_api()
         with pytest.raises(MammothValidationError, match="patch"):
-            api.update(5, patch=[])
+            await api.update(5, patch=[])
 
-    def test_update_invalid_path(self):
+    async def test_update_invalid_path(self):
         api, _ = _make_api()
         with pytest.raises(MammothValidationError, match="path"):
-            api.update(5, patch=[{"op": "replace", "path": "bogus", "value": True}])
+            await api.update(5, patch=[{"op": "replace", "path": "bogus", "value": True}])
 
-    def test_update_invalid_op(self):
+    async def test_update_invalid_op(self):
         api, _ = _make_api()
         with pytest.raises(MammothValidationError, match="op"):
-            api.update(5, patch=[{"op": "add", "path": "isRead", "value": True}])
+            await api.update(5, patch=[{"op": "add", "path": "isRead", "value": True}])
 
-    def test_update_missing_keys(self):
+    async def test_update_missing_keys(self):
         api, _ = _make_api()
         with pytest.raises(MammothValidationError, match="patch"):
-            api.update(5, patch=[{"op": "replace", "path": "isRead"}])
+            await api.update(5, patch=[{"op": "replace", "path": "isRead"}])
 
 
 class TestNotificationsAPIUpdateBatch:
-    def test_update_batch(self):
+    async def test_update_batch(self):
         api, mock_client = _make_api()
-        mock_client._request_json.return_value = {}
+        mock_client._request_json = AsyncMock(return_value={})
         patch = [{"op": "replace", "path": "isReadMultiple", "value": True}]
-        api.update_batch(patch=patch, workspace_id=2)
+        await api.update_batch(patch=patch, workspace_id=2)
         mock_client._request_json.assert_called_once_with(
             "PATCH",
             "/notifications",
@@ -149,11 +149,11 @@ class TestNotificationsAPIUpdateBatch:
             json={"patch": patch},
         )
 
-    def test_update_batch_no_workspace(self):
+    async def test_update_batch_no_workspace(self):
         api, mock_client = _make_api()
-        mock_client._request_json.return_value = {}
+        mock_client._request_json = AsyncMock(return_value={})
         patch = [{"op": "replace", "path": "isReadMultiple", "value": True}]
-        api.update_batch(patch=patch)
+        await api.update_batch(patch=patch)
         mock_client._request_json.assert_called_once_with(
             "PATCH",
             "/notifications",
@@ -161,7 +161,7 @@ class TestNotificationsAPIUpdateBatch:
             json={"patch": patch},
         )
 
-    def test_update_batch_empty_patch(self):
+    async def test_update_batch_empty_patch(self):
         api, _ = _make_api()
         with pytest.raises(MammothValidationError, match="patch"):
-            api.update_batch(patch=[])
+            await api.update_batch(patch=[])

@@ -28,7 +28,7 @@ else:
 class TextOpsMixin(ViewHost):
     """Mixin for text transformation operations on a View."""
 
-    def text_transform(
+    async def text_transform(
         self,
         columns: list[str],
         case: TextCase | None = None,
@@ -57,7 +57,7 @@ class TextOpsMixin(ViewHost):
                 condition=Condition("Region", Operator.EQ, "West"),
             )
         """
-        return self._add_task(
+        return await self._add_task(
             build_text_transform_params(
                 columns,
                 self.columns,
@@ -69,7 +69,7 @@ class TextOpsMixin(ViewHost):
             )
         )
 
-    def replace_values(
+    async def replace_values(
         self,
         columns: list[str],
         find: str,
@@ -99,7 +99,7 @@ class TextOpsMixin(ViewHost):
                 match_case=True, match_words=True,
             )
         """
-        return self._add_task(
+        return await self._add_task(
             build_replace_params(
                 columns,
                 self.columns,
@@ -113,7 +113,7 @@ class TextOpsMixin(ViewHost):
             )
         )
 
-    def bulk_replace(
+    async def bulk_replace(
         self,
         columns: list[str],
         mapping: list[BulkReplaceMapping],
@@ -147,7 +147,7 @@ class TextOpsMixin(ViewHost):
                 ],
             )
         """
-        return self._add_task(
+        return await self._add_task(
             build_bulk_replace_params(
                 columns,
                 self.columns,
@@ -160,7 +160,7 @@ class TextOpsMixin(ViewHost):
             )
         )
 
-    def split_column(
+    async def split_column(
         self,
         column: str,
         delimiter: str,
@@ -190,7 +190,7 @@ class TextOpsMixin(ViewHost):
                 [SplitColumnSpec("First Name"), SplitColumnSpec("Last Name")],
             )
         """
-        return self._add_task(
+        return await self._add_task(
             build_split_params(
                 column,
                 delimiter,
@@ -201,7 +201,7 @@ class TextOpsMixin(ViewHost):
             )
         )
 
-    def substring(
+    async def substring(
         self,
         column: str,
         direction: SubstringDirection | None = None,
@@ -264,7 +264,7 @@ class TextOpsMixin(ViewHost):
             view.substring("Email", regex_pattern=r"@(.+)",
                            new_column="Domain")
         """
-        return self._add_task(
+        return await self._add_task(
             build_substring_params(
                 column,
                 self.columns,

@@ -51,7 +51,7 @@ class SchedulesAPI:
             return proj
         raise ValueError("project_id must be set on the client using client.set_project_id()")
 
-    def list(
+    async def list(
         self,
         project_id: int | None = None,
         limit: int = 50,
@@ -79,13 +79,13 @@ class SchedulesAPI:
             params["limit"] = limit
         if offset != 0:
             params["offset"] = offset
-        return self._client._request_json(
+        return await self._client._request_json(
             "GET",
             f"/workspaces/{ws}/projects/{proj}/schedules",
             params=params or None,
         )
 
-    def get(self, schedule_id: int, project_id: int | None = None) -> dict[str, Any]:
+    async def get(self, schedule_id: int, project_id: int | None = None) -> dict[str, Any]:
         """Get schedule details.
 
         Args:
@@ -97,11 +97,11 @@ class SchedulesAPI:
         """
         ws = self._ws()
         proj = self._proj(project_id)
-        return self._client._request_json(
+        return await self._client._request_json(
             "GET", f"/workspaces/{ws}/projects/{proj}/schedules/{schedule_id}"
         )
 
-    def create(
+    async def create(
         self,
         spec: ScheduleCreateSpec,
         project_id: int | None = None,
@@ -126,13 +126,13 @@ class SchedulesAPI:
         ws = self._ws()
         proj = self._proj(project_id)
         body = _rrule_spec_to_dict(spec)
-        return self._client._request_json(
+        return await self._client._request_json(
             "POST",
             f"/workspaces/{ws}/projects/{proj}/schedules",
             json=body,
         )
 
-    def update(
+    async def update(
         self,
         schedule_id: int,
         patch: _list[SchedulePatchItem],
@@ -173,13 +173,13 @@ class SchedulesAPI:
         proj = self._proj(project_id)
         ops = build_schedule_patch_ops(patch)
         body: dict[str, Any] = {"patch": ops}
-        return self._client._request_json(
+        return await self._client._request_json(
             "PATCH",
             f"/workspaces/{ws}/projects/{proj}/schedules/{schedule_id}",
             json=body,
         )
 
-    def delete(self, schedule_id: int, project_id: int | None = None) -> dict[str, Any]:
+    async def delete(self, schedule_id: int, project_id: int | None = None) -> dict[str, Any]:
         """Delete a schedule.
 
         Args:
@@ -191,7 +191,7 @@ class SchedulesAPI:
         """
         ws = self._ws()
         proj = self._proj(project_id)
-        return self._client._request_json(
+        return await self._client._request_json(
             "DELETE",
             f"/workspaces/{ws}/projects/{proj}/schedules/{schedule_id}",
         )

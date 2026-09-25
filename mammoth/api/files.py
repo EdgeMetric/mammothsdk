@@ -47,7 +47,7 @@ class FilesAPI:
             raise ValueError("project_id must be set on the client using client.set_project_id()")
         return proj
 
-    def list(
+    async def list(
         self,
         fields: str | None = None,
         file_ids: _list[int] | None = None,
@@ -97,12 +97,12 @@ class FilesAPI:
         if sort:
             params["sort"] = sort
 
-        response = self._client._request_json(
+        response = await self._client._request_json(
             "GET", f"/workspaces/{ws}/projects/{proj}/files", params=params
         )
         return FilesList(**response)
 
-    def get(
+    async def get(
         self,
         file_id: int,
         fields: str | None = None,
@@ -121,13 +121,13 @@ class FilesAPI:
         params: dict[str, Any] = {}
         if fields:
             params["fields"] = fields
-        response = self._client._request_json(
+        response = await self._client._request_json(
             "GET", f"/workspaces/{ws}/projects/{proj}/files/{file_id}", params=params
         )
         file_details = FileDetails(**response)
         return file_details.file
 
-    def upload(
+    async def upload(
         self,
         files: _list[str | Path | BinaryIO] | str | Path | BinaryIO | None = None,
         folder_resource_id: str | int | None = None,
@@ -188,7 +188,7 @@ class FilesAPI:
             if override_target_schema is not None:
                 params["override_target_schema"] = override_target_schema
 
-            response = self._client._request_json(
+            response = await self._client._request_json(
                 "POST",
                 f"/workspaces/{ws}/projects/{proj}/files",
                 params=params,
@@ -205,7 +205,9 @@ class FilesAPI:
             return initial_job_id
 
         if initial_job_id:
-            completed_initial_job = self._client.jobs.wait_for_job(initial_job_id, timeout=timeout)
+            completed_initial_job = await self._client.jobs.wait_for_job(
+                initial_job_id, timeout=timeout
+            )
             job_response = completed_initial_job.get("response", {})
             nested_job_ids = job_response.get("job_ids", [])
 
@@ -216,7 +218,7 @@ class FilesAPI:
             for job_info in nested_job_ids:
                 nested_job_id = job_info.get("job_id")
                 if nested_job_id:
-                    completed_nested_job = self._client.jobs.wait_for_job(
+                    completed_nested_job = await self._client.jobs.wait_for_job(
                         nested_job_id, timeout=timeout
                     )
                     nested_response = completed_nested_job.get("response", {})
@@ -230,7 +232,7 @@ class FilesAPI:
 
         return None
 
-    def upload_folder(
+    async def upload_folder(
         self,
         folder_path: str | Path,
         folder_resource_id: str | None = None,
@@ -256,14 +258,14 @@ class FilesAPI:
         if not files:
             raise ValueError(f"No files found in folder: {folder_path}")
 
-        return self.upload(
+        return await self.upload(
             files=files,
             folder_resource_id=folder_resource_id,
             wait_for_completion=wait_for_completion,
             timeout=timeout,
         )
 
-    def delete(self, file_id: int) -> None:
+    async def delete(self, file_id: int) -> None:
         """Delete a specific file.
 
         Args:
@@ -271,9 +273,11 @@ class FilesAPI:
         """
         ws = self._ws()
         proj = self._proj()
-        self._client._request_json("DELETE", f"/workspaces/{ws}/projects/{proj}/files/{file_id}")
+        await self._client._request_json(
+            "DELETE", f"/workspaces/{ws}/projects/{proj}/files/{file_id}"
+        )
 
-    def bulk_delete(self, file_ids: _list[int]) -> None:
+    async def bulk_delete(self, file_ids: _list[int]) -> None:
         """Delete multiple files.
 
         Args:
@@ -282,11 +286,11 @@ class FilesAPI:
         ws = self._ws()
         proj = self._proj()
         params = {"ids": ",".join(str(fid) for fid in file_ids)}
-        self._client._request_json(
+        await self._client._request_json(
             "DELETE", f"/workspaces/{ws}/projects/{proj}/files", params=params
         )
 
-    def update(self, file_id: int, patch_request: FilePatchRequest) -> ObjectJobSchema:
+    async def update(self, file_id: int, patch_request: FilePatchRequest) -> ObjectJobSchema:
         """Update file configuration (e.g., set password, extract sheets).
 
         Waits for the job to complete before returning.
@@ -300,7 +304,7 @@ class FilesAPI:
         """
         ws = self._ws()
         proj = self._proj()
-        response = self._client._request_json(
+        response = await self._client._request_json(
             "PATCH",
             f"/workspaces/{ws}/projects/{proj}/files/{file_id}",
             json=patch_request.model_dump(),
@@ -309,11 +313,11 @@ class FilesAPI:
         # payload so a terminal ``status_code``/``failure_reason`` is surfaced
         # rather than the enqueue-time handle. The original response is kept as a
         # base so ``job_id`` survives when the completed payload omits it.
-        completed = self._client._wait_if_job(response)
+        completed = await self._client._wait_if_job(response)
         merged = {**response, **completed} if isinstance(completed, dict) else response
         return ObjectJobSchema(**merged)
 
-    def set_password(self, file_id: int, password: str) -> ObjectJobSchema:
+    async def set_password(self, file_id: int, password: str) -> ObjectJobSchema:
         """Set password for a password-protected file.
 
         Args:
@@ -329,9 +333,9 @@ class FilesAPI:
             value=password,
         )
         patch_request = FilePatchRequest(patch=[patch_data])
-        return self.update(file_id, patch_request)
+        return await self.update(file_id, patch_request)
 
-    def extract_sheets(
+    async def extract_sheets(
         self,
         file_id: int,
         sheets: _list[str],
@@ -362,4 +366,4 @@ class FilesAPI:
             value=extract_config,
         )
         patch_request = FilePatchRequest(patch=[patch_data])
-        return self.update(file_id, patch_request)
+        return await self.update(file_id, patch_request)

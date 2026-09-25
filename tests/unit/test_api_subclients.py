@@ -11,7 +11,7 @@ Tests every public method on every API sub-client:
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
@@ -73,13 +73,13 @@ from mammoth.models.workspaces import (
 @pytest.fixture
 def client() -> MammothClient:
     """MammothClient with mocked session and _request_json/_request_list."""
-    with patch("mammoth.client.requests.Session"):
+    with patch("mammoth.client.httpx.AsyncClient"):
         c = MammothClient(api_key="key", api_secret="secret", workspace_id=1)
     c.project_id = 100
-    c._request_json = MagicMock(return_value={})
-    c._request_list = MagicMock(return_value=[])
-    c._request = MagicMock(return_value={})
-    c._wait_if_job = MagicMock(side_effect=lambda r, **kw: r)
+    c._request_json = AsyncMock(return_value={})
+    c._request_list = AsyncMock(return_value=[])
+    c._request = AsyncMock(return_value={})
+    c._wait_if_job = AsyncMock(side_effect=lambda r, **kw: r)
     return c
 
 
@@ -114,30 +114,32 @@ def assert_json_body(mock: MagicMock, expected: dict) -> None:
 
 
 class TestProjectsAPI:
-    def test_list(self, client: MammothClient):
-        client.projects.list()
+    async def test_list(self, client: MammothClient):
+        await client.projects.list()
         assert_called_with_method_and_endpoint(
             client._request_json, "GET", "/workspaces/1/projects"
         )
 
-    def test_get_by_id(self, client: MammothClient):
-        # projects.get() calls list() internally and filters
-        client._request_json.return_value = {"projects": [{"id": 42, "name": "Test Project"}]}
-        result = client.projects.get(project=42)
+    async def test_get_by_id(self, client: MammothClient):
+        # await projects.get() calls list() internally and filters
+        client._request_json = AsyncMock(
+            return_value={"projects": [{"id": 42, "name": "Test Project"}]}
+        )
+        result = await client.projects.get(project=42)
         assert result["id"] == 42
         assert_called_with_method_and_endpoint(
             client._request_json, "GET", "/workspaces/1/projects"
         )
 
-    def test_create(self, client: MammothClient):
-        client.projects.create(name="New Project")
+    async def test_create(self, client: MammothClient):
+        await client.projects.create(name="New Project")
         assert_called_with_method_and_endpoint(
             client._request_json, "POST", "/workspaces/1/projects"
         )
 
-    def test_update(self, client: MammothClient):
+    async def test_update(self, client: MammothClient):
         # ProjectPatch: ``patches`` with bare-name paths; colour lives in properties.
-        client.projects.update(project_id=42, name="Renamed", color="#123456")
+        await client.projects.update(project_id=42, name="Renamed", color="#123456")
         assert_called_with_method_and_endpoint(client._request_json, "PATCH", "/projects/42")
         assert_json_body(
             client._request_json,
@@ -149,19 +151,19 @@ class TestProjectsAPI:
             },
         )
 
-    def test_delete(self, client: MammothClient):
-        client.projects.delete(project_id=42)
+    async def test_delete(self, client: MammothClient):
+        await client.projects.delete(project_id=42)
         assert_called_with_method_and_endpoint(
             client._request_json, "DELETE", "/workspaces/1/projects/42"
         )
 
-    def test_browse(self, client: MammothClient):
-        client.projects.browse(project_id=42)
+    async def test_browse(self, client: MammothClient):
+        await client.projects.browse(project_id=42)
         assert_called_with_method_and_endpoint(client._request_json, "GET", "/projects/42/browse")
 
-    def test_add_users(self, client: MammothClient):
+    async def test_add_users(self, client: MammothClient):
         # AddUsersToProject: ``users`` of {user_id, role}; ids are numeric.
-        client.projects.add_users(project_id=42, user_ids=[5, "6"], role="project_analyst")
+        await client.projects.add_users(project_id=42, user_ids=[5, "6"], role="project_analyst")
         assert_called_with_method_and_endpoint(client._request_json, "POST", "/projects/42/users")
         assert_json_body(
             client._request_json,
@@ -173,39 +175,39 @@ class TestProjectsAPI:
             },
         )
 
-    def test_add_users_rejects_emails(self, client: MammothClient):
+    async def test_add_users_rejects_emails(self, client: MammothClient):
         with pytest.raises(MammothValidationError, match="numeric user ids"):
-            client.projects.add_users(project_id=42, user_ids=["someone@example.com"])
+            await client.projects.add_users(project_id=42, user_ids=["someone@example.com"])
         client._request_json.assert_not_called()
 
-    def test_remove_users(self, client: MammothClient):
-        client.projects.remove_users(project_id=42, user_ids=["u1"])
+    async def test_remove_users(self, client: MammothClient):
+        await client.projects.remove_users(project_id=42, user_ids=["u1"])
         assert_called_with_method_and_endpoint(client._request_json, "DELETE", "/projects/42/users")
 
-    def test_bulk_update(self, client: MammothClient):
-        client.projects.bulk_update(patch_data={"name": "x"})
+    async def test_bulk_update(self, client: MammothClient):
+        await client.projects.bulk_update(patch_data={"name": "x"})
         assert_called_with_method_and_endpoint(
             client._request_json, "PATCH", "/workspaces/1/projects"
         )
 
-    def test_bulk_delete(self, client: MammothClient):
-        client.projects.bulk_delete(project_ids=[1, 2])
+    async def test_bulk_delete(self, client: MammothClient):
+        await client.projects.bulk_delete(project_ids=[1, 2])
         assert_called_with_method_and_endpoint(
             client._request_json, "DELETE", "/workspaces/1/projects"
         )
 
-    def test_checkpoint_list(self, client: MammothClient):
-        client.projects.checkpoint_list(project_id=42)
+    async def test_checkpoint_list(self, client: MammothClient):
+        await client.projects.checkpoint_list(project_id=42)
         assert_called_with_method_and_endpoint(
             client._request_json, "GET", "/workspaces/1/projects/42/checkpoints"
         )
 
-    def test_checkpoint_list_rejects_non_positive_project_id(self, client: MammothClient):
+    async def test_checkpoint_list_rejects_non_positive_project_id(self, client: MammothClient):
         with pytest.raises(MammothValidationError):
-            client.projects.checkpoint_list(project_id=0)
+            await client.projects.checkpoint_list(project_id=0)
 
-    def test_data_check_list(self, client: MammothClient):
-        client.projects.data_check_list(project_id=42, dataview_id=7, status="pending")
+    async def test_data_check_list(self, client: MammothClient):
+        await client.projects.data_check_list(project_id=42, dataview_id=7, status="pending")
         assert_called_with_method_and_endpoint(
             client._request_json, "GET", "/workspaces/1/projects/42/data-checks"
         )
@@ -214,21 +216,21 @@ class TestProjectsAPI:
             "status": "pending",
         }
 
-    def test_pending_changes(self, client: MammothClient):
-        client.projects.pending_changes(project_id=42)
+    async def test_pending_changes(self, client: MammothClient):
+        await client.projects.pending_changes(project_id=42)
         assert_called_with_method_and_endpoint(
             client._request_json, "GET", "/workspaces/1/projects/42/pending-changes"
         )
 
-    def test_publish_credentials(self, client: MammothClient):
-        client.projects.publish_credentials(project_id=42, odbc_type="postgres")
+    async def test_publish_credentials(self, client: MammothClient):
+        await client.projects.publish_credentials(project_id=42, odbc_type="postgres")
         assert_called_with_method_and_endpoint(
             client._request_json, "GET", "/workspaces/1/projects/42/credentials"
         )
         assert client._request_json.call_args.kwargs["params"] == {"odbc_type": "postgres"}
 
-    def test_resource_dependencies(self, client: MammothClient):
-        client.projects.resource_dependencies(
+    async def test_resource_dependencies(self, client: MammothClient):
+        await client.projects.resource_dependencies(
             project_id=42, resource_ids=["1", "2"], is_recursive=True
         )
         assert_called_with_method_and_endpoint(
@@ -239,21 +241,21 @@ class TestProjectsAPI:
             "is_recursive": True,
         }
 
-    def test_resource_status(self, client: MammothClient):
-        client.projects.resource_status(project_id=42)
+    async def test_resource_status(self, client: MammothClient):
+        await client.projects.resource_status(project_id=42)
         assert_called_with_method_and_endpoint(
             client._request_json, "GET", "/workspaces/1/projects/42/resource-status"
         )
 
-    def test_sample_flow(self, client: MammothClient):
-        client.projects.sample_flow(project_id=42, label_resource_id=8)
+    async def test_sample_flow(self, client: MammothClient):
+        await client.projects.sample_flow(project_id=42, label_resource_id=8)
         assert_called_with_method_and_endpoint(
             client._request_json, "POST", "/workspaces/1/projects/42/sample-flow"
         )
         assert_json_body(client._request_json, {"label_resource_id": 8})
 
-    def test_user_update(self, client: MammothClient):
-        client.projects.user_update(project_id=42, role="project_admin", user_id=9)
+    async def test_user_update(self, client: MammothClient):
+        await client.projects.user_update(project_id=42, role="project_admin", user_id=9)
         assert_called_with_method_and_endpoint(
             client._request_json, "PATCH", "/workspaces/1/projects/42/users"
         )
@@ -263,15 +265,17 @@ class TestProjectsAPI:
             {"patch": [{"op": "replace", "path": "permissions", "value": "project_admin"}]},
         )
 
-    def test_user_update_requires_exactly_one_target(self, client: MammothClient):
+    async def test_user_update_requires_exactly_one_target(self, client: MammothClient):
         with pytest.raises(MammothValidationError):
-            client.projects.user_update(project_id=42, role="project_admin")
+            await client.projects.user_update(project_id=42, role="project_admin")
         with pytest.raises(MammothValidationError):
-            client.projects.user_update(
+            await client.projects.user_update(
                 project_id=42, role="project_admin", user_id=9, invite_id=10
             )
 
-    def test_resource_dependencies_update_emits_release_patch_wire(self, client: MammothClient):
+    async def test_resource_dependencies_update_emits_release_patch_wire(
+        self, client: MammothClient
+    ):
         patches = [
             DataSyncPatchItem(
                 op="replace",
@@ -284,7 +288,7 @@ class TestProjectsAPI:
                 },
             )
         ]
-        client.projects.resource_dependencies_update(7, patches, workspace_id=4)
+        await client.projects.resource_dependencies_update(7, patches, workspace_id=4)
         assert_called_with_method_and_endpoint(
             client._request_json,
             "PATCH",
@@ -308,11 +312,11 @@ class TestProjectsAPI:
             },
         )
 
-    def test_resource_dependencies_update_rejects_invalid_before_request(
+    async def test_resource_dependencies_update_rejects_invalid_before_request(
         self, client: MammothClient
     ):
         with pytest.raises(MammothValidationError):
-            client.projects.resource_dependencies_update(
+            await client.projects.resource_dependencies_update(
                 7,
                 [
                     {
@@ -323,15 +327,15 @@ class TestProjectsAPI:
                 ],
             )
         with pytest.raises(MammothValidationError):
-            client.projects.resource_dependencies_update(
+            await client.projects.resource_dependencies_update(
                 7, [{"path": "data_sync", "value": {"context_type": "task", "context_id": 9}}]
             )
         with pytest.raises(MammothValidationError):
-            client.projects.resource_dependencies_update(
+            await client.projects.resource_dependencies_update(
                 7, [{"op": "replace", "value": {"context_type": "task", "context_id": 9}}]
             )
         with pytest.raises(MammothValidationError):
-            client.projects.resource_dependencies_update(
+            await client.projects.resource_dependencies_update(
                 7,
                 [
                     {
@@ -351,33 +355,33 @@ class TestProjectsAPI:
 
 
 class TestTemplatesAPI:
-    def test_list_reads_bare_array_and_wraps_it(self, client: MammothClient):
-        client._request_list.return_value = [{"id": 3}]
-        assert client.templates.list() == {"templates": [{"id": 3}]}
+    async def test_list_reads_bare_array_and_wraps_it(self, client: MammothClient):
+        client._request_list = AsyncMock(return_value=[{"id": 3}])
+        assert await client.templates.list() == {"templates": [{"id": 3}]}
         assert_called_with_method_and_endpoint(
             client._request_list, "GET", "/workspaces/1/templates"
         )
 
 
 class TestDatasetsAPI:
-    def test_list(self, client: MammothClient):
-        client.datasets.list()
+    async def test_list(self, client: MammothClient):
+        await client.datasets.list()
         assert_called_with_method_and_endpoint(client._request_json, "GET", "/datasets")
 
-    def test_get(self, client: MammothClient):
-        client.datasets.get(dataset_id=500)
+    async def test_get(self, client: MammothClient):
+        await client.datasets.get(dataset_id=500)
         assert_called_with_method_and_endpoint(client._request_json, "GET", "/datasets/500")
 
-    def test_create(self, client: MammothClient):
-        client.datasets.create(dataset_spec={"name": "ds"}, ds_creation_type="file")
+    async def test_create(self, client: MammothClient):
+        await client.datasets.create(dataset_spec={"name": "ds"}, ds_creation_type="file")
         assert_called_with_method_and_endpoint(client._request_json, "POST", "/datasets")
 
-    def test_update(self, client: MammothClient):
-        client.datasets.update(patch_data=[{"op": "rename_dataset", "path": "/500"}])
+    async def test_update(self, client: MammothClient):
+        await client.datasets.update(patch_data=[{"op": "rename_dataset", "path": "/500"}])
         assert_called_with_method_and_endpoint(client._request_json, "PATCH", "/datasets")
 
-    def test_rename(self, client: MammothClient):
-        client.datasets.rename(dataset_id=500, name="New Name")
+    async def test_rename(self, client: MammothClient):
+        await client.datasets.rename(dataset_id=500, name="New Name")
         assert_called_with_method_and_endpoint(client._request_json, "PATCH", "/datasets/500")
         # OpenAPI DatasetPatchRequest for the singular route: one operation,
         # op=replace, path=name, value=<new name>.
@@ -385,21 +389,21 @@ class TestDatasetsAPI:
             "patch": {"op": "replace", "path": "name", "value": "New Name"}
         }
 
-    def test_delete(self, client: MammothClient):
-        client.datasets.delete(dataset_id=500)
+    async def test_delete(self, client: MammothClient):
+        await client.datasets.delete(dataset_id=500)
         assert_called_with_method_and_endpoint(client._request_json, "DELETE", "/datasets/500")
 
-    def test_preview_interpretation(self, client: MammothClient):
-        client.datasets.preview_interpretation(dataset_id=500, instruction="rows 3 down")
+    async def test_preview_interpretation(self, client: MammothClient):
+        await client.datasets.preview_interpretation(dataset_id=500, instruction="rows 3 down")
         assert_called_with_method_and_endpoint(
             client._request_json, "POST", "/datasets/500/interpretation/preview"
         )
         assert client._request_json.call_args.kwargs["json"] == {"user_instruction": "rows 3 down"}
 
-    def test_confirm_interpretation_reuses_the_previewed_plan(self, client: MammothClient):
+    async def test_confirm_interpretation_reuses_the_previewed_plan(self, client: MammothClient):
         # The route never trusts a client's copy of the plan — it carries SQL.
         # An empty structure_map is what tells it to re-read its own.
-        client.datasets.confirm_interpretation(dataset_id=500, instruction="rows 3 down")
+        await client.datasets.confirm_interpretation(dataset_id=500, instruction="rows 3 down")
         assert_called_with_method_and_endpoint(
             client._request_json, "PATCH", "/datasets/500/interpretation"
         )
@@ -408,29 +412,29 @@ class TestDatasetsAPI:
             "structure_map": {},
         }
 
-    def test_get_unstructured_rows(self, client: MammothClient):
-        client.datasets.get_unstructured_rows(dataset_id=500)
+    async def test_get_unstructured_rows(self, client: MammothClient):
+        await client.datasets.get_unstructured_rows(dataset_id=500)
         assert_called_with_method_and_endpoint(
             client._request_json, "GET", "/datasets/500/unstructured_data"
         )
 
-    def test_discard_unstructured_rows(self, client: MammothClient):
-        client.datasets.discard_unstructured_rows(dataset_id=500)
+    async def test_discard_unstructured_rows(self, client: MammothClient):
+        await client.datasets.discard_unstructured_rows(dataset_id=500)
         assert_called_with_method_and_endpoint(
             client._request_json, "DELETE", "/datasets/500/unstructured_data"
         )
 
-    def test_list_batches(self, client: MammothClient):
-        client.datasets.list_batches(dataset_id=500)
+    async def test_list_batches(self, client: MammothClient):
+        await client.datasets.list_batches(dataset_id=500)
         assert_called_with_method_and_endpoint(client._request_json, "GET", "/datasets/500/batches")
 
-    def test_get_batch(self, client: MammothClient):
-        client.datasets.get_batch(dataset_id=500, batch_id=10)
+    async def test_get_batch(self, client: MammothClient):
+        await client.datasets.get_batch(dataset_id=500, batch_id=10)
         assert_called_with_method_and_endpoint(client._request_json, "GET", "/batches/10")
 
-    def test_get_batch_data(self, client: MammothClient):
-        client._request_json.return_value = {"job_id": 77, "status": "pending"}
-        client.datasets.get_batch_data(
+    async def test_get_batch_data(self, client: MammothClient):
+        client._request_json = AsyncMock(return_value={"job_id": 77, "status": "pending"})
+        await client.datasets.get_batch_data(
             dataset_id=500, batch_id=10, columns="a,b", limit=10, offset=3
         )
         assert_called_with_method_and_endpoint(client._request_json, "GET", "/batches/10/data")
@@ -440,35 +444,35 @@ class TestDatasetsAPI:
             "columns": "a,b",
         }
 
-    def test_get_batch_data_rejects_invalid_paging(self, client: MammothClient):
+    async def test_get_batch_data_rejects_invalid_paging(self, client: MammothClient):
         with pytest.raises(MammothValidationError, match="between 0 and 100"):
-            client.datasets.get_batch_data(dataset_id=500, batch_id=10, limit=101)
+            await client.datasets.get_batch_data(dataset_id=500, batch_id=10, limit=101)
         with pytest.raises(MammothValidationError, match="non-negative"):
-            client.datasets.get_batch_data(dataset_id=500, batch_id=10, offset=-1)
+            await client.datasets.get_batch_data(dataset_id=500, batch_id=10, offset=-1)
         client._request_json.assert_not_called()
 
-    def test_get_file_settings(self, client: MammothClient):
-        client.datasets.get_file_settings(dataset_id=500)
+    async def test_get_file_settings(self, client: MammothClient):
+        await client.datasets.get_file_settings(dataset_id=500)
         assert_called_with_method_and_endpoint(
             client._request_json, "GET", "/datasets/500/file_settings"
         )
 
-    def test_bulk_update(self, client: MammothClient):
-        client.datasets.bulk_update(patch_data={"name": "x"})
+    async def test_bulk_update(self, client: MammothClient):
+        await client.datasets.bulk_update(patch_data={"name": "x"})
         assert_called_with_method_and_endpoint(client._request_json, "PATCH", "/datasets")
 
-    def test_bulk_delete(self, client: MammothClient):
+    async def test_bulk_delete(self, client: MammothClient):
         # The route takes the ids query parameter; there is no delete-all form.
-        client.datasets.bulk_delete(dataset_ids=[7, 8])
+        await client.datasets.bulk_delete(dataset_ids=[7, 8])
         assert_called_with_method_and_endpoint(
             client._request_json, "DELETE", "/workspaces/1/projects/100/datasets"
         )
         assert client._request_json.call_args.kwargs["params"] == {"ids": "7,8"}
         with pytest.raises(MammothValidationError, match="dataset_ids"):
-            client.datasets.bulk_delete()
+            await client.datasets.bulk_delete()
 
-    def test_create_from_pdf(self, client: MammothClient):
-        client.datasets.create_from_pdf(file_object_id=7, file_name="report.pdf")
+    async def test_create_from_pdf(self, client: MammothClient):
+        await client.datasets.create_from_pdf(file_object_id=7, file_name="report.pdf")
         assert_called_with_method_and_endpoint(client._request_json, "POST", "/datasets-from-pdf")
         assert_json_body(
             client._request_json,
@@ -479,8 +483,8 @@ class TestDatasetsAPI:
             },
         )
 
-    def test_create_from_pdf_optional_fields(self, client: MammothClient):
-        client.datasets.create_from_pdf(
+    async def test_create_from_pdf_optional_fields(self, client: MammothClient):
+        await client.datasets.create_from_pdf(
             file_object_id=7,
             file_name="report.pdf",
             file_id="abc123",
@@ -501,13 +505,13 @@ class TestDatasetsAPI:
             },
         )
 
-    def test_create_from_pdf_rejects_nonpositive_file_object_id(self, client: MammothClient):
+    async def test_create_from_pdf_rejects_nonpositive_file_object_id(self, client: MammothClient):
         with pytest.raises(MammothValidationError, match="file_object_id"):
-            client.datasets.create_from_pdf(file_object_id=0, file_name="report.pdf")
+            await client.datasets.create_from_pdf(file_object_id=0, file_name="report.pdf")
         client._request_json.assert_not_called()
 
-    def test_file_settings_update(self, client: MammothClient):
-        client.datasets.file_settings_update(
+    async def test_file_settings_update(self, client: MammothClient):
+        await client.datasets.file_settings_update(
             dataset_id=500,
             delimiter=",",
             has_header=True,
@@ -530,9 +534,9 @@ class TestDatasetsAPI:
             },
         )
 
-    def test_file_settings_update_rejects_nonpositive_dataset_id(self, client: MammothClient):
+    async def test_file_settings_update_rejects_nonpositive_dataset_id(self, client: MammothClient):
         with pytest.raises(MammothValidationError, match="dataset_id"):
-            client.datasets.file_settings_update(
+            await client.datasets.file_settings_update(
                 dataset_id=0,
                 delimiter=",",
                 has_header=True,
@@ -541,25 +545,25 @@ class TestDatasetsAPI:
             )
         client._request_json.assert_not_called()
 
-    def test_file_settings_undo(self, client: MammothClient):
-        client.datasets.file_settings_undo(dataset_id=500)
+    async def test_file_settings_undo(self, client: MammothClient):
+        await client.datasets.file_settings_undo(dataset_id=500)
         assert_called_with_method_and_endpoint(
             client._request_json, "DELETE", "/datasets/500/file_settings"
         )
 
-    def test_restore(self, client: MammothClient):
-        client.datasets.restore(dataset_id=500)
+    async def test_restore(self, client: MammothClient):
+        await client.datasets.restore(dataset_id=500)
         assert_called_with_method_and_endpoint(
             client._request_json, "POST", "/datasets/500/restore"
         )
 
-    def test_trash(self, client: MammothClient):
-        client.datasets.trash(dataset_id=500)
+    async def test_trash(self, client: MammothClient):
+        await client.datasets.trash(dataset_id=500)
         assert_called_with_method_and_endpoint(client._request_json, "POST", "/datasets/500/trash")
 
-    def test_trash_rejects_nonpositive_dataset_id(self, client: MammothClient):
+    async def test_trash_rejects_nonpositive_dataset_id(self, client: MammothClient):
         with pytest.raises(MammothValidationError, match="dataset_id"):
-            client.datasets.trash(dataset_id=-1)
+            await client.datasets.trash(dataset_id=-1)
         client._request_json.assert_not_called()
 
 
@@ -569,72 +573,74 @@ class TestDatasetsAPI:
 
 
 class TestDataviewsAPI:
-    def test_list(self, client: MammothClient):
-        client.dataviews.list(dataset_id=500)
+    async def test_list(self, client: MammothClient):
+        await client.dataviews.list(dataset_id=500)
         assert_called_with_method_and_endpoint(
             client._request_json, "GET", "/datasets/500/dataviews"
         )
 
-    def test_get(self, client: MammothClient):
+    async def test_get(self, client: MammothClient):
         # sequence=0 pins the read to the base dataset so no latest-sequence
         # resolution call is made (that path has its own test below).
-        client.dataviews.get(dataset_id=500, dataview_id=42, sequence=0)
+        await client.dataviews.get(dataset_id=500, dataview_id=42, sequence=0)
         assert_called_with_method_and_endpoint(client._request_json, "GET", "/dataviews/42")
 
-    def test_get_resolves_latest_sequence_when_omitted(self, client: MammothClient):
+    async def test_get_resolves_latest_sequence_when_omitted(self, client: MammothClient):
         # Omitting sequence resolves the latest task sequence first (one extra
         # call), then reads metadata at that sequence.
-        client._request_json.return_value = {
-            "items": [{"item_type": "task", "sequence": 3, "status": "executed"}]
-        }
-        client.dataviews.get(dataset_id=500, dataview_id=42)
+        client._request_json = AsyncMock(
+            return_value={"items": [{"item_type": "task", "sequence": 3, "status": "executed"}]}
+        )
+        await client.dataviews.get(dataset_id=500, dataview_id=42)
         calls = client._request_json.call_args_list
         assert "/items" in calls[0][0][1]
         assert calls[-1][1]["params"]["sequence"] == 3
 
-    def test_create(self, client: MammothClient):
-        client.dataviews.create(dataset_id=500, name="New View")
+    async def test_create(self, client: MammothClient):
+        await client.dataviews.create(dataset_id=500, name="New View")
         assert_called_with_method_and_endpoint(
             client._request_json, "POST", "/datasets/500/dataviews"
         )
 
-    def test_update(self, client: MammothClient):
-        client.dataviews.update(dataset_id=500, dataview_id=42, patch_data=[{"op": "replace"}])
+    async def test_update(self, client: MammothClient):
+        await client.dataviews.update(
+            dataset_id=500, dataview_id=42, patch_data=[{"op": "replace"}]
+        )
         assert_called_with_method_and_endpoint(client._request_json, "PATCH", "/dataviews/42")
 
-    def test_delete(self, client: MammothClient):
-        client.dataviews.delete(dataset_id=500, dataview_id=42)
+    async def test_delete(self, client: MammothClient):
+        await client.dataviews.delete(dataset_id=500, dataview_id=42)
         assert_called_with_method_and_endpoint(client._request_json, "DELETE", "/dataviews/42")
 
-    def test_bulk_delete(self, client: MammothClient):
-        client.dataviews.bulk_delete(dataset_id=500, dataview_ids=[42, 43])
+    async def test_bulk_delete(self, client: MammothClient):
+        await client.dataviews.bulk_delete(dataset_id=500, dataview_ids=[42, 43])
         assert_called_with_method_and_endpoint(
             client._request_json, "DELETE", "/datasets/500/dataviews"
         )
 
-    def test_query_data(self, client: MammothClient):
+    async def test_query_data(self, client: MammothClient):
         # sequence=0 pins to the base dataset so no latest-sequence resolution
         # call is made.
-        client.dataviews.query_data(dataset_id=500, dataview_id=42, sequence=0)
+        await client.dataviews.query_data(dataset_id=500, dataview_id=42, sequence=0)
         assert_called_with_method_and_endpoint(client._request_json, "POST", "/dataviews/42/data")
 
-    def test_exportable_config_get(self, client: MammothClient):
-        client.dataviews.get_exportable_config(dataset_id=500, dataview_id=42)
+    async def test_exportable_config_get(self, client: MammothClient):
+        await client.dataviews.get_exportable_config(dataset_id=500, dataview_id=42)
         assert_called_with_method_and_endpoint(
             client._request_json, "GET", "/dataviews/42/exportable-config"
         )
 
-    def test_exportable_config_apply_requires_exactly_one_source(self, client: MammothClient):
+    async def test_exportable_config_apply_requires_exactly_one_source(self, client: MammothClient):
         with pytest.raises(MammothValidationError, match="Exactly one"):
-            client.dataviews.apply_exportable_config(dataset_id=500, dataview_id=42)
+            await client.dataviews.apply_exportable_config(dataset_id=500, dataview_id=42)
         with pytest.raises(MammothValidationError, match="Exactly one"):
-            client.dataviews.apply_exportable_config(
+            await client.dataviews.apply_exportable_config(
                 dataset_id=500, dataview_id=42, items=[], config={}
             )
         client._request_json.assert_not_called()
 
-    def test_exportable_config_apply(self, client: MammothClient):
-        client.dataviews.apply_exportable_config(
+    async def test_exportable_config_apply(self, client: MammothClient):
+        await client.dataviews.apply_exportable_config(
             dataset_id=500,
             dataview_id=42,
             config={"tasks": []},
@@ -648,33 +654,33 @@ class TestDataviewsAPI:
             {"config": {"tasks": []}, "is_paste_mode": True},
         )
 
-    def test_active_users(self, client: MammothClient):
-        client.dataviews.active_users(dataset_id=500, dataview_id=42)
+    async def test_active_users(self, client: MammothClient):
+        await client.dataviews.active_users(dataset_id=500, dataview_id=42)
         assert_called_with_method_and_endpoint(
             client._request_json, "GET", "/dataviews/42/activities"
         )
 
-    def test_mark_active(self, client: MammothClient):
-        client.dataviews.mark_active(dataset_id=500, dataview_id=42)
+    async def test_mark_active(self, client: MammothClient):
+        await client.dataviews.mark_active(dataset_id=500, dataview_id=42)
         assert_called_with_method_and_endpoint(
             client._request_json, "POST", "/dataviews/42/activities"
         )
 
-    def test_conditional_format_list(self, client: MammothClient):
-        client.dataviews.conditional_format_list(dataset_id=500, dataview_id=42)
+    async def test_conditional_format_list(self, client: MammothClient):
+        await client.dataviews.conditional_format_list(dataset_id=500, dataview_id=42)
         assert_called_with_method_and_endpoint(
             client._request_json, "GET", "/dataviews/42/conditional-format"
         )
 
-    def test_conditional_format_list_unpacks_rule_id_mapping(self, client: MammothClient):
+    async def test_conditional_format_list_unpacks_rule_id_mapping(self, client: MammothClient):
         # Release returns {rule_id: rule}; the id is what delete needs.
-        client._request_json = MagicMock(
+        client._request_json = AsyncMock(
             return_value={
                 "bca0ff33bd6f8ed1": {"cf_type": "RULE", "enabled": True, "sequence": 0},
                 "1f2e3d4c5b6a7980": {"cf_type": "COLOR_SCALE", "enabled": True, "sequence": 1},
             }
         )
-        rules = client.dataviews.conditional_format_list(dataset_id=500, dataview_id=42)
+        rules = await client.dataviews.conditional_format_list(dataset_id=500, dataview_id=42)
         assert rules == [
             {"rule_id": "bca0ff33bd6f8ed1", "cf_type": "RULE", "enabled": True, "sequence": 0},
             {
@@ -685,80 +691,82 @@ class TestDataviewsAPI:
             },
         ]
 
-    def test_conditional_format_list_empty_mapping(self, client: MammothClient):
-        client._request_json = MagicMock(return_value={})
-        assert client.dataviews.conditional_format_list(dataset_id=500, dataview_id=42) == []
+    async def test_conditional_format_list_empty_mapping(self, client: MammothClient):
+        client._request_json = AsyncMock(return_value={})
+        assert await client.dataviews.conditional_format_list(dataset_id=500, dataview_id=42) == []
 
-    def test_conditional_format_create(self, client: MammothClient):
-        client.dataviews.conditional_format_create(
+    async def test_conditional_format_create(self, client: MammothClient):
+        await client.dataviews.conditional_format_create(
             dataset_id=500, dataview_id=42, rule={"color": "red"}
         )
         assert_called_with_method_and_endpoint(
             client._request_json, "POST", "/dataviews/42/conditional-format"
         )
 
-    def test_conditional_format_update(self, client: MammothClient):
-        client.dataviews.conditional_format_update(
+    async def test_conditional_format_update(self, client: MammothClient):
+        await client.dataviews.conditional_format_update(
             dataset_id=500, dataview_id=42, rule={"color": "blue"}
         )
         assert_called_with_method_and_endpoint(
             client._request_json, "PATCH", "/dataviews/42/conditional-format"
         )
 
-    def test_conditional_format_delete(self, client: MammothClient):
+    async def test_conditional_format_delete(self, client: MammothClient):
         # The route requires the rule_id query parameter; there is no delete-all.
-        client.dataviews.conditional_format_delete(dataset_id=500, dataview_id=42, rule_id="r1")
+        await client.dataviews.conditional_format_delete(
+            dataset_id=500, dataview_id=42, rule_id="r1"
+        )
         assert_called_with_method_and_endpoint(
             client._request_json, "DELETE", "/dataviews/42/conditional-format"
         )
         assert client._request_json.call_args.kwargs["params"] == {"rule_id": "r1"}
         with pytest.raises(MammothValidationError, match="rule_id"):
-            client.dataviews.conditional_format_delete(dataset_id=500, dataview_id=42)
+            await client.dataviews.conditional_format_delete(dataset_id=500, dataview_id=42)
 
-    def test_draft_mode(self, client: MammothClient):
-        client.dataviews.draft_mode(dataset_id=500, dataview_id=42, command="enter")
+    async def test_draft_mode(self, client: MammothClient):
+        await client.dataviews.draft_mode(dataset_id=500, dataview_id=42, command="enter")
         assert_called_with_method_and_endpoint(
             client._request_json, "POST", "/dataviews/42/draft-mode"
         )
 
-    def test_parameter_context(self, client: MammothClient):
-        client.dataviews.parameter_context(dataset_id=500, dataview_id=42)
+    async def test_parameter_context(self, client: MammothClient):
+        await client.dataviews.parameter_context(dataset_id=500, dataview_id=42)
         assert_called_with_method_and_endpoint(
             client._request_json, "GET", "/dataviews/42/parameter-context"
         )
 
-    def test_parameter_context_rejects_nonpositive_dataview_id(self, client: MammothClient):
+    async def test_parameter_context_rejects_nonpositive_dataview_id(self, client: MammothClient):
         with pytest.raises(MammothValidationError, match="dataview_id"):
-            client.dataviews.parameter_context(dataset_id=500, dataview_id=0)
+            await client.dataviews.parameter_context(dataset_id=500, dataview_id=0)
         client._request_json.assert_not_called()
 
-    def test_preview(self, client: MammothClient):
-        client.dataviews.preview(dataset_id=500, dataview_id=42, rows=10, cols=5)
+    async def test_preview(self, client: MammothClient):
+        await client.dataviews.preview(dataset_id=500, dataview_id=42, rows=10, cols=5)
         assert_called_with_method_and_endpoint(client._request_json, "GET", "/dataviews/42/preview")
         assert client._request_json.call_args.kwargs["params"] == {"rows": 10, "cols": 5}
 
-    def test_preview_omits_unset_params(self, client: MammothClient):
-        client.dataviews.preview(dataset_id=500, dataview_id=42)
+    async def test_preview_omits_unset_params(self, client: MammothClient):
+        await client.dataviews.preview(dataset_id=500, dataview_id=42)
         assert client._request_json.call_args.kwargs["params"] is None
 
-    def test_preview_rejects_nonpositive_dataview_id(self, client: MammothClient):
+    async def test_preview_rejects_nonpositive_dataview_id(self, client: MammothClient):
         with pytest.raises(MammothValidationError, match="dataview_id"):
-            client.dataviews.preview(dataset_id=500, dataview_id=0)
+            await client.dataviews.preview(dataset_id=500, dataview_id=0)
         client._request_json.assert_not_called()
 
-    def test_restore(self, client: MammothClient):
-        client.dataviews.restore(dataset_id=500, dataview_id=42)
+    async def test_restore(self, client: MammothClient):
+        await client.dataviews.restore(dataset_id=500, dataview_id=42)
         assert_called_with_method_and_endpoint(
             client._request_json, "POST", "/dataviews/42/restore"
         )
 
-    def test_trash(self, client: MammothClient):
-        client.dataviews.trash(dataset_id=500, dataview_id=42)
+    async def test_trash(self, client: MammothClient):
+        await client.dataviews.trash(dataset_id=500, dataview_id=42)
         assert_called_with_method_and_endpoint(client._request_json, "POST", "/dataviews/42/trash")
 
-    def test_trash_rejects_nonpositive_dataview_id(self, client: MammothClient):
+    async def test_trash_rejects_nonpositive_dataview_id(self, client: MammothClient):
         with pytest.raises(MammothValidationError, match="dataview_id"):
-            client.dataviews.trash(dataset_id=500, dataview_id=0)
+            await client.dataviews.trash(dataset_id=500, dataview_id=0)
         client._request_json.assert_not_called()
 
 
@@ -768,27 +776,27 @@ class TestDataviewsAPI:
 
 
 class TestPipelineAPI:
-    def test_get_pipeline(self, client: MammothClient):
-        client.pipeline.get_pipeline(dataview_id=42, dataset_id=500)
+    async def test_get_pipeline(self, client: MammothClient):
+        await client.pipeline.get_pipeline(dataview_id=42, dataset_id=500)
         assert_called_with_method_and_endpoint(
             client._request_json, "GET", "/dataviews/42/pipeline"
         )
 
-    def test_list_tasks(self, client: MammothClient):
-        client.pipeline.list_tasks(dataview_id=42, dataset_id=500)
+    async def test_list_tasks(self, client: MammothClient):
+        await client.pipeline.list_tasks(dataview_id=42, dataset_id=500)
         assert_called_with_method_and_endpoint(client._request_json, "GET", "/pipeline/tasks")
 
-    def test_add_task(self, client: MammothClient):
-        client.pipeline.add_task(dataview_id=42, task_spec={"MATH": {}}, dataset_id=500)
+    async def test_add_task(self, client: MammothClient):
+        await client.pipeline.add_task(dataview_id=42, task_spec={"MATH": {}}, dataset_id=500)
         assert_called_with_method_and_endpoint(client._request_json, "POST", "/pipeline/tasks")
 
-    def test_get_task(self, client: MammothClient):
-        client.pipeline.get_task(dataview_id=42, task_id=7, dataset_id=500)
+    async def test_get_task(self, client: MammothClient):
+        await client.pipeline.get_task(dataview_id=42, task_id=7, dataset_id=500)
         assert_called_with_method_and_endpoint(client._request_json, "GET", "/pipeline/tasks/7")
 
-    def test_update_task(self, client: MammothClient):
+    async def test_update_task(self, client: MammothClient):
         # TaskPatch: ``patches``; task_spec is the replace-params shortcut.
-        client.pipeline.update_task(
+        await client.pipeline.update_task(
             dataview_id=42, task_id=7, task_spec={"MATH": {}}, dataset_id=500
         )
         assert_called_with_method_and_endpoint(client._request_json, "PATCH", "/pipeline/tasks/7")
@@ -797,38 +805,42 @@ class TestPipelineAPI:
             {"patches": [{"op": "replace", "path": "params", "value": {"MATH": {}}}]},
         )
 
-    def test_delete_task(self, client: MammothClient):
-        client.pipeline.delete_task(dataview_id=42, task_id=7, dataset_id=500)
+    async def test_delete_task(self, client: MammothClient):
+        await client.pipeline.delete_task(dataview_id=42, task_id=7, dataset_id=500)
         assert_called_with_method_and_endpoint(client._request_json, "DELETE", "/pipeline/tasks/7")
 
-    def test_preview_task(self, client: MammothClient):
-        client.pipeline.preview_task(dataview_id=42, task_spec={"MATH": {}}, dataset_id=500)
+    async def test_preview_task(self, client: MammothClient):
+        await client.pipeline.preview_task(dataview_id=42, task_spec={"MATH": {}}, dataset_id=500)
         assert_called_with_method_and_endpoint(
             client._request_json, "POST", "/pipeline/task_preview"
         )
 
-    def test_draft_mode(self, client: MammothClient):
-        client.pipeline.draft_mode(dataview_id=42, command="enter", dataset_id=500)
+    async def test_draft_mode(self, client: MammothClient):
+        await client.pipeline.draft_mode(dataview_id=42, command="enter", dataset_id=500)
         assert_called_with_method_and_endpoint(client._request_json, "POST", "/draft-mode")
 
-    def test_draft_mode_rejects_unknown_operation_before_transport(self, client: MammothClient):
+    async def test_draft_mode_rejects_unknown_operation_before_transport(
+        self, client: MammothClient
+    ):
         with pytest.raises(ValueError, match="enter, exit, submit, discard"):
-            client.pipeline.draft_mode(dataview_id=42, command="status", dataset_id=500)
+            await client.pipeline.draft_mode(dataview_id=42, command="status", dataset_id=500)
         client._request_json.assert_not_called()
 
-    def test_edit_pipeline(self, client: MammothClient):
-        client.pipeline.edit_pipeline(dataview_id=42, patches=[{"op": "command"}], dataset_id=500)
+    async def test_edit_pipeline(self, client: MammothClient):
+        await client.pipeline.edit_pipeline(
+            dataview_id=42, patches=[{"op": "command"}], dataset_id=500
+        )
         assert_called_with_method_and_endpoint(
             client._request_json, "PATCH", "/dataviews/42/pipeline"
         )
 
-    def test_command(self, client: MammothClient):
-        client.pipeline.command(dataview_id=42, command="exit", dataset_id=500)
+    async def test_command(self, client: MammothClient):
+        await client.pipeline.command(dataview_id=42, command="exit", dataset_id=500)
         assert_called_with_method_and_endpoint(client._request_json, "POST", "/draft-mode")
         assert_json_body(client._request_json, {"draft_operation": "exit"})
 
-    def test_items(self, client: MammothClient):
-        client.pipeline.items(dataview_id=42, dataset_id=500, status="pending", sequence=3)
+    async def test_items(self, client: MammothClient):
+        await client.pipeline.items(dataview_id=42, dataset_id=500, status="pending", sequence=3)
         assert_called_with_method_and_endpoint(
             client._request_json, "GET", "/dataviews/42/pipeline/items"
         )
@@ -837,19 +849,21 @@ class TestPipelineAPI:
             "status": "pending",
         }
 
-    def test_items_all_collects_pages_with_same_exact_parent(self, client: MammothClient):
-        client._request_json.side_effect = [
-            {
-                "items": [{"id": 1}],
-                "next": (
-                    "/api/v2/workspaces/1/projects/100/datasets/500/dataviews/42/"
-                    "pipeline/items?limit=1&offset=1"
-                ),
-            },
-            {"items": [{"id": 2}], "next": ""},
-        ]
+    async def test_items_all_collects_pages_with_same_exact_parent(self, client: MammothClient):
+        client._request_json = AsyncMock(
+            side_effect=[
+                {
+                    "items": [{"id": 1}],
+                    "next": (
+                        "/api/v2/workspaces/1/projects/100/datasets/500/dataviews/42/"
+                        "pipeline/items?limit=1&offset=1"
+                    ),
+                },
+                {"items": [{"id": 2}], "next": ""},
+            ]
+        )
 
-        result = client.pipeline.items_all(
+        result = await client.pipeline.items_all(
             dataview_id=42, dataset_id=500, limit=1, fields="__full", status="success"
         )
 
@@ -873,18 +887,20 @@ class TestPipelineAPI:
             "status": "success",
         }
 
-    def test_items_all_rejects_repeated_offset(self, client: MammothClient):
+    async def test_items_all_rejects_repeated_offset(self, client: MammothClient):
         from mammoth.exceptions import MammothPaginationError
 
-        client._request_json.return_value = {
-            "items": [{"id": 1}],
-            "next": (
-                "/api/v2/workspaces/1/projects/100/datasets/500/dataviews/42/"
-                "pipeline/items?offset=0"
-            ),
-        }
+        client._request_json = AsyncMock(
+            return_value={
+                "items": [{"id": 1}],
+                "next": (
+                    "/api/v2/workspaces/1/projects/100/datasets/500/dataviews/42/"
+                    "pipeline/items?offset=0"
+                ),
+            }
+        )
         with pytest.raises(MammothPaginationError, match="non-advancing"):
-            client.pipeline.items_all(dataview_id=42, dataset_id=500, limit=1)
+            await client.pipeline.items_all(dataview_id=42, dataset_id=500, limit=1)
 
     @pytest.mark.parametrize(
         "next_hint",
@@ -893,14 +909,14 @@ class TestPipelineAPI:
             "/api/v2/workspaces/1/projects/100/datasets/999/dataviews/42/pipeline/items?offset=1",
         ],
     )
-    def test_items_all_rejects_unverifiable_continuation(
+    async def test_items_all_rejects_unverifiable_continuation(
         self, client: MammothClient, next_hint: str
     ):
         from mammoth.exceptions import MammothPaginationError
 
-        client._request_json.return_value = {"items": [{"id": 1}], "next": next_hint}
+        client._request_json = AsyncMock(return_value={"items": [{"id": 1}], "next": next_hint})
         with pytest.raises(MammothPaginationError, match="unsupported pipeline-items"):
-            client.pipeline.items_all(dataview_id=42, dataset_id=500, limit=1)
+            await client.pipeline.items_all(dataview_id=42, dataset_id=500, limit=1)
 
     @pytest.mark.parametrize(
         "kwargs",
@@ -913,26 +929,26 @@ class TestPipelineAPI:
             {"max_pages": 1001},
         ],
     )
-    def test_items_all_rejects_invalid_bounds_before_transport(
+    async def test_items_all_rejects_invalid_bounds_before_transport(
         self, client: MammothClient, kwargs: dict[str, object]
     ):
         from mammoth.exceptions import MammothValidationError
 
         call_kwargs = {"dataset_id": 500, **kwargs}
         with pytest.raises(MammothValidationError):
-            client.pipeline.items_all(dataview_id=42, **call_kwargs)
+            await client.pipeline.items_all(dataview_id=42, **call_kwargs)
         client._request_json.assert_not_called()
 
-    def test_rerun(self, client: MammothClient):
-        client.pipeline.rerun(dataview_id=42, from_sequence=2, dataset_id=500)
+    async def test_rerun(self, client: MammothClient):
+        await client.pipeline.rerun(dataview_id=42, from_sequence=2, dataset_id=500)
         assert_called_with_method_and_endpoint(
             client._request_json, "POST", "/dataviews/42/pipeline/rerun"
         )
         assert_json_body(client._request_json, {"from_sequence": 2})
 
-    def test_rerun_rejects_negative_from_sequence(self, client: MammothClient):
+    async def test_rerun_rejects_negative_from_sequence(self, client: MammothClient):
         with pytest.raises(MammothValidationError):
-            client.pipeline.rerun(dataview_id=42, from_sequence=-1, dataset_id=500)
+            await client.pipeline.rerun(dataview_id=42, from_sequence=-1, dataset_id=500)
 
 
 # ======================================================================
@@ -941,32 +957,36 @@ class TestPipelineAPI:
 
 
 class TestFilesAPI:
-    def test_list(self, client: MammothClient):
-        # files.list() parses response into FilesList Pydantic model
-        client._request_json.return_value = {
-            "files": [],
-            "next": "",
-        }
-        client.files.list()
+    async def test_list(self, client: MammothClient):
+        # await files.list() parses response into FilesList Pydantic model
+        client._request_json = AsyncMock(
+            return_value={
+                "files": [],
+                "next": "",
+            }
+        )
+        await client.files.list()
         assert_called_with_method_and_endpoint(client._request_json, "GET", "/files")
 
-    def test_get(self, client: MammothClient):
-        # files.get() parses response into FileDetails -> returns file field
-        client._request_json.return_value = {
-            "file": {"id": 10, "name": "test.csv"},
-        }
-        client.files.get(file_id=10)
+    async def test_get(self, client: MammothClient):
+        # await files.get() parses response into FileDetails -> returns file field
+        client._request_json = AsyncMock(
+            return_value={
+                "file": {"id": 10, "name": "test.csv"},
+            }
+        )
+        await client.files.get(file_id=10)
         assert_called_with_method_and_endpoint(client._request_json, "GET", "/files/10")
 
-    def test_delete(self, client: MammothClient):
-        client.files.delete(file_id=10)
+    async def test_delete(self, client: MammothClient):
+        await client.files.delete(file_id=10)
         assert_called_with_method_and_endpoint(client._request_json, "DELETE", "/files/10")
 
-    def test_bulk_delete(self, client: MammothClient):
-        client.files.bulk_delete(file_ids=[10, 11])
+    async def test_bulk_delete(self, client: MammothClient):
+        await client.files.bulk_delete(file_ids=[10, 11])
         assert_called_with_method_and_endpoint(client._request_json, "DELETE", "/files")
 
-    def test_update_surfaces_completed_job_status(self, client: MammothClient):
+    async def test_update_surfaces_completed_job_status(self, client: MammothClient):
         # The PATCH enqueues a job (the handle carries the job id); waiting yields
         # the completed payload, whose terminal status must be surfaced on the
         # returned schema while the original job id is preserved.
@@ -977,8 +997,8 @@ class TestFilesAPI:
             FilePatchRequest,
         )
 
-        client._request_json.return_value = {"job_id": 77, "status_code": 202}
-        client._wait_if_job = MagicMock(side_effect=lambda r, **kw: {"status_code": 200})
+        client._request_json = AsyncMock(return_value={"job_id": 77, "status_code": 202})
+        client._wait_if_job = AsyncMock(side_effect=lambda r, **kw: {"status_code": 200})
         request = FilePatchRequest(
             patch=[
                 FilePatchData(
@@ -988,7 +1008,7 @@ class TestFilesAPI:
                 )
             ]
         )
-        result = client.files.update(file_id=10, patch_request=request)
+        result = await client.files.update(file_id=10, patch_request=request)
         assert_called_with_method_and_endpoint(client._request_json, "PATCH", "/files/10")
         assert result.job_id == 77  # preserved from the enqueue handle
         assert result.status_code == 200  # surfaced from the completed payload
@@ -1000,69 +1020,77 @@ class TestFilesAPI:
 
 
 class TestFoldersAPI:
-    def test_list(self, client: MammothClient):
-        client.folders.list()
+    async def test_list(self, client: MammothClient):
+        await client.folders.list()
         assert_called_with_method_and_endpoint(client._request_json, "GET", "/folders")
 
-    def test_create(self, client: MammothClient):
-        client._request_json.return_value = {"id": 1, "name": "Test", "resource_id": "r1"}
-        client.folders.create(name="Test Folder")
+    async def test_create(self, client: MammothClient):
+        client._request_json = AsyncMock(
+            return_value={"id": 1, "name": "Test", "resource_id": "r1"}
+        )
+        await client.folders.create(name="Test Folder")
         assert_called_with_method_and_endpoint(client._request_json, "POST", "/folders")
 
-    def test_delete(self, client: MammothClient):
-        client.folders.delete(folder_ids=[1, 2])
+    async def test_delete(self, client: MammothClient):
+        await client.folders.delete(folder_ids=[1, 2])
         assert_called_with_method_and_endpoint(client._request_json, "DELETE", "/folders")
 
-    def test_move(self, client: MammothClient):
+    async def test_move(self, client: MammothClient):
         # BulkFolderPatchRequest: patch [{op: move, from: [ids], path: folder | "root"}].
-        client.folders.move(resource_ids=["8024", 8025], target_folder_resource_id="17")
+        await client.folders.move(resource_ids=["8024", 8025], target_folder_resource_id="17")
         assert_called_with_method_and_endpoint(client._request_json, "PATCH", "/folders")
         assert_json_body(
             client._request_json,
             {"patch": [{"op": "move", "from": [8024, 8025], "path": 17}]},
         )
         client._request_json.reset_mock()
-        client.folders.move(resource_ids=[8024])
+        await client.folders.move(resource_ids=[8024])
         assert_json_body(
             client._request_json,
             {"patch": [{"op": "move", "from": [8024], "path": "root"}]},
         )
 
-    def test_bulk_delete(self, client: MammothClient):
-        client.folders.bulk_delete(folder_ids=[1, 2], check_dependency=False)
+    async def test_bulk_delete(self, client: MammothClient):
+        await client.folders.bulk_delete(folder_ids=[1, 2], check_dependency=False)
         assert_called_with_method_and_endpoint(client._request_json, "DELETE", "/folders")
         assert client._request_json.call_args.kwargs["params"] == {
             "ids": "1,2",
             "check_dependency": False,
         }
 
-    def test_get(self, client: MammothClient):
-        client._request_json.return_value = {"id": 1, "name": "Test", "resource_id": "r1"}
-        client.folders.get(folder_id=1)
+    async def test_get(self, client: MammothClient):
+        client._request_json = AsyncMock(
+            return_value={"id": 1, "name": "Test", "resource_id": "r1"}
+        )
+        await client.folders.get(folder_id=1)
         assert_called_with_method_and_endpoint(client._request_json, "GET", "/folders/1")
 
-    def test_get_rejects_non_positive_folder_id(self, client: MammothClient):
+    async def test_get_rejects_non_positive_folder_id(self, client: MammothClient):
         with pytest.raises(MammothValidationError):
-            client.folders.get(folder_id=0)
+            await client.folders.get(folder_id=0)
 
-    def test_trash(self, client: MammothClient):
-        client._request_json.return_value = {
-            "job": {
-                "id": 5,
-                "status": "processing",
-                "response": {},
-                "last_updated_at": datetime.now(timezone.utc),
-                "created_at": datetime.now(timezone.utc),
-                "path": "/folders/1/trash",
-                "operation": "trash_folder",
+    async def test_trash(self, client: MammothClient):
+        client._request_json = AsyncMock(
+            return_value={
+                "job": {
+                    "id": 5,
+                    "status": "processing",
+                    "response": {},
+                    "last_updated_at": datetime.now(timezone.utc),
+                    "created_at": datetime.now(timezone.utc),
+                    "path": "/folders/1/trash",
+                    "operation": "trash_folder",
+                }
             }
-        }
-        client.folders.trash(folder_id=1)
+        )
+        await client.folders.trash(folder_id=1)
         assert_called_with_method_and_endpoint(client._request_json, "POST", "/folders/1/trash")
 
-    def test_update(self, client: MammothClient):
-        client._request_json.return_value = {"id": 1, "name": "Renamed", "resource_id": "r1"}
-        client.folders.update(folder_id=1, name="Renamed")
+    async def test_update(self, client: MammothClient):
+        client._request_json = AsyncMock(
+            return_value={"id": 1, "name": "Renamed", "resource_id": "r1"}
+        )
+        await client.folders.update(folder_id=1, name="Renamed")
         assert_called_with_method_and_endpoint(client._request_json, "PATCH", "/folders/1")
         assert_json_body(
             client._request_json,
@@ -1076,12 +1104,12 @@ class TestFoldersAPI:
 
 
 class TestJobsAPI:
-    def test_get_job(self, client: MammothClient):
-        client.jobs.get_job(job_id=999)
+    async def test_get_job(self, client: MammothClient):
+        await client.jobs.get_job(job_id=999)
         assert_called_with_method_and_endpoint(client._request_json, "GET", "/jobs/999")
 
-    def test_get_jobs(self, client: MammothClient):
-        client.jobs.get_jobs(job_ids=[1, 2, 3])
+    async def test_get_jobs(self, client: MammothClient):
+        await client.jobs.get_jobs(job_ids=[1, 2, 3])
         assert_called_with_method_and_endpoint(client._request_json, "GET", "/jobs")
 
 
@@ -1091,28 +1119,34 @@ class TestJobsAPI:
 
 
 class TestExportsAPILowLevel:
-    def test_list(self, client: MammothClient):
-        # exports.list() needs _find_dataset_for_dataview and returns Pydantic model
-        client.pipeline._find_dataset_for_dataview = MagicMock(return_value=500)
-        client._request_json.return_value = {
-            "exports": [],
-            "total": 0,
-            "limit": 50,
-            "offset": 0,
-            "next": "",
-        }
-        client.exports.list(dataview_id=42)
+    async def test_list(self, client: MammothClient):
+        # await exports.list() needs _find_dataset_for_dataview and returns Pydantic model
+        client.pipeline._find_dataset_for_dataview = AsyncMock(return_value=500)
+        client._request_json = AsyncMock(
+            return_value={
+                "exports": [],
+                "total": 0,
+                "limit": 50,
+                "offset": 0,
+                "next": "",
+            }
+        )
+        await client.exports.list(dataview_id=42)
         assert_called_with_method_and_endpoint(client._request_json, "GET", "/pipeline/exports")
 
-    def test_list_with_explicit_dataset_id_bypasses_parent_discovery(self, client: MammothClient):
-        client.pipeline._find_dataset_for_dataview = MagicMock(side_effect=AssertionError)
-        client._request_json.return_value = {
-            "exports": [],
-            "limit": 50,
-            "offset": 0,
-            "next": "",
-        }
-        client.exports.list(dataview_id=42, dataset_id=500, limit=23, offset=4)
+    async def test_list_with_explicit_dataset_id_bypasses_parent_discovery(
+        self, client: MammothClient
+    ):
+        client.pipeline._find_dataset_for_dataview = AsyncMock(side_effect=AssertionError)
+        client._request_json = AsyncMock(
+            return_value={
+                "exports": [],
+                "limit": 50,
+                "offset": 0,
+                "next": "",
+            }
+        )
+        await client.exports.list(dataview_id=42, dataset_id=500, limit=23, offset=4)
         assert_called_with_method_and_endpoint(
             client._request_json, "GET", "/datasets/500/dataviews/42/pipeline/exports"
         )
@@ -1121,58 +1155,60 @@ class TestExportsAPILowLevel:
             "offset": 4,
         }
 
-    def test_list_rejects_nonpositive_explicit_dataset_id(self, client: MammothClient):
+    async def test_list_rejects_nonpositive_explicit_dataset_id(self, client: MammothClient):
         with pytest.raises(MammothValidationError, match="dataset_id"):
-            client.exports.list(dataview_id=42, dataset_id=0)
+            await client.exports.list(dataview_id=42, dataset_id=0)
         client._request_json.assert_not_called()
 
-    def test_get(self, client: MammothClient):
-        client.pipeline._find_dataset_for_dataview = MagicMock(return_value=500)
-        client.exports.get(dataview_id=42, export_id=99, fields="__full")
+    async def test_get(self, client: MammothClient):
+        client.pipeline._find_dataset_for_dataview = AsyncMock(return_value=500)
+        await client.exports.get(dataview_id=42, export_id=99, fields="__full")
         assert_called_with_method_and_endpoint(client._request_json, "GET", "/pipeline/exports/99")
         assert client._request_json.call_args.kwargs["params"] == {"fields": "__full"}
 
-    def test_get_rejects_nonpositive_export_id(self, client: MammothClient):
+    async def test_get_rejects_nonpositive_export_id(self, client: MammothClient):
         with pytest.raises(MammothValidationError, match="export_id"):
-            client.exports.get(dataview_id=42, export_id=0)
+            await client.exports.get(dataview_id=42, export_id=0)
         client._request_json.assert_not_called()
 
-    def test_get_rejects_nonpositive_dataview_id(self, client: MammothClient):
+    async def test_get_rejects_nonpositive_dataview_id(self, client: MammothClient):
         with pytest.raises(MammothValidationError, match="dataview_id"):
-            client.exports.get(dataview_id=0, export_id=99)
+            await client.exports.get(dataview_id=0, export_id=99)
         client._request_json.assert_not_called()
 
-    def test_update(self, client: MammothClient):
-        client.pipeline._find_dataset_for_dataview = MagicMock(return_value=500)
+    async def test_update(self, client: MammothClient):
+        client.pipeline._find_dataset_for_dataview = AsyncMock(return_value=500)
         patches = [{"op": "command", "path": "suspend", "value": None}]
-        client.exports.update(dataview_id=42, export_id=99, patches=patches, skip_validation=True)
+        await client.exports.update(
+            dataview_id=42, export_id=99, patches=patches, skip_validation=True
+        )
         assert_called_with_method_and_endpoint(
             client._request_json, "PATCH", "/pipeline/exports/99"
         )
         assert_json_body(client._request_json, {"patches": patches})
         assert client._request_json.call_args.kwargs["params"] == {"skip_validation": True}
 
-    def test_update_rejects_nonpositive_export_id(self, client: MammothClient):
+    async def test_update_rejects_nonpositive_export_id(self, client: MammothClient):
         with pytest.raises(MammothValidationError, match="export_id"):
-            client.exports.update(dataview_id=42, export_id=0, patches=[])
+            await client.exports.update(dataview_id=42, export_id=0, patches=[])
         client._request_json.assert_not_called()
 
-    def test_delete(self, client: MammothClient):
-        client.pipeline._find_dataset_for_dataview = MagicMock(return_value=500)
-        client.exports.delete(dataview_id=42, export_id=99, skip_validation=True)
+    async def test_delete(self, client: MammothClient):
+        client.pipeline._find_dataset_for_dataview = AsyncMock(return_value=500)
+        await client.exports.delete(dataview_id=42, export_id=99, skip_validation=True)
         assert_called_with_method_and_endpoint(
             client._request_json, "DELETE", "/pipeline/exports/99"
         )
         assert client._request_json.call_args.kwargs["params"] == {"skip_validation": True}
 
-    def test_delete_rejects_nonpositive_export_id(self, client: MammothClient):
+    async def test_delete_rejects_nonpositive_export_id(self, client: MammothClient):
         with pytest.raises(MammothValidationError, match="export_id"):
-            client.exports.delete(dataview_id=42, export_id=0)
+            await client.exports.delete(dataview_id=42, export_id=0)
         client._request_json.assert_not_called()
 
-    def test_publish_db(self, client: MammothClient):
-        client.pipeline._find_dataset_for_dataview = MagicMock(return_value=500)
-        client.exports.publish_db(
+    async def test_publish_db(self, client: MammothClient):
+        client.pipeline._find_dataset_for_dataview = AsyncMock(return_value=500)
+        await client.exports.publish_db(
             dataview_id=42,
             odbc_type=OdbcType.POSTGRES,
             target_properties={"table": "sales"},
@@ -1185,27 +1221,27 @@ class TestExportsAPILowLevel:
             {"odbc_type": "postgres", "target_properties": {"table": "sales"}},
         )
 
-    def test_publish_db_rejects_nonpositive_dataview_id(self, client: MammothClient):
+    async def test_publish_db_rejects_nonpositive_dataview_id(self, client: MammothClient):
         with pytest.raises(MammothValidationError, match="dataview_id"):
-            client.exports.publish_db(
+            await client.exports.publish_db(
                 dataview_id=0,
                 odbc_type=OdbcType.POSTGRES,
                 target_properties={"table": "sales"},
             )
         client._request_json.assert_not_called()
 
-    def test_publish_db_update(self, client: MammothClient):
-        client.pipeline._find_dataset_for_dataview = MagicMock(return_value=500)
+    async def test_publish_db_update(self, client: MammothClient):
+        client.pipeline._find_dataset_for_dataview = AsyncMock(return_value=500)
         patch = [{"op": "replace", "path": "credentials", "value": {"odbc_type": "postgres"}}]
-        client.exports.publish_db_update(dataview_id=42, patch=patch)
+        await client.exports.publish_db_update(dataview_id=42, patch=patch)
         assert_called_with_method_and_endpoint(
             client._request_json, "PATCH", "/dataviews/42/publish-to-db"
         )
         assert_json_body(client._request_json, {"patch": patch})
 
-    def test_publish_db_update_rejects_nonpositive_dataview_id(self, client: MammothClient):
+    async def test_publish_db_update_rejects_nonpositive_dataview_id(self, client: MammothClient):
         with pytest.raises(MammothValidationError, match="dataview_id"):
-            client.exports.publish_db_update(dataview_id=0, patch=[])
+            await client.exports.publish_db_update(dataview_id=0, patch=[])
         client._request_json.assert_not_called()
 
 
@@ -1215,24 +1251,24 @@ class TestExportsAPILowLevel:
 
 
 class TestConnectorsAPI:
-    def test_list(self, client: MammothClient):
-        client.connectors.list()
+    async def test_list(self, client: MammothClient):
+        await client.connectors.list()
         assert_called_with_method_and_endpoint(client._request, "GET", "/connectors")
 
-    def test_get(self, client: MammothClient):
-        client.connectors.get(connector_key="salesforce")
+    async def test_get(self, client: MammothClient):
+        await client.connectors.get(connector_key="salesforce")
         assert_called_with_method_and_endpoint(
             client._request_json, "GET", "/connectors/salesforce"
         )
 
-    def test_list_connections(self, client: MammothClient):
-        client.connectors.list_connections(connector_key="salesforce")
+    async def test_list_connections(self, client: MammothClient):
+        await client.connectors.list_connections(connector_key="salesforce")
         assert_called_with_method_and_endpoint(
             client._request, "GET", "/connectors/salesforce/connections"
         )
 
-    def test_create_connection(self, client: MammothClient):
-        client.connectors.create_connection(
+    async def test_create_connection(self, client: MammothClient):
+        await client.connectors.create_connection(
             connector_key="salesforce", config={"code": "oauth_code"}
         )
         assert_called_with_method_and_endpoint(
@@ -1240,7 +1276,7 @@ class TestConnectorsAPI:
         )
         assert_json_body(client._request_json, {"code": "oauth_code"})
 
-    def test_create_connection_forwards_config_unchanged(self, client: MammothClient):
+    async def test_create_connection_forwards_config_unchanged(self, client: MammothClient):
         creds = {
             "hostname": "db.example.com",
             "port": 5432,
@@ -1248,22 +1284,22 @@ class TestConnectorsAPI:
             "username": "u",
             "password": "p",
         }
-        client.connectors.create_connection(connector_key="postgres", config=creds)
+        await client.connectors.create_connection(connector_key="postgres", config=creds)
         assert_json_body(client._request_json, creds)
 
-    def test_create_connection_rejects_empty_config(self, client: MammothClient):
+    async def test_create_connection_rejects_empty_config(self, client: MammothClient):
         with pytest.raises(MammothValidationError, match="config"):
-            client.connectors.create_connection(connector_key="postgres", config={})
+            await client.connectors.create_connection(connector_key="postgres", config={})
         client._request_json.assert_not_called()
 
-    def test_get_connection(self, client: MammothClient):
-        client.connectors.get_connection(connector_key="salesforce", connection_key="conn1")
+    async def test_get_connection(self, client: MammothClient):
+        await client.connectors.get_connection(connector_key="salesforce", connection_key="conn1")
         assert_called_with_method_and_endpoint(client._request_json, "GET", "/connections/conn1")
 
-    def test_update_connection_wraps_patch_envelope(self, client: MammothClient):
+    async def test_update_connection_wraps_patch_envelope(self, client: MammothClient):
         """PROD BUG FIX: SDK must wrap credentials in the patch envelope."""
         creds = {"host": "new.db.example.com", "password": "newpass"}
-        client.connectors.update_connection(
+        await client.connectors.update_connection(
             connector_key="postgres", connection_key="conn1", credentials=creds
         )
         assert_called_with_method_and_endpoint(client._request_json, "PATCH", "/connections/conn1")
@@ -1272,25 +1308,27 @@ class TestConnectorsAPI:
             {"patch": [{"op": "replace", "path": "connection", "value": creds}]},
         )
 
-    def test_update_connection_rejects_empty_credentials(self, client: MammothClient):
+    async def test_update_connection_rejects_empty_credentials(self, client: MammothClient):
         with pytest.raises(MammothValidationError, match="credentials"):
-            client.connectors.update_connection(
+            await client.connectors.update_connection(
                 connector_key="postgres", connection_key="conn1", credentials={}
             )
         client._request_json.assert_not_called()
 
-    def test_delete_connection(self, client: MammothClient):
-        client.connectors.delete_connection(connector_key="salesforce", connection_key="conn1")
+    async def test_delete_connection(self, client: MammothClient):
+        await client.connectors.delete_connection(
+            connector_key="salesforce", connection_key="conn1"
+        )
         assert_called_with_method_and_endpoint(client._request_json, "DELETE", "/connections/conn1")
 
-    def test_list_ds_configs(self, client: MammothClient):
-        client.connectors.list_ds_configs(connector_key="salesforce", connection_key="conn1")
+    async def test_list_ds_configs(self, client: MammothClient):
+        await client.connectors.list_ds_configs(connector_key="salesforce", connection_key="conn1")
         assert_called_with_method_and_endpoint(
             client._request, "GET", "/connections/conn1/ds_configs"
         )
 
-    def test_create_ds_config_with_query(self, client: MammothClient):
-        client.connectors.create_ds_config(
+    async def test_create_ds_config_with_query(self, client: MammothClient):
+        await client.connectors.create_ds_config(
             connector_key="postgres",
             connection_key="conn1",
             query="SELECT * FROM orders",
@@ -1309,8 +1347,8 @@ class TestConnectorsAPI:
             },
         )
 
-    def test_create_ds_config_with_file_source(self, client: MammothClient):
-        client.connectors.create_ds_config(
+    async def test_create_ds_config_with_file_source(self, client: MammothClient):
+        await client.connectors.create_ds_config(
             connector_key="sftp",
             connection_key="conn1",
             file_source="/data/report.csv",
@@ -1322,14 +1360,16 @@ class TestConnectorsAPI:
             {"file_source": "/data/report.csv", "validate": False, "data_sample": True},
         )
 
-    def test_create_ds_config_rejects_no_source(self, client: MammothClient):
+    async def test_create_ds_config_rejects_no_source(self, client: MammothClient):
         with pytest.raises(MammothValidationError, match="query"):
-            client.connectors.create_ds_config(connector_key="postgres", connection_key="conn1")
+            await client.connectors.create_ds_config(
+                connector_key="postgres", connection_key="conn1"
+            )
         client._request_json.assert_not_called()
 
-    def test_create_ds_config_rejects_validate_xor(self, client: MammothClient):
+    async def test_create_ds_config_rejects_validate_xor(self, client: MammothClient):
         with pytest.raises(MammothValidationError, match="mutually exclusive"):
-            client.connectors.create_ds_config(
+            await client.connectors.create_ds_config(
                 connector_key="postgres",
                 connection_key="conn1",
                 query="SELECT 1",
@@ -1338,19 +1378,19 @@ class TestConnectorsAPI:
             )
         client._request_json.assert_not_called()
 
-    def test_get_ds_config(self, client: MammothClient):
-        client.connectors.get_ds_config(
+    async def test_get_ds_config(self, client: MammothClient):
+        await client.connectors.get_ds_config(
             connector_key="salesforce", connection_key="conn1", ds_config_key="dsc1"
         )
         assert_called_with_method_and_endpoint(client._request_json, "GET", "/ds_configs/dsc1")
 
-    def test_update_ds_config_sends_patch_envelope(self, client: MammothClient):
+    async def test_update_ds_config_sends_patch_envelope(self, client: MammothClient):
         op = DsConfigPatchOp(
             op="replace",
             path=DsConfigPatchPath.QUERY,
             value={"query": "SELECT id FROM users", "ds_id": 10, "validate": True},
         )
-        client.connectors.update_ds_config(
+        await client.connectors.update_ds_config(
             connector_key="postgres",
             connection_key="conn1",
             ds_config_key="dsc1",
@@ -1370,9 +1410,9 @@ class TestConnectorsAPI:
             },
         )
 
-    def test_update_ds_config_rejects_empty_patch(self, client: MammothClient):
+    async def test_update_ds_config_rejects_empty_patch(self, client: MammothClient):
         with pytest.raises(MammothValidationError, match="patch"):
-            client.connectors.update_ds_config(
+            await client.connectors.update_ds_config(
                 connector_key="postgres",
                 connection_key="conn1",
                 ds_config_key="dsc1",
@@ -1380,27 +1420,27 @@ class TestConnectorsAPI:
             )
         client._request_json.assert_not_called()
 
-    def test_delete_ds_config(self, client: MammothClient):
-        client.connectors.delete_ds_config(
+    async def test_delete_ds_config(self, client: MammothClient):
+        await client.connectors.delete_ds_config(
             connector_key="salesforce", connection_key="conn1", ds_config_key="dsc1"
         )
         assert_called_with_method_and_endpoint(client._request_json, "DELETE", "/ds_configs/dsc1")
 
-    def test_ds_config_delete_all_with_list(self, client: MammothClient):
-        client.connectors.ds_config_delete_all(
+    async def test_ds_config_delete_all_with_list(self, client: MammothClient):
+        await client.connectors.ds_config_delete_all(
             connector_key="salesforce", connection_key="conn1", config_ids=["dsc1", "dsc2"]
         )
         assert_called_with_method_and_endpoint(client._request_json, "DELETE", "/ds_configs")
         assert client._request_json.call_args.kwargs["params"] == {"config_ids": "dsc1,dsc2"}
 
-    def test_ds_config_delete_all_with_string(self, client: MammothClient):
-        client.connectors.ds_config_delete_all(
+    async def test_ds_config_delete_all_with_string(self, client: MammothClient):
+        await client.connectors.ds_config_delete_all(
             connector_key="salesforce", connection_key="conn1", config_ids="dsc1,dsc2"
         )
         assert client._request_json.call_args.kwargs["params"] == {"config_ids": "dsc1,dsc2"}
 
-    def test_active_connectors(self, client: MammothClient):
-        client.connectors.active_connectors()
+    async def test_active_connectors(self, client: MammothClient):
+        await client.connectors.active_connectors()
         assert_called_with_method_and_endpoint(client._request, "GET", "/active_connectors")
 
 
@@ -1412,27 +1452,27 @@ class TestConnectorsAPI:
 class TestDashboardsAPI:
     # ── list / get / delete / get_sources / get_analytics / get_by_url ───────
 
-    def test_list(self, client: MammothClient):
-        client.dashboards.list()
+    async def test_list(self, client: MammothClient):
+        await client.dashboards.list()
         assert_called_with_method_and_endpoint(client._request_json, "GET", "/dashboards")
 
-    def test_list_forwards_nullable_project_id(self, client: MammothClient):
-        client.dashboards.list(project_id=42)
+    async def test_list_forwards_nullable_project_id(self, client: MammothClient):
+        await client.dashboards.list(project_id=42)
         client._request_json.assert_called_once_with(
             "GET", "/dashboards", params={"project_id": 42}
         )
 
-    def test_get(self, client: MammothClient):
-        client.dashboards.get(dashboard_id=5)
+    async def test_get(self, client: MammothClient):
+        await client.dashboards.get(dashboard_id=5)
         assert_called_with_method_and_endpoint(client._request_json, "GET", "/dashboards/5")
 
-    def test_delete(self, client: MammothClient):
-        client.dashboards.delete(dashboard_id=5)
+    async def test_delete(self, client: MammothClient):
+        await client.dashboards.delete(dashboard_id=5)
         assert_called_with_method_and_endpoint(client._request_json, "DELETE", "/dashboards/5")
 
     @pytest.mark.parametrize("archived", [True, False])
-    def test_archive_sets_archived_state(self, client: MammothClient, archived: bool):
-        client.dashboards.archive(dashboard_id=5, archived=archived)
+    async def test_archive_sets_archived_state(self, client: MammothClient, archived: bool):
+        await client.dashboards.archive(dashboard_id=5, archived=archived)
         # The route declares no response schema and answers with a non-dict
         # JSON value; the shape-checked wrapper would report outcome_unknown
         # for a write that committed.
@@ -1440,33 +1480,33 @@ class TestDashboardsAPI:
             "POST", "/dashboards/5/archive", json={"archived": archived}
         )
 
-    def test_archive_rejects_invalid_inputs(self, client: MammothClient):
+    async def test_archive_rejects_invalid_inputs(self, client: MammothClient):
         with pytest.raises(MammothValidationError, match="dashboard_id"):
-            client.dashboards.archive(dashboard_id=0, archived=True)
+            await client.dashboards.archive(dashboard_id=0, archived=True)
         with pytest.raises(MammothValidationError, match="archived"):
-            client.dashboards.archive(dashboard_id=5, archived="true")  # type: ignore[arg-type]
+            await client.dashboards.archive(dashboard_id=5, archived="true")  # type: ignore[arg-type]
         client._request.assert_not_called()
 
-    def test_get_sources(self, client: MammothClient):
-        client.dashboards.get_sources()
+    async def test_get_sources(self, client: MammothClient):
+        await client.dashboards.get_sources()
         assert_called_with_method_and_endpoint(client._request_json, "GET", "/dashboards/sources")
 
-    def test_get_analytics(self, client: MammothClient):
-        client.dashboards.get_analytics(dashboard_id=5)
+    async def test_get_analytics(self, client: MammothClient):
+        await client.dashboards.get_analytics(dashboard_id=5)
         assert_called_with_method_and_endpoint(
             client._request_json, "GET", "/dashboards/5/analytics"
         )
 
-    def test_get_by_url(self, client: MammothClient):
-        client.dashboards.get_by_url(url="my-dashboard")
+    async def test_get_by_url(self, client: MammothClient):
+        await client.dashboards.get_by_url(url="my-dashboard")
         assert_called_with_method_and_endpoint(
             client._request_json, "GET", "/dashboards/url/my-dashboard"
         )
 
-    def test_get_draft_data_sends_widget_data_spec(self, client: MammothClient):
+    async def test_get_draft_data_sends_widget_data_spec(self, client: MammothClient):
         # The route takes ``{"params": WidgetDataParams}``; a top-level ``sql``
         # body was rejected on release with HTTP 400 "params: Field required".
-        client.dashboards.get_draft_data(
+        await client.dashboards.get_draft_data(
             dashboard_id=5,
             widget_id="550e8400-e29b-41d4-a716-446655440000",
             global_filters={"region": "North"},
@@ -1482,8 +1522,8 @@ class TestDashboardsAPI:
             },
         )
 
-    def test_get_publish_data_sends_widget_data_spec(self, client: MammothClient):
-        client.dashboards.get_publish_data(
+    async def test_get_publish_data_sends_widget_data_spec(self, client: MammothClient):
+        await client.dashboards.get_publish_data(
             dashboard_id=5, widget_id="550e8400-e29b-41d4-a716-446655440000"
         )
         client._request_json.assert_called_once_with(
@@ -1492,15 +1532,15 @@ class TestDashboardsAPI:
             json={"params": {"widget_id": "550e8400-e29b-41d4-a716-446655440000"}},
         )
 
-    def test_widget_data_reads_reject_empty_widget_id(self, client: MammothClient):
+    async def test_widget_data_reads_reject_empty_widget_id(self, client: MammothClient):
         with pytest.raises(MammothValidationError, match="widget_id"):
-            client.dashboards.get_draft_data(dashboard_id=5, widget_id="")
+            await client.dashboards.get_draft_data(dashboard_id=5, widget_id="")
         client._request_json.assert_not_called()
 
     # ── create ───────────────────────────────────────────────────────────────
 
-    def test_create_sends_correct_body(self, client: MammothClient):
-        client.dashboards.create(
+    async def test_create_sends_correct_body(self, client: MammothClient):
+        await client.dashboards.create(
             intent="Show quarterly revenue by region",
             source=[101, 102],
         )
@@ -1517,8 +1557,8 @@ class TestDashboardsAPI:
             },
         )
 
-    def test_create_explicit_flags(self, client: MammothClient):
-        client.dashboards.create(
+    async def test_create_explicit_flags(self, client: MammothClient):
+        await client.dashboards.create(
             intent="Sales performance breakdown for EMEA",
             source=[7],
             enable_filters=False,
@@ -1536,8 +1576,8 @@ class TestDashboardsAPI:
             },
         )
 
-    def test_create_blank_sends_release_wire(self, client: MammothClient):
-        client.dashboards.create_blank(
+    async def test_create_blank_sends_release_wire(self, client: MammothClient):
+        await client.dashboards.create_blank(
             CreateBlankParams(dataview_id=42, style="presentation", title="Revenue")
         )
         assert_called_with_method_and_endpoint(client._request_json, "POST", "/dashboards/v3/blank")
@@ -1552,96 +1592,98 @@ class TestDashboardsAPI:
             },
         )
 
-    def test_create_blank_rejects_nonpositive_dataview_before_request(self, client: MammothClient):
+    async def test_create_blank_rejects_nonpositive_dataview_before_request(
+        self, client: MammothClient
+    ):
         with pytest.raises(MammothValidationError, match="dataview_id"):
-            client.dashboards.create_blank({"dataview_id": 0})
+            await client.dashboards.create_blank({"dataview_id": 0})
         client._request_json.assert_not_called()
 
-    def test_create_rejects_short_intent(self, client: MammothClient):
+    async def test_create_rejects_short_intent(self, client: MammothClient):
         with pytest.raises(MammothValidationError, match="intent"):
-            client.dashboards.create(intent="too short", source=[1])
+            await client.dashboards.create(intent="too short", source=[1])
         client._request_json.assert_not_called()
 
-    def test_create_rejects_empty_source(self, client: MammothClient):
+    async def test_create_rejects_empty_source(self, client: MammothClient):
         with pytest.raises(MammothValidationError, match="source"):
-            client.dashboards.create(intent="Show quarterly revenue by region", source=[])
+            await client.dashboards.create(intent="Show quarterly revenue by region", source=[])
         client._request_json.assert_not_called()
 
-    def test_create_rejects_nonpositive_source_id(self, client: MammothClient):
+    async def test_create_rejects_nonpositive_source_id(self, client: MammothClient):
         with pytest.raises(MammothValidationError, match="source"):
-            client.dashboards.create(intent="Show quarterly revenue by region", source=[1, 0])
+            await client.dashboards.create(intent="Show quarterly revenue by region", source=[1, 0])
         client._request_json.assert_not_called()
 
     # ── update ───────────────────────────────────────────────────────────────
 
-    def test_update_rename(self, client: MammothClient):
+    async def test_update_rename(self, client: MammothClient):
         op = DashboardPatchItem(
             op=DashboardPatchOp.REPLACE, path=DashboardPatchPath.TITLE, value="New Name"
         )
-        client.dashboards.update(dashboard_id=5, patch=[op])
+        await client.dashboards.update(dashboard_id=5, patch=[op])
         assert_called_with_method_and_endpoint(client._request_json, "PATCH", "/dashboards/5")
         assert_json_body(
             client._request_json,
             {"patch": [{"op": "replace", "path": "title", "value": "New Name"}]},
         )
 
-    def test_update_theme(self, client: MammothClient):
+    async def test_update_theme(self, client: MammothClient):
         op = DashboardPatchItem(
             op=DashboardPatchOp.REPLACE, path=DashboardPatchPath.THEME, value="DARK_MODE"
         )
-        client.dashboards.update(dashboard_id=5, patch=[op])
+        await client.dashboards.update(dashboard_id=5, patch=[op])
         assert_json_body(
             client._request_json,
             {"patch": [{"op": "replace", "path": "theme", "value": "DARK_MODE"}]},
         )
 
-    def test_update_intent(self, client: MammothClient):
+    async def test_update_intent(self, client: MammothClient):
         intent_value = "Show quarterly revenue by product line"
         op = DashboardPatchItem(
             op=DashboardPatchOp.ADD, path=DashboardPatchPath.INTENT, value=intent_value
         )
-        client.dashboards.update(dashboard_id=5, patch=[op])
+        await client.dashboards.update(dashboard_id=5, patch=[op])
         assert_json_body(
             client._request_json,
             {"patch": [{"op": "add", "path": "intent", "value": intent_value}]},
         )
 
-    def test_update_rejects_nonpositive_id(self, client: MammothClient):
+    async def test_update_rejects_nonpositive_id(self, client: MammothClient):
         op = DashboardPatchItem(
             op=DashboardPatchOp.REPLACE, path=DashboardPatchPath.TITLE, value="x"
         )
         with pytest.raises(MammothValidationError, match="dashboard_id"):
-            client.dashboards.update(dashboard_id=0, patch=[op])
+            await client.dashboards.update(dashboard_id=0, patch=[op])
         client._request_json.assert_not_called()
 
-    def test_update_rejects_empty_patch(self, client: MammothClient):
+    async def test_update_rejects_empty_patch(self, client: MammothClient):
         with pytest.raises(MammothValidationError, match="patch"):
-            client.dashboards.update(dashboard_id=5, patch=[])
+            await client.dashboards.update(dashboard_id=5, patch=[])
         client._request_json.assert_not_called()
 
-    def test_update_rejects_short_intent_value(self, client: MammothClient):
+    async def test_update_rejects_short_intent_value(self, client: MammothClient):
         op = DashboardPatchItem(
             op=DashboardPatchOp.ADD, path=DashboardPatchPath.INTENT, value="too short"
         )
         with pytest.raises(MammothValidationError, match="intent"):
-            client.dashboards.update(dashboard_id=5, patch=[op])
+            await client.dashboards.update(dashboard_id=5, patch=[op])
         client._request_json.assert_not_called()
 
     # ── share ────────────────────────────────────────────────────────────────
 
-    def test_share_public(self, client: MammothClient):
-        client.dashboards.share(dashboard_id=5, type_of_auth=DashboardAuthType.PUBLIC)
+    async def test_share_public(self, client: MammothClient):
+        await client.dashboards.share(dashboard_id=5, type_of_auth=DashboardAuthType.PUBLIC)
         assert_called_with_method_and_endpoint(client._request, "POST", "/dashboards/5/share")
         assert_json_body(
             client._request,
             {"params": {"auth": {"type_of_auth": "public"}}},
         )
 
-    def test_share_mammoth_with_users(self, client: MammothClient):
+    async def test_share_mammoth_with_users(self, client: MammothClient):
         user = DashboardShareUser(
             email="alice@example.com", role=DashboardShareRole.EDITOR, shared=True
         )
-        client.dashboards.share(
+        await client.dashboards.share(
             dashboard_id=5,
             type_of_auth=DashboardAuthType.MAMMOTH,
             users=[user],
@@ -1666,21 +1708,21 @@ class TestDashboardsAPI:
             },
         )
 
-    def test_share_password_type(self, client: MammothClient):
-        client.dashboards.share(dashboard_id=5, type_of_auth=DashboardAuthType.PASSWORD)
+    async def test_share_password_type(self, client: MammothClient):
+        await client.dashboards.share(dashboard_id=5, type_of_auth=DashboardAuthType.PASSWORD)
         assert_json_body(
             client._request,
             {"params": {"auth": {"type_of_auth": "password"}}},
         )
 
-    def test_share_rejects_nonpositive_id(self, client: MammothClient):
+    async def test_share_rejects_nonpositive_id(self, client: MammothClient):
         with pytest.raises(MammothValidationError, match="dashboard_id"):
-            client.dashboards.share(dashboard_id=0, type_of_auth=DashboardAuthType.PUBLIC)
+            await client.dashboards.share(dashboard_id=0, type_of_auth=DashboardAuthType.PUBLIC)
         client._request.assert_not_called()
 
-    def test_share_rejects_empty_user_email(self, client: MammothClient):
+    async def test_share_rejects_empty_user_email(self, client: MammothClient):
         with pytest.raises(MammothValidationError, match="email"):
-            client.dashboards.share(
+            await client.dashboards.share(
                 dashboard_id=5,
                 type_of_auth=DashboardAuthType.MAMMOTH,
                 users=[DashboardShareUser(email="", role=DashboardShareRole.VIEWER, shared=True)],
@@ -1689,21 +1731,23 @@ class TestDashboardsAPI:
 
     # ── action ───────────────────────────────────────────────────────────────
 
-    def test_action_sync_no_params(self, client: MammothClient):
-        client.dashboards.action(dashboard_id=5, action=DashboardActionType.SYNC)
+    async def test_action_sync_no_params(self, client: MammothClient):
+        await client.dashboards.action(dashboard_id=5, action=DashboardActionType.SYNC)
         assert_called_with_method_and_endpoint(client._request_json, "POST", "/dashboards/5/action")
         assert_json_body(client._request_json, {"action": "sync"})
 
-    def test_action_sync_scoped(self, client: MammothClient):
-        client.dashboards.action(dashboard_id=5, action=DashboardActionType.SYNC, params_view_id=42)
+    async def test_action_sync_scoped(self, client: MammothClient):
+        await client.dashboards.action(
+            dashboard_id=5, action=DashboardActionType.SYNC, params_view_id=42
+        )
         assert_json_body(client._request_json, {"action": "sync", "params": {"view_id": 42}})
 
-    def test_action_publish_data(self, client: MammothClient):
-        client.dashboards.action(dashboard_id=5, action=DashboardActionType.PUBLISH_DATA)
+    async def test_action_publish_data(self, client: MammothClient):
+        await client.dashboards.action(dashboard_id=5, action=DashboardActionType.PUBLISH_DATA)
         assert_json_body(client._request_json, {"action": "publish-data"})
 
-    def test_action_auto_sync(self, client: MammothClient):
-        client.dashboards.action(
+    async def test_action_auto_sync(self, client: MammothClient):
+        await client.dashboards.action(
             dashboard_id=5,
             action=DashboardActionType.AUTO_SYNC,
             params_enabled=True,
@@ -1714,8 +1758,8 @@ class TestDashboardsAPI:
             {"action": "auto-sync", "params": {"enabled": True, "view_id": 42}},
         )
 
-    def test_action_auto_publish(self, client: MammothClient):
-        client.dashboards.action(
+    async def test_action_auto_publish(self, client: MammothClient):
+        await client.dashboards.action(
             dashboard_id=5, action=DashboardActionType.AUTO_PUBLISH, params_enabled=False
         )
         assert_json_body(
@@ -1723,8 +1767,8 @@ class TestDashboardsAPI:
             {"action": "auto-publish", "params": {"enabled": False}},
         )
 
-    def test_action_delete_source(self, client: MammothClient):
-        client.dashboards.action(
+    async def test_action_delete_source(self, client: MammothClient):
+        await client.dashboards.action(
             dashboard_id=5, action=DashboardActionType.DELETE_SOURCE, params_view_id=7
         )
         assert_json_body(
@@ -1732,82 +1776,82 @@ class TestDashboardsAPI:
             {"action": "delete-source", "params": {"view_id": 7}},
         )
 
-    def test_action_rejects_nonpositive_dashboard_id(self, client: MammothClient):
+    async def test_action_rejects_nonpositive_dashboard_id(self, client: MammothClient):
         with pytest.raises(MammothValidationError, match="dashboard_id"):
-            client.dashboards.action(dashboard_id=0, action=DashboardActionType.SYNC)
+            await client.dashboards.action(dashboard_id=0, action=DashboardActionType.SYNC)
         client._request_json.assert_not_called()
 
-    def test_action_auto_sync_requires_enabled(self, client: MammothClient):
+    async def test_action_auto_sync_requires_enabled(self, client: MammothClient):
         with pytest.raises(MammothValidationError, match="auto-sync"):
-            client.dashboards.action(dashboard_id=5, action=DashboardActionType.AUTO_SYNC)
+            await client.dashboards.action(dashboard_id=5, action=DashboardActionType.AUTO_SYNC)
         client._request_json.assert_not_called()
 
-    def test_action_auto_publish_requires_enabled(self, client: MammothClient):
+    async def test_action_auto_publish_requires_enabled(self, client: MammothClient):
         with pytest.raises(MammothValidationError, match="auto-publish"):
-            client.dashboards.action(dashboard_id=5, action=DashboardActionType.AUTO_PUBLISH)
+            await client.dashboards.action(dashboard_id=5, action=DashboardActionType.AUTO_PUBLISH)
         client._request_json.assert_not_called()
 
-    def test_action_delete_source_requires_view_id(self, client: MammothClient):
+    async def test_action_delete_source_requires_view_id(self, client: MammothClient):
         with pytest.raises(MammothValidationError, match="delete-source"):
-            client.dashboards.action(dashboard_id=5, action=DashboardActionType.DELETE_SOURCE)
+            await client.dashboards.action(dashboard_id=5, action=DashboardActionType.DELETE_SOURCE)
         client._request_json.assert_not_called()
 
-    def test_action_rejects_nonpositive_view_id(self, client: MammothClient):
+    async def test_action_rejects_nonpositive_view_id(self, client: MammothClient):
         with pytest.raises(MammothValidationError, match="params_view_id"):
-            client.dashboards.action(
+            await client.dashboards.action(
                 dashboard_id=5, action=DashboardActionType.DELETE_SOURCE, params_view_id=0
             )
         client._request_json.assert_not_called()
 
     # ── cancel_generation / restore / trash ─────────────────────────────────────
 
-    def test_cancel_generation(self, client: MammothClient):
-        client.dashboards.cancel_generation(dashboard_id=5)
+    async def test_cancel_generation(self, client: MammothClient):
+        await client.dashboards.cancel_generation(dashboard_id=5)
         assert_called_with_method_and_endpoint(
             client._request_json, "POST", "/dashboards/5/cancel-generation"
         )
 
-    def test_cancel_generation_rejects_nonpositive_id(self, client: MammothClient):
+    async def test_cancel_generation_rejects_nonpositive_id(self, client: MammothClient):
         with pytest.raises(MammothValidationError, match="dashboard_id"):
-            client.dashboards.cancel_generation(dashboard_id=0)
+            await client.dashboards.cancel_generation(dashboard_id=0)
         client._request_json.assert_not_called()
 
-    def test_restore(self, client: MammothClient):
-        client.dashboards.restore(dashboard_id=5)
+    async def test_restore(self, client: MammothClient):
+        await client.dashboards.restore(dashboard_id=5)
         assert_called_with_method_and_endpoint(
             client._request_json, "POST", "/dashboards/5/restore"
         )
 
-    def test_restore_rejects_nonpositive_id(self, client: MammothClient):
+    async def test_restore_rejects_nonpositive_id(self, client: MammothClient):
         with pytest.raises(MammothValidationError, match="dashboard_id"):
-            client.dashboards.restore(dashboard_id=0)
+            await client.dashboards.restore(dashboard_id=0)
         client._request_json.assert_not_called()
 
-    def test_trash(self, client: MammothClient):
-        client.dashboards.trash(dashboard_id=5)
+    async def test_trash(self, client: MammothClient):
+        await client.dashboards.trash(dashboard_id=5)
         assert_called_with_method_and_endpoint(client._request_json, "POST", "/dashboards/5/trash")
 
-    def test_trash_rejects_nonpositive_id(self, client: MammothClient):
+    async def test_trash_rejects_nonpositive_id(self, client: MammothClient):
         with pytest.raises(MammothValidationError, match="dashboard_id"):
-            client.dashboards.trash(dashboard_id=0)
+            await client.dashboards.trash(dashboard_id=0)
         client._request_json.assert_not_called()
 
     # ── job_by_url / published_data_by_url ──────────────────────────────────────
 
-    def test_job_by_url(self, client: MammothClient):
-        client.dashboards.job_by_url(url="my-dashboard", job_id=99)
+    async def test_job_by_url(self, client: MammothClient):
+        await client.dashboards.job_by_url(url="my-dashboard", job_id=99)
         assert_called_with_method_and_endpoint(
             client._request_json, "GET", "/dashboards/url/my-dashboard/jobs/99"
         )
 
-    def test_job_by_url_rejects_nonpositive_job_id(self, client: MammothClient):
+    async def test_job_by_url_rejects_nonpositive_job_id(self, client: MammothClient):
         with pytest.raises(MammothValidationError, match="job_id"):
-            client.dashboards.job_by_url(url="my-dashboard", job_id=0)
+            await client.dashboards.job_by_url(url="my-dashboard", job_id=0)
         client._request_json.assert_not_called()
 
-    def test_published_data_by_url(self, client: MammothClient):
+    async def test_published_data_by_url(self, client: MammothClient):
         body = {"params": {"widget_id": "w1"}}
-        client.dashboards.published_data_by_url(url="my-dashboard", body=body)
+        await client.dashboards.published_data_by_url(url="my-dashboard", body=body)
         assert_called_with_method_and_endpoint(
             client._request_json, "POST", "/dashboards/url/my-dashboard/getPublishData"
         )
@@ -1815,22 +1859,22 @@ class TestDashboardsAPI:
 
     # ── widget_data / widget_data_by_url ─────────────────────────────────────────
 
-    def test_widget_data(self, client: MammothClient):
+    async def test_widget_data(self, client: MammothClient):
         body = {"widgets": [{"widget_id": "w1"}]}
-        client.dashboards.widget_data(dashboard_id=5, body=body)
+        await client.dashboards.widget_data(dashboard_id=5, body=body)
         assert_called_with_method_and_endpoint(
             client._request_json, "POST", "/dashboards/5/widgets/data"
         )
         assert_json_body(client._request_json, body)
 
-    def test_widget_data_rejects_nonpositive_id(self, client: MammothClient):
+    async def test_widget_data_rejects_nonpositive_id(self, client: MammothClient):
         with pytest.raises(MammothValidationError, match="dashboard_id"):
-            client.dashboards.widget_data(dashboard_id=0, body={})
+            await client.dashboards.widget_data(dashboard_id=0, body={})
         client._request_json.assert_not_called()
 
-    def test_widget_data_by_url(self, client: MammothClient):
+    async def test_widget_data_by_url(self, client: MammothClient):
         body = {"widgets": [{"widget_id": "w1"}]}
-        client.dashboards.widget_data_by_url(url="my-dashboard", body=body)
+        await client.dashboards.widget_data_by_url(url="my-dashboard", body=body)
         assert_called_with_method_and_endpoint(
             client._request_json, "POST", "/dashboards/url/my-dashboard/widgets/data"
         )
@@ -1924,16 +1968,16 @@ _SCHEDULE_PATCH_RRULE_BODY = {
 
 
 class TestAutomationsAPI:
-    def test_list(self, client: MammothClient) -> None:
-        client.automations.list()
+    async def test_list(self, client: MammothClient) -> None:
+        await client.automations.list()
         assert_called_with_method_and_endpoint(client._request_json, "GET", "/automations")
 
-    def test_create(self, client: MammothClient) -> None:
+    async def test_create(self, client: MammothClient) -> None:
         task = AutomationTaskSpec(
             task_type=AutomationTaskType.RUN_DATA_RETRIEVAL,
             details=TaskDetailsSpec(ds_details=[DataRefreshConfig(ds_id=42)]),
         )
-        client.automations.create(
+        await client.automations.create(
             name="Nightly",
             description="desc",
             tasks=[task],
@@ -1955,39 +1999,39 @@ class TestAutomationsAPI:
             },
         )
 
-    def test_create_empty_name_raises(self, client: MammothClient) -> None:
+    async def test_create_empty_name_raises(self, client: MammothClient) -> None:
         task = AutomationTaskSpec(
             task_type=AutomationTaskType.RUN_DATA_RETRIEVAL,
             details=TaskDetailsSpec(ds_details=[DataRefreshConfig(ds_id=1)]),
         )
         with pytest.raises(MammothValidationError):
-            client.automations.create(name="", description="d", tasks=[task])
+            await client.automations.create(name="", description="d", tasks=[task])
         client._request_json.assert_not_called()
 
-    def test_create_empty_tasks_raises(self, client: MammothClient) -> None:
+    async def test_create_empty_tasks_raises(self, client: MammothClient) -> None:
         with pytest.raises(MammothValidationError):
-            client.automations.create(name="A", description="d", tasks=[])
+            await client.automations.create(name="A", description="d", tasks=[])
         client._request_json.assert_not_called()
 
-    def test_create_task_missing_ds_details_raises(self, client: MammothClient) -> None:
+    async def test_create_task_missing_ds_details_raises(self, client: MammothClient) -> None:
         task = AutomationTaskSpec(
             task_type=AutomationTaskType.RUN_DATA_RETRIEVAL,
             details=TaskDetailsSpec(),
         )
         with pytest.raises(MammothValidationError):
-            client.automations.create(name="A", description="d", tasks=[task])
+            await client.automations.create(name="A", description="d", tasks=[task])
         client._request_json.assert_not_called()
 
-    def test_create_task_missing_alert_fields_raises(self, client: MammothClient) -> None:
+    async def test_create_task_missing_alert_fields_raises(self, client: MammothClient) -> None:
         task = AutomationTaskSpec(
             task_type=AutomationTaskType.SEND_AN_ALERT,
             details=TaskDetailsSpec(alert_type=AlertType.EMAIL),
         )
         with pytest.raises(MammothValidationError):
-            client.automations.create(name="A", description="d", tasks=[task])
+            await client.automations.create(name="A", description="d", tasks=[task])
         client._request_json.assert_not_called()
 
-    def test_create_condition_at_specific_time_missing_interval_raises(
+    async def test_create_condition_at_specific_time_missing_interval_raises(
         self, client: MammothClient
     ) -> None:
         task = AutomationTaskSpec(
@@ -1999,10 +2043,14 @@ class TestAutomationsAPI:
             details=ConditionDetailsSpec(start_at=_DT),  # missing interval
         )
         with pytest.raises(MammothValidationError):
-            client.automations.create(name="A", description="d", tasks=[task], conditions=[cond])
+            await client.automations.create(
+                name="A", description="d", tasks=[task], conditions=[cond]
+            )
         client._request_json.assert_not_called()
 
-    def test_create_condition_by_month_day_out_of_range_raises(self, client: MammothClient) -> None:
+    async def test_create_condition_by_month_day_out_of_range_raises(
+        self, client: MammothClient
+    ) -> None:
         task = AutomationTaskSpec(
             task_type=AutomationTaskType.RUN_DATA_RETRIEVAL,
             details=TaskDetailsSpec(ds_details=[DataRefreshConfig(ds_id=1)]),
@@ -2012,157 +2060,161 @@ class TestAutomationsAPI:
             details=ConditionDetailsSpec(by_month_day=[32]),
         )
         with pytest.raises(MammothValidationError):
-            client.automations.create(name="A", description="d", tasks=[task], conditions=[cond])
+            await client.automations.create(
+                name="A", description="d", tasks=[task], conditions=[cond]
+            )
         client._request_json.assert_not_called()
 
-    def test_get(self, client: MammothClient) -> None:
-        client.automations.get(automation_id=10)
+    async def test_get(self, client: MammothClient) -> None:
+        await client.automations.get(automation_id=10)
         assert_called_with_method_and_endpoint(client._request_json, "GET", "/automations/10")
 
-    def test_update_command_run(self, client: MammothClient) -> None:
+    async def test_update_command_run(self, client: MammothClient) -> None:
         patch_item = AutomationPatchItem(
             op=AutomationPatchOp.COMMAND, path=AutomationPatchPath.RUN, value={}
         )
-        client.automations.update(automation_id=10, patch=[patch_item])
+        await client.automations.update(automation_id=10, patch=[patch_item])
         assert_called_with_method_and_endpoint(client._request_json, "PATCH", "/automations/10")
         assert_json_body(
             client._request_json,
             {"patch": [{"op": "command", "path": "run", "value": {}}]},
         )
 
-    def test_update_status_suspend(self, client: MammothClient) -> None:
+    async def test_update_status_suspend(self, client: MammothClient) -> None:
         patch_item = AutomationPatchItem(
             op=AutomationPatchOp.REPLACE,
             path=AutomationPatchPath.STATUS,
             value=AutomationStatus.SUSPEND.value,
         )
-        client.automations.update(automation_id=10, patch=[patch_item])
+        await client.automations.update(automation_id=10, patch=[patch_item])
         assert_json_body(
             client._request_json,
             {"patch": [{"op": "replace", "path": "status", "value": "suspend"}]},
         )
 
-    def test_update_details(self, client: MammothClient) -> None:
+    async def test_update_details(self, client: MammothClient) -> None:
         details = PatchAutomationDetails(name="Renamed")
         patch_item = AutomationPatchItem(
             op=AutomationPatchOp.REPLACE, path=AutomationPatchPath.DETAILS, value=details
         )
-        client.automations.update(automation_id=10, patch=[patch_item])
+        await client.automations.update(automation_id=10, patch=[patch_item])
         assert_json_body(
             client._request_json,
             {"patch": [{"op": "replace", "path": "details", "value": {"name": "Renamed"}}]},
         )
 
-    def test_update_invalid_id_raises(self, client: MammothClient) -> None:
+    async def test_update_invalid_id_raises(self, client: MammothClient) -> None:
         patch_item = AutomationPatchItem(
             op=AutomationPatchOp.COMMAND, path=AutomationPatchPath.RUN, value={}
         )
         with pytest.raises(MammothValidationError):
-            client.automations.update(automation_id=0, patch=[patch_item])
+            await client.automations.update(automation_id=0, patch=[patch_item])
         client._request_json.assert_not_called()
 
-    def test_update_empty_patch_raises(self, client: MammothClient) -> None:
+    async def test_update_empty_patch_raises(self, client: MammothClient) -> None:
         with pytest.raises(MammothValidationError):
-            client.automations.update(automation_id=10, patch=[])
+            await client.automations.update(automation_id=10, patch=[])
         client._request_json.assert_not_called()
 
-    def test_update_command_wrong_path_raises(self, client: MammothClient) -> None:
+    async def test_update_command_wrong_path_raises(self, client: MammothClient) -> None:
         patch_item = AutomationPatchItem(
             op=AutomationPatchOp.COMMAND, path=AutomationPatchPath.STATUS, value={}
         )
         with pytest.raises(MammothValidationError):
-            client.automations.update(automation_id=10, patch=[patch_item])
+            await client.automations.update(automation_id=10, patch=[patch_item])
         client._request_json.assert_not_called()
 
-    def test_update_status_invalid_value_raises(self, client: MammothClient) -> None:
+    async def test_update_status_invalid_value_raises(self, client: MammothClient) -> None:
         patch_item = AutomationPatchItem(
             op=AutomationPatchOp.REPLACE,
             path=AutomationPatchPath.STATUS,
             value="active",
         )
         with pytest.raises(MammothValidationError):
-            client.automations.update(automation_id=10, patch=[patch_item])
+            await client.automations.update(automation_id=10, patch=[patch_item])
         client._request_json.assert_not_called()
 
-    def test_update_details_all_none_raises(self, client: MammothClient) -> None:
+    async def test_update_details_all_none_raises(self, client: MammothClient) -> None:
         patch_item = AutomationPatchItem(
             op=AutomationPatchOp.REPLACE,
             path=AutomationPatchPath.DETAILS,
             value=PatchAutomationDetails(),
         )
         with pytest.raises(MammothValidationError):
-            client.automations.update(automation_id=10, patch=[patch_item])
+            await client.automations.update(automation_id=10, patch=[patch_item])
         client._request_json.assert_not_called()
 
-    def test_delete(self, client: MammothClient) -> None:
-        client.automations.delete(automation_id=10)
+    async def test_delete(self, client: MammothClient) -> None:
+        await client.automations.delete(automation_id=10)
         assert_called_with_method_and_endpoint(client._request_json, "DELETE", "/automations/10")
 
-    def test_restore(self, client: MammothClient) -> None:
-        client.automations.restore(automation_id=10)
+    async def test_restore(self, client: MammothClient) -> None:
+        await client.automations.restore(automation_id=10)
         assert_called_with_method_and_endpoint(
             client._request_json, "POST", "/automations/10/restore"
         )
 
-    def test_trash(self, client: MammothClient) -> None:
-        client.automations.trash(automation_id=10)
+    async def test_trash(self, client: MammothClient) -> None:
+        await client.automations.trash(automation_id=10)
         assert_called_with_method_and_endpoint(
             client._request_json, "POST", "/automations/10/trash"
         )
 
-    def test_list_schedules(self, client: MammothClient) -> None:
-        client.automations.list_schedules()
+    async def test_list_schedules(self, client: MammothClient) -> None:
+        await client.automations.list_schedules()
         assert_called_with_method_and_endpoint(client._request_json, "GET", "/schedules")
 
-    def test_create_schedule(self, client: MammothClient) -> None:
-        client.automations.create_schedule(spec=_SCHEDULE_CREATE_SPEC)
+    async def test_create_schedule(self, client: MammothClient) -> None:
+        await client.automations.create_schedule(spec=_SCHEDULE_CREATE_SPEC)
         assert_called_with_method_and_endpoint(client._request_json, "POST", "/schedules")
         assert_json_body(client._request_json, _SCHEDULE_CREATE_BODY)
 
-    def test_create_schedule_invalid_interval_raises(self, client: MammothClient) -> None:
+    async def test_create_schedule_invalid_interval_raises(self, client: MammothClient) -> None:
         spec = ScheduleCreateSpec(
             rrule=RruleSpec(frequency=RruleFrequency.DAILY, start=_DT, interval=-1)
         )
         with pytest.raises(MammothValidationError):
-            client.automations.create_schedule(spec=spec)
+            await client.automations.create_schedule(spec=spec)
         client._request_json.assert_not_called()
 
-    def test_update_schedule(self, client: MammothClient) -> None:
-        client.automations.update_schedule(schedule_id=5, patch=[_SCHEDULE_PATCH_RRULE_ITEM])
+    async def test_update_schedule(self, client: MammothClient) -> None:
+        await client.automations.update_schedule(schedule_id=5, patch=[_SCHEDULE_PATCH_RRULE_ITEM])
         assert_called_with_method_and_endpoint(client._request_json, "PATCH", "/schedules/5")
         assert_json_body(client._request_json, _SCHEDULE_PATCH_RRULE_BODY)
 
-    def test_update_schedule_status(self, client: MammothClient) -> None:
-        client.automations.update_schedule(schedule_id=5, patch=[_SCHEDULE_PATCH_STATUS_ITEM])
+    async def test_update_schedule_status(self, client: MammothClient) -> None:
+        await client.automations.update_schedule(schedule_id=5, patch=[_SCHEDULE_PATCH_STATUS_ITEM])
         assert_json_body(
             client._request_json,
             {"patch": [{"op": "replace", "path": "status", "value": "pause"}]},
         )
 
-    def test_update_schedule_invalid_id_raises(self, client: MammothClient) -> None:
+    async def test_update_schedule_invalid_id_raises(self, client: MammothClient) -> None:
         with pytest.raises(MammothValidationError):
-            client.automations.update_schedule(schedule_id=0, patch=[_SCHEDULE_PATCH_STATUS_ITEM])
+            await client.automations.update_schedule(
+                schedule_id=0, patch=[_SCHEDULE_PATCH_STATUS_ITEM]
+            )
         client._request_json.assert_not_called()
 
-    def test_update_schedule_empty_patch_raises(self, client: MammothClient) -> None:
+    async def test_update_schedule_empty_patch_raises(self, client: MammothClient) -> None:
         with pytest.raises(MammothValidationError):
-            client.automations.update_schedule(schedule_id=5, patch=[])
+            await client.automations.update_schedule(schedule_id=5, patch=[])
         client._request_json.assert_not_called()
 
-    def test_update_schedule_invalid_op_raises(self, client: MammothClient) -> None:
+    async def test_update_schedule_invalid_op_raises(self, client: MammothClient) -> None:
         bad_item = SchedulePatchItem(op="add", path=SchedulePatchPath.STATUS, value="pause")
         with pytest.raises(MammothValidationError):
-            client.automations.update_schedule(schedule_id=5, patch=[bad_item])
+            await client.automations.update_schedule(schedule_id=5, patch=[bad_item])
         client._request_json.assert_not_called()
 
-    def test_update_schedule_status_invalid_value_raises(self, client: MammothClient) -> None:
+    async def test_update_schedule_status_invalid_value_raises(self, client: MammothClient) -> None:
         bad_item = SchedulePatchItem(op="replace", path=SchedulePatchPath.STATUS, value="stop")
         with pytest.raises(MammothValidationError):
-            client.automations.update_schedule(schedule_id=5, patch=[bad_item])
+            await client.automations.update_schedule(schedule_id=5, patch=[bad_item])
         client._request_json.assert_not_called()
 
-    def test_delete_schedule(self, client: MammothClient) -> None:
-        client.automations.delete_schedule(schedule_id=5)
+    async def test_delete_schedule(self, client: MammothClient) -> None:
+        await client.automations.delete_schedule(schedule_id=5)
         assert_called_with_method_and_endpoint(client._request_json, "DELETE", "/schedules/5")
 
 
@@ -2172,76 +2224,76 @@ class TestAutomationsAPI:
 
 
 class TestSchedulesAPI:
-    def test_list(self, client: MammothClient) -> None:
-        client.schedules.list()
+    async def test_list(self, client: MammothClient) -> None:
+        await client.schedules.list()
         assert_called_with_method_and_endpoint(client._request_json, "GET", "/schedules")
 
-    def test_get(self, client: MammothClient) -> None:
-        client.schedules.get(schedule_id=5)
+    async def test_get(self, client: MammothClient) -> None:
+        await client.schedules.get(schedule_id=5)
         assert_called_with_method_and_endpoint(client._request_json, "GET", "/schedules/5")
 
-    def test_create(self, client: MammothClient) -> None:
+    async def test_create(self, client: MammothClient) -> None:
         """SchedulesAPI.create produces the same wire body as AutomationsAPI.create_schedule."""
-        client.schedules.create(spec=_SCHEDULE_CREATE_SPEC)
+        await client.schedules.create(spec=_SCHEDULE_CREATE_SPEC)
         assert_called_with_method_and_endpoint(client._request_json, "POST", "/schedules")
         assert_json_body(client._request_json, _SCHEDULE_CREATE_BODY)
 
-    def test_create_with_project_id(self, client: MammothClient) -> None:
-        client.schedules.create(spec=_SCHEDULE_CREATE_SPEC, project_id=99)
+    async def test_create_with_project_id(self, client: MammothClient) -> None:
+        await client.schedules.create(spec=_SCHEDULE_CREATE_SPEC, project_id=99)
         assert_called_with_method_and_endpoint(client._request_json, "POST", "/schedules")
         assert_json_body(client._request_json, _SCHEDULE_CREATE_BODY)
 
-    def test_create_invalid_project_id_raises(self, client: MammothClient) -> None:
+    async def test_create_invalid_project_id_raises(self, client: MammothClient) -> None:
         with pytest.raises(MammothValidationError):
-            client.schedules.create(spec=_SCHEDULE_CREATE_SPEC, project_id=0)
+            await client.schedules.create(spec=_SCHEDULE_CREATE_SPEC, project_id=0)
         client._request_json.assert_not_called()
 
-    def test_create_invalid_interval_raises(self, client: MammothClient) -> None:
+    async def test_create_invalid_interval_raises(self, client: MammothClient) -> None:
         spec = ScheduleCreateSpec(
             rrule=RruleSpec(frequency=RruleFrequency.HOURLY, start=_DT, interval=0)
         )
         with pytest.raises(MammothValidationError):
-            client.schedules.create(spec=spec)
+            await client.schedules.create(spec=spec)
         client._request_json.assert_not_called()
 
-    def test_update(self, client: MammothClient) -> None:
+    async def test_update(self, client: MammothClient) -> None:
         """SchedulesAPI.update produces the same wire body as AutomationsAPI.update_schedule."""
-        client.schedules.update(schedule_id=5, patch=[_SCHEDULE_PATCH_RRULE_ITEM])
+        await client.schedules.update(schedule_id=5, patch=[_SCHEDULE_PATCH_RRULE_ITEM])
         assert_called_with_method_and_endpoint(client._request_json, "PATCH", "/schedules/5")
         assert_json_body(client._request_json, _SCHEDULE_PATCH_RRULE_BODY)
 
-    def test_update_status(self, client: MammothClient) -> None:
-        client.schedules.update(schedule_id=5, patch=[_SCHEDULE_PATCH_STATUS_ITEM])
+    async def test_update_status(self, client: MammothClient) -> None:
+        await client.schedules.update(schedule_id=5, patch=[_SCHEDULE_PATCH_STATUS_ITEM])
         assert_json_body(
             client._request_json,
             {"patch": [{"op": "replace", "path": "status", "value": "pause"}]},
         )
 
-    def test_update_invalid_id_raises(self, client: MammothClient) -> None:
+    async def test_update_invalid_id_raises(self, client: MammothClient) -> None:
         with pytest.raises(MammothValidationError):
-            client.schedules.update(schedule_id=-1, patch=[_SCHEDULE_PATCH_STATUS_ITEM])
+            await client.schedules.update(schedule_id=-1, patch=[_SCHEDULE_PATCH_STATUS_ITEM])
         client._request_json.assert_not_called()
 
-    def test_update_invalid_project_id_raises(self, client: MammothClient) -> None:
+    async def test_update_invalid_project_id_raises(self, client: MammothClient) -> None:
         with pytest.raises(MammothValidationError):
-            client.schedules.update(
+            await client.schedules.update(
                 schedule_id=5, patch=[_SCHEDULE_PATCH_STATUS_ITEM], project_id=0
             )
         client._request_json.assert_not_called()
 
-    def test_update_empty_patch_raises(self, client: MammothClient) -> None:
+    async def test_update_empty_patch_raises(self, client: MammothClient) -> None:
         with pytest.raises(MammothValidationError):
-            client.schedules.update(schedule_id=5, patch=[])
+            await client.schedules.update(schedule_id=5, patch=[])
         client._request_json.assert_not_called()
 
-    def test_update_invalid_op_raises(self, client: MammothClient) -> None:
+    async def test_update_invalid_op_raises(self, client: MammothClient) -> None:
         bad_item = SchedulePatchItem(op="remove", path=SchedulePatchPath.RRULE, value="pause")
         with pytest.raises(MammothValidationError):
-            client.schedules.update(schedule_id=5, patch=[bad_item])
+            await client.schedules.update(schedule_id=5, patch=[bad_item])
         client._request_json.assert_not_called()
 
-    def test_delete(self, client: MammothClient) -> None:
-        client.schedules.delete(schedule_id=5)
+    async def test_delete(self, client: MammothClient) -> None:
+        await client.schedules.delete(schedule_id=5)
         assert_called_with_method_and_endpoint(client._request_json, "DELETE", "/schedules/5")
 
 
@@ -2251,16 +2303,16 @@ class TestSchedulesAPI:
 
 
 class TestBatchesAPI:
-    def test_list(self, client: MammothClient):
-        client.batches.list(dataset_id=500)
+    async def test_list(self, client: MammothClient):
+        await client.batches.list(dataset_id=500)
         assert_called_with_method_and_endpoint(client._request_json, "GET", "/datasets/500/batches")
 
-    def test_get(self, client: MammothClient):
-        client.batches.get(dataset_id=500, batch_id=10)
+    async def test_get(self, client: MammothClient):
+        await client.batches.get(dataset_id=500, batch_id=10)
         assert_called_with_method_and_endpoint(client._request_json, "GET", "/batches/10")
 
-    def test_create_sends_correct_body(self, client: MammothClient):
-        client.batches.create(
+    async def test_create_sends_correct_body(self, client: MammothClient):
+        await client.batches.create(
             dataset_id=500,
             source_id=42,
             mapping={"src_col": "dst_col"},
@@ -2284,8 +2336,8 @@ class TestBatchesAPI:
             },
         )
 
-    def test_create_with_optional_fields(self, client: MammothClient):
-        client.batches.create(
+    async def test_create_with_optional_fields(self, client: MammothClient):
+        await client.batches.create(
             dataset_id=500,
             source_id=42,
             mapping={"a": "b"},
@@ -2308,20 +2360,20 @@ class TestBatchesAPI:
             },
         )
 
-    def test_create_rejects_nonpositive_source_id(self, client: MammothClient):
+    async def test_create_rejects_nonpositive_source_id(self, client: MammothClient):
         with pytest.raises(MammothValidationError, match="source_id"):
-            client.batches.create(dataset_id=500, source_id=0, mapping={"a": "b"})
+            await client.batches.create(dataset_id=500, source_id=0, mapping={"a": "b"})
         client._request_json.assert_not_called()
 
-    def test_create_rejects_empty_mapping(self, client: MammothClient):
+    async def test_create_rejects_empty_mapping(self, client: MammothClient):
         with pytest.raises(MammothValidationError, match="mapping"):
-            client.batches.create(dataset_id=500, source_id=1, mapping={})
+            await client.batches.create(dataset_id=500, source_id=1, mapping={})
         client._request_json.assert_not_called()
 
-    def test_update_wraps_patch_envelope(self, client: MammothClient):
+    async def test_update_wraps_patch_envelope(self, client: MammothClient):
         """PROD BUG FIX: SDK must wrap patch ops in {"patch": [...]} envelope."""
         patch_ops = [{"op": "replace", "value": {"approve": [101, 102]}}]
-        client.batches.update(dataset_id=500, patch=patch_ops)
+        await client.batches.update(dataset_id=500, patch=patch_ops)
         assert_called_with_method_and_endpoint(
             client._request_json, "PATCH", "/datasets/500/batches"
         )
@@ -2330,37 +2382,37 @@ class TestBatchesAPI:
             {"patch": [{"op": "replace", "value": {"approve": [101, 102]}}]},
         )
 
-    def test_update_remove_op(self, client: MammothClient):
+    async def test_update_remove_op(self, client: MammothClient):
         patch_ops = [{"op": "remove", "value": [101, 102]}]
-        client.batches.update(dataset_id=500, patch=patch_ops)
+        await client.batches.update(dataset_id=500, patch=patch_ops)
         assert_json_body(
             client._request_json,
             {"patch": [{"op": "remove", "value": [101, 102]}]},
         )
 
-    def test_update_rejects_empty_patch(self, client: MammothClient):
+    async def test_update_rejects_empty_patch(self, client: MammothClient):
         with pytest.raises(MammothValidationError, match="patch"):
-            client.batches.update(dataset_id=500, patch=[])
+            await client.batches.update(dataset_id=500, patch=[])
         client._request_json.assert_not_called()
 
-    def test_update_rejects_invalid_op(self, client: MammothClient):
+    async def test_update_rejects_invalid_op(self, client: MammothClient):
         with pytest.raises(MammothValidationError, match="op"):
-            client.batches.update(dataset_id=500, patch=[{"op": "add", "value": [1]}])
+            await client.batches.update(dataset_id=500, patch=[{"op": "add", "value": [1]}])
         client._request_json.assert_not_called()
 
-    def test_delete(self, client: MammothClient):
-        client.batches.delete(dataset_id=500, batch_id=10)
+    async def test_delete(self, client: MammothClient):
+        await client.batches.delete(dataset_id=500, batch_id=10)
         assert_called_with_method_and_endpoint(client._request_json, "DELETE", "/batches/10")
 
-    def test_bulk_delete_no_ids(self, client: MammothClient):
-        client.batches.bulk_delete(dataset_id=500)
+    async def test_bulk_delete_no_ids(self, client: MammothClient):
+        await client.batches.bulk_delete(dataset_id=500)
         assert_called_with_method_and_endpoint(
             client._request_json, "DELETE", "/datasets/500/batches"
         )
         assert client._request_json.call_args.kwargs.get("params") is None
 
-    def test_bulk_delete_with_ids(self, client: MammothClient):
-        client.batches.bulk_delete(dataset_id=500, ids=[10, 11])
+    async def test_bulk_delete_with_ids(self, client: MammothClient):
+        await client.batches.bulk_delete(dataset_id=500, ids=[10, 11])
         assert_called_with_method_and_endpoint(
             client._request_json, "DELETE", "/datasets/500/batches"
         )
@@ -2373,31 +2425,31 @@ class TestBatchesAPI:
 
 
 class TestBrowseAPI:
-    def test_workspaces(self, client: MammothClient):
-        client.browse.workspaces()
+    async def test_workspaces(self, client: MammothClient):
+        await client.browse.workspaces()
         assert_called_with_method_and_endpoint(client._request_json, "GET", "/workspaces")
 
-    def test_projects(self, client: MammothClient):
-        client.browse.projects()
+    async def test_projects(self, client: MammothClient):
+        await client.browse.projects()
         assert_called_with_method_and_endpoint(client._request_json, "GET", "/projects")
 
-    def test_datasets(self, client: MammothClient):
-        client.browse.datasets()
+    async def test_datasets(self, client: MammothClient):
+        await client.browse.datasets()
         assert_called_with_method_and_endpoint(client._request_json, "GET", "/datasets")
 
-    def test_dataviews(self, client: MammothClient):
-        client.browse.dataviews(dataset_id=500)
+    async def test_dataviews(self, client: MammothClient):
+        await client.browse.dataviews(dataset_id=500)
         assert_called_with_method_and_endpoint(
             client._request_json, "GET", "/datasets/500/dataviews"
         )
 
-    def test_root(self, client: MammothClient):
-        client.browse.root()
+    async def test_root(self, client: MammothClient):
+        await client.browse.root()
         assert_called_with_method_and_endpoint(client._request_json, "GET", "/browse")
         assert client._request_json.call_args.kwargs.get("params") is None
 
-    def test_root_with_filters(self, client: MammothClient):
-        client.browse.root(name="foo", browse_type="project", limit=10, offset=5)
+    async def test_root_with_filters(self, client: MammothClient):
+        await client.browse.root(name="foo", browse_type="project", limit=10, offset=5)
         assert_called_with_method_and_endpoint(client._request_json, "GET", "/browse")
         assert client._request_json.call_args.kwargs["params"] == {
             "name": "foo",
@@ -2413,36 +2465,42 @@ class TestBrowseAPI:
 
 
 class TestClientAppsAPI:
-    def test_list(self, client: MammothClient):
-        # client_apps.list() returns Pydantic model
-        client._request_json.return_value = {
-            "result": [],
-        }
-        client.client_apps.list()
+    async def test_list(self, client: MammothClient):
+        # await client_apps.list() returns Pydantic model
+        client._request_json = AsyncMock(
+            return_value={
+                "result": [],
+            }
+        )
+        await client.client_apps.list()
         assert_called_with_method_and_endpoint(client._request_json, "GET", "/clientapps")
 
-    def test_create(self, client: MammothClient):
-        # client_apps.create() returns Pydantic model with ValueWrapper fields
-        client._request_json.return_value = {
-            "client_app": {
-                "client_key": {"value": "ck1"},
-                "app_name": {"value": "MyApp"},
-            },
-        }
-        client.client_apps.create(app_name="MyApp")
+    async def test_create(self, client: MammothClient):
+        # await client_apps.create() returns Pydantic model with ValueWrapper fields
+        client._request_json = AsyncMock(
+            return_value={
+                "client_app": {
+                    "client_key": {"value": "ck1"},
+                    "app_name": {"value": "MyApp"},
+                },
+            }
+        )
+        await client.client_apps.create(app_name="MyApp")
         assert_called_with_method_and_endpoint(client._request_json, "POST", "/clientapps")
 
-    def test_get(self, client: MammothClient):
-        # client_apps.get() returns ClientAppSchema with ValueWrapper fields
-        client._request_json.return_value = {
-            "client_key": {"value": "ck1"},
-            "app_name": {"value": "MyApp"},
-        }
-        client.client_apps.get(client_key="ck1")
+    async def test_get(self, client: MammothClient):
+        # await client_apps.get() returns ClientAppSchema with ValueWrapper fields
+        client._request_json = AsyncMock(
+            return_value={
+                "client_key": {"value": "ck1"},
+                "app_name": {"value": "MyApp"},
+            }
+        )
+        await client.client_apps.get(client_key="ck1")
         assert_called_with_method_and_endpoint(client._request_json, "GET", "/clientapps/ck1")
 
-    def test_delete(self, client: MammothClient):
-        client.client_apps.delete(client_key="ck1")
+    async def test_delete(self, client: MammothClient):
+        await client.client_apps.delete(client_key="ck1")
         assert_called_with_method_and_endpoint(client._request_json, "DELETE", "/clientapps/ck1")
 
 
@@ -2452,16 +2510,16 @@ class TestClientAppsAPI:
 
 
 class TestExternalKeysAPI:
-    def test_list(self, client: MammothClient):
-        client.external_keys.list()
+    async def test_list(self, client: MammothClient):
+        await client.external_keys.list()
         assert_called_with_method_and_endpoint(client._request_json, "GET", "/external_keys")
 
-    def test_get(self, client: MammothClient):
-        client.external_keys.get(key_id=3)
+    async def test_get(self, client: MammothClient):
+        await client.external_keys.get(key_id=3)
         assert_called_with_method_and_endpoint(client._request_json, "GET", "/external_keys/3")
 
-    def test_create_minimal(self, client: MammothClient):
-        client.external_keys.create(
+    async def test_create_minimal(self, client: MammothClient):
+        await client.external_keys.create(
             key_type=ExternalKeyType.ANTHROPIC,
             key_name="Claude key",
             secure_key="sk-ant-123",
@@ -2472,8 +2530,8 @@ class TestExternalKeysAPI:
             {"key_type": "anthropic", "key_name": "Claude key", "secure_key": "sk-ant-123"},
         )
 
-    def test_create_with_model_settings(self, client: MammothClient):
-        client.external_keys.create(
+    async def test_create_with_model_settings(self, client: MammothClient):
+        await client.external_keys.create(
             key_type=ExternalKeyType.OPEN_AI,
             key_name="GPT key",
             secure_key="sk-123",
@@ -2494,23 +2552,23 @@ class TestExternalKeysAPI:
             },
         )
 
-    def test_create_rejects_empty_name(self, client: MammothClient):
+    async def test_create_rejects_empty_name(self, client: MammothClient):
         with pytest.raises(MammothValidationError, match="key_name"):
-            client.external_keys.create(
+            await client.external_keys.create(
                 key_type=ExternalKeyType.GEMINI, key_name="", secure_key="abc"
             )
         client._request_json.assert_not_called()
 
-    def test_create_rejects_short_secure_key(self, client: MammothClient):
+    async def test_create_rejects_short_secure_key(self, client: MammothClient):
         with pytest.raises(MammothValidationError, match="secure_key"):
-            client.external_keys.create(
+            await client.external_keys.create(
                 key_type=ExternalKeyType.GROK, key_name="k", secure_key="ab"
             )
         client._request_json.assert_not_called()
 
-    def test_create_model_settings_requires_model_id(self, client: MammothClient):
+    async def test_create_model_settings_requires_model_id(self, client: MammothClient):
         with pytest.raises(MammothValidationError, match="model_id"):
-            client.external_keys.create(
+            await client.external_keys.create(
                 key_type=ExternalKeyType.OPEN_AI,
                 key_name="k",
                 secure_key="abc",
@@ -2518,8 +2576,8 @@ class TestExternalKeysAPI:
             )
         client._request_json.assert_not_called()
 
-    def test_delete(self, client: MammothClient):
-        client.external_keys.delete(key_id=3)
+    async def test_delete(self, client: MammothClient):
+        await client.external_keys.delete(key_id=3)
         assert_called_with_method_and_endpoint(client._request_json, "DELETE", "/external_keys/3")
 
 
@@ -2529,12 +2587,12 @@ class TestExternalKeysAPI:
 
 
 class TestActivityLogsAPI:
-    def test_list(self, client: MammothClient):
-        client.activity_logs.list()
+    async def test_list(self, client: MammothClient):
+        await client.activity_logs.list()
         assert_called_with_method_and_endpoint(client._request_json, "POST", "/activity_log")
 
-    def test_export(self, client: MammothClient):
-        client.activity_logs.export()
+    async def test_export(self, client: MammothClient):
+        await client.activity_logs.export()
         assert_called_with_method_and_endpoint(client._request_json, "POST", "/activity_log/export")
 
 
@@ -2544,75 +2602,75 @@ class TestActivityLogsAPI:
 
 
 class TestAddonsAPI:
-    def test_add_connector_single(self, client: MammothClient):
-        client.addons.add_connector(connector_id=42)
+    async def test_add_connector_single(self, client: MammothClient):
+        await client.addons.add_connector(connector_id=42)
         assert_called_with_method_and_endpoint(client._request_json, "POST", "/addons/connectors")
         assert_json_body(client._request_json, {"connector_id": 42})
 
-    def test_add_connector_bulk(self, client: MammothClient):
-        client.addons.add_connector(connector_ids=[42, 43])
+    async def test_add_connector_bulk(self, client: MammothClient):
+        await client.addons.add_connector(connector_ids=[42, 43])
         assert_json_body(client._request_json, {"connector_ids": [42, 43]})
 
-    def test_remove_connector_single(self, client: MammothClient):
-        client.addons.remove_connector(connector_id=42)
+    async def test_remove_connector_single(self, client: MammothClient):
+        await client.addons.remove_connector(connector_id=42)
         assert_called_with_method_and_endpoint(client._request_json, "DELETE", "/addons/connectors")
         assert_json_body(client._request_json, {"connector_id": 42})
 
-    def test_connector_requires_exactly_one(self, client: MammothClient):
+    async def test_connector_requires_exactly_one(self, client: MammothClient):
         with pytest.raises(MammothValidationError, match="exactly one"):
-            client.addons.add_connector()
+            await client.addons.add_connector()
         with pytest.raises(MammothValidationError, match="exactly one"):
-            client.addons.add_connector(connector_id=1, connector_ids=[2])
+            await client.addons.add_connector(connector_id=1, connector_ids=[2])
         client._request_json.assert_not_called()
 
-    def test_connector_rejects_nonpositive_id(self, client: MammothClient):
+    async def test_connector_rejects_nonpositive_id(self, client: MammothClient):
         with pytest.raises(MammothValidationError, match="positive"):
-            client.addons.add_connector(connector_id=0)
+            await client.addons.add_connector(connector_id=0)
         with pytest.raises(MammothValidationError, match="positive"):
-            client.addons.add_connector(connector_ids=[1, -2])
+            await client.addons.add_connector(connector_ids=[1, -2])
         client._request_json.assert_not_called()
 
-    def test_connector_rejects_empty_list(self, client: MammothClient):
+    async def test_connector_rejects_empty_list(self, client: MammothClient):
         with pytest.raises(MammothValidationError, match="non-empty"):
-            client.addons.add_connector(connector_ids=[])
+            await client.addons.add_connector(connector_ids=[])
         client._request_json.assert_not_called()
 
-    def test_add_storage(self, client: MammothClient):
-        client.addons.add_storage(additional_storage_gb=50)
+    async def test_add_storage(self, client: MammothClient):
+        await client.addons.add_storage(additional_storage_gb=50)
         assert_called_with_method_and_endpoint(client._request_json, "POST", "/addons/storage")
         assert_json_body(client._request_json, {"additional_storage_gb": 50})
 
-    def test_remove_storage(self, client: MammothClient):
-        client.addons.remove_storage(removal_storage_gb=20)
+    async def test_remove_storage(self, client: MammothClient):
+        await client.addons.remove_storage(removal_storage_gb=20)
         assert_called_with_method_and_endpoint(client._request_json, "DELETE", "/addons/storage")
         assert_json_body(client._request_json, {"removal_storage_gb": 20})
 
-    def test_storage_rejects_nonpositive(self, client: MammothClient):
+    async def test_storage_rejects_nonpositive(self, client: MammothClient):
         with pytest.raises(MammothValidationError, match="positive"):
-            client.addons.add_storage(additional_storage_gb=0)
+            await client.addons.add_storage(additional_storage_gb=0)
         with pytest.raises(MammothValidationError, match="positive"):
-            client.addons.remove_storage(removal_storage_gb=-5)
+            await client.addons.remove_storage(removal_storage_gb=-5)
         client._request_json.assert_not_called()
 
-    def test_add_users(self, client: MammothClient):
-        client.addons.add_users(user_count=5)
+    async def test_add_users(self, client: MammothClient):
+        await client.addons.add_users(user_count=5)
         assert_called_with_method_and_endpoint(client._request_json, "POST", "/addons/users")
         assert_json_body(client._request_json, {"user_count": 5})
 
-    def test_add_users_defaults_to_one(self, client: MammothClient):
-        client.addons.add_users()
+    async def test_add_users_defaults_to_one(self, client: MammothClient):
+        await client.addons.add_users()
         assert_json_body(client._request_json, {"user_count": 1})
 
-    def test_remove_users(self, client: MammothClient):
-        client.addons.remove_users(user_count=5)
+    async def test_remove_users(self, client: MammothClient):
+        await client.addons.remove_users(user_count=5)
         assert_called_with_method_and_endpoint(client._request_json, "DELETE", "/addons/users")
         assert_json_body(client._request_json, {"user_count": 5})
 
-    def test_users_rejects_nonpositive(self, client: MammothClient):
+    async def test_users_rejects_nonpositive(self, client: MammothClient):
         with pytest.raises(MammothValidationError, match="positive"):
-            client.addons.add_users(user_count=0)
+            await client.addons.add_users(user_count=0)
         with pytest.raises(MammothValidationError, match="positive"):
-            client.addons.remove_users(user_count=-1)
+            await client.addons.remove_users(user_count=-1)
         client._request_json.assert_not_called()
 
 
@@ -2622,8 +2680,8 @@ class TestAddonsAPI:
 
 
 class TestReportsAPI:
-    def test_list(self, client: MammothClient):
-        client.reports.list()
+    async def test_list(self, client: MammothClient):
+        await client.reports.list()
         assert_called_with_method_and_endpoint(client._request_json, "GET", "/reports")
 
 
@@ -2633,25 +2691,25 @@ class TestReportsAPI:
 
 
 class TestUserProfileAPI:
-    def test_get(self, client: MammothClient):
-        client.user_profile.get()
+    async def test_get(self, client: MammothClient):
+        await client.user_profile.get()
         assert_called_with_method_and_endpoint(client._request_json, "GET", "/self")
 
-    def test_update(self, client: MammothClient):
-        client.user_profile.update(first_name="Alice")
+    async def test_update(self, client: MammothClient):
+        await client.user_profile.update(first_name="Alice")
         assert_called_with_method_and_endpoint(client._request_json, "PATCH", "/self")
 
-    def test_change_password(self, client: MammothClient):
-        client.user_profile.change_password(current_password="old", new_password="new")
+    async def test_change_password(self, client: MammothClient):
+        await client.user_profile.change_password(current_password="old", new_password="new")
         assert_called_with_method_and_endpoint(client._request_json, "POST", "/change_password")
 
-    def test_get_preferences(self, client: MammothClient):
-        client.user_profile.get_preferences()
+    async def test_get_preferences(self, client: MammothClient):
+        await client.user_profile.get_preferences()
         assert_called_with_method_and_endpoint(client._request_json, "GET", "/preferences")
 
-    def test_update_preferences(self, client: MammothClient):
+    async def test_update_preferences(self, client: MammothClient):
         # PreferencesPatchRequest: patch of replace ops on dotted preference paths.
-        client.user_profile.update_preferences(**{"GLOBAL.PREFERENCES.THEME": "dark"})
+        await client.user_profile.update_preferences(**{"GLOBAL.PREFERENCES.THEME": "dark"})
         assert_called_with_method_and_endpoint(client._request_json, "PATCH", "/preferences")
         assert_json_body(
             client._request_json,
@@ -2665,93 +2723,93 @@ class TestUserProfileAPI:
 
 
 class TestWorkspaceAPI:
-    def test_list(self, client: MammothClient):
-        client.workspaces.list()
+    async def test_list(self, client: MammothClient):
+        await client.workspaces.list()
         assert_called_with_method_and_endpoint(client._request_json, "GET", "/workspaces")
 
-    def test_get(self, client: MammothClient):
-        client.workspaces.get()
+    async def test_get(self, client: MammothClient):
+        await client.workspaces.get()
         assert_called_with_method_and_endpoint(client._request_json, "GET", "/workspaces/1")
 
-    def test_update_name(self, client: MammothClient):
+    async def test_update_name(self, client: MammothClient):
         op = WorkspacePatchOp(op="replace", path=WorkspacePatchPath.NAME, value="Acme Corp")
-        client.workspaces.update(patches=[op])
+        await client.workspaces.update(patches=[op])
         assert_called_with_method_and_endpoint(client._request_json, "PATCH", "/workspaces/1")
         assert_json_body(
             client._request_json,
             {"patches": [{"op": "replace", "path": "name", "value": "Acme Corp"}]},
         )
 
-    def test_update_billing_cycle(self, client: MammothClient):
+    async def test_update_billing_cycle(self, client: MammothClient):
         op = WorkspacePatchOp(
             op="replace", path=WorkspacePatchPath.BILLING_CYCLE, value=BillingCycle.YEARLY
         )
-        client.workspaces.update(patches=[op])
+        await client.workspaces.update(patches=[op])
         assert_json_body(
             client._request_json,
             {"patches": [{"op": "replace", "path": "billing_cycle", "value": "yearly"}]},
         )
 
-    def test_update_plan_id(self, client: MammothClient):
+    async def test_update_plan_id(self, client: MammothClient):
         op = WorkspacePatchOp(op="replace", path=WorkspacePatchPath.PLAN_ID, value=3)
-        client.workspaces.update(patches=[op])
+        await client.workspaces.update(patches=[op])
         assert_json_body(
             client._request_json,
             {"patches": [{"op": "replace", "path": "plan_id", "value": 3}]},
         )
 
-    def test_update_rejects_empty_patches(self, client: MammothClient):
+    async def test_update_rejects_empty_patches(self, client: MammothClient):
         with pytest.raises(MammothValidationError, match="patches"):
-            client.workspaces.update(patches=[])
+            await client.workspaces.update(patches=[])
         client._request_json.assert_not_called()
 
-    def test_update_rejects_name_too_long(self, client: MammothClient):
+    async def test_update_rejects_name_too_long(self, client: MammothClient):
         with pytest.raises(ValueError, match="name"):
             WorkspacePatchOp(op="replace", path=WorkspacePatchPath.NAME, value="x" * 51)
 
-    def test_update_rejects_invalid_billing_cycle(self, client: MammothClient):
+    async def test_update_rejects_invalid_billing_cycle(self, client: MammothClient):
         with pytest.raises(ValueError, match="billing_cycle"):
             WorkspacePatchOp(op="replace", path=WorkspacePatchPath.BILLING_CYCLE, value="quarterly")
 
-    def test_delete(self, client: MammothClient):
-        client.workspaces.delete()
+    async def test_delete(self, client: MammothClient):
+        await client.workspaces.delete()
         assert_called_with_method_and_endpoint(client._request_json, "DELETE", "/workspaces/1")
 
-    def test_reactivate(self, client: MammothClient):
-        client.workspaces.reactivate()
+    async def test_reactivate(self, client: MammothClient):
+        await client.workspaces.reactivate()
         assert_called_with_method_and_endpoint(
             client._request_json, "POST", "/workspaces/1/reactivate"
         )
 
-    def test_list_users(self, client: MammothClient):
-        client.workspaces.list_users()
+    async def test_list_users(self, client: MammothClient):
+        await client.workspaces.list_users()
         assert_called_with_method_and_endpoint(client._request_json, "GET", "/workspaces/1/users")
 
-    def test_get_user(self, client: MammothClient):
-        client.workspaces.get_user(user_id="u1")
+    async def test_get_user(self, client: MammothClient):
+        await client.workspaces.get_user(user_id="u1")
         assert_called_with_method_and_endpoint(client._request_json, "GET", "/users/u1")
 
-    def test_update_user_sends_patch_envelope(self, client: MammothClient):
+    async def test_update_user_sends_patch_envelope(self, client: MammothClient):
         op = UserRolePatchOp(op="replace", path="role", value=WorkspaceRoleType.WORKSPACE_ADMIN)
-        client.workspaces.update_user(user_id="u1", patches=[op])
+        await client.workspaces.update_user(user_id="u1", patches=[op])
         assert_called_with_method_and_endpoint(client._request_json, "PATCH", "/users/u1")
         assert_json_body(
             client._request_json,
             {"patches": [{"op": "replace", "path": "role", "value": "workspace_admin"}]},
         )
 
-    def test_update_user_rejects_empty_user_id(self, client: MammothClient):
+    async def test_update_user_rejects_empty_user_id(self, client: MammothClient):
         op = UserRolePatchOp(op="replace", path="role", value=WorkspaceRoleType.WORKSPACE_MEMBER)
         with pytest.raises(MammothValidationError, match="user_id"):
-            client.workspaces.update_user(user_id="", patches=[op])
+            await client.workspaces.update_user(user_id="", patches=[op])
         client._request_json.assert_not_called()
 
-    def test_update_user_rejects_empty_patches(self, client: MammothClient):
+    async def test_update_user_rejects_empty_patches(self, client: MammothClient):
         with pytest.raises(MammothValidationError, match="patches"):
-            client.workspaces.update_user(user_id="u1", patches=[])
+            await client.workspaces.update_user(user_id="u1", patches=[])
         client._request_json.assert_not_called()
 
-    def test_update_user_rejects_invalid_role(self, client: MammothClient):
+    async def test_update_user_rejects_invalid_role(self, client: MammothClient):
         with pytest.raises(ValueError):
             UserRolePatchOp(op="replace", path="role", value="admin")
 
@@ -2762,12 +2820,12 @@ class TestWorkspaceAPI:
 
 
 class TestAIAPI:
-    def test_generate_profile(self, client: MammothClient):
-        client.ai.generate_profile(dataview_id=42, dataset_id=500)
+    async def test_generate_profile(self, client: MammothClient):
+        await client.ai.generate_profile(dataview_id=42, dataset_id=500)
         assert_called_with_method_and_endpoint(client._request_json, "POST", "/profile_generation")
 
-    def test_generate_data_sends_correct_body(self, client: MammothClient):
-        client.ai.generate_data(
+    async def test_generate_data_sends_correct_body(self, client: MammothClient):
+        await client.ai.generate_data(
             dataview_id=42,
             prompt="Generate realistic sales data",
             no_of_rows=25,
@@ -2779,8 +2837,8 @@ class TestAIAPI:
             {"prompt": "Generate realistic sales data", "no_of_rows": 25},
         )
 
-    def test_generate_data_with_columns(self, client: MammothClient):
-        client.ai.generate_data(
+    async def test_generate_data_with_columns(self, client: MammothClient):
+        await client.ai.generate_data(
             dataview_id=42,
             prompt="Generate sales data",
             no_of_rows=5,
@@ -2796,47 +2854,47 @@ class TestAIAPI:
             },
         )
 
-    def test_generate_data_rejects_empty_prompt(self, client: MammothClient):
+    async def test_generate_data_rejects_empty_prompt(self, client: MammothClient):
         with pytest.raises(MammothValidationError, match="prompt"):
-            client.ai.generate_data(dataview_id=42, prompt="", dataset_id=500)
+            await client.ai.generate_data(dataview_id=42, prompt="", dataset_id=500)
         client._request_json.assert_not_called()
 
-    def test_generate_data_rejects_rows_too_low(self, client: MammothClient):
+    async def test_generate_data_rejects_rows_too_low(self, client: MammothClient):
         with pytest.raises(MammothValidationError, match="no_of_rows"):
-            client.ai.generate_data(
+            await client.ai.generate_data(
                 dataview_id=42, prompt="Generate data", no_of_rows=0, dataset_id=500
             )
         client._request_json.assert_not_called()
 
-    def test_generate_data_rejects_rows_too_high(self, client: MammothClient):
+    async def test_generate_data_rejects_rows_too_high(self, client: MammothClient):
         with pytest.raises(MammothValidationError, match="no_of_rows"):
-            client.ai.generate_data(
+            await client.ai.generate_data(
                 dataview_id=42, prompt="Generate data", no_of_rows=101, dataset_id=500
             )
         client._request_json.assert_not_called()
 
-    def test_get_data_gen_info(self, client: MammothClient):
-        client.ai.get_data_gen_info(dataview_id=42, dataset_id=500)
+    async def test_get_data_gen_info(self, client: MammothClient):
+        await client.ai.get_data_gen_info(dataview_id=42, dataset_id=500)
         assert_called_with_method_and_endpoint(client._request_json, "GET", "/data/generate")
 
-    def test_generate_sql(self, client: MammothClient):
+    async def test_generate_sql(self, client: MammothClient):
         # The route requires the dataset_id query parameter.
-        client.ai.generate_sql(intent="count employees", dataset_id=48)
+        await client.ai.generate_sql(intent="count employees", dataset_id=48)
         assert_called_with_method_and_endpoint(client._request_json, "POST", "/sql_generation")
         assert client._request_json.call_args.kwargs["params"] == {"dataset_id": 48}
         with pytest.raises(MammothValidationError, match="dataset_id"):
-            client.ai.generate_sql(intent="count employees")
+            await client.ai.generate_sql(intent="count employees")
 
-    def test_generate_profile_sends_action(self, client: MammothClient):
-        client.ai.generate_profile(dataview_id=42, dataset_id=500, action="data_quality")
+    async def test_generate_profile_sends_action(self, client: MammothClient):
+        await client.ai.generate_profile(dataview_id=42, dataset_id=500, action="data_quality")
         assert client._request_json.call_args.kwargs["json"] == {
             "params": {"action": "data_quality"}
         }
         with pytest.raises(MammothValidationError, match="action"):
-            client.ai.generate_profile(dataview_id=42, dataset_id=500, action="profile")
+            await client.ai.generate_profile(dataview_id=42, dataset_id=500, action="profile")
 
-    def test_get_suggestions(self, client: MammothClient):
-        client.ai.get_suggestions(
+    async def test_get_suggestions(self, client: MammothClient):
+        await client.ai.get_suggestions(
             suggestion_type="generate_task", params={"prompt": "Filter Price > 100"}, dataview_id=73
         )
         assert_called_with_method_and_endpoint(client._request_json, "POST", "/suggestions")
@@ -2847,28 +2905,28 @@ class TestAIAPI:
         }
         assert kwargs["params"] == {"dataview_id": 73}
 
-    def test_get_suggestions_requires_type_and_params(self, client: MammothClient):
+    async def test_get_suggestions_requires_type_and_params(self, client: MammothClient):
         with pytest.raises(MammothValidationError, match="suggestion_type"):
-            client.ai.get_suggestions()
+            await client.ai.get_suggestions()
         with pytest.raises(MammothValidationError, match="params"):
-            client.ai.get_suggestions(suggestion_type="dashboards")
+            await client.ai.get_suggestions(suggestion_type="dashboards")
         client._request_json.assert_not_called()
 
-    def test_query_gen(self, client: MammothClient):
-        client.ai.query_gen(connector_key="sf", connection_key="conn1", query="list tables")
+    async def test_query_gen(self, client: MammothClient):
+        await client.ai.query_gen(connector_key="sf", connection_key="conn1", query="list tables")
         assert_called_with_method_and_endpoint(
             client._request_json, "POST", "/connections/conn1/chat"
         )
         assert client._request_json.call_args.kwargs["json"] == {"query": "list tables"}
 
-    def test_status(self, client: MammothClient):
-        client.ai.status(connector_key="sf", connection_key="conn1")
+    async def test_status(self, client: MammothClient):
+        await client.ai.status(connector_key="sf", connection_key="conn1")
         assert_called_with_method_and_endpoint(
             client._request_json, "GET", "/connections/conn1/chat"
         )
 
-    def test_condition_generate(self, client: MammothClient):
-        client.ai.condition_generate(intent="rows where amount > 100", dataset_id=500)
+    async def test_condition_generate(self, client: MammothClient):
+        await client.ai.condition_generate(intent="rows where amount > 100", dataset_id=500)
         assert_called_with_method_and_endpoint(
             client._request_json, "POST", "/sql_generation/condition"
         )
@@ -2878,8 +2936,8 @@ class TestAIAPI:
             {"params": {"intent": "rows where amount > 100"}},
         )
 
-    def test_condition_generate_with_optional_fields(self, client: MammothClient):
-        client.ai.condition_generate(
+    async def test_condition_generate_with_optional_fields(self, client: MammothClient):
+        await client.ai.condition_generate(
             intent="rows where amount > 100",
             dataset_id=500,
             dataview_id=42,
@@ -2894,8 +2952,8 @@ class TestAIAPI:
             {"params": {"intent": "rows where amount > 100", "sequence_number": 3}},
         )
 
-    def test_expression_generate(self, client: MammothClient):
-        client.ai.expression_generate(intent="total revenue", mode="metric", dataset_id=500)
+    async def test_expression_generate(self, client: MammothClient):
+        await client.ai.expression_generate(intent="total revenue", mode="metric", dataset_id=500)
         assert_called_with_method_and_endpoint(
             client._request_json, "POST", "/sql_generation/expression"
         )
@@ -2904,13 +2962,15 @@ class TestAIAPI:
             {"params": {"intent": "total revenue", "mode": "metric"}},
         )
 
-    def test_expression_generate_rejects_invalid_mode(self, client: MammothClient):
+    async def test_expression_generate_rejects_invalid_mode(self, client: MammothClient):
         with pytest.raises(MammothValidationError, match="mode"):
-            client.ai.expression_generate(intent="total revenue", mode="bogus", dataset_id=500)
+            await client.ai.expression_generate(
+                intent="total revenue", mode="bogus", dataset_id=500
+            )
         client._request_json.assert_not_called()
 
-    def test_retention_condition_generate(self, client: MammothClient):
-        client.ai.retention_condition(
+    async def test_retention_condition_generate(self, client: MammothClient):
+        await client.ai.retention_condition(
             dataset_id=0, mode="generate", intent="completed payments older than 90 days"
         )
         assert_called_with_method_and_endpoint(
@@ -2926,8 +2986,8 @@ class TestAIAPI:
             },
         )
 
-    def test_retention_condition_test(self, client: MammothClient):
-        client.ai.retention_condition(
+    async def test_retention_condition_test(self, client: MammothClient):
+        await client.ai.retention_condition(
             dataset_id=500, mode="test", condition_sql="status = 'completed'"
         )
         assert_json_body(
@@ -2948,36 +3008,36 @@ class TestAIAPI:
             {"dataset_id": 500, "mode": "test", "condition_sql": "y", "project_id": True},
         ],
     )
-    def test_retention_condition_rejects_invalid_payload(
+    async def test_retention_condition_rejects_invalid_payload(
         self, client: MammothClient, kwargs: dict[str, object]
     ):
         with pytest.raises(MammothValidationError, match="mode|intent|condition_sql|project_id"):
-            client.ai.retention_condition(**kwargs)
+            await client.ai.retention_condition(**kwargs)
         client._request_json.assert_not_called()
 
 
 class TestUrlScopedJobWait:
-    def test_wait_for_job_by_url_polls_the_url_scoped_route(self, client: MammothClient):
+    async def test_wait_for_job_by_url_polls_the_url_scoped_route(self, client: MammothClient):
         # Published-dashboard jobs answer 4PERM002 on GET /jobs/{id}; the
         # URL-scoped job route is the only readable observer for them.
-        client._request_json.return_value = {
-            "job": {"id": 313, "status": "success", "response": {"ok": 1}}
-        }
-        job = client.dashboards.wait_for_job_by_url("IuZl5tk5", 313, timeout=5)
+        client._request_json = AsyncMock(
+            return_value={"job": {"id": 313, "status": "success", "response": {"ok": 1}}}
+        )
+        job = await client.dashboards.wait_for_job_by_url("IuZl5tk5", 313, timeout=5)
         assert job["status"] == "success"
         client._request_json.assert_called_once_with("GET", "/dashboards/url/IuZl5tk5/jobs/313")
 
-    def test_wait_if_job_uses_custom_fetch(self):
-        with patch("mammoth.client.requests.Session"):
+    async def test_wait_if_job_uses_custom_fetch(self):
+        with patch("mammoth.client.httpx.AsyncClient"):
             client = MammothClient(api_key="key", api_secret="secret", workspace_id=1)
-        client._request_json = MagicMock(return_value={})
+        client._request_json = AsyncMock(return_value={})
         seen: list[int] = []
 
-        def fetch(job_id: int, remaining: float) -> dict:
+        async def fetch(job_id: int, remaining: float) -> dict:
             seen.append(job_id)
             return {"id": job_id, "status": "success", "response": {"value": 58824}}
 
-        assert client.wait_if_job({"job_id": 311}, timeout=5, fetch=fetch) == {"value": 58824}
+        assert await client.wait_if_job({"job_id": 311}, timeout=5, fetch=fetch) == {"value": 58824}
         assert seen == [311]
         client._request_json.assert_not_called()
 
@@ -2994,27 +3054,29 @@ class TestProjectsPagination:
             "next": next_token,
         }
 
-    def test_list_sends_offset_only_when_nonzero(self, client: MammothClient):
-        client.projects.list(limit=50)
+    async def test_list_sends_offset_only_when_nonzero(self, client: MammothClient):
+        await client.projects.list(limit=50)
         assert client._request_json.call_args.kwargs["params"] == {
             "fields": "id,name",
             "limit": 50,
         }
         client._request_json.reset_mock()
-        client.projects.list(limit=50, offset=50)
+        await client.projects.list(limit=50, offset=50)
         assert client._request_json.call_args.kwargs["params"] == {
             "fields": "id,name",
             "limit": 50,
             "offset": 50,
         }
 
-    def test_list_all_follows_full_pages(self, client: MammothClient):
-        client._request_json.side_effect = [
-            self._page(0, 100, "?offset=100"),
-            self._page(100, 100, "?offset=200"),
-            self._page(200, 7, ""),
-        ]
-        projects = client.projects.list_all()
+    async def test_list_all_follows_full_pages(self, client: MammothClient):
+        client._request_json = AsyncMock(
+            side_effect=[
+                self._page(0, 100, "?offset=100"),
+                self._page(100, 100, "?offset=200"),
+                self._page(200, 7, ""),
+            ]
+        )
+        projects = await client.projects.list_all()
         assert len(projects) == 207
         assert [
             c.kwargs["params"].get("offset", 0) for c in client._request_json.call_args_list
@@ -3024,14 +3086,19 @@ class TestProjectsPagination:
             200,
         ]
 
-    def test_list_all_stops_when_the_server_ignores_offset(self, client: MammothClient):
-        client._request_json.side_effect = [self._page(0, 100, ""), self._page(0, 100, "")]
-        projects = client.projects.list_all()
+    async def test_list_all_stops_when_the_server_ignores_offset(self, client: MammothClient):
+        client._request_json = AsyncMock(
+            side_effect=[self._page(0, 100, ""), self._page(0, 100, "")]
+        )
+        projects = await client.projects.list_all()
         assert len(projects) == 100
         assert client._request_json.call_count == 2
 
-    def test_get_by_name_sees_past_the_first_page(self, client: MammothClient):
+    async def test_get_by_name_sees_past_the_first_page(self, client: MammothClient):
         second = self._page(100, 1, "")
         second["projects"] = [{"id": 100, "name": "From Claude"}]
-        client._request_json.side_effect = [self._page(0, 100, "?offset=100"), second]
-        assert client.projects.get(project="From Claude") == {"id": 100, "name": "From Claude"}
+        client._request_json = AsyncMock(side_effect=[self._page(0, 100, "?offset=100"), second])
+        assert await client.projects.get(project="From Claude") == {
+            "id": 100,
+            "name": "From Claude",
+        }

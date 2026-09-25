@@ -50,7 +50,7 @@ class ParametersAPI:
         if project_id is not None and project_id <= 0:
             raise MammothValidationError(ERR_PROJECT_ID_POSITIVE.format(project_id))
 
-    def list(
+    async def list(
         self,
         limit: int | None = None,
         offset: int | None = None,
@@ -86,11 +86,11 @@ class ParametersAPI:
             params["sort"] = sort
         if project_id is not None:
             params["project_id"] = project_id
-        return self._client._request_json(
+        return await self._client._request_json(
             "GET", f"/workspaces/{self._ws()}/parameters", params=params or None
         )
 
-    def create(
+    async def create(
         self,
         name: str,
         param_type: str,
@@ -131,9 +131,11 @@ class ParametersAPI:
             body["group_id"] = group_id
         if project_id is not None:
             body["project_id"] = project_id
-        return self._client._request_json("POST", f"/workspaces/{self._ws()}/parameters", json=body)
+        return await self._client._request_json(
+            "POST", f"/workspaces/{self._ws()}/parameters", json=body
+        )
 
-    def get(self, parameter_id: int) -> dict[str, Any]:
+    async def get(self, parameter_id: int) -> dict[str, Any]:
         """Get parameter details.
 
         Args:
@@ -146,11 +148,11 @@ class ParametersAPI:
             MammothValidationError: If *parameter_id* <= 0.
         """
         self._check_parameter_id(parameter_id)
-        return self._client._request_json(
+        return await self._client._request_json(
             "GET", f"/workspaces/{self._ws()}/parameters/{parameter_id}"
         )
 
-    def update(
+    async def update(
         self,
         parameter_id: int,
         name: str | None = None,
@@ -187,11 +189,11 @@ class ParametersAPI:
             body["description"] = description
         if group_id is not None:
             body["group_id"] = group_id
-        return self._client._request_json(
+        return await self._client._request_json(
             "PATCH", f"/workspaces/{self._ws()}/parameters/{parameter_id}", json=body
         )
 
-    def delete(self, parameter_id: int) -> dict[str, Any]:
+    async def delete(self, parameter_id: int) -> dict[str, Any]:
         """Delete a parameter.
 
         Args:
@@ -204,11 +206,11 @@ class ParametersAPI:
             MammothValidationError: If *parameter_id* <= 0.
         """
         self._check_parameter_id(parameter_id)
-        return self._client._request_json(
+        return await self._client._request_json(
             "DELETE", f"/workspaces/{self._ws()}/parameters/{parameter_id}"
         )
 
-    def dependencies(self, parameter_id: int) -> dict[str, Any]:
+    async def dependencies(self, parameter_id: int) -> dict[str, Any]:
         """Get objects that depend on a parameter.
 
         Args:
@@ -221,11 +223,11 @@ class ParametersAPI:
             MammothValidationError: If *parameter_id* <= 0.
         """
         self._check_parameter_id(parameter_id)
-        return self._client._request_json(
+        return await self._client._request_json(
             "GET", f"/workspaces/{self._ws()}/parameters/{parameter_id}/dependencies"
         )
 
-    def duplicate(self, parameter_id: int) -> dict[str, Any]:
+    async def duplicate(self, parameter_id: int) -> dict[str, Any]:
         """Duplicate a parameter.
 
         Args:
@@ -238,11 +240,11 @@ class ParametersAPI:
             MammothValidationError: If *parameter_id* <= 0.
         """
         self._check_parameter_id(parameter_id)
-        return self._client._request_json(
+        return await self._client._request_json(
             "POST", f"/workspaces/{self._ws()}/parameters/{parameter_id}/duplicate"
         )
 
-    def rerun(self, parameter_id: int) -> dict[str, Any]:
+    async def rerun(self, parameter_id: int) -> dict[str, Any]:
         """Rerun a single parameter's computation.
 
         Args:
@@ -255,11 +257,11 @@ class ParametersAPI:
             MammothValidationError: If *parameter_id* <= 0.
         """
         self._check_parameter_id(parameter_id)
-        return self._client._request_json(
+        return await self._client._request_json(
             "POST", f"/workspaces/{self._ws()}/parameters/{parameter_id}/rerun"
         )
 
-    def rerun_all_stale(self, project_id: int) -> dict[str, Any]:
+    async def rerun_all_stale(self, project_id: int) -> dict[str, Any]:
         """Rerun all stale parameters in a project.
 
         Args:
@@ -273,13 +275,13 @@ class ParametersAPI:
         """
         if project_id <= 0:
             raise MammothValidationError(ERR_PROJECT_ID_POSITIVE.format(project_id))
-        return self._client._request_json(
+        return await self._client._request_json(
             "POST",
             f"/workspaces/{self._ws()}/parameters/rerun-all-stale",
             params={"project_id": project_id},
         )
 
-    def group_list(
+    async def group_list(
         self,
         project_id: int | None = None,
         limit: int | None = None,
@@ -307,11 +309,11 @@ class ParametersAPI:
             params["offset"] = offset
         if sort is not None:
             params["sort"] = sort
-        return self._client._request_json(
+        return await self._client._request_json(
             "GET", f"/workspaces/{self._ws()}/parameters/groups", params=params or None
         )
 
-    def group_create(
+    async def group_create(
         self,
         name: str,
         color: str = "#3B82F6",
@@ -335,14 +337,14 @@ class ParametersAPI:
         if project_id is not None:
             params["project_id"] = project_id
         body = {"name": name, "color": color}
-        return self._client._request_json(
+        return await self._client._request_json(
             "POST",
             f"/workspaces/{self._ws()}/parameters/groups",
             params=params or None,
             json=body,
         )
 
-    def group_update(
+    async def group_update(
         self,
         group_id: int,
         name: str | None = None,
@@ -373,14 +375,14 @@ class ParametersAPI:
             body["name"] = name
         if color is not None:
             body["color"] = color
-        return self._client._request_json(
+        return await self._client._request_json(
             "PATCH",
             f"/workspaces/{self._ws()}/parameters/groups/{group_id}",
             params=params or None,
             json=body,
         )
 
-    def group_delete(self, group_id: int, project_id: int | None = None) -> dict[str, Any]:
+    async def group_delete(self, group_id: int, project_id: int | None = None) -> dict[str, Any]:
         """Delete a parameter group.
 
         Args:
@@ -398,13 +400,13 @@ class ParametersAPI:
         params: dict[str, Any] = {}
         if project_id is not None:
             params["project_id"] = project_id
-        return self._client._request_json(
+        return await self._client._request_json(
             "DELETE",
             f"/workspaces/{self._ws()}/parameters/groups/{group_id}",
             params=params or None,
         )
 
-    def group_reorder(
+    async def group_reorder(
         self,
         order: _list[int],
         project_id: int | None = None,
@@ -426,7 +428,7 @@ class ParametersAPI:
         if project_id is not None:
             params["project_id"] = project_id
         body = {"order": order}
-        return self._client._request_json(
+        return await self._client._request_json(
             "POST",
             f"/workspaces/{self._ws()}/parameters/groups/reorder",
             params=params or None,

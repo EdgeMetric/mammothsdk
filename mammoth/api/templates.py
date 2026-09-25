@@ -34,17 +34,17 @@ class TemplatesAPI:
         if template_id <= 0:
             raise MammothValidationError(ERR_TEMPLATE_ID_POSITIVE.format(template_id))
 
-    def list(self) -> dict[str, Any]:
+    async def list(self) -> dict[str, Any]:
         """List templates in the workspace.
 
         Returns:
             ``{"templates": [...]}``. The backend answers this route with a bare
             JSON array, which is wrapped so callers get the usual dict shape.
         """
-        items = self._client._request_list("GET", f"/workspaces/{self._ws()}/templates")
+        items = await self._client._request_list("GET", f"/workspaces/{self._ws()}/templates")
         return {"templates": items}
 
-    def get(self, template_id: int) -> dict[str, Any]:
+    async def get(self, template_id: int) -> dict[str, Any]:
         """Get details of a template.
 
         Args:
@@ -57,11 +57,11 @@ class TemplatesAPI:
             MammothValidationError: If *template_id* is not a positive integer.
         """
         self._check_template_id(template_id)
-        return self._client._request_json(
+        return await self._client._request_json(
             "GET", f"/workspaces/{self._ws()}/templates/{template_id}"
         )
 
-    def create(self, body: dict[str, Any]) -> dict[str, Any]:
+    async def create(self, body: dict[str, Any]) -> dict[str, Any]:
         """Create a new template.
 
         Args:
@@ -70,9 +70,11 @@ class TemplatesAPI:
         Returns:
             Dict with the created template.
         """
-        return self._client._request_json("POST", f"/workspaces/{self._ws()}/templates", json=body)
+        return await self._client._request_json(
+            "POST", f"/workspaces/{self._ws()}/templates", json=body
+        )
 
-    def update(self, template_id: int, body: dict[str, Any]) -> dict[str, Any]:
+    async def update(self, template_id: int, body: dict[str, Any]) -> dict[str, Any]:
         """Update a template via patch operations.
 
         Args:
@@ -86,11 +88,11 @@ class TemplatesAPI:
             MammothValidationError: If *template_id* is not a positive integer.
         """
         self._check_template_id(template_id)
-        return self._client._request_json(
+        return await self._client._request_json(
             "PATCH", f"/workspaces/{self._ws()}/templates/{template_id}", json=body
         )
 
-    def delete(self, template_id: int) -> dict[str, Any]:
+    async def delete(self, template_id: int) -> dict[str, Any]:
         """Delete a template.
 
         Args:
@@ -103,6 +105,6 @@ class TemplatesAPI:
             MammothValidationError: If *template_id* is not a positive integer.
         """
         self._check_template_id(template_id)
-        return self._client._request_json(
+        return await self._client._request_json(
             "DELETE", f"/workspaces/{self._ws()}/templates/{template_id}"
         )

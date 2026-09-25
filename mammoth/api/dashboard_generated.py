@@ -184,59 +184,59 @@ def _typed_response(
     return response
 
 
-def analytics(self: Any, dashboard_id: int) -> DashboardAnalyticsResponse:
+async def analytics(self: Any, dashboard_id: int) -> DashboardAnalyticsResponse:
     """Get Dashboard Analytics."""
     path = "/dashboards/{dashboard_id}/analytics"
     path = path.replace("{dashboard_id}", str(dashboard_id))
     params = None
-    response = self._client._request_json("GET", path, params=params)
+    response = await self._client._request_json("GET", path, params=params)
     return _typed_response(response, (DashboardAnalyticsResponse,), allow_untyped=False)
 
 
-def source_list(self: Any) -> DashboardSourcesType:
+async def source_list(self: Any) -> DashboardSourcesType:
     """Get Dashboard Sources."""
     path = "/dashboards/sources"
     params = None
-    response = self._client._request_json("GET", path, params=params)
+    response = await self._client._request_json("GET", path, params=params)
     return _typed_response(response, (DashboardSourcesType,), allow_untyped=False)
 
 
-def data_draft(
+async def data_draft(
     self: Any, dashboard_id: int, body: WidgetDataSpec
 ) -> WidgetDataResponse | ObjectJobSchema | JobResponse:
     """Get draft data from given SQL query."""
     path = "/dashboards/{dashboard_id}/getDraftData"
     path = path.replace("{dashboard_id}", str(dashboard_id))
     params = None
-    response = self._client._request_json("POST", path, params=params, json=_json_body(body))
+    response = await self._client._request_json("POST", path, params=params, json=_json_body(body))
     return _typed_response(
         response, (WidgetDataResponse, ObjectJobSchema, JobResponse), allow_untyped=False
     )
 
 
-def data_published(
+async def data_published(
     self: Any, dashboard_id: int, body: WidgetDataSpec
 ) -> WidgetDataResponse | ObjectJobSchema | JobResponse:
     """Get published data from given SQL query."""
     path = "/dashboards/{dashboard_id}/getPublishData"
     path = path.replace("{dashboard_id}", str(dashboard_id))
     params = None
-    response = self._client._request_json("POST", path, params=params, json=_json_body(body))
+    response = await self._client._request_json("POST", path, params=params, json=_json_body(body))
     return _typed_response(
         response, (WidgetDataResponse, ObjectJobSchema, JobResponse), allow_untyped=False
     )
 
 
-def rls_column_list(self: Any, dashboard_id: int) -> RlsColumnsResponse:
+async def rls_column_list(self: Any, dashboard_id: int) -> RlsColumnsResponse:
     """Candidate columns for the RLS filter."""
     path = "/dashboards/{dashboard_id}/rls/columns"
     path = path.replace("{dashboard_id}", str(dashboard_id))
     params = None
-    response = self._client._request_json("GET", path, params=params)
+    response = await self._client._request_json("GET", path, params=params)
     return _typed_response(response, (RlsColumnsResponse,), allow_untyped=False)
 
 
-def rls_value_list(
+async def rls_value_list(
     self: Any, dashboard_id: int, column: str, search: str | None = None
 ) -> RlsDistinctValuesResponse:
     """Distinct values for an RLS filter column."""
@@ -247,68 +247,72 @@ def rls_value_list(
         for key, value in {"column": column, "search": search}.items()
         if value is not None
     }
-    response = self._client._request_json("GET", path, params=params)
+    response = await self._client._request_json("GET", path, params=params)
     return _typed_response(response, (RlsDistinctValuesResponse,), allow_untyped=False)
 
 
-def rls_assignment_list(self: Any, dashboard_id: int) -> RlsAssignmentsResponse:
+async def rls_assignment_list(self: Any, dashboard_id: int) -> RlsAssignmentsResponse:
     """List RLS viewer assignments."""
     path = "/dashboards/{dashboard_id}/rls/assignments"
     path = path.replace("{dashboard_id}", str(dashboard_id))
     params = None
-    response = self._client._request_json("GET", path, params=params)
+    response = await self._client._request_json("GET", path, params=params)
     return _typed_response(response, (RlsAssignmentsResponse,), allow_untyped=False)
 
 
-def rls_assignment_set(self: Any, dashboard_id: int, body: RlsAssignmentsSpec) -> dict[str, Any]:
+async def rls_assignment_set(
+    self: Any, dashboard_id: int, body: RlsAssignmentsSpec
+) -> dict[str, Any]:
     """Replace RLS viewer assignments."""
     path = "/dashboards/{dashboard_id}/rls/assignments"
     path = path.replace("{dashboard_id}", str(dashboard_id))
     params = None
-    response = self._client._request_json("PUT", path, params=params, json=_json_body(body))
+    response = await self._client._request_json("PUT", path, params=params, json=_json_body(body))
     return response
 
 
-def query(self: Any, dashboard_id: int, body: AdhocQuerySpec) -> AdhocQueryResponse:
+async def query(self: Any, dashboard_id: int, body: AdhocQuerySpec) -> AdhocQueryResponse:
     """Editor ad-hoc descriptor query."""
     path = "/dashboards/{dashboard_id}/query"
     path = path.replace("{dashboard_id}", str(dashboard_id))
     params = None
-    response = self._client._request_json("POST", path, params=params, json=_json_body(body))
+    response = await self._client._request_json("POST", path, params=params, json=_json_body(body))
     return _typed_response(response, (AdhocQueryResponse,), allow_untyped=False)
 
 
-def template_apply(self: Any, body: ApplyTemplateSpec) -> ObjectJobSchema | JobResponse:
+async def template_apply(self: Any, body: ApplyTemplateSpec) -> ObjectJobSchema | JobResponse:
     """Apply a template to a target dataset."""
     path = "/dashboards/v3/templates/apply"
     params = None
-    response = self._client._request_json("POST", path, params=params, json=_json_body(body))
+    response = await self._client._request_json("POST", path, params=params, json=_json_body(body))
     return _typed_response(response, (ObjectJobSchema, JobResponse), allow_untyped=False)
 
 
-def chat_history(
+async def chat_history(
     self: Any, dashboard_id: int, sequence: int | None = None
 ) -> mmai_dashboards_v3_schema_ChatHistoryResponse:
     """Editor chat transcript."""
     path = "/dashboards/{dashboard_id}/chat"
     path = path.replace("{dashboard_id}", str(dashboard_id))
     params = {key: value for key, value in {"sequence": sequence}.items() if value is not None}
-    response = self._client._request_json("GET", path, params=params)
+    response = await self._client._request_json("GET", path, params=params)
     return _typed_response(
         response, (mmai_dashboards_v3_schema_ChatHistoryResponse,), allow_untyped=False
     )
 
 
-def chat_edit(self: Any, dashboard_id: int, body: ChatEditSpec) -> ObjectJobSchema | JobResponse:
+async def chat_edit(
+    self: Any, dashboard_id: int, body: ChatEditSpec
+) -> ObjectJobSchema | JobResponse:
     """One chat-edit turn."""
     path = "/dashboards/{dashboard_id}/chat"
     path = path.replace("{dashboard_id}", str(dashboard_id))
     params = None
-    response = self._client._request_json("POST", path, params=params, json=_json_body(body))
+    response = await self._client._request_json("POST", path, params=params, json=_json_body(body))
     return _typed_response(response, (ObjectJobSchema, JobResponse), allow_untyped=False)
 
 
-def suggestion_list(
+async def suggestion_list(
     self: Any, dataview_id: int, table_item_id: int | None = None
 ) -> DashboardSuggestionsResponse:
     """Data-grounded starting points for the create screen."""
@@ -318,223 +322,231 @@ def suggestion_list(
         for key, value in {"dataview_id": dataview_id, "table_item_id": table_item_id}.items()
         if value is not None
     }
-    response = self._client._request_json("GET", path, params=params)
+    response = await self._client._request_json("GET", path, params=params)
     return _typed_response(response, (DashboardSuggestionsResponse,), allow_untyped=False)
 
 
-def descriptor_data(
+async def descriptor_data(
     self: Any, dashboard_id: int, body: DescriptorDataSpec
 ) -> ObjectJobSchema | JobResponse:
     """Descriptor data — future-request."""
     path = "/dashboards/{dashboard_id}/data"
     path = path.replace("{dashboard_id}", str(dashboard_id))
     params = None
-    response = self._client._request_json("POST", path, params=params, json=_json_body(body))
+    response = await self._client._request_json("POST", path, params=params, json=_json_body(body))
     return _typed_response(response, (ObjectJobSchema, JobResponse), allow_untyped=False)
 
 
-def published_data(self: Any, url: str, body: DescriptorDataSpec) -> ObjectJobSchema | JobResponse:
+async def published_data(
+    self: Any, url: str, body: DescriptorDataSpec
+) -> ObjectJobSchema | JobResponse:
     """Descriptor data for a published dashboard."""
     path = "/dashboards/url/{url}/data"
     path = path.replace("{url}", str(url))
     params = None
-    response = self._client._request_json("POST", path, params=params, json=_json_body(body))
+    response = await self._client._request_json("POST", path, params=params, json=_json_body(body))
     return _typed_response(response, (ObjectJobSchema, JobResponse), allow_untyped=False)
 
 
-def duplicate(self: Any, dashboard_id: int) -> DuplicateDashboardResponse:
+async def duplicate(self: Any, dashboard_id: int) -> DuplicateDashboardResponse:
     """Duplicate a v3 dashboard."""
     path = "/dashboards/v3/{dashboard_id}/duplicate"
     path = path.replace("{dashboard_id}", str(dashboard_id))
     params = None
-    response = self._client._request_json("POST", path, params=params)
+    response = await self._client._request_json("POST", path, params=params)
     return _typed_response(response, (DuplicateDashboardResponse,), allow_untyped=False)
 
 
-def pdf_export(self: Any, dashboard_id: int, body: PdfExportSpec) -> ObjectJobSchema | JobResponse:
+async def pdf_export(
+    self: Any, dashboard_id: int, body: PdfExportSpec
+) -> ObjectJobSchema | JobResponse:
     """Kick a draft-dashboard PDF export."""
     path = "/dashboards/{dashboard_id}/pdf"
     path = path.replace("{dashboard_id}", str(dashboard_id))
     params = None
-    response = self._client._request_json("POST", path, params=params, json=_json_body(body))
+    response = await self._client._request_json("POST", path, params=params, json=_json_body(body))
     return _typed_response(response, (ObjectJobSchema, JobResponse), allow_untyped=False)
 
 
-def published_pdf_export(self: Any, url: str, body: PdfExportSpec) -> ObjectJobSchema | JobResponse:
+async def published_pdf_export(
+    self: Any, url: str, body: PdfExportSpec
+) -> ObjectJobSchema | JobResponse:
     """Kick a published-dashboard PDF export."""
     path = "/dashboards/url/{url}/pdf"
     path = path.replace("{url}", str(url))
     params = None
-    response = self._client._request_json("POST", path, params=params, json=_json_body(body))
+    response = await self._client._request_json("POST", path, params=params, json=_json_body(body))
     return _typed_response(response, (ObjectJobSchema, JobResponse), allow_untyped=False)
 
 
-def video_export(self: Any, dashboard_id: int) -> ObjectJobSchema | JobResponse:
+async def video_export(self: Any, dashboard_id: int) -> ObjectJobSchema | JobResponse:
     """Kick a motion-story video export."""
     path = "/dashboards/{dashboard_id}/video"
     path = path.replace("{dashboard_id}", str(dashboard_id))
     params = None
-    response = self._client._request_json("POST", path, params=params)
+    response = await self._client._request_json("POST", path, params=params)
     return _typed_response(response, (ObjectJobSchema, JobResponse), allow_untyped=False)
 
 
-def published_video_export(self: Any, url: str) -> ObjectJobSchema | JobResponse:
+async def published_video_export(self: Any, url: str) -> ObjectJobSchema | JobResponse:
     """Kick a motion-story video export (published view)."""
     path = "/dashboards/url/{url}/video"
     path = path.replace("{url}", str(url))
     params = None
-    response = self._client._request_json("POST", path, params=params)
+    response = await self._client._request_json("POST", path, params=params)
     return _typed_response(response, (ObjectJobSchema, JobResponse), allow_untyped=False)
 
 
-def figure_intent(self: Any, dashboard_id: int, body: FigureIntentSpec) -> FigureIntentResponse:
+async def figure_intent(
+    self: Any, dashboard_id: int, body: FigureIntentSpec
+) -> FigureIntentResponse:
     """Resolve an AI-add figure from an intent."""
     path = "/dashboards/{dashboard_id}/figure-intent"
     path = path.replace("{dashboard_id}", str(dashboard_id))
     params = None
-    response = self._client._request_json("POST", path, params=params, json=_json_body(body))
+    response = await self._client._request_json("POST", path, params=params, json=_json_body(body))
     return _typed_response(response, (FigureIntentResponse,), allow_untyped=False)
 
 
-def v3_generate(self: Any, body: GenerateDashboardV3Spec) -> ObjectJobSchema | JobResponse:
+async def v3_generate(self: Any, body: GenerateDashboardV3Spec) -> ObjectJobSchema | JobResponse:
     """Generate a v3 dashboard."""
     path = "/dashboards/v3/generate"
     params = None
-    response = self._client._request_json("POST", path, params=params, json=_json_body(body))
+    response = await self._client._request_json("POST", path, params=params, json=_json_body(body))
     return _typed_response(response, (ObjectJobSchema, JobResponse), allow_untyped=False)
 
 
-def canvas_get(self: Any, dashboard_id: int, sequence: int | None = None) -> CanvasResponse:
+async def canvas_get(self: Any, dashboard_id: int, sequence: int | None = None) -> CanvasResponse:
     """Editor canvas (draft)."""
     path = "/dashboards/{dashboard_id}/canvas"
     path = path.replace("{dashboard_id}", str(dashboard_id))
     params = {key: value for key, value in {"sequence": sequence}.items() if value is not None}
-    response = self._client._request_json("GET", path, params=params)
+    response = await self._client._request_json("GET", path, params=params)
     return _typed_response(response, (CanvasResponse,), allow_untyped=False)
 
 
-def canvas_save(self: Any, dashboard_id: int, body: SaveCanvasSpec) -> SaveCanvasResponse:
+async def canvas_save(self: Any, dashboard_id: int, body: SaveCanvasSpec) -> SaveCanvasResponse:
     """Save the canvas (append a draft version)."""
     path = "/dashboards/{dashboard_id}/canvas"
     path = path.replace("{dashboard_id}", str(dashboard_id))
     params = None
-    response = self._client._request_json("PUT", path, params=params, json=_json_body(body))
+    response = await self._client._request_json("PUT", path, params=params, json=_json_body(body))
     return _typed_response(response, (SaveCanvasResponse,), allow_untyped=False)
 
 
-def published_canvas(self: Any, url: str) -> CanvasResponse:
+async def published_canvas(self: Any, url: str) -> CanvasResponse:
     """Published viewer canvas."""
     path = "/dashboards/url/{url}/canvas"
     path = path.replace("{url}", str(url))
     params = None
-    response = self._client._request_json("GET", path, params=params)
+    response = await self._client._request_json("GET", path, params=params)
     return _typed_response(response, (CanvasResponse,), allow_untyped=False)
 
 
-def pdf_artifact(self: Any, dashboard_id: int, job_id: int) -> dict[str, Any]:
+async def pdf_artifact(self: Any, dashboard_id: int, job_id: int) -> dict[str, Any]:
     """Download a completed draft PDF export."""
     path = "/dashboards/{dashboard_id}/pdf/{job_id}"
     path = path.replace("{dashboard_id}", str(dashboard_id))
     path = path.replace("{job_id}", str(job_id))
     params = None
-    response = self._client._request_binary("GET", path, params=params)
+    response = await self._client._request_binary("GET", path, params=params)
     return response
 
 
-def published_pdf_artifact(self: Any, url: str, job_id: int) -> dict[str, Any]:
+async def published_pdf_artifact(self: Any, url: str, job_id: int) -> dict[str, Any]:
     """Download a completed published PDF export."""
     path = "/dashboards/url/{url}/pdf/{job_id}"
     path = path.replace("{url}", str(url))
     path = path.replace("{job_id}", str(job_id))
     params = None
-    response = self._client._request_binary("GET", path, params=params)
+    response = await self._client._request_binary("GET", path, params=params)
     return response
 
 
-def video_state(self: Any, dashboard_id: int) -> dict[str, Any]:
+async def video_state(self: Any, dashboard_id: int) -> dict[str, Any]:
     """Motion-story video export state (never kicks a render)."""
     path = "/dashboards/{dashboard_id}/video-state"
     path = path.replace("{dashboard_id}", str(dashboard_id))
     params = None
-    response = self._client._request_json("GET", path, params=params)
+    response = await self._client._request_json("GET", path, params=params)
     return response
 
 
-def og_card(self: Any, dashboard_id: int) -> dict[str, Any]:
+async def og_card(self: Any, dashboard_id: int) -> dict[str, Any]:
     """Dashboard card thumbnail (draft or published PNG)."""
     path = "/dashboards/{dashboard_id}/og-card"
     path = path.replace("{dashboard_id}", str(dashboard_id))
     params = None
-    response = self._client._request_binary("GET", path, params=params)
+    response = await self._client._request_binary("GET", path, params=params)
     return response
 
 
-def published_og_card(self: Any, url: str) -> dict[str, Any]:
+async def published_og_card(self: Any, url: str) -> dict[str, Any]:
     """Published dashboard's link-unfurl OG card (baked PNG)."""
     path = "/dashboards/url/{url}/og-card"
     path = path.replace("{url}", str(url))
     params = None
-    response = self._client._request_binary("GET", path, params=params)
+    response = await self._client._request_binary("GET", path, params=params)
     return response
 
 
-def page_plan(self: Any, dashboard_id: int, body: PlanPageSpec) -> PlanPageResponse:
+async def page_plan(self: Any, dashboard_id: int, body: PlanPageSpec) -> PlanPageResponse:
     """Compose a new page from an intent."""
     path = "/dashboards/{dashboard_id}/plan-page"
     path = path.replace("{dashboard_id}", str(dashboard_id))
     params = None
-    response = self._client._request_json("POST", path, params=params, json=_json_body(body))
+    response = await self._client._request_json("POST", path, params=params, json=_json_body(body))
     return _typed_response(response, (PlanPageResponse,), allow_untyped=False)
 
 
-def template_preview(self: Any, body: PreviewTemplateSpec) -> PreviewTemplateResponse:
+async def template_preview(self: Any, body: PreviewTemplateSpec) -> PreviewTemplateResponse:
     """Preview a template mapping applied to a target dataset."""
     path = "/dashboards/v3/templates/preview"
     params = None
-    response = self._client._request_json("POST", path, params=params, json=_json_body(body))
+    response = await self._client._request_json("POST", path, params=params, json=_json_body(body))
     return _typed_response(response, (PreviewTemplateResponse,), allow_untyped=False)
 
 
-def template_resolve_mapping(
+async def template_resolve_mapping(
     self: Any, body: ResolveTemplateMappingSpec
 ) -> ResolveTemplateMappingResponse:
     """Propose a template mapping onto a target dataset."""
     path = "/dashboards/v3/templates/resolve-mapping"
     params = None
-    response = self._client._request_json("POST", path, params=params, json=_json_body(body))
+    response = await self._client._request_json("POST", path, params=params, json=_json_body(body))
     return _typed_response(response, (ResolveTemplateMappingResponse,), allow_untyped=False)
 
 
-def canvas_restore(
+async def canvas_restore(
     self: Any, dashboard_id: int, body: RestoreCanvasSpec
 ) -> ObjectJobSchema | JobResponse:
     """Undo / redo / revert the canvas to a target version."""
     path = "/dashboards/{dashboard_id}/canvas/restore"
     path = path.replace("{dashboard_id}", str(dashboard_id))
     params = None
-    response = self._client._request_json("POST", path, params=params, json=_json_body(body))
+    response = await self._client._request_json("POST", path, params=params, json=_json_body(body))
     return _typed_response(response, (ObjectJobSchema, JobResponse), allow_untyped=False)
 
 
-def published_share_page(self: Any, url: str) -> dict[str, Any]:
+async def published_share_page(self: Any, url: str) -> dict[str, Any]:
     """Published dashboard's link-unfurl share page (crawler-facing HTML)."""
     path = "/dashboards/url/{url}/share"
     path = path.replace("{url}", str(url))
     params = None
-    response = self._client._request_binary("GET", path, params=params)
+    response = await self._client._request_binary("GET", path, params=params)
     return response
 
 
-def published_video_artifact(self: Any, url: str) -> dict[str, Any]:
+async def published_video_artifact(self: Any, url: str) -> dict[str, Any]:
     """Stream a published motion-story video (Range-enabled)."""
     path = "/dashboards/url/{url}/video.mp4"
     path = path.replace("{url}", str(url))
     params = None
-    response = self._client._request_binary("GET", path, params=params)
+    response = await self._client._request_binary("GET", path, params=params)
     return response
 
 
-def qa_comment_create(
+async def qa_comment_create(
     self: Any, dashboard_id: int, session_id: int, body: CommentSpec
 ) -> SessionResponse:
     """Comment on a shared Q&A session."""
@@ -542,11 +554,11 @@ def qa_comment_create(
     path = path.replace("{dashboard_id}", str(dashboard_id))
     path = path.replace("{session_id}", str(session_id))
     params = None
-    response = self._client._request_json("POST", path, params=params, json=_json_body(body))
+    response = await self._client._request_json("POST", path, params=params, json=_json_body(body))
     return _typed_response(response, (SessionResponse,), allow_untyped=False)
 
 
-def qa_ask(
+async def qa_ask(
     self: Any, dashboard_id: int, session_id: int, body: AskSpec
 ) -> ObjectJobSchema | JobResponse:
     """One Q&A ask turn (async)."""
@@ -554,29 +566,31 @@ def qa_ask(
     path = path.replace("{dashboard_id}", str(dashboard_id))
     path = path.replace("{session_id}", str(session_id))
     params = None
-    response = self._client._request_json("POST", path, params=params, json=_json_body(body))
+    response = await self._client._request_json("POST", path, params=params, json=_json_body(body))
     return _typed_response(response, (ObjectJobSchema, JobResponse), allow_untyped=False)
 
 
-def qa_session_list(self: Any, dashboard_id: int) -> SessionListResponse:
+async def qa_session_list(self: Any, dashboard_id: int) -> SessionListResponse:
     """List Q&A sessions."""
     path = "/dashboards/{dashboard_id}/qa/sessions"
     path = path.replace("{dashboard_id}", str(dashboard_id))
     params = None
-    response = self._client._request_json("GET", path, params=params)
+    response = await self._client._request_json("GET", path, params=params)
     return _typed_response(response, (SessionListResponse,), allow_untyped=False)
 
 
-def qa_session_create(self: Any, dashboard_id: int, body: CreateSessionSpec) -> SessionResponse:
+async def qa_session_create(
+    self: Any, dashboard_id: int, body: CreateSessionSpec
+) -> SessionResponse:
     """Create a Q&A session."""
     path = "/dashboards/{dashboard_id}/qa/sessions"
     path = path.replace("{dashboard_id}", str(dashboard_id))
     params = None
-    response = self._client._request_json("POST", path, params=params, json=_json_body(body))
+    response = await self._client._request_json("POST", path, params=params, json=_json_body(body))
     return _typed_response(response, (SessionResponse,), allow_untyped=False)
 
 
-def qa_comment_delete(
+async def qa_comment_delete(
     self: Any, dashboard_id: int, session_id: int, comment_id: int
 ) -> SessionResponse:
     """Delete a comment (author or session owner)."""
@@ -585,59 +599,59 @@ def qa_comment_delete(
     path = path.replace("{session_id}", str(session_id))
     path = path.replace("{comment_id}", str(comment_id))
     params = None
-    response = self._client._request_json("DELETE", path, params=params)
+    response = await self._client._request_json("DELETE", path, params=params)
     return _typed_response(response, (SessionResponse,), allow_untyped=False)
 
 
-def qa_session_get(self: Any, dashboard_id: int, session_id: int) -> SessionResponse:
+async def qa_session_get(self: Any, dashboard_id: int, session_id: int) -> SessionResponse:
     """Read a Q&A session (replayable — carries baked answers)."""
     path = "/dashboards/{dashboard_id}/qa/sessions/{session_id}"
     path = path.replace("{dashboard_id}", str(dashboard_id))
     path = path.replace("{session_id}", str(session_id))
     params = None
-    response = self._client._request_json("GET", path, params=params)
+    response = await self._client._request_json("GET", path, params=params)
     return _typed_response(response, (SessionResponse,), allow_untyped=False)
 
 
-def qa_session_delete(self: Any, dashboard_id: int, session_id: int) -> dict[str, Any]:
+async def qa_session_delete(self: Any, dashboard_id: int, session_id: int) -> dict[str, Any]:
     """Delete a Q&A session (owner only)."""
     path = "/dashboards/{dashboard_id}/qa/sessions/{session_id}"
     path = path.replace("{dashboard_id}", str(dashboard_id))
     path = path.replace("{session_id}", str(session_id))
     params = None
-    response = self._client._request_json("DELETE", path, params=params)
+    response = await self._client._request_json("DELETE", path, params=params)
     return response
 
 
-def qa_session_fork(self: Any, dashboard_id: int, session_id: int) -> SessionResponse:
+async def qa_session_fork(self: Any, dashboard_id: int, session_id: int) -> SessionResponse:
     """Fork a shared Q&A session into a private copy."""
     path = "/dashboards/{dashboard_id}/qa/sessions/{session_id}/fork"
     path = path.replace("{dashboard_id}", str(dashboard_id))
     path = path.replace("{session_id}", str(session_id))
     params = None
-    response = self._client._request_json("POST", path, params=params)
+    response = await self._client._request_json("POST", path, params=params)
     return _typed_response(response, (SessionResponse,), allow_untyped=False)
 
 
-def qa_settings_get(self: Any, dashboard_id: int) -> QaSettingsResponse:
+async def qa_settings_get(self: Any, dashboard_id: int) -> QaSettingsResponse:
     """This dashboard's Q&A settings."""
     path = "/dashboards/{dashboard_id}/qa/settings"
     path = path.replace("{dashboard_id}", str(dashboard_id))
     params = None
-    response = self._client._request_json("GET", path, params=params)
+    response = await self._client._request_json("GET", path, params=params)
     return _typed_response(response, (QaSettingsResponse,), allow_untyped=False)
 
 
-def qa_settings_set(self: Any, dashboard_id: int, body: QaSettingsSpec) -> QaSettingsResponse:
+async def qa_settings_set(self: Any, dashboard_id: int, body: QaSettingsSpec) -> QaSettingsResponse:
     """Update this dashboard's Q&A settings (editors only)."""
     path = "/dashboards/{dashboard_id}/qa/settings"
     path = path.replace("{dashboard_id}", str(dashboard_id))
     params = None
-    response = self._client._request_json("PUT", path, params=params, json=_json_body(body))
+    response = await self._client._request_json("PUT", path, params=params, json=_json_body(body))
     return _typed_response(response, (QaSettingsResponse,), allow_untyped=False)
 
 
-def qa_session_rename(
+async def qa_session_rename(
     self: Any, dashboard_id: int, session_id: int, body: RenameSessionSpec
 ) -> SessionResponse:
     """Rename a Q&A session (owner only)."""
@@ -645,11 +659,11 @@ def qa_session_rename(
     path = path.replace("{dashboard_id}", str(dashboard_id))
     path = path.replace("{session_id}", str(session_id))
     params = None
-    response = self._client._request_json("PUT", path, params=params, json=_json_body(body))
+    response = await self._client._request_json("PUT", path, params=params, json=_json_body(body))
     return _typed_response(response, (SessionResponse,), allow_untyped=False)
 
 
-def qa_feedback(
+async def qa_feedback(
     self: Any, dashboard_id: int, session_id: int, message_id: int, body: FeedbackSpec
 ) -> SessionResponse:
     """Rate an assistant answer (up/down; null clears)."""
@@ -658,11 +672,11 @@ def qa_feedback(
     path = path.replace("{session_id}", str(session_id))
     path = path.replace("{message_id}", str(message_id))
     params = None
-    response = self._client._request_json("POST", path, params=params, json=_json_body(body))
+    response = await self._client._request_json("POST", path, params=params, json=_json_body(body))
     return _typed_response(response, (SessionResponse,), allow_untyped=False)
 
 
-def qa_session_set_visibility(
+async def qa_session_set_visibility(
     self: Any, dashboard_id: int, session_id: int, body: VisibilitySpec
 ) -> SessionResponse:
     """Share/unshare a Q&A session (owner only)."""
@@ -670,158 +684,158 @@ def qa_session_set_visibility(
     path = path.replace("{dashboard_id}", str(dashboard_id))
     path = path.replace("{session_id}", str(session_id))
     params = None
-    response = self._client._request_json("PUT", path, params=params, json=_json_body(body))
+    response = await self._client._request_json("PUT", path, params=params, json=_json_body(body))
     return _typed_response(response, (SessionResponse,), allow_untyped=False)
 
 
-def context_list(self: Any) -> ContextListResponse:
+async def context_list(self: Any) -> ContextListResponse:
     """The workspace's contexts."""
     path = "/dashboards/v3/contexts"
     params = None
-    response = self._client._request_json("GET", path, params=params)
+    response = await self._client._request_json("GET", path, params=params)
     return _typed_response(response, (ContextListResponse,), allow_untyped=False)
 
 
-def context_create(self: Any, body: ContextSpec) -> ContextResponse:
+async def context_create(self: Any, body: ContextSpec) -> ContextResponse:
     """Create a context."""
     path = "/dashboards/v3/contexts"
     params = None
-    response = self._client._request_json("POST", path, params=params, json=_json_body(body))
+    response = await self._client._request_json("POST", path, params=params, json=_json_body(body))
     return _typed_response(response, (ContextResponse,), allow_untyped=False)
 
 
-def style_custom_list(self: Any) -> StyleListResponse:
+async def style_custom_list(self: Any) -> StyleListResponse:
     """The workspace's custom styles."""
     path = "/dashboards/v3/styles/custom"
     params = None
-    response = self._client._request_json("GET", path, params=params)
+    response = await self._client._request_json("GET", path, params=params)
     return _typed_response(response, (StyleListResponse,), allow_untyped=False)
 
 
-def style_custom_create(self: Any, body: CustomStyleSpec) -> StyleResponse:
+async def style_custom_create(self: Any, body: CustomStyleSpec) -> StyleResponse:
     """Create a custom style."""
     path = "/dashboards/v3/styles/custom"
     params = None
-    response = self._client._request_json("POST", path, params=params, json=_json_body(body))
+    response = await self._client._request_json("POST", path, params=params, json=_json_body(body))
     return _typed_response(response, (StyleResponse,), allow_untyped=False)
 
 
-def signature_list(self: Any) -> SignatureListResponse:
+async def signature_list(self: Any) -> SignatureListResponse:
     """The workspace's signatures."""
     path = "/dashboards/v3/signatures"
     params = None
-    response = self._client._request_json("GET", path, params=params)
+    response = await self._client._request_json("GET", path, params=params)
     return _typed_response(response, (SignatureListResponse,), allow_untyped=False)
 
 
-def signature_create(self: Any, body: SignatureSpec) -> SignatureResponse:
+async def signature_create(self: Any, body: SignatureSpec) -> SignatureResponse:
     """Create a signature."""
     path = "/dashboards/v3/signatures"
     params = None
-    response = self._client._request_json("POST", path, params=params, json=_json_body(body))
+    response = await self._client._request_json("POST", path, params=params, json=_json_body(body))
     return _typed_response(response, (SignatureResponse,), allow_untyped=False)
 
 
-def context_update(self: Any, context_id: str, body: ContextSpec) -> ContextResponse:
+async def context_update(self: Any, context_id: str, body: ContextSpec) -> ContextResponse:
     """Update a context."""
     path = "/dashboards/v3/contexts/{context_id}"
     path = path.replace("{context_id}", str(context_id))
     params = None
-    response = self._client._request_json("PUT", path, params=params, json=_json_body(body))
+    response = await self._client._request_json("PUT", path, params=params, json=_json_body(body))
     return _typed_response(response, (ContextResponse,), allow_untyped=False)
 
 
-def context_delete(self: Any, context_id: str) -> OkResponse:
+async def context_delete(self: Any, context_id: str) -> OkResponse:
     """Delete a context."""
     path = "/dashboards/v3/contexts/{context_id}"
     path = path.replace("{context_id}", str(context_id))
     params = None
-    response = self._client._request_json("DELETE", path, params=params)
+    response = await self._client._request_json("DELETE", path, params=params)
     return _typed_response(response, (OkResponse,), allow_untyped=False)
 
 
-def style_custom_update(self: Any, style_id: str, body: CustomStyleSpec) -> StyleResponse:
+async def style_custom_update(self: Any, style_id: str, body: CustomStyleSpec) -> StyleResponse:
     """Update a custom style."""
     path = "/dashboards/v3/styles/custom/{style_id}"
     path = path.replace("{style_id}", str(style_id))
     params = None
-    response = self._client._request_json("PUT", path, params=params, json=_json_body(body))
+    response = await self._client._request_json("PUT", path, params=params, json=_json_body(body))
     return _typed_response(response, (StyleResponse,), allow_untyped=False)
 
 
-def style_custom_delete(self: Any, style_id: str) -> OkResponse:
+async def style_custom_delete(self: Any, style_id: str) -> OkResponse:
     """Delete a custom style."""
     path = "/dashboards/v3/styles/custom/{style_id}"
     path = path.replace("{style_id}", str(style_id))
     params = None
-    response = self._client._request_json("DELETE", path, params=params)
+    response = await self._client._request_json("DELETE", path, params=params)
     return _typed_response(response, (OkResponse,), allow_untyped=False)
 
 
-def signature_update(self: Any, signature_id: str, body: SignatureSpec) -> SignatureResponse:
+async def signature_update(self: Any, signature_id: str, body: SignatureSpec) -> SignatureResponse:
     """Update a signature."""
     path = "/dashboards/v3/signatures/{signature_id}"
     path = path.replace("{signature_id}", str(signature_id))
     params = None
-    response = self._client._request_json("PUT", path, params=params, json=_json_body(body))
+    response = await self._client._request_json("PUT", path, params=params, json=_json_body(body))
     return _typed_response(response, (SignatureResponse,), allow_untyped=False)
 
 
-def signature_delete(self: Any, signature_id: str) -> OkResponse:
+async def signature_delete(self: Any, signature_id: str) -> OkResponse:
     """Delete a signature."""
     path = "/dashboards/v3/signatures/{signature_id}"
     path = path.replace("{signature_id}", str(signature_id))
     params = None
-    response = self._client._request_json("DELETE", path, params=params)
+    response = await self._client._request_json("DELETE", path, params=params)
     return _typed_response(response, (OkResponse,), allow_untyped=False)
 
 
-def template_get(self: Any, template_id: str) -> TemplateDetailResponse:
+async def template_get(self: Any, template_id: str) -> TemplateDetailResponse:
     """One template's metadata + self-fit recipe."""
     path = "/dashboards/v3/templates/{template_id}"
     path = path.replace("{template_id}", str(template_id))
     params = None
-    response = self._client._request_json("GET", path, params=params)
+    response = await self._client._request_json("GET", path, params=params)
     return _typed_response(response, (TemplateDetailResponse,), allow_untyped=False)
 
 
-def template_delete(self: Any, template_id: str) -> OkResponse:
+async def template_delete(self: Any, template_id: str) -> OkResponse:
     """Delete a saved workspace template."""
     path = "/dashboards/v3/templates/{template_id}"
     path = path.replace("{template_id}", str(template_id))
     params = None
-    response = self._client._request_json("DELETE", path, params=params)
+    response = await self._client._request_json("DELETE", path, params=params)
     return _typed_response(response, (OkResponse,), allow_untyped=False)
 
 
-def template_rename(
+async def template_rename(
     self: Any, template_id: str, body: RenameTemplateSpec
 ) -> TemplateDetailResponse:
     """Rename a saved workspace template."""
     path = "/dashboards/v3/templates/{template_id}"
     path = path.replace("{template_id}", str(template_id))
     params = None
-    response = self._client._request_json("PATCH", path, params=params, json=_json_body(body))
+    response = await self._client._request_json("PATCH", path, params=params, json=_json_body(body))
     return _typed_response(response, (TemplateDetailResponse,), allow_untyped=False)
 
 
-def style_derive(self: Any, body: DeriveStyleSpec) -> dict[str, Any] | DeriveStyleResponse:
+async def style_derive(self: Any, body: DeriveStyleSpec) -> dict[str, Any] | DeriveStyleResponse:
     """Derive a full Style bundle from signals."""
     path = "/dashboards/v3/styles/derive"
     params = None
-    response = self._client._request_json("POST", path, params=params, json=_json_body(body))
+    response = await self._client._request_json("POST", path, params=params, json=_json_body(body))
     return _typed_response(response, (DeriveStyleResponse,), allow_untyped=True)
 
 
-def style_extract_brand(self: Any, body: ExtractBrandSpec) -> ObjectJobSchema | JobResponse:
+async def style_extract_brand(self: Any, body: ExtractBrandSpec) -> ObjectJobSchema | JobResponse:
     """Kick a brand extraction from a URL."""
     path = "/dashboards/v3/styles/extract-brand"
     params = None
-    response = self._client._request_json("POST", path, params=params, json=_json_body(body))
+    response = await self._client._request_json("POST", path, params=params, json=_json_body(body))
     return _typed_response(response, (ObjectJobSchema, JobResponse), allow_untyped=False)
 
 
-def template_fit(
+async def template_fit(
     self: Any, dataview_id: int, table_item_id: int | None = None
 ) -> TemplateFitResponse:
     """Fit-score the whole catalog against one dataset."""
@@ -831,55 +845,55 @@ def template_fit(
         for key, value in {"dataview_id": dataview_id, "table_item_id": table_item_id}.items()
         if value is not None
     }
-    response = self._client._request_json("GET", path, params=params)
+    response = await self._client._request_json("GET", path, params=params)
     return _typed_response(response, (TemplateFitResponse,), allow_untyped=False)
 
 
-def style_default_get(self: Any) -> DefaultStyleResponse:
+async def style_default_get(self: Any) -> DefaultStyleResponse:
     """The workspace default style id."""
     path = "/dashboards/v3/styles/default"
     params = None
-    response = self._client._request_json("GET", path, params=params)
+    response = await self._client._request_json("GET", path, params=params)
     return _typed_response(response, (DefaultStyleResponse,), allow_untyped=False)
 
 
-def style_default_set(self: Any, body: DefaultStyleSpec) -> DefaultStyleResponse:
+async def style_default_set(self: Any, body: DefaultStyleSpec) -> DefaultStyleResponse:
     """Set the workspace default style id."""
     path = "/dashboards/v3/styles/default"
     params = None
-    response = self._client._request_json("PUT", path, params=params, json=_json_body(body))
+    response = await self._client._request_json("PUT", path, params=params, json=_json_body(body))
     return _typed_response(response, (DefaultStyleResponse,), allow_untyped=False)
 
 
-def style_token_list(self: Any, id: str) -> StyleTokensResponse:
+async def style_token_list(self: Any, id: str) -> StyleTokensResponse:
     """Full Style bundle by id (stock or custom)."""
     path = "/dashboards/v3/styles/tokens"
     params = {key: value for key, value in {"id": id}.items() if value is not None}
-    response = self._client._request_json("GET", path, params=params)
+    response = await self._client._request_json("GET", path, params=params)
     return _typed_response(response, (StyleTokensResponse,), allow_untyped=False)
 
 
-def style_preset_list(self: Any) -> StylePresetsResponse:
+async def style_preset_list(self: Any) -> StylePresetsResponse:
     """Style presets (stock + custom)."""
     path = "/dashboards/v3/styles/presets"
     params = None
-    response = self._client._request_json("GET", path, params=params)
+    response = await self._client._request_json("GET", path, params=params)
     return _typed_response(response, (StylePresetsResponse,), allow_untyped=False)
 
 
-def template_list(self: Any) -> TemplateListResponse:
+async def template_list(self: Any) -> TemplateListResponse:
     """Curated template catalog."""
     path = "/dashboards/v3/templates"
     params = None
-    response = self._client._request_json("GET", path, params=params)
+    response = await self._client._request_json("GET", path, params=params)
     return _typed_response(response, (TemplateListResponse,), allow_untyped=False)
 
 
-def template_create(self: Any, body: SaveTemplateSpec) -> TemplateDetailResponse:
+async def template_create(self: Any, body: SaveTemplateSpec) -> TemplateDetailResponse:
     """Save a dashboard as a workspace template."""
     path = "/dashboards/v3/templates"
     params = None
-    response = self._client._request_json("POST", path, params=params, json=_json_body(body))
+    response = await self._client._request_json("POST", path, params=params, json=_json_body(body))
     return _typed_response(response, (TemplateDetailResponse,), allow_untyped=False)
 
 

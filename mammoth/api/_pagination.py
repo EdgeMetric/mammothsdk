@@ -38,7 +38,7 @@ def next_offset_from_hint(hint: object, current: int) -> int | None:
     return candidate
 
 
-def collect_offset_pages(
+async def collect_offset_pages(
     fetch: Callable[[int], Mapping[str, Any]],
     *,
     item_key: str,
@@ -76,7 +76,7 @@ def collect_offset_pages(
                 "Pagination did not advance its offset.", {"offset": offset}
             )
         seen_offsets.add(offset)
-        page = dict(fetch(offset))
+        page = dict(await fetch(offset))
         if first is None:
             first = page
         page_records = page.get(item_key, [])
@@ -94,9 +94,7 @@ def collect_offset_pages(
 
         fingerprint = json.dumps(page_records, sort_keys=True, default=str, separators=(",", ":"))
         if fingerprint in seen_fingerprints:
-            raise MammothPaginationError(
-                "The API repeated a pagination page.", {"offset": offset}
-            )
+            raise MammothPaginationError("The API repeated a pagination page.", {"offset": offset})
         seen_fingerprints.add(fingerprint)
         records.extend(page_records)
         pages += 1

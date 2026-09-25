@@ -23,7 +23,9 @@ else:
 class ColumnOpsMixin(ViewHost):
     """Mixin for column-level operations on a View."""
 
-    def add_column(self, name: str, column_type: ColumnType = ColumnType.TEXT) -> dict[str, Any]:
+    async def add_column(
+        self, name: str, column_type: ColumnType = ColumnType.TEXT
+    ) -> dict[str, Any]:
         """Add an empty column (ADD_COLUMN task).
 
         Args:
@@ -39,9 +41,11 @@ class ColumnOpsMixin(ViewHost):
             view.add_column("Score", column_type=ColumnType.NUMERIC)
             view.add_column("Created", column_type=ColumnType.DATE)
         """
-        return self._add_task(build_add_column_params(name, column_type, self._next_internal_name))
+        return await self._add_task(
+            build_add_column_params(name, column_type, self._next_internal_name)
+        )
 
-    def delete_columns(self, columns: list[str]) -> dict[str, Any]:
+    async def delete_columns(self, columns: list[str]) -> dict[str, Any]:
         """Remove one or more columns (DELETE task).
 
         Args:
@@ -55,9 +59,11 @@ class ColumnOpsMixin(ViewHost):
             view.delete_columns(["Temp"])
             view.delete_columns(["Notes", "Internal ID", "Debug"])
         """
-        return self._add_task(build_delete_params(columns, self.columns, self._internal_names))
+        return await self._add_task(
+            build_delete_params(columns, self.columns, self._internal_names)
+        )
 
-    def copy_columns(self, copies: list[CopySpec]) -> dict[str, Any]:
+    async def copy_columns(self, copies: list[CopySpec]) -> dict[str, Any]:
         """Duplicate columns (COPY task).
 
         Args:
@@ -68,7 +74,7 @@ class ColumnOpsMixin(ViewHost):
         Returns:
             API response dict.
         """
-        return self._add_task(
+        return await self._add_task(
             build_copy_params(
                 copies,
                 self.columns,
@@ -78,7 +84,7 @@ class ColumnOpsMixin(ViewHost):
             )
         )
 
-    def combine_columns(
+    async def combine_columns(
         self,
         sources: list[str],
         new_column: str | None = None,
@@ -117,7 +123,7 @@ class ColumnOpsMixin(ViewHost):
                 existing_column="Address", separator=", ",
             )
         """
-        return self._add_task(
+        return await self._add_task(
             build_combine_params(
                 sources,
                 self.columns,
@@ -132,7 +138,7 @@ class ColumnOpsMixin(ViewHost):
             )
         )
 
-    def convert_type(self, conversions: list[ConversionSpec]) -> dict[str, Any]:
+    async def convert_type(self, conversions: list[ConversionSpec]) -> dict[str, Any]:
         """Convert column data types (CONVERT task).
 
         Args:
@@ -156,4 +162,6 @@ class ColumnOpsMixin(ViewHost):
                                format="MM/DD/YYYY"),
             ])
         """
-        return self._add_task(build_convert_params(conversions, self.columns, self._internal_names))
+        return await self._add_task(
+            build_convert_params(conversions, self.columns, self._internal_names)
+        )

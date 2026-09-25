@@ -11,7 +11,7 @@ from contextlib import suppress
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-import requests
+import httpx
 
 if TYPE_CHECKING:
     from ..client import MammothClient
@@ -49,15 +49,15 @@ class ExportsAPI:
         self._client = client
         self._jobs_api = JobsAPI(client)
 
-    def _find_dataset_for_dataview(self, dataview_id: int) -> int:
+    async def _find_dataset_for_dataview(self, dataview_id: int) -> int:
         """Find which dataset contains the specified dataview.
 
         Delegates to the public PipelineAPI.find_dataset_for_dataview to avoid
         duplicating the dataset-scanning logic.
         """
-        return self._client.pipeline.find_dataset_for_dataview(dataview_id)
+        return await self._client.pipeline.find_dataset_for_dataview(dataview_id)
 
-    def list(
+    async def list(
         self,
         dataview_id: int,
         fields: str | None = None,
@@ -99,7 +99,7 @@ class ExportsAPI:
         if dataset_id is not None and dataset_id <= 0:
             raise MammothValidationError(ERR_DATASET_ID_POSITIVE.format(dataset_id))
         if dataset_id is None:
-            dataset_id = self._find_dataset_for_dataview(dataview_id)
+            dataset_id = await self._find_dataset_for_dataview(dataview_id)
         params: dict[str, Any] = {}
 
         if fields:
@@ -123,14 +123,14 @@ class ExportsAPI:
         if runnable is not None:
             params["runnable"] = runnable
 
-        response = self._client._request_json(
+        response = await self._client._request_json(
             "GET",
             f"/workspaces/{workspace_id}/projects/{project_id}/datasets/{dataset_id}/dataviews/{dataview_id}/pipeline/exports",
             params=params,
         )
         return PipelineExportsPaginated(**response)
 
-    def create(
+    async def create(
         self,
         dataview_id: int,
         export_spec: AddExportSpec,
@@ -157,9 +157,9 @@ class ExportsAPI:
                 )
 
         if dataset_id is None:
-            dataset_id = self._client.pipeline.find_dataset_for_dataview(dataview_id)
+            dataset_id = await self._client.pipeline.find_dataset_for_dataview(dataview_id)
 
-        response = self._client._request_json(
+        response = await self._client._request_json(
             "POST",
             f"/workspaces/{workspace_id}/projects/{project_id}/datasets/{dataset_id}/dataviews/{dataview_id}/pipeline/exports",
             json=export_spec.model_dump(),
@@ -169,7 +169,7 @@ class ExportsAPI:
             return JobResponse(**response)
         return PipelineExportsModificationResp(**response)
 
-    def get(
+    async def get(
         self,
         dataview_id: int,
         export_id: int,
@@ -206,20 +206,20 @@ class ExportsAPI:
                     "project_id must be provided either to the method or set on the client"
                 )
         if dataset_id is None:
-            dataset_id = self._find_dataset_for_dataview(dataview_id)
+            dataset_id = await self._find_dataset_for_dataview(dataview_id)
 
         params: dict[str, Any] = {}
         if fields is not None:
             params["fields"] = fields
 
-        return self._client._request_json(
+        return await self._client._request_json(
             "GET",
             f"/workspaces/{workspace_id}/projects/{project_id}/datasets/{dataset_id}"
             f"/dataviews/{dataview_id}/pipeline/exports/{export_id}",
             params=params or None,
         )
 
-    def update(
+    async def update(
         self,
         dataview_id: int,
         export_id: int,
@@ -259,13 +259,13 @@ class ExportsAPI:
                     "project_id must be provided either to the method or set on the client"
                 )
         if dataset_id is None:
-            dataset_id = self._find_dataset_for_dataview(dataview_id)
+            dataset_id = await self._find_dataset_for_dataview(dataview_id)
 
         params: dict[str, Any] = {}
         if skip_validation is not None:
             params["skip_validation"] = skip_validation
 
-        return self._client._request_json(
+        return await self._client._request_json(
             "PATCH",
             f"/workspaces/{workspace_id}/projects/{project_id}/datasets/{dataset_id}"
             f"/dataviews/{dataview_id}/pipeline/exports/{export_id}",
@@ -273,7 +273,7 @@ class ExportsAPI:
             params=params or None,
         )
 
-    def delete(
+    async def delete(
         self,
         dataview_id: int,
         export_id: int,
@@ -310,20 +310,20 @@ class ExportsAPI:
                     "project_id must be provided either to the method or set on the client"
                 )
         if dataset_id is None:
-            dataset_id = self._find_dataset_for_dataview(dataview_id)
+            dataset_id = await self._find_dataset_for_dataview(dataview_id)
 
         params: dict[str, Any] = {}
         if skip_validation is not None:
             params["skip_validation"] = skip_validation
 
-        return self._client._request_json(
+        return await self._client._request_json(
             "DELETE",
             f"/workspaces/{workspace_id}/projects/{project_id}/datasets/{dataset_id}"
             f"/dataviews/{dataview_id}/pipeline/exports/{export_id}",
             params=params or None,
         )
 
-    def publish_db(
+    async def publish_db(
         self,
         dataview_id: int,
         odbc_type: OdbcType,
@@ -357,20 +357,20 @@ class ExportsAPI:
                     "project_id must be provided either to the method or set on the client"
                 )
         if dataset_id is None:
-            dataset_id = self._find_dataset_for_dataview(dataview_id)
+            dataset_id = await self._find_dataset_for_dataview(dataview_id)
 
         body: dict[str, Any] = {
             "odbc_type": odbc_type.value,
             "target_properties": target_properties,
         }
-        return self._client._request_json(
+        return await self._client._request_json(
             "POST",
             f"/workspaces/{workspace_id}/projects/{project_id}/datasets/{dataset_id}"
             f"/dataviews/{dataview_id}/publish-to-db",
             json=body,
         )
 
-    def publish_db_update(
+    async def publish_db_update(
         self,
         dataview_id: int,
         patch: _list[dict[str, Any]],
@@ -404,16 +404,16 @@ class ExportsAPI:
                     "project_id must be provided either to the method or set on the client"
                 )
         if dataset_id is None:
-            dataset_id = self._find_dataset_for_dataview(dataview_id)
+            dataset_id = await self._find_dataset_for_dataview(dataview_id)
 
-        return self._client._request_json(
+        return await self._client._request_json(
             "PATCH",
             f"/workspaces/{workspace_id}/projects/{project_id}/datasets/{dataset_id}"
             f"/dataviews/{dataview_id}/publish-to-db",
             json={"patch": patch},
         )
 
-    def to_s3(
+    async def to_s3(
         self,
         dataview_id: int,
         file: str | None = None,
@@ -460,7 +460,7 @@ class ExportsAPI:
             raise ValueError("project_id must be set on the client using client.set_project_id()")
 
         if dataset_id is None:
-            dataset_id = self._find_dataset_for_dataview(dataview_id)
+            dataset_id = await self._find_dataset_for_dataview(dataview_id)
 
         if file is None:
             import datetime
@@ -489,11 +489,11 @@ class ExportsAPI:
             validate_only=validate_only,
         )
 
-        export_result = self.create(dataview_id, export_spec, dataset_id, project_id)
+        export_result = await self.create(dataview_id, export_spec, dataset_id, project_id)
 
         if isinstance(export_result, JobResponse) and export_result.job and export_result.job.id:
             job_id = export_result.job.id
-            completed_job = self._jobs_api.wait_for_job(job_id, timeout=300)
+            completed_job = await self._jobs_api.wait_for_job(job_id, timeout=300)
             if completed_job.get("response", {}).get("url"):
                 return {
                     "url": completed_job["response"]["url"],
@@ -503,7 +503,7 @@ class ExportsAPI:
 
         return export_result
 
-    def to_dataset(
+    async def to_dataset(
         self,
         dataview_id: int,
         dataset_name: str,
@@ -539,7 +539,7 @@ class ExportsAPI:
         if project_id is None:
             raise ValueError("project_id must be set on the client using client.set_project_id()")
 
-        dataset_id = self._find_dataset_for_dataview(dataview_id)
+        dataset_id = await self._find_dataset_for_dataview(dataview_id)
 
         target_properties: dict[str, Any] = {"dataset_name": dataset_name}
         if column_mapping:
@@ -559,9 +559,9 @@ class ExportsAPI:
             validate_only=validate_only,
         )
 
-        return self.create(dataview_id, export_spec, dataset_id, project_id)
+        return await self.create(dataview_id, export_spec, dataset_id, project_id)
 
-    def to_csv(
+    async def to_csv(
         self,
         dataview_id: int,
         output_path: str | Path | None = None,
@@ -586,7 +586,7 @@ class ExportsAPI:
             raise ValueError("project_id must be set on the client using client.set_project_id()")
 
         if dataset_id is None:
-            dataset_id = self._find_dataset_for_dataview(dataview_id)
+            dataset_id = await self._find_dataset_for_dataview(dataview_id)
 
         if output_path is None:
             output_path = f"dataview_{dataset_id}_{dataview_id}_export.csv"
@@ -611,11 +611,11 @@ class ExportsAPI:
             end_of_pipeline=True,
         )
 
-        export_result = self.create(dataview_id, export_spec, dataset_id)
+        export_result = await self.create(dataview_id, export_spec, dataset_id)
 
         if isinstance(export_result, JobResponse) and export_result.job and export_result.job.id:
             job_id = export_result.job.id
-            completed_job = self._jobs_api.wait_for_job(job_id, timeout)
+            completed_job = await self._jobs_api.wait_for_job(job_id, timeout)
             if completed_job.get("response", {}).get("url"):
                 download_url = completed_job["response"]["url"]
                 return self._download_file(download_url, output_path, job_handle=job_id)
@@ -639,7 +639,7 @@ class ExportsAPI:
         # The destination is never opened for writing until the complete stream
         # has been flushed and fsynced.
         temp_path: Path | None = None
-        response: requests.Response | None = None
+        response: httpx.Response | None = None
         published = False
         fd = -1
 
@@ -719,7 +719,7 @@ class ExportsAPI:
             published = True
             return output_path
 
-        except requests.exceptions.RequestException as e:
+        except httpx.HTTPError as e:
             quarantined_path = discard_partial()
             status_code = getattr(response, "status_code", None)
             if not isinstance(status_code, int):
@@ -756,10 +756,12 @@ class ExportsAPI:
         except OSError as e:
             quarantined_path = discard_partial()
             details = local_delivery_details("failed")
-            details.update({
-                "exception_type": type(e).__name__,
-                "errno": e.errno,
-            })
+            details.update(
+                {
+                    "exception_type": type(e).__name__,
+                    "errno": e.errno,
+                }
+            )
             if quarantined_path is not None:
                 details["quarantined_path"] = quarantined_path
             raise MammothAPIError(
