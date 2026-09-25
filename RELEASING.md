@@ -111,7 +111,9 @@ twine upload dist/mammoth_cli-<ver>*
 ### Agent eval after every CLI release
 
 Run `mammoth-cli/evals/two-files-dashboard` (see its README) with a small
-model against the version just published, and record the checklist score
+model against the version just published (first confirm that
+`pip install --no-cache-dir mammoth-cli==<ver>` works in a fresh venv; the index can
+lag the upload by minutes), and record the checklist score
 in `mammoth-cli/docs/release-status.md`. A lower score than the previous
 release is a regression in the guide or the CLI's output, even when every
 test passes.

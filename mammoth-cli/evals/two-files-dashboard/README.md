@@ -52,3 +52,11 @@ without reading the CLI's `column_warnings` and `join_check` output.
 |---|---|---|
 | 2.0.37 | 5 of 10 | 2 (read local files), 4, 5, 6, 8 |
 | 2.0.38 | 7 of 10 | 5, 6, 8 (saw the problems, did not fix them) |
+| 2.0.39 | 8 of 10 | 6 (`qty` blank seen, not decided), 8 (converted `price`, but charted only `qty`) |
+
+2.0.39 notes: the agent acted on `column_warnings` (converted `price`) and
+reported `join_check` (39 of 40, `C099`). New friction: `dashboard pages add`
+with a chart the data does not support (`pie`, `vbar`, a date as `dim`)
+still adds the page, so the dashboard kept two empty pages. A first run
+that could not find 2.0.39 on the index installed 2.0.38; it was discarded,
+and the brief now forbids another version.

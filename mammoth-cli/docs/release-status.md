@@ -30,6 +30,24 @@ had seen both. The guide asked for the fix; the CLI output did not.
 - `evals/two-files-dashboard` holds the scenario, the data and a 10-point
   checklist; RELEASING.md runs it after every CLI release.
 
+CLI published from deterministic local artifacts built from tag `cli-v2.0.39`
+(source commit `e22d4cc`; the SDK is unchanged at 0.7.17, so there is no SDK
+release):
+
+- `mammoth_cli-2.0.39-py3-none-any.whl` sha256 `114859c2d1da60daa5b58f1e57efee64a23865a027364514635d1b38cdfcf1fd`
+- `mammoth_cli-2.0.39.tar.gz` sha256 `acf99f6927a1424bf1653dc5e34835b2d1639e083966001b080fe86e51f52f36`
+
+GitHub release `cli-v2.0.39` (Latest) carries these, both installers and
+`SHA256SUMS`. Unit, contract, subprocess and packaging tests: 4494 passed,
+2 skipped.
+
+Agent eval (`evals/two-files-dashboard`, Haiku, 2.0.39 from PyPI): 8 of 10
+(2.0.38: 7, 2.0.37: 5). It converted `price` from the `column_warnings` fix
+and reported the `join_check` match rate (39 of 40, `C099`). Misses: the
+`qty` blank was not decided, and the charts used `qty` but no money measure.
+Follow-up: `dashboard pages add` keeps a page whose chart was refused, so
+the dashboard had two empty pages.
+
 ## 2.0.38 / SDK 0.7.17
 
 The CLI had no rename or sort. Both are real web-app actions: a
