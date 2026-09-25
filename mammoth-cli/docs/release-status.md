@@ -36,7 +36,7 @@ commit `fd13f5f`):
 - `mammoth_io-0.7.17.tar.gz` sha256 `b8c8439c78ad3f238d19fe726e03623d8a5b0c28bd783fa3816c998b342a21da`
 
 CLI published from deterministic local artifacts built from tag `cli-v2.0.38`
-(source commit `4f98fbe`):
+(source commit `b5e0ac0`):
 
 - `mammoth_cli-2.0.38-py3-none-any.whl` sha256 `4588f1b2ff2c9eb082bbe9f9930093ab35f1a4fa4837cc6f9c77aa79aace4a97`
 - `mammoth_cli-2.0.38.tar.gz` sha256 `98668487cf6920115dbe359b0a3d874f17cce669d2efbbf9dcfbe77ecdddf143`
