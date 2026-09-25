@@ -21,6 +21,7 @@ the public SDK method named by the command's reviewed manifest ``sdk_symbol``.
 from __future__ import annotations
 
 import inspect
+from datetime import UTC, datetime
 from typing import Any
 
 from mammoth.view import ViewExport
@@ -1642,9 +1643,12 @@ def view_task_add(invocation: Invocation) -> HandlerResult:
 
     with open_service(invocation) as (service, auth):
         require_expected_task_count(service, dataview_id, kwargs.get("dataset_id"), document)
+        submitted_at = datetime.now(UTC)
         data = service.call(_symbol(invocation), **kwargs)
         reject_pipeline_reference_errors(service, dataview_id, kwargs.get("dataset_id"), data)
-        reject_task_runtime_error(service, dataview_id, kwargs.get("dataset_id"), data)
+        reject_task_runtime_error(
+            service, dataview_id, kwargs.get("dataset_id"), data, submitted_at
+        )
     return data, _meta(invocation, auth.workspace_id, None)
 
 

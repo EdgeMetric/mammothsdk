@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import json
 from collections.abc import Callable
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from mammoth_cli.commands.view import (
@@ -61,6 +62,9 @@ _PIPELINE_SYMBOL = "mammoth.api.pipeline.PipelineAPI.get_pipeline"
 _PIPELINE_ITEMS_SYMBOL = "mammoth.api.pipeline.PipelineAPI.items"
 _PIPELINE_ITEMS_FULL = "__full"
 _ERROR_TRANSFORM_STATUSES = {"ERROR", "REFERROR"}
+#: Tolerance for clock skew between this process and the server when deciding
+#: whether a task's ``created_at`` falls at or after this call's submit time.
+_TASK_CLOCK_SKEW = timedelta(seconds=5)
 _REFERROR_REASON_HINTS = {
     "type mismatch": (
         "the task needs a different column type (find/replace and text operations "
@@ -448,7 +452,34 @@ def reject_pipeline_reference_errors(
     )
 
 
-def reject_task_runtime_error(service: Any, view_id: int, dataset_id: Any, data: Any) -> None:
+def _parse_created_at(value: Any) -> datetime | None:
+    if not isinstance(value, str):
+        return None
+    try:
+        parsed = datetime.fromisoformat(value)
+    except ValueError:
+        return None
+    return parsed if parsed.tzinfo is not None else parsed.replace(tzinfo=UTC)
+
+
+def _newest_task_created_at_or_after(tasks: list[Any], floor: datetime) -> dict[str, Any] | None:
+    """The task with the latest ``created_at`` at or after ``floor``, if any."""
+    newest: dict[str, Any] | None = None
+    newest_created: datetime | None = None
+    for task in tasks:
+        if not isinstance(task, dict):
+            continue
+        created = _parse_created_at(task.get("created_at"))
+        if created is None or created < floor:
+            continue
+        if newest_created is None or created > newest_created:
+            newest_created, newest = created, task
+    return newest
+
+
+def reject_task_runtime_error(
+    service: Any, view_id: int, dataset_id: Any, data: Any, submitted_at: datetime
+) -> None:
     """Fail a task add whose step errored at run time without flipping has_error.
 
     A GEN_AI (or other runtime-dependent) step can fail after the backend has
@@ -459,6 +490,16 @@ def reject_task_runtime_error(service: Any, view_id: int, dataset_id: Any, data:
     ``list_tasks`` now reads back at ``__full``. A reference-binding failure
     already raised via :func:`reject_pipeline_reference_errors` before this
     runs, so ``has_error`` here is always false or absent.
+
+    Checks the task *this call* created, not the pipeline's last step by
+    sequence: a task can be inserted mid-pipeline (lower sequence than an
+    existing later step), and a step already in ERROR before this call must
+    not fail every later add just because it sorts last. Neither the add
+    response nor its job names the created task's id (the server's
+    ``PipelineModificationResp`` has none; ``process_single_task`` only
+    echoes the submitted ``task_param`` back), so the newest task by
+    ``created_at`` -- accepted only if created at or after ``submitted_at``,
+    with a small clock-skew allowance -- stands in for it.
     """
     kwargs: dict[str, Any] = {"dataview_id": view_id}
     if dataset_id is not None:
@@ -467,11 +508,7 @@ def reject_task_runtime_error(service: Any, view_id: int, dataset_id: Any, data:
     tasks = listing.get("tasks") if isinstance(listing, dict) else None
     if not isinstance(tasks, list) or not tasks:
         return
-    newest = max(
-        (task for task in tasks if isinstance(task, dict)),
-        key=lambda task: task.get("sequence") or 0,
-        default=None,
-    )
+    newest = _newest_task_created_at_or_after(tasks, submitted_at - _TASK_CLOCK_SKEW)
     if newest is None:
         return
     status = newest.get("transform_status")
@@ -490,7 +527,12 @@ def reject_task_runtime_error(service: Any, view_id: int, dataset_id: Any, data:
             "though the pipeline reports ready."
         ),
         exit_status=EXIT_API,
-        hint=f"Run `{recovery}` for the failure detail.",
+        hint=(
+            "The API does not expose the failure reason (the server keeps only "
+            "transform_status). Likely causes: a GEN_AI step hitting the "
+            f"workspace AI quota, or a bad step config. Run `{recovery}` to "
+            "confirm the status."
+        ),
         details={
             "view_id": view_id,
             "dataset_id": dataset_kwarg,
