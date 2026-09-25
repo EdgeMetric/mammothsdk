@@ -79,26 +79,9 @@ def _write(tmp_path: Path, data: object) -> str:
 # --- connector.list --------------------------------------------------------------
 
 
-def test_connector_list_blocked_without_confirmation(fake_service: FakeMammothService) -> None:
-    with pytest.raises(CliError) as excinfo:
-        support_cmd.support_connector_list(_inv("support.connector.list", output="json"))
-    assert excinfo.value.code == "confirmation_required"
-    assert fake_service.call_log == []
-
-
-def test_connector_list_mismatch(fake_service: FakeMammothService) -> None:
-    with pytest.raises(CliError) as excinfo:
-        support_cmd.support_connector_list(
-            _inv("support.connector.list", yes=True, confirm="wrong")
-        )
-    assert excinfo.value.code == "confirmation_target_mismatch"
-    assert fake_service.call_log == []
-
-
-def test_connector_list_proceeds_with_workspace_target(
-    fake_service: FakeMammothService,
-) -> None:
-    support_cmd.support_connector_list(_inv("support.connector.list", yes=True, confirm="4"))
+def test_connector_list_needs_no_confirmation(fake_service: FakeMammothService) -> None:
+    """Item 11: a read (GET) is never high_impact/confirm_target."""
+    support_cmd.support_connector_list(_inv("support.connector.list", output="json"))
     assert fake_service.call_log == [(_CONNECTOR_LIST, {})]
 
 
@@ -213,18 +196,10 @@ def test_connector_delete_proceeds_with_matching_target(
 # --- connector-profile.list --------------------------------------------------------
 
 
-def test_connector_profile_list_blocked(fake_service: FakeMammothService) -> None:
-    with pytest.raises(CliError) as excinfo:
-        support_cmd.support_connector_profile_list(
-            _inv("support.connector-profile.list", output="json")
-        )
-    assert excinfo.value.code == "confirmation_required"
-    assert fake_service.call_log == []
-
-
-def test_connector_profile_list_proceeds(fake_service: FakeMammothService) -> None:
+def test_connector_profile_list_needs_no_confirmation(fake_service: FakeMammothService) -> None:
+    """Item 11: a read (GET) is never high_impact/confirm_target."""
     support_cmd.support_connector_profile_list(
-        _inv("support.connector-profile.list", yes=True, confirm="4")
+        _inv("support.connector-profile.list", output="json")
     )
     assert fake_service.call_log == [(_CONNECTOR_PROFILE_LIST, {})]
 
@@ -399,15 +374,9 @@ def test_connector_profile_add_connector_forwards_fields(
 # --- feature.list --------------------------------------------------------------------
 
 
-def test_feature_list_blocked(fake_service: FakeMammothService) -> None:
-    with pytest.raises(CliError) as excinfo:
-        support_cmd.support_feature_list(_inv("support.feature.list", output="json"))
-    assert excinfo.value.code == "confirmation_required"
-    assert fake_service.call_log == []
-
-
-def test_feature_list_proceeds(fake_service: FakeMammothService) -> None:
-    support_cmd.support_feature_list(_inv("support.feature.list", yes=True, confirm="4"))
+def test_feature_list_needs_no_confirmation(fake_service: FakeMammothService) -> None:
+    """Item 11: a read (GET) is never high_impact/confirm_target."""
+    support_cmd.support_feature_list(_inv("support.feature.list", output="json"))
     assert fake_service.call_log == [(_FEATURE_LIST, {})]
 
 
@@ -491,19 +460,9 @@ def test_feature_delete_proceeds(fake_service: FakeMammothService) -> None:
 # --- feature-profile.list --------------------------------------------------------------
 
 
-def test_feature_profile_list_blocked(fake_service: FakeMammothService) -> None:
-    with pytest.raises(CliError) as excinfo:
-        support_cmd.support_feature_profile_list(
-            _inv("support.feature-profile.list", output="json")
-        )
-    assert excinfo.value.code == "confirmation_required"
-    assert fake_service.call_log == []
-
-
-def test_feature_profile_list_proceeds(fake_service: FakeMammothService) -> None:
-    support_cmd.support_feature_profile_list(
-        _inv("support.feature-profile.list", yes=True, confirm="4")
-    )
+def test_feature_profile_list_needs_no_confirmation(fake_service: FakeMammothService) -> None:
+    """Item 11: a read (GET) is never high_impact/confirm_target."""
+    support_cmd.support_feature_profile_list(_inv("support.feature-profile.list", output="json"))
     assert fake_service.call_log == [(_FEATURE_PROFILE_LIST, {})]
 
 
@@ -731,48 +690,29 @@ def test_ownership_transfer_forwards_roles(
 # --- plan.list / self-serve-list / chargebee-list --------------------------------------
 
 
-def test_plan_list_blocked(fake_service: FakeMammothService) -> None:
-    with pytest.raises(CliError) as excinfo:
-        support_cmd.support_plan_list(_inv("support.plan.list", output="json"))
-    assert excinfo.value.code == "confirmation_required"
-    assert fake_service.call_log == []
-
-
-def test_plan_list_proceeds(fake_service: FakeMammothService) -> None:
-    support_cmd.support_plan_list(_inv("support.plan.list", yes=True, confirm="4"))
+def test_plan_list_needs_no_confirmation(fake_service: FakeMammothService) -> None:
+    """Item 11: a read (GET) is never high_impact/confirm_target."""
+    support_cmd.support_plan_list(_inv("support.plan.list", output="json"))
     assert fake_service.call_log == [(_PLAN_LIST, {})]
 
 
-def test_plan_self_serve_list_blocked(fake_service: FakeMammothService) -> None:
-    with pytest.raises(CliError) as excinfo:
-        support_cmd.support_plan_self_serve_list(
-            _inv("support.plan.self-serve-list", output="json")
-        )
-    assert excinfo.value.code == "confirmation_required"
-    assert fake_service.call_log == []
-
-
-def test_plan_self_serve_list_proceeds(fake_service: FakeMammothService) -> None:
-    support_cmd.support_plan_self_serve_list(
-        _inv("support.plan.self-serve-list", yes=True, confirm="4")
-    )
+def test_plan_self_serve_list_needs_no_confirmation(fake_service: FakeMammothService) -> None:
+    """Item 11: a read (GET) is never high_impact/confirm_target."""
+    support_cmd.support_plan_self_serve_list(_inv("support.plan.self-serve-list", output="json"))
     assert fake_service.call_log == [(_PLAN_SELF_SERVE_LIST, {})]
 
 
-def test_plan_chargebee_list_blocked(fake_service: FakeMammothService) -> None:
-    with pytest.raises(CliError) as excinfo:
-        support_cmd.support_plan_chargebee_list(_inv("support.plan.chargebee-list", output="json"))
-    assert excinfo.value.code == "confirmation_required"
-    assert fake_service.call_log == []
+def test_plan_chargebee_list_needs_no_confirmation(fake_service: FakeMammothService) -> None:
+    """Item 11: a read (GET) is never high_impact/confirm_target."""
+    support_cmd.support_plan_chargebee_list(_inv("support.plan.chargebee-list", output="json"))
+    assert fake_service.call_log == [(_PLAN_CHARGEBEE_LIST, {})]
 
 
 def test_plan_chargebee_list_forwards_resource(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
     doc = _write(tmp_path, {"resource": "addons"})
-    support_cmd.support_plan_chargebee_list(
-        _inv("support.plan.chargebee-list", input_file=doc, yes=True, confirm="4")
-    )
+    support_cmd.support_plan_chargebee_list(_inv("support.plan.chargebee-list", input_file=doc))
     assert fake_service.call_log == [(_PLAN_CHARGEBEE_LIST, {"resource": "addons"})]
 
 
@@ -785,15 +725,9 @@ def test_plan_get_requires_positional(fake_service: FakeMammothService) -> None:
     assert excinfo.value.code == "missing_argument"
 
 
-def test_plan_get_blocked(fake_service: FakeMammothService) -> None:
-    with pytest.raises(CliError) as excinfo:
-        support_cmd.support_plan_get(_inv("support.plan.get", extra_args=["6"], output="json"))
-    assert excinfo.value.code == "confirmation_required"
-    assert fake_service.call_log == []
-
-
-def test_plan_get_proceeds(fake_service: FakeMammothService) -> None:
-    support_cmd.support_plan_get(_inv("support.plan.get", extra_args=["6"], yes=True, confirm="6"))
+def test_plan_get_needs_no_confirmation(fake_service: FakeMammothService) -> None:
+    """Item 11: a read (GET) is never high_impact/confirm_target."""
+    support_cmd.support_plan_get(_inv("support.plan.get", extra_args=["6"], output="json"))
     assert fake_service.call_log == [(_PLAN_GET, {"plan_id": 6})]
 
 
@@ -1017,19 +951,18 @@ def test_subscription_get_requires_positional(fake_service: FakeMammothService) 
     assert excinfo.value.code == "missing_argument"
 
 
-def test_subscription_get_blocked(fake_service: FakeMammothService) -> None:
-    with pytest.raises(CliError) as excinfo:
-        support_cmd.support_subscription_get(
-            _inv("support.subscription.get", extra_args=["9"], output="json")
-        )
-    assert excinfo.value.code == "confirmation_required"
-    assert fake_service.call_log == []
+def test_subscription_get_needs_no_confirmation(fake_service: FakeMammothService) -> None:
+    """Item 11: a read (GET) is never high_impact/confirm_target."""
+    support_cmd.support_subscription_get(
+        _inv("support.subscription.get", extra_args=["9"], output="json")
+    )
+    assert fake_service.call_log == [(_SUBSCRIPTION_GET, {"workspace_id": 9})]
 
 
 def test_subscription_get_forwards_fields(fake_service: FakeMammothService, tmp_path: Path) -> None:
     doc = _write(tmp_path, {"fields": "plan_id,status"})
     support_cmd.support_subscription_get(
-        _inv("support.subscription.get", extra_args=["9"], input_file=doc, yes=True, confirm="9")
+        _inv("support.subscription.get", extra_args=["9"], input_file=doc)
     )
     assert fake_service.call_log == [
         (_SUBSCRIPTION_GET, {"workspace_id": 9, "fields": "plan_id,status"})
@@ -1165,20 +1098,17 @@ def test_subscription_update_proceeds(fake_service: FakeMammothService, tmp_path
 # --- user.list-all -------------------------------------------------------------------------
 
 
-def test_user_list_all_blocked(fake_service: FakeMammothService) -> None:
-    with pytest.raises(CliError) as excinfo:
-        support_cmd.support_user_list_all(_inv("support.user.list-all", output="json"))
-    assert excinfo.value.code == "confirmation_required"
-    assert fake_service.call_log == []
+def test_user_list_all_needs_no_confirmation(fake_service: FakeMammothService) -> None:
+    """Item 11: a read (GET) is never high_impact/confirm_target."""
+    support_cmd.support_user_list_all(_inv("support.user.list-all", output="json"))
+    assert fake_service.call_log == [(_USER_LIST_ALL, {})]
 
 
 def test_user_list_all_forwards_pagination(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
     doc = _write(tmp_path, {"limit": 10, "offset": 5, "sort": "(email:asc)"})
-    support_cmd.support_user_list_all(
-        _inv("support.user.list-all", input_file=doc, yes=True, confirm="4")
-    )
+    support_cmd.support_user_list_all(_inv("support.user.list-all", input_file=doc))
     assert fake_service.call_log == [
         (_USER_LIST_ALL, {"limit": 10, "offset": 5, "sort": "(email:asc)"})
     ]
@@ -1306,15 +1236,9 @@ def test_user_update_proceeds(fake_service: FakeMammothService, tmp_path: Path) 
 # --- workspace.list -------------------------------------------------------------------------
 
 
-def test_workspace_list_blocked(fake_service: FakeMammothService) -> None:
-    with pytest.raises(CliError) as excinfo:
-        support_cmd.support_workspace_list(_inv("support.workspace.list", output="json"))
-    assert excinfo.value.code == "confirmation_required"
-    assert fake_service.call_log == []
-
-
-def test_workspace_list_proceeds(fake_service: FakeMammothService) -> None:
-    support_cmd.support_workspace_list(_inv("support.workspace.list", yes=True, confirm="4"))
+def test_workspace_list_needs_no_confirmation(fake_service: FakeMammothService) -> None:
+    """Item 11: a read (GET) is never high_impact/confirm_target."""
+    support_cmd.support_workspace_list(_inv("support.workspace.list", output="json"))
     assert fake_service.call_log == [(_WORKSPACE_LIST, {})]
 
 
@@ -1327,19 +1251,18 @@ def test_workspace_get_requires_positional(fake_service: FakeMammothService) -> 
     assert excinfo.value.code == "missing_argument"
 
 
-def test_workspace_get_blocked(fake_service: FakeMammothService) -> None:
-    with pytest.raises(CliError) as excinfo:
-        support_cmd.support_workspace_get(
-            _inv("support.workspace.get", extra_args=["9"], output="json")
-        )
-    assert excinfo.value.code == "confirmation_required"
-    assert fake_service.call_log == []
+def test_workspace_get_needs_no_confirmation(fake_service: FakeMammothService) -> None:
+    """Item 11: a read (GET) is never high_impact/confirm_target."""
+    support_cmd.support_workspace_get(
+        _inv("support.workspace.get", extra_args=["9"], output="json")
+    )
+    assert fake_service.call_log == [(_WORKSPACE_GET, {"workspace_id": 9})]
 
 
 def test_workspace_get_forwards_fields(fake_service: FakeMammothService, tmp_path: Path) -> None:
     doc = _write(tmp_path, {"fields": "name,plan_id"})
     support_cmd.support_workspace_get(
-        _inv("support.workspace.get", extra_args=["9"], input_file=doc, yes=True, confirm="9")
+        _inv("support.workspace.get", extra_args=["9"], input_file=doc)
     )
     assert fake_service.call_log == [
         (_WORKSPACE_GET, {"workspace_id": 9, "fields": "name,plan_id"})
@@ -1602,13 +1525,12 @@ def test_workspace_user_list_requires_positional(fake_service: FakeMammothServic
     assert excinfo.value.code == "missing_argument"
 
 
-def test_workspace_user_list_blocked(fake_service: FakeMammothService) -> None:
-    with pytest.raises(CliError) as excinfo:
-        support_cmd.support_workspace_user_list(
-            _inv("support.workspace.user.list", extra_args=["9"], output="json")
-        )
-    assert excinfo.value.code == "confirmation_required"
-    assert fake_service.call_log == []
+def test_workspace_user_list_needs_no_confirmation(fake_service: FakeMammothService) -> None:
+    """Item 11: a read (GET) is never high_impact/confirm_target."""
+    support_cmd.support_workspace_user_list(
+        _inv("support.workspace.user.list", extra_args=["9"], output="json")
+    )
+    assert fake_service.call_log == [(_WORKSPACE_USER_LIST, {"workspace_id": 9})]
 
 
 def test_workspace_user_list_forwards_pagination(
@@ -1620,8 +1542,6 @@ def test_workspace_user_list_forwards_pagination(
             "support.workspace.user.list",
             extra_args=["9"],
             input_file=doc,
-            yes=True,
-            confirm="9",
         )
     )
     assert fake_service.call_log == [

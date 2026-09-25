@@ -90,7 +90,11 @@ def _operations_with_job_id(document: dict[str, Any]) -> set[str]:
 
 def derive_mutation(command_id: str, method: str) -> str:
     group = command_id.split(".", 1)[0]
-    if group in HIGH_IMPACT_GROUPS:
+    # A GET-backed billing/support command never mutates anything; only a
+    # write within these groups is high-impact (item 11: billing.*.get/list
+    # and support.*.get/list carried high_impact/confirm_target regardless
+    # of HTTP method).
+    if group in HIGH_IMPACT_GROUPS and method not in READ_METHODS:
         return "high_impact"
     if command_id in {"workspace.delete", "user.delete-account", "support.ownership.transfer"}:
         return "high_impact"
@@ -235,8 +239,10 @@ def build_command_record(
         "positionals": [p.as_manifest() for p in positionals],
         "options": [],
         "sdk_symbol": sdk_symbol,
-        "sdk_conversion": (catalog or {}).get("sdk_conversion")
-        or f"Call {sdk_symbol} with validated request fields.",
+        "sdk_conversion": (
+            (catalog or {}).get("sdk_conversion")
+            or f"Call {sdk_symbol} with validated request fields."
+        ),
         "request_model": f"{base}Request",
         "result_model": f"{base}Result",
         "mutation_class": mutation,
@@ -249,10 +255,14 @@ def build_command_record(
         "contract_fixture": None,
         "required_fixture_guard": None,
         "secret_fields": list((catalog or {}).get("secret_fields") or []),
-        "human_example": (catalog or {}).get("human_example")
-        or f"mammoth {command_path}{required_metavars} --help",
-        "agent_example": (catalog or {}).get("agent_example")
-        or f"mammoth {command_path}{positional_samples} --output json --no-input",
+        "human_example": (
+            (catalog or {}).get("human_example")
+            or f"mammoth {command_path}{required_metavars} --help"
+        ),
+        "agent_example": (
+            (catalog or {}).get("agent_example")
+            or f"mammoth {command_path}{positional_samples} --output json --no-input"
+        ),
         "unit_tests": [f"UT-{op_token}"],
         "contract_tests": [f"CT-{op_token}-HUMAN", f"CT-{op_token}-JSON", f"CT-{op_token}-ERROR"],
         "draft_test": None,
