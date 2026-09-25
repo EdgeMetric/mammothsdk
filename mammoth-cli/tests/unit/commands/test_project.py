@@ -198,3 +198,66 @@ def test_publish_credentials_forwards_odbc_type(
         _invocation("project.publish-credentials", project=9, input_file=str(doc))
     )
     assert fake_service.call_log == [(_PUBCRED_SYMBOL, {"project_id": 9, "odbc_type": "postgres"})]
+
+
+def test_project_check_lists_every_open_finding_for_the_report(
+    fake_service: FakeMammothService,
+) -> None:
+    # Two datasets (orders with a TEXT price and a blank, customers with a
+    # blank segment) and one dashboard whose canvas shows only counts.
+    fake_service.responses["mammoth.api.datasets.DatasetsAPI.list_all"] = {
+        "datasets": [{"id": 84, "name": "t_a"}, {"id": 85, "name": "t_b"}]
+    }
+    fake_service.responses["mammoth.api.dataviews.DataviewsAPI.list"] = {
+        "dataviews": [
+            {
+                "id": 81,
+                "row_count": 4,
+                "metadata": [
+                    {"display_name": "qty", "internal_name": "column_1", "type": "NUMERIC"},
+                    {"display_name": "segment", "internal_name": "column_2", "type": "TEXT"},
+                ],
+            }
+        ]
+    }
+    fake_service.responses["mammoth.api.dataviews.DataviewsAPI.get_data"] = {
+        "data": [
+            {"column_1": 1, "column_2": "SMB"},
+            {"column_1": 2, "column_2": None},
+            {"column_1": 3, "column_2": "SMB"},
+            {"column_1": 4, "column_2": "Enterprise"},
+        ]
+    }
+    fake_service.responses["mammoth.api.dashboards.DashboardsAPI.list"] = [
+        {"id": 7, "title": "Orders"}
+    ]
+    fake_service.responses["mammoth.api.dashboards.DashboardsAPI.canvas_get"] = {
+        "canvas": {"dataset": {"dataview_id": 81}, "pages": []},
+        "plan": {
+            "hints": {
+                "_profiles": [
+                    {"name": "qty", "type": "measure"},
+                    {"name": "amount", "type": "measure"},
+                ]
+            }
+        },
+    }
+    data, meta = project_cmd.project_check(_invocation("project.check", extra_args=["12"]))
+    assert meta["project_id"] == 12
+    assert [v["dataset_id"] for v in data["views"]] == [84, 85]
+    assert [d["id"] for d in data["dashboards"]] == [7]
+    assert any(
+        line.startswith("view 81 (t_b), column segment: blank_values") for line in data["to_report"]
+    )
+    assert any(line.startswith("dashboard 7: money_not_shown") for line in data["to_report"])
+    assert data["note"].startswith("Before you report")
+
+
+def test_project_check_on_a_clean_project_says_nothing_is_open(
+    fake_service: FakeMammothService,
+) -> None:
+    fake_service.responses["mammoth.api.datasets.DatasetsAPI.list_all"] = {"datasets": []}
+    fake_service.responses["mammoth.api.dashboards.DashboardsAPI.list"] = []
+    data, _ = project_cmd.project_check(_invocation("project.check", extra_args=["12"]))
+    assert data["to_report"] == []
+    assert data["note"] == "Nothing open in the views or dashboards."

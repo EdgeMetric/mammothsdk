@@ -279,6 +279,43 @@ def upload_hints(
     return warnings
 
 
+def columns_not_on_dashboard(
+    canvas_doc: Any, view_columns: Iterable[Mapping[str, Any]] | None
+) -> list[dict[str, Any]]:
+    """Warn about view columns that the dashboard's profile does not have.
+
+    A dashboard sees the view as it was when the dashboard was made
+    (``NEW_COLUMN_NOTE``), so a column added later cannot be charted there.
+    ``view_columns`` is the view's own profile (``profiles_from_view``).
+    """
+    known = {p["name"] for p in _profiles(canvas_doc)} if isinstance(canvas_doc, Mapping) else set()
+    if not known or not view_columns:
+        return []
+    missing = [
+        str(c["name"])
+        for c in view_columns
+        if isinstance(c.get("name"), str) and c["name"] not in known
+    ]
+    if not missing:
+        return []
+    canvas = canvas_doc.get("canvas")
+    source = canvas.get("dataset") if isinstance(canvas, Mapping) else None
+    view_id = source.get("dataview_id") if isinstance(source, Mapping) else None
+    spec = json.dumps({"params": {"dataview_id": view_id if view_id is not None else "VIEW_ID"}})
+    return [
+        {
+            "issue": "columns_not_on_dashboard",
+            "columns": missing,
+            "detail": (
+                f"The view has {', '.join(missing)}, but this dashboard was made before "
+                f"and cannot chart {'it' if len(missing) == 1 else 'them'}. Make a new "
+                "dashboard on the view and build there."
+            ),
+            "fix": f"mammoth dashboard create-blank --input '{spec}' --yes",
+        }
+    ]
+
+
 def has_profiles(canvas_doc: Any) -> bool:
     """Whether a canvas read carries the backend's column profile."""
     return isinstance(canvas_doc, Mapping) and bool(_profiles(canvas_doc))

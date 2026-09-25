@@ -99,7 +99,8 @@ mammoth view transform math VIEW_ID --project PROJECT_ID \
   are in your report.
 - `create-blank`, `canvas save` and `pages add` return `deliverable_check`:
   `money_not_shown` (with the `math` command in `fix`), `unit_price_summed`,
-  and one `blank_values` entry for each column on the board that has blanks.
+  `columns_not_on_dashboard` (view columns added after the dashboard was
+  made, with the `create-blank` command in `fix`), and one `blank_values` entry for each column on the board that has blanks.
   Fix each warning, or say in your report why you kept it.
 
 **Read the bindings back, then the numbers.** `dashboard canvas get` returns

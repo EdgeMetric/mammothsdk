@@ -43,6 +43,7 @@ from mammoth_cli.services.dashboard_pages import check_added_pages
 from mammoth_cli.services.dashboard_review import (
     CANVAS_GET,
     NEW_COLUMN_NOTE,
+    columns_not_on_dashboard,
     has_profiles,
     review,
 )
@@ -721,10 +722,21 @@ def _with_deliverable_check(
             if isinstance(view_id, int)
             else None
         )
-        fallback = None
-        if not has_profiles(canvas_doc) and isinstance(view_id, int) and dataset_id is not None:
-            fallback = view_profiles(service, dataset_id, view_id, resolved_project(invocation))
-        warnings = review(canvas_doc, dataset_id, fallback)
+        current = (
+            view_profiles(service, dataset_id, view_id, resolved_project(invocation))
+            if isinstance(view_id, int) and dataset_id is not None
+            else None
+        )
+        if has_profiles(canvas_doc):
+            stale = columns_not_on_dashboard(canvas_doc, current)
+            warnings = stale + [
+                warning
+                for warning in review(canvas_doc, dataset_id)
+                # On a stale board the money advice is the rebuild, not a new column.
+                if not (stale and warning["issue"] in {"money_not_shown", "unit_price_summed"})
+            ]
+        else:
+            warnings = review(canvas_doc, dataset_id, current)
     except Exception:  # noqa: BLE001 -- advice must never fail the authoring step
         return data
     if warnings:

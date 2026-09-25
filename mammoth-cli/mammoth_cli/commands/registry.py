@@ -205,6 +205,7 @@ HANDLERS: dict[str, Handler] = {
     # project family (read-only)
     "project.list": project_cmd.project_list,
     "project.get": project_cmd.project_get,
+    "project.check": project_cmd.project_check,
     "project.pending-changes": project_cmd.project_pending_changes,
     "project.resource-status": project_cmd.project_resource_status,
     "project.resource-dependencies": project_cmd.project_resource_dependencies,

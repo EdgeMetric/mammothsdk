@@ -1,10 +1,10 @@
 # Command reference
 
-Generated from the reviewed command manifests for mammoth-cli 2.0.42.
+Generated from the reviewed command manifests for mammoth-cli 2.0.43.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
-Total commands: 556.
+Total commands: 557.
 
 ## activity
 
@@ -2887,6 +2887,17 @@ Total commands: 556.
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.projects.ProjectsAPI.bulk_update`
 - Agent example: `mammoth project bulk-update --input '{"patch_data": {"patches": [{"op": "add", "path": "role", "value": [{"project_id": 456, "user_roles": [{"user_id": 123, "role": "project_analyst"}]}]}]}}'`
+
+### `mammoth project check`
+
+**Arguments**
+
+- `PROJECT_ID` (int, optional) — ID of the project to act on; defaults to the active project.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth_cli.commands.project.project_check`
+- Agent example: `mammoth project check 123`
 
 ### `mammoth project checkpoint list`
 

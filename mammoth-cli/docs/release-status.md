@@ -1,5 +1,36 @@
 # CLI release provenance
 
+## 2.0.43
+
+From the 2.0.41 eval and the release outage the same day.
+
+- `mammoth project check [PROJECT_ID]` (new, read-only): for each dataset,
+  the first view's `column_warnings` and `before_dashboard`; for each
+  dashboard, its `deliverable_check`; and `to_report`, one line for each
+  open finding. The skill tells agents to run it before reporting. Every
+  2.0.41 eval run left one column's blanks undecided, because the warning
+  was in an earlier result.
+- `deliverable_check` adds `columns_not_on_dashboard`: view columns that
+  the dashboard's profile lacks (added after the dashboard was made), with
+  the `create-blank` command in `fix`. On such a board the money warnings
+  are left out, since the fix is the rebuild.
+- `doctor --input '{"wait": N}'` (up to 900) probes a failing connection
+  again every 15 s while the error is retryable (502, 504, timeout).
+- An `outcome_unknown` write with no job handle now names the read that
+  settles it: `project get ID` after a project delete, `dashboard list`
+  after `create-blank`, `dashboard canvas get ID` after a canvas or pages
+  write. On release, agents stalled on these during the outage.
+
+Verified live on release (probe project 101, deleted): `project check`
+listed the blanks of both views and `columns_not_on_dashboard` for
+`revenue` on a dashboard made before it; `doctor` with `wait` passed.
+
+Backend, not fixed here: the dashboard profile cache key
+(`dash3:profile:{dataview_id}:{data_version}`) leaves out the table item,
+so a dashboard bound to an older table can store a stale profile for the
+current version (see 2.0.41). The fix is to add `table_item_id` to the
+key in `dashboards_v3/profile/service.py`.
+
 ## 2.0.42
 
 Docs and skill only; no code change. The 2.0.41 agent eval was run three

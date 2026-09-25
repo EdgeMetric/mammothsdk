@@ -1,6 +1,6 @@
 ---
 name: mammoth-cli
-version: 2.0.42
+version: 2.0.43
 description: "Use Mammoth Analytics from a terminal: install or authenticate the CLI, discover its live command contract, and safely manage projects, data, views, pipelines (join, merge, pivot, filter, clean), dashboards, exports, and handoffs."
 ---
 
@@ -31,7 +31,9 @@ mammoth project ensure 'PROJECT NAME'   # get-or-create; becomes the active proj
 ```
 
 `doctor` failing is a precondition failure, not a reason to try the business
-command anyway. Production is the `app` endpoint; use `release` only when the
+command anyway. When the connection check fails with a 502, 504 or timeout,
+`mammoth doctor --input '{"wait": 300}'` probes again for up to that many
+seconds; go on only when it passes. Production is the `app` endpoint; use `release` only when the
 task names it, and check `meta.profile`/`auth status` `endpoint` match the
 intended environment before doing anything. If no profile has credentials,
 tell the operator to run `mammoth auth login` in their own terminal (add
@@ -173,6 +175,10 @@ your report. If no column links the files, ask before you combine them.
   "limit": 50}`.
 - A timeout, exit 7 or interruption does not prove failure; reconcile an
   `outcome_unknown` (`job get`, `view task list`) before replaying.
+- Before you report, run `mammoth project check PROJECT_ID`. Its `to_report`
+  has one line for each open finding in every view and dashboard (blanks,
+  text numbers, money not shown, columns a dashboard cannot see). Fix each
+  one, or give it one line in the report.
 - Run the [report checklist](references/report-checklist.md) before stating
   a number or calling a step done. When files here disagree,
   [capabilities](references/capabilities.md) wins over a recipe, and a recipe

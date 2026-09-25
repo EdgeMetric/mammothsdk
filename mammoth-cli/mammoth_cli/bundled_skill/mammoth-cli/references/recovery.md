@@ -36,7 +36,7 @@ these commands are not blanket permission to replay a mutation.
 | `4DASH012 DASHBOARD_LEGACY_CREATION_RETIRED` (HTTP 409) from `dashboard create` | legacy engine retired | `dashboard create-blank` or `dashboard v3 generate` |
 | `4GENR001 ... params.data` (HTTP 400) from `dashboard pdf export` | route needs a browser-rendered payload | not available from the CLI; report it, do not retry with `{"data": {}}` |
 | `'destination'` KeyError in a `view export create` job with handler_type csv_file | generic export route is broken for CSV on release | use `view export csv` |
-| `timeout` / `outcome_unknown` (exit 7) | the request may have completed | `job get JOB_ID` if you have one, else re-list the resource (`dataset list`, `view task list VIEW_ID DATASET_ID`) before any replay |
+| `timeout` / `outcome_unknown` (exit 7) | the request may have completed | run the envelope's `recovery_commands` first: `job get JOB_ID`, `project get ID` after a delete (repeat until `resource_not_found`), `dashboard list` after `create-blank` (look for your title), `dashboard canvas get ID` after a canvas or pages write. Else re-list the resource (`dataset list`, `view task list VIEW_ID DATASET_ID`) before any replay |
 | HTTP 502 / connection errors on every command | backend outage | `mammoth doctor`; wait and re-run doctor until it succeeds; do not replay mutations blindly |
 
 Every error envelope from CLI 2.0.18 carries `error.log_ref` `{file, run_id}`.

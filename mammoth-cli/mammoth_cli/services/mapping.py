@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 import shlex
 from typing import Any
 
@@ -104,6 +105,35 @@ def _job_recovery(job_id: object, *, profile: str | None = None) -> list[str]:
         f"mammoth job get {job_id}{profile_option}",
         f"mammoth job wait {job_id}{profile_option}",
     ]
+
+
+_PROJECT_DELETE = re.compile(r"/workspaces/\d+/projects/(\d+)/?$")
+_DASHBOARD_WRITE = re.compile(r"/dashboards/(\d+)(?:/|$)")
+
+
+def _resource_recovery(
+    method: object, endpoint: object, project_id: object, *, profile: str | None = None
+) -> list[str]:
+    """Reads that settle an unknown outcome for writes with no job handle.
+
+    Seen on release during an outage: ``dashboard create-blank`` and
+    ``project delete`` timed out with nothing to inspect, and agents could
+    not tell whether to replay. Each command here answers that question.
+    """
+    if not isinstance(endpoint, str):
+        return []
+    options = f"{' --profile ' + shlex.quote(profile) if profile else ''}"
+    verb = str(method or "").upper()
+    if verb == "DELETE" and (match := _PROJECT_DELETE.search(endpoint)):
+        # Deletion is asynchronous (202): read until resource_not_found.
+        return [f"mammoth project get {match.group(1)}{options}"]
+    if verb == "POST" and endpoint.rstrip("/").endswith("/dashboards/v3/blank"):
+        project = f" --project {project_id}" if isinstance(project_id, int) else ""
+        # Look for a dashboard with the title you sent before creating another.
+        return [f"mammoth dashboard list{project}{options}"]
+    if verb in {"POST", "PUT", "PATCH"} and (match := _DASHBOARD_WRITE.search(endpoint)):
+        return [f"mammoth dashboard canvas get {match.group(1)}{options}"]
+    return []
 
 
 def map_sdk_exception(
@@ -250,6 +280,10 @@ def map_sdk_exception(
             )
         )
         if uncertain_effect:
+            if not recovery:
+                recovery = _resource_recovery(
+                    method, details.get("endpoint"), project_id, profile=profile
+                )
             details.setdefault("operation_state", CODE_OUTCOME_UNKNOWN)
             if method is None:
                 details.setdefault("metadata_missing", ["method", "operation_state"])

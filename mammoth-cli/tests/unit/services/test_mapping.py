@@ -333,3 +333,26 @@ def test_sdk_validation_error_surfaces_its_message_as_invalid_arguments() -> Non
     assert error.message == "mode must be 'math' or 'metric', got 'sample'."
     assert error.details == {"exception_type": "MammothValidationError", "mode": "sample"}
     assert "no request was sent" in (error.hint or "")
+
+
+@pytest.mark.parametrize(
+    ("method", "endpoint", "expected"),
+    [
+        ("DELETE", "/workspaces/4/projects/97", "mammoth project get 97"),
+        ("POST", "/dashboards/v3/blank", "mammoth dashboard list --project 12"),
+        ("POST", "/dashboards/54/pages", "mammoth dashboard canvas get 54"),
+    ],
+)
+def test_unknown_write_without_a_job_names_the_read_that_settles_it(
+    method: str, endpoint: str, expected: str
+) -> None:
+    error = MammothAPIError(
+        "read timeout",
+        status_code=None,
+        method=method,
+        endpoint=endpoint,
+        operation_state="outcome_unknown",
+    )
+    mapped = map_sdk_exception(error, project_id=12)
+    assert mapped.code == "outcome_unknown"
+    assert mapped.recovery_commands == [expected]

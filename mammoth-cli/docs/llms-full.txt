@@ -669,6 +669,8 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth project bulk-delete --input '{"project_ids": [1]}'
 - `mammoth project bulk-update` [high_impact/confirm_target] -> mammoth.api.projects.ProjectsAPI.bulk_update
   example: mammoth project bulk-update --input '{"patch_data": {"patches": [{"op": "add", "path": "role", "value": [{"project_id": 456, "user_roles": [{"user_id": 123, "role": "project_analyst"}]}]}]}}'
+- `mammoth project check` [read/none] -> mammoth_cli.commands.project.project_check
+  example: mammoth project check 123
 - `mammoth project checkpoint list` [read/none] -> mammoth.api.projects.ProjectsAPI.checkpoint_list
   example: mammoth project checkpoint list 123
 - `mammoth project create` [benign_mutation/none] -> mammoth.api.projects.ProjectsAPI.create

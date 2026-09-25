@@ -4,7 +4,12 @@ from __future__ import annotations
 
 from typing import Any
 
-from mammoth_cli.services.dashboard_review import profiles_from_view, review, upload_hints
+from mammoth_cli.services.dashboard_review import (
+    columns_not_on_dashboard,
+    profiles_from_view,
+    review,
+    upload_hints,
+)
 
 # The profile the dashboard backend computed for the eval's orders view.
 _PROFILES = [
@@ -106,3 +111,16 @@ def test_upload_hints_name_revenue_before_any_dashboard_and_leave_blanks_out() -
         "mammoth view transform math 81 --input "
         '\'{"dataset_id": 84, "expression": "qty * price", "new_column": "revenue"}\''
     )
+
+
+def test_a_view_column_the_dashboard_profile_lacks_is_named_with_the_rebuild() -> None:
+    board = _doc([])
+    view = [*[{"name": p["name"]} for p in _PROFILES], {"name": "revenue", "type": "measure"}]
+    (warning,) = columns_not_on_dashboard(board, view)
+    assert warning["issue"] == "columns_not_on_dashboard"
+    assert warning["columns"] == ["revenue"]
+    assert warning["fix"] == (
+        'mammoth dashboard create-blank --input \'{"params": {"dataview_id": 81}}\' --yes'
+    )
+    assert columns_not_on_dashboard(board, [{"name": "qty"}]) == []
+    assert columns_not_on_dashboard(_doc([], profiles=[]), view) == []

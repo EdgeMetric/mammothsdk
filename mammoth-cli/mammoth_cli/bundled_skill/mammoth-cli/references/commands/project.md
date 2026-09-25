@@ -22,6 +22,16 @@ Result: `ProjectBulkUpdateResult`; mutation `high_impact`, confirmation `confirm
 
 Status on release: ran once on CLI 2.0.15 — re-verification 2026-09-18: exit 0 on release with CLI 2.0.15. Fix held: body accepted as ProjectsPatch naming project_id in every value item; confirmation named the workspace scope (message: 'bulk-update roles in projects 23 of workspace 4', hint 'Pass --con…
 
+### `project.check`
+
+Run: `mammoth project check`. Exact input fields: `mammoth schema get project.check`.
+
+Example: `mammoth project check 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `ProjectCheckResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
 ### `project.checkpoint.list`
 
 Run: `mammoth project checkpoint list`. Exact input fields: `mammoth schema get project.checkpoint.list`.

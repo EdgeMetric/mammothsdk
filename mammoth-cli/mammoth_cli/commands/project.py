@@ -509,3 +509,80 @@ def project_user_update(invocation: Invocation) -> HandlerResult:
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), **kwargs)
     return data, _meta(invocation, auth.workspace_id, project_id)
+
+
+_DATASETS_LIST_SYMBOL = "mammoth.api.datasets.DatasetsAPI.list_all"
+_DASHBOARDS_LIST_SYMBOL = "mammoth.api.dashboards.DashboardsAPI.list"
+
+
+def _report_line(where: str, warning: dict[str, Any]) -> str:
+    column = warning.get("column")
+    subject = f"{where}, column {column}" if column else where
+    return f"{subject}: {warning.get('issue')}. {warning.get('detail', '')}".strip()
+
+
+def project_check(invocation: Invocation) -> HandlerResult:
+    """List what a report on this project must still account for.
+
+    Read-only local composite, run before reporting: for each dataset, the
+    first view's ``column_warnings`` and ``before_dashboard``; for each
+    dashboard, its ``deliverable_check``. ``to_report`` flattens them into
+    one line per finding. Cold-agent evals (2.0.41) left one column's blanks
+    undecided in every run, because the warning sat in an earlier result.
+    """
+    from mammoth_cli.commands.dashboard import _with_deliverable_check
+    from mammoth_cli.commands.view import upload_preview
+
+    project_id = _project_id(invocation)
+    views: list[dict[str, Any]] = []
+    dashboards: list[dict[str, Any]] = []
+    to_report: list[str] = []
+    with open_service(invocation) as (service, auth):
+        listing = service.call(_DATASETS_LIST_SYMBOL, project_id=project_id)
+        datasets = listing.get("datasets", []) if isinstance(listing, dict) else []
+        for dataset in datasets:
+            dataset_id = dataset.get("id") if isinstance(dataset, dict) else None
+            if not isinstance(dataset_id, int):
+                continue
+            preview = upload_preview(service, dataset_id, project_id)
+            if preview is None:
+                continue
+            entry = {
+                "dataset_id": dataset_id,
+                "dataset_name": dataset.get("name"),
+                "view_id": preview["view_id"],
+                "row_count": preview.get("row_count"),
+                "column_warnings": preview.get("column_warnings", []),
+            }
+            if "before_dashboard" in preview:
+                entry["before_dashboard"] = preview["before_dashboard"]
+            views.append(entry)
+            where = f"view {preview['view_id']} ({dataset.get('name')})"
+            to_report += [_report_line(where, w) for w in entry["column_warnings"]]
+        boards = service.call(_DASHBOARDS_LIST_SYMBOL, project_id=project_id)
+        for board in boards if isinstance(boards, list) else []:
+            dashboard_id = board.get("id") if isinstance(board, dict) else None
+            if not isinstance(dashboard_id, int):
+                continue
+            checked = _with_deliverable_check(
+                invocation, service, auth, {"dashboard_id": dashboard_id}, {"id": dashboard_id}
+            )
+            check = checked.get("deliverable_check") if isinstance(checked, dict) else None
+            warnings = check.get("warnings", []) if isinstance(check, dict) else []
+            dashboards.append(
+                {"id": dashboard_id, "title": board.get("title"), "warnings": warnings}
+            )
+            to_report += [_report_line(f"dashboard {dashboard_id}", w) for w in warnings]
+        meta = _meta(invocation, auth.workspace_id, project_id)
+    return {
+        "project_id": project_id,
+        "views": views,
+        "dashboards": dashboards,
+        "to_report": to_report,
+        "note": (
+            "Before you report: fix each finding, or give it one line in the report "
+            "(what you did and why). A finding you do not mention is a miss."
+            if to_report
+            else "Nothing open in the views or dashboards."
+        ),
+    }, meta

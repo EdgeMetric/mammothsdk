@@ -242,6 +242,7 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
     # active project). The SDK signature marks it required or omits it, so the
     # dual-sourced optional locator is authored here.
     "project.get": _optional_project_id(),
+    "project.check": _optional_project_id(),
     "project.pending-changes": _optional_project_id(),
     "project.resource-status": _optional_project_id(),
     "project.resource-dependencies": _optional_project_id(),
