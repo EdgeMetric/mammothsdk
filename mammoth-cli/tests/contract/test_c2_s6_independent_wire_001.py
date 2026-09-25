@@ -9,6 +9,8 @@ expectations. It proves only SDK transport shape, not CLI binding.
 
 from __future__ import annotations
 
+import asyncio
+import inspect
 import json
 from collections.abc import Callable
 from pathlib import Path
@@ -27,11 +29,11 @@ class RecordingClient:
     def __init__(self) -> None:
         self.calls: list[tuple[str, str, dict[str, Any]]] = []
 
-    def _request_json(self, method: str, path: str, **kwargs: Any) -> dict[str, Any]:
+    async def _request_json(self, method: str, path: str, **kwargs: Any) -> dict[str, Any]:
         self.calls.append((method, path, kwargs))
         return {}
 
-    def _request_binary(self, method: str, path: str, **kwargs: Any) -> dict[str, Any]:
+    async def _request_binary(self, method: str, path: str, **kwargs: Any) -> dict[str, Any]:
         # Artifact routes (PNG/PDF/MP4/HTML) go through the binary seam; the
         # wire oracle only cares about method, path, and query.
         self.calls.append((method, path, kwargs))
@@ -40,6 +42,13 @@ class RecordingClient:
 
 def _fixture() -> dict[str, Any]:
     return json.loads(FIXTURE.read_text(encoding="utf-8"))
+
+
+def _drive(work: Any) -> Any:
+    """Run one SDK coroutine to completion; hand anything else straight back."""
+    if not inspect.isawaitable(work):
+        return work
+    return asyncio.run(work)
 
 
 def _invoke(client: RecordingClient, route: str) -> None:
@@ -191,7 +200,7 @@ def _invoke(client: RecordingClient, route: str) -> None:
         ),
     }
     try:
-        calls[route]()
+        _drive(calls[route]())
     except ValidationError:
         # Minimal offline responses are expected to fail response validation;
         # the transport request was already recorded and is the assertion.

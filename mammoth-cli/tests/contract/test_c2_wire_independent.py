@@ -12,6 +12,8 @@ the uncovered route IDs.
 
 from __future__ import annotations
 
+import asyncio
+import inspect
 import json
 from collections.abc import Callable
 from pathlib import Path
@@ -45,7 +47,7 @@ class RecordingClient:
     def __init__(self) -> None:
         self.calls: list[tuple[str, str, dict[str, Any]]] = []
 
-    def _request_json(self, method: str, path: str, **kwargs: Any) -> dict[str, Any]:
+    async def _request_json(self, method: str, path: str, **kwargs: Any) -> dict[str, Any]:
         self.calls.append((method, path, kwargs))
         # Enough shape for the one list wrapper that is used below.  Generated
         # methods may reject this deliberately minimal response after they have
@@ -54,16 +56,23 @@ class RecordingClient:
             return {"dashboards": []}
         return {}
 
-    def _request_list(self, method: str, path: str, **kwargs: Any) -> list[dict[str, Any]]:
+    async def _request_list(self, method: str, path: str, **kwargs: Any) -> list[dict[str, Any]]:
         self.calls.append((method, path, kwargs))
         return []
 
-    def _wait_if_job(self, response: dict[str, Any], **_: Any) -> dict[str, Any]:
+    async def _wait_if_job(self, response: dict[str, Any], **_: Any) -> dict[str, Any]:
         return response
 
 
 def _fixture() -> dict[str, Any]:
     return json.loads(FIXTURE.read_text(encoding="utf-8"))
+
+
+def _drive(work: Any) -> Any:
+    """Run one SDK coroutine to completion; hand anything else straight back."""
+    if not inspect.isawaitable(work):
+        return work
+    return asyncio.run(work)
 
 
 def _invoke(client: RecordingClient, route: str) -> None:
@@ -145,7 +154,7 @@ def _invoke(client: RecordingClient, route: str) -> None:
         "template.update": lambda: TemplatesAPI(client).update(1201, {"C2_TEMPLATE": "C2_VALUE"}),  # type: ignore[arg-type]
     }
     try:
-        calls[route]()
+        _drive(calls[route]())
     except ValidationError:
         # Typed generated APIs validate their response after transport.  The
         # request has already been captured and is the subject of this test.

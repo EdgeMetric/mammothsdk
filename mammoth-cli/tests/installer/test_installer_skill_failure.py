@@ -95,9 +95,7 @@ def _write_windows_stub(directory: Path, *, exit_code_on_skill: int) -> None:
     directory.mkdir(parents=True, exist_ok=True)
     stub = directory / "mammoth.cmd"
     stub.write_text(
-        "@echo off\r\n"
-        f'if "%1"=="skill" exit /b {exit_code_on_skill}\r\n'
-        "exit /b 0\r\n",
+        "@echo off\r\n" f'if "%1"=="skill" exit /b {exit_code_on_skill}\r\n' "exit /b 0\r\n",
         encoding="utf-8",
     )
 

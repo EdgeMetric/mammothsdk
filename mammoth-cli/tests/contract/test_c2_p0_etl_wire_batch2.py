@@ -135,9 +135,7 @@ def test_next_ten_etl_routes_have_literal_wire_contracts(
 
     run("view.export.get", [str(VIEW), str(EXPORT)], {"dataset_id": DATASET, "fields": "__full"})
     assert api.last().query == {"fields": ["__full"]}
-    assert _path(api).endswith(
-        f"/datasets/{DATASET}/dataviews/{VIEW}/pipeline/exports/{EXPORT}"
-    )
+    assert _path(api).endswith(f"/datasets/{DATASET}/dataviews/{VIEW}/pipeline/exports/{EXPORT}")
 
     run(
         "view.export.update",

@@ -23,9 +23,7 @@ from mammoth_cli.services.positionals import resolve_positionals
 
 def _command_ids() -> list[str]:
     return [
-        record["command_id"]
-        for record in load_commands()
-        if record.get("disposition") != "alias"
+        record["command_id"] for record in load_commands() if record.get("disposition") != "alias"
     ]
 
 

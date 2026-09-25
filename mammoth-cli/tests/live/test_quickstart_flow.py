@@ -44,8 +44,16 @@ _INTERNAL_COL_RE = re.compile(r"^column_\d+$")
 def _run(args: list[str], env: dict[str, str], *, timeout: float = 180.0) -> dict[str, Any]:
     """Invoke the CLI, assert a clean exit, and return the parsed envelope."""
     result = make_runner().invoke(
-        [*args, "--project", env["_PROJECT"], "--output", "json", "--no-input",
-         "--job-timeout", str(timeout)],
+        [
+            *args,
+            "--project",
+            env["_PROJECT"],
+            "--output",
+            "json",
+            "--no-input",
+            "--job-timeout",
+            str(timeout),
+        ],
         env=env,
     )
     assert result.exit_code == 0, f"`{' '.join(args)}` failed: {result.output}"
@@ -79,10 +87,17 @@ def test_quickstart_flow_end_to_end(
 
         # 2) Create a dataset from the sample CSV URL -> ingestion job.
         code, created = _try(
-            ["dataset", "create", "--input", json.dumps({
-                "ds_creation_type": "weburl",
-                "dataset_spec": {"url": _SAMPLE_CSV_URL},
-            })],
+            [
+                "dataset",
+                "create",
+                "--input",
+                json.dumps(
+                    {
+                        "ds_creation_type": "weburl",
+                        "dataset_spec": {"url": _SAMPLE_CSV_URL},
+                    }
+                ),
+            ],
             env,
         )
         if code != 0:
@@ -129,31 +144,58 @@ def test_quickstart_flow_end_to_end(
         #    transform just added. The dataset is resolved from the view id.
         preview = _run(["view", "preview", str(view_id)], env)[_DATA_KEY]
         cols = preview[_COLUMNS_KEY]
-        assert cols and not any(_INTERNAL_COL_RE.match(c) for c in cols), (
-            f"preview leaked internal column ids: {cols}"
-        )
+        assert cols and not any(
+            _INTERNAL_COL_RE.match(c) for c in cols
+        ), f"preview leaked internal column ids: {cols}"
         assert "hash" not in cols, f"preview leaked the system hash column: {cols}"
-        assert transformed_column in cols, (
-            f"preview missing the transformed column {transformed_column!r}: {cols}"
-        )
+        assert (
+            transformed_column in cols
+        ), f"preview missing the transformed column {transformed_column!r}: {cols}"
 
         # 7) Export the view to a local CSV file (explicit path for cleanup).
         out = tmp_path / "quickstart_export.csv"
-        _run(["view", "export", "csv", str(view_id),
-              "--input", json.dumps({"output_path": str(out), "dataset_id": dataset_id})], env)
+        _run(
+            [
+                "view",
+                "export",
+                "csv",
+                str(view_id),
+                "--input",
+                json.dumps({"output_path": str(out), "dataset_id": dataset_id}),
+            ],
+            env,
+        )
         assert out.exists() and out.stat().st_size > 0, "export did not write a non-empty CSV"
         assert out.read_text(encoding="utf-8").strip(), "exported CSV is empty"
 
     finally:
         if dataset_id is not None:
             make_runner().invoke(
-                ["dataset", "delete", str(dataset_id), "--project", live_project,
-                 "--yes", "--output", "json", "--no-input"],
+                [
+                    "dataset",
+                    "delete",
+                    str(dataset_id),
+                    "--project",
+                    live_project,
+                    "--yes",
+                    "--output",
+                    "json",
+                    "--no-input",
+                ],
                 env=live_env,
             )
         if folder_id is not None:
             make_runner().invoke(
-                ["folder", "delete", str(folder_id), "--project", live_project,
-                 "--yes", "--output", "json", "--no-input"],
+                [
+                    "folder",
+                    "delete",
+                    str(folder_id),
+                    "--project",
+                    live_project,
+                    "--yes",
+                    "--output",
+                    "json",
+                    "--no-input",
+                ],
                 env=live_env,
             )

@@ -23,8 +23,7 @@ from typing import Any
 from urllib.parse import parse_qs, urlparse
 
 import pytest
-import requests
-from requests.adapters import HTTPAdapter
+import httpx
 
 from mammoth_cli.context.resolver import ResolvedAuth
 from mammoth_cli.services.sdk_service import SdkMammothService
@@ -88,8 +87,8 @@ class RecordedRequest:
     json_body: Any
 
 
-class FakeApi(HTTPAdapter):
-    """A ``requests`` adapter that fakes the external Mammoth API only.
+class FakeApi(httpx.AsyncBaseTransport):
+    """An httpx transport that fakes the external Mammoth API only.
 
     Register responses with :meth:`on`; inspect emitted requests with
     :attr:`requests`. Unmatched requests get the default response (200 ``{}``)
@@ -97,8 +96,7 @@ class FakeApi(HTTPAdapter):
     """
 
     def __init__(self) -> None:
-        """Initialize an adapter with no routes and a 200/empty default."""
-        super().__init__()
+        """Initialize a transport with no routes and a 200/empty default."""
         self.requests: list[RecordedRequest] = []
         self._routes: list[tuple[str, re.Pattern[str], Route]] = []
         self._default: tuple[int, Any] = (200, {})
@@ -136,19 +134,16 @@ class FakeApi(HTTPAdapter):
         """Return the most recently emitted request."""
         return self.requests[-1]
 
-    def send(
-        self,
-        request: Any,
-        stream: bool = False,
-        timeout: Any = None,
-        verify: bool = True,
-        cert: Any = None,
-        proxies: Any = None,
-    ) -> requests.Response:
+    async def handle_async_request(self, request: httpx.Request) -> httpx.Response:
         """Record the request and return the matching canned response."""
-        parsed = urlparse(request.url)
+        parsed = urlparse(str(request.url))
         body: Any = None
-        raw = request.body
+        # A streaming request (a multipart upload) refuses `.content` until it
+        # has been read, and a transport is the thing that reads it.
+        await request.aread()
+        # httpx reports a bodyless request as empty bytes, where requests
+        # reported None; the fixtures are written against "no body at all".
+        raw = request.content or None
         if raw is not None:
             if isinstance(raw, bytes):
                 raw = raw.decode("utf-8")
@@ -158,7 +153,7 @@ class FakeApi(HTTPAdapter):
                 body = raw
         record = RecordedRequest(
             method=request.method,
-            url=request.url,
+            url=str(request.url),
             path=parsed.path,
             query=parse_qs(parsed.query),
             json_body=body,
@@ -171,13 +166,12 @@ class FakeApi(HTTPAdapter):
                 status, payload = route(record)
                 break
 
-        response = requests.models.Response()
-        response.status_code = status
-        response._content = b"" if payload is None else json.dumps(payload).encode("utf-8")
-        response.headers["Content-Type"] = "application/json"
-        response.url = request.url
-        response.request = request
-        return response
+        return httpx.Response(
+            status,
+            content=b"" if payload is None else json.dumps(payload).encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+            request=request,
+        )
 
 
 ServiceFactory = Callable[..., "tuple[SdkMammothService, FakeApi]"]
@@ -190,7 +184,7 @@ def real_service() -> ServiceFactory:
     The factory accepts optional ``project_id`` and ``base_url`` keywords and
     returns ``(service, api)``: a genuine
     :class:`~mammoth_cli.services.sdk_service.SdkMammothService` and the
-    :class:`FakeApi` mounted on its client. The base url is never contacted;
+    :class:`FakeApi` given to its client. The base url is never contacted;
     it is only recorded.
     """
 
@@ -202,8 +196,10 @@ def real_service() -> ServiceFactory:
         auth = ResolvedAuth(api_key="k", api_secret="s", workspace_id=4, base_url=base_url)
         service = SdkMammothService(auth, project_id=project_id)
         api = FakeApi()
-        service._client.session.mount("https://", api)
-        service._client.session.mount("http://", api)
+        # Keep the credentials the real session carries; swap only the wire.
+        service._client.session = httpx.AsyncClient(
+            transport=api, headers=service._client.session.headers, follow_redirects=False
+        )
         return service, api
 
     return _factory

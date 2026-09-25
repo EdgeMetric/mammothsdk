@@ -43,6 +43,7 @@ def _normalize(text: str) -> str:
     """
     return " ".join(_ANSI_RE.sub("", text).split())
 
+
 # Commands whose handler answers entirely from the in-process catalog -- no
 # network, no credentials, no filesystem mutation -- so their advertised example
 # must run to exit zero anywhere, including a clean machine.

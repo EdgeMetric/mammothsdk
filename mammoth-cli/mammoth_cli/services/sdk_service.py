@@ -4,10 +4,18 @@ Wraps exactly one :class:`mammoth.client.MammothClient` built from a resolved
 authentication context. All Mammoth network access goes through this public
 SDK client; this module never imports a transport library and never touches
 a private (``_``-prefixed) SDK member.
+
+The SDK's methods are coroutines, because its other caller is a server that
+must keep serving while a request is in flight. A CLI has nobody to yield to,
+so this is the one place that runs them: every SDK call goes through
+:meth:`SdkMammothService._run`, and the command layer above stays ordinary
+synchronous code.
 """
 
 from __future__ import annotations
 
+import asyncio
+import inspect
 import re
 from collections.abc import Callable
 from types import TracebackType
@@ -115,8 +123,22 @@ class SdkMammothService:
             base_url=auth.base_url,
             **kwargs,
         )
+        # One loop for the process, not one per call: the client's connection
+        # pool lives on the loop that opened it.
+        self._loop = asyncio.new_event_loop()
         if project_id is not None:
             self._client.set_project_id(project_id)
+
+    def _run(self, work: Any) -> Any:
+        """Run one SDK coroutine to completion and hand back its result.
+
+        A stand-in client that answers directly is passed straight through:
+        this seam is where the CLI swaps the SDK out, and what it swaps in is
+        not obliged to be a coroutine.
+        """
+        if not inspect.isawaitable(work):
+            return work
+        return self._loop.run_until_complete(work)
 
     def call(self, sdk_symbol: str, /, **kwargs: Any) -> Any:
         """Resolve and invoke the public SDK method named by ``sdk_symbol``.
@@ -153,7 +175,7 @@ class SdkMammothService:
             self.gate(sdk_symbol, kwargs)
         try:
             with spinner(self._progress):
-                return method(**kwargs)
+                return self._run(method(**kwargs))
         except TypeError as exc:
             raise CliError(
                 code=CODE_INVALID_ARGUMENTS,
@@ -272,11 +294,15 @@ class SdkMammothService:
         try:
             with spinner(self._progress):
                 if dashboard_url is None:
-                    return self._client.wait_if_job(response)
+                    return self._run(self._client.wait_if_job(response))
                 dashboards = self._client.dashboards
-                return self._client.wait_if_job(
-                    response,
-                    fetch=lambda job_id, _remaining: dashboards.job_by_url(dashboard_url, job_id),
+                return self._run(
+                    self._client.wait_if_job(
+                        response,
+                        fetch=lambda job_id, _remaining: dashboards.job_by_url(
+                            dashboard_url, job_id
+                        ),
+                    )
                 )
         except Exception as exc:
             raise map_sdk_exception(exc) from exc
@@ -319,9 +345,9 @@ class SdkMammothService:
                 # potentially probing an unrelated parent and returning a
                 # misleading 403.
                 view = (
-                    self._client.get_view(view_id)
+                    self._run(self._client.get_view(view_id))
                     if dataset_id is None
-                    else self._client.views.get(view_id, dataset_id=dataset_id)
+                    else self._run(self._client.views.get(view_id, dataset_id=dataset_id))
                 )
         except ValueError as exc:
             # The SDK's project-wide parent discovery reports a miss as a bare
@@ -387,7 +413,7 @@ class SdkMammothService:
             self.gate(method, kwargs, view_id=view_id, dataset_id=getattr(view, "dataset_id", None))
         try:
             with spinner(self._progress):
-                return attribute(**kwargs)
+                return self._run(attribute(**kwargs))
         except MammothColumnError as exc:
             # Column validation happens while building the task, before the
             # SDK can POST. Preserve a useful agent-facing error envelope
@@ -467,7 +493,7 @@ class SdkMammothService:
                 details={view_kwarg: value, "missing_field": parent_kwarg},
                 recovery_commands=[f"mammoth view get {value}"],
             )
-        foreign = self._client.views.get(value, dataset_id=int(parent))
+        foreign = self._run(self._client.views.get(value, dataset_id=int(parent)))
         hydrated = dict(kwargs)
         hydrated[view_kwarg] = foreign
         return hydrated
@@ -773,13 +799,16 @@ class SdkMammothService:
         if self.gate is not None:
             self.gate("mammoth.api.projects.ProjectsAPI.delete", {"project_id": project_id})
         try:
-            return self._client.projects.delete(project_id)
+            return self._run(self._client.projects.delete(project_id))
         except Exception as exc:
             raise map_sdk_exception(exc) from exc
 
     def close(self) -> None:
-        """Close the owned HTTP session. Safe to call more than once."""
-        self._client.close()
+        """Close the owned HTTP session and its loop. Safe to call twice."""
+        if self._loop.is_closed():
+            return
+        self._run(self._client.close())
+        self._loop.close()
 
     def __enter__(self) -> SdkMammothService:
         """Enter the service as a context manager."""

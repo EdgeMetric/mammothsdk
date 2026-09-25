@@ -82,9 +82,7 @@ def main() -> int:
         parser.error("command must explicitly request --output json --no-input")
 
     exit_code, stdout, stderr = run_bounded(command)
-    version_result = subprocess.run(
-        ["mammoth", "--version"], capture_output=True, check=False
-    )
+    version_result = subprocess.run(["mammoth", "--version"], capture_output=True, check=False)
     record = {
         # Keep this standalone evidence script compatible with Python 3.10.
         "captured_at": datetime.now(timezone.utc).isoformat(),  # noqa: UP017

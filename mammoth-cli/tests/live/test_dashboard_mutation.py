@@ -97,9 +97,9 @@ def _assert_reversible_trash_restore(env: dict[str, Any], project: str, seed_id:
                 ],
                 env=env,
             )
-            assert restored.exit_code == 0, (
-                f"restore failed, dashboard left trashed: {restored.output}"
-            )
+            assert (
+                restored.exit_code == 0
+            ), f"restore failed, dashboard left trashed: {restored.output}"
     assert seed_id in _dashboard_ids(env, project), "restore did not return it to the listing"
 
 

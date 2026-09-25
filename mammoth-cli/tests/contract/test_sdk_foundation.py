@@ -15,9 +15,9 @@ def test_client_has_public_close_and_context_manager() -> None:
     from mammoth.client import MammothClient
 
     assert hasattr(MammothClient, "close"), "MammothClient needs a public close()"
-    assert hasattr(MammothClient, "__enter__") and hasattr(
-        MammothClient, "__exit__"
-    ), "MammothClient must support the context-manager protocol"
+    assert hasattr(MammothClient, "__aenter__") and hasattr(
+        MammothClient, "__aexit__"
+    ), "MammothClient must support the async context-manager protocol"
 
 
 def test_public_dataview_to_dataset_resolver_exists() -> None:

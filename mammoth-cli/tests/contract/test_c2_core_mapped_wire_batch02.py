@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import asyncio
+import inspect
+
 import json
 from contextlib import contextmanager
 from pathlib import Path
@@ -15,6 +18,13 @@ from mammoth_cli.runtime.invocation import Invocation
 PROJECT = 3
 DATASET = 731
 VIEW = 278
+
+
+def _drive(work: Any) -> Any:
+    """Run one SDK coroutine to completion; hand anything else straight back."""
+    if not inspect.isawaitable(work):
+        return work
+    return asyncio.run(work)
 
 
 def _inv(command: str, args: list[str], input_file: str | None = None) -> Invocation:
@@ -34,7 +44,7 @@ def _bind(monkeypatch: pytest.MonkeyPatch, module: Any, service: Any):
     def opened(_invocation: Invocation):
         yield service, type("Auth", (), {"workspace_id": 4})()
 
-    monkeypatch.setattr(module, "open_service", opened)
+    _drive(monkeypatch.setattr(module, "open_service", opened))
     yield
 
 
@@ -77,7 +87,7 @@ def test_core_read_batch02_matches_literal_release_wire(
     real_service: Any, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
     service, api = real_service(project_id=PROJECT)
-    api.default(200, {"items": [], "next": ""})
+    _drive(api.default(200, {"items": [], "next": ""}))
 
     def run(
         module: Any,
@@ -170,7 +180,8 @@ def test_core_read_batch02_matches_literal_release_wire(
     assert (_path(api), api.last().method, api.last().query) == (
         f"/workspaces/4/projects/{PROJECT}/resource-dependencies",
         "GET",
-        {"resource_ids": ["dataset-731,view-278"], "is_recursive": ["True"]},
+        # httpx writes a bool query value lowercase, which is the HTTP convention.
+        {"resource_ids": ["dataset-731,view-278"], "is_recursive": ["true"]},
     )
 
     # REL-234 project trash list.

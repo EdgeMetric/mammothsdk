@@ -137,9 +137,10 @@ _SITES = {
 def test_suites_discovered() -> None:
     """Sanity: the strongest runtime suites exist and are discovered."""
     suites = _discovered_suites()
-    assert {"realcode", "subprocess"} <= suites, (
-        f"expected realcode+subprocess suites under tests/, discovered {sorted(suites)}"
-    )
+    assert {
+        "realcode",
+        "subprocess",
+    } <= suites, f"expected realcode+subprocess suites under tests/, discovered {sorted(suites)}"
 
 
 @pytest.mark.parametrize("site_name", list(_SITES))
@@ -163,7 +164,7 @@ def test_gate_runs_whole_tests_tree(site_name: str) -> None:
     # 1) The whole tree must be a target of some invocation.
     assert "tests" in all_targets, (
         f"{site_name}: no pytest invocation targets the whole 'tests' tree; "
-        f"targets were {all_targets}. Use `pytest tests -m \"not live\" -q "
+        f'targets were {all_targets}. Use `pytest tests -m "not live" -q '
         f"-p no:cacheprovider` so suites {sorted(suites)} are all collected."
     )
 
@@ -175,13 +176,11 @@ def test_gate_runs_whole_tests_tree(site_name: str) -> None:
     assert not subset_targets, (
         f"{site_name}: names a subset of test directories {subset_targets} instead "
         f"of running the whole 'tests' tree; suites {sorted(suites)} can be omitted. "
-        f"Use `pytest tests -m \"not live\" -q -p no:cacheprovider`."
+        f'Use `pytest tests -m "not live" -q -p no:cacheprovider`.'
     )
 
     # 3) No suite directory may be excluded via --ignore.
-    ignored_suites = [
-        p for p in ignored if any(s in p for s in suites)
-    ]
-    assert not ignored_suites, (
-        f"{site_name}: excludes suite directories via --ignore {ignored_suites}."
-    )
+    ignored_suites = [p for p in ignored if any(s in p for s in suites)]
+    assert (
+        not ignored_suites
+    ), f"{site_name}: excludes suite directories via --ignore {ignored_suites}."

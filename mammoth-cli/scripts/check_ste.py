@@ -121,8 +121,10 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps([asdict(v) for v in violations], indent=1, sort_keys=True))
     else:
         for v in violations:
-            print(f"{v.file}:{v.line}: {v.kind} sentence has {v.words} words "
-                  f"(limit {v.limit}): {v.text}")
+            print(
+                f"{v.file}:{v.line}: {v.kind} sentence has {v.words} words "
+                f"(limit {v.limit}): {v.text}"
+            )
     return 1 if violations else 0
 
 

@@ -37,7 +37,8 @@ EXTRA_OP_HINTS: dict[str, dict[str, Any]] = {
     "dashboard.exemplar.extract": {"operation_ids": ["ExtractExemplar"], "method": "POST"},
     "dashboard.swap-data": {"operation_ids": ["SwapDashboardData"], "method": "POST"},
     "dashboard.templates.pending": {
-        "operation_ids": ["DashboardV3TakePendingTemplate"], "method": "POST"
+        "operation_ids": ["DashboardV3TakePendingTemplate"],
+        "method": "POST",
     },
     "dashboard.templates.use": {"operation_ids": ["UseTemplate"], "method": "POST"},
     "dashboard.assess-twb": {"operation_ids": ["AssessTwb"], "method": "POST"},

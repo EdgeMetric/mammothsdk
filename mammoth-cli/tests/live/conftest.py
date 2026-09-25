@@ -63,9 +63,7 @@ def live_env() -> dict[str, str]:
 
 
 @pytest.fixture(autouse=True)
-def _live_login(
-    live_env: dict[str, str], tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def _live_login(live_env: dict[str, str], tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """Log the live credentials into an isolated default profile.
 
     Isolates the config directory so the login never touches a developer's real

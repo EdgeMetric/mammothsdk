@@ -130,9 +130,9 @@ def test_installed_wheel_runs(wheelhouse: Path, tmp_path: Path) -> None:
         cwd=tmp_path,
         env=_isolated_python_env(),
     )
-    assert sdk_install.returncode == 0, (
-        f"SDK wheel install failed:\n{sdk_install.stdout}\n{sdk_install.stderr}"
-    )
+    assert (
+        sdk_install.returncode == 0
+    ), f"SDK wheel install failed:\n{sdk_install.stdout}\n{sdk_install.stderr}"
     cli_wheel = next(wheelhouse.glob("mammoth_cli-*.whl"))
     install = subprocess.run(
         [

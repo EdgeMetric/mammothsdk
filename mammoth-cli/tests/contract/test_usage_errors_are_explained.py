@@ -68,9 +68,7 @@ def test_the_sweep_actually_covers_the_tree() -> None:
     assert len(_GROUP_PATHS) >= 30, len(_GROUP_PATHS)
 
 
-@pytest.mark.parametrize(
-    "path", _GROUP_PATHS, ids=[" ".join(p) or "<root>" for p in _GROUP_PATHS]
-)
+@pytest.mark.parametrize("path", _GROUP_PATHS, ids=[" ".join(p) or "<root>" for p in _GROUP_PATHS])
 def test_a_group_invoked_with_no_subcommand_explains_itself(path: list[str]) -> None:
     error = _envelope_error(path)
 
@@ -110,9 +108,7 @@ def test_malformed_invocations_explain_themselves(args: list[str]) -> None:
     assert error["message"].strip(), f"{args}: usage error with an empty message"
 
 
-@pytest.mark.parametrize(
-    "path", _GROUP_PATHS, ids=[" ".join(p) or "<root>" for p in _GROUP_PATHS]
-)
+@pytest.mark.parametrize("path", _GROUP_PATHS, ids=[" ".join(p) or "<root>" for p in _GROUP_PATHS])
 def test_a_group_error_suggests_no_unrunnable_command(path: list[str]) -> None:
     """A recovery command is replayed verbatim, so it must be real.
 

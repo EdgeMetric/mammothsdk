@@ -41,9 +41,9 @@ def test_resolver_defines_no_base_url_env_var() -> None:
         if name.startswith("ENV_") and isinstance(value, str)
     }
     assert "MAMMOTH_BASE_URL" not in env_constants
-    assert env_constants <= _ALLOWED_ENV_VARS, (
-        f"resolver exposes unexpected env vars: {env_constants - _ALLOWED_ENV_VARS}"
-    )
+    assert (
+        env_constants <= _ALLOWED_ENV_VARS
+    ), f"resolver exposes unexpected env vars: {env_constants - _ALLOWED_ENV_VARS}"
 
 
 def test_explicit_login_has_no_base_url_field() -> None:

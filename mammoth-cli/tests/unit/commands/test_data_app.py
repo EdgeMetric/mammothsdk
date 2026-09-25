@@ -227,9 +227,7 @@ def test_share_without_id_is_usage_error(fake_service: FakeMammothService) -> No
 def test_share_forwards_id_and_body(fake_service: FakeMammothService, tmp_path: Path) -> None:
     body = {"params": {"auth": {"type_of_auth": "mammoth"}}}
     doc = _write(tmp_path, {"body": body})
-    data_app_cmd.data_app_share(
-        _inv("data-app.share", extra_args=["7"], input_file=doc, yes=True)
-    )
+    data_app_cmd.data_app_share(_inv("data-app.share", extra_args=["7"], input_file=doc, yes=True))
     assert fake_service.call_log == [(_SHARE, {"data_app_id": 7, "body": body})]
 
 

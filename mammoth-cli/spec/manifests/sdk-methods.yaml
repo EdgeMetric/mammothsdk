@@ -3334,6 +3334,54 @@ methods:
   pagination_policy: offset
   secret_fields: []
   reviewed_by: primary
+- sdk_symbol: mammoth.api.datasets.DatasetsAPI.get_unstructured_rows
+  implementation_origin: mammoth.api.datasets.DatasetsAPI.get_unstructured_rows
+  signature: 'get_unstructured_rows(self, dataset_id: ''int'', workspace_id: ''int | None'' = None, project_id: ''int | None'' = None) -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: dataset.unstructured-rows
+  alias_of: null
+  no_command_reason: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.datasets.DatasetsAPI.discard_unstructured_rows
+  implementation_origin: mammoth.api.datasets.DatasetsAPI.discard_unstructured_rows
+  signature: 'discard_unstructured_rows(self, dataset_id: ''int'', workspace_id: ''int | None'' = None, project_id: ''int | None'' = None) -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: dataset.unstructured-discard
+  alias_of: null
+  no_command_reason: null
+  mutation_class: destructive
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.datasets.DatasetsAPI.preview_interpretation
+  implementation_origin: mammoth.api.datasets.DatasetsAPI.preview_interpretation
+  signature: 'preview_interpretation(self, dataset_id: ''int'', instruction: ''str'', workspace_id: ''int | None'' = None, project_id: ''int | None'' = None) -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: dataset.interpretation-preview
+  alias_of: null
+  no_command_reason: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.datasets.DatasetsAPI.confirm_interpretation
+  implementation_origin: mammoth.api.datasets.DatasetsAPI.confirm_interpretation
+  signature: 'confirm_interpretation(self, dataset_id: ''int'', instruction: ''str'', workspace_id: ''int | None'' = None, project_id: ''int | None'' = None) -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: dataset.interpretation-confirm
+  alias_of: null
+  no_command_reason: null
+  mutation_class: reversible_pipeline
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
 - sdk_symbol: mammoth.api.datasets.DatasetsAPI.get_data
   implementation_origin: mammoth.api.datasets.DatasetsAPI.get_data
   signature: 'get_data(self, dataset_id: ''int'', workspace_id: ''int | None'' = None, project_id: ''int | None'' = None, timeout: ''int'' = 300, poll_interval: ''int'' = 2) -> ''dict[str, Any]'''

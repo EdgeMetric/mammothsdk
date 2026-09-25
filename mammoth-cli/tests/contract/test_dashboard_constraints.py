@@ -256,9 +256,7 @@ def test_named_specs_accept_valid_boundary_payloads() -> None:
     """The valid boundary of each named spec must still validate."""
     models.GenerateDashboardV3Spec.model_validate({"params": {"dataview_id": 1, "intent": "x"}})
     models.AskSpec.model_validate({"params": {"question": "x"}})
-    models.BulkWidgetDataSpec.model_validate(
-        {"params": {"widgets": [{"widget_id": VALID_UUID}]}}
-    )
+    models.BulkWidgetDataSpec.model_validate({"params": {"widgets": [{"widget_id": VALID_UUID}]}})
 
 
 # --------------------------------------------------------------------------- #

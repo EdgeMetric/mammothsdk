@@ -38,9 +38,7 @@ def test_rel335_approved_cli_emits_exact_wire_and_returns_response(
 ) -> None:
     service, api = real_service()
     api.default(201, {"id": 88, "sequence": 1})
-    payload = {
-        "params": {"dataview_id": 42, "style": "presentation", "title": "Revenue"}
-    }
+    payload = {"params": {"dataview_id": 42, "style": "presentation", "title": "Revenue"}}
     source = tmp_path / "blank.json"
     source.write_text(json.dumps(payload), encoding="utf-8")
     with _bind(monkeypatch, service):
