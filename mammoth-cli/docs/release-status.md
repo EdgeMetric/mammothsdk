@@ -30,6 +30,12 @@ in the command output that the agent already reads.
   dashboard. (Backend defect; reported, not fixed here.)
 - The eval is run three times per release; the result is the mean.
 
+CLI published from deterministic local artifacts built from tag `cli-v2.0.41`
+(source commit `88bc42e`); requires mammoth-io 0.7.18 (unchanged):
+
+- `mammoth_cli-2.0.41-py3-none-any.whl` sha256 `ef3733f5ad0a066d1d539091086c636408c7c816578e710cf093a5df6b12fb48`
+- `mammoth_cli-2.0.41.tar.gz` sha256 `048e91fc0a40ef7d31e0bbaa6732d09a6c95776de90ca8fe6531344dafd35794`
+
 ## 2.0.40 / SDK 0.7.18
 
 The 2.0.39 agent eval scored 8 of 10. The agent charted only `qty` (no
