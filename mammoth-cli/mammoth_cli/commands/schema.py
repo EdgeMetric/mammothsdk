@@ -56,31 +56,98 @@ _GROUP_DISCOVERY_PURPOSES = {
     "dataset": "data import tables CSV spreadsheet",
     "file": "source file storage",
     "view": "transform query clean analyze data pipeline",
-    "dashboard": "build visualize share charts analytics",
+    "dashboard": "build visualize share chart charts report analytics",
     "workflow": "automate pipeline orchestration",
 }
 
 _COMMAND_DISCOVERY_PURPOSES = {
-    "file.upload": "upload import CSV spreadsheet XLSX source data",
+    "file.upload": (
+        "upload import CSV spreadsheet XLSX source data append add rows union stack "
+        "a file into an existing dataset"
+    ),
     "file.upload-folder": "upload source-data directory folder",
     "view.export.csv": "export download local CSV file artifact",
-    "view.transform.discard-duplicates": (
-        "duplicate duplicates dedup deduplicate remove repeated rows"
+    "view.export.dataset": (
+        "send copy branch out rows into a dataset in another project append union stack rows"
     ),
-    "view.transform.convert-type": "convert type cast numeric text date column",
-    "view.transform.fill-missing": "fill missing null empty impute carry forward values",
-    "view.transform.join": "join blend lookup merge matching keys rows",
+    # One entry per ``view transform`` command, in the words a user states a
+    # goal in rather than Mammoth's own task names.  This is the CLI's version
+    # of the web app's Transform menu; keep every transform listed.
+    "view.transform.add-column": "add column new empty blank column",
+    "view.transform.add-sql": "sql query select statement replaces every column",
+    "view.transform.ai": (
+        "ai llm prompt generative classify categorize categorise sentiment enrich "
+        "summarize summarise rows into a new column"
+    ),
+    "view.transform.bulk-replace": (
+        "find replace strip characters text values mapping standardize standardise "
+        "normalize normalise variants many to one"
+    ),
+    "view.transform.combine-columns": (
+        "combine concatenate concat columns values into one column separator"
+    ),
+    "view.transform.convert-type": (
+        "convert type cast numeric number text date column parse to number to date"
+    ),
+    "view.transform.copy-columns": "copy duplicate rename column into a new column name",
+    "view.transform.crosstab": (
+        "crosstab cross tab pivot table matrix rows by columns summary into a new dataset"
+    ),
+    "view.transform.date-diff": "date difference days between two date columns age duration",
+    "view.transform.delete-columns": "delete drop remove columns",
+    "view.transform.discard-duplicates": (
+        "duplicate duplicates dedup dedupe deduplicate remove repeated rows unique distinct"
+    ),
     "view.transform.extract-date": (
         "extract date part year month day hour minute second week quarter weekday "
         "month_text into a new column"
     ),
-    "view.transform.date-diff": "date difference days between two date columns age duration",
+    "view.transform.fill-missing": (
+        "fill missing null empty blank blanks impute carry forward fill down values"
+    ),
+    "view.transform.filter": (
+        "filter rows keep drop exclude remove delete rows where condition subset"
+    ),
+    "view.transform.generate-sql": (
+        "generate sql from natural language intent question and run it as a task"
+    ),
     "view.transform.increment-date": "add subtract days months years to a date column shift",
-    "view.transform.math": "math arithmetic multiply divide add subtract formula expression amount",
-    "view.transform.pivot": "pivot group by aggregate sum count summary per region total",
-    "view.transform.set-values": "set values assign overwrite blank empty default where condition",
-    "view.transform.text": "text case upper lower title trim whitespace normalise",
-    "view.transform.bulk-replace": "find replace strip characters text values mapping",
+    "view.transform.join": (
+        "join blend merge combine enrich match matching keys rows add columns from another "
+        "second view views dataset datasets table tables vlookup"
+    ),
+    "view.transform.json-extract": "json extract parse nested fields keys into columns",
+    "view.transform.limit-rows": "limit top bottom first last n rows order by sorted head",
+    "view.transform.lookup": (
+        "lookup look up vlookup reference table map code to name enrich one value "
+        "from another view dataset"
+    ),
+    "view.transform.math": (
+        "math arithmetic multiply divide add subtract formula expression amount "
+        "calculate compute ratio percentage round"
+    ),
+    "view.transform.pivot": (
+        "pivot group by aggregate aggregation sum count average summary summarize "
+        "summarise per region total"
+    ),
+    "view.transform.replace": "find replace substitute text value in columns",
+    "view.transform.set-values": (
+        "set values assign overwrite blank empty default where condition label "
+        "category bucket flag if then conditional value"
+    ),
+    "view.transform.small-large": "nth smallest largest value across columns",
+    "view.transform.split": "split column by delimiter separator into columns",
+    "view.transform.substring": "substring left right characters regex pattern extract part text",
+    "view.transform.text": (
+        "text case upper uppercase lower lowercase title trim whitespace normalise normalize"
+    ),
+    "view.transform.unnest": (
+        "unnest unpivot melt wide to long columns into label value rows reshape"
+    ),
+    "view.transform.window": (
+        "window rank row number running total cumulative sum moving average lag lead "
+        "previous next row partition"
+    ),
 }
 
 # A compact string scope is retained for existing discovery consumers.  These
@@ -138,9 +205,52 @@ _DISCOVERY_SYNONYMS: dict[str, tuple[str, ...]] = {
     "asynchronous": ("async", "job", "wait"),
     "async": ("job", "wait", "poll"),
     "poll": ("job", "wait", "status"),
+    # British spellings search the same as the American ones.
+    "summarise": ("summarize",),
+    "standardise": ("standardize",),
+    "normalise": ("normalize",),
+    "categorise": ("categorize",),
 }
 _DISCOVERY_STOPWORDS = frozenset(
-    {"a", "an", "the", "me", "please", "for", "to", "of", "by", "with", "can", "i"}
+    {
+        "a",
+        "an",
+        "the",
+        "me",
+        "please",
+        "for",
+        "to",
+        "of",
+        "by",
+        "with",
+        "can",
+        "i",
+        # Filler in goal phrasing ("merge my two datasets"); a command never
+        # turns on these words, so they must not sink an otherwise good match.
+        "my",
+        "our",
+        "two",
+        "another",
+        "other",
+        "into",
+        "from",
+        "and",
+        "all",
+        "each",
+        "this",
+        "that",
+        "how",
+        "do",
+        "want",
+        "need",
+    }
+)
+# How many near misses a search with no full match returns.
+_MAX_SUGGESTIONS = 5
+_NO_MATCH_HINT = (
+    "No command matched every word. 'suggestions' match some of them; try fewer or other "
+    "words. 'mammoth view transform --help' lists every data transformation (join, pivot, "
+    "filter, dedupe, math, ...), and 'mammoth schema list' is the complete inventory."
 )
 _TOKEN_RE = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*")
 
@@ -967,15 +1077,21 @@ def find_schemas(
     the included ``full_schema_command`` to fetch the authoritative detail.
     Every whitespace-separated term must occur in a command name, its examples,
     or its stable operation-purpose text, making the result deterministic and
-    easy to compose in scripts.
+    easy to compose in scripts.  When no command carries every term, the result
+    adds ``suggestions`` (the commands that carry the most terms) and a ``hint``,
+    so a cold caller who phrased the goal in other words is not left with an
+    empty list.
     """
-    terms = _query_tokens(query)
+    # A query made only of filler words keeps them, rather than matching
+    # every command.
+    terms = _query_tokens(query) or tuple(_tokens(query))
     # Clamp caller-provided bounds instead of allowing an accidental unbounded
     # discovery response.  A negative cursor is a usage mistake, not a request
     # to wrap around the catalog.
     bounded_limit = max(1, min(int(limit), _MAX_FIND_LIMIT))
     offset = max(0, int(cursor))
     ranked_matches: list[tuple[int, dict[str, Any]]] = []
+    near_misses: list[tuple[int, int, dict[str, Any], list[str]]] = []
     for record in load_commands():
         if record.get("disposition") == "alias":
             continue
@@ -994,13 +1110,11 @@ def find_schemas(
         )
         searchable = " ".join(source for _, source in sources).casefold()
         searchable_tokens = _tokens(f"{primary_text} {searchable}")
+        matched_terms = [term for term in terms if _token_aliases(term) & searchable_tokens]
+        if not matched_terms:
+            continue
         score = 0
-        matched = True
-        for term in terms:
-            aliases = _token_aliases(term)
-            if not (aliases & searchable_tokens):
-                matched = False
-                break
+        for term in matched_terms:
             if term in _tokens(primary_text):
                 score += 100
             elif term in _tokens(searchable):
@@ -1011,29 +1125,29 @@ def find_schemas(
             # command-id ordering breaks all remaining ties.
             if term in searchable_tokens:
                 score += 10
-        if matched:
-            # Purpose and command-specific hints are stronger than generic
-            # family words such as ``data`` or ``show``.
-            score += 5 * sum(
-                1 for term in terms if any(term in source.casefold() for _, source in sources[:2])
-            )
-            command_purpose = _COMMAND_DISCOVERY_PURPOSES.get(command_id, "").casefold()
-            score += 100 * sum(1 for term in terms if term in _tokens(command_purpose))
-            action = command_path.split()[1] if len(command_path.split()) > 1 else ""
-            if "show" in terms and action in {"list", "get", "browse"}:
-                score += 80
-            ranked_matches.append(
-                (
-                    score,
-                    {
-                        "command_id": command_id,
-                        "command_path": command_path,
-                        "mutation_class": record["mutation_class"],
-                        "confirmation": record["confirmation"],
-                        "full_schema_command": (f"mammoth schema get {command_id}"),
-                    },
-                )
-            )
+        # Purpose and command-specific hints are stronger than generic
+        # family words such as ``data`` or ``show``.
+        score += 5 * sum(
+            1
+            for term in matched_terms
+            if any(term in source.casefold() for _, source in sources[:2])
+        )
+        command_purpose = _COMMAND_DISCOVERY_PURPOSES.get(command_id, "").casefold()
+        score += 100 * sum(1 for term in matched_terms if term in _tokens(command_purpose))
+        action = command_path.split()[1] if len(command_path.split()) > 1 else ""
+        if "show" in matched_terms and action in {"list", "get", "browse"}:
+            score += 80
+        entry = {
+            "command_id": command_id,
+            "command_path": command_path,
+            "mutation_class": record["mutation_class"],
+            "confirmation": record["confirmation"],
+            "full_schema_command": (f"mammoth schema get {command_id}"),
+        }
+        if len(matched_terms) == len(terms):
+            ranked_matches.append((score, entry))
+        else:
+            near_misses.append((len(matched_terms), score, entry, matched_terms))
     ranked_matches.sort(key=lambda item: (-item[0], item[1]["command_id"]))
     total_matches = len(ranked_matches)
     page = [match for _, match in ranked_matches[offset : offset + bounded_limit]]
@@ -1048,13 +1162,23 @@ def find_schemas(
         if has_more
         else None
     )
-    return {
+    result: dict[str, Any] = {
         "query": query,
         "matches": page,
         "total_matches": total_matches,
         "truncated": has_more,
         "continuation": continuation,
     }
+    if total_matches == 0:
+        # Most terms first, then the ordinary score: a command that carries
+        # two of three words beats one that carries a single common word.
+        near_misses.sort(key=lambda item: (-item[0], -item[1], item[2]["command_id"]))
+        result["suggestions"] = [
+            {**entry, "matched_terms": matched}
+            for _, _, entry, matched in near_misses[:_MAX_SUGGESTIONS]
+        ]
+        result["hint"] = _NO_MATCH_HINT
+    return result
 
 
 def get_schema(command_id: str) -> dict[str, Any] | None:

@@ -5,8 +5,9 @@ from __future__ import annotations
 import pytest
 
 from mammoth_cli.commands.registry import _schema_find
-from mammoth_cli.commands.schema import find_schemas
+from mammoth_cli.commands.schema import _COMMAND_DISCOVERY_PURPOSES, find_schemas
 from mammoth_cli.errors.envelope import CliError
+from mammoth_cli.manifest.loader import load_commands
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.testing import make_runner
 
@@ -55,6 +56,80 @@ def test_schema_find_prioritizes_path_matches_and_caps_broad_results() -> None:
     assert result["truncated"] is True
     assert all(match["command_id"].startswith("view.transform.") for match in result["matches"])
     assert len(result["matches"]) == 20
+
+
+@pytest.mark.parametrize(
+    ("query", "command_id"),
+    [
+        # A cold agent states the goal, not Mammoth's task name. Each of these
+        # returned nothing (or the wrong command) before 2.0.37.
+        ("merge two datasets", "view.transform.join"),
+        ("combine datasets", "view.transform.join"),
+        ("combine two views", "view.transform.join"),
+        ("add columns from another dataset", "view.transform.join"),
+        ("vlookup", "view.transform.join"),
+        ("reference table", "view.transform.lookup"),
+        ("dedupe", "view.transform.discard-duplicates"),
+        ("remove duplicates", "view.transform.discard-duplicates"),
+        ("keep rows", "view.transform.filter"),
+        ("delete rows", "view.transform.filter"),
+        ("summarise", "view.transform.ai"),
+        ("aggregate", "view.transform.pivot"),
+        ("calculate", "view.transform.math"),
+        ("running total", "view.transform.window"),
+        ("rank", "view.transform.window"),
+        ("top n", "view.transform.limit-rows"),
+        ("unpivot", "view.transform.unnest"),
+        ("concatenate", "view.transform.combine-columns"),
+        ("combine columns", "view.transform.combine-columns"),
+        ("standardise", "view.transform.bulk-replace"),
+        ("uppercase", "view.transform.text"),
+        ("fill blanks", "view.transform.fill-missing"),
+        ("parse date", "view.transform.convert-type"),
+        ("classify", "view.transform.ai"),
+        ("rename column", "view.transform.copy-columns"),
+        ("append rows", "file.upload"),
+    ],
+)
+def test_schema_find_resolves_goal_phrasing_to_the_transform(query: str, command_id: str) -> None:
+    matches = find_schemas(query)["matches"]
+
+    assert matches, query
+    assert matches[0]["command_id"] == command_id
+
+
+def test_every_view_transform_has_a_plain_language_discovery_purpose() -> None:
+    transforms = {
+        str(record["command_id"])
+        for record in load_commands()
+        if str(record["command_id"]).startswith("view.transform.")
+        and record.get("disposition") != "alias"
+    }
+
+    assert transforms
+    assert transforms <= set(_COMMAND_DISCOVERY_PURPOSES)
+
+
+def test_schema_find_without_a_full_match_suggests_near_misses_and_the_menu() -> None:
+    result = find_schemas("union two views")
+
+    assert result["matches"] == []
+    assert result["total_matches"] == 0
+    suggested = [item["command_id"] for item in result["suggestions"]]
+    assert "file.upload" in suggested and "view.export.dataset" in suggested
+    assert all(item["matched_terms"] for item in result["suggestions"])
+    assert all(
+        item["full_schema_command"].startswith("mammoth schema get ")
+        for item in result["suggestions"]
+    )
+    assert "mammoth view transform --help" in result["hint"]
+
+
+def test_schema_find_with_a_match_carries_no_suggestions() -> None:
+    result = find_schemas("join")
+
+    assert "suggestions" not in result
+    assert "hint" not in result
 
 
 def test_schema_find_rejects_an_empty_query() -> None:

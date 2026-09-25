@@ -1,7 +1,7 @@
 ---
 name: mammoth-cli
-version: 2.0.36
-description: "Use Mammoth Analytics from a terminal: install or authenticate the CLI, discover its live command contract, and safely manage projects, data, views, pipelines, dashboards, exports, and handoffs."
+version: 2.0.37
+description: "Use Mammoth Analytics from a terminal: install or authenticate the CLI, discover its live command contract, and safely manage projects, data, views, pipelines (join, merge, pivot, filter, clean), dashboards, exports, and handoffs."
 ---
 
 # Mammoth CLI
@@ -9,6 +9,19 @@ description: "Use Mammoth Analytics from a terminal: install or authenticate the
 Use this skill for Mammoth shell work, not for Python SDK integration. The
 CLI is the contract: it validates every request locally, returns one JSON
 envelope, and needs no flag for that when you pipe its output.
+
+## What Mammoth is
+
+Mammoth Analytics is a no-code data platform. Data comes in from files, URLs
+or connectors and lands in a **dataset**. It is cleaned, joined, reshaped and
+calculated in a **pipeline** of tasks on a **view**, and the result is
+published as a dashboard or delivered as a CSV, a database table, a BI feed
+or another dataset. The pipeline re-runs when new data arrives, so build the
+steps in Mammoth rather than computing a result locally. The web app and
+this CLI call the same API: every task in the web app's Transform menu is a
+`mammoth view transform` command. The data model, the high-level
+capabilities and the full web-to-CLI map are in
+[about Mammoth](references/about-mammoth.md).
 
 ## Start
 
@@ -41,6 +54,38 @@ before the next step.
   wins.
 - Commands that start platform work wait up to 300 s for the job; on
   `timeout` use the `job get` recovery command printed, do not resubmit.
+
+## Find the command for a goal
+
+State the goal in plain words; the search knows common phrasing, and
+`view transform --help` is the Transform menu with one line per task:
+
+```bash
+mammoth schema find "merge two datasets"   # -> view.transform.join
+mammoth view transform --help              # every data transformation
+```
+
+| Goal | Command |
+|---|---|
+| Combine two datasets on a key (merge, VLOOKUP) | `view transform join`; one value per key: `view transform lookup` |
+| Add rows to an existing dataset | `file upload FILE --input '{"append_to_ds_id": DATASET_ID}'` |
+| Keep or remove rows | `view transform filter` |
+| Remove duplicate rows | `view transform discard-duplicates` |
+| Totals, counts, averages per group | `view transform pivot` |
+| A calculated column | `view transform math` |
+| Blanks to a constant, or to the previous row's value | `view transform set-values` (`IS_EMPTY`), `view transform fill-missing` |
+| Clean text | `view transform text`, `replace`, `bulk-replace` |
+| Change a column's type | `view transform convert-type` |
+| Rank, running total, previous row | `view transform window` |
+| A dashboard | `dashboard create-blank` ([dashboards](references/recipes/dashboards.md)) |
+| Deliver the rows | `view export csv`, `view export postgres` (and other destinations), `view export dataset` |
+
+A search with no full match returns `suggestions` and a `hint`. Before you
+conclude the CLI cannot do something the web app does, check
+`view transform --help` and "Not a pipeline step" in
+[about Mammoth](references/about-mammoth.md). Do not switch to the web app
+in a browser, or compute the result locally, for work the CLI covers;
+report a real gap with the command you tried.
 
 ## Calling a command
 
@@ -89,6 +134,8 @@ before the next step.
 
 ## Route only what the task needs
 
+- **What Mammoth is, its data model, which feature fits a business goal, or
+  a web-app task you cannot find in the CLI:** [about Mammoth](references/about-mammoth.md)
 - **Cold start, task plan, or unsupported route:** [task start](references/task-start.md)
 - **Login, profiles, and authorized scope:** [auth](references/auth.md)
 - **Nested input, output envelopes, confirmations, jobs, or recovery:**

@@ -1,6 +1,28 @@
 # CLI release provenance
 
-## 2.0.36 / SDK 0.7.16
+## 2.0.37 / SDK 0.7.16
+
+An agent that stated a goal in its own words did not find the command. With
+2.0.36, `schema find` returned no match for "merge two datasets", "combine
+datasets", "vlookup", "dedupe", "rename column", "calculate", "rank" and
+"append rows", and "filter rows" returned `ai.suggestion.list` first. An
+agent then did a join in the web app, although `view transform join` exists.
+
+- `schema find` knows the common words for all 30 `view transform`
+  commands, British spellings, and filler words such as "two" or "my".
+  "merge two datasets" returns `view.transform.join` first.
+- When no command matches every word, the result adds `suggestions` (the
+  commands that match the most words, each with `matched_terms`) and a
+  `hint` that names `mammoth view transform --help`.
+- The skill has a "What Mammoth is" section, a goal-to-command table, and
+  a new reference, `references/about-mammoth.md`: the data model, the
+  capabilities, each web Transform-menu task with its command, and the
+  nearest route for work that is not a pipeline task (rename, sort, union).
+  It tells the agent not to use the web app in a browser for work the CLI
+  covers.
+- The `AGENTS.md` steering block and the agent prompts say the same.
+
+The SDK is unchanged (0.7.16).
 
 Login uses an API token only. Tokens created in the web app (Workspace
 settings → API Tokens) are one `mm_...` value with no secret, and 2.0.35

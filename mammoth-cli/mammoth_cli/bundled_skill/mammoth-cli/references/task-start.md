@@ -46,14 +46,17 @@ or secrets in an argument, prompt, transcript, or checkpoint.
 
    Do not print, echo, or copy secret-bearing inputs. A failed status, login,
    or doctor check stops the task before discovery and business commands.
-4. Discover instead of guessing. Run `mammoth schema list/find/get --output
-   json --no-input` for local CLI routes; `mammoth capability list --output
-   json --no-input` is an API-binding inventory and can omit typed/local
-   routes. Check [capabilities](capabilities.md) for whether a route is
-   proven, not supported, or untried on release before building a plan on
-   it. Then resolve workspace/project/dataset/view
+4. Discover instead of guessing. Search with the goal in plain words
+   (`mammoth schema find "merge two datasets"` finds the join), then run
+   `mammoth schema get COMMAND_ID` for local CLI routes; `mammoth view transform
+   --help` lists every data transformation; `mammoth schema list` is the
+   complete inventory. `mammoth capability list` is an API-binding inventory
+   and can omit typed/local routes. Check [capabilities](capabilities.md)
+   for whether a route is proven, not supported, or untried on release
+   before building a plan on it. Then resolve workspace/project/dataset/view
    parents with reads. Use display names returned by the exact view schema.
-5. Translate the business intent into a plan the agent chooses. Submit only
+5. Translate the business intent into a plan the agent chooses;
+   [about Mammoth](about-mammoth.md) maps goals to features. Submit only
    supported operations against the active project (`project ensure` sets it;
    `--project` overrides) with structured `--input`. Do not use private
    HTTP/SDK escape hatches or local data processing as a substitute.

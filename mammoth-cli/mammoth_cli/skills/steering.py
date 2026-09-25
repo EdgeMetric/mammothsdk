@@ -25,7 +25,9 @@ DEFAULT_STEERING_PATH = "AGENTS.md"
 STEERING_BODY = """## Mammoth Analytics
 
 Use the `mammoth` CLI for all Mammoth work; do not call the REST API or the
-Python SDK directly. Before the first Mammoth command in a session run
+Python SDK directly, and do not drive the web app in a browser: every web
+Transform-menu task is a `mammoth view transform` command (`mammoth view
+transform --help`). Before the first Mammoth command in a session run
 `mammoth doctor` (it must pass), then `mammoth skill show` and follow that
 guide. If `mammoth` is missing, install it with `pip install mammoth-cli`
 (or `uv tool install mammoth-cli`). If `mammoth auth status` shows no

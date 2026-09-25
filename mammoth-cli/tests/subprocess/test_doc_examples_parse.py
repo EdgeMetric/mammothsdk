@@ -19,6 +19,7 @@ import sys
 from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 import pytest
 from jsonschema import validate
@@ -192,9 +193,14 @@ def _parse_with_real_click(tokens: list[str], *, require_complete: bool) -> str 
         path, command_id = _resolve_path(tokens)
     except AssertionError:
         # ``mammoth COMMAND --help`` describes a command group rather than a
-        # leaf.  It is still collected and checked against the real root tree.
-        assert tokens[1] in root.commands, f"unknown documented command group: {tokens[1]}"
-        assert tokens[2:] == ["--help"], f"unroutable documented command: {' '.join(tokens)}"
+        # leaf (``mammoth view transform --help`` is nested).  Walk the real
+        # root tree so every group on the path must exist.
+        assert tokens[-1] == "--help", f"unroutable documented command: {' '.join(tokens)}"
+        group: Any = root
+        for part in tokens[1:-1]:
+            commands = getattr(group, "commands", {})
+            assert part in commands, f"unknown documented command group: {' '.join(tokens)}"
+            group = commands[part]
         return None
     if not require_complete:
         return command_id

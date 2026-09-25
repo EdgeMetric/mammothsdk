@@ -73,9 +73,11 @@ SCOPE
   transforms, exports and previews need the view id from `view list`.
 
 HOW TO CALL
-- `mammoth schema find "WORDS"` then `mammoth schema get COMMAND_ID` before any
+- `mammoth schema find "WORDS"` (the goal in plain words: "merge two
+  datasets" finds the join) then `mammoth schema get COMMAND_ID` before any
   command you have not run in this session; it lists positionals, `--input`
-  fields and `known_restrictions`.
+  fields and `known_restrictions`. `mammoth view transform --help` lists
+  every data transformation, the same set as the web app's Transform menu.
 - Ids are positionals; request fields are one `--input '{...}'` JSON document;
   there are no per-field flags.
 - Destructive commands need `--yes --confirm ID`. Only delete ids that this

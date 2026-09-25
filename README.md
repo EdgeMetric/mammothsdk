@@ -20,8 +20,9 @@ it installs the CLI and walks you through the one-time login; the long form with
 [docs/agent-prompt.md](https://github.com/EdgeMetric/mammothsdk/blob/main/mammoth-cli/docs/agent-prompt.md)):
 
 ```text
-Use Mammoth Analytics only through the `mammoth` CLI in bash; run
-`export MAMMOTH_OUTPUT=json MAMMOTH_NO_INPUT=1` once. Onboard me first:
+Use Mammoth Analytics only through the `mammoth` CLI in bash, never the web
+app in a browser; run `export MAMMOTH_OUTPUT=json MAMMOTH_NO_INPUT=1` once.
+Onboard me first:
 1. If `mammoth --version` fails, install, then re-check (new shell if needed):
    curl -fsSL https://raw.githubusercontent.com/EdgeMetric/mammothsdk/main/mammoth-cli/installers/mammoth-install.sh | bash
 2. Run `mammoth auth status`. If it shows no credentials or a
@@ -34,8 +35,9 @@ Use Mammoth Analytics only through the `mammoth` CLI in bash; run
 3. Require `mammoth doctor` to pass, then run `mammoth skill show` and
    follow the guide it prints.
 Work inside `mammoth project ensure 'PROJECT NAME'` unless I name a project;
-take ids only from reads; `schema get COMMAND_ID` before a new command; read
-results back before reporting.
+take ids only from reads; find a command with `schema find "GOAL IN PLAIN
+WORDS"` or `view transform --help`, and `schema get COMMAND_ID` before a new
+command; read results back before reporting.
 TASK: <what to achieve, and how you will know it is done>
 ```
 
