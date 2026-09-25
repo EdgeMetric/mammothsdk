@@ -141,11 +141,11 @@ No command:
   an existing dataset with `append_to_ds_id`, or send a view's rows into an
   existing dataset with `view export dataset` (`target_ds_id` and
   `save_as_mode` `APPEND_TO_DS`; that mode is untried on release). A row
-  present in both sources lands twice: after either append, compare the
-  appended view's `row_count` (`view get`) against the distinct count of its
-  natural key (`view transform pivot` grouped on that key, `COUNT`) and, if
-  they differ, run `view transform discard-duplicates` on the appended view
-  and report how many rows it removed.
+  present in both sources lands twice: note the appended view's `row_count`
+  (`view get`), run `view transform discard-duplicates` on it (`ignore_columns`
+  for any column you added per source, e.g. a region tag, since it would
+  make shared rows differ), read `row_count` again, and report the
+  difference as duplicates removed.
 - **Hide or reorder columns.** Display changes in the web app; they do not
   change the data.
 
