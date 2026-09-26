@@ -1,5 +1,18 @@
 # CLI release provenance
 
+## 2.0.52
+
+Two agent-facing skill/manifest fixes, found on koyal eval traces (2026-09-26):
+
+- `view.export.powerbi` no longer ships an internal developer note as its
+  restriction ("confirm camel-case clientId ... IO-EXPORT-HANDLERS blocker").
+  Agents read it through `schema get` and refused a working export (T1-H-005).
+  The mapping is shipped and tested: SDK `CLIENT_ID_CAMEL` (`TestToPowerbi`),
+  server `distributaries/cloud/powerbi.py:82`.
+- The transforms recipe teaches one-row-per-delimited-value (`add-sql` with
+  `UNNEST(string_split(COALESCE(col, ''), ','))`) and keeps blank and NULL rows;
+  there is no typed transform for it (T1-E-031). Requires mammoth-io 0.7.23.
+
 ## 2.0.51
 
 One fix, found live on a replayed eval trace (koyal, 2026-09-26 02:30 UTC):
