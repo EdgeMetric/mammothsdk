@@ -1098,11 +1098,13 @@ sdk_methods:
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.embed_config_set
   canonical_command: dashboard.embed.config.set
   alias_of: null
-  mutation_class: benign_mutation
+  mutation_class: high_impact
+  confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
   openapi_operation_ids:
   - PutEmbedConfig
+  notes: Can expose the board outside Mammoth (enabling embedding) or break live embeds (disabling it or narrowing the origin allowlist).
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.embed_key_rotate
   canonical_command: dashboard.embed.key.rotate
   alias_of: null
@@ -1124,11 +1126,13 @@ sdk_methods:
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.embed_origin_revoke
   canonical_command: dashboard.embed.origin.revoke
   alias_of: null
-  mutation_class: benign_mutation
+  mutation_class: high_impact
+  confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
   openapi_operation_ids:
   - RevokeOrigin
+  notes: Immediately breaks the embedded dashboard on that origin's site.
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.embed_preview_token_create
   canonical_command: dashboard.embed.preview-token.create
   alias_of: null

@@ -236,9 +236,9 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth dashboard embed config set`. Exact input fields: `mammoth schema get dashboard.embed.config.set`.
 
-Example: `mammoth dashboard embed config set 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth dashboard embed config set 123 --yes --confirm 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
-Result: `DashboardEmbedConfigSetResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+Result: `DashboardEmbedConfigSetResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
 
 Status on release: untried; no live run recorded.
 
@@ -266,9 +266,9 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth dashboard embed origin revoke`. Exact input fields: `mammoth schema get dashboard.embed.origin.revoke`.
 
-Example: `mammoth dashboard embed origin revoke 123 --input '{"origin": "sample"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth dashboard embed origin revoke 123 --input '{"origin": "sample"}' --yes --confirm 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
-Result: `DashboardEmbedOriginRevokeResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+Result: `DashboardEmbedOriginRevokeResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
 
 Status on release: untried; no live run recorded.
 

@@ -2002,7 +2002,7 @@ methods:
   canonical_command: dashboard.embed.config.set
   alias_of: null
   no_command_reason: null
-  mutation_class: benign_mutation
+  mutation_class: high_impact
   wait_policy: not_async
   pagination_policy: none
   secret_fields: []
@@ -2042,7 +2042,7 @@ methods:
   canonical_command: dashboard.embed.origin.revoke
   alias_of: null
   no_command_reason: null
-  mutation_class: benign_mutation
+  mutation_class: high_impact
   wait_policy: not_async
   pagination_policy: none
   secret_fields: []

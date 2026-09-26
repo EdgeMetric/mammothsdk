@@ -1274,10 +1274,10 @@ Total commands: 565.
 
 - `DASHBOARD_ID` (int, required) — ID of the dashboard.
 
-- Mutation class: `benign_mutation`
-- Confirmation: `none`
+- Mutation class: `high_impact`
+- Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.embed_config_set`
-- Agent example: `mammoth dashboard embed config set 123`
+- Agent example: `mammoth dashboard embed config set 123 --yes --confirm 123`
 
 ### `mammoth dashboard embed key rotate`
 
@@ -1307,10 +1307,10 @@ Total commands: 565.
 
 - `DASHBOARD_ID` (int, required) — ID of the dashboard.
 
-- Mutation class: `benign_mutation`
-- Confirmation: `none`
+- Mutation class: `high_impact`
+- Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.embed_origin_revoke`
-- Agent example: `mammoth dashboard embed origin revoke 123 --input '{"origin": "sample"}'`
+- Agent example: `mammoth dashboard embed origin revoke 123 --input '{"origin": "sample"}' --yes --confirm 123`
 
 ### `mammoth dashboard embed preview-token create`
 

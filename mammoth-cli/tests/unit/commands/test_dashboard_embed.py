@@ -4,7 +4,10 @@ Every embed command dispatches through the generic
 :func:`mammoth_cli.commands.dashboard.generated_dashboard` handler, exactly
 like ``dashboard.rls.*`` and ``dashboard.swap-data``. These tests pin the
 dispatch shape (exact SDK symbol + kwargs) and the confirmation policy for
-the two credential-rotating commands (key rotate, workspace secret rotate).
+the commands that require ``confirm_target``: the two credential-rotating
+commands (key rotate, workspace secret rotate), plus config set (can expose
+or break a live embed) and origin revoke (immediately breaks the embed on
+that origin's site).
 """
 
 from __future__ import annotations
@@ -51,7 +54,19 @@ def test_config_get_uses_positional_dashboard_id(fake_service: FakeMammothServic
     assert fake_service.call_log == [(_CONFIG_GET, {"dashboard_id": 7})]
 
 
-def test_config_set_forwards_exact_kwargs_no_confirmation_needed(
+def test_config_set_requires_target_confirmation(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    doc = _write_doc(tmp_path, {"allow_any_origin": False})
+    with pytest.raises(CliError) as excinfo:
+        dashboard_cmd.generated_dashboard(
+            _inv("dashboard.embed.config.set", extra_args=["7"], input_file=doc)
+        )
+    assert excinfo.value.code == "confirmation_required"
+    assert fake_service.call_log == []
+
+
+def test_config_set_dispatches_after_exact_confirm_target(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
     doc = _write_doc(
@@ -63,7 +78,7 @@ def test_config_set_forwards_exact_kwargs_no_confirmation_needed(
         },
     )
     dashboard_cmd.generated_dashboard(
-        _inv("dashboard.embed.config.set", extra_args=["7"], input_file=doc)
+        _inv("dashboard.embed.config.set", extra_args=["7"], input_file=doc, yes=True, confirm="7")
     )
     assert fake_service.call_log == [
         (
@@ -76,6 +91,24 @@ def test_config_set_forwards_exact_kwargs_no_confirmation_needed(
             },
         )
     ]
+
+
+def test_config_set_rejects_mismatched_confirm_target(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    doc = _write_doc(tmp_path, {"allow_any_origin": False})
+    with pytest.raises(CliError) as excinfo:
+        dashboard_cmd.generated_dashboard(
+            _inv(
+                "dashboard.embed.config.set",
+                extra_args=["7"],
+                input_file=doc,
+                yes=True,
+                confirm="8",
+            )
+        )
+    assert excinfo.value.code == "confirmation_target_mismatch"
+    assert fake_service.call_log == []
 
 
 def test_key_rotate_requires_target_confirmation(
@@ -112,16 +145,52 @@ def test_usage_get_uses_positional_dashboard_id(fake_service: FakeMammothService
     assert fake_service.call_log == [(_USAGE_GET, {"dashboard_id": 7})]
 
 
-def test_origin_revoke_forwards_origin_no_confirmation_needed(
+def test_origin_revoke_requires_target_confirmation(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    doc = _write_doc(tmp_path, {"origin": "https://old.example.com"})
+    with pytest.raises(CliError) as excinfo:
+        dashboard_cmd.generated_dashboard(
+            _inv("dashboard.embed.origin.revoke", extra_args=["7"], input_file=doc)
+        )
+    assert excinfo.value.code == "confirmation_required"
+    assert fake_service.call_log == []
+
+
+def test_origin_revoke_dispatches_after_exact_confirm_target(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
     doc = _write_doc(tmp_path, {"origin": "https://old.example.com"})
     dashboard_cmd.generated_dashboard(
-        _inv("dashboard.embed.origin.revoke", extra_args=["7"], input_file=doc)
+        _inv(
+            "dashboard.embed.origin.revoke",
+            extra_args=["7"],
+            input_file=doc,
+            yes=True,
+            confirm="7",
+        )
     )
     assert fake_service.call_log == [
         (_ORIGIN_REVOKE, {"dashboard_id": 7, "origin": "https://old.example.com"})
     ]
+
+
+def test_origin_revoke_rejects_mismatched_confirm_target(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    doc = _write_doc(tmp_path, {"origin": "https://old.example.com"})
+    with pytest.raises(CliError) as excinfo:
+        dashboard_cmd.generated_dashboard(
+            _inv(
+                "dashboard.embed.origin.revoke",
+                extra_args=["7"],
+                input_file=doc,
+                yes=True,
+                confirm="8",
+            )
+        )
+    assert excinfo.value.code == "confirmation_target_mismatch"
+    assert fake_service.call_log == []
 
 
 def test_preview_token_create_forwards_claims(

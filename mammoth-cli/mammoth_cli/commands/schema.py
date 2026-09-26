@@ -876,6 +876,8 @@ def runnable_example(
         "project.resource-dependencies.update",
         "dashboard.embed.key.rotate",
         "dashboard.embed.secret.rotate",
+        "dashboard.embed.config.set",
+        "dashboard.embed.origin.revoke",
     }:
         # These commands have a confirm_target policy.  Keep their generated
         # example executable in non-interactive mode instead of advertising a

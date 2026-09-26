@@ -923,8 +923,8 @@ commands:
   sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.embed_config_set with validated request fields.
   request_model: DashboardEmbedConfigSetRequest
   result_model: DashboardEmbedConfigSetResult
-  mutation_class: benign_mutation
-  confirmation: none
+  mutation_class: high_impact
+  confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: contract_only_no_disposable_fixture
@@ -934,7 +934,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard embed config set DASHBOARD_ID --help
-  agent_example: mammoth dashboard embed config set 123
+  agent_example: mammoth dashboard embed config set 123 --yes --confirm 123
   unit_tests:
   - UT-DASHBOARD-EMBED-CONFIG-SET
   contract_tests:
@@ -1046,8 +1046,8 @@ commands:
   sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.embed_origin_revoke with validated request fields.
   request_model: DashboardEmbedOriginRevokeRequest
   result_model: DashboardEmbedOriginRevokeResult
-  mutation_class: benign_mutation
-  confirmation: none
+  mutation_class: high_impact
+  confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: contract_only_no_disposable_fixture
@@ -1057,7 +1057,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard embed origin revoke DASHBOARD_ID --help
-  agent_example: 'mammoth dashboard embed origin revoke 123 --input ''{"origin": "sample"}'''
+  agent_example: 'mammoth dashboard embed origin revoke 123 --input ''{"origin": "sample"}'' --yes --confirm 123'
   unit_tests:
   - UT-DASHBOARD-EMBED-ORIGIN-REVOKE
   contract_tests:
