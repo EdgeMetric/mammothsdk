@@ -151,7 +151,7 @@ from mammoth.models.workspaces import (
 )
 from mammoth.view import View, ViewExport
 
-__version__ = "0.7.23"
+__version__ = "0.7.24"
 __all__ = [
     # Client
     "MammothClient",

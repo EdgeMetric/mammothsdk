@@ -1,5 +1,29 @@
 # CLI release provenance
 
+## 2.0.53
+
+Two fixes, found on replayed eval traces:
+
+- **Fixed (SDK, `mammoth-io` 0.7.24)**: `View._add_task` (`mammoth/view.py`)
+  returned the server's submit record unchanged whenever a view's pipeline is
+  in draft mode (auto-run off, whether from the workspace's `AUTO_RUN` flag or
+  an explicit `enter_draft_mode()`). That record says `{"status":
+  "processing"}`, which is false: the step is only staged and will never
+  execute until the draft is submitted (six replayed traces, views 1499, 1560,
+  1565, 1567, 1570, 1572, all `auto_run=false`). `_add_task` now returns
+  `{"status": "staged", "message": ...}` naming the exact command that runs
+  staged steps, `mammoth view draft submit VIEW_ID` (SDK: `submit_draft()`).
+  Requires mammoth-io 0.7.24.
+- The bundled `jobs-drafts` skill reference now explains why to use draft
+  mode: batching several pipeline changes into one pipeline run instead of
+  rerunning on every change.
+- **Fixed (SDK, `mammoth-io` 0.7.24)**: `folder move` takes `dataset_ids`/
+  `view_ids` (plain ids) and resolves them to resource ids before building the
+  move request, instead of requiring the caller to already have the
+  resource id that `FoldersAPI.move`'s `resource_ids` matches against
+  server-side (T2-J-013). `resource_ids` stays for callers that already have
+  a resource id.
+
 ## 2.0.52
 
 Two agent-facing skill/manifest fixes, found on koyal eval traces (2026-09-26):
