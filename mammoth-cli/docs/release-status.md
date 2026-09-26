@@ -1,5 +1,29 @@
 # CLI release provenance
 
+## 2.0.54
+
+PLAN-014 stream S2: cut in-product agent tool calls at the CLI layer.
+Evidence from 153 latest eval runs (1,740 tool calls, luna model):
+`schema get`/`schema find` were 35% of all calls, almost always as a
+`find` -> `get` pair, because `find` never returned enough to act on (#37,
+rebased from #36 after main moved forward with conflicting changes).
+
+- `schema find` now inlines `accepted_fields` (compact: name/type/required/
+  enum) and `agent_example` for its top 1-3 matches, so the common case (the
+  right command is a top match) needs no follow-up `schema get`.
+  Suggestion-only (near-miss) results are unchanged.
+- `view export dataset` resolves and inlines the target dataset's current
+  view (`view_id`/`view_name`) instead of unconditionally telling the agent
+  to run `view list` again — an append never changes the view id, so this
+  was a repeated, avoidable round trip on every append to the same dataset.
+- `project check` / `upload_preview` now surface when a dataset has more
+  than one live view (`other_views`: id + name) and add one `to_report`
+  line, instead of silently checking and reporting on only the first view
+  (T3-F-003).
+- `SKILL.md`'s `schema get`/`schema find` guidance updated to match, and
+  trimmed to stay within its 13,672-byte system-prompt budget alongside
+  2.0.53's own guidance growth.
+
 ## 2.0.53
 
 Three fixes, found on replayed eval traces:
