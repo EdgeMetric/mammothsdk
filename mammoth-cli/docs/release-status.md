@@ -1,5 +1,11 @@
 # CLI release provenance
 
+## 2.0.60
+
+**Fix**: `schema get project.user.add` says how to add someone by email who is not in the workspace
+yet: `workspace user add` with a `projects` role entry invites them as a member with that project
+role. The agent refused "add sam@example.com to this project as an Editor" without it.
+
 ## 2.0.59
 
 **Fix**: `schema find` maps "api", "key" and "keys" to `client-app`, so "list active API keys"
