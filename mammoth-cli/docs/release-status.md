@@ -1,5 +1,13 @@
 # CLI release provenance
 
+## 2.0.58
+
+**Fix**: embedded `view export csv` (a host running the CLI in-process via `mammoth_cli.embed`) no
+longer writes the CSV onto the host's disk; it returns `download_url` (the signed export link) and
+refuses `output_path`. New SDK method `to_csv_url`. **Fix**: `mammoth-io` imports again on Python
+3.12/3.13 — `mammoth/view.py` used 3.14-only `except A, B:` (0.7.24–0.7.27 affected); a unit test now
+parses every shipped module with the 3.12 grammar. Needs `mammoth-io` 0.7.28. PR #43.
+
 ## 2.0.57
 
 **Fix**: "API key" now finds `client-app` (the workspace's API keys: key + secret for scripts and

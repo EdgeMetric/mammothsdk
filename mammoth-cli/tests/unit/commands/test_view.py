@@ -9,7 +9,9 @@ from pathlib import Path
 import pytest
 
 from mammoth_cli.commands import view as view_cmd
+from mammoth_cli.context.resolver import ExplicitLogin
 from mammoth_cli.errors.envelope import CliError
+from mammoth_cli.runtime import embedded
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.services.testing import FakeMammothService
 from mammoth_cli.testing import login_default_profile
@@ -81,6 +83,7 @@ _TASK_UPDATE = "mammoth.api.pipeline.PipelineAPI.update_task"
 
 _EXPORT_CREATE = "mammoth.api.exports.ExportsAPI.create"
 _EXPORT_CSV = "mammoth.api.exports.ExportsAPI.to_csv"
+_EXPORT_CSV_URL = "mammoth.api.exports.ExportsAPI.to_csv_url"
 _EXPORT_DELETE = "mammoth.api.exports.ExportsAPI.delete"
 _EXPORT_GET = "mammoth.api.exports.ExportsAPI.get"
 _EXPORT_LIST = "mammoth.api.exports.ExportsAPI.list"
@@ -1915,6 +1918,59 @@ def test_export_csv_forwards_output_path(fake_service: FakeMammothService, tmp_p
     assert fake_service.call_log == [
         (_EXPORT_CSV, {"dataview_id": 7, "output_path": "/tmp/out.csv", "timeout": 60})
     ]
+
+
+def _enter_embedded_call() -> object:
+    """Make an embedded call current; returns the token for ``embedded.leave``."""
+    login = ExplicitLogin(
+        api_key=None,
+        api_secret=None,
+        workspace_id=1,
+        api_token="jwt-user",
+        server_prefix="app",
+        headers={},
+    )
+    return embedded.enter(embedded.EmbeddedCall(login=login))
+
+
+def test_export_csv_embedded_returns_download_url_and_writes_no_file(
+    fake_service: FakeMammothService, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Embedded, the CSV export must never touch the host process's disk --
+    it hands back the signed URL instead (see mammoth_cli/embed.py)."""
+    cwd = tmp_path / "server-cwd"
+    cwd.mkdir()
+    monkeypatch.chdir(cwd)
+    fake_service.responses[_EXPORT_CSV_URL] = {
+        "url": "https://signed.example/file.csv",
+        "trigger_id": None,
+        "job_id": 9001,
+    }
+    token = _enter_embedded_call()
+    try:
+        data, _ = view_cmd.view_export_csv(_inv("view.export.csv", extra_args=["7"]))
+    finally:
+        embedded.leave(token)
+
+    assert data == {"download_url": "https://signed.example/file.csv"}
+    assert fake_service.call_log == [(_EXPORT_CSV_URL, {"dataview_id": 7})]
+    assert list(cwd.iterdir()) == []
+
+
+def test_export_csv_embedded_rejects_output_path(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    doc = _doc(tmp_path, {"output_path": str(tmp_path / "out.csv")})
+    token = _enter_embedded_call()
+    try:
+        with pytest.raises(CliError) as excinfo:
+            view_cmd.view_export_csv(_inv("view.export.csv", extra_args=["7"], input_file=doc))
+    finally:
+        embedded.leave(token)
+
+    assert excinfo.value.code == "unsupported_contract"
+    assert fake_service.call_log == []
+    assert not (tmp_path / "out.csv").exists()
 
 
 def test_export_delete_blocked_without_confirmation(fake_service: FakeMammothService) -> None:

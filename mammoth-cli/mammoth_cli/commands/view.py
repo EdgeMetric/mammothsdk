@@ -39,7 +39,7 @@ from mammoth_cli.errors.envelope import (
     CliError,
 )
 from mammoth_cli.manifest.loader import command_by_id
-from mammoth_cli.runtime import parents
+from mammoth_cli.runtime import embedded, parents
 from mammoth_cli.runtime.confirm import (
     POLICY_CONFIRM_TARGET,
     POLICY_PROMPT_OR_YES,
@@ -1965,9 +1965,15 @@ def view_export_csv(invocation: Invocation) -> HandlerResult:
     With no --input the file is written to the current directory under an
     auto-generated name; the dataset is resolved from the view. Override with
     ``--input '{"output_path": "path.csv"}'``.
+
+    Embedded (see ``mammoth_cli.runtime.embedded``), no file is written: the
+    signed download URL is returned instead so the host can hand it to its
+    user. ``output_path`` is refused in that case.
     """
     dataview_id = _require_int_positional_at(invocation, 0, "dataview id")
     document = invocation.load_input() or {}
+    if embedded.active():
+        return _view_export_csv_embedded(invocation, dataview_id, document)
     kwargs: dict[str, Any] = {"dataview_id": dataview_id}
     _forward_optional(document, kwargs, ("output_path", "timeout", "dataset_id"))
     with open_service(invocation) as (service, auth):
@@ -1975,6 +1981,24 @@ def view_export_csv(invocation: Invocation) -> HandlerResult:
     # The SDK returns a Path; render it as a string so the written location is
     # visible in every output mode and serializes cleanly to JSON.
     return {"output_path": str(data)}, _meta(invocation, auth.workspace_id, None)
+
+
+def _view_export_csv_embedded(
+    invocation: Invocation, dataview_id: int, document: dict[str, Any]
+) -> HandlerResult:
+    """``view.export.csv`` for an embedded call: never writes a local file."""
+    if "output_path" in document:
+        raise CliError(
+            code=CODE_UNSUPPORTED_CONTRACT,
+            message="output_path is not supported here; files are not written in embedded mode.",
+            exit_status=EXIT_USAGE,
+            hint="Drop output_path -- an embedded call returns a download_url instead.",
+        )
+    kwargs: dict[str, Any] = {"dataview_id": dataview_id}
+    _forward_optional(document, kwargs, ("timeout", "dataset_id"))
+    with open_service(invocation) as (service, auth):
+        data = service.call("mammoth.api.exports.ExportsAPI.to_csv_url", **kwargs)
+    return {"download_url": data["url"]}, _meta(invocation, auth.workspace_id, None)
 
 
 def view_export_delete(invocation: Invocation) -> HandlerResult:

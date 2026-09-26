@@ -561,6 +561,68 @@ class ExportsAPI:
 
         return self.create(dataview_id, export_spec, dataset_id, project_id)
 
+    def to_csv_url(
+        self,
+        dataview_id: int,
+        timeout: int = 300,
+        dataset_id: int | None = None,
+    ) -> dict[str, Any]:
+        """Create a CSV export and return its signed download URL, undownloaded.
+
+        Creates a CSV export job and waits for completion, like :meth:`to_csv`,
+        but never writes a local file -- for a caller (for example a host
+        process running the CLI on a user's behalf) that hands the URL to
+        someone else instead.
+
+        Args:
+            dataview_id: ID of the dataview to export.
+            timeout: Timeout in seconds (default 300).
+            dataset_id: ID of the dataset (auto-detected if not provided).
+
+        Returns:
+            Dict with ``url`` (the signed download URL), ``trigger_id`` if the
+            job reports one, and ``job_id`` of the completed export job.
+        """
+        project_id = getattr(self._client, "project_id", None)
+        if project_id is None:
+            raise ValueError("project_id must be set on the client using client.set_project_id()")
+
+        if dataset_id is None:
+            dataset_id = self._find_dataset_for_dataview(dataview_id)
+
+        export_spec = AddExportSpec(
+            DATAVIEW_ID=dataview_id,
+            handler_type=HandlerType.S3,
+            trigger_type=TriggerType.NONE,
+            target_properties={
+                "file": f"temp_export_{dataset_id}_{dataview_id}.csv",
+                "file_type": "csv",
+                "include_hidden": False,
+                "is_format_set": True,
+                "use_format": True,
+            },
+            additional_properties={},
+            condition={},
+            run_immediately=True,
+            validate_only=False,
+            end_of_pipeline=True,
+        )
+
+        export_result = self.create(dataview_id, export_spec, dataset_id)
+
+        if isinstance(export_result, JobResponse) and export_result.job and export_result.job.id:
+            job_id = export_result.job.id
+            completed_job = self._jobs_api.wait_for_job(job_id, timeout)
+            response = completed_job.get("response", {})
+            if response.get("url"):
+                return {
+                    "url": response["url"],
+                    "trigger_id": response.get("trigger_id"),
+                    "job_id": job_id,
+                }
+            raise ValueError(f"No download URL found in completed job {job_id}")
+        raise ValueError("No job ID found in export result")
+
     def to_csv(
         self,
         dataview_id: int,
@@ -593,34 +655,8 @@ class ExportsAPI:
 
         output_path = Path(output_path)
 
-        export_spec = AddExportSpec(
-            DATAVIEW_ID=dataview_id,
-            handler_type=HandlerType.S3,
-            trigger_type=TriggerType.NONE,
-            target_properties={
-                "file": f"temp_export_{dataset_id}_{dataview_id}.csv",
-                "file_type": "csv",
-                "include_hidden": False,
-                "is_format_set": True,
-                "use_format": True,
-            },
-            additional_properties={},
-            condition={},
-            run_immediately=True,
-            validate_only=False,
-            end_of_pipeline=True,
-        )
-
-        export_result = self.create(dataview_id, export_spec, dataset_id)
-
-        if isinstance(export_result, JobResponse) and export_result.job and export_result.job.id:
-            job_id = export_result.job.id
-            completed_job = self._jobs_api.wait_for_job(job_id, timeout)
-            if completed_job.get("response", {}).get("url"):
-                download_url = completed_job["response"]["url"]
-                return self._download_file(download_url, output_path, job_handle=job_id)
-            raise ValueError(f"No download URL found in completed job {job_id}")
-        raise ValueError("No job ID found in export result")
+        result = self.to_csv_url(dataview_id, timeout=timeout, dataset_id=dataset_id)
+        return self._download_file(result["url"], output_path, job_handle=result["job_id"])
 
     def _download_file(self, url: str, output_path: Path, *, job_handle: int | None = None) -> Path:
         """Download a file from the given URL.

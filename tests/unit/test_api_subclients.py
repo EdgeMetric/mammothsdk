@@ -11,6 +11,7 @@ Tests every public method on every API sub-client:
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -1278,6 +1279,69 @@ class TestExportsAPILowLevel:
         with pytest.raises(MammothValidationError, match="dataview_id"):
             client.exports.publish_db_update(dataview_id=0, patch=[])
         client._request_json.assert_not_called()
+
+
+class TestExportsAPICsv:
+    """``to_csv`` downloads a local file; ``to_csv_url`` shares its create-and-wait
+    logic but returns the signed URL undownloaded, for an embedded CLI caller
+    that must never write to the host process's disk (see mammoth-cli's
+    ``mammoth_cli/embed.py`` and ``commands/view.py::view_export_csv``)."""
+
+    def _job_created_response(self, job_id: int) -> dict:
+        now = datetime.now(timezone.utc)
+        return {
+            "job": {
+                "id": job_id,
+                "status": "processing",
+                "response": {},
+                "last_updated_at": now,
+                "created_at": now,
+                "path": "/pipeline/exports",
+                "operation": "add_export",
+            }
+        }
+
+    def test_to_csv_url_returns_signed_url_without_downloading(self, client: MammothClient):
+        client._request_json.return_value = self._job_created_response(9001)
+        client.exports._jobs_api.wait_for_job = MagicMock(
+            return_value={
+                "status": "success",
+                "response": {"url": "https://signed.example/file.csv", "trigger_id": 77},
+            }
+        )
+
+        result = client.exports.to_csv_url(dataview_id=42, dataset_id=500)
+
+        assert result == {
+            "url": "https://signed.example/file.csv",
+            "trigger_id": 77,
+            "job_id": 9001,
+        }
+        assert_called_with_method_and_endpoint(client._request_json, "POST", "/pipeline/exports")
+
+    def test_to_csv_url_rejects_missing_project_id(self, client: MammothClient):
+        client.project_id = None
+        with pytest.raises(ValueError, match="project_id must be set"):
+            client.exports.to_csv_url(dataview_id=42, dataset_id=500)
+        client._request_json.assert_not_called()
+
+    def test_to_csv_downloads_using_to_csv_url_result(self, client: MammothClient):
+        client.exports.to_csv_url = MagicMock(
+            return_value={
+                "url": "https://signed.example/file.csv",
+                "trigger_id": None,
+                "job_id": 9001,
+            }
+        )
+        client.exports._download_file = MagicMock(return_value=Path("/tmp/out.csv"))
+
+        result = client.exports.to_csv(dataview_id=42, output_path="/tmp/out.csv", dataset_id=500)
+
+        client.exports.to_csv_url.assert_called_once_with(42, timeout=300, dataset_id=500)
+        client.exports._download_file.assert_called_once_with(
+            "https://signed.example/file.csv", Path("/tmp/out.csv"), job_handle=9001
+        )
+        assert result == Path("/tmp/out.csv")
 
 
 # ======================================================================
