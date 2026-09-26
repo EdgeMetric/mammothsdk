@@ -1,5 +1,13 @@
 # CLI release provenance
 
+## 2.0.55
+
+**New (SDK, `mammoth-io` 0.7.26)**: 8 `dashboard embed` commands (#39, CLI gap flagged by the S9b
+capability audit — `apiv2`'s embed_controller.py had full backend support for embedding a
+dashboard as an iframe with no CLI surface): `config get/set`, `key rotate`, `usage get`, `origin
+revoke`, `preview-token create`, `secret rotate`, `lifetime set`. `key rotate`/`secret rotate` are
+`confirm_target` (each invalidates the previous key/secret). Satisfies goldens T1-DASH-008/009.
+
 ## 2.0.54
 
 PLAN-014 stream S2: cut in-product agent tool calls at the CLI layer.
