@@ -227,6 +227,14 @@ _SCOPE_REQUIREMENTS: dict[str, dict[str, Any]] = {
 
 _MAX_FIND_RESULTS = 20
 _MAX_FIND_LIMIT = 100
+# How many of a find's top matches carry inline accepted_fields/agent_example.
+# 35% of all eval tool calls were command discovery (schema find -> schema
+# get) because find's compact entry gave a command_id but not what to pass
+# it; inlining the top few lets an agent act without a second round trip in
+# the common case where one of them is right. Bounded to a few commands so a
+# broad query never balloons the result (the tool result goes into the
+# model's context).
+_INLINE_DETAIL_COUNT = 3
 
 # Search is intentionally a small, deterministic intent matcher rather than a
 # fuzzy/remote search service.  The aliases describe language users commonly
@@ -367,6 +375,19 @@ def _accepted_fields(record: dict[str, Any]) -> list[dict[str, Any]] | None:
         for field in contract.accepted_fields
         if field.name not in excluded
     ]
+
+
+def _compact_accepted_fields(record: dict[str, Any]) -> list[dict[str, Any]] | None:
+    """``_accepted_fields`` without the per-field JSON Schema.
+
+    A find result inlines this for its top matches: enough to compose a call
+    (name, type, required, enum) without the nested-schema detail ``schema
+    get`` returns.
+    """
+    fields = _accepted_fields(record)
+    if fields is None:
+        return None
+    return [{key: field[key] for key in ("name", "type", "required", "enum")} for field in fields]
 
 
 def _externally_supplied_fields(command_id: str) -> frozenset[str]:
@@ -1301,6 +1322,17 @@ def find_schemas(
     )
     total_matches = len(ranked_matches)
     page = [match for _, match in ranked_matches[offset : offset + bounded_limit]]
+    for rank, match in enumerate(page, start=offset):
+        if rank >= _INLINE_DETAIL_COUNT:
+            break
+        match_record = command_by_id(match["command_id"])
+        if match_record is None:
+            continue
+        fields = _compact_accepted_fields(match_record)
+        if fields is not None:
+            match["accepted_fields"] = fields
+        if match_record.get("agent_example"):
+            match["agent_example"] = match_record["agent_example"]
     has_more = offset + len(page) < total_matches
     continuation = (
         {

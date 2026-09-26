@@ -572,6 +572,20 @@ def project_check(invocation: Invocation) -> HandlerResult:
             }
             if "before_dashboard" in preview:
                 entry["before_dashboard"] = preview["before_dashboard"]
+            other_views = preview.get("other_views")
+            if other_views:
+                # Only the first (most recent) view is previewed and checked.
+                # Say so explicitly instead of letting silence read as "this
+                # is the only view" -- which view to change is the user's
+                # call unless they already named one.
+                entry["other_views"] = other_views
+                other_desc = ", ".join(f"{v['id']} ({v.get('name')})" for v in other_views)
+                to_report.append(
+                    f"dataset {dataset.get('name')} (id {dataset_id}) has "
+                    f"{len(other_views) + 1} views; only view {preview['view_id']} was "
+                    f"checked (others: {other_desc}). Which view to change is the "
+                    "user's pick unless they named one."
+                )
             views.append(entry)
             where = f"view {preview['view_id']} ({dataset.get('name')})"
             to_report += [_report_line(where, w) for w in entry["column_warnings"]]

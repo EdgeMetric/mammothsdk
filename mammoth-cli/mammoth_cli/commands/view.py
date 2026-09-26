@@ -2307,16 +2307,25 @@ def view_export_specialized(invocation: Invocation) -> HandlerResult:
         if is_dataset_route and isinstance(data, int):
             # The SDK returns the bare id of the dataset written to; name it, and
             # say which project it landed in, so the agent's next read is obvious.
+            # The written dataset's view id/name is resolved here too: an append
+            # (save_as_mode=APPEND_TO_DS) never changes it, so telling the agent
+            # to go re-list every time -- as a text-only 'next' hint used to --
+            # cost one avoidable round trip per append to the same dataset. Best
+            # effort: a failed lookup falls back to the old hint instead.
             data = {
                 "dataset_id": data,
                 "project_id": result_project_id,
                 "source_view_id": dataview_id,
-                "next": (
-                    f"mammoth view list {data}"
-                    + (f" --project {result_project_id}" if target_project is not None else "")
-                ),
             }
-            rows_after = _dataset_row_count(service, data["dataset_id"], result_project_id)
+            view_info = _dataset_view_info(service, data["dataset_id"], result_project_id)
+            if view_info is not None:
+                data["view_id"] = view_info["id"]
+                data["view_name"] = view_info["name"]
+            else:
+                data["next"] = f"mammoth view list {data['dataset_id']}" + (
+                    f" --project {result_project_id}" if target_project is not None else ""
+                )
+            rows_after = view_info["row_count"] if view_info is not None else None
             if rows_after is not None:
                 data["rows_after"] = rows_after
             if rows_before is not None:
@@ -2342,6 +2351,35 @@ def _dataset_row_count(service: Any, dataset_id: int, project_id: int | None) ->
         return None
 
 
+def _dataset_view_info(
+    service: Any, dataset_id: int, project_id: int | None
+) -> dict[str, Any] | None:
+    """Id, name, and row count of a dataset's current (most recent) view, best effort.
+
+    Used right after ``view.export.dataset`` writes to ``dataset_id``: the
+    id/name let the response carry the view an agent needs next instead of a
+    'go list it' hint (an append never changes it), and the row count feeds
+    ``rows_after`` -- one listing call instead of two. Any failure returns
+    None; the caller falls back to the 'next' hint and skips ``rows_after``.
+    """
+    try:
+        listing = service.call(_DATAVIEW_LIST_SYMBOL, dataset_id=dataset_id, project_id=project_id)
+        views = listing.get("dataviews") if isinstance(listing, dict) else None
+        if not isinstance(views, list) or not views or not isinstance(views[0], dict):
+            return None
+        view_id = views[0].get("id")
+        if not isinstance(view_id, int):
+            return None
+    except Exception:  # noqa: BLE001 -- best effort; the caller's fallbacks still work
+        return None
+    row_count = views[0].get("row_count")
+    return {
+        "id": view_id,
+        "name": views[0].get("name"),
+        "row_count": int(row_count) if row_count is not None else None,
+    }
+
+
 _DATAVIEW_LIST_SYMBOL = "mammoth.api.dataviews.DataviewsAPI.list"
 #: Rows an upload shows of each new view (enough to see keys and formats).
 _UPLOAD_SAMPLE_ROWS = 3
@@ -2365,6 +2403,15 @@ def upload_preview(service: Any, dataset_id: int, project_id: int | None) -> dic
         views = listing.get("dataviews") if isinstance(listing, dict) else None
         if not isinstance(views, list) or not views or not isinstance(views[0], dict):
             return None
+        # A dataset with more than one live view has one previewed here; the
+        # rest are named (id + name) so a caller (``project.check``) can say
+        # a view besides the one checked exists, rather than silently acting
+        # on the single view this function happens to preview.
+        other_views = [
+            {"id": other.get("id"), "name": other.get("name")}
+            for other in views[1:]
+            if isinstance(other, dict) and isinstance(other.get("id"), int)
+        ]
         record = apply_column_renames(views[0])
         view_id = record.get("id")
         if not isinstance(view_id, int):
@@ -2412,6 +2459,8 @@ def upload_preview(service: Any, dataset_id: int, project_id: int | None) -> dic
         hints = []
     if hints:
         preview["before_dashboard"] = {"warnings": hints, "note": UPLOAD_NOTE}
+    if other_views:
+        preview["other_views"] = other_views
     return preview
 
 
