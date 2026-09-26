@@ -2844,8 +2844,13 @@ class TestWorkspaceAPI:
         assert client._request_json.call_args.kwargs["params"] == {"fields": "__full"}
 
     def test_get_user(self, client: MammothClient):
-        client.workspaces.get_user(user_id="u1")
-        assert_called_with_method_and_endpoint(client._request_json, "GET", "/users/u1")
+        client._request_json.return_value = {
+            "users": [{"id": 5, "email": "a@x.io"}, {"id": 6, "email": "b@x.io"}]
+        }
+        user = client.workspaces.get_user(user_id="6")
+        assert user == {"id": 6, "email": "b@x.io"}
+        assert_called_with_method_and_endpoint(client._request_json, "GET", "/workspaces/1/users")
+        assert client._request_json.call_args.kwargs["params"] == {"fields": "__full"}
 
     def test_update_user_sends_patch_envelope(self, client: MammothClient):
         op = UserRolePatchOp(op="replace", path="role", value=WorkspaceRoleType.WORKSPACE_ADMIN)
