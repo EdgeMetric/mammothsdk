@@ -140,13 +140,10 @@ your report. If no column links the files, ask before you combine them.
 - `mammoth skill show --input '{"file": "references/recipes/transforms.md"}'`
   prints any file of this skill; `mammoth skill agents-md install` writes a
   steering block into a repository's AGENTS.md so later sessions start here.
-- `COMMAND --help` lists the input fields with types; `schema find WORDS`
-  ranks matches and inlines `accepted_fields`/`agent_example` for the top
-  ones -- usually enough to call the command with no further lookup. Only
-  fall to `mammoth schema get COMMAND_ID` when the command is not one of
-  those top matches, or you need positionals, `scope_requirements`, or the
-  full JSON Schema (`--input '{"full": true}'`). `schema list` is the family
-  index, `schema list view` one family.
+- `COMMAND --help` lists input fields; `schema find WORDS` inlines
+  `accepted_fields`/`agent_example` for top matches, else `mammoth schema
+  get COMMAND_ID` (`--input '{"full": true}'` for the schema); `schema
+  list`/`schema list view` list families.
 - Uploads return a **dataset** id; transforms, joins, exports and previews
   take the **view** id from `view list DATASET_ID`.
 - `view list` and `view get` return the brief record (id, ds_id, name,
