@@ -52,6 +52,21 @@ only signal is the task's own `transform_status` (`view task get`/`view task
 list` always read it at full detail). `DONE` means the step actually
 produced output; `ERROR` or `REFERROR` means it did not, even though the
 mutation "succeeded".
+- `split` makes new columns and `unnest` turns columns into label/value
+  rows; neither gives one row per delimited value. For one row per value,
+  use `add-sql` over `"view:VIEW_ID"`, selecting the other columns plus
+  `TRIM(UNNEST(string_split(COALESCE(tags, ''), ','))) AS tag`. Keep every
+  row -- a blank or NULL value stays as one row with an empty tag, and
+  `COALESCE` is what keeps the NULL rows, since DuckDB's `UNNEST` of NULL
+  yields zero rows (verified: drop the `COALESCE` and a NULL row vanishes).
+  Never add a `WHERE` that drops rows the user did not ask to drop. Verify
+  by row count: the result should equal the sum of each row's value count,
+  with a blank or NULL counting as 1.
+
+```bash
+mammoth view transform add-sql VIEW_ID --project PROJECT_ID \
+  --input '{"dataset_id":DATASET_ID,"query":"SELECT event_id, TRIM(UNNEST(string_split(COALESCE(tags, '\'''\''), '\'','\''))) AS tag FROM \"view:VIEW_ID\""}'
+```
 
 These examples use the released route IDs and input shapes documented by the
 command manifest; substitute only observed view IDs and display names:
