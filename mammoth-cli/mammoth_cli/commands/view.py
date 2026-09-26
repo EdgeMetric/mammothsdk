@@ -2060,20 +2060,52 @@ def view_export_specialized(invocation: Invocation) -> HandlerResult:
         if dataset_id is None:
             dataset_id = _resolve_dataset_id(service, invocation, dataview_id, document)
         data = service.call_view(dataview_id, method, dataset_id=dataset_id, **kwargs)
-    if invocation.command_id == "view.export.dataset" and isinstance(data, int):
-        # The SDK returns the bare id of the dataset written to; name it, and
-        # say which project it landed in, so the agent's next read is obvious.
-        target_project = kwargs.get("target_project_id")
-        data = {
-            "dataset_id": data,
-            "project_id": int(target_project) if target_project is not None else project_id,
-            "source_view_id": dataview_id,
-            "next": (
-                f"mammoth view list {data}"
-                + (f" --project {int(target_project)}" if target_project is not None else "")
-            ),
-        }
+        if invocation.command_id == "view.export.dataset" and isinstance(data, int):
+            # The SDK returns the bare id of the dataset written to; name it,
+            # and say which project it landed in. The written dataset's view
+            # id is resolved here too: an append (save_as_mode=APPEND_TO_DS)
+            # never changes it, so telling the agent to go re-list every time
+            # -- as a text-only 'next' hint used to -- cost one avoidable
+            # round trip per append to the same dataset. Best effort: a failed
+            # lookup falls back to the old hint instead of the id.
+            target_project = kwargs.get("target_project_id")
+            resolved_project_id = int(target_project) if target_project is not None else project_id
+            data = {
+                "dataset_id": data,
+                "project_id": resolved_project_id,
+                "source_view_id": dataview_id,
+            }
+            target_view = _resolve_latest_view(service, data["dataset_id"], resolved_project_id)
+            if target_view is not None:
+                data["view_id"] = target_view["id"]
+                data["view_name"] = target_view["name"]
+            else:
+                data["next"] = f"mammoth view list {data['dataset_id']}" + (
+                    f" --project {resolved_project_id}" if target_project is not None else ""
+                )
     return data, _meta(invocation, auth.workspace_id, project_id)
+
+
+def _resolve_latest_view(
+    service: Any, dataset_id: int, project_id: int | None
+) -> dict[str, Any] | None:
+    """The id and name of a dataset's current (most recent) view, best effort.
+
+    Used right after ``view.export.dataset`` writes to ``dataset_id`` so its
+    response can carry the view an agent needs next instead of a 'go list it'
+    hint. Any failure returns None and the caller falls back to that hint.
+    """
+    try:
+        listing = service.call(_DATAVIEW_LIST_SYMBOL, dataset_id=dataset_id, project_id=project_id)
+        views = listing.get("dataviews") if isinstance(listing, dict) else None
+        if not isinstance(views, list) or not views or not isinstance(views[0], dict):
+            return None
+        view_id = views[0].get("id")
+        if not isinstance(view_id, int):
+            return None
+    except Exception:  # noqa: BLE001 -- best effort; the 'next' hint still works
+        return None
+    return {"id": view_id, "name": views[0].get("name")}
 
 
 _DATAVIEW_LIST_SYMBOL = "mammoth.api.dataviews.DataviewsAPI.list"
@@ -2099,6 +2131,15 @@ def upload_preview(service: Any, dataset_id: int, project_id: int | None) -> dic
         views = listing.get("dataviews") if isinstance(listing, dict) else None
         if not isinstance(views, list) or not views or not isinstance(views[0], dict):
             return None
+        # A dataset with more than one live view has one previewed here; the
+        # rest are named (id + name) so a caller (``project.check``) can say
+        # a view besides the one checked exists, rather than silently acting
+        # on the single view this function happens to preview.
+        other_views = [
+            {"id": other.get("id"), "name": other.get("name")}
+            for other in views[1:]
+            if isinstance(other, dict) and isinstance(other.get("id"), int)
+        ]
         record = apply_column_renames(views[0])
         view_id = record.get("id")
         if not isinstance(view_id, int):
@@ -2146,6 +2187,8 @@ def upload_preview(service: Any, dataset_id: int, project_id: int | None) -> dic
         hints = []
     if hints:
         preview["before_dashboard"] = {"warnings": hints, "note": UPLOAD_NOTE}
+    if other_views:
+        preview["other_views"] = other_views
     return preview
 
 

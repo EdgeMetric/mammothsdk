@@ -72,6 +72,39 @@ def test_dataset_route_names_the_written_dataset_and_its_project(
     }
 
 
+def test_dataset_route_inlines_the_target_view_instead_of_a_relist_hint(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    # A dataset export (create or append) never changes the target dataset's
+    # view id; when it can be resolved here, the response carries it instead
+    # of sending the agent back through a separate 'view list' call.
+    fake_service.view_responses[(7, "to_dataset")] = 114
+    fake_service.responses["mammoth.api.dataviews.DataviewsAPI.list"] = {
+        "dataviews": [{"id": 220, "name": "Store sales combined"}]
+    }
+    data, _meta = view_cmd.view_export_specialized(
+        _inv(
+            "view.export.dataset",
+            project=58,
+            extra_args=["7", "9"],
+            input_file=_doc(tmp_path, {"dataset_name": "feed", "target_ds_id": 114}),
+            yes=True,
+        )
+    )
+    assert data == {
+        "dataset_id": 114,
+        "project_id": 58,
+        "source_view_id": 7,
+        "view_id": 220,
+        "view_name": "Store sales combined",
+    }
+    assert "next" not in data
+    assert (
+        "mammoth.api.dataviews.DataviewsAPI.list",
+        {"dataset_id": 114, "project_id": 58},
+    ) in fake_service.call_log
+
+
 @pytest.mark.parametrize("file_type", ["csv", "json", "parquet"])
 def test_managed_s3_omitted_filename_reaches_sdk_default(
     fake_service: FakeMammothService, tmp_path: Path, file_type: str

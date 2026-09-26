@@ -253,6 +253,36 @@ def test_project_check_lists_every_open_finding_for_the_report(
     assert data["note"].startswith("Before you report")
 
 
+def test_project_check_flags_other_views_instead_of_checking_only_one(
+    fake_service: FakeMammothService,
+) -> None:
+    # T3-F-003: a dataset with two live views. ``project.check`` previews and
+    # checks only the first (most recent) one; it must say the other exists
+    # rather than let its absence from the report read as "there is only one".
+    fake_service.responses["mammoth.api.datasets.DatasetsAPI.list_all"] = {
+        "datasets": [{"id": 90, "name": "orders"}]
+    }
+    fake_service.responses["mammoth.api.dataviews.DataviewsAPI.list"] = {
+        "dataviews": [
+            {"id": 1632, "name": "View 1", "row_count": 4, "metadata": []},
+            {"id": 1633, "name": "View 2", "row_count": 4, "metadata": []},
+        ]
+    }
+    fake_service.responses["mammoth.api.dataviews.DataviewsAPI.get_data"] = {"data": []}
+    fake_service.responses["mammoth.api.dashboards.DashboardsAPI.list"] = []
+    data, _ = project_cmd.project_check(_invocation("project.check", extra_args=["12"]))
+    entry = data["views"][0]
+    assert entry["view_id"] == 1632
+    assert entry["other_views"] == [{"id": 1633, "name": "View 2"}]
+    assert any(
+        "orders" in line and "has 2 views" in line and "checked (others: 1633 (View 2))" in line
+        for line in data["to_report"]
+    )
+    # The second view is never independently checked -- one line, not
+    # duplicate findings that would push an agent to edit both views.
+    assert sum("1633" in line for line in data["to_report"]) == 1
+
+
 def test_project_check_on_a_clean_project_says_nothing_is_open(
     fake_service: FakeMammothService,
 ) -> None:
