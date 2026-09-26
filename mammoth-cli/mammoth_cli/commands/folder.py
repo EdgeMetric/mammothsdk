@@ -156,8 +156,9 @@ def folder_find(invocation: Invocation) -> HandlerResult:
     return {
         "matches": matches,
         "projects_searched": len(projects),
-        "projects_truncated": invocation.project is None
-        and len(projects) >= _MAX_PROJECTS_SEARCHED,
+        "projects_truncated": (
+            invocation.project is None and len(projects) >= _MAX_PROJECTS_SEARCHED
+        ),
     }, meta
 
 
@@ -240,13 +241,39 @@ def folder_update(invocation: Invocation) -> HandlerResult:
 
 
 def folder_move(invocation: Invocation) -> HandlerResult:
-    """Move resources into a target folder in the active project."""
+    """Move resources into a target folder in the active project.
+
+    One of ``resource_ids``, ``dataset_ids``, or ``view_ids`` is required.
+    ``dataset_ids``/``view_ids`` take the plain ids ``dataset get``/``view
+    get`` return and are resolved to resource ids by the SDK; ``resource_ids``
+    is for when the caller already has a resource id from elsewhere.
+    """
     project_id = require_project(invocation)
-    document = invocation.load_input()
-    resource_ids = _require_field(document, "resource_ids")
-    kwargs: dict[str, Any] = {"resource_ids": resource_ids, "project_id": project_id}
-    assert document is not None
-    _forward_optional(document, kwargs, ("target_folder_resource_id", "source_folder_resource_id"))
+    document = invocation.load_input() or {}
+    kwargs: dict[str, Any] = {"project_id": project_id}
+    _forward_optional(
+        document,
+        kwargs,
+        (
+            "resource_ids",
+            "dataset_ids",
+            "view_ids",
+            "target_folder_resource_id",
+            "source_folder_resource_id",
+        ),
+    )
+    if not any(field in kwargs for field in ("resource_ids", "dataset_ids", "view_ids")):
+        raise CliError(
+            code=CODE_MISSING_FIELD,
+            message=(
+                "This command requires one of 'resource_ids', 'dataset_ids', " "or 'view_ids'."
+            ),
+            exit_status=EXIT_USAGE,
+            hint=(
+                "Pass it via --input, e.g. "
+                '--input \'{"dataset_ids": [1407], "target_folder_resource_id": 3445}\'.'
+            ),
+        )
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), **kwargs)
     return data, _meta(invocation, auth.workspace_id, project_id)

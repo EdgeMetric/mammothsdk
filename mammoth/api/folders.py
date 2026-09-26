@@ -196,39 +196,124 @@ class FoldersAPI:
             "DELETE", f"/workspaces/{ws}/projects/{proj}/folders", params=params
         )
 
+    def _resolve_resource_ids(
+        self,
+        ws: int,
+        proj: int,
+        dataset_ids: _list[int],
+        view_ids: _list[int],
+    ) -> _list[int]:
+        """Resolve dataset/view object ids to the resource ids the folder-move
+        endpoint requires.
+
+        A dataset's or view's own id (the ``id`` field ``dataset get``/``view
+        get`` return) is a different number from its ``resource_id`` — the
+        value the server's move endpoint actually matches against. This calls
+        the bulk resource-lookup endpoint to translate object ids to resource
+        ids in one round trip, and fails loudly (rather than moving the wrong
+        thing or hitting a misleading permission error) when an id can't be
+        resolved.
+        """
+        requested = [("datasource", i) for i in dataset_ids] + [("dataview", i) for i in view_ids]
+        if not requested:
+            return []
+        response = self._client._request_json(
+            "POST",
+            f"/workspaces/{ws}/projects/{proj}/resources/bulk",
+            json={"ids": [{"type": type_, "id": oid} for type_, oid in requested]},
+            operation_effect="read",
+        )
+        found: dict[tuple[str, int], int] = {}
+        for item in response.get("resources", []):
+            resource_id = item.get("resource_id")
+            object_id = item.get("object_id")
+            if resource_id is not None and object_id is not None:
+                found[(item.get("resource_type"), object_id)] = int(resource_id)
+        resolved: list[int] = []
+        missing: list[str] = []
+        for type_, oid in requested:
+            resource_id = found.get((type_, oid))
+            if resource_id is None:
+                kind = "dataset" if type_ == "datasource" else "view"
+                missing.append(f"{kind} {oid}")
+            else:
+                resolved.append(resource_id)
+        if missing:
+            raise MammothValidationError(
+                "Could not resolve a resource id for: "
+                + ", ".join(missing)
+                + ". Check that the id(s) exist in this project and that you have"
+                " access to them."
+            )
+        return resolved
+
     def move(
         self,
-        resource_ids: _list[str],
+        resource_ids: _list[str] | None = None,
         target_folder_resource_id: str | None = None,
         source_folder_resource_id: str | None = None,
         workspace_id: int | None = None,
         project_id: int | None = None,
+        *,
+        dataset_ids: _list[int] | None = None,
+        view_ids: _list[int] | None = None,
     ) -> ObjectJobSchema:
         """Move resources between folders.
 
         Args:
-            resource_ids: List of resource IDs to move.
-            target_folder_resource_id: Target folder resource ID (None for root).
-            source_folder_resource_id: Source folder resource ID (optional).
+            resource_ids: Raw resource ids to move. This is NOT a dataset's or
+                view's own id — it is the ``resource_id`` field returned by
+                the resources lookup the SDK uses internally for
+                ``dataset_ids``/``view_ids`` below. Prefer those two params
+                unless you already have a resource id from elsewhere.
+            target_folder_resource_id: The target folder's id — the ``id``
+                field ``folder list``/``folder get``/``folder create``
+                return (despite this parameter's name, NOT the folder's
+                ``resource_id`` field). ``None``/``""``/``"root"`` moves to
+                the project root.
+            source_folder_resource_id: Same id kind as
+                ``target_folder_resource_id``. Accepted for compatibility;
+                the route infers the source itself.
             workspace_id: ID of the workspace (uses client default if not provided).
             project_id: ID of the project (uses client default if not provided).
+            dataset_ids: Dataset ids, as returned by ``dataset get``/``dataset
+                list`` (their ``id`` field). Resolved to resource ids
+                automatically — use this instead of ``resource_ids`` when all
+                you have is the dataset's own id.
+            view_ids: View ids, as returned by ``view get``/``view list``
+                (their ``id`` field). Resolved to resource ids automatically —
+                use this instead of ``resource_ids`` when all you have is the
+                view's own id.
 
         Returns:
             ObjectJobSchema with job information for the move.
+
+        Raises:
+            MammothValidationError: If no ids are given in any of
+                ``resource_ids``/``dataset_ids``/``view_ids``, or if a
+                dataset/view id in ``dataset_ids``/``view_ids`` can't be
+                resolved to a resource id.
         """
         ws = workspace_id or self._ws()
         proj = self._proj(project_id)
         # ``BulkFolderPatchRequest``: ``patch`` of ``{op: "move", from: [resource
         # ids], path: destination folder id | "root"}``. ``source_folder_resource_id``
         # is accepted for compatibility; the route infers the source.
-        try:
-            moved = [int(item) for item in resource_ids]
-        except (TypeError, ValueError) as exc:
-            raise MammothValidationError(
-                f"resource_ids must be integer resource ids, got {resource_ids!r}"
-            ) from exc
+        moved: list[int] = []
+        if resource_ids:
+            try:
+                moved.extend(int(item) for item in resource_ids)
+            except (TypeError, ValueError) as exc:
+                raise MammothValidationError(
+                    f"resource_ids must be integer resource ids, got {resource_ids!r}"
+                ) from exc
+        moved.extend(
+            self._resolve_resource_ids(ws, proj, list(dataset_ids or []), list(view_ids or []))
+        )
         if not moved:
-            raise MammothValidationError("resource_ids must contain at least one id.")
+            raise MammothValidationError(
+                "Provide at least one id via resource_ids, dataset_ids, or view_ids."
+            )
         destination: int | str = "root"
         if target_folder_resource_id not in (None, "", "root"):
             destination = (
