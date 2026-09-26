@@ -257,3 +257,15 @@ def test_canvas_save_wrong_shape_names_the_wrapping() -> None:
         validate_input_fields("dashboard.canvas.save", {"canvas": {"pages": []}})
     assert raised.value.code == "unknown_input_field"
     assert '{"body": {"params": {"canvas": CANVAS}}}' in (raised.value.hint or "")
+
+
+def test_dataset_list_project_id_input_names_the_project_option() -> None:
+    """project_id is a global option, not an --input field; the hint must say so.
+
+    Agents kept sending --input {"project_id": N} to dataset list and got a
+    bare 'unknown field' with no pointer to --project.
+    """
+    with pytest.raises(CliError) as raised:
+        validate_input_fields("dataset.list", {"project_id": 5})
+    assert raised.value.code == "unknown_input_field"
+    assert "--project" in (raised.value.hint or "")

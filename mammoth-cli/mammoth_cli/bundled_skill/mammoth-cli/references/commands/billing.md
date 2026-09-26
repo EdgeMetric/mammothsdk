@@ -6,9 +6,9 @@ Every command returns the standard JSON envelope. On nonzero exit, read the erro
 
 Run: `mammoth billing chargebee-plan`. Exact input fields: `mammoth schema get billing.chargebee-plan`.
 
-Example: `mammoth billing chargebee-plan`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth billing chargebee-plan`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
-Result: `BillingChargebeePlanResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+Result: `BillingChargebeePlanResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
 Status on release: observed blocker — backend_error: The CLI gates this GET behind --yes --confirm WORKSPACE_ID; with confirmation: HTTP 400 4SUBS014 'Chargebee plan not found for the given workspace' (workspace 4 is n. Re-check before relying on it.
 
@@ -36,9 +36,9 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth billing invoice get`. Exact input fields: `mammoth schema get billing.invoice.get`.
 
-Example: `mammoth billing invoice get 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth billing invoice get 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
-Result: `BillingInvoiceGetResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+Result: `BillingInvoiceGetResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
 Status on release: observed blocker — blocked_missing_fixture: The CLI gates this GET behind --yes --confirm WORKSPACE_ID; with confirmation: billing invoice list answered HTTP 500, so no invoice id was observed. Re-check before relying on it.
 
@@ -46,9 +46,9 @@ Status on release: observed blocker — blocked_missing_fixture: The CLI gates t
 
 Run: `mammoth billing invoice list`. Exact input fields: `mammoth schema get billing.invoice.list`.
 
-Example: `mammoth billing invoice list`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth billing invoice list`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
-Result: `BillingInvoiceListResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+Result: `BillingInvoiceListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
 Status on release: observed blocker — backend_error: The CLI gates this GET behind --yes --confirm WORKSPACE_ID; with confirmation: HTTP 500 with empty body on GET /workspaces/4/subscription_v1/invoices. Re-check before relying on it.
 
@@ -96,9 +96,9 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth billing stripe get`. Exact input fields: `mammoth schema get billing.stripe.get`.
 
-Example: `mammoth billing stripe get`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth billing stripe get`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
-Result: `BillingStripeGetResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+Result: `BillingStripeGetResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
 Status on release: untried; no live run recorded.
 
@@ -106,9 +106,9 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth billing stripe history`. Exact input fields: `mammoth schema get billing.stripe.history`.
 
-Example: `mammoth billing stripe history`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth billing stripe history`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
-Result: `BillingStripeHistoryResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+Result: `BillingStripeHistoryResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
 Status on release: ran once on CLI 2.0.15 — admin read sweep 2026-09-18: exit 0 on release with CLI 2.0.15. The CLI gates this GET behind --yes --confirm WORKSPACE_ID (confirm_target policy); with confirmation: exit 0; data.billing_history Single invocation only.
 
@@ -126,9 +126,9 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth billing stripe payment-method list`. Exact input fields: `mammoth schema get billing.stripe.payment-method.list`.
 
-Example: `mammoth billing stripe payment-method list`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth billing stripe payment-method list`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
-Result: `BillingStripePaymentMethodListResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+Result: `BillingStripePaymentMethodListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
 Status on release: ran once on CLI 2.0.15 — admin read sweep 2026-09-18: exit 0 on release with CLI 2.0.15. The CLI gates this GET behind --yes --confirm WORKSPACE_ID (confirm_target policy); with confirmation: exit 0; data.payment_methods Single invocation only.
 
@@ -156,9 +156,9 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth billing stripe preview-invoice`. Exact input fields: `mammoth schema get billing.stripe.preview-invoice`.
 
-Example: `mammoth billing stripe preview-invoice`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth billing stripe preview-invoice`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
-Result: `BillingStripePreviewInvoiceResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+Result: `BillingStripePreviewInvoiceResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
 Status on release: observed blocker — backend_error: The CLI gates this GET behind --yes --confirm WORKSPACE_ID; with confirmation: HTTP 400 4SUBS037 'Failed to perform subscription operation'. Re-check before relying on it.
 
@@ -176,9 +176,9 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth billing stripe status`. Exact input fields: `mammoth schema get billing.stripe.status`.
 
-Example: `mammoth billing stripe status`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth billing stripe status`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
-Result: `BillingStripeStatusResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+Result: `BillingStripeStatusResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
 Status on release: ran once on CLI 2.0.15 — admin read sweep 2026-09-18: exit 0 on release with CLI 2.0.15. The CLI gates this GET behind --yes --confirm WORKSPACE_ID (confirm_target policy); with confirmation: exit 0; data with billing_cycle, has_active_subscription, is_trial_expired, ... (20 keys) Si…
 
@@ -196,9 +196,9 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth billing stripe upcoming-invoice`. Exact input fields: `mammoth schema get billing.stripe.upcoming-invoice`.
 
-Example: `mammoth billing stripe upcoming-invoice`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth billing stripe upcoming-invoice`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
-Result: `BillingStripeUpcomingInvoiceResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+Result: `BillingStripeUpcomingInvoiceResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
 Status on release: observed blocker — backend_error: The CLI gates this GET behind --yes --confirm WORKSPACE_ID; with confirmation: HTTP 400 4SUBS074 'Upcoming invoice not found' (no active Stripe subscription on works. Re-check before relying on it.
 
@@ -206,9 +206,9 @@ Status on release: observed blocker — backend_error: The CLI gates this GET be
 
 Run: `mammoth billing stripe usage`. Exact input fields: `mammoth schema get billing.stripe.usage`.
 
-Example: `mammoth billing stripe usage`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth billing stripe usage`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
-Result: `BillingStripeUsageResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+Result: `BillingStripeUsageResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
 Status on release: observed blocker — backend_error: The CLI gates this GET behind --yes --confirm WORKSPACE_ID; with confirmation: HTTP 400 5GENR010 UNKNOWN_ERROR 'Unknown error occurred. Re-check before relying on it.
 
@@ -216,9 +216,9 @@ Status on release: observed blocker — backend_error: The CLI gates this GET be
 
 Run: `mammoth billing subscription get`. Exact input fields: `mammoth schema get billing.subscription.get`.
 
-Example: `mammoth billing subscription get`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth billing subscription get`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
-Result: `BillingSubscriptionGetResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+Result: `BillingSubscriptionGetResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
 Status on release: ran once on CLI 2.0.15 — admin read sweep 2026-09-18: exit 0 on release with CLI 2.0.15. The CLI gates this GET behind --yes --confirm WORKSPACE_ID (confirm_target policy); with confirmation: exit 0; data with current_plan_new, next_action_info, over_limit_info, sms_details Single in…
 

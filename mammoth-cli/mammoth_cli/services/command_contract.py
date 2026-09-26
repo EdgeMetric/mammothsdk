@@ -244,7 +244,6 @@ _PILOT_ADAPTER_INPUTS: dict[str, frozenset[str]] = {
     "file.upload": frozenset({"files"}),
     "view.transform.math": frozenset({"condition"}),
     "view.transform.lookup": frozenset(),
-    "dashboard.create": frozenset({"intent"}),
     "dashboard.source.list": frozenset(),
 }
 
@@ -622,16 +621,19 @@ _S7_ADDITIONAL_INPUT_FIELDS: dict[str, tuple[FieldSpec, ...]] = {
         # GLOBAL or WORKSPACE_PREFERENCES.
         FieldSpec("patch", required=False, annotation=list[Any] | None, default=None),
     ),
-    "user.update": (
-        FieldSpec("name", required=False, annotation=str | None, default=None),
-        FieldSpec("email", required=False, annotation=str | None, default=None),
-    ),
+    # user.update previously pinned name/email here as a guess, from when
+    # UserProfileAPI.update took **fields and so had nothing introspectable.
+    # The SDK method is now typed (first_name, last_name -- the backend's
+    # real SelfPatchData path values), so its own signature is the source of
+    # truth and this override is gone rather than fixed to match: keeping a
+    # hardcoded shadow of a typed signature is exactly how it drifted wrong
+    # the first time.
 }
 CONTRACT_BOUND_COMMANDS = frozenset(
     S2_COMMANDS | S3_COMMANDS | S4_COMMANDS | S6_COMMANDS | S7_COMMANDS
 )
 
-# The five reviewed adapter shapes remain separately named for compatibility
+# The four reviewed adapter shapes remain separately named for compatibility
 # with existing pilot tests and release notes.
 PILOT_COMMANDS = frozenset(_PILOT_ADAPTER_INPUTS)
 LOCAL_COMMANDS = _LOCAL_COMMANDS

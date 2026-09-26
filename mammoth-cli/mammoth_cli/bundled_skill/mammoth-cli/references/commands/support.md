@@ -36,9 +36,9 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth support connector-profile list`. Exact input fields: `mammoth schema get support.connector-profile.list`.
 
-Example: `mammoth support connector-profile list`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth support connector-profile list`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
-Result: `SupportConnectorProfileListResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+Result: `SupportConnectorProfileListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
 Status on release: ran once on CLI 2.0.15 — admin read sweep 2026-09-18: exit 0 on release with CLI 2.0.15. The CLI gates this GET behind --yes --confirm WORKSPACE_ID (confirm_target policy); with confirmation: exit 0; data.connector_profiles Single invocation only.
 
@@ -76,9 +76,9 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth support connector list`. Exact input fields: `mammoth schema get support.connector.list`.
 
-Example: `mammoth support connector list`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth support connector list`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
-Result: `SupportConnectorListResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+Result: `SupportConnectorListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
 Status on release: ran once on CLI 2.0.15 — admin read sweep 2026-09-18: exit 0 on release with CLI 2.0.15. The CLI gates this GET behind --yes --confirm WORKSPACE_ID (confirm_target policy); with confirmation: exit 0; data.connectors Single invocation only.
 
@@ -126,9 +126,9 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth support feature-profile list`. Exact input fields: `mammoth schema get support.feature-profile.list`.
 
-Example: `mammoth support feature-profile list`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth support feature-profile list`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
-Result: `SupportFeatureProfileListResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+Result: `SupportFeatureProfileListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
 Status on release: ran once on CLI 2.0.15 — admin read sweep 2026-09-18: exit 0 on release with CLI 2.0.15. The CLI gates this GET behind --yes --confirm WORKSPACE_ID (confirm_target policy); with confirmation: exit 0; data.feature_profiles Single invocation only.
 
@@ -166,9 +166,9 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth support feature list`. Exact input fields: `mammoth schema get support.feature.list`.
 
-Example: `mammoth support feature list`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth support feature list`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
-Result: `SupportFeatureListResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+Result: `SupportFeatureListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
 Status on release: ran once on CLI 2.0.15 — admin read sweep 2026-09-18: exit 0 on release with CLI 2.0.15. The CLI gates this GET behind --yes --confirm WORKSPACE_ID (confirm_target policy); with confirmation: exit 0; data.features Single invocation only.
 
@@ -206,9 +206,9 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth support plan chargebee-list`. Exact input fields: `mammoth schema get support.plan.chargebee-list`.
 
-Example: `mammoth support plan chargebee-list`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth support plan chargebee-list`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
-Result: `SupportPlanChargebeeListResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+Result: `SupportPlanChargebeeListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
 Status on release: ran once on CLI 2.0.15 — admin read sweep 2026-09-18: exit 0 on release with CLI 2.0.15. The CLI gates this GET behind --yes --confirm WORKSPACE_ID (confirm_target policy); with confirmation: exit 0; data.available_plans Single invocation only.
 
@@ -236,9 +236,9 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth support plan get`. Exact input fields: `mammoth schema get support.plan.get`.
 
-Example: `mammoth support plan get 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth support plan get 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
-Result: `SupportPlanGetResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+Result: `SupportPlanGetResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
 Status on release: untried; no live run recorded.
 
@@ -246,9 +246,9 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth support plan list`. Exact input fields: `mammoth schema get support.plan.list`.
 
-Example: `mammoth support plan list`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth support plan list`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
-Result: `SupportPlanListResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+Result: `SupportPlanListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
 Status on release: ran once on CLI 2.0.15 — admin read sweep 2026-09-18: exit 0 on release with CLI 2.0.15. The CLI gates this GET behind --yes --confirm WORKSPACE_ID (confirm_target policy); with confirmation: exit 0; data.plans (5 plans, ids 4-8) Single invocation only.
 
@@ -256,9 +256,9 @@ Status on release: ran once on CLI 2.0.15 — admin read sweep 2026-09-18: exit 
 
 Run: `mammoth support plan self-serve-list`. Exact input fields: `mammoth schema get support.plan.self-serve-list`.
 
-Example: `mammoth support plan self-serve-list`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth support plan self-serve-list`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
-Result: `SupportPlanSelfServeListResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+Result: `SupportPlanSelfServeListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
 Status on release: ran once on CLI 2.0.15 — admin read sweep 2026-09-18: exit 0 on release with CLI 2.0.15. The CLI gates this GET behind --yes --confirm WORKSPACE_ID (confirm_target policy); with confirmation: exit 0; data.plans Single invocation only.
 
@@ -296,9 +296,9 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth support subscription get`. Exact input fields: `mammoth schema get support.subscription.get`.
 
-Example: `mammoth support subscription get 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth support subscription get 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
-Result: `SupportSubscriptionGetResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+Result: `SupportSubscriptionGetResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
 Status on release: untried; no live run recorded.
 
@@ -316,9 +316,9 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth support user list-all`. Exact input fields: `mammoth schema get support.user.list-all`.
 
-Example: `mammoth support user list-all`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth support user list-all`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
-Result: `SupportUserListAllResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+Result: `SupportUserListAllResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
 Status on release: ran once on CLI 2.0.15 — admin read sweep 2026-09-18: exit 0 on release with CLI 2.0.15. The CLI gates this GET behind --yes --confirm WORKSPACE_ID (confirm_target policy); with confirmation: exit 0; data keyed by workspace id ('4') listing users Single invocation only.
 
@@ -366,9 +366,9 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth support workspace get`. Exact input fields: `mammoth schema get support.workspace.get`.
 
-Example: `mammoth support workspace get 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth support workspace get 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
-Result: `SupportWorkspaceGetResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+Result: `SupportWorkspaceGetResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
 Status on release: untried; no live run recorded.
 
@@ -376,9 +376,9 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth support workspace list`. Exact input fields: `mammoth schema get support.workspace.list`.
 
-Example: `mammoth support workspace list`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth support workspace list`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
-Result: `SupportWorkspaceListResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+Result: `SupportWorkspaceListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
 Status on release: ran once on CLI 2.0.15 — admin read sweep 2026-09-18: exit 0 on release with CLI 2.0.15. The CLI gates this GET behind --yes --confirm WORKSPACE_ID (confirm_target policy); with confirmation: exit 0; route returns a bare array so the SDK wraps it as {status_code:200, response:[...]}…
 
@@ -426,9 +426,9 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth support workspace user list`. Exact input fields: `mammoth schema get support.workspace.user.list`.
 
-Example: `mammoth support workspace user list 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth support workspace user list 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
-Result: `SupportWorkspaceUserListResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+Result: `SupportWorkspaceUserListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
 Status on release: untried; no live run recorded.
 

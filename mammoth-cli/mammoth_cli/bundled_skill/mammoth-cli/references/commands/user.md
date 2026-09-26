@@ -78,8 +78,8 @@ Status on release: ran once on CLI 2.0.15 — re-verification 2026-09-18: exit 0
 
 Run: `mammoth user update`. Exact input fields: `mammoth schema get user.update`.
 
-Example: `mammoth user update`. Discovery only: this command is fail-closed and must not dispatch a request.
+Example: `mammoth user update --input '{"first_name": "Jane"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
-Execution is unavailable for the current contract and returns `unsupported_contract`. Do not infer request fields or retry it; use only a separately typed alternative.
+Result: `UserUpdateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
-Known restriction: BLOCKED[B17 VARIADIC_INPUT_UNTYPED]: **fields is unconstrained; reserved, not registered.
+Status on release: untried; no live run recorded.

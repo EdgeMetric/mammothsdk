@@ -12,8 +12,8 @@ commands:
   sdk_conversion: Call mammoth.api.billing.BillingAPI.chargebee_plan with validated request fields.
   request_model: BillingChargebeePlanRequest
   result_model: BillingChargebeePlanResult
-  mutation_class: high_impact
-  confirmation: confirm_target
+  mutation_class: read
+  confirmation: none
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: contract_only_high_impact
@@ -126,8 +126,8 @@ commands:
   sdk_conversion: Call mammoth.api.billing.BillingAPI.invoice_get with validated request fields.
   request_model: BillingInvoiceGetRequest
   result_model: BillingInvoiceGetResult
-  mutation_class: high_impact
-  confirmation: confirm_target
+  mutation_class: read
+  confirmation: none
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: contract_only_high_impact
@@ -160,8 +160,8 @@ commands:
   sdk_conversion: Call mammoth.api.billing.BillingAPI.invoice_list with validated request fields.
   request_model: BillingInvoiceListRequest
   result_model: BillingInvoiceListResult
-  mutation_class: high_impact
-  confirmation: confirm_target
+  mutation_class: read
+  confirmation: none
   wait_policy: not_async
   pagination_policy: single_page
   acceptance_evidence: contract_only_high_impact
@@ -337,8 +337,8 @@ commands:
   sdk_conversion: Call mammoth.api.billing.BillingAPI.stripe_get with validated request fields.
   request_model: BillingStripeGetRequest
   result_model: BillingStripeGetResult
-  mutation_class: high_impact
-  confirmation: confirm_target
+  mutation_class: read
+  confirmation: none
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: contract_only_high_impact
@@ -371,8 +371,8 @@ commands:
   sdk_conversion: Call mammoth.api.billing.BillingAPI.stripe_history with validated request fields.
   request_model: BillingStripeHistoryRequest
   result_model: BillingStripeHistoryResult
-  mutation_class: high_impact
-  confirmation: confirm_target
+  mutation_class: read
+  confirmation: none
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: contract_only_high_impact
@@ -447,8 +447,8 @@ commands:
     fields.
   request_model: BillingStripePaymentMethodListRequest
   result_model: BillingStripePaymentMethodListResult
-  mutation_class: high_impact
-  confirmation: confirm_target
+  mutation_class: read
+  confirmation: none
   wait_policy: not_async
   pagination_policy: single_page
   acceptance_evidence: contract_only_high_impact
@@ -556,8 +556,8 @@ commands:
   sdk_conversion: Call mammoth.api.billing.BillingAPI.stripe_preview_invoice with validated request fields.
   request_model: BillingStripePreviewInvoiceRequest
   result_model: BillingStripePreviewInvoiceResult
-  mutation_class: high_impact
-  confirmation: confirm_target
+  mutation_class: read
+  confirmation: none
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: contract_only_high_impact
@@ -624,8 +624,8 @@ commands:
   sdk_conversion: Call mammoth.api.billing.BillingAPI.stripe_status with validated request fields.
   request_model: BillingStripeStatusRequest
   result_model: BillingStripeStatusResult
-  mutation_class: high_impact
-  confirmation: confirm_target
+  mutation_class: read
+  confirmation: none
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: contract_only_high_impact
@@ -692,8 +692,8 @@ commands:
   sdk_conversion: Call mammoth.api.billing.BillingAPI.stripe_upcoming_invoice with validated request fields.
   request_model: BillingStripeUpcomingInvoiceRequest
   result_model: BillingStripeUpcomingInvoiceResult
-  mutation_class: high_impact
-  confirmation: confirm_target
+  mutation_class: read
+  confirmation: none
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: contract_only_high_impact
@@ -726,8 +726,8 @@ commands:
   sdk_conversion: Call mammoth.api.billing.BillingAPI.stripe_usage with validated request fields.
   request_model: BillingStripeUsageRequest
   result_model: BillingStripeUsageResult
-  mutation_class: high_impact
-  confirmation: confirm_target
+  mutation_class: read
+  confirmation: none
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: contract_only_high_impact
@@ -760,8 +760,8 @@ commands:
   sdk_conversion: Call mammoth.api.billing.BillingAPI.subscription_get with validated request fields.
   request_model: BillingSubscriptionGetRequest
   result_model: BillingSubscriptionGetResult
-  mutation_class: high_impact
-  confirmation: confirm_target
+  mutation_class: read
+  confirmation: none
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: contract_only_high_impact

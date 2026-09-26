@@ -21,6 +21,7 @@ the public SDK method named by the command's reviewed manifest ``sdk_symbol``.
 from __future__ import annotations
 
 import inspect
+from datetime import UTC, datetime
 from typing import Any
 
 from mammoth.view import ViewExport
@@ -28,6 +29,7 @@ from mammoth.view import ViewExport
 from mammoth_cli.context import profiles
 from mammoth_cli.errors.envelope import (
     CODE_INVALID_ARGUMENT,
+    CODE_INVALID_ARGUMENTS,
     CODE_MISSING_ARGUMENT,
     CODE_MISSING_FIELD,
     CODE_SDK_SYMBOL_UNRESOLVED,
@@ -847,6 +849,121 @@ def view_data_query(invocation: Invocation) -> HandlerResult:
     return data, _meta(invocation, auth.workspace_id, project_id)
 
 
+def _resolved_aggregate_item(agg: dict[str, Any], column_map: dict[str, str]) -> dict[str, Any]:
+    """Resolve one ``{column, function, as_name}`` input entry's column to its
+    internal name and default its ``as_name``, ready to forward to the SDK.
+
+    Function/column validity is the SDK's job (:meth:`DataviewsAPI.aggregate`
+    raises ``MammothValidationError``, mapped to an ``invalid_arguments``
+    envelope) — this only resolves the display name and computes the default
+    label so the result can be relabeled below.
+    """
+    function = str(agg.get("function") or "").upper()
+    column = agg.get("column")
+    resolved: dict[str, Any] = {
+        "function": function,
+        "as_name": agg.get("as_name") or (f"{function}_{column}" if column else function),
+    }
+    if column:
+        resolved["column"] = column_map.get(column, column)
+    return resolved
+
+
+def _build_pivot_fields(
+    document: dict[str, Any], column_map: dict[str, str]
+) -> tuple[dict[str, Any], dict[str, str]]:
+    """Resolve ``aggregations``/``group_by`` into SDK kwargs and an as_map.
+
+    The as_map (``agg_0``/``group_0``/... -> the display label) mirrors the
+    internal-name scheme :func:`mammoth.api.dataviews._build_pivot_param`
+    assigns from the same list, in the same order — keep the two in step.
+    """
+    aggregations = document.get("aggregations")
+    if not isinstance(aggregations, list) or not aggregations:
+        raise CliError(
+            code=CODE_MISSING_FIELD,
+            message="'aggregations' is required for a PIVOT and must be a non-empty list.",
+            exit_status=EXIT_USAGE,
+            hint='--input \'{"aggregations": [{"column": "Sales", "function": "SUM"}]}\'',
+        )
+    resolved_aggregations = [_resolved_aggregate_item(agg, column_map) for agg in aggregations]
+    as_map = {f"agg_{index}": item["as_name"] for index, item in enumerate(resolved_aggregations)}
+    fields: dict[str, Any] = {"aggregations": resolved_aggregations}
+    group_by = document.get("group_by")
+    if group_by:
+        fields["group_by"] = [column_map.get(column, column) for column in group_by]
+        as_map.update({f"group_{index}": column for index, column in enumerate(group_by)})
+    return fields, as_map
+
+
+def _build_metric_fields(
+    document: dict[str, Any], column_map: dict[str, str]
+) -> tuple[dict[str, Any], dict[str, str]]:
+    """Resolve a ``metric`` field into SDK kwargs and an as_map."""
+    metric = document.get("metric")
+    if not isinstance(metric, dict):
+        raise CliError(
+            code=CODE_MISSING_FIELD,
+            message="'metric' is required and must be an object.",
+            exit_status=EXIT_USAGE,
+            hint='--input \'{"metric": {"column": "Sales", "function": "SUM"}}\'',
+        )
+    resolved = _resolved_aggregate_item(metric, column_map)
+    return {"metric": resolved}, {"metric": resolved["as_name"]}
+
+
+def view_data_aggregate(invocation: Invocation) -> HandlerResult:
+    """Aggregate a dataview's data: a PIVOT group-by or a single METRIC value.
+
+    Read-only: computes and returns the aggregated result without adding a
+    task to the view's pipeline or otherwise changing it. Pass exactly one of
+    ``aggregations`` (a PIVOT; ``group_by`` is optional) or ``metric`` (a
+    METRIC). ``function`` is one of SUM, COUNT, AVG, MIN, MAX. An optional
+    ``condition`` filters rows before aggregating, and ``sequence`` pins the
+    read to a pipeline step (default: latest). Never use ``view transform
+    pivot`` just to read a number — it mutates the view's pipeline.
+    """
+    project_id = require_project(invocation)
+    view_id = _require_int_positional_at(invocation, 0, "view id")
+    document = invocation.load_input() or {}
+    has_pivot = "aggregations" in document or "group_by" in document
+    has_metric = "metric" in document
+    if has_pivot == has_metric:
+        raise CliError(
+            code=CODE_INVALID_ARGUMENTS,
+            message="Pass exactly one of 'aggregations' (a PIVOT group-by, 'group_by' optional) "
+            "or 'metric' (a single METRIC value).",
+            exit_status=EXIT_USAGE,
+        )
+    with open_service(invocation) as (service, auth):
+        dataset_id = _resolve_dataset_id(service, invocation, view_id, document)
+        internal_to_display, column_types = _column_profile(
+            service, dataset_id, view_id, project_id
+        )
+        display_to_internal = {
+            display: internal for internal, display in internal_to_display.items()
+        }
+        if has_pivot:
+            fields, as_map = _build_pivot_fields(document, display_to_internal)
+        else:
+            fields, as_map = _build_metric_fields(document, display_to_internal)
+        kwargs: dict[str, Any] = {
+            "dataset_id": dataset_id,
+            "dataview_id": view_id,
+            "project_id": project_id,
+            **fields,
+        }
+        if document.get(CONDITION_KWARG) is not None:
+            compiled = compile_condition(document[CONDITION_KWARG])
+            kwargs[CONDITION_KWARG] = compiled.build(
+                display_to_internal or None, column_types or None
+            )
+        _forward_optional(document, kwargs, ("sequence", "limit"))
+        data = service.call(_symbol(invocation), **kwargs)
+        data = _relabel_columns(service, dataset_id, view_id, project_id, data, as_map)
+    return data, _meta(invocation, auth.workspace_id, project_id)
+
+
 def view_exportable_config_get(invocation: Invocation) -> HandlerResult:
     """Get a dataview's exportable pipeline configuration."""
     project_id = require_project(invocation)
@@ -1636,13 +1753,18 @@ def view_task_add(invocation: Invocation) -> HandlerResult:
     # Imported here: view_ops imports this module for the brief record helpers.
     from mammoth_cli.commands.view_ops import (
         reject_pipeline_reference_errors,
+        reject_task_runtime_error,
         require_expected_task_count,
     )
 
     with open_service(invocation) as (service, auth):
         require_expected_task_count(service, dataview_id, kwargs.get("dataset_id"), document)
+        submitted_at = datetime.now(UTC)
         data = service.call(_symbol(invocation), **kwargs)
         reject_pipeline_reference_errors(service, dataview_id, kwargs.get("dataset_id"), data)
+        reject_task_runtime_error(
+            service, dataview_id, kwargs.get("dataset_id"), data, submitted_at
+        )
     return data, _meta(invocation, auth.workspace_id, None)
 
 
@@ -2056,24 +2178,64 @@ def view_export_specialized(invocation: Invocation) -> HandlerResult:
     )
     kwargs = dict(document)
     kwargs.pop(_DATASET_ID_FIELD, None)
+    is_dataset_route = invocation.command_id == "view.export.dataset"
+    target_ds_id = kwargs.get("target_ds_id") if is_dataset_route else None
+    target_project = kwargs.get("target_project_id")
+    result_project_id = int(target_project) if target_project is not None else project_id
     with open_service(invocation) as (service, auth):
         if dataset_id is None:
             dataset_id = _resolve_dataset_id(service, invocation, dataview_id, document)
+        if target_ds_id is not None and int(target_ds_id) == dataset_id:
+            raise CliError(
+                code=CODE_INVALID_ARGUMENTS,
+                message="target_ds_id equals the view's own dataset.",
+                exit_status=EXIT_USAGE,
+                hint=(
+                    "A view cannot write into its own dataset. Export to a new "
+                    "dataset name (omit target_ds_id), or target a different dataset."
+                ),
+                details={"dataset_id": dataset_id, "target_ds_id": int(target_ds_id)},
+            )
+        rows_before = None
+        if target_ds_id is not None and kwargs.get("save_as_mode") == "APPEND_TO_DS":
+            rows_before = _dataset_row_count(service, int(target_ds_id), result_project_id)
         data = service.call_view(dataview_id, method, dataset_id=dataset_id, **kwargs)
-    if invocation.command_id == "view.export.dataset" and isinstance(data, int):
-        # The SDK returns the bare id of the dataset written to; name it, and
-        # say which project it landed in, so the agent's next read is obvious.
-        target_project = kwargs.get("target_project_id")
-        data = {
-            "dataset_id": data,
-            "project_id": int(target_project) if target_project is not None else project_id,
-            "source_view_id": dataview_id,
-            "next": (
-                f"mammoth view list {data}"
-                + (f" --project {int(target_project)}" if target_project is not None else "")
-            ),
-        }
+        if is_dataset_route and isinstance(data, int):
+            # The SDK returns the bare id of the dataset written to; name it, and
+            # say which project it landed in, so the agent's next read is obvious.
+            data = {
+                "dataset_id": data,
+                "project_id": result_project_id,
+                "source_view_id": dataview_id,
+                "next": (
+                    f"mammoth view list {data}"
+                    + (f" --project {result_project_id}" if target_project is not None else "")
+                ),
+            }
+            rows_after = _dataset_row_count(service, data["dataset_id"], result_project_id)
+            if rows_after is not None:
+                data["rows_after"] = rows_after
+            if rows_before is not None:
+                data["rows_before"] = rows_before
     return data, _meta(invocation, auth.workspace_id, project_id)
+
+
+def _dataset_row_count(service: Any, dataset_id: int, project_id: int | None) -> int | None:
+    """Best-effort row count for a dataset, read from its first view.
+
+    Row counts are exposed per-view, not per-dataset; this reads the first
+    dataview's ``row_count`` (mirrors ``upload_preview``). ``None`` on any
+    failure rather than failing the export result.
+    """
+    try:
+        listing = service.call(_DATAVIEW_LIST_SYMBOL, dataset_id=dataset_id, project_id=project_id)
+        views = listing.get("dataviews") if isinstance(listing, dict) else None
+        if not isinstance(views, list) or not views or not isinstance(views[0], dict):
+            return None
+        row_count = views[0].get("row_count")
+        return int(row_count) if row_count is not None else None
+    except Exception:  # noqa: BLE001 -- row count is advisory, never fails the export
+        return None
 
 
 _DATAVIEW_LIST_SYMBOL = "mammoth.api.dataviews.DataviewsAPI.list"

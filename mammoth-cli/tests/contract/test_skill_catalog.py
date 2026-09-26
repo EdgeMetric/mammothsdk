@@ -23,10 +23,8 @@ def test_packaged_skill_catalog_is_manifest_complete_and_current() -> None:
 
 
 def test_fail_closed_patch_commands_are_discoverable_but_not_presented_as_runnable() -> None:
-    catalog = (SKILL / "references" / "commands" / "dataset.md").read_text(encoding="utf-8")
-    catalog += (SKILL / "references" / "commands" / "view.md").read_text(encoding="utf-8")
-    for command_id in ("dataset.update", "view.update"):
-        section = catalog.split(f"### `{command_id}`", 1)[1].split("\n### `", 1)[0]
+    for family, command_id in (("dataset", "dataset.update"), ("view", "view.update")):
+        section = _section(family, command_id)
         assert "mammoth schema get" in section
         assert "Discovery only" in section
         assert "unsupported_contract" in section
@@ -34,9 +32,29 @@ def test_fail_closed_patch_commands_are_discoverable_but_not_presented_as_runnab
         assert "Runnable only" not in section
 
 
+#: An agent's skill-reference reader refuses a file over this many bytes; a
+#: shipped reference that exceeds it is unreadable, not just large.
+_MAX_REFERENCE_BYTES = 65536
+
+
 def _section(family: str, command_id: str) -> str:
-    catalog = (SKILL / "references" / "commands" / f"{family}.md").read_text(encoding="utf-8")
-    return catalog.split(f"### `{command_id}`", 1)[1].split("\n### `", 1)[0]
+    """Find one command's entry among a family's file and its split shards."""
+    commands_dir = SKILL / "references" / "commands"
+    paths = [commands_dir / f"{family}.md"] + sorted(commands_dir.glob(f"{family}-*.md"))
+    for path in paths:
+        if not path.is_file():
+            continue
+        text = path.read_text(encoding="utf-8")
+        if f"### `{command_id}`" in text:
+            return text.split(f"### `{command_id}`", 1)[1].split("\n### `", 1)[0]
+    raise AssertionError(f"{command_id!r} not found under family {family!r}")
+
+
+def test_every_shipped_reference_file_is_under_the_agent_read_cap() -> None:
+    for path in SKILL.rglob("*.md"):
+        assert (
+            len(path.read_bytes()) < _MAX_REFERENCE_BYTES
+        ), f"{path.relative_to(SKILL)} is over the {_MAX_REFERENCE_BYTES}-byte agent read cap"
 
 
 def test_every_entry_carries_a_release_status_joined_from_the_matrix() -> None:
@@ -56,6 +74,6 @@ def test_every_entry_carries_a_release_status_joined_from_the_matrix() -> None:
     assert "ran once on CLI" in _section("view", "view.data.get")
     assert "untried" in _section("view", "view.transform.unnest")
     assert "through `view.task.add`" in _section("view", "view.transform.filter")
-    unsupported = _section("dashboard", "dashboard.create")
+    unsupported = _section("dashboard", "dashboard.pdf.export")
     assert unsupported.startswith("\n\nRun:") and "Do not run:" in unsupported
     assert "Result:" not in unsupported

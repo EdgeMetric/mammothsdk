@@ -261,6 +261,18 @@ def test_upload_with_no_files_omits_files_kwarg(fake_service: FakeMammothService
     assert fake_service.call_log == [(_UPLOAD, {})]
 
 
+def test_upload_with_append_to_ds_id_and_no_files_is_missing_argument(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    doc = tmp_path / "in.json"
+    doc.write_text(json.dumps({"append_to_ds_id": 9}), encoding="utf-8")
+    with pytest.raises(CliError) as excinfo:
+        file_cmd.file_upload(_inv("file.upload", input_file=str(doc)))
+    assert excinfo.value.code == "missing_argument"
+    assert "files" in excinfo.value.message
+    assert fake_service.call_log == []
+
+
 def test_upload_reports_ready_dataset(fake_service: FakeMammothService) -> None:
     # The SDK waits and returns the new dataset id as a bare int; the handler
     # labels it and reports the status the platform holds for that dataset.

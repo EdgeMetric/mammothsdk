@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import pytest
@@ -25,6 +26,7 @@ _TRASH = "mammoth.api.dataviews.DataviewsAPI.trash"
 _UPDATE = "mammoth.api.dataviews.DataviewsAPI.update"
 _DATA_GET = "mammoth.api.dataviews.DataviewsAPI.get_data"
 _DATA_QUERY = "mammoth.api.dataviews.DataviewsAPI.query_data"
+_DATA_AGGREGATE = "mammoth.api.dataviews.DataviewsAPI.aggregate"
 _EXPORTABLE_GET = "mammoth.api.dataviews.DataviewsAPI.get_exportable_config"
 _EXPORTABLE_APPLY = "mammoth.api.dataviews.DataviewsAPI.apply_exportable_config"
 _FIND_DATASET = "mammoth.api.pipeline.PipelineAPI.find_dataset_for_dataview"
@@ -655,6 +657,143 @@ def test_data_query_dataset_from_input_field_skips_resolution(
     assert fake_service.call_log == [
         (_DATA_QUERY, {"dataset_id": 9, "dataview_id": 7, "project_id": 180, "limit": 5}),
     ]
+
+
+# ── view.data.aggregate ─────────────────────────────────────────────────────
+
+
+def test_data_aggregate_pivot_group_by_and_sum(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    fake_service.responses[_DATAVIEW_GET] = {
+        "metadata": [
+            {"internal_name": "column_1", "display_name": "Channel", "type": "TEXT"},
+            {"internal_name": "column_2", "display_name": "Spend", "type": "NUMERIC"},
+        ]
+    }
+    fake_service.responses[_DATA_AGGREGATE] = {
+        "data": [{"group_0": "Email", "agg_0": 120}, {"group_0": "Search", "agg_0": 80}]
+    }
+    doc = _doc(
+        tmp_path,
+        {
+            "group_by": ["Channel"],
+            "aggregations": [{"column": "Spend", "function": "SUM", "as_name": "Total Spend"}],
+        },
+    )
+    data = view_cmd.view_data_aggregate(
+        _inv("view.data.aggregate", project=180, extra_args=["7", "9"], input_file=doc)
+    )[0]
+    assert fake_service.call_log == [
+        (_DATAVIEW_GET, {"dataset_id": 9, "dataview_id": 7, "project_id": 180}),
+        (
+            _DATA_AGGREGATE,
+            {
+                "dataset_id": 9,
+                "dataview_id": 7,
+                "project_id": 180,
+                "aggregations": [
+                    {"function": "SUM", "as_name": "Total Spend", "column": "column_2"}
+                ],
+                "group_by": ["column_1"],
+            },
+        ),
+    ]
+    assert data["data"] == [
+        {"Channel": "Email", "Total Spend": 120},
+        {"Channel": "Search", "Total Spend": 80},
+    ]
+
+
+def test_data_aggregate_pivot_count_no_group_by(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    doc = _doc(tmp_path, {"aggregations": [{"function": "COUNT"}]})
+    view_cmd.view_data_aggregate(
+        _inv("view.data.aggregate", project=180, extra_args=["7", "9"], input_file=doc)
+    )
+    assert fake_service.call_log == [
+        (_DATAVIEW_GET, {"dataset_id": 9, "dataview_id": 7, "project_id": 180}),
+        (
+            _DATA_AGGREGATE,
+            {
+                "dataset_id": 9,
+                "dataview_id": 7,
+                "project_id": 180,
+                "aggregations": [{"function": "COUNT", "as_name": "COUNT"}],
+            },
+        ),
+    ]
+
+
+def test_data_aggregate_metric(fake_service: FakeMammothService, tmp_path: Path) -> None:
+    fake_service.responses[_DATAVIEW_GET] = {
+        "metadata": [{"internal_name": "column_2", "display_name": "Spend", "type": "NUMERIC"}]
+    }
+    doc = _doc(tmp_path, {"metric": {"column": "Spend", "function": "SUM", "as_name": "Total"}})
+    view_cmd.view_data_aggregate(
+        _inv("view.data.aggregate", project=180, extra_args=["7", "9"], input_file=doc)
+    )
+    assert fake_service.call_log == [
+        (_DATAVIEW_GET, {"dataset_id": 9, "dataview_id": 7, "project_id": 180}),
+        (
+            _DATA_AGGREGATE,
+            {
+                "dataset_id": 9,
+                "dataview_id": 7,
+                "project_id": 180,
+                "metric": {"function": "SUM", "as_name": "Total", "column": "column_2"},
+            },
+        ),
+    ]
+
+
+def test_data_aggregate_forwards_condition_sequence_and_limit(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    fake_service.responses[_DATAVIEW_GET] = {
+        "metadata": [{"internal_name": "column_2", "display_name": "Spend", "type": "NUMERIC"}]
+    }
+    doc = _doc(
+        tmp_path,
+        {
+            "metric": {"column": "Spend", "function": "SUM"},
+            "condition": {"column": "Spend", "operator": ">", "value": 0},
+            "sequence": 3,
+            "limit": 10,
+        },
+    )
+    view_cmd.view_data_aggregate(
+        _inv("view.data.aggregate", project=180, extra_args=["7", "9"], input_file=doc)
+    )
+    call = fake_service.call_log[-1][1]
+    assert call["condition"] == {"column_2": {"GT": {"VALUE": 0}}}
+    assert call["sequence"] == 3
+    assert call["limit"] == 10
+
+
+def test_data_aggregate_requires_exactly_one_of_aggregations_or_metric(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    for payload in ({}, {"group_by": ["Channel"], "metric": {"function": "COUNT"}}):
+        doc = _doc(tmp_path, payload)
+        with pytest.raises(CliError) as excinfo:
+            view_cmd.view_data_aggregate(
+                _inv("view.data.aggregate", project=180, extra_args=["7", "9"], input_file=doc)
+            )
+        assert excinfo.value.code == "invalid_arguments"
+    assert fake_service.call_log == []
+
+
+def test_data_aggregate_resolves_dataset_from_view_when_omitted(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    fake_service.responses[_FIND_DATASET] = 9
+    doc = _doc(tmp_path, {"metric": {"function": "COUNT"}})
+    view_cmd.view_data_aggregate(
+        _inv("view.data.aggregate", project=180, extra_args=["7"], input_file=doc)
+    )
+    assert fake_service.call_log[0] == (_FIND_DATASET, {"dataview_id": 7})
 
 
 def test_active_user_list_resolves_dataset_from_view_when_omitted(
@@ -1512,8 +1651,91 @@ def test_task_add_passes_task_spec(fake_service: FakeMammothService, tmp_path: P
     doc = _doc(tmp_path, {"task_spec": {"kind": "filter"}})
     view_cmd.view_task_add(_inv("view.task.add", extra_args=["7"], input_file=doc))
     assert fake_service.call_log == [
-        (_TASK_ADD, {"dataview_id": 7, "task_spec": {"kind": "filter"}})
+        (_TASK_ADD, {"dataview_id": 7, "task_spec": {"kind": "filter"}}),
+        (_TASK_LIST, {"dataview_id": 7}),
     ]
+
+
+def test_task_add_rejects_a_task_that_failed_at_run_time(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    """A GEN_AI step can fail after the backend accepts and binds the task --
+    a workspace AI quota outage, for example -- leaving the column blank
+    while ``has_error`` stays false and ``pipeline_state`` reads ready. Only
+    the task's own ``transform_status`` (``__full`` fields) shows it.
+    """
+    long_ago = (datetime.now(UTC) - timedelta(hours=1)).isoformat()
+    just_now = datetime.now(UTC).isoformat()
+    fake_service.responses[_TASK_LIST] = {
+        "tasks": [
+            {"id": 3, "sequence": 1, "created_at": long_ago, "transform_status": "DONE"},
+            {"id": 9, "sequence": 2, "created_at": just_now, "transform_status": "ERROR"},
+        ]
+    }
+    doc = _doc(tmp_path, {"task_spec": {"kind": "gen_ai"}})
+    with pytest.raises(CliError) as excinfo:
+        view_cmd.view_task_add(_inv("view.task.add", extra_args=["7"], input_file=doc))
+    assert excinfo.value.code == "task_runtime_error"
+    assert excinfo.value.details["task_id"] == 9
+    assert excinfo.value.details["transform_status"] == "ERROR"
+    assert "mammoth view task get 7 9" in excinfo.value.recovery_commands
+    # The API does not expose the failure reason -- do not claim it does.
+    assert excinfo.value.hint is not None
+    assert "does not expose" in excinfo.value.hint
+    assert "AI quota" in excinfo.value.hint
+
+
+def test_task_add_does_not_reject_a_pipeline_with_a_pre_existing_error_on_a_later_step(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    """A step already in ERROR before this call (the pipeline's last step,
+    by sequence) must not fail every later add just because it sorts last.
+    """
+    long_ago = (datetime.now(UTC) - timedelta(hours=1)).isoformat()
+    just_now = datetime.now(UTC).isoformat()
+    fake_service.responses[_TASK_LIST] = {
+        "tasks": [
+            {"id": 9, "sequence": 3, "created_at": just_now, "transform_status": "DONE"},
+            {"id": 2, "sequence": 5, "created_at": long_ago, "transform_status": "ERROR"},
+        ]
+    }
+    doc = _doc(tmp_path, {"task_spec": {"kind": "filter"}})
+    view_cmd.view_task_add(_inv("view.task.add", extra_args=["7"], input_file=doc))
+
+
+def test_task_add_checks_the_task_this_call_created_not_the_last_step(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    """A task inserted mid-pipeline is not the highest-sequence task."""
+    long_ago = (datetime.now(UTC) - timedelta(hours=1)).isoformat()
+    just_now = datetime.now(UTC).isoformat()
+    fake_service.responses[_TASK_LIST] = {
+        "tasks": [
+            {"id": 9, "sequence": 1, "created_at": just_now, "transform_status": "ERROR"},
+            {"id": 3, "sequence": 2, "created_at": long_ago, "transform_status": "DONE"},
+        ]
+    }
+    doc = _doc(tmp_path, {"task_spec": {"kind": "gen_ai"}})
+    with pytest.raises(CliError) as excinfo:
+        view_cmd.view_task_add(_inv("view.task.add", extra_args=["7"], input_file=doc))
+    assert excinfo.value.details["task_id"] == 9
+
+
+def test_task_add_accepts_a_task_that_finished_cleanly(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    fake_service.responses[_TASK_LIST] = {
+        "tasks": [
+            {
+                "id": 3,
+                "sequence": 1,
+                "created_at": datetime.now(UTC).isoformat(),
+                "transform_status": "DONE",
+            }
+        ]
+    }
+    doc = _doc(tmp_path, {"task_spec": {"kind": "filter"}})
+    view_cmd.view_task_add(_inv("view.task.add", extra_args=["7"], input_file=doc))
 
 
 def test_task_delete_blocked_without_confirmation(fake_service: FakeMammothService) -> None:

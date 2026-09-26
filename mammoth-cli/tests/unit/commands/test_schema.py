@@ -13,9 +13,10 @@ import json
 import shlex
 from pathlib import Path
 
+import pytest
 import yaml
 
-from mammoth_cli.commands.schema import find_schemas, get_schema, runnable_example
+from mammoth_cli.commands.schema import brief_schema, find_schemas, get_schema, runnable_example
 from mammoth_cli.services.positionals import positionals_for
 
 _BULK_REPLACE = "view.transform.bulk-replace"
@@ -200,6 +201,130 @@ def test_agent_transform_language_finds_typed_routes() -> None:
     }
 
 
+def test_append_rows_between_datasets_finds_view_export_dataset() -> None:
+    """A cold agent must find the row-stacking route, not just file.upload.
+
+    'append rows from one dataset into another dataset' previously matched
+    only file.upload (which needs a local file); an agent that has both
+    sources already in Mammoth would wrongly conclude row-stacking is
+    impossible. view.export.dataset (target_ds_id + save_as_mode
+    APPEND_TO_DS) must also surface.
+    """
+    matches = {
+        item["command_id"]
+        for item in find_schemas("append rows from one dataset into another dataset")["matches"]
+    }
+    assert "view.export.dataset" in matches
+
+
+_EXPORT_DESTINATION_NATURAL_QUERIES = {
+    "view.export.azure-blob": "export to azure blob storage",
+    "view.export.bigquery": "export to big query",
+    "view.export.csv": "export to csv file",
+    "view.export.dataset": "copy rows into another dataset",
+    "view.export.elasticsearch": "export to elastic search",
+    "view.export.email": "email the export",
+    "view.export.ftp": "export via ftp",
+    "view.export.managed-s3": "export to s3 bucket",
+    "view.export.mssql": "export to sql server",
+    "view.export.mysql": "export to mysql database",
+    "view.export.onedrive": "export to one drive",
+    "view.export.postgres": "export to postgres database",
+    "view.export.powerbi": "publish to power bi workspace",
+    "view.export.publish-db": "publish live database connection",
+    "view.export.publish-db-update": "refresh the live database connection",
+    "view.export.redshift": "export to redshift warehouse",
+    "view.export.rest": "export data to a rest endpoint",
+    "view.export.sftp": "export via sftp",
+    "view.export.sharepoint": "export to share point",
+    "view.export.tableau": "export to tableau server",
+}
+
+
+def test_every_export_destination_is_covered_by_this_test() -> None:
+    """Guards the fixture itself: a new view.export.* destination command
+    must get a natural-spelling case here, not silently go untested."""
+    destinations = {
+        item["command_id"]
+        for item in find_schemas("export")["matches"]
+        if item["command_id"].startswith("view.export.")
+        and item["command_id"].split(".")[-1] not in {"create", "get", "list", "update", "delete"}
+    }
+    assert destinations <= set(_EXPORT_DESTINATION_NATURAL_QUERIES)
+
+
+@pytest.mark.parametrize(
+    ("command_id", "query"), sorted(_EXPORT_DESTINATION_NATURAL_QUERIES.items())
+)
+def test_export_destination_natural_spelling_ranks_it_first(command_id: str, query: str) -> None:
+    """T1-H-005: 'Power BI', 'publish to Power BI workspace' and 'export data
+    to BI' all returned no match, despite view.export.powerbi existing.  Every
+    typed export destination must be reachable by how a user actually names
+    it, not only by Mammoth's own (sometimes compound, unhyphenated) route
+    spelling.
+    """
+    matches = [item["command_id"] for item in find_schemas(query)["matches"]]
+    assert matches, f"no full match for {query!r} (wanted {command_id})"
+    assert matches[0] == command_id, f"{query!r} -> {matches}, wanted {command_id} first"
+
+
+def test_invite_user_intent_ranks_workspace_user_add_first() -> None:
+    """T1-K-001: this query led an agent to support.workspace.user.add /
+    support.workspace.user.list (Mammoth-operator commands that act on
+    another workspace) instead of the caller's own workspace.user.add.
+    """
+    matches = [
+        item["command_id"]
+        for item in find_schemas("invite user to workspace and assign editor role")["matches"]
+    ]
+    assert matches, "no full match for the invite-user query"
+    assert matches[0] == "workspace.user.add", matches
+
+
+def test_support_family_ranks_below_any_non_support_match_and_is_labeled() -> None:
+    matches = find_schemas("workspace user")["matches"]
+    is_support = [m["command_id"].startswith("support.") for m in matches]
+    assert any(is_support) and not all(is_support), "expected a mix of support and non-support"
+    # Every support.* result must sit after every non-support result.
+    assert is_support == sorted(is_support)
+    assert all(m.get("operator_only") for m, support in zip(matches, is_support) if support)
+    assert all("operator_only" not in m for m, support in zip(matches, is_support) if not support)
+
+
+def test_brief_schema_keeps_nested_shape_for_non_scalar_fields() -> None:
+    """Brief mode stripped every field's schema, even a nested object/array,
+    leaving only a bare type name (e.g. 'DateDelta') to guess the shape of.
+    Non-scalar fields must keep their schema; scalars still get stripped.
+    """
+    full = get_schema("view.transform.increment-date")
+    assert full is not None
+    brief = brief_schema(full)
+    fields = {field["name"]: field for field in brief["accepted_fields"]}
+
+    delta = fields["delta"]
+    assert "schema" in delta
+    assert set(delta["schema"]["properties"]) >= {"days", "weeks", "months", "years"}
+
+    column = fields["column"]
+    assert "schema" not in column
+
+
+def test_math_intent_phrasings_rank_math_first() -> None:
+    """Cold-agent recall gap: both phrasings took 3 searches to reach math.
+
+    view.transform.math already supports a per-row 'condition' (a formula
+    applied only where the condition holds, e.g. a value over a threshold),
+    so the second query legitimately targets math, not just the first.
+    """
+    for query in (
+        "calculate a new column using multiplication",
+        "math conditional formula text if greater than threshold",
+    ):
+        matches = [item["command_id"] for item in find_schemas(query)["matches"]]
+        assert matches, f"no full match for {query!r}"
+        assert matches[0] == "view.transform.math", f"{query!r} -> {matches}"
+
+
 def test_csv_export_contract_does_not_preserve_stale_permission_block() -> None:
     """Retained live evidence supersedes the old blanket export restriction."""
     schema = get_schema("view.export.csv")
@@ -227,6 +352,20 @@ def test_ingestion_contract_preserves_supported_path_and_variant_boundaries() ->
     assert "not json" in file_upload["preconditions"]
     assert "HTTP 413" in file_upload["preconditions"]
     assert "do not assume other upload variants are qualified" in file_upload["preconditions"]
+
+
+def test_date_diff_documents_diffing_against_today() -> None:
+    """date-diff's start/end only accept existing DATE columns; the server's
+    SYSTEM_TIME operand (diff against the current execution time, e.g. 'days
+    since order') is undocumented and only reachable via a raw task. The
+    schema's preconditions must say so, with the exact recipe.
+    """
+    schema = get_schema("view.transform.date-diff")
+    assert schema is not None
+    restrictions = schema["preconditions"]
+    assert "today" in restrictions.casefold()
+    assert "view task add" in restrictions
+    assert "__TIME__" in restrictions
 
 
 def test_dataset_create_sdk_catalog_does_not_conflate_cli_waiting() -> None:

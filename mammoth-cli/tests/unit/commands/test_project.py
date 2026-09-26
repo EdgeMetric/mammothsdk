@@ -48,6 +48,26 @@ def test_project_list_reads_limit_from_input(
     assert fake_service.call_log[0] == (_LIST_SYMBOL, {"limit": 5})
 
 
+def test_project_list_forwards_offset_for_pagination(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    """``offset`` is already an accepted --input field (the SDK method takes
+    one), but the handler silently dropped it, making any project past the
+    first page unreachable. It must reach the SDK call, like dataset list.
+    """
+    fake_service.responses[_LIST_SYMBOL] = {
+        "projects": [{"id": 101}],
+        "limit": 100,
+        "offset": 100,
+        "next": "",
+    }
+    doc = tmp_path / "in.json"
+    doc.write_text(json.dumps({"limit": 100, "offset": 100}), encoding="utf-8")
+    data, _ = project_cmd.project_list(_invocation("project.list", input_file=str(doc)))
+    assert fake_service.call_log == [(_LIST_SYMBOL, {"limit": 100, "offset": 100})]
+    assert data["next"] == ""
+
+
 def test_project_get_uses_positional_id(fake_service: FakeMammothService) -> None:
     fake_service.responses[_GET_SYMBOL] = {"id": 180}
     data, meta = project_cmd.project_get(_invocation("project.get", extra_args=["180"]))

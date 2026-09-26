@@ -1,6 +1,6 @@
 # Command reference
 
-Generated from the reviewed command manifests for mammoth-cli 2.0.48.
+Generated from the reviewed command manifests for mammoth-cli 2.0.49.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
@@ -408,8 +408,8 @@ Total commands: 557.
 
 ### `mammoth billing chargebee-plan`
 
-- Mutation class: `high_impact`
-- Confirmation: `confirm_target`
+- Mutation class: `read`
+- Confirmation: `none`
 - Backing SDK: `mammoth.api.billing.BillingAPI.chargebee_plan`
 - Agent example: `mammoth billing chargebee-plan`
 
@@ -437,15 +437,15 @@ Total commands: 557.
 
 - `INVOICE_ID` (int, required) — ID of the invoice.
 
-- Mutation class: `high_impact`
-- Confirmation: `confirm_target`
+- Mutation class: `read`
+- Confirmation: `none`
 - Backing SDK: `mammoth.api.billing.BillingAPI.invoice_get`
 - Agent example: `mammoth billing invoice get 123`
 
 ### `mammoth billing invoice list`
 
-- Mutation class: `high_impact`
-- Confirmation: `confirm_target`
+- Mutation class: `read`
+- Confirmation: `none`
 - Backing SDK: `mammoth.api.billing.BillingAPI.invoice_list`
 - Agent example: `mammoth billing invoice list`
 
@@ -483,15 +483,15 @@ Total commands: 557.
 
 ### `mammoth billing stripe get`
 
-- Mutation class: `high_impact`
-- Confirmation: `confirm_target`
+- Mutation class: `read`
+- Confirmation: `none`
 - Backing SDK: `mammoth.api.billing.BillingAPI.stripe_get`
 - Agent example: `mammoth billing stripe get`
 
 ### `mammoth billing stripe history`
 
-- Mutation class: `high_impact`
-- Confirmation: `confirm_target`
+- Mutation class: `read`
+- Confirmation: `none`
 - Backing SDK: `mammoth.api.billing.BillingAPI.stripe_history`
 - Agent example: `mammoth billing stripe history`
 
@@ -508,8 +508,8 @@ Total commands: 557.
 
 ### `mammoth billing stripe payment-method list`
 
-- Mutation class: `high_impact`
-- Confirmation: `confirm_target`
+- Mutation class: `read`
+- Confirmation: `none`
 - Backing SDK: `mammoth.api.billing.BillingAPI.stripe_payment_method_list`
 - Agent example: `mammoth billing stripe payment-method list`
 
@@ -533,8 +533,8 @@ Total commands: 557.
 
 ### `mammoth billing stripe preview-invoice`
 
-- Mutation class: `high_impact`
-- Confirmation: `confirm_target`
+- Mutation class: `read`
+- Confirmation: `none`
 - Backing SDK: `mammoth.api.billing.BillingAPI.stripe_preview_invoice`
 - Agent example: `mammoth billing stripe preview-invoice`
 
@@ -547,8 +547,8 @@ Total commands: 557.
 
 ### `mammoth billing stripe status`
 
-- Mutation class: `high_impact`
-- Confirmation: `confirm_target`
+- Mutation class: `read`
+- Confirmation: `none`
 - Backing SDK: `mammoth.api.billing.BillingAPI.stripe_status`
 - Agent example: `mammoth billing stripe status`
 
@@ -561,22 +561,22 @@ Total commands: 557.
 
 ### `mammoth billing stripe upcoming-invoice`
 
-- Mutation class: `high_impact`
-- Confirmation: `confirm_target`
+- Mutation class: `read`
+- Confirmation: `none`
 - Backing SDK: `mammoth.api.billing.BillingAPI.stripe_upcoming_invoice`
 - Agent example: `mammoth billing stripe upcoming-invoice`
 
 ### `mammoth billing stripe usage`
 
-- Mutation class: `high_impact`
-- Confirmation: `confirm_target`
+- Mutation class: `read`
+- Confirmation: `none`
 - Backing SDK: `mammoth.api.billing.BillingAPI.stripe_usage`
 - Agent example: `mammoth billing stripe usage`
 
 ### `mammoth billing subscription get`
 
-- Mutation class: `high_impact`
-- Confirmation: `confirm_target`
+- Mutation class: `read`
+- Confirmation: `none`
 - Backing SDK: `mammoth.api.billing.BillingAPI.subscription_get`
 - Agent example: `mammoth billing subscription get`
 
@@ -1194,17 +1194,6 @@ Total commands: 557.
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.context_update`
 - Agent example: `mammoth dashboard context update resource-123 --input '{"body": {"params": {"name": "Revenue report"}}}'`
-
-### `mammoth dashboard create`
-
-**Arguments**
-
-- `INTENT` (str, optional) — Generation intent for the new dashboard; or pass it via the 'intent' input field.
-
-- Mutation class: `benign_mutation`
-- Confirmation: `none`
-- Backing SDK: `mammoth.api.dashboards.DashboardsAPI.create`
-- Agent example: `mammoth dashboard create 'Summarize revenue by region' --input '{"source": [1]}'`
 
 ### `mammoth dashboard create-blank`
 
@@ -3338,8 +3327,8 @@ Total commands: 557.
 
 ### `mammoth support connector list`
 
-- Mutation class: `high_impact`
-- Confirmation: `confirm_target`
+- Mutation class: `read`
+- Confirmation: `none`
 - Backing SDK: `mammoth.api.support.SupportAPI.connector_list`
 - Agent example: `mammoth support connector list`
 
@@ -3390,8 +3379,8 @@ Total commands: 557.
 
 ### `mammoth support connector-profile list`
 
-- Mutation class: `high_impact`
-- Confirmation: `confirm_target`
+- Mutation class: `read`
+- Confirmation: `none`
 - Backing SDK: `mammoth.api.support.SupportAPI.connector_profile_list`
 - Agent example: `mammoth support connector-profile list`
 
@@ -3430,8 +3419,8 @@ Total commands: 557.
 
 ### `mammoth support feature list`
 
-- Mutation class: `high_impact`
-- Confirmation: `confirm_target`
+- Mutation class: `read`
+- Confirmation: `none`
 - Backing SDK: `mammoth.api.support.SupportAPI.feature_list`
 - Agent example: `mammoth support feature list`
 
@@ -3482,8 +3471,8 @@ Total commands: 557.
 
 ### `mammoth support feature-profile list`
 
-- Mutation class: `high_impact`
-- Confirmation: `confirm_target`
+- Mutation class: `read`
+- Confirmation: `none`
 - Backing SDK: `mammoth.api.support.SupportAPI.feature_profile_list`
 - Agent example: `mammoth support feature-profile list`
 
@@ -3523,8 +3512,8 @@ Total commands: 557.
 
 ### `mammoth support plan chargebee-list`
 
-- Mutation class: `high_impact`
-- Confirmation: `confirm_target`
+- Mutation class: `read`
+- Confirmation: `none`
 - Backing SDK: `mammoth.api.support.SupportAPI.plan_chargebee_list`
 - Agent example: `mammoth support plan chargebee-list`
 
@@ -3556,22 +3545,22 @@ Total commands: 557.
 
 - `PLAN_ID` (int, required) — ID of the plan.
 
-- Mutation class: `high_impact`
-- Confirmation: `confirm_target`
+- Mutation class: `read`
+- Confirmation: `none`
 - Backing SDK: `mammoth.api.support.SupportAPI.plan_get`
 - Agent example: `mammoth support plan get 123`
 
 ### `mammoth support plan list`
 
-- Mutation class: `high_impact`
-- Confirmation: `confirm_target`
+- Mutation class: `read`
+- Confirmation: `none`
 - Backing SDK: `mammoth.api.support.SupportAPI.plan_list`
 - Agent example: `mammoth support plan list`
 
 ### `mammoth support plan self-serve-list`
 
-- Mutation class: `high_impact`
-- Confirmation: `confirm_target`
+- Mutation class: `read`
+- Confirmation: `none`
 - Backing SDK: `mammoth.api.support.SupportAPI.plan_self_serve_list`
 - Agent example: `mammoth support plan self-serve-list`
 
@@ -3615,8 +3604,8 @@ Total commands: 557.
 
 - `WORKSPACE_ID` (int, required) — ID of the workspace.
 
-- Mutation class: `high_impact`
-- Confirmation: `confirm_target`
+- Mutation class: `read`
+- Confirmation: `none`
 - Backing SDK: `mammoth.api.support.SupportAPI.subscription_get`
 - Agent example: `mammoth support subscription get 123`
 
@@ -3634,8 +3623,8 @@ Total commands: 557.
 
 ### `mammoth support user list-all`
 
-- Mutation class: `high_impact`
-- Confirmation: `confirm_target`
+- Mutation class: `read`
+- Confirmation: `none`
 - Backing SDK: `mammoth.api.support.SupportAPI.user_list_all`
 - Agent example: `mammoth support user list-all`
 
@@ -3689,15 +3678,15 @@ Total commands: 557.
 
 - `WORKSPACE_ID` (int, required) — ID of the workspace.
 
-- Mutation class: `high_impact`
-- Confirmation: `confirm_target`
+- Mutation class: `read`
+- Confirmation: `none`
 - Backing SDK: `mammoth.api.support.SupportAPI.workspace_get`
 - Agent example: `mammoth support workspace get 123`
 
 ### `mammoth support workspace list`
 
-- Mutation class: `high_impact`
-- Confirmation: `confirm_target`
+- Mutation class: `read`
+- Confirmation: `none`
 - Backing SDK: `mammoth.api.support.SupportAPI.workspace_list`
 - Agent example: `mammoth support workspace list`
 
@@ -3751,8 +3740,8 @@ Total commands: 557.
 
 - `WORKSPACE_ID` (int, required) — ID of the workspace.
 
-- Mutation class: `high_impact`
-- Confirmation: `confirm_target`
+- Mutation class: `read`
+- Confirmation: `none`
 - Backing SDK: `mammoth.api.support.SupportAPI.workspace_user_list`
 - Agent example: `mammoth support workspace user list 123`
 
@@ -3918,10 +3907,10 @@ Total commands: 557.
 
 ### `mammoth user update`
 
-- Mutation class: `high_impact`
-- Confirmation: `confirm_target`
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
 - Backing SDK: `mammoth.api.user_profile.UserProfileAPI.update`
-- Agent example: `mammoth user update`
+- Agent example: `mammoth user update --input '{"first_name": "Jane"}'`
 
 ## version
 
@@ -4123,6 +4112,18 @@ Total commands: 557.
 - Confirmation: `none`
 - Backing SDK: `mammoth.client.ViewsResource.create`
 - Agent example: `mammoth view create 123`
+
+### `mammoth view data aggregate`
+
+**Arguments**
+
+- `VIEW_ID` (int, required) — ID of the view to act on.
+- `DATASET_ID` (int, optional) — ID of the dataset the view belongs to; resolved from the view when omitted.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.dataviews.DataviewsAPI.aggregate`
+- Agent example: `mammoth view data aggregate 123 --input '{"group_by": ["Channel"], "aggregations": [{"column": "Spend", "function": "SUM", "as_name": "Total Spend"}]}'`
 
 ### `mammoth view data get`
 

@@ -130,3 +130,18 @@ def test_update_check_and_run_log_are_off_when_embedded() -> None:
         assert executor._open_run_log("project.list", invocation) is None
     finally:
         embedded.leave(token)
+
+
+def test_help_is_captured_as_a_success_envelope_not_no_output(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """schema find's own no-match hint tells agents to run '--help'; an
+    embedded agent following that advice must not dead-end on 'no_output'.
+    """
+    envelope = invoke(["view", "transform", "--help"], login=_login(5))
+
+    assert "error" not in envelope
+    assert "Transform" in envelope["data"]["help"]
+    assert "date-diff" in envelope["data"]["help"]
+    assert envelope["meta"]["command"] == "view transform"
+    assert capsys.readouterr() == ("", "")

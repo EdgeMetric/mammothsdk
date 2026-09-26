@@ -100,12 +100,28 @@ def _meta(invocation: Invocation, auth_workspace_id: int, project_id: int | None
     }
 
 
+def _forward_optional(
+    document: dict[str, Any], kwargs: dict[str, Any], fields: tuple[str, ...]
+) -> None:
+    """Copy any of ``fields`` present in ``document`` into ``kwargs``."""
+    for field in fields:
+        if field in document:
+            kwargs[field] = document[field]
+
+
 def project_list(invocation: Invocation) -> HandlerResult:
-    """List projects in the active workspace."""
+    """List projects in the active workspace, one page at a time.
+
+    ``offset`` forwards for pagination past the server's 100-row page, the
+    same as ``dataset list``; a short page's ``next`` in the response is
+    empty. The server has no name filter for this route (unlike ``dataset
+    list``'s discovery search), so none is exposed here.
+    """
     document = invocation.load_input() or {}
-    limit = int(document.get("limit", 100))
+    kwargs: dict[str, Any] = {"limit": int(document.get("limit", 100))}
+    _forward_optional(document, kwargs, ("offset",))
     with open_service(invocation) as (service, auth):
-        data = service.call(_symbol(invocation), limit=limit)
+        data = service.call(_symbol(invocation), **kwargs)
     return data, _meta(invocation, auth.workspace_id, resolved_project(invocation))
 
 

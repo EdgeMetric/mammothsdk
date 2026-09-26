@@ -1,5 +1,146 @@
 # CLI release provenance
 
+## 2.0.49
+
+Three fixes landed together for this release: a read-only aggregate query
+surface for `view.data.*` (plus two related fixes found alongside it), a
+dataset-export write-confirmation race, and seven usability gaps surfaced by
+tier1/tier2 luna eval traces (koyal).
+
+An in-app agent driving the CLI as its only surface had no read-only way to
+answer a question like "total spend by channel" and was mutating the user's
+pipeline (`view transform pivot`, then `view task delete` to clean up) just to
+read a number. Two more defects found alongside it while reviewing the same
+`view.data.*` surface.
+
+- **New (SDK, `mammoth-io` 0.7.21; CLI, `mammoth-cli` 2.0.49)**:
+  `DataviewsAPI.aggregate(...)` and `view data aggregate` — a read-only PIVOT
+  group-by or single METRIC query against `ExecuteVolatileQuery`
+  (`POST .../dataviews/{id}/data/query`). It computes and returns an
+  aggregated result without adding a task to the view's pipeline or otherwise
+  changing it. `mammoth view data aggregate VIEW_ID --input
+  '{"group_by": ["Channel"], "aggregations": [{"column": "Spend", "function":
+  "SUM", "as_name": "Total Spend"}]}'`; pass `metric` instead of
+  `aggregations`/`group_by` for a single value. The bundled guide's goal
+  table now steers an agent here instead of `view transform pivot` for a
+  read.
+- **Fixed**: `view.data.query`'s manifest declared `operation_ids:
+  [ExecuteVolatileQuery]`, but its SDK method (`DataviewsAPI.query_data`)
+  actually calls `GetDataviewDataPost` (`POST .../dataviews/{id}/data`, no
+  `/query`). The two commands' operation ids were swapped; corrected in
+  `spec/manifests/openapi-operations.yaml` and
+  `spec/manifests/commands/view.yaml`.
+- **Removed**: `dashboard.create` (the legacy AI dashboard-generation
+  command, backed by `GenerateDashboard`/`POST /dashboards`). Current apiv2
+  has no handler for a bare `POST /dashboards`
+  (`apiv2/apiv2/mmai/dashboard/controller.py`); every call 404s. It
+  historically returned a structured HTTP 409 `4DASH012
+  DASHBOARD_LEGACY_CREATION_RETIRED`, which the bundled guide already
+  documented as "not supported" without saying the command can never
+  succeed on release. Removed the manifest entry, the CLI handler
+  (`dashboard_create`), the SDK method (`DashboardsAPI.create`), and their
+  tests; `GenerateDashboard` is now `disposition: server_unavailable` in
+  `spec/manifests/openapi-operations.yaml` so it stays a reviewed,
+  documented operation rather than disappearing silently. Use
+  `dashboard create-blank` or `dashboard v3 generate` instead.
+
+Four defects from a tier1 luna trace replay (koyal), all in `view export
+dataset` (`target_ds_id` / `save_as_mode APPEND_TO_DS` into an existing
+dataset) and its neighbors.
+
+- **Fixed (SDK, `mammoth-io` 0.7.21)**: `View.export.to_dataset` with
+  `target_ds_id` set (writing into an existing dataset) returned the id
+  immediately after the export job was accepted, without waiting for the
+  write to materialize — unlike the new-dataset path, which already polled
+  to `EXECUTED`. A read immediately after `to_dataset` could see stale data.
+  `mammoth/view.py`'s `_run_internal_dataset_export` now waits for the
+  matching `internal_dataset` export trigger to reach `EXECUTED` (or raises
+  a typed timeout error) before returning, on both paths.
+- **Fixed (CLI, `mammoth-cli` 2.0.49)**: `view export dataset` result now
+  reports the target dataset's `rows_after` (and, for `APPEND_TO_DS`,
+  `rows_before`), so an agent does not have to guess whether an append
+  landed or re-read the dataset separately to check.
+- **Fixed (CLI)**: `view export dataset` with `target_ds_id` equal to the
+  source view's own dataset now fails fast with `invalid_arguments` before
+  the request is sent, instead of writing a view into its own dataset.
+- **Fixed (CLI)**: `file upload --input '{"append_to_ds_id": N}'` with no
+  files previously reached the SDK and failed as an opaque `api_error`
+  ("ValueError"); it now fails as `missing_argument` naming `files`.
+- **Fixed (CLI)**: `view create DATASET --input '{"clone_from": VIEW}'` where
+  `VIEW` belongs to a different dataset previously reached the backend,
+  which accepts it and produces a broken view (no columns; every later data
+  read fails). The CLI now checks `clone_from`'s own dataset against the
+  target dataset first and fails with `invalid_arguments`.
+- **Fixed (guide/discoverability)**: `mammoth schema find "append rows from
+  one dataset into another dataset"` matched only `file.upload` (which needs
+  a local file), so a cold agent with both sources already in Mammoth could
+  conclude row-stacking was impossible. `view.export.dataset` now also
+  matches (the query's filler "one" was sinking the match; added to
+  `_DISCOVERY_STOPWORDS` alongside the existing "two"). `SKILL.md`'s goal
+  table and `references/about-mammoth.md` ("Union or append two views") now
+  mention `view export dataset` for stacking a view already in Mammoth, and
+  note that an append is a standing pipeline step: re-running the source
+  view appends again, it does not run once.
+
+Seven usability gaps found across tier1 luna eval traces (koyal): three
+pipeline/discovery blind spots, an over-cap reference file, an undocumented
+diff-against-today recipe, an embedded-mode dead end on the CLI's own
+`--help` advice, and two search recall gaps.
+
+- **Fixed (CLI + SDK, `mammoth-cli` 2.0.49 / `mammoth-io` 0.7.21)**: a task
+  can run and still fail at run time -- a GEN_AI step hitting a workspace AI
+  quota, for example -- with the column coming out blank while `has_error`
+  stays false and `pipeline_state` reads `ready`. The only signal is the
+  task's own `transform_status` (`ERROR`/`REFERROR`), which the server's
+  default `__standard` fields mode omits; only `__full` carries it. Root
+  cause: `mammoth.api.pipeline.PipelineAPI.get_task`/`list_tasks`
+  (`mammoth/api/pipeline.py`) never requested it. Both now always request
+  `__full`. `view task add` (`mammoth-cli/mammoth_cli/commands/view.py`,
+  `view_ops.reject_task_runtime_error`) also reads the newly added task back
+  after the pipeline settles and rejects it with a `task_runtime_error`
+  envelope naming the task, its `transform_status`, and the `view task get`
+  recovery command, when the run failed without ever flipping `has_error`.
+  See `tests/unit/test_api_subclients.py::TestPipelineAPI::test_list_tasks_requests_full_fields`,
+  `test_get_task_requests_full_fields`, and
+  `mammoth-cli/tests/unit/commands/test_view.py::test_task_add_rejects_a_task_that_failed_at_run_time`.
+- **Fixed (guide)**: `references/recipes/transforms.md`'s "verify the write"
+  guidance now names `transform_status` explicitly, so an agent reading the
+  bundled skill knows a `DONE` step is what "succeeded" actually means.
+- **Fixed (CLI)**: the bundled `commands/view.md` and `commands/dashboard.md`
+  reference pages exceeded the 65,536-byte agent read cap (71,702 and 69,729
+  bytes), so an agent could not read either in one call.
+  `scripts/build_skill_catalog.py` now shards an over-cap family by its
+  largest `command_id` second segment (`view.transform` ->
+  `view-transform.md`, `dashboard.qa` -> `dashboard-qa.md`), peeling the
+  largest groups first until the remainder fits, and
+  `tests/contract/test_skill_catalog.py::test_every_shipped_reference_file_is_under_the_agent_read_cap`
+  guards every shipped reference file going forward.
+- **Fixed (guide)**: `view.transform.date-diff`'s manifest entry now
+  documents diffing against "today" -- `{"TYPE": "SYSTEM_TIME"}` on either
+  operand, sent through the raw `view task add` escape hatch with the
+  column's `internal_name` -- verified against the server's task spec
+  (`api/api/dataview/helpers/validators/date_diff.py`,
+  `CommonConstants/CommonConstants/dba_const.py`'s `__TIME__` wire value).
+- **Fixed (CLI)**: `dataset list --input {"project_id": N}` returned a
+  generic unknown-field error. `runtime/strict.py`'s
+  `_UNKNOWN_FIELD_HINTS` now names the `--project` global option for
+  `dataset.list` instead.
+- **Fixed (CLI)**: embedded mode (`mammoth_cli.embed.invoke`) discarded
+  `--help` output and returned `no_output`, which dead-ended an agent
+  following `schema find`'s own no-match hint to run `--help`.
+  `embed._run` now captures printed stdout and returns it as a success
+  envelope (`data: {"help": ...}`) whenever a call produces no envelope of
+  its own.
+- **Fixed (CLI)**: `schema get`'s brief mode dropped every field's nested
+  JSON Schema, even for non-scalar fields (a union, an object, or an
+  array-of-object), forcing an extra `--input {"full": true}` round trip to
+  see their keys. `brief_schema` now keeps a field's schema when it is not a
+  plain scalar.
+- **Fixed (CLI)**: `schema find` had no recall for common math-transform
+  phrasings ("calculate ... multiplication", "math conditional formula ...
+  threshold") and took multiple searches to reach `view.transform.math`.
+  Its discovery purpose text now covers the common phrasings directly.
+
 ## 2.0.48
 
 Two defects found from an eval trace and a live task replay on koyal

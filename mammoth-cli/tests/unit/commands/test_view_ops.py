@@ -18,6 +18,7 @@ from mammoth_cli.testing import login_default_profile
 _CREATE = "mammoth.client.ViewsResource.create"
 _GET = "mammoth.client.ViewsResource.get"
 _DELETE = "mammoth.client.ViewsResource.delete"
+_FIND_DATASET = "mammoth.api.pipeline.PipelineAPI.find_dataset_for_dataview"
 
 
 @pytest.fixture(autouse=True)
@@ -51,9 +52,28 @@ def test_create_requires_dataset_id(fake_service: FakeMammothService) -> None:
 
 
 def test_create_forwards_optional_fields(fake_service: FakeMammothService, tmp_path: Path) -> None:
+    # clone_from's own dataset is looked up first; program it as dataset 5 (the
+    # target) so the same-dataset check passes and the create call proceeds.
+    fake_service.responses[_FIND_DATASET] = 5
     doc = _write(tmp_path, {"name": "Copy", "clone_from": 9})
     view_ops_cmd.view_create(_inv("view.create", extra_args=["5"], input_file=doc))
-    assert fake_service.call_log == [(_CREATE, {"dataset_id": 5, "name": "Copy", "clone_from": 9})]
+    assert fake_service.call_log == [
+        (_FIND_DATASET, {"dataview_id": 9}),
+        (_CREATE, {"dataset_id": 5, "name": "Copy", "clone_from": 9}),
+    ]
+
+
+def test_create_rejects_clone_from_view_of_a_different_dataset(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    fake_service.responses[_FIND_DATASET] = 8
+    doc = _write(tmp_path, {"name": "Copy", "clone_from": 9})
+    with pytest.raises(CliError) as excinfo:
+        view_ops_cmd.view_create(_inv("view.create", extra_args=["5"], input_file=doc))
+    assert excinfo.value.code == "invalid_arguments"
+    assert excinfo.value.hint is not None
+    assert "plain view" in excinfo.value.hint
+    assert fake_service.call_log == [(_FIND_DATASET, {"dataview_id": 9})]
 
 
 def test_get_requires_view_id(fake_service: FakeMammothService) -> None:

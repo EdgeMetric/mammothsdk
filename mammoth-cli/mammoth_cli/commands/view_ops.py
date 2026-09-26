@@ -21,9 +21,11 @@ from __future__ import annotations
 
 import json
 from collections.abc import Callable
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from mammoth_cli.commands.view import (
+    _FIND_DATASET_SYMBOL,
     BRIEF_VIEW_FIELDS,
     _dataview_metadata,
     _require_discovery_allowed,
@@ -35,6 +37,7 @@ from mammoth_cli.commands.view import (
 from mammoth_cli.context import profiles
 from mammoth_cli.errors.envelope import (
     CODE_INVALID_ARGUMENT,
+    CODE_INVALID_ARGUMENTS,
     CODE_MISSING_ARGUMENT,
     CODE_MISSING_FIELD,
     CODE_SDK_SYMBOL_UNRESOLVED,
@@ -55,9 +58,15 @@ HandlerResult = tuple[Any, dict[str, Any]]
 
 #: Error code for a task the backend accepted but could not bind to the view.
 CODE_PIPELINE_REFERENCE_ERROR = "pipeline_reference_error"
+#: Error code for a task that bound fine but errored while it ran.
+CODE_TASK_RUNTIME_ERROR = "task_runtime_error"
 _PIPELINE_SYMBOL = "mammoth.api.pipeline.PipelineAPI.get_pipeline"
 _PIPELINE_ITEMS_SYMBOL = "mammoth.api.pipeline.PipelineAPI.items"
 _PIPELINE_ITEMS_FULL = "__full"
+_ERROR_TRANSFORM_STATUSES = {"ERROR", "REFERROR"}
+#: Tolerance for clock skew between this process and the server when deciding
+#: whether a task's ``created_at`` falls at or after this call's submit time.
+_TASK_CLOCK_SKEW = timedelta(seconds=5)
 _REFERROR_REASON_HINTS = {
     "type mismatch": (
         "the task needs a different column type (find/replace and text operations "
@@ -445,6 +454,97 @@ def reject_pipeline_reference_errors(
     )
 
 
+def _parse_created_at(value: Any) -> datetime | None:
+    if not isinstance(value, str):
+        return None
+    try:
+        parsed = datetime.fromisoformat(value)
+    except ValueError:
+        return None
+    return parsed if parsed.tzinfo is not None else parsed.replace(tzinfo=UTC)
+
+
+def _newest_task_created_at_or_after(tasks: list[Any], floor: datetime) -> dict[str, Any] | None:
+    """The task with the latest ``created_at`` at or after ``floor``, if any."""
+    newest: dict[str, Any] | None = None
+    newest_created: datetime | None = None
+    for task in tasks:
+        if not isinstance(task, dict):
+            continue
+        created = _parse_created_at(task.get("created_at"))
+        if created is None or created < floor:
+            continue
+        if newest_created is None or created > newest_created:
+            newest_created, newest = created, task
+    return newest
+
+
+def reject_task_runtime_error(
+    service: Any, view_id: int, dataset_id: Any, data: Any, submitted_at: datetime
+) -> None:
+    """Fail a task add whose step errored at run time without flipping has_error.
+
+    A GEN_AI (or other runtime-dependent) step can fail after the backend has
+    already accepted and bound the task -- a workspace AI quota outage, for
+    example -- leaving the new column blank while the SDK's ``has_error``
+    stays false and ``pipeline_state`` reads ``ready``. The only signal is
+    the task's own ``transform_status`` (``ERROR``/``REFERROR``), which
+    ``list_tasks`` now reads back at ``__full``. A reference-binding failure
+    already raised via :func:`reject_pipeline_reference_errors` before this
+    runs, so ``has_error`` here is always false or absent.
+
+    Checks the task *this call* created, not the pipeline's last step by
+    sequence: a task can be inserted mid-pipeline (lower sequence than an
+    existing later step), and a step already in ERROR before this call must
+    not fail every later add just because it sorts last. Neither the add
+    response nor its job names the created task's id (the server's
+    ``PipelineModificationResp`` has none; ``process_single_task`` only
+    echoes the submitted ``task_param`` back), so the newest task by
+    ``created_at`` -- accepted only if created at or after ``submitted_at``,
+    with a small clock-skew allowance -- stands in for it.
+    """
+    kwargs: dict[str, Any] = {"dataview_id": view_id}
+    if dataset_id is not None:
+        kwargs["dataset_id"] = int(dataset_id)
+    listing = service.call(_TASK_LIST_SYMBOL, **kwargs)
+    tasks = listing.get("tasks") if isinstance(listing, dict) else None
+    if not isinstance(tasks, list) or not tasks:
+        return
+    newest = _newest_task_created_at_or_after(tasks, submitted_at - _TASK_CLOCK_SKEW)
+    if newest is None:
+        return
+    status = newest.get("transform_status")
+    if status not in _ERROR_TRANSFORM_STATUSES:
+        return
+    task_id = newest.get("id")
+    dataset_kwarg = kwargs.get("dataset_id")
+    recovery = f"mammoth view task get {view_id} {task_id}"
+    if dataset_kwarg is not None:
+        recovery += f" --input '{{\"dataset_id\": {dataset_kwarg}}}'"
+    raise CliError(
+        code=CODE_TASK_RUNTIME_ERROR,
+        message=(
+            f"Task {task_id} was added to view {view_id} but failed at run time "
+            f"(transform_status {status}); its output may be blank or wrong even "
+            "though the pipeline reports ready."
+        ),
+        exit_status=EXIT_API,
+        hint=(
+            "The API does not expose the failure reason (the server keeps only "
+            "transform_status). Likely causes: a GEN_AI step hitting the "
+            f"workspace AI quota, or a bad step config. Run `{recovery}` to "
+            "confirm the status."
+        ),
+        details={
+            "view_id": view_id,
+            "dataset_id": dataset_kwarg,
+            "task_id": task_id,
+            "transform_status": status,
+        },
+        recovery_commands=[recovery],
+    )
+
+
 def _profile_name(invocation: Invocation) -> str:
     return invocation.profile or profiles.get_selected()
 
@@ -499,9 +599,37 @@ def view_create(invocation: Invocation) -> HandlerResult:
     document = invocation.load_input() or {}
     kwargs = bind_command_inputs(invocation.command_id, document, dataset_id=dataset_id)
     with open_service(invocation) as (service, auth):
+        clone_from = kwargs.get("clone_from")
+        if clone_from is not None:
+            _require_clone_from_same_dataset(service, int(clone_from), dataset_id)
         data = service.call(_symbol(invocation), **kwargs)
     # The SDK returns a rich ``View``; emit its dataview record like ``view get``.
     return _view_payload(data), _meta(invocation, auth.workspace_id)
+
+
+def _require_clone_from_same_dataset(service: Any, clone_from: int, dataset_id: int) -> None:
+    """Refuse ``clone_from`` when it is a view of a different dataset.
+
+    The backend accepts a cross-dataset clone and produces a broken view (no
+    columns; every later data read fails), so this is checked here before the
+    request is sent rather than surfaced by the server.
+    """
+    source_dataset_id = int(service.call(_FIND_DATASET_SYMBOL, dataview_id=clone_from))
+    if source_dataset_id != dataset_id:
+        raise CliError(
+            code=CODE_INVALID_ARGUMENTS,
+            message="clone_from must be a view of the same dataset.",
+            exit_status=EXIT_USAGE,
+            hint=(
+                f"View {clone_from} belongs to dataset {source_dataset_id}, not "
+                f"{dataset_id}. Create a plain view (omit clone_from) instead."
+            ),
+            details={
+                "clone_from": clone_from,
+                "source_dataset_id": source_dataset_id,
+                "dataset_id": dataset_id,
+            },
+        )
 
 
 def view_get(invocation: Invocation) -> HandlerResult:

@@ -486,7 +486,7 @@ def test_s3_every_route_has_closed_shared_admission() -> None:
             ("view.checkpoint.", "view.draft.", "view.pipeline.", "view.task.", "view.version.")
         )
     }
-    assert len(route_ids) == 65
+    assert len(route_ids) == 66
     for command_id in route_ids:
         contract = resolve_command_contract(command_id)
         assert contract is not None

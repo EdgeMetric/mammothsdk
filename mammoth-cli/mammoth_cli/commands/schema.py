@@ -70,6 +70,38 @@ _COMMAND_DISCOVERY_PURPOSES = {
     "view.export.dataset": (
         "send copy branch out rows into a dataset in another project append union stack rows"
     ),
+    # One entry per typed export destination, in the way users name the
+    # destination rather than Mammoth's route spelling (which a two-word
+    # phrase like "power bi" may not literally contain -- see the adjacent
+    # term-pair match in find_schemas for "powerbi"/"bigquery"/etc).
+    "view.export.azure-blob": "azure blob storage container",
+    "view.export.bigquery": "big query bigquery google cloud database table",
+    "view.export.elasticsearch": "elasticsearch elastic search index",
+    "view.export.email": "email send mail attachment",
+    "view.export.ftp": "ftp file transfer protocol server",
+    "view.export.managed-s3": "s3 amazon aws bucket managed storage",
+    "view.export.mssql": "sql server mssql microsoft database",
+    "view.export.mysql": "mysql database",
+    "view.export.onedrive": "one drive onedrive microsoft cloud storage",
+    "view.export.postgres": "postgres postgresql database",
+    "view.export.powerbi": "power bi powerbi microsoft dashboard workspace",
+    "view.export.publish-db": "publish database live connection odbc",
+    "view.export.publish-db-update": "publish database update refresh live connection",
+    "view.export.redshift": "redshift amazon aws database warehouse",
+    "view.export.rest": "webhook http endpoint api push rest",
+    "view.export.sftp": "sftp secure file transfer server",
+    "view.export.sharepoint": "share point sharepoint microsoft",
+    "view.export.tableau": "tableau server dashboard",
+    "webhook.create": "webhook http endpoint api push create",
+    "webhook.update": "webhook http endpoint api update",
+    "webhook.get": "webhook http endpoint api get",
+    "webhook.list": "webhook http endpoint api list",
+    "webhook.delete": "webhook http endpoint api delete",
+    "webhook.send": "webhook http endpoint api push send",
+    "webhook.send-get": "webhook http endpoint api pull send get",
+    "workspace.user.add": (
+        "invite add member teammate email role editor viewer admin assign permission access"
+    ),
     "automation.create": (
         "schedule scheduled recurring repeat refresh rerun run every day daily week weekly "
         "hour hourly month monthly automatically trigger alert email a dataset pipeline"
@@ -112,9 +144,7 @@ _COMMAND_DISCOVERY_PURPOSES = {
     "view.transform.filter": (
         "filter rows keep drop exclude remove delete rows where condition subset"
     ),
-    "view.transform.generate-sql": (
-        "generate write sql query from natural language intent question"
-    ),
+    "view.transform.generate-sql": "generate write sql query from natural language intent question",
     "view.transform.increment-date": "add subtract days months years to a date column shift",
     "view.transform.join": (
         "join blend merge combine enrich match matching keys rows add columns from another "
@@ -127,8 +157,9 @@ _COMMAND_DISCOVERY_PURPOSES = {
         "from another view dataset"
     ),
     "view.transform.math": (
-        "math arithmetic multiply divide add subtract formula expression amount "
-        "calculate compute ratio percentage round"
+        "math arithmetic multiply multiplication divide add subtract formula "
+        "expression amount calculate compute ratio percentage round new column "
+        "conditional threshold greater than if text"
     ),
     "view.transform.pivot": (
         "pivot group by aggregate aggregation sum count average summary summarize "
@@ -202,6 +233,11 @@ _DISCOVERY_SYNONYMS: dict[str, tuple[str, ...]] = {
     "csv": ("spreadsheet", "file", "upload"),
     "local": ("file", "download", "csv", "artifact"),
     "download": ("export", "file", "csv", "artifact", "local"),
+    # "publish" a dataset almost always means one of the typed exports
+    # (Power BI, a live DB connection, a webhook, ...); every export
+    # command's path literally contains "export", so this one alias covers
+    # any "publish data to X" phrasing without a per-destination entry.
+    "publish": ("export",),
     "column": ("columns", "field", "fields", "schema"),
     "columns": ("column", "field", "fields", "schema"),
     "display-name": ("name", "column", "columns", "field", "fields", "schema"),
@@ -240,6 +276,7 @@ _DISCOVERY_STOPWORDS = frozenset(
         # turns on these words, so they must not sink an otherwise good match.
         "my",
         "our",
+        "one",
         "two",
         "another",
         "other",
@@ -254,6 +291,9 @@ _DISCOVERY_STOPWORDS = frozenset(
         "do",
         "want",
         "need",
+        "using",
+        "than",
+        "via",
     }
 )
 # How many near misses a search with no full match returns.
@@ -426,6 +466,25 @@ def _query_tokens(query: str) -> tuple[str, ...]:
 def _token_aliases(token: str) -> frozenset[str]:
     """Return the finite synonym neighborhood for one intent token."""
     return frozenset((token, *_DISCOVERY_SYNONYMS.get(token, ())))
+
+
+def _adjacent_compound_forms(terms: tuple[str, ...]) -> dict[str, frozenset[str]]:
+    """Map each query term to the compound spellings an adjacent pair makes.
+
+    A route's un-hyphenated compound name (``powerbi``, ``bigquery``,
+    ``onedrive``, ``sharepoint``, ...) never shares a token with the natural
+    two-word phrasing a user types ("power bi", "big query"), since neither
+    half is a substring match in the token-set membership test. Generalizes
+    over any adjacent pair rather than hardcoding destination names: "azure
+    blob" -> "azureblob"/"azure-blob", "share point" -> "sharepoint", and so
+    on for whatever the query happens to contain.
+    """
+    forms: dict[str, set[str]] = {}
+    for left, right in zip(terms, terms[1:], strict=False):
+        for compound in (left + right, f"{left}-{right}"):
+            forms.setdefault(left, set()).add(compound)
+            forms.setdefault(right, set()).add(compound)
+    return {term: frozenset(compounds) for term, compounds in forms.items()}
 
 
 def _compact_contract(record: dict[str, Any]) -> dict[str, Any]:
@@ -648,6 +707,24 @@ def runnable_example(
                 "123",
                 "--input",
                 json.dumps({"file_id": 94}),
+                *_OUTPUT_JSON_NO_INPUT,
+            ]
+        )
+    if record["command_id"] == "view.data.aggregate":
+        return shlex.join(
+            [
+                "mammoth",
+                *record["command_path"].split(),
+                "123",
+                "--input",
+                json.dumps(
+                    {
+                        "group_by": ["Channel"],
+                        "aggregations": [
+                            {"column": "Spend", "function": "SUM", "as_name": "Total Spend"}
+                        ],
+                    }
+                ),
                 *_OUTPUT_JSON_NO_INPUT,
             ]
         )
@@ -1063,15 +1140,42 @@ def schema_index(family: str | None = None) -> dict[str, Any]:
     }
 
 
+def _is_scalar_field_schema(schema: Any) -> bool:
+    """Whether a field's JSON Schema is a plain scalar with no nested shape.
+
+    A caller composing ``--input`` for a scalar field just needs its type
+    name. An object, an array of objects, or a union that includes an
+    object (e.g. increment-date's ``delta``, convert-type's
+    ``conversions``, a ``condition``) needs its nested shape too, or the
+    bare type name (``DateDelta``) leaves it to guess.
+    """
+    if not isinstance(schema, dict):
+        return True
+    branches = schema.get("anyOf") or schema.get("oneOf")
+    if branches:
+        return all(_is_scalar_field_schema(branch) for branch in branches)
+    schema_type = schema.get("type")
+    if schema_type == "object":
+        return False
+    if schema_type == "array":
+        return _is_scalar_field_schema(schema.get("items"))
+    return True
+
+
 def brief_schema(entry: dict[str, Any]) -> dict[str, Any]:
     """Reduce a full ``schema get`` record to what composing one call needs."""
     brief = {key: entry[key] for key in _BRIEF_SCHEMA_KEYS if key in entry}
     accepted = brief.get("accepted_fields")
     if isinstance(accepted, list):
-        # Type and requirement are what a caller reads; the per-field JSON
-        # Schema is available under ``full``.
+        # Type and requirement are what a caller reads for a scalar; a
+        # non-scalar field keeps its JSON Schema too, since a bare type name
+        # does not say what shape it needs. ``full`` still has everything.
         brief["accepted_fields"] = [
-            {key: value for key, value in field.items() if key != "schema"}
+            {
+                key: value
+                for key, value in field.items()
+                if key != "schema" or not _is_scalar_field_schema(field.get("schema"))
+            }
             for field in accepted
             if isinstance(field, dict)
         ]
@@ -1101,6 +1205,7 @@ def find_schemas(
     # A query made only of filler words keeps them, rather than matching
     # every command.
     terms = _query_tokens(query) or tuple(_tokens(query))
+    compound_forms = _adjacent_compound_forms(terms)
     # Clamp caller-provided bounds instead of allowing an accidental unbounded
     # discovery response.  A negative cursor is a usage mistake, not a request
     # to wrap around the catalog.
@@ -1126,7 +1231,12 @@ def find_schemas(
         )
         searchable = " ".join(source for _, source in sources).casefold()
         searchable_tokens = _tokens(f"{primary_text} {searchable}")
-        matched_terms = [term for term in terms if _token_aliases(term) & searchable_tokens]
+        matched_terms = [
+            term
+            for term in terms
+            if (_token_aliases(term) & searchable_tokens)
+            or (compound_forms.get(term, frozenset()) & searchable_tokens)
+        ]
         if not matched_terms:
             continue
         score = 0
@@ -1153,18 +1263,34 @@ def find_schemas(
         action = command_path.split()[1] if len(command_path.split()) > 1 else ""
         if "show" in matched_terms and action in {"list", "get", "browse"}:
             score += 80
+        is_support = command_id.startswith("support.")
         entry = {
             "command_id": command_id,
             "command_path": command_path,
             "mutation_class": record["mutation_class"],
             "confirmation": record["confirmation"],
-            "full_schema_command": (f"mammoth schema get {command_id}"),
+            "full_schema_command": f"mammoth schema get {command_id}",
         }
+        if is_support:
+            # These operate on another workspace/customer on the caller's
+            # behalf (Mammoth-operator tooling), not the caller's own
+            # workspace. A query that also has an ordinary match should
+            # never surface the operator command first.
+            entry["operator_only"] = (
+                "support.* commands act on another workspace as an operator, not the "
+                "caller's own; ordinary workspace work uses the non-support command."
+            )
         if len(matched_terms) == len(terms):
             ranked_matches.append((score, entry))
         else:
             near_misses.append((len(matched_terms), score, entry, matched_terms))
-    ranked_matches.sort(key=lambda item: (-item[0], item[1]["command_id"]))
+    ranked_matches.sort(
+        key=lambda item: (
+            item[1]["command_id"].startswith("support."),
+            -item[0],
+            item[1]["command_id"],
+        )
+    )
     total_matches = len(ranked_matches)
     page = [match for _, match in ranked_matches[offset : offset + bounded_limit]]
     has_more = offset + len(page) < total_matches

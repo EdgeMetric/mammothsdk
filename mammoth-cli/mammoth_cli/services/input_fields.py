@@ -41,6 +41,10 @@ _CLOSED_ZERO_INPUT_COMMANDS = frozenset({"config.get"})
 _EXAMPLE_INPUT_HINTS: dict[str, dict[str, Any]] = {
     # Every field is optional; the useful call narrows to failures.
     "log.tail": {"errors_only": True, "limit": 20},
+    # first_name/last_name are each individually optional (either one alone is
+    # a valid update), so neither is `required`; show one so the example is a
+    # real call rather than the bare command, which the handler rejects.
+    "user.update": {"first_name": "Jane"},
     # The signature marks the target column and the condition optional, but a
     # SET with neither ``existing_column`` nor ``new_column`` has no target and
     # an unconditional SET rewrites every row; show the verified conditional form.

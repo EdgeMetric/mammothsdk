@@ -180,21 +180,23 @@ def user_preference_update(invocation: Invocation) -> HandlerResult:
 
 
 def user_update(invocation: Invocation) -> HandlerResult:
-    """Update the current user's profile. High-impact: ``--yes --confirm WORKSPACE_ID``."""
+    """Change the current user's own display name (first and/or last name).
+
+    Benign, no confirmation: this changes only the caller's own name, never
+    another user's. There is no ``email`` field here -- the backend's own
+    self-update route (``PATCH /self``) has no email path; an email change is
+    out of scope.
+    """
     document = _bound_document(invocation)
-    if not document:
+    kwargs: dict[str, Any] = {}
+    _forward_optional(document, kwargs, ("first_name", "last_name"))
+    if not kwargs:
         raise CliError(
             code=CODE_MISSING_FIELD,
-            message="Provide at least one field to update.",
+            message="Provide first_name and/or last_name to update.",
             exit_status=EXIT_USAGE,
-            hint="Pass fields via --input.",
+            hint='Pass at least one via --input, for example: --input \'{"first_name": "Jane"}\'.',
         )
     with open_service(invocation) as (service, auth):
-        enforce_confirmation(
-            invocation,
-            policy=POLICY_CONFIRM_TARGET,
-            action="update the current user's profile",
-            target=str(auth.workspace_id),
-        )
-        data = service.call(_symbol(invocation), **document)
+        data = service.call(_symbol(invocation), **kwargs)
     return data, _meta(invocation, auth.workspace_id)
