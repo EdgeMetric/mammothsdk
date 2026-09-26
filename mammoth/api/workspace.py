@@ -117,17 +117,24 @@ class WorkspaceAPI:
         ws = workspace_id or self._ws()
         return self._client._request_json("POST", f"/workspaces/{ws}/reactivate")
 
-    def list_users(self, workspace_id: int | None = None) -> _list[dict[str, Any]]:
+    def list_users(
+        self, workspace_id: int | None = None, fields: str | None = None
+    ) -> _list[dict[str, Any]]:
         """List all users in a workspace.
 
         Args:
             workspace_id: ID of the workspace (uses client default if not provided).
+            fields: Field set to return (e.g. ``"__full"`` adds ``user_roles`` and
+                ``status``); server default if omitted.
 
         Returns:
             List of user dicts.
         """
         ws = workspace_id or self._ws()
-        response = self._client._request_json("GET", f"/workspaces/{ws}/users")
+        request_kwargs: dict[str, Any] = {}
+        if fields is not None:
+            request_kwargs["params"] = {"fields": fields}
+        response = self._client._request_json("GET", f"/workspaces/{ws}/users", **request_kwargs)
         return response.get("users", response if isinstance(response, _list) else [])
 
     def get_user(self, user_id: str, workspace_id: int | None = None) -> dict[str, Any]:

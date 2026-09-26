@@ -108,14 +108,18 @@ def _meta(invocation: Invocation, workspace_id: int, project_id: int | None) -> 
 
 
 def external_key_list(invocation: Invocation) -> HandlerResult:
-    """List all external API keys in the active workspace."""
+    """List the workspace's LLM provider keys (OpenAI, Anthropic, etc.).
+
+    Not the product's own API keys for scripts/integrations -- see
+    ``client-app.list`` for those.
+    """
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation))
     return data, _meta(invocation, auth.workspace_id, resolved_project(invocation))
 
 
 def external_key_get(invocation: Invocation) -> HandlerResult:
-    """Get one external API key by id."""
+    """Get one LLM provider key by id."""
     key_id = _require_int_positional(invocation, "key id")
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), key_id=key_id)
@@ -153,7 +157,7 @@ def external_key_create(invocation: Invocation) -> HandlerResult:
 
 
 def external_key_delete(invocation: Invocation) -> HandlerResult:
-    """Permanently delete one external API key by id. Prompt or ``--yes`` required."""
+    """Permanently delete one LLM provider key by id. Prompt or ``--yes`` required."""
     key_id = _require_int_positional(invocation, "key id")
     enforce_confirmation(
         invocation, policy=POLICY_PROMPT_OR_YES, action=f"delete external key {key_id}"

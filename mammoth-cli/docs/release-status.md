@@ -1,5 +1,12 @@
 # CLI release provenance
 
+## 2.0.57
+
+**Fix**: "API key" now finds `client-app` (the workspace's API keys: key + secret for scripts and
+integrations); `external-key` help says "LLM provider keys". `workspace user list` returns each
+user's `user_roles` and `status` by default (backend `fields=__full`); `--input '{"fields": ...}'`
+overrides it. Needs `mammoth-io` 0.7.27 (`WorkspaceAPI.list_users(fields=...)`). PR #42.
+
 ## 2.0.56
 
 **Fix**: `view export dataset` into an existing `target_ds_id` now refuses a second writer

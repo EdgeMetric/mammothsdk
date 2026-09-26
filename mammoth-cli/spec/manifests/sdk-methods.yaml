@@ -6297,7 +6297,7 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.workspace.WorkspaceAPI.list_users
   implementation_origin: mammoth.api.workspace.WorkspaceAPI.list_users
-  signature: 'list_users(self, workspace_id: ''int | None'' = None) -> ''_list[dict[str, Any]]'''
+  signature: 'list_users(self, workspace_id: ''int | None'' = None, fields: ''str | None'' = None) -> ''_list[dict[str, Any]]'''
   openapi_operation_ids: []
   canonical_command: workspace.user.list
   alias_of: null

@@ -109,6 +109,13 @@ _COMMAND_DISCOVERY_PURPOSES = {
     "workspace.user.add": (
         "invite add member teammate email role editor viewer admin assign permission access"
     ),
+    # Client apps ARE the product's API keys: the key + secret credentials a
+    # script or integration uses to call Mammoth. Live-eval evidence: "list
+    # active API keys" only ever reached external-key.list (LLM provider
+    # keys), never this command, because nothing in its text said "API key".
+    "client-app.list": (
+        "api keys api key secret credentials workspace active script integration list"
+    ),
     "automation.create": (
         "schedule scheduled recurring repeat refresh rerun run every day daily week weekly "
         "hour hourly month monthly automatically trigger alert email a dataset pipeline"

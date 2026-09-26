@@ -1,6 +1,7 @@
 """Handlers for the ``client-app`` command family.
 
-Client apps are workspace-level API credentials: none of the reviewed manifest
+Client apps are the workspace's API keys: the key + secret credentials a
+script or integration uses to call Mammoth. None of the reviewed manifest
 signatures in this family take a ``project_id`` argument, so no handler here
 requires an active project. The (optional) active project is still reported
 in the envelope metadata for context, mirroring the read handlers in
@@ -159,7 +160,11 @@ def _meta(invocation: Invocation, workspace_id: int, project_id: int | None) -> 
 
 
 def client_app_list(invocation: Invocation) -> HandlerResult:
-    """List client apps in the active workspace (requires an admin role)."""
+    """List the workspace's API keys (client apps). Requires an admin role.
+
+    A client app IS the product's API key: the key + secret credentials a
+    script or integration uses to call Mammoth.
+    """
     document = _bound_document(invocation)
     kwargs: dict[str, Any] = {}
     _forward_optional(document, kwargs, ("limit", "offset", "fields", "sort"))
@@ -169,7 +174,7 @@ def client_app_list(invocation: Invocation) -> HandlerResult:
 
 
 def client_app_get(invocation: Invocation) -> HandlerResult:
-    """Get one client app by its client key."""
+    """Get one API key (client app) by its client key."""
     client_key = _require_string_positional(invocation, "client key")
     document = _bound_document(invocation)
     kwargs: dict[str, Any] = {"client_key": client_key}

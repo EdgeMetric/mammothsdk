@@ -318,6 +318,20 @@ def test_invite_user_intent_ranks_workspace_user_add_first() -> None:
     assert matches[0] == "workspace.user.add", matches
 
 
+def test_active_api_keys_intent_ranks_client_app_above_external_key() -> None:
+    """Live-eval evidence: 'what API keys do we have active right now?' only
+    surfaced external-key.list (LLM provider keys), never client-app.list --
+    which IS the product's API key/secret credential for a script or
+    integration to call Mammoth. client-app.list must rank first for this
+    intent, and ahead of external-key.list wherever both appear.
+    """
+    matches = [item["command_id"] for item in find_schemas("list active API keys")["matches"]]
+    assert "client-app.list" in matches, matches
+    assert matches[0] == "client-app.list", matches
+    if "external-key.list" in matches:
+        assert matches.index("client-app.list") < matches.index("external-key.list"), matches
+
+
 def test_support_family_ranks_below_any_non_support_match_and_is_labeled() -> None:
     matches = find_schemas("workspace user")["matches"]
     is_support = [m["command_id"].startswith("support.") for m in matches]
