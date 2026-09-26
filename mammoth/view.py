@@ -472,7 +472,9 @@ class View(
         export apart from an earlier one already at EXECUTED against the
         same target dataset (see :meth:`_wait_for_dataset_export_write`).
         """
-        page = self._client.exports.list(self.id, handler_type=HandlerType.INTERNAL_DATASET)
+        page = self._client.exports.list(
+            self.id, handler_type=HandlerType.INTERNAL_DATASET, dataset_id=self.dataset_id
+        )
         return max((export.id or 0 for export in page.exports), default=0)
 
     def _poll_internal_dataset_exports(
@@ -487,7 +489,9 @@ class View(
         deadline = time.monotonic() + (timeout or getattr(self._client, "job_timeout", 60) or 60)
         poll_interval = 2.0
         while time.monotonic() < deadline:
-            page = self._client.exports.list(self.id, handler_type=HandlerType.INTERNAL_DATASET)
+            page = self._client.exports.list(
+                self.id, handler_type=HandlerType.INTERNAL_DATASET, dataset_id=self.dataset_id
+            )
             matches = [e for e in page.exports if match(e)]
             if matches:
                 export = max(matches, key=lambda e: e.id or 0)
@@ -1862,7 +1866,9 @@ class ViewExport:
             for exp in exports:
                 print(f"{exp['id']}: {exp['handler_type']}")
         """
-        result = self._client.exports.list(dataview_id=self._view.id)
+        result = self._client.exports.list(
+            dataview_id=self._view.id, dataset_id=self._view.dataset_id
+        )
         if hasattr(result, "exports"):
             return result.exports
         return result.get("exports", []) if isinstance(result, dict) else []

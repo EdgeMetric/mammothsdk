@@ -1,5 +1,24 @@
 # CLI release provenance
 
+## 2.0.51
+
+One fix, found live on a replayed eval trace (koyal, 2026-09-26 02:30 UTC):
+a successful dataset export was reported as failed by the write-confirmation
+poll itself, not by the export.
+
+- **Fixed (SDK, `mammoth-io` 0.7.23)**: `View._highest_export_id` and
+  `View._poll_internal_dataset_exports` (`mammoth/view.py`) called
+  `exports.list(dataview_id, handler_type=...)` without the `dataset_id`
+  the `View` already holds (`self.dataset_id`). `ExportsAPI.list` then fell
+  back to `PipelineAPI.find_dataset_for_dataview`, which since 0.7.22 calls
+  `DatasetsAPI.list_all(project_id)` — a full, unrelated project-wide scan on
+  every poll iteration. Right after `to_dataset("New name")` creates a new
+  dataset, that scan raced the server's auth registration of the new
+  dataset and returned a 500, so the CLI reported the (already successful)
+  export as failed. `ViewExport.list()` had the identical gap and is fixed
+  the same way. All three now pass `dataset_id=self.dataset_id` /
+  `self._view.dataset_id` straight through, skipping discovery entirely.
+
 ## 2.0.50
 
 Six fixes from replayed WPP/T2/T3/T4 eval traces (koyal), the biggest being a

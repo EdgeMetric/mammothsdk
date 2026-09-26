@@ -935,6 +935,60 @@ class TestRunInternalDatasetExportWaitsForExistingWrite:
         assert export_view._client.exports.list.call_count == 3  # floor + 2 polls
 
 
+class TestToDatasetPollSkipsDatasetDiscovery:
+    """The write-confirmation poll already knows the view's dataset_id --
+    it must pass it straight through to ``exports.list`` instead of leaving
+    ``ExportsAPI.list`` to fall back to ``_find_dataset_for_dataview``'s
+    project-wide ``datasets.list_all`` scan. That fallback raced a
+    just-created dataset's auth registration in production (koyal,
+    2026-09-26 02:30 UTC) and made a successful export look failed, and it
+    is a wasted project-wide scan on every poll regardless.
+
+    Exercises the REAL ``ExportsAPI`` (only the HTTP transport is faked) so
+    the assertion has teeth: if the poll ever drops ``dataset_id`` again,
+    ``ExportsAPI.list`` really does call dataset discovery here, exactly as
+    it does against the live API.
+    """
+
+    def test_poll_passes_dataset_id_and_skips_discovery(self, export_view):
+        calls: list[tuple[str, str]] = []
+
+        def fake_request_json(method: str, url: str, **kwargs: Any) -> dict[str, Any]:
+            calls.append((method, url))
+            if method == "POST":
+                return {"trigger_id": 1}
+            get_calls = sum(1 for m, _ in calls if m == "GET")
+            if get_calls == 1:
+                return {"next": "", "exports": []}  # pre-submit floor: nothing yet
+            return {
+                "next": "",
+                "exports": [
+                    {
+                        "id": 43,
+                        "status": "executed",
+                        "target_properties": {"TARGET_DS_ID": 42},
+                    }
+                ],
+            }
+
+        export_view._client._request_json = MagicMock(side_effect=fake_request_json)
+
+        result = export_view.export.to_dataset("Existing DS", target_ds_id=42)
+
+        assert result == 42
+        # The bug: ExportsAPI.list(dataset_id=None) falls back to
+        # PipelineAPI.find_dataset_for_dataview -> datasets.list_all, a
+        # project-wide scan the poll has no reason to make.
+        export_view._client.pipeline.find_dataset_for_dataview.assert_not_called()
+        get_urls = [url for method, url in calls if method == "GET"]
+        assert len(get_urls) == 2  # floor + one poll
+        expected_path = (
+            f"/datasets/{export_view.dataset_id}/dataviews/{export_view.id}/pipeline/exports"
+        )
+        for url in get_urls:
+            assert expected_path in url
+
+
 # ── CSV export ────────────────────────────────────────────────
 
 
