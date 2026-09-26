@@ -286,15 +286,39 @@ def brief_view_record(record: Any) -> Any:
     return {key: record[key] for key in BRIEF_VIEW_FIELDS if key in record}
 
 
+#: dataset.list_all's SDK symbol, reused from the pagination-safe helper item
+#: A's discovery fix relies on (mammoth/api/datasets.py) rather than a
+#: single unpaginated page, so a project with many datasets is not silently
+#: truncated here either.
+_DATASETS_LIST_ALL_SYMBOL = "mammoth.api.datasets.DatasetsAPI.list_all"
+#: Soft floor for the no-DATASET_ID ``view list`` walk: whole per-dataset
+#: pages are pulled and appended until at least this many views have been
+#: collected (or every dataset in the project has been visited), so one call
+#: never silently returns a single dataset's worth from a large project.
+_VIEW_LIST_ALL_DATASETS_MIN_VIEWS = 100
+
+
 def view_list(invocation: Invocation) -> HandlerResult:
-    """List dataviews for a dataset in the active project."""
+    """List dataviews for a dataset, or every dataset in the active project.
+
+    Omitting DATASET_ID used to fail outright with ``missing_argument`` --
+    an agent's very first move is often ``view list`` before it knows any
+    dataset id. It now walks every dataset in the active project instead
+    (paged; see :data:`_VIEW_LIST_ALL_DATASETS_MIN_VIEWS`), same as passing
+    an explicit id still does for a single dataset.
+    """
     project_id = require_project(invocation)
-    dataset_id = _require_int_positional_at(invocation, 0, "dataset id")
+    dataset_id = _int_positional_at(invocation, 0, "dataset id")
     document = invocation.load_input() or {}
-    kwargs: dict[str, Any] = {"dataset_id": dataset_id, "project_id": project_id}
-    _forward_optional(document, kwargs, ("limit", "sort"))
+    if dataset_id is None and document.get(_DATASET_ID_FIELD) is not None:
+        dataset_id = int(document[_DATASET_ID_FIELD])
     with open_service(invocation) as (service, auth):
-        data = service.call(_symbol(invocation), **kwargs)
+        if dataset_id is None:
+            data = _view_list_across_project(service, _symbol(invocation), document, project_id)
+        else:
+            kwargs: dict[str, Any] = {"dataset_id": dataset_id, "project_id": project_id}
+            _forward_optional(document, kwargs, ("limit", "sort"))
+            data = service.call(_symbol(invocation), **kwargs)
         parents.remember_records(
             _profile_name(invocation), auth.workspace_id, data, project_id=project_id
         )
@@ -307,6 +331,45 @@ def view_list(invocation: Invocation) -> HandlerResult:
         # to the brief shape ``view get`` returns (``full: true`` keeps all).
         data = {**data, "dataviews": [brief_view_record(item) for item in data["dataviews"]]}
     return data, _meta(invocation, auth.workspace_id, project_id)
+
+
+def _view_list_across_project(
+    service: Any, view_list_symbol: str, document: dict[str, Any], project_id: int
+) -> dict[str, Any]:
+    """Aggregate dataviews from every dataset in the project (paged).
+
+    Starts at ``dataset_offset`` (default 0) into the project's dataset
+    list, pulling whole per-dataset view pages until either every dataset
+    has been visited or at least ``_VIEW_LIST_ALL_DATASETS_MIN_VIEWS`` views
+    have been collected. ``next_dataset_offset`` names where to resume when
+    the project holds more datasets than were visited.
+    """
+    dataset_offset = int(document.get("dataset_offset", 0))
+    datasets_page = service.call(_DATASETS_LIST_ALL_SYMBOL, project_id=project_id)
+    datasets = datasets_page.get("datasets", []) if isinstance(datasets_page, dict) else []
+    view_kwargs: dict[str, Any] = {}
+    _forward_optional(document, view_kwargs, ("sort",))
+    dataviews: list[Any] = []
+    visited = dataset_offset
+    for index in range(dataset_offset, len(datasets)):
+        dataset = datasets[index]
+        visited = index + 1
+        dataset_id = dataset.get("id") if isinstance(dataset, dict) else None
+        if not isinstance(dataset_id, int):
+            continue
+        page = service.call(
+            view_list_symbol, dataset_id=dataset_id, project_id=project_id, **view_kwargs
+        )
+        for item in page.get("dataviews", []) if isinstance(page, dict) else []:
+            if isinstance(item, dict):
+                item = {**item, "dataset_id": dataset_id}
+            dataviews.append(item)
+        if len(dataviews) >= _VIEW_LIST_ALL_DATASETS_MIN_VIEWS:
+            break
+    result: dict[str, Any] = {"dataviews": dataviews, "datasets_visited": visited - dataset_offset}
+    if visited < len(datasets):
+        result["next_dataset_offset"] = visited
+    return result
 
 
 def view_bulk_delete(invocation: Invocation) -> HandlerResult:
@@ -778,15 +841,17 @@ def _relabel_and_check(
     if mapping is None or types is None:
         mapping, types = _column_profile(service, dataset_id, view_id, project_id)
     data = _relabel_columns(service, dataset_id, view_id, project_id, data, mapping)
-    return _with_column_warnings(data, types, view_id)
+    return _with_column_warnings(data, types, view_id, dataset_id)
 
 
-def _with_column_warnings(data: Any, types: dict[str, str], view_id: int) -> Any:
+def _with_column_warnings(
+    data: Any, types: dict[str, str], view_id: int, dataset_id: int | None = None
+) -> Any:
     """Add ``column_warnings`` for the rows of a data page (never fatal)."""
     if not isinstance(data, dict) or not isinstance(data.get(_ROWS_KEY), list) or not types:
         return data
     try:
-        warnings = column_warnings(data[_ROWS_KEY], types, view_id)
+        warnings = column_warnings(data[_ROWS_KEY], types, view_id, dataset_id)
     except Exception:  # noqa: BLE001 -- a presentation aid must not fail the read
         return data
     return {**data, "column_warnings": warnings} if warnings else data
@@ -1635,6 +1700,31 @@ def view_pipeline_edit(invocation: Invocation) -> HandlerResult:
     return data, _meta(invocation, auth.workspace_id, None)
 
 
+#: OpenAPI ``PipelineInfo`` (the exact ``get_pipeline`` payload) pins
+#: ``draft_mode`` as a top-level string enum and ``auto_run`` as a top-level
+#: bool. "dirty" means unsubmitted draft changes are pending; ``auto_run``
+#: false means new tasks stop short of computing. Both leave a dataview
+#: looking finished when it is not (WPP/T3 evidence: agents that never ran
+#: 'view pipeline get' had no way to notice either).
+_DRAFT_MODE_DIRTY = "dirty"
+
+
+def _pipeline_action_hint(view_id: int, data: dict[str, Any]) -> str | None:
+    """Best-effort hint naming the exact command a stale pipeline needs."""
+    if data.get("draft_mode") == _DRAFT_MODE_DIRTY:
+        return (
+            f"This view has an unsubmitted draft with pending changes; run "
+            f"'mammoth view draft submit {view_id}' to apply them."
+        )
+    if data.get("auto_run") is False:
+        return (
+            f"Auto-run is off for this pipeline; new tasks will not compute "
+            f"automatically. Run 'mammoth view pipeline rerun {view_id}' to "
+            f"compute pending tasks now."
+        )
+    return None
+
+
 def view_pipeline_get(invocation: Invocation) -> HandlerResult:
     """Get a dataview's full pipeline."""
     dataview_id = _require_int_positional_at(invocation, 0, "dataview id")
@@ -1643,6 +1733,9 @@ def view_pipeline_get(invocation: Invocation) -> HandlerResult:
     _forward_optional(document, kwargs, ("dataset_id",))
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), **kwargs)
+    hint = _pipeline_action_hint(dataview_id, data) if isinstance(data, dict) else None
+    if hint is not None:
+        data = {**data, "hint": hint}
     return data, _meta(invocation, auth.workspace_id, None)
 
 
@@ -2149,7 +2242,18 @@ def view_export_specialized(invocation: Invocation) -> HandlerResult:
         for name, parameter in signature.parameters.items()
         if name != "self" and parameter.kind is not inspect.Parameter.VAR_KEYWORD
     }
-    allowed = explicit_fields | set(_SPECIAL_EXPORT_COMMON_FIELDS) | {_DATASET_ID_FIELD}
+    # The six common trigger controls only actually reach the SDK call when
+    # the route's method has a **kwargs sink to carry them; ``to_dataset`` has
+    # a closed signature (no **kwargs) and does not accept any of them.
+    # Allowing them anyway let a field like ``end_of_pipeline`` pass this
+    # check and then crash the call itself with an opaque "unexpected keyword
+    # argument" TypeError instead of a clear unknown_input_field.
+    accepts_var_keyword = any(
+        parameter.kind is inspect.Parameter.VAR_KEYWORD
+        for parameter in signature.parameters.values()
+    )
+    common_fields = _SPECIAL_EXPORT_COMMON_FIELDS if accepts_var_keyword else frozenset()
+    allowed = explicit_fields | common_fields | {_DATASET_ID_FIELD}
     unknown = sorted(set(document) - allowed)
     if unknown:
         raise CliError(
@@ -2290,7 +2394,7 @@ def upload_preview(service: Any, dataset_id: int, project_id: int | None) -> dic
         "sample_rows": rows[:_UPLOAD_SAMPLE_ROWS],
     }
     try:
-        warnings = column_warnings(rows, types, view_id) if rows else []
+        warnings = column_warnings(rows, types, view_id, dataset_id) if rows else []
     except Exception:  # noqa: BLE001
         warnings = []
     if warnings:

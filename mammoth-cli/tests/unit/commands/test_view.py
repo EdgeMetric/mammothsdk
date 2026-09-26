@@ -15,6 +15,7 @@ from mammoth_cli.services.testing import FakeMammothService
 from mammoth_cli.testing import login_default_profile
 
 _VIEW_LIST = "mammoth.api.dataviews.DataviewsAPI.list"
+_DATASETS_LIST_ALL = "mammoth.api.datasets.DatasetsAPI.list_all"
 _ACTIVE_USER_LIST = "mammoth.api.dataviews.DataviewsAPI.active_users"
 _ACTIVE_USER_MARK = "mammoth.api.dataviews.DataviewsAPI.mark_active"
 _BULK_DELETE = "mammoth.api.dataviews.DataviewsAPI.bulk_delete"
@@ -122,10 +123,45 @@ def test_view_list_requires_project(fake_service: FakeMammothService) -> None:
     assert excinfo.value.code == "project_required"
 
 
-def test_view_list_requires_dataset_id(fake_service: FakeMammothService) -> None:
-    with pytest.raises(CliError) as excinfo:
-        view_cmd.view_list(_inv("view.list", project=180))
-    assert excinfo.value.code == "missing_argument"
+def test_view_list_without_dataset_id_walks_every_dataset_in_the_project(
+    fake_service: FakeMammothService,
+) -> None:
+    """Item G: an agent's first move is often `view list` before it has any
+    dataset id yet. It must not fail outright; it lists across the project."""
+    fake_service.responses[_DATASETS_LIST_ALL] = {
+        "datasets": [{"id": 9, "name": "a"}, {"id": 10, "name": "b"}]
+    }
+    fake_service.responses[_VIEW_LIST] = {"dataviews": [{"id": 501, "name": "v"}]}
+    data, _ = view_cmd.view_list(_inv("view.list", project=180))
+    assert data["dataviews"] == [
+        {"id": 501, "name": "v", "dataset_id": 9},
+        {"id": 501, "name": "v", "dataset_id": 10},
+    ]
+    assert data["datasets_visited"] == 2
+    assert "next_dataset_offset" not in data
+    dataset_calls = [c for c in fake_service.call_log if c[0] == _VIEW_LIST]
+    assert [c[1]["dataset_id"] for c in dataset_calls] == [9, 10]
+
+
+def test_view_list_without_dataset_id_pages_past_the_view_floor(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    """Once enough views have been collected, later datasets are deferred to
+    a resumable `dataset_offset`, never silently dropped."""
+    fake_service.responses[_DATASETS_LIST_ALL] = {"datasets": [{"id": 9}, {"id": 10}, {"id": 11}]}
+    fake_service.responses[_VIEW_LIST] = {
+        "dataviews": [{"id": i} for i in range(view_cmd._VIEW_LIST_ALL_DATASETS_MIN_VIEWS)]
+    }
+    data, _ = view_cmd.view_list(_inv("view.list", project=180))
+    assert data["datasets_visited"] == 1
+    assert data["next_dataset_offset"] == 1
+
+    doc = _doc(tmp_path, {"dataset_offset": 1})
+    data, _ = view_cmd.view_list(_inv("view.list", project=180, input_file=doc))
+    assert data["datasets_visited"] == 1
+    assert data["next_dataset_offset"] == 2
+    resumed_calls = [c for c in fake_service.call_log if c[0] == _VIEW_LIST]
+    assert [c[1]["dataset_id"] for c in resumed_calls] == [9, 10]
 
 
 def test_view_list_passes_dataset_and_project(fake_service: FakeMammothService) -> None:
@@ -1545,6 +1581,39 @@ def test_pipeline_edit_forwards_dataset_id_to_wait(
 def test_pipeline_get_passes_dataview_id(fake_service: FakeMammothService) -> None:
     view_cmd.view_pipeline_get(_inv("view.pipeline.get", extra_args=["7"]))
     assert fake_service.call_log == [(_PIPE_GET, {"dataview_id": 7})]
+
+
+def test_pipeline_get_hints_the_exact_command_when_draft_is_dirty(
+    fake_service: FakeMammothService,
+) -> None:
+    # WPP/T3 evidence: an agent that only reads 'view pipeline get' had no
+    # way to notice an unsubmitted draft was holding back pending changes.
+    fake_service.responses[_PIPE_GET] = {"draft_mode": "dirty", "auto_run": True}
+    data, _ = view_cmd.view_pipeline_get(_inv("view.pipeline.get", extra_args=["7"]))
+    assert data["hint"] == (
+        "This view has an unsubmitted draft with pending changes; run "
+        "'mammoth view draft submit 7' to apply them."
+    )
+
+
+def test_pipeline_get_hints_the_exact_command_when_auto_run_is_off(
+    fake_service: FakeMammothService,
+) -> None:
+    fake_service.responses[_PIPE_GET] = {"draft_mode": "off", "auto_run": False}
+    data, _ = view_cmd.view_pipeline_get(_inv("view.pipeline.get", extra_args=["7"]))
+    assert data["hint"] == (
+        "Auto-run is off for this pipeline; new tasks will not compute "
+        "automatically. Run 'mammoth view pipeline rerun 7' to compute pending "
+        "tasks now."
+    )
+
+
+def test_pipeline_get_has_no_hint_when_clean_and_auto_run(
+    fake_service: FakeMammothService,
+) -> None:
+    fake_service.responses[_PIPE_GET] = {"draft_mode": "off", "auto_run": True}
+    data, _ = view_cmd.view_pipeline_get(_inv("view.pipeline.get", extra_args=["7"]))
+    assert "hint" not in data
 
 
 def test_pipeline_items_forwards_filters(fake_service: FakeMammothService, tmp_path: Path) -> None:

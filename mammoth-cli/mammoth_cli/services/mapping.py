@@ -109,6 +109,38 @@ def _job_recovery(job_id: object, *, profile: str | None = None) -> list[str]:
 
 _PROJECT_DELETE = re.compile(r"/workspaces/\d+/projects/(\d+)/?$")
 _DASHBOARD_WRITE = re.compile(r"/dashboards/(\d+)(?:/|$)")
+_ENDPOINT_WORKSPACE = re.compile(r"/workspaces/(\d+)")
+
+
+def _workspace_mismatch_error(exc: MammothAuthError, workspace_id: int | None) -> CliError | None:
+    """A 401 whose endpoint targets a workspace other than the profile's own
+    is a scoping mistake, not invalid credentials, so it must not tell the
+    user to reauthenticate (release evidence T4-L-002 — the in-product agent
+    parroted "reauthenticate" to a web user for exactly this case).
+    """
+    if workspace_id is None:
+        return None
+    endpoint = getattr(exc, "endpoint", None)
+    if not isinstance(endpoint, str):
+        return None
+    match = _ENDPOINT_WORKSPACE.search(endpoint)
+    if match is None:
+        return None
+    target_workspace_id = int(match.group(1))
+    if target_workspace_id == workspace_id:
+        return None
+    return CliError(
+        code=CODE_AUTHORIZATION_REQUIRED,
+        message=(
+            f"No access to workspace {target_workspace_id} "
+            f"(this sign-in is for workspace {workspace_id})."
+        ),
+        exit_status=EXIT_AUTH,
+        hint="Pass --workspace or use a profile signed in for that workspace.",
+        details=_metadata(exc),
+        request_id=exc.request_id,
+        authorization_required=True,
+    )
 
 
 def _resource_recovery(
@@ -161,6 +193,9 @@ def map_sdk_exception(
         )
 
     if isinstance(exc, MammothAuthError):
+        mismatch = _workspace_mismatch_error(exc, workspace_id)
+        if mismatch is not None:
+            return mismatch
         return CliError(
             code=CODE_AUTHENTICATION_FAILED,
             message="Mammoth rejected the provided credentials.",

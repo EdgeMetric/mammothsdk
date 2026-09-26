@@ -1,6 +1,6 @@
 # Command reference
 
-Generated from the reviewed command manifests for mammoth-cli 2.0.49.
+Generated from the reviewed command manifests for mammoth-cli 2.0.50.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
@@ -4404,7 +4404,7 @@ Total commands: 557.
 **Arguments**
 
 - `VIEW_ID` (int, required) — ID of the view to export.
-- `DATASET_ID` (int, optional) — Exact parent dataset ID. Required for this command: pass it here or as the 'dataset_id' input field; only read commands may omit it and discover the parent.
+- `DATASET_ID` (int, optional) — Exact parent dataset ID of the SOURCE view being exported -- not the destination. Required for this command: pass it here or as the 'dataset_id' input field. To write into an existing destination dataset instead of creating one, use the 'target_ds_id' input field, not this positional.
 
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
@@ -4689,7 +4689,7 @@ Total commands: 557.
 
 **Arguments**
 
-- `DATASET_ID` (int, required) — ID of the dataset.
+- `DATASET_ID` (int, optional) — ID of the dataset. Omit it to list dataviews across every dataset in the active project instead (paged; see the 'dataset_offset' input field and the 'next_dataset_offset' result field).
 
 - Mutation class: `read`
 - Confirmation: `none`

@@ -61,10 +61,43 @@ def _convert_hint(view_id: int | None, column: str, to: str) -> str:
     return f"mammoth view transform convert-type {target} --input '{spec}'"
 
 
+def _duplicate_rows_warning(
+    rows: list[Mapping[str, Any]],
+    view_id: int | None,
+    dataset_id: int | None,
+) -> dict[str, Any] | None:
+    """Return a table-level warning when the page itself holds exact duplicates.
+
+    Scoped honestly to the rows actually read: an agent must not read this as
+    table-wide duplication without separately checking the full table (e.g.
+    ``view data aggregate`` COUNT vs a distinct count).
+    """
+    fingerprints = [json.dumps(row, sort_keys=True, default=str) for row in rows]
+    counts: dict[str, int] = {}
+    for fingerprint in fingerprints:
+        counts[fingerprint] = counts.get(fingerprint, 0) + 1
+    duplicate_count = sum(count - 1 for count in counts.values() if count > 1)
+    if not duplicate_count:
+        return None
+    warning: dict[str, Any] = {
+        "issue": "duplicate_rows",
+        "detail": (
+            f"{duplicate_count} of the {len(rows)} rows read are exact duplicates "
+            "of another row in this page (not checked table-wide)."
+        ),
+        "rows_checked": len(rows),
+    }
+    if view_id is not None and dataset_id is not None:
+        spec = json.dumps({"dataset_id": dataset_id})
+        warning["fix"] = f"mammoth view transform discard-duplicates {view_id} --input '{spec}'"
+    return warning
+
+
 def column_warnings(
     rows: Iterable[Mapping[str, Any]],
     column_types: Mapping[str, str],
     view_id: int | None = None,
+    dataset_id: int | None = None,
 ) -> list[dict[str, Any]]:
     """Return warnings for text columns that hold numbers or dates, and for blanks.
 
@@ -72,18 +105,24 @@ def column_warnings(
         rows: Row objects keyed by display name (a data page after relabeling).
         column_types: Display name to Mammoth type (``TEXT``, ``NUMERIC``, ...).
         view_id: The view the rows came from, used in the suggested command.
+        dataset_id: The view's dataset, used for the duplicate-rows fix
+            command (a mutation, so it needs the exact parent, not discovery).
 
     Returns:
         One record per finding: ``column``, ``issue``
-        (``numbers_stored_as_text``, ``dates_stored_as_text`` or
-        ``blank_values``), ``detail`` and, where one command fixes it, ``fix``.
-        Counts are over the rows given (``rows_checked`` on each record).
+        (``numbers_stored_as_text``, ``dates_stored_as_text``,
+        ``blank_values`` or the table-level ``duplicate_rows``), ``detail``
+        and, where one command fixes it, ``fix``. Counts are over the rows
+        given (``rows_checked`` on each record).
     """
     materialised = [row for row in rows if isinstance(row, Mapping)]
     if not materialised:
         return []
     checked = len(materialised)
     warnings: list[dict[str, Any]] = []
+    duplicate_warning = _duplicate_rows_warning(materialised, view_id, dataset_id)
+    if duplicate_warning is not None:
+        warnings.append(duplicate_warning)
     for column, col_type in column_types.items():
         values = [row.get(column) for row in materialised if column in row]
         if not values:

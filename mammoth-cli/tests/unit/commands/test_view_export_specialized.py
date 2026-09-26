@@ -2,12 +2,15 @@
 
 from __future__ import annotations
 
+import inspect
 import json
 from pathlib import Path
 
 import pytest
+from mammoth.view import ViewExport
 
 from mammoth_cli.commands import view as view_cmd
+from mammoth_cli.commands.view import _SPECIAL_EXPORT_COMMON_FIELDS, _SPECIAL_EXPORTS
 from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.manifest.loader import command_by_id
 from mammoth_cli.runtime.confirm import POLICY_NONE
@@ -353,3 +356,65 @@ def test_csv_export_route_confirmation_matches_manifest(
         )
     except CliError as error:
         assert error.code != "confirmation_required"
+
+
+def test_common_trigger_field_rejected_when_route_has_no_kwargs_sink(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    """PR25 item A follow-up (T2-F-006 c37): ``view.export.dataset`` (SDK
+    ``ViewExport.to_dataset``) has a closed signature -- no ``**kwargs`` -- so
+    it cannot actually accept any of the six common trigger controls. Passing
+    one used to pass the unknown-field check (they were unioned in for every
+    route) and then crash the SDK call itself with an opaque "unexpected
+    keyword argument" TypeError, surfaced as invalid_arguments instead of a
+    clear unknown_input_field naming the actual problem field.
+    """
+    with pytest.raises(CliError) as error:
+        view_cmd.view_export_specialized(
+            _inv(
+                "view.export.dataset",
+                project=180,
+                extra_args=["7", "9"],
+                input_file=_doc(tmp_path, {"dataset_name": "snapshot", "end_of_pipeline": True}),
+                yes=True,
+            )
+        )
+    assert error.value.code == "unknown_input_field"
+    assert error.value.details["unknown"] == ["end_of_pipeline"]
+    assert fake_service.view_call_log == []
+
+
+def test_every_special_export_field_the_cli_would_forward_is_accepted_by_its_sdk_method() -> None:
+    """Guard against a repeat of the ``to_dataset``/``end_of_pipeline`` drift.
+
+    For every typed export route, whatever the CLI's own field-allow-list
+    computation would let through must be forwardable to that route's SDK
+    method without raising a TypeError for an unexpected keyword: either the
+    field is an explicit named parameter, or the method has a ``**kwargs``
+    sink to carry it.
+    """
+    for command_id, (method, required, _secrets) in _SPECIAL_EXPORTS.items():
+        signature = inspect.signature(getattr(ViewExport, method))
+        explicit_fields = {
+            name
+            for name, parameter in signature.parameters.items()
+            if name != "self" and parameter.kind is not inspect.Parameter.VAR_KEYWORD
+        }
+        accepts_var_keyword = any(
+            parameter.kind is inspect.Parameter.VAR_KEYWORD
+            for parameter in signature.parameters.values()
+        )
+        common_fields = _SPECIAL_EXPORT_COMMON_FIELDS if accepts_var_keyword else frozenset()
+        allowed = explicit_fields | common_fields
+        for field in required:
+            assert field in explicit_fields, (
+                f"{command_id}: required field {field!r} is not an explicit "
+                f"parameter of {method!r}"
+            )
+        if not accepts_var_keyword:
+            unforwardable = common_fields - explicit_fields
+            assert not unforwardable, (
+                f"{command_id}: {method!r} has no **kwargs sink, so the common "
+                f"trigger fields {sorted(unforwardable)} would crash the call"
+            )
+        assert allowed  # every route accepts at least its own explicit fields

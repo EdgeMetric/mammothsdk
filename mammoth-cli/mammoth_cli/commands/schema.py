@@ -92,6 +92,13 @@ _COMMAND_DISCOVERY_PURPOSES = {
     "view.export.sftp": "sftp secure file transfer server",
     "view.export.sharepoint": "share point sharepoint microsoft",
     "view.export.tableau": "tableau server dashboard",
+    # "Run"/"execute"/"apply"/"refresh" the pipeline is ambiguous between
+    # re-running its tasks and applying a pending draft; both need to surface.
+    "view.pipeline.rerun": (
+        "run execute rerun re-run refresh recompute apply pipeline tasks "
+        "from a point in the task sequence"
+    ),
+    "view.draft.submit": "apply submit run execute a pending draft changes",
     "webhook.create": "webhook http endpoint api push create",
     "webhook.update": "webhook http endpoint api update",
     "webhook.get": "webhook http endpoint api get",
@@ -142,7 +149,8 @@ _COMMAND_DISCOVERY_PURPOSES = {
         "fill missing null empty blank blanks impute carry forward fill down values"
     ),
     "view.transform.filter": (
-        "filter rows keep drop exclude remove delete rows where condition subset"
+        "filter rows keep drop exclude remove delete rows where condition subset "
+        "bind bound binding parameter"
     ),
     "view.transform.generate-sql": "generate write sql query from natural language intent question",
     "view.transform.increment-date": "add subtract days months years to a date column shift",

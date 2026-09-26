@@ -128,12 +128,8 @@ def test_discovery_403_is_typed_and_cannot_reach_task_post(
     service, api = real_service(project_id=PROJECT_ID)
     api.on(
         "GET",
-        r"/browse$",
-        body={
-            "resources": [
-                {"id": PROJECT_ID, "children": [{"type": "datasource", "id": DATASET_ID}]}
-            ]
-        },
+        r"/datasets$",
+        body={"datasets": [{"id": DATASET_ID, "name": "ds"}], "limit": 100, "offset": 0},
     )
     _metadata_route(api, status=403, body={"detail": "metadata denied"})
 
