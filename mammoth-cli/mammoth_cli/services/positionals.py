@@ -168,6 +168,23 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
     "dashboard.tags.merge": (
         PositionalSpec(name="tag_id", type=int, required=True, help="ID of the source tag."),
     ),
+    # Item G: an agent's first move is often `view list` before it has any
+    # dataset id; omitting it now walks every dataset in the active project
+    # (paged) instead of failing with missing_argument.
+    "view.list": (
+        PositionalSpec(
+            name="dataset_id",
+            type=int,
+            required=False,
+            falls_back_to_field="dataset_id",
+            help=(
+                "ID of the dataset. Omit it to list dataviews across every "
+                "dataset in the active project instead (paged; see the "
+                "'dataset_offset' input field and the 'next_dataset_offset' "
+                "result field)."
+            ),
+        ),
+    ),
     # Explicit parent avoids rich-view discovery for the release-scoped GET.
     "view.get": (
         PositionalSpec(name="view_id", type=int, required=True, help="ID of the view."),
@@ -913,6 +930,22 @@ EXACT_PARENT_HELP = (
     "'dataset_id' input field; only read commands may omit it and discover the parent."
 )
 
+# Per-command overrides of ``EXACT_PARENT_HELP`` for a command whose own
+# fields could otherwise be mistaken for this positional. ``view.export.dataset``
+# also takes a ``target_ds_id`` input field naming the destination dataset;
+# an agent that read only the generic text passed a destination id here
+# instead and hit a not-found on the (unrelated) source view's own parent
+# (WPP evidence c38/c39).
+_EXACT_PARENT_HELP_OVERRIDES: dict[str, str] = {
+    "view.export.dataset": (
+        "Exact parent dataset ID of the SOURCE view being exported -- not the "
+        "destination. Required for this command: pass it here or as the "
+        "'dataset_id' input field. To write into an existing destination dataset "
+        "instead of creating one, use the 'target_ds_id' input field, not this "
+        "positional."
+    ),
+}
+
 
 def _with_exact_parent_help(
     command_id: str, specs: tuple[PositionalSpec, ...]
@@ -926,13 +959,14 @@ def _with_exact_parent_help(
     record = command_by_id(command_id)
     if record is None or record.get("mutation_class", "read") == "read":
         return specs
+    help_text = _EXACT_PARENT_HELP_OVERRIDES.get(command_id, EXACT_PARENT_HELP)
     return tuple(
         (
             PositionalSpec(
                 name=spec.name,
                 type=spec.type,
                 required=spec.required,
-                help=EXACT_PARENT_HELP,
+                help=help_text,
                 falls_back_to_field=spec.falls_back_to_field,
                 fills_sdk_param=spec.fills_sdk_param,
                 example_value=spec.example_value,

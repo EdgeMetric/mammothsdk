@@ -9,7 +9,7 @@ from __future__ import annotations
 from unittest.mock import MagicMock
 
 import pytest
-from mammoth.exceptions import MammothAPIError, MammothJobTimeoutError
+from mammoth.exceptions import MammothAPIError, MammothAuthError, MammothJobTimeoutError
 
 from mammoth_cli.context.resolver import ResolvedAuth
 from mammoth_cli.errors.envelope import (
@@ -82,6 +82,46 @@ def test_unknown_mutation_is_not_advertised_as_safe_retry() -> None:
     assert mapped.retryable is False
     assert mapped.details["job_handle"] == 44
     assert any("job get 44" in command for command in mapped.recovery_commands)
+
+
+def test_cross_workspace_401_is_no_access_not_bad_credentials() -> None:
+    """A 401 whose endpoint targets a workspace other than the profile's own
+    is a scoping mistake, not invalid credentials: it must not tell the user
+    to reauthenticate (release evidence T4-L-002 — the in-product agent
+    parroted "reauthenticate" to a web user for exactly this case)."""
+    error = MammothAuthError(
+        "Token is invalid",
+        endpoint="/workspaces/7/projects",
+        method="GET",
+    )
+
+    mapped = map_sdk_exception(error, workspace_id=4)
+
+    assert mapped.code == "authorization_required"
+    assert mapped.exit_status == EXIT_AUTH
+    assert "workspace 7" in mapped.message
+    assert "workspace 4" in mapped.message
+    assert mapped.authorization_required is True
+    assert mapped.recovery_commands == []
+    assert "mammoth auth login" not in mapped.recovery_commands
+
+
+def test_401_without_a_workspace_mismatch_is_still_bad_credentials() -> None:
+    error = MammothAuthError("Token is invalid", endpoint="/workspaces/4/projects", method="GET")
+
+    mapped = map_sdk_exception(error, workspace_id=4)
+
+    assert mapped.code == "authentication_failed"
+    assert mapped.recovery_commands == ["mammoth auth login"]
+
+
+def test_401_with_no_workspace_id_context_is_still_bad_credentials() -> None:
+    error = MammothAuthError("Token is invalid", endpoint="/workspaces/7/projects", method="GET")
+
+    mapped = map_sdk_exception(error)
+
+    assert mapped.code == "authentication_failed"
+    assert mapped.recovery_commands == ["mammoth auth login"]
 
 
 @pytest.mark.parametrize(

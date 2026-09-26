@@ -111,3 +111,26 @@ def test_condition_annotation_unaffected() -> None:
     # The resource-reference branch must not intercept condition annotations.
     schema = json_schema(_condition_module.Condition)
     assert schema and schema.get("type") != "integer"
+
+
+def test_condition_value_documents_the_parameter_binding_marker() -> None:
+    # The server deep-walks task params and replaces any
+    # {"type": "parameter", "parameter_id": N} marker with that parameter's
+    # live value (api/api/parameters/binding_extractor.py in mvc-service) —
+    # the SDK's Condition.value already forwards such a dict untouched, but
+    # the schema never told an agent the shape exists. It must show both the
+    # literal-scalar and binding-marker shapes, with an example and a pointer
+    # to create a parameter first if none exists.
+    schema = json_schema(_condition_module.Condition)
+    value_schema = schema["$defs"]["condition"]["oneOf"][0]["properties"]["value"]
+    shapes = value_schema["anyOf"]
+    assert len(shapes) == 2
+    literal, binding = shapes
+    assert literal == {"example": "Active"}
+    assert binding["type"] == "object"
+    assert binding["properties"]["type"] == {"const": "parameter"}
+    assert binding["properties"]["parameter_id"] == {"type": "integer"}
+    assert binding["required"] == ["type", "parameter_id"]
+    assert binding["additionalProperties"] is False
+    assert binding["example"] == {"type": "parameter", "parameter_id": 12}
+    assert "parameter create" in binding["description"]

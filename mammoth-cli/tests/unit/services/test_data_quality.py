@@ -50,3 +50,40 @@ def test_blank_values_are_counted_for_any_type() -> None:
 
 def test_no_rows_no_warnings() -> None:
     assert column_warnings([], {"price": "TEXT"}) == []
+
+
+def test_exact_duplicate_rows_are_flagged_with_a_scoped_count_and_fix() -> None:
+    """PR25 item I: two agent runs missed duplicate rows because
+    ``column_warnings`` only ever checked individual columns, never whether
+    the page itself held repeated rows. The count must be scoped to the rows
+    actually read (never claimed table-wide), and the fix must be a directly
+    runnable ``discard-duplicates`` command when the dataset id is known.
+    """
+    rows = [
+        {"order_id": "1", "amount": "10"},
+        {"order_id": "2", "amount": "20"},
+        {"order_id": "1", "amount": "10"},  # exact duplicate of row 0
+        {"order_id": "1", "amount": "10"},  # exact duplicate of row 0
+    ]
+    warnings = column_warnings(rows, {"order_id": "TEXT", "amount": "NUMERIC"}, view_id=62)
+    (warning,) = [w for w in warnings if w["issue"] == "duplicate_rows"]
+    assert warning["detail"] == (
+        "2 of the 4 rows read are exact duplicates of another row in this page "
+        "(not checked table-wide)."
+    )
+    assert "fix" not in warning
+    assert warning["rows_checked"] == 4
+
+
+def test_duplicate_rows_fix_is_a_runnable_command_when_dataset_id_is_known() -> None:
+    rows = [{"a": "1"}, {"a": "1"}]
+    (warning,) = column_warnings(rows, {"a": "TEXT"}, view_id=62, dataset_id=9)
+    assert warning["issue"] == "duplicate_rows"
+    assert warning["fix"] == (
+        "mammoth view transform discard-duplicates 62 --input '{\"dataset_id\": 9}'"
+    )
+
+
+def test_no_duplicate_rows_is_quiet() -> None:
+    rows = [{"a": "1"}, {"a": "2"}, {"a": "3"}]
+    assert [w for w in column_warnings(rows, {"a": "TEXT"}) if w["issue"] == "duplicate_rows"] == []

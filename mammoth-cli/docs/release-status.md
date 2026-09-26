@@ -1,5 +1,97 @@
 # CLI release provenance
 
+## 2.0.50
+
+Six fixes from replayed WPP/T2/T3/T4 eval traces (koyal), the biggest being a
+deterministic dataview-discovery truncation that failed customer goldens
+outright on 2.0.49.
+
+- **Fixed (SDK, `mammoth-io` 0.7.22)**: `PipelineAPI._find_dataset_for_dataview`
+  (the parent-discovery path behind `view get`/`view export`/etc. without an
+  explicit `dataset_id`) enumerated a project's datasets via
+  `browse.workspace_resources`/`browse.folder_resources` at the SDK's default
+  `limit=100`, and never followed the server's pagination `next`. Server-side,
+  `ResourceService.ls` flattens an entire workspace->project->dataset/folder
+  depth-2 hierarchy into one list before paging it, so any project with more
+  than 100 such resources silently truncated — and a freshly created dataview
+  (sorting last) was the most likely one dropped, making `view get ID` return
+  `resource_not_found` on idle, fresh views every time (WPP W3/W4, T2-F-006,
+  T3-E-005, T3-E-009). `mammoth/api/pipeline.py` now enumerates via
+  `DatasetsAPI.list_all()` (already fully paginated, project-scoped, and the
+  same primitive `project.py::project_check` uses), and drops the now-
+  unnecessary folder DFS entirely — a dataset's `project_id` is the server's
+  only membership rule (`Datasource.get_filtered_datasets`); folder nesting
+  never bears on it.
+- **Fixed (CLI, `mammoth-cli` 2.0.50)**: `view export dataset|managed-s3|...`
+  (`ViewExport.to_dataset`/`to_csv`) let through six export-trigger fields
+  (`trigger_type`, `run_immediately`, `validate_only`, `end_of_pipeline`,
+  `additional_properties`, `condition`) regardless of whether the target SDK
+  method accepts a `**kwargs` sink. `to_dataset`/`to_csv` are closed-signature
+  and reject them at the SDK boundary (WPP W4 c37: `end_of_pipeline` on
+  `to_dataset` raised `TypeError`, surfaced as a confusing "unexpected keyword
+  argument"). `view_export_specialized` now only admits those fields when
+  `inspect.signature(...)` shows the route's method actually accepts
+  `**kwargs`.
+- **Fixed (CLI, `mammoth-cli` 2.0.50)**: `view.export.dataset`'s second
+  positional (the exact parent dataset of the *source* view) is easy to
+  mistake for the destination dataset, since `to_dataset` separately takes a
+  `target_ds_id` input field for that. An agent that read only the generic
+  "exact parent dataset" help text passed a destination id as the positional
+  and hit a not-found on the (unrelated) source's own parent, even with an
+  explicit dataset given (WPP W4 c38/c39). `view.export.dataset` now has its
+  own positional help in `mammoth_cli/services/positionals.py` naming
+  `target_ds_id` by name and saying explicitly this positional is not it.
+- **Added (CLI, `mammoth-cli` 2.0.50)**: `view list` no longer requires
+  `DATASET_ID`; omitting it walks every dataset in the active project (via
+  the same paginated `DatasetsAPI.list_all()` as the discovery fix above),
+  paging whole datasets at a time via the new `dataset_offset` input field
+  and `next_dataset_offset` result field.
+- **Added (CLI, `mammoth-cli` 2.0.50)**: the parameter-binding marker
+  (`{"type": "parameter", "parameter_id": N}`, resolved server-side by
+  `api/api/parameters/binding_extractor.py` in mvc-service) was already
+  accepted end to end by `view transform filter`'s `condition.value` — the
+  SDK's `Condition` forwards it untouched and the server's binding resolver
+  deep-walks task params to find it regardless of nesting — but the schema
+  never said the shape existed. `schema get view.transform.filter` now shows
+  `condition.value` as `anyOf` a literal or the binding marker, with an
+  example and a pointer to `parameter create`; `schema find "filter by
+  parameter"` / `"bind parameter"` now reach the command.
+- **Added (CLI, `mammoth-cli` 2.0.50)**: `schema find` synonyms for
+  "run"/"execute"/"apply"/"refresh"/"recompute" now reach
+  `view.pipeline.rerun` and `view.draft.submit` (WPP/T3 evidence: neither
+  command was reachable by those words at all). `view pipeline get`'s result
+  now carries a `hint` naming the exact command when the pipeline's own
+  `draft_mode` is `"dirty"` (an unsubmitted draft is holding back pending
+  changes — run `view draft submit`) or `auto_run` is `false` (new tasks
+  will not compute automatically — run `view pipeline rerun`).
+- **Added (CLI, `mammoth-cli` 2.0.50)**: `view data get`'s `column_warnings`
+  flagged blanks and dates-as-text but never exact duplicate rows, so two
+  replayed runs (WPP W7, T3-D-014) missed them. `services/data_quality.py`
+  now adds a table-level warning — "N of the M rows read are exact
+  duplicates" (scoped to the page actually read, never claiming table-wide)
+  — naming `view transform discard-duplicates VIEW --input '{"dataset_id":
+  N}'` as the fix. Near-duplicates (same row but a differing id) are out of
+  scope: no cheap, deterministic signal for those exists yet.
+- **Fixed (CLI, `mammoth-cli` 2.0.50)**: any 401 was reported as
+  `authentication_failed` with a `mammoth auth login` recovery command, even
+  when the profile's credentials were fine and the request simply targeted a
+  workspace the token isn't scoped to (e.g. `workspace get 7` from a token
+  signed in for workspace 4) — server message "Token is invalid" for what is
+  really a scoping mistake. The in-product agent parroted "reauthenticate in
+  your Mammoth CLI" to a web user for exactly this case (T4-L-002).
+  `mapping.py::map_sdk_exception` now compares the failing request's
+  endpoint (`/workspaces/{id}/...`) against the profile's own `workspace_id`;
+  on a mismatch it reports `authorization_required` ("no access to workspace
+  7 (this sign-in is for workspace 4)") with no `auth login` recovery,
+  instead of `authentication_failed`.
+- **New build guard**: `tests/contract/test_skill_catalog.py` now fails if
+  the bundled `mammoth-cli/mammoth_cli/bundled_skill/mammoth-cli/SKILL.md`
+  grows past its 2.0.49 size of 13,672 bytes. That file is injected into the
+  in-product agent's system prompt under a hard 12,000-token ceiling; every
+  byte here is one the product cannot spend elsewhere. This release adds no
+  bytes to it — the new guidance above lives in `schema get`/`schema find`
+  output and command hints, read on demand, not in the baked-in prompt.
+
 ## 2.0.49
 
 Three fixes landed together for this release: a read-only aggregate query

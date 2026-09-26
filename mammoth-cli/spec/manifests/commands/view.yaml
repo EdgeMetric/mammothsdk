@@ -1881,8 +1881,10 @@ commands:
     required: false
     metavar: DATASET_ID
     falls_back_to_field: dataset_id
-    help: 'Exact parent dataset ID. Required for this command: pass it here or as the ''dataset_id'' input
-      field; only read commands may omit it and discover the parent.'
+    help: 'Exact parent dataset ID of the SOURCE view being exported -- not the destination.
+      Required for this command: pass it here or as the ''dataset_id'' input field. To write into
+      an existing destination dataset instead of creating one, use the ''target_ds_id'' input field,
+      not this positional.'
   options: []
   sdk_symbol: mammoth.view.ViewExport.to_dataset
   sdk_conversion: Call mammoth.view.ViewExport.to_dataset with validated request fields.
@@ -2994,10 +2996,12 @@ commands:
   positionals:
   - name: dataset_id
     type: int
-    required: true
+    required: false
     metavar: DATASET_ID
-    falls_back_to_field: null
-    help: ID of the dataset.
+    falls_back_to_field: dataset_id
+    help: 'ID of the dataset. Omit it to list dataviews across every dataset in
+      the active project instead (paged; see the ''dataset_offset'' input field
+      and the ''next_dataset_offset'' result field).'
   options: []
   sdk_symbol: mammoth.api.dataviews.DataviewsAPI.list
   sdk_conversion: Call mammoth.api.dataviews.DataviewsAPI.list with validated request fields.
@@ -3013,7 +3017,7 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view list DATASET_ID --help
+  human_example: mammoth view list --help
   agent_example: mammoth view list 123
   unit_tests:
   - UT-VIEW-LIST

@@ -55,6 +55,19 @@ def test_transform_schema_advertises_exact_parent_dataset_context() -> None:
     assert fields["dataset_id"]["schema"]["anyOf"][0]["minimum"] == 1
 
 
+def test_export_dataset_positional_disambiguates_source_parent_from_target() -> None:
+    """WPP evidence (c38/c39): an agent passed the 2nd positional expecting it
+    to name the destination dataset, then hit the same resource_not_found even
+    with an explicit dataset -- because that positional is the SOURCE view's
+    own parent, and the destination is the separate 'target_ds_id' field."""
+    schema = get_schema("view.export.dataset")
+    assert schema is not None
+    positionals = {p["name"]: p for p in schema["positionals"]}
+    help_text = positionals["dataset_id"]["help"]
+    assert "not the destination" in help_text
+    assert "target_ds_id" in help_text
+
+
 def test_bulk_replace_exposes_the_required_view_id_positional() -> None:
     """bulk-replace's positional (the view id) was previously invisible."""
     schema = get_schema(_BULK_REPLACE)
@@ -199,6 +212,30 @@ def test_agent_transform_language_finds_typed_routes() -> None:
     assert "view.transform.join" in {
         item["command_id"] for item in find_schemas("join blend")["matches"]
     }
+
+
+def test_bind_parameter_finds_the_filter_transform() -> None:
+    """WPP evidence: an agent asked to 'filter by parameter' or 'bind a
+    parameter' to a condition value never reached view.transform.filter,
+    which is the only place that value can be a parameter binding marker."""
+    assert "view.transform.filter" in {
+        item["command_id"] for item in find_schemas("filter by parameter")["matches"]
+    }
+    assert "view.transform.filter" in {
+        item["command_id"] for item in find_schemas("bind parameter to condition")["matches"]
+    }
+
+
+def test_run_execute_apply_refresh_find_pipeline_rerun_and_draft_submit() -> None:
+    """Synonyms for 'run/execute/apply/refresh the pipeline tasks' must reach
+    view.pipeline.rerun (re-run from a point in the task sequence) and
+    view.draft.submit (apply a pending draft)."""
+    for query in ("run pipeline", "execute pipeline tasks", "refresh pipeline", "recompute view"):
+        matches = {item["command_id"] for item in find_schemas(query)["matches"]}
+        assert "view.pipeline.rerun" in matches, query
+    for query in ("apply draft", "apply pending changes"):
+        matches = {item["command_id"] for item in find_schemas(query)["matches"]}
+        assert "view.draft.submit" in matches, query
 
 
 def test_append_rows_between_datasets_finds_view_export_dataset() -> None:

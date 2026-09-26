@@ -57,6 +57,26 @@ def test_every_shipped_reference_file_is_under_the_agent_read_cap() -> None:
         ), f"{path.relative_to(SKILL)} is over the {_MAX_REFERENCE_BYTES}-byte agent read cap"
 
 
+#: SKILL.md, unlike references/*.md, ships inside the in-product system
+#: prompt's own fixed token budget -- it is not read on demand. At mammoth-cli
+#: 2.0.49 the prompt measured 11,867 of a 12,000-token cap with everything
+#: else already trimmed; SKILL.md was 13,672 bytes. New guidance belongs in
+#: references/ or in command hints/schemas (loaded on demand) instead of
+#: growing this file, so the cap is enforced at its 2.0.49 size rather than
+#: the much looser per-reference-file byte cap above.
+_MAX_SKILL_MD_BYTES = 13672
+
+
+def test_skill_md_does_not_grow_past_its_system_prompt_budget() -> None:
+    size = len((SKILL / "SKILL.md").read_bytes())
+    assert size <= _MAX_SKILL_MD_BYTES, (
+        f"SKILL.md is {size} bytes, over its {_MAX_SKILL_MD_BYTES}-byte budget. It ships "
+        "inside the in-product system prompt's fixed token cap, which is already spent "
+        "down to fit -- put new guidance in references/ or in command hints/schemas "
+        "instead, which load on demand."
+    )
+
+
 def test_every_entry_carries_a_release_status_joined_from_the_matrix() -> None:
     catalog = "\n".join(
         path.read_text(encoding="utf-8")
