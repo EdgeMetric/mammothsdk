@@ -1,5 +1,16 @@
 # CLI release provenance
 
+## 2.0.56
+
+**Fix**: `view export dataset` into an existing `target_ds_id` now refuses a second writer
+(`export_already_exists`, recovery `mammoth view pipeline rerun VIEW_ID`) when this view already
+has a live `internal_dataset` export into that target: each export is a persistent pipeline
+trigger and `REPLACE_IN_DS` replaces only its own rows, so a second export duplicated rows
+(WPP golden W2: 72 rows instead of 24). Soft-deleted exports are ignored. `rows_after` is no
+longer reported for writes into an existing dataset (it raced the target's metadata refresh
+and was stale); the success envelope now carries `refreshes_on_pipeline_run: true`. SDK unchanged
+(`mammoth-io` 0.7.26). PR #41.
+
 ## 2.0.55
 
 **New (SDK, `mammoth-io` 0.7.26)**: 8 `dashboard embed` commands (#39, CLI gap flagged by the S9b

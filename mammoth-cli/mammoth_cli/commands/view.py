@@ -24,6 +24,7 @@ import inspect
 from datetime import UTC, datetime
 from typing import Any
 
+from mammoth.models.exports import ExportStatus
 from mammoth.view import ViewExport
 
 from mammoth_cli.context import profiles
@@ -2300,9 +2301,35 @@ def view_export_specialized(invocation: Invocation) -> HandlerResult:
                 ),
                 details={"dataset_id": dataset_id, "target_ds_id": int(target_ds_id)},
             )
-        rows_before = None
-        if target_ds_id is not None and kwargs.get("save_as_mode") == "APPEND_TO_DS":
-            rows_before = _dataset_row_count(service, int(target_ds_id), result_project_id)
+        if target_ds_id is not None:
+            # Each `view export dataset` call creates its own PERSISTENT
+            # export trigger on this view, which re-runs on every pipeline
+            # run; REPLACE_IN_DS/APPEND_TO_DS only ever touch that trigger's
+            # OWN rows. A second export from this view into the same target
+            # is therefore a second writer, not a refresh of the first --
+            # the fix is to rerun the pipeline, not to export again.
+            existing_export = _existing_internal_dataset_export(
+                service, dataview_id, dataset_id, int(target_ds_id)
+            )
+            if existing_export is not None:
+                raise CliError(
+                    code="export_already_exists",
+                    message=(
+                        f"View {dataview_id} already exports into dataset "
+                        f"{int(target_ds_id)} (export {existing_export.id}). This export "
+                        "re-runs on every pipeline run, and REPLACE_IN_DS replaces only "
+                        "its own rows -- a second export into the same target duplicates "
+                        "rows instead of refreshing them."
+                    ),
+                    exit_status=EXIT_USAGE,
+                    hint="Refresh the target by rerunning the pipeline, not by exporting again.",
+                    recovery_commands=[f"mammoth view pipeline rerun {dataview_id}"],
+                    details={
+                        "dataview_id": dataview_id,
+                        "target_ds_id": int(target_ds_id),
+                        "export_id": existing_export.id,
+                    },
+                )
         data = service.call_view(dataview_id, method, dataset_id=dataset_id, **kwargs)
         if is_dataset_route and isinstance(data, int):
             # The SDK returns the bare id of the dataset written to; name it, and
@@ -2316,6 +2343,10 @@ def view_export_specialized(invocation: Invocation) -> HandlerResult:
                 "dataset_id": data,
                 "project_id": result_project_id,
                 "source_view_id": dataview_id,
+                # Every internal-dataset export is a pipeline trigger, not a
+                # one-shot copy: it re-runs (and re-writes its own rows) every
+                # time this view's pipeline runs.
+                "refreshes_on_pipeline_run": True,
             }
             view_info = _dataset_view_info(service, data["dataset_id"], result_project_id)
             if view_info is not None:
@@ -2325,30 +2356,52 @@ def view_export_specialized(invocation: Invocation) -> HandlerResult:
                 data["next"] = f"mammoth view list {data['dataset_id']}" + (
                     f" --project {result_project_id}" if target_project is not None else ""
                 )
-            rows_after = view_info["row_count"] if view_info is not None else None
-            if rows_after is not None:
-                data["rows_after"] = rows_after
-            if rows_before is not None:
-                data["rows_before"] = rows_before
+            # rows_after is only trustworthy for a brand-new dataset: nothing
+            # else could have written to it yet. Writing into an EXISTING
+            # target_ds_id races the target view's own metadata refresh --
+            # this same read has returned a stale row count right after a
+            # confirmed write -- so it is omitted rather than reported wrong.
+            if target_ds_id is None:
+                rows_after = view_info["row_count"] if view_info is not None else None
+                if rows_after is not None:
+                    data["rows_after"] = rows_after
     return data, _meta(invocation, auth.workspace_id, project_id)
 
 
-def _dataset_row_count(service: Any, dataset_id: int, project_id: int | None) -> int | None:
-    """Best-effort row count for a dataset, read from its first view.
+_EXPORTS_LIST_SYMBOL = "mammoth.api.exports.ExportsAPI.list"
+_INTERNAL_DATASET_HANDLER_TYPE = "internal_dataset"
 
-    Row counts are exposed per-view, not per-dataset; this reads the first
-    dataview's ``row_count`` (mirrors ``upload_preview``). ``None`` on any
-    failure rather than failing the export result.
+
+def _existing_internal_dataset_export(
+    service: Any, dataview_id: int, dataset_id: int | None, target_ds_id: int
+) -> Any | None:
+    """This dataview's ``internal_dataset`` export already writing into
+    ``target_ds_id``, if one exists (the most recent by id, when more than
+    one somehow matches). ``None`` on no match.
+
+    ``TARGET_DS_ID`` is compared as ``int``: the wire value can come back as
+    a string, which would otherwise never match (mirrors the same int/str
+    fix already applied to the SDK's own write-confirmation poll). A
+    soft-deleted export (``status == ExportStatus.DELETED``) is never a
+    match: the backend soft-deletes triggers rather than removing the row,
+    and the list endpoint does not filter on status, so a deleted export
+    would otherwise block every later export into that target forever.
     """
-    try:
-        listing = service.call(_DATAVIEW_LIST_SYMBOL, dataset_id=dataset_id, project_id=project_id)
-        views = listing.get("dataviews") if isinstance(listing, dict) else None
-        if not isinstance(views, list) or not views or not isinstance(views[0], dict):
-            return None
-        row_count = views[0].get("row_count")
-        return int(row_count) if row_count is not None else None
-    except Exception:  # noqa: BLE001 -- row count is advisory, never fails the export
-        return None
+    listing = service.call(
+        _EXPORTS_LIST_SYMBOL,
+        dataview_id=dataview_id,
+        dataset_id=dataset_id,
+        handler_type=_INTERNAL_DATASET_HANDLER_TYPE,
+    )
+    exports = getattr(listing, "exports", None) or []
+    matches = [
+        export
+        for export in exports
+        if export.status is not ExportStatus.DELETED
+        and (target := (export.target_properties or {}).get("TARGET_DS_ID")) is not None
+        and int(target) == target_ds_id
+    ]
+    return max(matches, key=lambda export: export.id or 0) if matches else None
 
 
 def _dataset_view_info(

@@ -7,6 +7,12 @@ import json
 from pathlib import Path
 
 import pytest
+from mammoth.models.exports import (
+    ExportStatus,
+    HandlerType,
+    ItemExportInfo,
+    PipelineExportsPaginated,
+)
 from mammoth.view import ViewExport
 
 from mammoth_cli.commands import view as view_cmd
@@ -19,6 +25,22 @@ from mammoth_cli.services.testing import FakeMammothService
 from mammoth_cli.testing import login_default_profile
 
 _DATAVIEW_LIST = "mammoth.api.dataviews.DataviewsAPI.list"
+_EXPORTS_LIST = "mammoth.api.exports.ExportsAPI.list"
+
+
+def _exports_page(*items: ItemExportInfo) -> PipelineExportsPaginated:
+    return PipelineExportsPaginated(limit=50, offset=0, next="", exports=list(items))
+
+
+def _internal_dataset_export(
+    export_id: int, target_ds_id: object, *, status: ExportStatus | None = None
+) -> ItemExportInfo:
+    return ItemExportInfo(
+        id=export_id,
+        handler_type=HandlerType.INTERNAL_DATASET,
+        target_properties={"TARGET_DS_ID": target_ds_id},
+        status=status,
+    )
 
 
 def _inv(command_id: str, **overrides: object) -> Invocation:
@@ -73,6 +95,7 @@ def test_dataset_route_names_the_written_dataset_and_its_project(
         "dataset_id": 114,
         "project_id": 57,
         "source_view_id": 7,
+        "refreshes_on_pipeline_run": True,
         "next": "mammoth view list 114 --project 57",
     }
 
@@ -92,13 +115,21 @@ def test_dataset_route_reports_rows_after_for_a_new_dataset(
         )
     )
     assert data["rows_after"] == 42
+    assert data["refreshes_on_pipeline_run"] is True
     assert "rows_before" not in data
     assert (_DATAVIEW_LIST, {"dataset_id": 114, "project_id": 180}) in fake_service.call_log
 
 
-def test_dataset_route_reports_rows_before_and_after_for_append(
+def test_dataset_route_omits_unverifiable_row_counts_for_append_into_existing_target(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
+    """Regression for eval W2 (2026-09-26): ``rows_after`` used to come from a
+    read taken immediately after the write, before the target view's row
+    count had recomputed -- stale by construction. The dataset's real row
+    count (60, in this fixture) must never be reported as ``rows_after``/
+    ``rows_before`` for a write into an EXISTING target, since the CLI has no
+    way to prove that number is fresh.
+    """
     fake_service.view_responses[(7, "to_dataset")] = 9
     fake_service.responses[_DATAVIEW_LIST] = {"dataviews": [{"id": 500, "row_count": 60}]}
     data, _meta = view_cmd.view_export_specialized(
@@ -113,9 +144,140 @@ def test_dataset_route_reports_rows_before_and_after_for_append(
             yes=True,
         )
     )
-    assert data["rows_before"] == 60
-    assert data["rows_after"] == 60
-    assert fake_service.call_log.count((_DATAVIEW_LIST, {"dataset_id": 9, "project_id": 180})) == 2
+    assert "rows_before" not in data
+    assert "rows_after" not in data
+    assert data["refreshes_on_pipeline_run"] is True
+    assert fake_service.call_log.count((_DATAVIEW_LIST, {"dataset_id": 9, "project_id": 180})) == 1
+    assert (
+        _EXPORTS_LIST,
+        {"dataview_id": 7, "dataset_id": 3, "handler_type": HandlerType.INTERNAL_DATASET},
+    ) in fake_service.call_log
+
+
+def test_dataset_route_rejects_a_second_export_into_the_same_target(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    """Regression for eval W2 (2026-09-26): a repeat ``view export dataset``
+    into a target this view already exports into must fail loud instead of
+    creating a second persistent trigger -- each is a separate writer, so
+    ``REPLACE_IN_DS``/``APPEND_TO_DS`` only ever replaces/appends its OWN
+    trigger's rows, and the target's row count balloons on every rerun.
+    """
+    fake_service.responses[_EXPORTS_LIST] = _exports_page(_internal_dataset_export(42, 1545))
+    with pytest.raises(CliError) as error:
+        view_cmd.view_export_specialized(
+            _inv(
+                "view.export.dataset",
+                project=180,
+                extra_args=["1758", "1544"],
+                input_file=_doc(
+                    tmp_path,
+                    {
+                        "dataset_name": "YouTube CPM benchmark",
+                        "target_ds_id": 1545,
+                        "save_as_mode": "REPLACE_IN_DS",
+                    },
+                ),
+                yes=True,
+            )
+        )
+    assert error.value.code == "export_already_exists"
+    assert "view 1758" in error.value.message.lower()
+    assert "dataset 1545" in error.value.message.lower()
+    assert "export 42" in error.value.message.lower()
+    assert "re-runs on every pipeline run" in error.value.message
+    assert "replace_in_ds" in error.value.message.lower()
+    assert error.value.recovery_commands == ["mammoth view pipeline rerun 1758"]
+    assert fake_service.view_call_log == []
+
+
+def test_dataset_route_export_guard_matches_target_ds_id_as_int(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    """The existing export's ``TARGET_DS_ID`` can come back as a string on
+    the wire; the comparison must not silently miss that match (mirrors the
+    int/str fix already applied to the SDK's own write-confirmation poll).
+    """
+    fake_service.responses[_EXPORTS_LIST] = _exports_page(_internal_dataset_export(42, "1545"))
+    with pytest.raises(CliError) as error:
+        view_cmd.view_export_specialized(
+            _inv(
+                "view.export.dataset",
+                project=180,
+                extra_args=["1758", "1544"],
+                input_file=_doc(tmp_path, {"dataset_name": "feed", "target_ds_id": 1545}),
+                yes=True,
+            )
+        )
+    assert error.value.code == "export_already_exists"
+    assert fake_service.view_call_log == []
+
+
+def test_dataset_route_export_guard_ignores_a_soft_deleted_export(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    """mvc-service soft-deletes a trigger (status -> ExportStatus.DELETED)
+    rather than removing its row, and the exports-list endpoint does not
+    filter on status (api/api/dataview/actions/actions.py:887,
+    apiv2/apiv2/dataview_pipeline/exports/controller.py:151). A deleted
+    export into the target must not count as an existing writer -- or a
+    once-deleted export would block every later export into that target
+    forever.
+    """
+    fake_service.responses[_EXPORTS_LIST] = _exports_page(
+        _internal_dataset_export(42, 1545, status=ExportStatus.DELETED)
+    )
+    fake_service.view_responses[(1758, "to_dataset")] = 1545
+    view_cmd.view_export_specialized(
+        _inv(
+            "view.export.dataset",
+            project=180,
+            extra_args=["1758", "1544"],
+            input_file=_doc(
+                tmp_path,
+                {
+                    "dataset_name": "YouTube CPM benchmark",
+                    "target_ds_id": 1545,
+                    "save_as_mode": "REPLACE_IN_DS",
+                },
+            ),
+            yes=True,
+        )
+    )
+    assert fake_service.view_call_log == [
+        (
+            1758,
+            "to_dataset",
+            {
+                "dataset_id": 1544,
+                "dataset_name": "YouTube CPM benchmark",
+                "target_ds_id": 1545,
+                "save_as_mode": "REPLACE_IN_DS",
+            },
+        )
+    ]
+
+
+def test_dataset_route_allows_first_export_into_an_existing_target(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    """No existing export from this view into the target -> the write
+    proceeds normally (an unrelated export, or none at all, must not block
+    it)."""
+    fake_service.responses[_EXPORTS_LIST] = _exports_page(_internal_dataset_export(7, 9001))
+    fake_service.view_responses[(7, "to_dataset")] = 9
+    view_cmd.view_export_specialized(
+        _inv(
+            "view.export.dataset",
+            project=180,
+            extra_args=["7", "3"],
+            input_file=_doc(tmp_path, {"dataset_name": "orders", "target_ds_id": 9}),
+            yes=True,
+        )
+    )
+    assert fake_service.view_call_log == [
+        (7, "to_dataset", {"dataset_id": 3, "dataset_name": "orders", "target_ds_id": 9})
+    ]
 
 
 def test_dataset_route_rejects_target_ds_id_equal_to_own_dataset(
@@ -160,6 +322,7 @@ def test_dataset_route_inlines_the_target_view_instead_of_a_relist_hint(
         "dataset_id": 114,
         "project_id": 58,
         "source_view_id": 7,
+        "refreshes_on_pipeline_run": True,
         "view_id": 220,
         "view_name": "Store sales combined",
     }
