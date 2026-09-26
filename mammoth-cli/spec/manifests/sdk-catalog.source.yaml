@@ -4185,8 +4185,9 @@ sdk_methods:
   wait_policy: returns_job
   pagination_policy: null
   openapi_operation_ids: []
-  notes: The handler enum and helper exist, but the pure contract omits it; confirm camel-case clientId
-    against the pinned server before enabling. See IO-EXPORT-HANDLERS blocker.
+  notes: Needs the Power BI account username and password, the Azure AD app's client_id, and the target
+    Power BI dataset and table; the password is a secret field, so pass it in the request file, never in
+    argv.
 - sdk_symbol: mammoth.view.ViewExport.to_redshift
   canonical_command: view.export.redshift
   alias_of: null
@@ -4281,10 +4282,8 @@ notes_on_dispositions:
   a reviewed typed fixture." No SDK method backs this handler.'
 - 'email export handler: "Outbound email stays contract-only until a dedicated sink and recipient allowlist
   exist" (acceptance class contract_only_high_impact).'
-- 'powerbi export handler: "The handler enum and helper exist, but the pure contract omits it. Confirm
-  camel-case clientId against the pinned server before enabling."'
-- 'IO-EXPORT-HANDLERS blocker: "csv_file, powerbi, and any server-rejected handler ... never infer support
-  from the enum."'
+- 'IO-EXPORT-HANDLERS blocker: "csv_file and any server-rejected handler ... never infer support from the
+  enum."'
 - 'B04 SERVER_VARIANCE (doc 09): "project browse and dashboard sources are documented as returning HTTP
   500 on some servers; schedule list may return 405. A permission or 5xx response is not server_unavailable;
   retain the live exemption evidence."'

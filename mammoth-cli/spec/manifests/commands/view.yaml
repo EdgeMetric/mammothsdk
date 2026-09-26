@@ -2474,8 +2474,9 @@ commands:
   - CT-VIEW-EXPORT-POWERBI-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: The handler enum and helper exist, but the pure contract omits it; confirm camel-case
-    clientId against the pinned server before enabling. See IO-EXPORT-HANDLERS blocker.
+  known_restrictions: Needs the Power BI account username and password, the Azure AD app's client_id, and
+    the target Power BI dataset and table; the password is a secret field, so pass it in the request file,
+    never in argv.
   reviewed_by: primary
 - command_id: view.export.publish-db
   command_path: view export publish-db
