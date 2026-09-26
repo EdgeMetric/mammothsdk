@@ -260,8 +260,11 @@ commands:
   - CT-FOLDER-MOVE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: 'B05 FOLDER_MOVE_NO_WAIT: SDK returns ObjectJobSchema but exposes no public wait
-    method; do not advertise --wait/--no-wait.'
+  known_restrictions: Prefer dataset_ids/view_ids (the plain ids dataset get/view get return) over resource_ids
+    -- the SDK resolves them to resource ids for you. resource_ids itself takes each item's resource id,
+    not a dataset/view's own id. target_folder_resource_id is the destination folder's id field, exactly
+    as folder list/folder get/folder create return it (NOT the folder's resource_id field, despite this
+    parameter's name).
   reviewed_by: primary
 - command_id: folder.root
   command_path: folder root

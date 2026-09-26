@@ -151,6 +151,18 @@ def test_move_forwards_targets(fake_service: FakeMammothService, tmp_path: Path)
     ]
 
 
+def test_move_requires_one_of_resource_dataset_view_ids(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    """Some other field present but none of the id fields is still missing_field."""
+    doc = tmp_path / "in.json"
+    doc.write_text(json.dumps({"target_folder_resource_id": "t"}), encoding="utf-8")
+    with pytest.raises(CliError) as excinfo:
+        folder_cmd.folder_move(_inv("folder.move", project=180, input_file=str(doc)))
+    assert excinfo.value.code == "missing_field"
+    assert fake_service.call_log == []
+
+
 def test_trash_passes_folder_and_project(fake_service: FakeMammothService) -> None:
     folder_cmd.folder_trash(_inv("folder.trash", project=180, extra_args=["7"]))
     assert fake_service.call_log == [(_TRASH, {"folder_id": 7, "project_id": 180})]
