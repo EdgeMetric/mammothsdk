@@ -64,7 +64,10 @@ _GROUP_DESCRIPTIONS = {
     "billing": "Manage billing and hosted checkout flows.",
     "browse": "Browse projects and workspace resources.",
     "capability": "Discover API operation support and policies.",
-    "client-app": "Manage client applications.",
+    "client-app": (
+        "Manage the workspace's API keys (client apps): key + secret credentials "
+        "for scripts and integrations."
+    ),
     "completion": "Install or print shell completion.",
     "config": "Read and update local CLI configuration.",
     "connector": "Manage data connectors and connector profiles.",
@@ -73,7 +76,7 @@ _GROUP_DESCRIPTIONS = {
     "dashboard": "Build, query, and publish dashboards.",
     "data-app": "Create and manage data applications.",
     "dataset": "Create, inspect, and manage datasets.",
-    "external-key": "Manage external keys.",
+    "external-key": "Manage LLM provider keys (OpenAI, Anthropic, etc.) used by AI features.",
     "file": "Upload and manage source files.",
     "folder": "Organize folders and their contents.",
     "job": "Inspect and wait for asynchronous jobs.",
