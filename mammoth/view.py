@@ -220,7 +220,7 @@ class View(
                 last_seq = max(int(k) for k in taskwise_info)
                 task_info = taskwise_info.get(last_seq) or taskwise_info.get(str(last_seq)) or {}
                 columns_list = task_info.get("metadata") or []
-            except ValueError, TypeError:
+            except (ValueError, TypeError):
                 pass
 
         # Fresh view with no tasks yet — taskwise_info is null, fall back to
@@ -563,7 +563,7 @@ class View(
                 return False
             try:
                 target_matches = int(target) == target_ds_id
-            except TypeError, ValueError:
+            except (TypeError, ValueError):
                 target_matches = False
             if not target_matches:
                 return False
