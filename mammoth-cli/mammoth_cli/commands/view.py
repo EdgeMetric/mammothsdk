@@ -24,6 +24,7 @@ import inspect
 from datetime import UTC, datetime
 from typing import Any
 
+from mammoth.models.exports import ExportStatus
 from mammoth.view import ViewExport
 
 from mammoth_cli.context import profiles
@@ -2380,7 +2381,11 @@ def _existing_internal_dataset_export(
 
     ``TARGET_DS_ID`` is compared as ``int``: the wire value can come back as
     a string, which would otherwise never match (mirrors the same int/str
-    fix already applied to the SDK's own write-confirmation poll).
+    fix already applied to the SDK's own write-confirmation poll). A
+    soft-deleted export (``status == ExportStatus.DELETED``) is never a
+    match: the backend soft-deletes triggers rather than removing the row,
+    and the list endpoint does not filter on status, so a deleted export
+    would otherwise block every later export into that target forever.
     """
     listing = service.call(
         _EXPORTS_LIST_SYMBOL,
@@ -2392,7 +2397,8 @@ def _existing_internal_dataset_export(
     matches = [
         export
         for export in exports
-        if (target := (export.target_properties or {}).get("TARGET_DS_ID")) is not None
+        if export.status is not ExportStatus.DELETED
+        and (target := (export.target_properties or {}).get("TARGET_DS_ID")) is not None
         and int(target) == target_ds_id
     ]
     return max(matches, key=lambda export: export.id or 0) if matches else None

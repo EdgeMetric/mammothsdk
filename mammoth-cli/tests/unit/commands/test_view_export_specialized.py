@@ -7,7 +7,12 @@ import json
 from pathlib import Path
 
 import pytest
-from mammoth.models.exports import HandlerType, ItemExportInfo, PipelineExportsPaginated
+from mammoth.models.exports import (
+    ExportStatus,
+    HandlerType,
+    ItemExportInfo,
+    PipelineExportsPaginated,
+)
 from mammoth.view import ViewExport
 
 from mammoth_cli.commands import view as view_cmd
@@ -27,11 +32,14 @@ def _exports_page(*items: ItemExportInfo) -> PipelineExportsPaginated:
     return PipelineExportsPaginated(limit=50, offset=0, next="", exports=list(items))
 
 
-def _internal_dataset_export(export_id: int, target_ds_id: object) -> ItemExportInfo:
+def _internal_dataset_export(
+    export_id: int, target_ds_id: object, *, status: ExportStatus | None = None
+) -> ItemExportInfo:
     return ItemExportInfo(
         id=export_id,
         handler_type=HandlerType.INTERNAL_DATASET,
         target_properties={"TARGET_DS_ID": target_ds_id},
+        status=status,
     )
 
 
@@ -203,6 +211,51 @@ def test_dataset_route_export_guard_matches_target_ds_id_as_int(
         )
     assert error.value.code == "export_already_exists"
     assert fake_service.view_call_log == []
+
+
+def test_dataset_route_export_guard_ignores_a_soft_deleted_export(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    """mvc-service soft-deletes a trigger (status -> ExportStatus.DELETED)
+    rather than removing its row, and the exports-list endpoint does not
+    filter on status (api/api/dataview/actions/actions.py:887,
+    apiv2/apiv2/dataview_pipeline/exports/controller.py:151). A deleted
+    export into the target must not count as an existing writer -- or a
+    once-deleted export would block every later export into that target
+    forever.
+    """
+    fake_service.responses[_EXPORTS_LIST] = _exports_page(
+        _internal_dataset_export(42, 1545, status=ExportStatus.DELETED)
+    )
+    fake_service.view_responses[(1758, "to_dataset")] = 1545
+    view_cmd.view_export_specialized(
+        _inv(
+            "view.export.dataset",
+            project=180,
+            extra_args=["1758", "1544"],
+            input_file=_doc(
+                tmp_path,
+                {
+                    "dataset_name": "YouTube CPM benchmark",
+                    "target_ds_id": 1545,
+                    "save_as_mode": "REPLACE_IN_DS",
+                },
+            ),
+            yes=True,
+        )
+    )
+    assert fake_service.view_call_log == [
+        (
+            1758,
+            "to_dataset",
+            {
+                "dataset_id": 1544,
+                "dataset_name": "YouTube CPM benchmark",
+                "target_ds_id": 1545,
+                "save_as_mode": "REPLACE_IN_DS",
+            },
+        )
+    ]
 
 
 def test_dataset_route_allows_first_export_into_an_existing_target(
