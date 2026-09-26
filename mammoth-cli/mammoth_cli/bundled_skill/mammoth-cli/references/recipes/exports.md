@@ -8,7 +8,10 @@ mammoth view export list VIEW_ID DATASET_ID --project PROJECT_ID
 ```
 
 `view export csv` takes one positional (the view); `dataset_id` and
-`output_path` go in `--input`. It is a download, not a pipeline step.
+`output_path` go in `--input`. It is a download, not a pipeline step. When
+embedded (see `mammoth_cli.embed.invoke`), it writes no local file and returns
+`download_url` instead, for the host to hand to its user; `output_path` is
+refused in that case.
 
 If the export or its source dataset/view is requested as a deliverable, mark
 both as retained before starting. Wait/reconcile returned jobs. Verify local
