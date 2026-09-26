@@ -29,7 +29,13 @@ is `outcome_unknown`. Re-read the exact target and scope before replaying it;
 the operation may already have committed.
 
 ## Draft mode
-Batch several pipeline edits, then submit them together:
+With auto-run on (the normal mode), every pipeline change reruns the whole
+pipeline. On a big view, say 1M rows, adding 3 rules runs it 3 times. When you
+know up front that you will make several changes, enter draft mode, add them
+all, then submit: the pipeline runs once. A staged change has no data until the
+submit, so read back after it, not before. A view already in draft mode (auto-run
+off) answers each change with `"status": "staged"`; add the rest, then submit
+once.
 ```bash
 mammoth view draft enter 1039 --project 180
 mammoth view transform add-column 1039 --project 180 \
