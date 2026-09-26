@@ -292,14 +292,18 @@ def workspace_user_get(invocation: Invocation) -> HandlerResult:
     return data, _meta(invocation, auth.workspace_id)
 
 
-def workspace_user_list(invocation: Invocation) -> HandlerResult:
-    """List users in the client's own workspace.
+#: The backend field set that includes each user's roles and status.
+_USER_LIST_FIELDS = "__full"
 
-    ``fields=__full`` (via ``--input``) adds ``user_roles`` and ``status`` to
-    each returned user.
+
+def workspace_user_list(invocation: Invocation) -> HandlerResult:
+    """List users in the client's own workspace, with their roles and status.
+
+    Asks for the backend's ``__full`` field set unless ``--input`` names another,
+    so each user carries ``user_roles`` and ``status``.
     """
     document = invocation.load_input() or {}
-    kwargs: dict[str, Any] = {}
+    kwargs: dict[str, Any] = {"fields": _USER_LIST_FIELDS}
     _forward_optional(document, kwargs, ("fields",))
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), **kwargs)

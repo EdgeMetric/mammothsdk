@@ -332,15 +332,14 @@ def test_user_get_uses_positional_never_passes_workspace_id(
 
 def test_user_list_never_passes_workspace_id(fake_service: FakeMammothService) -> None:
     workspace_cmd.workspace_user_list(_inv("workspace.user.list"))
-    assert fake_service.call_log == [(_USER_LIST, {})]
+    assert fake_service.call_log == [(_USER_LIST, {"fields": "__full"})]
 
 
 def test_user_list_forwards_fields(fake_service: FakeMammothService, tmp_path: Path) -> None:
-    """The backend's ``fields=__full`` adds ``user_roles`` and ``status`` to
-    each returned user; the CLI must pass it through, not swallow it."""
-    doc = _write(tmp_path, {"fields": "__full"})
+    """A ``fields`` the caller names wins over the ``__full`` default."""
+    doc = _write(tmp_path, {"fields": "__standard"})
     workspace_cmd.workspace_user_list(_inv("workspace.user.list", input_file=doc))
-    assert fake_service.call_log == [(_USER_LIST, {"fields": "__full"})]
+    assert fake_service.call_log == [(_USER_LIST, {"fields": "__standard"})]
 
 
 # --- user remove / remove-batch --------------------------------------------------
