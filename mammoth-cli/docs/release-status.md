@@ -1,5 +1,12 @@
 # CLI release provenance
 
+## 2.0.59
+
+**Fix**: `schema find` maps "api", "key" and "keys" to `client-app`, so "list active API keys"
+finds the workspace's API keys (Settings > API keys) instead of `external-key` (other services'
+keys). Needs `mammoth-io` 0.7.29, where `workspace user get` reads the member list (the API has no
+GET for one workspace user, so it always answered 405).
+
 ## 2.0.58
 
 **Fix**: embedded `view export csv` (a host running the CLI in-process via `mammoth_cli.embed`) no

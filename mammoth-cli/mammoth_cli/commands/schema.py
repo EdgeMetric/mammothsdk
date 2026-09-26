@@ -275,6 +275,11 @@ _DISCOVERY_SYNONYMS: dict[str, tuple[str, ...]] = {
     "asynchronous": ("async", "job", "wait"),
     "async": ("job", "wait", "poll"),
     "poll": ("job", "wait", "status"),
+    # "API keys" in the app (Settings > API keys) are client apps; `external-key`
+    # holds other services' keys and wrongly won "list active API keys".
+    "api": ("client-app",),
+    "key": ("client-app",),
+    "keys": ("client-app",),
     # British spellings search the same as the American ones.
     "summarise": ("summarize",),
     "standardise": ("standardize",),
