@@ -65,7 +65,7 @@ mutation "succeeded".
 
 ```bash
 mammoth view transform add-sql VIEW_ID --project PROJECT_ID \
-  --input '{"dataset_id":DATASET_ID,"query":"SELECT event_id, TRIM(UNNEST(string_split(COALESCE(tags, '\'''\''), '\'','\''))) AS tag FROM \"view:VIEW_ID\""}'
+  --input '{"dataset_id":DATASET_ID,"query":"SELECT event_id, user_id, event_time, payload, TRIM(UNNEST(string_split(COALESCE(tags, '\'''\''), '\'','\''))) AS tag FROM \"view:VIEW_ID\""}'
 ```
 
 These examples use the released route IDs and input shapes documented by the
