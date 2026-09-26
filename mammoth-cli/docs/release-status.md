@@ -2,7 +2,7 @@
 
 ## 2.0.53
 
-Two fixes, found on replayed eval traces:
+Three fixes, found on replayed eval traces:
 
 - **Fixed (SDK, `mammoth-io` 0.7.24)**: `View._add_task` (`mammoth/view.py`)
   returned the server's submit record unchanged whenever a view's pipeline is
@@ -23,6 +23,9 @@ Two fixes, found on replayed eval traces:
   resource id that `FoldersAPI.move`'s `resource_ids` matches against
   server-side (T2-J-013). `resource_ids` stays for callers that already have
   a resource id.
+- **Fixed (SDK, `mammoth-io` 0.7.24)**: connector commands base64-encode the
+  connector key the server expects (every key-based connector command
+  returned 4CNTR002 before).
 
 ## 2.0.52
 

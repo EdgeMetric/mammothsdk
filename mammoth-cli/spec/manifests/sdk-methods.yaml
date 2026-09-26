@@ -4130,7 +4130,7 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.folders.FoldersAPI.move
   implementation_origin: mammoth.api.folders.FoldersAPI.move
-  signature: 'move(self, resource_ids: ''_list[str]'', target_folder_resource_id: ''str | None'' = None, source_folder_resource_id: ''str | None'' = None, workspace_id: ''int | None'' = None, project_id: ''int | None'' = None) -> ''ObjectJobSchema'''
+  signature: 'move(self, resource_ids: ''_list[str] | None'' = None, target_folder_resource_id: ''str | None'' = None, source_folder_resource_id: ''str | None'' = None, workspace_id: ''int | None'' = None, project_id: ''int | None'' = None, *, dataset_ids: ''_list[int] | None'' = None, view_ids: ''_list[int] | None'' = None) -> ''ObjectJobSchema'''
   openapi_operation_ids: []
   canonical_command: folder.move
   alias_of: null
