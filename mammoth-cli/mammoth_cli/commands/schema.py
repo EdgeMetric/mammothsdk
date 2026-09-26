@@ -893,8 +893,14 @@ def runnable_example(
         # their manifests advertise; otherwise discovery emits a command that
         # deterministically fails before dispatch.
         tokens.append("--yes")
-    if record["command_id"] == "project.resource-dependencies.update":
-        # This command has a confirm_target policy.  Keep its generated
+    if record["command_id"] in {
+        "project.resource-dependencies.update",
+        "dashboard.embed.key.rotate",
+        "dashboard.embed.secret.rotate",
+        "dashboard.embed.config.set",
+        "dashboard.embed.origin.revoke",
+    }:
+        # These commands have a confirm_target policy.  Keep their generated
         # example executable in non-interactive mode instead of advertising a
         # request that the safety guard will reject.
         tokens.extend(["--yes", "--confirm", str(_sample_positional_value(positionals[0]))])

@@ -326,3 +326,119 @@ class DashboardActionType(str, Enum):
     AUTO_SYNC = "auto-sync"
     AUTO_PUBLISH = "auto-publish"
     DELETE_SOURCE = "delete-source"
+
+
+# ── embed: config / key / usage / preview-token / workspace secret ──────────
+
+
+class EmbedConfigParams(BaseModel):
+    """Embed settings for one board (mirrors ``EmbedConfigParams`` in apiv2).
+
+    Attributes:
+        mode: The tier a board WITHOUT a public link is on. ``key``: a page
+            presents the board's embed key. ``signed``: every viewer needs a
+            host-signed token.
+        allow_any_origin: Any site may frame the board. Set false to restrict
+            framing to ``allowed_origins``.
+        allowed_origins: Sites allowed to frame the board while
+            ``allow_any_origin`` is false. At most 20.
+        appearance: The board's saved look, applied when the embed loads.
+        snippet: How the embed snippet is shaped (``height`` etc.).
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    mode: Literal["key", "signed"] = "key"
+    allow_any_origin: bool = True
+    allowed_origins: list[str] = Field(default_factory=list, max_length=20)
+    appearance: dict[str, Any] = Field(default_factory=dict)
+    snippet: dict[str, Any] = Field(default_factory=dict)
+
+
+class EmbedConfigResponse(BaseModel):
+    """A board's embed settings plus the URLs a snippet needs."""
+
+    model_config = ConfigDict(extra="allow")
+
+    mode: str
+    tier: str = "key"
+    allow_any_origin: bool = True
+    allowed_origins: list[str] = Field(default_factory=list)
+    appearance: dict[str, Any] = Field(default_factory=dict)
+    snippet: dict[str, Any] = Field(default_factory=dict)
+    embed_url: str
+    sdk_url: str
+    published: bool
+    public: bool
+    access_key: str | None = None
+    key_rotated_at: str | None = None
+    has_signing_secret: bool = False
+    signing_secret_rotated_at: str | None = None
+    token_ttl: int = 300
+    rls_enabled: bool = False
+    rls_column: str | None = None
+
+
+class EmbedKeyResponse(BaseModel):
+    """The board's new (or current) embed key."""
+
+    model_config = ConfigDict(extra="allow")
+
+    key: str
+    rotated_at: str | None = None
+
+
+class EmbedOriginUsage(BaseModel):
+    """One origin/tile row in a board's embed usage registry."""
+
+    model_config = ConfigDict(extra="allow")
+
+    origin: str
+    tile: str
+    tier: str
+    first_seen_at: str
+    last_seen_at: str
+    renders_7d: int
+    renders_30d: int
+    refused_30d: int
+    errors_30d: int
+    active: bool
+    health: str
+    allowed: bool
+
+
+class EmbedUsageResponse(BaseModel):
+    """Where one board has been loaded from (the embed registry)."""
+
+    model_config = ConfigDict(extra="allow")
+
+    origins: list[EmbedOriginUsage] = Field(default_factory=list)
+    active_origins: int = 0
+
+
+class EmbedPreviewTokenResponse(BaseModel):
+    """A short-lived token the embed simulator hands to the frame."""
+
+    model_config = ConfigDict(extra="allow")
+
+    token: str
+    expires_at: int
+    embed_url: str
+
+
+class EmbedSecretResponse(BaseModel):
+    """A new workspace embed signing secret, returned once (create/rotate)."""
+
+    model_config = ConfigDict(extra="allow")
+
+    secret: str
+    token_ttl: int
+    rotated_at: str | None = None
+
+
+class EmbedLifetimeResponse(BaseModel):
+    """The saved embed viewer session lifetime for a workspace."""
+
+    model_config = ConfigDict(extra="allow")
+
+    token_ttl: int

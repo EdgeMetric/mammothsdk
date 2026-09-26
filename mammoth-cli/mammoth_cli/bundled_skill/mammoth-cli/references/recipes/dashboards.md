@@ -155,3 +155,36 @@ before that they return 404 `DASHBOARD_NOT_FOUND`. Legacy widget routes
 `video export` needs a motion-story dashboard. Revert the share
 (`type_of_auth: "mammoth"`) before trashing a temporary dashboard.
 
+## Embedding a board on a third-party page
+
+`dashboard embed config get DASHBOARD_ID` reads the board's embed settings
+(mode, origin allowlist, the `embed_url`/`sdk_url` a snippet needs); the first
+read on a non-public board without a key auto-mints one, so there is always a
+key to copy. `dashboard embed config set DASHBOARD_ID --yes --confirm
+DASHBOARD_ID --input '{"allow_any_origin": false, "allowed_origins":
+["https://intranet.example.com"]}'` restricts which sites may frame it —
+`allow_any_origin` defaults to true (any site). `mode: "signed"` requires a
+host-signed token instead of the board's key, and only applies while the
+board has no public link. `config set` is a `confirm_target` command, like
+`dashboard archive`: it can expose the board outside Mammoth (enabling
+embedding or widening the allowlist) or break every live embed on that board
+(disabling it or narrowing the allowlist).
+
+`dashboard embed key rotate DASHBOARD_ID --yes --confirm DASHBOARD_ID`
+replaces the board's embed key (the old key keeps working for 24h unless
+`keep_previous: false` is passed) — also `confirm_target`. `dashboard embed
+origin revoke DASHBOARD_ID --yes --confirm DASHBOARD_ID --input
+'{"origin": "https://old.example.com"}'` removes one origin from the
+allowlist without touching the rest — also `confirm_target`: it immediately
+breaks the embed on that origin's site. `dashboard embed usage get
+DASHBOARD_ID` reports per-origin render counts and health from the embed
+registry. `dashboard embed preview-token create DASHBOARD_ID` mints a
+short-lived signed token for testing a row-level-security-scoped embed
+before publishing.
+
+Two settings are workspace-scoped, not board-scoped: `dashboard embed secret
+rotate WORKSPACE_ID --yes --confirm WORKSPACE_ID` (also `confirm_target`;
+returns the plaintext signing secret once, never on a read) and `dashboard
+embed lifetime set WORKSPACE_ID --input '{"token_ttl": 900}'` (60-3600
+seconds, how long a minted embed viewer session lives).
+

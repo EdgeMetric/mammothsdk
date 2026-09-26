@@ -864,6 +864,333 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+- command_id: dashboard.embed.config.get
+  command_path: dashboard embed config get
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetEmbedConfig
+  positionals:
+  - name: dashboard_id
+    type: int
+    required: true
+    metavar: DASHBOARD_ID
+    falls_back_to_field: null
+    help: ID of the dashboard.
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.embed_config_get
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.embed_config_get with validated request fields.
+  request_model: DashboardEmbedConfigGetRequest
+  result_model: DashboardEmbedConfigGetResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-DASHBOARD-EMBED-CONFIG-GET
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard embed config get DASHBOARD_ID --help
+  agent_example: 'mammoth dashboard embed config get 123'
+  unit_tests:
+  - UT-DASHBOARD-EMBED-CONFIG-GET
+  contract_tests:
+  - CT-DASHBOARD-EMBED-CONFIG-GET-HUMAN
+  - CT-DASHBOARD-EMBED-CONFIG-GET-JSON
+  - CT-DASHBOARD-EMBED-CONFIG-GET-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+
+- command_id: dashboard.embed.config.set
+  command_path: dashboard embed config set
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - PutEmbedConfig
+  positionals:
+  - name: dashboard_id
+    type: int
+    required: true
+    metavar: DASHBOARD_ID
+    falls_back_to_field: null
+    help: ID of the dashboard.
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.embed_config_set
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.embed_config_set with validated request fields.
+  request_model: DashboardEmbedConfigSetRequest
+  result_model: DashboardEmbedConfigSetResult
+  mutation_class: high_impact
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard fixture in tests/live.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard embed config set DASHBOARD_ID --help
+  agent_example: mammoth dashboard embed config set 123 --yes --confirm 123
+  unit_tests:
+  - UT-DASHBOARD-EMBED-CONFIG-SET
+  contract_tests:
+  - CT-DASHBOARD-EMBED-CONFIG-SET-HUMAN
+  - CT-DASHBOARD-EMBED-CONFIG-SET-JSON
+  - CT-DASHBOARD-EMBED-CONFIG-SET-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+
+- command_id: dashboard.embed.key.rotate
+  command_path: dashboard embed key rotate
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - RotateEmbedKey
+  positionals:
+  - name: dashboard_id
+    type: int
+    required: true
+    metavar: DASHBOARD_ID
+    falls_back_to_field: null
+    help: ID of the dashboard.
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.embed_key_rotate
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.embed_key_rotate with validated request fields.
+  request_model: DashboardEmbedKeyRotateRequest
+  result_model: DashboardEmbedKeyRotateResult
+  mutation_class: high_impact
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard embed key rotate DASHBOARD_ID --help
+  agent_example: 'mammoth dashboard embed key rotate 123 --yes --confirm 123'
+  unit_tests:
+  - UT-DASHBOARD-EMBED-KEY-ROTATE
+  contract_tests:
+  - CT-DASHBOARD-EMBED-KEY-ROTATE-HUMAN
+  - CT-DASHBOARD-EMBED-KEY-ROTATE-JSON
+  - CT-DASHBOARD-EMBED-KEY-ROTATE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+
+- command_id: dashboard.embed.usage.get
+  command_path: dashboard embed usage get
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetEmbedUsage
+  positionals:
+  - name: dashboard_id
+    type: int
+    required: true
+    metavar: DASHBOARD_ID
+    falls_back_to_field: null
+    help: ID of the dashboard.
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.embed_usage_get
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.embed_usage_get with validated request fields.
+  request_model: DashboardEmbedUsageGetRequest
+  result_model: DashboardEmbedUsageGetResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-DASHBOARD-EMBED-USAGE-GET
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard embed usage get DASHBOARD_ID --help
+  agent_example: 'mammoth dashboard embed usage get 123'
+  unit_tests:
+  - UT-DASHBOARD-EMBED-USAGE-GET
+  contract_tests:
+  - CT-DASHBOARD-EMBED-USAGE-GET-HUMAN
+  - CT-DASHBOARD-EMBED-USAGE-GET-JSON
+  - CT-DASHBOARD-EMBED-USAGE-GET-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+
+- command_id: dashboard.embed.origin.revoke
+  command_path: dashboard embed origin revoke
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - RevokeOrigin
+  positionals:
+  - name: dashboard_id
+    type: int
+    required: true
+    metavar: DASHBOARD_ID
+    falls_back_to_field: null
+    help: ID of the dashboard.
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.embed_origin_revoke
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.embed_origin_revoke with validated request fields.
+  request_model: DashboardEmbedOriginRevokeRequest
+  result_model: DashboardEmbedOriginRevokeResult
+  mutation_class: high_impact
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard fixture in tests/live.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard embed origin revoke DASHBOARD_ID --help
+  agent_example: 'mammoth dashboard embed origin revoke 123 --input ''{"origin": "sample"}'' --yes --confirm 123'
+  unit_tests:
+  - UT-DASHBOARD-EMBED-ORIGIN-REVOKE
+  contract_tests:
+  - CT-DASHBOARD-EMBED-ORIGIN-REVOKE-HUMAN
+  - CT-DASHBOARD-EMBED-ORIGIN-REVOKE-JSON
+  - CT-DASHBOARD-EMBED-ORIGIN-REVOKE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+
+- command_id: dashboard.embed.preview-token.create
+  command_path: dashboard embed preview-token create
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - PreviewToken
+  positionals:
+  - name: dashboard_id
+    type: int
+    required: true
+    metavar: DASHBOARD_ID
+    falls_back_to_field: null
+    help: ID of the dashboard.
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.embed_preview_token_create
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.embed_preview_token_create with validated request fields.
+  request_model: DashboardEmbedPreviewTokenCreateRequest
+  result_model: DashboardEmbedPreviewTokenCreateResult
+  mutation_class: benign_mutation
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard fixture in tests/live.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard embed preview-token create DASHBOARD_ID --help
+  agent_example: mammoth dashboard embed preview-token create 123
+  unit_tests:
+  - UT-DASHBOARD-EMBED-PREVIEW-TOKEN-CREATE
+  contract_tests:
+  - CT-DASHBOARD-EMBED-PREVIEW-TOKEN-CREATE-HUMAN
+  - CT-DASHBOARD-EMBED-PREVIEW-TOKEN-CREATE-JSON
+  - CT-DASHBOARD-EMBED-PREVIEW-TOKEN-CREATE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+
+- command_id: dashboard.embed.secret.rotate
+  command_path: dashboard embed secret rotate
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - RotateEmbedSecret
+  positionals:
+  - name: workspace_id
+    type: int
+    required: true
+    metavar: WORKSPACE_ID
+    falls_back_to_field: null
+    help: ID of the workspace.
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.embed_secret_rotate
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.embed_secret_rotate with validated request fields.
+  request_model: DashboardEmbedSecretRotateRequest
+  result_model: DashboardEmbedSecretRotateResult
+  mutation_class: high_impact
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard embed secret rotate WORKSPACE_ID --help
+  agent_example: 'mammoth dashboard embed secret rotate 123 --yes --confirm 123'
+  unit_tests:
+  - UT-DASHBOARD-EMBED-SECRET-ROTATE
+  contract_tests:
+  - CT-DASHBOARD-EMBED-SECRET-ROTATE-HUMAN
+  - CT-DASHBOARD-EMBED-SECRET-ROTATE-JSON
+  - CT-DASHBOARD-EMBED-SECRET-ROTATE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+
+- command_id: dashboard.embed.lifetime.set
+  command_path: dashboard embed lifetime set
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - SetEmbedLifetime
+  positionals:
+  - name: workspace_id
+    type: int
+    required: true
+    metavar: WORKSPACE_ID
+    falls_back_to_field: null
+    help: ID of the workspace.
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.embed_lifetime_set
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.embed_lifetime_set with validated request fields.
+  request_model: DashboardEmbedLifetimeSetRequest
+  result_model: DashboardEmbedLifetimeSetResult
+  mutation_class: benign_mutation
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard fixture in tests/live.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard embed lifetime set WORKSPACE_ID --help
+  agent_example: 'mammoth dashboard embed lifetime set 123 --input ''{"token_ttl": 1}'''
+  unit_tests:
+  - UT-DASHBOARD-EMBED-LIFETIME-SET
+  contract_tests:
+  - CT-DASHBOARD-EMBED-LIFETIME-SET-HUMAN
+  - CT-DASHBOARD-EMBED-LIFETIME-SET-JSON
+  - CT-DASHBOARD-EMBED-LIFETIME-SET-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
 - command_id: dashboard.exemplar.extract
   command_path: dashboard exemplar extract
   disposition: command

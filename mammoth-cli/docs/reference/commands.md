@@ -4,7 +4,7 @@ Generated from the reviewed command manifests for mammoth-cli 2.0.54.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
-Total commands: 557.
+Total commands: 565.
 
 ## activity
 
@@ -1256,6 +1256,94 @@ Total commands: 557.
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.duplicate`
 - Agent example: `mammoth dashboard duplicate 123`
+
+### `mammoth dashboard embed config get`
+
+**Arguments**
+
+- `DASHBOARD_ID` (int, required) — ID of the dashboard.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.dashboards.DashboardsAPI.embed_config_get`
+- Agent example: `mammoth dashboard embed config get 123`
+
+### `mammoth dashboard embed config set`
+
+**Arguments**
+
+- `DASHBOARD_ID` (int, required) — ID of the dashboard.
+
+- Mutation class: `high_impact`
+- Confirmation: `confirm_target`
+- Backing SDK: `mammoth.api.dashboards.DashboardsAPI.embed_config_set`
+- Agent example: `mammoth dashboard embed config set 123 --yes --confirm 123`
+
+### `mammoth dashboard embed key rotate`
+
+**Arguments**
+
+- `DASHBOARD_ID` (int, required) — ID of the dashboard.
+
+- Mutation class: `high_impact`
+- Confirmation: `confirm_target`
+- Backing SDK: `mammoth.api.dashboards.DashboardsAPI.embed_key_rotate`
+- Agent example: `mammoth dashboard embed key rotate 123 --yes --confirm 123`
+
+### `mammoth dashboard embed lifetime set`
+
+**Arguments**
+
+- `WORKSPACE_ID` (int, required) — ID of the workspace.
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.dashboards.DashboardsAPI.embed_lifetime_set`
+- Agent example: `mammoth dashboard embed lifetime set 123 --input '{"token_ttl": 1}'`
+
+### `mammoth dashboard embed origin revoke`
+
+**Arguments**
+
+- `DASHBOARD_ID` (int, required) — ID of the dashboard.
+
+- Mutation class: `high_impact`
+- Confirmation: `confirm_target`
+- Backing SDK: `mammoth.api.dashboards.DashboardsAPI.embed_origin_revoke`
+- Agent example: `mammoth dashboard embed origin revoke 123 --input '{"origin": "sample"}' --yes --confirm 123`
+
+### `mammoth dashboard embed preview-token create`
+
+**Arguments**
+
+- `DASHBOARD_ID` (int, required) — ID of the dashboard.
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.dashboards.DashboardsAPI.embed_preview_token_create`
+- Agent example: `mammoth dashboard embed preview-token create 123`
+
+### `mammoth dashboard embed secret rotate`
+
+**Arguments**
+
+- `WORKSPACE_ID` (int, required) — ID of the workspace.
+
+- Mutation class: `high_impact`
+- Confirmation: `confirm_target`
+- Backing SDK: `mammoth.api.dashboards.DashboardsAPI.embed_secret_rotate`
+- Agent example: `mammoth dashboard embed secret rotate 123 --yes --confirm 123`
+
+### `mammoth dashboard embed usage get`
+
+**Arguments**
+
+- `DASHBOARD_ID` (int, required) — ID of the dashboard.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.dashboards.DashboardsAPI.embed_usage_get`
+- Agent example: `mammoth dashboard embed usage get 123`
 
 ### `mammoth dashboard exemplar extract`
 
