@@ -101,6 +101,35 @@ def test_schema_find_has_bounded_cursor_continuation_and_no_fake_final_cursor() 
     assert final["continuation"] is None
 
 
+def test_schema_find_inlines_accepted_fields_and_agent_example_for_top_matches_only() -> None:
+    """The top few matches carry what an agent needs to act; the rest don't.
+
+    Inlining every match's full field detail would make ``schema find``
+    balloon on a broad query; inlining none forces a second ``schema get``
+    round trip even in the common case where a top match is the right one.
+    """
+    result = find_schemas("view transform", limit=6)
+    assert result["total_matches"] >= 4
+
+    for match in result["matches"][:3]:
+        assert match["agent_example"]
+        assert match["accepted_fields"]
+        for field in match["accepted_fields"]:
+            assert set(field) == {"name", "type", "required", "enum"}
+
+    for match in result["matches"][3:]:
+        assert "accepted_fields" not in match
+        assert "agent_example" not in match
+
+    # A page that starts past the top 3 (by absolute rank) inlines nothing,
+    # even though these are the same commands a limit=6 first page would
+    # have enriched at those same ranks.
+    later_page = find_schemas("view transform", limit=3, cursor=3)
+    for match in later_page["matches"]:
+        assert "accepted_fields" not in match
+        assert "agent_example" not in match
+
+
 @pytest.mark.parametrize("requested", [0, -1, 10_000])
 def test_discovery_limit_is_finite_and_positive(requested: int) -> None:
     result = find_capabilities("show projects", limit=requested)
