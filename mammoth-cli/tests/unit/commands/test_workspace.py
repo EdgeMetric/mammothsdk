@@ -335,6 +335,14 @@ def test_user_list_never_passes_workspace_id(fake_service: FakeMammothService) -
     assert fake_service.call_log == [(_USER_LIST, {})]
 
 
+def test_user_list_forwards_fields(fake_service: FakeMammothService, tmp_path: Path) -> None:
+    """The backend's ``fields=__full`` adds ``user_roles`` and ``status`` to
+    each returned user; the CLI must pass it through, not swallow it."""
+    doc = _write(tmp_path, {"fields": "__full"})
+    workspace_cmd.workspace_user_list(_inv("workspace.user.list", input_file=doc))
+    assert fake_service.call_log == [(_USER_LIST, {"fields": "__full"})]
+
+
 # --- user remove / remove-batch --------------------------------------------------
 
 

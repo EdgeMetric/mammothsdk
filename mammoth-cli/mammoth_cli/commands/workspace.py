@@ -293,9 +293,16 @@ def workspace_user_get(invocation: Invocation) -> HandlerResult:
 
 
 def workspace_user_list(invocation: Invocation) -> HandlerResult:
-    """List users in the client's own workspace."""
+    """List users in the client's own workspace.
+
+    ``fields=__full`` (via ``--input``) adds ``user_roles`` and ``status`` to
+    each returned user.
+    """
+    document = invocation.load_input() or {}
+    kwargs: dict[str, Any] = {}
+    _forward_optional(document, kwargs, ("fields",))
     with open_service(invocation) as (service, auth):
-        data = service.call(_symbol(invocation))
+        data = service.call(_symbol(invocation), **kwargs)
     return data, _meta(invocation, auth.workspace_id)
 
 

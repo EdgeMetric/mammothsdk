@@ -2772,6 +2772,13 @@ class TestWorkspaceAPI:
         client.workspaces.list_users()
         assert_called_with_method_and_endpoint(client._request_json, "GET", "/workspaces/1/users")
 
+    def test_list_users_forwards_fields(self, client: MammothClient):
+        """``fields=__full`` adds ``user_roles`` and ``status`` per the backend
+        (apiv2/apiv2/workspaces/user_schema.py:29); the SDK must pass it through."""
+        client.workspaces.list_users(fields="__full")
+        assert_called_with_method_and_endpoint(client._request_json, "GET", "/workspaces/1/users")
+        assert client._request_json.call_args.kwargs["params"] == {"fields": "__full"}
+
     def test_get_user(self, client: MammothClient):
         client.workspaces.get_user(user_id="u1")
         assert_called_with_method_and_endpoint(client._request_json, "GET", "/users/u1")
