@@ -311,6 +311,22 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth dashboard descriptor-data 123 --input '{"body": {"params": {"descriptor_ids": ["ef28f9bcc263c0f7"], "filter_state": {"Month": ["2025-01-01", "2025-03-31"]}}}}'
 - `mammoth dashboard duplicate` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.duplicate
   example: mammoth dashboard duplicate 123
+- `mammoth dashboard embed config get` [read/none] -> mammoth.api.dashboards.DashboardsAPI.embed_config_get
+  example: mammoth dashboard embed config get 123
+- `mammoth dashboard embed config set` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.embed_config_set
+  example: mammoth dashboard embed config set 123
+- `mammoth dashboard embed key rotate` [high_impact/confirm_target] -> mammoth.api.dashboards.DashboardsAPI.embed_key_rotate
+  example: mammoth dashboard embed key rotate 123 --yes --confirm 123
+- `mammoth dashboard embed lifetime set` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.embed_lifetime_set
+  example: mammoth dashboard embed lifetime set 123 --input '{"token_ttl": 1}'
+- `mammoth dashboard embed origin revoke` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.embed_origin_revoke
+  example: mammoth dashboard embed origin revoke 123 --input '{"origin": "sample"}'
+- `mammoth dashboard embed preview-token create` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.embed_preview_token_create
+  example: mammoth dashboard embed preview-token create 123
+- `mammoth dashboard embed secret rotate` [high_impact/confirm_target] -> mammoth.api.dashboards.DashboardsAPI.embed_secret_rotate
+  example: mammoth dashboard embed secret rotate 123 --yes --confirm 123
+- `mammoth dashboard embed usage get` [read/none] -> mammoth.api.dashboards.DashboardsAPI.embed_usage_get
+  example: mammoth dashboard embed usage get 123
 - `mammoth dashboard exemplar extract` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.extract_exemplar
   example: mammoth dashboard exemplar extract --input '{"body": {"params": {"name": "Revenue report"}}}'
 - `mammoth dashboard figure-intent` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.figure_intent

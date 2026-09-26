@@ -1978,6 +1978,115 @@ methods:
   pagination_policy: null
   secret_fields: []
   reviewed_by: primary
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.embed_config_get
+  implementation_origin: mammoth.api.dashboards.DashboardsAPI.embed_config_get
+  signature: 'embed_config_get(self, dashboard_id: ''int'') -> ''EmbedConfigResponse'''
+  openapi_operation_ids:
+  - GetEmbedConfig
+  canonical_command: dashboard.embed.config.get
+  alias_of: null
+  no_command_reason: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.embed_config_set
+  implementation_origin: mammoth.api.dashboards.DashboardsAPI.embed_config_set
+  signature: 'embed_config_set(self, dashboard_id: ''int'', mode: "Literal[''key'', ''signed'']"
+  = ''key'', allow_any_origin: ''bool'' = True, allowed_origins: ''_list[str] | None''
+  = None, appearance: ''dict[str, Any] | None'' = None, snippet: ''dict[str, Any]
+  | None'' = None) -> ''EmbedConfigResponse'''
+  openapi_operation_ids:
+  - PutEmbedConfig
+  canonical_command: dashboard.embed.config.set
+  alias_of: null
+  no_command_reason: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.embed_key_rotate
+  implementation_origin: mammoth.api.dashboards.DashboardsAPI.embed_key_rotate
+  signature: 'embed_key_rotate(self, dashboard_id: ''int'', keep_previous: ''bool'' = True) ->
+  ''EmbedKeyResponse'''
+  openapi_operation_ids:
+  - RotateEmbedKey
+  canonical_command: dashboard.embed.key.rotate
+  alias_of: null
+  no_command_reason: null
+  mutation_class: high_impact
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.embed_usage_get
+  implementation_origin: mammoth.api.dashboards.DashboardsAPI.embed_usage_get
+  signature: 'embed_usage_get(self, dashboard_id: ''int'') -> ''EmbedUsageResponse'''
+  openapi_operation_ids:
+  - GetEmbedUsage
+  canonical_command: dashboard.embed.usage.get
+  alias_of: null
+  no_command_reason: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.embed_origin_revoke
+  implementation_origin: mammoth.api.dashboards.DashboardsAPI.embed_origin_revoke
+  signature: 'embed_origin_revoke(self, dashboard_id: ''int'', origin: ''str'') -> ''EmbedConfigResponse'''
+  openapi_operation_ids:
+  - RevokeOrigin
+  canonical_command: dashboard.embed.origin.revoke
+  alias_of: null
+  no_command_reason: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.embed_preview_token_create
+  implementation_origin: mammoth.api.dashboards.DashboardsAPI.embed_preview_token_create
+  signature: 'embed_preview_token_create(self, dashboard_id: ''int'', claims: ''dict[str, Any]
+  | None'' = None) -> ''EmbedPreviewTokenResponse'''
+  openapi_operation_ids:
+  - PreviewToken
+  canonical_command: dashboard.embed.preview-token.create
+  alias_of: null
+  no_command_reason: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.embed_secret_rotate
+  implementation_origin: mammoth.api.dashboards.DashboardsAPI.embed_secret_rotate
+  signature: 'embed_secret_rotate(self, workspace_id: ''int'') -> ''EmbedSecretResponse'''
+  openapi_operation_ids:
+  - RotateEmbedSecret
+  canonical_command: dashboard.embed.secret.rotate
+  alias_of: null
+  no_command_reason: null
+  mutation_class: high_impact
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.embed_lifetime_set
+  implementation_origin: mammoth.api.dashboards.DashboardsAPI.embed_lifetime_set
+  signature: 'embed_lifetime_set(self, workspace_id: ''int'', token_ttl: ''int'') -> ''EmbedLifetimeResponse'''
+  openapi_operation_ids:
+  - SetEmbedLifetime
+  canonical_command: dashboard.embed.lifetime.set
+  alias_of: null
+  no_command_reason: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.extract_context
   implementation_origin: mammoth.api.dashboards.DashboardsAPI.extract_context
   signature: 'extract_context(self, body: ''ContextExtractSpec'') -> ''dict[str, Any]'''

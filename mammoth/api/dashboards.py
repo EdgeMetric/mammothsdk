@@ -5,7 +5,7 @@ from __future__ import annotations
 import builtins
 import os
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 from urllib.parse import quote
 
 from pydantic import ValidationError
@@ -23,6 +23,13 @@ from mammoth.models.dashboards import (
     DashboardPatchPath,
     DashboardShareUser,
     DashboardTagsParams,
+    EmbedConfigParams,
+    EmbedConfigResponse,
+    EmbedKeyResponse,
+    EmbedLifetimeResponse,
+    EmbedPreviewTokenResponse,
+    EmbedSecretResponse,
+    EmbedUsageResponse,
     ExemplarExtractResponse,
     ExemplarExtractSpec,
     ImportDatasetResponse,
@@ -55,6 +62,9 @@ ERR_AUTO_PUBLISH_NEEDS_ENABLED = "`auto-publish` action requires `params_enabled
 ERR_DELETE_SOURCE_NEEDS_VIEW_ID = "`delete-source` action requires `params_view_id` (int > 0)."
 ERR_VIEW_ID_POSITIVE = "`params_view_id` must be a positive integer, got {0}."
 ERR_JOB_ID_POSITIVE = "`job_id` must be a positive integer, got {0}."
+ERR_WORKSPACE_ID_POSITIVE = "`workspace_id` must be a positive integer, got {0}."
+ERR_EMBED_ORIGIN_EMPTY = "`origin` must be a non-empty string."
+ERR_EMBED_TOKEN_TTL_RANGE = "`token_ttl` must be between 60 and 3600 seconds, got {0}."
 
 _INTENT_MIN_LEN = 10
 
@@ -755,6 +765,209 @@ class DashboardsAPI:
             Dict with per-widget data results.
         """
         return self._client._request_json("POST", f"/dashboards/url/{url}/widgets/data", json=body)
+
+    # ── embed: config / key / usage / preview-token / workspace secret ──────
+
+    def embed_config_get(self, dashboard_id: int) -> EmbedConfigResponse:
+        """Read a board's embed settings.
+
+        Args:
+            dashboard_id: ID of the dashboard (must be > 0).
+
+        Returns:
+            The board's embed settings plus the URLs a snippet needs.
+
+        Raises:
+            MammothValidationError: If *dashboard_id* ≤ 0.
+        """
+        if isinstance(dashboard_id, bool) or not isinstance(dashboard_id, int) or dashboard_id <= 0:
+            raise MammothValidationError(ERR_DASHBOARD_ID_POSITIVE.format(dashboard_id))
+        response = self._client._request_json("GET", f"/dashboards/{dashboard_id}/embed/config")
+        return EmbedConfigResponse.model_validate(response)
+
+    def embed_config_set(
+        self,
+        dashboard_id: int,
+        mode: Literal["key", "signed"] = "key",
+        allow_any_origin: bool = True,
+        allowed_origins: _list[str] | None = None,
+        appearance: dict[str, Any] | None = None,
+        snippet: dict[str, Any] | None = None,
+    ) -> EmbedConfigResponse:
+        """Save a board's embed settings (mode, origin allowlist, appearance).
+
+        Args:
+            dashboard_id: ID of the dashboard (must be > 0).
+            mode: ``key`` (the board's embed key) or ``signed`` (a host-signed
+                token). Ignored while the board is public.
+            allow_any_origin: Any site may frame the board. Set false to
+                restrict framing to *allowed_origins*.
+            allowed_origins: Origin patterns allowed to frame the board while
+                *allow_any_origin* is false. At most 20.
+            appearance: The board's saved embed look (theme, filters, tile, ...).
+            snippet: How the embed snippet is shaped (``height`` etc.).
+
+        Returns:
+            The board's updated embed settings.
+
+        Raises:
+            MammothValidationError: If *dashboard_id* ≤ 0 or the parameters
+                fail validation (e.g. more than 20 *allowed_origins*).
+        """
+        if isinstance(dashboard_id, bool) or not isinstance(dashboard_id, int) or dashboard_id <= 0:
+            raise MammothValidationError(ERR_DASHBOARD_ID_POSITIVE.format(dashboard_id))
+        try:
+            typed = EmbedConfigParams(
+                mode=mode,
+                allow_any_origin=allow_any_origin,
+                allowed_origins=allowed_origins or [],
+                appearance=appearance or {},
+                snippet=snippet or {},
+            )
+        except ValidationError as exc:
+            raise MammothValidationError(f"Invalid embed config parameters: {exc}") from exc
+        response = self._client._request_json(
+            "PUT",
+            f"/dashboards/{dashboard_id}/embed/config",
+            json={"params": typed.model_dump(mode="json")},
+        )
+        return EmbedConfigResponse.model_validate(response)
+
+    def embed_key_rotate(self, dashboard_id: int, keep_previous: bool = True) -> EmbedKeyResponse:
+        """Create or rotate a board's embed key (Basic embeds).
+
+        Args:
+            dashboard_id: ID of the dashboard (must be > 0).
+            keep_previous: Keep the replaced key usable for 24h (the default,
+                for a planned rotation). Pass ``False`` to end it at once,
+                for a leaked key.
+
+        Returns:
+            The board's new embed key (shown once here; readable again via
+            :meth:`embed_config_get`).
+
+        Raises:
+            MammothValidationError: If *dashboard_id* ≤ 0.
+        """
+        if isinstance(dashboard_id, bool) or not isinstance(dashboard_id, int) or dashboard_id <= 0:
+            raise MammothValidationError(ERR_DASHBOARD_ID_POSITIVE.format(dashboard_id))
+        response = self._client._request_json(
+            "POST",
+            f"/dashboards/{dashboard_id}/embed/key",
+            json={"params": {"keep_previous": keep_previous}},
+        )
+        return EmbedKeyResponse.model_validate(response)
+
+    def embed_usage_get(self, dashboard_id: int) -> EmbedUsageResponse:
+        """Get one board's embed registry: origins, tiles and render counts.
+
+        Args:
+            dashboard_id: ID of the dashboard (must be > 0).
+
+        Returns:
+            Per-origin render/health counts and the active-origin total.
+
+        Raises:
+            MammothValidationError: If *dashboard_id* ≤ 0.
+        """
+        if isinstance(dashboard_id, bool) or not isinstance(dashboard_id, int) or dashboard_id <= 0:
+            raise MammothValidationError(ERR_DASHBOARD_ID_POSITIVE.format(dashboard_id))
+        response = self._client._request_json("GET", f"/dashboards/{dashboard_id}/embed/usage")
+        return EmbedUsageResponse.model_validate(response)
+
+    def embed_origin_revoke(self, dashboard_id: int, origin: str) -> EmbedConfigResponse:
+        """Remove one origin from a board's embed allowlist.
+
+        Args:
+            dashboard_id: ID of the dashboard (must be > 0).
+            origin: The origin to remove (non-empty).
+
+        Returns:
+            The board's embed settings after the origin is removed.
+
+        Raises:
+            MammothValidationError: If *dashboard_id* ≤ 0 or *origin* is empty.
+        """
+        if isinstance(dashboard_id, bool) or not isinstance(dashboard_id, int) or dashboard_id <= 0:
+            raise MammothValidationError(ERR_DASHBOARD_ID_POSITIVE.format(dashboard_id))
+        if not origin:
+            raise MammothValidationError(ERR_EMBED_ORIGIN_EMPTY)
+        response = self._client._request_json(
+            "DELETE",
+            f"/dashboards/{dashboard_id}/embed/origin",
+            json={"params": {"origin": origin}},
+        )
+        return EmbedConfigResponse.model_validate(response)
+
+    def embed_preview_token_create(
+        self, dashboard_id: int, claims: dict[str, Any] | None = None
+    ) -> EmbedPreviewTokenResponse:
+        """Mint a preview token for the embed simulator (editor-only).
+
+        Args:
+            dashboard_id: ID of the dashboard (must be > 0).
+            claims: Row-level-security claims, keyed by the board's RLS
+                column name, exactly as a host's token would carry them.
+
+        Returns:
+            A short-lived token, its expiry, and the embed URL to use it with.
+
+        Raises:
+            MammothValidationError: If *dashboard_id* ≤ 0.
+        """
+        if isinstance(dashboard_id, bool) or not isinstance(dashboard_id, int) or dashboard_id <= 0:
+            raise MammothValidationError(ERR_DASHBOARD_ID_POSITIVE.format(dashboard_id))
+        response = self._client._request_json(
+            "POST",
+            f"/dashboards/{dashboard_id}/embed/preview-token",
+            json={"params": {"claims": claims or {}}},
+        )
+        return EmbedPreviewTokenResponse.model_validate(response)
+
+    def embed_secret_rotate(self, workspace_id: int) -> EmbedSecretResponse:
+        """Create or rotate the workspace's embed signing secret (owners/admins).
+
+        The plaintext secret is returned once, here, and never by a read route.
+        Rotating keeps the previous secret valid for 24 hours.
+
+        Args:
+            workspace_id: ID of the workspace (must be > 0).
+
+        Returns:
+            The new plaintext secret, its session token TTL, and rotation time.
+
+        Raises:
+            MammothValidationError: If *workspace_id* ≤ 0.
+        """
+        if isinstance(workspace_id, bool) or not isinstance(workspace_id, int) or workspace_id <= 0:
+            raise MammothValidationError(ERR_WORKSPACE_ID_POSITIVE.format(workspace_id))
+        response = self._client._request_json("POST", f"/workspaces/{workspace_id}/embed/secret")
+        return EmbedSecretResponse.model_validate(response)
+
+    def embed_lifetime_set(self, workspace_id: int, token_ttl: int) -> EmbedLifetimeResponse:
+        """Set how long an embed viewer session lives for a workspace.
+
+        Args:
+            workspace_id: ID of the workspace (must be > 0).
+            token_ttl: Session lifetime in seconds, 60 to 3600 inclusive.
+
+        Returns:
+            The saved session lifetime.
+
+        Raises:
+            MammothValidationError: If *workspace_id* ≤ 0 or *token_ttl* is
+                outside [60, 3600].
+        """
+        if isinstance(workspace_id, bool) or not isinstance(workspace_id, int) or workspace_id <= 0:
+            raise MammothValidationError(ERR_WORKSPACE_ID_POSITIVE.format(workspace_id))
+        if not (60 <= token_ttl <= 3600):
+            raise MammothValidationError(ERR_EMBED_TOKEN_TTL_RANGE.format(token_ttl))
+        response = self._client._request_json(
+            "PUT",
+            f"/workspaces/{workspace_id}/embed/lifetime",
+            json={"params": {"token_ttl": token_ttl}},
+        )
+        return EmbedLifetimeResponse.model_validate(response)
 
 
 # ── Private helpers ───────────────────────────────────────────────────────────
