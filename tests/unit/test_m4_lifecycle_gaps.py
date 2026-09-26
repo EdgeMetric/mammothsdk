@@ -217,7 +217,8 @@ def test_add_task_reports_done_after_the_pipeline_finishes() -> None:
     assert result == {"future_id": 77, "status": "done", "pipeline_state": "ready"}
 
 
-def test_add_task_in_draft_mode_returns_the_submit_record_unchanged() -> None:
+def test_add_task_in_draft_mode_returns_an_honest_staged_status() -> None:
+    """The step is only staged, not run, until the caller submits the draft."""
     pipeline = MagicMock()
     pipeline.add_task.return_value = {"future_id": 77, "status": "processing"}
     pipeline.get_draft_status.return_value = {"is_draft": True}
@@ -226,4 +227,7 @@ def test_add_task_in_draft_mode_returns_the_submit_record_unchanged() -> None:
     result = view._add_task({"LIMIT": {"N": 3}})
 
     pipeline.wait_for_pipeline.assert_not_called()
-    assert result == {"future_id": 77, "status": "processing"}
+    assert result["future_id"] == 77
+    assert result["status"] == "staged"
+    assert str(view.id) in result["message"]
+    assert "mammoth view draft submit" in result["message"]

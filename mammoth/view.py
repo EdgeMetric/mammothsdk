@@ -332,7 +332,11 @@ class View(
             ``pipeline_state`` carries the final state (``"ready"``); the
             server's submit record said ``"processing"``, which described the
             job at submit time and misled callers into polling it. In draft
-            mode the response is returned unchanged: the task is only queued.
+            mode the task is only staged, never run, so ``status`` is
+            ``"staged"`` and ``message`` names the exact command
+            (``submit_draft()`` / ``mammoth view draft submit``) that runs it
+            — the server's own ``"processing"`` would otherwise read as if the
+            step were already running.
         """
         # Read draft state *before* submitting: the server flips a view's
         # draft flag to "dirty" when the new task carries a reference error
@@ -394,6 +398,21 @@ class View(
             if isinstance(result, dict):
                 state = pipeline.get("state") if isinstance(pipeline, dict) else None
                 result = {**result, "status": "done", "pipeline_state": state or "ready"}
+        elif isinstance(result, dict):
+            # Auto-run is off (whether from the workspace's AUTO_RUN flag or an
+            # explicit enter_draft_mode()): the server queued the task but will
+            # never run it on its own. Name the exact command that will,
+            # rather than leaving the server's submit-time "processing" to be
+            # misread as "already running".
+            result = {
+                **result,
+                "status": "staged",
+                "message": (
+                    f"Auto-run is off for view {self.id}; this step is staged, "
+                    "not run. Run 'mammoth view draft submit "
+                    f"{self.id}' (or call submit_draft()) to run staged steps."
+                ),
+            }
         return result
 
     def _run_internal_dataset_export(

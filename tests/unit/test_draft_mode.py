@@ -76,7 +76,9 @@ class TestAddTaskDraftAware:
             view.id, {"TASK_TYPE": "TEST"}, SAMPLE_DATASET_ID
         )
         mock_client.pipeline.wait_for_pipeline.assert_not_called()
-        assert result == {"id": 999}
+        assert result["id"] == 999
+        assert result["status"] == "staged"
+        assert f"mammoth view draft submit {view.id}" in result["message"]
 
     def test_waits_and_refreshes_in_auto_run(self, mock_client: MammothClient) -> None:
         view = View(mock_client, SAMPLE_VIEW_DATA, SAMPLE_DATASET_ID)

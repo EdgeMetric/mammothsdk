@@ -9,7 +9,9 @@ happens with the job, so you do not have to guess:
   envelope says `"status": "done"` and `"pipeline_state": "ready"`: the
   pipeline has finished, so do not poll its `future_id`; verify the values
   with `view data get`. (With SDK ≤ 0.7.13 the same envelope said
-  `"processing"`; it meant the same thing.)
+  `"processing"`; it meant the same thing.) If the view's auto-run is off,
+  the same call instead returns `"status": "staged"` with a `message`
+  naming `view draft submit VIEW_ID` — run that to actually execute it.
 - Only a `returns_job` command normally needs you to wait on the job id
   explicitly:
   ```bash
