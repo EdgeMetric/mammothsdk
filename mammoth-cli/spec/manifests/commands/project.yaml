@@ -703,7 +703,10 @@ commands:
   - CT-PROJECT-USER-ADD-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: B03 PROJECT_USER_ID_ROLE_UNTYPED.
+  known_restrictions: 'B03 PROJECT_USER_ID_ROLE_UNTYPED. Takes existing workspace users'' ids. To add
+    someone by email who is not in the workspace yet, use workspace user add with
+    {"email_ids": [EMAIL], "projects": [{"project_id": PROJECT_ID, "role": ROLE}]}: it invites them as a workspace member
+    with that project role, which is how a project gets a new person.'
   reviewed_by: primary
 - command_id: project.user.remove
   command_path: project user remove
