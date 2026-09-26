@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import base64
 from typing import TYPE_CHECKING, Any
 
 from mammoth.exceptions import MammothValidationError
@@ -40,6 +41,18 @@ ERR_DS_CONFIG_PATCH_PATH = (
     "Each patch op path must be one of "
     "{query, profile, on_refresh_action, unique_sequence_column}, got {0!r}."
 )
+
+
+def _encode_connector_key(connector_key: str) -> str:
+    """Base64-encode a connector key for use in a URL path segment.
+
+    Every server route under ``/connectors/{connector_key}`` decodes this
+    segment with standard ``base64.b64decode`` (see
+    ``decode_connector_key`` in mvc-service), matching the web app's
+    ``btoa(key)`` encoding. Callers of this SDK keep passing the plain
+    ``name_key`` (e.g. ``"bigquery"``); only the wire representation changes.
+    """
+    return base64.b64encode(connector_key.encode("utf-8")).decode("ascii")
 
 
 class ConnectorsAPI:
@@ -86,7 +99,7 @@ class ConnectorsAPI:
             Dict with connector details.
         """
         return self._client._request_json(
-            "GET", f"/workspaces/{self._ws()}/connectors/{connector_key}"
+            "GET", f"/workspaces/{self._ws()}/connectors/{_encode_connector_key(connector_key)}"
         )
 
     def list_connections(
@@ -105,7 +118,7 @@ class ConnectorsAPI:
         proj = self._proj(project_id)
         response = self._client._request(
             "GET",
-            f"/workspaces/{ws}/projects/{proj}/connectors/{connector_key}/connections",
+            f"/workspaces/{ws}/projects/{proj}/connectors/{_encode_connector_key(connector_key)}/connections",
         )
         if isinstance(response, _list):
             return response
@@ -149,7 +162,7 @@ class ConnectorsAPI:
         proj = self._proj(project_id)
         return self._client._request_json(
             "POST",
-            f"/workspaces/{ws}/projects/{proj}/connectors/{connector_key}/connections",
+            f"/workspaces/{ws}/projects/{proj}/connectors/{_encode_connector_key(connector_key)}/connections",
             json=config,
         )
 
@@ -170,7 +183,7 @@ class ConnectorsAPI:
         proj = self._proj(project_id)
         return self._client._request_json(
             "GET",
-            f"/workspaces/{ws}/projects/{proj}/connectors/{connector_key}/connections/{connection_key}",
+            f"/workspaces/{ws}/projects/{proj}/connectors/{_encode_connector_key(connector_key)}/connections/{connection_key}",
         )
 
     def update_connection(
@@ -206,7 +219,7 @@ class ConnectorsAPI:
         body = {"patch": [{"op": "replace", "path": "connection", "value": credentials}]}
         return self._client._request_json(
             "PATCH",
-            f"/workspaces/{ws}/projects/{proj}/connectors/{connector_key}/connections/{connection_key}",
+            f"/workspaces/{ws}/projects/{proj}/connectors/{_encode_connector_key(connector_key)}/connections/{connection_key}",
             json=body,
         )
 
@@ -227,7 +240,7 @@ class ConnectorsAPI:
         proj = self._proj(project_id)
         return self._client._request_json(
             "DELETE",
-            f"/workspaces/{ws}/projects/{proj}/connectors/{connector_key}/connections/{connection_key}",
+            f"/workspaces/{ws}/projects/{proj}/connectors/{_encode_connector_key(connector_key)}/connections/{connection_key}",
         )
 
     def list_ds_configs(
@@ -247,7 +260,7 @@ class ConnectorsAPI:
         proj = self._proj(project_id)
         response = self._client._request(
             "GET",
-            f"/workspaces/{ws}/projects/{proj}/connectors/{connector_key}/connections/{connection_key}/ds_configs",
+            f"/workspaces/{ws}/projects/{proj}/connectors/{_encode_connector_key(connector_key)}/connections/{connection_key}/ds_configs",
         )
         if isinstance(response, _list):
             return response
@@ -311,7 +324,7 @@ class ConnectorsAPI:
             body["profile"] = profile
         return self._client._request_json(
             "POST",
-            f"/workspaces/{ws}/projects/{proj}/connectors/{connector_key}/connections/{connection_key}/ds_configs",
+            f"/workspaces/{ws}/projects/{proj}/connectors/{_encode_connector_key(connector_key)}/connections/{connection_key}/ds_configs",
             json=body,
         )
 
@@ -337,7 +350,7 @@ class ConnectorsAPI:
         proj = self._proj(project_id)
         return self._client._request_json(
             "GET",
-            f"/workspaces/{ws}/projects/{proj}/connectors/{connector_key}/connections/{connection_key}/ds_configs/{ds_config_key}",
+            f"/workspaces/{ws}/projects/{proj}/connectors/{_encode_connector_key(connector_key)}/connections/{connection_key}/ds_configs/{ds_config_key}",
         )
 
     def update_ds_config(
@@ -387,7 +400,7 @@ class ConnectorsAPI:
         body = {"patch": [{"op": p.op, "path": p.path.value, "value": p.value} for p in patch]}
         return self._client._request_json(
             "PATCH",
-            f"/workspaces/{ws}/projects/{proj}/connectors/{connector_key}/connections/{connection_key}/ds_configs/{ds_config_key}",
+            f"/workspaces/{ws}/projects/{proj}/connectors/{_encode_connector_key(connector_key)}/connections/{connection_key}/ds_configs/{ds_config_key}",
             json=body,
         )
 
@@ -413,7 +426,7 @@ class ConnectorsAPI:
         proj = self._proj(project_id)
         return self._client._request_json(
             "DELETE",
-            f"/workspaces/{ws}/projects/{proj}/connectors/{connector_key}/connections/{connection_key}/ds_configs/{ds_config_key}",
+            f"/workspaces/{ws}/projects/{proj}/connectors/{_encode_connector_key(connector_key)}/connections/{connection_key}/ds_configs/{ds_config_key}",
         )
 
     def ds_config_delete_all(
@@ -440,7 +453,7 @@ class ConnectorsAPI:
         ids_str = ",".join(config_ids) if isinstance(config_ids, _list) else config_ids
         return self._client._request_json(
             "DELETE",
-            f"/workspaces/{ws}/projects/{proj}/connectors/{connector_key}"
+            f"/workspaces/{ws}/projects/{proj}/connectors/{_encode_connector_key(connector_key)}"
             f"/connections/{connection_key}/ds_configs",
             params={"config_ids": ids_str},
         )

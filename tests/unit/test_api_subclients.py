@@ -1291,15 +1291,18 @@ class TestConnectorsAPI:
         assert_called_with_method_and_endpoint(client._request, "GET", "/connectors")
 
     def test_get(self, client: MammothClient):
+        # The server base64-decodes the connector_key path segment (see
+        # decode_connector_key in mvc-service); the SDK sends it encoded
+        # while callers keep passing the plain name_key.
         client.connectors.get(connector_key="salesforce")
         assert_called_with_method_and_endpoint(
-            client._request_json, "GET", "/connectors/salesforce"
+            client._request_json, "GET", "/connectors/c2FsZXNmb3JjZQ=="
         )
 
     def test_list_connections(self, client: MammothClient):
         client.connectors.list_connections(connector_key="salesforce")
         assert_called_with_method_and_endpoint(
-            client._request, "GET", "/connectors/salesforce/connections"
+            client._request, "GET", "/connectors/c2FsZXNmb3JjZQ==/connections"
         )
 
     def test_create_connection(self, client: MammothClient):
@@ -1307,7 +1310,7 @@ class TestConnectorsAPI:
             connector_key="salesforce", config={"code": "oauth_code"}
         )
         assert_called_with_method_and_endpoint(
-            client._request_json, "POST", "/connectors/salesforce/connections"
+            client._request_json, "POST", "/connectors/c2FsZXNmb3JjZQ==/connections"
         )
         assert_json_body(client._request_json, {"code": "oauth_code"})
 
