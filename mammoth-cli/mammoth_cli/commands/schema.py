@@ -339,6 +339,8 @@ _SCOPE_REQUIREMENTS: dict[str, dict[str, Any]] = {
 }
 
 _MAX_FIND_RESULTS = 20
+# Outranks any word-overlap score: a command named by its full path comes first.
+_NAMED_COMMAND_BOOST = 10_000
 _MAX_FIND_LIMIT = 100
 # How many of a find's top matches carry inline accepted_fields/agent_example.
 # 35% of all eval tool calls were command discovery (schema find -> schema
@@ -1471,7 +1473,13 @@ def find_schemas(
                 "support.* commands act on another workspace as an operator, not the "
                 "caller's own; ordinary workspace work uses the non-support command."
             )
-        if len(matched_terms) == len(terms):
+        # A query that spells out this command's whole path (``aggregate view
+        # data ...``) asks for it by name, whatever goal words ride along.
+        path_tokens = set(_tokens(command_path))
+        named = len(path_tokens) >= 3 and path_tokens <= set(terms)
+        if named:
+            score += _NAMED_COMMAND_BOOST
+        if named or len(matched_terms) == len(terms):
             ranked_matches.append((score, entry))
         else:
             near_misses.append((len(matched_terms), score, entry, matched_terms))

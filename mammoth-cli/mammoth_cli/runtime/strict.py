@@ -279,11 +279,21 @@ _UNKNOWN_FIELD_HINTS: dict[str, str] = {
         "from 'mammoth dashboard canvas get DASHBOARD_ID', edited. An --input file "
         "takes the same wrapped document."
     ),
-    "dataset.list": (
-        "project_id is not an --input field; pass the project with the global "
-        "--project option (or omit it to use the active project)."
-    ),
 }
+
+
+def _unknown_field_hint(command_id: str, document: dict[str, Any], accepted: list[str]) -> str:
+    """Name the fix for an unknown ``--input`` key, with the caller's own value."""
+    if command_id in _UNKNOWN_FIELD_HINTS:
+        return _UNKNOWN_FIELD_HINTS[command_id]
+    if "project_id" in document and "project_id" not in accepted:
+        return (
+            "project_id is not an --input field; put --project "
+            f"{document['project_id']} after the command: "
+            f"mammoth {command_id.replace('.', ' ')} ... --project {document['project_id']} "
+            "(or omit it to use the active project)."
+        )
+    return f"Accepted fields: {', '.join(accepted) or '(none)' }."
 
 
 def validate_input_fields(command_id: str, document: dict[str, Any] | None) -> None:
@@ -334,9 +344,7 @@ def validate_input_fields(command_id: str, document: dict[str, Any] | None) -> N
                 f"{', '.join(unknown)}."
             ),
             exit_status=EXIT_USAGE,
-            hint=_UNKNOWN_FIELD_HINTS.get(
-                command_id, f"Accepted fields: {', '.join(sorted(fields_by_name)) or '(none)' }."
-            ),
+            hint=_unknown_field_hint(command_id, document, sorted(fields_by_name)),
             details={"unknown": unknown, "accepted": sorted(fields_by_name)},
         )
     if is_closed_zero_input(command_id) and document == {}:

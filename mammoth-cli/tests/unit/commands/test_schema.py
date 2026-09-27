@@ -582,11 +582,28 @@ def test_migrate_workbook_intent_ranks_import_workbook_first(query: str) -> None
 def test_find_with_no_full_match_inlines_how_to_call_the_top_suggestions() -> None:
     """A long goal rarely matches every word; the top suggestions still carry the
     input fields and an example, so one find is enough to act (no schema get)."""
-    result = find_schemas("aggregate view data group by date and result")
+    result = find_schemas("aggregate rows by date year month and count by result")
     assert result["matches"] == []
     top = result["suggestions"][:3]
-    assert "view.data.aggregate" in [entry["command_id"] for entry in top]
+    assert "view.data.explore" in [entry["command_id"] for entry in top]
     for entry in top:
         assert "accepted_fields" in entry
         assert "agent_example" in entry
     assert all("accepted_fields" not in entry for entry in result["suggestions"][3:])
+
+
+@pytest.mark.parametrize(
+    "query",
+    [
+        "aggregate view data grouped by date and category",
+        "aggregate view data group by date and result",
+        "view data aggregate by month",
+    ],
+)
+def test_find_ranks_a_command_named_in_the_query_first(query: str) -> None:
+    """A query that spells out a command's path (in any order) is asking for that
+    command, whatever other goal words it carries (koyal trending traces)."""
+    result = find_schemas(query)
+    assert result["matches"], result.get("suggestions")
+    assert result["matches"][0]["command_id"] == "view.data.aggregate"
+    assert "accepted_fields" in result["matches"][0]
