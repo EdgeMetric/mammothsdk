@@ -677,6 +677,222 @@ class TestDataviewsAPI:
                 metric={"function": "SUM"},
             )
 
+    def test_aggregate_group_by_date_truncate(self, client: MammothClient):
+        client.dataviews.aggregate(
+            dataset_id=500,
+            dataview_id=42,
+            group_by=[{"column": "column_1", "truncate": "month"}],
+            aggregations=[{"function": "COUNT"}],
+        )
+        assert_json_body(
+            client._request_json,
+            {
+                "param": {
+                    "PIVOT": {
+                        "SELECT": [{"FUNCTION": "COUNT", "AS": "COUNT", "INTERNAL_NAME": "agg_0"}],
+                        "GROUP_BY": [
+                            {
+                                "COLUMN": "column_1",
+                                "INTERNAL_NAME": "group_0",
+                                "TRUNCATE": "MONTH",
+                            }
+                        ],
+                    }
+                }
+            },
+        )
+
+    def test_aggregate_group_by_numeric_resolution(self, client: MammothClient):
+        client.dataviews.aggregate(
+            dataset_id=500,
+            dataview_id=42,
+            group_by=[{"column": "column_2", "resolution": "AUTO"}],
+            aggregations=[{"function": "COUNT"}],
+        )
+        body = client._request_json.call_args.kwargs.get("json")
+        assert body["param"]["PIVOT"]["GROUP_BY"] == [
+            {"COLUMN": "column_2", "INTERNAL_NAME": "group_0", "RESOLUTION": "AUTO"}
+        ]
+
+    def test_aggregate_group_by_rejects_unsupported_truncate(self, client: MammothClient):
+        with pytest.raises(MammothValidationError):
+            client.dataviews.aggregate(
+                dataset_id=500,
+                dataview_id=42,
+                group_by=[{"column": "column_1", "truncate": "FORTNIGHT"}],
+                aggregations=[{"function": "COUNT"}],
+            )
+
+    def test_aggregate_group_by_dict_requires_column(self, client: MammothClient):
+        with pytest.raises(MammothValidationError):
+            client.dataviews.aggregate(
+                dataset_id=500,
+                dataview_id=42,
+                group_by=[{"truncate": "MONTH"}],
+                aggregations=[{"function": "COUNT"}],
+            )
+
+    def test_explore_date_column_buckets_by_truncate(self, client: MammothClient):
+        client.dataviews.explore(
+            dataset_id=500,
+            dataview_id=42,
+            column="column_3",
+            column_type="DATE",
+            level="MONTH",
+        )
+        assert_json_body(
+            client._request_json,
+            {
+                "param": {
+                    "PIVOT": {
+                        "SELECT": [{"FUNCTION": "COUNT", "AS": "count", "INTERNAL_NAME": "agg_0"}],
+                        "GROUP_BY": [
+                            {
+                                "COLUMN": "column_3",
+                                "INTERNAL_NAME": "group_0",
+                                "TRUNCATE": "MONTH",
+                            }
+                        ],
+                    }
+                }
+            },
+        )
+
+    def test_explore_numeric_column_buckets_by_resolution_default_auto(self, client: MammothClient):
+        client.dataviews.explore(
+            dataset_id=500, dataview_id=42, column="column_2", column_type="NUMERIC"
+        )
+        body = client._request_json.call_args.kwargs.get("json")
+        assert body["param"]["PIVOT"]["GROUP_BY"] == [
+            {"COLUMN": "column_2", "INTERNAL_NAME": "group_0", "RESOLUTION": "AUTO"}
+        ]
+
+    def test_explore_text_column_groups_by_raw_column(self, client: MammothClient):
+        client.dataviews.explore(
+            dataset_id=500, dataview_id=42, column="column_1", column_type="TEXT"
+        )
+        body = client._request_json.call_args.kwargs.get("json")
+        assert body["param"]["PIVOT"]["GROUP_BY"] == [
+            {"COLUMN": "column_1", "INTERNAL_NAME": "group_0"}
+        ]
+
+    def test_explore_metric_adds_second_aggregation(self, client: MammothClient):
+        client.dataviews.explore(
+            dataset_id=500,
+            dataview_id=42,
+            column="column_1",
+            column_type="TEXT",
+            metric={"column": "column_2", "function": "SUM", "as_name": "Total Spend"},
+        )
+        body = client._request_json.call_args.kwargs.get("json")
+        assert body["param"]["PIVOT"]["SELECT"] == [
+            {"FUNCTION": "COUNT", "AS": "count", "INTERNAL_NAME": "agg_0"},
+            {
+                "FUNCTION": "SUM",
+                "AS": "Total Spend",
+                "INTERNAL_NAME": "agg_1",
+                "COLUMN": "column_2",
+            },
+        ]
+
+    def test_explore_forwards_condition_and_sequence(self, client: MammothClient):
+        client.dataviews.explore(
+            dataset_id=500,
+            dataview_id=42,
+            column="column_1",
+            condition={"column_1": {"GT": {"VALUE": 0}}},
+            sequence=3,
+        )
+        body = client._request_json.call_args.kwargs.get("json")
+        assert body["param"]["CONDITION"] == {"column_1": {"GT": {"VALUE": 0}}}
+        assert body["param"]["SEQUENCE_NUMBER"] == 3
+
+    def test_explore_date_result_sorted_ascending_with_percentage(self, client: MammothClient):
+        client._request_json.return_value = {
+            "data": [
+                {"group_0": "2024-02-01", "agg_0": 30},
+                {"group_0": "2024-01-01", "agg_0": 10},
+            ]
+        }
+        result = client.dataviews.explore(
+            dataset_id=500, dataview_id=42, column="column_1", column_type="DATE", level="MONTH"
+        )
+        assert result["data"] == [
+            {"group_0": "2024-01-01", "agg_0": 10, "percentage": 25.0},
+            {"group_0": "2024-02-01", "agg_0": 30, "percentage": 75.0},
+        ]
+
+    def test_explore_text_result_sorted_desc_and_defaults_limit_20(self, client: MammothClient):
+        client._request_json.return_value = {
+            "data": [{"group_0": f"v{i}", "agg_0": i} for i in range(25)]
+        }
+        result = client.dataviews.explore(
+            dataset_id=500, dataview_id=42, column="column_1", column_type="TEXT"
+        )
+        assert len(result["data"]) == 20
+        assert result["data"][0]["group_0"] == "v24"
+        assert result["data"][-1]["group_0"] == "v5"
+
+    def test_explore_limit_trims_after_computing_percentage_of_the_full_total(
+        self, client: MammothClient
+    ):
+        client._request_json.return_value = {
+            "data": [
+                {"group_0": "Email", "agg_0": 5},
+                {"group_0": "Search", "agg_0": 15},
+            ]
+        }
+        result = client.dataviews.explore(
+            dataset_id=500, dataview_id=42, column="column_1", column_type="TEXT", limit=1
+        )
+        assert result["data"] == [{"group_0": "Search", "agg_0": 15, "percentage": 75.0}]
+
+    def test_explore_sort_value_desc_and_offset_page_the_buckets(self, client: MammothClient):
+        client._request_json.return_value = {
+            "data": [{"group_0": f"v{i}", "agg_0": 1} for i in range(5)] + [{"group_0": None, "agg_0": 1}]
+        }
+        result = client.dataviews.explore(
+            dataset_id=500,
+            dataview_id=42,
+            column="column_1",
+            column_type="TEXT",
+            sort="value_desc",
+            offset=1,
+            limit=2,
+        )
+        assert [row["group_0"] for row in result["data"]] == ["v3", "v2"]
+
+    def test_explore_blank_bucket_sorts_last(self, client: MammothClient):
+        client._request_json.return_value = {
+            "data": [{"group_0": None, "agg_0": 9}, {"group_0": "2024-01-01", "agg_0": 1}]
+        }
+        result = client.dataviews.explore(
+            dataset_id=500, dataview_id=42, column="column_1", column_type="DATE"
+        )
+        assert [row["group_0"] for row in result["data"]] == ["2024-01-01", None]
+
+    def test_explore_rejects_unknown_sort(self, client: MammothClient):
+        client._request_json.return_value = {"data": [{"group_0": "a", "agg_0": 1}]}
+        with pytest.raises(MammothValidationError):
+            client.dataviews.explore(
+                dataset_id=500, dataview_id=42, column="column_1", column_type="TEXT", sort="up"
+            )
+
+    def test_aggregate_accepts_stddev_and_distinct_count(self, client: MammothClient):
+        client.dataviews.aggregate(
+            dataset_id=500,
+            dataview_id=42,
+            aggregations=[
+                {"column": "column_2", "function": "STDDEV"},
+                {"column": "column_1", "function": "DISTINCT_COUNT"},
+            ],
+        )
+        body = client._request_json.call_args.kwargs.get("json")
+        assert [item["FUNCTION"] for item in body["param"]["PIVOT"]["SELECT"]] == [
+            "STDDEV",
+            "DISTINCT_COUNT",
+        ]
+
     def test_exportable_config_get(self, client: MammothClient):
         client.dataviews.get_exportable_config(dataset_id=500, dataview_id=42)
         assert_called_with_method_and_endpoint(

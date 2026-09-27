@@ -1,5 +1,5 @@
 manifest_schema_version: 1
-method_count: 573
+method_count: 574
 generator_version: '1'
 methods:
 - sdk_symbol: mammoth._mixins._advanced_ops.AdvancedOpsMixin.add_sql
@@ -3658,7 +3658,7 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.dataviews.DataviewsAPI.aggregate
   implementation_origin: mammoth.api.dataviews.DataviewsAPI.aggregate
-  signature: 'aggregate(self, dataset_id: ''int'', dataview_id: ''int'', aggregations: ''_list[dict[str, Any]] | None'' = None, group_by: ''_list[str] | None'' = None, metric: ''dict[str, Any] | None'' = None, condition: ''dict[str, Any] | None'' = None, sequence: ''int | None'' = None, limit: ''int | None'' = None, workspace_id: ''int | None'' = None, project_id: ''int | None'' = None, timeout: ''int | None'' = None, poll_interval: ''int'' = 2) -> ''dict[str, Any]'''
+  signature: 'aggregate(self, dataset_id: ''int'', dataview_id: ''int'', aggregations: ''_list[dict[str, Any]] | None'' = None, group_by: ''_list[str | dict[str, Any]] | None'' = None, metric: ''dict[str, Any] | None'' = None, condition: ''dict[str, Any] | None'' = None, sequence: ''int | None'' = None, limit: ''int | None'' = None, workspace_id: ''int | None'' = None, project_id: ''int | None'' = None, timeout: ''int | None'' = None, poll_interval: ''int'' = 2) -> ''dict[str, Any]'''
   openapi_operation_ids: []
   canonical_command: view.data.aggregate
   alias_of: null
@@ -3774,6 +3774,18 @@ methods:
   no_command_reason: null
   mutation_class: reversible_pipeline
   wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.dataviews.DataviewsAPI.explore
+  implementation_origin: mammoth.api.dataviews.DataviewsAPI.explore
+  signature: 'explore(self, dataset_id: ''int'', dataview_id: ''int'', column: ''str'', column_type: ''str | None'' = None, level: ''str | None'' = None, metric: ''dict[str, Any] | None'' = None, condition: ''dict[str, Any] | None'' = None, sequence: ''int | None'' = None, limit: ''int | None'' = None, offset: ''int | None'' = None, sort: ''str | None'' = None, workspace_id: ''int | None'' = None, project_id: ''int | None'' = None, timeout: ''int | None'' = None, poll_interval: ''int'' = 2) -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: view.data.explore
+  alias_of: null
+  no_command_reason: null
+  mutation_class: read
+  wait_policy: always_wait
   pagination_policy: none
   secret_fields: []
   reviewed_by: primary

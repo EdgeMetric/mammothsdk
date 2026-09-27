@@ -222,6 +222,16 @@ Result: `ViewDataAggregateResult`; mutation `read`, confirmation `none`, wait po
 
 Status on release: untried; no live run recorded.
 
+### `view.data.explore`
+
+Run: `mammoth view data explore`. Exact input fields: `mammoth schema get view.data.explore`.
+
+Example: `mammoth view data explore 123 Status 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `ViewDataExploreResult`; mutation `read`, confirmation `none`, wait policy `always_wait`.
+
+Status on release: untried; no live run recorded.
+
 ### `view.data.get`
 
 Run: `mammoth view data get`. Exact input fields: `mammoth schema get view.data.get`.

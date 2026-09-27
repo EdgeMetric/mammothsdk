@@ -1,5 +1,22 @@
 # CLI release provenance
 
+## 2.0.65
+
+**Feature**: `view data explore VIEW_ID COLUMN` reads a trend, distribution, histogram, or
+top-values breakdown of one column -- the CLI equivalent of the web app's column Explore
+card -- without adding a task to the view's pipeline. A DATE column buckets by `level`
+truncation (default AUTO); a NUMERIC column buckets by `level` resolution (default AUTO);
+any other column (TEXT) returns its top values by count, `limit` (default 20). Every
+bucket carries `count` and `percentage` of the column's total; an optional `metric` adds a
+second aggregate over another column, and an optional `condition` filters rows first.
+Closes the gap where the in-product agent's `view data aggregate` built `group_by` from
+bare column names only, so a DATE column could not be bucketed by month and a trend
+question fell back to one row per day. SDK: `DataviewsAPI.aggregate`'s `_build_pivot_param`
+now accepts a `group_by` entry as a `{"column", "truncate"}` / `{"column", "resolution"}`
+dict (validated against the backend's date-truncation levels) in addition to a plain
+column name; `DataviewsAPI.explore` is a new thin wrapper over `aggregate` selecting the
+bucket shape by column type.
+
 ## 2.0.64
 
 **Fix**: `mammoth_cli.embed.invoke` takes an optional `pipeline_timeout: float | None`,

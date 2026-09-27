@@ -984,7 +984,7 @@ def view_data_aggregate(invocation: Invocation) -> HandlerResult:
     Read-only: computes and returns the aggregated result without adding a
     task to the view's pipeline or otherwise changing it. Pass exactly one of
     ``aggregations`` (a PIVOT; ``group_by`` is optional) or ``metric`` (a
-    METRIC). ``function`` is one of SUM, COUNT, AVG, MIN, MAX. An optional
+    METRIC). ``function`` is one of SUM, COUNT, AVG, MIN, MAX, STDDEV, DISTINCT_COUNT. An optional
     ``condition`` filters rows before aggregating, and ``sequence`` pins the
     read to a pipeline step (default: latest). Never use ``view transform
     pivot`` just to read a number — it mutates the view's pipeline.
@@ -1025,6 +1025,74 @@ def view_data_aggregate(invocation: Invocation) -> HandlerResult:
                 display_to_internal or None, column_types or None
             )
         _forward_optional(document, kwargs, ("sequence", "limit"))
+        data = service.call(_symbol(invocation), **kwargs)
+        data = _relabel_columns(service, dataset_id, view_id, project_id, data, as_map)
+    return data, _meta(invocation, auth.workspace_id, project_id)
+
+
+def _require_string_positional_at(invocation: Invocation, index: int, name: str) -> str:
+    """Return the positional argument at ``index`` as a nonblank string, or raise."""
+    if len(invocation.extra_args) <= index or not str(invocation.extra_args[index]).strip():
+        raise CliError(
+            code=CODE_MISSING_ARGUMENT,
+            message=f"This command requires a {name} argument.",
+            exit_status=EXIT_USAGE,
+            hint=f"Pass the {name} as a positional argument.",
+        )
+    return str(invocation.extra_args[index])
+
+
+def view_data_explore(invocation: Invocation) -> HandlerResult:
+    """Explore one column: trend, distribution, or top values, like the web app's
+    column Explore card.
+
+    Read-only: computes and returns the result without adding a task to the
+    view's pipeline or otherwise changing it. Buckets by the column's type --
+    a DATE column by ``level`` (default "AUTO"; or DAY/WEEK/MONTH/QUARTER/
+    YEAR/...) for a trend "over time"/"by month"/"by year"; a NUMERIC column
+    by ``level`` resolution (default "AUTO") for a distribution/histogram; any
+    other column (TEXT) as its top values by count, ``limit`` (default 20).
+    Every bucket carries ``count`` and ``percentage`` of the column's total.
+    An optional ``metric`` ``{"column": ..., "function": ...}`` (SUM, COUNT,
+    AVG, MIN, MAX, STDDEV or DISTINCT_COUNT) adds a second aggregate per bucket over another column,
+    and an optional ``condition`` filters rows first -- same as ``view data
+    aggregate``, which this command wraps for the raw PIVOT shape. Never use
+    ``view transform pivot`` just to explore a column; it mutates the
+    pipeline.
+    """
+    project_id = require_project(invocation)
+    view_id = _require_int_positional_at(invocation, 0, "view id")
+    column_arg = _require_string_positional_at(invocation, 1, "column")
+    document = invocation.load_input() or {}
+    with open_service(invocation) as (service, auth):
+        dataset_id = _resolve_dataset_id(service, invocation, view_id, document, 2)
+        internal_to_display, column_types = _column_profile(
+            service, dataset_id, view_id, project_id
+        )
+        display_to_internal = {
+            display: internal for internal, display in internal_to_display.items()
+        }
+        internal_column = display_to_internal.get(column_arg, column_arg)
+        column_type = column_types.get(column_arg, "")
+        kwargs: dict[str, Any] = {
+            "dataset_id": dataset_id,
+            "dataview_id": view_id,
+            "project_id": project_id,
+            "column": internal_column,
+            "column_type": column_type,
+        }
+        as_map: dict[str, str] = {"group_0": "bucket", "agg_0": "count"}
+        metric = document.get("metric")
+        if isinstance(metric, dict):
+            resolved_metric = _resolved_aggregate_item(metric, display_to_internal)
+            kwargs["metric"] = resolved_metric
+            as_map["agg_1"] = resolved_metric["as_name"]
+        if document.get(CONDITION_KWARG) is not None:
+            compiled = compile_condition(document[CONDITION_KWARG])
+            kwargs[CONDITION_KWARG] = compiled.build(
+                display_to_internal or None, column_types or None
+            )
+        _forward_optional(document, kwargs, ("level", "sequence", "limit", "offset", "sort"))
         data = service.call(_symbol(invocation), **kwargs)
         data = _relabel_columns(service, dataset_id, view_id, project_id, data, as_map)
     return data, _meta(invocation, auth.workspace_id, project_id)

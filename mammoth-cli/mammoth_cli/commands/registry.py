@@ -597,6 +597,7 @@ HANDLERS: dict[str, Handler] = {
     "view.data.get": view_cmd.view_data_get,
     "view.data.query": view_cmd.view_data_query,
     "view.data.aggregate": view_cmd.view_data_aggregate,
+    "view.data.explore": view_cmd.view_data_explore,
     "view.exportable-config.get": view_cmd.view_exportable_config_get,
     "view.exportable-config.apply": view_cmd.view_exportable_config_apply,
     "view.conditional-format.create": view_cmd.view_conditional_format_create,

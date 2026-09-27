@@ -967,6 +967,8 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth view create 123
 - `mammoth view data aggregate` [read/none] -> mammoth.api.dataviews.DataviewsAPI.aggregate
   example: mammoth view data aggregate 123 --input '{"group_by": ["Channel"], "aggregations": [{"column": "Spend", "function": "SUM", "as_name": "Total Spend"}]}'
+- `mammoth view data explore` [read/none] -> mammoth.api.dataviews.DataviewsAPI.explore
+  example: mammoth view data explore 123 Status 123
 - `mammoth view data get` [read/none] -> mammoth.api.dataviews.DataviewsAPI.get_data
   example: mammoth view data get 123 123
 - `mammoth view data query` [read/none] -> mammoth.api.dataviews.DataviewsAPI.query_data
