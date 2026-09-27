@@ -1,6 +1,6 @@
 # mammoth-cli production readiness
 
-Last updated 2026-09-27 (mammoth-cli 2.0.69, mammoth-io 0.7.32).
+Last updated 2026-09-27 (mammoth-cli 2.0.70, mammoth-io 0.7.32).
 
 Read this page to learn what the CLI is, what is proven, and what is not. It
 also says where the evidence for each claim is. Update it with every release.

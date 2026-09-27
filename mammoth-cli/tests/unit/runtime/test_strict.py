@@ -269,3 +269,13 @@ def test_dataset_list_project_id_input_names_the_project_option() -> None:
         validate_input_fields("dataset.list", {"project_id": 5})
     assert raised.value.code == "unknown_input_field"
     assert "--project" in (raised.value.hint or "")
+
+
+def test_project_id_in_input_names_the_global_option_with_its_value() -> None:
+    """An agent that puts the project in --input gets the exact fix, value included,
+    so its next call is the right one (koyal trace: two wasted calls otherwise)."""
+    with pytest.raises(CliError) as excinfo:
+        validate_input_fields("dataset.list", {"project_id": 4589})
+    assert excinfo.value.hint is not None
+    assert "--project 4589" in excinfo.value.hint
+    assert "after the command" in excinfo.value.hint
