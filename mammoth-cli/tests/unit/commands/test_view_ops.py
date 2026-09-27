@@ -1374,7 +1374,11 @@ def test_transform_without_has_error_is_untouched(
             ),
         )
     )
-    assert data == {"has_error": False, "status": "done"}
+    assert data == {
+        "has_error": False,
+        "status": "done",
+        "row_check": {"rows_before": None, "rows_after": None},
+    }
     assert view_ops_cmd._PIPELINE_SYMBOL not in fake_service.calls
 
 
