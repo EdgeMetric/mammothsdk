@@ -114,6 +114,60 @@ def test_schema_find_resolves_goal_phrasing_to_the_transform(query: str, command
 @pytest.mark.parametrize(
     ("query", "command_id"),
     [
+        # An agent plans by stating the whole goal, not Mammoth's task names;
+        # each of these returned nothing (or the wrong command) as only a
+        # `suggestions` entry before this fix -- the right command must now
+        # be `matches[0]`.
+        ("save view result to a new dataset", "view.export.dataset"),
+        ("create a dataset from an existing view", "view.export.dataset"),
+        ("combine two datasets by appending rows", "view.export.dataset"),
+        ("union append stack rows from two existing views", "view.export.dataset"),
+        ("combine monthly datasets as rows", "view.export.dataset"),
+        ("join customer details into orders", "view.transform.join"),
+        ("create a new view from an existing dataset", "view.create"),
+        ("list datasets in a project", "dataset.list"),
+        ("deduplicate rows by order id", "view.transform.discard-duplicates"),
+        ("add a column with a constant value", "view.transform.set-values"),
+        ("calculate revenue as quantity times price", "view.transform.math"),
+        ("group and sum sales by store and month", "view.data.aggregate"),
+        ("build dashboard from a view", "dashboard.v3.generate"),
+        # Different phrasings of the same goals above, proving the fix is
+        # general vocabulary (purpose text/synonyms/stopwords), not these
+        # exact strings.
+        ("copy this view into a new dataset", "view.export.dataset"),
+        ("please create a new view using an existing dataset", "view.create"),
+        ("remove duplicate rows for each order id", "view.transform.discard-duplicates"),
+        ("quantity times price as revenue", "view.transform.math"),
+        ("sum sales by store and month", "view.data.aggregate"),
+    ],
+)
+def test_schema_find_resolves_natural_goal_phrasing_to_first_match(
+    query: str, command_id: str
+) -> None:
+    matches = find_schemas(query)["matches"]
+
+    assert matches, query
+    assert matches[0]["command_id"] == command_id
+
+
+@pytest.mark.parametrize(
+    ("query", "command_id"),
+    [
+        # A key names the join column: appending rows is the wrong read of
+        # "combine", and must not win once a key is named.
+        ("combine two datasets on a key", "view.transform.join"),
+    ],
+)
+def test_schema_find_still_prefers_join_when_a_key_is_named(query: str, command_id: str) -> None:
+    matches = find_schemas(query)["matches"]
+
+    assert matches, query
+    assert matches[0]["command_id"] == command_id
+
+
+@pytest.mark.parametrize(
+    ("query", "command_id"),
+    [
         # Data words (sales, revenue) are on no command, so these land in
         # suggestions; the board-by-sentence commands must still lead them.
         ("make a dashboard of sales by region", "dashboard.v3.generate"),
@@ -141,7 +195,12 @@ def test_every_view_transform_has_a_plain_language_discovery_purpose() -> None:
 
 
 def test_schema_find_without_a_full_match_suggests_near_misses_and_the_menu() -> None:
-    result = find_schemas("union two views")
+    # "union two views" now genuinely resolves to view.export.dataset (its
+    # own goal-phrasing coverage, see test_schema_find_resolves_natural_goal_
+    # phrasing_to_first_match) -- a real fix, not a regression. "three" carries
+    # the same partial-coverage shape (no command's text says "three") without
+    # colliding with that improvement.
+    result = find_schemas("union three views")
 
     assert result["matches"] == []
     assert result["total_matches"] == 0
@@ -167,6 +226,61 @@ def test_schema_find_rejects_an_empty_query() -> None:
         _schema_find(Invocation(command_id="schema.find", extra_args=["   "]))
 
     assert error.value.code == "empty_search_query"
+
+
+def test_schema_find_without_a_semicolon_is_unchanged() -> None:
+    data, _ = _schema_find(Invocation(command_id="schema.find", extra_args=["view transform"]))
+
+    assert data == find_schemas("view transform")
+    assert "goals" not in data
+
+
+def test_schema_find_splits_a_semicolon_query_into_several_goals() -> None:
+    query = "join customers onto orders; remove duplicate rows; build a dashboard"
+    data, _ = _schema_find(Invocation(command_id="schema.find", extra_args=[query]))
+
+    assert list(data) == ["goals"]
+    goals = data["goals"]
+    assert [goal["goal"] for goal in goals] == [
+        "join customers onto orders",
+        "remove duplicate rows",
+        "build a dashboard",
+    ]
+    # Each goal carries its own single-goal result shape.
+    for goal in goals:
+        assert set(goal) >= {"goal", "query", "matches", "total_matches", "truncated"}
+    # More than one goal: inline accepted_fields/agent_example caps to the
+    # top 1 match (or suggestion) per goal, so the envelope stays small.
+    for goal in goals:
+        entries = goal["matches"] or goal.get("suggestions") or []
+        for entry in entries[1:]:
+            assert "accepted_fields" not in entry
+            assert "agent_example" not in entry
+        if entries:
+            assert "accepted_fields" in entries[0] or "agent_example" in entries[0]
+
+
+def test_schema_find_semicolon_query_strips_and_drops_empty_goals() -> None:
+    data, _ = _schema_find(
+        Invocation(command_id="schema.find", extra_args=["  join two views ; ; remove duplicates "])
+    )
+
+    assert [goal["goal"] for goal in data["goals"]] == ["join two views", "remove duplicates"]
+
+
+def test_schema_find_rejects_an_all_empty_semicolon_query() -> None:
+    with pytest.raises(CliError, match="must contain") as error:
+        _schema_find(Invocation(command_id="schema.find", extra_args=[" ; ; "]))
+
+    assert error.value.code == "empty_search_query"
+
+
+def test_schema_find_caps_the_number_of_goals_per_call() -> None:
+    query = ";".join(f"goal {i}" for i in range(13))
+    with pytest.raises(CliError, match="at most 12") as error:
+        _schema_find(Invocation(command_id="schema.find", extra_args=[query]))
+
+    assert error.value.code == "too_many_goals"
 
 
 def test_root_help_groups_commands_by_task_and_explains_discovery() -> None:
