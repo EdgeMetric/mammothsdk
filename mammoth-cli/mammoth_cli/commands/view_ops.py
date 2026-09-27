@@ -280,6 +280,8 @@ def _dispatch_view(
     the view's row count is read before and after the call and added to the
     result as ``row_check``, so a caller always sees whether the write changed
     the row count -- the join path builds its own richer ``join_check`` instead.
+    A result staged as a draft never ran the pipeline, so no ``row_check`` is
+    added and there is nothing to wait for.
     """
     auto_row_check = before is None and after is None
     # ``dataset_id`` is invocation-local resource context.  It is not a View
@@ -330,10 +332,16 @@ def _dispatch_view(
             )
         if after is not None and dataset_id is not None:
             data = after(service, int(dataset_id), state, data)
-        elif auto_row_check and dataset_id is not None and isinstance(data, dict):
+        elif (
+            auto_row_check
+            and dataset_id is not None
+            and isinstance(data, dict)
+            and data.get("status") != "staged"
+        ):
             # A read taken right away can catch the pipeline still
             # recomputing and read back no row_count at all; wait for it to
-            # settle (bounded) before trusting this one.
+            # settle (bounded) before trusting this one. A staged draft never
+            # ran the pipeline, so there is nothing to wait for or read.
             rows_after = wait_for_view_row_count(
                 service, int(dataset_id), view_id, invocation.project
             )
