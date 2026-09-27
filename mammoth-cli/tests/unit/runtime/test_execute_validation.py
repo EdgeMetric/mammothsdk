@@ -116,6 +116,61 @@ def test_handler_owned_field_is_rejected_before_auth(
     assert "unknown_input_field" in result.output
 
 
+def _automation_doc(tmp_path: Path, by_week_day: list[str]) -> Path:
+    doc = tmp_path / "automation.json"
+    doc.write_text(
+        json.dumps(
+            {
+                "tasks": [
+                    {
+                        "task_type": "run_data_retrieval",
+                        "details": {"ds_details": [{"ds_id": 42}]},
+                    }
+                ],
+                "conditions": [
+                    {
+                        "condition_type": "at_specific_time",
+                        "details": {
+                            "frequency": "weekly",
+                            "interval": 1,
+                            "start_at": "2026-01-01T00:00:00Z",
+                            "by_week_day": by_week_day,
+                        },
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    return doc
+
+
+def test_uppercase_weekday_code_is_rejected_before_auth(
+    isolated_cli_config: Path, tmp_path: Path
+) -> None:
+    # The backend only accepts the lowercase RFC 5545 day codes ('mo', 'tu',
+    # ...); "MO" must be caught here, not on a later, real request.
+    doc = _automation_doc(tmp_path, ["MO"])
+    result = make_runner().invoke(
+        ["automation", "create", "Nightly", "--yes", "--input", str(doc), *_JSON_NO_INPUT]
+    )
+    assert result.exit_code == EXIT_USAGE
+    assert "invalid_input_field_type" in result.output
+    assert "by_week_day" in result.output
+
+
+def test_lowercase_weekday_code_passes_input_validation(
+    isolated_cli_config: Path, tmp_path: Path
+) -> None:
+    doc = _automation_doc(tmp_path, ["mo", "we"])
+    result = make_runner().invoke(
+        ["automation", "create", "Nightly", "--yes", "--input", str(doc), *_JSON_NO_INPUT]
+    )
+    # No credentials/project configured: this must fail later (on project/auth
+    # resolution), never on the by_week_day field type.
+    assert "invalid_input_field_type" not in result.output
+
+
 # --- R8: global options and positional ids are validated -------------------
 
 
