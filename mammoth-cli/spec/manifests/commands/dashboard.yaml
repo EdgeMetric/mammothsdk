@@ -1762,7 +1762,8 @@ commands:
   undo_test: null
   known_restrictions: Backend requires params.data to be the browser-hydrated DashboardData map
     (pre-rendered widget results); the server stores only query descriptors and cannot rebuild
-    it, so a PDF cannot be produced from the CLI alone.
+    it, so a PDF cannot be produced from the CLI alone; point the user to the board's Download PDF
+    in the app.
   reviewed_by: primary
 - command_id: dashboard.published-data-by-url
   command_path: dashboard published-data-by-url

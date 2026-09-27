@@ -63,7 +63,7 @@ _GROUP_DISCOVERY_PURPOSES = {
 _COMMAND_DISCOVERY_PURPOSES = {
     "file.upload": (
         "upload import CSV spreadsheet XLSX source data append add rows union stack "
-        "a file into an existing dataset"
+        "a file into an existing dataset excel workbook tabs sheets drop in"
     ),
     "file.upload-folder": "upload source-data directory folder",
     "view.export.csv": "export download local CSV file artifact",
@@ -85,7 +85,9 @@ _COMMAND_DISCOVERY_PURPOSES = {
     "view.export.onedrive": "one drive onedrive microsoft cloud storage",
     "view.export.postgres": "postgres postgresql database",
     "view.export.powerbi": "power bi powerbi microsoft dashboard workspace",
-    "view.export.publish-db": "publish database live connection odbc bi tool reads table",
+    "view.export.publish-db": (
+        "publish database live connection odbc bi tool reads table point straight at always latest"
+    ),
     "view.export.publish-db-update": "publish database update refresh live connection",
     "view.export.redshift": "redshift amazon aws database warehouse",
     "view.export.rest": "webhook http endpoint api push rest",
@@ -272,11 +274,14 @@ _COMMAND_DISCOVERY_PURPOSES = {
     "connector.ai.chat": (
         "connect our own internal custom api build a connector for an unsupported source"
     ),
+    "file.set-password": "locked password protected file pdf excel unlock",
     "project.sample-flow": "sample example demo starter data dataset try start from",
     "webhook.create": (
-        "webhook http endpoint api push create data pushed in sent from another system receive"
+        "webhook http endpoint api push create data pushed in sent from another system receive "
+        "url app post posts events rows straight in"
     ),
-    "dataset.create-from-pdf": "pdf table document extract into a dataset",
+    "dataset.create-from-pdf": "pdf table document extract get the table out of into a dataset",
+    "dashboard.pdf.export": "pdf of a board dashboard download print meeting export",
     "view.checkpoint.create": (
         "stop halt pause pipeline alert notify flag when rows match a rule condition checkpoint"
     ),
@@ -294,8 +299,16 @@ _COMMAND_DISCOVERY_PURPOSES = {
         "retention purge old data send an emailed file attachment"
     ),
     "billing.subscription.update": "upgrade downgrade bigger plan change subscription tier",
-    "billing.invoice.list": "past bills billing history invoices payments receipts",
-    "project.memory.add": "remember save preference always from now on note for next time",
+    "billing.invoice.list": "past bills billed billing history invoices payments receipts so far",
+    "project.memory.add": (
+        "remember save preference prefer prefers always from now on note for next time "
+        "amounts currency format style"
+    ),
+    # A rule about what a board's data means ("Returned orders are refunds") is
+    # the board's own context, not the user's preference.
+    "dashboard.context.create": (
+        "remember for this board dashboard rule meaning definition counts treat as business context"
+    ),
     "project.memory.list": "remembered saved preferences what do you remember memory",
     "project.memory.remove": "forget remove delete saved preference memory",
 }

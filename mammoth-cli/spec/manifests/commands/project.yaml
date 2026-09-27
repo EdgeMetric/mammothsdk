@@ -460,7 +460,7 @@ commands:
   - CT-PROJECT-MEMORY-ADD-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: 'Save only a preference the user stated for how the agent works or shows things (at most 20, each at most 200 characters); never data, results or secrets. The in-app agent applies them in every later turn in this project.'
+  known_restrictions: 'Save only a preference the user stated for how the agent works or shows things (at most 20, each at most 200 characters); never data, results or secrets. The in-app agent applies them in every later turn in this project. A rule about what a board''s data means (for example, Returned orders are refunds) belongs to that board: dashboard context create.'
   reviewed_by: primary
 - command_id: project.memory.remove
   command_path: project memory remove
