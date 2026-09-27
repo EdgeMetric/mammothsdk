@@ -25,6 +25,7 @@ from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from mammoth_cli.commands.view import (
+    _DATAVIEW_GET_SYMBOL,
     _FIND_DATASET_SYMBOL,
     BRIEF_VIEW_FIELDS,
     _dataview_metadata,
@@ -245,6 +246,17 @@ def _meta(invocation: Invocation, workspace_id: int) -> dict[str, Any]:
     }
 
 
+def _view_row_count(service: Any, dataset_id: int, view_id: int, project_id: int | None) -> Any:
+    """Return a view's current row count via the cheapest read (best effort)."""
+    try:
+        info = service.call(
+            _DATAVIEW_GET_SYMBOL, dataset_id=dataset_id, dataview_id=view_id, project_id=project_id
+        )
+    except Exception:  # noqa: BLE001 -- the check is advice; the write already ran
+        return None
+    return info.get("row_count") if isinstance(info, dict) else None
+
+
 def _dispatch_view(
     invocation: Invocation,
     view_id: int,
@@ -262,7 +274,13 @@ def _dispatch_view(
     result to emit. ``prepare(service, dataset_id, kwargs)`` may edit the call
     arguments in place; when it returns a value, that value is emitted and no
     call is made. All three need the exact parent; without one they are skipped.
+
+    When neither ``before`` nor ``after`` is given (every plain transform),
+    the view's row count is read before and after the call and added to the
+    result as ``row_check``, so a caller always sees whether the write changed
+    the row count -- the join path builds its own richer ``join_check`` instead.
     """
+    auto_row_check = before is None and after is None
     # ``dataset_id`` is invocation-local resource context.  It is not a View
     # transform argument, but passing it through lets the service fetch the
     # exact parent endpoint and prevents the SDK's legacy bare-view resolver
@@ -287,6 +305,11 @@ def _dispatch_view(
             if early is not None:
                 return early, _meta(invocation, auth.workspace_id)
         state = before(service, int(dataset_id)) if before and dataset_id is not None else None
+        rows_before = (
+            _view_row_count(service, int(dataset_id), view_id, invocation.project)
+            if auto_row_check and dataset_id is not None
+            else None
+        )
         try:
             if dataset_id is None:
                 _require_discovery_allowed(invocation, view_id)
@@ -306,6 +329,9 @@ def _dispatch_view(
             )
         if after is not None and dataset_id is not None:
             data = after(service, int(dataset_id), state, data)
+        elif auto_row_check and dataset_id is not None and isinstance(data, dict):
+            rows_after = _view_row_count(service, int(dataset_id), view_id, invocation.project)
+            data["row_check"] = {"rows_before": rows_before, "rows_after": rows_after}
     return data, _meta(invocation, auth.workspace_id)
 
 

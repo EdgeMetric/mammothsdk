@@ -44,6 +44,7 @@ from mammoth_cli.output.policy import (
 from mammoth_cli.runtime import executor, validate
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.strict import validate_extra_args
+from mammoth_cli.runtime.verify import with_verify
 from mammoth_cli.services.positionals import PositionalSpec, resolve_positionals
 
 OUTPUT_MODES = VALID_OUTPUTS
@@ -823,7 +824,8 @@ def _execute(invocation: Invocation) -> None:
             raise not_implemented_error(invocation.command_id, sdk_symbol)
         if invocation.dry_run:
             return _dry_run(handler, invocation)
-        return handler(invocation)
+        data, meta = handler(invocation)
+        return _apply_verify(invocation.command_id, data), meta
 
     executor.run(
         invocation.command_id,
@@ -833,6 +835,19 @@ def _execute(invocation: Invocation) -> None:
         invocation=invocation,
         profile=invocation.profile,
     )
+
+
+def _apply_verify(command_id: str, data: Any) -> Any:
+    """Add the automatic write read-back to a real, mutating, API-backed result.
+
+    A read command and a command with no reviewed ``sdk_symbol`` (a local or
+    not-yet-backed command) are returned unchanged; ``--dry-run`` never
+    reaches this at all, since it returns before the handler's real call.
+    """
+    record = command_by_id(command_id) or {}
+    if record.get("mutation_class") == "read" or not record.get("sdk_symbol"):
+        return data
+    return with_verify(data)
 
 
 def _dry_run(handler: Handler, invocation: Invocation) -> tuple[Any, dict[str, Any]]:

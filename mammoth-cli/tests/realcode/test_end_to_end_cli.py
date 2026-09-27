@@ -181,7 +181,10 @@ def test_generated_dashboard_async_result_waits_for_job(
     assert result.exit_code == 0, result.output
     assert [request.method for request in api.requests] == ["POST", "GET"]
     assert observed_timeouts == [7]
-    assert json.loads(result.output)["data"] == {"dashboard_id": 73}
+    assert json.loads(result.output)["data"] == {
+        "dashboard_id": 73,
+        "verify": {"verified": True, "state": "done", "warnings": [], "needs_user": None},
+    }
 
 
 def test_generated_dashboard_delete_requires_confirmation_and_routes(
