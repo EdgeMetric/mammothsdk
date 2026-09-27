@@ -957,8 +957,18 @@ def _build_pivot_fields(
     fields: dict[str, Any] = {"aggregations": resolved_aggregations}
     group_by = document.get("group_by")
     if group_by:
-        fields["group_by"] = [column_map.get(column, column) for column in group_by]
-        as_map.update({f"group_{index}": column for index, column in enumerate(group_by)})
+        # A string groups by the column's values; {column, truncate|resolution}
+        # buckets a DATE (DAY..YEAR) or NUMERIC column first, like Explore.
+        columns = [item["column"] if isinstance(item, dict) else item for item in group_by]
+        fields["group_by"] = [
+            (
+                {**item, "column": column_map.get(item["column"], item["column"])}
+                if isinstance(item, dict)
+                else column_map.get(item, item)
+            )
+            for item in group_by
+        ]
+        as_map.update({f"group_{index}": column for index, column in enumerate(columns)})
     return fields, as_map
 
 

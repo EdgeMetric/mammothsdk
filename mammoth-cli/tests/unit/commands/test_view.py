@@ -745,6 +745,30 @@ def test_data_aggregate_pivot_group_by_and_sum(
     ]
 
 
+def test_data_aggregate_group_by_buckets_a_date_by_month(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    """A trend is a count per month: group_by takes {column, truncate} for a DATE."""
+    fake_service.responses[_DATAVIEW_GET] = {
+        "metadata": [
+            {"internal_name": "column_3", "display_name": "inspection_date", "type": "DATE"}
+        ]
+    }
+    fake_service.responses[_DATA_AGGREGATE] = {"data": [{"group_0": "2024-01-01", "agg_0": 1500}]}
+    doc = _doc(
+        tmp_path,
+        {
+            "group_by": [{"column": "inspection_date", "truncate": "MONTH"}],
+            "aggregations": [{"function": "COUNT", "as_name": "inspections"}],
+        },
+    )
+    data = view_cmd.view_data_aggregate(
+        _inv("view.data.aggregate", project=180, extra_args=["7", "9"], input_file=doc)
+    )[0]
+    assert fake_service.call_log[-1][1]["group_by"] == [{"column": "column_3", "truncate": "MONTH"}]
+    assert data["data"] == [{"inspection_date": "2024-01-01", "inspections": 1500}]
+
+
 def test_data_aggregate_pivot_count_no_group_by(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
