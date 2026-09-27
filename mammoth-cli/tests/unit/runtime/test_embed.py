@@ -102,6 +102,41 @@ def test_project_and_output_options_are_forced(monkeypatch: pytest.MonkeyPatch) 
     assert envelope["meta"]["project_id"] == 42
 
 
+def test_pipeline_timeout_option_is_forwarded(monkeypatch: pytest.MonkeyPatch) -> None:
+    captured: list[Invocation] = []
+    real_resolve = resolve_auth
+
+    def _spy(invocation: Invocation, explicit_login: ExplicitLogin | None = None) -> ResolvedAuth:
+        captured.append(invocation)
+        return real_resolve(invocation, explicit_login)
+
+    monkeypatch.setattr("mammoth_cli.runtime.session.resolve_auth", _spy)
+    monkeypatch.setattr(service_factory, "build_service", lambda auth, **_kw: FakeMammothService())
+
+    invoke(["project", "list"], login=_login(5), pipeline_timeout=300)
+
+    assert captured[0].pipeline_timeout == 300.0
+
+
+def test_explicit_pipeline_timeout_in_args_wins(monkeypatch: pytest.MonkeyPatch) -> None:
+    captured: list[Invocation] = []
+    real_resolve = resolve_auth
+
+    def _spy(invocation: Invocation, explicit_login: ExplicitLogin | None = None) -> ResolvedAuth:
+        captured.append(invocation)
+        return real_resolve(invocation, explicit_login)
+
+    monkeypatch.setattr("mammoth_cli.runtime.session.resolve_auth", _spy)
+    monkeypatch.setattr(service_factory, "build_service", lambda auth, **_kw: FakeMammothService())
+
+    envelope = invoke(
+        ["project", "list", "--pipeline-timeout", "600"], login=_login(5), pipeline_timeout=300
+    )
+
+    assert captured[0].pipeline_timeout == 600.0
+    assert "error" not in envelope
+
+
 def test_server_prefix_and_headers_reach_the_sdk_session() -> None:
     call = embedded.EmbeddedCall(login=_login(9, token="jwt-9"))
     token = embedded.enter(call)
