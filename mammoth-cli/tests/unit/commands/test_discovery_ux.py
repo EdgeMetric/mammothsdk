@@ -98,6 +98,10 @@ def test_schema_find_prioritizes_path_matches_and_caps_broad_results() -> None:
         ("automation refresh dataset", "automation.create"),
         ("schedule a daily refresh", "automation.create"),
         ("run every week automatically", "automation.create"),
+        # 2.0.71: a board is built from a sentence, never hand-authored JSON.
+        ("create dashboard from a view", "dashboard.v3.generate"),
+        ("build combined dashboard", "dashboard.v3.generate"),
+        ("add a chart to the dashboard", "dashboard.chat.edit"),
     ],
 )
 def test_schema_find_resolves_goal_phrasing_to_the_transform(query: str, command_id: str) -> None:
@@ -105,6 +109,23 @@ def test_schema_find_resolves_goal_phrasing_to_the_transform(query: str, command
 
     assert matches, query
     assert matches[0]["command_id"] == command_id
+
+
+@pytest.mark.parametrize(
+    ("query", "command_id"),
+    [
+        # Data words (sales, revenue) are on no command, so these land in
+        # suggestions; the board-by-sentence commands must still lead them.
+        ("make a dashboard of sales by region", "dashboard.v3.generate"),
+        ("change the dashboard to show revenue by month", "dashboard.chat.edit"),
+    ],
+)
+def test_schema_find_suggests_the_intent_command_for_a_board_request(
+    query: str, command_id: str
+) -> None:
+    result = find_schemas(query)
+
+    assert result["suggestions"][0]["command_id"] == command_id
 
 
 def test_every_view_transform_has_a_plain_language_discovery_purpose() -> None:

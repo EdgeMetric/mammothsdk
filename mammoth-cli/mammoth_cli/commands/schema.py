@@ -281,6 +281,14 @@ _COMMAND_DISCOVERY_PURPOSES = {
         "url app post posts events rows straight in"
     ),
     "dataset.create-from-pdf": "pdf table document extract get the table out of into a dataset",
+    "dashboard.v3.generate": (
+        "create build make new generate dashboard board report from a view description "
+        "intent sentence ai combined showing"
+    ),
+    "dashboard.chat.edit": (
+        "add change edit update chart charts kpi to an existing dashboard board "
+        "by description sentence ai show instead"
+    ),
     "dashboard.pdf.export": "pdf of a board dashboard download print meeting export",
     "view.checkpoint.create": (
         "stop halt pause pipeline alert notify flag when rows match a rule condition checkpoint"
