@@ -1,6 +1,6 @@
 ---
 name: mammoth-cli
-version: 2.0.70
+version: 2.0.71
 description: "Use Mammoth Analytics from a terminal: install or authenticate the CLI, discover its live command contract, and safely manage projects, data, views, pipelines (join, merge, pivot, filter, clean), dashboards, exports, and handoffs."
 ---
 
@@ -81,7 +81,7 @@ mammoth view transform --help              # every data transformation
 | Change a column's type | `view transform convert-type` |
 | Rename a column, sort the rows (view settings, not tasks) | `view transform rename-columns`, `view transform sort` |
 | Rank, running total, previous row | `view transform window` |
-| A dashboard | `dashboard create-blank` ([dashboards](references/recipes/dashboards.md)) |
+| A dashboard | `dashboard v3 generate`, then `chat edit` ([dashboards](references/recipes/dashboards.md)) |
 | Deliver the rows | `view export csv`, `view export postgres` (and other destinations), `view export dataset` |
 | Run something on a schedule or on new data (refresh, append, alert) | `automation create`: a condition (`at_specific_time`, new file in a folder, ...) and tasks (`run_data_retrieval`, `append_data`, `send_an_alert`, `pull_cloud_files`). `schedule create` only pulls a connector's data. A dataset made from an uploaded file has no source to refresh from; say so. Full recipe, including a known `automation get` backend caveat: [recurring work](references/recipes/scheduling.md) |
 
@@ -122,11 +122,10 @@ dashboard from t_a and t_b"). Work it out from the data before you build:
 6. If the data has money, add it before you make the dashboard: `revenue`
    (`math`, `qty * price`, `new_column`), the `fix` in `before_dashboard`.
    A dashboard sees only the columns the view had when it was made.
-7. Build the dashboard from the joined view
-   ([dashboards](references/recipes/dashboards.md)) and chart the sum of
-   revenue. Do not sum a unit price. `create-blank`, `canvas save` and
-   `pages add` return `deliverable_check`: fix each warning, or say in the
-   report why not.
+7. Build the dashboard from the joined view with one sentence
+   ([dashboards](references/recipes/dashboards.md)) that charts the sum of
+   revenue. Do not sum a unit price. Fix each `deliverable_check` warning,
+   or say in the report why not.
 
 For the defaults that most pipelines use (new column or overwrite, `LEFT`
 joins, date steps), see

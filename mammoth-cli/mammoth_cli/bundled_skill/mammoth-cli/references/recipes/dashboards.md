@@ -2,17 +2,22 @@
 
 `dashboard create` (the legacy AI-generation engine) does not exist as a
 command: it has no handler in current apiv2 (always 404s; historically HTTP
-409 `4DASH012 DASHBOARD_LEGACY_CREATION_RETIRED`). Create with `create-blank`
-(or `v3 generate` when the task allows an AI route).
+409 `4DASH012 DASHBOARD_LEGACY_CREATION_RETIRED`). Build a board from one
+sentence with `v3 generate`, and change it with `chat edit`; author a canvas by
+hand (`create-blank`, `canvas save`, `pages add`) only when asked to.
 `dashboard source list` is an observed blocker on release (see
 capabilities); verify the view binding with `dashboard get DASHBOARD_ID`
 (`data.dataview_id`) instead.
 
 ```bash
-mammoth schema get dashboard.create-blank
-mammoth dashboard create-blank --input INPUT_JSON --project PROJECT_ID
+mammoth dashboard v3 generate --input '{"body": {"params": {"intent": "Monthly revenue by region, with top customers", "dataview_id": VIEW_ID}}}'
+mammoth dashboard chat edit DASHBOARD_ID --input '{"body": {"params": {"prompt": "Add a chart of orders by status"}}}'
 mammoth dashboard get DASHBOARD_ID
 ```
+
+`v3 generate` waits for the bake (about 30 s) and returns the baked canvas;
+`chat edit` returns `changed` and a one-line `message`. Quote one number from
+the board before you report it done.
 
 Discover page/widget/publish routes and verify the binding, draft/published
 data and terminal jobs. Use only returned IDs and schema confirmation policy;

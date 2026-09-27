@@ -490,7 +490,7 @@ commands:
   - CT-DASHBOARD-CHAT-EDIT-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: 'Changes an existing board from one sentence (add, remove or change a chart, KPI or page): {"body": {"params": {"prompt": "<the change>"}}}; returns changed, a one-line message and the rebaked canvas. Use it rather than dashboard pages add or canvas save.'
   reviewed_by: primary
 - command_id: dashboard.chat.history
   command_path: dashboard chat history
@@ -749,7 +749,7 @@ commands:
   - CT-DASHBOARD-CREATE-BLANK-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: 'Input is {"params": {"dataview_id": VIEW_ID, "title": ...}} with --yes; returns {id, sequence}. The blank canvas has one page (p1) and no figures: author it with dashboard canvas get -> edit -> dashboard canvas save or dashboard pages add. One dataview per dashboard.'
+  known_restrictions: 'To build a board from a description, use dashboard v3 generate instead. Input is {"params": {"dataview_id": VIEW_ID, "title": ...}} with --yes; returns {id, sequence}. The blank canvas has one page (p1) and no figures: author it with dashboard chat edit, or by hand with dashboard canvas get -> edit -> dashboard canvas save or dashboard pages add. One dataview per dashboard.'
   reviewed_by: primary
 - command_id: dashboard.data.draft
   command_path: dashboard data draft
@@ -1673,7 +1673,7 @@ commands:
   - CT-DASHBOARD-PAGES-ADD-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: 'Requires --yes --confirm DASHBOARD_ID. body.params.pages is a list of PageAdd objects: {title, focus: {measure, dim, kpis: [...]}, charts: [{kind, title, dim, measure, agg}]}; the schema example''''s {} entry is not a usable page. The route runs through the LLM control guard: in the ILG simulation it dropped unit.prefix on a money card ("nothing in this data says which currency") that dashboard canvas save had kept, and reports that in data.message.'
+  known_restrictions: 'To add or change content by description, use dashboard chat edit instead. Requires --yes --confirm DASHBOARD_ID. body.params.pages is a list of PageAdd objects: {title, focus: {measure, dim, kpis: [...]}, charts: [{kind, title, dim, measure, agg}]}; the schema example''''s {} entry is not a usable page. The route runs through the LLM control guard: in the ILG simulation it dropped unit.prefix on a money card ("nothing in this data says which currency") that dashboard canvas save had kept, and reports that in data.message.'
   reviewed_by: primary
 - command_id: dashboard.pdf-artifact
   command_path: dashboard pdf-artifact
@@ -4397,7 +4397,7 @@ commands:
   - CT-DASHBOARD-V3-GENERATE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: 'This is how to make a dashboard: it builds and bakes a whole board from one sentence on one view. Input {"body": {"params": {"intent": "<what the board should show>", "dataview_id": VIEW_ID, "title": "<optional name>"}}}; waits (about 30 s) and returns the baked canvas. Change it afterwards with dashboard chat edit. dashboard create-blank is only for authoring a canvas by hand.'
   reviewed_by: primary
 - command_id: dashboard.video-state
   command_path: dashboard video-state
