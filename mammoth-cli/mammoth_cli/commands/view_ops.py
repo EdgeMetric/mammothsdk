@@ -33,6 +33,7 @@ from mammoth_cli.commands.view import (
     apply_column_renames,
     brief_view_record,
     join_snapshot,
+    wait_for_view_row_count,
     with_join_check,
 )
 from mammoth_cli.context import profiles
@@ -330,7 +331,12 @@ def _dispatch_view(
         if after is not None and dataset_id is not None:
             data = after(service, int(dataset_id), state, data)
         elif auto_row_check and dataset_id is not None and isinstance(data, dict):
-            rows_after = _view_row_count(service, int(dataset_id), view_id, invocation.project)
+            # A read taken right away can catch the pipeline still
+            # recomputing and read back no row_count at all; wait for it to
+            # settle (bounded) before trusting this one.
+            rows_after = wait_for_view_row_count(
+                service, int(dataset_id), view_id, invocation.project
+            )
             data["row_check"] = {"rows_before": rows_before, "rows_after": rows_after}
     return data, _meta(invocation, auth.workspace_id)
 

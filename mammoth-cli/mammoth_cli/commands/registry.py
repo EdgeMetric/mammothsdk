@@ -152,16 +152,60 @@ def _schema_get(invocation: Invocation) -> HandlerResult:
     return schema_cmd.brief_schema(entry), {}
 
 
+#: Above this many ';'-separated goals in one 'schema find' call, an agent is
+#: almost certainly pasting something else (a whole plan, a sentence with
+#: semicolons) rather than a real goal list; reject with a clear message
+#: instead of silently running dozens of searches.
+_MAX_FIND_GOALS = 12
+
+_EMPTY_QUERY_ERROR = CliError(
+    code="empty_search_query",
+    message="The schema search query must contain at least one word.",
+    exit_status=EXIT_USAGE,
+    hint="For the complete inventory, use 'mammoth schema list'.",
+)
+
+
+def _cap_inline_detail(result: dict[str, Any], keep: int) -> None:
+    """Strip inline ``accepted_fields``/``agent_example`` past the top `keep`."""
+    for key in ("matches", "suggestions"):
+        for entry in (result.get(key) or [])[keep:]:
+            entry.pop("accepted_fields", None)
+            entry.pop("agent_example", None)
+
+
 def _schema_find(invocation: Invocation) -> HandlerResult:
     query = _require_arg(invocation, "search query")
     if not query.strip():
+        raise _EMPTY_QUERY_ERROR
+    if ";" not in query:
+        return schema_cmd.find_schemas(query), {}
+    # Several goals in one call ("join customers onto orders; remove
+    # duplicate rows; build a dashboard"): run the existing single-goal
+    # search per goal instead of round-tripping once per goal.
+    goals = [goal.strip() for goal in query.split(";") if goal.strip()]
+    if not goals:
+        raise _EMPTY_QUERY_ERROR
+    if len(goals) > _MAX_FIND_GOALS:
         raise CliError(
-            code="empty_search_query",
-            message="The schema search query must contain at least one word.",
+            code="too_many_goals",
+            message=(
+                f"schema find accepts at most {_MAX_FIND_GOALS} ';'-separated goals per "
+                f"call; got {len(goals)}."
+            ),
             exit_status=EXIT_USAGE,
-            hint="For the complete inventory, use 'mammoth schema list'.",
+            hint="Split the goals across more than one 'schema find' call.",
         )
-    return schema_cmd.find_schemas(query), {}
+    results = [schema_cmd.find_schemas(goal) for goal in goals]
+    if len(results) > 1:
+        # Cap inline accepted_fields/agent_example to the top match per goal
+        # so a multi-goal envelope stays small even when every goal has
+        # several candidates.
+        for result in results:
+            _cap_inline_detail(result, 1)
+    return {
+        "goals": [{"goal": goal, **result} for goal, result in zip(goals, results, strict=True)]
+    }, {}
 
 
 def _log_path(_: Invocation) -> HandlerResult:

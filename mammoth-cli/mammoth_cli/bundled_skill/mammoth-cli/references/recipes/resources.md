@@ -122,4 +122,7 @@ not sufficient. `dataset.create` waits for its asynchronous work; only the
 `weburl` creation type is proven, other freeform variants remain unqualified.
 If the schema does not accept a URL,
 report URL import unsupported; do not silently substitute local processing. A
-4/5/7 envelope is a failed or uncertain operation, not a usable dataset.
+4/5/7 envelope is a failed or uncertain operation, not a usable dataset. A
+`weburl` dataset is a one-time copy: it keeps no source details, so it cannot be
+scheduled to refresh (see [recurring work](scheduling.md)); say so rather than
+promising a refreshable source.

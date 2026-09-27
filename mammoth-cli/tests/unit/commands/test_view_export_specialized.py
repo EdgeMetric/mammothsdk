@@ -21,11 +21,13 @@ from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.manifest.loader import command_by_id
 from mammoth_cli.runtime.confirm import POLICY_NONE
 from mammoth_cli.runtime.invocation import Invocation
+from mammoth_cli.runtime.verify import with_verify
 from mammoth_cli.services.testing import FakeMammothService
 from mammoth_cli.testing import login_default_profile
 
 _DATAVIEW_LIST = "mammoth.api.dataviews.DataviewsAPI.list"
 _EXPORTS_LIST = "mammoth.api.exports.ExportsAPI.list"
+_WAIT_FOR_PIPELINE = "mammoth.api.pipeline.PipelineAPI.wait_for_pipeline"
 
 
 def _exports_page(*items: ItemExportInfo) -> PipelineExportsPaginated:
@@ -97,6 +99,7 @@ def test_dataset_route_names_the_written_dataset_and_its_project(
         "source_view_id": 7,
         "refreshes_on_pipeline_run": True,
         "next": "mammoth view list 114 --project 57",
+        "row_check": {"rows_before": None, "rows_after": None},
     }
 
 
@@ -114,21 +117,21 @@ def test_dataset_route_reports_rows_after_for_a_new_dataset(
             yes=True,
         )
     )
-    assert data["rows_after"] == 42
+    assert data["row_check"] == {"rows_before": None, "rows_after": 42}
     assert data["refreshes_on_pipeline_run"] is True
-    assert "rows_before" not in data
     assert (_DATAVIEW_LIST, {"dataset_id": 114, "project_id": 180}) in fake_service.call_log
 
 
-def test_dataset_route_omits_unverifiable_row_counts_for_append_into_existing_target(
+def test_dataset_route_reports_settled_row_counts_for_append_into_existing_target(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
     """Regression for eval W2 (2026-09-26): ``rows_after`` used to come from a
     read taken immediately after the write, before the target view's row
-    count had recomputed -- stale by construction. The dataset's real row
-    count (60, in this fixture) must never be reported as ``rows_after``/
-    ``rows_before`` for a write into an EXISTING target, since the CLI has no
-    way to prove that number is fresh.
+    count had recomputed -- stale by construction, so it was omitted rather
+    than reported wrong. ``wait_for_pipeline_to_settle`` now resolves that
+    same race instead of sidestepping it, so both counts are reported: one
+    read before the write (``rows_before``), and one read after waiting for
+    the target's pipeline to settle (``rows_after``).
     """
     fake_service.view_responses[(7, "to_dataset")] = 9
     fake_service.responses[_DATAVIEW_LIST] = {"dataviews": [{"id": 500, "row_count": 60}]}
@@ -144,14 +147,50 @@ def test_dataset_route_omits_unverifiable_row_counts_for_append_into_existing_ta
             yes=True,
         )
     )
-    assert "rows_before" not in data
-    assert "rows_after" not in data
+    assert data["row_check"] == {
+        "rows_before": 60,
+        "rows_after": 60,
+        "expected_row_increase": True,
+    }
     assert data["refreshes_on_pipeline_run"] is True
-    assert fake_service.call_log.count((_DATAVIEW_LIST, {"dataset_id": 9, "project_id": 180})) == 1
+    # One read ahead of the write (rows_before), one to discover the view id
+    # to wait on, and one settled re-read after the wait (rows_after).
+    assert fake_service.call_log.count((_DATAVIEW_LIST, {"dataset_id": 9, "project_id": 180})) == 3
+    assert (
+        _WAIT_FOR_PIPELINE,
+        {"dataview_id": 500, "dataset_id": 9, "timeout": 60.0},
+    ) in fake_service.call_log
     assert (
         _EXPORTS_LIST,
         {"dataview_id": 7, "dataset_id": 3, "handler_type": HandlerType.INTERNAL_DATASET},
     ) in fake_service.call_log
+
+
+def test_dataset_route_marks_an_append_that_adds_no_rows_as_unverified(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    """An APPEND_TO_DS that leaves the target's row count unchanged is not a
+    successful append; ``row_check`` carries ``expected_row_increase`` so
+    :mod:`mammoth_cli.runtime.verify` marks it unverified instead of trusting
+    a flat row count.
+    """
+    fake_service.view_responses[(7, "to_dataset")] = 9
+    fake_service.responses[_DATAVIEW_LIST] = {"dataviews": [{"id": 500, "row_count": 60}]}
+    data, _meta = view_cmd.view_export_specialized(
+        _inv(
+            "view.export.dataset",
+            project=180,
+            extra_args=["7", "3"],
+            input_file=_doc(
+                tmp_path,
+                {"dataset_name": "orders", "target_ds_id": 9, "save_as_mode": "APPEND_TO_DS"},
+            ),
+            yes=True,
+        )
+    )
+    verified = with_verify(data)["verify"]
+    assert verified["verified"] is False
+    assert verified["needs_user"] == "The append added no rows (was 60, still 60)."
 
 
 def test_dataset_route_rejects_a_second_export_into_the_same_target(
@@ -325,6 +364,7 @@ def test_dataset_route_inlines_the_target_view_instead_of_a_relist_hint(
         "refreshes_on_pipeline_run": True,
         "view_id": 220,
         "view_name": "Store sales combined",
+        "row_check": {"rows_before": None, "rows_after": None},
     }
     assert "next" not in data
     assert (

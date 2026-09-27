@@ -68,7 +68,8 @@ _COMMAND_DISCOVERY_PURPOSES = {
     "file.upload-folder": "upload source-data directory folder",
     "view.export.csv": "export download local CSV file artifact",
     "view.export.dataset": (
-        "send copy branch out rows into a dataset in another project append union stack rows"
+        "send copy branch out create save the result rows into a new project from an "
+        "existing append appending union stack monthly rows across datasets views"
     ),
     # One entry per typed export destination, in the way users name the
     # destination rather than Mammoth's route spelling (which a two-word
@@ -195,7 +196,14 @@ _COMMAND_DISCOVERY_PURPOSES = {
     "view.transform.date-diff": "date dates difference days between two date columns age duration",
     "view.transform.delete-columns": "delete drop remove columns",
     "view.transform.discard-duplicates": (
-        "duplicate duplicates dedup dedupe deduplicate remove repeated rows unique distinct"
+        "duplicate duplicates dedup dedupe deduplicate remove repeated rows unique distinct "
+        # "order"/"number" are kept as generic identifying-column vocabulary
+        # ("dedupe by an order/number/key"), not the specific business noun
+        # "order id" -- "order" also can't be dropped as a data word since
+        # view.transform.sort's own purpose text already uses it (sort
+        # order), so any query pairing "order" with dedupe words needs it
+        # covered here to reach a full match.
+        "by order number key column"
     ),
     "view.transform.extract-date": (
         "extract date part year month day hour minute second week quarter weekday "
@@ -211,8 +219,8 @@ _COMMAND_DISCOVERY_PURPOSES = {
     "view.transform.generate-sql": "generate write sql query from natural language intent question",
     "view.transform.increment-date": "add subtract days months years to a date column shift",
     "view.transform.join": (
-        "join blend merge combine enrich match matching keys rows add columns from another "
-        "second view views dataset datasets table tables vlookup"
+        "join blend merge combine enrich match matching key keys rows add columns from "
+        "another second view views dataset datasets table tables vlookup"
     ),
     "view.transform.json-extract": "json extract parse nested fields keys into columns",
     "view.transform.limit-rows": "limit top bottom first last n rows head",
@@ -223,7 +231,7 @@ _COMMAND_DISCOVERY_PURPOSES = {
     "view.transform.math": (
         "math arithmetic multiply multiplication divide add subtract formula "
         "expression amount calculate compute ratio percentage round new column "
-        "conditional threshold greater than if text"
+        "conditional threshold greater than if text times"
     ),
     "view.transform.pivot": (
         "pivot group by aggregate aggregation sum count average summary summarize "
@@ -235,7 +243,7 @@ _COMMAND_DISCOVERY_PURPOSES = {
     "view.transform.replace": "find replace substitute text value in columns",
     "view.transform.set-values": (
         "set values assign overwrite blank empty default where condition label "
-        "category bucket flag if then conditional value"
+        "category bucket flag if then conditional add a column with a constant value"
     ),
     "view.transform.small-large": "nth smallest largest value across columns",
     "view.transform.sort": (
@@ -261,6 +269,14 @@ _COMMAND_DISCOVERY_PURPOSES = {
         "distribution spread histogram top most common frequent values breakdown share "
         "percentage profile"
     ),
+    "view.create": "start a new one from an existing dataset, duplicate",
+    "dataset.list": "list every dataset in a project workspace",
+    # "month"/"week" are kept as generic calendar-grouping vocabulary (a
+    # group-by dimension any dataset can have), not a specific business
+    # value -- and neither can be dropped as a data word anyway, since
+    # view.data.explore's own purpose text already uses both for its trend
+    # feature.
+    "view.data.aggregate": "group and sum totals by month week without changing the pipeline",
     # Goals users state in their own words, one entry per command the agent's
     # system prompt used to spell out by hand.
     "dashboard.suggestion.list": "ideas suggest suggestions what to show put on a board chart",
@@ -349,6 +365,22 @@ _SCOPE_REQUIREMENTS: dict[str, dict[str, Any]] = {
 _MAX_FIND_RESULTS = 20
 # Outranks any word-overlap score: a command named by its full path comes first.
 _NAMED_COMMAND_BOOST = 10_000
+# Bag-of-words scoring cannot tell "create a NEW VIEW from an existing
+# DATASET" (view.create) apart from "create a DATASET from an existing
+# VIEW" (view.export.dataset): the two goals share the exact same word set,
+# and only word order says which resource is being made and which already
+# exists. No purpose text or synonym can encode that; this pair of small
+# adjacency checks is the intentionally scoped exception. Extend the two
+# dicts, never the regex, if another goal collides the same way.
+_NEW_OBJECT_HINTS: dict[str, str] = {
+    "view.create": "view",
+    "view.export.dataset": "dataset",
+}
+_EXISTING_OBJECT_HINTS: dict[str, str] = {
+    "view.create": "dataset",
+    "view.export.dataset": "view",
+}
+_OBJECT_ADJACENCY_BOOST = 150
 _MAX_FIND_LIMIT = 100
 # How many of a find's top matches carry inline accepted_fields/agent_example.
 # 35% of all eval tool calls were command discovery (schema find -> schema
@@ -372,6 +404,12 @@ _DISCOVERY_SYNONYMS: dict[str, tuple[str, ...]] = {
     "csv": ("spreadsheet", "file", "upload"),
     "local": ("file", "download", "csv", "artifact"),
     "download": ("export", "file", "csv", "artifact", "local"),
+    # "combine" alone is ambiguous between joining on a key and appending
+    # rows; kept a weak alias match (not a literal word) here so a bare
+    # "combine datasets" still favors join's own literal "combine" purpose
+    # text, while "combine ... by appending rows" still resolves to the
+    # export -- its own literal "append"/"union"/"stack" carry that case.
+    "combine": ("append", "union", "stack", "merge"),
     # "publish" a dataset almost always means one of the typed exports
     # (Power BI, a live DB connection, a webhook, ...); every export
     # command's path literally contains "export", so this one alias covers
@@ -454,6 +492,12 @@ _DISCOVERY_STOPWORDS = frozenset(
         "using",
         "than",
         "via",
+        # Filler prepositions in goal phrasing ("datasets as rows", "datasets
+        # in a project", "join two datasets on a key"); no command turns on
+        # any of these.
+        "as",
+        "in",
+        "on",
     }
 )
 # How many near misses a search with no full match returns.
@@ -667,6 +711,42 @@ def _adjacent_compound_forms(terms: tuple[str, ...]) -> dict[str, frozenset[str]
             forms.setdefault(left, set()).add(compound)
             forms.setdefault(right, set()).add(compound)
     return {term: frozenset(compounds) for term, compounds in forms.items()}
+
+
+@cache
+def _command_vocabulary_tokens() -> frozenset[str]:
+    """Every token that names a command or appears in its curated purpose text.
+
+    Distinguishes genuine CLI vocabulary from a data word -- a column,
+    table, or other business noun from the caller's own data (``orders``,
+    ``revenue``, ``store``) -- riding along in a goal. Counts a command's own
+    id/path (``user``, ``workspace``, ``invoice`` are real resource nouns a
+    command is named after) plus ``_COMMAND_DISCOVERY_PURPOSES``/
+    ``_GROUP_DISCOVERY_PURPOSES`` -- text hand-curated specifically to
+    describe what a command is for. Deliberately excludes ``human_example``/
+    ``agent_example`` and OpenAPI-derived operation hints: those are
+    illustrative sample values (a placeholder project name like "Revenue
+    report", a sample filename like "sales.csv") reused verbatim across
+    dozens of unrelated commands, so counting them would make almost any
+    plausible business noun look like real vocabulary and defeat this
+    check. A term absent from this set is not something any command is
+    named after or actually about, so :func:`find_schemas` drops it from a
+    goal's required terms rather than letting it sink an otherwise complete
+    match.
+    """
+    vocabulary: set[str] = set()
+    for record in load_commands():
+        if record.get("disposition") == "alias":
+            continue
+        command_id = str(record["command_id"])
+        command_path = str(record["command_path"])
+        text = (
+            f"{command_id} {command_path} "
+            f"{_COMMAND_DISCOVERY_PURPOSES.get(command_id, '')} "
+            f"{_GROUP_DISCOVERY_PURPOSES.get(command_path.split()[0], '')}"
+        )
+        vocabulary.update(_tokens(text))
+    return frozenset(vocabulary)
 
 
 def _compact_contract(record: dict[str, Any]) -> dict[str, Any]:
@@ -1405,8 +1485,26 @@ def find_schemas(
     """
     # A query made only of filler words keeps them, rather than matching
     # every command.
-    terms = _query_tokens(query) or tuple(_tokens(query))
-    compound_forms = _adjacent_compound_forms(terms)
+    raw_terms = _query_tokens(query) or tuple(_tokens(query))
+    compound_forms = _adjacent_compound_forms(raw_terms)
+    # A term no command's discovery-purpose text would ever say is a data
+    # word (a column/table/business noun from the caller's own data, not CLI
+    # vocabulary) riding along in the goal; drop it before the all-terms
+    # rule and scoring so it can't sink an otherwise complete match. If
+    # every term would be dropped, keep them all -- a query that is nothing
+    # but data words still deserves its ordinary near-miss treatment rather
+    # than becoming a match-everything wildcard. A literal full-path lookup
+    # (the ``named`` check below) always uses the un-dropped ``raw_terms``,
+    # so naming a command by its exact path never depends on this filter.
+    vocabulary = _command_vocabulary_tokens()
+    cli_terms = tuple(
+        term
+        for term in raw_terms
+        if (_token_aliases(term) & vocabulary)
+        or (compound_forms.get(term, frozenset()) & vocabulary)
+    )
+    terms = cli_terms or raw_terms
+    query_cf = query.casefold()
     # Clamp caller-provided bounds instead of allowing an accidental unbounded
     # discovery response.  A negative cursor is a usage mistake, not a request
     # to wrap around the catalog.
@@ -1464,6 +1562,12 @@ def find_schemas(
         action = command_path.split()[1] if len(command_path.split()) > 1 else ""
         if "show" in matched_terms and action in {"list", "get", "browse"}:
             score += 80
+        new_object = _NEW_OBJECT_HINTS.get(command_id)
+        if new_object and re.search(rf"\bnew\s+{new_object}s?\b", query_cf):
+            score += _OBJECT_ADJACENCY_BOOST
+        existing_object = _EXISTING_OBJECT_HINTS.get(command_id)
+        if existing_object and re.search(rf"\bexisting\s+{existing_object}s?\b", query_cf):
+            score += _OBJECT_ADJACENCY_BOOST
         is_support = command_id.startswith("support.")
         entry = {
             "command_id": command_id,
@@ -1484,7 +1588,7 @@ def find_schemas(
         # A query that spells out this command's whole path (``aggregate view
         # data ...``) asks for it by name, whatever goal words ride along.
         path_tokens = set(_tokens(command_path))
-        named = len(path_tokens) >= 3 and path_tokens <= set(terms)
+        named = len(path_tokens) >= 3 and path_tokens <= set(raw_terms)
         if named:
             score += _NAMED_COMMAND_BOOST
         if named or len(matched_terms) == len(terms):

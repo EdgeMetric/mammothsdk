@@ -52,6 +52,23 @@ class RruleFrequency(str, Enum):
     YEARLY = "yearly"
 
 
+class Weekday(str, Enum):
+    """Lowercase day-of-week code accepted by ``by_week_day``.
+
+    The backend rejects anything else, including the uppercase ``"MO"``
+    style RFC 5545 normally uses, with a 400 on
+    ``conditions.0.details.by_week_day.0``.
+    """
+
+    MONDAY = "mo"
+    TUESDAY = "tu"
+    WEDNESDAY = "we"
+    THURSDAY = "th"
+    FRIDAY = "fr"
+    SATURDAY = "sa"
+    SUNDAY = "su"
+
+
 class ScheduleStatus(str, Enum):
     """Schedule status values for a patch-status operation."""
 
@@ -103,14 +120,14 @@ class RruleSpec(BaseModel):
         frequency: How often the schedule fires.
         start: When the schedule starts (UTC).
         interval: Optional repeat interval (must be > 0 if supplied).
-        by_week_day: Days of the week, e.g. ``["MO", "WE"]``.
+        by_week_day: Days of the week, e.g. ``["mo", "we"]``.
         by_month_day: Days of the month (1–31).
     """
 
     frequency: RruleFrequency
     start: datetime
     interval: int | None = None
-    by_week_day: list[str] | None = None
+    by_week_day: list[Weekday] | None = None
     by_month_day: list[int] | None = None
 
 
@@ -299,7 +316,7 @@ class ConditionDetailsSpec(BaseModel):
     start_at: datetime | None = None
     until: datetime | None = None
     by_month_day: list[int] | None = None
-    by_week_day: list[str] | None = None
+    by_week_day: list[Weekday] | None = None
     start_now: bool = True
     file_contains: str | None = None
     execution_mode: str | None = None

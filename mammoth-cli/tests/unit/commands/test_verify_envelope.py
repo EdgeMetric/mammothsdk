@@ -14,11 +14,13 @@ import pytest
 
 from mammoth_cli.commands import view_ops as view_ops_cmd
 from mammoth_cli.runtime.invocation import Invocation, ResourceRef
+from mammoth_cli.runtime.verify import with_verify
 from mammoth_cli.services.testing import FakeMammothService
 from mammoth_cli.testing import login_default_profile, make_runner
 
 _DELETE = "mammoth.api.datasets.DatasetsAPI.delete"
 _DATAVIEW_GET = "mammoth.api.dataviews.DataviewsAPI.get"
+_WAIT_FOR_PIPELINE = "mammoth.api.pipeline.PipelineAPI.wait_for_pipeline"
 _JSON_NO_INPUT = ["--output", "json", "--no-input"]
 
 
@@ -91,6 +93,67 @@ def test_a_plain_view_transform_gets_a_row_check(
         )
         == 2
     )
+
+
+def test_a_plain_view_transform_waits_for_the_pipeline_before_reading_rows_after(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    """A read taken right after the write can catch the pipeline still
+    recomputing and come back with no ``row_count`` yet; waiting for it to
+    settle first (bounded) lets a real number arrive instead.
+    """
+    fake_service.responses[_DATAVIEW_GET] = {"row_count": 20}
+
+    def gate(symbol: str, kwargs: dict[str, object], **_ignored: object) -> None:
+        if symbol == _WAIT_FOR_PIPELINE:
+            fake_service.responses[_DATAVIEW_GET] = {"row_count": 17}
+
+    fake_service.gate = gate
+    data, _meta = view_ops_cmd.view_transform_limit_rows(
+        _inv(
+            "view.transform.limit-rows",
+            extra_args=["3"],
+            resource_ref=_parent(3),
+            input_file=_write(tmp_path, {"n": 10}),
+        )
+    )
+    assert data["row_check"] == {"rows_before": 20, "rows_after": 17}
+    assert (_WAIT_FOR_PIPELINE, {"dataview_id": 3, "dataset_id": 122, "timeout": 60.0}) in (
+        fake_service.call_log
+    )
+    verified = with_verify(data)["verify"]
+    assert verified["verified"] is True
+    assert verified["warnings"] == []
+
+
+def test_a_plain_view_transform_is_unverified_when_rows_after_never_arrives(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    """Even after waiting for the pipeline to settle, ``row_count`` can still
+    come back unreadable; that must never be reported as a verified count.
+    """
+    fake_service.responses[_DATAVIEW_GET] = {"row_count": 20}
+
+    def gate(symbol: str, kwargs: dict[str, object], **_ignored: object) -> None:
+        if symbol == _WAIT_FOR_PIPELINE:
+            fake_service.responses[_DATAVIEW_GET] = {}
+
+    fake_service.gate = gate
+    data, _meta = view_ops_cmd.view_transform_limit_rows(
+        _inv(
+            "view.transform.limit-rows",
+            extra_args=["3"],
+            resource_ref=_parent(3),
+            input_file=_write(tmp_path, {"n": 10}),
+        )
+    )
+    assert data["row_check"] == {"rows_before": 20, "rows_after": None}
+    verified = with_verify(data)["verify"]
+    assert verified["verified"] is False
+    assert verified["needs_user"] == "The row count after the change could not be read."
+    assert verified["warnings"] == [
+        "the row count after the change could not be read; read the view before building on it"
+    ]
 
 
 def test_a_join_transform_keeps_its_own_join_check_not_row_check(

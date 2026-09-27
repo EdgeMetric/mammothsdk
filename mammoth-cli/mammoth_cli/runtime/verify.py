@@ -20,6 +20,14 @@ _FAILURE_STATUSES = frozenset({"error", "failed", "failure"})
 _FAILURE_PIPELINE_STATES = frozenset({"error", "ref_error"})
 
 
+#: Surfaced in ``warnings`` (and drives ``verified: false``) when a
+#: ``row_check``/``join_check`` was attempted but ``rows_after`` never came
+#: back readable, even after waiting for the pipeline to settle.
+_UNREADABLE_ROW_COUNT_WARNING = (
+    "the row count after the change could not be read; read the view before building on it"
+)
+
+
 def with_verify(data: Any) -> Any:
     """Return ``data`` with a ``verify`` read-back block added.
 
@@ -28,16 +36,33 @@ def with_verify(data: Any) -> Any:
     """
     if not isinstance(data, dict):
         return data
-    verified = _verified(data)
+    check = _check_dict(data)
+    row_count_attempted = _row_count_attempted(check)
+    rows_before, rows_after = _row_counts(check) if row_count_attempted else (None, None)
+    verified = _verified(
+        data,
+        check=check,
+        row_count_attempted=row_count_attempted,
+        rows_before=rows_before,
+        rows_after=rows_after,
+    )
     state = _state(data)
-    rows_before, rows_after = _row_counts(data)
     verify: dict[str, Any] = {"verified": verified, "state": state}
-    if rows_before is not None or rows_after is not None:
+    if row_count_attempted:
         verify["rows_before"] = rows_before
         verify["rows_after"] = rows_after
-    verify["warnings"] = _warnings(data)
+    warnings = _warnings(data)
+    if row_count_attempted and rows_after is None:
+        warnings.append(_UNREADABLE_ROW_COUNT_WARNING)
+    verify["warnings"] = warnings
     verify["needs_user"] = _needs_user(
-        data, verified=verified, state=state, rows_before=rows_before, rows_after=rows_after
+        data,
+        verified=verified,
+        state=state,
+        check=check,
+        row_count_attempted=row_count_attempted,
+        rows_before=rows_before,
+        rows_after=rows_after,
     )
     return {**data, "verify": verify}
 
@@ -48,7 +73,39 @@ def _job_status(data: dict[str, Any]) -> str | None:
     return status if isinstance(status, str) else None
 
 
-def _verified(data: dict[str, Any]) -> bool:
+def _check_dict(data: dict[str, Any]) -> dict[str, Any] | None:
+    """The ``row_check``/``join_check`` dict a command attached, if any."""
+    for key in ("row_check", "join_check"):
+        check = data.get(key)
+        if isinstance(check, dict):
+            return check
+    return None
+
+
+def _row_count_attempted(check: dict[str, Any] | None) -> bool:
+    """Whether ``check`` actually attempted a row-count read-back.
+
+    A ``join_check`` may carry only ``match_rate``/``notes`` with no row
+    count involved at all; only a check that names ``rows_before``/
+    ``rows_after`` -- even if the value it got back was ``None`` -- counts.
+    """
+    return check is not None and ("rows_before" in check or "rows_after" in check)
+
+
+def _row_counts(check: dict[str, Any] | None) -> tuple[int | None, int | None]:
+    if check is None:
+        return None, None
+    return check.get("rows_before"), check.get("rows_after")
+
+
+def _verified(
+    data: dict[str, Any],
+    *,
+    check: dict[str, Any] | None,
+    row_count_attempted: bool,
+    rows_before: int | None,
+    rows_after: int | None,
+) -> bool:
     if data.get("has_error"):
         return False
     for status in (data.get("status"), _job_status(data)):
@@ -57,7 +114,23 @@ def _verified(data: dict[str, Any]) -> bool:
     pipeline_state = data.get("pipeline_state")
     if isinstance(pipeline_state, str) and pipeline_state.lower() in _FAILURE_PIPELINE_STATES:
         return False
-    return data.get("bake_ok") is not False
+    if data.get("bake_ok") is False:
+        return False
+    if row_count_attempted:
+        # An attempted row count that never came back readable is never
+        # reported as a known, verified count -- even when nothing else
+        # flagged a failure.
+        if rows_after is None:
+            return False
+        if (
+            check is not None
+            and check.get("expected_row_increase")
+            and isinstance(rows_before, int)
+            and isinstance(rows_after, int)
+            and rows_after <= rows_before
+        ):
+            return False
+    return True
 
 
 def _state(data: dict[str, Any]) -> str:
@@ -66,14 +139,6 @@ def _state(data: dict[str, Any]) -> str:
         if value is not None:
             return str(value)
     return "done"
-
-
-def _row_counts(data: dict[str, Any]) -> tuple[int | None, int | None]:
-    for key in ("row_check", "join_check"):
-        check = data.get(key)
-        if isinstance(check, dict):
-            return check.get("rows_before"), check.get("rows_after")
-    return None, None
 
 
 def _warnings(data: dict[str, Any]) -> list[str]:
@@ -93,10 +158,23 @@ def _needs_user(
     *,
     verified: bool,
     state: str,
+    check: dict[str, Any] | None,
+    row_count_attempted: bool,
     rows_before: int | None,
     rows_after: int | None,
 ) -> str | None:
     if not verified:
+        if row_count_attempted and rows_after is None:
+            return "The row count after the change could not be read."
+        if (
+            row_count_attempted
+            and check is not None
+            and check.get("expected_row_increase")
+            and isinstance(rows_before, int)
+            and isinstance(rows_after, int)
+            and rows_after <= rows_before
+        ):
+            return f"The append added no rows (was {rows_before}, still {rows_after})."
         return f"The change failed: {state}."
     if rows_after == 0 and isinstance(rows_before, int) and rows_before > 0:
         return f"The change left the view with no rows (was {rows_before})."
