@@ -2415,6 +2415,7 @@ def view_export_specialized(invocation: Invocation) -> HandlerResult:
     kwargs.pop(_DATASET_ID_FIELD, None)
     is_dataset_route = invocation.command_id == "view.export.dataset"
     target_ds_id = kwargs.get("target_ds_id") if is_dataset_route else None
+    save_as_mode = kwargs.get("save_as_mode") if is_dataset_route else None
     target_project = kwargs.get("target_project_id")
     result_project_id = int(target_project) if target_project is not None else project_id
     with open_service(invocation) as (service, auth):
@@ -2431,6 +2432,7 @@ def view_export_specialized(invocation: Invocation) -> HandlerResult:
                 ),
                 details={"dataset_id": dataset_id, "target_ds_id": int(target_ds_id)},
             )
+        target_view_before = None
         if target_ds_id is not None:
             # Each `view export dataset` call creates its own PERSISTENT
             # export trigger on this view, which re-runs on every pipeline
@@ -2460,6 +2462,9 @@ def view_export_specialized(invocation: Invocation) -> HandlerResult:
                         "export_id": existing_export.id,
                     },
                 )
+            # rows_before is the target's own count ahead of this write, read
+            # before the call so a later re-read can never be confused with it.
+            target_view_before = _dataset_view_info(service, int(target_ds_id), result_project_id)
         data = service.call_view(dataview_id, method, dataset_id=dataset_id, **kwargs)
         if is_dataset_route and isinstance(data, int):
             # The SDK returns the bare id of the dataset written to; name it, and
@@ -2478,7 +2483,17 @@ def view_export_specialized(invocation: Invocation) -> HandlerResult:
                 # time this view's pipeline runs.
                 "refreshes_on_pipeline_run": True,
             }
-            view_info = _dataset_view_info(service, data["dataset_id"], result_project_id)
+            # A read immediately after the write can catch the pipeline still
+            # recomputing; wait for it to settle (bounded) before trusting
+            # the id/name/row_count, whether this is a brand-new dataset or
+            # an existing target_ds_id -- this is the same race the old
+            # "omit rather than report wrong" comment used to sidestep by
+            # never reading the target's row count at all.
+            view_info = _view_info_after_settling(
+                service,
+                int(target_ds_id) if target_ds_id is not None else data["dataset_id"],
+                result_project_id,
+            )
             if view_info is not None:
                 data["view_id"] = view_info["id"]
                 data["view_name"] = view_info["name"]
@@ -2486,15 +2501,19 @@ def view_export_specialized(invocation: Invocation) -> HandlerResult:
                 data["next"] = f"mammoth view list {data['dataset_id']}" + (
                     f" --project {result_project_id}" if target_project is not None else ""
                 )
-            # rows_after is only trustworthy for a brand-new dataset: nothing
-            # else could have written to it yet. Writing into an EXISTING
-            # target_ds_id races the target view's own metadata refresh --
-            # this same read has returned a stale row count right after a
-            # confirmed write -- so it is omitted rather than reported wrong.
-            if target_ds_id is None:
-                rows_after = view_info["row_count"] if view_info is not None else None
-                if rows_after is not None:
-                    data["rows_after"] = rows_after
+            # rows_before is None for a brand-new dataset (nothing else could
+            # have written to it yet); for an existing target_ds_id it is the
+            # count read above, ahead of this write.
+            rows_before = (
+                target_view_before["row_count"] if target_view_before is not None else None
+            )
+            rows_after = view_info["row_count"] if view_info is not None else None
+            row_check: dict[str, Any] = {"rows_before": rows_before, "rows_after": rows_after}
+            if save_as_mode == "APPEND_TO_DS":
+                # An append is expected to grow the target; verify.py treats
+                # a non-increase here as unverified, not just an omitted count.
+                row_check["expected_row_increase"] = True
+            data["row_check"] = row_check
     return data, _meta(invocation, auth.workspace_id, project_id)
 
 
@@ -2561,6 +2580,73 @@ def _dataset_view_info(
         "name": views[0].get("name"),
         "row_count": int(row_count) if row_count is not None else None,
     }
+
+
+#: Bound on the best-effort pipeline-settle wait before a row-count
+#: read-back. This is advice for the caller, not the write itself, so it
+#: must not turn a fast command into a slow one even when a recompute is
+#: large.
+_ROW_CHECK_SETTLE_TIMEOUT = 60.0
+
+
+def wait_for_pipeline_to_settle(service: Any, dataset_id: int, view_id: int) -> None:
+    """Best-effort, bounded wait for a view's pipeline to reach a terminal state.
+
+    A row-count read taken immediately after a write can catch the pipeline
+    still recomputing and return a stale or missing count (evidence: a
+    `view transform filter`/`view transform json-extract` whose result held
+    0 rows still read back an unreadable count right after the write).
+    Bounded so a slow recompute cannot turn a fast command into a slow one.
+    Whichever way this ends -- settled, errored, or timed out -- the caller
+    still reads the row count afterward; a failed wait is no reason to skip
+    a read that might now succeed anyway, and :mod:`mammoth_cli.runtime.
+    verify` treats an unreadable count as unverified either way.
+    """
+    try:
+        service.call(
+            _WAIT_FOR_PIPELINE_SYMBOL,
+            dataview_id=view_id,
+            dataset_id=dataset_id,
+            timeout=_ROW_CHECK_SETTLE_TIMEOUT,
+        )
+    except Exception:  # noqa: BLE001, S110 -- best effort; the write already ran
+        pass
+
+
+def wait_for_view_row_count(
+    service: Any, dataset_id: int, view_id: int, project_id: int | None
+) -> Any:
+    """A view's row count once its pipeline has settled, best effort.
+
+    Returns ``None`` if the read still cannot be made; the caller (and
+    :mod:`mammoth_cli.runtime.verify`) must treat that as unverified, never
+    as a known count.
+    """
+    wait_for_pipeline_to_settle(service, dataset_id, view_id)
+    try:
+        info = service.call(
+            _DATAVIEW_GET_SYMBOL, dataset_id=dataset_id, dataview_id=view_id, project_id=project_id
+        )
+    except Exception:  # noqa: BLE001 -- best effort; the write already ran
+        return None
+    return info.get("row_count") if isinstance(info, dict) else None
+
+
+def _view_info_after_settling(
+    service: Any, dataset_id: int, project_id: int | None
+) -> dict[str, Any] | None:
+    """A dataset's current view info, re-read once its pipeline has settled.
+
+    Used right after a `view.export.dataset` write, for a brand-new dataset
+    or an existing ``target_ds_id`` alike: id/name/row_count all come from
+    this settled read, not the discovery lookup that finds the view id, so
+    a still-recomputing pipeline can never leave ``row_count`` stale.
+    """
+    view_info = _dataset_view_info(service, dataset_id, project_id)
+    if view_info is None:
+        return None
+    wait_for_pipeline_to_settle(service, dataset_id, view_info["id"])
+    return _dataset_view_info(service, dataset_id, project_id) or view_info
 
 
 _DATAVIEW_LIST_SYMBOL = "mammoth.api.dataviews.DataviewsAPI.list"
