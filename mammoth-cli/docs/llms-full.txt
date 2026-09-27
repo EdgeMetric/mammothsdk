@@ -277,6 +277,10 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth dashboard assess-pbix sample.pbix
 - `mammoth dashboard assess-twb` [read/none] -> mammoth.api.dashboards.DashboardsAPI.assess_twb
   example: mammoth dashboard assess-twb sample.twb
+- `mammoth dashboard bi-export` [read/none] -> mammoth.api.dashboards.DashboardsAPI.export_powerbi
+  example: mammoth dashboard bi-export 123 --input '{"target": "powerbi"}'
+- `mammoth dashboard bi-preflight` [read/none] -> mammoth.api.dashboards.DashboardsAPI.powerbi_preflight
+  example: mammoth dashboard bi-preflight 123 --input '{"target": "powerbi"}'
 - `mammoth dashboard cancel-generation` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.cancel_generation
   example: mammoth dashboard cancel-generation 123
 - `mammoth dashboard canvas get` [read/none] -> mammoth.api.dashboards.DashboardsAPI.canvas_get

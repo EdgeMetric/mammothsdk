@@ -11,7 +11,7 @@ SDK method named by the command's reviewed manifest ``sdk_symbol``.
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal, cast
 
 from mammoth.models.dashboards import AddPagesSpec
 from pydantic import ValidationError
@@ -23,11 +23,12 @@ from mammoth_cli.errors.envelope import (
     CODE_MISSING_ARGUMENT,
     CODE_MISSING_FIELD,
     CODE_SDK_SYMBOL_UNRESOLVED,
+    CODE_UNSUPPORTED_CONTRACT,
     EXIT_USAGE,
     CliError,
 )
 from mammoth_cli.manifest.loader import command_by_id
-from mammoth_cli.runtime import parents
+from mammoth_cli.runtime import embedded, parents
 from mammoth_cli.runtime.confirm import (
     POLICY_CONFIRM_TARGET,
     POLICY_NONE,
@@ -803,3 +804,72 @@ def dashboard_import_workbook(invocation: Invocation) -> HandlerResult:
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), file=file_path, project_id=project_id)
     return data, _meta(invocation, auth.workspace_id)
+
+
+# ── BI export (Power BI / Tableau) ───────────────────────────────────────────
+
+_BI_TARGETS: tuple[Literal["powerbi", "tableau"], ...] = ("powerbi", "tableau")
+_BI_EXPORT_EMBEDDED_REFUSAL = (
+    "The file cannot be downloaded from here. Send the user to the dashboard's Publish menu"
+    " (the arrow next to Publish) -> Export to Power BI / Export to Tableau."
+)
+
+
+def _bi_target(document: dict[str, Any]) -> Literal["powerbi", "tableau"]:
+    """Read and validate the required ``target`` input field."""
+    target = document.get("target")
+    if target not in _BI_TARGETS:
+        raise CliError(
+            code=CODE_INVALID_ARGUMENT,
+            message="Input `target` must be 'powerbi' or 'tableau'.",
+            exit_status=EXIT_USAGE,
+            hint='Pass --input \'{"target": "powerbi"}\' or \'{"target": "tableau"}\'.',
+        )
+    return cast(Literal["powerbi", "tableau"], target)
+
+
+def dashboard_bi_preflight(invocation: Invocation) -> HandlerResult:
+    """What a Power BI or Tableau export of this dashboard would carry.
+
+    Side-effect free -- nothing is built and nothing is logged, so the export
+    dialog can be opened and dismissed freely. Required input ``target``
+    (``powerbi`` or ``tableau``) selects which release route answers.
+    """
+    dashboard_id = _require_int_positional(invocation, "dashboard id")
+    document = invocation.load_input() or {}
+    target = _bi_target(document)
+    symbol = f"mammoth.api.dashboards.DashboardsAPI.{target}_preflight"
+    with open_service(invocation) as (service, auth):
+        data = service.call(symbol, dashboard_id=dashboard_id)
+    return data, _meta(invocation, auth.workspace_id)
+
+
+def dashboard_bi_export(invocation: Invocation) -> HandlerResult:
+    """Download this dashboard as a Power BI project (.zip) or Tableau workbook (.twbx).
+
+    Required input ``target`` (``powerbi`` or ``tableau``) selects the release
+    route. With no ``output_path`` the file is written to the current
+    directory under an auto-generated name.
+
+    Embedded (see ``mammoth_cli.runtime.embedded``) it is refused: the route
+    needs the Authorization header, so a link handed to the user's browser
+    401s. The user downloads it from the dashboard's own export dialog.
+    """
+    dashboard_id = _require_int_positional(invocation, "dashboard id")
+    document = invocation.load_input() or {}
+    target = _bi_target(document)
+    if embedded.active():
+        raise CliError(
+            code=CODE_UNSUPPORTED_CONTRACT,
+            message=_BI_EXPORT_EMBEDDED_REFUSAL,
+            exit_status=EXIT_USAGE,
+            hint="Run `dashboard bi-preflight` to tell the user what will convert first.",
+        )
+    symbol = f"mammoth.api.dashboards.DashboardsAPI.export_{target}"
+    kwargs: dict[str, Any] = {"dashboard_id": dashboard_id}
+    _forward_optional(document, kwargs, ("output_path",))
+    with open_service(invocation) as (service, auth):
+        data = service.call(symbol, **kwargs)
+    # The SDK returns a Path; render it as a string so the written location is
+    # visible in every output mode and serializes cleanly to JSON.
+    return {"output_path": str(data)}, _meta(invocation, auth.workspace_id)

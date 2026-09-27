@@ -52,6 +52,26 @@ Result: `TwbAssessResponse`; mutation `read`, confirmation `none`, wait policy `
 
 Status on release: untried; no live run recorded.
 
+### `dashboard.bi-export`
+
+Run: `mammoth dashboard bi-export`. Exact input fields: `mammoth schema get dashboard.bi-export`.
+
+Example: `mammoth dashboard bi-export 123 --input '{"target": "powerbi"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `DashboardBiExportResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `dashboard.bi-preflight`
+
+Run: `mammoth dashboard bi-preflight`. Exact input fields: `mammoth schema get dashboard.bi-preflight`.
+
+Example: `mammoth dashboard bi-preflight 123 --input '{"target": "powerbi"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `PowerBiPreflightResponse`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
 ### `dashboard.cancel-generation`
 
 Run: `mammoth dashboard cancel-generation`. Exact input fields: `mammoth schema get dashboard.cancel-generation`.

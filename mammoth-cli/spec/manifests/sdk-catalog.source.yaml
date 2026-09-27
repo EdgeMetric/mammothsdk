@@ -1446,6 +1446,7 @@ sdk_methods:
   pagination_policy: none
   openapi_operation_ids:
   - AssessTwb
+  notes: "These take a workbook file from the local disk. Inside the Mammoth app the user's file cannot reach the agent: send the user to the dashboard import page at /workspaces/{workspace_id}/publish/import (Publish → Import), where they upload the .pbix/.twb/.twbx themselves."
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.assess_pbix
   canonical_command: dashboard.assess-pbix
   mutation_class: read
@@ -1454,6 +1455,7 @@ sdk_methods:
   pagination_policy: none
   openapi_operation_ids:
   - AssessPbix
+  notes: "These take a workbook file from the local disk. Inside the Mammoth app the user's file cannot reach the agent: send the user to the dashboard import page at /workspaces/{workspace_id}/publish/import (Publish → Import), where they upload the .pbix/.twb/.twbx themselves."
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.import_workbook
   canonical_command: dashboard.import-workbook
   mutation_class: high_impact
@@ -1463,6 +1465,7 @@ sdk_methods:
   agent_example: mammoth dashboard import-workbook sample.twbx --project 456 --yes --confirm 456 --output json --no-input
   openapi_operation_ids:
   - ImportWorkbookDataset
+  notes: "These take a workbook file from the local disk. Inside the Mammoth app the user's file cannot reach the agent: send the user to the dashboard import page at /workspaces/{workspace_id}/publish/import (Publish → Import), where they upload the .pbix/.twb/.twbx themselves."
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.use_template
   canonical_command: dashboard.templates.use
   alias_of: null
@@ -1486,6 +1489,56 @@ sdk_methods:
   wait_policy: always_wait
   pagination_policy: null
   openapi_operation_ids: []
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.powerbi_preflight
+  canonical_command: dashboard.bi-preflight
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.tableau_preflight
+  canonical_command: null
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+  notes: One of two target-specific implementations behind `dashboard bi-preflight` (--input
+    target=tableau); powerbi_preflight is the manifest's representative sdk_symbol.
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.powerbi_export_artifact
+  canonical_command: null
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+  notes: SDK-only artifact fetch (content_base64) export_powerbi decodes and writes to disk;
+    dashboard bi-export is the reviewed CLI command.
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.tableau_export_artifact
+  canonical_command: null
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+  notes: SDK-only artifact fetch (content_base64) export_tableau decodes and writes to disk;
+    dashboard bi-export is the reviewed CLI command.
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.export_powerbi
+  canonical_command: dashboard.bi-export
+  alias_of: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.export_tableau
+  canonical_command: null
+  alias_of: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids: []
+  notes: One of two target-specific implementations behind `dashboard bi-export` (--input
+    target=tableau); export_powerbi is the manifest's representative sdk_symbol.
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.published_canvas
   canonical_command: dashboard.published.canvas
   alias_of: null
