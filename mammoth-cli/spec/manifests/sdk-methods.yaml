@@ -2363,20 +2363,6 @@ methods:
   pagination_policy: null
   secret_fields: []
   reviewed_by: primary
-- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.powerbi_export_url
-  implementation_origin: mammoth.api.dashboards.DashboardsAPI.powerbi_export_url
-  signature: 'powerbi_export_url(self, dashboard_id: ''int'') -> ''dict[str, str]'''
-  openapi_operation_ids: []
-  canonical_command: null
-  alias_of: null
-  no_command_reason: SDK-only seam dashboard bi-export dispatches to instead of export_powerbi
-    for an embedded call (mammoth_cli.runtime.embedded); builds the download URL without fetching
-    the file.
-  mutation_class: read
-  wait_policy: not_async
-  pagination_policy: none
-  secret_fields: []
-  reviewed_by: primary
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.powerbi_preflight
   implementation_origin: mammoth.api.dashboards.DashboardsAPI.powerbi_preflight
   signature: 'powerbi_preflight(self, dashboard_id: ''int'') -> ''PowerBiPreflightResponse'''
@@ -2979,20 +2965,6 @@ methods:
   mutation_class: null
   wait_policy: null
   pagination_policy: null
-  secret_fields: []
-  reviewed_by: primary
-- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.tableau_export_url
-  implementation_origin: mammoth.api.dashboards.DashboardsAPI.tableau_export_url
-  signature: 'tableau_export_url(self, dashboard_id: ''int'') -> ''dict[str, str]'''
-  openapi_operation_ids: []
-  canonical_command: null
-  alias_of: null
-  no_command_reason: SDK-only seam dashboard bi-export dispatches to instead of export_tableau
-    for an embedded call (mammoth_cli.runtime.embedded); builds the download URL without fetching
-    the file.
-  mutation_class: read
-  wait_policy: not_async
-  pagination_policy: none
   secret_fields: []
   reviewed_by: primary
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.tableau_preflight

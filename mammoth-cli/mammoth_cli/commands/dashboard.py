@@ -809,6 +809,10 @@ def dashboard_import_workbook(invocation: Invocation) -> HandlerResult:
 # ── BI export (Power BI / Tableau) ───────────────────────────────────────────
 
 _BI_TARGETS: tuple[Literal["powerbi", "tableau"], ...] = ("powerbi", "tableau")
+_BI_EXPORT_EMBEDDED_REFUSAL = (
+    "The file cannot be downloaded from here. Send the user to the dashboard's Publish menu"
+    " (the arrow next to Publish) -> Export to Power BI / Export to Tableau."
+)
 
 
 def _bi_target(document: dict[str, Any]) -> Literal["powerbi", "tableau"]:
@@ -847,15 +851,20 @@ def dashboard_bi_export(invocation: Invocation) -> HandlerResult:
     route. With no ``output_path`` the file is written to the current
     directory under an auto-generated name.
 
-    Embedded (see ``mammoth_cli.runtime.embedded``), no file is written: the
-    download URL is returned instead, for the host's browser to fetch with the
-    user's own session. ``output_path`` is refused in that case.
+    Embedded (see ``mammoth_cli.runtime.embedded``) it is refused: the route
+    needs the Authorization header, so a link handed to the user's browser
+    401s. The user downloads it from the dashboard's own export dialog.
     """
     dashboard_id = _require_int_positional(invocation, "dashboard id")
     document = invocation.load_input() or {}
     target = _bi_target(document)
     if embedded.active():
-        return _dashboard_bi_export_embedded(invocation, dashboard_id, target, document)
+        raise CliError(
+            code=CODE_UNSUPPORTED_CONTRACT,
+            message=_BI_EXPORT_EMBEDDED_REFUSAL,
+            exit_status=EXIT_USAGE,
+            hint="Run `dashboard bi-preflight` to tell the user what will convert first.",
+        )
     symbol = f"mammoth.api.dashboards.DashboardsAPI.export_{target}"
     kwargs: dict[str, Any] = {"dashboard_id": dashboard_id}
     _forward_optional(document, kwargs, ("output_path",))
@@ -864,26 +873,3 @@ def dashboard_bi_export(invocation: Invocation) -> HandlerResult:
     # The SDK returns a Path; render it as a string so the written location is
     # visible in every output mode and serializes cleanly to JSON.
     return {"output_path": str(data)}, _meta(invocation, auth.workspace_id)
-
-
-def _dashboard_bi_export_embedded(
-    invocation: Invocation,
-    dashboard_id: int,
-    target: Literal["powerbi", "tableau"],
-    document: dict[str, Any],
-) -> HandlerResult:
-    """``dashboard.bi-export`` for an embedded call: never writes a local file."""
-    if "output_path" in document:
-        raise CliError(
-            code=CODE_UNSUPPORTED_CONTRACT,
-            message="output_path is not supported here; files are not written in embedded mode.",
-            exit_status=EXIT_USAGE,
-            hint="Drop output_path -- an embedded call returns a download_url instead.",
-        )
-    symbol = f"mammoth.api.dashboards.DashboardsAPI.{target}_export_url"
-    with open_service(invocation) as (service, auth):
-        data = service.call(symbol, dashboard_id=dashboard_id)
-    return {
-        "download_url": data["url"],
-        "filename": data["filename"],
-    }, _meta(invocation, auth.workspace_id)

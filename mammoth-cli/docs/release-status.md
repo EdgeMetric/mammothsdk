@@ -2,17 +2,17 @@
 
 ## 2.0.62
 
-**Feature**: the in-product agent can hand a dashboard to Power BI or Tableau without a manual
-export step:
+**Feature**: dashboard export to Power BI or Tableau:
 
 - `dashboard bi-preflight DASHBOARD_ID --input '{"target": "powerbi"|"tableau"}'` runs the
   side-effect-free preflight check (`GET /dashboards/{id}/powerbi` or `/tableau`) and reports
   whether the board can be exported.
 - `dashboard bi-export DASHBOARD_ID --input '{"target": "powerbi"|"tableau"}'` downloads the
   export artifact (a Power BI project zip or a Tableau `.twbx`). In the terminal it writes the
-  file to `--output_path` (or an auto-generated filename); inside the Mammoth app (embedded mode)
-  it never writes a server-side file — it returns `{"download_url", "filename"}` so the browser
-  downloads it under the user's own session.
+  file to `--output_path` (or an auto-generated filename). Inside the Mammoth app (embedded mode)
+  it is refused with a pointer to the dashboard's Publish menu → Export to Power BI / Export to
+  Tableau: the export route needs the Authorization header, so a link handed to the user's
+  browser would 401.
 - `schema find` ranks these two commands first for "power bi file", "tableau workbook", "pbix",
   "twbx", and "open this board in power bi". Needs `mammoth-io` 0.7.31.
 

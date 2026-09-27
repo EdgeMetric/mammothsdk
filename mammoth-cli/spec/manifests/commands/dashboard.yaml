@@ -229,9 +229,9 @@ commands:
   human_example: mammoth dashboard bi-preflight DASHBOARD_ID --help
   agent_example: 'mammoth dashboard bi-preflight 123 --input ''{"target": "powerbi"}'''
   unit_tests:
-  - mammoth-cli/tests/unit/commands/test_dashboard.py::test_dashboard_bi_preflight_dispatches_powerbi
-  - mammoth-cli/tests/unit/commands/test_dashboard.py::test_dashboard_bi_preflight_dispatches_tableau
-  - mammoth-cli/tests/unit/commands/test_dashboard.py::test_dashboard_bi_preflight_rejects_bad_target
+  - mammoth-cli/tests/unit/commands/test_dashboard.py::test_bi_preflight_dispatches_powerbi
+  - mammoth-cli/tests/unit/commands/test_dashboard.py::test_bi_preflight_dispatches_tableau
+  - mammoth-cli/tests/unit/commands/test_dashboard.py::test_bi_preflight_rejects_unknown_target_value_without_a_request
   contract_tests:
   - mammoth-cli/tests/contract/test_rel360_bi_export.py::test_rel360_schema_preserves_release_overlay
   draft_test: null
@@ -273,17 +273,17 @@ commands:
   human_example: mammoth dashboard bi-export DASHBOARD_ID --help
   agent_example: 'mammoth dashboard bi-export 123 --input ''{"target": "powerbi"}'''
   unit_tests:
-  - mammoth-cli/tests/unit/commands/test_dashboard.py::test_dashboard_bi_export_writes_file_in_terminal_mode
-  - mammoth-cli/tests/unit/commands/test_dashboard.py::test_dashboard_bi_export_embedded_returns_download_url_and_writes_nothing
-  - mammoth-cli/tests/unit/commands/test_dashboard.py::test_dashboard_bi_export_embedded_refuses_output_path
+  - mammoth-cli/tests/unit/commands/test_dashboard.py::test_bi_export_writes_file_in_terminal_mode
+  - mammoth-cli/tests/unit/commands/test_dashboard.py::test_bi_export_embedded_points_user_to_export_dialog
   contract_tests:
   - mammoth-cli/tests/contract/test_rel361_bi_export.py::test_rel361_schema_preserves_release_overlay
   draft_test: null
   undo_test: null
-  known_restrictions: Release snapshot provenance only; unverified against release. Author-only, like
-    bi-preflight. Terminal mode writes `output_path` to local disk; an embedded call never writes a
-    file and returns `download_url`/`filename` instead -- see `dashboard bi-preflight` for the
-    side-effect-free preview of what the file would carry before downloading it.
+  known_restrictions: "Release snapshot provenance only; unverified against release. Author-only, like
+    bi-preflight. Terminal mode writes `output_path` to local disk. Inside the Mammoth app the
+    download cannot reach the user: run `dashboard bi-preflight` to tell them what will convert,
+    then send them to the dashboard's Publish menu (the arrow next to Publish) -> Export to Power
+    BI / Export to Tableau, where they download the file themselves."
   reviewed_by: primary
 - command_id: dashboard.cancel-generation
   command_path: dashboard cancel-generation

@@ -469,31 +469,6 @@ class DashboardsAPI:
         )
         return _write_bytes_atomic(content, path)
 
-    def powerbi_export_url(self, dashboard_id: int) -> dict[str, str]:
-        """Build this dashboard's Power BI export URL, without downloading it.
-
-        No network call: the URL is the same authenticated route
-        :meth:`export_powerbi` downloads, for a caller (for example a host
-        process running the CLI on a user's behalf) that hands the link to the
-        user's own browser session instead of fetching it itself.
-        """
-        return self._bi_export_url(dashboard_id, "powerbi")
-
-    def tableau_export_url(self, dashboard_id: int) -> dict[str, str]:
-        """Build this dashboard's Tableau export URL, without downloading it."""
-        return self._bi_export_url(dashboard_id, "tableau")
-
-    def _bi_export_url(
-        self, dashboard_id: int, target: Literal["powerbi", "tableau"]
-    ) -> dict[str, str]:
-        if isinstance(dashboard_id, bool) or not isinstance(dashboard_id, int) or dashboard_id <= 0:
-            raise MammothValidationError(ERR_DASHBOARD_ID_POSITIVE.format(dashboard_id))
-        filename = f"dashboard_{dashboard_id}_{target}.{_BI_EXPORT_EXTENSIONS[target]}"
-        return {
-            "url": f"{self._client.base_url}/dashboards/{dashboard_id}/{target}/export",
-            "filename": filename,
-        }
-
     def update(
         self,
         dashboard_id: int,

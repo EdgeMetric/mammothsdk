@@ -842,8 +842,6 @@ _POWERBI_PREFLIGHT = "mammoth.api.dashboards.DashboardsAPI.powerbi_preflight"
 _TABLEAU_PREFLIGHT = "mammoth.api.dashboards.DashboardsAPI.tableau_preflight"
 _EXPORT_POWERBI = "mammoth.api.dashboards.DashboardsAPI.export_powerbi"
 _EXPORT_TABLEAU = "mammoth.api.dashboards.DashboardsAPI.export_tableau"
-_POWERBI_EXPORT_URL = "mammoth.api.dashboards.DashboardsAPI.powerbi_export_url"
-_TABLEAU_EXPORT_URL = "mammoth.api.dashboards.DashboardsAPI.tableau_export_url"
 
 
 def _bi_doc(tmp_path: Path, payload: dict[str, object]) -> str:
@@ -940,60 +938,22 @@ def test_bi_export_dispatches_tableau_in_terminal_mode(
     assert data == {"output_path": "dashboard_42_tableau.twbx"}
 
 
-def test_bi_export_embedded_returns_download_url_and_writes_nothing(
-    fake_service: FakeMammothService, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+@pytest.mark.parametrize(
+    "payload",
+    [{"target": "powerbi"}, {"target": "tableau"}, {"target": "powerbi", "output_path": "o.zip"}],
+)
+def test_bi_export_embedded_points_user_to_export_dialog(
+    fake_service: FakeMammothService,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    payload: dict[str, object],
 ) -> None:
+    """The export route needs the Authorization header, so a link handed to the
+    user's browser 401s: embedded, the command refuses and names the dialog."""
     cwd = tmp_path / "server-cwd"
     cwd.mkdir()
     monkeypatch.chdir(cwd)
-    fake_service.responses[_POWERBI_EXPORT_URL] = {
-        "url": "https://app.mammoth.io/api/v2/dashboards/42/powerbi/export",
-        "filename": "dashboard_42_powerbi.zip",
-    }
-    doc = _bi_doc(tmp_path, {"target": "powerbi"})
-    token = _enter_embedded_call()
-    try:
-        data, _ = dashboard_cmd.dashboard_bi_export(
-            _inv("dashboard.bi-export", extra_args=["42"], input_file=doc)
-        )
-    finally:
-        embedded.leave(token)
-
-    assert data == {
-        "download_url": "https://app.mammoth.io/api/v2/dashboards/42/powerbi/export",
-        "filename": "dashboard_42_powerbi.zip",
-    }
-    assert fake_service.call_log == [(_POWERBI_EXPORT_URL, {"dashboard_id": 42})]
-    assert list(cwd.iterdir()) == []
-
-
-def test_bi_export_embedded_dispatches_tableau_url(
-    fake_service: FakeMammothService, tmp_path: Path
-) -> None:
-    fake_service.responses[_TABLEAU_EXPORT_URL] = {
-        "url": "https://app.mammoth.io/api/v2/dashboards/42/tableau/export",
-        "filename": "dashboard_42_tableau.twbx",
-    }
-    doc = _bi_doc(tmp_path, {"target": "tableau"})
-    token = _enter_embedded_call()
-    try:
-        data, _ = dashboard_cmd.dashboard_bi_export(
-            _inv("dashboard.bi-export", extra_args=["42"], input_file=doc)
-        )
-    finally:
-        embedded.leave(token)
-
-    assert data == {
-        "download_url": "https://app.mammoth.io/api/v2/dashboards/42/tableau/export",
-        "filename": "dashboard_42_tableau.twbx",
-    }
-    assert fake_service.call_log == [(_TABLEAU_EXPORT_URL, {"dashboard_id": 42})]
-
-
-def test_bi_export_embedded_refuses_output_path(
-    fake_service: FakeMammothService, tmp_path: Path
-) -> None:
-    doc = _bi_doc(tmp_path, {"target": "powerbi", "output_path": str(tmp_path / "out.zip")})
+    doc = _bi_doc(tmp_path, payload)
     token = _enter_embedded_call()
     try:
         with pytest.raises(CliError) as excinfo:
@@ -1004,8 +964,10 @@ def test_bi_export_embedded_refuses_output_path(
         embedded.leave(token)
 
     assert excinfo.value.code == "unsupported_contract"
+    assert "Publish" in excinfo.value.message
+    assert "Export to Power BI / Export to Tableau" in excinfo.value.message
     assert fake_service.call_log == []
-    assert not (tmp_path / "out.zip").exists()
+    assert list(cwd.iterdir()) == []
 
 
 @pytest.mark.parametrize(

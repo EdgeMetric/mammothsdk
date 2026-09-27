@@ -1539,24 +1539,6 @@ sdk_methods:
   openapi_operation_ids: []
   notes: One of two target-specific implementations behind `dashboard bi-export` (--input
     target=tableau); export_powerbi is the manifest's representative sdk_symbol.
-- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.powerbi_export_url
-  canonical_command: null
-  alias_of: null
-  mutation_class: read
-  wait_policy: not_async
-  pagination_policy: none
-  openapi_operation_ids: []
-  notes: SDK-only seam dashboard bi-export dispatches to instead of export_powerbi for an embedded
-    call (mammoth_cli.runtime.embedded); builds the download URL without fetching the file.
-- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.tableau_export_url
-  canonical_command: null
-  alias_of: null
-  mutation_class: read
-  wait_policy: not_async
-  pagination_policy: none
-  openapi_operation_ids: []
-  notes: SDK-only seam dashboard bi-export dispatches to instead of export_tableau for an embedded
-    call (mammoth_cli.runtime.embedded); builds the download URL without fetching the file.
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.published_canvas
   canonical_command: dashboard.published.canvas
   alias_of: null
