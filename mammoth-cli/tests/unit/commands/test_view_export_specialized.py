@@ -190,7 +190,8 @@ def test_dataset_route_marks_an_append_that_adds_no_rows_as_unverified(
     )
     verified = with_verify(data)["verify"]
     assert verified["verified"] is False
-    assert verified["needs_user"] == "The append added no rows (was 60, still 60)."
+    assert verified["needs_user"] is None
+    assert verified["reason"] == "the append did not add rows"
 
 
 def test_dataset_route_rejects_a_second_export_into_the_same_target(

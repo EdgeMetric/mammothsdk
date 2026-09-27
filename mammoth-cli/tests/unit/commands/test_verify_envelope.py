@@ -54,6 +54,7 @@ def test_a_mutating_command_gets_a_verify_block(fake_service: FakeMammothService
         "verified": True,
         "state": "done",
         "warnings": [],
+        "reason": None,
         "needs_user": None,
     }
 
@@ -150,10 +151,38 @@ def test_a_plain_view_transform_is_unverified_when_rows_after_never_arrives(
     assert data["row_check"] == {"rows_before": 20, "rows_after": None}
     verified = with_verify(data)["verify"]
     assert verified["verified"] is False
-    assert verified["needs_user"] == "The row count after the change could not be read."
+    assert verified["needs_user"] is None
+    assert verified["reason"] == (
+        "the row count after the change could not be read; read the view before building on it"
+    )
     assert verified["warnings"] == [
         "the row count after the change could not be read; read the view before building on it"
     ]
+
+
+def test_a_staged_draft_transform_skips_the_row_check_and_the_settle_wait(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    """A view in draft mode never runs the pipeline, so there is no row
+    count to wait for or read -- ``row_check`` must not appear at all.
+    """
+    fake_service.view_responses[(3, "limit_rows")] = {"status": "staged"}
+    data, _meta = view_ops_cmd.view_transform_limit_rows(
+        _inv(
+            "view.transform.limit-rows",
+            extra_args=["3"],
+            resource_ref=_parent(3),
+            input_file=_write(tmp_path, {"n": 10}),
+        )
+    )
+    assert "row_check" not in data
+    assert _WAIT_FOR_PIPELINE not in fake_service.calls
+    verified = with_verify(data)["verify"]
+    assert verified["verified"] is True
+    assert verified["state"] == "staged"
+    assert "rows_before" not in verified
+    assert "rows_after" not in verified
+    assert verified["reason"] == "staged in draft; not applied until the draft is submitted"
 
 
 def test_a_join_transform_keeps_its_own_join_check_not_row_check(

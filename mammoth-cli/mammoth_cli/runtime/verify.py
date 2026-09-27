@@ -27,6 +27,10 @@ _UNREADABLE_ROW_COUNT_WARNING = (
     "the row count after the change could not be read; read the view before building on it"
 )
 
+#: ``reason`` for a write left in a draft: the pipeline never ran, so there is
+#: no row count to check yet.
+_STAGED_REASON = "staged in draft; not applied until the draft is submitted"
+
 
 def with_verify(data: Any) -> Any:
     """Return ``data`` with a ``verify`` read-back block added.
@@ -39,14 +43,15 @@ def with_verify(data: Any) -> Any:
     check = _check_dict(data)
     row_count_attempted = _row_count_attempted(check)
     rows_before, rows_after = _row_counts(check) if row_count_attempted else (None, None)
-    verified = _verified(
+    state = _state(data)
+    verified, reason = _verify_and_reason(
         data,
+        state=state,
         check=check,
         row_count_attempted=row_count_attempted,
         rows_before=rows_before,
         rows_after=rows_after,
     )
-    state = _state(data)
     verify: dict[str, Any] = {"verified": verified, "state": state}
     if row_count_attempted:
         verify["rows_before"] = rows_before
@@ -55,14 +60,9 @@ def with_verify(data: Any) -> Any:
     if row_count_attempted and rows_after is None:
         warnings.append(_UNREADABLE_ROW_COUNT_WARNING)
     verify["warnings"] = warnings
+    verify["reason"] = reason
     verify["needs_user"] = _needs_user(
-        data,
-        verified=verified,
-        state=state,
-        check=check,
-        row_count_attempted=row_count_attempted,
-        rows_before=rows_before,
-        rows_after=rows_after,
+        data, verified=verified, rows_before=rows_before, rows_after=rows_after
     )
     return {**data, "verify": verify}
 
@@ -98,30 +98,42 @@ def _row_counts(check: dict[str, Any] | None) -> tuple[int | None, int | None]:
     return check.get("rows_before"), check.get("rows_after")
 
 
-def _verified(
+def _verify_and_reason(
     data: dict[str, Any],
     *,
+    state: str,
     check: dict[str, Any] | None,
     row_count_attempted: bool,
     rows_before: int | None,
     rows_after: int | None,
-) -> bool:
+) -> tuple[bool, str | None]:
+    """Whether the write is verified, plus a human-readable ``reason`` for it.
+
+    ``reason`` is set whenever ``verified`` is ``False`` (a failure or a
+    no-op) and for a staged draft; it is ``None`` for an ordinary success.
+    A failure never sets ``needs_user`` -- see :func:`_needs_user`, which
+    covers only the two outcomes serious enough to interrupt the caller.
+    """
+    if data.get("changed") is False:
+        message = data.get("message")
+        text = message if isinstance(message, str) else ""
+        return False, f"nothing changed: {text[:200]}"
     if data.get("has_error"):
-        return False
+        return False, "the operation reported an error"
     for status in (data.get("status"), _job_status(data)):
         if isinstance(status, str) and status.lower() in _FAILURE_STATUSES:
-            return False
+            return False, "the operation failed"
     pipeline_state = data.get("pipeline_state")
     if isinstance(pipeline_state, str) and pipeline_state.lower() in _FAILURE_PIPELINE_STATES:
-        return False
+        return False, "the pipeline reported an error"
     if data.get("bake_ok") is False:
-        return False
+        return False, "the dashboard did not bake"
     if row_count_attempted:
         # An attempted row count that never came back readable is never
         # reported as a known, verified count -- even when nothing else
         # flagged a failure.
         if rows_after is None:
-            return False
+            return False, _UNREADABLE_ROW_COUNT_WARNING
         if (
             check is not None
             and check.get("expected_row_increase")
@@ -129,8 +141,10 @@ def _verified(
             and isinstance(rows_after, int)
             and rows_after <= rows_before
         ):
-            return False
-    return True
+            return False, "the append did not add rows"
+    if state == "staged":
+        return True, _STAGED_REASON
+    return True, None
 
 
 def _state(data: dict[str, Any]) -> str:
@@ -157,25 +171,18 @@ def _needs_user(
     data: dict[str, Any],
     *,
     verified: bool,
-    state: str,
-    check: dict[str, Any] | None,
-    row_count_attempted: bool,
     rows_before: int | None,
     rows_after: int | None,
 ) -> str | None:
+    """The only two outcomes worth interrupting the caller for.
+
+    ``needs_user`` means "a serious outcome the user must hear about before
+    anything is built on it" -- never "something went wrong that you can
+    retry". A failed write is reported through ``verified``/``reason``
+    instead (see :func:`_verify_and_reason`); it never sets this.
+    """
     if not verified:
-        if row_count_attempted and rows_after is None:
-            return "The row count after the change could not be read."
-        if (
-            row_count_attempted
-            and check is not None
-            and check.get("expected_row_increase")
-            and isinstance(rows_before, int)
-            and isinstance(rows_after, int)
-            and rows_after <= rows_before
-        ):
-            return f"The append added no rows (was {rows_before}, still {rows_after})."
-        return f"The change failed: {state}."
+        return None
     if rows_after == 0 and isinstance(rows_before, int) and rows_before > 0:
         return f"The change left the view with no rows (was {rows_before})."
     join_check = data.get("join_check")

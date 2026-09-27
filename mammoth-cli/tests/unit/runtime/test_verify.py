@@ -18,26 +18,85 @@ def test_a_normal_result_is_verified_with_no_needs_user() -> None:
         "verified": True,
         "state": "done",
         "warnings": [],
+        "reason": None,
         "needs_user": None,
     }
 
 
 @pytest.mark.parametrize(
-    ("data", "state"),
+    ("data", "reason"),
     [
-        ({"has_error": True, "status": "done"}, "done"),
-        ({"status": "ERROR"}, "ERROR"),
-        ({"job": {"status": "failed"}}, "done"),
-        ({"pipeline_state": "ref_error"}, "ref_error"),
-        ({"bake_ok": False}, "done"),
+        ({"has_error": True, "status": "done"}, "the operation reported an error"),
+        ({"status": "ERROR"}, "the operation failed"),
+        ({"job": {"status": "failed"}}, "the operation failed"),
+        ({"pipeline_state": "ref_error"}, "the pipeline reported an error"),
+        ({"bake_ok": False}, "the dashboard did not bake"),
     ],
 )
-def test_each_failure_signal_marks_unverified_and_sets_needs_user(
-    data: dict[str, object], state: str
+def test_each_failure_signal_marks_unverified_with_a_reason_and_no_needs_user(
+    data: dict[str, object], reason: str
 ) -> None:
     result = with_verify(data)
     assert result["verify"]["verified"] is False
-    assert result["verify"]["needs_user"] == f"The change failed: {state}."
+    assert result["verify"]["reason"] == reason
+    assert result["verify"]["needs_user"] is None
+
+
+def test_unreadable_row_count_is_a_failure_not_a_needs_user() -> None:
+    result = with_verify({"status": "done", "row_check": {"rows_before": 20, "rows_after": None}})
+    assert result["verify"]["verified"] is False
+    assert result["verify"]["needs_user"] is None
+    assert result["verify"]["reason"] == (
+        "the row count after the change could not be read; read the view before building on it"
+    )
+
+
+def test_append_that_did_not_grow_is_a_failure_not_a_needs_user() -> None:
+    result = with_verify(
+        {
+            "status": "done",
+            "row_check": {
+                "rows_before": 60,
+                "rows_after": 60,
+                "expected_row_increase": True,
+            },
+        }
+    )
+    assert result["verify"]["verified"] is False
+    assert result["verify"]["needs_user"] is None
+    assert result["verify"]["reason"] == "the append did not add rows"
+
+
+def test_changed_false_is_a_no_op_not_a_needs_user() -> None:
+    result = with_verify(
+        {
+            "changed": False,
+            "bake_ok": False,
+            "message": "I didn't change anything because the request was unclear.",
+        }
+    )
+    assert result["verify"]["verified"] is False
+    assert result["verify"]["needs_user"] is None
+    assert result["verify"]["reason"] == (
+        "nothing changed: I didn't change anything because the request was unclear."
+    )
+
+
+def test_changed_false_message_is_truncated_to_200_chars() -> None:
+    long_message = "x" * 300
+    result = with_verify({"changed": False, "message": long_message})
+    assert result["verify"]["reason"] == f"nothing changed: {'x' * 200}"
+
+
+def test_staged_status_is_verified_with_no_rows_and_a_reason() -> None:
+    result = with_verify({"status": "staged"})
+    assert result["verify"] == {
+        "verified": True,
+        "state": "staged",
+        "warnings": [],
+        "reason": "staged in draft; not applied until the draft is submitted",
+        "needs_user": None,
+    }
 
 
 def test_rows_after_zero_with_rows_before_positive_needs_user() -> None:

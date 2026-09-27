@@ -183,7 +183,13 @@ def test_generated_dashboard_async_result_waits_for_job(
     assert observed_timeouts == [7]
     assert json.loads(result.output)["data"] == {
         "dashboard_id": 73,
-        "verify": {"verified": True, "state": "done", "warnings": [], "needs_user": None},
+        "verify": {
+            "verified": True,
+            "state": "done",
+            "warnings": [],
+            "reason": None,
+            "needs_user": None,
+        },
     }
 
 
