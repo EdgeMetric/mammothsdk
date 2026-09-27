@@ -376,6 +376,8 @@ HANDLERS: dict[str, Handler] = {
     "dashboard.assess-twb": dashboard_cmd.dashboard_assess_twb,
     "dashboard.assess-pbix": dashboard_cmd.dashboard_assess_pbix,
     "dashboard.import-workbook": dashboard_cmd.dashboard_import_workbook,
+    "dashboard.bi-preflight": dashboard_cmd.dashboard_bi_preflight,
+    "dashboard.bi-export": dashboard_cmd.dashboard_bi_export,
     "dashboard.embed.config.get": dashboard_cmd.generated_dashboard,
     "dashboard.embed.config.set": dashboard_cmd.generated_dashboard,
     "dashboard.embed.key.rotate": dashboard_cmd.generated_dashboard,

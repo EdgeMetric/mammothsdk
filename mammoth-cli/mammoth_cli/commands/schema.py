@@ -140,6 +140,34 @@ _COMMAND_DISCOVERY_PURPOSES = {
     "workspace.app-usage": (
         "storage usage used space how much plan current allowed total quota limit"
     ),
+    # "Give me this board as a Power BI file" / "open this in Tableau" is the
+    # dashboard-to-BI-file export pair, not `view.export.powerbi`/`.tableau`
+    # (those publish a live ODBC connection for a dataview, not a downloadable
+    # file for a dashboard). Both destinations' vocabulary lives on both
+    # commands: the dialog answers "what will I get" the same way for either
+    # tool (see PowerBiPreflightResponse/TableauPreflightResponse), and the
+    # export downloads whichever the caller names via input `target`.
+    "dashboard.bi-preflight": (
+        "power bi powerbi pbix pbip tableau twb twbx workbook file board open this dashboard "
+        "board in power bi desktop or tableau desktop preview dry run what would convert "
+        "figures rows before downloading export"
+    ),
+    "dashboard.bi-export": (
+        "power bi powerbi pbix pbip tableau twb twbx workbook file board open this dashboard "
+        "board in power bi desktop or tableau desktop download export save project convert"
+    ),
+    # "Bring my old Power BI report in" / "move my dashboards over" is the
+    # workbook-to-Mammoth-dataset import, the opposite direction of
+    # `dashboard.bi-export`. The command id's own tokens ("import",
+    # "workbook") already cover half of this -- "workbook" is deliberately
+    # NOT repeated below: it would double-score (command-id token AND purpose
+    # match) and outrank `dashboard.bi-export`/`.bi-preflight` on the bare
+    # "tableau workbook" phrasing those two must win instead. Only "tableau"
+    # (its own text says neither tool's name) and the migration verbs are new.
+    "dashboard.import-workbook": (
+        "bring in migrate move transfer switch old existing dashboards dashboard over power "
+        "bi report tableau file upload"
+    ),
     "automation.create": (
         "schedule scheduled recurring repeat refresh rerun run every day daily week weekly "
         "hour hourly month monthly automatically trigger alert email a dataset pipeline"

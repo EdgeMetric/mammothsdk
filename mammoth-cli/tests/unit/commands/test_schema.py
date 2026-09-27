@@ -535,3 +535,45 @@ def test_schema_get_names_secret_fields_and_routes_their_example_through_a_file(
     assert normalize({"secret_fields": ["password"]}) == {"secret_fields": ["password"]}
     assert "/private/path/request.json" in postgres["agent_example"]
     assert "password" not in postgres["agent_example"]
+
+
+@pytest.mark.parametrize(
+    "query",
+    [
+        "power bi file",
+        "tableau workbook",
+        "pbix",
+        "twbx",
+        "open this board in power bi",
+    ],
+)
+def test_dashboard_bi_file_intent_ranks_bi_export_first(query: str) -> None:
+    """The in-product agent cannot run 'give me this board as a Power BI
+    file' unless schema find surfaces the dashboard-to-file export commands
+    ahead of the unrelated view.export.powerbi/.tableau (which publish a
+    live ODBC connection for a dataview, not a downloadable file for a
+    dashboard) and ahead of dashboard.assess-pbix/.import-workbook (the
+    opposite, import direction).
+    """
+    matches = [item["command_id"] for item in find_schemas(query)["matches"]]
+    assert matches, f"no full match for {query!r}"
+    assert matches[0] in ("dashboard.bi-export", "dashboard.bi-preflight"), (query, matches)
+
+
+@pytest.mark.parametrize(
+    "query",
+    [
+        "bring my power bi report in",
+        "import tableau workbook",
+        "move my old dashboards over",
+    ],
+)
+def test_migrate_workbook_intent_ranks_import_workbook_first(query: str) -> None:
+    """The opposite direction of the BI-file export pair: bringing an
+    existing Power BI/Tableau workbook INTO Mammoth is dashboard.import-
+    workbook, not dashboard.bi-export/.bi-preflight (which go the other way).
+    """
+    result = find_schemas(query)
+    top = result["matches"] or result.get("suggestions", [])
+    assert top, f"no match or suggestion for {query!r}"
+    assert top[0]["command_id"] == "dashboard.import-workbook", (query, top)

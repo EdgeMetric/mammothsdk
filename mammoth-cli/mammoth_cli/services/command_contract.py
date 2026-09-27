@@ -14,7 +14,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from functools import cache
 from types import MappingProxyType
-from typing import Any, cast
+from typing import Any, Literal, cast
 
 from mammoth.models.batches import (
     ColumnIdMapping,
@@ -625,6 +625,16 @@ _S7_ADDITIONAL_INPUT_FIELDS: dict[str, tuple[FieldSpec, ...]] = {
         # PreferencesPatchRequest: replace ops on dotted paths rooted at
         # GLOBAL or WORKSPACE_PREFERENCES.
         FieldSpec("patch", required=False, annotation=list[Any] | None, default=None),
+    ),
+    # ``target`` picks which of the two backing SDK methods the handler calls
+    # (powerbi_preflight/tableau_preflight, export_powerbi/export_tableau); it
+    # is CLI-side dispatch, never forwarded into either SDK call, so neither
+    # signature can introspect it.
+    "dashboard.bi-preflight": (
+        FieldSpec("target", required=True, annotation=Literal["powerbi", "tableau"]),
+    ),
+    "dashboard.bi-export": (
+        FieldSpec("target", required=True, annotation=Literal["powerbi", "tableau"]),
     ),
     # user.update previously pinned name/email here as a guess, from when
     # UserProfileAPI.update took **fields and so had nothing introspectable.

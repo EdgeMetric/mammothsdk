@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+import base64
 import builtins
 import os
+import tempfile
+from contextlib import suppress
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal
 from urllib.parse import quote
@@ -35,7 +38,9 @@ from mammoth.models.dashboards import (
     ImportDatasetResponse,
     PbixAssessResponse,
     PendingTemplateResponse,
+    PowerBiPreflightResponse,
     SwapDataSpec,
+    TableauPreflightResponse,
     TagMergeParams,
     TagRenameParams,
     TwbAssessResponse,
@@ -67,6 +72,12 @@ ERR_EMBED_ORIGIN_EMPTY = "`origin` must be a non-empty string."
 ERR_EMBED_TOKEN_TTL_RANGE = "`token_ttl` must be between 60 and 3600 seconds, got {0}."
 
 _INTENT_MIN_LEN = 10
+
+# Local filename extension for each BI export target's downloaded artifact.
+_BI_EXPORT_EXTENSIONS: dict[Literal["powerbi", "tableau"], str] = {
+    "powerbi": "zip",
+    "tableau": "twbx",
+}
 
 
 class DashboardsAPI:
@@ -360,6 +371,128 @@ class DashboardsAPI:
             return model.model_validate(response)
         except ValidationError as exc:
             raise MammothValidationError(f"Invalid workbook assessment response: {exc}") from exc
+
+    def powerbi_preflight(self, dashboard_id: int) -> PowerBiPreflightResponse:
+        """What a Power BI export of this dashboard would carry (release route)."""
+        if isinstance(dashboard_id, bool) or not isinstance(dashboard_id, int) or dashboard_id <= 0:
+            raise MammothValidationError(ERR_DASHBOARD_ID_POSITIVE.format(dashboard_id))
+        response = self._client._request_json("GET", f"/dashboards/{dashboard_id}/powerbi")
+        try:
+            return PowerBiPreflightResponse.model_validate(response)
+        except ValidationError as exc:
+            raise MammothValidationError(f"Invalid Power BI preflight response: {exc}") from exc
+
+    def tableau_preflight(self, dashboard_id: int) -> TableauPreflightResponse:
+        """What a Tableau export of this dashboard would carry (release route)."""
+        if isinstance(dashboard_id, bool) or not isinstance(dashboard_id, int) or dashboard_id <= 0:
+            raise MammothValidationError(ERR_DASHBOARD_ID_POSITIVE.format(dashboard_id))
+        response = self._client._request_json("GET", f"/dashboards/{dashboard_id}/tableau")
+        try:
+            return TableauPreflightResponse.model_validate(response)
+        except ValidationError as exc:
+            raise MammothValidationError(f"Invalid Tableau preflight response: {exc}") from exc
+
+    def powerbi_export_artifact(self, dashboard_id: int) -> dict[str, Any]:
+        """Fetch the raw Power BI export artifact (release route).
+
+        SDK-only: :meth:`export_powerbi` decodes ``content_base64`` and writes
+        the result to disk; that is the reviewed CLI command.
+        """
+        if isinstance(dashboard_id, bool) or not isinstance(dashboard_id, int) or dashboard_id <= 0:
+            raise MammothValidationError(ERR_DASHBOARD_ID_POSITIVE.format(dashboard_id))
+        return self._client._request_binary("GET", f"/dashboards/{dashboard_id}/powerbi/export")
+
+    def tableau_export_artifact(self, dashboard_id: int) -> dict[str, Any]:
+        """Fetch the raw Tableau export artifact (release route).
+
+        SDK-only: :meth:`export_tableau` decodes ``content_base64`` and writes
+        the result to disk; that is the reviewed CLI command.
+        """
+        if isinstance(dashboard_id, bool) or not isinstance(dashboard_id, int) or dashboard_id <= 0:
+            raise MammothValidationError(ERR_DASHBOARD_ID_POSITIVE.format(dashboard_id))
+        return self._client._request_binary("GET", f"/dashboards/{dashboard_id}/tableau/export")
+
+    def export_powerbi(self, dashboard_id: int, output_path: str | Path | None = None) -> Path:
+        """Download this dashboard as a Power BI project (.zip) to a local file.
+
+        The zip holds the PBIP project, a CSV snapshot of the data, and a
+        readme written for someone who has never seen the Mammoth original.
+        See :meth:`powerbi_preflight` for what will convert before committing
+        to the download.
+
+        Args:
+            dashboard_id: ID of the dashboard (must be > 0).
+            output_path: Path for the .zip file (auto-generated if not provided).
+
+        Returns:
+            Path to the downloaded file.
+        """
+        return self._download_bi_export(dashboard_id, "powerbi", output_path)
+
+    def export_tableau(self, dashboard_id: int, output_path: str | Path | None = None) -> Path:
+        """Download this dashboard as a Tableau workbook (.twbx) to a local file.
+
+        One file, no refresh step and no gateway -- a .twbx carries its own
+        data. See :meth:`tableau_preflight` for what will convert before
+        committing to the download.
+
+        Args:
+            dashboard_id: ID of the dashboard (must be > 0).
+            output_path: Path for the .twbx file (auto-generated if not provided).
+
+        Returns:
+            Path to the downloaded file.
+        """
+        return self._download_bi_export(dashboard_id, "tableau", output_path)
+
+    def _download_bi_export(
+        self,
+        dashboard_id: int,
+        target: Literal["powerbi", "tableau"],
+        output_path: str | Path | None,
+    ) -> Path:
+        if isinstance(dashboard_id, bool) or not isinstance(dashboard_id, int) or dashboard_id <= 0:
+            raise MammothValidationError(ERR_DASHBOARD_ID_POSITIVE.format(dashboard_id))
+        artifact = (
+            self.powerbi_export_artifact(dashboard_id)
+            if target == "powerbi"
+            else self.tableau_export_artifact(dashboard_id)
+        )
+        try:
+            content = base64.b64decode(artifact["content_base64"])
+        except (KeyError, ValueError) as exc:
+            raise MammothValidationError(f"Invalid {target} export artifact response.") from exc
+        path = (
+            Path(output_path)
+            if output_path
+            else Path(f"dashboard_{dashboard_id}_{target}.{_BI_EXPORT_EXTENSIONS[target]}")
+        )
+        return _write_bytes_atomic(content, path)
+
+    def powerbi_export_url(self, dashboard_id: int) -> dict[str, str]:
+        """Build this dashboard's Power BI export URL, without downloading it.
+
+        No network call: the URL is the same authenticated route
+        :meth:`export_powerbi` downloads, for a caller (for example a host
+        process running the CLI on a user's behalf) that hands the link to the
+        user's own browser session instead of fetching it itself.
+        """
+        return self._bi_export_url(dashboard_id, "powerbi")
+
+    def tableau_export_url(self, dashboard_id: int) -> dict[str, str]:
+        """Build this dashboard's Tableau export URL, without downloading it."""
+        return self._bi_export_url(dashboard_id, "tableau")
+
+    def _bi_export_url(
+        self, dashboard_id: int, target: Literal["powerbi", "tableau"]
+    ) -> dict[str, str]:
+        if isinstance(dashboard_id, bool) or not isinstance(dashboard_id, int) or dashboard_id <= 0:
+            raise MammothValidationError(ERR_DASHBOARD_ID_POSITIVE.format(dashboard_id))
+        filename = f"dashboard_{dashboard_id}_{target}.{_BI_EXPORT_EXTENSIONS[target]}"
+        return {
+            "url": f"{self._client.base_url}/dashboards/{dashboard_id}/{target}/export",
+            "filename": filename,
+        }
 
     def update(
         self,
@@ -971,6 +1104,32 @@ class DashboardsAPI:
 
 
 # ── Private helpers ───────────────────────────────────────────────────────────
+
+
+def _write_bytes_atomic(content: bytes, output_path: Path) -> Path:
+    """Write ``content`` to ``output_path``, publishing it only once complete.
+
+    Uses a same-directory temporary file so the final ``os.replace`` is atomic
+    even when the destination is on a different filesystem from the process
+    temp dir; the destination is never opened for writing until the full
+    content has been flushed and fsynced.
+    """
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    fd, raw_temp_path = tempfile.mkstemp(
+        prefix=f".{output_path.name}.", suffix=".part", dir=output_path.parent
+    )
+    temp_path = Path(raw_temp_path)
+    try:
+        with os.fdopen(fd, "wb") as stream:
+            stream.write(content)
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.replace(temp_path, output_path)
+    except OSError:
+        with suppress(OSError):
+            temp_path.unlink()
+        raise
+    return output_path
 
 
 def _validate_patch_item(item: DashboardPatchItem) -> None:

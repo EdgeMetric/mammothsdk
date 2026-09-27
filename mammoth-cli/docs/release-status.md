@@ -1,5 +1,28 @@
 # CLI release provenance
 
+## 2.0.62
+
+**Feature**: the in-product agent can hand a dashboard to Power BI or Tableau without a manual
+export step:
+
+- `dashboard bi-preflight DASHBOARD_ID --input '{"target": "powerbi"|"tableau"}'` runs the
+  side-effect-free preflight check (`GET /dashboards/{id}/powerbi` or `/tableau`) and reports
+  whether the board can be exported.
+- `dashboard bi-export DASHBOARD_ID --input '{"target": "powerbi"|"tableau"}'` downloads the
+  export artifact (a Power BI project zip or a Tableau `.twbx`). In the terminal it writes the
+  file to `--output_path` (or an auto-generated filename); inside the Mammoth app (embedded mode)
+  it never writes a server-side file — it returns `{"download_url", "filename"}` so the browser
+  downloads it under the user's own session.
+- `schema find` ranks these two commands first for "power bi file", "tableau workbook", "pbix",
+  "twbx", and "open this board in power bi". Needs `mammoth-io` 0.7.31.
+
+**Fix**: `dashboard assess-pbix`, `dashboard assess-twb`, and `dashboard import-workbook` now say,
+in their own `known_restrictions`, that the in-product agent cannot receive a user's local
+workbook file and must send the user to the dashboard import page
+(`/workspaces/{workspace_id}/publish/import`, Publish → Import) to upload it themselves.
+`schema find` ranks `dashboard import-workbook` first for "bring my power bi report in", "import
+tableau workbook", and "move my old dashboards over".
+
 ## 2.0.61
 
 **Fix**: three discovery/execution gaps found by the in-product agent driving this CLI:

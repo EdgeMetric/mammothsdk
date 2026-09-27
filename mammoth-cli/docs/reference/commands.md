@@ -1,10 +1,10 @@
 # Command reference
 
-Generated from the reviewed command manifests for mammoth-cli 2.0.61.
+Generated from the reviewed command manifests for mammoth-cli 2.0.62.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
-Total commands: 565.
+Total commands: 567.
 
 ## activity
 
@@ -1085,6 +1085,28 @@ Total commands: 565.
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.assess_twb`
 - Agent example: `mammoth dashboard assess-twb sample.twb`
+
+### `mammoth dashboard bi-export`
+
+**Arguments**
+
+- `DASHBOARD_ID` (int, required) — ID of the dashboard.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.dashboards.DashboardsAPI.export_powerbi`
+- Agent example: `mammoth dashboard bi-export 123 --input '{"target": "powerbi"}'`
+
+### `mammoth dashboard bi-preflight`
+
+**Arguments**
+
+- `DASHBOARD_ID` (int, required) — ID of the dashboard.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.dashboards.DashboardsAPI.powerbi_preflight`
+- Agent example: `mammoth dashboard bi-preflight 123 --input '{"target": "powerbi"}'`
 
 ### `mammoth dashboard cancel-generation`
 

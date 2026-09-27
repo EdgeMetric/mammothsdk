@@ -151,6 +151,39 @@ class ImportDatasetResponse(BaseModel):
     fields: list[dict[str, Any]] = Field(default_factory=list)
 
 
+class DashboardBiRefusal(BaseModel):
+    """One figure the BI export/preflight route could not carry over."""
+
+    model_config = ConfigDict(extra="allow")
+    title: str
+    reason: str
+
+
+class DashboardBiPreflightResponse(BaseModel):
+    """What a Power BI or Tableau export of a dashboard would carry (release route)."""
+
+    model_config = ConfigDict(extra="allow")
+    exportable: bool
+    blocked_reason: str | None = None
+    figures_total: int
+    figures_exported: int
+    figures_refused: int
+    degraded: bool
+    refusals: list[DashboardBiRefusal]
+    row_count: int
+    column_count: int
+
+
+# Same body as the Tableau pre-flight, deliberately: the backend answers both
+# with one response class (dashboards_v3/schema.py: ``TableauPreflightResponse
+# = PowerBiPreflightResponse``), since the dialog asks one question -- "what
+# will I actually get" -- with the same shape for either recipient tool.
+PowerBiPreflightResponse = DashboardBiPreflightResponse
+
+# Alias, not a subclass -- see the note by ``PowerBiPreflightResponse``.
+TableauPreflightResponse = DashboardBiPreflightResponse
+
+
 class DashboardSource(BaseModel):
     """Dashboard data source information."""
 

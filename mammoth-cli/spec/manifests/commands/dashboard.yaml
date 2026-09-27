@@ -156,7 +156,7 @@ commands:
   - mammoth-cli/tests/contract/test_rel341_schema_preserves_release_overlay.py::test_rel341_schema_preserves_release_overlay
   draft_test: null
   undo_test: null
-  known_restrictions: Release snapshot provenance only; unverified against release.
+  known_restrictions: "Release snapshot provenance only; unverified against release. These take a workbook file from the local disk. Inside the Mammoth app the user's file cannot reach the agent: send the user to the dashboard import page at /workspaces/{workspace_id}/publish/import (Publish → Import), where they upload the .pbix/.twb/.twbx themselves."
   reviewed_by: primary
 - command_id: dashboard.assess-twb
   command_path: dashboard assess-twb
@@ -194,7 +194,96 @@ commands:
   - mammoth-cli/tests/contract/test_rel357_schema_preserves_release_overlay.py::test_rel357_schema_preserves_release_overlay
   draft_test: null
   undo_test: null
-  known_restrictions: Release snapshot provenance only; unverified against release.
+  known_restrictions: "Release snapshot provenance only; unverified against release. These take a workbook file from the local disk. Inside the Mammoth app the user's file cannot reach the agent: send the user to the dashboard import page at /workspaces/{workspace_id}/publish/import (Publish → Import), where they upload the .pbix/.twb/.twbx themselves."
+  reviewed_by: primary
+- command_id: dashboard.bi-preflight
+  command_path: dashboard bi-preflight
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - PowerbiPreflight
+  - TableauPreflightHandler
+  positionals:
+  - name: dashboard_id
+    type: int
+    required: true
+    metavar: DASHBOARD_ID
+    falls_back_to_field: null
+    help: ID of the dashboard.
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.powerbi_preflight
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.powerbi_preflight or .tableau_preflight,
+    chosen by input `target`, with validated request fields.
+  request_model: DashboardBiPreflightRequest
+  result_model: PowerBiPreflightResponse
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Release-only supplemental binding; no disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard bi-preflight DASHBOARD_ID --help
+  agent_example: 'mammoth dashboard bi-preflight 123 --input ''{"target": "powerbi"}'''
+  unit_tests:
+  - mammoth-cli/tests/unit/commands/test_dashboard.py::test_dashboard_bi_preflight_dispatches_powerbi
+  - mammoth-cli/tests/unit/commands/test_dashboard.py::test_dashboard_bi_preflight_dispatches_tableau
+  - mammoth-cli/tests/unit/commands/test_dashboard.py::test_dashboard_bi_preflight_rejects_bad_target
+  contract_tests:
+  - mammoth-cli/tests/contract/test_rel360_bi_export.py::test_rel360_schema_preserves_release_overlay
+  draft_test: null
+  undo_test: null
+  known_restrictions: Release snapshot provenance only; unverified against release. Author-only,
+    like the release routes it calls -- a non-author caller is refused, unlike `dashboard pdf export`
+    (which any viewer can run).
+  reviewed_by: primary
+- command_id: dashboard.bi-export
+  command_path: dashboard bi-export
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - PowerbiExport
+  - TableauExport
+  positionals:
+  - name: dashboard_id
+    type: int
+    required: true
+    metavar: DASHBOARD_ID
+    falls_back_to_field: null
+    help: ID of the dashboard.
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.export_powerbi
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.export_powerbi or .export_tableau, chosen
+    by input `target`, with validated request fields.
+  request_model: DashboardBiExportRequest
+  result_model: DashboardBiExportResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Release-only supplemental binding; no disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard bi-export DASHBOARD_ID --help
+  agent_example: 'mammoth dashboard bi-export 123 --input ''{"target": "powerbi"}'''
+  unit_tests:
+  - mammoth-cli/tests/unit/commands/test_dashboard.py::test_dashboard_bi_export_writes_file_in_terminal_mode
+  - mammoth-cli/tests/unit/commands/test_dashboard.py::test_dashboard_bi_export_embedded_returns_download_url_and_writes_nothing
+  - mammoth-cli/tests/unit/commands/test_dashboard.py::test_dashboard_bi_export_embedded_refuses_output_path
+  contract_tests:
+  - mammoth-cli/tests/contract/test_rel361_bi_export.py::test_rel361_schema_preserves_release_overlay
+  draft_test: null
+  undo_test: null
+  known_restrictions: Release snapshot provenance only; unverified against release. Author-only, like
+    bi-preflight. Terminal mode writes `output_path` to local disk; an embedded call never writes a
+    file and returns `download_url`/`filename` instead -- see `dashboard bi-preflight` for the
+    side-effect-free preview of what the file would carry before downloading it.
   reviewed_by: primary
 - command_id: dashboard.cancel-generation
   command_path: dashboard cancel-generation
@@ -1382,7 +1471,7 @@ commands:
   - mammoth-cli/tests/contract/test_rel340_schema_preserves_release_overlay.py::test_rel340_schema_preserves_release_overlay
   draft_test: null
   undo_test: null
-  known_restrictions: Release snapshot provenance only; unverified against release.
+  known_restrictions: "Release snapshot provenance only; unverified against release. These take a workbook file from the local disk. Inside the Mammoth app the user's file cannot reach the agent: send the user to the dashboard import page at /workspaces/{workspace_id}/publish/import (Publish → Import), where they upload the .pbix/.twb/.twbx themselves."
   reviewed_by: primary
 - command_id: dashboard.job-by-url
   command_path: dashboard job-by-url

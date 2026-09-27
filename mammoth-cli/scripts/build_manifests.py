@@ -566,7 +566,13 @@ def build() -> dict[str, int]:
                 live_exemption_reason=(
                     "Release-only multipart binding; no approved workbook fixture."
                 ),
-                known_restrictions="Release snapshot provenance only; unverified against release.",
+                known_restrictions=(
+                    "Release snapshot provenance only; unverified against release. "
+                    "These take a workbook file from the local disk. Inside the Mammoth app the "
+                    "user's file cannot reach the agent: send the user to the dashboard import "
+                    "page at /workspaces/{workspace_id}/publish/import (Publish → Import), where "
+                    "they upload the .pbix/.twb/.twbx themselves."
+                ),
                 contract_tests=[f"mammoth-cli/tests/contract/{test}.py::{test}"],
             )
 
