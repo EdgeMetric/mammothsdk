@@ -40,6 +40,7 @@ def invoke(
     login: ExplicitLogin,
     project_id: int | None = None,
     timeout: float | None = None,
+    pipeline_timeout: float | None = None,
 ) -> dict[str, Any]:
     """Run ``mammoth <args>`` as ``login`` and return its envelope.
 
@@ -51,12 +52,14 @@ def invoke(
             already names one.
         timeout: Per-request timeout in seconds, sent as ``--timeout`` unless
             ``args`` already sets one.
+        pipeline_timeout: Pipeline wait timeout in seconds, sent as
+            ``--pipeline-timeout`` unless ``args`` already sets one.
 
     Returns:
         The success envelope (``data`` + ``meta``) or the error envelope
         (``error``). A CLI error is returned, never raised.
     """
-    argv = _argv(args, project_id=project_id, timeout=timeout)
+    argv = _argv(args, project_id=project_id, timeout=timeout, pipeline_timeout=pipeline_timeout)
     call = embedded.EmbeddedCall(login=login)
     token = embedded.enter(call)
     try:
@@ -68,13 +71,21 @@ def invoke(
     return _error("no_output", "This command printed text only (help or version).", EXIT_USAGE)
 
 
-def _argv(args: Sequence[str], *, project_id: int | None, timeout: float | None) -> list[str]:
+def _argv(
+    args: Sequence[str],
+    *,
+    project_id: int | None,
+    timeout: float | None,
+    pipeline_timeout: float | None,
+) -> list[str]:
     """``args`` plus the options an embedded call always runs with."""
     argv = list(args)
     if project_id is not None and not _has_option(argv, "--project"):
         argv += ["--project", str(project_id)]
     if timeout is not None and not _has_option(argv, "--timeout"):
         argv += ["--timeout", str(timeout)]
+    if pipeline_timeout is not None and not _has_option(argv, "--pipeline-timeout"):
+        argv += ["--pipeline-timeout", str(pipeline_timeout)]
     # Last, so they win over any output or input option in ``args``.
     return [*argv, "--output", "json", "--no-input"]
 

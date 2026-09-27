@@ -1,5 +1,14 @@
 # CLI release provenance
 
+## 2.0.64
+
+**Fix**: `mammoth_cli.embed.invoke` takes an optional `pipeline_timeout: float | None`,
+forwarded as `--pipeline-timeout` unless `args` already sets one (mirrors the existing
+`timeout` keyword). A host agent runs each embedded command in a thread; a command that
+waits on pipeline readiness previously fell back to the SDK's `DEFAULT_PIPELINE_TIMEOUT`
+(3600s), so a pipeline stuck in `running` held the host's thread for an hour with no way
+to bound it through `embed.invoke`. The full CLI suite (4701 tests) passes.
+
 ## 2.0.63
 
 **Fix**: the `pydantic` floor is `>=2.12.5` (was `>=2.13`), so the CLI installs beside
