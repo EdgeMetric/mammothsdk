@@ -168,9 +168,12 @@ def test_schema_find_still_prefers_join_when_a_key_is_named(query: str, command_
 @pytest.mark.parametrize(
     ("query", "command_id"),
     [
-        # Data words (sales, revenue) are on no command, so these land in
-        # suggestions; the board-by-sentence commands must still lead them.
-        ("make a dashboard of sales by region", "dashboard.v3.generate"),
+        # Data words (sales, warehouse, revenue) are dropped from the
+        # required terms (see test_schema_find_still_resolves_a_goal_when_a_
+        # data_word_rides_along), but these two still don't reach a full
+        # match on any command, so they land in suggestions; the
+        # board-by-sentence commands must still lead them.
+        ("build a board showing sales by warehouse", "dashboard.v3.generate"),
         ("change the dashboard to show revenue by month", "dashboard.chat.edit"),
     ],
 )
@@ -180,6 +183,31 @@ def test_schema_find_suggests_the_intent_command_for_a_board_request(
     result = find_schemas(query)
 
     assert result["suggestions"][0]["command_id"] == command_id
+
+
+@pytest.mark.parametrize(
+    ("query", "command_id"),
+    [
+        # A business/data noun (a column or table name from the caller's own
+        # data) riding along in an otherwise-complete goal must not sink the
+        # match: find_schemas drops a term no command's curated discovery
+        # text is about (see _command_vocabulary_tokens) before requiring
+        # every term to be covered.
+        ("remove duplicate suppliers by supplier number", "view.transform.discard-duplicates"),
+        ("filter the shipments to late ones", "view.transform.filter"),
+        # Matches whatever "total per group" already resolves to today
+        # (view.transform.pivot) -- "supplier" is the data word riding
+        # along, not a reason to change that ranking.
+        ("total spend per supplier", "view.transform.pivot"),
+    ],
+)
+def test_schema_find_still_resolves_a_goal_when_a_data_word_rides_along(
+    query: str, command_id: str
+) -> None:
+    matches = find_schemas(query)["matches"]
+
+    assert matches, query
+    assert matches[0]["command_id"] == command_id
 
 
 def test_every_view_transform_has_a_plain_language_discovery_purpose() -> None:
@@ -197,10 +225,13 @@ def test_every_view_transform_has_a_plain_language_discovery_purpose() -> None:
 def test_schema_find_without_a_full_match_suggests_near_misses_and_the_menu() -> None:
     # "union two views" now genuinely resolves to view.export.dataset (its
     # own goal-phrasing coverage, see test_schema_find_resolves_natural_goal_
-    # phrasing_to_first_match) -- a real fix, not a regression. "three" carries
-    # the same partial-coverage shape (no command's text says "three") without
-    # colliding with that improvement.
-    result = find_schemas("union three views")
+    # phrasing_to_first_match) -- a real fix, not a regression. A bare number
+    # like "three" would be dropped as a data word (see
+    # _command_vocabulary_tokens), so "sort" stands in: it's genuine CLI
+    # vocabulary (view.transform.sort's own purpose text) that view.export.
+    # dataset's text doesn't carry, so it keeps this a real partial-coverage
+    # near miss instead of colliding with that improvement.
+    result = find_schemas("union sort views")
 
     assert result["matches"] == []
     assert result["total_matches"] == 0

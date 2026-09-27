@@ -197,7 +197,13 @@ _COMMAND_DISCOVERY_PURPOSES = {
     "view.transform.delete-columns": "delete drop remove columns",
     "view.transform.discard-duplicates": (
         "duplicate duplicates dedup dedupe deduplicate remove repeated rows unique distinct "
-        "by order id key column"
+        # "order"/"number" are kept as generic identifying-column vocabulary
+        # ("dedupe by an order/number/key"), not the specific business noun
+        # "order id" -- "order" also can't be dropped as a data word since
+        # view.transform.sort's own purpose text already uses it (sort
+        # order), so any query pairing "order" with dedupe words needs it
+        # covered here to reach a full match.
+        "by order number key column"
     ),
     "view.transform.extract-date": (
         "extract date part year month day hour minute second week quarter weekday "
@@ -214,8 +220,7 @@ _COMMAND_DISCOVERY_PURPOSES = {
     "view.transform.increment-date": "add subtract days months years to a date column shift",
     "view.transform.join": (
         "join blend merge combine enrich match matching key keys rows add columns from "
-        "another second view views dataset datasets table tables vlookup customer customers "
-        "details order orders"
+        "another second view views dataset datasets table tables vlookup"
     ),
     "view.transform.json-extract": "json extract parse nested fields keys into columns",
     "view.transform.limit-rows": "limit top bottom first last n rows head",
@@ -226,7 +231,7 @@ _COMMAND_DISCOVERY_PURPOSES = {
     "view.transform.math": (
         "math arithmetic multiply multiplication divide add subtract formula "
         "expression amount calculate compute ratio percentage round new column "
-        "conditional threshold greater than if text revenue times"
+        "conditional threshold greater than if text times"
     ),
     "view.transform.pivot": (
         "pivot group by aggregate aggregation sum count average summary summarize "
@@ -266,10 +271,12 @@ _COMMAND_DISCOVERY_PURPOSES = {
     ),
     "view.create": "start a new one from an existing dataset, duplicate",
     "dataset.list": "list every dataset in a project workspace",
-    "view.data.aggregate": (
-        "group and sum totals sales revenue by store region month week without "
-        "changing the pipeline"
-    ),
+    # "month"/"week" are kept as generic calendar-grouping vocabulary (a
+    # group-by dimension any dataset can have), not a specific business
+    # value -- and neither can be dropped as a data word anyway, since
+    # view.data.explore's own purpose text already uses both for its trend
+    # feature.
+    "view.data.aggregate": "group and sum totals by month week without changing the pipeline",
     # Goals users state in their own words, one entry per command the agent's
     # system prompt used to spell out by hand.
     "dashboard.suggestion.list": "ideas suggest suggestions what to show put on a board chart",
@@ -704,6 +711,42 @@ def _adjacent_compound_forms(terms: tuple[str, ...]) -> dict[str, frozenset[str]
             forms.setdefault(left, set()).add(compound)
             forms.setdefault(right, set()).add(compound)
     return {term: frozenset(compounds) for term, compounds in forms.items()}
+
+
+@cache
+def _command_vocabulary_tokens() -> frozenset[str]:
+    """Every token that names a command or appears in its curated purpose text.
+
+    Distinguishes genuine CLI vocabulary from a data word -- a column,
+    table, or other business noun from the caller's own data (``orders``,
+    ``revenue``, ``store``) -- riding along in a goal. Counts a command's own
+    id/path (``user``, ``workspace``, ``invoice`` are real resource nouns a
+    command is named after) plus ``_COMMAND_DISCOVERY_PURPOSES``/
+    ``_GROUP_DISCOVERY_PURPOSES`` -- text hand-curated specifically to
+    describe what a command is for. Deliberately excludes ``human_example``/
+    ``agent_example`` and OpenAPI-derived operation hints: those are
+    illustrative sample values (a placeholder project name like "Revenue
+    report", a sample filename like "sales.csv") reused verbatim across
+    dozens of unrelated commands, so counting them would make almost any
+    plausible business noun look like real vocabulary and defeat this
+    check. A term absent from this set is not something any command is
+    named after or actually about, so :func:`find_schemas` drops it from a
+    goal's required terms rather than letting it sink an otherwise complete
+    match.
+    """
+    vocabulary: set[str] = set()
+    for record in load_commands():
+        if record.get("disposition") == "alias":
+            continue
+        command_id = str(record["command_id"])
+        command_path = str(record["command_path"])
+        text = (
+            f"{command_id} {command_path} "
+            f"{_COMMAND_DISCOVERY_PURPOSES.get(command_id, '')} "
+            f"{_GROUP_DISCOVERY_PURPOSES.get(command_path.split()[0], '')}"
+        )
+        vocabulary.update(_tokens(text))
+    return frozenset(vocabulary)
 
 
 def _compact_contract(record: dict[str, Any]) -> dict[str, Any]:
@@ -1442,8 +1485,25 @@ def find_schemas(
     """
     # A query made only of filler words keeps them, rather than matching
     # every command.
-    terms = _query_tokens(query) or tuple(_tokens(query))
-    compound_forms = _adjacent_compound_forms(terms)
+    raw_terms = _query_tokens(query) or tuple(_tokens(query))
+    compound_forms = _adjacent_compound_forms(raw_terms)
+    # A term no command's discovery-purpose text would ever say is a data
+    # word (a column/table/business noun from the caller's own data, not CLI
+    # vocabulary) riding along in the goal; drop it before the all-terms
+    # rule and scoring so it can't sink an otherwise complete match. If
+    # every term would be dropped, keep them all -- a query that is nothing
+    # but data words still deserves its ordinary near-miss treatment rather
+    # than becoming a match-everything wildcard. A literal full-path lookup
+    # (the ``named`` check below) always uses the un-dropped ``raw_terms``,
+    # so naming a command by its exact path never depends on this filter.
+    vocabulary = _command_vocabulary_tokens()
+    cli_terms = tuple(
+        term
+        for term in raw_terms
+        if (_token_aliases(term) & vocabulary)
+        or (compound_forms.get(term, frozenset()) & vocabulary)
+    )
+    terms = cli_terms or raw_terms
     query_cf = query.casefold()
     # Clamp caller-provided bounds instead of allowing an accidental unbounded
     # discovery response.  A negative cursor is a usage mistake, not a request
@@ -1528,7 +1588,7 @@ def find_schemas(
         # A query that spells out this command's whole path (``aggregate view
         # data ...``) asks for it by name, whatever goal words ride along.
         path_tokens = set(_tokens(command_path))
-        named = len(path_tokens) >= 3 and path_tokens <= set(terms)
+        named = len(path_tokens) >= 3 and path_tokens <= set(raw_terms)
         if named:
             score += _NAMED_COMMAND_BOOST
         if named or len(matched_terms) == len(terms):
