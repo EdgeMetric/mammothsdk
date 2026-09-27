@@ -257,7 +257,7 @@ _COMMAND_DISCOVERY_PURPOSES = {
     # The web app's column Explore cards: what is trending, how a column is
     # spread, its top values, a count over time.
     "view.data.explore": (
-        "explore trend trends trending over time per day week month quarter year "
+        "explore trend trends trending over time per day week month quarter year by date "
         "distribution spread histogram top most common frequent values breakdown share "
         "percentage profile"
     ),
