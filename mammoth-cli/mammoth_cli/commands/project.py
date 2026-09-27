@@ -141,6 +141,32 @@ def project_pending_changes(invocation: Invocation) -> HandlerResult:
     return data, _meta(invocation, auth.workspace_id, project_id)
 
 
+def project_memory_list(invocation: Invocation) -> HandlerResult:
+    """List the caller's saved agent preferences for a project."""
+    project_id = _project_id(invocation)
+    with open_service(invocation) as (service, auth):
+        data = service.call(_symbol(invocation), project_id=project_id)
+    return data, _meta(invocation, auth.workspace_id, project_id)
+
+
+def project_memory_add(invocation: Invocation) -> HandlerResult:
+    """Save one agent preference (``text`` from ``--input``) for the caller."""
+    project_id = _project_id(invocation)
+    text = _require_input_field(invocation.load_input(), "text")
+    with open_service(invocation) as (service, auth):
+        data = service.call(_symbol(invocation), project_id=project_id, text=text)
+    return data, _meta(invocation, auth.workspace_id, project_id)
+
+
+def project_memory_remove(invocation: Invocation) -> HandlerResult:
+    """Remove the caller's saved preference at ``index`` (from ``--input``)."""
+    project_id = _project_id(invocation)
+    index = _require_input_field(invocation.load_input(), "index")
+    with open_service(invocation) as (service, auth):
+        data = service.call(_symbol(invocation), project_id=project_id, index=index)
+    return data, _meta(invocation, auth.workspace_id, project_id)
+
+
 def project_resource_status(invocation: Invocation) -> HandlerResult:
     """Report the status of a project's resources."""
     project_id = _project_id(invocation)

@@ -221,6 +221,25 @@ class TestProjectsAPI:
             client._request_json, "GET", "/workspaces/1/projects/42/pending-changes"
         )
 
+    def test_list_agent_memory(self, client: MammothClient):
+        client.projects.list_agent_memory(project_id=42)
+        assert_called_with_method_and_endpoint(
+            client._request_json, "GET", "/workspaces/1/projects/42/agent-memory"
+        )
+
+    def test_add_agent_memory(self, client: MammothClient):
+        client.projects.add_agent_memory(project_id=42, text="Show amounts in EUR")
+        assert_called_with_method_and_endpoint(
+            client._request_json, "POST", "/workspaces/1/projects/42/agent-memory"
+        )
+        assert client._request_json.call_args.kwargs["json"] == {"text": "Show amounts in EUR"}
+
+    def test_remove_agent_memory(self, client: MammothClient):
+        client.projects.remove_agent_memory(project_id=42, index=3)
+        assert_called_with_method_and_endpoint(
+            client._request_json, "DELETE", "/workspaces/1/projects/42/agent-memory/3"
+        )
+
     def test_publish_credentials(self, client: MammothClient):
         client.projects.publish_credentials(project_id=42, odbc_type="postgres")
         assert_called_with_method_and_endpoint(
@@ -849,7 +868,10 @@ class TestDataviewsAPI:
 
     def test_explore_sort_value_desc_and_offset_page_the_buckets(self, client: MammothClient):
         client._request_json.return_value = {
-            "data": [{"group_0": f"v{i}", "agg_0": 1} for i in range(5)] + [{"group_0": None, "agg_0": 1}]
+            "data": (
+                [{"group_0": f"v{i}", "agg_0": 1} for i in range(5)]
+                + [{"group_0": None, "agg_0": 1}]
+            )
         }
         result = client.dataviews.explore(
             dataset_id=500,

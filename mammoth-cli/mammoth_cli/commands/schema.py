@@ -291,7 +291,7 @@ _COMMAND_DISCOVERY_PURPOSES = {
     "automation.create": (
         "schedule scheduled recurring repeat refresh rerun run every day daily week weekly "
         "hour hourly month monthly automatically trigger alert email a dataset pipeline "
-        "delete old rows retention send an emailed file attachment"
+        "retention purge old data send an emailed file attachment"
     ),
     "billing.subscription.update": "upgrade downgrade bigger plan change subscription tier",
     "billing.invoice.list": "past bills billing history invoices payments receipts",

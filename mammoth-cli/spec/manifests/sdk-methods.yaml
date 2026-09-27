@@ -4934,6 +4934,18 @@ methods:
   pagination_policy: null
   secret_fields: []
   reviewed_by: primary
+- sdk_symbol: mammoth.api.projects.ProjectsAPI.add_agent_memory
+  implementation_origin: mammoth.api.projects.ProjectsAPI.add_agent_memory
+  signature: 'add_agent_memory(self, project_id: ''int'', text: ''str'', workspace_id: ''int | None'' = None) -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: project.memory.add
+  alias_of: null
+  no_command_reason: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
 - sdk_symbol: mammoth.api.projects.ProjectsAPI.add_users
   implementation_origin: mammoth.api.projects.ProjectsAPI.add_users
   signature: 'add_users(self, project_id: ''int'', user_ids: ''_list[int]'', role: ''str | None'' = None, workspace_id: ''int | None'' = None) -> ''dict[str, Any]'''
@@ -5042,6 +5054,18 @@ methods:
   pagination_policy: single_page
   secret_fields: []
   reviewed_by: primary
+- sdk_symbol: mammoth.api.projects.ProjectsAPI.list_agent_memory
+  implementation_origin: mammoth.api.projects.ProjectsAPI.list_agent_memory
+  signature: 'list_agent_memory(self, project_id: ''int'', workspace_id: ''int | None'' = None) -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: project.memory.list
+  alias_of: null
+  no_command_reason: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
 - sdk_symbol: mammoth.api.projects.ProjectsAPI.list
   implementation_origin: mammoth.api.projects.ProjectsAPI.list
   signature: 'list(self, workspace_id: ''int | None'' = None, limit: ''int'' = 100, offset: ''int'' = 0) -> ''dict[str, Any]'''
@@ -5089,6 +5113,18 @@ methods:
   mutation_class: null
   wait_policy: null
   pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.projects.ProjectsAPI.remove_agent_memory
+  implementation_origin: mammoth.api.projects.ProjectsAPI.remove_agent_memory
+  signature: 'remove_agent_memory(self, project_id: ''int'', index: ''int'', workspace_id: ''int | None'' = None) -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: project.memory.remove
+  alias_of: null
+  no_command_reason: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
   secret_fields: []
   reviewed_by: primary
 - sdk_symbol: mammoth.api.projects.ProjectsAPI.remove_users

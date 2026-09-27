@@ -4,7 +4,7 @@ Generated from the reviewed command manifests for mammoth-cli 2.0.65.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
-Total commands: 568.
+Total commands: 571.
 
 ## activity
 
@@ -3070,6 +3070,39 @@ Total commands: 568.
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.projects.ProjectsAPI.list`
 - Agent example: `mammoth project list`
+
+### `mammoth project memory add`
+
+**Arguments**
+
+- `PROJECT_ID` (int, optional) — ID of the project to act on; defaults to the active project.
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.projects.ProjectsAPI.add_agent_memory`
+- Agent example: `mammoth project memory add 123 --input '{"text": "sample"}'`
+
+### `mammoth project memory list`
+
+**Arguments**
+
+- `PROJECT_ID` (int, optional) — ID of the project to act on; defaults to the active project.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.projects.ProjectsAPI.list_agent_memory`
+- Agent example: `mammoth project memory list 123`
+
+### `mammoth project memory remove`
+
+**Arguments**
+
+- `PROJECT_ID` (int, optional) — ID of the project to act on; defaults to the active project.
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.projects.ProjectsAPI.remove_agent_memory`
+- Agent example: `mammoth project memory remove 123 --input '{"index": 1}'`
 
 ### `mammoth project pending-changes`
 

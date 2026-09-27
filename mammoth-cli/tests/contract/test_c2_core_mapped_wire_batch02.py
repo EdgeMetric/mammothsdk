@@ -189,3 +189,48 @@ def test_core_read_batch02_matches_literal_release_wire(
         "GET",
         {"rows": ["9"], "cols": ["4"]},
     )
+
+
+def test_project_memory_commands_match_the_agent_memory_wire(
+    real_service: Any, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """``project memory`` list/add/remove hit the per-user agent-memory route."""
+    service, api = real_service(project_id=PROJECT)
+    api.default(200, {"items": ["Show amounts in EUR"]})
+    route = f"/workspaces/4/projects/{PROJECT}/agent-memory"
+    cases = [
+        ("project.memory.list", "project_memory_list", None, "GET", route, None),
+        (
+            "project.memory.add",
+            "project_memory_add",
+            {"text": "Show amounts in EUR"},
+            "POST",
+            route,
+            {"text": "Show amounts in EUR"},
+        ),
+        (
+            "project.memory.remove",
+            "project_memory_remove",
+            {"index": 0},
+            "DELETE",
+            f"{route}/0",
+            None,
+        ),
+    ]
+    for command, handler_name, payload, method, path, body in cases:
+        input_file = None
+        if payload is not None:
+            input_file = str(tmp_path / f"{handler_name}.json")
+            Path(input_file).write_text(json.dumps(payload), encoding="utf-8")
+        with _bind(monkeypatch, project, service):
+            data, _ = getattr(project, handler_name)(_inv(command, [str(PROJECT)], input_file))
+        assert (_path(api), api.last().method, api.last().json_body) == (path, method, body)
+        assert data == {"items": ["Show amounts in EUR"]}
+
+
+def test_project_memory_add_requires_text() -> None:
+    """Without ``text`` the add fails as a usage error before any request."""
+    from mammoth_cli.errors.envelope import CliError
+
+    with pytest.raises(CliError, match="'text'"):
+        project.project_memory_add(_inv("project.memory.add", [str(PROJECT)]))
