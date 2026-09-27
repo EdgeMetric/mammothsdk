@@ -586,7 +586,7 @@ wheels = [
 
 [[package]]
 name = "mammoth-cli"
-version = "2.0.45"
+version = "2.0.65"
 source = { editable = "." }
 dependencies = [
     { name = "jsonschema" },
@@ -614,9 +614,9 @@ dev = [
 requires-dist = [
     { name = "jsonschema", specifier = ">=4.20" },
     { name = "keyring", specifier = ">=25.7,<26" },
-    { name = "mammoth-io", specifier = ">=0.7.18,<0.8" },
+    { name = "mammoth-io", specifier = ">=0.7.32,<0.8" },
     { name = "platformdirs", specifier = ">=4.10,<5" },
-    { name = "pydantic", specifier = ">=2.13,<3" },
+    { name = "pydantic", specifier = ">=2.12.5,<3" },
     { name = "pyyaml", specifier = ">=6,<7" },
     { name = "rich", specifier = ">=15,<16" },
     { name = "tomlkit", specifier = ">=0.15.1,<0.16" },
@@ -635,15 +635,15 @@ dev = [
 
 [[package]]
 name = "mammoth-io"
-version = "0.7.18"
+version = "0.7.32"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "pydantic" },
     { name = "requests" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/93/c5/093e3a7717ea9d8bb9c3bf295abe5e13bfe7dbc163e2c206072483e85f6f/mammoth_io-0.7.18.tar.gz", hash = "sha256:a6389ecbadd558fc9116e3aca643af99102b7275fba5de1354d8d9182495d3a7", size = 515403, upload-time = "2026-09-25T10:41:30.26Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/20/04/09b6976052b2871b8ce10eda87eb9979bcaa166571c975dea721a40d710e/mammoth_io-0.7.32.tar.gz", hash = "sha256:d56e1abb37b1ed6fe3e0613d57b9ffa2b3a77b210fa2299c2731ff1381c12aea", size = 529430, upload-time = "2026-09-27T15:47:35.524Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/b4/21/aa0aee1a47162f26351865b01645ce46af5b0672862f10e4b1fdf6bb4f46/mammoth_io-0.7.18-py3-none-any.whl", hash = "sha256:94f213009dc0bc194ddf0b845713c76a8d7b650c0b026742fe09e7c3194f5e74", size = 248521, upload-time = "2026-09-25T10:41:28.018Z" },
+    { url = "https://files.pythonhosted.org/packages/19/2c/47dfb220384da9998a1cfd505ca36008043c7e187ca8e9b521a8caf75898/mammoth_io-0.7.32-py3-none-any.whl", hash = "sha256:023f570dbf1f3f669e1ec69a5f446fe57c676249c574580cd980ee0d29fbef54", size = 261340, upload-time = "2026-09-27T15:47:31.006Z" },
 ]
 
 [[package]]
