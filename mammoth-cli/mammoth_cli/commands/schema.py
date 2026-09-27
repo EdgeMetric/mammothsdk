@@ -1361,6 +1361,19 @@ def brief_schema(entry: dict[str, Any]) -> dict[str, Any]:
     return brief
 
 
+def _inline_call_detail(entries: list[dict[str, Any]]) -> None:
+    """Add each entry's compact accepted fields and agent example in place."""
+    for entry in entries:
+        record = command_by_id(entry["command_id"])
+        if record is None:
+            continue
+        fields = _compact_accepted_fields(record)
+        if fields is not None:
+            entry["accepted_fields"] = fields
+        if record.get("agent_example"):
+            entry["agent_example"] = record["agent_example"]
+
+
 def find_schemas(
     query: str,
     *,
@@ -1471,17 +1484,7 @@ def find_schemas(
     )
     total_matches = len(ranked_matches)
     page = [match for _, match in ranked_matches[offset : offset + bounded_limit]]
-    for rank, match in enumerate(page, start=offset):
-        if rank >= _INLINE_DETAIL_COUNT:
-            break
-        match_record = command_by_id(match["command_id"])
-        if match_record is None:
-            continue
-        fields = _compact_accepted_fields(match_record)
-        if fields is not None:
-            match["accepted_fields"] = fields
-        if match_record.get("agent_example"):
-            match["agent_example"] = match_record["agent_example"]
+    _inline_call_detail(page[: max(0, _INLINE_DETAIL_COUNT - offset)])
     has_more = offset + len(page) < total_matches
     continuation = (
         {
@@ -1508,6 +1511,9 @@ def find_schemas(
             {**entry, "matched_terms": matched}
             for _, _, entry, matched in near_misses[:_MAX_SUGGESTIONS]
         ]
+        # A goal phrased in the user's words rarely carries every term; the
+        # best near misses still say how to call them, so one find suffices.
+        _inline_call_detail(result["suggestions"][:_INLINE_DETAIL_COUNT])
         result["hint"] = _NO_MATCH_HINT
     return result
 

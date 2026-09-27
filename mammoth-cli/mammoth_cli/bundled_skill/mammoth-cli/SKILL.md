@@ -1,6 +1,6 @@
 ---
 name: mammoth-cli
-version: 2.0.68
+version: 2.0.69
 description: "Use Mammoth Analytics from a terminal: install or authenticate the CLI, discover its live command contract, and safely manage projects, data, views, pipelines (join, merge, pivot, filter, clean), dashboards, exports, and handoffs."
 ---
 
@@ -85,7 +85,8 @@ mammoth view transform --help              # every data transformation
 | Deliver the rows | `view export csv`, `view export postgres` (and other destinations), `view export dataset` |
 | Run something on a schedule or on new data (refresh, append, alert) | `automation create`: a condition (`at_specific_time`, new file in a folder, ...) and tasks (`run_data_retrieval`, `append_data`, `send_an_alert`, `pull_cloud_files`). `schedule create` only pulls a connector's data. A dataset made from an uploaded file has no source to refresh from; say so. Full recipe, including a known `automation get` backend caveat: [recurring work](references/recipes/scheduling.md) |
 
-A search with no full match returns `suggestions` and a `hint`. Before you
+Call a find result (or `suggestions` entry) from its `accepted_fields` and
+`agent_example`. Before you
 conclude the CLI cannot do something the web app does, check
 `view transform --help` and "View settings, and what has no command" in
 [about Mammoth](references/about-mammoth.md). Do not switch to the web app
@@ -177,10 +178,10 @@ your report. If no column links the files, ask before you combine them.
   "limit": 50}`.
 - A timeout, exit 7 or interruption does not prove failure; reconcile an
   `outcome_unknown` (`job get`, `view task list`) before replaying.
-- Before you report, run `mammoth project check PROJECT_ID`. Its `to_report`
-  has one line for each open finding in every view and dashboard (blanks,
-  text numbers, money not shown, columns a dashboard cannot see). Fix each
-  one, or give it one line in the report.
+- Check an answer with no write against the question (a trend: time
+  buckets, a partial period named); no `project check`.
+- After a write, run `mammoth project check PROJECT_ID` and fix each
+  `to_report` line, or give it one line in the report.
 - Run the [report checklist](references/report-checklist.md) before stating
   a number or calling a step done. When files here disagree,
   [capabilities](references/capabilities.md) wins over a recipe, and a recipe
