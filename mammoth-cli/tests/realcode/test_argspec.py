@@ -42,10 +42,35 @@ def test_fixed_signature_method_field_set() -> None:
 
 def test_var_keyword_method_accepts_anything() -> None:
     """A method with **kwargs accepts any field, so enforcement is disabled."""
-    # ActivityLogsAPI.list has a **kwargs catch-all, so no key can be proven
+    # ActivityLogsAPI.export has a **kwargs catch-all, so no key can be proven
     # invalid and strict enforcement is intentionally disabled.
-    assert accepted_field_names("mammoth.api.activity_logs.ActivityLogsAPI.list") is None
-    assert arg_spec("mammoth.api.activity_logs.ActivityLogsAPI.list").accepts_extra is True
+    assert accepted_field_names("mammoth.api.activity_logs.ActivityLogsAPI.export") is None
+    assert arg_spec("mammoth.api.activity_logs.ActivityLogsAPI.export").accepts_extra is True
+
+
+def test_activity_list_filters_are_fully_typed() -> None:
+    """ActivityLogsAPI.list used to take **filters (BLOCKED[B17]); every filter
+    the backend's ActivityFiltersSchema declares is now a named parameter, so
+    the CLI can prove the accepted field set instead of accepting anything.
+    """
+    names = accepted_field_names("mammoth.api.activity_logs.ActivityLogsAPI.list")
+    assert names == {
+        "limit",
+        "offset",
+        "sort",
+        "project_id",
+        "categories",
+        "activities",
+        "resource_id",
+        "result",
+        "start_time",
+        "end_time",
+        "origin",
+        "user_ids",
+        "parent_id",
+        "search_text",
+    }
+    assert arg_spec("mammoth.api.activity_logs.ActivityLogsAPI.list").accepts_extra is False
 
 
 def test_private_symbol_is_refused() -> None:

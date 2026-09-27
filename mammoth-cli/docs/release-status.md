@@ -1,5 +1,25 @@
 # CLI release provenance
 
+## 2.0.61
+
+**Fix**: three discovery/execution gaps found by the in-product agent driving this CLI:
+
+- `schema find` now maps "chat", "conversation(s)", "history", "previous", "earlier" and "asked" to
+  `agent session`, so "what did I ask you about earlier this week?" surfaces `agent.session.list`
+  and `agent.session.messages` instead of nothing (or the unrelated per-project
+  `connector.ai.session.*` chat feature).
+- `schema find` now ranks `workspace.app-usage` first for storage-usage queries ("how much storage
+  am I using", "storage used"); it carries the actual total (`storage_used`/
+  `current_storage_allowed`/`plan_storage_value`/`max_storage_allowed`), unlike
+  `workspace.storage-breakdown`, a paginated per-item list with no total, whose own restriction text
+  now says so.
+- `activity list` is executable again: `mammoth.api.activity_logs.ActivityLogsAPI.list` took
+  `**filters: Any` (BLOCKED[B17 VARIADIC_INPUT_UNTYPED]), so the CLI could not prove its accepted
+  fields and refused to run it. The method is now typed against the backend's
+  `ActivityFiltersSchema` (project_id, categories, activities, resource_id, result, start_time,
+  end_time, origin, user_ids, parent_id, search_text) plus limit/offset/sort. Needs `mammoth-io`
+  0.7.30.
+
 ## 2.0.60
 
 **Fix**: `schema get project.user.add` says how to add someone by email who is not in the workspace

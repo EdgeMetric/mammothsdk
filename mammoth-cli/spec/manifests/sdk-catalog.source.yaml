@@ -267,7 +267,6 @@ sdk_methods:
   wait_policy: not_async
   pagination_policy: offset
   openapi_operation_ids: []
-  notes: 'BLOCKED[B17 VARIADIC_INPUT_UNTYPED]: **filters is unconstrained; reserved, not registered.'
 - sdk_symbol: mammoth.api.addons.AddonsAPI.add_connector
   canonical_command: addon.connector.add
   alias_of: null
@@ -3891,6 +3890,9 @@ sdk_methods:
   wait_policy: null
   pagination_policy: null
   openapi_operation_ids: []
+  notes: This is a paginated per-item list of storage-consuming resources (limit/offset); it carries
+    no workspace total and can page through thousands of items. For the workspace's total storage
+    used/allowed, use `workspace app-usage` instead.
 - sdk_symbol: mammoth.api.workspaces.WorkspacesAPI.user_add
   canonical_command: workspace.user.add
   alias_of: null

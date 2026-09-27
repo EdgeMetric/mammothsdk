@@ -332,6 +332,45 @@ def test_active_api_keys_intent_ranks_client_app_above_external_key() -> None:
         assert matches.index("client-app.list") < matches.index("external-key.list"), matches
 
 
+def test_past_conversation_intent_ranks_agent_session_first() -> None:
+    """In-product-agent evidence: `schema find "conversation history previous
+    messages chat conversations asked earlier this week"` never matched
+    `agent.session.list`/`agent.session.messages` -- nothing in either
+    command's own text says "conversation", "chat", "history", or "asked" --
+    so the agent never ran `agent session list`, which exists and works.
+    """
+    matches = [
+        item["command_id"]
+        for item in find_schemas(
+            "conversation history previous messages chat conversations asked earlier this week"
+        )["matches"]
+    ]
+    assert matches, "no full match for the past-conversation query"
+    assert matches[0] == "agent.session.list", matches
+    assert "agent.session.messages" in matches, matches
+
+
+def test_what_did_i_ask_earlier_ranks_agent_session_list_first() -> None:
+    result = find_schemas("what did I ask you about earlier this week")
+    top = result["matches"] or result.get("suggestions", [])
+    assert top, "no match or suggestion for the past-conversation query"
+    assert top[0]["command_id"] == "agent.session.list", top
+
+
+def test_storage_usage_intent_ranks_app_usage_above_storage_breakdown() -> None:
+    """In-product-agent evidence: 'how much storage am I using, and what plan
+    am I on?' only ever reached workspace.storage-breakdown -- a paginated
+    per-item list with no total that paged through 300+ projects and never
+    produced a number. workspace.app-usage carries the actual total
+    (storage_used/current_storage_allowed/plan_storage_value/
+    max_storage_allowed) and must rank first for a storage-usage query.
+    """
+    for query in ("storage used", "how much storage", "storage usage", "space used"):
+        matches = [item["command_id"] for item in find_schemas(query)["matches"]]
+        assert matches, f"no full match for {query!r}"
+        assert matches[0] == "workspace.app-usage", f"{query!r} -> {matches}"
+
+
 def test_support_family_ranks_below_any_non_support_match_and_is_labeled() -> None:
     matches = find_schemas("workspace user")["matches"]
     is_support = [m["command_id"].startswith("support.") for m in matches]
