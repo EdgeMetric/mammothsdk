@@ -577,3 +577,16 @@ def test_migrate_workbook_intent_ranks_import_workbook_first(query: str) -> None
     top = result["matches"] or result.get("suggestions", [])
     assert top, f"no match or suggestion for {query!r}"
     assert top[0]["command_id"] == "dashboard.import-workbook", (query, top)
+
+
+def test_find_with_no_full_match_inlines_how_to_call_the_top_suggestions() -> None:
+    """A long goal rarely matches every word; the top suggestions still carry the
+    input fields and an example, so one find is enough to act (no schema get)."""
+    result = find_schemas("aggregate view data group by date and result")
+    assert result["matches"] == []
+    top = result["suggestions"][:3]
+    assert "view.data.aggregate" in [entry["command_id"] for entry in top]
+    for entry in top:
+        assert "accepted_fields" in entry
+        assert "agent_example" in entry
+    assert all("accepted_fields" not in entry for entry in result["suggestions"][3:])
