@@ -40,7 +40,9 @@ commands:
   draft_test: null
   undo_test: null
   known_restrictions: 'B15 AUTOMATION_EXTERNAL_EFFECTS: task models can pull cloud files and send email;
-    requires connector/email allowlists and dedicated fixtures.'
+    requires connector/email allowlists and dedicated fixtures. Delete old rows on a schedule with
+    task apply_retention_policy (datasource_id, rule_type time_based, count_based or
+    condition_based). An emailed file is task send_an_alert with attachments.dataview_ids.'
   reviewed_by: primary
 - command_id: automation.delete
   command_path: automation delete

@@ -283,7 +283,8 @@ commands:
     bi-preflight. Terminal mode writes `output_path` to local disk. Inside the Mammoth app the
     download cannot reach the user: run `dashboard bi-preflight` to tell them what will convert,
     then send them to the dashboard's Publish menu (the arrow next to Publish) -> Export to Power
-    BI / Export to Tableau, where they download the file themselves."
+    BI / Export to Tableau, where they download the file themselves. No command makes a PDF of a
+    board: that is the board's Download PDF in the app."
   reviewed_by: primary
 - command_id: dashboard.cancel-generation
   command_path: dashboard cancel-generation
