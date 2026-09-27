@@ -978,6 +978,33 @@ def _build_metric_fields(
     return {"metric": resolved}, {"metric": resolved["as_name"]}
 
 
+_METRIC_ANY_TYPE_FUNCTIONS = frozenset({"COUNT", "DISTINCT_COUNT"})
+
+
+def _require_numeric_metric(
+    document: dict[str, Any], column_types: dict[str, str], view_id: int
+) -> None:
+    """Refuse a METRIC the backend cannot compute: it stores a NUMERIC value,
+    so only COUNT/DISTINCT_COUNT work on a non-numeric column."""
+    metric = document.get("metric")
+    if not isinstance(metric, dict):
+        return
+    column = metric.get("column")
+    function = str(metric.get("function", "")).upper()
+    column_type = column_types.get(str(column), "")
+    if function in _METRIC_ANY_TYPE_FUNCTIONS or column_type in ("", "NUMERIC"):
+        return
+    raise CliError(
+        code=CODE_INVALID_ARGUMENTS,
+        message=f"A metric is a number: {function} of the {column_type} column '{column}' "
+        "cannot be computed here.",
+        exit_status=EXIT_USAGE,
+        hint=f"For the latest or earliest value run: mammoth view data explore {view_id} "
+        f'{column} --input \'{{"column_type": "{column_type}", "level": "DAY", '
+        '"sort": "value_desc", "limit": 1}\' (value_asc for the earliest).',
+    )
+
+
 def view_data_aggregate(invocation: Invocation) -> HandlerResult:
     """Aggregate a dataview's data: a PIVOT group-by or a single METRIC value.
 
@@ -1012,6 +1039,7 @@ def view_data_aggregate(invocation: Invocation) -> HandlerResult:
         if has_pivot:
             fields, as_map = _build_pivot_fields(document, display_to_internal)
         else:
+            _require_numeric_metric(document, column_types, view_id)
             fields, as_map = _build_metric_fields(document, display_to_internal)
         kwargs: dict[str, Any] = {
             "dataset_id": dataset_id,
