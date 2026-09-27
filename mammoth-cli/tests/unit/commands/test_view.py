@@ -788,6 +788,41 @@ def test_data_aggregate_metric(fake_service: FakeMammothService, tmp_path: Path)
     ]
 
 
+def test_data_aggregate_metric_min_max_on_a_date_points_to_explore(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    """A METRIC is a number: MAX of a DATE fails in the backend (COALESCE with 0), so the
+    CLI refuses it up front and names the explore call that gives the latest date."""
+    fake_service.responses[_DATAVIEW_GET] = {
+        "metadata": [
+            {"internal_name": "column_3", "display_name": "inspection_date", "type": "DATE"}
+        ]
+    }
+    doc = _doc(tmp_path, {"metric": {"column": "inspection_date", "function": "MAX"}})
+    with pytest.raises(CliError) as excinfo:
+        view_cmd.view_data_aggregate(
+            _inv("view.data.aggregate", project=180, extra_args=["7", "9"], input_file=doc)
+        )
+    assert excinfo.value.code == "invalid_arguments"
+    assert "view data explore 7 inspection_date" in (excinfo.value.hint or "")
+    assert [name for name, _ in fake_service.call_log] == [_DATAVIEW_GET]
+
+
+def test_data_aggregate_metric_count_on_a_date_is_allowed(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    fake_service.responses[_DATAVIEW_GET] = {
+        "metadata": [
+            {"internal_name": "column_3", "display_name": "inspection_date", "type": "DATE"}
+        ]
+    }
+    doc = _doc(tmp_path, {"metric": {"column": "inspection_date", "function": "DISTINCT_COUNT"}})
+    view_cmd.view_data_aggregate(
+        _inv("view.data.aggregate", project=180, extra_args=["7", "9"], input_file=doc)
+    )
+    assert fake_service.call_log[-1][0] == _DATA_AGGREGATE
+
+
 def test_data_aggregate_forwards_condition_sequence_and_limit(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
