@@ -261,6 +261,9 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
     "project.get": _optional_project_id(),
     "project.check": _optional_project_id(),
     "project.pending-changes": _optional_project_id(),
+    "project.memory.list": _optional_project_id(),
+    "project.memory.add": _optional_project_id(),
+    "project.memory.remove": _optional_project_id(),
     "project.resource-status": _optional_project_id(),
     "project.resource-dependencies": _optional_project_id(),
     "project.resource-dependencies.update": _optional_project_id(),
@@ -617,6 +620,34 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
             ("view.version.update", "version_id", "ID of the pipeline version."),
         )
     },
+    # ``view data explore`` takes VIEW_ID first, then the required COLUMN (a
+    # display name, not an id -- the only ``str``-typed sub-positional in this
+    # family), then the OPTIONAL trailing DATASET_ID resolved from the view,
+    # mirroring the sub-resource commands above. ``column`` is a real,
+    # positional-sourced parameter of ``DataviewsAPI.explore``, so it stays out
+    # of the advertised --input fields without needing ``fills_sdk_param``.
+    "view.data.explore": (
+        PositionalSpec(
+            name="view_id",
+            type=int,
+            required=True,
+            help="ID of the view to act on.",
+            fills_sdk_param="dataview_id",
+        ),
+        PositionalSpec(
+            name="column",
+            type=str,
+            required=True,
+            help="Display name of the column to explore.",
+        ),
+        PositionalSpec(
+            name="dataset_id",
+            type=int,
+            required=False,
+            help="ID of the dataset the view belongs to; resolved from the view when omitted.",
+            falls_back_to_field="dataset_id",
+        ),
+    ),
     # ``billing hosted-page`` takes the page's object type as a positional OR an
     # ``object_type`` --input field (handler dual-sources
     # ``_string_positional(invocation) or document.get("object_type")``). The SDK

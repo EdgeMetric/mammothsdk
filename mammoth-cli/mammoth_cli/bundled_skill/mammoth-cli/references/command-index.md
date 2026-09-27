@@ -1,6 +1,6 @@
 # Published CLI command catalog
 
-This generated catalog is a lookup table for every command in the published CLI manifest, currently 567; each entry carries its release status line. It is a command-contract index, not an assertion that every backend/OpenAPI operation has a CLI binding. For an exact local CLI contract, run `mammoth schema get COMMAND_ID`; `mammoth capability list` is an API-binding inventory and can omit typed/local CLI routes. For focused workflows, read the [recipes index](recipes/index.md). Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
+This generated catalog is a lookup table for every command in the published CLI manifest, currently 571; each entry carries its release status line. It is a command-contract index, not an assertion that every backend/OpenAPI operation has a CLI binding. For an exact local CLI contract, run `mammoth schema get COMMAND_ID`; `mammoth capability list` is an API-binding inventory and can omit typed/local CLI routes. For focused workflows, read the [recipes index](recipes/index.md). Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
 Load only the applicable domain file:
 
@@ -32,7 +32,7 @@ Load only the applicable domain file:
 - [log](commands/log.md) — 2 published commands
 - [notification](commands/notification.md) — 5 published commands
 - [parameter](commands/parameter.md) — 14 published commands
-- [project](commands/project.md) — 20 published commands
+- [project](commands/project.md) — 23 published commands
 - [report](commands/report.md) — 1 published commands
 - [schedule](commands/schedule.md) — 5 published commands
 - [schema](commands/schema.md) — 3 published commands
@@ -45,7 +45,7 @@ Load only the applicable domain file:
 - [user](commands/user.md) — 8 published commands
 - [version](commands/version.md) — 1 published commands
 - [view-transform](commands/view-transform.md) — 32 published commands
-- [view](commands/view.md) — 87 published commands
+- [view](commands/view.md) — 88 published commands
 - [webhook](commands/webhook.md) — 7 published commands
 - [workflow](commands/workflow.md) — 16 published commands
 - [workspace](commands/workspace.md) — 20 published commands

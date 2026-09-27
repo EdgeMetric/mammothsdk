@@ -121,6 +121,9 @@ S2_ROUTE_INVENTORY = frozenset(
         "project.delete",
         "project.get",
         "project.list",
+        "project.memory.add",
+        "project.memory.list",
+        "project.memory.remove",
         "project.pending-changes",
         "project.publish-credentials",
         "project.resource-dependencies",
@@ -198,7 +201,7 @@ def _write(tmp_path: Path, value: object) -> str:
 
 def test_inventory_is_exactly_the_closed_s2_surface() -> None:
     assert S2_COMMANDS == S2_ROUTE_INVENTORY
-    assert len(S2_ROUTE_INVENTORY) == 94
+    assert len(S2_ROUTE_INVENTORY) == 97
     for command_id in sorted(S2_ROUTE_INVENTORY):
         record = command_by_id(command_id)
         assert record is not None

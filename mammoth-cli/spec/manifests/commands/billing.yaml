@@ -814,5 +814,5 @@ commands:
   - CT-BILLING-SUBSCRIPTION-UPDATE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: 'Plans: storage 1 GB Free, 10 GB Starter, 50 GB Pro; users 1, 5, 10.'
   reviewed_by: primary

@@ -1,10 +1,10 @@
 # Command reference
 
-Generated from the reviewed command manifests for mammoth-cli 2.0.64.
+Generated from the reviewed command manifests for mammoth-cli 2.0.65.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
-Total commands: 567.
+Total commands: 571.
 
 ## activity
 
@@ -3071,6 +3071,39 @@ Total commands: 567.
 - Backing SDK: `mammoth.api.projects.ProjectsAPI.list`
 - Agent example: `mammoth project list`
 
+### `mammoth project memory add`
+
+**Arguments**
+
+- `PROJECT_ID` (int, optional) — ID of the project to act on; defaults to the active project.
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.projects.ProjectsAPI.add_agent_memory`
+- Agent example: `mammoth project memory add 123 --input '{"text": "sample"}'`
+
+### `mammoth project memory list`
+
+**Arguments**
+
+- `PROJECT_ID` (int, optional) — ID of the project to act on; defaults to the active project.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.projects.ProjectsAPI.list_agent_memory`
+- Agent example: `mammoth project memory list 123`
+
+### `mammoth project memory remove`
+
+**Arguments**
+
+- `PROJECT_ID` (int, optional) — ID of the project to act on; defaults to the active project.
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.projects.ProjectsAPI.remove_agent_memory`
+- Agent example: `mammoth project memory remove 123 --input '{"index": 1}'`
+
 ### `mammoth project pending-changes`
 
 **Arguments**
@@ -4234,6 +4267,19 @@ Total commands: 567.
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dataviews.DataviewsAPI.aggregate`
 - Agent example: `mammoth view data aggregate 123 --input '{"group_by": ["Channel"], "aggregations": [{"column": "Spend", "function": "SUM", "as_name": "Total Spend"}]}'`
+
+### `mammoth view data explore`
+
+**Arguments**
+
+- `VIEW_ID` (int, required) — ID of the view to act on.
+- `COLUMN` (str, required) — Display name of the column to explore.
+- `DATASET_ID` (int, optional) — ID of the dataset the view belongs to; resolved from the view when omitted.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.dataviews.DataviewsAPI.explore`
+- Agent example: `mammoth view data explore 123 Status 123`
 
 ### `mammoth view data get`
 

@@ -30,6 +30,7 @@ _UPDATE = "mammoth.api.dataviews.DataviewsAPI.update"
 _DATA_GET = "mammoth.api.dataviews.DataviewsAPI.get_data"
 _DATA_QUERY = "mammoth.api.dataviews.DataviewsAPI.query_data"
 _DATA_AGGREGATE = "mammoth.api.dataviews.DataviewsAPI.aggregate"
+_DATA_EXPLORE = "mammoth.api.dataviews.DataviewsAPI.explore"
 _EXPORTABLE_GET = "mammoth.api.dataviews.DataviewsAPI.get_exportable_config"
 _EXPORTABLE_APPLY = "mammoth.api.dataviews.DataviewsAPI.apply_exportable_config"
 _FIND_DATASET = "mammoth.api.pipeline.PipelineAPI.find_dataset_for_dataview"
@@ -831,6 +832,178 @@ def test_data_aggregate_resolves_dataset_from_view_when_omitted(
     doc = _doc(tmp_path, {"metric": {"function": "COUNT"}})
     view_cmd.view_data_aggregate(
         _inv("view.data.aggregate", project=180, extra_args=["7"], input_file=doc)
+    )
+    assert fake_service.call_log[0] == (_FIND_DATASET, {"dataview_id": 7})
+
+
+# ── view.data.explore ───────────────────────────────────────────────────────
+
+
+def test_data_explore_date_column_buckets_by_level(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    fake_service.responses[_DATAVIEW_GET] = {
+        "metadata": [{"internal_name": "column_1", "display_name": "Signup Date", "type": "DATE"}]
+    }
+    # Sorting and the local percentage are computed inside DataviewsAPI.explore
+    # itself (see tests/unit/test_api_subclients.py); the fake service returns
+    # this canned, already-processed shape verbatim, and the handler's own job
+    # is only column resolution, kwarg building, and display-name relabeling.
+    fake_service.responses[_DATA_EXPLORE] = {
+        "data": [
+            {"group_0": "2024-01-01", "agg_0": 10, "percentage": 25.0},
+            {"group_0": "2024-02-01", "agg_0": 30, "percentage": 75.0},
+        ]
+    }
+    doc = _doc(tmp_path, {"level": "MONTH"})
+    data = view_cmd.view_data_explore(
+        _inv("view.data.explore", project=180, extra_args=["7", "Signup Date", "9"], input_file=doc)
+    )[0]
+    assert fake_service.call_log == [
+        (_DATAVIEW_GET, {"dataset_id": 9, "dataview_id": 7, "project_id": 180}),
+        (
+            _DATA_EXPLORE,
+            {
+                "dataset_id": 9,
+                "dataview_id": 7,
+                "project_id": 180,
+                "column": "column_1",
+                "column_type": "DATE",
+                "level": "MONTH",
+            },
+        ),
+    ]
+    assert data["data"] == [
+        {"bucket": "2024-01-01", "count": 10, "percentage": 25.0},
+        {"bucket": "2024-02-01", "count": 30, "percentage": 75.0},
+    ]
+
+
+def test_data_explore_numeric_column_defaults_level_to_auto(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    fake_service.responses[_DATAVIEW_GET] = {
+        "metadata": [{"internal_name": "column_2", "display_name": "Spend", "type": "NUMERIC"}]
+    }
+    fake_service.responses[_DATA_EXPLORE] = {"data": [{"group_0": 100, "agg_0": 5}]}
+    doc = _doc(tmp_path, {})
+    view_cmd.view_data_explore(
+        _inv("view.data.explore", project=180, extra_args=["7", "Spend", "9"], input_file=doc)
+    )
+    assert fake_service.call_log[-1] == (
+        _DATA_EXPLORE,
+        {
+            "dataset_id": 9,
+            "dataview_id": 7,
+            "project_id": 180,
+            "column": "column_2",
+            "column_type": "NUMERIC",
+        },
+    )
+
+
+def test_data_explore_text_column_forwards_no_limit_by_default(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    # No 'limit' input field means DataviewsAPI.explore's own default (20)
+    # applies; the handler must not inject one itself.
+    fake_service.responses[_DATAVIEW_GET] = {
+        "metadata": [{"internal_name": "column_3", "display_name": "Channel", "type": "TEXT"}]
+    }
+    doc = _doc(tmp_path, {})
+    view_cmd.view_data_explore(
+        _inv("view.data.explore", project=180, extra_args=["7", "Channel", "9"], input_file=doc)
+    )
+    assert "limit" not in fake_service.call_log[-1][1]
+
+
+def test_data_explore_text_column_forwards_explicit_limit(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    fake_service.responses[_DATAVIEW_GET] = {
+        "metadata": [{"internal_name": "column_3", "display_name": "Channel", "type": "TEXT"}]
+    }
+    doc = _doc(tmp_path, {"limit": 1})
+    view_cmd.view_data_explore(
+        _inv("view.data.explore", project=180, extra_args=["7", "Channel", "9"], input_file=doc)
+    )
+    assert fake_service.call_log[-1][1]["limit"] == 1
+
+
+def test_data_explore_metric_adds_second_aggregate(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    fake_service.responses[_DATAVIEW_GET] = {
+        "metadata": [
+            {"internal_name": "column_1", "display_name": "Channel", "type": "TEXT"},
+            {"internal_name": "column_2", "display_name": "Spend", "type": "NUMERIC"},
+        ]
+    }
+    fake_service.responses[_DATA_EXPLORE] = {
+        "data": [{"group_0": "Email", "agg_0": 2, "agg_1": 120, "percentage": 100.0}]
+    }
+    doc = _doc(
+        tmp_path, {"metric": {"column": "Spend", "function": "SUM", "as_name": "Total Spend"}}
+    )
+    data = view_cmd.view_data_explore(
+        _inv("view.data.explore", project=180, extra_args=["7", "Channel", "9"], input_file=doc)
+    )[0]
+    assert fake_service.call_log[-1][1]["metric"] == {
+        "function": "SUM",
+        "as_name": "Total Spend",
+        "column": "column_2",
+    }
+    assert data["data"] == [
+        {"bucket": "Email", "count": 2, "percentage": 100.0, "Total Spend": 120}
+    ]
+
+
+def test_data_explore_forwards_condition_and_sequence(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    fake_service.responses[_DATAVIEW_GET] = {
+        "metadata": [{"internal_name": "column_2", "display_name": "Spend", "type": "NUMERIC"}]
+    }
+    doc = _doc(
+        tmp_path,
+        {
+            "condition": {"column": "Spend", "operator": ">", "value": 0},
+            "sequence": 3,
+            "sort": "count_asc",
+            "offset": 20,
+        },
+    )
+    view_cmd.view_data_explore(
+        _inv("view.data.explore", project=180, extra_args=["7", "Spend", "9"], input_file=doc)
+    )
+    call = fake_service.call_log[-1][1]
+    assert call["condition"] == {"column_2": {"GT": {"VALUE": 0}}}
+    assert call["sequence"] == 3
+    assert call["sort"] == "count_asc"
+    assert call["offset"] == 20
+
+
+def test_data_explore_rejects_non_integer_limit(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    fake_service.responses[_DATAVIEW_GET] = {
+        "metadata": [{"internal_name": "column_3", "display_name": "Channel", "type": "TEXT"}]
+    }
+    doc = _doc(tmp_path, {"limit": "many"})
+    with pytest.raises(CliError) as excinfo:
+        view_cmd.view_data_explore(
+            _inv("view.data.explore", project=180, extra_args=["7", "Channel", "9"], input_file=doc)
+        )
+    assert excinfo.value.code == "invalid_input_field_type"
+
+
+def test_data_explore_resolves_dataset_from_view_when_omitted(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    fake_service.responses[_FIND_DATASET] = 9
+    doc = _doc(tmp_path, {})
+    view_cmd.view_data_explore(
+        _inv("view.data.explore", project=180, extra_args=["7", "Channel"], input_file=doc)
     )
     assert fake_service.call_log[0] == (_FIND_DATASET, {"dataview_id": 7})
 

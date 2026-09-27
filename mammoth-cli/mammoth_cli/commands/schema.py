@@ -85,7 +85,7 @@ _COMMAND_DISCOVERY_PURPOSES = {
     "view.export.onedrive": "one drive onedrive microsoft cloud storage",
     "view.export.postgres": "postgres postgresql database",
     "view.export.powerbi": "power bi powerbi microsoft dashboard workspace",
-    "view.export.publish-db": "publish database live connection odbc",
+    "view.export.publish-db": "publish database live connection odbc bi tool reads table",
     "view.export.publish-db-update": "publish database update refresh live connection",
     "view.export.redshift": "redshift amazon aws database warehouse",
     "view.export.rest": "webhook http endpoint api push rest",
@@ -99,7 +99,6 @@ _COMMAND_DISCOVERY_PURPOSES = {
         "from a point in the task sequence"
     ),
     "view.draft.submit": "apply submit run execute a pending draft changes",
-    "webhook.create": "webhook http endpoint api push create",
     "webhook.update": "webhook http endpoint api update",
     "webhook.get": "webhook http endpoint api get",
     "webhook.list": "webhook http endpoint api list",
@@ -167,10 +166,6 @@ _COMMAND_DISCOVERY_PURPOSES = {
     "dashboard.import-workbook": (
         "bring in migrate move transfer switch old existing dashboards dashboard over power "
         "bi report tableau file upload"
-    ),
-    "automation.create": (
-        "schedule scheduled recurring repeat refresh rerun run every day daily week weekly "
-        "hour hourly month monthly automatically trigger alert email a dataset pipeline"
     ),
     # One entry per ``view transform`` command, in the words a user states a
     # goal in rather than Mammoth's own task names.  This is the CLI's version
@@ -257,6 +252,52 @@ _COMMAND_DISCOVERY_PURPOSES = {
         "window rank row number running total cumulative sum moving average lag lead "
         "previous next row partition"
     ),
+    # The web app's column Explore cards: what is trending, how a column is
+    # spread, its top values, a count over time.
+    "view.data.explore": (
+        "explore trend trends trending over time per day week month quarter year "
+        "distribution spread histogram top most common frequent values breakdown share "
+        "percentage profile"
+    ),
+    # Goals users state in their own words, one entry per command the agent's
+    # system prompt used to spell out by hand.
+    "dashboard.suggestion.list": "ideas suggest suggestions what to show put on a board chart",
+    "dashboard.analytics": "who viewed seen opened views visitors usage of a board",
+    "dashboard.share": "share make live publish board for the team link access",
+    "connector.connection.list": "which outside external sources connected connections list",
+    "project.pending-changes": (
+        "source changes new rows not taken in yet pending updates waiting to apply"
+    ),
+    "project.resource-status": "stuck stale failing broken error status anything wrong health",
+    "connector.ai.chat": (
+        "connect our own internal custom api build a connector for an unsupported source"
+    ),
+    "project.sample-flow": "sample example demo starter data dataset try start from",
+    "webhook.create": (
+        "webhook http endpoint api push create data pushed in sent from another system receive"
+    ),
+    "dataset.create-from-pdf": "pdf table document extract into a dataset",
+    "view.checkpoint.create": (
+        "stop halt pause pipeline alert notify flag when rows match a rule condition checkpoint"
+    ),
+    "view.data-check.create": "data quality check rule validate rows match condition flag",
+    "view.derivative.create": "metric kpi number single value to check track daily monitor",
+    "view.draft.auto-run": (
+        "stop prevent re-running rerun automatically when source changes auto run enable disable"
+    ),
+    "data-app.create": (
+        "page portal form others drop upload a file cleaned the same way self service"
+    ),
+    "automation.create": (
+        "schedule scheduled recurring repeat refresh rerun run every day daily week weekly "
+        "hour hourly month monthly automatically trigger alert email a dataset pipeline "
+        "retention purge old data send an emailed file attachment"
+    ),
+    "billing.subscription.update": "upgrade downgrade bigger plan change subscription tier",
+    "billing.invoice.list": "past bills billing history invoices payments receipts",
+    "project.memory.add": "remember save preference always from now on note for next time",
+    "project.memory.list": "remembered saved preferences what do you remember memory",
+    "project.memory.remove": "forget remove delete saved preference memory",
 }
 
 # A compact string scope is retained for existing discovery consumers.  These
@@ -380,6 +421,10 @@ _DISCOVERY_STOPWORDS = frozenset(
         "this",
         "that",
         "how",
+        "what",
+        "is",
+        # The tail of "what's"/"it's" once the apostrophe splits the word.
+        "s",
         "do",
         "want",
         "need",

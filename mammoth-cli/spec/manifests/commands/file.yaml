@@ -317,7 +317,8 @@ commands:
     upload well under 16 MB: split larger files or upload a zip/gz. Parsing is asynchronous; use --timeout 300 for files past a few MB and poll the returned
     job on timeout. Upload authorization is tenant- and scope-specific; a permission failure does not
     make this route universally unavailable. On success retain returned IDs, read them back, and
-    verify owned cleanup; do not assume other upload variants are qualified.'
+    verify owned cleanup; do not assume other upload variants are qualified. Each sheet of an Excel
+    file becomes its own dataset.'
   reviewed_by: primary
 - command_id: file.upload-folder
   command_path: file upload-folder

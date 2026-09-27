@@ -504,6 +504,84 @@ class ProjectsAPI:
             "GET", f"/workspaces/{ws}/projects/{project_id}/pending-changes"
         )
 
+    def list_agent_memory(
+        self,
+        project_id: int,
+        workspace_id: int | None = None,
+    ) -> dict[str, Any]:
+        """List the caller's saved agent preferences for a project.
+
+        Args:
+            project_id: ID of the project (must be a positive integer).
+            workspace_id: ID of the workspace (uses client default if not provided).
+
+        Returns:
+            Dict with ``items``: the saved preferences, oldest first.
+
+        Raises:
+            MammothValidationError: If project_id is not a positive integer.
+        """
+        if project_id <= 0:
+            raise MammothValidationError(ERR_PROJECT_ID_POSITIVE.format(project_id))
+        ws = workspace_id or self._ws()
+        return self._client._request_json(
+            "GET", f"/workspaces/{ws}/projects/{project_id}/agent-memory"
+        )
+
+    def add_agent_memory(
+        self,
+        project_id: int,
+        text: str,
+        workspace_id: int | None = None,
+    ) -> dict[str, Any]:
+        """Save one agent preference for the caller in a project.
+
+        Args:
+            project_id: ID of the project (must be a positive integer).
+            text: The preference, in the user's words.
+            workspace_id: ID of the workspace (uses client default if not provided).
+
+        Returns:
+            Dict with ``items``: the saved preferences after the add.
+
+        Raises:
+            MammothValidationError: If project_id is not a positive integer.
+        """
+        if project_id <= 0:
+            raise MammothValidationError(ERR_PROJECT_ID_POSITIVE.format(project_id))
+        ws = workspace_id or self._ws()
+        return self._client._request_json(
+            "POST",
+            f"/workspaces/{ws}/projects/{project_id}/agent-memory",
+            json={"text": text},
+        )
+
+    def remove_agent_memory(
+        self,
+        project_id: int,
+        index: int,
+        workspace_id: int | None = None,
+    ) -> dict[str, Any]:
+        """Remove one of the caller's saved agent preferences in a project.
+
+        Args:
+            project_id: ID of the project (must be a positive integer).
+            index: Zero-based position of the preference in ``list_agent_memory``.
+            workspace_id: ID of the workspace (uses client default if not provided).
+
+        Returns:
+            Dict with ``items``: the saved preferences after the removal.
+
+        Raises:
+            MammothValidationError: If project_id is not a positive integer.
+        """
+        if project_id <= 0:
+            raise MammothValidationError(ERR_PROJECT_ID_POSITIVE.format(project_id))
+        ws = workspace_id or self._ws()
+        return self._client._request_json(
+            "DELETE", f"/workspaces/{ws}/projects/{project_id}/agent-memory/{index}"
+        )
+
     def publish_credentials(
         self,
         project_id: int,

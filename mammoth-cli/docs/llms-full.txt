@@ -703,6 +703,12 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth project get 123
 - `mammoth project list` [read/none] -> mammoth.api.projects.ProjectsAPI.list
   example: mammoth project list
+- `mammoth project memory add` [benign_mutation/none] -> mammoth.api.projects.ProjectsAPI.add_agent_memory
+  example: mammoth project memory add 123 --input '{"text": "sample"}'
+- `mammoth project memory list` [read/none] -> mammoth.api.projects.ProjectsAPI.list_agent_memory
+  example: mammoth project memory list 123
+- `mammoth project memory remove` [benign_mutation/none] -> mammoth.api.projects.ProjectsAPI.remove_agent_memory
+  example: mammoth project memory remove 123 --input '{"index": 1}'
 - `mammoth project pending-changes` [read/none] -> mammoth.api.projects.ProjectsAPI.pending_changes
   example: mammoth project pending-changes 123
 - `mammoth project publish-credentials` [read/none] -> mammoth.api.projects.ProjectsAPI.publish_credentials
@@ -967,6 +973,8 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth view create 123
 - `mammoth view data aggregate` [read/none] -> mammoth.api.dataviews.DataviewsAPI.aggregate
   example: mammoth view data aggregate 123 --input '{"group_by": ["Channel"], "aggregations": [{"column": "Spend", "function": "SUM", "as_name": "Total Spend"}]}'
+- `mammoth view data explore` [read/none] -> mammoth.api.dataviews.DataviewsAPI.explore
+  example: mammoth view data explore 123 Status 123
 - `mammoth view data get` [read/none] -> mammoth.api.dataviews.DataviewsAPI.get_data
   example: mammoth view data get 123 123
 - `mammoth view data query` [read/none] -> mammoth.api.dataviews.DataviewsAPI.query_data
