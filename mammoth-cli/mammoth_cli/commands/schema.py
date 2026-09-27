@@ -106,6 +106,21 @@ _COMMAND_DISCOVERY_PURPOSES = {
     "webhook.delete": "webhook http endpoint api delete",
     "webhook.send": "webhook http endpoint api push send",
     "webhook.send-get": "webhook http endpoint api pull send get",
+    # "What did I ask you about earlier this week?" is a lookup over past
+    # agent conversations. Live-eval evidence: `schema find` on that phrasing
+    # never matched `agent.session.list`/`agent.session.messages` because
+    # neither command's own text says "conversation", "chat", "history", or
+    # "asked" -- and the unrelated per-project `connector.ai.session.*`
+    # family, whose OpenAPI summary literally says "chat session", outranked
+    # them. These two ARE the past-conversation lookup: list the sessions,
+    # then read one's messages.
+    "agent.session.list": (
+        "chat conversation conversations history past previous asked earlier week "
+        "messages sessions"
+    ),
+    "agent.session.messages": (
+        "chat conversation conversations history past previous asked earlier week read"
+    ),
     "workspace.user.add": (
         "invite add member teammate email role editor viewer admin assign permission access"
     ),
@@ -115,6 +130,15 @@ _COMMAND_DISCOVERY_PURPOSES = {
     # keys), never this command, because nothing in its text said "API key".
     "client-app.list": (
         "api keys api key secret credentials workspace active script integration list"
+    ),
+    # "How much storage am I using, and what plan am I on?" only ever reached
+    # workspace.storage-breakdown -- a paginated per-item list with no total
+    # that pages through every project before giving up. This command's own
+    # text says neither "storage" nor "usage"; it is the one that carries the
+    # actual total (storage_used/current_storage_allowed/plan_storage_value/
+    # max_storage_allowed).
+    "workspace.app-usage": (
+        "storage usage used space how much plan current allowed total quota limit"
     ),
     "automation.create": (
         "schedule scheduled recurring repeat refresh rerun run every day daily week weekly "
@@ -280,6 +304,18 @@ _DISCOVERY_SYNONYMS: dict[str, tuple[str, ...]] = {
     "api": ("client-app",),
     "key": ("client-app",),
     "keys": ("client-app",),
+    # "What did I ask you earlier?" is a past-conversation lookup: an agent
+    # session. Nothing in `agent.session.list`/`agent.session.messages` text
+    # says "conversation", "chat", or "history", so a query phrased that way
+    # (rather than with the literal word "session") never found them.
+    "conversation": ("session",),
+    "conversations": ("session",),
+    "chat": ("session",),
+    "chats": ("session",),
+    "history": ("session",),
+    "previous": ("session",),
+    "earlier": ("session",),
+    "asked": ("session",),
     # British spellings search the same as the American ones.
     "summarise": ("summarize",),
     "standardise": ("standardize",),
@@ -412,7 +448,16 @@ def _externally_supplied_fields(command_id: str) -> frozenset[str]:
                 if item.falls_back_to_field is None
             }
         )
-    return excluded_input_fields(command_id)
+    excluded = excluded_input_fields(command_id)
+    if command_id == "activity.list":
+        # ``excluded_input_fields`` treats "project_id" as the active-project
+        # context on every command, but here it is an ActivityFiltersSchema
+        # request-body filter (any workspace project, not the active one) --
+        # the command's own contract already admits and forwards it (see
+        # ``_S7_ADDITIONAL_INPUT_FIELDS["activity.list"]``). Only
+        # "workspace_id" is the legacy-admitted, never-forwarded field here.
+        excluded -= {"project_id"}
+    return excluded
 
 
 def _positionals(command_id: str) -> list[dict[str, Any]]:

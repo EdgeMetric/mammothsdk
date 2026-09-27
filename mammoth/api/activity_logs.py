@@ -28,7 +28,17 @@ class ActivityLogsAPI:
         limit: int = 50,
         offset: int = 0,
         sort: str | None = None,
-        **filters: Any,
+        project_id: int | None = None,
+        categories: list[Any] | None = None,
+        activities: list[Any] | None = None,
+        resource_id: str | None = None,
+        result: str | None = None,
+        start_time: str | None = None,
+        end_time: str | None = None,
+        origin: str | None = None,
+        user_ids: list[Any] | None = None,
+        parent_id: int | None = None,
+        search_text: str | None = None,
     ) -> dict[str, Any]:
         """List activity logs.
 
@@ -36,7 +46,17 @@ class ActivityLogsAPI:
             limit: Maximum number of results (default 50).
             offset: Number of results to skip (default 0).
             sort: Sort specification.
-            **filters: Additional filter parameters (user, action, resource, etc.).
+            project_id: Filter to one project's activity.
+            categories: Filter by activity categories (e.g. "Project", "Dataview").
+            activities: Filter by activity names (e.g. "create_project").
+            resource_id: Filter to one resource's activity.
+            result: Filter by outcome (e.g. "success").
+            start_time: Filter to activity at or after this time.
+            end_time: Filter to activity at or before this time.
+            origin: Filter by request origin (e.g. "user").
+            user_ids: Filter by the ids of the users who performed the activity.
+            parent_id: Filter by the parent resource id.
+            search_text: Free-text search across activity log entries.
 
         Returns:
             Dict with activity logs and pagination info.
@@ -45,7 +65,21 @@ class ActivityLogsAPI:
         body: dict[str, Any] = {"limit": limit, "offset": offset}
         if sort:
             body["sort"] = sort
-        body.update(filters)
+        for name, value in (
+            ("project_id", project_id),
+            ("categories", categories),
+            ("activities", activities),
+            ("resource_id", resource_id),
+            ("result", result),
+            ("start_time", start_time),
+            ("end_time", end_time),
+            ("origin", origin),
+            ("user_ids", user_ids),
+            ("parent_id", parent_id),
+            ("search_text", search_text),
+        ):
+            if value is not None:
+                body[name] = value
         return self._client._request_json("POST", f"/workspaces/{ws}/activity_log", json=body)
 
     def export(self, format: str = "csv", **filters: Any) -> dict[str, Any]:

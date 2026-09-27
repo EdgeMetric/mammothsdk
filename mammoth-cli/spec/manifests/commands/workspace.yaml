@@ -427,7 +427,9 @@ commands:
   - CT-WORKSPACE-STORAGE-BREAKDOWN-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: This is a paginated per-item list of storage-consuming resources (limit/offset);
+    it carries no workspace total and can page through thousands of items. For the workspace's total
+    storage used/allowed, use `workspace app-usage` instead.
   reviewed_by: primary
 - command_id: workspace.update
   command_path: workspace update
