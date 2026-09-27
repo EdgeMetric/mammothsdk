@@ -1,6 +1,6 @@
 [project]
 name = "mammoth-cli"
-version = "2.0.62"
+version = "2.0.63"
 description = "Command-line interface for the Mammoth Analytics platform"
 authors = [{name = "Mammoth Analytics", email = "support@mammoth.io"}]
 readme = "README.md"
@@ -14,7 +14,7 @@ dependencies = [
     "tomlkit (>=0.15.1,<0.16)",
     "keyring (>=25.7,<26)",
     "PyYAML (>=6,<7)",
-    "pydantic (>=2.13,<3)",
+    "pydantic (>=2.12.5,<3)",
     "jsonschema (>=4.20)",
 ]
 urls = {homepage = "https://mammoth.io", repository = "https://github.com/EdgeMetric/mammothsdk"}

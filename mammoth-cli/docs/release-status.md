@@ -1,5 +1,11 @@
 # CLI release provenance
 
+## 2.0.63
+
+**Fix**: the `pydantic` floor is `>=2.12.5` (was `>=2.13`), so the CLI installs beside
+hosts that pin pydantic 2.12.5 (Mammoth's mm-dbinfra does). Nothing used a 2.13-only API: the
+full CLI suite (3723 tests) passes on pydantic 2.12.5.
+
 ## 2.0.62
 
 **Feature**: dashboard export to Power BI or Tableau:
