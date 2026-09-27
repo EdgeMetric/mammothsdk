@@ -43,6 +43,10 @@ mammoth automation create 'Nightly refresh' --yes --input '{
 }'
 ```
 
+`run_data_retrieval` only refreshes a cloud-connected dataset; a dataset made
+from an uploaded file or a URL (`weburl`) is a one-time copy with no source
+details to refresh from — say so rather than scheduling one.
+
 The other three task types take the shapes documented in `schema get
 automation.create` under `tasks[].details`:
 
