@@ -334,3 +334,48 @@ def test_unknown_name_in_math_expression_is_named_in_the_error(
     assert error.value.details["scope"] == "expression"
     assert "'Unit Cost'" in error.value.message
     assert _posts(api) == []
+
+
+def test_numeric_string_condition_value_is_converted_before_post(
+    real_service: ServiceFactory,
+) -> None:
+    """Reproduces eval T2-WPP-W2: a numeric-string condition value against a
+    NUMERIC column reached the backend as "1", the pipeline went into
+    ref_error (7003 "type mismatch"), and every read failed until the task
+    was deleted. The CLI knows the column type; it must convert locally."""
+    service, api = real_service(project_id=PROJECT_ID)
+    _configure(api, local=[_column("revision_rank", "column_rank", "NUMERIC")])
+
+    service.call_view(
+        LOCAL_VIEW,
+        "filter_rows",
+        dataset_id=LOCAL_DATASET,
+        condition={"column": "revision_rank", "operator": "EQ", "value": "1"},
+        filter_type="SHOW",
+    )
+
+    assert len(_posts(api)) == 1
+    value = _posts(api)[0].json_body["CONDITION"]["column_rank"]["EQ"]["VALUE"]
+    assert value == 1
+    assert isinstance(value, int)
+
+
+def test_unconvertible_numeric_condition_value_fails_locally_before_post(
+    real_service: ServiceFactory,
+) -> None:
+    service, api = real_service(project_id=PROJECT_ID)
+    _configure(api, local=[_column("revision_rank", "column_rank", "NUMERIC")])
+
+    with pytest.raises(CliError) as error:
+        service.call_view(
+            LOCAL_VIEW,
+            "filter_rows",
+            dataset_id=LOCAL_DATASET,
+            condition={"column": "revision_rank", "operator": "EQ", "value": "abc"},
+            filter_type="SHOW",
+        )
+
+    assert error.value.details["column"] == "revision_rank"
+    assert error.value.details["column_type"] == "NUMERIC"
+    assert error.value.details["value"] == "abc"
+    assert _posts(api) == []
