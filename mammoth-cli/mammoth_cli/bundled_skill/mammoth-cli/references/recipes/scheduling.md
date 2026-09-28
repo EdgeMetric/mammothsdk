@@ -52,7 +52,10 @@ automation.create` under `tasks[].details`:
 
 - `append_data`: `destination_dataset_ids` (required) plus either
   `source_folder_resource_id` or `source_dataset_id`.
-- `send_an_alert`: `alert_type` ("email"), `recipients`, `subject`.
+- `send_an_alert`: `alert_type` ("email"), `recipients`, `subject`, and optional
+  `attachments.dataview_ids` (a list of view ids); each attached view is
+  emailed as a CSV file, combined row count capped at 100,000 across all
+  attachments.
 - `pull_cloud_files`: `connector_key`, `connection_key`,
   `cloud_source_folder_path`, `destination_folder_resource_id`.
 
