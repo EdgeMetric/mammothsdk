@@ -176,6 +176,58 @@ def _duplicate_rows_warning(
     return warning
 
 
+def _varying_numbers(rows: list[Mapping[str, Any]], column_types: Mapping[str, str]) -> list[str]:
+    """The NUMERIC columns whose non-blank values differ between rows: the row's figures."""
+    return [
+        column
+        for column, col_type in column_types.items()
+        if str(col_type).upper() == "NUMERIC"
+        and len({str(row.get(column)) for row in rows if not _blank(row.get(column))}) > 1
+    ]
+
+
+def _blank_values_warning(
+    column: str,
+    blanks: int,
+    total: int,
+    checked: int,
+    remove_fix: str | None,
+) -> dict[str, Any]:
+    """The ``blank_values`` record; *remove_fix* when a blank row holds no figure at all."""
+    detail = f"{blanks} of {total} rows are blank. "
+    if remove_fix is None:
+        detail += (
+            "Decide before you summarise: fill them (view transform set-values with "
+            "IS_EMPTY, or fill-missing), remove the rows (view transform filter), or "
+            "keep them and say so."
+        )
+        return {
+            "column": column,
+            "issue": "blank_values",
+            "detail": detail,
+            "rows_checked": checked,
+        }
+    detail += (
+        f"{column} is the only number that varies between rows, so these rows hold no "
+        "figure: removing them (fix) is the clean-up. Fill them only with a value the "
+        "user gave; keep them only when the user needs every row listed."
+    )
+    return {
+        "column": column,
+        "issue": "blank_values",
+        "detail": detail,
+        "fix": remove_fix,
+        "rows_checked": checked,
+    }
+
+
+def _remove_blank_rows_hint(view_id: int, dataset_id: int, column: str) -> str:
+    spec = json.dumps(
+        {"condition": {"column": column, "operator": "IS_NOT_EMPTY"}, "dataset_id": dataset_id}
+    )
+    return f"mammoth view transform filter {view_id} --input '{spec}'"
+
+
 def column_warnings(
     rows: Iterable[Mapping[str, Any]],
     column_types: Mapping[str, str],
@@ -204,6 +256,7 @@ def column_warnings(
         return []
     checked = len(materialised)
     warnings: list[dict[str, Any]] = []
+    figures = _varying_numbers(materialised, column_types)
     duplicate_warning = _duplicate_rows_warning(materialised, view_id, dataset_id)
     if duplicate_warning is not None:
         warnings.append(duplicate_warning)
@@ -254,17 +307,8 @@ def column_warnings(
             if variant_warning is not None:
                 warnings.append(variant_warning)
         if blanks:
-            warnings.append(
-                {
-                    "column": column,
-                    "issue": "blank_values",
-                    "detail": (
-                        f"{blanks} of {len(values)} rows are blank. Decide before you "
-                        "summarise: fill them (view transform set-values with "
-                        "IS_EMPTY, or fill-missing), remove the rows (view transform "
-                        "filter), or keep them and say so."
-                    ),
-                    "rows_checked": checked,
-                }
-            )
+            remove_fix = None
+            if figures == [column] and view_id is not None and dataset_id is not None:
+                remove_fix = _remove_blank_rows_hint(view_id, dataset_id, column)
+            warnings.append(_blank_values_warning(column, blanks, len(values), checked, remove_fix))
     return warnings
