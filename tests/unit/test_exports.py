@@ -706,6 +706,50 @@ class TestToDataset:
         assert tp["SAVE_AS_DS_MODE"] == "APPEND_TO_DS"
         assert tp["COLUMN_MAPPING"] == mapping
 
+    def test_new_dataset_partial_mapping_keeps_other_columns(self, mock_client):
+        # Reproduces the koyal QA-smoke bug (2026-09-28, RCA cause (a)):
+        # "rename petal_width, save as new dataset" sent column_mapping=
+        # {"petal_width": "..."} alone. The backend treats a non-empty
+        # COLUMN_MAPPING as an allow-list (api/api/ds/sketch.py), so every
+        # column NOT in the mapping was silently dropped -- a 4-column view
+        # exported as a 1-column dataset. A rename-only mapping on a NEW
+        # dataset (target_ds_id=None) must keep every other view column.
+        view = View(
+            mock_client,
+            {
+                "id": 2001,
+                "name": "Multi Col View",
+                "properties": {
+                    "columns": [
+                        {
+                            "display_name": "col_a",
+                            "internal_name": "column_aaa",
+                            "type": "TEXT",
+                        },
+                        {
+                            "display_name": "col_b",
+                            "internal_name": "column_bbb",
+                            "type": "TEXT",
+                        },
+                        {
+                            "display_name": "col_c",
+                            "internal_name": "column_ccc",
+                            "type": "TEXT",
+                        },
+                    ],
+                },
+            },
+            501,
+        )
+        captured = self._capture_run(view)
+        view.export.to_dataset("New DS", column_mapping={"col_b": "renamed_b"})
+        tp = captured["target_properties"]
+        assert tp["COLUMN_MAPPING"] == {
+            "col_a": "col_a",
+            "col_b": "renamed_b",
+            "col_c": "col_c",
+        }
+
     def test_condition_forwarded_to_seam_untouched(self, export_view):
         captured = self._capture_run(export_view)
         cond = Condition("col_a", Operator.EQ, "x")

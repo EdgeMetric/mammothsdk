@@ -961,8 +961,11 @@ def view_transform_date_diff(invocation: Invocation) -> HandlerResult:
 
 
 def view_transform_delete_columns(invocation: Invocation) -> HandlerResult:
-    """Delete columns. ``columns`` is required."""
+    """Delete columns. ``columns`` is required. Prompt or ``--yes`` required."""
     view_id = _view_id(invocation)
+    enforce_confirmation(
+        invocation, policy=POLICY_PROMPT_OR_YES, action=f"delete columns on view {view_id}"
+    )
     document = invocation.load_input()
     _require_field(document, "columns")
     assert document is not None

@@ -560,7 +560,7 @@ def test_transform_date_diff_forwards_optional(
 def test_transform_delete_columns_requires_columns(fake_service: FakeMammothService) -> None:
     with pytest.raises(CliError) as excinfo:
         view_ops_cmd.view_transform_delete_columns(
-            _inv("view.transform.delete-columns", extra_args=["3"])
+            _inv("view.transform.delete-columns", extra_args=["3"], yes=True)
         )
     assert excinfo.value.code == "missing_field"
 
@@ -575,11 +575,30 @@ def test_transform_delete_columns_forwards(
             extra_args=["3"],
             resource_ref=_parent(3),
             input_file=doc,
+            yes=True,
         )
     )
     assert fake_service.view_call_log == [
         (3, "delete_columns", {"dataset_id": 122, "columns": ["a", "b"]})
     ]
+
+
+def test_transform_delete_columns_blocked_without_confirmation(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    doc = _write(tmp_path, {"columns": ["a", "b"]})
+    with pytest.raises(CliError) as excinfo:
+        view_ops_cmd.view_transform_delete_columns(
+            _inv(
+                "view.transform.delete-columns",
+                extra_args=["3"],
+                resource_ref=_parent(3),
+                input_file=doc,
+                output="json",
+            )
+        )
+    assert excinfo.value.code == "confirmation_required"
+    assert fake_service.view_call_log == []
 
 
 def test_transform_discard_duplicates_no_input(fake_service: FakeMammothService) -> None:
