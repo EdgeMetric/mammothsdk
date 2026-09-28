@@ -222,6 +222,16 @@ Result: `ViewDataAggregateResult`; mutation `read`, confirmation `none`, wait po
 
 Status on release: untried; no live run recorded.
 
+### `view.data.compare`
+
+Run: `mammoth view data compare`. Exact input fields: `mammoth schema get view.data.compare`.
+
+Example: `mammoth view data compare 111 222 --input '{"group_by": ["Campaign"], "aggregations": [{"column": "Spend", "function": "SUM", "as_name": "Spend"}]}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `ViewDataCompareResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
 ### `view.data.explore`
 
 Run: `mammoth view data explore`. Exact input fields: `mammoth schema get view.data.explore`.
