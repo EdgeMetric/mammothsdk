@@ -1,0 +1,378 @@
+"""Automatic write read-back: attach the write's new state to its result.
+
+``with_verify`` (see :mod:`mammoth_cli.runtime.verify`) tells the caller
+whether a write succeeded. It does not show what the write actually produced:
+an export can report ``verified: true`` while the dataset it wrote has one of
+four expected columns, and nothing in the result would say so. :func:`with_state`
+closes that gap: every manifest command whose ``mutation_class`` is not
+``read`` declares, in its command record, either a ``readback`` (a read
+command plus how to source its arguments from this write's input/result, plus
+a ``kind``) or a ``no_readback`` reason. After the write settles, the executor
+runs the declared read and attaches a compact ``state`` block built from it --
+never from the request, and never omitted: a read that fails still yields a
+``state`` (``kind: unreadable``) rather than silence.
+
+See ``CONTRACT-write-state.md`` (D-077) for the manifest shape this reads.
+"""
+
+from __future__ import annotations
+
+import json
+from typing import Any
+
+from mammoth_cli.errors.envelope import CliError
+from mammoth_cli.manifest.loader import command_by_id
+from mammoth_cli.runtime.invocation import Invocation
+from mammoth_cli.services.positionals import resolve_positionals
+
+#: Total JSON size a ``state`` block may reach before trimming kicks in.
+STATE_SIZE_CAP_BYTES = 1500
+
+#: Sample rows a ``kind: data`` state keeps, and the char length each cell is
+#: truncated to -- row count and columns are never dropped to make room.
+_SAMPLE_ROW_CAP = 5
+_CELL_CHAR_CAP = 80
+
+_VIEW_GET_COMMAND = "view.get"
+_VIEW_DATA_COMMAND = "view.data.get"
+_VIEW_LIST_COMMAND = "view.list"
+
+
+def with_state(invocation: Invocation, data: Any) -> Any:
+    """Return ``data`` with a ``state`` read-back block added, per the manifest.
+
+    A command with no ``readback``/``no_readback`` declared yet (mid-rollout)
+    is returned unchanged, as is a command that declares ``no_readback`` --
+    there is nothing to read back, by the family owner's own account.
+    """
+    if not isinstance(data, dict):
+        return data
+    record = command_by_id(invocation.command_id) or {}
+    readback = record.get("readback")
+    if not isinstance(readback, dict):
+        return data
+    state = _enforce_cap(_build_state(invocation, data, readback))
+    return {**data, "state": state}
+
+
+def _build_state(
+    invocation: Invocation, data: dict[str, Any], readback: dict[str, Any]
+) -> dict[str, Any]:
+    read_command_id = str(readback["command"])
+    kind = str(readback["kind"])
+    ids_spec: dict[str, Any] = readback.get("ids") or {}
+    resolved_ids: dict[str, Any] = {}
+    try:
+        resolved_ids = {
+            name: _resolve_source(str(source), data, invocation)
+            for name, source in ids_spec.items()
+        }
+        missing = [name for name, value in resolved_ids.items() if value is None]
+        if missing:
+            raise ValueError(f"could not resolve id(s) {missing} from the write's result/input")
+        if kind == "data":
+            return _data_state(resolved_ids, invocation)
+        read_data = _call_read(read_command_id, resolved_ids, invocation)
+        read_by = _read_by_label(read_command_id, resolved_ids)
+        if kind == "object":
+            return _object_state(read_by, read_data)
+        if kind == "delivery":
+            return _delivery_state(read_by, read_data)
+        raise ValueError(f"unknown readback kind {kind!r}")
+    except Exception as exc:  # noqa: BLE001 -- a read failure must surface, never crash the write
+        read_by = _read_by_label(read_command_id, resolved_ids)
+        reason = exc.message if isinstance(exc, CliError) else str(exc)
+        return {"kind": "unreadable", "read_by": read_by, "reason": reason or type(exc).__name__}
+
+
+def _read_by_label(command_id: str, resolved_ids: dict[str, Any]) -> str:
+    representative = next(iter(resolved_ids.values()), None)
+    return f"{command_id} {representative}" if representative is not None else command_id
+
+
+# ---------------------------------------------------------------------------
+# id resolution
+# ---------------------------------------------------------------------------
+
+
+def _resolve_source(source: str, data: dict[str, Any], invocation: Invocation) -> Any:
+    """Resolve one ``ids`` value: ``result.<path>`` | ``input.<field>`` | ``positional.<n>``."""
+    if source.startswith("result."):
+        return _get_path(data, source[len("result.") :])
+    if source.startswith("input."):
+        document = invocation.bound_input() or {}
+        return _get_path(document, source[len("input.") :])
+    if source.startswith("positional."):
+        index_text = source[len("positional.") :]
+        try:
+            index = int(index_text)
+        except ValueError:
+            raise ValueError(f"invalid positional index in id source {source!r}") from None
+        return invocation.extra_args[index] if index < len(invocation.extra_args) else None
+    raise ValueError(f"unrecognized id source {source!r}")
+
+
+def _get_path(root: Any, path: str) -> Any:
+    current = root
+    for segment in path.split("."):
+        if isinstance(current, dict):
+            current = current.get(segment)
+        elif isinstance(current, list) and segment.isdigit():
+            index = int(segment)
+            current = current[index] if index < len(current) else None
+        else:
+            return None
+    return current
+
+
+# ---------------------------------------------------------------------------
+# dispatching a read command's handler directly (never through the executor:
+# this is an internal follow-up read, not a fresh command invocation)
+# ---------------------------------------------------------------------------
+
+
+def _read_invocation(command_id: str, resolved_ids: dict[str, Any], base: Invocation) -> Invocation:
+    """Build the :class:`Invocation` a read command's handler expects.
+
+    Ids that name a declared positional of ``command_id`` are supplied in
+    order (matching how handlers read ``extra_args``); any id left over is
+    offered as a pre-admitted ``--input`` document instead.
+    """
+    positional_names = [spec.name for spec in resolve_positionals(command_id)]
+    positionals: dict[str, Any] = {}
+    extra_args: list[str] = []
+    for name in positional_names:
+        if name not in resolved_ids:
+            break
+        value = resolved_ids[name]
+        positionals[name] = value
+        extra_args.append(str(value))
+    document = {name: value for name, value in resolved_ids.items() if name not in positionals}
+    invocation = Invocation(
+        command_id=command_id,
+        output="json",
+        profile=base.profile,
+        project=base.project,
+        timeout=base.timeout,
+        job_timeout=base.job_timeout,
+        pipeline_timeout=base.pipeline_timeout,
+        no_input=True,
+        positionals=positionals,
+        extra_args=extra_args,
+    )
+    object.__setattr__(invocation, "_prepared_input", document or None)
+    return invocation
+
+
+def _call_read(command_id: str, resolved_ids: dict[str, Any], base: Invocation) -> Any:
+    from mammoth_cli.commands.registry import HANDLERS
+
+    handler = HANDLERS.get(command_id)
+    if handler is None:
+        raise LookupError(f"no handler registered for read command {command_id!r}")
+    read_invocation = _read_invocation(command_id, resolved_ids, base)
+    read_data, _meta = handler(read_invocation)
+    return read_data
+
+
+# ---------------------------------------------------------------------------
+# kind: object
+# ---------------------------------------------------------------------------
+
+
+def _object_state(read_by: str, read_data: Any) -> dict[str, Any]:
+    return {"kind": "object", "read_by": read_by, "object": _extract_object(read_data)}
+
+
+def _extract_object(read_data: Any) -> Any:
+    if not isinstance(read_data, dict):
+        return read_data
+    # A single-record read (``view.get``, ``dataset.get``, ...) carries its own
+    # ``id`` at the top level; a listing read (``view.list``, ...) wraps its
+    # items under a plural key instead. Checking for ``id`` first keeps a
+    # record's own nested list fields (e.g. a dataview's ``metadata`` columns)
+    # from being mistaken for the collection.
+    if "id" not in read_data:
+        listing = _first_list(read_data)
+        if listing is not None:
+            return [_scalar_fields(item) for item in listing]
+    return _scalar_fields(read_data)
+
+
+def _first_list(record: dict[str, Any]) -> list[Any] | None:
+    """The first list-of-dicts value in a ``*.list`` read's result, if any."""
+    for value in record.values():
+        if isinstance(value, list) and (not value or isinstance(value[0], dict)):
+            return value
+    return None
+
+
+def _scalar_fields(item: Any) -> Any:
+    """Keep only an object's top-level scalar fields (every id is one)."""
+    if not isinstance(item, dict):
+        return item
+    return {
+        key: value
+        for key, value in item.items()
+        if value is None or isinstance(value, (str, int, float, bool))
+    }
+
+
+# ---------------------------------------------------------------------------
+# kind: delivery
+# ---------------------------------------------------------------------------
+
+
+def _delivery_state(read_by: str, read_data: Any) -> dict[str, Any]:
+    status: Any = None
+    detail: Any = None
+    if isinstance(read_data, dict):
+        status = read_data.get("status")
+        if status is None:
+            job = read_data.get("job")
+            status = job.get("status") if isinstance(job, dict) else None
+        detail = read_data.get("message") or read_data.get("detail") or read_data.get("error")
+    return {
+        "kind": "delivery",
+        "read_by": read_by,
+        "status": status if isinstance(status, str) else None,
+        "detail": str(detail) if detail is not None else None,
+    }
+
+
+# ---------------------------------------------------------------------------
+# kind: data -- the write's output view: real columns, row count, 5 rows.
+#
+# No single read command returns columns+type, row_count and sample rows
+# together, so this always makes two fixed internal reads once it has a
+# view id: ``view.get`` for the typed columns and row count, ``view.data.get``
+# for the sample. When the write's own ids only resolve a dataset id (a
+# dataset/upload write, whose output is that dataset's first view), the
+# view id is discovered with one ``view.list`` read first.
+# ---------------------------------------------------------------------------
+
+
+def _data_state(resolved_ids: dict[str, Any], base: Invocation) -> dict[str, Any]:
+    view_id = _as_int(resolved_ids.get("view_id") or resolved_ids.get("dataview_id"))
+    dataset_id = _as_int(resolved_ids.get("dataset_id"))
+    if view_id is None:
+        if dataset_id is None:
+            raise ValueError("readback kind 'data' needs a resolved view_id or dataset_id")
+        view_id = _discover_view_id(dataset_id, base)
+    view_ids: dict[str, Any] = {"view_id": view_id}
+    if dataset_id is not None:
+        view_ids["dataset_id"] = dataset_id
+    info = _call_read(_VIEW_GET_COMMAND, view_ids, base)
+    page = _call_read(_VIEW_DATA_COMMAND, view_ids, base)
+    rows = page.get("data") if isinstance(page, dict) else None
+    sample = [_trim_row(row) for row in (rows or [])[:_SAMPLE_ROW_CAP]]
+    return {
+        "kind": "data",
+        "read_by": f"{_VIEW_DATA_COMMAND} {view_id}",
+        "columns": _columns(info),
+        "row_count": info.get("row_count") if isinstance(info, dict) else None,
+        "sample": sample,
+    }
+
+
+def _discover_view_id(dataset_id: int, base: Invocation) -> int:
+    listing = _call_read(_VIEW_LIST_COMMAND, {"dataset_id": dataset_id}, base)
+    views = listing.get("dataviews") if isinstance(listing, dict) else None
+    if not isinstance(views, list) or not views or not isinstance(views[0], dict):
+        raise ValueError(f"dataset {dataset_id} has no view to read its new state from")
+    view_id = views[0].get("id")
+    if not isinstance(view_id, int):
+        raise ValueError(f"dataset {dataset_id}'s first view has no usable id")
+    return view_id
+
+
+def _columns(info: Any) -> list[dict[str, str]]:
+    if not isinstance(info, dict):
+        return []
+    metadata = info.get("metadata")
+    if not isinstance(metadata, list):
+        return []
+    columns: list[dict[str, str]] = []
+    for column in metadata:
+        if not isinstance(column, dict):
+            continue
+        name = column.get("display_name") or column.get("internal_name")
+        if name is None:
+            continue
+        columns.append({"name": str(name), "type": str(column.get("type") or "")})
+    return columns
+
+
+def _trim_row(row: Any) -> Any:
+    if not isinstance(row, dict):
+        return row
+    return {key: _trim_cell(value) for key, value in row.items()}
+
+
+def _trim_cell(value: Any) -> Any:
+    if isinstance(value, str) and len(value) > _CELL_CHAR_CAP:
+        return value[:_CELL_CHAR_CAP] + "..."
+    return value
+
+
+def _as_int(value: Any) -> int | None:
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, int):
+        return value
+    if isinstance(value, str) and value.strip().lstrip("-").isdigit():
+        return int(value)
+    return None
+
+
+# ---------------------------------------------------------------------------
+# size cap
+# ---------------------------------------------------------------------------
+
+
+def _enforce_cap(state: dict[str, Any]) -> dict[str, Any]:
+    """Trim ``state`` under :data:`STATE_SIZE_CAP_BYTES`; never drop columns/row_count."""
+    if _size(state) <= STATE_SIZE_CAP_BYTES:
+        return state
+    kind = state.get("kind")
+    if kind == "data":
+        sample = list(state.get("sample") or [])
+        while sample and _size({**state, "sample": sample}) > STATE_SIZE_CAP_BYTES:
+            sample.pop()
+        return {**state, "sample": sample}
+    if kind == "object":
+        return {**state, "object": _capped_object(state)}
+    if kind == "delivery":
+        detail = state.get("detail")
+        if isinstance(detail, str):
+            overflow = _size(state) - STATE_SIZE_CAP_BYTES
+            keep = max(0, len(detail) - overflow - 3)
+            return {**state, "detail": detail[:keep] + "..."}
+    return state
+
+
+def _capped_object(state: dict[str, Any]) -> Any:
+    obj = state.get("object")
+    if isinstance(obj, list):
+        items = list(obj)
+        while items and _size({**state, "object": items}) > STATE_SIZE_CAP_BYTES:
+            items.pop()
+        return items
+    if isinstance(obj, dict):
+        fields = dict(obj)
+        protected = {key for key in fields if key == "id" or key.endswith("_id")}
+        droppable = sorted(
+            (key for key in fields if key not in protected),
+            key=lambda key: len(str(fields[key])),
+            reverse=True,
+        )
+        for key in droppable:
+            if _size({**state, "object": fields}) <= STATE_SIZE_CAP_BYTES:
+                break
+            fields.pop(key, None)
+        return fields
+    return obj
+
+
+def _size(value: Any) -> int:
+    return len(json.dumps(value, default=str))
