@@ -370,6 +370,24 @@ def test_what_did_i_ask_earlier_ranks_agent_session_list_first() -> None:
     assert top[0]["command_id"] == "agent.session.list", top
 
 
+def test_pick_up_where_we_left_off_reaches_agent_session_list() -> None:
+    """Live-eval evidence (T1-A-04): 'pick up where we left off last time on
+    the orders' -- the model searched 'recent project activity' and
+    'activity list' instead. activity.list may still rank for some of
+    these, but agent.session.list (the actual past-conversation lookup)
+    must be at or near the top, not absent.
+    """
+    for query in (
+        "pick up where we left off last time",
+        "continue where I left off on the orders",
+        "resume my previous conversation about orders",
+        "what did we talk about earlier in this chat",
+    ):
+        matches = [item["command_id"] for item in find_schemas(query)["matches"]]
+        assert matches, f"no full match for {query!r}"
+        assert "agent.session.list" in matches[:3], f"{query!r} -> {matches}"
+
+
 def test_storage_usage_intent_ranks_app_usage_above_storage_breakdown() -> None:
     """In-product-agent evidence: 'how much storage am I using, and what plan
     am I on?' only ever reached workspace.storage-breakdown -- a paginated

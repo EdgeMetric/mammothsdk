@@ -116,12 +116,18 @@ _COMMAND_DISCOVERY_PURPOSES = {
     # family, whose OpenAPI summary literally says "chat session", outranked
     # them. These two ARE the past-conversation lookup: list the sessions,
     # then read one's messages.
+    # "Pick up where we left off last time" / "continue where I left off" /
+    # "resume my previous conversation" is the same past-conversation lookup
+    # under different wording -- the model instead searched "recent project
+    # activity" and "activity list", since neither command said "left off",
+    # "last time", "resume", "pick up", or "continue".
     "agent.session.list": (
         "chat conversation conversations history past previous asked earlier week "
-        "messages sessions"
+        "messages sessions where left off last time resume pick up continue"
     ),
     "agent.session.messages": (
-        "chat conversation conversations history past previous asked earlier week read"
+        "chat conversation conversations history past previous asked earlier week read "
+        "where left off last time resume pick up continue"
     ),
     "workspace.user.add": (
         "invite add member teammate email role editor viewer admin assign permission access"
