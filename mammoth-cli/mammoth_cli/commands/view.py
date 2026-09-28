@@ -182,6 +182,29 @@ def _resolve_dataset_id(
     return dataset_id
 
 
+def _resolve_dataset_id_for_settle(
+    service: Any,
+    invocation: Invocation,
+    view_id: int,
+    document: dict[str, Any],
+    dataset_index: int,
+) -> int | None:
+    """Best-effort :func:`_resolve_dataset_id`, for the settle step only.
+
+    The write this settles has already happened by the time this runs; a
+    parent that ``_resolve_dataset_id`` cannot resolve raises (these are
+    mutation commands, so it refuses project-wide discovery) -- that must
+    never surface as an exception past a write that already succeeded. A
+    ``None`` here leaves the settle step unable to run, which
+    ``_settle_async_view_write``/verify.py report as unverified rather than
+    guessing "done".
+    """
+    try:
+        return _resolve_dataset_id(service, invocation, view_id, document, dataset_index)
+    except CliError:
+        return None
+
+
 def _profile_name(invocation: Invocation) -> str:
     return invocation.profile or profiles.get_selected()
 
@@ -1928,9 +1951,12 @@ def view_pipeline_rerun(invocation: Invocation) -> HandlerResult:
     _forward_optional(document, kwargs, ("from_sequence", "dataset_id"))
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), **kwargs)
-        data = _settle_async_view_write(
-            service, kwargs.get("dataset_id"), dataview_id, invocation.project, data
-        )
+        dataset_id = kwargs.get("dataset_id")
+        if dataset_id is None:
+            dataset_id = _resolve_dataset_id_for_settle(
+                service, invocation, dataview_id, document, 1
+            )
+        data = _settle_async_view_write(service, dataset_id, dataview_id, invocation.project, data)
     return data, _meta(invocation, auth.workspace_id, None)
 
 
@@ -1985,9 +2011,12 @@ def view_task_delete(invocation: Invocation) -> HandlerResult:
     _forward_optional(document, kwargs, ("dataset_id",))
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), **kwargs)
-        data = _settle_async_view_write(
-            service, kwargs.get("dataset_id"), dataview_id, invocation.project, data
-        )
+        dataset_id = kwargs.get("dataset_id")
+        if dataset_id is None:
+            dataset_id = _resolve_dataset_id_for_settle(
+                service, invocation, dataview_id, document, 2
+            )
+        data = _settle_async_view_write(service, dataset_id, dataview_id, invocation.project, data)
     return data, _meta(invocation, auth.workspace_id, None)
 
 
@@ -2042,9 +2071,12 @@ def view_task_update(invocation: Invocation) -> HandlerResult:
     _forward_optional(document, kwargs, ("dataset_id",))
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), **kwargs)
-        data = _settle_async_view_write(
-            service, kwargs.get("dataset_id"), dataview_id, invocation.project, data
-        )
+        dataset_id = kwargs.get("dataset_id")
+        if dataset_id is None:
+            dataset_id = _resolve_dataset_id_for_settle(
+                service, invocation, dataview_id, document, 2
+            )
+        data = _settle_async_view_write(service, dataset_id, dataview_id, invocation.project, data)
     return data, _meta(invocation, auth.workspace_id, None)
 
 
@@ -2830,13 +2862,15 @@ def wait_for_view_row_count(
 
 
 def _row_count_now(service: Any, dataset_id: int, view_id: int, project_id: int | None) -> Any:
-    """A view's row count, read directly with no settle wait, best effort."""
-    try:
-        info = service.call(
-            _DATAVIEW_GET_SYMBOL, dataset_id=dataset_id, dataview_id=view_id, project_id=project_id
-        )
-    except Exception:  # noqa: BLE001 -- best effort; the write already ran
-        return None
+    """A view's row count, read directly with no settle wait.
+
+    Raises the read's own :class:`CliError` rather than swallowing it -- the
+    caller records it in ``row_check`` instead of silently reporting "no
+    rows yet" for a read that never actually happened.
+    """
+    info = service.call(
+        _DATAVIEW_GET_SYMBOL, dataset_id=dataset_id, dataview_id=view_id, project_id=project_id
+    )
     return info.get("row_count") if isinstance(info, dict) else None
 
 
@@ -2852,14 +2886,21 @@ def _settle_async_view_write(
     :mod:`mammoth_cli.runtime.verify`, which reports ``status`` verbatim --
     must never see that as the final outcome. Only runs when ``dataset_id``
     is known, like every other settle-and-check path; an unknown parent is
-    skipped rather than guessed.
+    skipped rather than guessed (verify.py still catches a leftover
+    ``processing`` status either way).
     """
     if dataset_id is None or not isinstance(data, dict):
         return data
     dataset_id = int(dataset_id)
-    rows_before = _row_count_now(service, dataset_id, view_id, project_id)
+    try:
+        row_check: dict[str, Any] = {
+            "rows_before": _row_count_now(service, dataset_id, view_id, project_id)
+        }
+    except CliError as exc:
+        row_check = {"rows_before": None, "rows_before_error": f"{type(exc).__name__}: {exc}"}
     rows_after, pipeline_error = wait_for_view_row_count(service, dataset_id, view_id, project_id)
-    data = {**data, "row_check": {"rows_before": rows_before, "rows_after": rows_after}}
+    row_check["rows_after"] = rows_after
+    data = {**data, "row_check": row_check}
     if pipeline_error is not None:
         data["pipeline_error"] = pipeline_error
         data["status"] = "failed"

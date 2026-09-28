@@ -31,6 +31,10 @@ def test_a_normal_result_is_verified_with_no_needs_user() -> None:
         ({"job": {"status": "failed"}}, "the operation failed"),
         ({"pipeline_state": "ref_error"}, "the pipeline reported an error"),
         ({"bake_ok": False}, "the dashboard did not bake"),
+        (
+            {"status": "processing"},
+            "the change was accepted but has not finished; read the view before building on it",
+        ),
     ],
 )
 def test_each_failure_signal_marks_unverified_with_a_reason_and_no_needs_user(

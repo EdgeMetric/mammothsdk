@@ -1957,6 +1957,48 @@ def test_pipeline_rerun_without_dataset_id_never_settles(
     assert fake_service.call_log == [(_PIPE_RERUN, {"dataview_id": 7})]
 
 
+def test_pipeline_rerun_without_dataset_id_settles_via_remembered_parent(
+    fake_service: FakeMammothService,
+) -> None:
+    """No explicit ``dataset_id`` -- but a prior view command already
+    remembered this view's parent dataset, so the settle step must still
+    run rather than leaving ``status: processing`` as the final result.
+
+    ``FakeMammothService`` has no ``_workspace_id`` (only the real SDK
+    service sets it), so the resolver's own workspace key is ``None`` here
+    -- matching that, not the profile's real workspace id, is what makes
+    the lookup hit in this test double.
+    """
+    from mammoth_cli.runtime import parents
+
+    parents.remember("default", None, {7: 9})
+    fake_service.responses[_PIPE_RERUN] = {"status": "processing"}
+    fake_service.responses[_DATAVIEW_GET] = {"row_count": 5}
+    data, _meta = view_cmd.view_pipeline_rerun(_inv("view.pipeline.rerun", extra_args=["7"]))
+    assert data["status"] == "done"
+    assert data["row_check"] == {"rows_before": 5, "rows_after": 5}
+
+
+def test_pipeline_rerun_without_dataset_id_and_unresolvable_reports_unverified(
+    fake_service: FakeMammothService,
+) -> None:
+    """No explicit ``dataset_id`` and no remembered parent -- the parent
+    truly cannot be resolved (a mutation command refuses project-wide
+    discovery). The raw ``processing`` status is forwarded unchanged, and
+    ``with_verify`` must never report that as verified.
+    """
+    from mammoth_cli.runtime.verify import with_verify
+
+    fake_service.responses[_PIPE_RERUN] = {"status": "processing"}
+    data, _meta = view_cmd.view_pipeline_rerun(_inv("view.pipeline.rerun", extra_args=["7"]))
+    assert data == {"status": "processing"}
+    verified = with_verify(data)
+    assert verified["verify"]["verified"] is False
+    assert verified["verify"]["reason"] == (
+        "the change was accepted but has not finished; read the view before building on it"
+    )
+
+
 def test_pipeline_wait_forwards_timeout(fake_service: FakeMammothService, tmp_path: Path) -> None:
     doc = _doc(tmp_path, {"timeout": 60, "poll_interval": 5})
     view_cmd.view_pipeline_wait(_inv("view.pipeline.wait", extra_args=["7"], input_file=doc))
@@ -2129,6 +2171,70 @@ def test_task_delete_without_dataset_id_never_settles(fake_service: FakeMammothS
     )
     assert data == {"status": "processing"}
     assert fake_service.call_log == [(_TASK_DELETE, {"dataview_id": 7, "task_id": 3})]
+
+
+def test_task_delete_without_dataset_id_settles_via_remembered_parent(
+    fake_service: FakeMammothService,
+) -> None:
+    """The real failing call (``view task delete 3165 1595``, no dataset id)
+    had a remembered parent from an earlier ``view get`` -- settle must use
+    it instead of leaving ``status: processing`` as the final result.
+
+    ``FakeMammothService`` has no ``_workspace_id`` (only the real SDK
+    service sets it), so the resolver's own workspace key is ``None`` here
+    -- matching that, not the profile's real workspace id, is what makes
+    the lookup hit in this test double.
+    """
+    from mammoth_cli.runtime import parents
+
+    parents.remember("default", None, {7: 9})
+    fake_service.responses[_TASK_DELETE] = {"status": "processing"}
+    fake_service.responses[_DATAVIEW_GET] = {"row_count": 20}
+    data, _meta = view_cmd.view_task_delete(
+        _inv("view.task.delete", extra_args=["7", "3"], yes=True)
+    )
+    assert data["status"] == "done"
+    assert data["row_check"] == {"rows_before": 20, "rows_after": 20}
+
+
+def test_task_delete_without_dataset_id_and_unresolvable_reports_unverified(
+    fake_service: FakeMammothService,
+) -> None:
+    """No remembered parent either -- the settle step is skipped, and
+    ``with_verify`` must report the leftover ``processing`` as unverified
+    rather than the caller silently building on a write that has not
+    actually finished.
+    """
+    from mammoth_cli.runtime.verify import with_verify
+
+    fake_service.responses[_TASK_DELETE] = {"status": "processing"}
+    data, _meta = view_cmd.view_task_delete(
+        _inv("view.task.delete", extra_args=["7", "3"], yes=True)
+    )
+    verified = with_verify(data)
+    assert verified["verify"]["verified"] is False
+    assert verified["verify"]["reason"] == (
+        "the change was accepted but has not finished; read the view before building on it"
+    )
+
+
+def test_task_delete_with_dataset_id_records_unreadable_row_count_before_error(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    """``_row_count_now``'s read can itself fail (e.g. the view was deleted
+    between the write and the settle check) -- that must be recorded, never
+    silently swallowed into a plain ``rows_before: None``.
+    """
+    fake_service.responses[_TASK_DELETE] = {"status": "processing"}
+    fake_service.responses[_DATAVIEW_GET] = CliError(
+        code="resource_not_found", message="dataview 7 not found"
+    )
+    doc = _doc(tmp_path, {"dataset_id": 9})
+    data, _meta = view_cmd.view_task_delete(
+        _inv("view.task.delete", extra_args=["7", "3"], yes=True, input_file=doc)
+    )
+    assert data["row_check"]["rows_before"] is None
+    assert data["row_check"]["rows_before_error"] == "CliError: dataview 7 not found"
 
 
 def test_task_get_passes_ids(fake_service: FakeMammothService) -> None:

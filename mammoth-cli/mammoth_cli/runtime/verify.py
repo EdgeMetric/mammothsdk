@@ -31,6 +31,13 @@ _UNREADABLE_ROW_COUNT_WARNING = (
 #: no row count to check yet.
 _STAGED_REASON = "staged in draft; not applied until the draft is submitted"
 
+#: ``reason`` for a write whose settle step never ran (its parent dataset
+#: could not be resolved) and whose own status is still ``processing`` --
+#: never reported as verified just because nothing named a failure.
+_UNSETTLED_REASON = (
+    "the change was accepted but has not finished; read the view before building on it"
+)
+
 
 def with_verify(data: Any) -> Any:
     """Return ``data`` with a ``verify`` read-back block added.
@@ -157,6 +164,8 @@ def _verify_and_reason(
     for status in (data.get("status"), _job_status(data)):
         if isinstance(status, str) and status.lower() in _FAILURE_STATUSES:
             return False, "the operation failed"
+        if isinstance(status, str) and status.lower() == "processing":
+            return False, _UNSETTLED_REASON
     pipeline_state = data.get("pipeline_state")
     if isinstance(pipeline_state, str) and pipeline_state.lower() in _FAILURE_PIPELINE_STATES:
         return False, "the pipeline reported an error"
