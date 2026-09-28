@@ -2,11 +2,23 @@
 
 from __future__ import annotations
 
+import json
+from typing import Any
+
 from mammoth_cli.services.data_quality import column_warnings
 
 
 def _rows(values: list[object], column: str = "price") -> list[dict[str, object]]:
     return [{column: v} for v in values]
+
+
+def _variant_warning(rows: list[dict[str, object]], view_id: int | None = None) -> dict[str, Any]:
+    (warning,) = [
+        w
+        for w in column_warnings(rows, {"brand": "TEXT"}, view_id=view_id)
+        if w["issue"] == "variant_spellings"
+    ]
+    return warning
 
 
 def test_numbers_stored_as_text_names_the_odd_values_and_the_fix() -> None:
@@ -112,3 +124,71 @@ def test_duplicate_rows_fix_is_a_runnable_command_when_dataset_id_is_known() -> 
 def test_no_duplicate_rows_is_quiet() -> None:
     rows = [{"a": "1"}, {"a": "2"}, {"a": "3"}]
     assert [w for w in column_warnings(rows, {"a": "TEXT"}) if w["issue"] == "duplicate_rows"] == []
+
+
+def test_variant_spellings_are_grouped_with_a_bulk_replace_fix() -> None:
+    rows = _rows(["PEPSI", "Pepsi ", "pepsi", "Pepsi", "Pepsi", "Coke", "Sprite"], column="brand")
+    warning = _variant_warning(rows, view_id=62)
+    assert "{'PEPSI', 'Pepsi', 'Pepsi ', 'pepsi'} -> 'Pepsi'" in warning["detail"]
+    assert warning["fix"].startswith("mammoth view transform bulk-replace 62 --input ")
+    payload = json.loads(warning["fix"].split("--input ", 1)[1].strip("'"))
+    assert payload["columns"] == ["brand"]
+    (mapping,) = payload["mapping"]
+    assert sorted(mapping["search"]) == ["PEPSI", "Pepsi", "Pepsi ", "pepsi"]
+    assert mapping["replace"] == "Pepsi"
+
+
+def test_variant_spellings_placeholder_view_id_when_unknown() -> None:
+    rows = _rows(["PEPSI", "Pepsi ", "pepsi"], column="brand")
+    warning = _variant_warning(rows)
+    assert warning["fix"].startswith("mammoth view transform bulk-replace VIEW_ID --input ")
+
+
+def test_variant_spellings_do_not_fuzzy_match_different_words() -> None:
+    """'pepsi cola' is a different brand name, not a spelling of 'pepsi': only
+    values that are normalisation-equal (same case-, whitespace- and
+    punctuation-stripped key) may be grouped.
+    """
+    rows = _rows(
+        ["pepsi", "Pepsi", "pepsi cola", "pepsi cola", "sprite", "sprite"],
+        column="brand",
+    )
+    warning = _variant_warning(rows)
+    payload = json.loads(warning["fix"].split("--input ", 1)[1].strip("'"))
+    searched = {v for m in payload["mapping"] for v in m["search"]}
+    assert searched == {"pepsi", "Pepsi"}
+    assert "pepsi cola" not in searched
+
+
+def test_variant_spellings_ignores_inner_punctuation_differences() -> None:
+    rows = _rows(["Pepsi, Co.", "Pepsi Co", "pepsi co"], column="brand")
+    warning = _variant_warning(rows)
+    payload = json.loads(warning["fix"].split("--input ", 1)[1].strip("'"))
+    (mapping,) = payload["mapping"]
+    assert sorted(mapping["search"]) == ["Pepsi Co", "Pepsi, Co.", "pepsi co"]
+
+
+def test_variant_spellings_caps_at_five_groups_and_says_so() -> None:
+    values: list[object] = []
+    for i in range(6):
+        values.extend([f"Brand{i}", f"brand{i} "])
+    rows = _rows(values, column="brand")
+    warning = _variant_warning(rows, view_id=1)
+    payload = json.loads(warning["fix"].split("--input ", 1)[1].strip("'"))
+    assert len(payload["mapping"]) == 5
+    assert "1 more" in warning["detail"]
+
+
+def test_no_variant_spellings_is_quiet_for_distinct_words() -> None:
+    rows = _rows(["Coke", "Sprite", "Fanta"], column="brand")
+    assert [
+        w for w in column_warnings(rows, {"brand": "TEXT"}) if w["issue"] == "variant_spellings"
+    ] == []
+
+
+def test_variant_spellings_replace_with_the_most_used_real_spelling() -> None:
+    rows = _rows(["McDonald's", "McDonald's", "mcdonald's", "Kfc", "Taco"], column="brand")
+    warning = _variant_warning(rows, view_id=7)
+
+    assert '-> "McDonald\'s"' in warning["detail"]
+    assert "Mcdonald'S" not in warning["fix"]

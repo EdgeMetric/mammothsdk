@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import json
 import re
+from collections import Counter
 from collections.abc import Iterable, Mapping
 from datetime import datetime
 from typing import Any
@@ -20,8 +21,14 @@ _MOSTLY = 0.8
 #: Fewer non-blank values than this are too few to call a pattern.
 _MIN_VALUES = 3
 _MAX_EXAMPLES = 3
+#: Most groups of variant spellings to name in one warning.
+_MAX_VARIANT_GROUPS = 5
 
 _NUMBER = re.compile(r"^[-+]?[$€£]?\s*\d[\d,]*(\.\d+)?\s*%?$|^[-+]?[$€£]?\s*\.\d+\s*%?$")
+#: Punctuation is normalised to a space, not dropped, so "Pepsi,Cola" and
+#: "Pepsi Cola" collapse the same way as "Pepsi Cola" itself.
+_PUNCTUATION = re.compile(r"[^\w\s]", re.UNICODE)
+_WHITESPACE = re.compile(r"\s+")
 _DATE_FORMATS = (
     "%Y-%m-%d",
     "%Y/%m/%d",
@@ -59,6 +66,82 @@ def _convert_hint(view_id: int | None, column: str, to: str) -> str:
     target = str(view_id) if view_id is not None else "VIEW_ID"
     spec = json.dumps({"conversions": [{"column": column, "to": to}]})
     return f"mammoth view transform convert-type {target} --input '{spec}'"
+
+
+def _bulk_replace_hint(view_id: int | None, column: str, mapping: list[dict[str, Any]]) -> str:
+    target = str(view_id) if view_id is not None else "VIEW_ID"
+    spec = json.dumps({"columns": [column], "mapping": mapping})
+    return f"mammoth view transform bulk-replace {target} --input '{spec}'"
+
+
+def _spelling_key(text: str) -> str:
+    """Case-, whitespace- and punctuation-insensitive grouping key.
+
+    Punctuation is replaced with a space (not dropped) before whitespace is
+    collapsed, so inner punctuation ("Pepsi, Co.") normalises the same way
+    as a plain space ("Pepsi Co"). This is normalisation, not fuzzy
+    matching: different words ("pepsi cola") get a different key than
+    ("pepsi") and are never grouped.
+    """
+    despaced = _WHITESPACE.sub(" ", _PUNCTUATION.sub(" ", text))
+    return despaced.strip().lower()
+
+
+def _variant_spelling_groups(texts: list[str]) -> list[tuple[str, list[str]]]:
+    """Group distinct values that share a spelling key, keys sorted for stable output.
+
+    Only keys with more than one distinct raw value are a "group" worth
+    reporting; a single spelling of a value is not a finding.
+    """
+    by_key: dict[str, list[str]] = {}
+    for text in dict.fromkeys(texts):  # distinct values, first-seen order
+        key = _spelling_key(text)
+        if not key:
+            continue
+        by_key.setdefault(key, []).append(text)
+    groups = [(key, values) for key, values in by_key.items() if len(values) > 1]
+    return sorted(groups, key=lambda item: item[0])
+
+
+def _most_used_spelling(values: list[str], counts: Counter[str]) -> str:
+    """The group's most frequent real spelling (first seen on a tie), trimmed.
+
+    Never a synthesised form such as ``str.title()``, which would rewrite
+    "McDonald's" as "Mcdonald'S".
+    """
+    return max(values, key=lambda value: counts[value]).strip()
+
+
+def _variant_spellings_warning(
+    column: str,
+    texts: list[str],
+    view_id: int | None,
+    checked: int,
+) -> dict[str, Any] | None:
+    groups = _variant_spelling_groups(texts)
+    if not groups:
+        return None
+    shown = groups[:_MAX_VARIANT_GROUPS]
+    counts = Counter(texts)
+    canonical = {key: _most_used_spelling(values, counts) for key, values in shown}
+    mapping = [{"search": sorted(values), "replace": canonical[key]} for key, values in shown]
+    examples = "; ".join(
+        "{" + ", ".join(repr(v) for v in sorted(values)) + "}" + f" -> {canonical[key]!r}"
+        for key, values in shown
+    )
+    detail = (
+        f"{len(groups)} group(s) of values in this TEXT column differ only in case, "
+        f"whitespace or punctuation and will be counted separately unless unified: {examples}."
+    )
+    if len(groups) > _MAX_VARIANT_GROUPS:
+        detail += f" ({len(groups) - _MAX_VARIANT_GROUPS} more not shown)."
+    return {
+        "column": column,
+        "issue": "variant_spellings",
+        "detail": detail,
+        "fix": _bulk_replace_hint(view_id, column, mapping),
+        "rows_checked": checked,
+    }
 
 
 def _duplicate_rows_warning(
@@ -111,9 +194,10 @@ def column_warnings(
     Returns:
         One record per finding: ``column``, ``issue``
         (``numbers_stored_as_text``, ``dates_stored_as_text``,
-        ``blank_values`` or the table-level ``duplicate_rows``), ``detail``
-        and, where one command fixes it, ``fix``. Counts are over the rows
-        given (``rows_checked`` on each record).
+        ``variant_spellings``, ``blank_values`` or the table-level
+        ``duplicate_rows``), ``detail`` and, where one command fixes it,
+        ``fix``. Counts are over the rows given (``rows_checked`` on each
+        record).
     """
     materialised = [row for row in rows if isinstance(row, Mapping)]
     if not materialised:
@@ -166,6 +250,9 @@ def column_warnings(
                     }
                 )
                 break
+            variant_warning = _variant_spellings_warning(column, texts, view_id, checked)
+            if variant_warning is not None:
+                warnings.append(variant_warning)
         if blanks:
             warnings.append(
                 {
