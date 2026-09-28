@@ -85,6 +85,33 @@ def test_blank_values_are_counted_for_any_type() -> None:
     assert "fix" not in warning
 
 
+def _benchmark(cpm: object, reach: object = "62.0") -> dict[str, object]:
+    return {"market": "Mumbai", "cpm_inr": cpm, "max_reach_pct": reach}
+
+
+_BENCHMARK_TYPES = {"market": "TEXT", "cpm_inr": "NUMERIC", "max_reach_pct": "NUMERIC"}
+
+
+def test_a_blank_in_the_only_varying_number_offers_removing_the_rows() -> None:
+    """Eval T2-WPP-W7: a benchmark row whose one varying figure is blank holds
+    no figure at all. The warning offered fill, remove or keep as equals and
+    the agent kept both rows (24, not the 22 a clean-up leaves)."""
+    rows = [_benchmark("150"), _benchmark(None), _benchmark("145")]
+    (warning,) = column_warnings(rows, _BENCHMARK_TYPES, view_id=3428, dataset_id=2791)
+    assert "only number that varies" in warning["detail"]
+    spec = {"condition": {"column": "cpm_inr", "operator": "IS_NOT_EMPTY"}, "dataset_id": 2791}
+    assert warning["fix"] == f"mammoth view transform filter 3428 --input '{json.dumps(spec)}'"
+
+
+def test_a_blank_beside_another_varying_number_keeps_the_open_choice() -> None:
+    """A row that still carries another figure is not empty, so nothing is
+    recommended: dropping it would lose that figure."""
+    rows = [_benchmark("150", "62"), _benchmark(None, "55"), _benchmark("145", "60")]
+    (warning,) = column_warnings(rows, _BENCHMARK_TYPES, view_id=3428, dataset_id=2791)
+    assert warning["detail"].endswith("or keep them and say so.")
+    assert "fix" not in warning
+
+
 def test_no_rows_no_warnings() -> None:
     assert column_warnings([], {"price": "TEXT"}) == []
 
