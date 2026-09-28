@@ -974,13 +974,8 @@ def view_transform_delete_columns(invocation: Invocation) -> HandlerResult:
 
 
 def view_transform_discard_duplicates(invocation: Invocation) -> HandlerResult:
-    """Discard duplicate rows. ``ignore_columns`` is optional. Prompt or ``--yes`` required."""
+    """Discard duplicate rows. ``ignore_columns`` is optional."""
     view_id = _view_id(invocation)
-    enforce_confirmation(
-        invocation,
-        policy=POLICY_PROMPT_OR_YES,
-        action=f"discard duplicate rows on view {view_id}",
-    )
     document = invocation.load_input() or {}
     kwargs = _bind_transform_inputs(invocation, document)
     return _dispatch_view(invocation, view_id, "discard_duplicates", **kwargs)
@@ -1009,11 +1004,8 @@ def view_transform_fill_missing(invocation: Invocation) -> HandlerResult:
 
 
 def view_transform_filter(invocation: Invocation) -> HandlerResult:
-    """Filter rows. ``condition`` is required. Prompt or ``--yes`` required."""
+    """Filter rows. ``condition`` is required."""
     view_id = _view_id(invocation)
-    enforce_confirmation(
-        invocation, policy=POLICY_PROMPT_OR_YES, action=f"filter rows on view {view_id}"
-    )
     document = invocation.load_input()
     _require_field(document, CONDITION_KWARG)
     assert document is not None
@@ -1091,11 +1083,8 @@ def view_transform_json_extract(invocation: Invocation) -> HandlerResult:
 
 
 def view_transform_limit_rows(invocation: Invocation) -> HandlerResult:
-    """Limit the row count. ``n`` is required. Prompt or ``--yes`` required."""
+    """Limit the row count. ``n`` is required."""
     view_id = _view_id(invocation)
-    enforce_confirmation(
-        invocation, policy=POLICY_PROMPT_OR_YES, action=f"limit rows on view {view_id}"
-    )
     document = invocation.load_input()
     _require_field(document, "n")
     assert document is not None

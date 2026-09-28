@@ -88,7 +88,6 @@ def test_a_plain_view_transform_gets_a_row_check(
             extra_args=["3"],
             resource_ref=_parent(3),
             input_file=_write(tmp_path, {"n": 10}),
-            yes=True,
         )
     )
     assert data["row_check"] == {"rows_before": 20, "rows_after": 20}
@@ -120,7 +119,6 @@ def test_a_plain_view_transform_waits_for_the_pipeline_before_reading_rows_after
             extra_args=["3"],
             resource_ref=_parent(3),
             input_file=_write(tmp_path, {"n": 10}),
-            yes=True,
         )
     )
     assert data["row_check"] == {"rows_before": 20, "rows_after": 17}
@@ -151,7 +149,6 @@ def test_a_plain_view_transform_is_unverified_when_rows_after_never_arrives(
             extra_args=["3"],
             resource_ref=_parent(3),
             input_file=_write(tmp_path, {"n": 10}),
-            yes=True,
         )
     )
     assert data["row_check"] == {"rows_before": 20, "rows_after": None}
@@ -179,7 +176,6 @@ def test_a_staged_draft_transform_skips_the_row_check_and_the_settle_wait(
             extra_args=["3"],
             resource_ref=_parent(3),
             input_file=_write(tmp_path, {"n": 10}),
-            yes=True,
         )
     )
     assert "row_check" not in data
@@ -217,7 +213,6 @@ def test_a_plain_view_transform_catches_a_runtime_error_execution_state(
             extra_args=["3"],
             resource_ref=_parent(3),
             input_file=_write(tmp_path, {"n": 10}),
-            yes=True,
         )
     )
     verified = with_verify(data)["verify"]
@@ -244,7 +239,6 @@ def test_a_failed_pipeline_read_after_settle_is_unverified_not_silently_ok(
             extra_args=["3"],
             resource_ref=_parent(3),
             input_file=_write(tmp_path, {"n": 10}),
-            yes=True,
         )
     )
     assert data["pipeline_error"]["execution_state"] == "unknown"
@@ -269,7 +263,6 @@ def test_a_non_dict_pipeline_read_is_unverified_not_silently_ok(
             extra_args=["3"],
             resource_ref=_parent(3),
             input_file=_write(tmp_path, {"n": 10}),
-            yes=True,
         )
     )
     assert data["pipeline_error"]["execution_state"] == "unknown"
@@ -297,7 +290,6 @@ def test_a_failed_task_detail_read_is_recorded_not_swallowed(
             extra_args=["3"],
             resource_ref=_parent(3),
             input_file=_write(tmp_path, {"n": 10}),
-            yes=True,
         )
     )
     assert data["pipeline_error"]["execution_state"] == "runtime_error"
