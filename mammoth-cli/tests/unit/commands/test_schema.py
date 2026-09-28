@@ -404,6 +404,22 @@ def test_undo_dashboard_intent_reaches_chat_history() -> None:
         assert "dashboard.chat.history" in matches, f"{query!r} -> {matches}"
 
 
+def test_matched_purpose_text_is_returned_so_the_caller_knows_why_it_matched() -> None:
+    """Live-eval evidence (T1-I-07): 'custom internal API sources' ranked
+    connector.ai.chat first via its hidden purpose text ("connect our own
+    internal custom api build a connector for an unsupported source"), but
+    schema find never handed that text back -- only command_id/command_path/
+    agent_example/matched_terms -- so the model read it as "ask the AI a
+    question" and never explained the generic/custom-connector route. Every
+    match must now carry why it matched.
+    """
+    result = find_schemas("custom internal API sources")
+    by_id = {item["command_id"]: item for item in result["suggestions"]}
+    assert "connector.ai.chat" in by_id, result["suggestions"]
+    matched_on = by_id["connector.ai.chat"]["matched_on"]
+    assert "build a connector for an unsupported source" in matched_on, matched_on
+
+
 def test_or_is_a_discovery_stopword_so_import_workbook_still_matches() -> None:
     """Live-eval evidence (T1-D-06): 'import Power BI or Tableau reports; export
     dashboard or board as PDF' -- the incidental conjunction 'or' was not a

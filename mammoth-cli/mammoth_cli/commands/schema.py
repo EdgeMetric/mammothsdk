@@ -584,6 +584,9 @@ _DISCOVERY_STOPWORDS = frozenset(
 )
 # How many near misses a search with no full match returns.
 _MAX_SUGGESTIONS = 5
+# Cap on the curated purpose text a match's ``matched_on`` field quotes back,
+# so one long entry can't bloat every result in a page.
+_MATCHED_ON_MAX_CHARS = 120
 _NO_MATCH_HINT = (
     "No command matched every word. 'suggestions' match some of them; try fewer or other "
     "words. 'mammoth view transform --help' lists every data transformation (join, pivot, "
@@ -1658,6 +1661,20 @@ def find_schemas(
             "confirmation": record["confirmation"],
             "full_schema_command": f"mammoth schema get {command_id}",
         }
+        # A match on hidden curated purpose text (T1-I-07) is otherwise
+        # invisible to the caller: only command_id/command_path/matched_terms
+        # come back, and a terse docstring-derived example can read as
+        # something else entirely (connector.ai.chat's own example reads as
+        # "ask the AI a question", not "build a connector for an unsupported
+        # API"). Echo the purpose text that matched, capped so a long entry
+        # doesn't bloat every result.
+        if command_purpose and any(term in _tokens(command_purpose) for term in matched_terms):
+            purpose_text = _COMMAND_DISCOVERY_PURPOSES[command_id]
+            entry["matched_on"] = (
+                purpose_text
+                if len(purpose_text) <= _MATCHED_ON_MAX_CHARS
+                else purpose_text[:_MATCHED_ON_MAX_CHARS].rstrip() + "..."
+            )
         if is_support:
             # These operate on another workspace/customer on the caller's
             # behalf (Mammoth-operator tooling), not the caller's own
