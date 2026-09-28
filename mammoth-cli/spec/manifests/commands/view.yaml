@@ -1261,7 +1261,8 @@ commands:
     [{"column": "Spend", "function": "SUM", "as_name": "Spend"}]}'''
   unit_tests:
   - UT-VIEW-DATA-COMPARE
-  contract_tests: []
+  contract_tests:
+  - CT-VIEW-DATA-COMPARE
   draft_test: null
   undo_test: null
   known_restrictions: 'Every number reported to the user comes from a tool result: use this to compare

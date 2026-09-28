@@ -32,7 +32,8 @@ commands:
   agent_example: mammoth calc '2063664 - 1917815'
   unit_tests:
   - UT-CALC
-  contract_tests: []
+  contract_tests:
+  - CT-CALC-S1-LOCAL
   draft_test: null
   undo_test: null
   known_restrictions: 'Every number reported to the user comes from a tool result:
