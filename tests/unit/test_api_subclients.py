@@ -596,16 +596,26 @@ class TestDataviewsAPI:
         await client.dataviews.get(dataset_id=500, dataview_id=42, sequence=0)
         assert_called_with_method_and_endpoint(client._request_json, "GET", "/dataviews/42")
 
-    async def test_get_resolves_latest_sequence_when_omitted(self, client: MammothClient):
-        # Omitting sequence resolves the latest task sequence first (one extra
-        # call), then reads metadata at that sequence.
-        client._request_json = AsyncMock(
-            return_value={"items": [{"item_type": "task", "sequence": 3, "status": "executed"}]}
-        )
+    async def test_get_leaves_the_sequence_to_the_server_when_omitted(
+        self, client: MammothClient
+    ):
+        """No sequence means "the last task in the pipeline" to the API itself.
+
+        Working it out here took an extra request and got it wrong while a
+        draft was open: the highest task is the staged one, which never ran.
+        """
         await client.dataviews.get(dataset_id=500, dataview_id=42)
         calls = client._request_json.call_args_list
-        assert "/items" in calls[0][0][1]
-        assert calls[-1][1]["params"]["sequence"] == 3
+        assert len(calls) == 1, "no latest-sequence lookup"
+        assert "sequence" not in (calls[0][1].get("params") or {})
+
+    async def test_query_data_leaves_the_sequence_to_the_server_when_omitted(
+        self, client: MammothClient
+    ):
+        await client.dataviews.query_data(dataset_id=500, dataview_id=42)
+        calls = client._request_json.call_args_list
+        assert len(calls) == 1, "no latest-sequence lookup"
+        assert "sequence" not in calls[0][1]["json"]
 
     async def test_create(self, client: MammothClient):
         await client.dataviews.create(dataset_id=500, name="New View")

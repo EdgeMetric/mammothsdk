@@ -79,17 +79,18 @@ class DataviewsAPI:
     ) -> dict[str, Any]:
         """Get dataview information.
 
-        Metadata is scoped to a pipeline task *sequence*. When ``sequence`` is
-        omitted it defaults to the latest task sequence, so the returned
-        ``metadata`` reflects every pipeline-derived column (math, add_column,
-        etc.). Pass ``sequence=0`` for the original dataset columns.
+        Metadata is scoped to a pipeline task *sequence*. Omitting it leaves
+        the choice to the API, which reads the last task in the pipeline, so
+        the returned ``metadata`` reflects every pipeline-derived column (math,
+        add_column, etc.). Pass ``sequence=0`` for the original dataset columns.
 
         Args:
             dataset_id: ID of the dataset.
             dataview_id: ID of the dataview.
             workspace_id: ID of the workspace (uses client default if not provided).
             project_id: ID of the project (uses client default if not provided).
-            sequence: Pipeline step to read metadata at (default: latest).
+            sequence: Pipeline step to read metadata at. Omit to let the
+                API read the last task in the pipeline.
             fields: Field set to return (e.g. ``"__full"``); server default if omitted.
 
         Returns:
@@ -97,15 +98,18 @@ class DataviewsAPI:
         """
         ws = workspace_id or self._ws()
         proj = project_id or self._proj()
-        if sequence is None:
-            sequence = await self._client.pipeline.latest_task_sequence(dataview_id, dataset_id)
-        params: dict[str, Any] = {"sequence": sequence}
+        # No sequence means "the last task in the pipeline" to the API itself.
+        # Working it out here cost a request and got it wrong while a draft was
+        # open, where the highest task is the staged one that never ran.
+        params: dict[str, Any] = {}
+        if sequence is not None:
+            params["sequence"] = sequence
         if fields is not None:
             params["fields"] = fields
         return await self._client._request_json(
             "GET",
             f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/dataviews/{dataview_id}",
-            params=params,
+            params=params or None,
         )
 
     async def create(
@@ -293,9 +297,9 @@ class DataviewsAPI:
         Args:
             dataset_id: ID of the dataset.
             dataview_id: ID of the dataview.
-            sequence: Pipeline step to fetch data at (default: latest task
-                sequence, so rows include every pipeline-derived column; pass
-                ``0`` for the original dataset).
+            sequence: Pipeline step to fetch data at. Omit to let the API
+                read the last task in the pipeline; pass ``0`` for the
+                original dataset.
             offset: One-indexed starting row (default 1).
             limit: Number of rows to fetch (default 400).
             columns: List of column names to fetch (optional).
@@ -309,9 +313,11 @@ class DataviewsAPI:
         """
         ws = workspace_id or self._ws()
         proj = project_id or self._proj()
-        if sequence is None:
-            sequence = await self._client.pipeline.latest_task_sequence(dataview_id, dataset_id)
-        payload: dict[str, Any] = {"sequence": sequence, "offset": offset, "limit": limit}
+        # As in `get`: the API reads the last task in the pipeline when asked
+        # for no sequence, and is right about it while a draft is open.
+        payload: dict[str, Any] = {"offset": offset, "limit": limit}
+        if sequence is not None:
+            payload["sequence"] = sequence
         if columns is not None:
             payload["columns"] = columns
         if condition is not None:
