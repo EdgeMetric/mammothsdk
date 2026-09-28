@@ -219,3 +219,46 @@ def test_variant_spellings_replace_with_the_most_used_real_spelling() -> None:
 
     assert '-> "McDonald\'s"' in warning["detail"]
     assert "Mcdonald'S" not in warning["fix"]
+
+
+_STORE_TYPES = {"date": "DATE", "store": "TEXT"}
+
+
+def _store_rows(*spans: tuple[str, list[str]]) -> list[dict[str, object]]:
+    return [{"date": day, "store": store} for store, days in spans for day in days]
+
+
+def test_a_label_that_stops_where_a_longer_one_starts_reads_as_a_rename() -> None:
+    """A store renamed in March ("Riverside" -> "Riverside Mall") splits its figures
+    across two names; the agent asked and kept them apart, so the quarter showed
+    no drop where the real one was (eval T2-BK-G3)."""
+    rows = _store_rows(
+        ("Riverside", ["2026-01-05", "2026-02-11", "2026-02-27"]),
+        ("Riverside Mall", ["2026-03-02", "2026-03-22"]),
+        ("Downtown", ["2026-01-14", "2026-03-22"]),
+    )
+
+    (warning,) = [
+        w for w in column_warnings(rows, _STORE_TYPES, view_id=62) if w["issue"] == "renamed_label"
+    ]
+
+    assert warning["column"] == "store"
+    assert "'Riverside'" in warning["detail"] and "'Riverside Mall'" in warning["detail"]
+    assert warning["fix"] == (
+        "mammoth view transform bulk-replace 62 --input "
+        '\'{"columns": ["store"], "mapping": [{"search": ["Riverside"], '
+        '"replace": "Riverside Mall"}]}\''
+    )
+
+
+def test_labels_that_share_dates_are_not_a_rename() -> None:
+    rows = _store_rows(
+        ("Pepsi", ["2026-01-05", "2026-03-01"]),
+        ("Pepsi Max", ["2026-02-01", "2026-03-22"]),
+    )
+
+    assert not [
+        w
+        for w in column_warnings(rows, {"date": "DATE", "store": "TEXT"})
+        if w["issue"] == "renamed_label"
+    ]
