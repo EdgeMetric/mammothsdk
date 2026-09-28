@@ -42,12 +42,16 @@ never read one from a file/env var, never run `auth login`
 yourself. If any envelope carries `meta.update_available`, run its `command`
 before the next step.
 
+In a shell: piped stdout is compact JSON and prompts are off; in a session
+that is not piped, `export MAMMOTH_OUTPUT=json MAMMOTH_NO_INPUT=1` once.
+`project ensure` saves the active project (`--project`, `MAMMOTH_PROFILE`
+and `MAMMOTH_PROJECT` override it). `mammoth skill show --input '{"file":
+"references/recipes/transforms.md"}'` prints any file of this skill;
+`mammoth skill agents-md install` writes a steering block into a
+repository's AGENTS.md so later sessions start here.
+
 ## Defaults you do not repeat
 
-- Piped stdout is compact JSON and prompts are off. Only in a session that
-  is not piped, `export MAMMOTH_OUTPUT=json MAMMOTH_NO_INPUT=1` once.
-- `project ensure` saves the active project; `--project` only overrides it.
-  `MAMMOTH_PROFILE` / `MAMMOTH_PROJECT` also work as session defaults.
 - The CLI remembers which dataset owns each view from any read (`view list
   DATASET_ID`, `view get VIEW_ID`, an upload). After that, no `dataset_id`
   on transforms, exports or deletes. If a command asks for the parent
@@ -96,10 +100,10 @@ with the command tried.
 Users often upload related files without saying how they relate ("make a
 dashboard from t_a and t_b"). Work it out from the data before building:
 
-1. Upload every file. Each result carries a `view` preview of what Mammoth
-   made of it (`view_id`, column types, sample rows, `column_warnings`,
-   `before_dashboard`). Do not open the local files (`cat`, `head`) — what
-   Mammoth made of them is what counts. Run `view data get VIEW_ID` per view;
+1. Upload every file, or find the ones already uploaded. An upload result
+   carries a `view` preview of what Mammoth made of it (`view_id`, column
+   types, sample rows, `column_warnings`, `before_dashboard`). What Mammoth
+   made of the files is what counts, not the raw files. Run `view data get VIEW_ID` per view;
    warnings list numbers/dates stored as text, and blanks, each with its fix.
 2. Find the keys. A column in one view whose values appear in a column of
    the other (`customer_id` and `id`, `order_ref` and `order_no`) is a
@@ -114,8 +118,8 @@ dashboard from t_a and t_b"). Work it out from the data before building:
    is a miss.
 5. `view transform join` the lookup view into the main view (`LEFT`). The
    result's `join_check` gives `match_rate`, `unmatched_rows` and
-   `unmatched_keys`; put them in your report, and stop to compare the keys
-   if more than a few rows found no match.
+   `unmatched_keys`; put them in your report. When the result's
+   `verify.needs_user` is set, stop and tell the user before building on it.
 6. If the data has money, add it before you make the dashboard: `revenue`
    (`math`, `qty * price`, `new_column`), the `fix` in `before_dashboard`.
    A dashboard sees only the columns the view had when it was made.
@@ -134,9 +138,6 @@ your report. If no column links the files, ask before you combine them.
 
 - Ids are positionals; request fields are one `--input '{...}'` document;
   no per-field flags (`project create NAME`, not `--name`).
-- `mammoth skill show --input '{"file": "references/recipes/transforms.md"}'`
-  prints any file of this skill; `mammoth skill agents-md install` writes a
-  steering block into a repository's AGENTS.md so later sessions start here.
 - `COMMAND --help` lists input fields; `schema find WORDS` inlines
   `accepted_fields`/`agent_example` for top matches, else `mammoth schema
   get COMMAND_ID` (`--input '{"full": true}'` for the schema); `schema
@@ -161,11 +162,10 @@ your report. If no column links the files, ask before you combine them.
 
 ## Verify before you report
 
-- A success envelope proves the call, not the outcome. After a row-scoped
-  change (set-values, filter, replace, join, fill) run `view data get
-  VIEW_ID` (50 rows by default, `limit` to change) and check rows the
-  condition should and should not have touched. Sample the target column
-  before the change.
+- A success envelope proves the call; the write's `state` (the data,
+  object or job status read back after it settled) shows the outcome.
+  Check it against your plan: rows the change should and should not have
+  touched. `unreadable` or a partial sample: read it with `view data get`.
 - A uniform result (every amount 0, every region "Unknown", most join rows
   unmatched) means the previous step went wrong; stop and re-inspect it.
 - `column_warnings` on a data read and `join_check` on a join are findings,
