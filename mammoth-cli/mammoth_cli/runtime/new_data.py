@@ -3,8 +3,8 @@
 A dataset made from an uploaded file reads as a one-time snapshot, so an agent
 asked for a recurring report concludes nothing new will ever arrive; the next
 file appends to it as a new batch and its views re-run. A dataset written by a
-view's export reads as a standalone copy, so an agent asked to remove it deletes
-the dataset and leaves the export that writes it again. :func:`with_new_data_path`
+view's export reads as a standalone copy, so an agent cannot tell what writes it
+or what deleting it takes with it. :func:`with_new_data_path`
 states either path; it never makes a request.
 """
 
@@ -20,10 +20,10 @@ _FROM_FILE = (
     "sends the updated data without anyone rebuilding the pipeline."
 )
 _FROM_EXPORT = (
-    "Written by an export in view {view_id}'s pipeline, which fills it again on "
-    "every run of that view. To stop the copy, remove the export: mammoth view "
-    "export delete {view_id} {export_id}; deleting only this dataset leaves the "
-    "export in place."
+    "Written by export {export_id} in view {view_id}'s pipeline, which fills it "
+    "again on every run of that view. Deleting this dataset also removes that "
+    "export; to keep the dataset but stop the updates, run mammoth view export "
+    "delete {view_id} {export_id}."
 )
 #: Nesting to search: a result, a listing inside it, a record in the listing.
 _MAX_DEPTH = 3
