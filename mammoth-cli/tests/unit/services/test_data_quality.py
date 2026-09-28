@@ -33,6 +33,31 @@ def test_dates_stored_as_text() -> None:
     assert '"to": "DATE"' in warning["fix"]
 
 
+def test_dates_stored_as_text_does_not_claim_unrecognized_values_go_empty() -> None:
+    """Truth-probe finding: ``_DATE_FORMATS`` is a narrow whitelist (no
+    ``%d-%b-%Y`` etc.), so a value like ``15-Jan-2024`` lands in ``others``
+    purely because the CLI's own check doesn't recognize it -- not because
+    the backend's date converter can't parse it. The probe confirmed such
+    values convert losslessly, so the warning must not assert they'll come
+    back empty.
+    """
+    rows = _rows(
+        [
+            "2026-01-02",
+            "2026-02-03",
+            "2026-03-04",
+            "2026-04-05",
+            "2026-05-06",
+            "15-Jan-2024",
+        ],
+        column="day",
+    )
+    (warning,) = column_warnings(rows, {"day": "TEXT"})
+    assert warning["issue"] == "dates_stored_as_text"
+    assert "'15-Jan-2024'" in warning["detail"]
+    assert "makes them empty" not in warning["detail"]
+
+
 def test_mostly_text_and_typed_columns_are_quiet() -> None:
     assert column_warnings(_rows(["a", "b", "1", "c"]), {"price": "TEXT"}) == []
     assert column_warnings(_rows(["1", "2", "3"]), {"price": "NUMERIC"}) == []
