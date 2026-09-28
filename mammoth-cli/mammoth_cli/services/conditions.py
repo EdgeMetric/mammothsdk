@@ -101,6 +101,11 @@ def compile_condition(spec: Any) -> _ConditionResult:
     if not isinstance(spec, dict):
         raise _invalid("A condition must be a mapping.")
 
+    compound = [key for key in ("and", "or", "not") if key in spec]
+    if compound and len(spec) != 1:
+        raise _invalid(
+            f"'{compound[0]}' must be the condition's only key; nest the others inside it."
+        )
     if "and" in spec or "or" in spec:
         key = "and" if "and" in spec else "or"
         branches = spec[key]

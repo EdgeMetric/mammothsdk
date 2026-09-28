@@ -313,6 +313,27 @@ def test_pipeline_write_with_a_now_broken_export_is_unverified_and_needs_user(
     assert ("mammoth.api.exports.ExportsAPI.list", {"dataview_id": 3388}) in fake_service.call_log
 
 
+@pytest.mark.parametrize(
+    ("command_id", "args"),
+    [
+        ("view.task.delete", ["3388", "12"]),
+        ("view.transform.rename-columns", ["3388"]),
+        ("view.pipeline.edit", ["3388"]),
+    ],
+)
+def test_every_write_that_can_drop_or_rename_a_column_checks_the_exports(
+    fake_service: FakeMammothService, command_id: str, args: list[str]
+) -> None:
+    """Deleting a step, renaming a column or editing the pipeline breaks an
+    export the same way a column delete does, but none of them is classed
+    ``reversible_pipeline``, so the check never ran for them."""
+    fake_service.responses["mammoth.api.exports.ExportsAPI.list"] = {"exports": [_BROKEN_EXPORT]}
+    invocation = Invocation(command_id=command_id, output="json", extra_args=args)
+    result = with_verify({"status": "done"}, invocation)
+    assert result["verify"]["verified"] is False
+    assert "export 251" in result["verify"]["reason"]
+
+
 def test_pipeline_write_with_no_broken_exports_is_unaffected(
     fake_service: FakeMammothService,
 ) -> None:

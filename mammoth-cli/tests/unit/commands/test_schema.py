@@ -898,3 +898,16 @@ def test_find_ranks_a_command_named_in_the_query_first(query: str) -> None:
     assert result["matches"], result.get("suggestions")
     assert result["matches"][0]["command_id"] == "view.data.aggregate"
     assert "accepted_fields" in result["matches"][0]
+
+
+def test_connector_connection_credentials_are_secret_fields_sent_through_a_file() -> None:
+    """``config`` on create and ``credentials`` on update ARE the connection's
+    secret, so their examples must not inline it on the command line."""
+    create = get_schema("connector.connection.create")
+    update = get_schema("connector.connection.update")
+    assert create is not None and update is not None
+
+    assert create["secret_fields"] == ["config"]
+    assert update["secret_fields"] == ["credentials"]
+    for schema in (create, update):
+        assert schema["agent_example"].endswith("--input /private/path/request.json")

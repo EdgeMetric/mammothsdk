@@ -1555,7 +1555,8 @@ methods:
   mutation_class: external_effect
   wait_policy: not_async
   pagination_policy: none
-  secret_fields: []
+  secret_fields:
+  - config
   reviewed_by: primary
 - sdk_symbol: mammoth.api.connectors.ConnectorsAPI.create_ds_config
   implementation_origin: mammoth.api.connectors.ConnectorsAPI.create_ds_config
@@ -1687,7 +1688,8 @@ methods:
   mutation_class: external_effect
   wait_policy: not_async
   pagination_policy: none
-  secret_fields: []
+  secret_fields:
+  - credentials
   reviewed_by: primary
 - sdk_symbol: mammoth.api.connectors.ConnectorsAPI.update_ds_config
   implementation_origin: mammoth.api.connectors.ConnectorsAPI.update_ds_config

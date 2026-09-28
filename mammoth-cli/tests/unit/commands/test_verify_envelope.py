@@ -12,6 +12,7 @@ from pathlib import Path
 
 import pytest
 
+from mammoth_cli.commands import view as view_cmd
 from mammoth_cli.commands import view_ops as view_ops_cmd
 from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.runtime.invocation import Invocation, ResourceRef
@@ -24,6 +25,7 @@ _DATAVIEW_GET = "mammoth.api.dataviews.DataviewsAPI.get"
 _WAIT_FOR_PIPELINE = "mammoth.api.pipeline.PipelineAPI.wait_for_pipeline"
 _PIPELINE_GET = "mammoth.api.pipeline.PipelineAPI.get_pipeline"
 _TASK_LIST = "mammoth.api.pipeline.PipelineAPI.list_tasks"
+_DELETE_TASK = "mammoth.api.pipeline.PipelineAPI.delete_task"
 _JSON_NO_INPUT = ["--output", "json", "--no-input"]
 
 
@@ -319,3 +321,28 @@ def test_a_join_transform_keeps_its_own_join_check_not_row_check(
     )
     assert "row_check" not in data
     assert "join_check" in data
+
+
+def test_a_task_delete_reads_rows_before_the_delete_is_sent(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    """A small view recomputes before the delete call even returns; a count read
+    after the call would already be the new one, and the check would say
+    nothing changed while the delete dropped rows."""
+    fake_service.responses[_DATAVIEW_GET] = {"row_count": 20}
+    fake_service.responses[_DELETE_TASK] = {"status": "processing"}
+
+    def gate(symbol: str, kwargs: dict[str, object], **_ignored: object) -> None:
+        if symbol == _DELETE_TASK:
+            fake_service.responses[_DATAVIEW_GET] = {"row_count": 15}
+
+    fake_service.gate = gate
+    data, _meta = view_cmd.view_task_delete(
+        _inv(
+            "view.task.delete",
+            extra_args=["3", "9"],
+            yes=True,
+            input_file=_write(tmp_path, {"dataset_id": 122}),
+        )
+    )
+    assert data["row_check"] == {"rows_before": 20, "rows_after": 15}

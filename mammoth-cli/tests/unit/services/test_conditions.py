@@ -56,3 +56,22 @@ def test_aliases_apply_inside_compound_specs() -> None:
     )
     built = condition.build({"A": "c1", "B": "c2"}, {"A": "NUMERIC", "B": "NUMERIC"})
     assert built == {"AND": [{"c1": {"EQ": {"VALUE": 1}}}, {"c2": {"LT": {"VALUE": 2}}}]}
+
+
+@pytest.mark.parametrize(
+    "spec",
+    [
+        {
+            "and": [{"column": "a", "operator": "EQ", "value": 1}],
+            "or": [{"column": "b", "operator": "EQ", "value": 2}],
+        },
+        {"not": {"column": "a", "operator": "EQ", "value": 1}, "value": 3},
+        {"or": [{"column": "a", "operator": "EQ", "value": 1}], "column": "b"},
+    ],
+)
+def test_a_compound_condition_with_a_second_key_is_refused(spec: dict[str, object]) -> None:
+    """With "and" beside "or", "or" was silently dropped: the filter kept or
+    removed different rows than the caller wrote."""
+    with pytest.raises(CliError) as excinfo:
+        compile_condition(spec)
+    assert excinfo.value.code == "invalid_condition"
