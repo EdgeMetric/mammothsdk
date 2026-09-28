@@ -345,3 +345,42 @@ def test_the_downstream_export_check_only_runs_for_pipeline_writes() -> None:
     invocation = Invocation(command_id="connector.connection.create", output="json")
     result = with_verify({"status": "done"}, invocation)
     assert result["verify"]["verified"] is True
+
+
+def test_a_broken_export_in_the_live_nested_shape_names_its_error_and_column(
+    fake_service: FakeMammothService,
+) -> None:
+    """The backend nests the details under ``additional_info`` (live koyal
+    `view export get 3388 251`, T2-WPP-W2)."""
+    fake_service.responses["mammoth.api.exports.ExportsAPI.list"] = {
+        "exports": [
+            {
+                "id": 251,
+                "handler_type": "internal_dataset",
+                "error_info": {
+                    "additional_info": {
+                        "error_code": 7001,
+                        "reference_errors": [{"column": {"display_name": "revision_rank"}}],
+                    }
+                },
+            }
+        ]
+    }
+    invocation = Invocation(
+        command_id="view.transform.delete-columns", output="json", extra_args=["3388"]
+    )
+    result = with_verify({"status": "done"}, invocation)
+    assert "error 7001" in result["verify"]["reason"]
+    assert "revision_rank" in result["verify"]["reason"]
+
+
+def test_a_failed_export_read_is_reported_not_hidden(
+    fake_service: FakeMammothService,
+) -> None:
+    fake_service.responses["mammoth.api.exports.ExportsAPI.list"] = RuntimeError("503")
+    invocation = Invocation(
+        command_id="view.transform.delete-columns", output="json", extra_args=["3388"]
+    )
+    result = with_verify({"status": "done"}, invocation)
+    assert result["verify"]["verified"] is True
+    assert any("could not check" in w for w in result["verify"]["warnings"])

@@ -320,15 +320,18 @@ def _apply_downstream_export_check(verify: dict[str, Any], invocation: Invocatio
     if view_id is None:
         return
     broken = _broken_downstream_exports(invocation, view_id)
+    if isinstance(broken, str):
+        verify["warnings"] = [*verify["warnings"], broken]
+        return
     if not broken:
         return
     details = [_export_error_detail(item) for item in broken]
     verify["verified"] = False
-    verify["reason"] = "this change broke a downstream export: " + "; ".join(details)
+    verify["reason"] = "a saved export on this view is in error: " + "; ".join(details)
     verify["warnings"] = [*verify["warnings"], *details]
     verify["needs_user"] = (
-        "A pipeline change on this view broke a saved export; its data will not "
-        "reach its destination until this is fixed: " + "; ".join(details)
+        "A saved export on this view is in error after this change; its data will "
+        "not reach its destination until this is fixed: " + "; ".join(details)
     )
 
 
@@ -350,13 +353,14 @@ def _pipeline_view_id(invocation: Invocation) -> int | None:
     return None
 
 
-def _broken_downstream_exports(invocation: Invocation, view_id: int) -> list[dict[str, Any]]:
+def _broken_downstream_exports(invocation: Invocation, view_id: int) -> list[dict[str, Any]] | str:
     """Exports on ``view_id`` now in error, read via the existing ``view.export.list``.
 
     Each export the backend hands back already carries its own ``error_info``
     when it can no longer run (see ``mammoth.models.exports.ItemExportInfo``);
-    this is the one read that surfaces it. Best effort: a read that itself
-    fails must not hide the write's own, already-settled success.
+    this is the one read that surfaces it. A read that itself fails returns
+    the warning to show instead: it must not hide the write's own,
+    already-settled success, nor pass silently.
     """
     from mammoth_cli.commands.registry import HANDLERS
 
@@ -377,8 +381,8 @@ def _broken_downstream_exports(invocation: Invocation, view_id: int) -> list[dic
     )
     try:
         read_data, _meta = handler(read_invocation)
-    except Exception:  # noqa: BLE001 -- best effort; the write already succeeded
-        return []
+    except Exception as exc:  # noqa: BLE001 -- the write already succeeded
+        return f"could not check this view's saved exports: {exc}"
     exports = read_data.get("exports") if isinstance(read_data, dict) else None
     if not isinstance(exports, list):
         return []
@@ -389,6 +393,10 @@ def _export_error_detail(item: dict[str, Any]) -> str:
     """Human-readable ``"export <id> (<handler>): ..."`` line for one broken export."""
     error_info = item.get("error_info")
     error_info = error_info if isinstance(error_info, dict) else {}
+    # the backend nests the details: error_info.additional_info.{error_code,
+    # reference_errors} (live `view export get`, T2-WPP-W2)
+    nested = error_info.get("additional_info")
+    error_info = {**error_info, **nested} if isinstance(nested, dict) else error_info
     what = f"export {item.get('id')}"
     handler_type = item.get("handler_type")
     if handler_type:
@@ -398,7 +406,7 @@ def _export_error_detail(item: dict[str, Any]) -> str:
     columns = _export_error_columns(error_info)
     if columns:
         detail += f", column(s) {', '.join(columns)}"
-    return f"{what} is now broken: {detail}"
+    return f"{what} is in error: {detail}"
 
 
 def _export_error_columns(error_info: dict[str, Any]) -> list[str]:

@@ -89,45 +89,39 @@ def test_list_dispatches(fake_service: FakeMammothService) -> None:
 
 
 def test_list_marks_a_premium_not_added_connector(fake_service: FakeMammothService) -> None:
-    fake_service.responses[_LIST] = {
-        "connectors": [
-            {
-                "api_type": "DB",
-                "disp_name": "Google BigQuery",
-                "is_added": False,
-                "is_premium": True,
-                "name_key": "bigquery",
-            },
-            {
-                "api_type": "DB",
-                "disp_name": "Postgres SQL",
-                "is_added": True,
-                "is_premium": False,
-                "name_key": "postgres",
-            },
-        ],
-        "next": "",
-    }
+    # ConnectorsAPI.list returns a plain list (live koyal connector list)
+    fake_service.responses[_LIST] = [
+        {
+            "api_type": "DB",
+            "disp_name": "Google BigQuery",
+            "is_added": False,
+            "is_premium": True,
+            "name_key": "bigquery",
+        },
+        {
+            "api_type": "DB",
+            "disp_name": "Postgres SQL",
+            "is_added": True,
+            "is_premium": False,
+            "name_key": "postgres",
+        },
+    ]
     data, _meta = connector_cmd.connector_list(_inv("connector.list"))
-    bigquery, postgres = data["connectors"]
+    bigquery, postgres = data
     assert bigquery["availability"] == "premium_not_enabled"
+    assert "sales" in bigquery["availability_note"].lower()
     assert "availability" not in postgres
-    assert "Google BigQuery" in data["premium_connector_note"]
-    assert "sales" in data["premium_connector_note"].lower()
 
 
-def test_list_adds_no_note_when_nothing_is_premium_and_unadded(
+def test_list_leaves_ordinary_connectors_unmarked(
     fake_service: FakeMammothService,
 ) -> None:
-    fake_service.responses[_LIST] = {
-        "connectors": [
-            {"disp_name": "Postgres SQL", "is_added": True, "is_premium": False},
-        ],
-        "next": "",
-    }
+    fake_service.responses[_LIST] = [
+        {"disp_name": "Postgres SQL", "is_added": True, "is_premium": False},
+        {"disp_name": "MySQL", "is_added": False, "is_premium": False},
+    ]
     data, _meta = connector_cmd.connector_list(_inv("connector.list"))
-    assert "premium_connector_note" not in data
-    assert "availability" not in data["connectors"][0]
+    assert all("availability" not in item for item in data)
 
 
 # --- ai chat ---------------------------------------------------------------------
