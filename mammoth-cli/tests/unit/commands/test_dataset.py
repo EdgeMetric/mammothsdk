@@ -135,6 +135,25 @@ def test_get_without_dataset_id_is_usage_error(fake_service: FakeMammothService)
     assert excinfo.value.code == "missing_argument"
 
 
+def test_get_strips_file_ingestion_automation_possible_flag(
+    fake_service: FakeMammothService,
+) -> None:
+    """RCA evidence (T1-R-01/T1-R-07): automation_possible is CSV-ingestion
+    metadata (api/api/file/unprocessed.py) about whether the header-parsing
+    pipeline can auto-process this upload -- unrelated to whether the
+    dataset can be put on a scheduled refresh. An agent reading it next to a
+    'no refreshable source' claim misreads it as contradicting that claim.
+    It must not appear in dataset get's output.
+    """
+    fake_service.responses[_GET] = {
+        "id": 7,
+        "additional_info": {"all_data_backup": {"PARAMS": {"automation_possible": True}}},
+    }
+    data, _meta = dataset_cmd.dataset_get(_inv("dataset.get", project=180, extra_args=["7"]))
+    all_data_params = data["additional_info"]["all_data_backup"]["PARAMS"]
+    assert "automation_possible" not in all_data_params
+
+
 def test_batch_data_rejects_invalid_paging_before_service(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:

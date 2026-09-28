@@ -184,8 +184,9 @@ def dataset_find(invocation: Invocation) -> HandlerResult:
     return {
         "matches": matches,
         "projects_searched": len(projects),
-        "projects_truncated": invocation.project is None
-        and len(projects) >= _MAX_PROJECTS_SEARCHED,
+        "projects_truncated": (
+            invocation.project is None and len(projects) >= _MAX_PROJECTS_SEARCHED
+        ),
     }, meta
 
 
@@ -206,7 +207,22 @@ def dataset_get(invocation: Invocation) -> HandlerResult:
     dataset_id = _require_int_positional(invocation, "dataset id")
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), dataset_id=dataset_id, project_id=project_id)
+    _strip_file_ingestion_automation_possible(data)
     return data, _meta(invocation, auth.workspace_id, project_id)
+
+
+def _strip_file_ingestion_automation_possible(data: Any) -> None:
+    """Drop ``automation_possible`` (T1-R-01/T1-R-07): CSV-ingestion metadata
+    about whether the header-parsing pipeline can auto-process this upload
+    (``api/api/file/unprocessed.py``), unrelated to whether the dataset has a
+    connector to put on a scheduled refresh. Left in, an agent checking a
+    dataset's automation options reads it as contradicting a correct "no
+    refreshable source" claim."""
+    if not isinstance(data, dict):
+        return
+    params = data.get("additional_info", {}).get("all_data_backup", {}).get("PARAMS", {})
+    if isinstance(params, dict):
+        params.pop("automation_possible", None)
 
 
 def dataset_data(invocation: Invocation) -> HandlerResult:
