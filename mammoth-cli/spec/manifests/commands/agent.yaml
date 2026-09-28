@@ -37,6 +37,7 @@ commands:
   reviewed_by: primary
   readback:
     command: agent.session.list
+    ids: {}
     kind: object
 - command_id: agent.session.delete
   command_path: agent session delete
@@ -80,6 +81,7 @@ commands:
   reviewed_by: primary
   readback:
     command: agent.session.list
+    ids: {}
     kind: object
 - command_id: agent.session.list
   command_path: agent session list
@@ -197,4 +199,5 @@ commands:
   reviewed_by: primary
   readback:
     command: agent.session.list
+    ids: {}
     kind: object

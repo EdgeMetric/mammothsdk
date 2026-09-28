@@ -93,6 +93,7 @@ commands:
   reviewed_by: primary
   readback:
     command: automation.list
+    ids: {}
     kind: object
 - command_id: automation.get
   command_path: automation get

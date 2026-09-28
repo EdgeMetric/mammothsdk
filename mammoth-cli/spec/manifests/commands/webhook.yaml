@@ -87,6 +87,7 @@ commands:
   reviewed_by: primary
   readback:
     command: webhook.list
+    ids: {}
     kind: object
 - command_id: webhook.get
   command_path: webhook get

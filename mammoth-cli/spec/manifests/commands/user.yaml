@@ -36,6 +36,7 @@ commands:
   reviewed_by: primary
   readback:
     command: user.get
+    ids: {}
     kind: object
 - command_id: user.avatar.upload
   command_path: user avatar upload
@@ -79,6 +80,7 @@ commands:
   reviewed_by: primary
   readback:
     command: user.get
+    ids: {}
     kind: object
 - command_id: user.change-password
   command_path: user change-password
@@ -121,6 +123,7 @@ commands:
   reviewed_by: primary
   readback:
     command: user.get
+    ids: {}
     kind: object
 - command_id: user.delete-account
   command_path: user delete-account
@@ -265,6 +268,7 @@ commands:
   reviewed_by: primary
   readback:
     command: user.preference.get
+    ids: {}
     kind: object
 - command_id: user.update
   command_path: user update
@@ -302,4 +306,5 @@ commands:
   reviewed_by: primary
   readback:
     command: user.get
+    ids: {}
     kind: object

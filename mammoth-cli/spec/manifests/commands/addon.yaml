@@ -36,6 +36,7 @@ commands:
   reviewed_by: primary
   readback:
     command: addon.list
+    ids: {}
     kind: object
 - command_id: addon.connector.remove
   command_path: addon connector remove
@@ -73,6 +74,7 @@ commands:
   reviewed_by: primary
   readback:
     command: addon.list
+    ids: {}
     kind: object
 - command_id: addon.list
   command_path: addon list
@@ -143,6 +145,7 @@ commands:
   reviewed_by: primary
   readback:
     command: addon.list
+    ids: {}
     kind: object
 - command_id: addon.storage.remove
   command_path: addon storage remove
@@ -180,6 +183,7 @@ commands:
   reviewed_by: primary
   readback:
     command: addon.list
+    ids: {}
     kind: object
 - command_id: addon.user.add
   command_path: addon user add
@@ -217,6 +221,7 @@ commands:
   reviewed_by: primary
   readback:
     command: addon.list
+    ids: {}
     kind: object
 - command_id: addon.user.remove
   command_path: addon user remove
@@ -254,4 +259,5 @@ commands:
   reviewed_by: primary
   readback:
     command: addon.list
+    ids: {}
     kind: object

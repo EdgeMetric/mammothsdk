@@ -49,6 +49,7 @@ commands:
   reviewed_by: primary
   readback:
     command: support.connector-profile.list
+    ids: {}
     kind: object
 - command_id: support.connector-profile.create
   command_path: support connector-profile create
@@ -93,6 +94,7 @@ commands:
   reviewed_by: primary
   readback:
     command: support.connector-profile.list
+    ids: {}
     kind: object
 - command_id: support.connector-profile.delete
   command_path: support connector-profile delete
@@ -137,6 +139,7 @@ commands:
   reviewed_by: primary
   readback:
     command: support.connector-profile.list
+    ids: {}
     kind: object
 - command_id: support.connector-profile.list
   command_path: support connector-profile list
@@ -215,6 +218,7 @@ commands:
   reviewed_by: primary
   readback:
     command: support.connector-profile.list
+    ids: {}
     kind: object
 - command_id: support.connector.create
   command_path: support connector create
@@ -258,6 +262,7 @@ commands:
   reviewed_by: primary
   readback:
     command: support.connector.list
+    ids: {}
     kind: object
 - command_id: support.connector.delete
   command_path: support connector delete
@@ -301,6 +306,7 @@ commands:
   reviewed_by: primary
   readback:
     command: support.connector.list
+    ids: {}
     kind: object
 - command_id: support.connector.list
   command_path: support connector list
@@ -378,6 +384,7 @@ commands:
   reviewed_by: primary
   readback:
     command: support.connector.list
+    ids: {}
     kind: object
 - command_id: support.feature-profile.add-feature
   command_path: support feature-profile add-feature
@@ -428,6 +435,7 @@ commands:
   reviewed_by: primary
   readback:
     command: support.feature-profile.list
+    ids: {}
     kind: object
 - command_id: support.feature-profile.create
   command_path: support feature-profile create
@@ -471,6 +479,7 @@ commands:
   reviewed_by: primary
   readback:
     command: support.feature-profile.list
+    ids: {}
     kind: object
 - command_id: support.feature-profile.delete
   command_path: support feature-profile delete
@@ -514,6 +523,7 @@ commands:
   reviewed_by: primary
   readback:
     command: support.feature-profile.list
+    ids: {}
     kind: object
 - command_id: support.feature-profile.list
   command_path: support feature-profile list
@@ -591,6 +601,7 @@ commands:
   reviewed_by: primary
   readback:
     command: support.feature-profile.list
+    ids: {}
     kind: object
 - command_id: support.feature.create
   command_path: support feature create
@@ -634,6 +645,7 @@ commands:
   reviewed_by: primary
   readback:
     command: support.feature.list
+    ids: {}
     kind: object
 - command_id: support.feature.delete
   command_path: support feature delete
@@ -677,6 +689,7 @@ commands:
   reviewed_by: primary
   readback:
     command: support.feature.list
+    ids: {}
     kind: object
 - command_id: support.feature.list
   command_path: support feature list
@@ -754,6 +767,7 @@ commands:
   reviewed_by: primary
   readback:
     command: support.feature.list
+    ids: {}
     kind: object
 - command_id: support.ownership.transfer
   command_path: support ownership transfer
@@ -973,6 +987,7 @@ commands:
   reviewed_by: primary
   readback:
     command: support.plan.list
+    ids: {}
     kind: object
 - command_id: support.plan.get
   command_path: support plan get
@@ -1393,6 +1408,7 @@ commands:
   reviewed_by: primary
   readback:
     command: support.user.list-all
+    ids: {}
     kind: object
 - command_id: support.user.update
   command_path: support user update
@@ -1436,6 +1452,7 @@ commands:
   reviewed_by: primary
   readback:
     command: support.user.list-all
+    ids: {}
     kind: object
 - command_id: support.workspace.create
   command_path: support workspace create
@@ -1525,6 +1542,7 @@ commands:
   reviewed_by: primary
   readback:
     command: support.workspace.list
+    ids: {}
     kind: object
 - command_id: support.workspace.get
   command_path: support workspace get

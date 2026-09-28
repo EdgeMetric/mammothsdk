@@ -36,6 +36,7 @@ commands:
   reviewed_by: primary
   readback:
     command: project.list
+    ids: {}
     kind: object
 - command_id: project.bulk-update
   command_path: project bulk-update
@@ -76,6 +77,7 @@ commands:
   reviewed_by: primary
   readback:
     command: project.list
+    ids: {}
     kind: object
 - command_id: project.check
   command_path: project check
@@ -329,6 +331,7 @@ commands:
   reviewed_by: primary
   readback:
     command: project.list
+    ids: {}
     kind: object
 - command_id: project.get
   command_path: project get

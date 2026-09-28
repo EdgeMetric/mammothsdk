@@ -82,6 +82,7 @@ commands:
   reviewed_by: primary
   readback:
     command: schedule.list
+    ids: {}
     kind: object
 - command_id: schedule.get
   command_path: schedule get

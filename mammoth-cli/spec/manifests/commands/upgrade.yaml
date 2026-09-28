@@ -35,4 +35,5 @@ commands:
   reviewed_by: primary
   readback:
     command: version
+    ids: {}
     kind: object

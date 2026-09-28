@@ -42,6 +42,7 @@ commands:
   reviewed_by: primary
   readback:
     command: notification.list
+    ids: {}
     kind: object
 - command_id: notification.delete-batch
   command_path: notification delete-batch
@@ -80,6 +81,7 @@ commands:
   reviewed_by: primary
   readback:
     command: notification.list
+    ids: {}
     kind: object
 - command_id: notification.list
   command_path: notification list
@@ -157,6 +159,7 @@ commands:
   reviewed_by: primary
   readback:
     command: notification.list
+    ids: {}
     kind: object
 - command_id: notification.update-batch
   command_path: notification update-batch
@@ -195,4 +198,5 @@ commands:
   reviewed_by: primary
   readback:
     command: notification.list
+    ids: {}
     kind: object

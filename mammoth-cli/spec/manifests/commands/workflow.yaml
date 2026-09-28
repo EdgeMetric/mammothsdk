@@ -279,6 +279,7 @@ commands:
   reviewed_by: primary
   readback:
     command: workflow.list
+    ids: {}
     kind: object
 - command_id: workflow.create
   command_path: workflow create
@@ -367,6 +368,7 @@ commands:
   reviewed_by: primary
   readback:
     command: workflow.list
+    ids: {}
     kind: object
 - command_id: workflow.from-template
   command_path: workflow from-template

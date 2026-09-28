@@ -88,6 +88,7 @@ commands:
   reviewed_by: primary
   readback:
     command: client-app.list
+    ids: {}
     kind: object
 - command_id: client-app.get
   command_path: client-app get

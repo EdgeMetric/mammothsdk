@@ -35,6 +35,7 @@ commands:
   reviewed_by: primary
   readback:
     command: skill.list
+    ids: {}
     kind: object
 - command_id: skill.list
   command_path: skill list
@@ -205,6 +206,7 @@ commands:
   reviewed_by: primary
   readback:
     command: skill.list
+    ids: {}
     kind: object
 - command_id: skill.update
   command_path: skill update
@@ -241,4 +243,5 @@ commands:
   reviewed_by: primary
   readback:
     command: skill.list
+    ids: {}
     kind: object

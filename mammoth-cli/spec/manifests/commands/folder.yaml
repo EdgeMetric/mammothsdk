@@ -36,6 +36,7 @@ commands:
   reviewed_by: primary
   readback:
     command: folder.list
+    ids: {}
     kind: object
 - command_id: folder.create
   command_path: folder create
@@ -125,6 +126,7 @@ commands:
   reviewed_by: primary
   readback:
     command: folder.list
+    ids: {}
     kind: object
 - command_id: folder.find
   command_path: folder find

@@ -35,6 +35,7 @@ commands:
   reviewed_by: primary
   readback:
     command: auth.status
+    ids: {}
     kind: object
 - command_id: auth.logout
   command_path: auth logout
@@ -71,6 +72,7 @@ commands:
   reviewed_by: primary
   readback:
     command: auth.status
+    ids: {}
     kind: object
 - command_id: auth.status
   command_path: auth status

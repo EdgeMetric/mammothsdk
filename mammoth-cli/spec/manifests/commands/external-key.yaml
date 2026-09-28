@@ -85,6 +85,7 @@ commands:
   reviewed_by: primary
   readback:
     command: external-key.list
+    ids: {}
     kind: object
 - command_id: external-key.get
   command_path: external-key get

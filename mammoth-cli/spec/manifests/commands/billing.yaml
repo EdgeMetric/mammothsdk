@@ -111,6 +111,7 @@ commands:
   reviewed_by: primary
   readback:
     command: billing.invoice.list
+    ids: {}
     kind: object
 - command_id: billing.invoice.get
   command_path: billing invoice get
@@ -222,6 +223,7 @@ commands:
   reviewed_by: primary
   readback:
     command: billing.stripe.status
+    ids: {}
     kind: object
 - command_id: billing.stripe.checkout-url
   command_path: billing stripe checkout-url
@@ -301,6 +303,7 @@ commands:
   reviewed_by: primary
   readback:
     command: billing.stripe.status
+    ids: {}
     kind: object
 - command_id: billing.stripe.end-trial
   command_path: billing stripe end-trial
@@ -338,6 +341,7 @@ commands:
   reviewed_by: primary
   readback:
     command: billing.stripe.status
+    ids: {}
     kind: object
 - command_id: billing.stripe.get
   command_path: billing stripe get
@@ -450,6 +454,7 @@ commands:
   reviewed_by: primary
   readback:
     command: billing.stripe.payment-method.list
+    ids: {}
     kind: object
 - command_id: billing.stripe.payment-method.list
   command_path: billing stripe payment-method list
@@ -529,6 +534,7 @@ commands:
   reviewed_by: primary
   readback:
     command: billing.stripe.payment-method.list
+    ids: {}
     kind: object
 - command_id: billing.stripe.portal-url
   command_path: billing stripe portal-url
@@ -635,6 +641,7 @@ commands:
   reviewed_by: primary
   readback:
     command: billing.stripe.status
+    ids: {}
     kind: object
 - command_id: billing.stripe.status
   command_path: billing stripe status
@@ -706,6 +713,7 @@ commands:
   reviewed_by: primary
   readback:
     command: billing.stripe.status
+    ids: {}
     kind: object
 - command_id: billing.stripe.upcoming-invoice
   command_path: billing stripe upcoming-invoice
@@ -845,4 +853,5 @@ commands:
   reviewed_by: primary
   readback:
     command: billing.subscription.get
+    ids: {}
     kind: object

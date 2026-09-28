@@ -71,6 +71,7 @@ commands:
   reviewed_by: primary
   readback:
     command: connector.ai.session.list
+    ids: {}
     kind: object
 - command_id: connector.ai.history
   command_path: connector ai history
@@ -225,6 +226,7 @@ commands:
   reviewed_by: primary
   readback:
     command: connector.ai.session.list
+    ids: {}
     kind: object
 - command_id: connector.ai.submit-credentials
   command_path: connector ai submit-credentials
@@ -264,6 +266,7 @@ commands:
   reviewed_by: primary
   readback:
     command: connector.ai.session.list
+    ids: {}
     kind: object
 - command_id: connector.connection.create
   command_path: connector connection create

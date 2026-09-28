@@ -36,6 +36,7 @@ commands:
   reviewed_by: primary
   readback:
     command: trash.list
+    ids: {}
     kind: object
 - command_id: trash.list
   command_path: trash list
@@ -107,4 +108,5 @@ commands:
   reviewed_by: primary
   readback:
     command: trash.list
+    ids: {}
     kind: object

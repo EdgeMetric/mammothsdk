@@ -37,6 +37,7 @@ commands:
   reviewed_by: primary
   readback:
     command: workspace.list
+    ids: {}
     kind: object
 - command_id: workspace.app-usage
   command_path: workspace app-usage
@@ -189,6 +190,7 @@ commands:
   reviewed_by: primary
   readback:
     command: workspace.list
+    ids: {}
     kind: object
 - command_id: workspace.get
   command_path: workspace get
@@ -419,6 +421,7 @@ commands:
   reviewed_by: primary
   readback:
     command: workspace.segment.list
+    ids: {}
     kind: object
 - command_id: workspace.storage-breakdown
   command_path: workspace storage-breakdown
@@ -538,6 +541,7 @@ commands:
   reviewed_by: primary
   readback:
     command: workspace.user.list
+    ids: {}
     kind: object
 - command_id: workspace.user.get
   command_path: workspace user get
@@ -654,6 +658,7 @@ commands:
   reviewed_by: primary
   readback:
     command: workspace.user.list
+    ids: {}
     kind: object
 - command_id: workspace.user.remove-batch
   command_path: workspace user remove-batch
@@ -691,6 +696,7 @@ commands:
   reviewed_by: primary
   readback:
     command: workspace.user.list
+    ids: {}
     kind: object
 - command_id: workspace.user.update
   command_path: workspace user update
@@ -774,4 +780,5 @@ commands:
   reviewed_by: primary
   readback:
     command: workspace.user.list
+    ids: {}
     kind: object
