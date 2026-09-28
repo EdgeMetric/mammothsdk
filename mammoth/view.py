@@ -894,7 +894,7 @@ class View(
         """
         result = self._client.pipeline.edit_pipeline(
             self.id,
-            [{"op": "command", "path": "auto_run", "value": enabled}],
+            [{"op": "replace", "path": "auto_run", "value": enabled}],
             self.dataset_id,
         )
         self._draft_mode = not enabled
