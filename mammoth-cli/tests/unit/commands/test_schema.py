@@ -384,6 +384,25 @@ def test_storage_usage_intent_ranks_app_usage_above_storage_breakdown() -> None:
         assert matches[0] == "workspace.app-usage", f"{query!r} -> {matches}"
 
 
+def test_per_dataset_storage_intent_reaches_storage_breakdown() -> None:
+    """Live-eval evidence: goals asking which datasets/projects use the most
+    storage (dataset details, dataset storage metrics, per-project storage
+    usage) matched dataset.get, workflow.workspace-datasets and
+    workspace.app-usage -- never workspace.storage-breakdown, the one
+    command whose result is actually a per-dataset (and per-project) size
+    breakdown. It must not regress the query above: those stay
+    workspace.app-usage's own generic "total storage used" phrasing.
+    """
+    for query in (
+        "which datasets use the most storage",
+        "storage used by each dataset",
+        "largest datasets by storage size",
+        "per project storage breakdown",
+    ):
+        matches = [item["command_id"] for item in find_schemas(query)["matches"]]
+        assert "workspace.storage-breakdown" in matches, f"{query!r} -> {matches}"
+
+
 def test_support_family_ranks_below_any_non_support_match_and_is_labeled() -> None:
     matches = find_schemas("workspace user")["matches"]
     is_support = [m["command_id"].startswith("support.") for m in matches]

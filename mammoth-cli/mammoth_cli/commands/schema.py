@@ -142,6 +142,17 @@ _COMMAND_DISCOVERY_PURPOSES = {
     "workspace.app-usage": (
         "storage usage used space how much plan current allowed total quota limit"
     ),
+    # "Which datasets use the most storage" / "storage used by each dataset"
+    # / "per-project storage breakdown" only ever reached dataset.get,
+    # workflow.workspace-datasets or workspace.app-usage (the total, not a
+    # breakdown) -- never this command, the one whose result actually is a
+    # per-dataset (and per-project) size list (dataset_id, dataset_name,
+    # project_id, dataset_size, total_size, views). Deliberately omits
+    # "storage" (already an id/path token here, unlike app-usage) so a bare
+    # "storage used" query keeps ranking app-usage's own total first.
+    "workspace.storage-breakdown": (
+        "size used use per dataset datasets project projects largest biggest most which top"
+    ),
     # "Give me this board as a Power BI file" / "open this in Tableau" is the
     # dashboard-to-BI-file export pair, not `view.export.powerbi`/`.tableau`
     # (those publish a live ODBC connection for a dataview, not a downloadable
