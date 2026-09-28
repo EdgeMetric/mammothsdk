@@ -32,7 +32,17 @@ _DATASET_GET = "mammoth.api.datasets.DatasetsAPI.get"
 
 
 def _dataset_schema(*display_names: str) -> dict[str, object]:
-    return {"data_schema": [{"display_name": name} for name in display_names]}
+    # The real ``GET .../datasets/{id}`` shape (probed on a live server): the
+    # dataset is nested under "dataset", and each schema column names itself
+    # with ``c_name`` next to its internal ``c_id``.
+    return {
+        "dataset": {
+            "data_schema": [
+                {"c_id": f"column_{i}", "c_name": name, "c_type": "text"}
+                for i, name in enumerate(display_names, start=1)
+            ]
+        }
+    }
 
 
 def _exports_page(*items: ItemExportInfo) -> PipelineExportsPaginated:
@@ -323,7 +333,7 @@ def test_dataset_route_raises_when_target_schema_is_unreadable(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
     fake_service.view_responses[(7, "columns")] = {"Region": "column_1"}
-    fake_service.responses[_DATASET_GET] = {"data_schema": "not a list"}
+    fake_service.responses[_DATASET_GET] = {"dataset": {"data_schema": "not a list"}}
     with pytest.raises(CliError) as excinfo:
         view_cmd.view_export_specialized(
             _inv(

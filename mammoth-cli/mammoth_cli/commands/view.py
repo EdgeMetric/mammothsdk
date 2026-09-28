@@ -2627,9 +2627,11 @@ def _target_dataset_schema_names(service: Any, target_ds_id: int) -> set[str]:
     schema, not a view's, so this check must too. An unreadable or
     malformed response is never treated as "no columns" -- fail loud,
     rather than let an append write past a check that could not actually
-    run.
+    run. The response nests the dataset under ``dataset``, and each schema
+    column carries its name as ``c_name`` (``c_id`` is the internal id).
     """
-    dataset = service.call(_DATASET_GET_SYMBOL, dataset_id=target_ds_id)
+    response = service.call(_DATASET_GET_SYMBOL, dataset_id=target_ds_id)
+    dataset = response.get("dataset") if isinstance(response, dict) else None
     data_schema = dataset.get("data_schema") if isinstance(dataset, dict) else None
     if not isinstance(data_schema, list):
         raise CliError(
@@ -2640,7 +2642,7 @@ def _target_dataset_schema_names(service: Any, target_ds_id: int) -> set[str]:
         )
     names: set[str] = set()
     for column in data_schema:
-        display_name = column.get("display_name") if isinstance(column, dict) else None
+        display_name = column.get("c_name") if isinstance(column, dict) else None
         if not isinstance(display_name, str):
             raise CliError(
                 code="append_schema_unreadable",
