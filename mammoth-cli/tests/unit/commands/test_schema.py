@@ -254,6 +254,19 @@ def test_append_rows_between_datasets_finds_view_export_dataset() -> None:
     assert "view.export.dataset" in matches
 
 
+def test_email_a_view_as_a_csv_attachment_finds_automation_create() -> None:
+    """A scheduled email action attaches each selected view as a CSV
+    (backend: ``generate_csv_files_for_attachment``); a cold agent phrasing
+    that goal in plain words must still land on automation.create, not just
+    on a synonym-adjacent export command.
+    """
+    matches = {
+        item["command_id"]
+        for item in find_schemas("email a view as a csv attachment every week")["matches"]
+    }
+    assert "automation.create" in matches
+
+
 _EXPORT_DESTINATION_NATURAL_QUERIES = {
     "view.export.azure-blob": "export to azure blob storage",
     "view.export.bigquery": "export to big query",
@@ -456,6 +469,38 @@ def test_date_diff_documents_diffing_against_today() -> None:
     assert "today" in restrictions.casefold()
     assert "view task add" in restrictions
     assert "__TIME__" in restrictions
+
+
+def test_json_extract_documents_list_to_rows_item_and_index() -> None:
+    """JSON_LIST_TO_ROWS gives one row per list element in an 'Item' column
+    (plus 'Index'); an object element needs a second json-extract
+    (json_type=OBJECT) on Item to become columns. An agent choosing between
+    LIST and OBJECT must see this without reading the SDK source.
+    """
+    schema = get_schema("view.transform.json-extract")
+    assert schema is not None
+    restrictions = schema["preconditions"]
+    assert "Item" in restrictions
+    assert "Index" in restrictions
+    assert "one row per" in restrictions.casefold()
+    assert "second json-extract" in restrictions.casefold()
+
+
+def test_automation_create_documents_the_email_csv_row_limit() -> None:
+    """A scheduled email action (task send_an_alert, attachments.dataview_ids)
+    sends each selected view as a CSV file. The 100,000-row cap (backend:
+    _validate_attachment_row_count, EMAIL_CSV_ATTACHMENT_ROW_LIMIT) is on the
+    COMBINED row count across all attached views, not per view; an agent
+    must see the format and the real (combined) cap without reading the
+    backend source.
+    """
+    schema = get_schema("automation.create")
+    assert schema is not None
+    restrictions = schema["preconditions"]
+    assert "csv" in restrictions.casefold()
+    assert "100,000" in restrictions
+    assert "combined" in restrictions.casefold()
+    assert "per view" not in restrictions.casefold()
 
 
 def test_dataset_create_sdk_catalog_does_not_conflate_cli_waiting() -> None:

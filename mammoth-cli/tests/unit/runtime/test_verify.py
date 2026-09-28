@@ -31,6 +31,10 @@ def test_a_normal_result_is_verified_with_no_needs_user() -> None:
         ({"job": {"status": "failed"}}, "the operation failed"),
         ({"pipeline_state": "ref_error"}, "the pipeline reported an error"),
         ({"bake_ok": False}, "the dashboard did not bake"),
+        (
+            {"status": "processing"},
+            "the change was accepted but has not finished; read the view before building on it",
+        ),
     ],
 )
 def test_each_failure_signal_marks_unverified_with_a_reason_and_no_needs_user(
@@ -97,6 +101,39 @@ def test_staged_status_is_verified_with_no_rows_and_a_reason() -> None:
         "reason": "staged in draft; not applied until the draft is submitted",
         "needs_user": None,
     }
+
+
+def test_pipeline_error_with_unknown_execution_state_is_a_failed_read() -> None:
+    """``execution_state: "unknown"`` means the settle step's own read of the
+    pipeline failed or came back malformed -- fail loud: that is never
+    reported as verified just because nothing named an error.
+    """
+    result = with_verify(
+        {"status": "done", "pipeline_error": {"execution_state": "unknown", "read_error": "boom"}}
+    )
+    assert result["verify"]["verified"] is False
+    assert result["verify"]["needs_user"] is None
+    assert result["verify"]["reason"] == (
+        "the pipeline state after this change could not be read; read the view "
+        "before building on it"
+    )
+
+
+def test_pipeline_error_with_a_real_execution_state_reports_task_and_code() -> None:
+    result = with_verify(
+        {
+            "status": "done",
+            "pipeline_error": {
+                "execution_state": "runtime_error",
+                "task_id": 42,
+                "error_code": 7000,
+            },
+        }
+    )
+    assert result["verify"]["verified"] is False
+    assert result["verify"]["needs_user"] is None
+    assert "42" in result["verify"]["reason"]
+    assert "7000" in result["verify"]["reason"]
 
 
 def test_rows_after_zero_with_rows_before_positive_needs_user() -> None:

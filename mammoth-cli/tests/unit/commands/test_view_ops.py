@@ -1379,7 +1379,11 @@ def test_transform_without_has_error_is_untouched(
         "status": "done",
         "row_check": {"rows_before": None, "rows_after": None},
     }
-    assert view_ops_cmd._PIPELINE_SYMBOL not in fake_service.calls
+    # reject_pipeline_reference_errors's own read (a follow-up items list) is
+    # the reference-error-specific signal; it must not fire when has_error is
+    # false. A plain PipelineAPI.get_pipeline call still happens as part of
+    # the settle step's execution_state check, which is unrelated.
+    assert view_ops_cmd._PIPELINE_ITEMS_SYMBOL not in fake_service.calls
 
 
 def test_reference_error_survives_a_failed_follow_up_read(

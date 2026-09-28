@@ -31,6 +31,13 @@ _UNREADABLE_ROW_COUNT_WARNING = (
 #: no row count to check yet.
 _STAGED_REASON = "staged in draft; not applied until the draft is submitted"
 
+#: ``reason`` for a write whose settle step never ran (its parent dataset
+#: could not be resolved) and whose own status is still ``processing`` --
+#: never reported as verified just because nothing named a failure.
+_UNSETTLED_REASON = (
+    "the change was accepted but has not finished; read the view before building on it"
+)
+
 
 def with_verify(data: Any) -> Any:
     """Return ``data`` with a ``verify`` read-back block added.
@@ -98,6 +105,37 @@ def _row_counts(check: dict[str, Any] | None) -> tuple[int | None, int | None]:
     return check.get("rows_before"), check.get("rows_after")
 
 
+def _pipeline_error_reason(pipeline_error: dict[str, Any]) -> str:
+    """Reason text for a settled pipeline whose own ``execution_state`` errored.
+
+    The write's own envelope can say ``status: done`` / ``pipeline_state:
+    ready`` -- ``execution_state`` is a separate, more trustworthy field the
+    settle step reads afresh (see ``view.py``'s ``_pipeline_execution_error``).
+    An ``execution_state`` of "unknown" means that read itself failed (or
+    came back malformed) -- fail loud: this is never reported as verified,
+    just because nothing came back that named an error.
+    """
+    if pipeline_error.get("execution_state") == "unknown":
+        return (
+            "the pipeline state after this change could not be read; read the "
+            "view before building on it"
+        )
+    reason = (
+        "the pipeline hit a runtime error after this change; the view may be "
+        "empty -- remove or fix the failing task"
+    )
+    detail_bits = []
+    task_id = pipeline_error.get("task_id")
+    if task_id is not None:
+        detail_bits.append(f"task {task_id}")
+    error_code = pipeline_error.get("error_code")
+    if error_code is not None:
+        detail_bits.append(f"error {error_code}")
+    if detail_bits:
+        reason += " (" + ", ".join(detail_bits) + ")"
+    return reason
+
+
 def _verify_and_reason(
     data: dict[str, Any],
     *,
@@ -118,11 +156,16 @@ def _verify_and_reason(
         message = data.get("message")
         text = message if isinstance(message, str) else ""
         return False, f"nothing changed: {text[:200]}"
+    pipeline_error = data.get("pipeline_error")
+    if isinstance(pipeline_error, dict):
+        return False, _pipeline_error_reason(pipeline_error)
     if data.get("has_error"):
         return False, "the operation reported an error"
     for status in (data.get("status"), _job_status(data)):
         if isinstance(status, str) and status.lower() in _FAILURE_STATUSES:
             return False, "the operation failed"
+        if isinstance(status, str) and status.lower() == "processing":
+            return False, _UNSETTLED_REASON
     pipeline_state = data.get("pipeline_state")
     if isinstance(pipeline_state, str) and pipeline_state.lower() in _FAILURE_PIPELINE_STATES:
         return False, "the pipeline reported an error"

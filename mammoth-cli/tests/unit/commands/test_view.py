@@ -1927,11 +1927,76 @@ def test_pipeline_rerun_passes_dataview_id(fake_service: FakeMammothService) -> 
 def test_pipeline_rerun_forwards_from_sequence(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
+    fake_service.responses[_DATAVIEW_GET] = {"row_count": 5}
     doc = _doc(tmp_path, {"from_sequence": 2, "dataset_id": 9})
-    view_cmd.view_pipeline_rerun(_inv("view.pipeline.rerun", extra_args=["7"], input_file=doc))
-    assert fake_service.call_log == [
-        (_PIPE_RERUN, {"dataview_id": 7, "from_sequence": 2, "dataset_id": 9})
-    ]
+    data, _meta = view_cmd.view_pipeline_rerun(
+        _inv("view.pipeline.rerun", extra_args=["7"], input_file=doc)
+    )
+    assert (_PIPE_RERUN, {"dataview_id": 7, "from_sequence": 2, "dataset_id": 9}) in (
+        fake_service.call_log
+    )
+    assert data["row_check"] == {"rows_before": 5, "rows_after": 5}
+
+
+def test_pipeline_rerun_with_processing_status_settles_to_done(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    fake_service.responses[_PIPE_RERUN] = {"status": "processing"}
+    fake_service.responses[_DATAVIEW_GET] = {"row_count": 5}
+    doc = _doc(tmp_path, {"dataset_id": 9})
+    data, _meta = view_cmd.view_pipeline_rerun(
+        _inv("view.pipeline.rerun", extra_args=["7"], input_file=doc)
+    )
+    assert data["status"] == "done"
+
+
+def test_pipeline_rerun_without_dataset_id_never_settles(
+    fake_service: FakeMammothService,
+) -> None:
+    view_cmd.view_pipeline_rerun(_inv("view.pipeline.rerun", extra_args=["7"]))
+    assert fake_service.call_log == [(_PIPE_RERUN, {"dataview_id": 7})]
+
+
+def test_pipeline_rerun_without_dataset_id_settles_via_remembered_parent(
+    fake_service: FakeMammothService,
+) -> None:
+    """No explicit ``dataset_id`` -- but a prior view command already
+    remembered this view's parent dataset, so the settle step must still
+    run rather than leaving ``status: processing`` as the final result.
+
+    ``FakeMammothService`` has no ``_workspace_id`` (only the real SDK
+    service sets it), so the resolver's own workspace key is ``None`` here
+    -- matching that, not the profile's real workspace id, is what makes
+    the lookup hit in this test double.
+    """
+    from mammoth_cli.runtime import parents
+
+    parents.remember("default", None, {7: 9})
+    fake_service.responses[_PIPE_RERUN] = {"status": "processing"}
+    fake_service.responses[_DATAVIEW_GET] = {"row_count": 5}
+    data, _meta = view_cmd.view_pipeline_rerun(_inv("view.pipeline.rerun", extra_args=["7"]))
+    assert data["status"] == "done"
+    assert data["row_check"] == {"rows_before": 5, "rows_after": 5}
+
+
+def test_pipeline_rerun_without_dataset_id_and_unresolvable_reports_unverified(
+    fake_service: FakeMammothService,
+) -> None:
+    """No explicit ``dataset_id`` and no remembered parent -- the parent
+    truly cannot be resolved (a mutation command refuses project-wide
+    discovery). The raw ``processing`` status is forwarded unchanged, and
+    ``with_verify`` must never report that as verified.
+    """
+    from mammoth_cli.runtime.verify import with_verify
+
+    fake_service.responses[_PIPE_RERUN] = {"status": "processing"}
+    data, _meta = view_cmd.view_pipeline_rerun(_inv("view.pipeline.rerun", extra_args=["7"]))
+    assert data == {"status": "processing"}
+    verified = with_verify(data)
+    assert verified["verify"]["verified"] is False
+    assert verified["verify"]["reason"] == (
+        "the change was accepted but has not finished; read the view before building on it"
+    )
 
 
 def test_pipeline_wait_forwards_timeout(fake_service: FakeMammothService, tmp_path: Path) -> None:
@@ -2054,6 +2119,124 @@ def test_task_delete_proceeds_with_yes(fake_service: FakeMammothService) -> None
     assert fake_service.call_log == [(_TASK_DELETE, {"dataview_id": 7, "task_id": 3})]
 
 
+def test_task_delete_with_dataset_id_settles_processing_to_done(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    """``view task delete`` can return ``status: processing`` right away
+    (evidence: ``{"status":"processing","type_of_modification":"discard_rule"}``);
+    with the parent dataset known, it must settle like every other view
+    write, never leaving ``processing`` as the final result.
+    """
+    fake_service.responses[_TASK_DELETE] = {
+        "status": "processing",
+        "type_of_modification": "discard_rule",
+    }
+    fake_service.responses[_DATAVIEW_GET] = {"row_count": 20}
+    doc = _doc(tmp_path, {"dataset_id": 9})
+    data, _meta = view_cmd.view_task_delete(
+        _inv("view.task.delete", extra_args=["7", "3"], yes=True, input_file=doc)
+    )
+    assert data["status"] == "done"
+    assert data["row_check"] == {"rows_before": 20, "rows_after": 20}
+    assert (_PIPE_WAIT, {"dataview_id": 7, "dataset_id": 9, "timeout": 60.0}) in (
+        fake_service.call_log
+    )
+
+
+def test_task_delete_with_dataset_id_surfaces_a_pipeline_runtime_error(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    fake_service.responses[_TASK_DELETE] = {
+        "status": "processing",
+        "type_of_modification": "discard_rule",
+    }
+    fake_service.responses[_DATAVIEW_GET] = {"row_count": 20}
+    fake_service.responses[_PIPE_GET] = {"state": "ready", "execution_state": "runtime_error"}
+    doc = _doc(tmp_path, {"dataset_id": 9})
+    data, _meta = view_cmd.view_task_delete(
+        _inv("view.task.delete", extra_args=["7", "3"], yes=True, input_file=doc)
+    )
+    assert data["status"] == "failed"
+    assert data["pipeline_error"]["execution_state"] == "runtime_error"
+
+
+def test_task_delete_without_dataset_id_never_settles(fake_service: FakeMammothService) -> None:
+    """No known parent dataset -- like every other settle-and-check path,
+    an unknown parent skips it rather than guessing; the response is
+    forwarded exactly as the backend returned it.
+    """
+    fake_service.responses[_TASK_DELETE] = {"status": "processing"}
+    data, _meta = view_cmd.view_task_delete(
+        _inv("view.task.delete", extra_args=["7", "3"], yes=True)
+    )
+    assert data == {"status": "processing"}
+    assert fake_service.call_log == [(_TASK_DELETE, {"dataview_id": 7, "task_id": 3})]
+
+
+def test_task_delete_without_dataset_id_settles_via_remembered_parent(
+    fake_service: FakeMammothService,
+) -> None:
+    """The real failing call (``view task delete 3165 1595``, no dataset id)
+    had a remembered parent from an earlier ``view get`` -- settle must use
+    it instead of leaving ``status: processing`` as the final result.
+
+    ``FakeMammothService`` has no ``_workspace_id`` (only the real SDK
+    service sets it), so the resolver's own workspace key is ``None`` here
+    -- matching that, not the profile's real workspace id, is what makes
+    the lookup hit in this test double.
+    """
+    from mammoth_cli.runtime import parents
+
+    parents.remember("default", None, {7: 9})
+    fake_service.responses[_TASK_DELETE] = {"status": "processing"}
+    fake_service.responses[_DATAVIEW_GET] = {"row_count": 20}
+    data, _meta = view_cmd.view_task_delete(
+        _inv("view.task.delete", extra_args=["7", "3"], yes=True)
+    )
+    assert data["status"] == "done"
+    assert data["row_check"] == {"rows_before": 20, "rows_after": 20}
+
+
+def test_task_delete_without_dataset_id_and_unresolvable_reports_unverified(
+    fake_service: FakeMammothService,
+) -> None:
+    """No remembered parent either -- the settle step is skipped, and
+    ``with_verify`` must report the leftover ``processing`` as unverified
+    rather than the caller silently building on a write that has not
+    actually finished.
+    """
+    from mammoth_cli.runtime.verify import with_verify
+
+    fake_service.responses[_TASK_DELETE] = {"status": "processing"}
+    data, _meta = view_cmd.view_task_delete(
+        _inv("view.task.delete", extra_args=["7", "3"], yes=True)
+    )
+    verified = with_verify(data)
+    assert verified["verify"]["verified"] is False
+    assert verified["verify"]["reason"] == (
+        "the change was accepted but has not finished; read the view before building on it"
+    )
+
+
+def test_task_delete_with_dataset_id_records_unreadable_row_count_before_error(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    """``_row_count_now``'s read can itself fail (e.g. the view was deleted
+    between the write and the settle check) -- that must be recorded, never
+    silently swallowed into a plain ``rows_before: None``.
+    """
+    fake_service.responses[_TASK_DELETE] = {"status": "processing"}
+    fake_service.responses[_DATAVIEW_GET] = CliError(
+        code="resource_not_found", message="dataview 7 not found"
+    )
+    doc = _doc(tmp_path, {"dataset_id": 9})
+    data, _meta = view_cmd.view_task_delete(
+        _inv("view.task.delete", extra_args=["7", "3"], yes=True, input_file=doc)
+    )
+    assert data["row_check"]["rows_before"] is None
+    assert data["row_check"]["rows_before_error"] == "CliError: dataview 7 not found"
+
+
 def test_task_get_passes_ids(fake_service: FakeMammothService) -> None:
     view_cmd.view_task_get(_inv("view.task.get", extra_args=["7", "3"]))
     assert fake_service.call_log == [(_TASK_GET, {"dataview_id": 7, "task_id": 3})]
@@ -2090,6 +2273,19 @@ def test_task_update_passes_task_spec(fake_service: FakeMammothService, tmp_path
     assert fake_service.call_log == [
         (_TASK_UPDATE, {"dataview_id": 7, "task_id": 3, "task_spec": {"kind": "sort"}})
     ]
+
+
+def test_task_update_with_dataset_id_settles_processing_to_done(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    fake_service.responses[_TASK_UPDATE] = {"status": "processing"}
+    fake_service.responses[_DATAVIEW_GET] = {"row_count": 12}
+    doc = _doc(tmp_path, {"task_spec": {"kind": "sort"}, "dataset_id": 9})
+    data, _meta = view_cmd.view_task_update(
+        _inv("view.task.update", extra_args=["7", "3"], input_file=doc)
+    )
+    assert data["status"] == "done"
+    assert data["row_check"] == {"rows_before": 12, "rows_after": 12}
 
 
 # ── export.* ────────────────────────────────────────────────────────────────

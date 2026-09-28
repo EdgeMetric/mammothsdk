@@ -222,7 +222,10 @@ _COMMAND_DISCOVERY_PURPOSES = {
         "join blend merge combine enrich match matching key keys rows add columns from "
         "another second view views dataset datasets table tables vlookup"
     ),
-    "view.transform.json-extract": "json extract parse nested fields keys into columns",
+    "view.transform.json-extract": (
+        "json extract parse nested fields keys into columns list rows item index "
+        "one row per element explode array"
+    ),
     "view.transform.limit-rows": "limit top bottom first last n rows head",
     "view.transform.lookup": (
         "lookup look up vlookup reference table map code to name enrich one value "
@@ -320,7 +323,7 @@ _COMMAND_DISCOVERY_PURPOSES = {
     "automation.create": (
         "schedule scheduled recurring repeat refresh rerun run every day daily week weekly "
         "hour hourly month monthly automatically trigger alert email a dataset pipeline "
-        "retention purge old data send an emailed file attachment"
+        "retention purge old data send an emailed file attachment view views csv"
     ),
     "billing.subscription.update": "upgrade downgrade bigger plan change subscription tier",
     "billing.invoice.list": "past bills billed billing history invoices payments receipts so far",

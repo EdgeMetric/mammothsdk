@@ -182,6 +182,29 @@ def _resolve_dataset_id(
     return dataset_id
 
 
+def _resolve_dataset_id_for_settle(
+    service: Any,
+    invocation: Invocation,
+    view_id: int,
+    document: dict[str, Any],
+    dataset_index: int,
+) -> int | None:
+    """Best-effort :func:`_resolve_dataset_id`, for the settle step only.
+
+    The write this settles has already happened by the time this runs; a
+    parent that ``_resolve_dataset_id`` cannot resolve raises (these are
+    mutation commands, so it refuses project-wide discovery) -- that must
+    never surface as an exception past a write that already succeeded. A
+    ``None`` here leaves the settle step unable to run, which
+    ``_settle_async_view_write``/verify.py report as unverified rather than
+    guessing "done".
+    """
+    try:
+        return _resolve_dataset_id(service, invocation, view_id, document, dataset_index)
+    except CliError:
+        return None
+
+
 def _profile_name(invocation: Invocation) -> str:
     return invocation.profile or profiles.get_selected()
 
@@ -1928,6 +1951,12 @@ def view_pipeline_rerun(invocation: Invocation) -> HandlerResult:
     _forward_optional(document, kwargs, ("from_sequence", "dataset_id"))
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), **kwargs)
+        dataset_id = kwargs.get("dataset_id")
+        if dataset_id is None:
+            dataset_id = _resolve_dataset_id_for_settle(
+                service, invocation, dataview_id, document, 1
+            )
+        data = _settle_async_view_write(service, dataset_id, dataview_id, invocation.project, data)
     return data, _meta(invocation, auth.workspace_id, None)
 
 
@@ -1982,6 +2011,12 @@ def view_task_delete(invocation: Invocation) -> HandlerResult:
     _forward_optional(document, kwargs, ("dataset_id",))
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), **kwargs)
+        dataset_id = kwargs.get("dataset_id")
+        if dataset_id is None:
+            dataset_id = _resolve_dataset_id_for_settle(
+                service, invocation, dataview_id, document, 2
+            )
+        data = _settle_async_view_write(service, dataset_id, dataview_id, invocation.project, data)
     return data, _meta(invocation, auth.workspace_id, None)
 
 
@@ -2036,6 +2071,12 @@ def view_task_update(invocation: Invocation) -> HandlerResult:
     _forward_optional(document, kwargs, ("dataset_id",))
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), **kwargs)
+        dataset_id = kwargs.get("dataset_id")
+        if dataset_id is None:
+            dataset_id = _resolve_dataset_id_for_settle(
+                service, invocation, dataview_id, document, 2
+            )
+        data = _settle_async_view_write(service, dataset_id, dataview_id, invocation.project, data)
     return data, _meta(invocation, auth.workspace_id, None)
 
 
@@ -2433,6 +2474,7 @@ def view_export_specialized(invocation: Invocation) -> HandlerResult:
                 details={"dataset_id": dataset_id, "target_ds_id": int(target_ds_id)},
             )
         target_view_before = None
+        target_only_columns: list[str] = []
         if target_ds_id is not None:
             # Each `view export dataset` call creates its own PERSISTENT
             # export trigger on this view, which re-runs on every pipeline
@@ -2465,6 +2507,14 @@ def view_export_specialized(invocation: Invocation) -> HandlerResult:
             # rows_before is the target's own count ahead of this write, read
             # before the call so a later re-read can never be confused with it.
             target_view_before = _dataset_view_info(service, int(target_ds_id), result_project_id)
+            if save_as_mode == "APPEND_TO_DS":
+                target_only_columns = _reject_append_schema_mismatch(
+                    service,
+                    dataview_id,
+                    dataset_id,
+                    int(target_ds_id),
+                    kwargs.get("column_mapping"),
+                )
         data = service.call_view(dataview_id, method, dataset_id=dataset_id, **kwargs)
         if is_dataset_route and isinstance(data, int):
             # The SDK returns the bare id of the dataset written to; name it, and
@@ -2489,7 +2539,7 @@ def view_export_specialized(invocation: Invocation) -> HandlerResult:
             # an existing target_ds_id -- this is the same race the old
             # "omit rather than report wrong" comment used to sidestep by
             # never reading the target's row count at all.
-            view_info = _view_info_after_settling(
+            view_info, pipeline_error = _view_info_after_settling(
                 service,
                 int(target_ds_id) if target_ds_id is not None else data["dataset_id"],
                 result_project_id,
@@ -2513,7 +2563,16 @@ def view_export_specialized(invocation: Invocation) -> HandlerResult:
                 # An append is expected to grow the target; verify.py treats
                 # a non-increase here as unverified, not just an omitted count.
                 row_check["expected_row_increase"] = True
+            if target_only_columns:
+                # Allowed -- an append never has to cover every target column
+                # -- but worth surfacing rather than leaving silent.
+                row_check["warnings"] = [
+                    "target dataset has column(s) the source view does not (kept "
+                    "as-is): " + ", ".join(target_only_columns)
+                ]
             data["row_check"] = row_check
+            if pipeline_error is not None:
+                data["pipeline_error"] = pipeline_error
     return data, _meta(invocation, auth.workspace_id, project_id)
 
 
@@ -2553,6 +2612,100 @@ def _existing_internal_dataset_export(
     return max(matches, key=lambda export: export.id or 0) if matches else None
 
 
+_DATASET_GET_SYMBOL = "mammoth.api.datasets.DatasetsAPI.get"
+
+
+def _target_dataset_schema_names(service: Any, target_ds_id: int) -> set[str]:
+    """The target dataset's own schema column display names.
+
+    ``dataset.get``'s ``data_schema`` is the dataset's base schema, not any
+    view's live/rendered columns -- a view's own rename task can show a
+    different display name than the dataset's schema still uses (evidence:
+    a target view renamed 'Cust ID' -> 'cust_id' while the dataset's
+    data_schema still said 'Cust ID'). The backend's own append-schema match
+    (``match_existing_target_schema``) compares against this dataset-level
+    schema, not a view's, so this check must too. An unreadable or
+    malformed response is never treated as "no columns" -- fail loud,
+    rather than let an append write past a check that could not actually
+    run. The response nests the dataset under ``dataset``, and each schema
+    column carries its name as ``c_name`` (``c_id`` is the internal id).
+    """
+    response = service.call(_DATASET_GET_SYMBOL, dataset_id=target_ds_id)
+    dataset = response.get("dataset") if isinstance(response, dict) else None
+    data_schema = dataset.get("data_schema") if isinstance(dataset, dict) else None
+    if not isinstance(data_schema, list):
+        raise CliError(
+            code="append_schema_unreadable",
+            message=f"Could not read target dataset {target_ds_id}'s schema before the append.",
+            hint="Read the target dataset before appending to it.",
+            details={"side": "target", "dataset_id": target_ds_id},
+        )
+    names: set[str] = set()
+    for column in data_schema:
+        display_name = column.get("c_name") if isinstance(column, dict) else None
+        if not isinstance(display_name, str):
+            raise CliError(
+                code="append_schema_unreadable",
+                message=(f"Target dataset {target_ds_id}'s schema had a malformed column entry."),
+                hint="Read the target dataset before appending to it.",
+                details={"side": "target", "dataset_id": target_ds_id},
+            )
+        names.add(display_name)
+    return names
+
+
+def _reject_append_schema_mismatch(
+    service: Any,
+    dataview_id: int,
+    dataset_id: int | None,
+    target_ds_id: int,
+    column_mapping: Any,
+) -> list[str]:
+    """Refuse an ``APPEND_TO_DS`` export whose source has a column the target
+    dataset's schema does not, and ``column_mapping`` does not cover.
+
+    An append writes into rows the target dataset already has; a source
+    column with no home in the target schema and no explicit mapping would
+    otherwise reach the backend as a malformed write. Checked here, before
+    the call, so the refusal costs nothing and names exactly what to fix.
+
+    Returns the target-only column names (present in the target schema, not
+    in the source, not a ``column_mapping`` destination) -- allowed, but
+    worth a warning rather than silence.
+    """
+    source_columns = service.call_view(dataview_id, "columns", dataset_id=dataset_id)
+    if not isinstance(source_columns, dict):
+        raise CliError(
+            code="append_schema_unreadable",
+            message=f"Could not read view {dataview_id}'s columns before the append.",
+            hint="Read the source view before appending from it.",
+            details={"side": "source", "dataview_id": dataview_id},
+        )
+    target_names = _target_dataset_schema_names(service, target_ds_id)
+    mapping = column_mapping if isinstance(column_mapping, dict) else {}
+    # View.columns (mammoth/view.py) maps display name -> internal name; these
+    # dict keys are display names, matching what the backend's own schema
+    # match compares by -- never the internal ids in the dict's values.
+    source_names = set(source_columns)
+    source_only = sorted(source_names - target_names - set(mapping))
+    target_only = sorted(target_names - source_names - set(mapping.values()))
+    if source_only:
+        raise CliError(
+            code="append_schema_mismatch",
+            message=(
+                f"View {dataview_id} has column(s) the target dataset {target_ds_id} "
+                f"does not: {', '.join(source_only)}."
+            ),
+            exit_status=EXIT_USAGE,
+            hint=(
+                "Map these in column_mapping (source column -> an existing target "
+                "column), or rename them in the source view to match the target schema."
+            ),
+            details={"source_only": source_only, "target_only": target_only},
+        )
+    return target_only
+
+
 def _dataset_view_info(
     service: Any, dataset_id: int, project_id: int | None
 ) -> dict[str, Any] | None:
@@ -2588,8 +2741,19 @@ def _dataset_view_info(
 #: large.
 _ROW_CHECK_SETTLE_TIMEOUT = 60.0
 
+_PIPELINE_GET_SYMBOL = "mammoth.api.pipeline.PipelineAPI.get_pipeline"
+_TASK_LIST_SYMBOL = "mammoth.api.pipeline.PipelineAPI.list_tasks"
+_ERROR_TRANSFORM_STATUSES = {"ERROR", "REFERROR"}
+#: ``wait_for_pipeline`` polls the pipeline's ``state`` and can see it settle
+#: back to ``ready`` even though the backend's own ``execution_state`` -- a
+#: separate field -- already recorded the task that actually failed. Only
+#: ``execution_state`` is trustworthy here.
+_PIPELINE_ERROR_EXECUTION_STATES = frozenset({"runtime_error", "ref_error"})
 
-def wait_for_pipeline_to_settle(service: Any, dataset_id: int, view_id: int) -> None:
+
+def wait_for_pipeline_to_settle(
+    service: Any, dataset_id: int, view_id: int
+) -> dict[str, Any] | None:
     """Best-effort, bounded wait for a view's pipeline to reach a terminal state.
 
     A row-count read taken immediately after a write can catch the pipeline
@@ -2601,6 +2765,10 @@ def wait_for_pipeline_to_settle(service: Any, dataset_id: int, view_id: int) -> 
     still reads the row count afterward; a failed wait is no reason to skip
     a read that might now succeed anyway, and :mod:`mammoth_cli.runtime.
     verify` treats an unreadable count as unverified either way.
+
+    Returns the pipeline's execution error (see :func:`_pipeline_execution_error`),
+    if a fresh read finds one, so the caller can flag it even when the
+    write's own envelope said ``status: done`` / ``pipeline_state: ready``.
     """
     try:
         service.call(
@@ -2611,42 +2779,157 @@ def wait_for_pipeline_to_settle(service: Any, dataset_id: int, view_id: int) -> 
         )
     except Exception:  # noqa: BLE001, S110 -- best effort; the write already ran
         pass
+    return _pipeline_execution_error(service, dataset_id, view_id)
+
+
+def _pipeline_execution_error(service: Any, dataset_id: int, view_id: int) -> dict[str, Any] | None:
+    """A settled pipeline's ``execution_state``, if it names an error.
+
+    A failed read here must not be silently treated as "no error" -- that
+    would report the write as verified when nobody actually confirmed it
+    (fail loud, no silent fallbacks). It returns ``execution_state:
+    "unknown"`` with a ``read_error``, which verify.py reports as
+    unverified instead. ``service.call`` maps every SDK exception to
+    :class:`CliError` (see ``MammothService.call``'s contract), so that is
+    the one identifiable type caught here. When a task list read cheaply
+    finds the failing task, its id and ``reference_errors.error_code``
+    (evidence: transform_status ERROR, error_code 7000) are added; a failed
+    read there is recorded as ``task_detail_error`` rather than swallowed.
+    """
+    try:
+        pipeline = service.call(_PIPELINE_GET_SYMBOL, dataview_id=view_id, dataset_id=dataset_id)
+    except CliError as exc:
+        return {"execution_state": "unknown", "read_error": f"{type(exc).__name__}: {exc}"}
+    if not isinstance(pipeline, dict):
+        return {
+            "execution_state": "unknown",
+            "read_error": f"the pipeline read returned {type(pipeline).__name__}, not a dict",
+        }
+    execution_state = pipeline.get("execution_state")
+    if (
+        not isinstance(execution_state, str)
+        or execution_state.lower() not in _PIPELINE_ERROR_EXECUTION_STATES
+    ):
+        return None
+    error: dict[str, Any] = {"execution_state": execution_state}
+    task_id = pipeline.get("executing_task_id")
+    if task_id is not None:
+        error["task_id"] = task_id
+    try:
+        listing = service.call(_TASK_LIST_SYMBOL, dataview_id=view_id, dataset_id=dataset_id)
+        tasks = listing.get("tasks") if isinstance(listing, dict) else None
+        failing = next(
+            (
+                task
+                for task in tasks or []
+                if isinstance(task, dict)
+                and task.get("transform_status") in _ERROR_TRANSFORM_STATUSES
+            ),
+            None,
+        )
+        if failing is not None:
+            if failing.get("id") is not None:
+                error["task_id"] = failing["id"]
+            reference_errors = failing.get("reference_errors")
+            error_code = (
+                reference_errors.get("error_code") if isinstance(reference_errors, dict) else None
+            )
+            if error_code is not None:
+                error["error_code"] = error_code
+    except CliError as exc:
+        error["task_detail_error"] = f"{type(exc).__name__}: {exc}"
+    return error
 
 
 def wait_for_view_row_count(
     service: Any, dataset_id: int, view_id: int, project_id: int | None
-) -> Any:
+) -> tuple[Any, dict[str, Any] | None]:
     """A view's row count once its pipeline has settled, best effort.
 
-    Returns ``None`` if the read still cannot be made; the caller (and
+    Returns ``(rows_after, pipeline_error)``. ``rows_after`` is ``None`` if
+    the read still cannot be made; the caller (and
     :mod:`mammoth_cli.runtime.verify`) must treat that as unverified, never
-    as a known count.
+    as a known count. ``pipeline_error`` is the settled pipeline's own
+    execution error (see :func:`_pipeline_execution_error`), if any.
     """
-    wait_for_pipeline_to_settle(service, dataset_id, view_id)
+    pipeline_error = wait_for_pipeline_to_settle(service, dataset_id, view_id)
     try:
         info = service.call(
             _DATAVIEW_GET_SYMBOL, dataset_id=dataset_id, dataview_id=view_id, project_id=project_id
         )
     except Exception:  # noqa: BLE001 -- best effort; the write already ran
-        return None
+        return None, pipeline_error
+    rows_after = info.get("row_count") if isinstance(info, dict) else None
+    return rows_after, pipeline_error
+
+
+def _row_count_now(service: Any, dataset_id: int, view_id: int, project_id: int | None) -> Any:
+    """A view's row count, read directly with no settle wait.
+
+    Raises the read's own :class:`CliError` rather than swallowing it -- the
+    caller records it in ``row_check`` instead of silently reporting "no
+    rows yet" for a read that never actually happened.
+    """
+    info = service.call(
+        _DATAVIEW_GET_SYMBOL, dataset_id=dataset_id, dataview_id=view_id, project_id=project_id
+    )
     return info.get("row_count") if isinstance(info, dict) else None
+
+
+def _settle_async_view_write(
+    service: Any, dataset_id: Any, view_id: int, project_id: int | None, data: Any
+) -> Any:
+    """Turn an async view write's immediate response into a final one.
+
+    ``view task delete``/``update`` and ``view pipeline rerun`` can return
+    ``status: processing`` right away, before the pipeline has actually run
+    (evidence: ``view task delete`` -> ``{"status":"processing",
+    "type_of_modification":"discard_rule"}``); a caller -- and
+    :mod:`mammoth_cli.runtime.verify`, which reports ``status`` verbatim --
+    must never see that as the final outcome. Only runs when ``dataset_id``
+    is known, like every other settle-and-check path; an unknown parent is
+    skipped rather than guessed (verify.py still catches a leftover
+    ``processing`` status either way).
+    """
+    if dataset_id is None or not isinstance(data, dict):
+        return data
+    dataset_id = int(dataset_id)
+    try:
+        row_check: dict[str, Any] = {
+            "rows_before": _row_count_now(service, dataset_id, view_id, project_id)
+        }
+    except CliError as exc:
+        row_check = {"rows_before": None, "rows_before_error": f"{type(exc).__name__}: {exc}"}
+    rows_after, pipeline_error = wait_for_view_row_count(service, dataset_id, view_id, project_id)
+    row_check["rows_after"] = rows_after
+    data = {**data, "row_check": row_check}
+    if pipeline_error is not None:
+        data["pipeline_error"] = pipeline_error
+        data["status"] = "failed"
+    elif data.get("status") == "processing":
+        data["status"] = "done"
+    return data
 
 
 def _view_info_after_settling(
     service: Any, dataset_id: int, project_id: int | None
-) -> dict[str, Any] | None:
+) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
     """A dataset's current view info, re-read once its pipeline has settled.
 
     Used right after a `view.export.dataset` write, for a brand-new dataset
     or an existing ``target_ds_id`` alike: id/name/row_count all come from
     this settled read, not the discovery lookup that finds the view id, so
     a still-recomputing pipeline can never leave ``row_count`` stale.
+
+    Returns ``(view_info, pipeline_error)`` -- ``pipeline_error`` is the
+    settled pipeline's own execution error (see :func:`_pipeline_execution_error`),
+    if any.
     """
     view_info = _dataset_view_info(service, dataset_id, project_id)
     if view_info is None:
-        return None
-    wait_for_pipeline_to_settle(service, dataset_id, view_info["id"])
-    return _dataset_view_info(service, dataset_id, project_id) or view_info
+        return None, None
+    pipeline_error = wait_for_pipeline_to_settle(service, dataset_id, view_info["id"])
+    return _dataset_view_info(service, dataset_id, project_id) or view_info, pipeline_error
 
 
 _DATAVIEW_LIST_SYMBOL = "mammoth.api.dataviews.DataviewsAPI.list"

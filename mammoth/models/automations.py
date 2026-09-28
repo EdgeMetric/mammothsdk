@@ -283,7 +283,15 @@ class TaskDetailsSpec(BaseModel):
     subject: str | None = None
     recipients: list[str] | None = None
     message: str | None = None
-    attachments: dict[str, Any] | None = None
+    attachments: dict[str, Any] | None = Field(
+        None,
+        description=(
+            "dataview_ids: view ids to email as attachments; each view is sent "
+            "as a CSV file. The combined row count of all attached views must "
+            "stay within 100,000 -- over that, the automation is refused (and "
+            "a run that grows past it fails)."
+        ),
+    )
     test_email: bool = False
 
     # shared optional

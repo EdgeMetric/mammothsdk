@@ -94,12 +94,18 @@ def test_next_ten_etl_routes_have_literal_wire_contracts(
         "status": ["success"],
     }
 
-    run("view.pipeline.rerun", [str(VIEW)], {"dataset_id": DATASET, "from_sequence": 3})
-    assert (api.last().method, _path(api), api.last().json_body) == (
-        "POST",
-        f"/workspaces/4/projects/{PROJECT}/datasets/{DATASET}/dataviews/{VIEW}/pipeline/rerun",
-        {"from_sequence": 3},
+    rerun_path = (
+        f"/workspaces/4/projects/{PROJECT}/datasets/{DATASET}/dataviews/{VIEW}" "/pipeline/rerun"
     )
+    before = len(api.requests)
+    run("view.pipeline.rerun", [str(VIEW)], {"dataset_id": DATASET, "from_sequence": 3})
+    rerun_requests = [
+        request
+        for request in api.requests[before:]
+        if request.method == "POST" and request.path.removeprefix("/api/v2") == rerun_path
+    ]
+    assert len(rerun_requests) == 1
+    assert rerun_requests[0].json_body == {"from_sequence": 3}
 
     spec = {
         "task_spec": {"DATAVIEW_ID": VIEW, "MATH": {"expression": "value"}},
@@ -118,26 +124,31 @@ def test_next_ten_etl_routes_have_literal_wire_contracts(
         f"/workspaces/4/projects/{PROJECT}/datasets/{DATASET}/dataviews/{VIEW}/pipeline/tasks/{TASK}",
     )
 
-    run("view.task.update", [str(VIEW), str(TASK)], spec)
-    assert (api.last().method, _path(api), api.last().json_body) == (
-        "PATCH",
-        f"/workspaces/4/projects/{PROJECT}/datasets/{DATASET}/dataviews/{VIEW}/pipeline/tasks/{TASK}",
-        {
-            "patches": [
-                {
-                    "op": "replace",
-                    "path": "params",
-                    "value": {"DATAVIEW_ID": VIEW, "MATH": {"expression": "value"}},
-                }
-            ]
-        },
+    task_update_path = (
+        f"/workspaces/4/projects/{PROJECT}/datasets/{DATASET}/dataviews/{VIEW}"
+        f"/pipeline/tasks/{TASK}"
     )
+    before = len(api.requests)
+    run("view.task.update", [str(VIEW), str(TASK)], spec)
+    update_requests = [
+        request
+        for request in api.requests[before:]
+        if request.method == "PATCH" and request.path.removeprefix("/api/v2") == task_update_path
+    ]
+    assert len(update_requests) == 1
+    assert update_requests[0].json_body == {
+        "patches": [
+            {
+                "op": "replace",
+                "path": "params",
+                "value": {"DATAVIEW_ID": VIEW, "MATH": {"expression": "value"}},
+            }
+        ]
+    }
 
     run("view.export.get", [str(VIEW), str(EXPORT)], {"dataset_id": DATASET, "fields": "__full"})
     assert api.last().query == {"fields": ["__full"]}
-    assert _path(api).endswith(
-        f"/datasets/{DATASET}/dataviews/{VIEW}/pipeline/exports/{EXPORT}"
-    )
+    assert _path(api).endswith(f"/datasets/{DATASET}/dataviews/{VIEW}/pipeline/exports/{EXPORT}")
 
     run(
         "view.export.update",

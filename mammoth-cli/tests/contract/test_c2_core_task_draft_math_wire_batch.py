@@ -115,11 +115,21 @@ def test_task_draft_and_math_routes_have_literal_wires(
         f"/workspaces/4/projects/{PROJECT}/datasets/{DATASET}/dataviews/{VIEW}/draft-mode",
         {"draft_operation": "discard"},
     )
-    invoke(view, "view.task.delete", [str(VIEW), str(TASK)], {"dataset_id": DATASET}, yes=True)
-    assert (_path(api), api.last().method) == (
-        f"/workspaces/4/projects/{PROJECT}/datasets/{DATASET}/dataviews/{VIEW}/pipeline/tasks/{TASK}",
-        "DELETE",
+    task_path = (
+        f"/workspaces/4/projects/{PROJECT}/datasets/{DATASET}/dataviews/{VIEW}"
+        f"/pipeline/tasks/{TASK}"
     )
+    before = len(api.requests)
+    invoke(view, "view.task.delete", [str(VIEW), str(TASK)], {"dataset_id": DATASET}, yes=True)
+    # The delete itself, plus its settle-and-check follow-up reads (item 3:
+    # an async task write must never leave "processing" as the final
+    # result), so find the DELETE among them rather than assume it is last.
+    delete_requests = [
+        request
+        for request in api.requests[before:]
+        if request.method == "DELETE" and request.path.removeprefix("/api/v2") == task_path
+    ]
+    assert len(delete_requests) == 1
 
     invoke(
         view,
@@ -136,6 +146,7 @@ def test_task_draft_and_math_routes_have_literal_wires(
         {"task_type": "MATH", "params": {"expression": "amount * 2"}},
     )
 
+    before = len(api.requests)
     invoke(
         view,
         "view.task.update",
@@ -145,19 +156,23 @@ def test_task_draft_and_math_routes_have_literal_wires(
             "task_spec": {"task_type": "MATH", "params": {"expression": "amount * 2"}},
         },
     )
-    assert (_path(api), api.last().method, api.last().json_body) == (
-        f"/workspaces/4/projects/{PROJECT}/datasets/{DATASET}/dataviews/{VIEW}/pipeline/tasks/{TASK}",
-        "PATCH",
-        {
-            "patches": [
-                {
-                    "op": "replace",
-                    "path": "params",
-                    "value": {"task_type": "MATH", "params": {"expression": "amount * 2"}},
-                }
-            ]
-        },
-    )
+    # Also followed by settle-and-check reads (item 3), so find the PATCH
+    # among them rather than assume it is last.
+    patch_requests = [
+        request
+        for request in api.requests[before:]
+        if request.method == "PATCH" and request.path.removeprefix("/api/v2") == task_path
+    ]
+    assert len(patch_requests) == 1
+    assert patch_requests[0].json_body == {
+        "patches": [
+            {
+                "op": "replace",
+                "path": "params",
+                "value": {"task_type": "MATH", "params": {"expression": "amount * 2"}},
+            }
+        ]
+    }
 
     # A successful math transform requires a server-backed display-name map;
     # the offline default has no metadata, so assert the safe failure path

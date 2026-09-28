@@ -4518,7 +4518,10 @@ commands:
   - CT-VIEW-TRANSFORM-JSON-EXTRACT-ERROR
   draft_test: LT-VIEW-TRANSFORM-JSON-EXTRACT-DRAFT
   undo_test: LT-VIEW-TRANSFORM-JSON-EXTRACT-UNDO
-  known_restrictions: null
+  known_restrictions: 'json_type=LIST (JSON_LIST_TO_ROWS) gives one row per list element, landing in
+    an Item column (plus an Index column for its original position); with no keys/extractions
+    this is the default. An object element does not get columns from this call -- run a
+    second json-extract (json_type=OBJECT) on Item to turn its keys into columns.'
   reviewed_by: primary
 - command_id: view.transform.limit-rows
   command_path: view transform limit-rows
