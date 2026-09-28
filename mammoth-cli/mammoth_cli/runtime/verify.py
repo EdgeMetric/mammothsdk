@@ -10,7 +10,10 @@ what it should" instead of re-deriving it per command.
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from mammoth_cli.runtime.invocation import Invocation
 
 #: Below this share of matched rows, a join has enough misses to flag before
 #: the caller builds anything further on it.
@@ -18,6 +21,10 @@ JOIN_MATCH_RATE_THRESHOLD = 0.8
 
 _FAILURE_STATUSES = frozenset({"error", "failed", "failure"})
 _FAILURE_PIPELINE_STATES = frozenset({"error", "ref_error"})
+
+#: HTTP status codes that mean "accepted, not finished" when a write's own
+#: response carries no other completion signal at all.
+_ACCEPTED_STATUS_CODES = frozenset({202})
 
 
 #: Surfaced in ``warnings`` (and drives ``verified: false``) when a
@@ -39,14 +46,19 @@ _UNSETTLED_REASON = (
 )
 
 
-def with_verify(data: Any) -> Any:
+def with_verify(data: Any, invocation: Invocation | None = None) -> Any:
     """Return ``data`` with a ``verify`` read-back block added.
 
     ``data`` that is not a dict (a dry-run report, a bare list, ...) is
-    returned unchanged.
+    returned unchanged. When ``invocation`` is given, a write whose own
+    response is nothing but an unsettled async job (a bare ``job_id``/
+    ``future_id``, or an HTTP 202 with no job reference at all) is settled
+    first -- see :func:`_settle_unfinished_write` -- so it is never reported
+    ``verified: true`` before it has actually finished.
     """
     if not isinstance(data, dict):
         return data
+    data = _settle_unfinished_write(data, invocation)
     check = _check_dict(data)
     row_count_attempted = _row_count_attempted(check)
     rows_before, rows_after = _row_counts(check) if row_count_attempted else (None, None)
@@ -78,6 +90,42 @@ def _job_status(data: dict[str, Any]) -> str | None:
     job = data.get("job")
     status = job.get("status") if isinstance(job, dict) else None
     return status if isinstance(status, str) else None
+
+
+def _settle_unfinished_write(data: dict[str, Any], invocation: Invocation | None) -> dict[str, Any]:
+    """Settle a write whose immediate response is an unfinished async job.
+
+    ``wait_if_job`` (every ``MammothService``) already recognizes a bare
+    ``{"job_id": N}``/``{"future_id": N}`` job reference and polls it to
+    completion -- raising on failure or timeout, exactly like every other
+    settle in this codebase -- but only a write handler that explicitly calls
+    it gets that settle. A write whose result carries no other completion
+    signal (no ``status``/``pipeline_state``/nested ``job.status``) must not
+    be reported ``verified: true`` on the strength of an unpolled job
+    reference, or of an HTTP 202 with no reference to poll at all.
+    """
+    if invocation is None or _job_status(data) is not None:
+        return data
+    if isinstance(data.get("status"), str) or isinstance(data.get("pipeline_state"), str):
+        return data
+    if _has_bare_job_reference(data):
+        from mammoth_cli.runtime.session import open_service
+
+        with open_service(invocation) as (service, _auth):
+            settled = service.wait_if_job(data)
+        return settled if isinstance(settled, dict) else data
+    if data.get("status_code") in _ACCEPTED_STATUS_CODES:
+        # Accepted, with nothing at all to poll: still not finished.
+        return {**data, "status": "processing"}
+    return data
+
+
+def _has_bare_job_reference(data: dict[str, Any]) -> bool:
+    for key in ("job_id", "future_id"):
+        value = data.get(key)
+        if isinstance(value, int) and not isinstance(value, bool):
+            return True
+    return False
 
 
 def _check_dict(data: dict[str, Any]) -> dict[str, Any] | None:

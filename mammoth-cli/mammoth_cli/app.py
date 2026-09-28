@@ -854,7 +854,7 @@ def _apply_verify(invocation: Invocation, data: Any) -> Any:
     record = command_by_id(invocation.command_id) or {}
     if record.get("mutation_class") == "read" or not record.get("sdk_symbol"):
         return data
-    return with_state(invocation, with_verify(data))
+    return with_state(invocation, with_verify(data, invocation))
 
 
 def _dry_run(handler: Handler, invocation: Invocation) -> tuple[Any, dict[str, Any]]:

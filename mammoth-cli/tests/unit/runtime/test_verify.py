@@ -2,9 +2,33 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+from typing import Any
+
 import pytest
 
+from mammoth_cli.errors.envelope import CliError
+from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.verify import with_verify
+from mammoth_cli.services import factory as service_factory
+from mammoth_cli.services.testing import FakeMammothService
+from mammoth_cli.testing import login_default_profile
+
+
+@pytest.fixture(autouse=True)
+def _env_auth(isolated_cli_config: Path) -> None:
+    login_default_profile()
+
+
+@pytest.fixture
+def fake_service(monkeypatch: pytest.MonkeyPatch) -> FakeMammothService:
+    service = FakeMammothService()
+
+    def _build(auth: Any, **kwargs: Any) -> FakeMammothService:
+        return service
+
+    monkeypatch.setattr(service_factory, "build_service", _build)
+    return service
 
 
 def test_non_dict_data_passes_through_unchanged() -> None:
@@ -174,3 +198,72 @@ def test_warnings_collected_from_every_check_dict() -> None:
         "a key repeats",
         "{'issue': 'money_not_shown'}",
     ]
+
+
+# ---------------------------------------------------------------------------
+# Settling an unfinished write: a bare job_id/future_id, or an HTTP 202 with
+# no job reference at all, must never be reported verified before it has
+# actually finished (truth-probe finding, 2026-09-28: `connector connection
+# create` and `project delete`).
+# ---------------------------------------------------------------------------
+
+
+def test_bare_job_id_with_no_invocation_keeps_legacy_behavior() -> None:
+    """No invocation to settle with (a direct unit-test call): unchanged."""
+    result = with_verify({"job_id": 8827, "failure_reason": None, "status_code": None})
+    assert result["verify"]["verified"] is True
+    assert result["verify"]["state"] == "done"
+
+
+def test_bare_job_id_settles_to_the_jobs_real_status_before_reporting(
+    fake_service: FakeMammothService,
+) -> None:
+    """`connector connection create` shape: bare ``job_id``, job later succeeds."""
+    fake_service.job_result = {"status": "done", "connection_id": 42}
+    invocation = Invocation(command_id="connector.connection.create", output="json")
+    result = with_verify({"job_id": 8827, "failure_reason": None, "status_code": None}, invocation)
+    assert fake_service.calls == ["wait_if_job", "close"]
+    assert fake_service.wait_log == [{"job_id": 8827, "failure_reason": None, "status_code": None}]
+    assert result["connection_id"] == 42
+    assert result["verify"]["verified"] is True
+    assert result["verify"]["state"] == "done"
+
+
+def test_bare_job_id_whose_job_fails_propagates_the_failure(
+    fake_service: FakeMammothService,
+) -> None:
+    """`connector connection create` shape: the job later fails (psycopg2 DNS error).
+
+    ``wait_if_job`` raises on a failed job, exactly like every other settle in
+    this codebase; a job that fails must never be reported verified, so the
+    failure is left to propagate rather than swallowed here.
+    """
+
+    def _raise(response: Any, **_kwargs: Any) -> Any:
+        raise CliError(code="job_failed", message="could not translate host name", exit_status=1)
+
+    fake_service.wait_if_job = _raise  # type: ignore[method-assign]
+    invocation = Invocation(command_id="connector.connection.create", output="json")
+    with pytest.raises(CliError, match="could not translate host name"):
+        with_verify({"job_id": 8827, "failure_reason": None, "status_code": None}, invocation)
+
+
+def test_bare_202_with_no_job_reference_is_not_verified(fake_service: FakeMammothService) -> None:
+    """`project delete` shape: HTTP 202, no job reference at all to poll."""
+    invocation = Invocation(command_id="project.delete", output="json")
+    result = with_verify({"response": None, "status_code": 202}, invocation)
+    assert fake_service.calls == []  # nothing to poll
+    assert result["verify"]["verified"] is False
+    assert result["verify"]["reason"] == (
+        "the change was accepted but has not finished; read the view before building on it"
+    )
+
+
+def test_a_write_with_an_explicit_status_is_never_re_settled(
+    fake_service: FakeMammothService,
+) -> None:
+    """A ``job_id`` alongside an already-meaningful ``status`` is left alone."""
+    invocation = Invocation(command_id="connector.connection.create", output="json")
+    result = with_verify({"job_id": 8827, "status": "done"}, invocation)
+    assert fake_service.calls == []
+    assert result["verify"]["verified"] is True
