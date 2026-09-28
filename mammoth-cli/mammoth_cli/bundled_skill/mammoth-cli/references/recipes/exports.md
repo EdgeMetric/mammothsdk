@@ -58,10 +58,20 @@ reporting it. Do not build this with `view export create`: the raw
 `schema get` lists `secret_fields` for every typed destination export
 (`postgres`, `mysql`, `mssql`, `redshift`, `elasticsearch`, `ftp`, `sftp`,
 `powerbi`, `tableau`, `azure-blob`, `onedrive`, `sharepoint`, `rest`). When
-that list is non-empty the request body is written by the operator to a
-`0600` file and passed as `--input FILE`; it is never an inline document and
-never appears in argv, the run log, or a checkpoint. The connector command is
-`external_effect` with `confirmation: yes_always`, so `--yes` is required.
+that list is non-empty:
+
+- In a shell, the operator writes the request body to a `0600` file and
+  passes it as `--input FILE` -- never an inline document, and never in
+  argv.
+- Embedded in a product with no shell and no file system (see
+  `mammoth_cli.embed.invoke`), where every write is shown to the user on a
+  confirmation card before it runs, the secret goes in the `--input`
+  JSON's credential field instead: a password or token the user supplies
+  for their own destination is used there, behind the card.
+
+In every case the secret never appears in a reply, a note, a checkpoint, or
+the run log. The connector command is `external_effect` with
+`confirmation: yes_always`, so `--yes` is required.
 
 ```bash
 mammoth schema get view.export.postgres   # read secret_fields, required fields

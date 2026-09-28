@@ -157,8 +157,8 @@ your report. If no column links the files, ask before you combine them.
   deliverables; cleanup is exact-ID authorized and
   never means delete-all-owned-resources: delete only ids this run created,
   one per call, and read back that they are gone.
-- A command whose schema lists `secret_fields` takes `--input FILE` (mode
-  0600); secrets never go in argv, notes, checkpoints or replies.
+- `secret_fields` commands send secrets via `--input`: 0600 FILE (shell)
+  or JSON (embedded); never in replies, notes, checkpoints or run logs.
 
 ## Verify before you report
 

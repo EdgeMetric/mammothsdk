@@ -76,3 +76,21 @@ def test_resource_recipe_does_not_offer_raw_dataset_patch_operations() -> None:
     assert "Do not send raw\n`dataset update` patches" in text
     assert "dataset rename" in text
     assert "dataset file-settings update" in text
+
+
+def test_exports_recipe_scopes_secret_handling_for_shell_and_embedded() -> None:
+    """A password/token the user gives for their own destination is used in
+    the command behind the confirmation card when the CLI runs embedded (no
+    shell, no file system) -- the recipe must say so alongside the
+    shell-only ``--input FILE`` path, and must still say the secret never
+    ends up anywhere it could be read back later.
+    """
+    text = (RECIPES / "exports.md").read_text(encoding="utf-8")
+    section = text.split("## Destination exports that carry a secret", 1)[1]
+
+    assert "0600" in section
+    assert "embedded" in section.casefold()
+    assert "confirmation card" in section.casefold()
+    assert "credential field" in section.casefold()
+    for term in ("reply", "note", "checkpoint", "run log"):
+        assert term in section.casefold(), f"{term!r} missing from secret-export guidance"
