@@ -40,6 +40,11 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: workflow.get
+    ids:
+      workflow_id: positional.0
+    kind: object
 - command_id: workflow.block.auth
   command_path: workflow block auth
   disposition: command
@@ -86,6 +91,11 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: workflow.get
+    ids:
+      workflow_id: positional.0
+    kind: object
 - command_id: workflow.block.config
   command_path: workflow block config
   disposition: command
@@ -132,6 +142,11 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: workflow.get
+    ids:
+      workflow_id: positional.0
+    kind: object
 - command_id: workflow.block.type
   command_path: workflow block type
   disposition: command
@@ -178,6 +193,11 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: workflow.get
+    ids:
+      workflow_id: positional.0
+    kind: object
 - command_id: workflow.canvas
   command_path: workflow canvas
   disposition: command
@@ -218,6 +238,11 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: workflow.get
+    ids:
+      workflow_id: positional.0
+    kind: object
 - command_id: workflow.cleanup
   command_path: workflow cleanup
   disposition: command
@@ -252,6 +277,9 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: workflow.list
+    kind: object
 - command_id: workflow.create
   command_path: workflow create
   disposition: command
@@ -292,6 +320,11 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: workflow.get
+    ids:
+      workflow_id: result.id
+    kind: object
 - command_id: workflow.delete
   command_path: workflow delete
   disposition: command
@@ -332,6 +365,9 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: workflow.list
+    kind: object
 - command_id: workflow.from-template
   command_path: workflow from-template
   disposition: command
@@ -372,6 +408,11 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: workflow.get
+    ids:
+      workflow_id: result.id
+    kind: object
 - command_id: workflow.get
   command_path: workflow get
   disposition: command
@@ -520,6 +561,11 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: workflow.get
+    ids:
+      workflow_id: positional.0
+    kind: object
 - command_id: workflow.workspace-datasets
   command_path: workflow workspace-datasets
   disposition: command

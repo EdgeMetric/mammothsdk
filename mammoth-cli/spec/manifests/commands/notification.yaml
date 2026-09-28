@@ -40,6 +40,9 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: notification.list
+    kind: object
 - command_id: notification.delete-batch
   command_path: notification delete-batch
   disposition: command
@@ -75,6 +78,9 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: notification.list
+    kind: object
 - command_id: notification.list
   command_path: notification list
   disposition: command
@@ -149,6 +155,9 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: notification.list
+    kind: object
 - command_id: notification.update-batch
   command_path: notification update-batch
   disposition: command
@@ -184,3 +193,6 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: notification.list
+    kind: object

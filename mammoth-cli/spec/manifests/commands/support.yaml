@@ -47,6 +47,9 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: support.connector-profile.list
+    kind: object
 - command_id: support.connector-profile.create
   command_path: support connector-profile create
   disposition: command
@@ -88,6 +91,9 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: support.connector-profile.list
+    kind: object
 - command_id: support.connector-profile.delete
   command_path: support connector-profile delete
   disposition: command
@@ -129,6 +135,9 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: support.connector-profile.list
+    kind: object
 - command_id: support.connector-profile.list
   command_path: support connector-profile list
   disposition: command
@@ -204,6 +213,9 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: support.connector-profile.list
+    kind: object
 - command_id: support.connector.create
   command_path: support connector create
   disposition: command
@@ -244,6 +256,9 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: support.connector.list
+    kind: object
 - command_id: support.connector.delete
   command_path: support connector delete
   disposition: command
@@ -284,6 +299,9 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: support.connector.list
+    kind: object
 - command_id: support.connector.list
   command_path: support connector list
   disposition: command
@@ -358,6 +376,9 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: support.connector.list
+    kind: object
 - command_id: support.feature-profile.add-feature
   command_path: support feature-profile add-feature
   disposition: command
@@ -405,6 +426,9 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: support.feature-profile.list
+    kind: object
 - command_id: support.feature-profile.create
   command_path: support feature-profile create
   disposition: command
@@ -445,6 +469,9 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: support.feature-profile.list
+    kind: object
 - command_id: support.feature-profile.delete
   command_path: support feature-profile delete
   disposition: command
@@ -485,6 +512,9 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: support.feature-profile.list
+    kind: object
 - command_id: support.feature-profile.list
   command_path: support feature-profile list
   disposition: command
@@ -559,6 +589,9 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: support.feature-profile.list
+    kind: object
 - command_id: support.feature.create
   command_path: support feature create
   disposition: command
@@ -599,6 +632,9 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: support.feature.list
+    kind: object
 - command_id: support.feature.delete
   command_path: support feature delete
   disposition: command
@@ -639,6 +675,9 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: support.feature.list
+    kind: object
 - command_id: support.feature.list
   command_path: support feature list
   disposition: command
@@ -713,6 +752,9 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: support.feature.list
+    kind: object
 - command_id: support.ownership.transfer
   command_path: support ownership transfer
   disposition: command
@@ -759,6 +801,11 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: support.workspace.user.list
+    ids:
+      workspace_id: positional.0
+    kind: object
 - command_id: support.plan.archive
   command_path: support plan archive
   disposition: command
@@ -799,6 +846,11 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: support.plan.get
+    ids:
+      plan_id: positional.0
+    kind: object
 - command_id: support.plan.chargebee-list
   command_path: support plan chargebee-list
   disposition: command
@@ -874,6 +926,11 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: support.plan.get
+    ids:
+      plan_id: result.plan.id
+    kind: object
 - command_id: support.plan.delete
   command_path: support plan delete
   disposition: command
@@ -914,6 +971,9 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: support.plan.list
+    kind: object
 - command_id: support.plan.get
   command_path: support plan get
   disposition: command
@@ -1062,6 +1122,11 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: support.plan.get
+    ids:
+      plan_id: positional.0
+    kind: object
 - command_id: support.plan.update-storage-tiers
   command_path: support plan update-storage-tiers
   disposition: command
@@ -1104,6 +1169,11 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: support.plan.get
+    ids:
+      plan_id: positional.0
+    kind: object
 - command_id: support.subscription.create
   command_path: support subscription create
   disposition: command
@@ -1150,6 +1220,11 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: support.subscription.get
+    ids:
+      workspace_id: positional.0
+    kind: object
 - command_id: support.subscription.get
   command_path: support subscription get
   disposition: command
@@ -1236,6 +1311,11 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: support.subscription.get
+    ids:
+      workspace_id: positional.0
+    kind: object
 - command_id: support.user.list-all
   command_path: support user list-all
   disposition: command
@@ -1311,6 +1391,9 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: support.user.list-all
+    kind: object
 - command_id: support.user.update
   command_path: support user update
   disposition: command
@@ -1351,6 +1434,9 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: support.user.list-all
+    kind: object
 - command_id: support.workspace.create
   command_path: support workspace create
   disposition: command
@@ -1392,6 +1478,11 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: job.get
+    ids:
+      job_id: result.id
+    kind: delivery
 - command_id: support.workspace.delete
   command_path: support workspace delete
   disposition: command
@@ -1432,6 +1523,9 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: support.workspace.list
+    kind: object
 - command_id: support.workspace.get
   command_path: support workspace get
   disposition: command
@@ -1547,6 +1641,11 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: support.workspace.get
+    ids:
+      workspace_id: positional.0
+    kind: object
 - command_id: support.workspace.suspend-access
   command_path: support workspace suspend-access
   disposition: command
@@ -1588,6 +1687,11 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: support.workspace.get
+    ids:
+      workspace_id: positional.0
+    kind: object
 - command_id: support.workspace.update
   command_path: support workspace update
   disposition: command
@@ -1629,6 +1733,11 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: support.workspace.get
+    ids:
+      workspace_id: positional.0
+    kind: object
 - command_id: support.workspace.user.add
   command_path: support workspace user add
   disposition: command
@@ -1670,6 +1779,11 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: support.workspace.user.list
+    ids:
+      workspace_id: positional.0
+    kind: object
 - command_id: support.workspace.user.list
   command_path: support workspace user list
   disposition: command
@@ -1756,6 +1870,11 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: support.workspace.user.list
+    ids:
+      workspace_id: positional.0
+    kind: object
 - command_id: support.workspace.user.transfer
   command_path: support workspace user transfer
   disposition: command
@@ -1802,3 +1921,8 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: support.workspace.user.list
+    ids:
+      workspace_id: positional.0
+    kind: object

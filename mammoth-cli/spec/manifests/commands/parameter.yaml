@@ -41,6 +41,11 @@ commands:
   undo_test: null
   known_restrictions: param_type is NUMERIC, TEXT or DATE (uppercase; 4PARM008 otherwise).
   reviewed_by: primary
+  readback:
+    command: parameter.get
+    ids:
+      parameter_id: result.id
+    kind: object
 - command_id: parameter.delete
   command_path: parameter delete
   disposition: command
@@ -81,6 +86,9 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: parameter.list
+    kind: object
 - command_id: parameter.dependencies
   command_path: parameter dependencies
   disposition: command
@@ -161,6 +169,11 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: parameter.get
+    ids:
+      parameter_id: result.id
+    kind: object
 - command_id: parameter.get
   command_path: parameter get
   disposition: command
@@ -241,6 +254,9 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: parameter.group.list
+    kind: object
 - command_id: parameter.group.delete
   command_path: parameter group delete
   disposition: command
@@ -281,6 +297,9 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: parameter.group.list
+    kind: object
 - command_id: parameter.group.list
   command_path: parameter group list
   disposition: command
@@ -349,6 +368,9 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: parameter.group.list
+    kind: object
 - command_id: parameter.group.update
   command_path: parameter group update
   disposition: command
@@ -389,6 +411,9 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: parameter.group.list
+    kind: object
 - command_id: parameter.list
   command_path: parameter list
   disposition: command
@@ -463,6 +488,11 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: parameter.get
+    ids:
+      parameter_id: positional.0
+    kind: object
 - command_id: parameter.rerun-all-stale
   command_path: parameter rerun-all-stale
   disposition: command
@@ -497,6 +527,9 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: parameter.list
+    kind: object
 - command_id: parameter.update
   command_path: parameter update
   disposition: command
@@ -537,3 +570,8 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: parameter.get
+    ids:
+      parameter_id: positional.0
+    kind: object

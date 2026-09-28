@@ -41,6 +41,11 @@ commands:
   known_restrictions: App key/token emitted only once through approved secret output and redacted from
     diagnostics. B20.
   reviewed_by: primary
+  readback:
+    command: client-app.get
+    ids:
+      client_key: result.app_key
+    kind: object
 - command_id: client-app.delete
   command_path: client-app delete
   disposition: command
@@ -81,6 +86,9 @@ commands:
   undo_test: null
   known_restrictions: Exact client-key confirmation. B20.
   reviewed_by: primary
+  readback:
+    command: client-app.list
+    kind: object
 - command_id: client-app.get
   command_path: client-app get
   disposition: command
@@ -197,3 +205,8 @@ commands:
   known_restrictions: 'BLOCKED[B21 CLIENT_APP_PATCH_UNCONSTRAINED]: op/path/value are arbitrary strings;
     reserved, not registered.'
   reviewed_by: primary
+  readback:
+    command: client-app.get
+    ids:
+      client_key: positional.0
+    kind: object

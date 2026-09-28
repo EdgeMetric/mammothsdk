@@ -35,6 +35,9 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: workspace.list
+    kind: object
 - command_id: workspace.app-usage
   command_path: workspace app-usage
   disposition: command
@@ -104,6 +107,7 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  no_readback: "generates a preview expression only; nothing is persisted to read back"
 - command_id: workspace.create
   command_path: workspace create
   disposition: command
@@ -138,6 +142,11 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: workspace.get
+    ids:
+      workspace_id: result.id
+    kind: object
 - command_id: workspace.delete
   command_path: workspace delete
   disposition: command
@@ -178,6 +187,9 @@ commands:
   undo_test: null
   known_restrictions: Exact immutable workspace-ID confirmation, not --yes alone.
   reviewed_by: primary
+  readback:
+    command: workspace.list
+    kind: object
 - command_id: workspace.get
   command_path: workspace get
   disposition: command
@@ -287,6 +299,11 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: job.get
+    ids:
+      job_id: result.job.id
+    kind: delivery
 - command_id: workspace.reactivate
   command_path: workspace reactivate
   disposition: command
@@ -327,6 +344,11 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: workspace.get
+    ids:
+      workspace_id: positional.0
+    kind: object
 - command_id: workspace.segment.list
   command_path: workspace segment list
   disposition: command
@@ -395,6 +417,9 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: workspace.segment.list
+    kind: object
 - command_id: workspace.storage-breakdown
   command_path: workspace storage-breakdown
   disposition: command
@@ -472,6 +497,11 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: workspace.get
+    ids:
+      workspace_id: positional.0
+    kind: object
 - command_id: workspace.user.add
   command_path: workspace user add
   disposition: command
@@ -506,6 +536,9 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: workspace.user.list
+    kind: object
 - command_id: workspace.user.get
   command_path: workspace user get
   disposition: command
@@ -619,6 +652,9 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: workspace.user.list
+    kind: object
 - command_id: workspace.user.remove-batch
   command_path: workspace user remove-batch
   disposition: command
@@ -653,6 +689,9 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: workspace.user.list
+    kind: object
 - command_id: workspace.user.update
   command_path: workspace user update
   disposition: command
@@ -694,6 +733,11 @@ commands:
   undo_test: null
   known_restrictions: Exact user-ID confirmation for owner/admin role changes.
   reviewed_by: primary
+  readback:
+    command: workspace.user.get
+    ids:
+      user_id: positional.0
+    kind: object
 - command_id: workspace.user.update-batch
   command_path: workspace user update-batch
   disposition: command
@@ -728,3 +772,6 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: workspace.user.list
+    kind: object

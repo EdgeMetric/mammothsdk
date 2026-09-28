@@ -33,6 +33,9 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: skill.list
+    kind: object
 - command_id: skill.list
   command_path: skill list
   disposition: command
@@ -132,6 +135,7 @@ commands:
   undo_test: null
   known_restrictions: 'Writes one <mammoth-cli>…</mammoth-cli> block into AGENTS.md in the current directory (--input ''{"path": "CLAUDE.md"}'' for another file); re-running replaces the block in place. Local file write only.'
   reviewed_by: primary
+  no_readback: "writes a local AGENTS.md file; no read command in this manifest reports its installed state"
 - command_id: skill.show
   command_path: skill show
   disposition: command
@@ -199,6 +203,9 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: skill.list
+    kind: object
 - command_id: skill.update
   command_path: skill update
   disposition: command
@@ -232,3 +239,6 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: skill.list
+    kind: object

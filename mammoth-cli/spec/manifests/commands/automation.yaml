@@ -46,6 +46,11 @@ commands:
     selected view is emailed as a CSV file. The combined row count of all attached views must stay
     within 100,000 -- over that, the automation is refused (and a run that grows past it fails).'
   reviewed_by: primary
+  readback:
+    command: automation.get
+    ids:
+      automation_id: result.id
+    kind: object
 - command_id: automation.delete
   command_path: automation delete
   disposition: command
@@ -86,6 +91,9 @@ commands:
   undo_test: null
   known_restrictions: Immutable ID confirmation.
   reviewed_by: primary
+  readback:
+    command: automation.list
+    kind: object
 - command_id: automation.get
   command_path: automation get
   disposition: command
@@ -205,6 +213,11 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: automation.get
+    ids:
+      automation_id: positional.0
+    kind: object
 - command_id: automation.trash
   command_path: automation trash
   disposition: command
@@ -245,6 +258,11 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: automation.get
+    ids:
+      automation_id: positional.0
+    kind: object
 - command_id: automation.update
   command_path: automation update
   disposition: command
@@ -286,3 +304,8 @@ commands:
   undo_test: null
   known_restrictions: run/status patches require exact ID confirmation. B15.
   reviewed_by: primary
+  readback:
+    command: automation.get
+    ids:
+      automation_id: positional.0
+    kind: object

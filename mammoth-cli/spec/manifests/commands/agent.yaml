@@ -35,6 +35,9 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: agent.session.list
+    kind: object
 - command_id: agent.session.delete
   command_path: agent session delete
   disposition: command
@@ -75,6 +78,9 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: agent.session.list
+    kind: object
 - command_id: agent.session.list
   command_path: agent session list
   disposition: command
@@ -189,3 +195,6 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: agent.session.list
+    kind: object

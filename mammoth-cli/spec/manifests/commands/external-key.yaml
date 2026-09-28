@@ -38,6 +38,11 @@ commands:
     JSON''s secure_key field (embedded), behind the confirmation card; never in a reply, note, checkpoint
     or run log. Response is recursively redacted.'
   reviewed_by: primary
+  readback:
+    command: external-key.get
+    ids:
+      key_id: result.id
+    kind: object
 - command_id: external-key.delete
   command_path: external-key delete
   disposition: command
@@ -78,6 +83,9 @@ commands:
   undo_test: null
   known_restrictions: Immutable ID confirmation.
   reviewed_by: primary
+  readback:
+    command: external-key.list
+    kind: object
 - command_id: external-key.get
   command_path: external-key get
   disposition: command

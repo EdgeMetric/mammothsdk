@@ -40,6 +40,11 @@ commands:
   undo_test: null
   known_restrictions: Secure creation uses the secret-output rule (--secret-out/--show-secret).
   reviewed_by: primary
+  readback:
+    command: webhook.get
+    ids:
+      webhook_id: result.webhook.id
+    kind: object
 - command_id: webhook.delete
   command_path: webhook delete
   disposition: command
@@ -80,6 +85,9 @@ commands:
   undo_test: null
   known_restrictions: Resolve webhook before confirmation.
   reviewed_by: primary
+  readback:
+    command: webhook.list
+    kind: object
 - command_id: webhook.get
   command_path: webhook get
   disposition: command
@@ -190,6 +198,7 @@ commands:
   known_restrictions: Never retry; requires a disposable webhook and dataset fixture; current dataset
     permission blocks live evidence.
   reviewed_by: primary
+  no_readback: "posts data to an external webhook URL; the external receiver's state is not something this CLI can read back"
 - command_id: webhook.send-get
   command_path: webhook send-get
   disposition: command
@@ -225,6 +234,7 @@ commands:
   known_restrictions: webhook send-get is a mutation despite HTTP GET, and it is never retried. Reject
     an empty query; never log the URI if the server treats it as a capability.
   reviewed_by: primary
+  no_readback: "posts data to an external webhook URL; the external receiver's state is not something this CLI can read back"
 - command_id: webhook.update
   command_path: webhook update
   disposition: command
@@ -265,3 +275,8 @@ commands:
   undo_test: null
   known_restrictions: Reject an empty patch; a newly issued secret uses the secret-output rule.
   reviewed_by: primary
+  readback:
+    command: webhook.get
+    ids:
+      webhook_id: positional.0
+    kind: object

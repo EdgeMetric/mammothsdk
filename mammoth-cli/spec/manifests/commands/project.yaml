@@ -34,6 +34,9 @@ commands:
   undo_test: null
   known_restrictions: Sorted comma-separated ID-set confirmation.
   reviewed_by: primary
+  readback:
+    command: project.list
+    kind: object
 - command_id: project.bulk-update
   command_path: project bulk-update
   disposition: command
@@ -71,6 +74,9 @@ commands:
     The CLI requires every patches[].value item to name a project_id and the confirmation names
     those ids; a body that names no project is refused before dispatch. Not verified live.
   reviewed_by: primary
+  readback:
+    command: project.list
+    kind: object
 - command_id: project.check
   command_path: project check
   disposition: command
@@ -190,6 +196,11 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: project.get
+    ids:
+      project_id: result.id
+    kind: object
 - command_id: project.ensure
   command_path: project ensure
   disposition: command
@@ -231,6 +242,11 @@ commands:
     to the lowest id and the rest are listed under 'duplicates'. Creating a project is a benign mutation;
     sweep with 'project delete ID --yes --confirm ID'.
   reviewed_by: primary
+  readback:
+    command: project.get
+    ids:
+      project_id: result.id
+    kind: object
 - command_id: project.data-check.list
   command_path: project data-check list
   disposition: command
@@ -311,6 +327,9 @@ commands:
   undo_test: null
   known_restrictions: Immutable project-ID confirmation.
   reviewed_by: primary
+  readback:
+    command: project.list
+    kind: object
 - command_id: project.get
   command_path: project get
   disposition: command
@@ -462,6 +481,11 @@ commands:
   undo_test: null
   known_restrictions: 'Save only a preference the user stated for how the agent works or shows things (at most 20, each at most 200 characters); never data, results or secrets. The in-app agent applies them in every later turn in this project. A rule about what a board''s data means (for example, Returned orders are refunds) belongs to that board: dashboard context create.'
   reviewed_by: primary
+  readback:
+    command: project.memory.list
+    ids:
+      project_id: positional.0
+    kind: object
 - command_id: project.memory.remove
   command_path: project memory remove
   disposition: command
@@ -501,6 +525,11 @@ commands:
   undo_test: null
   known_restrictions: 'index is the zero-based position from project memory list; use it when the user asks to forget a preference.'
   reviewed_by: primary
+  readback:
+    command: project.memory.list
+    ids:
+      project_id: positional.0
+    kind: object
 - command_id: project.pending-changes
   command_path: project pending-changes
   disposition: command
@@ -662,6 +691,11 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: project.resource-dependencies
+    ids:
+      project_id: positional.0
+    kind: object
 - command_id: project.resource-status
   command_path: project resource-status
   disposition: command
@@ -742,6 +776,11 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: job.get
+    ids:
+      job_id: result.job_id
+    kind: delivery
 - command_id: project.update
   command_path: project update
   disposition: command
@@ -782,6 +821,11 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: project.get
+    ids:
+      project_id: positional.0
+    kind: object
 - command_id: project.user.add
   command_path: project user add
   disposition: command
@@ -825,6 +869,7 @@ commands:
     {"email_ids": [EMAIL], "projects": [{"project_id": PROJECT_ID, "role": ROLE}]}: it invites them as a workspace member
     with that project role, which is how a project gets a new person.'
   reviewed_by: primary
+  no_readback: "no CLI read command exposes per-project user role assignments"
 - command_id: project.user.remove
   command_path: project user remove
   disposition: command
@@ -865,6 +910,7 @@ commands:
   undo_test: null
   known_restrictions: B03 PROJECT_USER_ID_ROLE_UNTYPED; sorted target-set confirmation.
   reviewed_by: primary
+  no_readback: "no CLI read command exposes per-project user role assignments"
 - command_id: project.user.update
   command_path: project user update
   disposition: command
@@ -906,3 +952,4 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  no_readback: "no CLI read command exposes per-project user role assignments"

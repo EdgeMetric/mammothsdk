@@ -74,6 +74,7 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  no_readback: "returns a one-time hosted checkout page URL; nothing persisted to read back"
 - command_id: billing.invoice.charge
   command_path: billing invoice charge
   disposition: command
@@ -108,6 +109,9 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: billing.invoice.list
+    kind: object
 - command_id: billing.invoice.get
   command_path: billing invoice get
   disposition: command
@@ -216,6 +220,9 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: billing.stripe.status
+    kind: object
 - command_id: billing.stripe.checkout-url
   command_path: billing stripe checkout-url
   disposition: command
@@ -251,6 +258,7 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  no_readback: "returns a one-time Stripe checkout URL; nothing persisted to read back"
 - command_id: billing.stripe.create
   command_path: billing stripe create
   disposition: command
@@ -291,6 +299,9 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: billing.stripe.status
+    kind: object
 - command_id: billing.stripe.end-trial
   command_path: billing stripe end-trial
   disposition: command
@@ -325,6 +336,9 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: billing.stripe.status
+    kind: object
 - command_id: billing.stripe.get
   command_path: billing stripe get
   disposition: command
@@ -434,6 +448,9 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: billing.stripe.payment-method.list
+    kind: object
 - command_id: billing.stripe.payment-method.list
   command_path: billing stripe payment-method list
   disposition: command
@@ -510,6 +527,9 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: billing.stripe.payment-method.list
+    kind: object
 - command_id: billing.stripe.portal-url
   command_path: billing stripe portal-url
   disposition: command
@@ -544,6 +564,7 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  no_readback: "returns a one-time Stripe customer-portal URL; nothing persisted to read back"
 - command_id: billing.stripe.preview-invoice
   command_path: billing stripe preview-invoice
   disposition: command
@@ -612,6 +633,9 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: billing.stripe.status
+    kind: object
 - command_id: billing.stripe.status
   command_path: billing stripe status
   disposition: command
@@ -680,6 +704,9 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: billing.stripe.status
+    kind: object
 - command_id: billing.stripe.upcoming-invoice
   command_path: billing stripe upcoming-invoice
   disposition: command
@@ -816,3 +843,6 @@ commands:
   undo_test: null
   known_restrictions: 'Plans: storage 1 GB Free, 10 GB Starter, 50 GB Pro; users 1, 5, 10.'
   reviewed_by: primary
+  readback:
+    command: billing.subscription.get
+    kind: object

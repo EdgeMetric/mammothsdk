@@ -33,3 +33,6 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: version
+    kind: object
