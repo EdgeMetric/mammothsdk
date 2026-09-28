@@ -468,6 +468,63 @@ def test_hedged_view_or_dashboard_bi_export_still_matches() -> None:
     assert "dashboard.bi-export" in matches or "dashboard.bi-preflight" in matches, matches
 
 
+def test_url_import_intent_reaches_dataset_create() -> None:
+    """Live-eval evidence (T1-I-16): 'import data from a public URL or JSON API
+    into a dataset' / 'fetch or retrieve JSON from public URL into dataset'
+    never matched dataset.create (ds_creation_type=weburl), which has no
+    discovery-purpose text at all -- even though the capability exists and
+    works once found.
+    """
+    for query in (
+        "import data from a public URL into a dataset",
+        "fetch or retrieve JSON from a public URL into a dataset",
+    ):
+        matches = [item["command_id"] for item in find_schemas(query)["matches"]]
+        assert "dataset.create" in matches, f"{query!r} -> {matches}"
+
+
+def test_alert_on_row_match_reaches_checkpoint_create() -> None:
+    """Live-eval evidence (T1-R-02): 'alert me when a row matches a condition' /
+    'notify me if a value changes' should surface view.checkpoint.create
+    (checkpoint_type=alert) as an automation-adjacent option, not just
+    automation.create.
+    """
+    for query in (
+        "alert me when a row matches a condition",
+        "notify me if a value changes",
+    ):
+        matches = [item["command_id"] for item in find_schemas(query)["matches"]]
+        assert "view.checkpoint.create" in matches, f"{query!r} -> {matches}"
+
+
+def test_new_file_in_folder_trigger_reaches_automation_create() -> None:
+    """Live-eval evidence (T1-R-06): 'automation trigger on new file in folder;
+    scheduled weekly automation append data' returned no match -- the agent
+    lacked a discovered path for a new-file-arrives trigger.
+    """
+    matches = [
+        item["command_id"]
+        for item in find_schemas("trigger automation on new file in a folder")["matches"]
+    ]
+    assert "automation.create" in matches, matches
+
+
+def test_plan_storage_intent_reaches_billing_plan_commands() -> None:
+    """Live-eval evidence (T1-W-06): 'what plan are we on and how much storage
+    does it include' / 'current subscription plan tier for workspace; billing
+    plan and storage allowance' returned 'No command matched every word' twice
+    -- billing.chargebee-plan/billing.subscription.get had no discovery text
+    for plan/subscription/storage-allowance phrasing.
+    """
+    matches = [
+        item["command_id"]
+        for item in find_schemas(
+            "current subscription plan tier for workspace; billing plan and storage allowance"
+        )["matches"]
+    ]
+    assert "billing.chargebee-plan" in matches or "billing.subscription.get" in matches, matches
+
+
 def test_storage_usage_intent_ranks_app_usage_above_storage_breakdown() -> None:
     """In-product-agent evidence: 'how much storage am I using, and what plan
     am I on?' only ever reached workspace.storage-breakdown -- a paginated

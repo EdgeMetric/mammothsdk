@@ -331,6 +331,13 @@ _COMMAND_DISCOVERY_PURPOSES = {
         "url app post posts events rows straight in"
     ),
     "dataset.create-from-pdf": "pdf table document extract get the table out of into a dataset",
+    # "import data from a public URL or JSON API into a dataset" / "fetch or
+    # retrieve JSON from a public URL" (T1-I-16) never matched dataset.create
+    # (ds_creation_type=weburl) -- the capability exists and works once found,
+    # it just had no discovery-purpose text at all.
+    "dataset.create": (
+        "url web link fetch retrieve pull import public website endpoint api json data weburl"
+    ),
     "dashboard.v3.generate": (
         "create build make new generate dashboard board report from a view description "
         "intent sentence ai combined showing"
@@ -367,7 +374,8 @@ _COMMAND_DISCOVERY_PURPOSES = {
     ),
     "dashboard.template.apply": "apply a ready-made template layout to this board",
     "view.checkpoint.create": (
-        "stop halt pause pipeline alert notify flag when rows match a rule condition checkpoint"
+        "stop halt pause pipeline alert notify flag when if row rows match matches a rule "
+        "condition checkpoint value changes"
     ),
     "view.data-check.create": "data quality check rule validate rows match condition flag",
     "view.derivative.create": "metric kpi number single value to check track daily monitor",
@@ -380,7 +388,18 @@ _COMMAND_DISCOVERY_PURPOSES = {
     "automation.create": (
         "schedule scheduled recurring repeat refresh rerun run every day daily week weekly "
         "hour hourly month monthly automatically trigger alert email a dataset pipeline "
-        "retention purge old data send an emailed file attachment view views csv"
+        "retention purge old data send an emailed file attachment view views csv new folder "
+        "arrives lands dropped"
+    ),
+    # "current subscription plan tier for workspace; billing plan and storage
+    # allowance" (T1-W-06) never matched -- "plan and storage allowance"/
+    # "subscription tier" phrasing had no discovery-purpose text on either
+    # billing command. Deliberately no "much"/generic "how much" wording here:
+    # that would also fully-match the bare "how much storage" query and tie
+    # workspace.app-usage on score (alphabetical tie-break would then wrongly
+    # rank this ahead of it -- see storage_usage_intent guard test).
+    "billing.chargebee-plan": (
+        "current subscription tier plan storage allowance space included for workspace"
     ),
     "billing.subscription.update": "upgrade downgrade bigger plan change subscription tier",
     "billing.invoice.list": "past bills billed billing history invoices payments receipts so far",
