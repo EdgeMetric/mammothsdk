@@ -25,23 +25,7 @@ from mammoth_cli.manifest.loader import load_commands
 #: MUST BE EMPTY BEFORE RELEASE -- it is a standing TODO list, not a
 #: permanent exemption, and the "every write declares one" check below is
 #: skipped (not passed) for any family still in it.
-PENDING_FAMILIES: set[str] = {
-    "activity",
-    "annotation",
-    "browse",
-    "calc",
-    "capability",
-    "dashboard",
-    "data-app",
-    "doctor",
-    "job",
-    "log",
-    "report",
-    "schema",
-    "snippet",
-    "template",
-    "version",
-}
+PENDING_FAMILIES: set[str] = set()
 
 _VALID_ID_SOURCE_PREFIXES = ("result.", "input.", "positional.")
 
