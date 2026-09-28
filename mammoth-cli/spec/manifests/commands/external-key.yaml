@@ -21,7 +21,8 @@ commands:
   live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
   contract_fixture: null
   required_fixture_guard: null
-  secret_fields: []
+  secret_fields:
+  - secure_key
   human_example: mammoth external-key create --help
   agent_example: 'mammoth external-key create --input ''{"key_type": "open_ai", "key_name": "Revenue report",
     "secure_key": "sample"}'''
@@ -33,7 +34,9 @@ commands:
   - CT-EXTERNAL-KEY-CREATE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: secure_key is secret prompt/input/stdin only; response is recursively redacted.
+  known_restrictions: 'secure_key is a secret_fields entry: --input FILE, mode 0600 (shell) or the --input
+    JSON''s secure_key field (embedded), behind the confirmation card; never in a reply, note, checkpoint
+    or run log. Response is recursively redacted.'
   reviewed_by: primary
 - command_id: external-key.delete
   command_path: external-key delete
