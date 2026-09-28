@@ -404,6 +404,70 @@ def test_undo_dashboard_intent_reaches_chat_history() -> None:
         assert "dashboard.chat.history" in matches, f"{query!r} -> {matches}"
 
 
+def test_or_is_a_discovery_stopword_so_import_workbook_still_matches() -> None:
+    """Live-eval evidence (T1-D-06): 'import Power BI or Tableau reports; export
+    dashboard or board as PDF' -- the incidental conjunction 'or' was not a
+    discovery stopword, so it became a required term; dashboard.import-workbook's
+    purpose text has no literal 'or' and dropped out, while dashboard.bi-export/
+    bi-preflight won by accident (their text happens to contain 'desktop or
+    tableau desktop').
+    """
+    matches = [
+        item["command_id"] for item in find_schemas("import Power BI or Tableau reports")["matches"]
+    ]
+    assert "dashboard.import-workbook" in matches, matches
+
+
+def test_row_level_security_intent_reaches_dashboard_rls() -> None:
+    """Live-eval evidence (T1-D-03): 'row-level security' / 'per-user or
+    row-level region security' never matched any dashboard.rls.* command --
+    none had any discovery-purpose text at all.
+    """
+    matches = [
+        item["command_id"] for item in find_schemas("row-level security per manager")["matches"]
+    ]
+    assert any(m.startswith("dashboard.rls.") for m in matches), matches
+
+
+def test_dashboard_template_intent_reaches_template_family() -> None:
+    """Live-eval evidence (T1-D-12): 'list browse available dashboard templates
+    styles; apply template to current dashboard' returned 0 matches --
+    dashboard.template.* had no discovery-purpose text at all.
+    """
+    matches = [
+        item["command_id"]
+        for item in find_schemas("list browse available dashboard templates styles")["matches"]
+    ]
+    assert any(m.startswith("dashboard.template") for m in matches), matches
+
+
+def test_publish_dashboard_intent_reaches_dashboard_action() -> None:
+    """Live-eval evidence (T1-D-15): 'publish dashboard' / 'make it live' never
+    surfaced dashboard.action (the actual publish step dashboard.share depends
+    on) among 12 near-misses -- it had no discovery-purpose text.
+    """
+    matches = [
+        item["command_id"] for item in find_schemas("publish dashboard make it live")["matches"]
+    ]
+    assert "dashboard.action" in matches, matches
+
+
+def test_hedged_view_or_dashboard_bi_export_still_matches() -> None:
+    """Live-eval evidence (T1-D-22): 'publish a dashboard or its underlying view
+    to Power BI' matched only view.export.powerbi (the raw ODBC connector) --
+    dashboard.bi-export/bi-preflight missed only because their purpose text
+    never says 'view', so the hedge word knocked them out of the strict
+    all-terms gate.
+    """
+    matches = [
+        item["command_id"]
+        for item in find_schemas("publish a dashboard or its underlying view to Power BI")[
+            "matches"
+        ]
+    ]
+    assert "dashboard.bi-export" in matches or "dashboard.bi-preflight" in matches, matches
+
+
 def test_storage_usage_intent_ranks_app_usage_above_storage_breakdown() -> None:
     """In-product-agent evidence: 'how much storage am I using, and what plan
     am I on?' only ever reached workspace.storage-breakdown -- a paginated

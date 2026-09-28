@@ -166,14 +166,19 @@ _COMMAND_DISCOVERY_PURPOSES = {
     # commands: the dialog answers "what will I get" the same way for either
     # tool (see PowerBiPreflightResponse/TableauPreflightResponse), and the
     # export downloads whichever the caller names via input `target`.
+    # "publish a dashboard OR ITS UNDERLYING VIEW to Power BI" (T1-D-22) hedges
+    # with "view" even though the export is dashboard-only; without "view" in
+    # this text the strict all-terms gate drops these two and the unrelated
+    # view.export.powerbi (a raw ODBC connector, literally named "view") wins.
     "dashboard.bi-preflight": (
-        "power bi powerbi pbix pbip tableau twb twbx workbook file board open this dashboard "
-        "board in power bi desktop or tableau desktop preview dry run what would convert "
-        "figures rows before downloading export"
+        "power bi powerbi pbix pbip tableau twb twbx workbook file board view open this "
+        "dashboard board in power bi desktop or tableau desktop preview dry run what would "
+        "convert figures rows before downloading export"
     ),
     "dashboard.bi-export": (
-        "power bi powerbi pbix pbip tableau twb twbx workbook file board open this dashboard "
-        "board in power bi desktop or tableau desktop download export save project convert"
+        "power bi powerbi pbix pbip tableau twb twbx workbook file board view open this "
+        "dashboard board in power bi desktop or tableau desktop download export save project "
+        "convert"
     ),
     # "Bring my old Power BI report in" / "move my dashboards over" is the
     # workbook-to-Mammoth-dataset import, the opposite direction of
@@ -343,6 +348,24 @@ _COMMAND_DISCOVERY_PURPOSES = {
         "last change board"
     ),
     "dashboard.pdf.export": "pdf of a board dashboard download print meeting export",
+    # "single dashboard per-user or row-level region security" (T1-D-03) --
+    # none of the dashboard.rls.* commands had any discovery-purpose text.
+    "dashboard.rls.assignment.list": (
+        "row row-level level security per user per-user per manager per-manager restrict "
+        "each viewer to their own rows region"
+    ),
+    # "publish dashboard" / "make it live" (T1-D-15) -- dashboard.action is the
+    # publish step dashboard.share depends on (fails with 4DASH010 otherwise),
+    # but it had no discovery-purpose text at all.
+    "dashboard.action": "publish make live go live unpublish share delete-source",
+    # "list browse available dashboard templates styles; apply template to
+    # current dashboard" (T1-D-12) returned 0 matches -- dashboard.template.*
+    # had no discovery-purpose text (and the query's plural "templates" never
+    # matches the family's singular path token "template").
+    "dashboard.template.list": (
+        "ready-made pre-built layout gallery browse choose templates styles available"
+    ),
+    "dashboard.template.apply": "apply a ready-made template layout to this board",
     "view.checkpoint.create": (
         "stop halt pause pipeline alert notify flag when rows match a rule condition checkpoint"
     ),
@@ -514,6 +537,9 @@ _DISCOVERY_STOPWORDS = frozenset(
         "into",
         "from",
         "and",
+        # Same as "and" -- an incidental conjunction ("Power BI or Tableau")
+        # must not become a required match term.
+        "or",
         "all",
         "each",
         "this",
