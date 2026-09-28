@@ -23,6 +23,9 @@ commands:
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: live_disposable_project
+  no_readback: AddComment's response (id/annotation_id/body/created_by/created_at) has no target_type/target_id;
+    the only read command (annotation.list) filters by target, not by annotation_id, so the specific comment
+    thread cannot be read back.
   live_test: LT-ANNOTATION-COMMENT-ADD
   live_exemption_reason: null
   contract_fixture: null
@@ -57,6 +60,12 @@ commands:
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: live_disposable_project
+  readback:
+    command: annotation.list
+    ids:
+      target_type: input.target_type
+      target_id: input.target_id
+    kind: object
   live_test: LT-ANNOTATION-CREATE
   live_exemption_reason: null
   contract_fixture: null
@@ -98,6 +107,10 @@ commands:
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: live_disposable_project
+  readback:
+    command: annotation.list
+    ids: {}
+    kind: object
   live_test: LT-ANNOTATION-DELETE
   live_exemption_reason: null
   contract_fixture: null
@@ -172,6 +185,12 @@ commands:
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: live_disposable_project
+  readback:
+    command: annotation.list
+    ids:
+      target_type: result.target_type
+      target_id: result.target_id
+    kind: object
   live_test: LT-ANNOTATION-UPDATE
   live_exemption_reason: null
   contract_fixture: null
