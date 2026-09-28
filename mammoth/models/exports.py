@@ -8,7 +8,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 from mammoth.models.jobs import JobResponse
 
@@ -121,10 +121,12 @@ class AddExportSpec(BaseModel):
     handler_type: HandlerType = Field(..., description="Export handler (destination type)")
     trigger_type: TriggerType = Field(..., description="Trigger that controls when export executes")
     target_properties: S3TargetProperties | dict[str, Any] = Field(
-        ..., description="Destination configuration properties"
+        description="Destination configuration properties. A destination that needs none sends none.",
+        default_factory=dict,
     )
     additional_properties: dict[str, Any] = Field(
-        ..., description="Additional export configuration"
+        description="Additional export configuration. Empty dict means none.",
+        default_factory=dict,
     )
     condition: dict[str, Any] = Field(
         description="Export conditions. Empty dict means none.",
@@ -135,6 +137,20 @@ class AddExportSpec(BaseModel):
         description="Validate config without executing.",
         default=False,
     )
+
+    @model_validator(mode="after")
+    def _an_export_inside_the_pipeline_says_where(self) -> AddExportSpec:
+        """An export that is not the last step has to name the step it follows.
+
+        The route checks the sequence against the pipeline's own step count as
+        well, which only the server can do.
+        """
+        if not self.end_of_pipeline and (self.sequence is None or self.sequence < 0):
+            raise ValueError(
+                "sequence is required to be a non-negative integer when"
+                f" end_of_pipeline is false. Sequence passed: {self.sequence}"
+            )
+        return self
 
 
 class ItemExportInfo(BaseModel):
