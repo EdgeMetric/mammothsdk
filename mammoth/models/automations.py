@@ -286,9 +286,10 @@ class TaskDetailsSpec(BaseModel):
     attachments: dict[str, Any] | None = Field(
         None,
         description=(
-            "dataview_ids: view ids to email as attachments. Each selected view "
-            "is sent as a CSV file, capped at 100,000 rows per view; a view over "
-            "that limit sends no attachment for it."
+            "dataview_ids: view ids to email as attachments; each view is sent "
+            "as a CSV file. The combined row count of all attached views must "
+            "stay within 100,000 -- over that, the automation is refused (and "
+            "a run that grows past it fails)."
         ),
     )
     test_email: bool = False

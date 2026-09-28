@@ -281,11 +281,17 @@ class TestUpdate:
 class TestSendAnAlertAttachmentsDocumented:
     def test_attachments_field_documents_the_csv_row_limit(self) -> None:
         """A ``send_an_alert`` task's ``attachments`` sends each selected view
-        as a CSV file, capped at 100,000 rows per view (backend:
-        ``generate_csv_files_for_attachment``, ``EMAIL_CSV_ATTACHMENT_ROW_LIMIT``);
-        an agent reading the schema for this field must see that fact rather
-        than discover the cap only after a large view was silently dropped.
+        as a CSV file. The 100,000-row cap (backend:
+        ``_validate_attachment_row_count``, ``EMAIL_CSV_ATTACHMENT_ROW_LIMIT``)
+        is on the COMBINED row count across all attached views, not per view --
+        creating/updating the automation is refused (4AUTO010
+        ATTACHMENT_ROW_LIMIT_EXCEEDED) once the total exceeds it, and a run
+        whose total grows past it fails. An agent reading the schema for this
+        field must see that fact rather than assume each view gets its own
+        100,000-row budget.
         """
         description = TaskDetailsSpec.model_fields["attachments"].description or ""
         assert "csv" in description.lower()
         assert "100,000" in description or "100000" in description
+        assert "combined" in description.lower()
+        assert "per view" not in description.lower()

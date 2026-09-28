@@ -488,16 +488,19 @@ def test_json_extract_documents_list_to_rows_item_and_index() -> None:
 
 def test_automation_create_documents_the_email_csv_row_limit() -> None:
     """A scheduled email action (task send_an_alert, attachments.dataview_ids)
-    sends each selected view as a CSV file, capped at 100,000 rows per view
-    (backend: generate_csv_files_for_attachment,
-    EMAIL_CSV_ATTACHMENT_ROW_LIMIT); an agent must see the format and the cap
-    without reading the backend source.
+    sends each selected view as a CSV file. The 100,000-row cap (backend:
+    _validate_attachment_row_count, EMAIL_CSV_ATTACHMENT_ROW_LIMIT) is on the
+    COMBINED row count across all attached views, not per view; an agent
+    must see the format and the real (combined) cap without reading the
+    backend source.
     """
     schema = get_schema("automation.create")
     assert schema is not None
     restrictions = schema["preconditions"]
     assert "csv" in restrictions.casefold()
     assert "100,000" in restrictions
+    assert "combined" in restrictions.casefold()
+    assert "per view" not in restrictions.casefold()
 
 
 def test_dataset_create_sdk_catalog_does_not_conflate_cli_waiting() -> None:
