@@ -222,7 +222,10 @@ _COMMAND_DISCOVERY_PURPOSES = {
         "join blend merge combine enrich match matching key keys rows add columns from "
         "another second view views dataset datasets table tables vlookup"
     ),
-    "view.transform.json-extract": "json extract parse nested fields keys into columns",
+    "view.transform.json-extract": (
+        "json extract parse nested fields keys into columns list rows item index "
+        "one row per element explode array"
+    ),
     "view.transform.limit-rows": "limit top bottom first last n rows head",
     "view.transform.lookup": (
         "lookup look up vlookup reference table map code to name enrich one value "

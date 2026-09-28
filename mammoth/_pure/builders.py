@@ -1217,8 +1217,18 @@ def build_json_extract_params(
 
     Each extraction item carries ``INTERNAL_NAME`` (backend JSON_HANDLE
     validator requires it) and a ``TYPE`` in {NUMERIC, TEXT}.
+
+    JSON_LIST_TO_ROWS turns each list element into its own row -- one row per
+    element, landing in an ``Item`` column (plus an ``Index`` column for its
+    original position). An object element does not get columns from this
+    call; a second ``json_extract`` (JSON_OBJECT) on ``Item`` is needed to
+    turn its keys into columns. DBAdapter's json_handle op asserts
+    ``len(column_spec) == 2`` for this op -- an item spec and an index spec,
+    nothing else -- so with no ``keys``/``extractions`` this defaults to that
+    exact pair; any other count raises instead of reaching the backend as a
+    malformed extraction (which used to empty the view with a runtime error).
     """
-    extract_specs: list[dict[str, str]] = []
+    extract_specs: list[dict[str, Any]] = []
     if extractions:
         for e in extractions:
             extract_specs.append(
@@ -1241,6 +1251,30 @@ def build_json_extract_params(
             )
 
     backend_type, default_op, op_key = _JSON_TYPE_MAP[json_type]
+    effective_op = op_type or default_op
+    if json_type == JsonType.LIST and effective_op == JsonOpType.JSON_LIST_TO_ROWS:
+        if not extract_specs:
+            extract_specs = [
+                {
+                    "COLUMN": "Item",
+                    "TYPE": "TEXT",
+                    "_IS_ITEM": 0,
+                    "INTERNAL_NAME": next_internal_name(name_gen),
+                },
+                {
+                    "COLUMN": "Index",
+                    "TYPE": "NUMERIC",
+                    "_IS_INDEX": 0,
+                    "INTERNAL_NAME": next_internal_name(name_gen),
+                },
+            ]
+        elif len(extract_specs) != 2:
+            raise ValueError(
+                "JSON_LIST_TO_ROWS requires exactly two JSON_EXTRACT specs (an item "
+                "spec and an index spec) -- DBAdapter's json_handle op asserts "
+                f"len(column_spec) == 2; got {len(extract_specs)}."
+            )
+
     json_handle_spec: dict[str, Any] = {
         "SOURCE": resolve_column(column, col_map, internal_names),
         "TYPE": backend_type,

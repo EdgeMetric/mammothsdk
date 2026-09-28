@@ -38,6 +38,10 @@ sdk_methods:
   wait_policy: always_wait
   pagination_policy: null
   openapi_operation_ids: []
+  notes: 'json_type=LIST (JSON_LIST_TO_ROWS) gives one row per list element, landing in
+    an Item column (plus an Index column for its original position); with no keys/extractions
+    this is the default. An object element does not get columns from this call -- run a
+    second json-extract (json_type=OBJECT) on Item to turn its keys into columns.'
 - sdk_symbol: mammoth._mixins._advanced_ops.AdvancedOpsMixin.lookup
   canonical_command: view.transform.lookup
   alias_of: null
