@@ -45,6 +45,12 @@ mammoth view export dataset SOURCE_VIEW_ID SOURCE_DATASET_ID --yes \
 mammoth view export list SOURCE_VIEW_ID SOURCE_DATASET_ID     # handler internal_dataset, status executed, TARGET_DS_ID N
 ```
 
+The product's per-destination "Export Auto-Sync" toggle is this same
+pipeline-step behavior seen from the UI: it is the CLI's `trigger_type`
+(default `pipeline`; pass `"none"` to turn Auto-Sync off) and `run_immediately`
+(whether it also executes once now) fields on the typed export commands —
+there is no separate Auto-Sync endpoint or field to find.
+
 `target_ds_id` writes into an existing dataset instead of creating one
 (`save_as_mode` `REPLACE_IN_DS` or `APPEND_TO_DS`). Read the delivery back in
 the target project (`view list N --project P`, `view data get`) before
