@@ -113,7 +113,21 @@ def _read_by_label(command_id: str, resolved_ids: dict[str, Any]) -> str:
 
 
 def _resolve_source(source: str, data: dict[str, Any], invocation: Invocation) -> Any:
-    """Resolve one ``ids`` value: ``result.<path>`` | ``input.<field>`` | ``positional.<n>``."""
+    """Resolve one ``ids`` value; ``a|b`` takes the first alternative that resolves.
+
+    A write whose response comes in more than one shape (an export returns
+    either ``{trigger_id, future_id}`` or ``{"job": {...}}``) names each place
+    its id can be.
+    """
+    for alternative in source.split("|"):
+        value = _resolve_one_source(alternative, data, invocation)
+        if value is not None:
+            return value
+    return None
+
+
+def _resolve_one_source(source: str, data: dict[str, Any], invocation: Invocation) -> Any:
+    """Resolve one ``result.<path>`` | ``input.<field>`` | ``positional.<n>`` source."""
     if source.startswith("result."):
         return _get_path(data, source[len("result.") :])
     if source.startswith("input."):

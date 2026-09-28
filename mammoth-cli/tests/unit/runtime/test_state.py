@@ -291,3 +291,27 @@ def test_truncated_listing_says_how_many_items_it_held(monkeypatch: pytest.Monke
     state = with_state(invocation, {"status": "done"})["state"]
     assert len(state["object"]) < 80
     assert state["object_total"] == 80
+
+
+def test_id_source_alternatives_take_the_first_that_resolves(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _patch_record(
+        monkeypatch,
+        {
+            "readback": {
+                "command": "job.get",
+                "ids": {"job_id": "result.future_id|result.job.id"},
+                "kind": "delivery",
+            }
+        },
+    )
+
+    def fake_job_get(invocation: Invocation) -> tuple[dict[str, Any], dict[str, Any]]:
+        assert invocation.extra_args == ["7660"]
+        return {"id": 7660, "status": "success"}, {}
+
+    _patch_handlers(monkeypatch, {"job.get": fake_job_get})
+    state = with_state(_invocation(), {"job": {"id": 7660, "status": "processing"}})["state"]
+    assert state["read_by"] == "job.get 7660"
+    assert state["status"] == "success"

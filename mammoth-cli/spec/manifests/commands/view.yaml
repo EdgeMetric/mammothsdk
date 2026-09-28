@@ -1964,7 +1964,7 @@ commands:
   readback:
     command: job.get
     ids:
-      job_id: result.future_id
+      job_id: result.future_id|result.job.id
     kind: delivery
   live_test: null
   live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
@@ -2016,7 +2016,7 @@ commands:
   readback:
     command: job.get
     ids:
-      job_id: result.future_id
+      job_id: result.future_id|result.job.id
     kind: delivery
   live_test: null
   live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
@@ -2062,7 +2062,7 @@ commands:
   readback:
     command: job.get
     ids:
-      job_id: result.future_id
+      job_id: result.future_id|result.job.id
     kind: delivery
   live_test: null
   live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
@@ -2265,7 +2265,7 @@ commands:
   readback:
     command: job.get
     ids:
-      job_id: result.future_id
+      job_id: result.future_id|result.job.id
     kind: delivery
   live_test: null
   live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
@@ -2317,7 +2317,7 @@ commands:
   readback:
     command: job.get
     ids:
-      job_id: result.future_id
+      job_id: result.future_id|result.job.id
     kind: delivery
   live_test: null
   live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
@@ -2369,7 +2369,7 @@ commands:
   readback:
     command: job.get
     ids:
-      job_id: result.future_id
+      job_id: result.future_id|result.job.id
     kind: delivery
   live_test: null
   live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
@@ -2561,7 +2561,7 @@ commands:
   readback:
     command: job.get
     ids:
-      job_id: result.future_id
+      job_id: result.future_id|result.job.id
     kind: delivery
   live_test: null
   live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
@@ -2613,7 +2613,7 @@ commands:
   readback:
     command: job.get
     ids:
-      job_id: result.future_id
+      job_id: result.future_id|result.job.id
     kind: delivery
   live_test: null
   live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
@@ -2665,7 +2665,7 @@ commands:
   readback:
     command: job.get
     ids:
-      job_id: result.future_id
+      job_id: result.future_id|result.job.id
     kind: delivery
   live_test: null
   live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
@@ -2717,7 +2717,7 @@ commands:
   readback:
     command: job.get
     ids:
-      job_id: result.future_id
+      job_id: result.future_id|result.job.id
     kind: delivery
   live_test: null
   live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
@@ -2769,7 +2769,7 @@ commands:
   readback:
     command: job.get
     ids:
-      job_id: result.future_id
+      job_id: result.future_id|result.job.id
     kind: delivery
   live_test: null
   live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
@@ -2909,7 +2909,7 @@ commands:
   readback:
     command: job.get
     ids:
-      job_id: result.future_id
+      job_id: result.future_id|result.job.id
     kind: delivery
   live_test: null
   live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
@@ -2961,7 +2961,7 @@ commands:
   readback:
     command: job.get
     ids:
-      job_id: result.future_id
+      job_id: result.future_id|result.job.id
     kind: delivery
   live_test: null
   live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
@@ -3015,7 +3015,7 @@ commands:
   readback:
     command: job.get
     ids:
-      job_id: result.future_id
+      job_id: result.future_id|result.job.id
     kind: delivery
   live_test: null
   live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
@@ -3069,7 +3069,7 @@ commands:
   readback:
     command: job.get
     ids:
-      job_id: result.future_id
+      job_id: result.future_id|result.job.id
     kind: delivery
   live_test: null
   live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
@@ -3121,7 +3121,7 @@ commands:
   readback:
     command: job.get
     ids:
-      job_id: result.future_id
+      job_id: result.future_id|result.job.id
     kind: delivery
   live_test: null
   live_exemption_reason: High-impact or external-effect operation without a disposable fixture.

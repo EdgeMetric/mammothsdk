@@ -99,14 +99,18 @@ def test_readback_ids_sources_are_well_formed() -> None:
             continue
         positionals = command.get("positionals") or []
         bad = []
-        for name, source in (readback.get("ids") or {}).items():
-            if not isinstance(source, str) or not source.startswith(_VALID_ID_SOURCE_PREFIXES):
-                bad.append(f"{name}={source!r}: not a result./input./positional. source")
-                continue
-            if source.startswith("positional."):
-                index = source[len("positional.") :]
-                if not index.isdigit() or int(index) >= len(positionals):
-                    bad.append(f"{name}={source!r}: no positional at index {index} on this write")
+        for name, sources in (readback.get("ids") or {}).items():
+            alternatives = sources.split("|") if isinstance(sources, str) else [sources]
+            for source in alternatives:
+                if not isinstance(source, str) or not source.startswith(_VALID_ID_SOURCE_PREFIXES):
+                    bad.append(f"{name}={source!r}: not a result./input./positional. source")
+                    continue
+                if source.startswith("positional."):
+                    index = source[len("positional.") :]
+                    if not index.isdigit() or int(index) >= len(positionals):
+                        bad.append(
+                            f"{name}={source!r}: no positional at index {index} on this write"
+                        )
         if bad:
             offenders[command["command_id"]] = bad
     assert not offenders, f"readback.ids sources must be resolvable: {offenders}"
