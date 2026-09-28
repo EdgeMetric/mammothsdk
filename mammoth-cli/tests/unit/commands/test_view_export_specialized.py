@@ -29,6 +29,7 @@ _DATAVIEW_LIST = "mammoth.api.dataviews.DataviewsAPI.list"
 _EXPORTS_LIST = "mammoth.api.exports.ExportsAPI.list"
 _WAIT_FOR_PIPELINE = "mammoth.api.pipeline.PipelineAPI.wait_for_pipeline"
 _DATASET_GET = "mammoth.api.datasets.DatasetsAPI.get"
+_PIPELINE_GET = "mammoth.api.pipeline.PipelineAPI.get_pipeline"
 
 
 def _dataset_schema(*display_names: str) -> dict[str, object]:
@@ -866,3 +867,27 @@ def test_every_special_export_field_the_cli_would_forward_is_accepted_by_its_sdk
                 f"trigger fields {sorted(unforwardable)} would crash the call"
             )
         assert allowed  # every route accepts at least its own explicit fields
+
+
+def test_dataset_route_refuses_a_view_in_draft_mode_instead_of_waiting_on_it(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    """With auto-run off, a view holds new pipeline changes in a draft, so an
+    export added there never runs and the SDK waited out its whole timeout
+    (~6 min) before a generic error; the agent then gave up (eval T1-O-11)."""
+    fake_service.responses[_PIPELINE_GET] = {"draft_mode": "clean", "auto_run": False}
+
+    with pytest.raises(CliError) as caught:
+        view_cmd.view_export_specialized(
+            _inv(
+                "view.export.dataset",
+                project=180,
+                extra_args=["7", "9"],
+                input_file=_doc(tmp_path, {"dataset_name": "orders_copy"}),
+                yes=True,
+            )
+        )
+
+    assert caught.value.code == "view_in_draft"
+    assert "mammoth view draft auto-run 7" in (caught.value.hint or "")
+    assert fake_service.view_call_log == []

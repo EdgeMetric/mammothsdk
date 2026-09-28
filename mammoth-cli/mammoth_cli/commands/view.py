@@ -2518,6 +2518,33 @@ _SPECIAL_EXPORT_COMMON_FIELDS = frozenset(
 )
 
 
+def _reject_export_into_draft(service: Any, dataview_id: int, dataset_id: int) -> None:
+    """Refuse a dataset export on a view whose changes are held in a draft.
+
+    With auto-run off the view keeps new pipeline changes in a draft, so the
+    export would only be staged and write nothing; the SDK then waits out its
+    whole timeout for a write that cannot happen (eval T1-O-11).
+    """
+    pipeline = service.call(_PIPELINE_GET_SYMBOL, dataview_id=dataview_id, dataset_id=dataset_id)
+    draft_mode = pipeline.get("draft_mode") if isinstance(pipeline, dict) else None
+    if draft_mode in (None, "off"):
+        return
+    raise CliError(
+        code="view_in_draft",
+        message=(
+            f"View {dataview_id} holds its changes in a draft (auto-run is off), so an "
+            "export added now would be staged and write nothing."
+        ),
+        exit_status=EXIT_USAGE,
+        hint=(
+            f"Turn auto-run on with mammoth view draft auto-run {dataview_id} --input "
+            "'{\"enabled\": true}', add the export, then turn auto-run off again if the "
+            f"dataset should only update when asked (mammoth view pipeline rerun {dataview_id})."
+        ),
+        details={"dataview_id": dataview_id, "draft_mode": draft_mode},
+    )
+
+
 def view_export_specialized(invocation: Invocation) -> HandlerResult:
     """Run one of the SDK's typed ``View.export`` destination helpers."""
     route = _SPECIAL_EXPORTS.get(invocation.command_id)
@@ -2605,6 +2632,8 @@ def view_export_specialized(invocation: Invocation) -> HandlerResult:
                 ),
                 details={"dataset_id": dataset_id, "target_ds_id": int(target_ds_id)},
             )
+        if is_dataset_route:
+            _reject_export_into_draft(service, dataview_id, dataset_id)
         target_view_before = None
         target_only_columns: list[str] = []
         if target_ds_id is not None:
