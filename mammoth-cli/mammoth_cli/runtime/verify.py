@@ -104,7 +104,15 @@ def _pipeline_error_reason(pipeline_error: dict[str, Any]) -> str:
     The write's own envelope can say ``status: done`` / ``pipeline_state:
     ready`` -- ``execution_state`` is a separate, more trustworthy field the
     settle step reads afresh (see ``view.py``'s ``_pipeline_execution_error``).
+    An ``execution_state`` of "unknown" means that read itself failed (or
+    came back malformed) -- fail loud: this is never reported as verified,
+    just because nothing came back that named an error.
     """
+    if pipeline_error.get("execution_state") == "unknown":
+        return (
+            "the pipeline state after this change could not be read; read the "
+            "view before building on it"
+        )
     reason = (
         "the pipeline hit a runtime error after this change; the view may be "
         "empty -- remove or fix the failing task"

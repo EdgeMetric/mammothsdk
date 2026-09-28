@@ -2643,17 +2643,26 @@ def wait_for_pipeline_to_settle(
 def _pipeline_execution_error(service: Any, dataset_id: int, view_id: int) -> dict[str, Any] | None:
     """A settled pipeline's ``execution_state``, if it names an error.
 
-    Best effort: a failed read here must not hide the write that already
-    ran. When a task list read cheaply finds the failing task, its id and
-    ``reference_errors.error_code`` (evidence: transform_status ERROR,
-    error_code 7000) are added.
+    A failed read here must not be silently treated as "no error" -- that
+    would report the write as verified when nobody actually confirmed it
+    (fail loud, no silent fallbacks). It returns ``execution_state:
+    "unknown"`` with a ``read_error``, which verify.py reports as
+    unverified instead. ``service.call`` maps every SDK exception to
+    :class:`CliError` (see ``MammothService.call``'s contract), so that is
+    the one identifiable type caught here. When a task list read cheaply
+    finds the failing task, its id and ``reference_errors.error_code``
+    (evidence: transform_status ERROR, error_code 7000) are added; a failed
+    read there is recorded as ``task_detail_error`` rather than swallowed.
     """
     try:
         pipeline = service.call(_PIPELINE_GET_SYMBOL, dataview_id=view_id, dataset_id=dataset_id)
-    except Exception:  # noqa: BLE001 -- best effort; the write already ran
-        return None
+    except CliError as exc:
+        return {"execution_state": "unknown", "read_error": f"{type(exc).__name__}: {exc}"}
     if not isinstance(pipeline, dict):
-        return None
+        return {
+            "execution_state": "unknown",
+            "read_error": f"the pipeline read returned {type(pipeline).__name__}, not a dict",
+        }
     execution_state = pipeline.get("execution_state")
     if (
         not isinstance(execution_state, str)
@@ -2685,8 +2694,8 @@ def _pipeline_execution_error(service: Any, dataset_id: int, view_id: int) -> di
             )
             if error_code is not None:
                 error["error_code"] = error_code
-    except Exception:  # noqa: BLE001, S110 -- best effort; the write already ran
-        pass
+    except CliError as exc:
+        error["task_detail_error"] = f"{type(exc).__name__}: {exc}"
     return error
 
 

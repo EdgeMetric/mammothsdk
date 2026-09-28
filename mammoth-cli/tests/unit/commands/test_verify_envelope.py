@@ -13,6 +13,7 @@ from pathlib import Path
 import pytest
 
 from mammoth_cli.commands import view_ops as view_ops_cmd
+from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.runtime.invocation import Invocation, ResourceRef
 from mammoth_cli.runtime.verify import with_verify
 from mammoth_cli.services.testing import FakeMammothService
@@ -220,6 +221,82 @@ def test_a_plain_view_transform_catches_a_runtime_error_execution_state(
     assert "runtime error" in verified["reason"]
     assert "42" in verified["reason"]
     assert "7000" in verified["reason"]
+
+
+def test_a_failed_pipeline_read_after_settle_is_unverified_not_silently_ok(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    """A failed ``get_pipeline`` read must never be treated as "no error" --
+    that would report the write as verified when nobody actually confirmed
+    it (fail loud, no silent fallbacks). Same reason text either way,
+    needs_user stays null.
+    """
+    fake_service.responses[_DATAVIEW_GET] = {"row_count": 20}
+    fake_service.responses[_PIPELINE_GET] = CliError(code="api_error", message="boom")
+    data, _meta = view_ops_cmd.view_transform_limit_rows(
+        _inv(
+            "view.transform.limit-rows",
+            extra_args=["3"],
+            resource_ref=_parent(3),
+            input_file=_write(tmp_path, {"n": 10}),
+        )
+    )
+    assert data["pipeline_error"]["execution_state"] == "unknown"
+    assert "CliError" in data["pipeline_error"]["read_error"]
+    verified = with_verify(data)["verify"]
+    assert verified["verified"] is False
+    assert verified["needs_user"] is None
+    assert verified["reason"] == (
+        "the pipeline state after this change could not be read; read the view "
+        "before building on it"
+    )
+
+
+def test_a_non_dict_pipeline_read_is_unverified_not_silently_ok(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    fake_service.responses[_DATAVIEW_GET] = {"row_count": 20}
+    fake_service.responses[_PIPELINE_GET] = "not a dict"
+    data, _meta = view_ops_cmd.view_transform_limit_rows(
+        _inv(
+            "view.transform.limit-rows",
+            extra_args=["3"],
+            resource_ref=_parent(3),
+            input_file=_write(tmp_path, {"n": 10}),
+        )
+    )
+    assert data["pipeline_error"]["execution_state"] == "unknown"
+    verified = with_verify(data)["verify"]
+    assert verified["verified"] is False
+    assert verified["needs_user"] is None
+
+
+def test_a_failed_task_detail_read_is_recorded_not_swallowed(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    """A failed follow-up task-list read (finding the failing task's id and
+    error code) must be recorded as ``task_detail_error``, not silently
+    passed -- the pipeline error itself is still reported either way.
+    """
+    fake_service.responses[_DATAVIEW_GET] = {"row_count": 20}
+    fake_service.responses[_PIPELINE_GET] = {
+        "state": "ready",
+        "execution_state": "runtime_error",
+    }
+    fake_service.responses[_TASK_LIST] = CliError(code="api_error", message="task list boom")
+    data, _meta = view_ops_cmd.view_transform_limit_rows(
+        _inv(
+            "view.transform.limit-rows",
+            extra_args=["3"],
+            resource_ref=_parent(3),
+            input_file=_write(tmp_path, {"n": 10}),
+        )
+    )
+    assert data["pipeline_error"]["execution_state"] == "runtime_error"
+    assert "CliError" in data["pipeline_error"]["task_detail_error"]
+    verified = with_verify(data)["verify"]
+    assert verified["verified"] is False
+    assert verified["needs_user"] is None
 
 
 def test_a_join_transform_keeps_its_own_join_check_not_row_check(
