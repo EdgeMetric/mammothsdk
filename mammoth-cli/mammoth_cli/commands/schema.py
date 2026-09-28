@@ -1402,7 +1402,9 @@ def _schema_common(record: dict[str, Any]) -> dict[str, Any]:
     contract_level = (
         "opaque_expert"
         if record["command_id"] in _OPAQUE_EXPERT_COMMANDS
-        else "partially_typed" if opaque_fields else "typed"
+        else "partially_typed"
+        if opaque_fields
+        else "typed"
     )
     return {
         "positionals": _positionals(record["command_id"]),
@@ -1556,6 +1558,13 @@ def _inline_call_detail(entries: list[dict[str, Any]]) -> None:
             entry["accepted_fields"] = fields
         if record.get("agent_example"):
             entry["agent_example"] = record["agent_example"]
+
+
+#: How to drill down from a find: a family's full command list, or every family.
+_BROWSE_NEXT = (
+    "mammoth schema list FAMILY lists every command in a family; mammoth schema list "
+    "lists the families"
+)
 
 
 def find_schemas(
@@ -1747,7 +1756,15 @@ def find_schemas(
             if result["suggestions"]
             else _NO_MATCH_HINT_NO_SUGGESTIONS
         )
+    result["browse"] = _browse(page or result.get("suggestions", []))
     return result
+
+
+def _browse(entries: list[dict[str, Any]]) -> dict[str, Any]:
+    """The families behind *entries* and how to list each one in full: a keyword
+    find surfaces one way to do a thing, its family holds the siblings."""
+    families = list(dict.fromkeys(entry["command_path"].split()[0] for entry in entries))
+    return {"families": families, "next": _BROWSE_NEXT}
 
 
 def get_schema(command_id: str) -> dict[str, Any] | None:

@@ -911,3 +911,23 @@ def test_connector_connection_credentials_are_secret_fields_sent_through_a_file(
     assert update["secret_fields"] == ["credentials"]
     for schema in (create, update):
         assert schema["agent_example"].endswith("--input /private/path/request.json")
+
+
+def test_a_find_points_into_the_families_it_matched() -> None:
+    """A keyword search over hundreds of commands finds one way to do a thing;
+    the family it lives in holds the siblings (other export targets, other
+    joins). Every find names those families and how to list them, so the agent
+    can drill down instead of guessing more keywords."""
+    result = find_schemas("export view csv")
+
+    families = result["browse"]["families"]
+    assert families
+    assert families == list(dict.fromkeys(m["command_path"].split()[0] for m in result["matches"]))
+    assert result["browse"]["next"].startswith("mammoth schema list FAMILY")
+
+
+def test_a_find_with_no_match_still_points_into_families() -> None:
+    result = find_schemas("zzqx frobnicate")
+
+    assert "browse" in result
+    assert "mammoth schema list" in result["browse"]["next"]
