@@ -361,3 +361,5 @@ class DashboardActionType(str, Enum):
     AUTO_SYNC = "auto-sync"
     AUTO_PUBLISH = "auto-publish"
     DELETE_SOURCE = "delete-source"
+    RESTORE = "restore"
+    SET_RLS_CONFIG = "set-rls-config"

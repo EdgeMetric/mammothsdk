@@ -577,6 +577,8 @@ class DashboardsAPI:
         action: DashboardActionType,
         params_enabled: bool | None = None,
         params_view_id: int | None = None,
+        params_sequence: int | None = None,
+        params_filter_column: str | None = None,
     ) -> dict[str, Any]:
         """Perform an action on a dashboard.
 
@@ -587,6 +589,9 @@ class DashboardsAPI:
                 enables or disables the behaviour.
             params_view_id: Required (> 0) for ``delete-source``;
                 optional for ``sync`` and ``auto-sync`` to scope to one source.
+            params_sequence: The version to rewind to; required for ``restore``.
+            params_filter_column: The column rows are filtered on; required
+                when ``set-rls-config`` turns row-level security on.
 
         Returns:
             Dict with action result.
@@ -616,6 +621,10 @@ class DashboardsAPI:
             params["enabled"] = params_enabled
         if params_view_id is not None:
             params["view_id"] = params_view_id
+        if params_sequence is not None:
+            params["sequence"] = params_sequence
+        if params_filter_column is not None:
+            params["filter_column"] = params_filter_column
         if params:
             body["params"] = params
 
