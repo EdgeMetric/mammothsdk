@@ -489,6 +489,7 @@ class SdkMammothService:
         local_columns = getattr(view, "columns", {}) or {}
         local_internal = {value for value in local_columns.values() if isinstance(value, str)}
         local_display = set(local_columns)
+        local_types = getattr(view, "column_types", {}) or {}
 
         def check(value: Any, *, scope: str, columns: dict[str, str], display: set[str]) -> None:
             internal = {item for item in columns.values() if isinstance(item, str)}
@@ -583,6 +584,8 @@ class SdkMammothService:
                     columns=local_columns,
                     display=local_display,
                 )
+                if not spec.get("value_is_column") and "value" in spec:
+                    SdkMammothService._coerce_numeric_condition_value(spec, local_types)
             if spec.get("value_is_column") and "value" in spec:
                 check(
                     spec["value"],
@@ -638,6 +641,50 @@ class SdkMammothService:
                 columns=foreign_columns,
                 display=foreign_display,
             )
+
+    @staticmethod
+    def _coerce_numeric_condition_value(spec: dict[str, Any], column_types: dict[str, str]) -> None:
+        """Convert a numeric-string condition value against a NUMERIC column.
+
+        The backend accepts a filter/set-values/pivot condition whose value is
+        a string even when the column is NUMERIC, then puts the whole pipeline
+        into ref_error (7003 "type mismatch") on the next read. The CLI already
+        knows the column's type, so it converts what it can and fails locally,
+        before any request, for what it can't. DATE columns are left as is.
+        """
+        column = spec.get("column")
+        if not isinstance(column, str) or column_types.get(column) != "NUMERIC":
+            return
+
+        def convert(item: Any) -> Any:
+            if not isinstance(item, str):
+                return item
+            try:
+                number = float(item)
+            except ValueError:
+                raise SdkMammothService._condition_value_type_error(
+                    column, "NUMERIC", item
+                ) from None
+            return int(number) if number.is_integer() else number
+
+        value = spec["value"]
+        spec["value"] = (
+            [convert(item) for item in value] if isinstance(value, list) else convert(value)
+        )
+
+    @staticmethod
+    def _condition_value_type_error(column: str, column_type: str, value: str) -> CliError:
+        """Build a stable pre-mutation condition-value type error."""
+        return CliError(
+            code="invalid_condition_value",
+            message=(
+                f"Condition value {value!r} for column '{column}' ({column_type}) "
+                "is not a valid number."
+            ),
+            exit_status=EXIT_USAGE,
+            hint="Use a numeric value for a NUMERIC column.",
+            details={"column": column, "column_type": column_type, "value": value},
+        )
 
     @staticmethod
     def column_input_error(
