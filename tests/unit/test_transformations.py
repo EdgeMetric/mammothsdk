@@ -917,6 +917,23 @@ class TestRenameColumns:
             mock_view.rename_columns({"emp_id": "Full_Name"})
         assert calls == []
 
+    def test_a_rename_the_server_did_not_apply_raises(self, mock_view, monkeypatch):
+        """A PATCH the server accepted but did not apply must not read as done:
+        the refreshed columns are the proof, and they still show the old name."""
+        from unittest.mock import MagicMock
+
+        from mammoth.exceptions import MammothColumnError
+        from tests.unit.conftest import SAMPLE_VIEW_DATA
+
+        mock_view._client.dataviews = MagicMock()
+        monkeypatch.setattr(
+            mock_view,
+            "refresh",
+            lambda: mock_view._build_column_maps(SAMPLE_VIEW_DATA) or mock_view,
+        )
+        with pytest.raises(MammothColumnError, match="Employee ID"):
+            mock_view.rename_columns({"emp_id": "Employee ID"})
+
     def test_blank_and_empty_refused(self, mock_view, monkeypatch):
         _patch_view(mock_view, monkeypatch)
         with pytest.raises(ValueError):
