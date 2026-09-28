@@ -4222,7 +4222,7 @@ commands:
   request_model: ViewTransformDeleteColumnsRequest
   result_model: ViewTransformDeleteColumnsResult
   mutation_class: reversible_pipeline
-  confirmation: none
+  confirmation: prompt_or_yes
   wait_policy: always_wait
   pagination_policy: none
   acceptance_evidence: live_disposable_project
@@ -4265,7 +4265,7 @@ commands:
   request_model: ViewTransformDiscardDuplicatesRequest
   result_model: ViewTransformDiscardDuplicatesResult
   mutation_class: reversible_pipeline
-  confirmation: none
+  confirmation: prompt_or_yes
   wait_policy: always_wait
   pagination_policy: none
   acceptance_evidence: live_disposable_project
@@ -4387,7 +4387,7 @@ commands:
   request_model: ViewTransformFilterRequest
   result_model: ViewTransformFilterResult
   mutation_class: reversible_pipeline
-  confirmation: none
+  confirmation: prompt_or_yes
   wait_policy: always_wait
   pagination_policy: none
   acceptance_evidence: live_disposable_project
@@ -4599,7 +4599,7 @@ commands:
   request_model: ViewTransformLimitRowsRequest
   result_model: ViewTransformLimitRowsResult
   mutation_class: reversible_pipeline
-  confirmation: none
+  confirmation: prompt_or_yes
   wait_policy: always_wait
   pagination_policy: none
   acceptance_evidence: live_disposable_project

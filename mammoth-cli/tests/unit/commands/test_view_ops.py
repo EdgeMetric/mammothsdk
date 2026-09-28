@@ -198,6 +198,7 @@ def test_transform_uses_exact_resource_parent_in_parallel_project_scope(
             resource_ref=ResourceRef(project_id=180, dataset_id=122, view_id=7),
             project=180,
             positionals={"view_id": "7"},
+            yes=True,
         )
     )
     assert fake_service.view_call_log == [(7, "discard_duplicates", {"dataset_id": 122})]
@@ -560,7 +561,7 @@ def test_transform_date_diff_forwards_optional(
 def test_transform_delete_columns_requires_columns(fake_service: FakeMammothService) -> None:
     with pytest.raises(CliError) as excinfo:
         view_ops_cmd.view_transform_delete_columns(
-            _inv("view.transform.delete-columns", extra_args=["3"])
+            _inv("view.transform.delete-columns", extra_args=["3"], yes=True)
         )
     assert excinfo.value.code == "missing_field"
 
@@ -575,6 +576,7 @@ def test_transform_delete_columns_forwards(
             extra_args=["3"],
             resource_ref=_parent(3),
             input_file=doc,
+            yes=True,
         )
     )
     assert fake_service.view_call_log == [
@@ -582,9 +584,29 @@ def test_transform_delete_columns_forwards(
     ]
 
 
+def test_transform_delete_columns_blocked_without_confirmation(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    doc = _write(tmp_path, {"columns": ["a", "b"]})
+    with pytest.raises(CliError) as excinfo:
+        view_ops_cmd.view_transform_delete_columns(
+            _inv(
+                "view.transform.delete-columns",
+                extra_args=["3"],
+                resource_ref=_parent(3),
+                input_file=doc,
+                output="json",
+            )
+        )
+    assert excinfo.value.code == "confirmation_required"
+    assert fake_service.view_call_log == []
+
+
 def test_transform_discard_duplicates_no_input(fake_service: FakeMammothService) -> None:
     view_ops_cmd.view_transform_discard_duplicates(
-        _inv("view.transform.discard-duplicates", extra_args=["3"], resource_ref=_parent(3))
+        _inv(
+            "view.transform.discard-duplicates", extra_args=["3"], resource_ref=_parent(3), yes=True
+        )
     )
     assert fake_service.view_call_log == [(3, "discard_duplicates", {"dataset_id": 122})]
 
@@ -599,11 +621,28 @@ def test_transform_discard_duplicates_forwards_optional(
             extra_args=["3"],
             resource_ref=_parent(3),
             input_file=doc,
+            yes=True,
         )
     )
     assert fake_service.view_call_log == [
         (3, "discard_duplicates", {"dataset_id": 122, "ignore_columns": ["a"]})
     ]
+
+
+def test_transform_discard_duplicates_blocked_without_confirmation(
+    fake_service: FakeMammothService,
+) -> None:
+    with pytest.raises(CliError) as excinfo:
+        view_ops_cmd.view_transform_discard_duplicates(
+            _inv(
+                "view.transform.discard-duplicates",
+                extra_args=["3"],
+                resource_ref=_parent(3),
+                output="json",
+            )
+        )
+    assert excinfo.value.code == "confirmation_required"
+    assert fake_service.view_call_log == []
 
 
 def test_transform_extract_date_requires_component(fake_service: FakeMammothService) -> None:
@@ -660,7 +699,9 @@ def test_transform_fill_missing_forwards_optional(
 
 def test_transform_filter_requires_condition(fake_service: FakeMammothService) -> None:
     with pytest.raises(CliError) as excinfo:
-        view_ops_cmd.view_transform_filter(_inv("view.transform.filter", extra_args=["3"]))
+        view_ops_cmd.view_transform_filter(
+            _inv("view.transform.filter", extra_args=["3"], yes=True)
+        )
     assert excinfo.value.code == "missing_field"
 
 
@@ -675,7 +716,13 @@ def test_transform_filter_forwards_optional(
         },
     )
     view_ops_cmd.view_transform_filter(
-        _inv("view.transform.filter", extra_args=["3"], resource_ref=_parent(3), input_file=doc)
+        _inv(
+            "view.transform.filter",
+            extra_args=["3"],
+            resource_ref=_parent(3),
+            input_file=doc,
+            yes=True,
+        )
     )
     assert fake_service.view_call_log == [
         (
@@ -688,6 +735,24 @@ def test_transform_filter_forwards_optional(
             },
         )
     ]
+
+
+def test_transform_filter_blocked_without_confirmation(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    doc = _write(tmp_path, {"condition": {"column": "a", "operator": "EQ", "value": 1}})
+    with pytest.raises(CliError) as excinfo:
+        view_ops_cmd.view_transform_filter(
+            _inv(
+                "view.transform.filter",
+                extra_args=["3"],
+                resource_ref=_parent(3),
+                input_file=doc,
+                output="json",
+            )
+        )
+    assert excinfo.value.code == "confirmation_required"
+    assert fake_service.view_call_log == []
 
 
 def test_transform_generate_sql_requires_intent(fake_service: FakeMammothService) -> None:
@@ -818,7 +883,9 @@ def test_transform_json_extract_forwards_optional(
 
 def test_transform_limit_rows_requires_n(fake_service: FakeMammothService) -> None:
     with pytest.raises(CliError) as excinfo:
-        view_ops_cmd.view_transform_limit_rows(_inv("view.transform.limit-rows", extra_args=["3"]))
+        view_ops_cmd.view_transform_limit_rows(
+            _inv("view.transform.limit-rows", extra_args=["3"], yes=True)
+        )
     assert excinfo.value.code == "missing_field"
 
 
@@ -827,11 +894,35 @@ def test_transform_limit_rows_forwards_optional(
 ) -> None:
     doc = _write(tmp_path, {"n": 10, "bottom": True})
     view_ops_cmd.view_transform_limit_rows(
-        _inv("view.transform.limit-rows", extra_args=["3"], resource_ref=_parent(3), input_file=doc)
+        _inv(
+            "view.transform.limit-rows",
+            extra_args=["3"],
+            resource_ref=_parent(3),
+            input_file=doc,
+            yes=True,
+        )
     )
     assert fake_service.view_call_log == [
         (3, "limit_rows", {"dataset_id": 122, "n": 10, "bottom": True})
     ]
+
+
+def test_transform_limit_rows_blocked_without_confirmation(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    doc = _write(tmp_path, {"n": 10})
+    with pytest.raises(CliError) as excinfo:
+        view_ops_cmd.view_transform_limit_rows(
+            _inv(
+                "view.transform.limit-rows",
+                extra_args=["3"],
+                resource_ref=_parent(3),
+                input_file=doc,
+                output="json",
+            )
+        )
+    assert excinfo.value.code == "confirmation_required"
+    assert fake_service.view_call_log == []
 
 
 @pytest.mark.parametrize(
@@ -1181,7 +1272,7 @@ def test_non_read_view_ops_refuse_parent_discovery(
     # every dataset in the project; on large projects that path 500s or
     # misses the view and used to surface as an opaque api_error. Fail
     # closed before any SDK call and hand back the read that supplies it.
-    overrides: dict[str, Any] = {"extra_args": ["308772"], "project": 4301}
+    overrides: dict[str, Any] = {"extra_args": ["308772"], "project": 4301, "yes": True}
     if payload is not None:
         overrides["input_file"] = _write(tmp_path, payload)
     with pytest.raises(CliError) as excinfo:
@@ -1468,6 +1559,7 @@ def test_expected_task_count_mismatch_refuses_the_write(
                 resource_ref=_parent(132),
                 positionals={"view_id": "132"},
                 input_file=_filter_doc(tmp_path, 1),
+                yes=True,
             )
         )
     error = excinfo.value
@@ -1495,6 +1587,7 @@ def test_expected_task_count_match_lets_the_write_through_without_the_field(
             resource_ref=_parent(132),
             positionals={"view_id": "132"},
             input_file=_filter_doc(tmp_path, 2),
+            yes=True,
         )
     )
     view_id, method, kwargs = fake_service.view_call_log[0]
@@ -1513,6 +1606,7 @@ def test_expected_task_count_must_be_a_non_negative_integer(
                 resource_ref=_parent(132),
                 positionals={"view_id": "132"},
                 input_file=_filter_doc(tmp_path, -1),
+                yes=True,
             )
         )
     assert excinfo.value.code == "invalid_resource_context"

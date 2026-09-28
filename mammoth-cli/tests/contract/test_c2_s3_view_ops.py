@@ -452,7 +452,7 @@ def test_transform_wire_destination_is_exact(
     # Callers supply the exact parent in --input; it rides along to the wire
     # as resource context and is never discovered for a mutation.
     document = {**payload, "dataset_id": 122}
-    handler(_inv(command_id, extra_args=["501"], input_file=_write(tmp_path, document)))
+    handler(_inv(command_id, extra_args=["501"], input_file=_write(tmp_path, document), yes=True))
     assert fake_service.view_call_log == [(501, method, document)]
 
 
@@ -470,7 +470,9 @@ def test_transform_dropped_field_is_rejected_before_dispatch(
     altered["S3_DROPPED_FIELD"] = "must-not-be-forwarded"
     handler: Callable[[Invocation], Any] = getattr(view_ops, handler_name)
     with pytest.raises(CliError) as error:
-        handler(_inv(command_id, extra_args=["501"], input_file=_write(tmp_path, altered)))
+        handler(
+            _inv(command_id, extra_args=["501"], input_file=_write(tmp_path, altered), yes=True)
+        )
     assert error.value.code == "unknown_input_field"
     assert fake_service.view_call_log == []
 
