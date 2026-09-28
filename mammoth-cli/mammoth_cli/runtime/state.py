@@ -37,6 +37,9 @@ _VIEW_GET_COMMAND = "view.get"
 _VIEW_DATA_COMMAND = "view.data.get"
 _VIEW_LIST_COMMAND = "view.list"
 
+#: ``verify.state`` of a write that was accepted but has not finished.
+_UNFINISHED_VERIFY_STATE = "processing"
+
 
 def with_state(invocation: Invocation, data: Any) -> Any:
     """Return ``data`` with a ``state`` read-back block added, per the manifest.
@@ -51,8 +54,22 @@ def with_state(invocation: Invocation, data: Any) -> Any:
     readback = record.get("readback")
     if not isinstance(readback, dict):
         return data
-    state = _enforce_cap(_build_state(invocation, data, readback))
+    unfinished = _unfinished_state(data)
+    state = unfinished or _enforce_cap(_build_state(invocation, data, readback))
     return {**data, "state": state}
+
+
+def _unfinished_state(data: dict[str, Any]) -> dict[str, Any] | None:
+    """A write ``verify`` found still processing has no new state to read yet."""
+    verify = data.get("verify")
+    if not isinstance(verify, dict) or verify.get("state") != _UNFINISHED_VERIFY_STATE:
+        return None
+    return {
+        "kind": "delivery",
+        "read_by": "verify",
+        "status": _UNFINISHED_VERIFY_STATE,
+        "detail": verify.get("reason"),
+    }
 
 
 def _build_state(
@@ -341,7 +358,11 @@ def _enforce_cap(state: dict[str, Any]) -> dict[str, Any]:
             sample.pop()
         return {**state, "sample": sample}
     if kind == "object":
-        return {**state, "object": _capped_object(state)}
+        capped = {**state, "object": _capped_object(state)}
+        original = state.get("object")
+        if isinstance(original, list) and len(capped["object"]) < len(original):
+            capped["object_total"] = len(original)
+        return capped
     if kind == "delivery":
         detail = state.get("detail")
         if isinstance(detail, str):

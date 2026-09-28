@@ -241,3 +241,53 @@ def test_size_cap_trims_sample_rows_but_keeps_columns_and_row_count(
     import json
 
     assert len(json.dumps(state)) <= STATE_SIZE_CAP_BYTES
+
+
+def test_write_still_processing_reports_delivery_not_stale_data(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _patch_record(
+        monkeypatch,
+        {
+            "readback": {
+                "command": "view.data.get",
+                "ids": {"view_id": "positional.0"},
+                "kind": "data",
+            }
+        },
+    )
+
+    def must_not_read(invocation: Invocation) -> tuple[dict[str, Any], dict[str, Any]]:
+        raise AssertionError("an unfinished write must not be read back as its new state")
+
+    _patch_handlers(monkeypatch, {"view.get": must_not_read, "view.data.get": must_not_read})
+    data = {
+        "status": "processing",
+        "verify": {"verified": False, "state": "processing", "reason": "accepted, not finished"},
+    }
+    assert with_state(_invocation(), data)["state"] == {
+        "kind": "delivery",
+        "read_by": "verify",
+        "status": "processing",
+        "detail": "accepted, not finished",
+    }
+
+
+def test_truncated_listing_says_how_many_items_it_held(monkeypatch: pytest.MonkeyPatch) -> None:
+    _patch_record(
+        monkeypatch,
+        {
+            "readback": {
+                "command": "view.list",
+                "ids": {"dataset_id": "input.dataset_id"},
+                "kind": "object",
+            }
+        },
+    )
+    views = [{"id": n, "name": "v" * 60} for n in range(80)]
+    _patch_handlers(monkeypatch, {"view.list": lambda invocation: ({"dataviews": views}, {})})
+    invocation = _invocation(positionals={}, extra_args=[])
+    object.__setattr__(invocation, "_prepared_input", {"dataset_id": 7})
+    state = with_state(invocation, {"status": "done"})["state"]
+    assert len(state["object"]) < 80
+    assert state["object_total"] == 80
