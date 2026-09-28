@@ -33,6 +33,10 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: auth.status
+    ids: {}
+    kind: object
 - command_id: auth.logout
   command_path: auth logout
   disposition: command
@@ -66,6 +70,10 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: auth.status
+    ids: {}
+    kind: object
 - command_id: auth.status
   command_path: auth status
   disposition: command

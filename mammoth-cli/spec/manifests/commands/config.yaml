@@ -150,3 +150,8 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: config.get
+    ids:
+      key: positional.0
+    kind: object

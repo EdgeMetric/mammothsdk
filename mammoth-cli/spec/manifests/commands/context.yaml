@@ -33,6 +33,10 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: context.project.status
+    ids: {}
+    kind: object
 - command_id: context.project.status
   command_path: context project status
   disposition: command
@@ -105,3 +109,7 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: context.project.status
+    ids: {}
+    kind: object

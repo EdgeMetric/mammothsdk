@@ -26,3 +26,14 @@ def test_recipes_are_discovery_led_and_machine_output_safe() -> None:
     assert "api_secret" not in text
     assert "standard JSON envelope" in text
     assert "structured error" in text
+
+
+def test_dashboards_recipe_names_the_real_view_binding_field() -> None:
+    """Truth-probe finding: a live `dashboard get` response has no
+    `data.dataview_id` key -- the view binding is exposed as `data.sources`
+    (a list of view ids). Following the old recipe verbatim gets an agent
+    `None` back and could wrongly conclude no view is bound.
+    """
+    text = (ROOT / "dashboards.md").read_text(encoding="utf-8")
+    assert "`data.sources`" in text
+    assert "data.dataview_id" not in text

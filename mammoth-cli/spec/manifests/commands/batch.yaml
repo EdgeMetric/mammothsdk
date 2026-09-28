@@ -40,6 +40,11 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: batch.list
+    ids:
+      dataset_id: positional.0
+    kind: object
 - command_id: batch.create
   command_path: batch create
   disposition: command
@@ -87,6 +92,11 @@ commands:
   undo_test: null
   known_restrictions: SOURCE_ID is a standalone dataset in the same project (4BATC010 INVALID_SOURCE_DATASET for a file id or an append child); to append a file use file upload with append_to_ds_id. delete_source_ds=true changes the mutation class to destructive and requires confirmation.
   reviewed_by: primary
+  readback:
+    command: batch.list
+    ids:
+      dataset_id: positional.0
+    kind: object
 - command_id: batch.create-spec
   command_path: batch create-spec
   disposition: command
@@ -127,6 +137,11 @@ commands:
   known_restrictions: Release BatchesPostRequest; file_id-only or source_id plus homogeneous mapping array.
     Dynamic confirmation applies only to delete_source_ds.
   reviewed_by: primary
+  readback:
+    command: batch.list
+    ids:
+      dataset_id: positional.0
+    kind: object
 - command_id: batch.delete
   command_path: batch delete
   disposition: command
@@ -173,6 +188,11 @@ commands:
   undo_test: null
   known_restrictions: Resolve the batch before confirmation.
   reviewed_by: primary
+  readback:
+    command: batch.list
+    ids:
+      dataset_id: positional.0
+    kind: object
 - command_id: batch.get
   command_path: batch get
   disposition: command
@@ -299,3 +319,8 @@ commands:
   undo_test: null
   known_restrictions: Any remove operation in the discriminated patch changes the mutation class to destructive.
   reviewed_by: primary
+  readback:
+    command: batch.list
+    ids:
+      dataset_id: positional.0
+    kind: object

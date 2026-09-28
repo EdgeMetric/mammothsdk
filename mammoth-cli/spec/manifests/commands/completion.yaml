@@ -39,6 +39,11 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: completion.show
+    ids:
+      shell: positional.0
+    kind: object
 - command_id: completion.show
   command_path: completion show
   disposition: command

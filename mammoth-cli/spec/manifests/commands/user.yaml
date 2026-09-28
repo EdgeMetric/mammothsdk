@@ -34,6 +34,10 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: user.get
+    ids: {}
+    kind: object
 - command_id: user.avatar.upload
   command_path: user avatar upload
   disposition: command
@@ -74,6 +78,10 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: user.get
+    ids: {}
+    kind: object
 - command_id: user.change-password
   command_path: user change-password
   disposition: command
@@ -113,6 +121,10 @@ commands:
     reserved and contract-only. Secrets use hidden prompt/permission-checked input/stdin, never normal
     flags.'
   reviewed_by: primary
+  readback:
+    command: user.get
+    ids: {}
+    kind: object
 - command_id: user.delete-account
   command_path: user delete-account
   disposition: command
@@ -147,6 +159,7 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  no_readback: "deletes the caller's own account; no parent listing exists and the account can no longer be read afterward"
 - command_id: user.get
   command_path: user get
   disposition: command
@@ -253,6 +266,10 @@ commands:
   known_restrictions: 'Body is the release {"patch": [{"op", "path", "value"}]} list; the CLI does not
     validate preference paths (observed key GLOBAL.PREFERENCES.TOP_TABS). Not verified live.'
   reviewed_by: primary
+  readback:
+    command: user.preference.get
+    ids: {}
+    kind: object
 - command_id: user.update
   command_path: user update
   disposition: command
@@ -287,3 +304,7 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: user.get
+    ids: {}
+    kind: object

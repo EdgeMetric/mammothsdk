@@ -34,6 +34,10 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: trash.list
+    ids: {}
+    kind: object
 - command_id: trash.list
   command_path: trash list
   disposition: command
@@ -102,3 +106,7 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: trash.list
+    ids: {}
+    kind: object

@@ -62,6 +62,10 @@ commands:
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: live_disposable_project
+  readback:
+    command: dataset.list
+    ids: {}
+    kind: object
   live_test: LT-DATASET-BULK-DELETE
   live_exemption_reason: null
   contract_fixture: null
@@ -96,6 +100,10 @@ commands:
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: contract_only_high_impact
+  readback:
+    command: dataset.list
+    ids: {}
+    kind: object
   live_test: null
   live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
   contract_fixture: null
@@ -130,6 +138,11 @@ commands:
   wait_policy: always_wait
   pagination_policy: none
   acceptance_evidence: live_disposable_project
+  readback:
+    command: view.data.get
+    ids:
+      dataset_id: result.dataset_id
+    kind: data
   live_test: LT-DATASET-CREATE
   live_exemption_reason: null
   contract_fixture: null
@@ -150,8 +163,8 @@ commands:
     documented path are not qualified. Retained live evidence supports ds_creation_type=weburl with dataset_spec.url;
     the CLI command waits for the raw SDK job and returned ready for five OWID URL imports. Re-read returned
     dataset/view IDs and delete only IDs created by this task. A weburl dataset is a one-time copy that
-    keeps no source details to refresh from, so automation's run_data_retrieval task cannot refresh it (only
-    a cloud-connected dataset can be refreshed); say so rather than scheduling a refresh for it.
+    keeps no source details to refresh from, so automation's run_data_retrieval task cannot refresh it
+    (only a cloud-connected dataset can be refreshed); say so rather than scheduling a refresh for it.
   reviewed_by: primary
 - command_id: dataset.create-from-pdf
   command_path: dataset create-from-pdf
@@ -176,6 +189,10 @@ commands:
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: live_disposable_project
+  readback:
+    command: dataset.list
+    ids: {}
+    kind: object
   live_test: LT-DATASET-CREATE-FROM-PDF
   live_exemption_reason: null
   contract_fixture: null
@@ -256,6 +273,10 @@ commands:
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: live_disposable_project
+  readback:
+    command: dataset.list
+    ids: {}
+    kind: object
   live_test: LT-DATASET-DELETE
   live_exemption_reason: null
   contract_fixture: null
@@ -336,6 +357,11 @@ commands:
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: live_disposable_project
+  readback:
+    command: dataset.file-settings.get
+    ids:
+      dataset_id: positional.0
+    kind: object
   live_test: LT-DATASET-FILE-SETTINGS-UNDO
   live_exemption_reason: null
   contract_fixture: null
@@ -376,6 +402,11 @@ commands:
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: live_disposable_project
+  readback:
+    command: dataset.file-settings.get
+    ids:
+      dataset_id: positional.0
+    kind: object
   live_test: LT-DATASET-FILE-SETTINGS-UPDATE
   live_exemption_reason: null
   contract_fixture: null
@@ -530,6 +561,11 @@ commands:
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: live_disposable_project
+  readback:
+    command: dataset.get
+    ids:
+      dataset_id: positional.0
+    kind: object
   live_test: LT-DATASET-RENAME
   live_exemption_reason: null
   contract_fixture: null
@@ -571,6 +607,11 @@ commands:
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: live_disposable_project
+  readback:
+    command: dataset.get
+    ids:
+      dataset_id: positional.0
+    kind: object
   live_test: LT-DATASET-RESTORE
   live_exemption_reason: null
   contract_fixture: null
@@ -611,6 +652,11 @@ commands:
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: live_disposable_project
+  readback:
+    command: dataset.get
+    ids:
+      dataset_id: positional.0
+    kind: object
   live_test: LT-DATASET-TRASH
   live_exemption_reason: null
   contract_fixture: null
@@ -645,6 +691,8 @@ commands:
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: contract_only_high_impact
+  no_readback: this command always rejects with a typed-command redirect before any write happens; there
+    is no new state to read back
   live_test: null
   live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
   contract_fixture: null

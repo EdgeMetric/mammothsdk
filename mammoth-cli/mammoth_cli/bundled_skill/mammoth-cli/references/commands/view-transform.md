@@ -96,9 +96,9 @@ Status on release: ran once on CLI 2.0.40 through `view.task.add` and was read b
 
 Run: `mammoth view transform delete-columns`. Exact input fields: `mammoth schema get view.transform.delete-columns`.
 
-Example: `mammoth view transform delete-columns 123 --input '{"columns": ["Status"], "dataset_id": 456}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth view transform delete-columns 123 --input '{"columns": ["Status"], "dataset_id": 456}'`. Illustrative only: append `--yes` after observing an owned target.
 
-Result: `ViewTransformDeleteColumnsResult`; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`.
+Result: `ViewTransformDeleteColumnsResult`; mutation `reversible_pipeline`, confirmation `prompt_or_yes`, wait policy `always_wait`.
 
 Status on release: ran once on CLI 2.0.40 through `view.task.add` and was read back with `view data get`; other inputs for this transform are untried.
 

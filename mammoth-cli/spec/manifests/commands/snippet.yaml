@@ -23,6 +23,11 @@ commands:
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: live_disposable_project
+  readback:
+    command: snippet.get
+    ids:
+      snippet_id: result.id
+    kind: object
   live_test: LT-SNIPPET-CREATE
   live_exemption_reason: null
   contract_fixture: null
@@ -63,6 +68,10 @@ commands:
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: live_disposable_project
+  readback:
+    command: snippet.list
+    ids: {}
+    kind: object
   live_test: LT-SNIPPET-DELETE
   live_exemption_reason: null
   contract_fixture: null
@@ -143,6 +152,11 @@ commands:
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: live_disposable_project
+  readback:
+    command: snippet.get
+    ids:
+      snippet_id: result.id
+    kind: object
   live_test: LT-SNIPPET-DUPLICATE
   live_exemption_reason: null
   contract_fixture: null
@@ -257,6 +271,11 @@ commands:
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: live_disposable_project
+  readback:
+    command: snippet.get
+    ids:
+      snippet_id: positional.0
+    kind: object
   live_test: LT-SNIPPET-RERUN
   live_exemption_reason: null
   contract_fixture: null
@@ -297,6 +316,11 @@ commands:
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: live_disposable_project
+  readback:
+    command: snippet.get
+    ids:
+      snippet_id: positional.0
+    kind: object
   live_test: LT-SNIPPET-UPDATE
   live_exemption_reason: null
   contract_fixture: null

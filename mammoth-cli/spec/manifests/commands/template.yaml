@@ -17,6 +17,11 @@ commands:
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: live_disposable_project
+  readback:
+    command: template.get
+    ids:
+      template_id: result.id
+    kind: object
   live_test: LT-TEMPLATE-CREATE
   live_exemption_reason: null
   contract_fixture: null
@@ -57,6 +62,10 @@ commands:
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: live_disposable_project
+  readback:
+    command: template.list
+    ids: {}
+    kind: object
   live_test: LT-TEMPLATE-DELETE
   live_exemption_reason: null
   contract_fixture: null
@@ -171,6 +180,11 @@ commands:
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: live_disposable_project
+  readback:
+    command: template.get
+    ids:
+      template_id: positional.0
+    kind: object
   live_test: LT-TEMPLATE-UPDATE
   live_exemption_reason: null
   contract_fixture: null

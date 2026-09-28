@@ -37,6 +37,19 @@
         "server_unavailable"
       ]
     },
+    "readback_kind": {
+      "enum": ["data", "object", "delivery"]
+    },
+    "readback": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["command", "ids", "kind"],
+      "properties": {
+        "command": {"$ref": "#/$defs/no_placeholder"},
+        "ids": {"type": "object", "additionalProperties": {"$ref": "#/$defs/no_placeholder"}},
+        "kind": {"$ref": "#/$defs/readback_kind"}
+      }
+    },
     "operation_record": {
       "type": "object",
       "additionalProperties": false,
@@ -183,6 +196,8 @@
         "wait_policy": {"$ref": "#/$defs/wait_policy"},
         "pagination_policy": {"$ref": "#/$defs/pagination_policy"},
         "acceptance_evidence": {"$ref": "#/$defs/acceptance_evidence"},
+        "readback": {"$ref": "#/$defs/readback"},
+        "no_readback": {"$ref": "#/$defs/no_placeholder"},
         "live_test": {"type": ["string", "null"]},
         "live_exemption_reason": {"type": ["string", "null"]},
         "contract_fixture": {"type": ["string", "null"]},

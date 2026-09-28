@@ -7,7 +7,7 @@ sentence with `v3 generate`, and change it with `chat edit`; author a canvas by
 hand (`create-blank`, `canvas save`, `pages add`) only when asked to.
 `dashboard source list` is an observed blocker on release (see
 capabilities); verify the view binding with `dashboard get DASHBOARD_ID`
-(`data.dataview_id`) instead.
+(`data.sources`) instead.
 
 ```bash
 mammoth dashboard v3 generate --input '{"body": {"params": {"intent": "Monthly revenue by region, with top customers", "dataview_id": VIEW_ID}}}'

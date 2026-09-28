@@ -147,7 +147,15 @@ def column_warnings(
                 )
                 if others:
                     shown = ", ".join(repr(o) for o in others[:_MAX_EXAMPLES])
-                    detail += f" Other values: {shown} (the conversion makes them empty)."
+                    detail += f" Other values: {shown}"
+                    if kind == "numbers":
+                        # A value that fails this number check truly can't
+                        # become NUMERIC. Dates have no such guarantee: the
+                        # backend's date parser accepts formats this
+                        # whitelist doesn't recognize, so claiming data loss
+                        # there would be untrue.
+                        detail += " (the conversion makes them empty)"
+                    detail += "."
                 warnings.append(
                     {
                         "column": column,

@@ -35,6 +35,11 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: schedule.get
+    ids:
+      schedule_id: result.id
+    kind: object
 - command_id: schedule.delete
   command_path: schedule delete
   disposition: command
@@ -75,6 +80,10 @@ commands:
   undo_test: null
   known_restrictions: Immutable ID confirmation.
   reviewed_by: primary
+  readback:
+    command: schedule.list
+    ids: {}
+    kind: object
 - command_id: schedule.get
   command_path: schedule get
   disposition: command
@@ -198,3 +207,8 @@ commands:
   undo_test: null
   known_restrictions: status=resume requires exact ID confirmation.
   reviewed_by: primary
+  readback:
+    command: schedule.get
+    ids:
+      schedule_id: positional.0
+    kind: object

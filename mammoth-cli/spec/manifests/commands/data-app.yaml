@@ -57,6 +57,11 @@ commands:
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: live_disposable_project
+  readback:
+    command: data-app.get
+    ids:
+      data_app_id: result.id
+    kind: object
   live_test: LT-DATA-APP-CREATE
   live_exemption_reason: null
   contract_fixture: null
@@ -98,6 +103,10 @@ commands:
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: live_disposable_project
+  readback:
+    command: data-app.list
+    ids: {}
+    kind: object
   live_test: LT-DATA-APP-DELETE
   live_exemption_reason: null
   contract_fixture: null
@@ -298,6 +307,11 @@ commands:
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: live_disposable_project
+  readback:
+    command: data-app.user.list
+    ids:
+      data_app_id: positional.0
+    kind: object
   live_test: LT-DATA-APP-SHARE
   live_exemption_reason: null
   contract_fixture: null
@@ -339,6 +353,11 @@ commands:
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: live_disposable_project
+  readback:
+    command: data-app.get
+    ids:
+      data_app_id: positional.0
+    kind: object
   live_test: LT-DATA-APP-UPDATE
   live_exemption_reason: null
   contract_fixture: null
@@ -385,6 +404,11 @@ commands:
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: live_disposable_project
+  readback:
+    command: data-app.active-job
+    ids:
+      data_app_id: positional.0
+    kind: object
   live_test: LT-DATA-APP-UPLOAD
   live_exemption_reason: null
   contract_fixture: null
@@ -471,6 +495,11 @@ commands:
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: live_disposable_project
+  readback:
+    command: data-app.user.list
+    ids:
+      data_app_id: positional.0
+    kind: object
   live_test: LT-DATA-APP-USER-REMOVE
   live_exemption_reason: null
   contract_fixture: null

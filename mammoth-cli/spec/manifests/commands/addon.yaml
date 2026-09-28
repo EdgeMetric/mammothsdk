@@ -34,6 +34,10 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: addon.list
+    ids: {}
+    kind: object
 - command_id: addon.connector.remove
   command_path: addon connector remove
   disposition: command
@@ -68,6 +72,10 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: addon.list
+    ids: {}
+    kind: object
 - command_id: addon.list
   command_path: addon list
   disposition: command
@@ -135,6 +143,10 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: addon.list
+    ids: {}
+    kind: object
 - command_id: addon.storage.remove
   command_path: addon storage remove
   disposition: command
@@ -169,6 +181,10 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: addon.list
+    ids: {}
+    kind: object
 - command_id: addon.user.add
   command_path: addon user add
   disposition: command
@@ -203,6 +219,10 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: addon.list
+    ids: {}
+    kind: object
 - command_id: addon.user.remove
   command_path: addon user remove
   disposition: command
@@ -237,3 +257,7 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: addon.list
+    ids: {}
+    kind: object
