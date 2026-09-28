@@ -4,9 +4,9 @@ from __future__ import annotations
 
 from datetime import datetime
 from enum import Enum
-from typing import Any
+from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 # ── Read/response models (existing, kept as-is) ──────────────────────────────
 
@@ -179,6 +179,7 @@ class AutomationTaskType(str, Enum):
     APPEND_DATA = "append_data"
     SEND_AN_ALERT = "send_an_alert"
     PULL_CLOUD_FILES = "pull_cloud_files"
+    APPLY_RETENTION_POLICY = "apply_retention_policy"
 
 
 class AutomationConditionType(str, Enum):
@@ -210,13 +211,19 @@ class AutomationPatchPath(str, Enum):
     DETAILS = "details"
     RUN = "run"
     STATUS = "status"
+    APPROVE_RETENTION = "approve_retention"
+    REJECT_RETENTION = "reject_retention"
 
 
 class AutomationStatus(str, Enum):
-    """Allowed automation status values for a ``replace + status`` patch."""
+    """Allowed automation status values for a ``replace + status`` patch.
+
+    Each names the ACTION, not the status it leaves behind: ``suspend`` sets
+    the status "suspended". The route takes these two and no others.
+    """
 
     SUSPEND = "suspend"
-    RESUME = "resume"
+    RESTORE = "restore"
 
 
 class AlertType(str, Enum):
@@ -258,7 +265,8 @@ class TaskDetailsSpec(BaseModel):
     connector_key: str | None = None
     connection_key: str | None = None
     connection_profile: str | list[str] | None = None
-    cloud_source_folder_path: str | None = None
+    # A connector may name a folder by more than a path — Drive sends an id too.
+    cloud_source_folder_path: dict[str, str] | str | None = None
     destination_folder_resource_id: int | None = None
 
     # send_an_alert
@@ -269,8 +277,30 @@ class TaskDetailsSpec(BaseModel):
     attachments: dict[str, Any] | None = None
     test_email: bool = False
 
+    # apply_retention_policy
+    datasource_id: int | None = None
+    rule_type: Literal["time_based", "count_based", "condition_based"] | None = None
+    threshold_value: int | None = Field(default=None, ge=1)
+    threshold_unit: Literal["minutely", "hourly", "daily", "weekly", "monthly", "yearly"] | None = (
+        None
+    )
+    keep_count: int | None = Field(default=None, ge=1)
+    condition_sql: str | None = None
+    intent: str | None = None
+    notify: bool = False
+    notify_recipients: list[str] = Field(default_factory=list)
+    notify_trigger: Literal["approval_and_policy_runs", "approval_only", "runs_only"] = (
+        "approval_and_policy_runs"
+    )
+    require_approval: bool = False
+    action: Literal["delete", "suspend"] = "delete"
+    timezone: str | None = None
+
+    # pdf_orchestration: one destination watches exactly one folder
+    destination_dataset_id: int | None = Field(default=None, gt=0)
+
     # shared optional
-    id: int | None = None
+    id: int | None = Field(default=None, gt=0)
 
 
 class AutomationTaskSpec(BaseModel):
@@ -285,6 +315,13 @@ class AutomationTaskSpec(BaseModel):
     task_type: AutomationTaskType
     details: TaskDetailsSpec | None = None
     conditions: list[dict[str, Any]] | None = None
+
+
+class UniqueSequenceColumn(BaseModel):
+    """The column a refresh reads to tell new rows from ones it already has."""
+
+    c_name: str
+    c_type: Literal["numeric", "date"]
 
 
 class ConditionDetailsSpec(BaseModel):
@@ -302,10 +339,10 @@ class ConditionDetailsSpec(BaseModel):
     by_week_day: list[str] | None = None
     start_now: bool = True
     file_contains: str | None = None
-    execution_mode: str | None = None
-    trigger_type: str | None = None
-    on_refresh_action: str | None = None
-    unique_sequence_column: dict[str, str] | None = None
+    execution_mode: Literal["parallel", "sequential"] = "parallel"
+    trigger_type: Literal["manual", "schedule"] = "manual"
+    on_refresh_action: Literal["replace", "combine", "append"] = "replace"
+    unique_sequence_column: UniqueSequenceColumn | None = None
     contains: str | None = None
     starts_with: str | None = None
     ends_with: str | None = None
@@ -333,9 +370,9 @@ class PatchAutomationDetails(BaseModel):
     At least one field must be set (validated by the SDK).
     """
 
-    name: str | None = None
+    name: str | None = Field(default=None, min_length=1)
     description: str | None = None
-    status: str | None = None
+    status: Literal["active", "suspended", "failed"] | None = None
     tasks: list[AutomationTaskSpec] | None = None
     conditions: list[AutomationConditionSpec] | None = None
     condition_mode: AutomationConditionMode | None = None
