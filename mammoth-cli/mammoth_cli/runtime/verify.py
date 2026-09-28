@@ -10,14 +10,20 @@ what it should" instead of re-deriving it per command.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
-if TYPE_CHECKING:
-    from mammoth_cli.runtime.invocation import Invocation
+from mammoth_cli.runtime.invocation import Invocation
 
 #: Below this share of matched rows, a join has enough misses to flag before
 #: the caller builds anything further on it.
 JOIN_MATCH_RATE_THRESHOLD = 0.8
+
+#: The one ``mutation_class`` (see ``spec/manifests/commands/view.yaml``) a
+#: view write can carry that runs a pipeline -- the only kind that can leave a
+#: downstream export referencing something the write just changed or removed.
+_VIEW_PIPELINE_MUTATION_CLASS = "reversible_pipeline"
+
+_VIEW_EXPORT_LIST_COMMAND = "view.export.list"
 
 _FAILURE_STATUSES = frozenset({"error", "failed", "failure"})
 _FAILURE_PIPELINE_STATES = frozenset({"error", "ref_error"})
@@ -83,6 +89,7 @@ def with_verify(data: Any, invocation: Invocation | None = None) -> Any:
     verify["needs_user"] = _needs_user(
         data, verified=verified, rows_before=rows_before, rows_after=rows_after
     )
+    _apply_downstream_export_check(verify, invocation)
     return {**data, "verify": verify}
 
 
@@ -270,7 +277,10 @@ def _needs_user(
     ``needs_user`` means "a serious outcome the user must hear about before
     anything is built on it" -- never "something went wrong that you can
     retry". A failed write is reported through ``verified``/``reason``
-    instead (see :func:`_verify_and_reason`); it never sets this.
+    instead (see :func:`_verify_and_reason`); it never sets this -- except a
+    downstream export broken by this very write (see
+    :func:`_apply_downstream_export_check`), which is serious enough to set
+    both.
     """
     if not verified:
         return None
@@ -285,3 +295,127 @@ def _needs_user(
             "confirm before building on it."
         )
     return None
+
+
+# ---------------------------------------------------------------------------
+# A pipeline write can succeed on the view itself while leaving a saved
+# export broken -- its target_properties still reference a column the write
+# just deleted or renamed. The write's own response never carries that; only
+# a fresh read of the view's exports does (T2-WPP-W2: `view export dataset`
+# then `view transform delete-columns` left the export in error_info 7001,
+# but the delete's own verify said verified: true with no warnings).
+# ---------------------------------------------------------------------------
+
+
+def _apply_downstream_export_check(verify: dict[str, Any], invocation: Invocation | None) -> None:
+    """Flag a view-pipeline write that left one of its exports in error.
+
+    Runs at most once per write, and only when the write's own signals
+    already say a clean, settled success -- a write already reported
+    unverified for its own reason spends no extra read here.
+    """
+    if invocation is None or not verify["verified"] or verify["reason"] is not None:
+        return
+    view_id = _pipeline_view_id(invocation)
+    if view_id is None:
+        return
+    broken = _broken_downstream_exports(invocation, view_id)
+    if not broken:
+        return
+    details = [_export_error_detail(item) for item in broken]
+    verify["verified"] = False
+    verify["reason"] = "this change broke a downstream export: " + "; ".join(details)
+    verify["warnings"] = [*verify["warnings"], *details]
+    verify["needs_user"] = (
+        "A pipeline change on this view broke a saved export; its data will not "
+        "reach its destination until this is fixed: " + "; ".join(details)
+    )
+
+
+def _pipeline_view_id(invocation: Invocation) -> int | None:
+    """The view id a ``reversible_pipeline`` write acted on, or None otherwise."""
+    from mammoth_cli.manifest.loader import command_by_id
+
+    record = command_by_id(invocation.command_id) or {}
+    if record.get("mutation_class") != _VIEW_PIPELINE_MUTATION_CLASS:
+        return None
+    for name in ("view_id", "dataview_id"):
+        value = invocation.positional(name)
+        if isinstance(value, bool):
+            continue
+        if isinstance(value, int):
+            return value
+        if isinstance(value, str) and value.strip().lstrip("-").isdigit():
+            return int(value)
+    return None
+
+
+def _broken_downstream_exports(invocation: Invocation, view_id: int) -> list[dict[str, Any]]:
+    """Exports on ``view_id`` now in error, read via the existing ``view.export.list``.
+
+    Each export the backend hands back already carries its own ``error_info``
+    when it can no longer run (see ``mammoth.models.exports.ItemExportInfo``);
+    this is the one read that surfaces it. Best effort: a read that itself
+    fails must not hide the write's own, already-settled success.
+    """
+    from mammoth_cli.commands.registry import HANDLERS
+
+    handler = HANDLERS.get(_VIEW_EXPORT_LIST_COMMAND)
+    if handler is None:
+        return []
+    read_invocation = Invocation(
+        command_id=_VIEW_EXPORT_LIST_COMMAND,
+        output="json",
+        profile=invocation.profile,
+        project=invocation.project,
+        timeout=invocation.timeout,
+        job_timeout=invocation.job_timeout,
+        pipeline_timeout=invocation.pipeline_timeout,
+        no_input=True,
+        positionals={"dataview_id": view_id},
+        extra_args=[str(view_id)],
+    )
+    try:
+        read_data, _meta = handler(read_invocation)
+    except Exception:  # noqa: BLE001 -- best effort; the write already succeeded
+        return []
+    exports = read_data.get("exports") if isinstance(read_data, dict) else None
+    if not isinstance(exports, list):
+        return []
+    return [item for item in exports if isinstance(item, dict) and item.get("error_info")]
+
+
+def _export_error_detail(item: dict[str, Any]) -> str:
+    """Human-readable ``"export <id> (<handler>): ..."`` line for one broken export."""
+    error_info = item.get("error_info")
+    error_info = error_info if isinstance(error_info, dict) else {}
+    what = f"export {item.get('id')}"
+    handler_type = item.get("handler_type")
+    if handler_type:
+        what += f" ({handler_type})"
+    error_code = error_info.get("error_code")
+    detail = f"error {error_code}" if error_code is not None else "an error"
+    columns = _export_error_columns(error_info)
+    if columns:
+        detail += f", column(s) {', '.join(columns)}"
+    return f"{what} is now broken: {detail}"
+
+
+def _export_error_columns(error_info: dict[str, Any]) -> list[str]:
+    """Column display names named by an export's ``error_info.reference_errors``."""
+    reference_errors = error_info.get("reference_errors")
+    if isinstance(reference_errors, dict):
+        entries = reference_errors.get("reference_errors") or []
+    elif isinstance(reference_errors, list):
+        entries = reference_errors
+    else:
+        entries = []
+    names: list[str] = []
+    for entry in entries:
+        if not isinstance(entry, dict):
+            continue
+        column = entry.get("column")
+        name = column.get("display_name") if isinstance(column, dict) else column
+        if isinstance(name, str):
+            names.append(name)
+    return names

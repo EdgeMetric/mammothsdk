@@ -267,3 +267,81 @@ def test_a_write_with_an_explicit_status_is_never_re_settled(
     result = with_verify({"job_id": 8827, "status": "done"}, invocation)
     assert fake_service.calls == []
     assert result["verify"]["verified"] is True
+
+
+# ---------------------------------------------------------------------------
+# A pipeline write can succeed on the view itself while breaking a saved
+# export whose target_properties still reference something the write just
+# removed (T2-WPP-W2: `view export dataset` then `view transform
+# delete-columns` left the export's COLUMN_MAPPING pointing at a deleted
+# column; `view export get` afterwards showed error_info 7001, but the
+# delete's own verify said verified: true with no warnings).
+# ---------------------------------------------------------------------------
+
+_BROKEN_EXPORT = {
+    "id": 251,
+    "handler_type": "internal_dataset",
+    "error_info": {
+        "error_code": 7001,
+        "reference_errors": {
+            "reference_errors": [
+                {
+                    "column": {"display_name": "revision_rank"},
+                    "reason": "missing_column",
+                    "error_code": 7001,
+                }
+            ]
+        },
+    },
+}
+
+
+def test_pipeline_write_with_a_now_broken_export_is_unverified_and_needs_user(
+    fake_service: FakeMammothService,
+) -> None:
+    fake_service.responses["mammoth.api.exports.ExportsAPI.list"] = {"exports": [_BROKEN_EXPORT]}
+    invocation = Invocation(
+        command_id="view.transform.delete-columns", output="json", extra_args=["3388"]
+    )
+    result = with_verify({"status": "done"}, invocation)
+    assert result["verify"]["verified"] is False
+    assert "export 251" in result["verify"]["reason"]
+    assert "revision_rank" in result["verify"]["reason"]
+    assert any("revision_rank" in warning for warning in result["verify"]["warnings"])
+    assert result["verify"]["needs_user"] is not None
+    assert "export 251" in result["verify"]["needs_user"]
+    assert ("mammoth.api.exports.ExportsAPI.list", {"dataview_id": 3388}) in fake_service.call_log
+
+
+def test_pipeline_write_with_no_broken_exports_is_unaffected(
+    fake_service: FakeMammothService,
+) -> None:
+    fake_service.responses["mammoth.api.exports.ExportsAPI.list"] = {
+        "exports": [{"id": 251, "handler_type": "internal_dataset", "error_info": None}]
+    }
+    invocation = Invocation(
+        command_id="view.transform.delete-columns", output="json", extra_args=["3388"]
+    )
+    result = with_verify({"status": "done"}, invocation)
+    assert result["verify"]["verified"] is True
+    assert result["verify"]["needs_user"] is None
+    assert result["verify"]["warnings"] == []
+
+
+def test_the_downstream_export_check_is_skipped_once_the_write_already_failed(
+    fake_service: FakeMammothService,
+) -> None:
+    """A write already flagged unverified must not spend the extra read at all."""
+    invocation = Invocation(
+        command_id="view.transform.delete-columns", output="json", extra_args=["3388"]
+    )
+    result = with_verify({"has_error": True}, invocation)
+    assert result["verify"]["verified"] is False
+    assert fake_service.calls == []
+
+
+def test_the_downstream_export_check_only_runs_for_pipeline_writes() -> None:
+    """A non-view, non-pipeline write (no ``view_id``/``dataview_id`` positional) is unaffected."""
+    invocation = Invocation(command_id="connector.connection.create", output="json")
+    result = with_verify({"status": "done"}, invocation)
+    assert result["verify"]["verified"] is True
