@@ -240,7 +240,7 @@ class DataviewsAPI:
         workspace_id: int | None = None,
         project_id: int | None = None,
         timeout: int | None = None,
-        poll_interval: int = 2,
+        poll_interval: float | None = None,
         sequence: int | None = None,
     ) -> dict[str, Any]:
         """Get dataview data (GET method).
@@ -255,7 +255,8 @@ class DataviewsAPI:
             workspace_id: ID of the workspace (uses client default if not provided).
             project_id: ID of the project (uses client default if not provided).
             timeout: Max job wait time in seconds (default: client.job_timeout).
-            poll_interval: Seconds between job polls (default: 2).
+            poll_interval: Seconds between job polls (default:
+                client.job_poll_seconds).
             sequence: Pipeline step to read data at (default: latest).
 
         Returns:

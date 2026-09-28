@@ -107,6 +107,9 @@ def _is_loopback_host(hostname: str | None) -> bool:
 # ── Configurable defaults ─────────────────────────────────────
 DEFAULT_TIMEOUT = 30  # seconds — max time for any single API call
 DEFAULT_JOB_TIMEOUT = 60  # seconds — max time to poll a job to completion
+# seconds between polls of a running job. Two suits a script that started a long
+# build; a caller answering a person wants a fraction of it.
+DEFAULT_JOB_POLL_SECONDS = 2
 DEFAULT_PIPELINE_TIMEOUT = 3600  # seconds — max time to wait for pipeline readiness
 
 _list = list  # Alias to avoid shadowing by method name
@@ -299,6 +302,7 @@ class MammothClient:
         base_url: str = "https://app.mammoth.io/api/v2",
         timeout: float = DEFAULT_TIMEOUT,
         job_timeout: float = DEFAULT_JOB_TIMEOUT,
+        job_poll_seconds: float = DEFAULT_JOB_POLL_SECONDS,
         pipeline_timeout: float = DEFAULT_PIPELINE_TIMEOUT,
         allow_insecure_loopback_http: bool = False,
         *,
@@ -318,6 +322,8 @@ class MammothClient:
             base_url: Base URL for the Mammoth API.
             timeout: Request timeout in seconds.
             job_timeout: Job polling timeout in seconds.
+            job_poll_seconds: How long to wait between polls of a running
+                job. Lower it when a person is waiting on the answer.
             pipeline_timeout: Pipeline readiness polling timeout in seconds.
             allow_insecure_loopback_http: Permit HTTP only for an explicit
                 loopback development endpoint. Production API credentials must
@@ -375,13 +381,18 @@ class MammothClient:
             raise ValueError("timeout must be a positive finite number")
         if not math.isfinite(timeout) or timeout <= 0:
             raise ValueError("timeout must be a positive finite number")
-        for name, value in (("job_timeout", job_timeout), ("pipeline_timeout", pipeline_timeout)):
+        for name, value in (
+            ("job_timeout", job_timeout),
+            ("job_poll_seconds", job_poll_seconds),
+            ("pipeline_timeout", pipeline_timeout),
+        ):
             if isinstance(value, bool) or not isinstance(value, (int, float)):
                 raise ValueError(f"{name} must be a positive finite number")
             if not math.isfinite(value) or value <= 0:
                 raise ValueError(f"{name} must be a positive finite number")
         self.timeout = timeout
         self.job_timeout = job_timeout
+        self.job_poll_seconds = job_poll_seconds
         self.pipeline_timeout = pipeline_timeout
 
         self.project_id: int | None = None
@@ -836,7 +847,7 @@ class MammothClient:
         self,
         response: dict[str, Any],
         timeout: int | None = None,
-        poll_interval: int = 2,
+        poll_interval: float | None = None,
         fetch: Callable[[int, float], dict[str, Any]] | None = None,
     ) -> dict[str, Any]:
         """Detect job references in API responses and wait for completion.
@@ -849,7 +860,8 @@ class MammothClient:
         Args:
             response: Raw API response dict.
             timeout: Max wait time in seconds (default: client.job_timeout).
-            poll_interval: Seconds between polls (default: 2).
+            poll_interval: Seconds between polls (default:
+                ``client.job_poll_seconds``).
 
         Returns:
             Completed job's inner response data, or the original response
@@ -880,8 +892,9 @@ class MammothClient:
 
         if job_id:
             t = timeout if timeout is not None else self.job_timeout
+            every = poll_interval if poll_interval is not None else self.job_poll_seconds
             completed = await self.jobs.wait_for_job(
-                job_id, timeout=t, poll_interval=poll_interval, fetch=fetch
+                job_id, timeout=t, poll_interval=every, fetch=fetch
             )
             return completed.get("response", completed)
 
@@ -891,7 +904,7 @@ class MammothClient:
         self,
         response: dict[str, Any],
         timeout: int | None = None,
-        poll_interval: int = 2,
+        poll_interval: float | None = None,
         fetch: Callable[[int, float], dict[str, Any]] | None = None,
     ) -> dict[str, Any]:
         """Wait when an API response contains a recognized job reference.

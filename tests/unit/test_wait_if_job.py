@@ -4,6 +4,9 @@ from __future__ import annotations
 
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import pytest
+
+from mammoth.api.jobs import JobsAPI
 from mammoth.client import MammothClient
 from mammoth.view import View
 
@@ -12,13 +15,14 @@ from .conftest import SAMPLE_DATASET_ID, SAMPLE_VIEW_DATA
 # ── Helpers ──────────────────────────────────────────────────
 
 
-def _make_client() -> MammothClient:
+def _make_client(**overrides) -> MammothClient:
     """Create a MammothClient with mocked HTTP and jobs."""
     with patch("mammoth.client.httpx.AsyncClient"):
         client = MammothClient(
             api_key="test-key",
             api_secret="test-secret",
             workspace_id=1,
+            **overrides,
         )
     client.project_id = 100
     client._request_json = AsyncMock(return_value={})
@@ -401,3 +405,65 @@ class TestDatasetsGetDataRefactored:
         self.client.jobs.wait_for_job.assert_called_once_with(
             402, timeout=600, poll_interval=5, fetch=None
         )
+
+
+class TestHowOftenAJobIsAsked:
+    """How long the client waits between polls is the caller's to set.
+
+    Two seconds suits a script that started a long build. It is far too long
+    for a caller answering a person in a conversation, where the job is
+    usually finished before the first sleep would end.
+    """
+
+    async def test_the_poll_interval_defaults_to_two_seconds(self):
+        client = _make_client()
+        await client._wait_if_job({"job_id": 42})
+        assert client.jobs.wait_for_job.await_args.kwargs["poll_interval"] == 2
+
+    async def test_a_client_can_ask_more_often_than_that(self):
+        client = _make_client(job_poll_seconds=0.2)
+        await client._wait_if_job({"job_id": 42})
+        assert client.jobs.wait_for_job.await_args.kwargs["poll_interval"] == 0.2
+
+    async def test_an_explicit_interval_still_wins_over_the_client_s(self):
+        client = _make_client(job_poll_seconds=0.2)
+        await client._wait_if_job({"job_id": 42}, poll_interval=5)
+        assert client.jobs.wait_for_job.await_args.kwargs["poll_interval"] == 5
+
+    @pytest.mark.parametrize("bad", [0, -1, True, float("inf")])
+    def test_an_interval_that_is_not_a_positive_number_is_refused(self, bad):
+        with pytest.raises(ValueError, match="job_poll_seconds"):
+            _make_client(job_poll_seconds=bad)
+
+    async def test_a_method_with_its_own_interval_argument_defers_to_the_client(self):
+        # `dataviews.get_data` takes a `poll_interval` of its own. Its default
+        # must not quietly overrule what the client was built with.
+        client = _make_client(job_poll_seconds=0.2)
+        client._request_json = AsyncMock(return_value={"job_id": 42})
+        client.pipeline = AsyncMock()
+        client.pipeline.latest_task_sequence = AsyncMock(return_value=3)
+
+        await client.dataviews.get_data(dataset_id=1, dataview_id=2)
+
+        assert client.jobs.wait_for_job.await_args.kwargs["poll_interval"] == 0.2
+
+    async def test_the_job_loop_itself_reads_the_client_when_asked_for_nothing(self):
+        # Every other wait funnels into this one, so it is the last place the
+        # client's interval can be lost.
+        client = _make_client(job_poll_seconds=0.2)
+        slept: list[float] = []
+
+        async def record(seconds: float) -> None:
+            slept.append(seconds)
+
+        client.jobs = JobsAPI(client)
+        client.jobs.get_job = AsyncMock(
+            side_effect=[
+                {"status": "processing", "id": 42},
+                {"status": "success", "id": 42, "response": {}},
+            ]
+        )
+        with patch("mammoth.api.jobs.asyncio.sleep", record):
+            await client.jobs.wait_for_job(42)
+
+        assert slept == [0.2]

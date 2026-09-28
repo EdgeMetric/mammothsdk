@@ -39,6 +39,7 @@ from __future__ import annotations
 
 from mammoth.api.automations import SchedulePatchItem
 from mammoth.client import (
+    DEFAULT_JOB_POLL_SECONDS,
     DEFAULT_JOB_TIMEOUT,
     DEFAULT_PIPELINE_TIMEOUT,
     DEFAULT_TIMEOUT,
@@ -156,6 +157,7 @@ __all__ = [
     # Client
     "MammothClient",
     "DEFAULT_TIMEOUT",
+    "DEFAULT_JOB_POLL_SECONDS",
     "DEFAULT_JOB_TIMEOUT",
     "DEFAULT_PIPELINE_TIMEOUT",
     # Condition builder

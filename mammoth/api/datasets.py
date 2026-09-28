@@ -132,7 +132,7 @@ class DatasetsAPI:
         workspace_id: int | None = None,
         project_id: int | None = None,
         timeout: int = 300,
-        poll_interval: int = 2,
+        poll_interval: float | None = None,
     ) -> dict[str, Any]:
         """Get the actual data from a dataset. Polls the job until completion.
 
@@ -141,7 +141,8 @@ class DatasetsAPI:
             workspace_id: ID of the workspace (uses client default if not provided).
             project_id: ID of the project (uses client default if not provided).
             timeout: Maximum wait time in seconds (default 300).
-            poll_interval: Polling interval in seconds (default 2).
+            poll_interval: Seconds between job polls (default:
+                client.job_poll_seconds).
 
         Returns:
             Dict with dataset data.
@@ -550,7 +551,7 @@ class DatasetsAPI:
         workspace_id: int | None = None,
         project_id: int | None = None,
         timeout: int | None = None,
-        poll_interval: int = 2,
+        poll_interval: float | None = None,
     ) -> dict[str, Any]:
         """Get data for a batch; the API returns an asynchronous job."""
         if limit < 0 or limit > 100:

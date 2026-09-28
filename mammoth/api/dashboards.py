@@ -713,7 +713,7 @@ class DashboardsAPI:
         url: str,
         job_id: int,
         timeout: float | None = None,
-        poll_interval: float = 2,
+        poll_interval: float | None = None,
     ) -> dict[str, Any]:
         """Wait for a published-dashboard job through the URL-scoped job route.
 

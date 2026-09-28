@@ -2103,7 +2103,7 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.wait_for_job_by_url
   implementation_origin: mammoth.api.dashboards.DashboardsAPI.wait_for_job_by_url
-  signature: 'wait_for_job_by_url(self, url: ''str'', job_id: ''int'', timeout: ''float | None'' = None, poll_interval: ''float'' = 2) -> ''dict[str, Any]'''
+  signature: 'wait_for_job_by_url(self, url: ''str'', job_id: ''int'', timeout: ''float | None'' = None, poll_interval: ''float | None'' = None) -> ''dict[str, Any]'''
   openapi_operation_ids: []
   canonical_command: null
   alias_of: null
@@ -3323,7 +3323,7 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.datasets.DatasetsAPI.get_batch_data
   implementation_origin: mammoth.api.datasets.DatasetsAPI.get_batch_data
-  signature: 'get_batch_data(self, dataset_id: ''int'', batch_id: ''int'', columns: ''str | None'' = None, limit: ''int'' = 50, offset: ''int'' = 0, workspace_id: ''int | None'' = None, project_id: ''int | None'' = None, timeout: ''int | None'' = None, poll_interval: ''int'' = 2) -> ''dict[str, Any]'''
+  signature: 'get_batch_data(self, dataset_id: ''int'', batch_id: ''int'', columns: ''str | None'' = None, limit: ''int'' = 50, offset: ''int'' = 0, workspace_id: ''int | None'' = None, project_id: ''int | None'' = None, timeout: ''int | None'' = None, poll_interval: ''float | None'' = None) -> ''dict[str, Any]'''
   openapi_operation_ids:
   - GetBatchData
   canonical_command: dataset.batch-data
@@ -3384,7 +3384,7 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.datasets.DatasetsAPI.get_data
   implementation_origin: mammoth.api.datasets.DatasetsAPI.get_data
-  signature: 'get_data(self, dataset_id: ''int'', workspace_id: ''int | None'' = None, project_id: ''int | None'' = None, timeout: ''int'' = 300, poll_interval: ''int'' = 2) -> ''dict[str, Any]'''
+  signature: 'get_data(self, dataset_id: ''int'', workspace_id: ''int | None'' = None, project_id: ''int | None'' = None, timeout: ''int'' = 300, poll_interval: ''float | None'' = None) -> ''dict[str, Any]'''
   openapi_operation_ids: []
   canonical_command: dataset.data
   alias_of: null
@@ -3625,7 +3625,7 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.dataviews.DataviewsAPI.get_data
   implementation_origin: mammoth.api.dataviews.DataviewsAPI.get_data
-  signature: 'get_data(self, dataset_id: ''int'', dataview_id: ''int'', workspace_id: ''int | None'' = None, project_id: ''int | None'' = None, timeout: ''int | None'' = None, poll_interval: ''int'' = 2, sequence: ''int | None'' = None) -> ''dict[str, Any]'''
+  signature: 'get_data(self, dataset_id: ''int'', dataview_id: ''int'', workspace_id: ''int | None'' = None, project_id: ''int | None'' = None, timeout: ''int | None'' = None, poll_interval: ''float | None'' = None, sequence: ''int | None'' = None) -> ''dict[str, Any]'''
   openapi_operation_ids: []
   canonical_command: view.data.get
   alias_of: null
@@ -4214,7 +4214,7 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.jobs.JobsAPI.wait_for_job
   implementation_origin: mammoth.api.jobs.JobsAPI.wait_for_job
-  signature: 'wait_for_job(self, job_id: ''int'', timeout: ''float | None'' = None, poll_interval: ''float'' = 2, fetch: ''Callable[[int, float], dict[str, Any]] | None'' = None) -> ''dict[str, Any]'''
+  signature: 'wait_for_job(self, job_id: ''int'', timeout: ''float | None'' = None, poll_interval: ''float | None'' = None, fetch: ''Callable[[int, float], dict[str, Any]] | None'' = None) -> ''dict[str, Any]'''
   openapi_operation_ids: []
   canonical_command: job.wait
   alias_of: null
@@ -6477,7 +6477,7 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.client.MammothClient.wait_if_job
   implementation_origin: mammoth.client.MammothClient.wait_if_job
-  signature: 'wait_if_job(self, response: ''dict[str, Any]'', timeout: ''int | None'' = None, poll_interval: ''int'' = 2, fetch: ''Callable[[int, float], dict[str, Any]] | None'' = None) -> ''dict[str, Any]'''
+  signature: 'wait_if_job(self, response: ''dict[str, Any]'', timeout: ''int | None'' = None, poll_interval: ''float | None'' = None, fetch: ''Callable[[int, float], dict[str, Any]] | None'' = None) -> ''dict[str, Any]'''
   openapi_operation_ids: []
   canonical_command: null
   alias_of: null

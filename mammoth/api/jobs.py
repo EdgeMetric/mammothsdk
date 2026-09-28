@@ -103,7 +103,7 @@ class JobsAPI:
         self,
         job_id: int,
         timeout: float | None = None,
-        poll_interval: float = 2,
+        poll_interval: float | None = None,
         fetch: Callable[[int, float], dict[str, Any]] | None = None,
     ) -> dict[str, Any]:
         """
@@ -112,7 +112,8 @@ class JobsAPI:
         Args:
             job_id: ID of the job to wait for
             timeout: Maximum time to wait in seconds (default: client.job_timeout)
-            poll_interval: Time between polling attempts in seconds (default: 2)
+            poll_interval: Time between polling attempts in seconds
+                (default: client.job_poll_seconds)
             fetch: Optional observer ``(job_id, remaining_timeout) -> job dict``
                 used instead of ``GET /jobs/{id}``. Published-dashboard jobs
                 are only readable through the URL-scoped job route, for
@@ -128,6 +129,8 @@ class JobsAPI:
         """
         if timeout is None:
             timeout = getattr(self._client, "job_timeout", 60)
+        if poll_interval is None:
+            poll_interval = getattr(self._client, "job_poll_seconds", 2)
         if timeout is None:
             raise TypeError("timeout must not be None — set client.job_timeout or pass explicitly")
 
