@@ -145,11 +145,51 @@ def connector_get(invocation: Invocation) -> HandlerResult:
     return data, _meta(invocation, auth.workspace_id, resolved_project(invocation))
 
 
+#: ``availability`` a premium connector gets when it is not yet added to the
+#: workspace -- distinct from an ordinary connector nobody has added yet.
+_PREMIUM_NOT_ENABLED = "premium_not_enabled"
+
+
+_PREMIUM_NOT_ENABLED_NOTE = (
+    "Premium connector, not enabled in this workspace: Mammoth sales must enable"
+    " it before it can be connected. Tell the user so and offer to contact sales."
+)
+
+
+def _with_premium_availability(data: Any) -> Any:
+    """Mark each premium, not-yet-added connector with why it cannot be connected.
+
+    ``is_premium``/``is_added`` alone said a connector could not be connected
+    but never why: a premium connector must be enabled by Mammoth sales
+    before this workspace can use it, unlike an ordinary connector nobody has
+    added yet. Without this, an agent that reads ``connector list`` can route
+    a user to sales but never explain why (T2-WPP-W7). ``ConnectorsAPI.list``
+    returns a list, which stays a list.
+    """
+    if not isinstance(data, list):
+        return data
+    return [
+        (
+            {
+                **item,
+                "availability": _PREMIUM_NOT_ENABLED,
+                "availability_note": _PREMIUM_NOT_ENABLED_NOTE,
+            }
+            if isinstance(item, dict) and item.get("is_premium") and not item.get("is_added")
+            else item
+        )
+        for item in data
+    ]
+
+
 def connector_list(invocation: Invocation) -> HandlerResult:
     """List all available connectors (workspace-scoped, no project)."""
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation))
-    return data, _meta(invocation, auth.workspace_id, resolved_project(invocation))
+    return (
+        _with_premium_availability(data),
+        _meta(invocation, auth.workspace_id, resolved_project(invocation)),
+    )
 
 
 def connector_ai_chat(invocation: Invocation) -> HandlerResult:

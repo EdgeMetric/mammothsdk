@@ -47,6 +47,43 @@ mammoth automation create 'Nightly refresh' --yes --input '{
 from an uploaded file or a URL (`weburl`) is a one-time copy with no source
 details to refresh from — say so rather than scheduling one.
 
+That is not the same as "this dataset can never be recurring." A
+file-backed dataset's pipeline re-runs on new data exactly like any other
+dataset's ([how Mammoth organises
+data](../about-mammoth.md#how-mammoth-organises-data)); the only difference
+is that nothing pulls the next file in for you — each new batch has to be
+uploaded with `append_to_ds_id` rather than fetched automatically. Once a
+new file lands that way, every view on that dataset recomputes over it
+automatically, so a monthly "email this view as CSV" delivery is buildable
+today, with no connector:
+
+```bash
+# each month, once the new file is ready (a person or an outside script runs this):
+mammoth file upload ./brand_spend_2026_10.csv --input '{"append_to_ds_id": DATASET_ID}'
+# one-time setup: the recurring delivery itself, via send_an_alert
+mammoth automation create 'Monthly brand spend to client' --yes --input '{
+  "tasks": [
+    {"task_type": "send_an_alert", "details": {
+      "alert_type": "email", "recipients": ["client@example.com"],
+      "subject": "Monthly brand spend report",
+      "attachments": {"dataview_ids": [VIEW_ID]}
+    }}
+  ],
+  "conditions": [
+    {"condition_type": "at_specific_time", "details": {
+      "frequency": "monthly", "interval": 1, "start_at": "2026-01-01T02:00:00Z"
+    }}
+  ]
+}'
+```
+
+`send_an_alert`'s CSV attachment is exported from the view's prepared rows
+at the moment the automation fires, not a copy taken at creation time (every
+output in Mammoth is computed from prepared data, never cached — see
+[about-mammoth.md](../about-mammoth.md)), so once this automation exists it
+delivers whatever the view currently holds each month; only the file-upload
+step above still needs to happen before each run.
+
 The other three task types take the shapes documented in `schema get
 automation.create` under `tasks[].details`:
 
