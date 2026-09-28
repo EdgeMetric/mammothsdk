@@ -1382,14 +1382,19 @@ class TestJsonExtract:
         assert p["JSON_HANDLE"]["JSON_OBJECT_OP_TYPE"] == "JSON_OBJECT_TO_COLUMNS"
 
     def test_list_type(self, mock_view):
+        # No keys/extractions: JSON_LIST_TO_ROWS defaults to the product's own
+        # Item + Index pair (DBAdapter's json_handle op requires exactly two).
         mock_view.json_extract(
             column="department",
             json_type=JsonType.LIST,
-            keys=["item"],
         )
         p = last_payload(mock_view)
         assert p["JSON_HANDLE"]["TYPE"] == "JSON_LIST"
         assert p["JSON_HANDLE"]["JSON_LIST_OP_TYPE"] == "JSON_LIST_TO_ROWS"
+        extracts = p["JSON_HANDLE"]["JSON_EXTRACT"]
+        assert len(extracts) == 2
+        assert extracts[0]["COLUMN"] == "Item"
+        assert extracts[1]["COLUMN"] == "Index"
 
     def test_advanced_extractions(self, mock_view):
         mock_view.json_extract(
@@ -1847,10 +1852,11 @@ class TestGoldenReference:
         assert jh["JSON_EXTRACT"][0]["KEY"] == "name"
 
     def test_golden_json_list(self, mock_view):
+        # No keys/extractions: JSON_LIST_TO_ROWS defaults to the product's own
+        # Item + Index pair (DBAdapter's json_handle op requires exactly two).
         mock_view.json_extract(
             column="department",
             json_type=JsonType.LIST,
-            keys=["item"],
         )
         p = last_payload(mock_view)
         jh = p["JSON_HANDLE"]
