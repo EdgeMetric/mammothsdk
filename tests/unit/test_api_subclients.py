@@ -2443,6 +2443,36 @@ class TestBrowseAPI:
             client._request_json, "GET", "/datasets/500/dataviews"
         )
 
+    @pytest.mark.parametrize(
+        "browse, endpoint",
+        [
+            (lambda b: b.workspaces(fields="__min", limit=25, offset=50), "/workspaces"),
+            (lambda b: b.projects(fields="__min", limit=25, offset=50), "/projects"),
+            (lambda b: b.datasets(fields="__min", limit=25, offset=50), "/datasets"),
+            (
+                lambda b: b.dataviews(dataset_id=500, fields="__min", limit=25, offset=50),
+                "/datasets/500/dataviews",
+            ),
+        ],
+    )
+    async def test_a_browse_can_ask_for_one_page_of_smaller_records(
+        self, client: MammothClient, browse, endpoint
+    ):
+        """A caller reading a list into a model's context pays for every field."""
+        await browse(client.browse)
+        assert_called_with_method_and_endpoint(client._request_json, "GET", endpoint)
+        assert client._request_json.call_args.kwargs["params"] == {
+            "fields": "__min",
+            "limit": 25,
+            "offset": 50,
+        }
+
+    async def test_a_browse_that_asks_for_nothing_leaves_the_route_its_defaults(
+        self, client: MammothClient
+    ):
+        await client.browse.datasets()
+        assert client._request_json.call_args.kwargs.get("params") is None
+
     async def test_root(self, client: MammothClient):
         await client.browse.root()
         assert_called_with_method_and_endpoint(client._request_json, "GET", "/browse")

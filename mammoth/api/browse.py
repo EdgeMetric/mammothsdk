@@ -8,6 +8,22 @@ if TYPE_CHECKING:
     from ..client import MammothClient
 
 
+def _page(fields: str | None, limit: int | None, offset: int | None) -> dict[str, Any] | None:
+    """The query a browse route takes to narrow and page what it returns.
+
+    A caller that asks for nothing sends nothing, so the route keeps its own
+    defaults.
+    """
+    params: dict[str, Any] = {}
+    if fields is not None:
+        params["fields"] = fields
+    if limit is not None:
+        params["limit"] = limit
+    if offset is not None:
+        params["offset"] = offset
+    return params or None
+
+
 class BrowseAPI:
     """Client for browsing and discovering resources.
 
@@ -95,49 +111,88 @@ class BrowseAPI:
             params["permissions"] = permissions
         return await self._client._request_json("GET", "/browse", params=params or None)
 
-    async def workspaces(self) -> dict[str, Any]:
+    async def workspaces(
+        self,
+        fields: str | None = None,
+        limit: int | None = None,
+        offset: int | None = None,
+    ) -> dict[str, Any]:
         """Browse available workspaces.
+
+        Args:
+            fields: Field set to return, e.g. ``"__min"``; server default if
+                omitted.
+            limit: Maximum number of results.
+            offset: Number of results to skip.
 
         Returns:
             Dict with workspace resources.
         """
-        return await self._client._request_json("GET", "/workspaces")
+        return await self._client._request_json(
+            "GET", "/workspaces", params=_page(fields, limit, offset)
+        )
 
-    async def projects(self, workspace_id: int | None = None) -> dict[str, Any]:
+    async def projects(
+        self,
+        workspace_id: int | None = None,
+        fields: str | None = None,
+        limit: int | None = None,
+        offset: int | None = None,
+    ) -> dict[str, Any]:
         """Browse projects in a workspace.
 
         Args:
             workspace_id: Workspace ID (uses client default if not provided).
+            fields: Field set to return, e.g. ``"__min"``; server default if
+                omitted.
+            limit: Maximum number of results.
+            offset: Number of results to skip.
 
         Returns:
             Dict with project resources.
         """
         ws = workspace_id or self._ws()
-        return await self._client._request_json("GET", f"/workspaces/{ws}/projects")
+        return await self._client._request_json(
+            "GET", f"/workspaces/{ws}/projects", params=_page(fields, limit, offset)
+        )
 
     async def datasets(
         self,
         project_id: int | None = None,
         workspace_id: int | None = None,
+        fields: str | None = None,
+        limit: int | None = None,
+        offset: int | None = None,
     ) -> dict[str, Any]:
         """Browse datasets in a project.
 
         Args:
             project_id: Project ID (uses client default if not provided).
             workspace_id: Workspace ID (uses client default if not provided).
+            fields: Field set to return, e.g. ``"__min"``; server default if
+                omitted.
+            limit: Maximum number of results.
+            offset: Number of results to skip.
 
         Returns:
             Dict with dataset resources.
         """
         ws = workspace_id or self._ws()
         proj = self._proj(project_id)
-        return await self._client._request_json("GET", f"/workspaces/{ws}/projects/{proj}/datasets")
+        return await self._client._request_json(
+            "GET",
+            f"/workspaces/{ws}/projects/{proj}/datasets",
+            params=_page(fields, limit, offset),
+        )
 
     async def dataviews(
         self,
         dataset_id: int,
         project_id: int | None = None,
         workspace_id: int | None = None,
+        fields: str | None = None,
+        limit: int | None = None,
+        offset: int | None = None,
     ) -> dict[str, Any]:
         """Browse dataviews in a dataset.
 
@@ -145,6 +200,10 @@ class BrowseAPI:
             dataset_id: ID of the dataset.
             project_id: Project ID (uses client default if not provided).
             workspace_id: Workspace ID (uses client default if not provided).
+            fields: Field set to return, e.g. ``"__min"``; server default if
+                omitted.
+            limit: Maximum number of results.
+            offset: Number of results to skip.
 
         Returns:
             Dict with dataview resources.
@@ -154,6 +213,7 @@ class BrowseAPI:
         return await self._client._request_json(
             "GET",
             f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/dataviews",
+            params=_page(fields, limit, offset),
         )
 
     async def workspace_resources(

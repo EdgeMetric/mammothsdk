@@ -1230,7 +1230,7 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.browse.BrowseAPI.datasets
   implementation_origin: mammoth.api.browse.BrowseAPI.datasets
-  signature: 'datasets(self, project_id: ''int | None'' = None, workspace_id: ''int | None'' = None) -> ''dict[str, Any]'''
+  signature: 'datasets(self, project_id: ''int | None'' = None, workspace_id: ''int | None'' = None, fields: ''str | None'' = None, limit: ''int | None'' = None, offset: ''int | None'' = None) -> ''dict[str, Any]'''
   openapi_operation_ids: []
   canonical_command: null
   alias_of: dataset.list
@@ -1242,7 +1242,7 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.browse.BrowseAPI.dataviews
   implementation_origin: mammoth.api.browse.BrowseAPI.dataviews
-  signature: 'dataviews(self, dataset_id: ''int'', project_id: ''int | None'' = None, workspace_id: ''int | None'' = None) -> ''dict[str, Any]'''
+  signature: 'dataviews(self, dataset_id: ''int'', project_id: ''int | None'' = None, workspace_id: ''int | None'' = None, fields: ''str | None'' = None, limit: ''int | None'' = None, offset: ''int | None'' = None) -> ''dict[str, Any]'''
   openapi_operation_ids: []
   canonical_command: null
   alias_of: view.list
@@ -1266,7 +1266,7 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.browse.BrowseAPI.projects
   implementation_origin: mammoth.api.browse.BrowseAPI.projects
-  signature: 'projects(self, workspace_id: ''int | None'' = None) -> ''dict[str, Any]'''
+  signature: 'projects(self, workspace_id: ''int | None'' = None, fields: ''str | None'' = None, limit: ''int | None'' = None, offset: ''int | None'' = None) -> ''dict[str, Any]'''
   openapi_operation_ids: []
   canonical_command: null
   alias_of: project.list
@@ -1302,7 +1302,7 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.browse.BrowseAPI.workspaces
   implementation_origin: mammoth.api.browse.BrowseAPI.workspaces
-  signature: 'workspaces(self) -> ''dict[str, Any]'''
+  signature: 'workspaces(self, fields: ''str | None'' = None, limit: ''int | None'' = None, offset: ''int | None'' = None) -> ''dict[str, Any]'''
   openapi_operation_ids: []
   canonical_command: null
   alias_of: workspace.list
