@@ -2489,7 +2489,7 @@ def view_export_specialized(invocation: Invocation) -> HandlerResult:
             # an existing target_ds_id -- this is the same race the old
             # "omit rather than report wrong" comment used to sidestep by
             # never reading the target's row count at all.
-            view_info = _view_info_after_settling(
+            view_info, pipeline_error = _view_info_after_settling(
                 service,
                 int(target_ds_id) if target_ds_id is not None else data["dataset_id"],
                 result_project_id,
@@ -2514,6 +2514,8 @@ def view_export_specialized(invocation: Invocation) -> HandlerResult:
                 # a non-increase here as unverified, not just an omitted count.
                 row_check["expected_row_increase"] = True
             data["row_check"] = row_check
+            if pipeline_error is not None:
+                data["pipeline_error"] = pipeline_error
     return data, _meta(invocation, auth.workspace_id, project_id)
 
 
@@ -2588,8 +2590,19 @@ def _dataset_view_info(
 #: large.
 _ROW_CHECK_SETTLE_TIMEOUT = 60.0
 
+_PIPELINE_GET_SYMBOL = "mammoth.api.pipeline.PipelineAPI.get_pipeline"
+_TASK_LIST_SYMBOL = "mammoth.api.pipeline.PipelineAPI.list_tasks"
+_ERROR_TRANSFORM_STATUSES = {"ERROR", "REFERROR"}
+#: ``wait_for_pipeline`` polls the pipeline's ``state`` and can see it settle
+#: back to ``ready`` even though the backend's own ``execution_state`` -- a
+#: separate field -- already recorded the task that actually failed. Only
+#: ``execution_state`` is trustworthy here.
+_PIPELINE_ERROR_EXECUTION_STATES = frozenset({"runtime_error", "ref_error"})
 
-def wait_for_pipeline_to_settle(service: Any, dataset_id: int, view_id: int) -> None:
+
+def wait_for_pipeline_to_settle(
+    service: Any, dataset_id: int, view_id: int
+) -> dict[str, Any] | None:
     """Best-effort, bounded wait for a view's pipeline to reach a terminal state.
 
     A row-count read taken immediately after a write can catch the pipeline
@@ -2601,6 +2614,10 @@ def wait_for_pipeline_to_settle(service: Any, dataset_id: int, view_id: int) -> 
     still reads the row count afterward; a failed wait is no reason to skip
     a read that might now succeed anyway, and :mod:`mammoth_cli.runtime.
     verify` treats an unreadable count as unverified either way.
+
+    Returns the pipeline's execution error (see :func:`_pipeline_execution_error`),
+    if a fresh read finds one, so the caller can flag it even when the
+    write's own envelope said ``status: done`` / ``pipeline_state: ready``.
     """
     try:
         service.call(
@@ -2611,42 +2628,100 @@ def wait_for_pipeline_to_settle(service: Any, dataset_id: int, view_id: int) -> 
         )
     except Exception:  # noqa: BLE001, S110 -- best effort; the write already ran
         pass
+    return _pipeline_execution_error(service, dataset_id, view_id)
+
+
+def _pipeline_execution_error(service: Any, dataset_id: int, view_id: int) -> dict[str, Any] | None:
+    """A settled pipeline's ``execution_state``, if it names an error.
+
+    Best effort: a failed read here must not hide the write that already
+    ran. When a task list read cheaply finds the failing task, its id and
+    ``reference_errors.error_code`` (evidence: transform_status ERROR,
+    error_code 7000) are added.
+    """
+    try:
+        pipeline = service.call(_PIPELINE_GET_SYMBOL, dataview_id=view_id, dataset_id=dataset_id)
+    except Exception:  # noqa: BLE001 -- best effort; the write already ran
+        return None
+    if not isinstance(pipeline, dict):
+        return None
+    execution_state = pipeline.get("execution_state")
+    if (
+        not isinstance(execution_state, str)
+        or execution_state.lower() not in _PIPELINE_ERROR_EXECUTION_STATES
+    ):
+        return None
+    error: dict[str, Any] = {"execution_state": execution_state}
+    task_id = pipeline.get("executing_task_id")
+    if task_id is not None:
+        error["task_id"] = task_id
+    try:
+        listing = service.call(_TASK_LIST_SYMBOL, dataview_id=view_id, dataset_id=dataset_id)
+        tasks = listing.get("tasks") if isinstance(listing, dict) else None
+        failing = next(
+            (
+                task
+                for task in tasks or []
+                if isinstance(task, dict)
+                and task.get("transform_status") in _ERROR_TRANSFORM_STATUSES
+            ),
+            None,
+        )
+        if failing is not None:
+            if failing.get("id") is not None:
+                error["task_id"] = failing["id"]
+            reference_errors = failing.get("reference_errors")
+            error_code = (
+                reference_errors.get("error_code") if isinstance(reference_errors, dict) else None
+            )
+            if error_code is not None:
+                error["error_code"] = error_code
+    except Exception:  # noqa: BLE001, S110 -- best effort; the write already ran
+        pass
+    return error
 
 
 def wait_for_view_row_count(
     service: Any, dataset_id: int, view_id: int, project_id: int | None
-) -> Any:
+) -> tuple[Any, dict[str, Any] | None]:
     """A view's row count once its pipeline has settled, best effort.
 
-    Returns ``None`` if the read still cannot be made; the caller (and
+    Returns ``(rows_after, pipeline_error)``. ``rows_after`` is ``None`` if
+    the read still cannot be made; the caller (and
     :mod:`mammoth_cli.runtime.verify`) must treat that as unverified, never
-    as a known count.
+    as a known count. ``pipeline_error`` is the settled pipeline's own
+    execution error (see :func:`_pipeline_execution_error`), if any.
     """
-    wait_for_pipeline_to_settle(service, dataset_id, view_id)
+    pipeline_error = wait_for_pipeline_to_settle(service, dataset_id, view_id)
     try:
         info = service.call(
             _DATAVIEW_GET_SYMBOL, dataset_id=dataset_id, dataview_id=view_id, project_id=project_id
         )
     except Exception:  # noqa: BLE001 -- best effort; the write already ran
-        return None
-    return info.get("row_count") if isinstance(info, dict) else None
+        return None, pipeline_error
+    rows_after = info.get("row_count") if isinstance(info, dict) else None
+    return rows_after, pipeline_error
 
 
 def _view_info_after_settling(
     service: Any, dataset_id: int, project_id: int | None
-) -> dict[str, Any] | None:
+) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
     """A dataset's current view info, re-read once its pipeline has settled.
 
     Used right after a `view.export.dataset` write, for a brand-new dataset
     or an existing ``target_ds_id`` alike: id/name/row_count all come from
     this settled read, not the discovery lookup that finds the view id, so
     a still-recomputing pipeline can never leave ``row_count`` stale.
+
+    Returns ``(view_info, pipeline_error)`` -- ``pipeline_error`` is the
+    settled pipeline's own execution error (see :func:`_pipeline_execution_error`),
+    if any.
     """
     view_info = _dataset_view_info(service, dataset_id, project_id)
     if view_info is None:
-        return None
-    wait_for_pipeline_to_settle(service, dataset_id, view_info["id"])
-    return _dataset_view_info(service, dataset_id, project_id) or view_info
+        return None, None
+    pipeline_error = wait_for_pipeline_to_settle(service, dataset_id, view_info["id"])
+    return _dataset_view_info(service, dataset_id, project_id) or view_info, pipeline_error
 
 
 _DATAVIEW_LIST_SYMBOL = "mammoth.api.dataviews.DataviewsAPI.list"

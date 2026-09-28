@@ -342,10 +342,12 @@ def _dispatch_view(
             # recomputing and read back no row_count at all; wait for it to
             # settle (bounded) before trusting this one. A staged draft never
             # ran the pipeline, so there is nothing to wait for or read.
-            rows_after = wait_for_view_row_count(
+            rows_after, pipeline_error = wait_for_view_row_count(
                 service, int(dataset_id), view_id, invocation.project
             )
             data["row_check"] = {"rows_before": rows_before, "rows_after": rows_after}
+            if pipeline_error is not None:
+                data["pipeline_error"] = pipeline_error
     return data, _meta(invocation, auth.workspace_id)
 
 

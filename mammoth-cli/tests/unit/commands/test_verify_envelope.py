@@ -21,6 +21,8 @@ from mammoth_cli.testing import login_default_profile, make_runner
 _DELETE = "mammoth.api.datasets.DatasetsAPI.delete"
 _DATAVIEW_GET = "mammoth.api.dataviews.DataviewsAPI.get"
 _WAIT_FOR_PIPELINE = "mammoth.api.pipeline.PipelineAPI.wait_for_pipeline"
+_PIPELINE_GET = "mammoth.api.pipeline.PipelineAPI.get_pipeline"
+_TASK_LIST = "mammoth.api.pipeline.PipelineAPI.list_tasks"
 _JSON_NO_INPUT = ["--output", "json", "--no-input"]
 
 
@@ -183,6 +185,41 @@ def test_a_staged_draft_transform_skips_the_row_check_and_the_settle_wait(
     assert "rows_before" not in verified
     assert "rows_after" not in verified
     assert verified["reason"] == "staged in draft; not applied until the draft is submitted"
+
+
+def test_a_plain_view_transform_catches_a_runtime_error_execution_state(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    """The write's own envelope can say ``status: done`` / ``pipeline_state:
+    ready`` while the pipeline's own ``execution_state`` already carries
+    runtime_error -- the row-count read alone never surfaces this. verify
+    must see it and mark the write unverified, with the failing task id and
+    error code when a cheap follow-up read finds them; needs_user stays
+    null (2.0.74 rule: a failure is not "the user must hear about this").
+    """
+    fake_service.responses[_DATAVIEW_GET] = {"row_count": 20}
+    fake_service.responses[_PIPELINE_GET] = {
+        "state": "ready",
+        "execution_state": "runtime_error",
+        "executing_task_id": 42,
+    }
+    fake_service.responses[_TASK_LIST] = {
+        "tasks": [{"id": 42, "transform_status": "ERROR", "reference_errors": {"error_code": 7000}}]
+    }
+    data, _meta = view_ops_cmd.view_transform_limit_rows(
+        _inv(
+            "view.transform.limit-rows",
+            extra_args=["3"],
+            resource_ref=_parent(3),
+            input_file=_write(tmp_path, {"n": 10}),
+        )
+    )
+    verified = with_verify(data)["verify"]
+    assert verified["verified"] is False
+    assert verified["needs_user"] is None
+    assert "runtime error" in verified["reason"]
+    assert "42" in verified["reason"]
+    assert "7000" in verified["reason"]
 
 
 def test_a_join_transform_keeps_its_own_join_check_not_row_check(
