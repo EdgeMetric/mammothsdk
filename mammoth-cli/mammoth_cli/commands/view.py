@@ -2475,13 +2475,12 @@ def view_export_specialized(invocation: Invocation) -> HandlerResult:
             # rows_before is the target's own count ahead of this write, read
             # before the call so a later re-read can never be confused with it.
             target_view_before = _dataset_view_info(service, int(target_ds_id), result_project_id)
-            if save_as_mode == "APPEND_TO_DS" and target_view_before is not None:
+            if save_as_mode == "APPEND_TO_DS":
                 target_only_columns = _reject_append_schema_mismatch(
                     service,
                     dataview_id,
                     dataset_id,
                     int(target_ds_id),
-                    target_view_before["id"],
                     kwargs.get("column_mapping"),
                 )
         data = service.call_view(dataview_id, method, dataset_id=dataset_id, **kwargs)
@@ -2581,12 +2580,51 @@ def _existing_internal_dataset_export(
     return max(matches, key=lambda export: export.id or 0) if matches else None
 
 
+_DATASET_GET_SYMBOL = "mammoth.api.datasets.DatasetsAPI.get"
+
+
+def _target_dataset_schema_names(service: Any, target_ds_id: int) -> set[str]:
+    """The target dataset's own schema column display names.
+
+    ``dataset.get``'s ``data_schema`` is the dataset's base schema, not any
+    view's live/rendered columns -- a view's own rename task can show a
+    different display name than the dataset's schema still uses (evidence:
+    a target view renamed 'Cust ID' -> 'cust_id' while the dataset's
+    data_schema still said 'Cust ID'). The backend's own append-schema match
+    (``match_existing_target_schema``) compares against this dataset-level
+    schema, not a view's, so this check must too. An unreadable or
+    malformed response is never treated as "no columns" -- fail loud,
+    rather than let an append write past a check that could not actually
+    run.
+    """
+    dataset = service.call(_DATASET_GET_SYMBOL, dataset_id=target_ds_id)
+    data_schema = dataset.get("data_schema") if isinstance(dataset, dict) else None
+    if not isinstance(data_schema, list):
+        raise CliError(
+            code="append_schema_unreadable",
+            message=f"Could not read target dataset {target_ds_id}'s schema before the append.",
+            hint="Read the target dataset before appending to it.",
+            details={"side": "target", "dataset_id": target_ds_id},
+        )
+    names: set[str] = set()
+    for column in data_schema:
+        display_name = column.get("display_name") if isinstance(column, dict) else None
+        if not isinstance(display_name, str):
+            raise CliError(
+                code="append_schema_unreadable",
+                message=(f"Target dataset {target_ds_id}'s schema had a malformed column entry."),
+                hint="Read the target dataset before appending to it.",
+                details={"side": "target", "dataset_id": target_ds_id},
+            )
+        names.add(display_name)
+    return names
+
+
 def _reject_append_schema_mismatch(
     service: Any,
     dataview_id: int,
     dataset_id: int | None,
     target_ds_id: int,
-    target_view_id: int,
     column_mapping: Any,
 ) -> list[str]:
     """Refuse an ``APPEND_TO_DS`` export whose source has a column the target
@@ -2602,10 +2640,19 @@ def _reject_append_schema_mismatch(
     worth a warning rather than silence.
     """
     source_columns = service.call_view(dataview_id, "columns", dataset_id=dataset_id)
-    target_columns = service.call_view(target_view_id, "columns", dataset_id=target_ds_id)
+    if not isinstance(source_columns, dict):
+        raise CliError(
+            code="append_schema_unreadable",
+            message=f"Could not read view {dataview_id}'s columns before the append.",
+            hint="Read the source view before appending from it.",
+            details={"side": "source", "dataview_id": dataview_id},
+        )
+    target_names = _target_dataset_schema_names(service, target_ds_id)
     mapping = column_mapping if isinstance(column_mapping, dict) else {}
-    source_names = set(source_columns) if isinstance(source_columns, dict) else set()
-    target_names = set(target_columns) if isinstance(target_columns, dict) else set()
+    # View.columns (mammoth/view.py) maps display name -> internal name; these
+    # dict keys are display names, matching what the backend's own schema
+    # match compares by -- never the internal ids in the dict's values.
+    source_names = set(source_columns)
     source_only = sorted(source_names - target_names - set(mapping))
     target_only = sorted(target_names - source_names - set(mapping.values()))
     if source_only:

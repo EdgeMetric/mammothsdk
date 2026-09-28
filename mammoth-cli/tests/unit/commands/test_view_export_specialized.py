@@ -28,6 +28,11 @@ from mammoth_cli.testing import login_default_profile
 _DATAVIEW_LIST = "mammoth.api.dataviews.DataviewsAPI.list"
 _EXPORTS_LIST = "mammoth.api.exports.ExportsAPI.list"
 _WAIT_FOR_PIPELINE = "mammoth.api.pipeline.PipelineAPI.wait_for_pipeline"
+_DATASET_GET = "mammoth.api.datasets.DatasetsAPI.get"
+
+
+def _dataset_schema(*display_names: str) -> dict[str, object]:
+    return {"data_schema": [{"display_name": name} for name in display_names]}
 
 
 def _exports_page(*items: ItemExportInfo) -> PipelineExportsPaginated:
@@ -135,6 +140,7 @@ def test_dataset_route_reports_settled_row_counts_for_append_into_existing_targe
     """
     fake_service.view_responses[(7, "to_dataset")] = 9
     fake_service.responses[_DATAVIEW_LIST] = {"dataviews": [{"id": 500, "row_count": 60}]}
+    fake_service.responses[_DATASET_GET] = _dataset_schema()
     data, _meta = view_cmd.view_export_specialized(
         _inv(
             "view.export.dataset",
@@ -176,6 +182,7 @@ def test_dataset_route_marks_an_append_that_adds_no_rows_as_unverified(
     """
     fake_service.view_responses[(7, "to_dataset")] = 9
     fake_service.responses[_DATAVIEW_LIST] = {"dataviews": [{"id": 500, "row_count": 60}]}
+    fake_service.responses[_DATASET_GET] = _dataset_schema()
     data, _meta = view_cmd.view_export_specialized(
         _inv(
             "view.export.dataset",
@@ -202,9 +209,8 @@ def test_dataset_route_rejects_append_when_source_has_unmapped_columns(
     before any write -- an append that silently drops or mismatches a
     column is worse than an early, explicit refusal.
     """
-    fake_service.responses[_DATAVIEW_LIST] = {"dataviews": [{"id": 500, "row_count": 60}]}
+    fake_service.responses[_DATASET_GET] = _dataset_schema("Region")
     fake_service.view_responses[(7, "columns")] = {"Region": "column_1", "Amount": "column_2"}
-    fake_service.view_responses[(500, "columns")] = {"Region": "column_1"}
     with pytest.raises(CliError) as excinfo:
         view_cmd.view_export_specialized(
             _inv(
@@ -224,13 +230,124 @@ def test_dataset_route_rejects_append_when_source_has_unmapped_columns(
     assert "to_dataset" not in [call[1] for call in fake_service.view_call_log]
 
 
+def test_dataset_route_matches_the_target_datasets_own_schema_not_its_views(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    """Regression: the target VIEW can carry a rename task that disagrees
+    with the target DATASET's own schema (evidence: a target view renamed
+    'Cust ID' -> 'cust_id' while the dataset's data_schema still said
+    'Cust ID'). The backend's own append-schema match
+    (match_existing_target_schema) compares against the dataset's schema,
+    not any view's live columns -- so this check must too, or a real
+    mismatch (source 'cust_id' vs. dataset schema 'Cust ID') would pass
+    when it should be refused.
+    """
+    fake_service.responses[_DATASET_GET] = _dataset_schema("Cust ID")
+    fake_service.view_responses[(7, "columns")] = {"cust_id": "column_1"}
+    with pytest.raises(CliError) as excinfo:
+        view_cmd.view_export_specialized(
+            _inv(
+                "view.export.dataset",
+                project=180,
+                extra_args=["7", "3"],
+                input_file=_doc(
+                    tmp_path,
+                    {"dataset_name": "orders", "target_ds_id": 9, "save_as_mode": "APPEND_TO_DS"},
+                ),
+                yes=True,
+            )
+        )
+    assert excinfo.value.code == "append_schema_mismatch"
+    assert excinfo.value.details["source_only"] == ["cust_id"]
+    assert (_DATASET_GET, {"dataset_id": 9}) in fake_service.call_log
+    # Only the source view's own columns are consulted -- never a target
+    # VIEW's, which is exactly the mismatch this regression covers.
+    assert fake_service.view_call_log == [(7, "columns", {"dataset_id": 3})]
+
+
+def test_dataset_route_source_columns_are_display_names_not_internal(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    """``call_view(view_id, "columns", ...)`` returns ``View.columns``: a
+    display-name -> internal-name mapping (mammoth/view.py). The mismatch
+    check must compare display names -- what the backend's own schema match
+    uses -- never the internal ids in the dict's values.
+    """
+    fake_service.view_responses[(7, "to_dataset")] = 9
+    fake_service.responses[_DATASET_GET] = _dataset_schema("Region")
+    fake_service.view_responses[(7, "columns")] = {"Region": "some_internal_id_999"}
+    data, _meta = view_cmd.view_export_specialized(
+        _inv(
+            "view.export.dataset",
+            project=180,
+            extra_args=["7", "3"],
+            input_file=_doc(
+                tmp_path,
+                {"dataset_name": "orders", "target_ds_id": 9, "save_as_mode": "APPEND_TO_DS"},
+            ),
+            yes=True,
+        )
+    )
+    # "Region" (the display name) matched the target schema; the internal id
+    # "some_internal_id_999" was never treated as a column name to compare.
+    assert data["dataset_id"] == 9
+
+
+def test_dataset_route_raises_when_source_columns_are_unreadable(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    """An unreadable/malformed source-view column read must never be treated
+    as "no columns" (which would silently pass the check and let the write
+    through) -- fail loud instead.
+    """
+    fake_service.view_responses[(7, "columns")] = "not a dict"
+    with pytest.raises(CliError) as excinfo:
+        view_cmd.view_export_specialized(
+            _inv(
+                "view.export.dataset",
+                project=180,
+                extra_args=["7", "3"],
+                input_file=_doc(
+                    tmp_path,
+                    {"dataset_name": "orders", "target_ds_id": 9, "save_as_mode": "APPEND_TO_DS"},
+                ),
+                yes=True,
+            )
+        )
+    assert excinfo.value.code == "append_schema_unreadable"
+    assert excinfo.value.details["side"] == "source"
+    assert "to_dataset" not in [call[1] for call in fake_service.view_call_log]
+
+
+def test_dataset_route_raises_when_target_schema_is_unreadable(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    fake_service.view_responses[(7, "columns")] = {"Region": "column_1"}
+    fake_service.responses[_DATASET_GET] = {"data_schema": "not a list"}
+    with pytest.raises(CliError) as excinfo:
+        view_cmd.view_export_specialized(
+            _inv(
+                "view.export.dataset",
+                project=180,
+                extra_args=["7", "3"],
+                input_file=_doc(
+                    tmp_path,
+                    {"dataset_name": "orders", "target_ds_id": 9, "save_as_mode": "APPEND_TO_DS"},
+                ),
+                yes=True,
+            )
+        )
+    assert excinfo.value.code == "append_schema_unreadable"
+    assert excinfo.value.details["side"] == "target"
+    assert "to_dataset" not in [call[1] for call in fake_service.view_call_log]
+
+
 def test_dataset_route_allows_append_when_column_mapping_covers_the_difference(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
     fake_service.view_responses[(7, "to_dataset")] = 9
-    fake_service.responses[_DATAVIEW_LIST] = {"dataviews": [{"id": 500, "row_count": 60}]}
+    fake_service.responses[_DATASET_GET] = _dataset_schema("Region", "Amount")
     fake_service.view_responses[(7, "columns")] = {"Region": "column_1", "Amt": "column_2"}
-    fake_service.view_responses[(500, "columns")] = {"Region": "column_1", "Amount": "column_2"}
     data, _meta = view_cmd.view_export_specialized(
         _inv(
             "view.export.dataset",
@@ -257,8 +374,8 @@ def test_dataset_route_warns_when_target_has_columns_the_source_lacks(
 ) -> None:
     fake_service.view_responses[(7, "to_dataset")] = 9
     fake_service.responses[_DATAVIEW_LIST] = {"dataviews": [{"id": 500, "row_count": 60}]}
+    fake_service.responses[_DATASET_GET] = _dataset_schema("Region", "Notes")
     fake_service.view_responses[(7, "columns")] = {"Region": "column_1"}
-    fake_service.view_responses[(500, "columns")] = {"Region": "column_1", "Notes": "column_2"}
     data, _meta = view_cmd.view_export_specialized(
         _inv(
             "view.export.dataset",
