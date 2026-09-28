@@ -45,6 +45,45 @@ commands:
   undo_test: null
   known_restrictions: Dataset and batch parent are explicit; limit is 0..100 and offset is non-negative.
   reviewed_by: primary
+- command_id: dataset.broken-rows.list
+  command_path: dataset broken-rows list
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - name: dataset_id
+    type: int
+    required: true
+    metavar: DATASET_ID
+    falls_back_to_field: null
+    help: ID of the dataset.
+  options: []
+  sdk_symbol: mammoth.api.datasets.DatasetsAPI.get_unstructured_rows
+  sdk_conversion: Call mammoth.api.datasets.DatasetsAPI.get_unstructured_rows with validated request fields.
+  request_model: DatasetBrokenRowsListRequest
+  result_model: DatasetBrokenRowsListResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-DATASET-BROKEN-ROWS-LIST
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dataset broken-rows list DATASET_ID --help
+  agent_example: mammoth dataset broken-rows list 123
+  unit_tests:
+  - UT-DATASET-BROKEN-ROWS-LIST
+  contract_tests:
+  - CT-DATASET-BROKEN-ROWS-LIST-HUMAN
+  - CT-DATASET-BROKEN-ROWS-LIST-JSON
+  - CT-DATASET-BROKEN-ROWS-LIST-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Returns the first 100 lines the upload could not parse, each with its line number, upload (batch_id) and why it does not fit the columns; row_count is the total. A dataset not made from a file upload has none.
+  reviewed_by: primary
 - command_id: dataset.bulk-delete
   command_path: dataset bulk-delete
   disposition: command

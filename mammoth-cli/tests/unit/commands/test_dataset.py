@@ -22,6 +22,7 @@ _BATCH_DATA = "mammoth.api.datasets.DatasetsAPI.get_batch_data"
 _FILE_SETTINGS = "mammoth.api.datasets.DatasetsAPI.get_file_settings"
 _FILE_SETTINGS_UPDATE = "mammoth.api.datasets.DatasetsAPI.file_settings_update"
 _FILE_SETTINGS_UNDO = "mammoth.api.datasets.DatasetsAPI.file_settings_undo"
+_BROKEN_ROWS = "mammoth.api.datasets.DatasetsAPI.get_unstructured_rows"
 _CREATE = "mammoth.api.datasets.DatasetsAPI.create"
 _CREATE_FROM_PDF = "mammoth.api.datasets.DatasetsAPI.create_from_pdf"
 _RENAME = "mammoth.api.datasets.DatasetsAPI.rename"
@@ -270,6 +271,13 @@ def test_file_settings_passes_dataset_and_project(fake_service: FakeMammothServi
         _inv("dataset.file-settings.get", project=180, extra_args=["7"])
     )
     assert fake_service.call_log == [(_FILE_SETTINGS, {"dataset_id": 7, "project_id": 180})]
+
+
+def test_broken_rows_list_reads_the_dataset_s_unparsed_lines(
+    fake_service: FakeMammothService,
+) -> None:
+    dataset_cmd.dataset_broken_rows(_inv("dataset.broken-rows.list", project=180, extra_args=["7"]))
+    assert fake_service.call_log == [(_BROKEN_ROWS, {"dataset_id": 7, "project_id": 180})]
 
 
 def test_file_settings_update_requires_delimiter(fake_service: FakeMammothService) -> None:

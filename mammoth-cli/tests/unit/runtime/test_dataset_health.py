@@ -18,7 +18,7 @@ def test_a_dataset_that_loaded_badly_carries_its_health_and_fix() -> None:
 
     assert [h["dataset_id"] for h in health] == [2759]
     assert "could not be split into columns" in health[0]["detail"]
-    assert health[0]["fix"].startswith("mammoth dataset file-settings get 2759")
+    assert health[0]["fix"].startswith("mammoth dataset broken-rows list 2759")
 
 
 def test_datasets_in_a_listing_are_checked_too() -> None:

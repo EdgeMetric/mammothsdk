@@ -322,6 +322,16 @@ def dataset_batch_data(invocation: Invocation) -> HandlerResult:
 
 def dataset_file_settings(invocation: Invocation) -> HandlerResult:
     """Get file settings (delimiter, header, dates, ...) for a dataset."""
+    return _read_dataset(invocation)
+
+
+def dataset_broken_rows(invocation: Invocation) -> HandlerResult:
+    """List the lines of a dataset's uploaded file that could not be parsed."""
+    return _read_dataset(invocation)
+
+
+def _read_dataset(invocation: Invocation) -> HandlerResult:
+    """Call this command's SDK read with the DATASET_ID positional."""
     project_id = require_project(invocation)
     dataset_id = _require_int_positional(invocation, "dataset id")
     if dataset_id <= 0:

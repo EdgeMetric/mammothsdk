@@ -314,6 +314,7 @@ HANDLERS: dict[str, Handler] = {
     "dataset.file-settings.get": dataset_cmd.dataset_file_settings,
     "dataset.file-settings.update": dataset_cmd.dataset_file_settings_update,
     "dataset.file-settings.undo": dataset_cmd.dataset_file_settings_undo,
+    "dataset.broken-rows.list": dataset_cmd.dataset_broken_rows,
     "dataset.create": dataset_cmd.dataset_create,
     "dataset.create-from-pdf": dataset_cmd.dataset_create_from_pdf,
     "dataset.rename": dataset_cmd.dataset_rename,

@@ -18,8 +18,9 @@ _UNHEALTHY: dict[str, tuple[str, str]] = {
         "Some rows of this file could not be split into columns, so they are held "
         "apart and the dataset may have few or no usable rows. The usual cause is "
         "the wrong delimiter or quote character.",
-        "mammoth dataset file-settings get {id}, then mammoth dataset file-settings "
-        "update {id} with the right delimiter or quote character",
+        "mammoth dataset broken-rows list {id} shows the rows and why each does "
+        "not fit; then mammoth dataset file-settings get {id} and mammoth dataset "
+        "file-settings update {id} with the right delimiter or quote character",
     ),
 }
 #: Nesting to search: a result, a listing inside it, a record in the listing.
