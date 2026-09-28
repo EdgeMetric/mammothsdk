@@ -11,7 +11,7 @@ from mammoth._pure.builders import (
     build_copy_params,
     build_delete_params,
 )
-from mammoth.exceptions import MammothColumnError
+from mammoth.exceptions import MammothError
 from mammoth.models.pipeline import ColumnType, ConversionSpec, CopySpec
 
 if TYPE_CHECKING:
@@ -174,9 +174,9 @@ class ColumnOpsMixin(ViewHost):
             ``{"renamed": {old: new}, "columns": [display names after]}``.
 
         Raises:
-            MammothColumnError: A current name is not a column of the view,
-                or a new name is not among the view's columns after the
-                rename (the server did not apply it).
+            MammothColumnError: A current name is not a column of the view.
+            MammothError: A new name is not among the view's columns after the
+                rename (the server accepted the change but did not apply it).
             ValueError: ``renames`` is empty, a new name is blank, or two
                 columns would end up with the same name.
 
@@ -205,7 +205,17 @@ class ColumnOpsMixin(ViewHost):
         self.refresh()
         # The refreshed columns are the proof: a PATCH the server accepted
         # but did not apply must not read as a rename that happened.
-        for new_name in cleaned.values():
-            if new_name not in self.columns:
-                raise MammothColumnError(new_name, list(self.columns))
+        not_applied = {old: new for old, new in cleaned.items() if new not in self.columns}
+        if not_applied:
+            raise MammothError(
+                "The server accepted the rename but did not apply it.",
+                details={
+                    "reason": (
+                        "rename not applied: the view's columns after the change"
+                        " do not show the new name"
+                    ),
+                    "not_applied": not_applied,
+                    "columns_after": list(self.columns),
+                },
+            )
         return {"renamed": cleaned, "columns": list(self.columns)}

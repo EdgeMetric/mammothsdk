@@ -922,7 +922,7 @@ class TestRenameColumns:
         the refreshed columns are the proof, and they still show the old name."""
         from unittest.mock import MagicMock
 
-        from mammoth.exceptions import MammothColumnError
+        from mammoth.exceptions import MammothError
         from tests.unit.conftest import SAMPLE_VIEW_DATA
 
         mock_view._client.dataviews = MagicMock()
@@ -931,8 +931,10 @@ class TestRenameColumns:
             "refresh",
             lambda: mock_view._build_column_maps(SAMPLE_VIEW_DATA) or mock_view,
         )
-        with pytest.raises(MammothColumnError, match="Employee ID"):
+        with pytest.raises(MammothError, match="did not apply") as excinfo:
             mock_view.rename_columns({"emp_id": "Employee ID"})
+        assert excinfo.value.details["not_applied"] == {"emp_id": "Employee ID"}
+        assert "emp_id" in excinfo.value.details["columns_after"]
 
     def test_blank_and_empty_refused(self, mock_view, monkeypatch):
         _patch_view(mock_view, monkeypatch)
