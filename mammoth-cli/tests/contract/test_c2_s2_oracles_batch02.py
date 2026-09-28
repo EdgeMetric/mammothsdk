@@ -41,7 +41,9 @@ CASES = [
     {"route":"annotation.update","argv":["annotation","update","759"],"project":41,"input":{"status":"resolved"},"api":AnnotationsAPI,"method":"update","kwargs":{"annotation_id":759,"status":"resolved","project_id":41},"wire":["PATCH","/workspaces/4/projects/41/annotations/759",{"json":{"status":"resolved"}}],"response":{}},
     {"route":"browse.project","argv":["browse","project"],"project":41,"input":{"fields":"C2_PROJECT_FIELDS","name":"C2_PROJECT_NAME","browse_type":"dataset","sort":"-updated_at","offset":9,"limit":27},"api":ProjectsAPI,"method":"browse","kwargs":{"project_id":41,"fields":"C2_PROJECT_FIELDS","name":"C2_PROJECT_NAME","browse_type":"dataset","sort":"-updated_at","offset":9,"limit":27},"wire":["GET","/workspaces/4/projects/41/browse",{"params":{"fields":"C2_PROJECT_FIELDS","name":"C2_PROJECT_NAME","browse_type":"dataset","sort":"-updated_at","offset":9,"limit":27}}],"response":{}},
     {"route":"dataset.list","argv":["dataset","list"],"project":41,"input":{"limit":21,"offset":0,"sort":"(name:asc)"},"api":DatasetsAPI,"method":"list","kwargs":{"project_id":41,"limit":21,"offset":0,"sort":"(name:asc)"},"wire":["GET","/workspaces/4/projects/41/datasets",{"params":{"fields":"id,name","limit":21,"offset":0,"sort":"(name:asc)"}}],"response":{"datasets":[]}},
-    {"route":"dataset.get","argv":["dataset","get","763"],"project":41,"input":None,"api":DatasetsAPI,"method":"get","kwargs":{"dataset_id":763,"project_id":41},"wire":["GET","/workspaces/4/projects/41/datasets/763",{}],"response":{}},
+    # dataset.get also reads the dataview count for its "hint" (T1-I-13); that
+    # follow-up read is the *last* wire call, so assert against the *first*.
+    {"route":"dataset.get","argv":["dataset","get","763"],"project":41,"input":None,"api":DatasetsAPI,"method":"get","kwargs":{"dataset_id":763,"project_id":41},"wire":["GET","/workspaces/4/projects/41/datasets/763",{}],"response":{},"wire_index":0},
     {"route":"dataset.rename","argv":["dataset","rename","763"],"project":41,"input":{"name":"C2_DATASET_RENAMED"},"api":DatasetsAPI,"method":"rename","kwargs":{"dataset_id":763,"name":"C2_DATASET_RENAMED","project_id":41},"wire":["PATCH","/workspaces/4/projects/41/datasets/763",{"json":{"patch":{"op":"replace","path":"name","value":"C2_DATASET_RENAMED"}}}],"response":{"name":"C2_DATASET_RENAMED"}},
     {"route":"dataset.restore","argv":["dataset","restore","763"],"project":41,"input":None,"api":DatasetsAPI,"method":"restore","kwargs":{"dataset_id":763,"project_id":41},"wire":["POST","/workspaces/4/projects/41/datasets/763/restore",{}],"response":{}},
     {"route":"file.list","argv":["file","list"],"project":41,"input":{"fields":"__full","file_ids":[801,802],"names":["C2_A","C2_B"],"statuses":["ready"],"created_at":"2026-01-01","updated_at":"2026-02-01","limit":7,"offset":3,"sort":"(id:asc)"},"api":FilesAPI,"method":"list","kwargs":{"fields":"__full","file_ids":[801,802],"names":["C2_A","C2_B"],"statuses":["ready"],"created_at":"2026-01-01","updated_at":"2026-02-01","limit":7,"offset":3,"sort":"(id:asc)"},"wire":["GET","/workspaces/4/projects/41/files",{"params":{"fields":"__full","id":"801,802","name":"C2_A,C2_B","status":"ready","created_at":"2026-01-01","updated_at":"2026-02-01","limit":7,"offset":3,"sort":"(id:asc)"}}],"response":{"files":[],"limit":7,"offset":3,"next":""}},
@@ -116,7 +118,7 @@ def test_cli_to_recording_transport_uses_independent_wire(
     api.on(method, "/api/v2" + path, body=case["response"])
     result = make_runner().invoke(_argv(case))
     assert result.exit_code == 0, result.output
-    request = api.last()
+    request = api.requests[case.get("wire_index", -1)]
     assert request.method == method
     assert request.path.removeprefix("/api/v2") == path
     assert request.json_body == kwargs.get("json")

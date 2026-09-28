@@ -184,9 +184,8 @@ def dataset_find(invocation: Invocation) -> HandlerResult:
     return {
         "matches": matches,
         "projects_searched": len(projects),
-        "projects_truncated": (
-            invocation.project is None and len(projects) >= _MAX_PROJECTS_SEARCHED
-        ),
+        "projects_truncated": invocation.project is None
+        and len(projects) >= _MAX_PROJECTS_SEARCHED,
     }, meta
 
 
@@ -225,13 +224,38 @@ def _export_write_hint(data: dict[str, Any]) -> str | None:
     )
 
 
+def _zero_view_hint(dataset_id: int) -> str:
+    """Name the fix for a dataset with no queryable views yet (T1-I-13).
+
+    Nothing is queryable until a view exists (transforms, joins, exports and
+    previews all take a view id, not a dataset id) — an agent that only reads
+    dataset-level metadata and never sees a zero view count can conclude "no
+    correction needed" while nothing it changed is visible anywhere.
+    """
+    return (
+        f"This dataset has no views yet; nothing is queryable until one exists. "
+        f"Run 'mammoth view create {dataset_id}' to create one."
+    )
+
+
 def dataset_get(invocation: Invocation) -> HandlerResult:
     """Get one dataset by id in the active project."""
     project_id = require_project(invocation)
     dataset_id = _require_int_positional(invocation, "dataset id")
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), dataset_id=dataset_id, project_id=project_id)
+        views = service.call(
+            "mammoth.api.dataviews.DataviewsAPI.list",
+            dataset_id=dataset_id,
+            project_id=project_id,
+        )
     hint = _export_write_hint(data) if isinstance(data, dict) else None
+    if isinstance(data, dict) and isinstance(views, dict):
+        view_count = len(views.get("dataviews") or [])
+        data = {**data, "view_count": view_count}
+        if view_count == 0:
+            zero_hint = _zero_view_hint(dataset_id)
+            hint = f"{hint} {zero_hint}" if hint else zero_hint
     if hint is not None:
         data = {**data, "hint": hint}
     return data, _meta(invocation, auth.workspace_id, project_id)

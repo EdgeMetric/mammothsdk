@@ -16,6 +16,7 @@ from mammoth_cli.testing import login_default_profile
 _LIST = "mammoth.api.datasets.DatasetsAPI.list"
 _LIST_ALL = "mammoth.api.datasets.DatasetsAPI.list_all"
 _GET = "mammoth.api.datasets.DatasetsAPI.get"
+_VIEW_LIST = "mammoth.api.dataviews.DataviewsAPI.list"
 _DATA = "mammoth.api.datasets.DatasetsAPI.get_data"
 _BATCH_DATA = "mammoth.api.datasets.DatasetsAPI.get_batch_data"
 _FILE_SETTINGS = "mammoth.api.datasets.DatasetsAPI.get_file_settings"
@@ -126,7 +127,10 @@ def test_list_passes_project_and_optional_fields(
 
 def test_get_uses_positional_dataset_id(fake_service: FakeMammothService) -> None:
     dataset_cmd.dataset_get(_inv("dataset.get", project=180, extra_args=["7"]))
-    assert fake_service.call_log == [(_GET, {"dataset_id": 7, "project_id": 180})]
+    assert fake_service.call_log == [
+        (_GET, {"dataset_id": 7, "project_id": 180}),
+        (_VIEW_LIST, {"dataset_id": 7, "project_id": 180}),
+    ]
 
 
 def test_get_without_dataset_id_is_usage_error(fake_service: FakeMammothService) -> None:
@@ -151,8 +155,23 @@ def test_get_names_the_export_that_writes_into_this_dataset(
 
 def test_get_without_additional_info_has_no_hint(fake_service: FakeMammothService) -> None:
     fake_service.responses[_GET] = {"id": 7}
+    fake_service.responses[_VIEW_LIST] = {"dataviews": [{"id": 1}]}
     result, _meta = dataset_cmd.dataset_get(_inv("dataset.get", project=180, extra_args=["7"]))
     assert "hint" not in result
+    assert result["view_count"] == 1
+
+
+def test_get_hints_view_create_when_dataset_has_zero_views(
+    fake_service: FakeMammothService,
+) -> None:
+    # T1-I-13: an agent that only reads dataset-level metadata has no signal
+    # nothing is queryable yet; a corrected dataset with zero views is
+    # invisible to every downstream Mammoth feature (and to the grader).
+    fake_service.responses[_GET] = {"id": 2643}
+    fake_service.responses[_VIEW_LIST] = {"dataviews": []}
+    result, _meta = dataset_cmd.dataset_get(_inv("dataset.get", project=180, extra_args=["2643"]))
+    assert result["view_count"] == 0
+    assert "mammoth view create 2643" in result["hint"]
 
 
 def test_batch_data_rejects_invalid_paging_before_service(
