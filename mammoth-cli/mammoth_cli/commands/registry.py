@@ -26,6 +26,7 @@ from mammoth_cli.commands import automation as automation_cmd
 from mammoth_cli.commands import batch as batch_cmd
 from mammoth_cli.commands import billing as billing_cmd
 from mammoth_cli.commands import browse as browse_cmd
+from mammoth_cli.commands import calc as calc_cmd
 from mammoth_cli.commands import capability as capability_cmd
 from mammoth_cli.commands import client_app as client_app_cmd
 from mammoth_cli.commands import completion as completion_cmd
@@ -231,6 +232,7 @@ HANDLERS: dict[str, Handler] = {
     "log.path": _log_path,
     "log.tail": _log_tail,
     "doctor": doctor_cmd.doctor,
+    "calc": calc_cmd.calc,
     "completion.show": completion_cmd.completion_show,
     "completion.install": completion_cmd.completion_install,
     "skill.agents-md.install": skill_cmd.skill_agents_md_install,

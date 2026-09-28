@@ -450,6 +450,18 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
             example_value="view transform",
         ),
     ),
+    "calc": (
+        PositionalSpec(
+            name="expression",
+            type=str,
+            required=True,
+            help=(
+                "Arithmetic expression: + - * / and parentheses, unary +/-, a "
+                "trailing %% (divides by 100), and round(x[, ndigits])."
+            ),
+            example_value="2063664 - 1917815",
+        ),
+    ),
     "capability.find": (
         PositionalSpec(
             name="query",
