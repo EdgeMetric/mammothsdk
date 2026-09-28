@@ -200,6 +200,8 @@ Example: `mammoth connector list`. Placeholders are illustrative; resolve IDs an
 
 Result: `ConnectorListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
+`is_premium: true` with `is_added: false` means the connector must be enabled by Mammoth sales before this workspace can use it -- not that nobody has set it up yet. Such an item also carries `availability: "premium_not_enabled"`, and the envelope carries a top-level `premium_connector_note` naming every locked connector. Tell the user why (premium, not enabled here) and offer to contact Mammoth sales; there is no CLI command that enables a premium connector or contacts sales on the user's behalf.
+
 Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Listed 42 available connectors (name_key, disp_name, api_type, is_added, is_premium). Single invocation only.
 
 ### `connector.query.generate`

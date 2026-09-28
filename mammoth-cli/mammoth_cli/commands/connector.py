@@ -145,11 +145,50 @@ def connector_get(invocation: Invocation) -> HandlerResult:
     return data, _meta(invocation, auth.workspace_id, resolved_project(invocation))
 
 
+#: ``availability`` a premium connector gets when it is not yet added to the
+#: workspace -- distinct from an ordinary connector nobody has added yet.
+_PREMIUM_NOT_ENABLED = "premium_not_enabled"
+
+
+def _with_premium_availability(data: Any) -> Any:
+    """Mark each premium, not-yet-added connector and add one workspace-level note.
+
+    ``is_premium``/``is_added`` alone said a connector could not be connected
+    but never why: a premium connector must be enabled by Mammoth sales
+    before this workspace can use it, unlike an ordinary connector nobody has
+    added yet. Without this, an agent that reads ``connector list`` can route
+    a user to sales but never explain why (T2-WPP-W7).
+    """
+    if not isinstance(data, dict) or not isinstance(data.get("connectors"), list):
+        return data
+    connectors: list[Any] = []
+    locked_names: list[str] = []
+    for item in data["connectors"]:
+        if isinstance(item, dict) and item.get("is_premium") and not item.get("is_added"):
+            item = {**item, "availability": _PREMIUM_NOT_ENABLED}
+            name = item.get("disp_name") or item.get("name_key")
+            if isinstance(name, str):
+                locked_names.append(name)
+        connectors.append(item)
+    if not locked_names:
+        return {**data, "connectors": connectors}
+    note = (
+        "Premium connector(s) not enabled in this workspace: "
+        + ", ".join(locked_names)
+        + ". Mammoth sales must enable a premium connector before it can be "
+        "connected; tell the user and offer to contact sales."
+    )
+    return {**data, "connectors": connectors, "premium_connector_note": note}
+
+
 def connector_list(invocation: Invocation) -> HandlerResult:
     """List all available connectors (workspace-scoped, no project)."""
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation))
-    return data, _meta(invocation, auth.workspace_id, resolved_project(invocation))
+    return (
+        _with_premium_availability(data),
+        _meta(invocation, auth.workspace_id, resolved_project(invocation)),
+    )
 
 
 def connector_ai_chat(invocation: Invocation) -> HandlerResult:
