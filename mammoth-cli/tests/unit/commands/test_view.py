@@ -1927,11 +1927,34 @@ def test_pipeline_rerun_passes_dataview_id(fake_service: FakeMammothService) -> 
 def test_pipeline_rerun_forwards_from_sequence(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
+    fake_service.responses[_DATAVIEW_GET] = {"row_count": 5}
     doc = _doc(tmp_path, {"from_sequence": 2, "dataset_id": 9})
-    view_cmd.view_pipeline_rerun(_inv("view.pipeline.rerun", extra_args=["7"], input_file=doc))
-    assert fake_service.call_log == [
-        (_PIPE_RERUN, {"dataview_id": 7, "from_sequence": 2, "dataset_id": 9})
-    ]
+    data, _meta = view_cmd.view_pipeline_rerun(
+        _inv("view.pipeline.rerun", extra_args=["7"], input_file=doc)
+    )
+    assert (_PIPE_RERUN, {"dataview_id": 7, "from_sequence": 2, "dataset_id": 9}) in (
+        fake_service.call_log
+    )
+    assert data["row_check"] == {"rows_before": 5, "rows_after": 5}
+
+
+def test_pipeline_rerun_with_processing_status_settles_to_done(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    fake_service.responses[_PIPE_RERUN] = {"status": "processing"}
+    fake_service.responses[_DATAVIEW_GET] = {"row_count": 5}
+    doc = _doc(tmp_path, {"dataset_id": 9})
+    data, _meta = view_cmd.view_pipeline_rerun(
+        _inv("view.pipeline.rerun", extra_args=["7"], input_file=doc)
+    )
+    assert data["status"] == "done"
+
+
+def test_pipeline_rerun_without_dataset_id_never_settles(
+    fake_service: FakeMammothService,
+) -> None:
+    view_cmd.view_pipeline_rerun(_inv("view.pipeline.rerun", extra_args=["7"]))
+    assert fake_service.call_log == [(_PIPE_RERUN, {"dataview_id": 7})]
 
 
 def test_pipeline_wait_forwards_timeout(fake_service: FakeMammothService, tmp_path: Path) -> None:
@@ -2054,6 +2077,60 @@ def test_task_delete_proceeds_with_yes(fake_service: FakeMammothService) -> None
     assert fake_service.call_log == [(_TASK_DELETE, {"dataview_id": 7, "task_id": 3})]
 
 
+def test_task_delete_with_dataset_id_settles_processing_to_done(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    """``view task delete`` can return ``status: processing`` right away
+    (evidence: ``{"status":"processing","type_of_modification":"discard_rule"}``);
+    with the parent dataset known, it must settle like every other view
+    write, never leaving ``processing`` as the final result.
+    """
+    fake_service.responses[_TASK_DELETE] = {
+        "status": "processing",
+        "type_of_modification": "discard_rule",
+    }
+    fake_service.responses[_DATAVIEW_GET] = {"row_count": 20}
+    doc = _doc(tmp_path, {"dataset_id": 9})
+    data, _meta = view_cmd.view_task_delete(
+        _inv("view.task.delete", extra_args=["7", "3"], yes=True, input_file=doc)
+    )
+    assert data["status"] == "done"
+    assert data["row_check"] == {"rows_before": 20, "rows_after": 20}
+    assert (_PIPE_WAIT, {"dataview_id": 7, "dataset_id": 9, "timeout": 60.0}) in (
+        fake_service.call_log
+    )
+
+
+def test_task_delete_with_dataset_id_surfaces_a_pipeline_runtime_error(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    fake_service.responses[_TASK_DELETE] = {
+        "status": "processing",
+        "type_of_modification": "discard_rule",
+    }
+    fake_service.responses[_DATAVIEW_GET] = {"row_count": 20}
+    fake_service.responses[_PIPE_GET] = {"state": "ready", "execution_state": "runtime_error"}
+    doc = _doc(tmp_path, {"dataset_id": 9})
+    data, _meta = view_cmd.view_task_delete(
+        _inv("view.task.delete", extra_args=["7", "3"], yes=True, input_file=doc)
+    )
+    assert data["status"] == "failed"
+    assert data["pipeline_error"]["execution_state"] == "runtime_error"
+
+
+def test_task_delete_without_dataset_id_never_settles(fake_service: FakeMammothService) -> None:
+    """No known parent dataset -- like every other settle-and-check path,
+    an unknown parent skips it rather than guessing; the response is
+    forwarded exactly as the backend returned it.
+    """
+    fake_service.responses[_TASK_DELETE] = {"status": "processing"}
+    data, _meta = view_cmd.view_task_delete(
+        _inv("view.task.delete", extra_args=["7", "3"], yes=True)
+    )
+    assert data == {"status": "processing"}
+    assert fake_service.call_log == [(_TASK_DELETE, {"dataview_id": 7, "task_id": 3})]
+
+
 def test_task_get_passes_ids(fake_service: FakeMammothService) -> None:
     view_cmd.view_task_get(_inv("view.task.get", extra_args=["7", "3"]))
     assert fake_service.call_log == [(_TASK_GET, {"dataview_id": 7, "task_id": 3})]
@@ -2090,6 +2167,19 @@ def test_task_update_passes_task_spec(fake_service: FakeMammothService, tmp_path
     assert fake_service.call_log == [
         (_TASK_UPDATE, {"dataview_id": 7, "task_id": 3, "task_spec": {"kind": "sort"}})
     ]
+
+
+def test_task_update_with_dataset_id_settles_processing_to_done(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    fake_service.responses[_TASK_UPDATE] = {"status": "processing"}
+    fake_service.responses[_DATAVIEW_GET] = {"row_count": 12}
+    doc = _doc(tmp_path, {"task_spec": {"kind": "sort"}, "dataset_id": 9})
+    data, _meta = view_cmd.view_task_update(
+        _inv("view.task.update", extra_args=["7", "3"], input_file=doc)
+    )
+    assert data["status"] == "done"
+    assert data["row_check"] == {"rows_before": 12, "rows_after": 12}
 
 
 # ── export.* ────────────────────────────────────────────────────────────────

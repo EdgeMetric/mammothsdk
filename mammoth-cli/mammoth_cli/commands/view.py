@@ -1928,6 +1928,9 @@ def view_pipeline_rerun(invocation: Invocation) -> HandlerResult:
     _forward_optional(document, kwargs, ("from_sequence", "dataset_id"))
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), **kwargs)
+        data = _settle_async_view_write(
+            service, kwargs.get("dataset_id"), dataview_id, invocation.project, data
+        )
     return data, _meta(invocation, auth.workspace_id, None)
 
 
@@ -1982,6 +1985,9 @@ def view_task_delete(invocation: Invocation) -> HandlerResult:
     _forward_optional(document, kwargs, ("dataset_id",))
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), **kwargs)
+        data = _settle_async_view_write(
+            service, kwargs.get("dataset_id"), dataview_id, invocation.project, data
+        )
     return data, _meta(invocation, auth.workspace_id, None)
 
 
@@ -2036,6 +2042,9 @@ def view_task_update(invocation: Invocation) -> HandlerResult:
     _forward_optional(document, kwargs, ("dataset_id",))
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), **kwargs)
+        data = _settle_async_view_write(
+            service, kwargs.get("dataset_id"), dataview_id, invocation.project, data
+        )
     return data, _meta(invocation, auth.workspace_id, None)
 
 
@@ -2701,6 +2710,45 @@ def wait_for_view_row_count(
         return None, pipeline_error
     rows_after = info.get("row_count") if isinstance(info, dict) else None
     return rows_after, pipeline_error
+
+
+def _row_count_now(service: Any, dataset_id: int, view_id: int, project_id: int | None) -> Any:
+    """A view's row count, read directly with no settle wait, best effort."""
+    try:
+        info = service.call(
+            _DATAVIEW_GET_SYMBOL, dataset_id=dataset_id, dataview_id=view_id, project_id=project_id
+        )
+    except Exception:  # noqa: BLE001 -- best effort; the write already ran
+        return None
+    return info.get("row_count") if isinstance(info, dict) else None
+
+
+def _settle_async_view_write(
+    service: Any, dataset_id: Any, view_id: int, project_id: int | None, data: Any
+) -> Any:
+    """Turn an async view write's immediate response into a final one.
+
+    ``view task delete``/``update`` and ``view pipeline rerun`` can return
+    ``status: processing`` right away, before the pipeline has actually run
+    (evidence: ``view task delete`` -> ``{"status":"processing",
+    "type_of_modification":"discard_rule"}``); a caller -- and
+    :mod:`mammoth_cli.runtime.verify`, which reports ``status`` verbatim --
+    must never see that as the final outcome. Only runs when ``dataset_id``
+    is known, like every other settle-and-check path; an unknown parent is
+    skipped rather than guessed.
+    """
+    if dataset_id is None or not isinstance(data, dict):
+        return data
+    dataset_id = int(dataset_id)
+    rows_before = _row_count_now(service, dataset_id, view_id, project_id)
+    rows_after, pipeline_error = wait_for_view_row_count(service, dataset_id, view_id, project_id)
+    data = {**data, "row_check": {"rows_before": rows_before, "rows_after": rows_after}}
+    if pipeline_error is not None:
+        data["pipeline_error"] = pipeline_error
+        data["status"] = "failed"
+    elif data.get("status") == "processing":
+        data["status"] = "done"
+    return data
 
 
 def _view_info_after_settling(
