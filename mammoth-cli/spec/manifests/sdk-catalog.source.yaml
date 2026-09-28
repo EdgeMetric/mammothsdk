@@ -477,7 +477,8 @@ sdk_methods:
   pagination_policy: none
   openapi_operation_ids: []
   notes: 'B15 AUTOMATION_EXTERNAL_EFFECTS: task models can pull cloud files and send email; requires connector/email
-    allowlists and dedicated fixtures.'
+    allowlists and dedicated fixtures. An emailed file (send_an_alert, attachments.dataview_ids) is
+    sent as a CSV per view, capped at 100,000 rows per view.'
 - sdk_symbol: mammoth.api.automations.AutomationsAPI.create_schedule
   canonical_command: null
   alias_of: schedule.create

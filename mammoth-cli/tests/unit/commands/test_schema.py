@@ -254,6 +254,19 @@ def test_append_rows_between_datasets_finds_view_export_dataset() -> None:
     assert "view.export.dataset" in matches
 
 
+def test_email_a_view_as_a_csv_attachment_finds_automation_create() -> None:
+    """A scheduled email action attaches each selected view as a CSV
+    (backend: ``generate_csv_files_for_attachment``); a cold agent phrasing
+    that goal in plain words must still land on automation.create, not just
+    on a synonym-adjacent export command.
+    """
+    matches = {
+        item["command_id"]
+        for item in find_schemas("email a view as a csv attachment every week")["matches"]
+    }
+    assert "automation.create" in matches
+
+
 _EXPORT_DESTINATION_NATURAL_QUERIES = {
     "view.export.azure-blob": "export to azure blob storage",
     "view.export.bigquery": "export to big query",
@@ -471,6 +484,20 @@ def test_json_extract_documents_list_to_rows_item_and_index() -> None:
     assert "Index" in restrictions
     assert "one row per" in restrictions.casefold()
     assert "second json-extract" in restrictions.casefold()
+
+
+def test_automation_create_documents_the_email_csv_row_limit() -> None:
+    """A scheduled email action (task send_an_alert, attachments.dataview_ids)
+    sends each selected view as a CSV file, capped at 100,000 rows per view
+    (backend: generate_csv_files_for_attachment,
+    EMAIL_CSV_ATTACHMENT_ROW_LIMIT); an agent must see the format and the cap
+    without reading the backend source.
+    """
+    schema = get_schema("automation.create")
+    assert schema is not None
+    restrictions = schema["preconditions"]
+    assert "csv" in restrictions.casefold()
+    assert "100,000" in restrictions
 
 
 def test_dataset_create_sdk_catalog_does_not_conflate_cli_waiting() -> None:

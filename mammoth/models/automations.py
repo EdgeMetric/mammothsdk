@@ -283,7 +283,14 @@ class TaskDetailsSpec(BaseModel):
     subject: str | None = None
     recipients: list[str] | None = None
     message: str | None = None
-    attachments: dict[str, Any] | None = None
+    attachments: dict[str, Any] | None = Field(
+        None,
+        description=(
+            "dataview_ids: view ids to email as attachments. Each selected view "
+            "is sent as a CSV file, capped at 100,000 rows per view; a view over "
+            "that limit sends no attachment for it."
+        ),
+    )
     test_email: bool = False
 
     # shared optional
