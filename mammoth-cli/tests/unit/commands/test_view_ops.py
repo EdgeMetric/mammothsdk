@@ -19,6 +19,7 @@ _CREATE = "mammoth.client.ViewsResource.create"
 _GET = "mammoth.client.ViewsResource.get"
 _DELETE = "mammoth.client.ViewsResource.delete"
 _FIND_DATASET = "mammoth.api.pipeline.PipelineAPI.find_dataset_for_dataview"
+_DASHBOARDS_LIST = "mammoth.api.dashboards.DashboardsAPI.list"
 
 
 @pytest.fixture(autouse=True)
@@ -1536,3 +1537,18 @@ def test_expected_task_count_must_be_a_non_negative_integer(
         )
     assert excinfo.value.code == "invalid_resource_context"
     assert fake_service.call_log == []
+
+
+def test_get_names_the_dashboards_built_on_the_view(fake_service: FakeMammothService) -> None:
+    """Asked to send "this board" to Power BI from a view's page, the agent read
+    the view, found no board on it, and never looked for the one built on it
+    (eval T1-D-22)."""
+    fake_service.responses[_GET] = _RichView()
+    fake_service.responses[_DASHBOARDS_LIST] = [
+        {"id": 132, "title": "Sales board", "sources": [7]},
+        {"id": 133, "title": "Other board", "sources": [8]},
+    ]
+
+    data, _ = view_ops_cmd.view_get(_inv("view.get", extra_args=["7"]))
+
+    assert data["dashboards"] == [{"id": 132, "title": "Sales board"}]
