@@ -99,7 +99,11 @@ def test_dry_run_delete_reports_and_sends_nothing(fake_service: FakeMammothServi
     assert data["dry_run"] is True
     assert data["would_call"]["sdk_symbol"] == _DELETE
     assert data["would_call"]["arguments"] == {"dataset_id": 7, "project_id": 180}
-    assert fake_service.call_log == []
+    # dataset_delete reads the dataset first to name the export writing into it
+    # (T1-O-10) in the confirmation message; that read is a `read` symbol, so
+    # the gate lets it through even under --dry-run. Only the delete itself,
+    # the command's own symbol, is withheld.
+    assert fake_service.call_log == [(_DATASET_GET, {"dataset_id": 7, "project_id": 180})]
 
 
 def test_local_validation_still_fails_under_dry_run(fake_service: FakeMammothService) -> None:

@@ -135,6 +135,26 @@ def test_get_without_dataset_id_is_usage_error(fake_service: FakeMammothService)
     assert excinfo.value.code == "missing_argument"
 
 
+def test_get_names_the_export_that_writes_into_this_dataset(
+    fake_service: FakeMammothService,
+) -> None:
+    # T1-O-10: a dataset built by a recurring `view export dataset` carries its
+    # source view/export ids in additional_info; name the export and the exact
+    # command that stops it instead of leaving that as raw additional_info.
+    fake_service.responses[_GET] = {
+        "id": 2625,
+        "additional_info": {"DATAVIEW_ID": 3229, "TRIGGER_ID": 225},
+    }
+    result, _meta = dataset_cmd.dataset_get(_inv("dataset.get", project=180, extra_args=["2625"]))
+    assert "mammoth view export delete 3229 225" in result["hint"]
+
+
+def test_get_without_additional_info_has_no_hint(fake_service: FakeMammothService) -> None:
+    fake_service.responses[_GET] = {"id": 7}
+    result, _meta = dataset_cmd.dataset_get(_inv("dataset.get", project=180, extra_args=["7"]))
+    assert "hint" not in result
+
+
 def test_batch_data_rejects_invalid_paging_before_service(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
@@ -406,12 +426,33 @@ def test_delete_blocked_without_confirmation(fake_service: FakeMammothService) -
             _inv("dataset.delete", project=180, extra_args=["7"], output="json")
         )
     assert excinfo.value.code == "confirmation_required"
-    assert fake_service.call_log == []
+    # The preview read that builds the confirmation message is a read, not a
+    # mutation; only the delete call itself must be withheld.
+    assert fake_service.call_log == [(_GET, {"dataset_id": 7, "project_id": 180})]
+
+
+def test_delete_blocked_without_confirmation_names_the_writing_export(
+    fake_service: FakeMammothService,
+) -> None:
+    # T1-O-10: the confirmation preview must name the export writing into this
+    # dataset and the command that stops it, not just "delete dataset 2625".
+    fake_service.responses[_GET] = {
+        "id": 2625,
+        "additional_info": {"DATAVIEW_ID": 3229, "TRIGGER_ID": 225},
+    }
+    with pytest.raises(CliError) as excinfo:
+        dataset_cmd.dataset_delete(
+            _inv("dataset.delete", project=180, extra_args=["2625"], output="json")
+        )
+    assert "mammoth view export delete 3229 225" in excinfo.value.message
 
 
 def test_delete_proceeds_with_yes(fake_service: FakeMammothService) -> None:
     dataset_cmd.dataset_delete(_inv("dataset.delete", project=180, extra_args=["7"], yes=True))
-    assert fake_service.call_log == [(_DELETE, {"dataset_id": 7, "project_id": 180})]
+    assert fake_service.call_log == [
+        (_GET, {"dataset_id": 7, "project_id": 180}),
+        (_DELETE, {"dataset_id": 7, "project_id": 180}),
+    ]
 
 
 # -- bulk-delete --------------------------------------------------------

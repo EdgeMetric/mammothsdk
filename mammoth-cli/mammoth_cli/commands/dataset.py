@@ -184,8 +184,9 @@ def dataset_find(invocation: Invocation) -> HandlerResult:
     return {
         "matches": matches,
         "projects_searched": len(projects),
-        "projects_truncated": invocation.project is None
-        and len(projects) >= _MAX_PROJECTS_SEARCHED,
+        "projects_truncated": (
+            invocation.project is None and len(projects) >= _MAX_PROJECTS_SEARCHED
+        ),
     }, meta
 
 
@@ -200,12 +201,39 @@ def dataset_list(invocation: Invocation) -> HandlerResult:
     return data, _meta(invocation, auth.workspace_id, project_id)
 
 
+def _export_write_hint(data: dict[str, Any]) -> str | None:
+    """Name the recurring export that writes into this dataset, if any.
+
+    A dataset produced by ``view export dataset`` carries its source view and
+    export ids in ``additional_info`` (``DATAVIEW_ID``/``TRIGGER_ID`` — an
+    export is a ``DataviewActionTrigger`` row, so ``TRIGGER_ID`` is exactly the
+    ``export_id`` argument ``view export delete`` takes). Deleting the dataset
+    does not stop that export from writing into it again; name the export and
+    the command that stops it (T1-O-10: an agent deleted the dataset instead).
+    """
+    additional_info = data.get("additional_info")
+    if not isinstance(additional_info, dict):
+        return None
+    dataview_id = additional_info.get("DATAVIEW_ID")
+    export_id = additional_info.get("TRIGGER_ID")
+    if not isinstance(dataview_id, int) or not isinstance(export_id, int):
+        return None
+    return (
+        f"This dataset is written by a recurring export from view {dataview_id} "
+        f"(export {export_id}); deleting the dataset does not stop the export. "
+        f"Run 'mammoth view export delete {dataview_id} {export_id}' to stop it."
+    )
+
+
 def dataset_get(invocation: Invocation) -> HandlerResult:
     """Get one dataset by id in the active project."""
     project_id = require_project(invocation)
     dataset_id = _require_int_positional(invocation, "dataset id")
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), dataset_id=dataset_id, project_id=project_id)
+    hint = _export_write_hint(data) if isinstance(data, dict) else None
+    if hint is not None:
+        data = {**data, "hint": hint}
     return data, _meta(invocation, auth.workspace_id, project_id)
 
 
@@ -432,11 +460,21 @@ def dataset_delete(invocation: Invocation) -> HandlerResult:
     """Permanently delete one dataset by id. Prompt or ``--yes`` required."""
     project_id = require_project(invocation)
     dataset_id = _require_int_positional(invocation, "dataset id")
-    enforce_confirmation(
-        invocation, policy=POLICY_PROMPT_OR_YES, action=f"delete dataset {dataset_id}"
-    )
+    action = f"delete dataset {dataset_id}"
     with open_service(invocation) as (service, auth):
+        # A read, not a mutation: the dry-run gate lets it through so the
+        # confirmation message below can name the export writing into this
+        # dataset (T1-O-10), the same as a real run would see.
+        preview = service.call(
+            "mammoth.api.datasets.DatasetsAPI.get", dataset_id=dataset_id, project_id=project_id
+        )
+        hint = _export_write_hint(preview) if isinstance(preview, dict) else None
+        if hint is not None:
+            action = f"{action}. {hint}"
+        enforce_confirmation(invocation, policy=POLICY_PROMPT_OR_YES, action=action)
         data = service.call(_symbol(invocation), dataset_id=dataset_id, project_id=project_id)
+    if hint is not None and isinstance(data, dict):
+        data = {**data, "hint": hint}
     return data, _meta(invocation, auth.workspace_id, project_id)
 
 
