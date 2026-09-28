@@ -220,7 +220,7 @@ class View(
                 last_seq = max(int(k) for k in taskwise_info)
                 task_info = taskwise_info.get(last_seq) or taskwise_info.get(str(last_seq)) or {}
                 columns_list = task_info.get("metadata") or []
-            except (ValueError, TypeError):
+            except ValueError, TypeError:
                 pass
 
         # Fresh view with no tasks yet — taskwise_info is null, fall back to
@@ -563,7 +563,7 @@ class View(
                 return False
             try:
                 target_matches = int(target) == target_ds_id
-            except (TypeError, ValueError):
+            except TypeError, ValueError:
                 target_matches = False
             if not target_matches:
                 return False
@@ -1168,6 +1168,14 @@ class ViewExport:
             target_ds_id: Existing dataset to write into; None creates a new one.
             save_as_mode: Replace or append when writing the output dataset.
             column_mapping: Source -> destination column-name map (empty = all).
+                Renames only: when ``target_ds_id`` is None (a new dataset),
+                any view column left out of this map is kept under its
+                current name automatically, so a rename-only map (for
+                example ``{"petal_width": "width_cm"}``) still copies every
+                other column instead of silently dropping them. Writing into
+                an EXISTING dataset (``target_ds_id`` set) maps exactly the
+                listed columns, as before -- there the caller is matching a
+                specific target schema.
             label_ids: Folder/label ids for the new dataset.
             condition: Optional row filter applied before copying.
             timeout: Max seconds to wait for the job.
@@ -1193,6 +1201,16 @@ class ViewExport:
                 "target_project_id": target_project_id,
                 "source_project_id": getattr(self._client, "project_id", None),
                 "user_id": user.get("id") if isinstance(user, dict) else None,
+            }
+        if column_mapping and target_ds_id is None:
+            # A rename-only map (e.g. {"petal_width": "width_cm"}) must not
+            # silently drop every other column: the backend treats a
+            # non-empty COLUMN_MAPPING as an allow-list, so any view column
+            # left out never reaches the new dataset. Fill every other
+            # current column in as an identity entry; explicit keys win.
+            column_mapping = {
+                **{name: name for name in self._view.display_names if name not in column_mapping},
+                **column_mapping,
             }
         target_properties = build_branch_out_params(
             dataset_name,
