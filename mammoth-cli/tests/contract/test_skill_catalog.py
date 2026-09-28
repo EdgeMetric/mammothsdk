@@ -77,6 +77,16 @@ def test_skill_md_does_not_grow_past_its_system_prompt_budget() -> None:
     )
 
 
+def test_skill_md_tells_the_agent_to_use_a_tool_for_arithmetic_not_mental_math() -> None:
+    """T2-WPP-W8: an agent subtracted two aggregate totals by hand and got the
+    difference wrong. SKILL.md's "Verify before you report" section must
+    route a reported number through `calc`/`view data compare` instead.
+    """
+    text = (SKILL / "SKILL.md").read_text(encoding="utf-8")
+    assert "never mental math" in text
+    assert "`calc`/`view data compare`" in text
+
+
 #: Measured with ``wc -w`` on the bullet as it read before it was rescoped for
 #: shell vs. embedded use (mammoth-cli 2.0.75): "A command whose schema lists
 #: `secret_fields` takes `--input FILE` (mode 0600); secrets never go in
