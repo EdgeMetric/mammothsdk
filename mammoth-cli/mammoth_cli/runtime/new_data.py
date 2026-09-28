@@ -44,6 +44,16 @@ def with_new_data_path(data: Any) -> Any:
     return {**data, "new_data": paths}
 
 
+def with_file_upload_path(data: Any, dataset_id: int) -> Any:
+    """Return file settings with a ``new_data`` entry: settings with a delimiter
+    exist only for a parsed upload, which the next period's file can join."""
+    info = data.get("info") if isinstance(data, dict) else None
+    if not isinstance(info, dict) or not info.get("delimiter"):
+        return data
+    how = _FROM_FILE.format(id=dataset_id)
+    return {**data, "new_data": [{"dataset_id": dataset_id, "name": None, "how": how}]}
+
+
 def _fed_datasets(value: Any, depth: int) -> Iterator[tuple[dict[str, Any], str]]:
     if depth > _MAX_DEPTH:
         return

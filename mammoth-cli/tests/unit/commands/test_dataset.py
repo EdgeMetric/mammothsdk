@@ -273,6 +273,23 @@ def test_file_settings_passes_dataset_and_project(fake_service: FakeMammothServi
     assert fake_service.call_log == [(_FILE_SETTINGS, {"dataset_id": 7, "project_id": 180})]
 
 
+def test_file_settings_of_an_upload_say_how_the_next_file_joins(
+    fake_service: FakeMammothService,
+) -> None:
+    """Asked to keep Power BI on the latest data of an uploaded CSV, the agent read
+    its file settings, concluded nothing new could ever arrive, and stopped
+    without publishing (eval T1-O-08)."""
+    fake_service.responses[_FILE_SETTINGS] = {"info": {"delimiter": ",", "has_header": True}}
+
+    data, _ = dataset_cmd.dataset_file_settings(
+        _inv("dataset.file-settings.get", project=180, extra_args=["7"])
+    )
+
+    (path,) = data["new_data"]
+    assert path["dataset_id"] == 7
+    assert "append_to_ds_id" in path["how"]
+
+
 def test_broken_rows_list_reads_the_dataset_s_unparsed_lines(
     fake_service: FakeMammothService,
 ) -> None:
