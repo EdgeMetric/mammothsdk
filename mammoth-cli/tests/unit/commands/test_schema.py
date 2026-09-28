@@ -734,6 +734,21 @@ def test_automation_create_documents_the_email_csv_row_limit() -> None:
     assert "per view" not in restrictions.casefold()
 
 
+def test_publish_db_and_powerbi_document_that_the_target_refreshes_on_rerun() -> None:
+    """T1-O-08: an agent found both typed exports, then talked itself out of
+    calling either one over an unstated worry about whether the destination
+    stays live. Both become a persistent pipeline step (like `view export
+    dataset`): the target refreshes automatically every time the source
+    view's pipeline reruns, not just once at call time.
+    """
+    for command_id in ("view.export.publish-db", "view.export.powerbi"):
+        schema = get_schema(command_id)
+        assert schema is not None
+        restrictions = schema["preconditions"]
+        assert "refresh" in restrictions.casefold(), command_id
+        assert "rerun" in restrictions.casefold() or "re-run" in restrictions.casefold(), command_id
+
+
 def test_dataset_create_sdk_catalog_does_not_conflate_cli_waiting() -> None:
     """The SDK returns a job handle; the CLI handler owns its always-wait policy."""
     catalog = yaml.safe_load(

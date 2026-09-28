@@ -9577,7 +9577,7 @@
       "capability_id": "REL-437",
       "capability": "Create automation",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Created automation id=1 after two failed attempts: agent_example's run_data_retrieval needs cloud-source dataset ids (4AUTO006), and send_an_alert needed attachments.dataview_ids (undocumented shape) in addition to recipients/subject. Single invocation only.",
+      "remarks": "Partial bounded evidence only; fixture-lifecycle sweep 2026-09-19: exit 0 on CLI 2.0.18. Created automation id=1 after two failed attempts: run_data_retrieval needs cloud-source dataset ids (4AUTO006); send_an_alert needs attachments.dataview_ids, sent as CSV. Single invocation only.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "CreateAutomation",
       "method": "POST",

@@ -10,7 +10,7 @@ Example: `mammoth automation create 'Revenue report' --input '{"description": "s
 
 Result: `AutomationCreateResult`; mutation `external_effect`, confirmation `yes_always`, wait policy `not_async`.
 
-Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Created automation id=1 after two failed attempts: agent_example's run_data_retrieval needs cloud-source dataset ids (4AUTO006), and send_an_alert needed attachments.dataview_ids (undocume…
+Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19: exit 0 on CLI 2.0.18. Created automation id=1 after two failed attempts: run_data_retrieval needs cloud-source dataset ids (4AUTO006); send_an_alert needs attachments.dataview_ids, sent as CSV. Single invocation only.
 
 ### `automation.delete`
 

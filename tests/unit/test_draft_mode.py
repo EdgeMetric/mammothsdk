@@ -146,7 +146,7 @@ class TestSetAutoRun:
 
         mock_client.pipeline.edit_pipeline.assert_called_once_with(
             view.id,
-            [{"op": "command", "path": "auto_run", "value": True}],
+            [{"op": "replace", "path": "auto_run", "value": True}],
             SAMPLE_DATASET_ID,
         )
         assert view.is_draft_mode is False
@@ -160,7 +160,7 @@ class TestSetAutoRun:
 
         mock_client.pipeline.edit_pipeline.assert_called_once_with(
             view.id,
-            [{"op": "command", "path": "auto_run", "value": False}],
+            [{"op": "replace", "path": "auto_run", "value": False}],
             SAMPLE_DATASET_ID,
         )
         assert view.is_draft_mode is True
