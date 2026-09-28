@@ -69,6 +69,10 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: connector.ai.session.list
+    ids: {}
+    kind: object
 - command_id: connector.ai.history
   command_path: connector ai history
   disposition: command
@@ -220,6 +224,10 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: connector.ai.session.list
+    ids: {}
+    kind: object
 - command_id: connector.ai.submit-credentials
   command_path: connector ai submit-credentials
   disposition: command
@@ -256,6 +264,10 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: connector.ai.session.list
+    ids: {}
+    kind: object
 - command_id: connector.connection.create
   command_path: connector connection create
   disposition: command
@@ -296,6 +308,11 @@ commands:
   undo_test: null
   known_restrictions: Fixture required; connection documents are discriminated by connector_key.
   reviewed_by: primary
+  readback:
+    command: connector.connection.list
+    ids:
+      connector_key: positional.0
+    kind: object
 - command_id: connector.connection.delete
   command_path: connector connection delete
   disposition: command
@@ -342,6 +359,11 @@ commands:
   undo_test: null
   known_restrictions: Resolve immutable key before confirmation; fixture required.
   reviewed_by: primary
+  readback:
+    command: connector.connection.list
+    ids:
+      connector_key: positional.0
+    kind: object
 - command_id: connector.connection.get
   command_path: connector connection get
   disposition: command
@@ -475,6 +497,12 @@ commands:
   undo_test: null
   known_restrictions: Require --yes if validation contacts the destination; fixture required.
   reviewed_by: primary
+  readback:
+    command: connector.connection.get
+    ids:
+      connector_key: positional.0
+      connection_key: positional.1
+    kind: object
 - command_id: connector.ds-config.create
   command_path: connector ds-config create
   disposition: command
@@ -521,6 +549,12 @@ commands:
   undo_test: null
   known_restrictions: Require exactly one source and reject validate && data_sample; fixture required.
   reviewed_by: primary
+  readback:
+    command: connector.ds-config.list
+    ids:
+      connector_key: positional.0
+      connection_key: positional.1
+    kind: object
 - command_id: connector.ds-config.delete
   command_path: connector ds-config delete
   disposition: command
@@ -573,6 +607,12 @@ commands:
   undo_test: null
   known_restrictions: Resolve immutable key before confirmation; fixture required.
   reviewed_by: primary
+  readback:
+    command: connector.ds-config.list
+    ids:
+      connector_key: positional.0
+      connection_key: positional.1
+    kind: object
 - command_id: connector.ds-config.delete-all
   command_path: connector ds-config delete-all
   disposition: command
@@ -620,6 +660,12 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: connector.ds-config.list
+    ids:
+      connector_key: positional.0
+      connection_key: positional.1
+    kind: object
 - command_id: connector.ds-config.get
   command_path: connector ds-config get
   disposition: command
@@ -772,6 +818,13 @@ commands:
   known_restrictions: Only query has current server support; other enum paths remain blocked pending successful
     server evidence. Fixture required.
   reviewed_by: primary
+  readback:
+    command: connector.ds-config.get
+    ids:
+      connector_key: positional.0
+      connection_key: positional.1
+      ds_config_key: positional.2
+    kind: object
 - command_id: connector.get
   command_path: connector get
   disposition: command

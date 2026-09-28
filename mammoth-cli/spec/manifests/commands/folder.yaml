@@ -34,6 +34,10 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: folder.list
+    ids: {}
+    kind: object
 - command_id: folder.create
   command_path: folder create
   disposition: command
@@ -74,6 +78,11 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: folder.get
+    ids:
+      folder_id: result.folder.id
+    kind: object
 - command_id: folder.delete
   command_path: folder delete
   disposition: command
@@ -115,6 +124,10 @@ commands:
   known_restrictions: Sorted ID-set confirmation, plus exact project ID and phrase DELETE FOLDER CONTENTS
     when removing contents.
   reviewed_by: primary
+  readback:
+    command: folder.list
+    ids: {}
+    kind: object
 - command_id: folder.find
   command_path: folder find
   disposition: command
@@ -266,6 +279,11 @@ commands:
     as folder list/folder get/folder create return it (NOT the folder's resource_id field, despite this
     parameter's name).
   reviewed_by: primary
+  readback:
+    command: job.get
+    ids:
+      job_id: result.job_id
+    kind: delivery
 - command_id: folder.root
   command_path: folder root
   disposition: command
@@ -340,6 +358,11 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: folder.get
+    ids:
+      folder_id: positional.0
+    kind: object
 - command_id: folder.update
   command_path: folder update
   disposition: command
@@ -380,3 +403,8 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: folder.get
+    ids:
+      folder_id: positional.0
+    kind: object
