@@ -4625,7 +4625,7 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.pipeline.PipelineAPI.preview_task
   implementation_origin: mammoth.api.pipeline.PipelineAPI.preview_task
-  signature: 'preview_task(self, dataview_id: ''int'', task_spec: ''dict[str, Any]'', dataset_id: ''int | None'' = None) -> ''dict[str, Any]'''
+  signature: 'preview_task(self, dataview_id: ''int'', task_spec: ''dict[str, Any]'', dataset_id: ''int | None'' = None, sample_size: ''int | None'' = None) -> ''dict[str, Any]'''
   openapi_operation_ids: []
   canonical_command: view.task.preview
   alias_of: null

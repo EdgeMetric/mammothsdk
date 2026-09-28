@@ -830,6 +830,21 @@ class TestPipelineAPI:
         await client.pipeline.delete_task(dataview_id=42, task_id=7, dataset_id=500)
         assert_called_with_method_and_endpoint(client._request_json, "DELETE", "/pipeline/tasks/7")
 
+    async def test_preview_task_can_say_how_many_rows_to_sample(
+        self, client: MammothClient
+    ):
+        """A caller showing a preview to a person chooses how much to show."""
+        await client.pipeline.preview_task(
+            dataview_id=42, task_spec={"MATH": {}}, dataset_id=500, sample_size=25
+        )
+        assert client._request_json.call_args.kwargs["params"] == {"sample_size": 25}
+
+    async def test_preview_task_that_names_no_size_leaves_the_route_its_own(
+        self, client: MammothClient
+    ):
+        await client.pipeline.preview_task(dataview_id=42, task_spec={"MATH": {}}, dataset_id=500)
+        assert client._request_json.call_args.kwargs.get("params") is None
+
     async def test_preview_task(self, client: MammothClient):
         await client.pipeline.preview_task(dataview_id=42, task_spec={"MATH": {}}, dataset_id=500)
         assert_called_with_method_and_endpoint(

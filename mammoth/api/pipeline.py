@@ -406,7 +406,11 @@ class PipelineAPI:
         return await self._client._wait_if_job(response)
 
     async def preview_task(
-        self, dataview_id: int, task_spec: dict[str, Any], dataset_id: int | None = None
+        self,
+        dataview_id: int,
+        task_spec: dict[str, Any],
+        dataset_id: int | None = None,
+        sample_size: int | None = None,
     ) -> dict[str, Any]:
         """Preview task results without adding to pipeline.
 
@@ -414,13 +418,17 @@ class PipelineAPI:
             dataview_id: ID of the dataview.
             task_spec: Task specification to preview.
             dataset_id: Dataset ID (auto-detected if not provided).
+            sample_size: How many rows to sample; server default if omitted.
 
         Returns:
             Preview result dict with sample data.
         """
         ws, proj, ds, dv = await self._resolve_ids(dataview_id, dataset_id)
         response = await self._client._request_json(
-            "POST", f"{self._base_url(ws, proj, ds, dv)}/task_preview", json=task_spec
+            "POST",
+            f"{self._base_url(ws, proj, ds, dv)}/task_preview",
+            json=task_spec,
+            params={"sample_size": sample_size} if sample_size is not None else None,
         )
         return await self._client._wait_if_job(response)
 
