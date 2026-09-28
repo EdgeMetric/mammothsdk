@@ -30,3 +30,24 @@ def test_a_real_dataset_read_carries_the_health_entry(
     assert result.exit_code == 0, result.output
     health = json.loads(result.output)["data"]["dataset_health"]
     assert [h["dataset_id"] for h in health] == [2759]
+
+
+def test_a_real_dataset_read_says_how_new_data_arrives(
+    isolated_cli_config: object, fake_service: FakeMammothService
+) -> None:
+    """Wiring: the next-file path reaches what ``dataset get`` returns."""
+    login_default_profile()
+    fake_service.responses["mammoth.api.datasets.DatasetsAPI.get"] = {
+        "id": 2830,
+        "name": "brand_campaigns.csv",
+        "status": "ready",
+        "sources": [{"type": "file"}],
+    }
+
+    result = make_runner().invoke(
+        ["dataset", "get", "2830", "--project", "180", "--output", "json", "--no-input"]
+    )
+
+    assert result.exit_code == 0, result.output
+    paths = json.loads(result.output)["data"]["new_data"]
+    assert [p["dataset_id"] for p in paths] == [2830]
