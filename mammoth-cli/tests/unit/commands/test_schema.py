@@ -421,6 +421,23 @@ def test_per_dataset_storage_intent_reaches_storage_breakdown() -> None:
         assert "workspace.storage-breakdown" in matches, f"{query!r} -> {matches}"
 
 
+def test_independent_dataset_copy_intent_reaches_view_create() -> None:
+    """Live-eval evidence (T1-T-28): 'keep this table as is, but give the West
+    team their own copy they can change' -- the model tried 'copy or
+    duplicate a dataset', 'duplicate dataset as independent copy', 'clone
+    dataset without changing source view pipeline'; view.create (a new view
+    on the same dataset is exactly that editable, source-preserving copy)
+    never ranked for any of them.
+    """
+    for query in (
+        "copy or duplicate a dataset",
+        "duplicate dataset as independent copy",
+        "clone dataset without changing source view pipeline",
+    ):
+        matches = [item["command_id"] for item in find_schemas(query)["matches"]]
+        assert "view.create" in matches, f"{query!r} -> {matches}"
+
+
 def test_support_family_ranks_below_any_non_support_match_and_is_labeled() -> None:
     matches = find_schemas("workspace user")["matches"]
     is_support = [m["command_id"].startswith("support.") for m in matches]

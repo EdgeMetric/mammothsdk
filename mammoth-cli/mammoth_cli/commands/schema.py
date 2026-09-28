@@ -289,7 +289,16 @@ _COMMAND_DISCOVERY_PURPOSES = {
         "distribution spread histogram top most common frequent values breakdown share "
         "percentage profile"
     ),
-    "view.create": "start a new one from an existing dataset, duplicate",
+    # "Give the West team their own copy they can change" / "duplicate this
+    # dataset as an independent copy" / "clone it without changing the
+    # source pipeline" -- a new view on the same dataset IS that editable
+    # copy (its own pipeline, the source view untouched) but none of these
+    # phrasings ever reached it; the query's own incidental words (schema
+    # find is an AND-term search) needed saying explicitly.
+    "view.create": (
+        "start a new one from an existing dataset, duplicate copy clone "
+        "independent without changing the source pipeline"
+    ),
     "dataset.list": "list every dataset in a project workspace",
     # "month"/"week" are kept as generic calendar-grouping vocabulary (a
     # group-by dimension any dataset can have), not a specific business
