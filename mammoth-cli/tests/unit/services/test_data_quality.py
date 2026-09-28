@@ -127,14 +127,14 @@ def test_no_duplicate_rows_is_quiet() -> None:
 
 
 def test_variant_spellings_are_grouped_with_a_bulk_replace_fix() -> None:
-    rows = _rows(["PEPSI", "Pepsi ", "pepsi", "Coke", "Coke", "Sprite"], column="brand")
+    rows = _rows(["PEPSI", "Pepsi ", "pepsi", "Pepsi", "Pepsi", "Coke", "Sprite"], column="brand")
     warning = _variant_warning(rows, view_id=62)
-    assert "{'PEPSI', 'Pepsi ', 'pepsi'} -> 'Pepsi'" in warning["detail"]
+    assert "{'PEPSI', 'Pepsi', 'Pepsi ', 'pepsi'} -> 'Pepsi'" in warning["detail"]
     assert warning["fix"].startswith("mammoth view transform bulk-replace 62 --input ")
     payload = json.loads(warning["fix"].split("--input ", 1)[1].strip("'"))
     assert payload["columns"] == ["brand"]
     (mapping,) = payload["mapping"]
-    assert sorted(mapping["search"]) == ["PEPSI", "Pepsi ", "pepsi"]
+    assert sorted(mapping["search"]) == ["PEPSI", "Pepsi", "Pepsi ", "pepsi"]
     assert mapping["replace"] == "Pepsi"
 
 
@@ -184,3 +184,11 @@ def test_no_variant_spellings_is_quiet_for_distinct_words() -> None:
     assert [
         w for w in column_warnings(rows, {"brand": "TEXT"}) if w["issue"] == "variant_spellings"
     ] == []
+
+
+def test_variant_spellings_replace_with_the_most_used_real_spelling() -> None:
+    rows = _rows(["McDonald's", "McDonald's", "mcdonald's", "Kfc", "Taco"], column="brand")
+    warning = _variant_warning(rows, view_id=7)
+
+    assert '-> "McDonald\'s"' in warning["detail"]
+    assert "Mcdonald'S" not in warning["fix"]

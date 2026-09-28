@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import json
 import re
+from collections import Counter
 from collections.abc import Iterable, Mapping
 from datetime import datetime
 from typing import Any
@@ -102,6 +103,15 @@ def _variant_spelling_groups(texts: list[str]) -> list[tuple[str, list[str]]]:
     return sorted(groups, key=lambda item: item[0])
 
 
+def _most_used_spelling(values: list[str], counts: Counter[str]) -> str:
+    """The group's most frequent real spelling (first seen on a tie), trimmed.
+
+    Never a synthesised form such as ``str.title()``, which would rewrite
+    "McDonald's" as "Mcdonald'S".
+    """
+    return max(values, key=lambda value: counts[value]).strip()
+
+
 def _variant_spellings_warning(
     column: str,
     texts: list[str],
@@ -112,9 +122,11 @@ def _variant_spellings_warning(
     if not groups:
         return None
     shown = groups[:_MAX_VARIANT_GROUPS]
-    mapping = [{"search": sorted(values), "replace": key.title()} for key, values in shown]
+    counts = Counter(texts)
+    canonical = {key: _most_used_spelling(values, counts) for key, values in shown}
+    mapping = [{"search": sorted(values), "replace": canonical[key]} for key, values in shown]
     examples = "; ".join(
-        "{" + ", ".join(repr(v) for v in sorted(values)) + "}" + f" -> {key.title()!r}"
+        "{" + ", ".join(repr(v) for v in sorted(values)) + "}" + f" -> {canonical[key]!r}"
         for key, values in shown
     )
     detail = (
