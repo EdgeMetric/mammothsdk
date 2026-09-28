@@ -660,6 +660,10 @@ class SdkMammothService:
             if not isinstance(item, str):
                 return item
             try:
+                return int(item)
+            except ValueError:
+                pass
+            try:
                 number = float(item)
             except ValueError:
                 raise SdkMammothService._condition_value_type_error(
