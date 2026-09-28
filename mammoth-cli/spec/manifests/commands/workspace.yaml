@@ -485,7 +485,7 @@ commands:
   request_model: WorkspaceUserAddRequest
   result_model: WorkspaceUserAddResult
   mutation_class: benign_mutation
-  confirmation: none
+  confirmation: yes_always
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: contract_only_high_impact
@@ -495,7 +495,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth workspace user add --help
-  agent_example: 'mammoth workspace user add --input ''{"email_ids": ["analyst@example.com"]}'''
+  agent_example: 'mammoth workspace user add --yes --input ''{"email_ids": ["analyst@example.com"]}'''
   unit_tests:
   - UT-WORKSPACE-USER-ADD
   contract_tests:

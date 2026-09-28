@@ -29,16 +29,16 @@ mammoth doctor                          # auth, endpoint, connectivity, version;
 mammoth project ensure 'PROJECT NAME'   # get-or-create; becomes the active project
 ```
 
-`doctor` failing is a precondition failure, not a reason to proceed anyway.
+`doctor` failing is a precondition failure; never proceed anyway.
 When the connection check fails with a 502, 504 or timeout, `mammoth doctor
 --input '{"wait": 300}'` probes again for up to that many seconds; continue
 only once it passes. Production is the `app` endpoint; use `release` only
 when named, and check `meta.profile`/`auth status` `endpoint` match before
 continuing. If no profile has credentials, tell the operator to run
 `mammoth auth login` in their own terminal (add
-`--profile NAME` only for a profile other than `default`; [auth](references/auth.md)
+`--profile NAME` only if not `default`; [auth](references/auth.md)
 says where the token comes from) and wait; never ask for the token in chat,
-never read one from a file or environment variable, never run `auth login`
+never read one from a file/env var, never run `auth login`
 yourself. If any envelope carries `meta.update_available`, run its `command`
 before the next step.
 
@@ -51,8 +51,7 @@ before the next step.
 - The CLI remembers which dataset owns each view from any read (`view list
   DATASET_ID`, `view get VIEW_ID`, an upload). After that, no `dataset_id`
   on transforms, exports or deletes. If a command asks for the parent
-  `DATASET_ID`, read the view once and repeat it; an explicit value always
-  wins.
+  `DATASET_ID`, read the view once and repeat it; an explicit value wins.
 - Commands that start platform work wait up to 300 s for the job; on
   `timeout` use the `job get` recovery command printed, do not resubmit.
 
@@ -157,8 +156,8 @@ your report. If no column links the files, ask before you combine them.
   deliverables; cleanup is exact-ID authorized and
   never means delete-all-owned-resources: delete only ids this run created,
   one per call, and read back that they are gone.
-- A command whose schema lists `secret_fields` takes `--input FILE` (mode
-  0600); secrets never go in argv, notes, checkpoints or replies.
+- `secret_fields` commands send secrets via `--input`: 0600 FILE (shell)
+  or JSON (embedded); never in replies, notes, checkpoints or run logs.
 
 ## Verify before you report
 
@@ -166,7 +165,7 @@ your report. If no column links the files, ask before you combine them.
   change (set-values, filter, replace, join, fill) run `view data get
   VIEW_ID` (50 rows by default, `limit` to change) and check rows the
   condition should and should not have touched. Sample the target column
-  *before* the change for comparison.
+  before the change.
 - A uniform result (every amount 0, every region "Unknown", most join rows
   unmatched) means the previous step went wrong; stop and re-inspect it.
 - `column_warnings` on a data read and `join_check` on a join are findings,
@@ -175,13 +174,14 @@ your report. If no column links the files, ask before you combine them.
 - A timeout, exit 7 or interruption does not prove failure; reconcile an
   `outcome_unknown` (`job get`, `view task list`) before replaying.
 - Check an answer with no write against the question (a trend: time
-  buckets, a partial period named); no `project check`.
+  buckets, a partial period named; no `project check`); a reported number
+  comes from `calc`/`view data compare`, never mental math.
 - After a write, run `mammoth project check PROJECT_ID` and fix each
-  `to_report` line, or give it one line in the report.
+  `to_report` line, or note it in the report.
 - Run the [report checklist](references/report-checklist.md) before stating
   a number or calling a step done. When files disagree,
-  [capabilities](references/capabilities.md) wins over a recipe, which wins
-  over the generated catalog.
+  [capabilities](references/capabilities.md) wins over a recipe, then the
+  generated catalog.
 
 ## Route only what the task needs
 

@@ -116,12 +116,18 @@ _COMMAND_DISCOVERY_PURPOSES = {
     # family, whose OpenAPI summary literally says "chat session", outranked
     # them. These two ARE the past-conversation lookup: list the sessions,
     # then read one's messages.
+    # "Pick up where we left off last time" / "continue where I left off" /
+    # "resume my previous conversation" is the same past-conversation lookup
+    # under different wording -- the model instead searched "recent project
+    # activity" and "activity list", since neither command said "left off",
+    # "last time", "resume", "pick up", or "continue".
     "agent.session.list": (
         "chat conversation conversations history past previous asked earlier week "
-        "messages sessions"
+        "messages sessions where left off last time resume pick up continue"
     ),
     "agent.session.messages": (
-        "chat conversation conversations history past previous asked earlier week read"
+        "chat conversation conversations history past previous asked earlier week read "
+        "where left off last time resume pick up continue"
     ),
     "workspace.user.add": (
         "invite add member teammate email role editor viewer admin assign permission access"
@@ -142,6 +148,17 @@ _COMMAND_DISCOVERY_PURPOSES = {
     "workspace.app-usage": (
         "storage usage used space how much plan current allowed total quota limit"
     ),
+    # "Which datasets use the most storage" / "storage used by each dataset"
+    # / "per-project storage breakdown" only ever reached dataset.get,
+    # workflow.workspace-datasets or workspace.app-usage (the total, not a
+    # breakdown) -- never this command, the one whose result actually is a
+    # per-dataset (and per-project) size list (dataset_id, dataset_name,
+    # project_id, dataset_size, total_size, views). Deliberately omits
+    # "storage" (already an id/path token here, unlike app-usage) so a bare
+    # "storage used" query keeps ranking app-usage's own total first.
+    "workspace.storage-breakdown": (
+        "size used use per dataset datasets project projects largest biggest most which top"
+    ),
     # "Give me this board as a Power BI file" / "open this in Tableau" is the
     # dashboard-to-BI-file export pair, not `view.export.powerbi`/`.tableau`
     # (those publish a live ODBC connection for a dataview, not a downloadable
@@ -149,14 +166,19 @@ _COMMAND_DISCOVERY_PURPOSES = {
     # commands: the dialog answers "what will I get" the same way for either
     # tool (see PowerBiPreflightResponse/TableauPreflightResponse), and the
     # export downloads whichever the caller names via input `target`.
+    # "publish a dashboard OR ITS UNDERLYING VIEW to Power BI" (T1-D-22) hedges
+    # with "view" even though the export is dashboard-only; without "view" in
+    # this text the strict all-terms gate drops these two and the unrelated
+    # view.export.powerbi (a raw ODBC connector, literally named "view") wins.
     "dashboard.bi-preflight": (
-        "power bi powerbi pbix pbip tableau twb twbx workbook file board open this dashboard "
-        "board in power bi desktop or tableau desktop preview dry run what would convert "
-        "figures rows before downloading export"
+        "power bi powerbi pbix pbip tableau twb twbx workbook file board view open this "
+        "dashboard board in power bi desktop or tableau desktop preview dry run what would "
+        "convert figures rows before downloading export"
     ),
     "dashboard.bi-export": (
-        "power bi powerbi pbix pbip tableau twb twbx workbook file board open this dashboard "
-        "board in power bi desktop or tableau desktop download export save project convert"
+        "power bi powerbi pbix pbip tableau twb twbx workbook file board view open this "
+        "dashboard board in power bi desktop or tableau desktop download export save project "
+        "convert"
     ),
     # "Bring my old Power BI report in" / "move my dashboards over" is the
     # workbook-to-Mammoth-dataset import, the opposite direction of
@@ -272,7 +294,16 @@ _COMMAND_DISCOVERY_PURPOSES = {
         "distribution spread histogram top most common frequent values breakdown share "
         "percentage profile"
     ),
-    "view.create": "start a new one from an existing dataset, duplicate",
+    # "Give the West team their own copy they can change" / "duplicate this
+    # dataset as an independent copy" / "clone it without changing the
+    # source pipeline" -- a new view on the same dataset IS that editable
+    # copy (its own pipeline, the source view untouched) but none of these
+    # phrasings ever reached it; the query's own incidental words (schema
+    # find is an AND-term search) needed saying explicitly.
+    "view.create": (
+        "start a new one from an existing dataset, duplicate copy clone "
+        "independent without changing the source pipeline"
+    ),
     "dataset.list": "list every dataset in a project workspace",
     # "month"/"week" are kept as generic calendar-grouping vocabulary (a
     # group-by dimension any dataset can have), not a specific business
@@ -300,6 +331,13 @@ _COMMAND_DISCOVERY_PURPOSES = {
         "url app post posts events rows straight in"
     ),
     "dataset.create-from-pdf": "pdf table document extract get the table out of into a dataset",
+    # "import data from a public URL or JSON API into a dataset" / "fetch or
+    # retrieve JSON from a public URL" (T1-I-16) never matched dataset.create
+    # (ds_creation_type=weburl) -- the capability exists and works once found,
+    # it just had no discovery-purpose text at all.
+    "dataset.create": (
+        "url web link fetch retrieve pull import public website endpoint api json data weburl"
+    ),
     "dashboard.v3.generate": (
         "create build make new generate dashboard board report from a view description "
         "intent sentence ai combined showing"
@@ -308,9 +346,36 @@ _COMMAND_DISCOVERY_PURPOSES = {
         "add change edit update chart charts kpi to an existing dashboard board "
         "by description sentence ai show instead"
     ),
+    # "I messed up the board, put it back to how it was before" (T1-D-09) --
+    # this is the version list dashboard.canvas.restore's target_sequence
+    # comes from (revisions[]: sequence, updated_at, updated_by_name), but
+    # nothing in its own path/purpose said undo/revert/before.
+    "dashboard.chat.history": (
+        "undo revert put back previous version before restore history versions saved "
+        "last change board"
+    ),
     "dashboard.pdf.export": "pdf of a board dashboard download print meeting export",
+    # "single dashboard per-user or row-level region security" (T1-D-03) --
+    # none of the dashboard.rls.* commands had any discovery-purpose text.
+    "dashboard.rls.assignment.list": (
+        "row row-level level security per user per-user per manager per-manager restrict "
+        "each viewer to their own rows region"
+    ),
+    # "publish dashboard" / "make it live" (T1-D-15) -- dashboard.action is the
+    # publish step dashboard.share depends on (fails with 4DASH010 otherwise),
+    # but it had no discovery-purpose text at all.
+    "dashboard.action": "publish make live go live unpublish share delete-source",
+    # "list browse available dashboard templates styles; apply template to
+    # current dashboard" (T1-D-12) returned 0 matches -- dashboard.template.*
+    # had no discovery-purpose text (and the query's plural "templates" never
+    # matches the family's singular path token "template").
+    "dashboard.template.list": (
+        "ready-made pre-built layout gallery browse choose templates styles available"
+    ),
+    "dashboard.template.apply": "apply a ready-made template layout to this board",
     "view.checkpoint.create": (
-        "stop halt pause pipeline alert notify flag when rows match a rule condition checkpoint"
+        "stop halt pause pipeline alert notify flag when if row rows match matches a rule "
+        "condition checkpoint value changes"
     ),
     "view.data-check.create": "data quality check rule validate rows match condition flag",
     "view.derivative.create": "metric kpi number single value to check track daily monitor",
@@ -323,7 +388,18 @@ _COMMAND_DISCOVERY_PURPOSES = {
     "automation.create": (
         "schedule scheduled recurring repeat refresh rerun run every day daily week weekly "
         "hour hourly month monthly automatically trigger alert email a dataset pipeline "
-        "retention purge old data send an emailed file attachment view views csv"
+        "retention purge old data send an emailed file attachment view views csv new folder "
+        "arrives lands dropped"
+    ),
+    # "current subscription plan tier for workspace; billing plan and storage
+    # allowance" (T1-W-06) never matched -- "plan and storage allowance"/
+    # "subscription tier" phrasing had no discovery-purpose text on either
+    # billing command. Deliberately no "much"/generic "how much" wording here:
+    # that would also fully-match the bare "how much storage" query and tie
+    # workspace.app-usage on score (alphabetical tie-break would then wrongly
+    # rank this ahead of it -- see storage_usage_intent guard test).
+    "billing.chargebee-plan": (
+        "current subscription tier plan storage allowance space included for workspace"
     ),
     "billing.subscription.update": "upgrade downgrade bigger plan change subscription tier",
     "billing.invoice.list": "past bills billed billing history invoices payments receipts so far",
@@ -480,6 +556,9 @@ _DISCOVERY_STOPWORDS = frozenset(
         "into",
         "from",
         "and",
+        # Same as "and" -- an incidental conjunction ("Power BI or Tableau")
+        # must not become a required match term.
+        "or",
         "all",
         "each",
         "this",
@@ -505,10 +584,22 @@ _DISCOVERY_STOPWORDS = frozenset(
 )
 # How many near misses a search with no full match returns.
 _MAX_SUGGESTIONS = 5
-_NO_MATCH_HINT = (
-    "No command matched every word. 'suggestions' match some of them; try fewer or other "
-    "words. 'mammoth view transform --help' lists every data transformation (join, pivot, "
-    "filter, dedupe, math, ...), and 'mammoth schema list' is the complete inventory."
+# Cap on the curated purpose text a match's ``matched_on`` field quotes back,
+# so one long entry can't bloat every result in a page.
+_MATCHED_ON_MAX_CHARS = 120
+# T1-R-06: an agent reading "No command matched every word" stopped there and
+# never tried what 'suggestions' actually held (automation.create among
+# them) -- the framing read as a dead end even when it wasn't one. Word the
+# two cases (some candidates vs. none at all) differently so the presence of
+# 'suggestions' reads as "try these" rather than "nothing found".
+_NO_MATCH_HINT_WITH_SUGGESTIONS = (
+    "No single command matched every word, but 'suggestions' lists the closest candidates "
+    "-- each with its own matched_terms. Try one of those before rephrasing."
+)
+_NO_MATCH_HINT_NO_SUGGESTIONS = (
+    "No command matched any word; try fewer or other words. 'mammoth view transform --help' "
+    "lists every data transformation (join, pivot, filter, dedupe, math, ...), and 'mammoth "
+    "schema list' is the complete inventory."
 )
 _TOKEN_RE = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*")
 
@@ -1579,6 +1670,20 @@ def find_schemas(
             "confirmation": record["confirmation"],
             "full_schema_command": f"mammoth schema get {command_id}",
         }
+        # A match on hidden curated purpose text (T1-I-07) is otherwise
+        # invisible to the caller: only command_id/command_path/matched_terms
+        # come back, and a terse docstring-derived example can read as
+        # something else entirely (connector.ai.chat's own example reads as
+        # "ask the AI a question", not "build a connector for an unsupported
+        # API"). Echo the purpose text that matched, capped so a long entry
+        # doesn't bloat every result.
+        if command_purpose and any(term in _tokens(command_purpose) for term in matched_terms):
+            purpose_text = _COMMAND_DISCOVERY_PURPOSES[command_id]
+            entry["matched_on"] = (
+                purpose_text
+                if len(purpose_text) <= _MATCHED_ON_MAX_CHARS
+                else purpose_text[:_MATCHED_ON_MAX_CHARS].rstrip() + "..."
+            )
         if is_support:
             # These operate on another workspace/customer on the caller's
             # behalf (Mammoth-operator tooling), not the caller's own
@@ -1637,7 +1742,11 @@ def find_schemas(
         # A goal phrased in the user's words rarely carries every term; the
         # best near misses still say how to call them, so one find suffices.
         _inline_call_detail(result["suggestions"][:_INLINE_DETAIL_COUNT])
-        result["hint"] = _NO_MATCH_HINT
+        result["hint"] = (
+            _NO_MATCH_HINT_WITH_SUGGESTIONS
+            if result["suggestions"]
+            else _NO_MATCH_HINT_NO_SUGGESTIONS
+        )
     return result
 
 

@@ -895,6 +895,94 @@ def test_data_aggregate_resolves_dataset_from_view_when_omitted(
     assert fake_service.call_log[0] == (_FIND_DATASET, {"dataview_id": 7})
 
 
+# ── view.data.compare ───────────────────────────────────────────────────────
+#
+# These monkeypatch view_cmd.view_data_aggregate directly rather than driving
+# FakeMammothService: aggregate's own SDK wiring (dataset resolution, column
+# relabeling, ...) is already covered by its own tests above, and
+# FakeMammothService programs one static response per SDK symbol, which
+# cannot return different rows for the two views compare must join. This
+# isolates compare's actual new logic: the join, the exact Decimal delta, and
+# the fail-loud behavior on an unmatched key.
+
+
+def test_data_compare_joins_pivot_rows_and_computes_exact_delta(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """T2-WPP-W8's exact evidence: 2,063,664 - 1,917,815 is 145,849, not 45,849."""
+    responses = {
+        7: {"data": [{"Campaign": "A", "Spend": 2063664}, {"Campaign": "B", "Spend": 10}]},
+        9: {"data": [{"Campaign": "A", "Spend": 1917815}, {"Campaign": "B", "Spend": 10}]},
+    }
+
+    def fake_aggregate(invocation: Invocation) -> tuple[dict[str, object], dict[str, object]]:
+        return responses[int(invocation.extra_args[0])], {"profile": None}
+
+    monkeypatch.setattr(view_cmd, "view_data_aggregate", fake_aggregate)
+    doc = _doc(
+        tmp_path,
+        {
+            "group_by": ["Campaign"],
+            "aggregations": [{"column": "Spend", "function": "SUM", "as_name": "Spend"}],
+        },
+    )
+    data = view_cmd.view_data_compare(
+        _inv("view.data.compare", project=180, extra_args=["7", "9"], input_file=doc)
+    )[0]
+    assert data["data"] == [
+        {"Campaign": "A", "Spend_a": "2063664", "Spend_b": "1917815", "Spend_delta": "145849"},
+        {"Campaign": "B", "Spend_a": "10", "Spend_b": "10", "Spend_delta": "0"},
+    ]
+
+
+def test_data_compare_fails_loud_on_a_key_present_in_only_one_view(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    responses = {
+        7: {"data": [{"Campaign": "A", "Spend": 100}, {"Campaign": "B", "Spend": 5}]},
+        9: {"data": [{"Campaign": "A", "Spend": 90}]},
+    }
+
+    def fake_aggregate(invocation: Invocation) -> tuple[dict[str, object], dict[str, object]]:
+        return responses[int(invocation.extra_args[0])], {}
+
+    monkeypatch.setattr(view_cmd, "view_data_aggregate", fake_aggregate)
+    doc = _doc(
+        tmp_path,
+        {
+            "group_by": ["Campaign"],
+            "aggregations": [{"column": "Spend", "function": "SUM"}],
+        },
+    )
+    with pytest.raises(CliError) as excinfo:
+        view_cmd.view_data_compare(
+            _inv("view.data.compare", project=180, extra_args=["7", "9"], input_file=doc)
+        )
+    assert excinfo.value.code == "invalid_arguments"
+    assert excinfo.value.details is not None
+    assert excinfo.value.details["only_in_first"] == [{"Campaign": "B"}]
+    assert excinfo.value.details["only_in_second"] == []
+
+
+def test_data_compare_metric_only_is_a_single_row(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    responses = {
+        7: {"data": [{"Total": 500}]},
+        9: {"data": [{"Total": 300}]},
+    }
+
+    def fake_aggregate(invocation: Invocation) -> tuple[dict[str, object], dict[str, object]]:
+        return responses[int(invocation.extra_args[0])], {}
+
+    monkeypatch.setattr(view_cmd, "view_data_aggregate", fake_aggregate)
+    doc = _doc(tmp_path, {"metric": {"column": "Spend", "function": "SUM", "as_name": "Total"}})
+    data = view_cmd.view_data_compare(
+        _inv("view.data.compare", project=180, extra_args=["7", "9"], input_file=doc)
+    )[0]
+    assert data["data"] == [{"Total_a": "500", "Total_b": "300", "Total_delta": "200"}]
+
+
 # ── view.data.explore ───────────────────────────────────────────────────────
 
 

@@ -407,7 +407,9 @@ commands:
   - CT-DASHBOARD-CANVAS-RESTORE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: 'target_sequence must be an existing draft version -- get the list from dashboard
+    chat history DASHBOARD_ID, whose revisions[] gives {sequence, updated_at, updated_by_name} for
+    every saved version, oldest first; pick the sequence to undo/redo/revert to.'
   reviewed_by: primary
 - command_id: dashboard.canvas.save
   command_path: dashboard canvas save
@@ -530,7 +532,10 @@ commands:
   - CT-DASHBOARD-CHAT-HISTORY-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: 'The response carries a revisions[] list (one {sequence, updated_at, updated_by_name}
+    per saved version, oldest first) -- real on the wire but not yet in the typed SDK model, so read
+    it from --output json. It is the version list for dashboard canvas restore''s target_sequence:
+    to undo/revert the board, find the sequence to go back to here and pass it there.'
   reviewed_by: primary
 - command_id: dashboard.context.create
   command_path: dashboard context create

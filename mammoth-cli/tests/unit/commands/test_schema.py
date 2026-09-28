@@ -370,6 +370,201 @@ def test_what_did_i_ask_earlier_ranks_agent_session_list_first() -> None:
     assert top[0]["command_id"] == "agent.session.list", top
 
 
+def test_pick_up_where_we_left_off_reaches_agent_session_list() -> None:
+    """Live-eval evidence (T1-A-04): 'pick up where we left off last time on
+    the orders' -- the model searched 'recent project activity' and
+    'activity list' instead. activity.list may still rank for some of
+    these, but agent.session.list (the actual past-conversation lookup)
+    must be at or near the top, not absent.
+    """
+    for query in (
+        "pick up where we left off last time",
+        "continue where I left off on the orders",
+        "resume my previous conversation about orders",
+        "what did we talk about earlier in this chat",
+    ):
+        matches = [item["command_id"] for item in find_schemas(query)["matches"]]
+        assert matches, f"no full match for {query!r}"
+        assert "agent.session.list" in matches[:3], f"{query!r} -> {matches}"
+
+
+def test_undo_dashboard_intent_reaches_chat_history() -> None:
+    """Live-eval evidence (T1-D-09): 'I messed up the board, put it back to how
+    it was before' -- dashboard.canvas.restore needs a target_sequence, and
+    dashboard.chat.history is the command that lists every saved version
+    (revisions[]) a sequence can be picked from, but neither 'undo', 'put back',
+    'previous version', 'before', nor 'revert' reached it.
+    """
+    for query in (
+        "put the dashboard back to how it was before",
+        "undo my last change to the board",
+        "revert the dashboard to a previous version",
+    ):
+        matches = [item["command_id"] for item in find_schemas(query)["matches"]]
+        assert "dashboard.chat.history" in matches, f"{query!r} -> {matches}"
+
+
+def test_matched_purpose_text_is_returned_so_the_caller_knows_why_it_matched() -> None:
+    """Live-eval evidence (T1-I-07): 'custom internal API sources' ranked
+    connector.ai.chat first via its hidden purpose text ("connect our own
+    internal custom api build a connector for an unsupported source"), but
+    schema find never handed that text back -- only command_id/command_path/
+    agent_example/matched_terms -- so the model read it as "ask the AI a
+    question" and never explained the generic/custom-connector route. Every
+    match must now carry why it matched.
+    """
+    result = find_schemas("custom internal API sources")
+    by_id = {item["command_id"]: item for item in result["suggestions"]}
+    assert "connector.ai.chat" in by_id, result["suggestions"]
+    matched_on = by_id["connector.ai.chat"]["matched_on"]
+    assert "build a connector for an unsupported source" in matched_on, matched_on
+
+
+def test_hint_presents_suggestions_as_candidates_when_present() -> None:
+    """Live-eval evidence (T1-R-06): 'automation trigger on new file in folder;
+    scheduled weekly automation append data' returned zero full matches, and
+    the agent stopped at the "No command matched every word" hint even though
+    'suggestions' already held automation.create -- the framing read as a
+    dead end rather than "try one of these". A query with suggestions must
+    get a hint that says to use them; only a query with NO suggestions at all
+    gets the harsher "try fewer or other words" framing.
+    """
+    with_suggestions = find_schemas(
+        "automation trigger on new file in folder; scheduled weekly automation append data"
+    )
+    assert with_suggestions["total_matches"] == 0
+    assert with_suggestions["suggestions"]
+    assert "automation.create" in {m["command_id"] for m in with_suggestions["suggestions"]}
+    assert "candidates" in with_suggestions["hint"]
+    assert "No command matched every word" not in with_suggestions["hint"]
+
+    no_suggestions = find_schemas("zzqxwv frobnicate glarbnak")
+    assert no_suggestions["total_matches"] == 0
+    assert not no_suggestions["suggestions"]
+    assert "candidates" not in no_suggestions["hint"]
+
+
+def test_or_is_a_discovery_stopword_so_import_workbook_still_matches() -> None:
+    """Live-eval evidence (T1-D-06): 'import Power BI or Tableau reports; export
+    dashboard or board as PDF' -- the incidental conjunction 'or' was not a
+    discovery stopword, so it became a required term; dashboard.import-workbook's
+    purpose text has no literal 'or' and dropped out, while dashboard.bi-export/
+    bi-preflight won by accident (their text happens to contain 'desktop or
+    tableau desktop').
+    """
+    matches = [
+        item["command_id"] for item in find_schemas("import Power BI or Tableau reports")["matches"]
+    ]
+    assert "dashboard.import-workbook" in matches, matches
+
+
+def test_row_level_security_intent_reaches_dashboard_rls() -> None:
+    """Live-eval evidence (T1-D-03): 'row-level security' / 'per-user or
+    row-level region security' never matched any dashboard.rls.* command --
+    none had any discovery-purpose text at all.
+    """
+    matches = [
+        item["command_id"] for item in find_schemas("row-level security per manager")["matches"]
+    ]
+    assert any(m.startswith("dashboard.rls.") for m in matches), matches
+
+
+def test_dashboard_template_intent_reaches_template_family() -> None:
+    """Live-eval evidence (T1-D-12): 'list browse available dashboard templates
+    styles; apply template to current dashboard' returned 0 matches --
+    dashboard.template.* had no discovery-purpose text at all.
+    """
+    matches = [
+        item["command_id"]
+        for item in find_schemas("list browse available dashboard templates styles")["matches"]
+    ]
+    assert any(m.startswith("dashboard.template") for m in matches), matches
+
+
+def test_publish_dashboard_intent_reaches_dashboard_action() -> None:
+    """Live-eval evidence (T1-D-15): 'publish dashboard' / 'make it live' never
+    surfaced dashboard.action (the actual publish step dashboard.share depends
+    on) among 12 near-misses -- it had no discovery-purpose text.
+    """
+    matches = [
+        item["command_id"] for item in find_schemas("publish dashboard make it live")["matches"]
+    ]
+    assert "dashboard.action" in matches, matches
+
+
+def test_hedged_view_or_dashboard_bi_export_still_matches() -> None:
+    """Live-eval evidence (T1-D-22): 'publish a dashboard or its underlying view
+    to Power BI' matched only view.export.powerbi (the raw ODBC connector) --
+    dashboard.bi-export/bi-preflight missed only because their purpose text
+    never says 'view', so the hedge word knocked them out of the strict
+    all-terms gate.
+    """
+    matches = [
+        item["command_id"]
+        for item in find_schemas("publish a dashboard or its underlying view to Power BI")[
+            "matches"
+        ]
+    ]
+    assert "dashboard.bi-export" in matches or "dashboard.bi-preflight" in matches, matches
+
+
+def test_url_import_intent_reaches_dataset_create() -> None:
+    """Live-eval evidence (T1-I-16): 'import data from a public URL or JSON API
+    into a dataset' / 'fetch or retrieve JSON from public URL into dataset'
+    never matched dataset.create (ds_creation_type=weburl), which has no
+    discovery-purpose text at all -- even though the capability exists and
+    works once found.
+    """
+    for query in (
+        "import data from a public URL into a dataset",
+        "fetch or retrieve JSON from a public URL into a dataset",
+    ):
+        matches = [item["command_id"] for item in find_schemas(query)["matches"]]
+        assert "dataset.create" in matches, f"{query!r} -> {matches}"
+
+
+def test_alert_on_row_match_reaches_checkpoint_create() -> None:
+    """Live-eval evidence (T1-R-02): 'alert me when a row matches a condition' /
+    'notify me if a value changes' should surface view.checkpoint.create
+    (checkpoint_type=alert) as an automation-adjacent option, not just
+    automation.create.
+    """
+    for query in (
+        "alert me when a row matches a condition",
+        "notify me if a value changes",
+    ):
+        matches = [item["command_id"] for item in find_schemas(query)["matches"]]
+        assert "view.checkpoint.create" in matches, f"{query!r} -> {matches}"
+
+
+def test_new_file_in_folder_trigger_reaches_automation_create() -> None:
+    """Live-eval evidence (T1-R-06): 'automation trigger on new file in folder;
+    scheduled weekly automation append data' returned no match -- the agent
+    lacked a discovered path for a new-file-arrives trigger.
+    """
+    matches = [
+        item["command_id"]
+        for item in find_schemas("trigger automation on new file in a folder")["matches"]
+    ]
+    assert "automation.create" in matches, matches
+
+
+def test_plan_storage_intent_reaches_billing_plan_commands() -> None:
+    """Live-eval evidence (T1-W-06): 'what plan are we on and how much storage
+    does it include' / 'current subscription plan tier for workspace; billing
+    plan and storage allowance' returned 'No command matched every word' twice
+    -- billing.chargebee-plan/billing.subscription.get had no discovery text
+    for plan/subscription/storage-allowance phrasing.
+    """
+    matches = [
+        item["command_id"]
+        for item in find_schemas(
+            "current subscription plan tier for workspace; billing plan and storage allowance"
+        )["matches"]
+    ]
+    assert "billing.chargebee-plan" in matches or "billing.subscription.get" in matches, matches
+
+
 def test_storage_usage_intent_ranks_app_usage_above_storage_breakdown() -> None:
     """In-product-agent evidence: 'how much storage am I using, and what plan
     am I on?' only ever reached workspace.storage-breakdown -- a paginated
@@ -382,6 +577,42 @@ def test_storage_usage_intent_ranks_app_usage_above_storage_breakdown() -> None:
         matches = [item["command_id"] for item in find_schemas(query)["matches"]]
         assert matches, f"no full match for {query!r}"
         assert matches[0] == "workspace.app-usage", f"{query!r} -> {matches}"
+
+
+def test_per_dataset_storage_intent_reaches_storage_breakdown() -> None:
+    """Live-eval evidence: goals asking which datasets/projects use the most
+    storage (dataset details, dataset storage metrics, per-project storage
+    usage) matched dataset.get, workflow.workspace-datasets and
+    workspace.app-usage -- never workspace.storage-breakdown, the one
+    command whose result is actually a per-dataset (and per-project) size
+    breakdown. It must not regress the query above: those stay
+    workspace.app-usage's own generic "total storage used" phrasing.
+    """
+    for query in (
+        "which datasets use the most storage",
+        "storage used by each dataset",
+        "largest datasets by storage size",
+        "per project storage breakdown",
+    ):
+        matches = [item["command_id"] for item in find_schemas(query)["matches"]]
+        assert "workspace.storage-breakdown" in matches, f"{query!r} -> {matches}"
+
+
+def test_independent_dataset_copy_intent_reaches_view_create() -> None:
+    """Live-eval evidence (T1-T-28): 'keep this table as is, but give the West
+    team their own copy they can change' -- the model tried 'copy or
+    duplicate a dataset', 'duplicate dataset as independent copy', 'clone
+    dataset without changing source view pipeline'; view.create (a new view
+    on the same dataset is exactly that editable, source-preserving copy)
+    never ranked for any of them.
+    """
+    for query in (
+        "copy or duplicate a dataset",
+        "duplicate dataset as independent copy",
+        "clone dataset without changing source view pipeline",
+    ):
+        matches = [item["command_id"] for item in find_schemas(query)["matches"]]
+        assert "view.create" in matches, f"{query!r} -> {matches}"
 
 
 def test_support_family_ranks_below_any_non_support_match_and_is_labeled() -> None:
@@ -501,6 +732,21 @@ def test_automation_create_documents_the_email_csv_row_limit() -> None:
     assert "100,000" in restrictions
     assert "combined" in restrictions.casefold()
     assert "per view" not in restrictions.casefold()
+
+
+def test_publish_db_and_powerbi_document_that_the_target_refreshes_on_rerun() -> None:
+    """T1-O-08: an agent found both typed exports, then talked itself out of
+    calling either one over an unstated worry about whether the destination
+    stays live. Both become a persistent pipeline step (like `view export
+    dataset`): the target refreshes automatically every time the source
+    view's pipeline reruns, not just once at call time.
+    """
+    for command_id in ("view.export.publish-db", "view.export.powerbi"):
+        schema = get_schema(command_id)
+        assert schema is not None
+        restrictions = schema["preconditions"]
+        assert "refresh" in restrictions.casefold(), command_id
+        assert "rerun" in restrictions.casefold() or "re-run" in restrictions.casefold(), command_id
 
 
 def test_dataset_create_sdk_catalog_does_not_conflate_cli_waiting() -> None:

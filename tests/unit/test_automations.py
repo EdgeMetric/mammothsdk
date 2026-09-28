@@ -88,6 +88,21 @@ class TestCreate:
                     "destination_folder_resource_id": 5,
                 },
             ),
+            (
+                # T1-R-08: apply_retention_policy is a fully backend-supported
+                # task type (apiv2/apiv2/automations/{utils,schema}.py) already
+                # documented in automation.create's known_restrictions prose,
+                # but missing from this enum -- so the agent-facing typed
+                # schema (``schema get automation.create``) contradicted its
+                # own preconditions text and offered no way to construct it.
+                AutomationTaskType.APPLY_RETENTION_POLICY,
+                {
+                    "datasource_id": 3,
+                    "rule_type": "time_based",
+                    "threshold_value": 30,
+                    "threshold_unit": "daily",
+                },
+            ),
         ],
     )
     def test_create_accepts_every_required_task_type(self, task_type, details_kwargs) -> None:

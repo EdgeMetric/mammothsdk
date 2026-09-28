@@ -242,7 +242,10 @@ def test_schema_find_without_a_full_match_suggests_near_misses_and_the_menu() ->
         item["full_schema_command"].startswith("mammoth schema get ")
         for item in result["suggestions"]
     )
-    assert "mammoth view transform --help" in result["hint"]
+    # T1-R-06: when suggestions exist, the hint presents them as candidates
+    # to try rather than the harsher "no command matched, try fewer or other
+    # words" framing (that framing is reserved for zero suggestions at all).
+    assert "candidates" in result["hint"]
 
 
 def test_schema_find_with_a_match_carries_no_suggestions() -> None:

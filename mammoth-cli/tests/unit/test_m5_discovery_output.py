@@ -412,6 +412,29 @@ def test_normalize_redacts_api_keys_without_erasing_cursor_or_schema_names() -> 
     assert normalized["schema"]["api_key"] == "***REDACTED***"
 
 
+def test_normalize_redacts_every_declared_secret_field_name() -> None:
+    """Every name any command's manifest ``secret_fields`` declares must be
+    unreadable wherever ``normalize`` runs (the run log, in particular) --
+    not just the ones that happen to contain "password" or "token". SFTP's
+    ``passphrase`` and REST's whole-field ``auth`` (an ``auth_type``-specific
+    dict, e.g. ``{"key_value": "..."}`` for an API key) are declared secret
+    fields that carry neither substring.
+    """
+    normalized = normalize(
+        {
+            "passphrase": "must-not-appear",
+            "auth": {"key_value": "must-not-appear"},
+            "auth_type": "api_key",
+        }
+    )
+
+    assert normalized["passphrase"] == "***REDACTED***"
+    assert normalized["auth"] == "***REDACTED***"
+    # A non-secret field that merely contains "auth" as a substring must
+    # survive -- only the exact declared field name is redacted.
+    assert normalized["auth_type"] == "api_key"
+
+
 def test_nonfinite_json_input_is_rejected_before_command_execution(tmp_path: Path) -> None:
     path = tmp_path / "nonfinite.json"
     path.write_text('{"value": NaN}', encoding="utf-8")

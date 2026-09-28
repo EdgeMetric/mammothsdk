@@ -16,5 +16,7 @@ Every "yes" must point at a command you ran in this task and its response.
 | List cleanup ids and read each one back | one id per destructive call, each followed by a `list`/`get` that no longer shows it; the final list of what remains |
 | Nothing in the report is a secret or an unredacted body | no keys, tokens, `--input` documents for `secret_fields` commands, or raw error bodies |
 | Name every unknown outcome | any exit 7 / `outcome_unknown` with the id or job it may have created |
+| A "can X do Y" answer leads with the real limitation, not an unqualified "Yes" when only an alternative exists | the caveat or alternative is the first clause of the answer, not an afterthought |
+| A capability you describe by a command you looked up names that command's own words | the reply uses the term from its purpose text or `action` field (e.g. `view ai profile` -> "profile"/"insights") so the user can find it in the app |
 
 If you cannot satisfy a row, say so in the report instead of omitting it.

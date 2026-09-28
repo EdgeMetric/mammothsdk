@@ -129,7 +129,8 @@ sort):
   {"cust_id": "Customer ID"}}`. The column keeps its internal name, so
   earlier tasks keep working; later commands, data reads, exports and
   dashboards use the new name. To name a column you create, use its
-  `new_column` or `as_name` field instead.
+  `new_column` or `as_name` field instead. Safe to call for a "just how it
+  looks" request -- it does not alter cell values.
 - **Sort the rows:** `view transform sort` with `{"order_by": [["Revenue",
   "DESC"]]}` (up to three columns; `[]` clears it). Data reads and exports
   return rows in this order. To keep only the top N rows, use `limit-rows`

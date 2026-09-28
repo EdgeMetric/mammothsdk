@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from enum import Enum
-from typing import Annotated, Any
+from typing import Annotated, Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -196,6 +196,7 @@ class AutomationTaskType(str, Enum):
     APPEND_DATA = "append_data"
     SEND_AN_ALERT = "send_an_alert"
     PULL_CLOUD_FILES = "pull_cloud_files"
+    APPLY_RETENTION_POLICY = "apply_retention_policy"
 
 
 class AutomationConditionType(str, Enum):
@@ -293,6 +294,22 @@ class TaskDetailsSpec(BaseModel):
         ),
     )
     test_email: bool = False
+
+    # apply_retention_policy
+    datasource_id: int | None = Field(None, description="Dataset the retention policy applies to")
+    rule_type: Literal["time_based", "count_based", "condition_based"] | None = None
+    threshold_value: int | None = Field(
+        None, description="Number of minutes/hours/days/weeks/months for time_based", ge=1
+    )
+    threshold_unit: Literal["minutely", "hourly", "daily", "weekly", "monthly", "yearly"] | None = (
+        None
+    )
+    keep_count: int | None = Field(
+        None, description="Most-recent batches to keep for count_based", ge=1
+    )
+    condition_sql: str | None = Field(
+        None, description="WHERE clause predicate for condition_based"
+    )
 
     # shared optional
     id: int | None = None

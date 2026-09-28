@@ -94,12 +94,17 @@ def test_connector_remove_forwards_single_id(
 # --- list --------------------------------------------------------------------------
 
 
-def test_list_passes_no_kwargs(fake_service: FakeMammothService) -> None:
-    fake_service.responses[_LIST] = {"addons": []}
-    result, meta = addon_cmd.addon_list(_inv("addon.list"))
-    assert fake_service.call_log == [(_LIST, {})]
-    assert result == {"addons": []}
-    assert meta == {"profile": None, "workspace_id": 4, "project_id": None}
+def test_list_fails_loud_with_no_backend_route(fake_service: FakeMammothService) -> None:
+    """RCA evidence (T1-W-17): GET /workspaces/{id}/addons has no backing
+    route at all (reproduced live: a 404 from Litestar's own routing trie,
+    not a typed error) -- addon list must say so up front rather than
+    surface that raw 404 as if the call had found nothing.
+    """
+    with pytest.raises(CliError) as excinfo:
+        addon_cmd.addon_list(_inv("addon.list"))
+    assert excinfo.value.code == "unsupported_contract"
+    assert "no backend route" in excinfo.value.message
+    assert fake_service.call_log == []
 
 
 # --- storage add ---------------------------------------------------------------

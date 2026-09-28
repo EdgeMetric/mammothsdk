@@ -45,6 +45,12 @@ mammoth view export dataset SOURCE_VIEW_ID SOURCE_DATASET_ID --yes \
 mammoth view export list SOURCE_VIEW_ID SOURCE_DATASET_ID     # handler internal_dataset, status executed, TARGET_DS_ID N
 ```
 
+The product's per-destination "Export Auto-Sync" toggle is this same
+pipeline-step behavior seen from the UI: it is the CLI's `trigger_type`
+(default `pipeline`; pass `"none"` to turn Auto-Sync off) and `run_immediately`
+(whether it also executes once now) fields on the typed export commands —
+there is no separate Auto-Sync endpoint or field to find.
+
 `target_ds_id` writes into an existing dataset instead of creating one
 (`save_as_mode` `REPLACE_IN_DS` or `APPEND_TO_DS`). Read the delivery back in
 the target project (`view list N --project P`, `view data get`) before
@@ -58,10 +64,20 @@ reporting it. Do not build this with `view export create`: the raw
 `schema get` lists `secret_fields` for every typed destination export
 (`postgres`, `mysql`, `mssql`, `redshift`, `elasticsearch`, `ftp`, `sftp`,
 `powerbi`, `tableau`, `azure-blob`, `onedrive`, `sharepoint`, `rest`). When
-that list is non-empty the request body is written by the operator to a
-`0600` file and passed as `--input FILE`; it is never an inline document and
-never appears in argv, the run log, or a checkpoint. The connector command is
-`external_effect` with `confirmation: yes_always`, so `--yes` is required.
+that list is non-empty:
+
+- In a shell, the operator writes the request body to a `0600` file and
+  passes it as `--input FILE` -- never an inline document, and never in
+  argv.
+- Embedded in a product with no shell and no file system (see
+  `mammoth_cli.embed.invoke`), where every write is shown to the user on a
+  confirmation card before it runs, the secret goes in the `--input`
+  JSON's credential field instead: a password or token the user supplies
+  for their own destination is used there, behind the card.
+
+In every case the secret never appears in a reply, a note, a checkpoint, or
+the run log. The connector command is `external_effect` with
+`confirmation: yes_always`, so `--yes` is required.
 
 ```bash
 mammoth schema get view.export.postgres   # read secret_fields, required fields

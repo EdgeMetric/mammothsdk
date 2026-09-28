@@ -324,6 +324,22 @@ _RELEASE_BATCH_SPEC_FIELDS = (
     ),
 )
 
+# view.data.compare's own handler never calls its manifest sdk_symbol directly
+# -- it runs view.data.aggregate's own handler once per view and joins
+# client-side (see mammoth_cli.commands.view.view_data_compare). The manifest
+# still names that symbol so discovery is accurate, but the accepted document
+# fields are authored here rather than introspected, minus view.data.aggregate's
+# own dataset_id override (compare has no per-view dataset positional) and its
+# async-wait fields (compare's wait_policy is not_async).
+_VIEW_DATA_COMPARE_FIELDS = (
+    FieldSpec("aggregations", required=False, annotation=list[Any] | None, default=None),
+    FieldSpec("group_by", required=False, annotation=list[Any] | None, default=None),
+    FieldSpec("metric", required=False, annotation=dict[str, Any] | None, default=None),
+    FieldSpec("condition", required=False, annotation=dict[str, Any] | None, default=None),
+    FieldSpec("sequence", required=False, annotation=int | None, default=None),
+    FieldSpec("limit", required=False, annotation=int | None, default=None),
+)
+
 # The remaining S1 commands are intentionally closed zero-input commands.  A
 # command may still receive ordinary positional/context values; those are
 # represented by ``positionals`` and never become structured-input keys.
@@ -332,6 +348,7 @@ _LOCAL_COMMANDS = frozenset(
         "auth.login",
         "auth.logout",
         "auth.status",
+        "calc",
         "capability.find",
         "capability.get",
         "capability.list",
@@ -675,6 +692,8 @@ def resolve_command_contract(command_id: str) -> ResolvedCommandContract | None:
     special_fields = _special_export_fields(command_id, spec)
     if command_id == "batch.create-spec":
         special_fields = _RELEASE_BATCH_SPEC_FIELDS
+    elif command_id == "view.data.compare":
+        special_fields = _VIEW_DATA_COMPARE_FIELDS
     local_fields = _LOCAL_CONTRACT_FIELDS.get(command_id, ()) if is_local else None
     fields = tuple(
         field

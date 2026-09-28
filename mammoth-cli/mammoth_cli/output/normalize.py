@@ -35,7 +35,15 @@ _SECRET_KEY_HINTS = (
     "access_key",
     "secret_key",
     "client_secret",
+    "passphrase",
 )
+#: Exact key names that are secrets in their own right but carry no hint
+#: substring above -- a schema's whole ``secret_fields`` entry (``rest``
+#: export's ``auth``, a dict merging in whichever typed credential the
+#: chosen ``auth_type`` needs). Exact match, not a hint substring: a
+#: substring match on "auth" would also erase ``auth_type`` and similar
+#: non-secret fields.
+_EXACT_SECRET_KEYS = frozenset({"auth"})
 REDACTED = "***REDACTED***"
 _SCHEMA_PROPERTY_CONTAINERS = frozenset({"properties", "patternProperties", "$defs", "definitions"})
 _SCHEMA_VALUE_KEYWORDS = frozenset({"default", "example", "examples", "const"})
@@ -72,6 +80,8 @@ def _is_secret_key(key: str) -> bool:
         "secret_fields",
     }:
         return False
+    if lowered in _EXACT_SECRET_KEYS:
+        return True
     if "token" in lowered and not any(
         hint in lowered for hint in _SECRET_KEY_HINTS if hint != "token"
     ):

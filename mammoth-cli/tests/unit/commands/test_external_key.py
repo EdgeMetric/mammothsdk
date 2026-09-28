@@ -9,6 +9,7 @@ import pytest
 
 from mammoth_cli.commands import external_key as external_key_cmd
 from mammoth_cli.errors.envelope import CliError
+from mammoth_cli.manifest.loader import load_commands
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.services.testing import FakeMammothService
 from mammoth_cli.testing import login_default_profile
@@ -201,3 +202,18 @@ def test_delete_without_key_id_is_usage_error(fake_service: FakeMammothService) 
     with pytest.raises(CliError) as excinfo:
         external_key_cmd.external_key_delete(_inv("external-key.delete", yes=True))
     assert excinfo.value.code == "missing_argument"
+
+
+def test_create_declares_secure_key_as_a_secret_field_with_embedded_scoping() -> None:
+    """RCA evidence (T1-W-14): secret_fields: [] meant the generic, already
+    embedded-aware secret_fields rule (SKILL.md, post-e503856) never
+    activated for this command; its ad hoc known_restrictions was
+    shell-only ("prompt/input/stdin"), giving an embedded agent (no stdin,
+    no prompt) no sanctioned path to submit secure_key at all.
+    """
+    commands = {str(record["command_id"]): record for record in load_commands()}
+    record = commands["external-key.create"]
+    assert "secure_key" in record["secret_fields"]
+    restrictions = str(record["known_restrictions"])
+    assert "--input" in restrictions
+    assert "embedded" in restrictions

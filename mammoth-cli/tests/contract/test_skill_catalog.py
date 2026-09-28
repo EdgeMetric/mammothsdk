@@ -77,6 +77,62 @@ def test_skill_md_does_not_grow_past_its_system_prompt_budget() -> None:
     )
 
 
+def test_skill_md_tells_the_agent_to_use_a_tool_for_arithmetic_not_mental_math() -> None:
+    """T2-WPP-W8: an agent subtracted two aggregate totals by hand and got the
+    difference wrong. SKILL.md's "Verify before you report" section must
+    route a reported number through `calc`/`view data compare` instead.
+    """
+    text = (SKILL / "SKILL.md").read_text(encoding="utf-8")
+    assert "never mental math" in text
+    assert "`calc`/`view data compare`" in text
+
+
+#: Measured with ``wc -w`` on the bullet as it read before it was rescoped for
+#: shell vs. embedded use (mammoth-cli 2.0.75): "A command whose schema lists
+#: `secret_fields` takes `--input FILE` (mode 0600); secrets never go in
+#: argv, notes, checkpoints or replies." Rescoping it must not grow it -- it
+#: ships inside SKILL.md's own fixed token budget (see the byte-cap test
+#: above).
+_SECRET_FIELDS_BULLET_WORD_BUDGET = 21
+
+
+def _bullet_containing(text: str, needle: str) -> str:
+    """The single markdown bullet (its wrapped continuation lines included)
+    that contains ``needle``, from its leading ``- `` to the next bullet,
+    blank line, or heading.
+    """
+    lines = text.splitlines()
+    for index, line in enumerate(lines):
+        if line.startswith("- ") and needle in line:
+            bullet_lines = [line]
+            for later in lines[index + 1 :]:
+                if later.startswith("  ") and not later.lstrip().startswith("- "):
+                    bullet_lines.append(later)
+                else:
+                    break
+            return "\n".join(bullet_lines)
+    raise AssertionError(f"no bullet containing {needle!r} found")
+
+
+def test_secret_fields_bullet_is_scoped_for_shell_and_embedded_without_growing() -> None:
+    """A password/token the user gives for their own destination is used in
+    the command behind the confirmation card when the CLI runs embedded
+    (no shell, no file system) -- the bullet must say so, not just describe
+    the shell-only `--input FILE` path, and must not grow past its original
+    word count since it ships inside SKILL.md's fixed token budget.
+    """
+    text = (SKILL / "SKILL.md").read_text(encoding="utf-8")
+    bullet = _bullet_containing(text, "secret_fields")
+    word_count = len(bullet.split())
+    assert word_count <= _SECRET_FIELDS_BULLET_WORD_BUDGET, (
+        f"secret_fields bullet is {word_count} words, was "
+        f"{_SECRET_FIELDS_BULLET_WORD_BUDGET}: {bullet!r}"
+    )
+    assert "0600" in bullet
+    assert "embedded" in bullet.casefold()
+    assert "run log" in bullet.casefold()
+
+
 def test_every_entry_carries_a_release_status_joined_from_the_matrix() -> None:
     catalog = "\n".join(
         path.read_text(encoding="utf-8")
