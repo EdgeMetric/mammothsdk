@@ -109,6 +109,7 @@ class DatasetsAPI:
         dataset_id: int,
         workspace_id: int | None = None,
         project_id: int | None = None,
+        fields: str | None = None,
     ) -> dict[str, Any]:
         """Get dataset details by ID.
 
@@ -116,6 +117,8 @@ class DatasetsAPI:
             dataset_id: ID of the dataset.
             workspace_id: ID of the workspace (uses client default if not provided).
             project_id: ID of the project (uses client default if not provided).
+            fields: Field set to return, e.g. ``"__standard"``; server default
+                if omitted.
 
         Returns:
             Dict with complete dataset information.
@@ -123,7 +126,9 @@ class DatasetsAPI:
         ws = workspace_id or self._ws()
         proj = self._proj(project_id)
         return await self._client._request_json(
-            "GET", f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}"
+            "GET",
+            f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}",
+            params={"fields": fields} if fields is not None else None,
         )
 
     async def get_data(

@@ -372,6 +372,17 @@ class TestDatasetsAPI:
         await client.datasets.get(dataset_id=500)
         assert_called_with_method_and_endpoint(client._request_json, "GET", "/datasets/500")
 
+    async def test_get_can_ask_for_a_smaller_record(self, client: MammothClient):
+        """A caller reading a dataset into a model's context pays per field."""
+        await client.datasets.get(dataset_id=500, fields="__standard")
+        assert client._request_json.call_args.kwargs["params"] == {"fields": "__standard"}
+
+    async def test_get_that_asks_for_nothing_leaves_the_route_its_default(
+        self, client: MammothClient
+    ):
+        await client.datasets.get(dataset_id=500)
+        assert client._request_json.call_args.kwargs.get("params") is None
+
     async def test_create(self, client: MammothClient):
         await client.datasets.create(dataset_spec={"name": "ds"}, ds_creation_type="file")
         assert_called_with_method_and_endpoint(client._request_json, "POST", "/datasets")

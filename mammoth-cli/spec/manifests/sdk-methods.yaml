@@ -3299,7 +3299,7 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.datasets.DatasetsAPI.get
   implementation_origin: mammoth.api.datasets.DatasetsAPI.get
-  signature: 'get(self, dataset_id: ''int'', workspace_id: ''int | None'' = None, project_id: ''int | None'' = None) -> ''dict[str, Any]'''
+  signature: 'get(self, dataset_id: ''int'', workspace_id: ''int | None'' = None, project_id: ''int | None'' = None, fields: ''str | None'' = None) -> ''dict[str, Any]'''
   openapi_operation_ids: []
   canonical_command: dataset.get
   alias_of: null

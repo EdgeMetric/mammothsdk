@@ -324,7 +324,9 @@ CASES = [
         "api": DatasetsAPI,
         "method": "get",
         "kwargs": {"dataset_id": 763, "project_id": 41},
-        "wire": ["GET", "/workspaces/4/projects/41/datasets/763", {}],
+        # `fields` is optional and unset here, so the kwarg is sent as None and
+        # nothing reaches the query string.
+        "wire": ["GET", "/workspaces/4/projects/41/datasets/763", {"params": None}],
         "response": {},
     },
     {
