@@ -25,6 +25,7 @@ from mammoth.models.dashboards import (
     DashboardTagsParams,
     ExemplarExtractResponse,
     ExemplarExtractSpec,
+    GenerateV3Params,
     ImportDatasetResponse,
     PbixAssessResponse,
     PendingTemplateResponse,
@@ -118,8 +119,6 @@ class DashboardsAPI:
             )
         if not isinstance(tags, list) or any(not isinstance(tag, str) for tag in tags):
             raise MammothValidationError("`tags` must be a list of strings.")
-        if len(tags) != len(set(tags)):
-            raise MammothValidationError("`tags` must not contain duplicates.")
         try:
             typed = DashboardTagsParams(tags=tags)
         except ValidationError as exc:
@@ -215,6 +214,37 @@ class DashboardsAPI:
         return await self._client._request_json(
             "POST",
             "/dashboards/v3/blank",
+            json={"params": typed.model_dump(mode="json", exclude_unset=True)},
+        )
+
+    async def generate_v3(self, params: GenerateV3Params | dict[str, Any]) -> dict[str, Any]:
+        """Have Mammoth build a v3 dashboard on a dataview from a brief.
+
+        The route answers with the id of the job that builds it.
+
+        Args:
+            params: What to build, as
+                :class:`~mammoth.models.dashboards.GenerateV3Params` or the
+                same fields as a dict. ``format="qa"`` opens a
+                question-and-answer notebook, which needs no ``intent``.
+
+        Returns:
+            Dict carrying the build job.
+
+        Raises:
+            MammothValidationError: If the brief is not one the route takes.
+        """
+        try:
+            typed = (
+                params
+                if isinstance(params, GenerateV3Params)
+                else GenerateV3Params.model_validate(params)
+            )
+        except ValidationError as exc:
+            raise MammothValidationError(f"Invalid dashboard generation parameters: {exc}") from exc
+        return await self._client._request_json(
+            "POST",
+            "/dashboards/v3/generate",
             json={"params": typed.model_dump(mode="json", exclude_unset=True)},
         )
 

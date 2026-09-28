@@ -59,14 +59,24 @@ async def test_set_tags_rejects_invalid_id_without_request(dashboard_id: object)
     client._request_json.assert_not_called()
 
 
-@pytest.mark.parametrize("tags", [["Revenue", "Revenue"], ["Revenue", 7]])
-async def test_set_tags_rejects_duplicate_or_invalid_values_without_request(
-    tags: list[object],
-) -> None:
+async def test_set_tags_rejects_a_tag_that_is_not_a_name_without_request() -> None:
     api, client = _api()
     with pytest.raises(MammothValidationError):
-        await api.set_tags(7, tags)  # type: ignore[arg-type]
+        await api.set_tags(7, ["Revenue", 7])  # type: ignore[list-item]
     client._request_json.assert_not_called()
+
+
+async def test_set_tags_passes_a_repeated_tag_to_the_route() -> None:
+    # The route files the dashboard under each name it is given and is
+    # idempotent about it, so a repeat is its business, not the SDK's.
+    api, client = _api()
+    client._request_json = AsyncMock(return_value={"id": 7, "tags": ["Revenue"]})
+
+    await api.set_tags(7, ["Revenue", "Revenue"])
+
+    client._request_json.assert_called_once_with(
+        "PUT", "/dashboards/7/tags", json={"tags": ["Revenue", "Revenue"]}
+    )
 
 
 async def test_delete_tag_uses_release_route() -> None:
