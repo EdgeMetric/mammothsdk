@@ -550,6 +550,24 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
         )
         for command in ("view.preview", "view.data.get", "view.data.query", "view.data.aggregate")
     },
+    # `view data compare` runs the same aggregate against two views and joins
+    # the results -- both ids are required and neither is dual-sourced or
+    # forwarded into an SDK parameter, so the handler reads them directly via
+    # ``_require_int_positional_at`` rather than a ``fills_sdk_param`` binding.
+    "view.data.compare": (
+        PositionalSpec(
+            name="view_id_a",
+            type=int,
+            required=True,
+            help="ID of the first view to compare.",
+        ),
+        PositionalSpec(
+            name="view_id_b",
+            type=int,
+            required=True,
+            help="ID of the second view to compare.",
+        ),
+    ),
     # The view sub-resource commands take VIEW_ID first, then an OPTIONAL trailing
     # DATASET_ID resolved from the view -- mirroring the view data commands so the
     # whole view.* surface is uniformly view-first. The SDK signatures lead with a

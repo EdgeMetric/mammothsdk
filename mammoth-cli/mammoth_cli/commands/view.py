@@ -20,8 +20,10 @@ the public SDK method named by the command's reviewed manifest ``sdk_symbol``.
 
 from __future__ import annotations
 
+import dataclasses
 import inspect
 from datetime import UTC, datetime
+from decimal import Decimal, InvalidOperation
 from typing import Any
 
 from mammoth.models.exports import ExportStatus
@@ -1089,6 +1091,127 @@ def view_data_aggregate(invocation: Invocation) -> HandlerResult:
         data = service.call(_symbol(invocation), **kwargs)
         data = _relabel_columns(service, dataset_id, view_id, project_id, data, as_map)
     return data, _meta(invocation, auth.workspace_id, project_id)
+
+
+def _compare_key_and_value_columns(document: dict[str, Any]) -> tuple[list[str], list[str]]:
+    """Return the (key, value) display-column names an aggregate call over
+    ``document`` will produce, without making the call -- mirrors the label
+    rules :func:`_build_pivot_fields`/:func:`_build_metric_fields` apply.
+    """
+    group_by = document.get("group_by") or []
+    key_columns = [item["column"] if isinstance(item, dict) else item for item in group_by]
+    if "metric" in document:
+        value_columns = [_resolved_aggregate_item(document["metric"], {})["as_name"]]
+    else:
+        value_columns = [
+            _resolved_aggregate_item(agg, {})["as_name"] for agg in document.get("aggregations", [])
+        ]
+    return key_columns, value_columns
+
+
+def _run_aggregate_for_compare(
+    invocation: Invocation, view_id: int
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    """Run ``view data aggregate``'s own handler against one view, for compare."""
+    sub_invocation = dataclasses.replace(
+        invocation, command_id="view.data.aggregate", extra_args=[str(view_id)]
+    )
+    data, meta = view_data_aggregate(sub_invocation)
+    rows = data.get(_ROWS_KEY, [])
+    return (rows if isinstance(rows, list) else []), meta
+
+
+def _index_by_key(
+    rows: list[dict[str, Any]], key_columns: list[str]
+) -> dict[tuple[Any, ...], dict[str, Any]]:
+    return {tuple(row.get(column) for column in key_columns): row for row in rows}
+
+
+def _require_matched_keys(
+    keyed_a: dict[tuple[Any, ...], dict[str, Any]],
+    keyed_b: dict[tuple[Any, ...], dict[str, Any]],
+    key_columns: list[str],
+    view_id_a: int,
+    view_id_b: int,
+) -> None:
+    """Fail loud -- never silently drop -- when a key is on only one side."""
+    only_a = sorted(keyed_a.keys() - keyed_b.keys(), key=str)
+    only_b = sorted(keyed_b.keys() - keyed_a.keys(), key=str)
+    if not only_a and not only_b:
+        return
+
+    def _describe(keys: list[tuple[Any, ...]]) -> list[dict[str, Any]]:
+        return [dict(zip(key_columns, key, strict=True)) for key in keys[:10]]
+
+    raise CliError(
+        code=CODE_INVALID_ARGUMENTS,
+        message=(
+            f"view {view_id_a} and view {view_id_b} do not share the same "
+            f"{'/'.join(key_columns) or 'rows'}: {len(only_a)} only in view {view_id_a}, "
+            f"{len(only_b)} only in view {view_id_b}."
+        ),
+        exit_status=EXIT_USAGE,
+        hint="compare only reports a row where both views have the key; reconcile or "
+        "narrow with 'condition' before comparing.",
+        details={"only_in_first": _describe(only_a), "only_in_second": _describe(only_b)},
+    )
+
+
+def _decimal_or_raise(value: Any, column: str) -> Decimal:
+    try:
+        return Decimal(str(value))
+    except (InvalidOperation, TypeError) as exc:
+        raise CliError(
+            code=CODE_INVALID_ARGUMENTS,
+            message=f"'{column}' is not numeric ({value!r}); compare only works on "
+            "numeric aggregates.",
+            exit_status=EXIT_USAGE,
+        ) from exc
+
+
+def _compare_rows(
+    keyed_a: dict[tuple[Any, ...], dict[str, Any]],
+    keyed_b: dict[tuple[Any, ...], dict[str, Any]],
+    key_columns: list[str],
+    value_columns: list[str],
+) -> list[dict[str, Any]]:
+    compared: list[dict[str, Any]] = []
+    for key in sorted(keyed_a.keys(), key=str):
+        row_a, row_b = keyed_a[key], keyed_b[key]
+        entry: dict[str, Any] = dict(zip(key_columns, key, strict=True))
+        for column in value_columns:
+            value_a = _decimal_or_raise(row_a.get(column), column)
+            value_b = _decimal_or_raise(row_b.get(column), column)
+            entry[f"{column}_a"] = str(value_a)
+            entry[f"{column}_b"] = str(value_b)
+            entry[f"{column}_delta"] = str(value_a - value_b)
+        compared.append(entry)
+    return compared
+
+
+def view_data_compare(invocation: Invocation) -> HandlerResult:
+    """Compare the same PIVOT/METRIC aggregate across two views, joined by key.
+
+    T2-WPP-W8: an agent subtracted two views' totals by hand and mis-stated the
+    difference. Compare takes ``view data aggregate``'s exact input shape
+    (``aggregations``/``group_by``, or ``metric``) and runs it against both
+    views, joining the rows on the group-by key (or as a single row for a bare
+    metric) and returning an exact Decimal delta per key -- never ask the
+    caller to subtract. A key present on only one side fails loud instead of
+    silently reporting a partial diff.
+    """
+    require_project(invocation)
+    view_id_a = _require_int_positional_at(invocation, 0, "first view id")
+    view_id_b = _require_int_positional_at(invocation, 1, "second view id")
+    document = invocation.load_input() or {}
+    key_columns, value_columns = _compare_key_and_value_columns(document)
+    rows_a, meta = _run_aggregate_for_compare(invocation, view_id_a)
+    rows_b, _meta_b = _run_aggregate_for_compare(invocation, view_id_b)
+    keyed_a = _index_by_key(rows_a, key_columns)
+    keyed_b = _index_by_key(rows_b, key_columns)
+    _require_matched_keys(keyed_a, keyed_b, key_columns, view_id_a, view_id_b)
+    compared = _compare_rows(keyed_a, keyed_b, key_columns, value_columns)
+    return {_ROWS_KEY: compared}, meta
 
 
 def _require_string_positional_at(invocation: Invocation, index: int, name: str) -> str:
