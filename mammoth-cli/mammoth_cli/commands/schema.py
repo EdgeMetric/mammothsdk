@@ -587,10 +587,19 @@ _MAX_SUGGESTIONS = 5
 # Cap on the curated purpose text a match's ``matched_on`` field quotes back,
 # so one long entry can't bloat every result in a page.
 _MATCHED_ON_MAX_CHARS = 120
-_NO_MATCH_HINT = (
-    "No command matched every word. 'suggestions' match some of them; try fewer or other "
-    "words. 'mammoth view transform --help' lists every data transformation (join, pivot, "
-    "filter, dedupe, math, ...), and 'mammoth schema list' is the complete inventory."
+# T1-R-06: an agent reading "No command matched every word" stopped there and
+# never tried what 'suggestions' actually held (automation.create among
+# them) -- the framing read as a dead end even when it wasn't one. Word the
+# two cases (some candidates vs. none at all) differently so the presence of
+# 'suggestions' reads as "try these" rather than "nothing found".
+_NO_MATCH_HINT_WITH_SUGGESTIONS = (
+    "No single command matched every word, but 'suggestions' lists the closest candidates "
+    "-- each with its own matched_terms. Try one of those before rephrasing."
+)
+_NO_MATCH_HINT_NO_SUGGESTIONS = (
+    "No command matched any word; try fewer or other words. 'mammoth view transform --help' "
+    "lists every data transformation (join, pivot, filter, dedupe, math, ...), and 'mammoth "
+    "schema list' is the complete inventory."
 )
 _TOKEN_RE = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*")
 
@@ -1733,7 +1742,11 @@ def find_schemas(
         # A goal phrased in the user's words rarely carries every term; the
         # best near misses still say how to call them, so one find suffices.
         _inline_call_detail(result["suggestions"][:_INLINE_DETAIL_COUNT])
-        result["hint"] = _NO_MATCH_HINT
+        result["hint"] = (
+            _NO_MATCH_HINT_WITH_SUGGESTIONS
+            if result["suggestions"]
+            else _NO_MATCH_HINT_NO_SUGGESTIONS
+        )
     return result
 
 

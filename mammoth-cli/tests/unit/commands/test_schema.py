@@ -420,6 +420,30 @@ def test_matched_purpose_text_is_returned_so_the_caller_knows_why_it_matched() -
     assert "build a connector for an unsupported source" in matched_on, matched_on
 
 
+def test_hint_presents_suggestions_as_candidates_when_present() -> None:
+    """Live-eval evidence (T1-R-06): 'automation trigger on new file in folder;
+    scheduled weekly automation append data' returned zero full matches, and
+    the agent stopped at the "No command matched every word" hint even though
+    'suggestions' already held automation.create -- the framing read as a
+    dead end rather than "try one of these". A query with suggestions must
+    get a hint that says to use them; only a query with NO suggestions at all
+    gets the harsher "try fewer or other words" framing.
+    """
+    with_suggestions = find_schemas(
+        "automation trigger on new file in folder; scheduled weekly automation append data"
+    )
+    assert with_suggestions["total_matches"] == 0
+    assert with_suggestions["suggestions"]
+    assert "automation.create" in {m["command_id"] for m in with_suggestions["suggestions"]}
+    assert "candidates" in with_suggestions["hint"]
+    assert "No command matched every word" not in with_suggestions["hint"]
+
+    no_suggestions = find_schemas("zzqxwv frobnicate glarbnak")
+    assert no_suggestions["total_matches"] == 0
+    assert not no_suggestions["suggestions"]
+    assert "candidates" not in no_suggestions["hint"]
+
+
 def test_or_is_a_discovery_stopword_so_import_workbook_still_matches() -> None:
     """Live-eval evidence (T1-D-06): 'import Power BI or Tableau reports; export
     dashboard or board as PDF' -- the incidental conjunction 'or' was not a
