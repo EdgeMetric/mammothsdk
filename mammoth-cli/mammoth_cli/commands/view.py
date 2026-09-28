@@ -2442,6 +2442,7 @@ def view_export_specialized(invocation: Invocation) -> HandlerResult:
                 details={"dataset_id": dataset_id, "target_ds_id": int(target_ds_id)},
             )
         target_view_before = None
+        target_only_columns: list[str] = []
         if target_ds_id is not None:
             # Each `view export dataset` call creates its own PERSISTENT
             # export trigger on this view, which re-runs on every pipeline
@@ -2474,6 +2475,15 @@ def view_export_specialized(invocation: Invocation) -> HandlerResult:
             # rows_before is the target's own count ahead of this write, read
             # before the call so a later re-read can never be confused with it.
             target_view_before = _dataset_view_info(service, int(target_ds_id), result_project_id)
+            if save_as_mode == "APPEND_TO_DS" and target_view_before is not None:
+                target_only_columns = _reject_append_schema_mismatch(
+                    service,
+                    dataview_id,
+                    dataset_id,
+                    int(target_ds_id),
+                    target_view_before["id"],
+                    kwargs.get("column_mapping"),
+                )
         data = service.call_view(dataview_id, method, dataset_id=dataset_id, **kwargs)
         if is_dataset_route and isinstance(data, int):
             # The SDK returns the bare id of the dataset written to; name it, and
@@ -2522,6 +2532,13 @@ def view_export_specialized(invocation: Invocation) -> HandlerResult:
                 # An append is expected to grow the target; verify.py treats
                 # a non-increase here as unverified, not just an omitted count.
                 row_check["expected_row_increase"] = True
+            if target_only_columns:
+                # Allowed -- an append never has to cover every target column
+                # -- but worth surfacing rather than leaving silent.
+                row_check["warnings"] = [
+                    "target dataset has column(s) the source view does not (kept "
+                    "as-is): " + ", ".join(target_only_columns)
+                ]
             data["row_check"] = row_check
             if pipeline_error is not None:
                 data["pipeline_error"] = pipeline_error
@@ -2562,6 +2579,50 @@ def _existing_internal_dataset_export(
         and int(target) == target_ds_id
     ]
     return max(matches, key=lambda export: export.id or 0) if matches else None
+
+
+def _reject_append_schema_mismatch(
+    service: Any,
+    dataview_id: int,
+    dataset_id: int | None,
+    target_ds_id: int,
+    target_view_id: int,
+    column_mapping: Any,
+) -> list[str]:
+    """Refuse an ``APPEND_TO_DS`` export whose source has a column the target
+    dataset's schema does not, and ``column_mapping`` does not cover.
+
+    An append writes into rows the target dataset already has; a source
+    column with no home in the target schema and no explicit mapping would
+    otherwise reach the backend as a malformed write. Checked here, before
+    the call, so the refusal costs nothing and names exactly what to fix.
+
+    Returns the target-only column names (present in the target schema, not
+    in the source, not a ``column_mapping`` destination) -- allowed, but
+    worth a warning rather than silence.
+    """
+    source_columns = service.call_view(dataview_id, "columns", dataset_id=dataset_id)
+    target_columns = service.call_view(target_view_id, "columns", dataset_id=target_ds_id)
+    mapping = column_mapping if isinstance(column_mapping, dict) else {}
+    source_names = set(source_columns) if isinstance(source_columns, dict) else set()
+    target_names = set(target_columns) if isinstance(target_columns, dict) else set()
+    source_only = sorted(source_names - target_names - set(mapping))
+    target_only = sorted(target_names - source_names - set(mapping.values()))
+    if source_only:
+        raise CliError(
+            code="append_schema_mismatch",
+            message=(
+                f"View {dataview_id} has column(s) the target dataset {target_ds_id} "
+                f"does not: {', '.join(source_only)}."
+            ),
+            exit_status=EXIT_USAGE,
+            hint=(
+                "Map these in column_mapping (source column -> an existing target "
+                "column), or rename them in the source view to match the target schema."
+            ),
+            details={"source_only": source_only, "target_only": target_only},
+        )
+    return target_only
 
 
 def _dataset_view_info(

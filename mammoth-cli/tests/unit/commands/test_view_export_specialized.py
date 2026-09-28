@@ -194,6 +194,90 @@ def test_dataset_route_marks_an_append_that_adds_no_rows_as_unverified(
     assert verified["reason"] == "the append did not add rows"
 
 
+def test_dataset_route_rejects_append_when_source_has_unmapped_columns(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    """An APPEND_TO_DS whose source view has a column the target dataset's
+    schema does not, with no ``column_mapping`` entry for it, is refused
+    before any write -- an append that silently drops or mismatches a
+    column is worse than an early, explicit refusal.
+    """
+    fake_service.responses[_DATAVIEW_LIST] = {"dataviews": [{"id": 500, "row_count": 60}]}
+    fake_service.view_responses[(7, "columns")] = {"Region": "column_1", "Amount": "column_2"}
+    fake_service.view_responses[(500, "columns")] = {"Region": "column_1"}
+    with pytest.raises(CliError) as excinfo:
+        view_cmd.view_export_specialized(
+            _inv(
+                "view.export.dataset",
+                project=180,
+                extra_args=["7", "3"],
+                input_file=_doc(
+                    tmp_path,
+                    {"dataset_name": "orders", "target_ds_id": 9, "save_as_mode": "APPEND_TO_DS"},
+                ),
+                yes=True,
+            )
+        )
+    assert excinfo.value.code == "append_schema_mismatch"
+    assert "Amount" in excinfo.value.message
+    assert excinfo.value.details == {"source_only": ["Amount"], "target_only": []}
+    assert "to_dataset" not in [call[1] for call in fake_service.view_call_log]
+
+
+def test_dataset_route_allows_append_when_column_mapping_covers_the_difference(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    fake_service.view_responses[(7, "to_dataset")] = 9
+    fake_service.responses[_DATAVIEW_LIST] = {"dataviews": [{"id": 500, "row_count": 60}]}
+    fake_service.view_responses[(7, "columns")] = {"Region": "column_1", "Amt": "column_2"}
+    fake_service.view_responses[(500, "columns")] = {"Region": "column_1", "Amount": "column_2"}
+    data, _meta = view_cmd.view_export_specialized(
+        _inv(
+            "view.export.dataset",
+            project=180,
+            extra_args=["7", "3"],
+            input_file=_doc(
+                tmp_path,
+                {
+                    "dataset_name": "orders",
+                    "target_ds_id": 9,
+                    "save_as_mode": "APPEND_TO_DS",
+                    "column_mapping": {"Amt": "Amount"},
+                },
+            ),
+            yes=True,
+        )
+    )
+    assert data["dataset_id"] == 9
+    assert "warnings" not in data.get("row_check", {})
+
+
+def test_dataset_route_warns_when_target_has_columns_the_source_lacks(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    fake_service.view_responses[(7, "to_dataset")] = 9
+    fake_service.responses[_DATAVIEW_LIST] = {"dataviews": [{"id": 500, "row_count": 60}]}
+    fake_service.view_responses[(7, "columns")] = {"Region": "column_1"}
+    fake_service.view_responses[(500, "columns")] = {"Region": "column_1", "Notes": "column_2"}
+    data, _meta = view_cmd.view_export_specialized(
+        _inv(
+            "view.export.dataset",
+            project=180,
+            extra_args=["7", "3"],
+            input_file=_doc(
+                tmp_path,
+                {"dataset_name": "orders", "target_ds_id": 9, "save_as_mode": "APPEND_TO_DS"},
+            ),
+            yes=True,
+        )
+    )
+    assert data["row_check"]["warnings"] == [
+        "target dataset has column(s) the source view does not (kept as-is): Notes"
+    ]
+    verified = with_verify(data)["verify"]
+    assert "target dataset has column(s)" in verified["warnings"][0]
+
+
 def test_dataset_route_rejects_a_second_export_into_the_same_target(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
