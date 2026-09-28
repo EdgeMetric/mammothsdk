@@ -334,6 +334,14 @@ _COMMAND_DISCOVERY_PURPOSES = {
         "add change edit update chart charts kpi to an existing dashboard board "
         "by description sentence ai show instead"
     ),
+    # "I messed up the board, put it back to how it was before" (T1-D-09) --
+    # this is the version list dashboard.canvas.restore's target_sequence
+    # comes from (revisions[]: sequence, updated_at, updated_by_name), but
+    # nothing in its own path/purpose said undo/revert/before.
+    "dashboard.chat.history": (
+        "undo revert put back previous version before restore history versions saved "
+        "last change board"
+    ),
     "dashboard.pdf.export": "pdf of a board dashboard download print meeting export",
     "view.checkpoint.create": (
         "stop halt pause pipeline alert notify flag when rows match a rule condition checkpoint"

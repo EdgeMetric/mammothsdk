@@ -388,6 +388,22 @@ def test_pick_up_where_we_left_off_reaches_agent_session_list() -> None:
         assert "agent.session.list" in matches[:3], f"{query!r} -> {matches}"
 
 
+def test_undo_dashboard_intent_reaches_chat_history() -> None:
+    """Live-eval evidence (T1-D-09): 'I messed up the board, put it back to how
+    it was before' -- dashboard.canvas.restore needs a target_sequence, and
+    dashboard.chat.history is the command that lists every saved version
+    (revisions[]) a sequence can be picked from, but neither 'undo', 'put back',
+    'previous version', 'before', nor 'revert' reached it.
+    """
+    for query in (
+        "put the dashboard back to how it was before",
+        "undo my last change to the board",
+        "revert the dashboard to a previous version",
+    ):
+        matches = [item["command_id"] for item in find_schemas(query)["matches"]]
+        assert "dashboard.chat.history" in matches, f"{query!r} -> {matches}"
+
+
 def test_storage_usage_intent_ranks_app_usage_above_storage_breakdown() -> None:
     """In-product-agent evidence: 'how much storage am I using, and what plan
     am I on?' only ever reached workspace.storage-breakdown -- a paginated

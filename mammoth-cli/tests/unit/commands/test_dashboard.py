@@ -983,3 +983,28 @@ def test_workbook_upload_commands_point_agent_to_import_page(command_id: str) ->
     assert "cannot reach the agent" in restrictions
     assert "/workspaces/{workspace_id}/publish/import" in restrictions
     assert "Publish → Import" in restrictions
+
+
+def test_canvas_restore_hint_points_to_chat_history_for_target_sequence() -> None:
+    """Live-eval evidence (T1-D-09): 'I messed up the board, put it back to how
+    it was before' -- dashboard.canvas.restore takes a target_sequence but
+    nothing told the agent where a valid one comes from. dashboard chat
+    history's revisions[] is that version list (sequence/updated_at/
+    updated_by_name, oldest first); the restore hint must say so.
+    """
+    commands = {str(record["command_id"]): record for record in load_commands()}
+    restrictions = str(commands["dashboard.canvas.restore"]["known_restrictions"])
+    assert "dashboard chat history" in restrictions
+    assert "revisions" in restrictions
+    assert "target_sequence" in restrictions
+
+
+def test_chat_history_hint_documents_revisions_field() -> None:
+    """revisions[] is real on the wire (extra=allow passthrough -- the pinned
+    SDK response model only declares messages/sequence/history_index) but was
+    never documented, so an agent had no a-priori reason to look for it."""
+    commands = {str(record["command_id"]): record for record in load_commands()}
+    restrictions = str(commands["dashboard.chat.history"]["known_restrictions"])
+    assert "revisions" in restrictions
+    assert "sequence" in restrictions
+    assert "canvas restore" in restrictions
