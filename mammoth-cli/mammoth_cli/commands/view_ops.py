@@ -302,6 +302,9 @@ def _dispatch_view(
     with open_service(invocation) as (service, auth):
         if dataset_id is None:
             dataset_id = parents.lookup(_profile_name(invocation), auth.workspace_id, view_id)
+        if dataset_id is not None:
+            # Verify and the state readback reuse it; neither may walk datasets.
+            object.__setattr__(invocation, "known_dataset_id", int(dataset_id))
         require_expected_task_count(service, view_id, dataset_id, document)
         if prepare is not None and dataset_id is not None:
             early = prepare(service, int(dataset_id), kwargs)

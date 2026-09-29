@@ -666,10 +666,5 @@ def project_check(invocation: Invocation) -> HandlerResult:
             else {}
         ),
         "to_report": to_report,
-        "note": (
-            "Before you report: fix each finding, or give it one line in the report "
-            "(what you did and why). A finding you do not mention is a miss."
-            if to_report
-            else "Nothing open in the views or dashboards."
-        ),
+        **({} if to_report else {"note": "Nothing open in the views or dashboards."}),
     }, meta

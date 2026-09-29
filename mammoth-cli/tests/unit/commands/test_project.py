@@ -270,7 +270,7 @@ def test_project_check_lists_every_open_finding_for_the_report(
         line.startswith("view 81 (t_b), column segment: blank_values") for line in data["to_report"]
     )
     assert any(line.startswith("dashboard 7: money_not_shown") for line in data["to_report"])
-    assert data["note"].startswith("Before you report")
+    assert "note" not in data
 
 
 def test_project_check_flags_other_views_instead_of_checking_only_one(

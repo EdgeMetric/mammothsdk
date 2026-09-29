@@ -364,9 +364,12 @@ def _pipeline_view_id(invocation: Invocation) -> int | None:
 def _known_dataset_id(invocation: Invocation) -> int | None:
     """The parent dataset id the write itself already carried, or None.
 
-    From the DATASET_ID positional or the ``dataset_id`` input field. When it
-    is absent the read falls back to the local parent memory, never a scan.
+    From the parent the write handler resolved, else the DATASET_ID positional
+    or the ``dataset_id`` input field. When it is absent the read falls back to
+    the local parent memory, never a scan.
     """
+    if invocation.known_dataset_id is not None:
+        return invocation.known_dataset_id
     value = invocation.positional("dataset_id")
     if value is None:
         try:

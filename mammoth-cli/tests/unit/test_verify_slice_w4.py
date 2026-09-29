@@ -13,6 +13,7 @@ from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.manifest.loader import command_by_id
 from mammoth_cli.runtime import state as state_mod
 from mammoth_cli.runtime.invocation import Invocation
+from mammoth_cli.runtime.state import _write_parent
 from mammoth_cli.runtime.verify import _known_dataset_id
 from mammoth_cli.services.board_values import (
     attach_values,
@@ -90,6 +91,19 @@ def test_verify_takes_the_dataset_from_the_positional_or_the_input_field(tmp_pat
     assert _known_dataset_id(positional) == 4
     assert _known_dataset_id(from_input) == 7
     assert _known_dataset_id(Invocation(command_id="view.transform.filter")) is None
+
+
+def test_verify_and_readback_use_the_parent_the_write_resolved() -> None:
+    # The write carried no dataset_id (the parent came from the local memory);
+    # the handler records it once and neither verify nor the readback walks.
+    write = Invocation(
+        command_id="view.transform.filter", positionals={"view_id": 9}, extra_args=["9"]
+    )
+    assert _known_dataset_id(write) is None
+    object.__setattr__(write, "known_dataset_id", 4)
+    assert _known_dataset_id(write) == 4
+    assert _write_parent(write, 9) == 4
+    assert _write_parent(write, 10) is None
 
 
 # -- a view edit returns the changed column's new values ------------------------------------

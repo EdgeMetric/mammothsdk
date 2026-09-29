@@ -289,9 +289,15 @@ def _delivery_state(read_by: str, read_data: Any) -> dict[str, Any]:
 # ---------------------------------------------------------------------------
 
 
+def _write_parent(base: Invocation, view_id: int | None) -> int | None:
+    """The parent the write resolved, when the view read back is the view it wrote."""
+    written = {_as_int(base.positional("view_id")), _as_int(base.positional("dataview_id"))}
+    return base.known_dataset_id if view_id is not None and view_id in written else None
+
+
 def _data_state(resolved_ids: dict[str, Any], base: Invocation) -> dict[str, Any]:
     view_id = _as_int(resolved_ids.get("view_id") or resolved_ids.get("dataview_id"))
-    dataset_id = _as_int(resolved_ids.get("dataset_id"))
+    dataset_id = _as_int(resolved_ids.get("dataset_id")) or _write_parent(base, view_id)
     if view_id is None:
         if dataset_id is None:
             raise ValueError("readback kind 'data' needs a resolved view_id or dataset_id")

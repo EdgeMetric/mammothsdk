@@ -137,6 +137,16 @@ def profiles_from_view(
     return profiles
 
 
+def _rate(value: Any) -> float:
+    """A profile rate as a float; anything that is not a number is 0."""
+    return float(value) if isinstance(value, (int, float)) and not isinstance(value, bool) else 0.0
+
+
+def _percent(rate: float) -> str:
+    """A share as a whole percent, never rounding a real share down to 0%."""
+    return f"{max(round(rate * 100), 1)}%"
+
+
 def review(
     canvas_doc: Any,
     dataset_id: int | None = None,
@@ -220,19 +230,24 @@ def review(
     shown = measures | dims
     for profile in profiles:
         name = profile["name"]
-        rate = profile.get("nullRate") or profile.get("emptyRate") or 0
-        if not isinstance(rate, (int, float)) or rate <= 0:
+        nulls = _rate(profile.get("nullRate"))
+        # ``emptyRate`` is (nulls + zeros) / rows, so its excess over the null
+        # rate is the share of zeros, which are values and not blanks.
+        zeros = max(_rate(profile.get("emptyRate")) - nulls, 0.0)
+        if nulls <= 0 and zeros <= 0:
             continue
         if shown and name not in shown:
             continue
+        parts = []
+        if nulls > 0:
+            parts.append(f"{_percent(nulls)} of {name} is blank (null or empty)")
+        if zeros > 0:
+            parts.append(f"{_percent(zeros)} of {name} is 0")
         warnings.append(
             {
-                "issue": "blank_values",
+                "issue": "blank_values" if nulls > 0 else "zero_values",
                 "column": name,
-                "detail": (
-                    f"{round(rate * 100)}% of {name} is blank. Say in your report what you "
-                    "did: filled, filtered, or kept (and how the board shows them)."
-                ),
+                "detail": "; ".join(parts) + ".",
             }
         )
     return warnings

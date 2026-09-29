@@ -81,6 +81,20 @@ def test_an_empty_board_lists_every_blank_column() -> None:
     assert blanks == ["segment", "qty", "price"]
 
 
+def test_zeros_are_reported_as_zeros_and_never_as_blank() -> None:
+    # emptyRate is (nulls + zeros) / rows: 48% zeros and no nulls is not "48% blank".
+    profiles = [
+        {"name": "discount", "type": "measure", "nullRate": 0, "emptyRate": 0.48},
+        {"name": "profit", "type": "measure", "nullRate": 0.01, "emptyRate": 0.03},
+    ]
+    warnings = review(_doc([{"id": "p1"}], profiles=profiles))
+    found = {w["column"]: w for w in warnings if "column" in w}
+    assert found["discount"]["issue"] == "zero_values"
+    assert found["discount"]["detail"] == "48% of discount is 0."
+    assert found["profit"]["issue"] == "blank_values"
+    assert found["profit"]["detail"] == "1% of profit is blank (null or empty); 2% of profit is 0."
+
+
 def test_no_profile_means_no_advice() -> None:
     assert review(_doc([{"id": "p1"}], profiles=[])) == []
     assert review({"canvas": None}) == []
