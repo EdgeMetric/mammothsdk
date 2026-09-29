@@ -295,9 +295,10 @@ commands:
   live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
   contract_fixture: null
   required_fixture_guard: null
-  secret_fields: []
+  secret_fields:
+  - config
   human_example: mammoth connector connection create CONNECTOR_KEY --help
-  agent_example: 'mammoth connector connection create sample --input ''{"config": {"sample_key": "Status"}}'''
+  agent_example: mammoth connector connection create sample --input /private/path/request.json
   unit_tests:
   - UT-CONNECTOR-CONNECTION-CREATE
   contract_tests:
@@ -483,10 +484,10 @@ commands:
   live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
   contract_fixture: null
   required_fixture_guard: null
-  secret_fields: []
+  secret_fields:
+  - credentials
   human_example: mammoth connector connection update CONNECTOR_KEY CONNECTION_KEY --help
-  agent_example: 'mammoth connector connection update sample sample --input ''{"credentials": {"sample_key":
-    "Status"}}'''
+  agent_example: mammoth connector connection update sample sample --input /private/path/request.json
   unit_tests:
   - UT-CONNECTOR-CONNECTION-UPDATE
   contract_tests:

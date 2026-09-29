@@ -23,6 +23,8 @@ _MIN_VALUES = 3
 _MAX_EXAMPLES = 3
 #: Most groups of variant spellings to name in one warning.
 _MAX_VARIANT_GROUPS = 5
+#: Above this many distinct labels a column is not a set of names to compare pairwise.
+_MAX_LABELS_COMPARED = 200
 
 _NUMBER = re.compile(r"^[-+]?[$€£]?\s*\d[\d,]*(\.\d+)?\s*%?$|^[-+]?[$€£]?\s*\.\d+\s*%?$")
 #: Punctuation is normalised to a space, not dropped, so "Pepsi,Cola" and
@@ -144,6 +146,74 @@ def _variant_spellings_warning(
     }
 
 
+def _parse_date(value: Any) -> datetime | None:
+    text = str(value).strip()[:19]
+    for fmt in _DATE_FORMATS:
+        try:
+            return datetime.strptime(text, fmt)
+        except ValueError:
+            continue
+    return None
+
+
+def _date_spans(
+    rows: list[Mapping[str, Any]], column: str, date_column: str
+) -> dict[str, tuple[datetime, datetime]]:
+    """Each label's first and last date, over rows where both parse."""
+    spans: dict[str, tuple[datetime, datetime]] = {}
+    for row in rows:
+        label, day = row.get(column), _parse_date(row.get(date_column))
+        if _blank(label) or day is None:
+            continue
+        first, last = spans.get(str(label), (day, day))
+        spans[str(label)] = (min(first, day), max(last, day))
+    return spans
+
+
+def _renamed_label_warning(
+    rows: list[Mapping[str, Any]],
+    column: str,
+    date_column: str,
+    view_id: int | None,
+) -> dict[str, Any] | None:
+    """A label that stops before a longer label starting with its words begins
+    reads as one thing renamed ("Riverside" -> "Riverside Mall"): left apart, its
+    figures split and a period comparison shows a false drop and a false newcomer.
+    """
+    spans = _date_spans(rows, column, date_column)
+    if len(spans) > _MAX_LABELS_COMPARED:
+        return None
+    words = {label: _spelling_key(label).split() for label in spans}
+    pairs = [
+        (old, new)
+        for old in spans
+        for new in spans
+        if 0 < len(words[old]) < len(words[new])
+        and words[new][: len(words[old])] == words[old]
+        and spans[old][1] < spans[new][0]
+    ]
+    if not pairs:
+        return None
+    shown = pairs[:_MAX_VARIANT_GROUPS]
+    examples = "; ".join(
+        f"{old!r} last on {spans[old][1]:%Y-%m-%d}, {new!r} first on {spans[new][0]:%Y-%m-%d}"
+        for old, new in shown
+    )
+    mapping = [{"search": [old], "replace": new} for old, new in shown]
+    return {
+        "column": column,
+        "issue": "renamed_label",
+        "detail": (
+            f"These labels never share a date and the later one starts with the earlier "
+            f"one's words, so each reads as one {column} renamed: {examples}. Left apart, "
+            "its figures split across two names and a period comparison shows a drop "
+            "and a new entry that are the same thing; confirm, then unify them."
+        ),
+        "fix": _bulk_replace_hint(view_id, column, mapping),
+        "rows_checked": len(rows),
+    }
+
+
 def _duplicate_rows_warning(
     rows: list[Mapping[str, Any]],
     view_id: int | None,
@@ -246,7 +316,7 @@ def column_warnings(
     Returns:
         One record per finding: ``column``, ``issue``
         (``numbers_stored_as_text``, ``dates_stored_as_text``,
-        ``variant_spellings``, ``blank_values`` or the table-level
+        ``variant_spellings``, ``renamed_label``, ``blank_values`` or the table-level
         ``duplicate_rows``), ``detail`` and, where one command fixes it,
         ``fix``. Counts are over the rows given (``rows_checked`` on each
         record).
@@ -306,6 +376,17 @@ def column_warnings(
             variant_warning = _variant_spellings_warning(column, texts, view_id, checked)
             if variant_warning is not None:
                 warnings.append(variant_warning)
+            date_column = next(
+                (name for name, kind in column_types.items() if str(kind).upper() == "DATE"),
+                None,
+            )
+            renamed = (
+                _renamed_label_warning(materialised, column, date_column, view_id)
+                if date_column is not None
+                else None
+            )
+            if renamed is not None:
+                warnings.append(renamed)
         if blanks:
             remove_fix = None
             if figures == [column] and view_id is not None and dataset_id is not None:

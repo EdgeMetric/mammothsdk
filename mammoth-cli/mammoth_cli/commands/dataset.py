@@ -28,6 +28,7 @@ from mammoth_cli.runtime.confirm import (
     enforce_confirmation,
 )
 from mammoth_cli.runtime.invocation import Invocation
+from mammoth_cli.runtime.new_data import with_file_upload_path
 from mammoth_cli.runtime.session import open_service, require_project
 
 HandlerResult = tuple[Any, dict[str, Any]]
@@ -322,6 +323,17 @@ def dataset_batch_data(invocation: Invocation) -> HandlerResult:
 
 def dataset_file_settings(invocation: Invocation) -> HandlerResult:
     """Get file settings (delimiter, header, dates, ...) for a dataset."""
+    data, meta = _read_dataset(invocation)
+    return with_file_upload_path(data, _require_int_positional(invocation, "dataset id")), meta
+
+
+def dataset_broken_rows(invocation: Invocation) -> HandlerResult:
+    """List the lines of a dataset's uploaded file that could not be parsed."""
+    return _read_dataset(invocation)
+
+
+def _read_dataset(invocation: Invocation) -> HandlerResult:
+    """Call this command's SDK read with the DATASET_ID positional."""
     project_id = require_project(invocation)
     dataset_id = _require_int_positional(invocation, "dataset id")
     if dataset_id <= 0:

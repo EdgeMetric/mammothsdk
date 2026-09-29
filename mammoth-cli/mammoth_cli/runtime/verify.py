@@ -22,6 +22,11 @@ JOIN_MATCH_RATE_THRESHOLD = 0.8
 #: view write can carry that runs a pipeline -- the only kind that can leave a
 #: downstream export referencing something the write just changed or removed.
 _VIEW_PIPELINE_MUTATION_CLASS = "reversible_pipeline"
+#: Pipeline writes outside that class that can still drop or rename a column
+#: a saved export reads: deleting a step, renaming, editing the pipeline.
+_EXPORT_BREAKING_COMMANDS = frozenset(
+    {"view.task.delete", "view.transform.rename-columns", "view.pipeline.edit"}
+)
 
 _VIEW_EXPORT_LIST_COMMAND = "view.export.list"
 
@@ -336,11 +341,14 @@ def _apply_downstream_export_check(verify: dict[str, Any], invocation: Invocatio
 
 
 def _pipeline_view_id(invocation: Invocation) -> int | None:
-    """The view id a ``reversible_pipeline`` write acted on, or None otherwise."""
+    """The view id a write that can break an export acted on, or None otherwise."""
     from mammoth_cli.manifest.loader import command_by_id
 
     record = command_by_id(invocation.command_id) or {}
-    if record.get("mutation_class") != _VIEW_PIPELINE_MUTATION_CLASS:
+    if (
+        record.get("mutation_class") != _VIEW_PIPELINE_MUTATION_CLASS
+        and invocation.command_id not in _EXPORT_BREAKING_COMMANDS
+    ):
         return None
     for name in ("view_id", "dataview_id"):
         value = invocation.positional(name)

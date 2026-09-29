@@ -12,6 +12,16 @@ Result: `DatasetBatchDataResult`; mutation `read`, confirmation `none`, wait pol
 
 Status on release: ran once on CLI 1.1.11 — Published PyPI CLI 1.1.11 / SDK 0.7.1 batch-data read succeeded for an ID observed from retained dataset 29; bounded 50-row page. One observed-ID chain and page; not Full.
 
+### `dataset.broken-rows.list`
+
+Run: `mammoth dataset broken-rows list`. Exact input fields: `mammoth schema get dataset.broken-rows.list`.
+
+Example: `mammoth dataset broken-rows list 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `DatasetBrokenRowsListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
 ### `dataset.bulk-delete`
 
 Run: `mammoth dataset bulk-delete`. Exact input fields: `mammoth schema get dataset.bulk-delete`.

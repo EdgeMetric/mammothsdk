@@ -442,6 +442,12 @@ class TestDatasetsAPI:
             client._request_json, "GET", "/datasets/500/file_settings"
         )
 
+    def test_get_unstructured_rows(self, client: MammothClient):
+        client.datasets.get_unstructured_rows(dataset_id=500)
+        assert_called_with_method_and_endpoint(
+            client._request_json, "GET", "/datasets/500/unstructured_rows"
+        )
+
     def test_bulk_update(self, client: MammothClient):
         client.datasets.bulk_update(patch_data={"name": "x"})
         assert_called_with_method_and_endpoint(client._request_json, "PATCH", "/datasets")

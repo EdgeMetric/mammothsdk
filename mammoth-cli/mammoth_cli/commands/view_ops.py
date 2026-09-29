@@ -674,6 +674,23 @@ def _require_clone_from_same_dataset(service: Any, clone_from: int, dataset_id: 
         )
 
 
+_DASHBOARDS_LIST_SYMBOL = "mammoth.api.dashboards.DashboardsAPI.list"
+
+
+def _with_dashboards(service: Any, view_id: int, record: Any) -> Any:
+    """Add the dashboards built on this view, so a user on the view's page who
+    says "this board" is understood (eval T1-D-22); unchanged when none."""
+    if not isinstance(record, dict):
+        return record
+    boards = service.call(_DASHBOARDS_LIST_SYMBOL)
+    built_on = [
+        {"id": board.get("id"), "title": board.get("title")}
+        for board in (boards if isinstance(boards, list) else [])
+        if isinstance(board, dict) and view_id in (board.get("sources") or [])
+    ]
+    return {**record, "dashboards": built_on} if built_on else record
+
+
 def view_get(invocation: Invocation) -> HandlerResult:
     """Get one view by id, optionally scoped to an exact dataset parent."""
     view_id = _view_id(invocation)
@@ -699,7 +716,8 @@ def view_get(invocation: Invocation) -> HandlerResult:
         with open_service(invocation) as (service, auth):
             data = service.call("mammoth.api.dataviews.DataviewsAPI.get", **kwargs)
             parents.remember(_profile_name(invocation), auth.workspace_id, {view_id: dataset_id})
-        data = apply_column_renames(data) if document.get("fields") else brief_view_record(data)
+            data = apply_column_renames(data) if document.get("fields") else brief_view_record(data)
+            data = _with_dashboards(service, view_id, data)
         return data, _meta(invocation, auth.workspace_id)
     context: dict[str, Any] = {"view_id": view_id}
     if dataset_id is not None:
@@ -718,12 +736,13 @@ def view_get(invocation: Invocation) -> HandlerResult:
         data = service.call(_symbol(invocation), **kwargs)
         payload = _view_payload(data)
         parents.remember_records(_profile_name(invocation), auth.workspace_id, payload)
-    if not document.get("fields"):
-        # The discovery path returns the standard record; trim it to the same
-        # brief shape the exact path asks the server for.
-        payload = brief_view_record(payload)
-    else:
-        payload = apply_column_renames(payload)
+        if not document.get("fields"):
+            # The discovery path returns the standard record; trim it to the same
+            # brief shape the exact path asks the server for.
+            payload = brief_view_record(payload)
+        else:
+            payload = apply_column_renames(payload)
+        payload = _with_dashboards(service, view_id, payload)
     return payload, _meta(invocation, auth.workspace_id)
 
 

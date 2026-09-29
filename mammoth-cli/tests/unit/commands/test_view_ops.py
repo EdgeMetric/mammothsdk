@@ -19,6 +19,7 @@ _CREATE = "mammoth.client.ViewsResource.create"
 _GET = "mammoth.client.ViewsResource.get"
 _DELETE = "mammoth.client.ViewsResource.delete"
 _FIND_DATASET = "mammoth.api.pipeline.PipelineAPI.find_dataset_for_dataview"
+_DASHBOARDS_LIST = "mammoth.api.dashboards.DashboardsAPI.list"
 
 
 @pytest.fixture(autouse=True)
@@ -84,7 +85,7 @@ def test_get_requires_view_id(fake_service: FakeMammothService) -> None:
 
 def test_get_uses_positional_view_id(fake_service: FakeMammothService) -> None:
     view_ops_cmd.view_get(_inv("view.get", extra_args=["7"]))
-    assert fake_service.call_log == [(_GET, {"view_id": 7})]
+    assert fake_service.call_log == [(_GET, {"view_id": 7}), (_DASHBOARDS_LIST, {})]
 
 
 class _RichView:
@@ -1225,7 +1226,8 @@ def test_get_with_exact_parent_asks_the_server_for_the_brief_projection(
     # display trees); the GET route projects server-side.
     view_ops_cmd.view_get(_inv("view.get", extra_args=["7", "63"]))
     assert fake_service.call_log == [
-        (_DV_GET, {"dataset_id": 63, "dataview_id": 7, "fields": _BRIEF})
+        (_DV_GET, {"dataset_id": 63, "dataview_id": 7, "fields": _BRIEF}),
+        (_DASHBOARDS_LIST, {}),
     ]
 
 
@@ -1235,7 +1237,7 @@ def test_get_fields_input_overrides_the_projection(
     doc = tmp_path / "in.json"
     doc.write_text('{"fields": "__full"}', encoding="utf-8")
     view_ops_cmd.view_get(_inv("view.get", extra_args=["7", "63"], input_file=str(doc)))
-    assert fake_service.call_log[-1][1]["fields"] == "__full"
+    assert fake_service.call_log[0][1]["fields"] == "__full"
 
 
 def test_get_via_discovery_trims_to_the_brief_shape(fake_service: FakeMammothService) -> None:
@@ -1294,7 +1296,7 @@ def test_discovery_get_with_fields_keeps_the_full_record(
     fake_service.responses[_GET] = rich
     doc = _write(tmp_path, {"fields": "__full"})
     data, _ = view_ops_cmd.view_get(_inv("view.get", extra_args=["7"], input_file=doc))
-    assert fake_service.call_log == [(_GET, {"view_id": 7})]
+    assert fake_service.call_log == [(_GET, {"view_id": 7}), (_DASHBOARDS_LIST, {})]
     assert data["display_properties"] == _RENAMED["display_properties"]
     assert data["metadata"][0]["display_name"] == "Customer Ref"
 
@@ -1536,3 +1538,18 @@ def test_expected_task_count_must_be_a_non_negative_integer(
         )
     assert excinfo.value.code == "invalid_resource_context"
     assert fake_service.call_log == []
+
+
+def test_get_names_the_dashboards_built_on_the_view(fake_service: FakeMammothService) -> None:
+    """Asked to send "this board" to Power BI from a view's page, the agent read
+    the view, found no board on it, and never looked for the one built on it
+    (eval T1-D-22)."""
+    fake_service.responses[_GET] = _RichView()
+    fake_service.responses[_DASHBOARDS_LIST] = [
+        {"id": 132, "title": "Sales board", "sources": [7]},
+        {"id": 133, "title": "Other board", "sources": [8]},
+    ]
+
+    data, _ = view_ops_cmd.view_get(_inv("view.get", extra_args=["7"]))
+
+    assert data["dashboards"] == [{"id": 132, "title": "Sales board"}]

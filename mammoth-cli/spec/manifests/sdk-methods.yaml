@@ -1555,7 +1555,8 @@ methods:
   mutation_class: external_effect
   wait_policy: not_async
   pagination_policy: none
-  secret_fields: []
+  secret_fields:
+  - config
   reviewed_by: primary
 - sdk_symbol: mammoth.api.connectors.ConnectorsAPI.create_ds_config
   implementation_origin: mammoth.api.connectors.ConnectorsAPI.create_ds_config
@@ -1687,7 +1688,8 @@ methods:
   mutation_class: external_effect
   wait_policy: not_async
   pagination_policy: none
-  secret_fields: []
+  secret_fields:
+  - credentials
   reviewed_by: primary
 - sdk_symbol: mammoth.api.connectors.ConnectorsAPI.update_ds_config
   implementation_origin: mammoth.api.connectors.ConnectorsAPI.update_ds_config
@@ -3553,6 +3555,18 @@ methods:
   signature: 'get_file_settings(self, dataset_id: ''int'', workspace_id: ''int | None'' = None, project_id: ''int | None'' = None) -> ''dict[str, Any]'''
   openapi_operation_ids: []
   canonical_command: dataset.file-settings.get
+  alias_of: null
+  no_command_reason: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.datasets.DatasetsAPI.get_unstructured_rows
+  implementation_origin: mammoth.api.datasets.DatasetsAPI.get_unstructured_rows
+  signature: 'get_unstructured_rows(self, dataset_id: ''int'', workspace_id: ''int | None'' = None, project_id: ''int | None'' = None) -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: dataset.broken-rows.list
   alias_of: null
   no_command_reason: null
   mutation_class: read

@@ -2073,13 +2073,16 @@ def view_pipeline_rerun(invocation: Invocation) -> HandlerResult:
     kwargs: dict[str, Any] = {"dataview_id": dataview_id}
     _forward_optional(document, kwargs, ("from_sequence", "dataset_id"))
     with open_service(invocation) as (service, auth):
-        data = service.call(_symbol(invocation), **kwargs)
         dataset_id = kwargs.get("dataset_id")
         if dataset_id is None:
             dataset_id = _resolve_dataset_id_for_settle(
                 service, invocation, dataview_id, document, 1
             )
-        data = _settle_async_view_write(service, dataset_id, dataview_id, invocation.project, data)
+        before = _rows_before(service, dataset_id, dataview_id, invocation.project)
+        data = service.call(_symbol(invocation), **kwargs)
+        data = _settle_async_view_write(
+            service, dataset_id, dataview_id, invocation.project, data, before
+        )
     return data, _meta(invocation, auth.workspace_id, None)
 
 
@@ -2133,13 +2136,16 @@ def view_task_delete(invocation: Invocation) -> HandlerResult:
     kwargs: dict[str, Any] = {"dataview_id": dataview_id, "task_id": task_id}
     _forward_optional(document, kwargs, ("dataset_id",))
     with open_service(invocation) as (service, auth):
-        data = service.call(_symbol(invocation), **kwargs)
         dataset_id = kwargs.get("dataset_id")
         if dataset_id is None:
             dataset_id = _resolve_dataset_id_for_settle(
                 service, invocation, dataview_id, document, 2
             )
-        data = _settle_async_view_write(service, dataset_id, dataview_id, invocation.project, data)
+        before = _rows_before(service, dataset_id, dataview_id, invocation.project)
+        data = service.call(_symbol(invocation), **kwargs)
+        data = _settle_async_view_write(
+            service, dataset_id, dataview_id, invocation.project, data, before
+        )
     return data, _meta(invocation, auth.workspace_id, None)
 
 
@@ -2193,13 +2199,16 @@ def view_task_update(invocation: Invocation) -> HandlerResult:
     assert document is not None
     _forward_optional(document, kwargs, ("dataset_id",))
     with open_service(invocation) as (service, auth):
-        data = service.call(_symbol(invocation), **kwargs)
         dataset_id = kwargs.get("dataset_id")
         if dataset_id is None:
             dataset_id = _resolve_dataset_id_for_settle(
                 service, invocation, dataview_id, document, 2
             )
-        data = _settle_async_view_write(service, dataset_id, dataview_id, invocation.project, data)
+        before = _rows_before(service, dataset_id, dataview_id, invocation.project)
+        data = service.call(_symbol(invocation), **kwargs)
+        data = _settle_async_view_write(
+            service, dataset_id, dataview_id, invocation.project, data, before
+        )
     return data, _meta(invocation, auth.workspace_id, None)
 
 
@@ -2509,6 +2518,33 @@ _SPECIAL_EXPORT_COMMON_FIELDS = frozenset(
 )
 
 
+def _reject_export_into_draft(service: Any, dataview_id: int, dataset_id: int) -> None:
+    """Refuse a dataset export on a view whose changes are held in a draft.
+
+    With auto-run off the view keeps new pipeline changes in a draft, so the
+    export would only be staged and write nothing; the SDK then waits out its
+    whole timeout for a write that cannot happen (eval T1-O-11).
+    """
+    pipeline = service.call(_PIPELINE_GET_SYMBOL, dataview_id=dataview_id, dataset_id=dataset_id)
+    draft_mode = pipeline.get("draft_mode") if isinstance(pipeline, dict) else None
+    if draft_mode in (None, "off"):
+        return
+    raise CliError(
+        code="view_in_draft",
+        message=(
+            f"View {dataview_id} holds its changes in a draft (auto-run is off), so an "
+            "export added now would be staged and write nothing."
+        ),
+        exit_status=EXIT_USAGE,
+        hint=(
+            f"Turn auto-run on with mammoth view draft auto-run {dataview_id} --input "
+            "'{\"enabled\": true}', add the export, then turn auto-run off again if the "
+            f"dataset should only update when asked (mammoth view pipeline rerun {dataview_id})."
+        ),
+        details={"dataview_id": dataview_id, "draft_mode": draft_mode},
+    )
+
+
 def view_export_specialized(invocation: Invocation) -> HandlerResult:
     """Run one of the SDK's typed ``View.export`` destination helpers."""
     route = _SPECIAL_EXPORTS.get(invocation.command_id)
@@ -2596,6 +2632,8 @@ def view_export_specialized(invocation: Invocation) -> HandlerResult:
                 ),
                 details={"dataset_id": dataset_id, "target_ds_id": int(target_ds_id)},
             )
+        if is_dataset_route:
+            _reject_export_into_draft(service, dataview_id, dataset_id)
         target_view_before = None
         target_only_columns: list[str] = []
         if target_ds_id is not None:
@@ -2999,8 +3037,30 @@ def _row_count_now(service: Any, dataset_id: int, view_id: int, project_id: int 
     return info.get("row_count") if isinstance(info, dict) else None
 
 
+def _rows_before(
+    service: Any, dataset_id: Any, view_id: int, project_id: int | None
+) -> dict[str, Any] | None:
+    """The view's row count read BEFORE an async write is sent.
+
+    Read after the call, a small view may already have recomputed, so the
+    "before" would be the new count and a real change would look like none.
+    None when the parent dataset is unknown (the settle step is skipped then).
+    """
+    if dataset_id is None:
+        return None
+    try:
+        return {"rows_before": _row_count_now(service, int(dataset_id), view_id, project_id)}
+    except CliError as exc:
+        return {"rows_before": None, "rows_before_error": f"{type(exc).__name__}: {exc}"}
+
+
 def _settle_async_view_write(
-    service: Any, dataset_id: Any, view_id: int, project_id: int | None, data: Any
+    service: Any,
+    dataset_id: Any,
+    view_id: int,
+    project_id: int | None,
+    data: Any,
+    before: dict[str, Any] | None,
 ) -> Any:
     """Turn an async view write's immediate response into a final one.
 
@@ -3017,12 +3077,7 @@ def _settle_async_view_write(
     if dataset_id is None or not isinstance(data, dict):
         return data
     dataset_id = int(dataset_id)
-    try:
-        row_check: dict[str, Any] = {
-            "rows_before": _row_count_now(service, dataset_id, view_id, project_id)
-        }
-    except CliError as exc:
-        row_check = {"rows_before": None, "rows_before_error": f"{type(exc).__name__}: {exc}"}
+    row_check: dict[str, Any] = dict(before or {"rows_before": None})
     rows_after, pipeline_error = wait_for_view_row_count(service, dataset_id, view_id, project_id)
     row_check["rows_after"] = rows_after
     data = {**data, "row_check": row_check}
