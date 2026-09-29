@@ -660,13 +660,6 @@ sdk_methods:
   wait_policy: null
   pagination_policy: null
   openapi_operation_ids: []
-- sdk_symbol: mammoth.api.billing.BillingAPI.invoice_get
-  canonical_command: billing.invoice.get
-  alias_of: null
-  mutation_class: null
-  wait_policy: null
-  pagination_policy: null
-  openapi_operation_ids: []
 - sdk_symbol: mammoth.api.billing.BillingAPI.invoice_list
   canonical_command: billing.invoice.list
   alias_of: null

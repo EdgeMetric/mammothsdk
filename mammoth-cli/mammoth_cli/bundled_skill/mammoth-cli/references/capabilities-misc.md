@@ -47,8 +47,6 @@ Ran once: `billing.stripe.history`, `billing.stripe.payment-method.list`, `billi
 | Command | State | Note |
 |---|---|---|
 | `billing.chargebee-plan` | observed blocker | backend_error: The CLI gates this GET behind --yes --confirm WORKSPACE_ID; with confirmation: HTTP 400 4SUBS014 'Chargebee plan not found for the given workspace' (workspace 4 is n |
-| `billing.invoice.get` | observed blocker | blocked_missing_fixture: The CLI gates this GET behind --yes --confirm WORKSPACE_ID; with confirmation: billing invoice list answered HTTP 500, so no invoice id was observed |
-| `billing.invoice.list` | observed blocker | backend_error: The CLI gates this GET behind --yes --confirm WORKSPACE_ID; with confirmation: HTTP 500 with empty body on GET /workspaces/4/subscription_v1/invoices |
 | `billing.stripe.preview-invoice` | observed blocker | backend_error: The CLI gates this GET behind --yes --confirm WORKSPACE_ID; with confirmation: HTTP 400 4SUBS037 'Failed to perform subscription operation' |
 | `billing.stripe.upcoming-invoice` | observed blocker | backend_error: The CLI gates this GET behind --yes --confirm WORKSPACE_ID; with confirmation: HTTP 400 4SUBS074 'Upcoming invoice not found' (no active Stripe subscription on works |
 | `billing.stripe.usage` | observed blocker | backend_error: The CLI gates this GET behind --yes --confirm WORKSPACE_ID; with confirmation: HTTP 400 5GENR010 UNKNOWN_ERROR 'Unknown error occurred |

@@ -566,7 +566,6 @@ HANDLERS: dict[str, Handler] = {
     "billing.chargebee-plan": billing_cmd.billing_chargebee_plan,
     "billing.hosted-page": billing_cmd.billing_hosted_page,
     "billing.invoice.charge": billing_cmd.billing_invoice_charge,
-    "billing.invoice.get": billing_cmd.billing_invoice_get,
     "billing.invoice.list": billing_cmd.billing_invoice_list,
     "billing.stripe.cancel": billing_cmd.billing_stripe_cancel,
     "billing.stripe.checkout-url": billing_cmd.billing_stripe_checkout_url,

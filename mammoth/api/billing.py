@@ -20,7 +20,6 @@ _list = list  # Alias to avoid shadowing by method name
 
 # ── Validation error constants ────────────────────────────────────────────────
 
-ERR_INVOICE_ID_POSITIVE = "`invoice_id` must be a positive integer, got {0}."
 ERR_PLAN_ID_POSITIVE = "`plan_id` must be a positive integer, got {0}."
 ERR_PAYMENT_METHOD_ID_EMPTY = "`payment_method_id` must be a non-empty string."
 ERR_OBJECT_TYPE_EMPTY = "`object_type` must be a non-empty string."
@@ -330,46 +329,13 @@ class BillingAPI:
 
     # ── Invoices ──────────────────────────────────────────────────────────
 
-    def invoice_list(self, limit: int | None = None, sort: str | None = None) -> dict[str, Any]:
-        """List the workspace's invoices.
-
-        Args:
-            limit: Maximum number of results to return (server default 50, max 100).
-            sort: Sort spec, e.g. ``"(date:desc)"`` (allowed fields: ``date``,
-                ``updated_at``).
+    def invoice_list(self) -> dict[str, Any]:
+        """List the workspace's invoices (Stripe billing history).
 
         Returns:
-            Dict with the invoices list.
+            Dict with the billing history entries (same as :meth:`stripe_history`).
         """
-        params: dict[str, Any] = {}
-        if limit is not None:
-            params["limit"] = limit
-        if sort is not None:
-            params["sort"] = sort
-        return self._client._request_json(
-            "GET",
-            f"/workspaces/{self._ws()}/subscription_v1/invoices",
-            params=params or None,
-        )
-
-    def invoice_get(self, invoice_id: int) -> dict[str, Any]:
-        """Get details of a specific invoice.
-
-        Args:
-            invoice_id: ID of the invoice (must be positive).
-
-        Returns:
-            Dict with invoice details.
-
-        Raises:
-            MammothValidationError: If ``invoice_id`` is not a positive integer.
-        """
-        if invoice_id <= 0:
-            raise MammothValidationError(ERR_INVOICE_ID_POSITIVE.format(invoice_id))
-        return self._client._request_json(
-            "GET",
-            f"/workspaces/{self._ws()}/subscription_v1/invoices/{invoice_id}",
-        )
+        return self.stripe_history()
 
     def invoice_charge(self) -> dict[str, Any]:
         """Trigger an immediate charge of the workspace's outstanding invoices.

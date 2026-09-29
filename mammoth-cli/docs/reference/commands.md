@@ -1,10 +1,10 @@
 # Command reference
 
-Generated from the reviewed command manifests for mammoth-cli 2.0.75.
+Generated from the reviewed command manifests for mammoth-cli 2.0.83.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
-Total commands: 571.
+Total commands: 573.
 
 ## activity
 
@@ -431,17 +431,6 @@ Total commands: 571.
 - Backing SDK: `mammoth.api.billing.BillingAPI.invoice_charge`
 - Agent example: `mammoth billing invoice charge`
 
-### `mammoth billing invoice get`
-
-**Arguments**
-
-- `INVOICE_ID` (int, required) — ID of the invoice.
-
-- Mutation class: `read`
-- Confirmation: `none`
-- Backing SDK: `mammoth.api.billing.BillingAPI.invoice_get`
-- Agent example: `mammoth billing invoice get 123`
-
 ### `mammoth billing invoice list`
 
 - Mutation class: `read`
@@ -620,6 +609,19 @@ Total commands: 571.
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.browse.BrowseAPI.workspace_resources`
 - Agent example: `mammoth browse workspace`
+
+## calc
+
+### `mammoth calc`
+
+**Arguments**
+
+- `EXPRESSION` (str, required) — Arithmetic expression: + - * / and parentheses, unary +/-, a trailing %% (divides by 100), and round(x[, ndigits]).
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth_cli.commands.calc.calc`
+- Agent example: `mammoth calc '2063664 - 1917815'`
 
 ## capability
 
@@ -836,7 +838,7 @@ Total commands: 571.
 - Mutation class: `external_effect`
 - Confirmation: `yes_always`
 - Backing SDK: `mammoth.api.connectors.ConnectorsAPI.create_connection`
-- Agent example: `mammoth connector connection create sample --input '{"config": {"sample_key": "Status"}}'`
+- Agent example: `mammoth connector connection create sample --input /private/path/request.json`
 
 ### `mammoth connector connection delete`
 
@@ -883,7 +885,7 @@ Total commands: 571.
 - Mutation class: `external_effect`
 - Confirmation: `yes_always`
 - Backing SDK: `mammoth.api.connectors.ConnectorsAPI.update_connection`
-- Agent example: `mammoth connector connection update sample sample --input '{"credentials": {"sample_key": "Status"}}'`
+- Agent example: `mammoth connector connection update sample sample --input /private/path/request.json`
 
 ### `mammoth connector ds-config create`
 
@@ -2334,6 +2336,17 @@ Total commands: 571.
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.datasets.DatasetsAPI.get_batch_data`
 - Agent example: `mammoth dataset batch-data 123 123`
+
+### `mammoth dataset broken-rows list`
+
+**Arguments**
+
+- `DATASET_ID` (int, required) — ID of the dataset.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.datasets.DatasetsAPI.get_unstructured_rows`
+- Agent example: `mammoth dataset broken-rows list 123`
 
 ### `mammoth dataset bulk-delete`
 
@@ -4268,6 +4281,18 @@ Total commands: 571.
 - Backing SDK: `mammoth.api.dataviews.DataviewsAPI.aggregate`
 - Agent example: `mammoth view data aggregate 123 --input '{"group_by": ["Channel"], "aggregations": [{"column": "Spend", "function": "SUM", "as_name": "Total Spend"}]}'`
 
+### `mammoth view data compare`
+
+**Arguments**
+
+- `VIEW_ID_A` (int, required) — ID of the first view to compare.
+- `VIEW_ID_B` (int, required) — ID of the second view to compare.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.dataviews.DataviewsAPI.aggregate`
+- Agent example: `mammoth view data compare 111 222 --input '{"group_by": ["Campaign"], "aggregations": [{"column": "Spend", "function": "SUM", "as_name": "Spend"}]}'`
+
 ### `mammoth view data explore`
 
 **Arguments**
@@ -5157,7 +5182,7 @@ Total commands: 571.
 - `VIEW_ID` (int, required) — ID of the view to act on.
 
 - Mutation class: `reversible_pipeline`
-- Confirmation: `none`
+- Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.View.delete_columns`
 - Agent example: `mammoth view transform delete-columns 123 --input '{"columns": ["Status"], "dataset_id": 456}'`
 
@@ -5832,9 +5857,9 @@ Total commands: 571.
 ### `mammoth workspace user add`
 
 - Mutation class: `benign_mutation`
-- Confirmation: `none`
+- Confirmation: `yes_always`
 - Backing SDK: `mammoth.api.workspaces.WorkspacesAPI.user_add`
-- Agent example: `mammoth workspace user add --input '{"email_ids": ["analyst@example.com"]}'`
+- Agent example: `mammoth workspace user add --yes --input '{"email_ids": ["analyst@example.com"]}'`
 
 ### `mammoth workspace user get`
 
