@@ -108,17 +108,34 @@ def _argv(case: dict[str, Any]) -> list[str]:
     return out
 
 
+# `addon list` is fail-loud by design (7363d74): the backend has no GET
+# /workspaces/{id}/addons route.  The SDK wire stays pinned below; the CLI must
+# refuse before any request leaves the process.
+CLI_UNSUPPORTED_ROUTES = frozenset({"addon.list"})
+
+
 @pytest.mark.parametrize("case", CASES, ids=lambda c: c["route"])
 def test_cli_to_recording_transport_uses_independent_wire(
     case: dict[str, Any], monkeypatch: pytest.MonkeyPatch, real_service: Any
 ) -> None:
     service, api = real_service(project_id=case.get("project"))
     monkeypatch.setattr(factory, "build_service", lambda *args, **kwargs: service)
+    if case["route"] in CLI_UNSUPPORTED_ROUTES:
+        result = make_runner().invoke(_argv(case))
+        assert result.exit_code == 2, result.output
+        assert json.loads(result.output)["error"]["code"] == "unsupported_contract"
+        assert api.requests == []
+        return
     method, path, kwargs = case["wire"]
     api.on(method, "/api/v2" + path, body=case["response"])
     result = make_runner().invoke(_argv(case))
     assert result.exit_code == 0, result.output
-    request = api.requests[case.get("wire_index", -1)]
+    # A settled write is followed by one automatic read-back GET (runtime/verify.py);
+    # the oracle is the mutation itself, so select it by method, not by position.
+    if "wire_index" in case:
+        request = api.requests[case["wire_index"]]
+    else:
+        request = next(r for r in reversed(api.requests) if r.method == method)
     assert request.method == method
     assert request.path.removeprefix("/api/v2") == path
     assert request.json_body == kwargs.get("json")

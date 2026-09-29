@@ -155,8 +155,15 @@ def test_rel198_view_get_honors_explicit_parent(
     payload.write_text(json.dumps({"dataset_id": DATASET}), encoding="utf-8")
     with _bind(monkeypatch, view_ops, service):
         view_ops.view_get(_inv("view.get", [str(VIEW)], str(payload)))
-    assert (_path(api), api.last().method) == (
-        f"/workspaces/4/projects/{PROJECT}/datasets/{DATASET}/dataviews/{VIEW}", "GET")
+    # The SDK resolves the latest pipeline sequence for the exact view (a read
+    # under the explicit parent), the view read follows, and the workspace-level
+    # dashboards read names boards built on it.  No discovery probe escapes.
+    view_path = f"/workspaces/4/projects/{PROJECT}/datasets/{DATASET}/dataviews/{VIEW}"
+    assert [(r.method, r.path.removeprefix("/api/v2")) for r in api.requests] == [
+        ("GET", f"{view_path}/pipeline/items"),
+        ("GET", view_path),
+        ("GET", "/dashboards"),
+    ]
 
 
 def test_rel198_view_get_rejects_nonpositive_explicit_parent_without_request(

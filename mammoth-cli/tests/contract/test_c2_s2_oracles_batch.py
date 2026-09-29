@@ -31,6 +31,10 @@ from mammoth_cli.services import factory
 from mammoth_cli.testing import login_default_profile, make_runner
 
 FIXTURE = Path(__file__).with_name("fixtures") / "C2-S2-BATCH-01.json"
+# `addon list` is fail-loud by design (7363d74): the backend has no GET
+# /workspaces/{id}/addons route.  The SDK wire stays pinned below; the CLI must
+# refuse before any request leaves the process.
+CLI_UNSUPPORTED_ROUTES = frozenset({"addon.list"})
 
 
 @pytest.fixture(autouse=True)
@@ -133,6 +137,12 @@ def test_cli_binding_reaches_real_sdk_transport(
     """Real CLI dispatch consumes every supplied field into exact wire data."""
     service, api = real_service(project_id=41)
     monkeypatch.setattr(factory, "build_service", lambda *args, **kwargs: service)
+    if case["route"] in CLI_UNSUPPORTED_ROUTES:
+        result = make_runner().invoke(_cli_argv(case))
+        assert result.exit_code == 2, result.output
+        assert json.loads(result.output)["error"]["code"] == "unsupported_contract"
+        assert api.requests == []
+        return
     expected = _expected_wire(case)
     response = case["response"]
     api.on(expected[0], re.escape("/api/v2" + expected[1]) + r"$", body=response)

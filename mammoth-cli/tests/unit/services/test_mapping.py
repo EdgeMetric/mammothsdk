@@ -418,6 +418,8 @@ def test_pipeline_timeout_identifies_view_and_recovers_via_pipeline_commands() -
         "phase": "pipeline",
         "dataset_id": 7,
         "project_id": 3,
+        "waited_seconds": 60,
+        "resume": "mammoth view pipeline wait 5 --project 3 --profile p",
     }
     assert mapped.recovery_commands == [
         "mammoth view pipeline get 5 --project 3 --profile p",
