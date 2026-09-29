@@ -44,6 +44,26 @@ from _sdk_catalog import CLI_ONLY_COMMANDS, EXTRA_OP_HINTS, load_sdk_catalog  # 
 from mammoth_cli.services.positionals import positionals_for  # noqa: E402
 
 REVIEWER = "primary"
+EDITS_TARGET_SOURCE = MANIFESTS / "edits-target.source.yaml"
+
+
+def _load_edits_target_commands() -> set[str]:
+    import yaml
+
+    data = yaml.safe_load(EDITS_TARGET_SOURCE.read_text(encoding="utf-8"))
+    return set(data["edits_target_commands"])
+
+
+def _with_edits_target(record: dict[str, Any], edits: set[str]) -> dict[str, Any]:
+    """Return the record with ``edits_target`` placed right after ``mutation_class``."""
+    if record["mutation_class"] == "read":
+        return record
+    out: dict[str, Any] = {}
+    for key, value in record.items():
+        out[key] = value
+        if key == "mutation_class":
+            out["edits_target"] = record["command_id"] in edits
+    return out
 
 
 def _yaml_dump(data: Any) -> str:
@@ -575,6 +595,16 @@ def build() -> dict[str, int]:
                 ),
                 contract_tests=[f"mammoth-cli/tests/contract/{test}.py::{test}"],
             )
+
+    edits = _load_edits_target_commands()
+    unknown = sorted(
+        c for c in edits if c not in commands or commands[c]["mutation_class"] == "read"
+    )
+    if unknown:
+        raise SystemExit(
+            f"edits-target.source.yaml lists non-mutating or unknown commands: {unknown}"
+        )
+    commands = {cid: _with_edits_target(rec, edits) for cid, rec in commands.items()}
 
     # write grouped by top-level group
     grouped: dict[str, list[dict[str, Any]]] = defaultdict(list)

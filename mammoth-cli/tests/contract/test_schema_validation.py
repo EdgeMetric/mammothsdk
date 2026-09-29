@@ -81,3 +81,26 @@ def test_loader_serves_edits_target() -> None:
 
     assert command_by_id("dataset.rename")["edits_target"] is True
     assert command_by_id("dashboard.qa.ask")["edits_target"] is False
+
+
+def _generator():
+    import importlib.util
+
+    path = CLI_ROOT / "scripts" / "build_manifests.py"
+    spec = importlib.util.spec_from_file_location("build_manifests_under_test", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def test_generator_source_matches_committed_edits_target() -> None:
+    """A regeneration must emit exactly the committed edits_target values."""
+    generator = _generator()
+    source = generator._load_edits_target_commands()
+    records = _command_records()
+    committed_true = {r["command_id"] for r in records if r.get("edits_target") is True}
+    assert source == committed_true
+    for record in records:
+        stamped = generator._with_edits_target(dict(record), source)
+        assert stamped.get("edits_target") == record.get("edits_target"), record["command_id"]
+        assert list(stamped) == list(record), record["command_id"]
