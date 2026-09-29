@@ -576,7 +576,7 @@ Sensitive structured input must come from a private file or pipe; never put secr
 ## external-key
 
 - `mammoth external-key create` [high_impact/confirm_target] -> mammoth.api.external_keys.ExternalKeysAPI.create
-  example: mammoth external-key create --input '{"key_type": "open_ai", "key_name": "Revenue report", "secure_key": "sample"}'
+  example: mammoth external-key create --input /private/path/request.json
 - `mammoth external-key delete` [destructive/prompt_or_yes] -> mammoth.api.external_keys.ExternalKeysAPI.delete
   example: mammoth external-key delete 123
 - `mammoth external-key get` [read/none] -> mammoth.api.external_keys.ExternalKeysAPI.get

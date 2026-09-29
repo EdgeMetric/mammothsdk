@@ -25,8 +25,7 @@ commands:
   secret_fields:
   - secure_key
   human_example: mammoth external-key create --help
-  agent_example: 'mammoth external-key create --input ''{"key_type": "open_ai", "key_name": "Revenue report",
-    "secure_key": "sample"}'''
+  agent_example: mammoth external-key create --input /private/path/request.json
   unit_tests:
   - UT-EXTERNAL-KEY-CREATE
   contract_tests:

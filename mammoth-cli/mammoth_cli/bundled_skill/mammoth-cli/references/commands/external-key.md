@@ -6,7 +6,9 @@ Every command returns the standard JSON envelope. On nonzero exit, read the erro
 
 Run: `mammoth external-key create`. Exact input fields: `mammoth schema get external-key.create`.
 
-Example: `mammoth external-key create --input '{"key_type": "open_ai", "key_name": "Revenue report", "secure_key": "sample"}'`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth external-key create --input /private/path/request.json`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+
+Secret fields: pass the body as `--input FILE` (mode 0600); never inline.
 
 Result: `ExternalKeyCreateResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
 

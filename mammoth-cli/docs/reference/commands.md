@@ -2547,7 +2547,7 @@ Total commands: 576.
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.external_keys.ExternalKeysAPI.create`
-- Agent example: `mammoth external-key create --input '{"key_type": "open_ai", "key_name": "Revenue report", "secure_key": "sample"}'`
+- Agent example: `mammoth external-key create --input /private/path/request.json`
 
 ### `mammoth external-key delete`
 
