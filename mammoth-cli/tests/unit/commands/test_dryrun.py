@@ -5,6 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
+from mammoth.models.dashboard_generated import ChatEditParams, ChatEditSpec
 
 from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.runtime.confirm import POLICY_YES_ALWAYS, enforce_confirmation
@@ -75,6 +76,15 @@ def test_jsonable_renders_sdk_objects_without_leaking_them() -> None:
         "c": {"column": "a", "op": "EQ"},
         "v": {"view_id": 5, "dataset_id": 9},
         "n": [1, 2],
+    }
+
+
+def test_jsonable_renders_an_sdk_request_model_as_its_fields() -> None:
+    """QA UQA-RT4-06: a dashboard edit card showed ``ChatEditSpec(params=...)``."""
+    body = ChatEditSpec(params=ChatEditParams(prompt="Remove the Average Price KPI"))
+
+    assert jsonable({"body": body}) == {
+        "body": {"params": {"prompt": "Remove the Average Price KPI"}}
     }
 
 

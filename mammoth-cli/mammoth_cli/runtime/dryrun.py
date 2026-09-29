@@ -36,8 +36,7 @@ DATAVIEW_GET = "mammoth.api.dataviews.DataviewsAPI.get"
 IRREVERSIBLE_CLASS = "destructive"
 
 NOTE_UNDECLARED = (
-    "Stopped before an SDK call the command's manifest does not declare; "
-    "nothing was sent for it."
+    "Stopped before an SDK call the command's manifest does not declare; nothing was sent for it."
 )
 
 
@@ -76,6 +75,9 @@ def jsonable(value: Any) -> Any:
         return [jsonable(item) for item in value]
     if value is None or isinstance(value, (str, int, float, bool)):
         return value
+    model_dump = getattr(value, "model_dump", None)
+    if callable(model_dump):  # an SDK request model (pydantic)
+        return jsonable(model_dump(mode="json", exclude_none=True))
     to_dict = getattr(value, "to_dict", None)
     if callable(to_dict):
         try:
