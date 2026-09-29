@@ -5894,7 +5894,7 @@ Total commands: 576.
 - Mutation class: `benign_mutation`
 - Confirmation: `yes_always`
 - Backing SDK: `mammoth.api.workspaces.WorkspacesAPI.user_add`
-- Agent example: `mammoth workspace user add --yes --input '{"email_ids": ["analyst@example.com"]}'`
+- Agent example: `mammoth workspace user add --input '{"email_ids": ["analyst@example.com"]}' --yes`
 
 ### `mammoth workspace user get`
 

@@ -138,7 +138,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth workspace user add`. Exact input fields: `mammoth schema get workspace.user.add`.
 
-Example: `mammoth workspace user add --yes --input '{"email_ids": ["analyst@example.com"]}'`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth workspace user add --input '{"email_ids": ["analyst@example.com"]}' --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `WorkspaceUserAddResult`; mutation `benign_mutation`, confirmation `yes_always`, wait policy `not_async`.
 

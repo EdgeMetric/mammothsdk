@@ -42,6 +42,19 @@ _OUTPUT_JSON_NO_INPUT: tuple[str, ...] = ()
 # the published example points at a protected owner-only file instead, so no
 # generated or copied command line ever puts a credential in argv.
 _PROTECTED_INPUT_PATH = "/private/path/request.json"
+# Commands whose useful example the SDK signature cannot express: a distinct
+# second id, an optional-but-central input field, or two views to compare.
+_FIXED_EXAMPLES: dict[str, tuple[tuple[str, ...], dict[str, Any]]] = {
+    "project.check": (("123", "456"), {}),
+    "view.data.profile": (("123",), {"target": "Churn"}),
+    "view.data.compare": (
+        ("111", "222"),
+        {
+            "group_by": ["Campaign"],
+            "aggregations": [{"column": "Spend", "function": "SUM", "as_name": "Spend"}],
+        },
+    ),
+}
 _OPAQUE_EXPERT_COMMANDS = frozenset({"view.task.add", "view.task.preview", "view.task.update"})
 _TYPED_TRANSFORM_ALTERNATIVES = [
     "view.transform.filter",
@@ -1063,6 +1076,17 @@ def runnable_example(
                 *_OUTPUT_JSON_NO_INPUT,
             ]
         )
+    if record["command_id"] in _FIXED_EXAMPLES:
+        positional_samples, sample_input = _FIXED_EXAMPLES[record["command_id"]]
+        return shlex.join(
+            [
+                "mammoth",
+                *record["command_path"].split(),
+                *positional_samples,
+                *(["--input", json.dumps(sample_input)] if sample_input else []),
+                *_OUTPUT_JSON_NO_INPUT,
+            ]
+        )
     if record["command_id"] == "batch.create-spec":
         return shlex.join(
             [
@@ -1223,7 +1247,7 @@ def runnable_example(
         else:
             tokens.extend(["--input", json.dumps(document)])
     tokens.extend(_OUTPUT_JSON_NO_INPUT)
-    if record["command_id"] in {"project.user.update", "data-app.share"}:
+    if record["command_id"] in {"project.user.update", "data-app.share", "workspace.user.add"}:
         # These published high-impact examples must satisfy the same policy
         # their manifests advertise; otherwise discovery emits a command that
         # deterministically fails before dispatch.

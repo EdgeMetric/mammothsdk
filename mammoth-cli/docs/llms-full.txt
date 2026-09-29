@@ -1278,7 +1278,7 @@ Sensitive structured input must come from a private file or pipe; never put secr
 - `mammoth workspace update` [high_impact/confirm_target] -> mammoth.api.workspace.WorkspaceAPI.update
   example: mammoth workspace update 123 --input '{"patches": [{"op": "replace", "path": "name", "value": "sample"}]}'
 - `mammoth workspace user add` [benign_mutation/yes_always] -> mammoth.api.workspaces.WorkspacesAPI.user_add
-  example: mammoth workspace user add --yes --input '{"email_ids": ["analyst@example.com"]}'
+  example: mammoth workspace user add --input '{"email_ids": ["analyst@example.com"]}' --yes
 - `mammoth workspace user get` [read/none] -> mammoth.api.workspace.WorkspaceAPI.get_user
   example: mammoth workspace user get resource-123
 - `mammoth workspace user list` [read/none] -> mammoth.api.workspace.WorkspaceAPI.list_users
