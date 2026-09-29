@@ -492,16 +492,15 @@ _DATE_COMPONENTS_NUMERIC = frozenset(
         DateComponent.SECOND.value,
         DateComponent.WEEK.value,
         DateComponent.QUARTER.value,
-        DateComponent.DAY_OF_WEEK.value,
+        DateComponent.WEEKDAY.value,
         DateComponent.DAY_OF_YEAR.value,
+        DateComponent.MILLISECOND.value,
     }
 )
 _DATE_COMPONENTS_DATE = frozenset({DateComponent.YEAR_MONTH_DAY_AS_DATE.value})
 
 # Every remaining component is a formatted string. ``DATE_ONLY`` is the one judgement call
-# here: it is absent from BOTH the executor's lists and from production, so it is typed by
-# the same fallback as the other unobserved composites rather than being special-cased on a
-# guess about its name.
+# here: the components the executor lists as neither NUMERIC nor DATE are strftime strings.
 DATE_COMPONENT_TYPE: dict[str, str] = {
     c.value: (
         "DATE"
