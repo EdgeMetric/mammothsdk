@@ -588,7 +588,7 @@ class SdkMammothService:
                     display=local_display,
                 )
                 if not spec.get("value_is_column") and "value" in spec:
-                    SdkMammothService._coerce_numeric_condition_value(spec, local_types)
+                    SdkMammothService.coerce_numeric_condition_value(spec, local_types)
             if spec.get("value_is_column") and "value" in spec:
                 check(
                     spec["value"],
@@ -646,7 +646,7 @@ class SdkMammothService:
             )
 
     @staticmethod
-    def _coerce_numeric_condition_value(spec: dict[str, Any], column_types: dict[str, str]) -> None:
+    def coerce_numeric_condition_value(spec: dict[str, Any], column_types: dict[str, str]) -> None:
         """Convert a numeric-string condition value against a NUMERIC column.
 
         The backend accepts a filter/set-values/pivot condition whose value is
@@ -669,7 +669,7 @@ class SdkMammothService:
             try:
                 number = float(item)
             except ValueError:
-                raise SdkMammothService._condition_value_type_error(
+                raise SdkMammothService.condition_value_type_error(
                     column, "NUMERIC", item
                 ) from None
             return int(number) if number.is_integer() else number
@@ -680,7 +680,7 @@ class SdkMammothService:
         )
 
     @staticmethod
-    def _condition_value_type_error(column: str, column_type: str, value: str) -> CliError:
+    def condition_value_type_error(column: str, column_type: str, value: str) -> CliError:
         """Build a stable pre-mutation condition-value type error."""
         return CliError(
             code="invalid_condition_value",
