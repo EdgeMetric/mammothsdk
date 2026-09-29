@@ -222,23 +222,59 @@ class TestProjectsAPI:
         )
 
     def test_list_agent_memory(self, client: MammothClient):
-        client.projects.list_agent_memory(project_id=42)
+        client._request_json.return_value = {
+            "projects": [
+                {"id": 7, "properties": {"agent_memory": ["other"]}},
+                {"id": 42, "properties": {"agent_memory": ["Show amounts in EUR"]}},
+            ]
+        }
+        result = client.projects.list_agent_memory(project_id=42)
         assert_called_with_method_and_endpoint(
-            client._request_json, "GET", "/workspaces/1/projects/42/agent-memory"
+            client._request_json, "GET", "/workspaces/1/projects"
         )
+        assert client._request_json.call_args.kwargs["params"]["fields"] == "id,properties"
+        assert result == {"items": ["Show amounts in EUR"]}
+
+    def test_list_agent_memory_absent_is_empty(self, client: MammothClient):
+        client._request_json.return_value = {"projects": [{"id": 42, "properties": {}}]}
+        assert client.projects.list_agent_memory(project_id=42) == {"items": []}
+
+    def test_list_agent_memory_unknown_project_raises(self, client: MammothClient):
+        client._request_json.return_value = {"projects": [{"id": 7}]}
+        with pytest.raises(ValueError, match="42"):
+            client.projects.list_agent_memory(project_id=42)
 
     def test_add_agent_memory(self, client: MammothClient):
-        client.projects.add_agent_memory(project_id=42, text="Show amounts in EUR")
+        client._request_json.return_value = {
+            "properties": {"agent_memory": ["Show amounts in EUR"]}
+        }
+        result = client.projects.add_agent_memory(project_id=42, text="Show amounts in EUR")
         assert_called_with_method_and_endpoint(
-            client._request_json, "POST", "/workspaces/1/projects/42/agent-memory"
+            client._request_json, "PATCH", "/workspaces/1/projects/42"
         )
-        assert client._request_json.call_args.kwargs["json"] == {"text": "Show amounts in EUR"}
+        assert_json_body(
+            client._request_json,
+            {"patches": [{"op": "add", "path": "agent_memory", "value": "Show amounts in EUR"}]},
+        )
+        assert result == {"items": ["Show amounts in EUR"]}
 
     def test_remove_agent_memory(self, client: MammothClient):
-        client.projects.remove_agent_memory(project_id=42, index=3)
+        client._request_json.return_value = {"properties": {}}
+        result = client.projects.remove_agent_memory(project_id=42, index=3)
         assert_called_with_method_and_endpoint(
-            client._request_json, "DELETE", "/workspaces/1/projects/42/agent-memory/3"
+            client._request_json, "PATCH", "/workspaces/1/projects/42"
         )
+        assert_json_body(
+            client._request_json,
+            {"patches": [{"op": "remove", "path": "agent_memory", "value": 3}]},
+        )
+        assert result == {"items": []}
+
+    def test_agent_memory_writes_reject_non_positive_project_id(self, client: MammothClient):
+        with pytest.raises(MammothValidationError):
+            client.projects.add_agent_memory(project_id=0, text="x")
+        with pytest.raises(MammothValidationError):
+            client.projects.remove_agent_memory(project_id=0, index=0)
 
     def test_publish_credentials(self, client: MammothClient):
         client.projects.publish_credentials(project_id=42, odbc_type="postgres")

@@ -171,21 +171,10 @@ def billing_invoice_charge(invocation: Invocation) -> HandlerResult:
     return data, _meta(invocation, auth.workspace_id, None)
 
 
-def billing_invoice_get(invocation: Invocation) -> HandlerResult:
-    """Get one invoice by id."""
-    invoice_id = _require_int_positional(invocation, "invoice id")
-    with open_service(invocation) as (service, auth):
-        data = service.call(_symbol(invocation), invoice_id=invoice_id)
-    return data, _meta(invocation, auth.workspace_id, None)
-
-
 def billing_invoice_list(invocation: Invocation) -> HandlerResult:
-    """List invoices for the workspace."""
-    document = _bound_document(invocation)
-    kwargs: dict[str, Any] = {}
-    _forward_optional(document, kwargs, ("limit", "sort"))
+    """List invoices for the workspace (Stripe billing history)."""
     with open_service(invocation) as (service, auth):
-        data = service.call(_symbol(invocation), **kwargs)
+        data = service.call(_symbol(invocation))
     return data, _meta(invocation, auth.workspace_id, None)
 
 

@@ -16,7 +16,6 @@ from mammoth_cli.testing import login_default_profile
 _CHARGEBEE_PLAN = "mammoth.api.billing.BillingAPI.chargebee_plan"
 _HOSTED_PAGE = "mammoth.api.billing.BillingAPI.hosted_page"
 _INVOICE_CHARGE = "mammoth.api.billing.BillingAPI.invoice_charge"
-_INVOICE_GET = "mammoth.api.billing.BillingAPI.invoice_get"
 _INVOICE_LIST = "mammoth.api.billing.BillingAPI.invoice_list"
 _STRIPE_CANCEL = "mammoth.api.billing.BillingAPI.stripe_cancel"
 _STRIPE_CHECKOUT_URL = "mammoth.api.billing.BillingAPI.stripe_checkout_url"
@@ -125,31 +124,6 @@ def test_invoice_charge_proceeds_with_confirm(fake_service: FakeMammothService) 
     assert fake_service.call_log == [(_INVOICE_CHARGE, {})]
 
 
-# --- invoice.get ---------------------------------------------------------------------
-
-
-def test_invoice_get_requires_invoice_id(fake_service: FakeMammothService) -> None:
-    with pytest.raises(CliError) as excinfo:
-        billing_cmd.billing_invoice_get(_inv("billing.invoice.get", yes=True, confirm="4"))
-    assert excinfo.value.code == "missing_argument"
-    assert fake_service.call_log == []
-
-
-def test_invoice_get_invalid_invoice_id(fake_service: FakeMammothService) -> None:
-    with pytest.raises(CliError) as excinfo:
-        billing_cmd.billing_invoice_get(
-            _inv("billing.invoice.get", extra_args=["abc"], yes=True, confirm="abc")
-        )
-    assert excinfo.value.code == "invalid_argument"
-    assert fake_service.call_log == []
-
-
-def test_invoice_get_needs_no_confirmation(fake_service: FakeMammothService) -> None:
-    """Item 11: a read (GET) is never high_impact/confirm_target."""
-    billing_cmd.billing_invoice_get(_inv("billing.invoice.get", extra_args=["501"], output="json"))
-    assert fake_service.call_log == [(_INVOICE_GET, {"invoice_id": 501})]
-
-
 # --- invoice.list --------------------------------------------------------------------
 
 
@@ -157,16 +131,6 @@ def test_invoice_list_needs_no_confirmation(fake_service: FakeMammothService) ->
     """Item 11: a read (GET) is never high_impact/confirm_target."""
     billing_cmd.billing_invoice_list(_inv("billing.invoice.list", output="json"))
     assert fake_service.call_log == [(_INVOICE_LIST, {})]
-
-
-def test_invoice_list_forwards_optional_fields(
-    fake_service: FakeMammothService, tmp_path: Path
-) -> None:
-    doc = _write(tmp_path, {"limit": 10, "sort": "-date"})
-    billing_cmd.billing_invoice_list(
-        _inv("billing.invoice.list", input_file=doc, yes=True, confirm="4")
-    )
-    assert fake_service.call_log == [(_INVOICE_LIST, {"limit": 10, "sort": "-date"})]
 
 
 # --- stripe.cancel -------------------------------------------------------------------

@@ -32,16 +32,6 @@ Result: `BillingInvoiceChargeResult`; mutation `high_impact`, confirmation `conf
 
 Status on release: untried; no live run recorded.
 
-### `billing.invoice.get`
-
-Run: `mammoth billing invoice get`. Exact input fields: `mammoth schema get billing.invoice.get`.
-
-Example: `mammoth billing invoice get 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
-
-Result: `BillingInvoiceGetResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
-
-Status on release: observed blocker — blocked_missing_fixture: The CLI gates this GET behind --yes --confirm WORKSPACE_ID; with confirmation: billing invoice list answered HTTP 500, so no invoice id was observed. Re-check before relying on it.
-
 ### `billing.invoice.list`
 
 Run: `mammoth billing invoice list`. Exact input fields: `mammoth schema get billing.invoice.list`.
@@ -50,7 +40,7 @@ Example: `mammoth billing invoice list`. Placeholders are illustrative; resolve 
 
 Result: `BillingInvoiceListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
-Status on release: observed blocker — backend_error: The CLI gates this GET behind --yes --confirm WORKSPACE_ID; with confirmation: HTTP 500 with empty body on GET /workspaces/4/subscription_v1/invoices. Re-check before relying on it.
+Status on release: untried; no live run recorded.
 
 ### `billing.stripe.cancel`
 

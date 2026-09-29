@@ -191,30 +191,42 @@ def test_core_read_batch02_matches_literal_release_wire(
     )
 
 
-def test_project_memory_commands_match_the_agent_memory_wire(
+def test_project_memory_commands_match_the_project_patch_wire(
     real_service: Any, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
-    """``project memory`` list/add/remove hit the per-user agent-memory route."""
+    """``project memory`` reads the project list and writes via the project PATCH."""
     service, api = real_service(project_id=PROJECT)
-    api.default(200, {"items": ["Show amounts in EUR"]})
-    route = f"/workspaces/4/projects/{PROJECT}/agent-memory"
+    memory = ["Show amounts in EUR"]
+    api.on(
+        "GET",
+        r"/workspaces/4/projects$",
+        body={"projects": [{"id": PROJECT, "properties": {"agent_memory": memory}}]},
+    )
+    api.on(
+        "PATCH",
+        rf"/workspaces/4/projects/{PROJECT}$",
+        body={"id": PROJECT, "properties": {"agent_memory": memory}},
+    )
+    route = f"/workspaces/4/projects/{PROJECT}"
+    patch_add = {"patches": [{"op": "add", "path": "agent_memory", "value": memory[0]}]}
+    patch_remove = {"patches": [{"op": "remove", "path": "agent_memory", "value": 0}]}
     cases = [
-        ("project.memory.list", "project_memory_list", None, "GET", route, None),
+        ("project.memory.list", "project_memory_list", None, "GET", "/workspaces/4/projects", None),
         (
             "project.memory.add",
             "project_memory_add",
-            {"text": "Show amounts in EUR"},
-            "POST",
+            {"text": memory[0]},
+            "PATCH",
             route,
-            {"text": "Show amounts in EUR"},
+            patch_add,
         ),
         (
             "project.memory.remove",
             "project_memory_remove",
             {"index": 0},
-            "DELETE",
-            f"{route}/0",
-            None,
+            "PATCH",
+            route,
+            patch_remove,
         ),
     ]
     for command, handler_name, payload, method, path, body in cases:
@@ -225,7 +237,7 @@ def test_project_memory_commands_match_the_agent_memory_wire(
         with _bind(monkeypatch, project, service):
             data, _ = getattr(project, handler_name)(_inv(command, [str(PROJECT)], input_file))
         assert (_path(api), api.last().method, api.last().json_body) == (path, method, body)
-        assert data == {"items": ["Show amounts in EUR"]}
+        assert data == {"items": memory}
 
 
 def test_project_memory_add_requires_text() -> None:

@@ -8613,11 +8613,11 @@ operations:
   response_schemas:
   - InvoicesSchema
   deprecated: false
-  disposition: command
-  disposition_reason: User-initiated production operation.
-  canonical_command: billing.invoice.list
-  alias_of: null
-  sdk_symbol: mammoth.api.billing.BillingAPI.invoice_list
+  disposition: alias
+  disposition_reason: Chargebee-only invoice read that returns nothing for Stripe workspaces; the Stripe billing-history endpoint replaces it.
+  canonical_command: null
+  alias_of: billing.stripe.history
+  sdk_symbol: null
   reviewed_by: primary
 - identity: GET /workspaces/{workspace_id}/subscription_v1/invoices/{invoice_id}
   method: GET
@@ -8633,11 +8633,11 @@ operations:
   response_schemas:
   - InvoiceSchema
   deprecated: false
-  disposition: command
-  disposition_reason: User-initiated production operation.
-  canonical_command: billing.invoice.get
-  alias_of: null
-  sdk_symbol: mammoth.api.billing.BillingAPI.invoice_get
+  disposition: alias
+  disposition_reason: Chargebee-only invoice read that returns nothing for Stripe workspaces; the Stripe billing-history endpoint replaces it.
+  canonical_command: null
+  alias_of: billing.stripe.history
+  sdk_symbol: null
   reviewed_by: primary
 - identity: GET /workspaces/{workspace_id}/templates
   method: GET

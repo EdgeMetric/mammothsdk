@@ -76,7 +76,9 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth connector connection create`. Exact input fields: `mammoth schema get connector.connection.create`.
 
-Example: `mammoth connector connection create sample --input '{"config": {"sample_key": "Status"}}'`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth connector connection create sample --input /private/path/request.json`. Illustrative only: append `--yes` after observing an owned target.
+
+Secret fields: pass the body as `--input FILE` (mode 0600); never inline.
 
 Result: `ConnectorConnectionCreateResult`; mutation `external_effect`, confirmation `yes_always`, wait policy `not_async`.
 
@@ -116,7 +118,9 @@ Status on release: observed blocker — server_error: see sweep report. Re-check
 
 Run: `mammoth connector connection update`. Exact input fields: `mammoth schema get connector.connection.update`.
 
-Example: `mammoth connector connection update sample sample --input '{"credentials": {"sample_key": "Status"}}'`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth connector connection update sample sample --input /private/path/request.json`. Illustrative only: append `--yes` after observing an owned target.
+
+Secret fields: pass the body as `--input FILE` (mode 0600); never inline.
 
 Result: `ConnectorConnectionUpdateResult`; mutation `external_effect`, confirmation `yes_always`, wait policy `not_async`.
 
@@ -199,8 +203,6 @@ Run: `mammoth connector list`. Exact input fields: `mammoth schema get connector
 Example: `mammoth connector list`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ConnectorListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
-
-`is_premium: true` with `is_added: false` means the connector must be enabled by Mammoth sales before this workspace can use it -- not that nobody has set it up yet. Such an item also carries `availability: "premium_not_enabled"` and an `availability_note` saying so. Tell the user why (premium, not enabled here) and offer to contact Mammoth sales; there is no CLI command that enables a premium connector or contacts sales on the user's behalf.
 
 Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Listed 42 available connectors (name_key, disp_name, api_type, is_added, is_premium). Single invocation only.
 

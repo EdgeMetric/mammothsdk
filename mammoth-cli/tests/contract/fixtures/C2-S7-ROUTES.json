@@ -1,13 +1,13 @@
 {
   "schema_version": 1,
   "task": "C2/S7 remaining-families",
-  "route_count": 104,
+  "route_count": 103,
   "families": {
     "activity": 2,
     "agent": 5,
     "ai": 4,
     "automation": 7,
-    "billing": 23,
+    "billing": 22,
     "client-app": 5,
     "schedule": 5,
     "support": 45,
@@ -912,58 +912,14 @@
       }
     },
     {
-      "command_id": "billing.invoice.get",
-      "operation_id": "GetInvoice",
-      "sdk_symbol": "mammoth.api.billing.BillingAPI.invoice_get",
-      "field_destinations": {
-        "invoice_id": {
-          "source": "positional",
-          "destination": "invoice_id"
-        }
-      },
-      "context_destinations": {},
-      "wire": {
-        "method": "GET",
-        "path": "/workspaces/{workspace_id}/subscription_v1/invoices/{invoice_id}",
-        "body": "none",
-        "checks": [
-          "method",
-          "path",
-          "body"
-        ]
-      },
-      "dropped_field_sentinel": "__s7_dropped_field__",
-      "wire_verification": {
-        "status": "unverified",
-        "executed_controls": [],
-        "planned_controls": [
-          "exact_sdk_symbol",
-          "field_consumption",
-          "wire_method_path_body",
-          "reject_dropped_field"
-        ]
-      }
-    },
-    {
       "command_id": "billing.invoice.list",
-      "operation_id": "ListInvoices",
+      "operation_id": "GetWorkspaceBillingHistory",
       "sdk_symbol": "mammoth.api.billing.BillingAPI.invoice_list",
-      "field_destinations": {
-        "limit": {
-          "source": "input",
-          "destination": "limit",
-          "wire": "sdk_argument"
-        },
-        "sort": {
-          "source": "input",
-          "destination": "sort",
-          "wire": "sdk_argument"
-        }
-      },
+      "field_destinations": {},
       "context_destinations": {},
       "wire": {
         "method": "GET",
-        "path": "/workspaces/{workspace_id}/subscription_v1/invoices",
+        "path": "/workspaces/{workspace_id}/subscription/billing-history",
         "body": "none",
         "checks": [
           "method",
