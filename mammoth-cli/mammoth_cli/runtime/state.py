@@ -187,6 +187,7 @@ def _read_invocation(command_id: str, resolved_ids: dict[str, Any], base: Invoca
         timeout=base.timeout,
         job_timeout=base.job_timeout,
         pipeline_timeout=base.pipeline_timeout,
+        return_running=base.return_running,
         no_input=True,
         positionals=positionals,
         extra_args=extra_args,

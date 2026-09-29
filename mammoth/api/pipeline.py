@@ -15,8 +15,8 @@ from urllib.parse import parse_qs, urlparse
 
 from ..exceptions import (
     MammothAPIError,
-    MammothJobTimeoutError,
     MammothPaginationError,
+    MammothPipelineTimeoutError,
     MammothTransformError,
     MammothValidationError,
 )
@@ -542,7 +542,8 @@ class PipelineAPI:
 
         Raises:
             MammothTransformError: If pipeline reaches ``runtime_error`` or ``ref_error``.
-            MammothJobTimeoutError: If timeout is exceeded.
+            MammothPipelineTimeoutError: If timeout is exceeded (a
+                ``MammothJobTimeoutError`` subclass identifying the view, not a job).
         """
         effective_timeout = (
             timeout if timeout is not None else getattr(self._client, "pipeline_timeout", 3600)
@@ -567,7 +568,9 @@ class PipelineAPI:
                 return pipeline
 
             if time.monotonic() >= deadline:
-                raise MammothJobTimeoutError(job_id=dataview_id, timeout_seconds=effective_timeout)
+                raise MammothPipelineTimeoutError(
+                    dataview_id, effective_timeout, dataset_id=ds, project_id=proj
+                )
 
             logger.debug("Pipeline state for dataview %d: %s — waiting...", dataview_id, state)
             time.sleep(poll_interval)

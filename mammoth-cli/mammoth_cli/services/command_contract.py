@@ -603,6 +603,9 @@ S7_COMMANDS = frozenset(
 # admission, and handler binding agree instead of treating every arbitrary
 # keyword as valid.
 _S7_ADDITIONAL_INPUT_FIELDS: dict[str, tuple[FieldSpec, ...]] = {
+    # Published-dashboard jobs are readable only through the URL-scoped job
+    # route; ``job wait`` polls it when the dashboard URL slug is given.
+    "job.wait": (FieldSpec("dashboard_url", required=False, annotation=str | None, default=None),),
     # The GET data route has no server-side page size; the CLI trims the row
     # list so a read-back costs a screen of tokens, not the whole view.
     "view.data.get": (

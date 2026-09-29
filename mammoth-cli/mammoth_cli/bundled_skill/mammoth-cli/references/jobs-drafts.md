@@ -24,6 +24,11 @@ or wait that job — inspect it rather than submitting the original mutation.
 The `--job-timeout` /
 `--pipeline-timeout` options bound the wait.
 
+With `--return-running` a wait that runs out exits 0 with `{status: running, job_id, resume}`
+(`dataview_id` for a pipeline wait). `mammoth job wait JOB_ID` resumes: it returns
+`{status: success, job_id, result}`, a `job_failed` error with the reason, or the running handle
+again, and waits at most 15 minutes by default.
+
 A transport failure during a mutation without a confirmed job/resource handle
 is `outcome_unknown`. Re-read the exact target and scope before replaying it;
 the operation may already have committed.

@@ -580,6 +580,24 @@ def _shared_option_params() -> list[inspect.Parameter]:
             ],
         ),
         opt(
+            "return_running",
+            False,
+            Annotated[
+                bool,
+                typer.Option(
+                    "--return-running",
+                    help=(
+                        "When a job or pipeline wait runs out, exit 0 with "
+                        "{status: running, job_id or dataview_id, resume} instead of a "
+                        "timeout error; resume with 'mammoth job wait JOB_ID' "
+                        "(reports success, failure or still running; waits at most "
+                        "15 minutes by default)."
+                    ),
+                    rich_help_panel="Context and timeouts",
+                ),
+            ],
+        ),
+        opt(
             "pipeline_timeout",
             None,
             Annotated[

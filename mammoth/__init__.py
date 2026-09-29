@@ -53,6 +53,7 @@ from mammoth.exceptions import (
     MammothExportError,
     MammothJobFailedError,
     MammothJobTimeoutError,
+    MammothPipelineTimeoutError,
     MammothTransformError,
     MammothValidationError,
 )
@@ -151,7 +152,7 @@ from mammoth.models.workspaces import (
 )
 from mammoth.view import View, ViewExport
 
-__version__ = "0.7.38"
+__version__ = "0.7.39"
 __all__ = [
     # Client
     "MammothClient",
@@ -265,6 +266,7 @@ __all__ = [
     "MammothTransformError",
     "MammothColumnError",
     "MammothJobTimeoutError",
+    "MammothPipelineTimeoutError",
     "MammothJobFailedError",
     "MammothValidationError",
     "MammothExportError",

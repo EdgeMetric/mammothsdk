@@ -32,7 +32,7 @@ from mammoth_cli.runtime import parents
 from mammoth_cli.services.coerce import coerce_arguments
 from mammoth_cli.services.conditions import CONDITION_KWARG, compile_condition
 from mammoth_cli.services.dispatch import resolve_sdk_method
-from mammoth_cli.services.mapping import map_sdk_exception
+from mammoth_cli.services.mapping import map_sdk_exception, with_dashboard_scope
 
 #: Largest ``limit`` the projects route accepts (``4GENR007`` above it).
 _PROJECT_MISS = re.compile(r"^Project (ID \d+|'.*') not found\.")
@@ -284,7 +284,10 @@ class SdkMammothService:
                     fetch=lambda job_id, _remaining: dashboards.job_by_url(dashboard_url, job_id),
                 )
         except Exception as exc:
-            raise map_sdk_exception(exc) from exc
+            mapped = map_sdk_exception(exc)
+            if dashboard_url is not None:
+                mapped = with_dashboard_scope(mapped, dashboard_url)
+            raise mapped from exc
 
     def call_view(
         self,

@@ -180,3 +180,35 @@ def test_help_is_captured_as_a_success_envelope_not_no_output(
     assert "date-diff" in envelope["data"]["help"]
     assert envelope["meta"]["command"] == "view transform"
     assert capsys.readouterr() == ("", "")
+
+
+def test_job_timeout_and_return_running_options_are_appended() -> None:
+    from mammoth_cli.embed import _argv
+
+    argv = _argv(
+        ["job", "wait", "9"],
+        project_id=None,
+        timeout=None,
+        pipeline_timeout=None,
+        job_timeout=45.0,
+        return_running=True,
+    )
+
+    assert argv[:5] == ["job", "wait", "9", "--job-timeout", "45.0"]
+    assert "--return-running" in argv
+
+
+def test_args_that_already_set_job_timeout_and_return_running_win() -> None:
+    from mammoth_cli.embed import _argv
+
+    argv = _argv(
+        ["job", "wait", "9", "--job-timeout=5", "--return-running"],
+        project_id=None,
+        timeout=None,
+        pipeline_timeout=None,
+        job_timeout=45.0,
+        return_running=True,
+    )
+
+    assert argv.count("--return-running") == 1
+    assert not any(token == "--job-timeout" for token in argv)

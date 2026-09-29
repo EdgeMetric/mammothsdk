@@ -32,9 +32,17 @@ from mammoth_cli.services.protocol import MammothService
 #: pass ``--timeout 300`` by hand. Reads keep the SDK default.
 DEFAULT_MUTATION_JOB_TIMEOUT = 300.0
 
+#: Wait budget for ``job wait`` / ``job wait-many`` when no timeout was given:
+#: long enough for a big transform, and never unbounded, so a resuming agent
+#: is always told the job's state (success, failure, or still running).
+DEFAULT_JOB_WAIT_TIMEOUT = 900.0
+_JOB_WAIT_COMMANDS = ("job.wait", "job.wait-many")
+
 
 def default_job_timeout(command_id: str) -> float | None:
     """The job-wait timeout for ``command_id`` when none was configured."""
+    if command_id in _JOB_WAIT_COMMANDS:
+        return DEFAULT_JOB_WAIT_TIMEOUT
     record = command_by_id(command_id) or {}
     if record.get("mutation_class", "read") in (None, "read"):
         return None
