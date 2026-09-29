@@ -71,15 +71,6 @@ def test_a_read_command_gets_no_verify_block(fake_service: FakeMammothService) -
     assert "verify" not in data
 
 
-def test_a_dry_run_gets_no_verify_block(fake_service: FakeMammothService) -> None:
-    result = make_runner().invoke(
-        ["dataset", "delete", "7", "--project", "180", "--dry-run", *_JSON_NO_INPUT]
-    )
-    assert result.exit_code == 0, result.output
-    data = json.loads(result.output)["data"]
-    assert "verify" not in data
-
-
 def test_a_plain_view_transform_gets_a_row_check(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:

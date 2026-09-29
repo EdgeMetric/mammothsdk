@@ -3395,19 +3395,18 @@ class TestProjectsPagination:
             "next": next_token,
         }
 
-    def test_list_sends_offset_only_when_nonzero(self, client: MammothClient):
+    def test_list_always_sends_the_params_the_server_requires(self, client: MammothClient):
         client.projects.list(limit=50)
         assert client._request_json.call_args.kwargs["params"] == {
             "fields": "id,name",
             "limit": 50,
+            "offset": 0,
+            "sort": "(id:asc)",
+            "subscribed": "",
         }
         client._request_json.reset_mock()
         client.projects.list(limit=50, offset=50)
-        assert client._request_json.call_args.kwargs["params"] == {
-            "fields": "id,name",
-            "limit": 50,
-            "offset": 50,
-        }
+        assert client._request_json.call_args.kwargs["params"]["offset"] == 50
 
     def test_list_all_follows_full_pages(self, client: MammothClient):
         client._request_json.side_effect = [

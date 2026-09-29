@@ -72,9 +72,15 @@ class ProjectsAPI:
             ``offset`` and ``next`` (empty when this is the last page).
         """
         ws = workspace_id or self._ws()
-        params: dict[str, Any] = {"fields": fields, "limit": limit}
-        if offset:
-            params["offset"] = offset
+        # ``offset``, ``sort`` and ``subscribed`` are always sent: the server rejects a
+        # projects listing without them (an empty ``subscribed`` lists every project).
+        params: dict[str, Any] = {
+            "fields": fields,
+            "limit": limit,
+            "offset": offset,
+            "sort": "(id:asc)",
+            "subscribed": "",
+        }
         return self._client._request_json("GET", f"/workspaces/{ws}/projects", params=params)
 
     def list_all(

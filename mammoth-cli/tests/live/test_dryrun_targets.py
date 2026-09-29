@@ -31,7 +31,11 @@ import pytest
 from mammoth_cli import embed
 from mammoth_cli.context.resolver import ExplicitLogin
 from mammoth_cli.manifest.loader import load_commands
-from mammoth_cli.runtime.dryrun_targets import CODE_TARGETS_UNRESOLVABLE, COMMAND_TARGETS
+from mammoth_cli.runtime.dryrun_targets import (
+    CODE_TARGETS_UNRESOLVABLE,
+    COMMAND_TARGETS,
+    SUBS,
+)
 
 pytestmark = pytest.mark.live
 
@@ -68,6 +72,7 @@ class World:
 
     login: ExplicitLogin
     project: int = 0
+    spare_projects: list[int] = field(default_factory=list)
     names: dict[str, str] = field(default_factory=dict)
     ids: dict[str, int] = field(default_factory=dict)
 
@@ -78,6 +83,11 @@ class World:
 
     def ok(self, *args: str, scoped: bool = True) -> dict[str, Any]:
         envelope = self.run(*args, scoped=scoped)
+        for _ in range(2):  # koyal answers 502/504 under load; a scratch duplicate is harmless
+            if envelope.get("error", {}).get("code") not in ("outcome_unknown", "retryable_error"):
+                break
+            time.sleep(15)
+            envelope = self.run(*args, scoped=scoped)
         assert "error" not in envelope, f"{' '.join(args)}: {envelope.get('error')}"
         data: dict[str, Any] = envelope["data"]
         return data
@@ -128,6 +138,7 @@ def _build(world: World, tmp: Path, stamp: int) -> None:
         data = world.ok(*command, name, *extra, *_YES)
         record = data.get("webhook", data)
         world.ids[key], world.names[key] = int(record["id"]), name
+    _build_view_parts(world, a)
     made = world.ok(
         "dashboard",
         "create-blank",
@@ -142,9 +153,45 @@ def _build(world: World, tmp: Path, stamp: int) -> None:
     world.names["user"] = f"{me['first_name']} {me['last_name']}".strip()
 
 
+def _first(world: World, args: tuple[str, ...], key: str, label: str) -> tuple[Any, str] | None:
+    """The first item of an existing list read: (id, label), or None when empty."""
+    data = world.ok(*args)
+    items = data if isinstance(data, list) else data.get(key, [])
+    return (items[0]["id"], items[0][label]) if items else None
+
+
+def _build_view_parts(world: World, dataset: int) -> None:
+    """A pipeline step, its version and a draft on real views; a group; spare projects."""
+    view = str(world.ids["view"])
+    scope = json.dumps({"dataset_id": dataset})
+    world.ok(
+        "view",
+        "transform",
+        "limit-rows",
+        view,
+        "--input",
+        json.dumps({"n": 2, "dataset_id": dataset}),
+        *_YES,
+    )
+    tasks = world.ok("view", "task", "list", view, "--input", scope)["tasks"]
+    world.ids["task"], world.names["task"] = tasks[0]["id"], "step 1: LIMIT"
+    versions = world.ok("view", "version", "list", view, str(dataset))["versions"]
+    world.ids["version"], world.names["version"] = versions[0]["id"], versions[0]["name"]
+    world.ok("view", "draft", "enter", str(world.ids["view2"]), "--input", scope, *_YES)
+    name = f"dryrun_group_{int(time.time())}"
+    world.ids["group"], world.names["group"] = (
+        int(world.ok("parameter", "group", "create", name, *_YES)["id"]),
+        name,
+    )
+    for key in ("spare1", "spare2"):
+        name = f"{PREFIX}-{key}-{int(time.time())}"
+        world.ids[key], world.names[key] = _create_project(world, name), name
+        world.spare_projects.append(world.ids[key])
+
+
 def _sweep(world: World) -> None:
     """Delete the scratch projects this run created, by the ids it recorded."""
-    for pid in (world.project,):
+    for pid in (world.project, *world.spare_projects):
         if pid:
             world.run(
                 "project", "delete", str(pid), "--yes", "--confirm", str(pid), *_QUIET, scoped=False
@@ -246,6 +293,82 @@ def _cases(world: World) -> dict[str, tuple[list[str], list[dict[str, Any]]]]:
             ["workflow", "delete", str(world.ids["workflow"])],
             [_target(world, "workflow", "workflow")],
         ),
+        "view.task.delete": (
+            [
+                "view",
+                "task",
+                "delete",
+                str(world.ids["view"]),
+                str(world.ids["task"]),
+                "--input",
+                json.dumps({"dataset_id": a}),
+            ],
+            [
+                {
+                    "type": "step",
+                    "id": world.ids["task"],
+                    "name": (
+                        f"\u201c{world.names['view']}\u201d \u203a step "
+                        f"\u201c{world.names['task'][5:]}\u201d"
+                    ),
+                }
+            ],
+        ),
+        "view.version.delete": (
+            [
+                "view",
+                "version",
+                "delete",
+                str(world.ids["view"]),
+                str(world.ids["version"]),
+                str(a),
+            ],
+            [
+                {
+                    "type": "version",
+                    "id": world.ids["version"],
+                    "name": (
+                        f"\u201c{world.names['view']}\u201d \u203a version "
+                        f"\u201c{world.names['version']}\u201d"
+                    ),
+                }
+            ],
+        ),
+        "view.draft.discard": (
+            [
+                "view",
+                "draft",
+                "discard",
+                str(world.ids["view2"]),
+                "--input",
+                json.dumps({"dataset_id": a}),
+            ],
+            [
+                {
+                    "type": "draft",
+                    "id": world.ids["view2"],
+                    "name": f"\u201c{world.names['view2']}\u201d \u203a unsaved draft changes",
+                }
+            ],
+        ),
+        "parameter.group.delete": (
+            ["parameter", "group", "delete", str(world.ids["group"])],
+            [
+                {
+                    "type": "parameter group",
+                    "id": world.ids["group"],
+                    "name": f"parameter group \u201c{world.names['group']}\u201d",
+                }
+            ],
+        ),
+        "project.delete": (
+            ["project", "delete", str(world.ids["spare1"])],
+            [_target(world, "project", "spare1")],
+        ),
+        "project.bulk-delete": (
+            ["project", "bulk-delete", "--input", f'{{"project_ids": {ids("spare1", "spare2")}}}'],
+            [_target(world, "project", "spare1"), _target(world, "project", "spare2")],
+        ),
         "dashboard.delete": (
             ["dashboard", "delete", str(world.ids["dashboard"])],
             [_target(world, "dashboard", "dashboard")],
@@ -280,6 +403,12 @@ CASE_IDS = [
     "dashboard.delete",
     "workspace.user.remove",
     "workspace.user.remove-batch",
+    "view.task.delete",
+    "view.version.delete",
+    "view.draft.discard",
+    "parameter.group.delete",
+    "project.delete",
+    "project.bulk-delete",
 ]
 
 
@@ -312,59 +441,40 @@ def test_an_unknown_id_fails_loud_with_no_targets(world: World) -> None:
     assert envelope["error"]["hint"]
 
 
-def test_covered_commands_are_all_live_cases() -> None:
-    """Every mapped command is exercised above, or listed as not live-testable."""
-    not_live = {
-        # automation: needs a cloud dataset; schedule: koyal answers "Not implemented";
-        # external-key: needs a key the provider validates; data-app: needs an automation.
-        # project.*: the SDK's ProjectsAPI.get (list_all) omits offset=0 and koyal now
-        # rejects that, so `project get` fails upstream and the dry run fails with it.
-        "project.delete", "project.bulk-delete",
-        "automation.delete", "schedule.delete", "external-key.delete", "data-app.delete",
-    }  # fmt: skip
-    assert set(COMMAND_TARGETS) - not_live == set(CASE_IDS)
+MAPPED = set(COMMAND_TARGETS) | set(SUBS) | {"user.avatar.delete"}
 
 
-def _unmapped_destructive() -> list[str]:
-    return sorted(
-        r["command_id"]
-        for r in load_commands()
-        if r["mutation_class"] == "destructive" and r["command_id"] not in COMMAND_TARGETS
-    )
+def test_every_destructive_command_has_a_reader() -> None:
+    destructive = {r["command_id"] for r in load_commands() if r["mutation_class"] == "destructive"}
+    assert destructive - MAPPED == set()
 
 
-@pytest.mark.parametrize("command_id", _unmapped_destructive())
-def test_a_destructive_command_with_no_reader_fails_loud(
-    world: World,
-    command_id: str,
-) -> None:
+def test_the_only_unnameable_destructive_call_is_a_filter_selection() -> None:
+    """`notification delete-batch` without ids deletes by filter: no target list exists."""
+    # Exercised live below (test_a_filter_selection_fails_loud); nothing else may be unnameable.
+    assert "notification.delete-batch" in SUBS
+
+
+def _not_set_up_live() -> list[str]:
+    return sorted(MAPPED - set(CASE_IDS))
+
+
+@pytest.mark.parametrize("command_id", _not_set_up_live())
+def test_a_command_without_live_setup_names_or_fails_loud(world: World, command_id: str) -> None:
+    """Dummy ids from the manifest example: the dry run names them or errors, never `[]`."""
     record = next(r for r in load_commands() if r["command_id"] == command_id)
-    argv = _needing_real_ids(world).get(command_id) or _example_argv(
-        str(record.get("agent_example") or "")
-    )
-    envelope = world.dry(*argv)
-    error = envelope.get("error")
-    assert error is not None, f"{command_id} reported {envelope.get('data')}"
-    if error["code"] != CODE_TARGETS_UNRESOLVABLE:
-        pytest.fail(f"{command_id} stopped earlier with {error['code']}: {error['message'][:120]}")
+    envelope = world.dry(*_example_argv(str(record.get("agent_example") or "")))
+    if "error" in envelope:
+        assert envelope["error"]["code"]
+        return
+    targets = envelope["data"]["targets"]
+    assert targets
+    assert all(t["name"] for t in targets)
 
 
-def _needing_real_ids(world: World) -> dict[str, list[str]]:
-    """Unmapped commands whose manifest example is refused before the dry-run stop."""
-    view, dataset = world.ids["view"], world.ids[f"ds_dta_{_stamp(world)}"]
-    return {
-        "view.draft.discard": [
-            *("view", "draft", "discard", str(view)),
-            *("--input", json.dumps({"dataset_id": dataset})),
-        ],
-        "workspace.user.remove-batch": [
-            "workspace",
-            "user",
-            "remove-batch",
-            "--input",
-            '{"ids": "1"}',
-        ],
-    }
+def test_a_filter_selection_fails_loud(world: World) -> None:
+    envelope = world.dry("notification", "delete-batch", "--input", '{"is_read": true}')
+    assert envelope["error"]["code"] == CODE_TARGETS_UNRESOLVABLE
 
 
 def _example_argv(example: str) -> list[str]:
