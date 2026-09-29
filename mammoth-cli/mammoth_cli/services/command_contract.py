@@ -626,6 +626,21 @@ _S7_ADDITIONAL_INPUT_FIELDS: dict[str, tuple[FieldSpec, ...]] = {
     # The dataview GET takes a server-side projection: "__min", "__standard",
     # "__full" or a comma-separated field list.
     "view.get": (FieldSpec("fields", required=False, annotation=str | None, default=None),),
+    # ``order_by`` (result labels, ``"Total desc"``) and ``top`` rank the groups on the
+    # backend; ``text_date_format`` settles a day/month-ambiguous TEXT date column.
+    "view.data.aggregate": (
+        FieldSpec("order_by", required=False, annotation=list[Any] | None, default=None),
+        FieldSpec("top", required=False, annotation=int | None, default=None),
+        FieldSpec("text_date_format", required=False, annotation=str | None, default=None),
+    ),
+    "view.data.explore": (
+        FieldSpec("text_date_format", required=False, annotation=str | None, default=None),
+    ),
+    "view.data.query": (
+        FieldSpec("text_date_format", required=False, annotation=str | None, default=None),
+    ),
+    # ``full`` returns the raw ``{id, name}`` list instead of the summaries.
+    "dataset.list": (FieldSpec("full", required=False, annotation=bool, default=False),),
     # ``view list`` records are trimmed to the brief shape; ``full`` keeps
     # them. ``dataset_offset`` resumes the no-DATASET_ID, every-dataset-in-
     # the-project walk (item G) at a later dataset index.

@@ -30,6 +30,7 @@ from mammoth_cli.runtime.confirm import (
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.new_data import with_file_upload_path
 from mammoth_cli.runtime.session import open_service, require_project
+from mammoth_cli.services.listing import DATASET_LIST_FIELDS, dataset_summary, fit_budget
 
 HandlerResult = tuple[Any, dict[str, Any]]
 
@@ -192,14 +193,43 @@ def dataset_find(invocation: Invocation) -> HandlerResult:
 
 
 def dataset_list(invocation: Invocation) -> HandlerResult:
-    """List datasets in the active project."""
+    """List datasets in the active project, newest first, each with what tells them apart.
+
+    Every item carries its size, created/updated time, how its data arrived, and
+    its column names and types (from the list route's stored ``stats``,
+    ``sources`` and ``data_schema``), cut to fit the agent tool output cap.
+    ``full: true`` returns the raw ``{id, name}`` list instead.
+    """
     project_id = require_project(invocation)
     document = invocation.load_input() or {}
     kwargs: dict[str, Any] = {"project_id": project_id}
     _forward_optional(document, kwargs, ("limit", "offset", "sort"))
+    compact = not document.get("full")
+    if compact:
+        kwargs["fields"] = DATASET_LIST_FIELDS
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), **kwargs)
+    if compact:
+        data = _compact_dataset_list(data, kwargs.get("offset", 0), kwargs.get("sort"))
     return data, _meta(invocation, auth.workspace_id, project_id)
+
+
+def _compact_dataset_list(data: Any, offset: int, sort: str | None) -> Any:
+    """Summarise a dataset-list page and fit it to the tool output cap."""
+    datasets = data.get("datasets") if isinstance(data, dict) else None
+    if not isinstance(datasets, list):
+        return data
+    summaries = [dataset_summary(item) for item in datasets if isinstance(item, dict)]
+    kept, omitted = fit_budget(summaries)
+    result: dict[str, Any] = {
+        "datasets": kept,
+        "shown": len(kept),
+        "order": sort or "newest first (created_at desc)",
+    }
+    if omitted or data.get("next"):
+        result["more"] = True
+        result["next_offset"] = int(offset) + len(kept)
+    return result
 
 
 def _export_write_hint(data: dict[str, Any]) -> str | None:

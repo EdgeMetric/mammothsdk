@@ -3491,7 +3491,8 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.datasets.DatasetsAPI.get
   implementation_origin: mammoth.api.datasets.DatasetsAPI.get
-  signature: 'get(self, dataset_id: ''int'', workspace_id: ''int | None'' = None, project_id: ''int | None'' = None) -> ''dict[str, Any]'''
+  signature: 'get(self, dataset_id: ''int'', workspace_id: ''int | None'' = None, project_id: ''int | None''
+    = None, fields: ''str | None'' = None) -> ''dict[str, Any]'''
   openapi_operation_ids: []
   canonical_command: dataset.get
   alias_of: null
@@ -3564,7 +3565,9 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.datasets.DatasetsAPI.list
   implementation_origin: mammoth.api.datasets.DatasetsAPI.list
-  signature: 'list(self, workspace_id: ''int | None'' = None, project_id: ''int | None'' = None, limit: ''int'' = 100, offset: ''int'' = 0, sort: ''str'' = ''(created_at:desc)'') -> ''dict[str, Any]'''
+  signature: 'list(self, workspace_id: ''int | None'' = None, project_id: ''int | None'' = None, limit:
+    ''int'' = 100, offset: ''int'' = 0, sort: ''str'' = ''(created_at:desc)'', fields: ''str'' = ''id,name'')
+    -> ''dict[str, Any]'''
   openapi_operation_ids: []
   canonical_command: dataset.list
   alias_of: null
@@ -3576,7 +3579,9 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.datasets.DatasetsAPI.list_all
   implementation_origin: mammoth.api.datasets.DatasetsAPI.list_all
-  signature: 'list_all(self, workspace_id: ''int | None'' = None, project_id: ''int | None'' = None, limit: ''int'' = 100, sort: ''str'' = ''(created_at:desc)'', max_pages: ''int'' = 1000) -> ''dict[str, Any]'''
+  signature: 'list_all(self, workspace_id: ''int | None'' = None, project_id: ''int | None'' = None, limit:
+    ''int'' = 100, sort: ''str'' = ''(created_at:desc)'', max_pages: ''int'' = 1000, fields: ''str'' = ''id,name'')
+    -> ''dict[str, Any]'''
   openapi_operation_ids: []
   canonical_command: null
   alias_of: null
@@ -3660,7 +3665,12 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.dataviews.DataviewsAPI.aggregate
   implementation_origin: mammoth.api.dataviews.DataviewsAPI.aggregate
-  signature: 'aggregate(self, dataset_id: ''int'', dataview_id: ''int'', aggregations: ''_list[dict[str, Any]] | None'' = None, group_by: ''_list[str | dict[str, Any]] | None'' = None, metric: ''dict[str, Any] | None'' = None, condition: ''dict[str, Any] | None'' = None, sequence: ''int | None'' = None, limit: ''int | None'' = None, workspace_id: ''int | None'' = None, project_id: ''int | None'' = None, timeout: ''int | None'' = None, poll_interval: ''int'' = 2) -> ''dict[str, Any]'''
+  signature: 'aggregate(self, dataset_id: ''int'', dataview_id: ''int'', aggregations: ''_list[dict[str,
+    Any]] | None'' = None, group_by: ''_list[str | dict[str, Any]] | None'' = None, metric: ''dict[str,
+    Any] | None'' = None, condition: ''dict[str, Any] | None'' = None, sequence: ''int | None'' = None,
+    limit: ''int | None'' = None, sort: ''_list[_list[str]] | None'' = None, workspace_id: ''int | None''
+    = None, project_id: ''int | None'' = None, timeout: ''int | None'' = None, poll_interval: ''int'' =
+    2) -> ''dict[str, Any]'''
   openapi_operation_ids: []
   canonical_command: view.data.aggregate
   alias_of: null
@@ -3830,7 +3840,9 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.dataviews.DataviewsAPI.list
   implementation_origin: mammoth.api.dataviews.DataviewsAPI.list
-  signature: 'list(self, dataset_id: ''int'', workspace_id: ''int | None'' = None, project_id: ''int | None'' = None, limit: ''int'' = 100, sort: ''str'' = ''(created_at:desc)'') -> ''dict[str, Any]'''
+  signature: 'list(self, dataset_id: ''int'', workspace_id: ''int | None'' = None, project_id: ''int | None''
+    = None, limit: ''int'' = 100, sort: ''str'' = ''(created_at:desc)'', offset: ''int'' = 0) -> ''dict[str,
+    Any]'''
   openapi_operation_ids: []
   canonical_command: view.list
   alias_of: null

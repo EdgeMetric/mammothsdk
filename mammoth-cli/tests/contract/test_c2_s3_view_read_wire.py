@@ -219,7 +219,7 @@ def test_s3_view_data_reads_have_literal_query_and_body_wires(
         (
             "view.list",
             [str(DATASET)],
-            {"limit": 13, "sort": "C2_S3_VIEW_SORT"},
+            {"limit": 13, "sort": "C2_S3_VIEW_SORT", "full": True},
             view_cmd.view_list,
             (
                 "GET",
@@ -247,9 +247,13 @@ def test_s3_view_data_reads_have_literal_query_and_body_wires(
                 _input(tmp_path, {"dataset_id": DATASET, "timeout": 31, "poll_interval": 3}),
             )
         )
+    view_path = f"/workspaces/{WORKSPACE}/projects/{PROJECT}/datasets/{DATASET}/dataviews/{VIEW}"
     assert [r.path.removeprefix("/api/v2") for r in api.requests] == [
-        f"/workspaces/{WORKSPACE}/projects/{PROJECT}/datasets/{DATASET}/dataviews/{VIEW}/pipeline/items",
-        f"/workspaces/{WORKSPACE}/projects/{PROJECT}/datasets/{DATASET}/dataviews/{VIEW}/data",
+        f"{view_path}/pipeline/items",  # resolves the view's dataset
+        view_path,  # names the view in meta
+        f"/workspaces/{WORKSPACE}/projects/{PROJECT}/datasets/{DATASET}",  # names the dataset
+        f"{view_path}/pipeline/items",  # the sequence prerequisite
+        f"{view_path}/data",
     ]
     assert api.requests[-1].query == {"sequence": ["0"]}
 
@@ -392,7 +396,7 @@ def test_true_cli_wire_oracle_detects_mutated_valid_field(
     [
         (
             ["view", "list", str(DATASET)],
-            {"limit": 29, "sort": "CLI_S3_VIEW_SORT"},
+            {"limit": 29, "sort": "CLI_S3_VIEW_SORT", "full": True},
             f"/workspaces/{WORKSPACE}/projects/{PROJECT}/datasets/{DATASET}/dataviews",
             {"limit": "29", "sort": "CLI_S3_VIEW_SORT"},
         ),

@@ -10,6 +10,7 @@ import pytest
 from mammoth_cli.commands import dataset as dataset_cmd
 from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.runtime.invocation import Invocation
+from mammoth_cli.services.listing import DATASET_LIST_FIELDS
 from mammoth_cli.services.testing import FakeMammothService
 from mammoth_cli.testing import login_default_profile
 
@@ -119,7 +120,10 @@ def test_list_passes_project_and_optional_fields(
     input_file = _write(tmp_path, {"limit": 10, "sort": "(name:asc)"})
     dataset_cmd.dataset_list(_inv("dataset.list", project=180, input_file=input_file))
     assert fake_service.call_log == [
-        (_LIST, {"project_id": 180, "limit": 10, "sort": "(name:asc)"})
+        (
+            _LIST,
+            {"project_id": 180, "limit": 10, "sort": "(name:asc)", "fields": DATASET_LIST_FIELDS},
+        )
     ]
 
 

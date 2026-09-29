@@ -24,6 +24,7 @@ _BULK_DELETE = "mammoth.api.dataviews.DataviewsAPI.bulk_delete"
 _PARAMETER_CONTEXT = "mammoth.api.dataviews.DataviewsAPI.parameter_context"
 _PREVIEW = "mammoth.api.dataviews.DataviewsAPI.preview"
 _DATAVIEW_GET = "mammoth.api.dataviews.DataviewsAPI.get"
+_DATASET_GET = "mammoth.api.datasets.DatasetsAPI.get"
 _RESTORE = "mammoth.api.dataviews.DataviewsAPI.restore"
 _TRASH = "mammoth.api.dataviews.DataviewsAPI.trash"
 _UPDATE = "mammoth.api.dataviews.DataviewsAPI.update"
@@ -108,6 +109,21 @@ def _env_auth(isolated_cli_config: Path) -> None:
     login_default_profile()
 
 
+#: `fields` values the read-meta lookup sends to name the dataset and view a read used.
+_META_LOOKUP_FIELDS = ("__min", "id,name")
+
+
+def _without_meta(
+    call_log: list[tuple[str, dict[str, object]]],
+) -> list[tuple[str, dict[str, object]]]:
+    """The calls a handler made for its own work, minus the source-name lookups."""
+    return [
+        c
+        for c in call_log
+        if not (c[0] in (_DATAVIEW_GET, _DATASET_GET) and c[1].get("fields") in _META_LOOKUP_FIELDS)
+    ]
+
+
 def _inv(command_id: str, **overrides: object) -> Invocation:
     return Invocation(command_id=command_id, **overrides)  # type: ignore[arg-type]
 
@@ -128,7 +144,7 @@ def test_view_list_requires_project(fake_service: FakeMammothService) -> None:
 
 
 def test_view_list_without_dataset_id_walks_every_dataset_in_the_project(
-    fake_service: FakeMammothService,
+    fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
     """Item G: an agent's first move is often `view list` before it has any
     dataset id yet. It must not fail outright; it lists across the project."""
@@ -136,14 +152,15 @@ def test_view_list_without_dataset_id_walks_every_dataset_in_the_project(
         "datasets": [{"id": 9, "name": "a"}, {"id": 10, "name": "b"}]
     }
     fake_service.responses[_VIEW_LIST] = {"dataviews": [{"id": 501, "name": "v"}]}
-    data, _ = view_cmd.view_list(_inv("view.list", project=180))
+    doc = _doc(tmp_path, {"full": True})
+    data, _ = view_cmd.view_list(_inv("view.list", project=180, input_file=doc))
     assert data["dataviews"] == [
         {"id": 501, "name": "v", "dataset_id": 9},
         {"id": 501, "name": "v", "dataset_id": 10},
     ]
     assert data["datasets_visited"] == 2
     assert "next_dataset_offset" not in data
-    dataset_calls = [c for c in fake_service.call_log if c[0] == _VIEW_LIST]
+    dataset_calls = [c for c in _without_meta(fake_service.call_log) if c[0] == _VIEW_LIST]
     assert [c[1]["dataset_id"] for c in dataset_calls] == [9, 10]
 
 
@@ -164,19 +181,24 @@ def test_view_list_without_dataset_id_pages_past_the_view_floor(
     data, _ = view_cmd.view_list(_inv("view.list", project=180, input_file=doc))
     assert data["datasets_visited"] == 1
     assert data["next_dataset_offset"] == 2
-    resumed_calls = [c for c in fake_service.call_log if c[0] == _VIEW_LIST]
+    resumed_calls = [c for c in _without_meta(fake_service.call_log) if c[0] == _VIEW_LIST]
     assert [c[1]["dataset_id"] for c in resumed_calls] == [9, 10]
 
 
-def test_view_list_passes_dataset_and_project(fake_service: FakeMammothService) -> None:
-    view_cmd.view_list(_inv("view.list", project=180, extra_args=["9"]))
-    assert fake_service.call_log == [(_VIEW_LIST, {"dataset_id": 9, "project_id": 180})]
+def test_view_list_passes_dataset_and_project(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    doc = _doc(tmp_path, {"full": True})
+    view_cmd.view_list(_inv("view.list", project=180, extra_args=["9"], input_file=doc))
+    assert _without_meta(fake_service.call_log) == [
+        (_VIEW_LIST, {"dataset_id": 9, "project_id": 180})
+    ]
 
 
 def test_view_list_forwards_limit_sort(fake_service: FakeMammothService, tmp_path: Path) -> None:
-    doc = _doc(tmp_path, {"limit": 10, "sort": "(name:asc)"})
+    doc = _doc(tmp_path, {"limit": 10, "sort": "(name:asc)", "full": True})
     view_cmd.view_list(_inv("view.list", project=180, extra_args=["9"], input_file=doc))
-    assert fake_service.call_log == [
+    assert _without_meta(fake_service.call_log) == [
         (_VIEW_LIST, {"dataset_id": 9, "project_id": 180, "limit": 10, "sort": "(name:asc)"})
     ]
 
@@ -196,7 +218,7 @@ def test_bulk_delete_blocked_without_confirmation(
             _inv("view.bulk-delete", project=180, extra_args=["9"], input_file=doc, output="json")
         )
     assert excinfo.value.code == "confirmation_required"
-    assert fake_service.call_log == []
+    assert _without_meta(fake_service.call_log) == []
 
 
 def test_bulk_delete_proceeds_with_yes(fake_service: FakeMammothService, tmp_path: Path) -> None:
@@ -204,7 +226,7 @@ def test_bulk_delete_proceeds_with_yes(fake_service: FakeMammothService, tmp_pat
     view_cmd.view_bulk_delete(
         _inv("view.bulk-delete", project=180, extra_args=["9"], input_file=doc, yes=True)
     )
-    assert fake_service.call_log == [
+    assert _without_meta(fake_service.call_log) == [
         (_BULK_DELETE, {"dataset_id": 9, "dataview_ids": [1, 2], "project_id": 180})
     ]
 
@@ -216,7 +238,7 @@ def test_active_user_list_passes_ids(fake_service: FakeMammothService) -> None:
     view_cmd.view_active_user_list(
         _inv("view.active-user.list", project=180, extra_args=["7", "9"])
     )
-    assert fake_service.call_log == [
+    assert _without_meta(fake_service.call_log) == [
         (_ACTIVE_USER_LIST, {"dataset_id": 9, "dataview_id": 7, "project_id": 180})
     ]
 
@@ -233,7 +255,7 @@ def test_active_user_mark_passes_ids(fake_service: FakeMammothService) -> None:
     view_cmd.view_active_user_mark(
         _inv("view.active-user.mark", project=180, extra_args=["7", "9"])
     )
-    assert fake_service.call_log == [
+    assert _without_meta(fake_service.call_log) == [
         (_ACTIVE_USER_MARK, {"dataset_id": 9, "dataview_id": 7, "project_id": 180})
     ]
 
@@ -242,7 +264,7 @@ def test_parameter_context_passes_ids(fake_service: FakeMammothService) -> None:
     view_cmd.view_parameter_context(
         _inv("view.parameter-context", project=180, extra_args=["7", "9"])
     )
-    assert fake_service.call_log == [
+    assert _without_meta(fake_service.call_log) == [
         (_PARAMETER_CONTEXT, {"dataset_id": 9, "dataview_id": 7, "project_id": 180})
     ]
 
@@ -253,7 +275,7 @@ def test_preview_passes_ids_with_default_rows(fake_service: FakeMammothService) 
     # the fake returning no metadata, the column count is unknown so no cols cap
     # is sent (the endpoint keeps its own default).
     view_cmd.view_preview(_inv("view.preview", project=180, extra_args=["7", "9"]))
-    assert fake_service.call_log == [
+    assert _without_meta(fake_service.call_log) == [
         (_DATAVIEW_GET, {"dataset_id": 9, "dataview_id": 7, "project_id": 180}),
         (_PREVIEW, {"dataset_id": 9, "dataview_id": 7, "project_id": 180, "rows": 50}),
     ]
@@ -262,7 +284,7 @@ def test_preview_passes_ids_with_default_rows(fake_service: FakeMammothService) 
 def test_preview_forwards_rows_cols(fake_service: FakeMammothService, tmp_path: Path) -> None:
     doc = _doc(tmp_path, {"rows": 5, "cols": 3})
     view_cmd.view_preview(_inv("view.preview", project=180, extra_args=["7", "9"], input_file=doc))
-    assert fake_service.call_log == [
+    assert _without_meta(fake_service.call_log) == [
         (_DATAVIEW_GET, {"dataset_id": 9, "dataview_id": 7, "project_id": 180}),
         (_PREVIEW, {"dataset_id": 9, "dataview_id": 7, "project_id": 180, "rows": 5, "cols": 3}),
     ]
@@ -338,7 +360,7 @@ def test_preview_defaults_cols_to_column_count(
         ]
     }
     view_cmd.view_preview(_inv("view.preview", project=180, extra_args=["7", "9"]))
-    assert fake_service.call_log[-1] == (
+    assert _without_meta(fake_service.call_log)[-1] == (
         _PREVIEW,
         {"dataset_id": 9, "dataview_id": 7, "project_id": 180, "rows": 50, "cols": 3},
     )
@@ -346,14 +368,14 @@ def test_preview_defaults_cols_to_column_count(
 
 def test_restore_passes_ids(fake_service: FakeMammothService) -> None:
     view_cmd.view_restore(_inv("view.restore", project=180, extra_args=["7", "9"]))
-    assert fake_service.call_log == [
+    assert _without_meta(fake_service.call_log) == [
         (_RESTORE, {"dataset_id": 9, "dataview_id": 7, "project_id": 180})
     ]
 
 
 def test_trash_passes_ids(fake_service: FakeMammothService) -> None:
     view_cmd.view_trash(_inv("view.trash", project=180, extra_args=["7", "9"]))
-    assert fake_service.call_log == [
+    assert _without_meta(fake_service.call_log) == [
         (_TRASH, {"dataset_id": 9, "dataview_id": 7, "project_id": 180})
     ]
 
@@ -365,7 +387,7 @@ def test_update_rejects_missing_patch_data_without_dispatch(
         view_cmd.view_update(_inv("view.update", project=180, extra_args=["7", "9"]))
     assert excinfo.value.code == "unsupported_contract"
     assert excinfo.value.details["blocker"] == "B09 DATAVIEW_INPUT_UNTYPED"
-    assert fake_service.call_log == []
+    assert _without_meta(fake_service.call_log) == []
 
 
 def test_update_rejects_raw_patch_without_dispatch(
@@ -378,12 +400,12 @@ def test_update_rejects_raw_patch_without_dispatch(
         )
     assert excinfo.value.code == "unsupported_contract"
     assert excinfo.value.details["typed_alternatives"] == []
-    assert fake_service.call_log == []
+    assert _without_meta(fake_service.call_log) == []
 
 
 def test_data_get_passes_ids(fake_service: FakeMammothService) -> None:
     view_cmd.view_data_get(_inv("view.data.get", project=180, extra_args=["7", "9"]))
-    assert fake_service.call_log == [
+    assert _without_meta(fake_service.call_log) == [
         (_DATA_GET, {"dataset_id": 9, "dataview_id": 7, "project_id": 180})
     ]
 
@@ -395,7 +417,7 @@ def test_data_get_forwards_timeout_poll_interval(
     view_cmd.view_data_get(
         _inv("view.data.get", project=180, extra_args=["7", "9"], input_file=doc)
     )
-    assert fake_service.call_log == [
+    assert _without_meta(fake_service.call_log) == [
         (
             _DATA_GET,
             {
@@ -461,7 +483,7 @@ def test_data_get_offset_reads_a_later_page_through_the_query_route(
     data, _ = view_cmd.view_data_get(
         _inv("view.data.get", project=180, extra_args=["7", "9"], input_file=str(doc))
     )
-    query = [c for c in fake_service.call_log if c[0].endswith("query_data")]
+    query = [c for c in _without_meta(fake_service.call_log) if c[0].endswith("query_data")]
     assert query == [
         (
             "mammoth.api.dataviews.DataviewsAPI.query_data",
@@ -525,13 +547,15 @@ def test_data_get_trims_rows_to_the_limit(fake_service: FakeMammothService, tmp_
         _inv("view.data.get", project=180, extra_args=["7", "9"], input_file=doc)
     )
     assert len(data["data"]) == 120 and data["truncated"] is False
-    data_calls = [kwargs for symbol, kwargs in fake_service.call_log if symbol == _DATA_GET]
+    data_calls = [
+        kwargs for symbol, kwargs in _without_meta(fake_service.call_log) if symbol == _DATA_GET
+    ]
     assert data_calls[-1]["sequence"] == 3
 
 
 def test_data_query_passes_ids(fake_service: FakeMammothService) -> None:
     view_cmd.view_data_query(_inv("view.data.query", project=180, extra_args=["7", "9"]))
-    assert fake_service.call_log == [
+    assert _without_meta(fake_service.call_log) == [
         (_DATA_QUERY, {"dataset_id": 9, "dataview_id": 7, "project_id": 180})
     ]
 
@@ -542,7 +566,7 @@ def test_exportable_config_get_passes_view_and_explicit_dataset(
     view_cmd.view_exportable_config_get(
         _inv("view.exportable-config.get", project=180, extra_args=["7", "9"])
     )
-    assert fake_service.call_log == [
+    assert _without_meta(fake_service.call_log) == [
         (_EXPORTABLE_GET, {"dataset_id": 9, "dataview_id": 7, "project_id": 180})
     ]
 
@@ -555,7 +579,7 @@ def test_exportable_config_rejects_nonpositive_ids_before_service(
             view_cmd.view_exportable_config_get(
                 _inv("view.exportable-config.get", project=180, extra_args=args)
             )
-    assert fake_service.call_log == []
+    assert _without_meta(fake_service.call_log) == []
 
 
 def test_exportable_config_apply_requires_exact_confirmation(
@@ -575,7 +599,7 @@ def test_exportable_config_apply_requires_exact_confirmation(
                     confirm=confirm,
                 )
             )
-    assert fake_service.call_log == []
+    assert _without_meta(fake_service.call_log) == []
 
 
 def test_exportable_config_apply_passes_exact_confirmation(
@@ -593,7 +617,7 @@ def test_exportable_config_apply_passes_exact_confirmation(
             confirm="7",
         )
     )
-    assert fake_service.call_log == [
+    assert _without_meta(fake_service.call_log) == [
         (
             _EXPORTABLE_APPLY,
             {
@@ -632,7 +656,7 @@ def test_data_query_forwards_filters(fake_service: FakeMammothService, tmp_path:
     view_cmd.view_data_query(
         _inv("view.data.query", project=180, extra_args=["7", "9"], input_file=doc)
     )
-    assert fake_service.call_log == [
+    assert _without_meta(fake_service.call_log) == [
         (_DATAVIEW_GET, {"dataset_id": 9, "dataview_id": 7, "project_id": 180}),
         (
             _DATA_QUERY,
@@ -660,7 +684,7 @@ def test_data_query_rejects_an_unknown_operator(
             _inv("view.data.query", project=180, extra_args=["7", "9"], input_file=doc)
         )
     assert excinfo.value.code == "invalid_condition"
-    assert fake_service.call_log[-1][0] != _DATA_QUERY
+    assert _without_meta(fake_service.call_log)[-1][0] != _DATA_QUERY
 
 
 def test_data_get_resolves_dataset_from_view_when_omitted(
@@ -670,7 +694,7 @@ def test_data_get_resolves_dataset_from_view_when_omitted(
     # public pipeline resolver, then forwarded to the SDK call.
     fake_service.responses[_FIND_DATASET] = 9
     view_cmd.view_data_get(_inv("view.data.get", project=180, extra_args=["7"]))
-    assert fake_service.call_log == [
+    assert _without_meta(fake_service.call_log) == [
         (_FIND_DATASET, {"dataview_id": 7}),
         (_DATA_GET, {"dataset_id": 9, "dataview_id": 7, "project_id": 180}),
     ]
@@ -681,7 +705,7 @@ def test_preview_resolves_dataset_from_view_when_omitted(
 ) -> None:
     fake_service.responses[_FIND_DATASET] = 9
     view_cmd.view_preview(_inv("view.preview", project=180, extra_args=["7"]))
-    assert fake_service.call_log == [
+    assert _without_meta(fake_service.call_log) == [
         (_FIND_DATASET, {"dataview_id": 7}),
         (_DATAVIEW_GET, {"dataset_id": 9, "dataview_id": 7, "project_id": 180}),
         (_PREVIEW, {"dataset_id": 9, "dataview_id": 7, "project_id": 180, "rows": 50}),
@@ -694,7 +718,7 @@ def test_data_query_dataset_from_input_field_skips_resolution(
     # A ``dataset_id`` --input field is honored and skips the browse lookup.
     doc = _doc(tmp_path, {"dataset_id": 9, "limit": 5})
     view_cmd.view_data_query(_inv("view.data.query", project=180, extra_args=["7"], input_file=doc))
-    assert fake_service.call_log == [
+    assert _without_meta(fake_service.call_log) == [
         (_DATA_QUERY, {"dataset_id": 9, "dataview_id": 7, "project_id": 180, "limit": 5}),
     ]
 
@@ -724,7 +748,7 @@ def test_data_aggregate_pivot_group_by_and_sum(
     data = view_cmd.view_data_aggregate(
         _inv("view.data.aggregate", project=180, extra_args=["7", "9"], input_file=doc)
     )[0]
-    assert fake_service.call_log == [
+    assert _without_meta(fake_service.call_log) == [
         (_DATAVIEW_GET, {"dataset_id": 9, "dataview_id": 7, "project_id": 180}),
         (
             _DATA_AGGREGATE,
@@ -765,7 +789,9 @@ def test_data_aggregate_group_by_buckets_a_date_by_month(
     data = view_cmd.view_data_aggregate(
         _inv("view.data.aggregate", project=180, extra_args=["7", "9"], input_file=doc)
     )[0]
-    assert fake_service.call_log[-1][1]["group_by"] == [{"column": "column_3", "truncate": "MONTH"}]
+    assert _without_meta(fake_service.call_log)[-1][1]["group_by"] == [
+        {"column": "column_3", "truncate": "MONTH"}
+    ]
     assert data["data"] == [{"inspection_date": "2024-01-01", "inspections": 1500}]
 
 
@@ -776,7 +802,7 @@ def test_data_aggregate_pivot_count_no_group_by(
     view_cmd.view_data_aggregate(
         _inv("view.data.aggregate", project=180, extra_args=["7", "9"], input_file=doc)
     )
-    assert fake_service.call_log == [
+    assert _without_meta(fake_service.call_log) == [
         (_DATAVIEW_GET, {"dataset_id": 9, "dataview_id": 7, "project_id": 180}),
         (
             _DATA_AGGREGATE,
@@ -798,7 +824,7 @@ def test_data_aggregate_metric(fake_service: FakeMammothService, tmp_path: Path)
     view_cmd.view_data_aggregate(
         _inv("view.data.aggregate", project=180, extra_args=["7", "9"], input_file=doc)
     )
-    assert fake_service.call_log == [
+    assert _without_meta(fake_service.call_log) == [
         (_DATAVIEW_GET, {"dataset_id": 9, "dataview_id": 7, "project_id": 180}),
         (
             _DATA_AGGREGATE,
@@ -829,7 +855,7 @@ def test_data_aggregate_metric_min_max_on_a_date_points_to_explore(
         )
     assert excinfo.value.code == "invalid_arguments"
     assert "view data explore 7 inspection_date" in (excinfo.value.hint or "")
-    assert [name for name, _ in fake_service.call_log] == [_DATAVIEW_GET]
+    assert [name for name, _ in _without_meta(fake_service.call_log)] == [_DATAVIEW_GET]
 
 
 def test_data_aggregate_metric_count_on_a_date_is_allowed(
@@ -844,7 +870,7 @@ def test_data_aggregate_metric_count_on_a_date_is_allowed(
     view_cmd.view_data_aggregate(
         _inv("view.data.aggregate", project=180, extra_args=["7", "9"], input_file=doc)
     )
-    assert fake_service.call_log[-1][0] == _DATA_AGGREGATE
+    assert _without_meta(fake_service.call_log)[-1][0] == _DATA_AGGREGATE
 
 
 def test_data_aggregate_forwards_condition_sequence_and_limit(
@@ -865,7 +891,7 @@ def test_data_aggregate_forwards_condition_sequence_and_limit(
     view_cmd.view_data_aggregate(
         _inv("view.data.aggregate", project=180, extra_args=["7", "9"], input_file=doc)
     )
-    call = fake_service.call_log[-1][1]
+    call = _without_meta(fake_service.call_log)[-1][1]
     assert call["condition"] == {"column_2": {"GT": {"VALUE": 0}}}
     assert call["sequence"] == 3
     assert call["limit"] == 10
@@ -881,7 +907,7 @@ def test_data_aggregate_requires_exactly_one_of_aggregations_or_metric(
                 _inv("view.data.aggregate", project=180, extra_args=["7", "9"], input_file=doc)
             )
         assert excinfo.value.code == "invalid_arguments"
-    assert fake_service.call_log == []
+    assert _without_meta(fake_service.call_log) == []
 
 
 def test_data_aggregate_resolves_dataset_from_view_when_omitted(
@@ -892,7 +918,7 @@ def test_data_aggregate_resolves_dataset_from_view_when_omitted(
     view_cmd.view_data_aggregate(
         _inv("view.data.aggregate", project=180, extra_args=["7"], input_file=doc)
     )
-    assert fake_service.call_log[0] == (_FIND_DATASET, {"dataview_id": 7})
+    assert _without_meta(fake_service.call_log)[0] == (_FIND_DATASET, {"dataview_id": 7})
 
 
 # ── view.data.compare ───────────────────────────────────────────────────────
@@ -1006,7 +1032,7 @@ def test_data_explore_date_column_buckets_by_level(
     data = view_cmd.view_data_explore(
         _inv("view.data.explore", project=180, extra_args=["7", "Signup Date", "9"], input_file=doc)
     )[0]
-    assert fake_service.call_log == [
+    assert _without_meta(fake_service.call_log) == [
         (_DATAVIEW_GET, {"dataset_id": 9, "dataview_id": 7, "project_id": 180}),
         (
             _DATA_EXPLORE,
@@ -1037,7 +1063,7 @@ def test_data_explore_numeric_column_defaults_level_to_auto(
     view_cmd.view_data_explore(
         _inv("view.data.explore", project=180, extra_args=["7", "Spend", "9"], input_file=doc)
     )
-    assert fake_service.call_log[-1] == (
+    assert _without_meta(fake_service.call_log)[-1] == (
         _DATA_EXPLORE,
         {
             "dataset_id": 9,
@@ -1061,7 +1087,7 @@ def test_data_explore_text_column_forwards_no_limit_by_default(
     view_cmd.view_data_explore(
         _inv("view.data.explore", project=180, extra_args=["7", "Channel", "9"], input_file=doc)
     )
-    assert "limit" not in fake_service.call_log[-1][1]
+    assert "limit" not in _without_meta(fake_service.call_log)[-1][1]
 
 
 def test_data_explore_text_column_forwards_explicit_limit(
@@ -1074,7 +1100,7 @@ def test_data_explore_text_column_forwards_explicit_limit(
     view_cmd.view_data_explore(
         _inv("view.data.explore", project=180, extra_args=["7", "Channel", "9"], input_file=doc)
     )
-    assert fake_service.call_log[-1][1]["limit"] == 1
+    assert _without_meta(fake_service.call_log)[-1][1]["limit"] == 1
 
 
 def test_data_explore_metric_adds_second_aggregate(
@@ -1095,7 +1121,7 @@ def test_data_explore_metric_adds_second_aggregate(
     data = view_cmd.view_data_explore(
         _inv("view.data.explore", project=180, extra_args=["7", "Channel", "9"], input_file=doc)
     )[0]
-    assert fake_service.call_log[-1][1]["metric"] == {
+    assert _without_meta(fake_service.call_log)[-1][1]["metric"] == {
         "function": "SUM",
         "as_name": "Total Spend",
         "column": "column_2",
@@ -1123,7 +1149,7 @@ def test_data_explore_forwards_condition_and_sequence(
     view_cmd.view_data_explore(
         _inv("view.data.explore", project=180, extra_args=["7", "Spend", "9"], input_file=doc)
     )
-    call = fake_service.call_log[-1][1]
+    call = _without_meta(fake_service.call_log)[-1][1]
     assert call["condition"] == {"column_2": {"GT": {"VALUE": 0}}}
     assert call["sequence"] == 3
     assert call["sort"] == "count_asc"
@@ -1152,7 +1178,7 @@ def test_data_explore_resolves_dataset_from_view_when_omitted(
     view_cmd.view_data_explore(
         _inv("view.data.explore", project=180, extra_args=["7", "Channel"], input_file=doc)
     )
-    assert fake_service.call_log[0] == (_FIND_DATASET, {"dataview_id": 7})
+    assert _without_meta(fake_service.call_log)[0] == (_FIND_DATASET, {"dataview_id": 7})
 
 
 def test_active_user_list_resolves_dataset_from_view_when_omitted(
@@ -1162,7 +1188,7 @@ def test_active_user_list_resolves_dataset_from_view_when_omitted(
     # dataset is resolved from the view before the SDK call.
     fake_service.responses[_FIND_DATASET] = 9
     view_cmd.view_active_user_list(_inv("view.active-user.list", project=180, extra_args=["7"]))
-    assert fake_service.call_log == [
+    assert _without_meta(fake_service.call_log) == [
         (_FIND_DATASET, {"dataview_id": 7}),
         (_ACTIVE_USER_LIST, {"dataset_id": 9, "dataview_id": 7, "project_id": 180}),
     ]
@@ -1175,7 +1201,7 @@ def test_checkpoint_get_resolves_dataset_from_view_when_omitted(
     # omitted, it is resolved from the view and the checkpoint id stays second.
     fake_service.responses[_FIND_DATASET] = 9
     view_cmd.view_checkpoint_get(_inv("view.checkpoint.get", project=180, extra_args=["7", "3"]))
-    assert fake_service.call_log == [
+    assert _without_meta(fake_service.call_log) == [
         (_FIND_DATASET, {"dataview_id": 7}),
         (_CKPT_GET, {"dataset_id": 9, "dataview_id": 7, "checkpoint_id": 3, "project_id": 180}),
     ]
@@ -1202,14 +1228,14 @@ def test_non_read_commands_refuse_parent_discovery(
     assert error.code == "missing_argument"
     assert error.exit_status == 2
     assert error.recovery_commands == ["mammoth view get 7 --project 180"]
-    assert fake_service.call_log == []
+    assert _without_meta(fake_service.call_log) == []
 
 
 def test_non_read_command_with_exact_parent_skips_discovery(
     fake_service: FakeMammothService,
 ) -> None:
     view_cmd.view_trash(_inv("view.trash", project=180, extra_args=["7", "9"]))
-    assert fake_service.call_log == [
+    assert _without_meta(fake_service.call_log) == [
         (_TRASH, {"dataset_id": 9, "dataview_id": 7, "project_id": 180}),
     ]
 
@@ -1229,7 +1255,7 @@ def test_conditional_format_create_forwards_rule(
     view_cmd.view_conditional_format_create(
         _inv("view.conditional-format.create", project=180, extra_args=["7", "9"], input_file=doc)
     )
-    assert fake_service.call_log == [
+    assert _without_meta(fake_service.call_log) == [
         (
             _CF_CREATE,
             {"dataset_id": 9, "dataview_id": 7, "rule": {"color": "red"}, "project_id": 180},
@@ -1246,7 +1272,7 @@ def test_conditional_format_delete_all_requires_rule_id(
             _inv("view.conditional-format.delete-all", project=180, extra_args=["9", "7"], yes=True)
         )
     assert excinfo.value.code == "missing_field"
-    assert fake_service.call_log == []
+    assert _without_meta(fake_service.call_log) == []
 
 
 def test_conditional_format_delete_all_blocked_without_confirmation(
@@ -1264,7 +1290,7 @@ def test_conditional_format_delete_all_blocked_without_confirmation(
             )
         )
     assert excinfo.value.code == "confirmation_required"
-    assert fake_service.call_log == []
+    assert _without_meta(fake_service.call_log) == []
 
 
 def test_conditional_format_delete_all_proceeds_with_yes(
@@ -1280,7 +1306,7 @@ def test_conditional_format_delete_all_proceeds_with_yes(
             input_file=doc,
         )
     )
-    assert fake_service.call_log == [
+    assert _without_meta(fake_service.call_log) == [
         (
             _CF_DELETE_ALL,
             {"dataset_id": 9, "dataview_id": 7, "rule_id": "rule-1", "project_id": 180},
@@ -1292,7 +1318,7 @@ def test_conditional_format_list_passes_ids(fake_service: FakeMammothService) ->
     view_cmd.view_conditional_format_list(
         _inv("view.conditional-format.list", project=180, extra_args=["7", "9"])
     )
-    assert fake_service.call_log == [
+    assert _without_meta(fake_service.call_log) == [
         (_CF_LIST, {"dataset_id": 9, "dataview_id": 7, "project_id": 180})
     ]
 
@@ -1312,7 +1338,7 @@ def test_conditional_format_update_forwards_rule(
     view_cmd.view_conditional_format_update(
         _inv("view.conditional-format.update", project=180, extra_args=["7", "9"], input_file=doc)
     )
-    assert fake_service.call_log == [
+    assert _without_meta(fake_service.call_log) == [
         (
             _CF_UPDATE,
             {"dataset_id": 9, "dataview_id": 7, "rule": {"color": "blue"}, "project_id": 180},
@@ -1337,7 +1363,7 @@ def test_checkpoint_create_passes_body(fake_service: FakeMammothService, tmp_pat
     view_cmd.view_checkpoint_create(
         _inv("view.checkpoint.create", project=180, extra_args=["7", "9"], input_file=doc)
     )
-    assert fake_service.call_log == [
+    assert _without_meta(fake_service.call_log) == [
         (
             _CKPT_CREATE,
             {"dataset_id": 9, "dataview_id": 7, "body": body, "project_id": 180},
@@ -1351,14 +1377,14 @@ def test_checkpoint_delete_blocked_without_confirmation(fake_service: FakeMammot
             _inv("view.checkpoint.delete", project=180, extra_args=["7", "3", "9"], output="json")
         )
     assert excinfo.value.code == "confirmation_required"
-    assert fake_service.call_log == []
+    assert _without_meta(fake_service.call_log) == []
 
 
 def test_checkpoint_delete_proceeds_with_yes(fake_service: FakeMammothService) -> None:
     view_cmd.view_checkpoint_delete(
         _inv("view.checkpoint.delete", project=180, extra_args=["7", "3", "9"], yes=True)
     )
-    assert fake_service.call_log == [
+    assert _without_meta(fake_service.call_log) == [
         (_CKPT_DELETE, {"dataset_id": 9, "dataview_id": 7, "checkpoint_id": 3, "project_id": 180})
     ]
 
@@ -1377,7 +1403,7 @@ def test_checkpoint_get_passes_ids(fake_service: FakeMammothService) -> None:
     view_cmd.view_checkpoint_get(
         _inv("view.checkpoint.get", project=180, extra_args=["7", "3", "9"])
     )
-    assert fake_service.call_log == [
+    assert _without_meta(fake_service.call_log) == [
         (_CKPT_GET, {"dataset_id": 9, "dataview_id": 7, "checkpoint_id": 3, "project_id": 180})
     ]
 
@@ -1387,7 +1413,7 @@ def test_checkpoint_get_forwards_fields(fake_service: FakeMammothService, tmp_pa
     view_cmd.view_checkpoint_get(
         _inv("view.checkpoint.get", project=180, extra_args=["7", "3", "9"], input_file=doc)
     )
-    assert fake_service.call_log == [
+    assert _without_meta(fake_service.call_log) == [
         (
             _CKPT_GET,
             {
@@ -1406,7 +1432,7 @@ def test_checkpoint_list_forwards_filters(fake_service: FakeMammothService, tmp_
     view_cmd.view_checkpoint_list(
         _inv("view.checkpoint.list", project=180, extra_args=["7", "9"], input_file=doc)
     )
-    assert fake_service.call_log == [
+    assert _without_meta(fake_service.call_log) == [
         (
             _CKPT_LIST,
             {
@@ -1436,7 +1462,7 @@ def test_checkpoint_update_passes_body(fake_service: FakeMammothService, tmp_pat
     view_cmd.view_checkpoint_update(
         _inv("view.checkpoint.update", project=180, extra_args=["7", "3", "9"], input_file=doc)
     )
-    assert fake_service.call_log == [
+    assert _without_meta(fake_service.call_log) == [
         (
             _CKPT_UPDATE,
             {
@@ -1470,7 +1496,7 @@ def test_data_check_create_passes_body(fake_service: FakeMammothService, tmp_pat
     view_cmd.view_data_check_create(
         _inv("view.data-check.create", project=180, extra_args=["7", "9"], input_file=doc)
     )
-    assert fake_service.call_log == [
+    assert _without_meta(fake_service.call_log) == [
         (
             _DC_CREATE,
             {"dataset_id": 9, "dataview_id": 7, "body": body, "project_id": 180},
@@ -1484,14 +1510,14 @@ def test_data_check_delete_blocked_without_confirmation(fake_service: FakeMammot
             _inv("view.data-check.delete", project=180, extra_args=["7", "3", "9"], output="json")
         )
     assert excinfo.value.code == "confirmation_required"
-    assert fake_service.call_log == []
+    assert _without_meta(fake_service.call_log) == []
 
 
 def test_data_check_delete_proceeds_with_yes(fake_service: FakeMammothService) -> None:
     view_cmd.view_data_check_delete(
         _inv("view.data-check.delete", project=180, extra_args=["7", "3", "9"], yes=True)
     )
-    assert fake_service.call_log == [
+    assert _without_meta(fake_service.call_log) == [
         (_DC_DELETE, {"dataset_id": 9, "dataview_id": 7, "data_check_id": 3, "project_id": 180})
     ]
 
@@ -1501,7 +1527,7 @@ def test_data_check_get_forwards_fields(fake_service: FakeMammothService, tmp_pa
     view_cmd.view_data_check_get(
         _inv("view.data-check.get", project=180, extra_args=["7", "3", "9"], input_file=doc)
     )
-    assert fake_service.call_log == [
+    assert _without_meta(fake_service.call_log) == [
         (
             _DC_GET,
             {
@@ -1517,7 +1543,7 @@ def test_data_check_get_forwards_fields(fake_service: FakeMammothService, tmp_pa
 
 def test_data_check_list_passes_ids(fake_service: FakeMammothService) -> None:
     view_cmd.view_data_check_list(_inv("view.data-check.list", project=180, extra_args=["7", "9"]))
-    assert fake_service.call_log == [
+    assert _without_meta(fake_service.call_log) == [
         (_DC_LIST, {"dataset_id": 9, "dataview_id": 7, "project_id": 180})
     ]
 
@@ -1536,7 +1562,7 @@ def test_data_check_update_passes_body(fake_service: FakeMammothService, tmp_pat
     view_cmd.view_data_check_update(
         _inv("view.data-check.update", project=180, extra_args=["7", "3", "9"], input_file=doc)
     )
-    assert fake_service.call_log == [
+    assert _without_meta(fake_service.call_log) == [
         (
             _DC_UPDATE,
             {
@@ -1574,7 +1600,7 @@ def test_derivative_create_passes_body(fake_service: FakeMammothService, tmp_pat
     view_cmd.view_derivative_create(
         _inv("view.derivative.create", project=180, extra_args=["7", "9"], input_file=doc)
     )
-    assert fake_service.call_log == [
+    assert _without_meta(fake_service.call_log) == [
         (
             _DERIV_CREATE,
             {"dataset_id": 9, "dataview_id": 7, "body": body, "project_id": 180},
@@ -1595,7 +1621,7 @@ def test_derivative_data_passes_body(fake_service: FakeMammothService, tmp_path:
     view_cmd.view_derivative_data(
         _inv("view.derivative.data", project=180, extra_args=["7", "3", "9"], input_file=doc)
     )
-    assert fake_service.call_log == [
+    assert _without_meta(fake_service.call_log) == [
         (
             _DERIV_DATA,
             {
@@ -1615,21 +1641,21 @@ def test_derivative_delete_blocked_without_confirmation(fake_service: FakeMammot
             _inv("view.derivative.delete", project=180, extra_args=["7", "3", "9"], output="json")
         )
     assert excinfo.value.code == "confirmation_required"
-    assert fake_service.call_log == []
+    assert _without_meta(fake_service.call_log) == []
 
 
 def test_derivative_delete_proceeds_with_yes(fake_service: FakeMammothService) -> None:
     view_cmd.view_derivative_delete(
         _inv("view.derivative.delete", project=180, extra_args=["7", "3", "9"], yes=True)
     )
-    assert fake_service.call_log == [
+    assert _without_meta(fake_service.call_log) == [
         (_DERIV_DELETE, {"dataset_id": 9, "dataview_id": 7, "derivative_id": 3, "project_id": 180})
     ]
 
 
 def test_derivative_list_passes_ids(fake_service: FakeMammothService) -> None:
     view_cmd.view_derivative_list(_inv("view.derivative.list", project=180, extra_args=["7", "9"]))
-    assert fake_service.call_log == [
+    assert _without_meta(fake_service.call_log) == [
         (_DERIV_LIST, {"dataset_id": 9, "dataview_id": 7, "project_id": 180})
     ]
 
@@ -1663,7 +1689,7 @@ def test_derivative_update_passes_body(fake_service: FakeMammothService, tmp_pat
     view_cmd.view_derivative_update(
         _inv("view.derivative.update", project=180, extra_args=["7", "3", "9"], input_file=doc)
     )
-    assert fake_service.call_log == [
+    assert _without_meta(fake_service.call_log) == [
         (
             _DERIV_UPDATE,
             {
@@ -1682,7 +1708,7 @@ def test_derivative_update_passes_body(fake_service: FakeMammothService, tmp_pat
 
 def test_version_apply_passes_ids(fake_service: FakeMammothService) -> None:
     view_cmd.view_version_apply(_inv("view.version.apply", project=180, extra_args=["7", "3", "9"]))
-    assert fake_service.call_log == [
+    assert _without_meta(fake_service.call_log) == [
         (_VER_APPLY, {"dataset_id": 9, "dataview_id": 7, "version_id": 3, "project_id": 180})
     ]
 
@@ -1693,14 +1719,14 @@ def test_version_delete_blocked_without_confirmation(fake_service: FakeMammothSe
             _inv("view.version.delete", project=180, extra_args=["7", "3", "9"], output="json")
         )
     assert excinfo.value.code == "confirmation_required"
-    assert fake_service.call_log == []
+    assert _without_meta(fake_service.call_log) == []
 
 
 def test_version_delete_proceeds_with_yes(fake_service: FakeMammothService) -> None:
     view_cmd.view_version_delete(
         _inv("view.version.delete", project=180, extra_args=["7", "3", "9"], yes=True)
     )
-    assert fake_service.call_log == [
+    assert _without_meta(fake_service.call_log) == [
         (_VER_DELETE, {"dataset_id": 9, "dataview_id": 7, "version_id": 3, "project_id": 180})
     ]
 
@@ -1710,7 +1736,7 @@ def test_version_get_forwards_fields(fake_service: FakeMammothService, tmp_path:
     view_cmd.view_version_get(
         _inv("view.version.get", project=180, extra_args=["7", "3", "9"], input_file=doc)
     )
-    assert fake_service.call_log == [
+    assert _without_meta(fake_service.call_log) == [
         (
             _VER_GET,
             {
@@ -1731,7 +1757,7 @@ def test_version_list_forwards_filters(fake_service: FakeMammothService, tmp_pat
     view_cmd.view_version_list(
         _inv("view.version.list", project=180, extra_args=["7", "9"], input_file=doc)
     )
-    assert fake_service.call_log == [
+    assert _without_meta(fake_service.call_log) == [
         (
             _VER_LIST,
             {
@@ -1762,7 +1788,7 @@ def test_version_update_passes_body(fake_service: FakeMammothService, tmp_path: 
     view_cmd.view_version_update(
         _inv("view.version.update", project=180, extra_args=["7", "3", "9"], input_file=doc)
     )
-    assert fake_service.call_log == [
+    assert _without_meta(fake_service.call_log) == [
         (
             _VER_UPDATE,
             {
@@ -1790,7 +1816,9 @@ def test_ai_generate_data_passes_prompt_no_project(
 ) -> None:
     doc = _doc(tmp_path, {"prompt": "make data"})
     view_cmd.view_ai_generate_data(_inv("view.ai.generate-data", extra_args=["7"], input_file=doc))
-    assert fake_service.call_log == [(_AI_GEN_DATA, {"dataview_id": 7, "prompt": "make data"})]
+    assert _without_meta(fake_service.call_log) == [
+        (_AI_GEN_DATA, {"dataview_id": 7, "prompt": "make data"})
+    ]
 
 
 def test_ai_generate_data_forwards_optional(
@@ -1801,7 +1829,7 @@ def test_ai_generate_data_forwards_optional(
         {"prompt": "make data", "no_of_rows": 20, "columns": ["a"], "dataset_id": 9},
     )
     view_cmd.view_ai_generate_data(_inv("view.ai.generate-data", extra_args=["7"], input_file=doc))
-    assert fake_service.call_log == [
+    assert _without_meta(fake_service.call_log) == [
         (
             _AI_GEN_DATA,
             {
@@ -1817,7 +1845,7 @@ def test_ai_generate_data_forwards_optional(
 
 def test_ai_generation_info_passes_dataview_id(fake_service: FakeMammothService) -> None:
     view_cmd.view_ai_generation_info(_inv("view.ai.generation-info", extra_args=["7"]))
-    assert fake_service.call_log == [(_AI_GEN_INFO, {"dataview_id": 7})]
+    assert _without_meta(fake_service.call_log) == [(_AI_GEN_INFO, {"dataview_id": 7})]
 
 
 def test_ai_generation_info_forwards_dataset_id(
@@ -1827,18 +1855,20 @@ def test_ai_generation_info_forwards_dataset_id(
     view_cmd.view_ai_generation_info(
         _inv("view.ai.generation-info", extra_args=["7"], input_file=doc)
     )
-    assert fake_service.call_log == [(_AI_GEN_INFO, {"dataview_id": 7, "dataset_id": 9})]
+    assert _without_meta(fake_service.call_log) == [
+        (_AI_GEN_INFO, {"dataview_id": 7, "dataset_id": 9})
+    ]
 
 
 def test_ai_profile_passes_dataview_id(fake_service: FakeMammothService) -> None:
     view_cmd.view_ai_profile(_inv("view.ai.profile", extra_args=["7"]))
-    assert fake_service.call_log == [(_AI_PROFILE, {"dataview_id": 7})]
+    assert _without_meta(fake_service.call_log) == [(_AI_PROFILE, {"dataview_id": 7})]
 
 
 def test_ai_profile_forwards_action(fake_service: FakeMammothService, tmp_path: Path) -> None:
     doc = _doc(tmp_path, {"dataset_id": 9, "action": "data_quality"})
     view_cmd.view_ai_profile(_inv("view.ai.profile", extra_args=["7"], input_file=doc))
-    assert fake_service.call_log == [
+    assert _without_meta(fake_service.call_log) == [
         (_AI_PROFILE, {"dataview_id": 7, "dataset_id": 9, "action": "data_quality"})
     ]
 
@@ -1855,7 +1885,9 @@ def test_draft_command_requires_command(fake_service: FakeMammothService) -> Non
 def test_draft_command_passes_command(fake_service: FakeMammothService, tmp_path: Path) -> None:
     doc = _doc(tmp_path, {"command": "enter"})
     view_cmd.view_draft_command(_inv("view.draft.command", extra_args=["7"], input_file=doc))
-    assert fake_service.call_log == [(_DRAFT_COMMAND, {"dataview_id": 7, "command": "enter"})]
+    assert _without_meta(fake_service.call_log) == [
+        (_DRAFT_COMMAND, {"dataview_id": 7, "command": "enter"})
+    ]
 
 
 def test_draft_command_forwards_dataset_id(
@@ -1863,7 +1895,7 @@ def test_draft_command_forwards_dataset_id(
 ) -> None:
     doc = _doc(tmp_path, {"command": "enter", "dataset_id": 9})
     view_cmd.view_draft_command(_inv("view.draft.command", extra_args=["7"], input_file=doc))
-    assert fake_service.call_log == [
+    assert _without_meta(fake_service.call_log) == [
         (_DRAFT_COMMAND, {"dataview_id": 7, "command": "enter", "dataset_id": 9})
     ]
 
@@ -1884,7 +1916,7 @@ def test_pipeline_edit_passes_patches_then_waits(
     # (run/reset patches are async) and returns that terminal state.
     doc = _doc(tmp_path, {"patches": [{"op": "remove", "path": "/x"}]})
     view_cmd.view_pipeline_edit(_inv("view.pipeline.edit", extra_args=["7"], input_file=doc))
-    assert fake_service.call_log == [
+    assert _without_meta(fake_service.call_log) == [
         (_PIPE_EDIT, {"dataview_id": 7, "patches": [{"op": "remove", "path": "/x"}]}),
         (_PIPE_WAIT, {"dataview_id": 7}),
     ]
@@ -1895,7 +1927,7 @@ def test_pipeline_edit_forwards_dataset_id_to_wait(
 ) -> None:
     doc = _doc(tmp_path, {"patches": [{"op": "run"}], "dataset_id": 9})
     view_cmd.view_pipeline_edit(_inv("view.pipeline.edit", extra_args=["7"], input_file=doc))
-    assert fake_service.call_log == [
+    assert _without_meta(fake_service.call_log) == [
         (_PIPE_EDIT, {"dataview_id": 7, "patches": [{"op": "run"}], "dataset_id": 9}),
         (_PIPE_WAIT, {"dataview_id": 7, "dataset_id": 9}),
     ]
@@ -1903,7 +1935,7 @@ def test_pipeline_edit_forwards_dataset_id_to_wait(
 
 def test_pipeline_get_passes_dataview_id(fake_service: FakeMammothService) -> None:
     view_cmd.view_pipeline_get(_inv("view.pipeline.get", extra_args=["7"]))
-    assert fake_service.call_log == [(_PIPE_GET, {"dataview_id": 7})]
+    assert _without_meta(fake_service.call_log) == [(_PIPE_GET, {"dataview_id": 7})]
 
 
 def test_pipeline_get_hints_the_exact_command_when_draft_is_dirty(
@@ -1952,7 +1984,7 @@ def test_pipeline_items_forwards_filters(fake_service: FakeMammothService, tmp_p
         },
     )
     view_cmd.view_pipeline_items(_inv("view.pipeline.items", extra_args=["7"], input_file=doc))
-    assert fake_service.call_log == [
+    assert _without_meta(fake_service.call_log) == [
         (
             _PIPE_ITEMS,
             {
@@ -1975,7 +2007,7 @@ def test_pipeline_items_all_requires_parent_and_forwards_bounds(
     view_cmd.view_pipeline_items_all(
         _inv("view.pipeline.items-all", extra_args=["7"], input_file=doc)
     )
-    assert fake_service.call_log == [
+    assert _without_meta(fake_service.call_log) == [
         (
             _PIPE_ITEMS_ALL,
             {"dataview_id": 7, "dataset_id": 9, "limit": 2, "max_pages": 3, "status": "success"},
@@ -2004,12 +2036,12 @@ def test_pipeline_items_all_rejects_invalid_bounds_before_request(
         view_cmd.view_pipeline_items_all(
             _inv("view.pipeline.items-all", extra_args=["7"], input_file=doc)
         )
-    assert fake_service.call_log == []
+    assert _without_meta(fake_service.call_log) == []
 
 
 def test_pipeline_rerun_passes_dataview_id(fake_service: FakeMammothService) -> None:
     view_cmd.view_pipeline_rerun(_inv("view.pipeline.rerun", extra_args=["7"]))
-    assert fake_service.call_log == [(_PIPE_RERUN, {"dataview_id": 7})]
+    assert _without_meta(fake_service.call_log) == [(_PIPE_RERUN, {"dataview_id": 7})]
 
 
 def test_pipeline_rerun_forwards_from_sequence(
@@ -2021,7 +2053,7 @@ def test_pipeline_rerun_forwards_from_sequence(
         _inv("view.pipeline.rerun", extra_args=["7"], input_file=doc)
     )
     assert (_PIPE_RERUN, {"dataview_id": 7, "from_sequence": 2, "dataset_id": 9}) in (
-        fake_service.call_log
+        _without_meta(fake_service.call_log)
     )
     assert data["row_check"] == {"rows_before": 5, "rows_after": 5}
 
@@ -2042,7 +2074,7 @@ def test_pipeline_rerun_without_dataset_id_never_settles(
     fake_service: FakeMammothService,
 ) -> None:
     view_cmd.view_pipeline_rerun(_inv("view.pipeline.rerun", extra_args=["7"]))
-    assert fake_service.call_log == [(_PIPE_RERUN, {"dataview_id": 7})]
+    assert _without_meta(fake_service.call_log) == [(_PIPE_RERUN, {"dataview_id": 7})]
 
 
 def test_pipeline_rerun_without_dataset_id_settles_via_remembered_parent(
@@ -2090,7 +2122,7 @@ def test_pipeline_rerun_without_dataset_id_and_unresolvable_reports_unverified(
 def test_pipeline_wait_forwards_timeout(fake_service: FakeMammothService, tmp_path: Path) -> None:
     doc = _doc(tmp_path, {"timeout": 60, "poll_interval": 5})
     view_cmd.view_pipeline_wait(_inv("view.pipeline.wait", extra_args=["7"], input_file=doc))
-    assert fake_service.call_log == [
+    assert _without_meta(fake_service.call_log) == [
         (_PIPE_WAIT, {"dataview_id": 7, "timeout": 60, "poll_interval": 5})
     ]
 
@@ -2107,7 +2139,7 @@ def test_task_add_requires_task_spec(fake_service: FakeMammothService) -> None:
 def test_task_add_passes_task_spec(fake_service: FakeMammothService, tmp_path: Path) -> None:
     doc = _doc(tmp_path, {"task_spec": {"kind": "filter"}})
     view_cmd.view_task_add(_inv("view.task.add", extra_args=["7"], input_file=doc))
-    assert fake_service.call_log == [
+    assert _without_meta(fake_service.call_log) == [
         (_TASK_ADD, {"dataview_id": 7, "task_spec": {"kind": "filter"}}),
         (_TASK_LIST, {"dataview_id": 7}),
     ]
@@ -2199,12 +2231,14 @@ def test_task_delete_blocked_without_confirmation(fake_service: FakeMammothServi
     with pytest.raises(CliError) as excinfo:
         view_cmd.view_task_delete(_inv("view.task.delete", extra_args=["7", "3"], output="json"))
     assert excinfo.value.code == "confirmation_required"
-    assert fake_service.call_log == []
+    assert _without_meta(fake_service.call_log) == []
 
 
 def test_task_delete_proceeds_with_yes(fake_service: FakeMammothService) -> None:
     view_cmd.view_task_delete(_inv("view.task.delete", extra_args=["7", "3"], yes=True))
-    assert fake_service.call_log == [(_TASK_DELETE, {"dataview_id": 7, "task_id": 3})]
+    assert _without_meta(fake_service.call_log) == [
+        (_TASK_DELETE, {"dataview_id": 7, "task_id": 3})
+    ]
 
 
 def test_task_delete_with_dataset_id_settles_processing_to_done(
@@ -2227,7 +2261,7 @@ def test_task_delete_with_dataset_id_settles_processing_to_done(
     assert data["status"] == "done"
     assert data["row_check"] == {"rows_before": 20, "rows_after": 20}
     assert (_PIPE_WAIT, {"dataview_id": 7, "dataset_id": 9, "timeout": 60.0}) in (
-        fake_service.call_log
+        _without_meta(fake_service.call_log)
     )
 
 
@@ -2258,7 +2292,9 @@ def test_task_delete_without_dataset_id_never_settles(fake_service: FakeMammothS
         _inv("view.task.delete", extra_args=["7", "3"], yes=True)
     )
     assert data == {"status": "processing"}
-    assert fake_service.call_log == [(_TASK_DELETE, {"dataview_id": 7, "task_id": 3})]
+    assert _without_meta(fake_service.call_log) == [
+        (_TASK_DELETE, {"dataview_id": 7, "task_id": 3})
+    ]
 
 
 def test_task_delete_without_dataset_id_settles_via_remembered_parent(
@@ -2327,12 +2363,12 @@ def test_task_delete_with_dataset_id_records_unreadable_row_count_before_error(
 
 def test_task_get_passes_ids(fake_service: FakeMammothService) -> None:
     view_cmd.view_task_get(_inv("view.task.get", extra_args=["7", "3"]))
-    assert fake_service.call_log == [(_TASK_GET, {"dataview_id": 7, "task_id": 3})]
+    assert _without_meta(fake_service.call_log) == [(_TASK_GET, {"dataview_id": 7, "task_id": 3})]
 
 
 def test_task_list_passes_dataview_id(fake_service: FakeMammothService) -> None:
     view_cmd.view_task_list(_inv("view.task.list", extra_args=["7"]))
-    assert fake_service.call_log == [(_TASK_LIST, {"dataview_id": 7})]
+    assert _without_meta(fake_service.call_log) == [(_TASK_LIST, {"dataview_id": 7})]
 
 
 def test_task_preview_requires_task_spec(fake_service: FakeMammothService) -> None:
@@ -2344,7 +2380,7 @@ def test_task_preview_requires_task_spec(fake_service: FakeMammothService) -> No
 def test_task_preview_passes_task_spec(fake_service: FakeMammothService, tmp_path: Path) -> None:
     doc = _doc(tmp_path, {"task_spec": {"kind": "math"}})
     view_cmd.view_task_preview(_inv("view.task.preview", extra_args=["7"], input_file=doc))
-    assert fake_service.call_log == [
+    assert _without_meta(fake_service.call_log) == [
         (_TASK_PREVIEW, {"dataview_id": 7, "task_spec": {"kind": "math"}})
     ]
 
@@ -2358,7 +2394,7 @@ def test_task_update_requires_task_spec(fake_service: FakeMammothService) -> Non
 def test_task_update_passes_task_spec(fake_service: FakeMammothService, tmp_path: Path) -> None:
     doc = _doc(tmp_path, {"task_spec": {"kind": "sort"}})
     view_cmd.view_task_update(_inv("view.task.update", extra_args=["7", "3"], input_file=doc))
-    assert fake_service.call_log == [
+    assert _without_meta(fake_service.call_log) == [
         (_TASK_UPDATE, {"dataview_id": 7, "task_id": 3, "task_spec": {"kind": "sort"}})
     ]
 
@@ -2402,7 +2438,7 @@ def test_export_create_blocked_without_confirmation(
             )
         )
     assert excinfo.value.code == "confirmation_required"
-    assert fake_service.call_log == []
+    assert _without_meta(fake_service.call_log) == []
 
 
 def test_export_create_proceeds_with_yes(fake_service: FakeMammothService, tmp_path: Path) -> None:
@@ -2410,7 +2446,7 @@ def test_export_create_proceeds_with_yes(fake_service: FakeMammothService, tmp_p
     view_cmd.view_export_create(
         _inv("view.export.create", project=180, extra_args=["7"], input_file=doc, yes=True)
     )
-    assert fake_service.call_log == [
+    assert _without_meta(fake_service.call_log) == [
         (
             _EXPORT_CREATE,
             {
@@ -2425,13 +2461,13 @@ def test_export_create_proceeds_with_yes(fake_service: FakeMammothService, tmp_p
 
 def test_export_csv_passes_dataview_id_no_project(fake_service: FakeMammothService) -> None:
     view_cmd.view_export_csv(_inv("view.export.csv", extra_args=["7"]))
-    assert fake_service.call_log == [(_EXPORT_CSV, {"dataview_id": 7})]
+    assert _without_meta(fake_service.call_log) == [(_EXPORT_CSV, {"dataview_id": 7})]
 
 
 def test_export_csv_forwards_output_path(fake_service: FakeMammothService, tmp_path: Path) -> None:
     doc = _doc(tmp_path, {"output_path": "/tmp/out.csv", "timeout": 60})
     view_cmd.view_export_csv(_inv("view.export.csv", extra_args=["7"], input_file=doc))
-    assert fake_service.call_log == [
+    assert _without_meta(fake_service.call_log) == [
         (_EXPORT_CSV, {"dataview_id": 7, "output_path": "/tmp/out.csv", "timeout": 60})
     ]
 
@@ -2469,7 +2505,7 @@ def test_export_csv_embedded_returns_download_url_and_writes_no_file(
         embedded.leave(token)
 
     assert data == {"download_url": "https://signed.example/file.csv"}
-    assert fake_service.call_log == [(_EXPORT_CSV_URL, {"dataview_id": 7})]
+    assert _without_meta(fake_service.call_log) == [(_EXPORT_CSV_URL, {"dataview_id": 7})]
     assert list(cwd.iterdir()) == []
 
 
@@ -2485,7 +2521,7 @@ def test_export_csv_embedded_rejects_output_path(
         embedded.leave(token)
 
     assert excinfo.value.code == "unsupported_contract"
-    assert fake_service.call_log == []
+    assert _without_meta(fake_service.call_log) == []
     assert not (tmp_path / "out.csv").exists()
 
 
@@ -2495,41 +2531,43 @@ def test_export_delete_blocked_without_confirmation(fake_service: FakeMammothSer
             _inv("view.export.delete", project=180, extra_args=["7", "3"], output="json")
         )
     assert excinfo.value.code == "confirmation_required"
-    assert fake_service.call_log == []
+    assert _without_meta(fake_service.call_log) == []
 
 
 def test_export_delete_proceeds_with_yes(fake_service: FakeMammothService) -> None:
     view_cmd.view_export_delete(
         _inv("view.export.delete", project=180, extra_args=["7", "3"], yes=True)
     )
-    assert fake_service.call_log == [
+    assert _without_meta(fake_service.call_log) == [
         (_EXPORT_DELETE, {"dataview_id": 7, "export_id": 3, "project_id": 180})
     ]
 
 
 def test_export_get_passes_ids(fake_service: FakeMammothService) -> None:
     view_cmd.view_export_get(_inv("view.export.get", project=180, extra_args=["7", "3"]))
-    assert fake_service.call_log == [
+    assert _without_meta(fake_service.call_log) == [
         (_EXPORT_GET, {"dataview_id": 7, "export_id": 3, "project_id": 180})
     ]
 
 
 def test_export_list_passes_dataview_id_no_project(fake_service: FakeMammothService) -> None:
     view_cmd.view_export_list(_inv("view.export.list", extra_args=["7"]))
-    assert fake_service.call_log == [(_EXPORT_LIST, {"dataview_id": 7})]
+    assert _without_meta(fake_service.call_log) == [(_EXPORT_LIST, {"dataview_id": 7})]
 
 
 def test_export_list_passes_explicit_dataset_without_discovery(
     fake_service: FakeMammothService,
 ) -> None:
     view_cmd.view_export_list(_inv("view.export.list", extra_args=["7", "9"]))
-    assert fake_service.call_log == [(_EXPORT_LIST, {"dataview_id": 7, "dataset_id": 9})]
+    assert _without_meta(fake_service.call_log) == [
+        (_EXPORT_LIST, {"dataview_id": 7, "dataset_id": 9})
+    ]
 
 
 def test_export_list_forwards_filters(fake_service: FakeMammothService, tmp_path: Path) -> None:
     doc = _doc(tmp_path, {"limit": 10, "offset": 0, "status": "executed"})
     view_cmd.view_export_list(_inv("view.export.list", extra_args=["7"], input_file=doc))
-    assert fake_service.call_log == [
+    assert _without_meta(fake_service.call_log) == [
         (_EXPORT_LIST, {"dataview_id": 7, "limit": 10, "offset": 0, "status": "executed"})
     ]
 
@@ -2566,7 +2604,7 @@ def test_export_publish_db_blocked_without_confirmation(
             )
         )
     assert excinfo.value.code == "confirmation_required"
-    assert fake_service.call_log == []
+    assert _without_meta(fake_service.call_log) == []
 
 
 def test_export_publish_db_proceeds_with_yes(
@@ -2576,7 +2614,7 @@ def test_export_publish_db_proceeds_with_yes(
     view_cmd.view_export_publish_db(
         _inv("view.export.publish-db", project=180, extra_args=["7"], input_file=doc, yes=True)
     )
-    assert fake_service.call_log == [
+    assert _without_meta(fake_service.call_log) == [
         (
             _EXPORT_PUBLISH_DB,
             {
@@ -2610,7 +2648,7 @@ def test_export_publish_db_update_proceeds_with_yes(
             yes=True,
         )
     )
-    assert fake_service.call_log == [
+    assert _without_meta(fake_service.call_log) == [
         (
             _EXPORT_PUBLISH_DB_UPDATE,
             {
@@ -2645,7 +2683,7 @@ def test_export_update_blocked_without_confirmation(
             )
         )
     assert excinfo.value.code == "confirmation_required"
-    assert fake_service.call_log == []
+    assert _without_meta(fake_service.call_log) == []
 
 
 def test_export_update_proceeds_with_yes(fake_service: FakeMammothService, tmp_path: Path) -> None:
@@ -2659,7 +2697,7 @@ def test_export_update_proceeds_with_yes(fake_service: FakeMammothService, tmp_p
             yes=True,
         )
     )
-    assert fake_service.call_log == [
+    assert _without_meta(fake_service.call_log) == [
         (
             _EXPORT_UPDATE,
             {
@@ -2679,7 +2717,9 @@ def test_pipeline_items_all_accepts_trailing_parent_positional(
     # The schema advertises DATAVIEW_ID [DATASET_ID]; the trailing positional
     # used to be ignored and the command then demanded the input field.
     view_cmd.view_pipeline_items_all(_inv("view.pipeline.items-all", extra_args=["7", "9"]))
-    assert fake_service.call_log == [(_PIPE_ITEMS_ALL, {"dataview_id": 7, "dataset_id": 9})]
+    assert _without_meta(fake_service.call_log) == [
+        (_PIPE_ITEMS_ALL, {"dataview_id": 7, "dataset_id": 9})
+    ]
 
 
 def test_pipeline_items_all_rejects_conflicting_parents(
@@ -2691,7 +2731,7 @@ def test_pipeline_items_all_rejects_conflicting_parents(
             _inv("view.pipeline.items-all", extra_args=["7", "9"], input_file=doc)
         )
     assert excinfo.value.code == "ambiguous_resource_identity"
-    assert fake_service.call_log == []
+    assert _without_meta(fake_service.call_log) == []
 
 
 def test_view_list_trims_records_unless_full(
@@ -2708,11 +2748,11 @@ def test_view_list_trims_records_unless_full(
     }
     fake_service.responses[_VIEW_LIST] = {"dataviews": [record], "next": None}
     data, _ = view_cmd.view_list(_inv("view.list", project=180, extra_args=["9"]))
-    assert data["dataviews"] == [
-        {"id": 45, "ds_id": 9, "name": "v", "status": "ready", "row_count": 6}
-    ]
-    assert data["next"] is None
+    (summary,) = data["dataviews"]
+    assert (summary["id"], summary["name"], summary["dataset_id"]) == (45, "v", 9)
+    assert summary["rows"] == 6
+    assert "dependencies_info" not in summary
     doc = _doc(tmp_path, {"full": True})
     data, _ = view_cmd.view_list(_inv("view.list", project=180, extra_args=["9"], input_file=doc))
     assert data["dataviews"] == [record]
-    assert "full" not in fake_service.call_log[-1][1]
+    assert "full" not in _without_meta(fake_service.call_log)[-1][1]

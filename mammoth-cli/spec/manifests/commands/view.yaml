@@ -1231,7 +1231,14 @@ commands:
     DAY|WEEK|MONTH|QUARTER|YEAR} to bucket a DATE (a trend over time), or {"column": C, "resolution":
     N} to bucket a NUMERIC; grouping by a raw date gives one row per day. A metric is a number: only COUNT
     and DISTINCT_COUNT work on a DATE or TEXT column. For one column''s trend, top values or spread, view
-    data explore is the shorter call.'
+    data explore is the shorter call. order_by (result labels; a string like ''Total desc'' or {column,
+    direction}) with top ranks the groups on the backend; a limit without order_by keeps arbitrary rows
+    and the result says ordered false. A group_by truncate on a TEXT column of dates is bucketed by the
+    CLI: the stored format is detected from the data and stated in text_dates, an ambiguous day/month
+    order (settle it with text_date_format) or an unreadable value fails loud, and a range condition
+    (GT, GTE, LT, LTE, IN_RANGE with a YYYY-MM-DD value) on such a column works the same way. A truncate on
+    a NUMERIC column, or a resolution on a non-NUMERIC one, is refused. An empty result carries
+    observed_range: the min and max of the filtered or date column.'
   reviewed_by: primary
 - command_id: view.data.compare
   command_path: view data compare
@@ -1353,7 +1360,9 @@ commands:
     distinct raw values of a DATE/NUMERIC column, a summary (min/max/sum/avg) or a matching-row count
     -> ''view data aggregate''; keep the filter as a pipeline step -> ''view transform filter''; save
     it as a new view -> ''view create'' then ''view transform filter'' on it; download all rows -> ''view
-    export csv''. Example: --input ''{"level": "MONTH", "condition": {"column": "Results", "operator":
+    export csv''. A TEXT column of dates takes a level (or column_type DATE): the format is detected from the data and
+    stated in text_dates; ambiguous or unreadable dates fail loud. A column_type that disagrees with the
+    stored type is refused, never dropped. Example: --input ''{"level": "MONTH", "condition": {"column": "Results", "operator":
     "EQ", "value": "Fail"}}''.'
   reviewed_by: primary
 - command_id: view.data.profile
@@ -3492,7 +3501,10 @@ commands:
   - CT-VIEW-LIST-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: B01.
+  known_restrictions: 'B01. Each view names its dataset (dataset_id and dataset_name) and carries rows
+    and cols, created and updated time, the dataset''s source kind, its column names with types and one
+    real sample row, cut to fit the agent tool output cap (next_dataset_offset and views_omitted say where
+    the rest is). Newest first. full true returns the raw records.'
   reviewed_by: primary
 - command_id: view.parameter-context
   command_path: view parameter-context

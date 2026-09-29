@@ -17,6 +17,10 @@ class Meta:
     workspace_id: int | None = None
     project_id: int | None = None
     pagination: dict[str, Any] | None = None
+    #: ``{"id", "name"}`` of the dataset and view a data read came from, so a
+    #: number in an answer can name its source.
+    dataset: dict[str, Any] | None = None
+    view: dict[str, Any] | None = None
     #: ``{"current", "latest", "command"}`` when a newer CLI is on PyPI
     #: (from the daily cached check), else None.
     update_available: dict[str, Any] | None = None
@@ -30,6 +34,8 @@ class Meta:
             "workspace_id": self.workspace_id,
             "project_id": self.project_id,
             "pagination": self.pagination,
+            "dataset": self.dataset,
+            "view": self.view,
             "update_available": self.update_available,
         }
         return {key: value for key, value in document.items() if value is not None}

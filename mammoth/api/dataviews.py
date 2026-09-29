@@ -136,6 +136,28 @@ def _build_pivot_param(
     return pivot
 
 
+ERR_AGGREGATE_SORT_INVALID = (
+    "`sort` must be at most three [result_column, 'ASC'|'DESC'] pairs, got {0!r}."
+)
+
+
+def _build_query_display_properties(
+    limit: int | None, sort: _list[_list[str]] | None
+) -> dict[str, Any]:
+    """Build a volatile query's ``display_properties`` (LIMIT and SORT)."""
+    display: dict[str, Any] = {}
+    if limit is not None:
+        display["LIMIT"] = limit
+    if sort:
+        valid = len(sort) <= 3 and all(
+            len(pair) == 2 and str(pair[1]).upper() in ("ASC", "DESC") for pair in sort
+        )
+        if not valid:
+            raise MammothValidationError(ERR_AGGREGATE_SORT_INVALID.format(sort))
+        display["SORT"] = [[str(pair[0]), str(pair[1]).upper()] for pair in sort]
+    return display
+
+
 def _build_metric_param(metric: dict[str, Any]) -> dict[str, Any]:
     """Build a volatile-query METRIC param from a single ``{column, function, as_name}`` dict."""
     item = _build_aggregate_select_item(metric, "metric")
@@ -232,6 +254,7 @@ class DataviewsAPI:
         project_id: int | None = None,
         limit: int = 100,
         sort: str = "(created_at:desc)",
+        offset: int = 0,
     ) -> dict[str, Any]:
         """Get list of dataviews in a dataset.
 
@@ -241,13 +264,16 @@ class DataviewsAPI:
             project_id: ID of the project (uses client default if not provided).
             limit: Maximum number of results (default 100).
             sort: Sort order (default "(created_at:desc)").
+            offset: Number of dataviews to skip (default 0).
 
         Returns:
             Dict containing dataviews list.
         """
         ws = workspace_id or self._ws()
         proj = project_id or self._proj()
-        params = {"limit": limit, "sort": sort}
+        params: dict[str, Any] = {"limit": limit, "sort": sort}
+        if offset:
+            params["offset"] = offset
         return self._client._request_json(
             "GET",
             f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/dataviews",
@@ -518,6 +544,7 @@ class DataviewsAPI:
         condition: dict[str, Any] | None = None,
         sequence: int | None = None,
         limit: int | None = None,
+        sort: _list[_list[str]] | None = None,
         workspace_id: int | None = None,
         project_id: int | None = None,
         timeout: int | None = None,
@@ -552,7 +579,12 @@ class DataviewsAPI:
                 *aggregations*/*group_by*), same shape as an *aggregations* entry.
             condition: Filter condition dict applied before aggregating (optional).
             sequence: Pipeline step to read data at (default: latest).
-            limit: Maximum number of result rows to return (optional).
+            limit: Maximum number of result rows to return (optional). Without
+                *sort* the rows kept are arbitrary, not the top ones.
+            sort: Up to three ``[result_column, "ASC"|"DESC"]`` pairs, applied by
+                the backend before *limit*. ``result_column`` is the internal name
+                of a result column: ``agg_<n>`` for the n-th aggregation, ``group_<n>``
+                for the n-th group_by entry, ``metric`` for a METRIC.
             workspace_id: ID of the workspace (uses client default if not provided).
             project_id: ID of the project (uses client default if not provided).
             timeout: Max job wait time in seconds (default: client.job_timeout).
@@ -589,8 +621,9 @@ class DataviewsAPI:
         if sequence is not None:
             param["SEQUENCE_NUMBER"] = sequence
         payload: dict[str, Any] = {"param": param}
-        if limit is not None:
-            payload["display_properties"] = {"LIMIT": limit}
+        display_properties = _build_query_display_properties(limit, sort)
+        if display_properties:
+            payload["display_properties"] = display_properties
         response = self._client._request_json(
             "POST",
             f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/dataviews/{dataview_id}/data/query",

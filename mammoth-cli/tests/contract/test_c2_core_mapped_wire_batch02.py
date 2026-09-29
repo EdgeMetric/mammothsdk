@@ -109,7 +109,7 @@ def test_core_read_batch02_matches_literal_release_wire(
     )
 
     # REL-197 dataview list.
-    run(view, "view.list", [str(DATASET)], {"limit": 13, "sort": "-created_at"})
+    run(view, "view.list", [str(DATASET)], {"limit": 13, "sort": "-created_at", "full": True})
     assert (_path(api), api.last().method, api.last().query) == (
         f"/workspaces/4/projects/{PROJECT}/datasets/{DATASET}/dataviews",
         "GET",

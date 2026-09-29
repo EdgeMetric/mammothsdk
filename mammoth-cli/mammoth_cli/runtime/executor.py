@@ -76,6 +76,8 @@ def emit_success(
     project_id: int | None = None,
     pagination: dict[str, Any] | None = None,
     update_available: dict[str, Any] | None = None,
+    dataset: dict[str, Any] | None = None,
+    view: dict[str, Any] | None = None,
 ) -> None:
     """Render one success envelope to stdout.
 
@@ -89,6 +91,8 @@ def emit_success(
         project_id: The resolved project id, if any.
         pagination: Pagination metadata, if any.
         update_available: The cached newer-release notice, if any.
+        dataset: ``{"id", "name"}`` of the dataset a data read came from, if any.
+        view: ``{"id", "name"}`` of the view a data read came from, if any.
     """
     meta = Meta(
         command=command_id.replace(".", " "),
@@ -97,6 +101,8 @@ def emit_success(
         project_id=project_id,
         pagination=pagination,
         update_available=update_available,
+        dataset=dataset,
+        view=view,
     )
     envelope = Result(data=data, meta=meta).to_envelope()
     if embedded.capture(normalize(envelope)):
@@ -155,7 +161,7 @@ def run(
         producer: A zero-argument callable returning ``(data, meta_extra)``.
             ``meta_extra`` is forwarded as keyword arguments to
             :func:`emit_success` (``profile``, ``workspace_id``,
-            ``project_id``, ``pagination``).
+            ``project_id``, ``pagination``, ``dataset``, ``view``).
         agent_mode: Whether the invocation explicitly disabled interaction
             (``--no-input``). This is used only when an invalid output mode
             needs an error renderer before a concrete machine mode exists.

@@ -24,6 +24,12 @@ _HANDLER_OWNED_FIELDS: dict[str, frozenset[str]] = {
     # These handlers supply the SDK dataview_id from the VIEW_ID positional.
     "view.exportable-config.get": frozenset({"dataview_id"}),
     "view.exportable-config.apply": frozenset({"dataview_id"}),
+    # The list summary picks its own ``fields``; the get handler returns the standard set.
+    "dataset.list": frozenset({"fields"}),
+    "dataset.get": frozenset({"fields"}),
+    # ``sort`` is the backend's internal result-column pairs; the CLI takes
+    # ``order_by`` (result labels) and maps it, so a raw ``sort`` would be dropped.
+    "view.data.aggregate": frozenset({"sort"}),
 }
 
 # CLI-only commands whose complete request is carried by positionals/context.

@@ -50,9 +50,12 @@ from mammoth_cli.runtime.confirm import (
 )
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.session import open_service, require_project
+from mammoth_cli.services import read_queries, text_dates
 from mammoth_cli.services.conditions import CONDITION_KWARG, compile_condition
 from mammoth_cli.services.dashboard_review import UPLOAD_NOTE, upload_hints
 from mammoth_cli.services.data_quality import column_warnings
+from mammoth_cli.services.listing import DATASET_LIST_FIELDS, compact_view_list
+from mammoth_cli.services.read_queries import ReadContext
 
 HandlerResult = tuple[Any, dict[str, Any]]
 
@@ -65,6 +68,7 @@ _METADATA_KEY = "metadata"
 _INTERNAL_NAME_KEY = "internal_name"
 _DISPLAY_NAME_KEY = "display_name"
 _DATAVIEW_GET_SYMBOL = "mammoth.api.dataviews.DataviewsAPI.get"
+_DATASET_GET_SYMBOL = "mammoth.api.datasets.DatasetsAPI.get"
 # Public SDK resolver that finds the dataset containing a dataview, so the
 # data-read commands can take the view id alone and fill the dataset for the
 # caller. See :data:`mammoth_cli.services.positionals.POSITIONAL_OVERRIDES`.
@@ -256,6 +260,36 @@ def _meta(invocation: Invocation, workspace_id: int, project_id: int | None) -> 
     }
 
 
+def _read_meta(
+    service: Any,
+    invocation: Invocation,
+    workspace_id: int,
+    dataset_id: int,
+    view_id: int,
+    project_id: int | None,
+) -> dict[str, Any]:
+    """Envelope metadata for a data read, naming the dataset and view it read.
+
+    A number in an answer needs its source; without the names an agent that
+    silently used the wrong one of two look-alike datasets never says so.
+    """
+    meta = _meta(invocation, workspace_id, project_id)
+    view = service.call(
+        _DATAVIEW_GET_SYMBOL,
+        dataset_id=dataset_id,
+        dataview_id=view_id,
+        project_id=project_id,
+        fields="__min",
+    )
+    dataset = service.call(
+        _DATASET_GET_SYMBOL, dataset_id=dataset_id, project_id=project_id, fields="id,name"
+    )
+    dataset = dataset.get("dataset", dataset) if isinstance(dataset, dict) else {}
+    meta["dataset"] = {"id": dataset_id, "name": dataset.get("name")}
+    meta["view"] = {"id": view_id, "name": view.get("name") if isinstance(view, dict) else None}
+    return meta
+
+
 # ---------------------------------------------------------------------------
 # view.list / view.bulk-delete (dataset-scoped, no dataview_id)
 # ---------------------------------------------------------------------------
@@ -332,46 +366,99 @@ def view_list(invocation: Invocation) -> HandlerResult:
     dataset id. It now walks every dataset in the active project instead
     (paged; see :data:`_VIEW_LIST_ALL_DATASETS_MIN_VIEWS`), same as passing
     an explicit id still does for a single dataset.
+
+    Each view is summarised with what tells views apart: its dataset's name, size,
+    times, source, column names and types, and one real row, cut to fit the agent
+    tool output cap. ``full: true`` returns the raw records instead.
     """
     project_id = require_project(invocation)
     dataset_id = _int_positional_at(invocation, 0, "dataset id")
     document = invocation.load_input() or {}
     if dataset_id is None and document.get(_DATASET_ID_FIELD) is not None:
         dataset_id = int(document[_DATASET_ID_FIELD])
+    compact = not document.get("full")
     with open_service(invocation) as (service, auth):
+        datasets: list[dict[str, Any]] = []
         if dataset_id is None:
-            data = _view_list_across_project(service, _symbol(invocation), document, project_id)
+            data, datasets = _view_list_across_project(
+                service, _symbol(invocation), document, project_id, compact
+            )
         else:
             kwargs: dict[str, Any] = {"dataset_id": dataset_id, "project_id": project_id}
-            _forward_optional(document, kwargs, ("limit", "sort"))
+            _forward_optional(document, kwargs, ("limit", "sort", "offset"))
             data = service.call(_symbol(invocation), **kwargs)
+            if compact:
+                datasets = [_dataset_record(service, dataset_id, project_id)]
         parents.remember_records(
             _profile_name(invocation), auth.workspace_id, data, project_id=project_id
         )
-    if (
-        isinstance(data, dict)
-        and isinstance(data.get("dataviews"), list)
-        and not document.get("full")
-    ):
-        # The list route has no field projection in the SDK; trim each record
-        # to the brief shape ``view get`` returns (``full: true`` keeps all).
-        data = {**data, "dataviews": [brief_view_record(item) for item in data["dataviews"]]}
+        if compact and isinstance(data, dict) and isinstance(data.get("dataviews"), list):
+            data = _compact_view_list(service, data, datasets, document, project_id)
     return data, _meta(invocation, auth.workspace_id, project_id)
 
 
-def _view_list_across_project(
-    service: Any, view_list_symbol: str, document: dict[str, Any], project_id: int
+def _dataset_record(service: Any, dataset_id: int, project_id: int) -> dict[str, Any]:
+    """One dataset with the fields a list summary shows."""
+    response = service.call(
+        _DATASET_GET_SYMBOL,
+        dataset_id=dataset_id,
+        project_id=project_id,
+        fields=DATASET_LIST_FIELDS,
+    )
+    record = response.get("dataset", response) if isinstance(response, dict) else {}
+    return {**record, "id": record.get("id", dataset_id)}
+
+
+def _compact_view_list(
+    service: Any,
+    data: dict[str, Any],
+    datasets: list[dict[str, Any]],
+    document: dict[str, Any],
+    project_id: int,
 ) -> dict[str, Any]:
+    """Summarise a view-list result and turn any cut into a way to the next page."""
+    views = [apply_column_renames(v) for v in data["dataviews"] if isinstance(v, dict)]
+    by_id = {d.get("id"): d for d in datasets if isinstance(d, dict)}
+    summary = compact_view_list(service, views, by_id, project_id)
+    dropped = summary.pop("first_dropped_dataset", None)
+    result: dict[str, Any] = {**summary, "order": document.get("sort") or "newest first"}
+    for key in ("datasets_visited", "next_dataset_offset"):
+        if key in data:
+            result[key] = data[key]
+    if dropped is not None:
+        start = int(document.get("dataset_offset", 0))
+        stop = [d.get("id") for d in datasets].index(dropped)
+        result["next_dataset_offset"] = stop
+        result["datasets_visited"] = stop - start
+    if summary.get("views_omitted"):
+        result["more"] = (
+            "Some views were cut to fit the output cap; list one dataset with "
+            "'view list DATASET_ID' and page it with offset/limit."
+        )
+    return result
+
+
+def _view_list_across_project(
+    service: Any,
+    view_list_symbol: str,
+    document: dict[str, Any],
+    project_id: int,
+    compact: bool = False,
+) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     """Aggregate dataviews from every dataset in the project (paged).
 
     Starts at ``dataset_offset`` (default 0) into the project's dataset
     list, pulling whole per-dataset view pages until either every dataset
     has been visited or at least ``_VIEW_LIST_ALL_DATASETS_MIN_VIEWS`` views
     have been collected. ``next_dataset_offset`` names where to resume when
-    the project holds more datasets than were visited.
+    the project holds more datasets than were visited. Returns the result and
+    the project's dataset records (with the summary fields when ``compact``).
     """
     dataset_offset = int(document.get("dataset_offset", 0))
-    datasets_page = service.call(_DATASETS_LIST_ALL_SYMBOL, project_id=project_id)
+    list_kwargs: dict[str, Any] = {"project_id": project_id}
+    if compact:
+        list_kwargs["fields"] = DATASET_LIST_FIELDS
+    datasets_page = service.call(_DATASETS_LIST_ALL_SYMBOL, **list_kwargs)
     datasets = datasets_page.get("datasets", []) if isinstance(datasets_page, dict) else []
     view_kwargs: dict[str, Any] = {}
     _forward_optional(document, view_kwargs, ("sort",))
@@ -395,7 +482,7 @@ def _view_list_across_project(
     result: dict[str, Any] = {"dataviews": dataviews, "datasets_visited": visited - dataset_offset}
     if visited < len(datasets):
         result["next_dataset_offset"] = visited
-    return result
+    return result, datasets
 
 
 def view_bulk_delete(invocation: Invocation) -> HandlerResult:
@@ -517,6 +604,7 @@ def _compile_query_filters(
     project_id: int | None,
     document: dict[str, Any],
     kwargs: dict[str, Any],
+    reads: ReadContext | None = None,
 ) -> tuple[dict[str, str] | None, dict[str, str] | None]:
     """Translate a data query's ``condition`` and ``columns`` to the wire format.
 
@@ -542,7 +630,11 @@ def _compile_query_filters(
             if isinstance(column.get("type"), str):
                 column_types[display] = column["type"]
     if CONDITION_KWARG in document:
-        compiled = compile_condition(document[CONDITION_KWARG])
+        spec = document[CONDITION_KWARG]
+        if reads is not None:
+            reads.display_to_internal, reads.column_types = column_map, column_types
+            spec = read_queries.resolve_text_date_conditions(reads, spec)
+        compiled = compile_condition(spec)
         kwargs[CONDITION_KWARG] = compiled.build(column_map or None, column_types or None)
     columns = document.get("columns")
     if isinstance(columns, list):
@@ -627,6 +719,7 @@ def view_preview(invocation: Invocation) -> HandlerResult:
     document = invocation.load_input() or {}
     with open_service(invocation) as (service, auth):
         dataset_id = _resolve_dataset_id(service, invocation, view_id, document)
+        meta = _read_meta(service, invocation, auth.workspace_id, dataset_id, view_id, project_id)
         # Fetch the display-name map once, up front: it drives both the column
         # relabel and the "show every column" default (its length is the real
         # column count, excluding system columns).
@@ -644,7 +737,7 @@ def view_preview(invocation: Invocation) -> HandlerResult:
             kwargs["cols"] = cols
         data = service.call(_symbol(invocation), **kwargs)
         data = _relabel_columns(service, dataset_id, view_id, project_id, data, mapping=mapping)
-    return data, _meta(invocation, auth.workspace_id, project_id)
+    return data, meta
 
 
 def view_restore(invocation: Invocation) -> HandlerResult:
@@ -715,6 +808,7 @@ def view_data_get(invocation: Invocation) -> HandlerResult:
     limit = document.get("limit", _DATA_GET_DEFAULT_LIMIT)
     with open_service(invocation) as (service, auth):
         dataset_id = _resolve_dataset_id(service, invocation, view_id, document)
+        meta = _read_meta(service, invocation, auth.workspace_id, dataset_id, view_id, project_id)
         kwargs: dict[str, Any] = {
             "dataset_id": dataset_id,
             "dataview_id": view_id,
@@ -729,7 +823,7 @@ def view_data_get(invocation: Invocation) -> HandlerResult:
             _forward_optional(document, kwargs, ("timeout", "poll_interval", "sequence"))
             data = service.call(_symbol(invocation), **kwargs)
         data = _relabel_and_check(service, dataset_id, view_id, project_id, data)
-    return _trim_rows(data, limit), _meta(invocation, auth.workspace_id, project_id)
+    return _trim_rows(data, limit), meta
 
 
 _QUERY_DATA_SYMBOL = "mammoth.api.dataviews.DataviewsAPI.query_data"
@@ -926,18 +1020,32 @@ def view_data_query(invocation: Invocation) -> HandlerResult:
     document = invocation.load_input() or {}
     with open_service(invocation) as (service, auth):
         dataset_id = _resolve_dataset_id(service, invocation, view_id, document)
+        meta = _read_meta(service, invocation, auth.workspace_id, dataset_id, view_id, project_id)
         kwargs: dict[str, Any] = {
             "dataset_id": dataset_id,
             "dataview_id": view_id,
             "project_id": project_id,
         }
         _forward_optional(document, kwargs, ("sequence", "offset", "limit", "sort"))
+        reads = ReadContext(
+            service,
+            dataset_id,
+            view_id,
+            project_id,
+            {},
+            {},
+            document.get("sequence"),
+            document.get("text_date_format"),
+        )
         mapping, types = _compile_query_filters(
-            service, dataset_id, view_id, project_id, document, kwargs
+            service, dataset_id, view_id, project_id, document, kwargs, reads
         )
         data = service.call(_symbol(invocation), **kwargs)
         data = _relabel_and_check(service, dataset_id, view_id, project_id, data, mapping, types)
-    return data, _meta(invocation, auth.workspace_id, project_id)
+        columns = read_queries.condition_columns(document.get(CONDITION_KWARG))
+        data = read_queries.with_observed_range(reads, data, columns)
+        data = read_queries.with_assumptions(reads, data)
+    return data, meta
 
 
 def _resolved_aggregate_item(agg: dict[str, Any], column_map: dict[str, str]) -> dict[str, Any]:
@@ -1029,15 +1137,101 @@ def _require_numeric_metric(
     column_type = column_types.get(str(column), "")
     if function in _METRIC_ANY_TYPE_FUNCTIONS or column_type in ("", "NUMERIC"):
         return
+    if column_type == "TEXT":
+        hint = (
+            f"MIN/MAX of a TEXT column is alphabetical, never chronological. If '{column}' "
+            f"holds dates, run: mammoth view data explore {view_id} {column} --input "
+            '\'{"column_type": "DATE", "level": "YEAR"}\' for its range by year '
+            "(the format is detected from the data and stated in the result)."
+        )
+    else:
+        hint = (
+            f"For the latest or earliest value run: mammoth view data explore {view_id} "
+            f'{column} --input \'{{"column_type": "{column_type}", "level": "DAY", '
+            '"sort": "value_desc", "limit": 1}\' (value_asc for the earliest).'
+        )
     raise CliError(
         code=CODE_INVALID_ARGUMENTS,
         message=f"A metric is a number: {function} of the {column_type} column '{column}' "
         "cannot be computed here.",
         exit_status=EXIT_USAGE,
-        hint=f"For the latest or earliest value run: mammoth view data explore {view_id} "
-        f'{column} --input \'{{"column_type": "{column_type}", "level": "DAY", '
-        '"sort": "value_desc", "limit": 1}\' (value_asc for the earliest).',
+        hint=hint,
     )
+
+
+def _plain_text_date_groups(document: dict[str, Any], levels: dict[int, str]) -> dict[str, Any]:
+    """The document with each TEXT-date group_by entry reduced to its plain column.
+
+    The backend groups by the raw stored string; the CLI buckets it afterwards.
+    """
+    if not levels:
+        return document
+    group_by = [
+        item["column"] if index in levels and isinstance(item, dict) else item
+        for index, item in enumerate(document["group_by"])
+    ]
+    return {**document, "group_by": group_by}
+
+
+def _aggregate_range_columns(document: dict[str, Any], column_types: dict[str, str]) -> list[str]:
+    """Columns an empty aggregate should report the observed range of."""
+    columns = read_queries.condition_columns(document.get(CONDITION_KWARG))
+    for item in document.get("group_by") or []:
+        if isinstance(item, dict) and item.get("truncate") is not None:
+            columns.append(str(item["column"]))
+    return list(dict.fromkeys(columns))
+
+
+def _reject_order_on_metric(document: dict[str, Any]) -> None:
+    if any(document.get(key) is not None for key in ("order_by", "top")):
+        raise CliError(
+            code=CODE_INVALID_ARGUMENTS,
+            message="'order_by' and 'top' rank the rows of a group-by; a single 'metric' has none.",
+            exit_status=EXIT_USAGE,
+            hint="Use 'aggregations' with 'group_by' to rank groups.",
+        )
+
+
+def _run_aggregate(
+    reads: ReadContext,
+    symbol: str,
+    document: dict[str, Any],
+    fields: dict[str, Any],
+    order: tuple[list[list[str]] | None, int | None],
+    levels: dict[int, str],
+) -> Any:
+    """Run the aggregate: on the backend, or (a TEXT-date group) bucketed in the CLI."""
+    sort, top = order
+    limit = top if top is not None else document.get("limit")
+    kwargs: dict[str, Any] = {
+        "dataset_id": reads.dataset_id,
+        "dataview_id": reads.view_id,
+        "project_id": reads.project_id,
+        **fields,
+    }
+    condition = None
+    if document.get(CONDITION_KWARG) is not None:
+        spec = read_queries.resolve_text_date_conditions(reads, document[CONDITION_KWARG])
+        condition = compile_condition(spec).build(
+            reads.display_to_internal or None, reads.column_types or None
+        )
+        kwargs[CONDITION_KWARG] = condition
+    _forward_optional(document, kwargs, ("sequence",))
+    if levels:
+        response = read_queries.pivot_with_text_dates(
+            reads,
+            aggregations=fields["aggregations"],
+            group_by=fields["group_by"],
+            levels=levels,
+            condition=condition,
+        )
+        rows = read_queries.sort_locally(response["data"], sort)
+        return {**response, "data": rows[:limit] if limit else rows}
+    if sort:
+        kwargs["sort"] = sort
+    if limit is not None:
+        kwargs["limit"] = limit
+    return reads.service.call(symbol, **kwargs)
 
 
 def view_data_aggregate(invocation: Invocation) -> HandlerResult:
@@ -1048,8 +1242,12 @@ def view_data_aggregate(invocation: Invocation) -> HandlerResult:
     ``aggregations`` (a PIVOT; ``group_by`` is optional) or ``metric`` (a
     METRIC). ``function`` is one of SUM, COUNT, AVG, MIN, MAX, STDDEV, DISTINCT_COUNT. An optional
     ``condition`` filters rows before aggregating, and ``sequence`` pins the
-    read to a pipeline step (default: latest). Never use ``view transform
-    pivot`` just to read a number — it mutates the view's pipeline.
+    read to a pipeline step (default: latest). ``order_by`` (result labels,
+    ``"Total desc"``) with ``top`` ranks the groups on the backend; a ``limit``
+    without ``order_by`` is flagged unordered. A ``truncate`` on a TEXT column of
+    dates is bucketed here from the detected format, stated in ``text_dates``.
+    Never use ``view transform pivot`` just to read a number -- it mutates the
+    view's pipeline.
     """
     project_id = require_project(invocation)
     view_id = _require_int_positional_at(invocation, 0, "view id")
@@ -1065,32 +1263,42 @@ def view_data_aggregate(invocation: Invocation) -> HandlerResult:
         )
     with open_service(invocation) as (service, auth):
         dataset_id = _resolve_dataset_id(service, invocation, view_id, document)
+        meta = _read_meta(service, invocation, auth.workspace_id, dataset_id, view_id, project_id)
         internal_to_display, column_types = _column_profile(
             service, dataset_id, view_id, project_id
         )
         display_to_internal = {
             display: internal for internal, display in internal_to_display.items()
         }
+        reads = ReadContext(
+            service,
+            dataset_id,
+            view_id,
+            project_id,
+            display_to_internal,
+            column_types,
+            document.get("sequence"),
+            document.get("text_date_format"),
+        )
+        levels: dict[int, str] = {}
         if has_pivot:
-            fields, as_map = _build_pivot_fields(document, display_to_internal)
+            levels = read_queries.text_date_group_levels(document.get("group_by"), column_types)
+            fields, as_map = _build_pivot_fields(
+                _plain_text_date_groups(document, levels), display_to_internal
+            )
         else:
+            _reject_order_on_metric(document)
             _require_numeric_metric(document, column_types, view_id)
             fields, as_map = _build_metric_fields(document, display_to_internal)
-        kwargs: dict[str, Any] = {
-            "dataset_id": dataset_id,
-            "dataview_id": view_id,
-            "project_id": project_id,
-            **fields,
-        }
-        if document.get(CONDITION_KWARG) is not None:
-            compiled = compile_condition(document[CONDITION_KWARG])
-            kwargs[CONDITION_KWARG] = compiled.build(
-                display_to_internal or None, column_types or None
-            )
-        _forward_optional(document, kwargs, ("sequence", "limit"))
-        data = service.call(_symbol(invocation), **kwargs)
+        order = read_queries.parse_order(document, as_map)
+        data = _run_aggregate(reads, _symbol(invocation), document, fields, order, levels)
         data = _relabel_columns(service, dataset_id, view_id, project_id, data, as_map)
-    return data, _meta(invocation, auth.workspace_id, project_id)
+        data = read_queries.mark_unordered(document, data)
+        data = read_queries.with_observed_range(
+            reads, data, _aggregate_range_columns(document, column_types)
+        )
+        data = read_queries.with_assumptions(reads, data)
+    return data, meta
 
 
 def _compare_key_and_value_columns(document: dict[str, Any]) -> tuple[list[str], list[str]]:
@@ -1226,6 +1434,62 @@ def _require_string_positional_at(invocation: Invocation, index: int, name: str)
     return str(invocation.extra_args[index])
 
 
+def _explore_wants_text_dates(document: dict[str, Any], column: str, stored: str) -> bool:
+    """Whether this explore buckets a TEXT column of dates; fail loud on a type it cannot honour.
+
+    The column's stored type decides how it is read. A ``column_type`` that
+    disagrees is refused with the reason (a read cannot re-type a column), except
+    DATE over a TEXT column, which is parsed from the data. A bucket ``level`` on
+    a TEXT column means the same.
+    """
+    requested = str(document.get("column_type") or "").upper()
+    level = document.get("level")
+    if requested and stored and requested != stored:
+        if stored == "TEXT" and requested == "DATE":
+            return True
+        raise CliError(
+            code=CODE_INVALID_ARGUMENTS,
+            message=f"column_type {requested} does not match '{column}', which is stored as "
+            f"{stored}; a read cannot re-type a column.",
+            exit_status=EXIT_USAGE,
+            hint="Drop column_type (the stored type is used), or convert the column with "
+            "'view transform convert-type' (a pipeline write).",
+        )
+    if level is not None and stored and stored not in ("DATE", "NUMERIC", "TEXT"):
+        raise CliError(
+            code=CODE_INVALID_ARGUMENTS,
+            message=f"'level' buckets a DATE, NUMERIC or TEXT-date column; '{column}' is {stored}.",
+            exit_status=EXIT_USAGE,
+        )
+    return stored == "TEXT" and level is not None
+
+
+def _explore_text_dates(
+    reads: ReadContext, document: dict[str, Any], internal_column: str, metric: Any
+) -> dict[str, Any]:
+    """Explore a TEXT column of dates: count per ``level`` bucket, parsed from the data."""
+    level = text_dates.require_level(document.get("level"))
+    aggregations: list[dict[str, Any]] = [{"function": "COUNT", "as_name": "count"}]
+    if metric is not None:
+        aggregations.append(metric)
+    condition = None
+    if document.get(CONDITION_KWARG) is not None:
+        spec = read_queries.resolve_text_date_conditions(reads, document[CONDITION_KWARG])
+        condition = compile_condition(spec).build(
+            reads.display_to_internal or None, reads.column_types or None
+        )
+    response = read_queries.pivot_with_text_dates(
+        reads,
+        aggregations=aggregations,
+        group_by=[internal_column],
+        levels={0: level},
+        condition=condition,
+    )
+    page = (document.get("offset"), document.get("limit"))
+    rows = read_queries.apply_explore_order(response["data"], document.get("sort"), page)
+    return {**response, "data": rows}
+
+
 def view_data_explore(invocation: Invocation) -> HandlerResult:
     """Explore one column: trend, distribution, or top values, like the web app's
     column Explore card.
@@ -1236,6 +1500,9 @@ def view_data_explore(invocation: Invocation) -> HandlerResult:
     YEAR/...) for a trend "over time"/"by month"/"by year"; a NUMERIC column
     by ``level`` resolution (default "AUTO") for a distribution/histogram; any
     other column (TEXT) as its top values by count, ``limit`` (default 20).
+    A TEXT column of dates with a ``level`` (or ``column_type`` DATE) is parsed
+    from the data -- the format is detected and stated in ``text_dates``, and an
+    ambiguous or unreadable column fails loud.
     Every bucket carries ``count`` and ``percentage`` of the column's total.
     An optional ``metric`` ``{"column": ..., "function": ...}`` (SUM, COUNT,
     AVG, MIN, MAX, STDDEV or DISTINCT_COUNT) adds a second aggregate per bucket over another column,
@@ -1250,6 +1517,7 @@ def view_data_explore(invocation: Invocation) -> HandlerResult:
     document = invocation.load_input() or {}
     with open_service(invocation) as (service, auth):
         dataset_id = _resolve_dataset_id(service, invocation, view_id, document, 2)
+        meta = _read_meta(service, invocation, auth.workspace_id, dataset_id, view_id, project_id)
         internal_to_display, column_types = _column_profile(
             service, dataset_id, view_id, project_id
         )
@@ -1258,28 +1526,62 @@ def view_data_explore(invocation: Invocation) -> HandlerResult:
         }
         internal_column = display_to_internal.get(column_arg, column_arg)
         column_type = column_types.get(column_arg, "")
-        kwargs: dict[str, Any] = {
-            "dataset_id": dataset_id,
-            "dataview_id": view_id,
-            "project_id": project_id,
-            "column": internal_column,
-            "column_type": column_type,
-        }
+        reads = ReadContext(
+            service,
+            dataset_id,
+            view_id,
+            project_id,
+            display_to_internal,
+            column_types,
+            document.get("sequence"),
+            document.get("text_date_format"),
+        )
+        bucket_dates = _explore_wants_text_dates(document, column_arg, column_type)
         as_map: dict[str, str] = {"group_0": "bucket", "agg_0": "count"}
         metric = document.get("metric")
+        resolved_metric = None
         if isinstance(metric, dict):
             resolved_metric = _resolved_aggregate_item(metric, display_to_internal)
-            kwargs["metric"] = resolved_metric
             as_map["agg_1"] = resolved_metric["as_name"]
-        if document.get(CONDITION_KWARG) is not None:
-            compiled = compile_condition(document[CONDITION_KWARG])
-            kwargs[CONDITION_KWARG] = compiled.build(
-                display_to_internal or None, column_types or None
+        if bucket_dates:
+            data = _explore_text_dates(reads, document, internal_column, resolved_metric)
+        else:
+            data = _explore_on_backend(
+                invocation, reads, document, (internal_column, column_type), resolved_metric
             )
-        _forward_optional(document, kwargs, ("level", "sequence", "limit", "offset", "sort"))
-        data = service.call(_symbol(invocation), **kwargs)
         data = _relabel_columns(service, dataset_id, view_id, project_id, data, as_map)
-    return data, _meta(invocation, auth.workspace_id, project_id)
+        range_columns = read_queries.condition_columns(document.get(CONDITION_KWARG))
+        if bucket_dates:
+            range_columns.append(column_arg)
+        data = read_queries.with_observed_range(reads, data, list(dict.fromkeys(range_columns)))
+        data = read_queries.with_assumptions(reads, data)
+    return data, meta
+
+
+def _explore_on_backend(
+    invocation: Invocation,
+    reads: ReadContext,
+    document: dict[str, Any],
+    column: tuple[str, str],
+    metric: dict[str, Any] | None,
+) -> Any:
+    """Explore a DATE, NUMERIC or plain TEXT column through the SDK's own bucketing."""
+    kwargs: dict[str, Any] = {
+        "dataset_id": reads.dataset_id,
+        "dataview_id": reads.view_id,
+        "project_id": reads.project_id,
+        "column": column[0],
+        "column_type": column[1],
+    }
+    if metric is not None:
+        kwargs["metric"] = metric
+    if document.get(CONDITION_KWARG) is not None:
+        spec = read_queries.resolve_text_date_conditions(reads, document[CONDITION_KWARG])
+        kwargs[CONDITION_KWARG] = compile_condition(spec).build(
+            reads.display_to_internal or None, reads.column_types or None
+        )
+    _forward_optional(document, kwargs, ("level", "sequence", "limit", "offset", "sort"))
+    return reads.service.call(_symbol(invocation), **kwargs)
 
 
 def view_exportable_config_get(invocation: Invocation) -> HandlerResult:

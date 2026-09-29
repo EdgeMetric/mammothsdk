@@ -54,6 +54,7 @@ class DatasetsAPI:
         limit: int = 100,
         offset: int = 0,
         sort: str = "(created_at:desc)",
+        fields: str = "id,name",
     ) -> dict[str, Any]:
         """Get list of datasets in a project.
 
@@ -63,13 +64,18 @@ class DatasetsAPI:
             limit: Maximum number of results (default 100).
             offset: Number of results to skip (default 0).
             sort: Sort order (default "(created_at:desc)").
+            fields: Comma-separated dataset fields to return, or "__min" /
+                "__standard" / "__full" (default "id,name"). ``stats`` carries
+                the row/column counts, ``data_schema`` the column names and types,
+                ``sources`` how the dataset was made, plus ``created_at`` and
+                ``updated_at``.
 
         Returns:
-            Dict containing datasets list with id, name and other info.
+            Dict containing datasets list with the requested fields.
         """
         ws = workspace_id or self._ws()
         proj = self._proj(project_id)
-        params = {"fields": "id,name", "limit": limit, "offset": offset, "sort": sort}
+        params = {"fields": fields, "limit": limit, "offset": offset, "sort": sort}
         return self._client._request_json(
             "GET", f"/workspaces/{ws}/projects/{proj}/datasets", params=params
         )
@@ -81,6 +87,7 @@ class DatasetsAPI:
         limit: int = 100,
         sort: str = "(created_at:desc)",
         max_pages: int = 1000,
+        fields: str = "id,name",
     ) -> dict[str, Any]:
         """List all datasets with bounded, progress-checked pagination.
 
@@ -96,6 +103,7 @@ class DatasetsAPI:
                 limit=limit,
                 offset=offset,
                 sort=sort,
+                fields=fields,
             ),
             item_key="datasets",
             limit=limit,
@@ -107,6 +115,7 @@ class DatasetsAPI:
         dataset_id: int,
         workspace_id: int | None = None,
         project_id: int | None = None,
+        fields: str | None = None,
     ) -> dict[str, Any]:
         """Get dataset details by ID.
 
@@ -114,15 +123,18 @@ class DatasetsAPI:
             dataset_id: ID of the dataset.
             workspace_id: ID of the workspace (uses client default if not provided).
             project_id: ID of the project (uses client default if not provided).
+            fields: Comma-separated fields to return, or "__min" / "__standard" /
+                "__full" (default: the standard set).
 
         Returns:
             Dict with complete dataset information.
         """
         ws = workspace_id or self._ws()
         proj = self._proj(project_id)
-        return self._client._request_json(
-            "GET", f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}"
-        )
+        path = f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}"
+        if fields:
+            return self._client._request_json("GET", path, params={"fields": fields})
+        return self._client._request_json("GET", path)
 
     def get_data(
         self,

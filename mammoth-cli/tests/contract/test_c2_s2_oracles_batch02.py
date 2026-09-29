@@ -40,7 +40,7 @@ CASES = [
     {"route":"annotation.list","argv":["annotation","list"],"project":41,"input":{"target_type":"workflow","target_id":757},"api":AnnotationsAPI,"method":"list","kwargs":{"project_id":41,"target_type":"workflow","target_id":757},"wire":["GET","/workspaces/4/projects/41/annotations",{"params":{"target_type":"workflow","target_id":757}}],"response":[]},
     {"route":"annotation.update","argv":["annotation","update","759"],"project":41,"input":{"status":"resolved"},"api":AnnotationsAPI,"method":"update","kwargs":{"annotation_id":759,"status":"resolved","project_id":41},"wire":["PATCH","/workspaces/4/projects/41/annotations/759",{"json":{"status":"resolved"}}],"response":{}},
     {"route":"browse.project","argv":["browse","project"],"project":41,"input":{"fields":"C2_PROJECT_FIELDS","name":"C2_PROJECT_NAME","browse_type":"dataset","sort":"-updated_at","offset":9,"limit":27},"api":ProjectsAPI,"method":"browse","kwargs":{"project_id":41,"fields":"C2_PROJECT_FIELDS","name":"C2_PROJECT_NAME","browse_type":"dataset","sort":"-updated_at","offset":9,"limit":27},"wire":["GET","/workspaces/4/projects/41/browse",{"params":{"fields":"C2_PROJECT_FIELDS","name":"C2_PROJECT_NAME","browse_type":"dataset","sort":"-updated_at","offset":9,"limit":27}}],"response":{}},
-    {"route":"dataset.list","argv":["dataset","list"],"project":41,"input":{"limit":21,"offset":0,"sort":"(name:asc)"},"api":DatasetsAPI,"method":"list","kwargs":{"project_id":41,"limit":21,"offset":0,"sort":"(name:asc)"},"wire":["GET","/workspaces/4/projects/41/datasets",{"params":{"fields":"id,name","limit":21,"offset":0,"sort":"(name:asc)"}}],"response":{"datasets":[]}},
+    {"route":"dataset.list","argv":["dataset","list"],"project":41,"input":{"limit":21,"offset":0,"sort":"(name:asc)"},"api":DatasetsAPI,"method":"list","kwargs":{"project_id":41,"limit":21,"offset":0,"sort":"(name:asc)","fields":"id,name,created_at,updated_at,status,stats,sources,data_schema,additional_info"},"wire":["GET","/workspaces/4/projects/41/datasets",{"params":{"fields":"id,name,created_at,updated_at,status,stats,sources,data_schema,additional_info","limit":21,"offset":0,"sort":"(name:asc)"}}],"response":{"datasets":[]}},
     # dataset.get also reads the dataview count for its "hint" (T1-I-13); that
     # follow-up read is the *last* wire call, so assert against the *first*.
     {"route":"dataset.get","argv":["dataset","get","763"],"project":41,"input":None,"api":DatasetsAPI,"method":"get","kwargs":{"dataset_id":763,"project_id":41},"wire":["GET","/workspaces/4/projects/41/datasets/763",{}],"response":{},"wire_index":0},
@@ -338,7 +338,7 @@ def test_dataset_list_nonzero_offset_cli_wire_in_venv314(
     assert seen and seen[0].get("offset") == 6, seen
     request = api.last()
     assert {key: values[-1] for key, values in request.query.items()} == {
-        "fields": "id,name", "limit": "1", "offset": "6", "sort": "(name:asc)"
+        "fields": "id,name,created_at,updated_at,status,stats,sources,data_schema,additional_info", "limit": "1", "offset": "6", "sort": "(name:asc)"
     }
 
 
@@ -368,5 +368,5 @@ def test_dataset_list_nonzero_offset_cli_wire_in_mandatory_no_input_mode(
     assert seen and seen[0].get("offset") == 6, seen
     request = api.last()
     assert {key: values[-1] for key, values in request.query.items()} == {
-        "fields": "id,name", "limit": "1", "offset": "6", "sort": "(name:asc)"
+        "fields": "id,name,created_at,updated_at,status,stats,sources,data_schema,additional_info", "limit": "1", "offset": "6", "sort": "(name:asc)"
     }
