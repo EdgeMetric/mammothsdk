@@ -52,6 +52,7 @@ def figure_bindings(canvas_doc: Mapping[str, Any]) -> list[dict[str, Any]]:
     if not isinstance(figures, Mapping):
         return []
     labels = _labels(canvas_doc)
+    axes = _tile_axes(canvas_doc)
     bindings: list[dict[str, Any]] = []
     for figure, entry in figures.items():
         parts = str(figure).split(":")
@@ -65,22 +66,52 @@ def figure_bindings(canvas_doc: Mapping[str, Any]) -> list[dict[str, Any]]:
                 "kind": kind,
                 "label": labels.get(str(figure)),
                 "descriptors": {str(name): str(did) for name, did in descriptors.items()},
+                "axis": axes.get(str(figure)),
             }
         )
     return bindings
 
 
-def _labels(canvas_doc: Mapping[str, Any]) -> dict[str, str]:
-    """``figure id -> title`` for the cards and tiles the canvas names, best effort."""
+def _pages(canvas_doc: Mapping[str, Any]) -> list[tuple[str, Mapping[str, Any]]]:
+    """``(page id, page)`` for the canvas's first page and each of its ``pages``."""
     canvas = canvas_doc.get("canvas")
     if not isinstance(canvas, Mapping):
-        return {}
+        return []
     pages = [("p1", canvas)]
     for page in canvas.get("pages") or []:
         if isinstance(page, Mapping) and isinstance(page.get("id"), str):
             pages.append((page["id"], page))
+    return pages
+
+
+def _tile_axes(canvas_doc: Mapping[str, Any]) -> dict[str, tuple[str, frozenset[str]]]:
+    """``figure id -> (axis field, measure names)`` for each tile grouped by a date or a
+    dimension: what an evaluated row must carry besides its numbers to be drawn."""
+    axes: dict[str, tuple[str, frozenset[str]]] = {}
+    for page_id, page in _pages(canvas_doc):
+        for index, tile in enumerate(page.get("added") or []):
+            if not isinstance(tile, Mapping):
+                continue
+            bucket = tile.get("date_bucket")
+            axis = bucket.get("field") if isinstance(bucket, Mapping) else tile.get("dim")
+            if isinstance(axis, str) and axis:
+                key = tile.get("id") or index
+                axes[f"{page_id}:add:{key}"] = (axis, _measures(tile))
+    return axes
+
+
+def _measures(tile: Mapping[str, Any]) -> frozenset[str]:
+    encoding = tile.get("encoding")
+    series = encoding.get("series") if isinstance(encoding, Mapping) else None
+    named = [tile.get("measure"), tile.get("measure2")]
+    named += [item.get("measure") for item in series or [] if isinstance(item, Mapping)]
+    return frozenset(name for name in named if isinstance(name, str))
+
+
+def _labels(canvas_doc: Mapping[str, Any]) -> dict[str, str]:
+    """``figure id -> title`` for the cards and tiles the canvas names, best effort."""
     labels: dict[str, str] = {}
-    for page_id, page in pages:
+    for page_id, page in _pages(canvas_doc):
         focus = page.get("focus")
         kpis = focus.get("kpis") if isinstance(focus, Mapping) else None
         for index, card in enumerate(kpis or []):
@@ -128,6 +159,18 @@ def _entry_values(entry: Any) -> dict[str, Any]:
     return {"error": "no value or rows in the result"}
 
 
+def _drawable(entry: dict[str, Any], axis: tuple[str, frozenset[str]] | None) -> dict[str, Any]:
+    """*entry*, or an error when a grouped tile's rows carry only its measures: the
+    grouping was lost and the chart has no axis to draw (UQA-RT2-05)."""
+    rows = entry.get("rows")
+    if axis is None or not rows:
+        return entry
+    field, measures = axis
+    if all(isinstance(row, Mapping) and set(row) <= measures for row in rows):
+        return {"error": f"the rows carry no {field} values, so this chart draws nothing"}
+    return entry
+
+
 def attach_values(
     bindings: list[dict[str, Any]], results: Mapping[str, Any]
 ) -> list[dict[str, Any]]:
@@ -135,7 +178,8 @@ def attach_values(
     values: list[dict[str, Any]] = []
     for binding in bindings:
         series = {
-            name: _entry_values(results.get(did)) for name, did in binding["descriptors"].items()
+            name: _drawable(_entry_values(results.get(did)), binding["axis"])
+            for name, did in binding["descriptors"].items()
         }
         item = {key: binding[key] for key in ("figure", "kind", "label") if binding[key]}
         if binding["kind"] == "kpi" and set(series) == {"value"}:

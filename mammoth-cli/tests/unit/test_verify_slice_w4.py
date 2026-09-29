@@ -206,6 +206,45 @@ def test_a_descriptor_that_failed_is_reported_not_dropped() -> None:
     assert values[0]["error"] == "unknown descriptor id"
 
 
+TREND_DOC = {
+    "canvas": {
+        "added": [
+            {
+                "id": "trend",
+                "title": "Monthly Sales and Profit Trend",
+                "kind": "combo",
+                "date_bucket": {"field": "Order Date", "unit": "month"},
+                "measure": "Sales",
+                "measure2": "Profit",
+                "encoding": {"series": [{"measure": "Sales"}, {"measure": "Profit"}]},
+            },
+            {"id": "region", "title": "Sales by Region", "dim": "Region", "measure": "Sales"},
+        ]
+    },
+    "meta": {
+        "figures": {
+            "p1:add:trend": {"descriptors": {"rows": "d-trend"}},
+            "p1:add:region": {"descriptors": {"value": "d-region"}},
+        }
+    },
+}
+
+
+def test_a_bucketed_tile_whose_rows_lost_their_axis_is_reported_as_drawing_nothing() -> None:
+    """UQA-RT2-05/09: board 160's month trend evaluated to bare order lines, no month,
+    so the chart was empty while the agent said it showed a 48-month trend."""
+    results = {
+        "d-trend": {"status": "success", "data": [{"Sales": 261.96, "Profit": 41.9136}] * 12},
+        "d-region": {"status": "success", "data": [{"key": "West", "n": 3203, "value": 725457.8}]},
+    }
+
+    trend, region = attach_values(figure_bindings(TREND_DOC), results)
+
+    assert "Order Date" in trend["series"]["rows"]["error"]
+    assert "rows" not in trend["series"]["rows"]
+    assert region["series"]["value"]["rows"] == [{"key": "West", "n": 3203, "value": 725457.8}]
+
+
 def test_descriptor_data_results_are_found_at_top_level_or_under_response() -> None:
     assert results_of({"results": {"a": 1}}) == {"a": 1}
     assert results_of({"response": {"results": {"a": 1}}}) == {"a": 1}
