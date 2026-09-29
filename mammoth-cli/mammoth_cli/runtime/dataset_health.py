@@ -21,6 +21,7 @@ _UNHEALTHY: dict[str, str] = {
         "This file was not loaded as a finished table: it has more than one plausible "
         "way to be read, so the dataset may have few or no usable rows."
     ),
+    "need_action": "This dataset needs a user decision before it is usable.",
 }
 #: Nesting to search: a result, a listing inside it, a record in the listing.
 _MAX_DEPTH = 3
@@ -69,6 +70,14 @@ def _stored_strings(stored: dict[str, Any], key: str) -> list[str]:
     return [v for v in values if isinstance(v, str) and v] if isinstance(values, list) else []
 
 
+def _status_info_text(record: dict[str, Any]) -> str:
+    """The record's own ``status_info`` text, quoted as the backend wrote it."""
+    info = record.get("status_info")
+    if not isinstance(info, dict):
+        return ""
+    return " ".join(v.strip() for v in info.values() if isinstance(v, str) and v.strip())
+
+
 def _entry(record: dict[str, Any]) -> dict[str, Any]:
     dataset_id = _dataset_id(record)
     stored = _stored_interpretation(record)
@@ -77,6 +86,9 @@ def _entry(record: dict[str, Any]) -> dict[str, Any]:
     detail = _UNHEALTHY[record["status"]]
     if reasons:
         detail += " The backend recorded: " + "; ".join(reasons) + "."
+    said = _status_info_text(record)
+    if said:
+        detail += f" Status info: {said}"
     entry: dict[str, Any] = {
         "dataset_id": dataset_id,
         "name": record.get("name"),

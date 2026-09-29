@@ -72,3 +72,32 @@ def test_healthy_results_are_left_exactly_as_they_were() -> None:
 
     assert with_dataset_health(data) is data
     assert with_dataset_health(["not", "a", "dict"]) == ["not", "a", "dict"]
+
+
+def test_a_dataset_get_record_in_need_action_quotes_the_backends_own_words() -> None:
+    # Shape of `dataset get` after the backend maps has_unstructured_data to need_action:
+    # status_info["need_action"] carries the text with "Suggested: ..." appended.
+    data = {
+        "id": 3108,
+        "name": "wb.csv",
+        "status": "need_action",
+        "status_info": {
+            "need_action": (
+                "This file has more than one plausible way to be read. "
+                "Suggested: Skip preamble rows, row 5 is the header"
+            )
+        },
+        "additional_info": {
+            "interpretation": {
+                "instruction_suggestions": ["Skip preamble rows, row 5 is the header"]
+            }
+        },
+    }
+
+    entry = with_dataset_health(data)["dataset_health"][0]
+
+    assert entry["status"] == "need_action"
+    assert "needs a user decision" in entry["detail"]
+    assert "Suggested: Skip preamble rows, row 5 is the header" in entry["detail"]
+    assert "delimiter" not in entry["detail"]
+    assert entry["fix"].startswith("mammoth dataset interpretation preview 3108 --input ")
