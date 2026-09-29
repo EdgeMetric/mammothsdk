@@ -82,6 +82,9 @@ ERROR_SUMMARIES: dict[str, str] = {
         "The confirmation was for a different item, so nothing was changed."
     ),
     "conflict": "This conflicts with the current state of your data, so nothing was changed.",
+    "dry_run_targets_unresolvable": (
+        "The assistant couldn't tell exactly which items this would change, so nothing was changed."
+    ),
     "download_failed": "A download didn't complete.",
     "duplicate_input_key": _S_BAD_INPUT,
     "empty_search_query": "The search was empty.",
