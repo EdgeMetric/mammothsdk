@@ -911,6 +911,10 @@ def join_after_snapshot(
         snapshot["unmatched_total"] = _count_all_blank(
             service, dataset_id, dataview_id, project_id, added
         )
+        # A large view reads no row count right after the join; without one the
+        # whole-view blank count was dropped for a first-page sample (UQA-RT8-01).
+        if snapshot["row_count"] is None:
+            snapshot["row_count"] = _count_rows(service, dataset_id, dataview_id, project_id)
     return snapshot
 
 
@@ -921,14 +925,26 @@ def _count_all_blank(
     condition = compile_condition(
         {"and": [{"column": name, "operator": "IS_EMPTY"} for name in internals]}
     )
+    return _count_rows(service, dataset_id, dataview_id, project_id, condition.build())
+
+
+def _count_rows(
+    service: Any,
+    dataset_id: int,
+    dataview_id: int,
+    project_id: int | None,
+    condition: dict[str, Any] | None = None,
+) -> int | None:
+    """Rows of the view matching ``condition`` (all rows without one); ``None`` when the
+    count could not run."""
     try:
         result = service.call(
             read_queries.AGGREGATE_SYMBOL,
             dataset_id=dataset_id,
             dataview_id=dataview_id,
             project_id=project_id,
-            aggregations=[{"function": "COUNT", "as_name": "unmatched"}],
-            condition=condition.build(),
+            aggregations=[{"function": "COUNT", "as_name": "rows"}],
+            condition=condition,
         )
     except Exception:  # noqa: BLE001 -- the check is advice; the join already ran
         return None
