@@ -518,7 +518,23 @@ def test_join_check_reports_match_rate_and_unmatched_keys() -> None:
     assert (check["unmatched_rows"], check["match_rate"]) == (1, 0.5)
     assert check["unmatched_keys"] == ["C99"]
     assert any("found no match" in n for n in check["notes"])
-    assert any("first 2 rows of 40" in n for n in check["notes"])
+    assert any("first 2 rows only" in n for n in check["notes"])
+
+
+def test_join_check_counts_the_whole_view_when_the_sample_all_matched() -> None:
+    before = {"row_count": 201910, "columns": {"column_1": "Customer ID"}, "rows": []}
+    after = {
+        "row_count": 201910,
+        "columns": {"column_1": "Customer ID", "column_9": "First invoice"},
+        "rows": [{"Customer ID": "16348", "First invoice": "05-Oct-2010"}],
+        "unmatched_total": 53313,
+    }
+    doc = {"on": [{"left": "Customer ID", "right": "Customer ID"}]}
+    check = view_cmd.with_join_check({}, before, after, doc)["join_check"]
+    assert (check["unmatched_rows"], check["rows_checked"]) == (53313, 201910)
+    assert check["match_rate"] == 0.736
+    assert any("53313 of 201910 rows found no match" in n for n in check["notes"])
+    assert not any("first" in n for n in check["notes"])
 
 
 def test_join_check_flags_repeated_and_dropped_rows() -> None:

@@ -894,11 +894,70 @@ def join_snapshot(
     return snapshot
 
 
+def join_after_snapshot(
+    service: Any, dataset_id: int, dataview_id: int, project_id: int | None, before: Any
+) -> dict[str, Any]:
+    """The view once the join has run, with ``unmatched_total`` counted over every row.
+
+    A first-page sample says nothing about the rest of the view: a join whose
+    first 400 rows all matched once reported a 100% match on a view where a
+    quarter of the keys were blank.
+    """
+    wait_for_pipeline_to_settle(service, dataset_id, dataview_id)
+    snapshot = join_snapshot(service, dataset_id, dataview_id, project_id)
+    known = before.get("columns", {}) if isinstance(before, dict) else {}
+    added = [internal for internal in snapshot["columns"] if internal not in known]
+    if added:
+        snapshot["unmatched_total"] = _count_all_blank(
+            service, dataset_id, dataview_id, project_id, added
+        )
+    return snapshot
+
+
+def _count_all_blank(
+    service: Any, dataset_id: int, dataview_id: int, project_id: int | None, internals: list[str]
+) -> int | None:
+    """Rows where every one of ``internals`` is blank; ``None`` when the count could not run."""
+    condition = compile_condition(
+        {"and": [{"column": name, "operator": "IS_EMPTY"} for name in internals]}
+    )
+    try:
+        result = service.call(
+            read_queries.AGGREGATE_SYMBOL,
+            dataset_id=dataset_id,
+            dataview_id=dataview_id,
+            project_id=project_id,
+            aggregations=[{"function": "COUNT", "as_name": "unmatched"}],
+            condition=condition.build(),
+        )
+    except Exception:  # noqa: BLE001 -- the check is advice; the join already ran
+        return None
+    if not isinstance(result, dict):
+        return None
+    rows = [row for row in result.get("data") or [] if isinstance(row, dict)]
+    return int(rows[0].get("agg_0") or 0) if rows else 0
+
+
+def _match_counts(
+    after: dict[str, Any], added: list[str], rows: list[dict[str, Any]]
+) -> tuple[int, int, bool] | None:
+    """``(unmatched, checked, whole_view)``: the full count when there is one, else the sample."""
+    total, after_n = after.get("unmatched_total"), after.get("row_count")
+    if isinstance(total, int) and isinstance(after_n, int) and after_n > 0:
+        return total, after_n, True
+    if not added or not rows:
+        return None
+    unmatched = sum(1 for r in rows if all(r.get(c) in (None, "") for c in added))
+    return unmatched, len(rows), False
+
+
 def with_join_check(data: Any, before: Any, after: dict[str, Any], document: dict[str, Any]) -> Any:
     """Add ``join_check`` (row counts, columns added, match rate) to a join result.
 
     ``unmatched_rows`` counts rows where every added column is blank: for a
-    LEFT join these are rows whose key found no match in the other view.
+    LEFT join these are rows whose key found no match in the other view. It is
+    counted over the whole view when ``after`` carries ``unmatched_total``
+    (see :func:`join_after_snapshot`), else over the sampled first page.
     """
     if not isinstance(data, dict) or not isinstance(before, dict):
         return data
@@ -919,18 +978,25 @@ def with_join_check(data: Any, before: Any, after: dict[str, Any], document: dic
     left_key = None
     if isinstance(on, list) and on and isinstance(on[0], dict):
         left_key = on[0].get("left")
-    if added and rows:
-        unmatched = [r for r in rows if all(r.get(c) in (None, "") for c in added)]
-        check["unmatched_rows"] = len(unmatched)
-        check["match_rate"] = round((len(rows) - len(unmatched)) / len(rows), 3)
+    counts = _match_counts(after, added, rows)
+    if counts is not None:
+        unmatched, checked, whole_view = counts
+        check.update(
+            unmatched_rows=unmatched,
+            match_rate=round((checked - unmatched) / checked, 3),
+            rows_checked=checked,
+        )
         if unmatched:
-            keys = sorted({str(r.get(left_key)) for r in unmatched if left_key in r})
+            missing = [r for r in rows if all(r.get(c) in (None, "") for c in added)]
+            keys = sorted({str(r.get(left_key)) for r in missing if left_key in r})
             check["unmatched_keys"] = keys[:_MAX_UNMATCHED_KEYS]
             notes.append(
-                f"{len(unmatched)} of {len(rows)} rows found no match. If that is more "
+                f"{unmatched} of {checked} rows found no match. If that is more "
                 "than a few, compare the key columns in both views (type, case, "
                 "padding) before you build on this; otherwise say so in your report."
             )
+        if not whole_view:
+            notes.append(f"Match rate is from the first {checked} rows only, not the whole view.")
     before_n, after_n = check["rows_before"], check["rows_after"]
     if isinstance(before_n, int) and isinstance(after_n, int):
         if after_n > before_n:
@@ -944,8 +1010,6 @@ def with_join_check(data: Any, before: Any, after: dict[str, Any], document: dic
                 f"{before_n - after_n} rows had no match and were dropped "
                 "(an INNER join keeps matched rows only)."
             )
-    if isinstance(after_n, int) and len(rows) < after_n:
-        notes.append(f"Match rate is from the first {len(rows)} rows of {after_n}.")
     if notes:
         check["notes"] = notes
     return {**data, "join_check": check}

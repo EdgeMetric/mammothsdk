@@ -32,6 +32,7 @@ from mammoth_cli.commands.view import (
     _require_discovery_allowed,
     apply_column_renames,
     brief_view_record,
+    join_after_snapshot,
     join_snapshot,
     wait_for_view_row_count,
     with_join_check,
@@ -1088,7 +1089,10 @@ def view_transform_join(invocation: Invocation) -> HandlerResult:
 
     def after(service: Any, dataset_id: int, state: Any, data: Any) -> Any:
         return with_join_check(
-            data, state, join_snapshot(service, dataset_id, view_id, project_id), document
+            data,
+            state,
+            join_after_snapshot(service, dataset_id, view_id, project_id, state),
+            document,
         )
 
     return _dispatch_view(invocation, view_id, "join", before=before, after=after, **kwargs)
