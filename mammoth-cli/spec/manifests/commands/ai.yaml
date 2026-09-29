@@ -19,6 +19,7 @@ commands:
   request_model: AiConditionGenerateRequest
   result_model: AiConditionGenerateResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -60,6 +61,7 @@ commands:
   request_model: AiExpressionGenerateRequest
   result_model: AiExpressionGenerateResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -101,6 +103,7 @@ commands:
   request_model: AiRetentionConditionRequest
   result_model: AiRetentionConditionResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: start_or_wait
   pagination_policy: none

@@ -13,6 +13,7 @@ commands:
   request_model: FileBulkDeleteRequest
   result_model: FileBulkDeleteResult
   mutation_class: destructive
+  edits_target: true
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -57,6 +58,7 @@ commands:
   request_model: FileDeleteRequest
   result_model: FileDeleteResult
   mutation_class: destructive
+  edits_target: true
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -102,6 +104,7 @@ commands:
   request_model: FileExtractSheetsRequest
   result_model: FileExtractSheetsResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -221,6 +224,7 @@ commands:
   request_model: FileSetPasswordRequest
   result_model: FileSetPasswordResult
   mutation_class: high_impact
+  edits_target: true
   confirmation: confirm_target
   wait_policy: always_wait
   pagination_policy: none
@@ -267,6 +271,7 @@ commands:
   request_model: FileUpdateRequest
   result_model: FileUpdateResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -314,6 +319,7 @@ commands:
   request_model: FileUploadRequest
   result_model: FileUploadResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: start_or_wait
   pagination_policy: none
@@ -364,6 +370,7 @@ commands:
   request_model: FileUploadFolderRequest
   result_model: FileUploadFolderResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: start_or_wait
   pagination_policy: none

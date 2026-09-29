@@ -13,6 +13,7 @@ commands:
   request_model: TemplateCreateRequest
   result_model: TemplateCreateResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -58,6 +59,7 @@ commands:
   request_model: TemplateDeleteRequest
   result_model: TemplateDeleteResult
   mutation_class: destructive
+  edits_target: true
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -176,6 +178,7 @@ commands:
   request_model: TemplateUpdateRequest
   result_model: TemplateUpdateResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: not_async
   pagination_policy: none

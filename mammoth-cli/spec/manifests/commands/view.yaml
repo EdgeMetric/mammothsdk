@@ -72,6 +72,7 @@ commands:
   request_model: ViewActiveUserMarkRequest
   result_model: ViewActiveUserMarkResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -117,6 +118,7 @@ commands:
   request_model: ViewAiGenerateDataRequest
   result_model: ViewAiGenerateDataResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -203,6 +205,7 @@ commands:
   request_model: ViewAiProfileRequest
   result_model: ViewAiProfileResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -248,6 +251,7 @@ commands:
   request_model: ViewBulkDeleteRequest
   result_model: ViewBulkDeleteResult
   mutation_class: destructive
+  edits_target: true
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -300,6 +304,7 @@ commands:
   request_model: ViewCheckpointCreateRequest
   result_model: ViewCheckpointCreateResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -359,6 +364,7 @@ commands:
   request_model: ViewCheckpointDeleteRequest
   result_model: ViewCheckpointDeleteResult
   mutation_class: destructive
+  edits_target: true
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -515,6 +521,7 @@ commands:
   request_model: ViewCheckpointUpdateRequest
   result_model: ViewCheckpointUpdateResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -570,6 +577,7 @@ commands:
   request_model: ViewConditionalFormatCreateRequest
   result_model: ViewConditionalFormatCreateResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -627,6 +635,7 @@ commands:
   request_model: ViewConditionalFormatDeleteAllRequest
   result_model: ViewConditionalFormatDeleteAllResult
   mutation_class: destructive
+  edits_target: true
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -727,6 +736,7 @@ commands:
   request_model: ViewConditionalFormatUpdateRequest
   result_model: ViewConditionalFormatUpdateResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -772,6 +782,7 @@ commands:
   request_model: ViewCreateRequest
   result_model: ViewCreateResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -824,6 +835,7 @@ commands:
   request_model: ViewDataCheckCreateRequest
   result_model: ViewDataCheckCreateResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -885,6 +897,7 @@ commands:
   request_model: ViewDataCheckDeleteRequest
   result_model: ViewDataCheckDeleteResult
   mutation_class: destructive
+  edits_target: true
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -1041,6 +1054,7 @@ commands:
   request_model: ViewDataCheckUpdateRequest
   result_model: ViewDataCheckUpdateResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -1368,6 +1382,7 @@ commands:
   request_model: ViewDeleteRequest
   result_model: ViewDeleteResult
   mutation_class: destructive
+  edits_target: true
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -1420,6 +1435,7 @@ commands:
   request_model: ViewDerivativeCreateRequest
   result_model: ViewDerivativeCreateResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -1481,6 +1497,7 @@ commands:
   request_model: ViewDerivativeDataRequest
   result_model: ViewDerivativeDataResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -1541,6 +1558,7 @@ commands:
   request_model: ViewDerivativeDeleteRequest
   result_model: ViewDerivativeDeleteResult
   mutation_class: destructive
+  edits_target: true
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -1645,6 +1663,7 @@ commands:
   request_model: ViewDerivativeUpdateRequest
   result_model: ViewDerivativeUpdateResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -1692,6 +1711,7 @@ commands:
   request_model: ViewDraftAutoRunRequest
   result_model: ViewDraftAutoRunResult
   mutation_class: reversible_pipeline
+  edits_target: true
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -1737,6 +1757,7 @@ commands:
   request_model: ViewDraftCommandRequest
   result_model: ViewDraftCommandResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -1779,6 +1800,7 @@ commands:
   request_model: ViewDraftDiscardRequest
   result_model: ViewDraftDiscardResult
   mutation_class: destructive
+  edits_target: true
   confirmation: prompt_or_yes
   wait_policy: always_wait
   pagination_policy: none
@@ -1824,6 +1846,7 @@ commands:
   request_model: ViewDraftEnterRequest
   result_model: ViewDraftEnterResult
   mutation_class: reversible_pipeline
+  edits_target: true
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -1906,6 +1929,7 @@ commands:
   request_model: ViewDraftSubmitRequest
   result_model: ViewDraftSubmitResult
   mutation_class: reversible_pipeline
+  edits_target: true
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -1957,6 +1981,7 @@ commands:
   request_model: ViewExportAzureBlobRequest
   result_model: ViewExportAzureBlobResult
   mutation_class: external_effect
+  edits_target: false
   confirmation: yes_always
   wait_policy: returns_job
   pagination_policy: none
@@ -2009,6 +2034,7 @@ commands:
   request_model: ViewExportBigqueryRequest
   result_model: ViewExportBigqueryResult
   mutation_class: external_effect
+  edits_target: false
   confirmation: yes_always
   wait_policy: returns_job
   pagination_policy: none
@@ -2055,6 +2081,7 @@ commands:
   request_model: ViewExportCreateRequest
   result_model: ViewExportCreateResult
   mutation_class: external_effect
+  edits_target: false
   confirmation: yes_always
   wait_policy: returns_job
   pagination_policy: none
@@ -2103,6 +2130,7 @@ commands:
   request_model: ViewExportCsvRequest
   result_model: ViewExportCsvResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -2153,6 +2181,7 @@ commands:
   request_model: ViewExportDatasetRequest
   result_model: ViewExportDatasetResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -2207,6 +2236,7 @@ commands:
   request_model: ViewExportDeleteRequest
   result_model: ViewExportDeleteResult
   mutation_class: external_effect
+  edits_target: true
   confirmation: yes_always
   wait_policy: not_async
   pagination_policy: none
@@ -2258,6 +2288,7 @@ commands:
   request_model: ViewExportElasticsearchRequest
   result_model: ViewExportElasticsearchResult
   mutation_class: external_effect
+  edits_target: false
   confirmation: yes_always
   wait_policy: returns_job
   pagination_policy: none
@@ -2310,6 +2341,7 @@ commands:
   request_model: ViewExportEmailRequest
   result_model: ViewExportEmailResult
   mutation_class: external_effect
+  edits_target: false
   confirmation: yes_always
   wait_policy: returns_job
   pagination_policy: none
@@ -2362,6 +2394,7 @@ commands:
   request_model: ViewExportFtpRequest
   result_model: ViewExportFtpResult
   mutation_class: external_effect
+  edits_target: false
   confirmation: yes_always
   wait_policy: returns_job
   pagination_policy: none
@@ -2506,6 +2539,7 @@ commands:
   request_model: ViewExportManagedS3Request
   result_model: ViewExportManagedS3Result
   mutation_class: external_effect
+  edits_target: false
   confirmation: yes_always
   wait_policy: always_wait
   pagination_policy: none
@@ -2554,6 +2588,7 @@ commands:
   request_model: ViewExportMssqlRequest
   result_model: ViewExportMssqlResult
   mutation_class: external_effect
+  edits_target: false
   confirmation: yes_always
   wait_policy: returns_job
   pagination_policy: none
@@ -2606,6 +2641,7 @@ commands:
   request_model: ViewExportMysqlRequest
   result_model: ViewExportMysqlResult
   mutation_class: external_effect
+  edits_target: false
   confirmation: yes_always
   wait_policy: returns_job
   pagination_policy: none
@@ -2658,6 +2694,7 @@ commands:
   request_model: ViewExportOnedriveRequest
   result_model: ViewExportOnedriveResult
   mutation_class: external_effect
+  edits_target: false
   confirmation: yes_always
   wait_policy: returns_job
   pagination_policy: none
@@ -2710,6 +2747,7 @@ commands:
   request_model: ViewExportPostgresRequest
   result_model: ViewExportPostgresResult
   mutation_class: external_effect
+  edits_target: false
   confirmation: yes_always
   wait_policy: returns_job
   pagination_policy: none
@@ -2762,6 +2800,7 @@ commands:
   request_model: ViewExportPowerbiRequest
   result_model: ViewExportPowerbiResult
   mutation_class: external_effect
+  edits_target: false
   confirmation: yes_always
   wait_policy: returns_job
   pagination_policy: none
@@ -2811,6 +2850,7 @@ commands:
   request_model: ViewExportPublishDbRequest
   result_model: ViewExportPublishDbResult
   mutation_class: external_effect
+  edits_target: false
   confirmation: yes_always
   wait_policy: not_async
   pagination_policy: none
@@ -2854,6 +2894,7 @@ commands:
   request_model: ViewExportPublishDbUpdateRequest
   result_model: ViewExportPublishDbUpdateResult
   mutation_class: external_effect
+  edits_target: true
   confirmation: yes_always
   wait_policy: not_async
   pagination_policy: none
@@ -2902,6 +2943,7 @@ commands:
   request_model: ViewExportRedshiftRequest
   result_model: ViewExportRedshiftResult
   mutation_class: external_effect
+  edits_target: false
   confirmation: yes_always
   wait_policy: returns_job
   pagination_policy: none
@@ -2954,6 +2996,7 @@ commands:
   request_model: ViewExportRestRequest
   result_model: ViewExportRestResult
   mutation_class: external_effect
+  edits_target: false
   confirmation: yes_always
   wait_policy: returns_job
   pagination_policy: none
@@ -3008,6 +3051,7 @@ commands:
   request_model: ViewExportSftpRequest
   result_model: ViewExportSftpResult
   mutation_class: external_effect
+  edits_target: false
   confirmation: yes_always
   wait_policy: returns_job
   pagination_policy: none
@@ -3062,6 +3106,7 @@ commands:
   request_model: ViewExportSharepointRequest
   result_model: ViewExportSharepointResult
   mutation_class: external_effect
+  edits_target: false
   confirmation: yes_always
   wait_policy: returns_job
   pagination_policy: none
@@ -3114,6 +3159,7 @@ commands:
   request_model: ViewExportTableauRequest
   result_model: ViewExportTableauResult
   mutation_class: external_effect
+  edits_target: false
   confirmation: yes_always
   wait_policy: returns_job
   pagination_policy: none
@@ -3166,6 +3212,7 @@ commands:
   request_model: ViewExportUpdateRequest
   result_model: ViewExportUpdateResult
   mutation_class: external_effect
+  edits_target: true
   confirmation: yes_always
   wait_policy: not_async
   pagination_policy: none
@@ -3219,6 +3266,7 @@ commands:
   request_model: ViewExportableConfigApplyRequest
   result_model: ViewExportableConfigApplyResult
   mutation_class: reversible_pipeline
+  edits_target: true
   confirmation: confirm_target
   wait_policy: returns_job
   pagination_policy: none
@@ -3447,6 +3495,7 @@ commands:
   request_model: ViewPipelineEditRequest
   result_model: ViewPipelineEditResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -3621,6 +3670,7 @@ commands:
   request_model: ViewPipelineRerunRequest
   result_model: ViewPipelineRerunResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -3758,6 +3808,7 @@ commands:
   request_model: ViewRestoreRequest
   result_model: ViewRestoreResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -3803,6 +3854,7 @@ commands:
   request_model: ViewTaskAddRequest
   result_model: ViewTaskAddResult
   mutation_class: reversible_pipeline
+  edits_target: true
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -3856,6 +3908,7 @@ commands:
   request_model: ViewTaskDeleteRequest
   result_model: ViewTaskDeleteResult
   mutation_class: destructive
+  edits_target: true
   confirmation: prompt_or_yes
   wait_policy: always_wait
   pagination_policy: none
@@ -4037,6 +4090,7 @@ commands:
   request_model: ViewTaskUpdateRequest
   result_model: ViewTaskUpdateResult
   mutation_class: reversible_pipeline
+  edits_target: true
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -4084,6 +4138,7 @@ commands:
   request_model: ViewTransformAddColumnRequest
   result_model: ViewTransformAddColumnResult
   mutation_class: reversible_pipeline
+  edits_target: true
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -4130,6 +4185,7 @@ commands:
   request_model: ViewTransformAddSqlRequest
   result_model: ViewTransformAddSqlResult
   mutation_class: reversible_pipeline
+  edits_target: true
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -4182,6 +4238,7 @@ commands:
   request_model: ViewTransformAiRequest
   result_model: ViewTransformAiResult
   mutation_class: reversible_pipeline
+  edits_target: true
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -4229,6 +4286,7 @@ commands:
   request_model: ViewTransformBulkReplaceRequest
   result_model: ViewTransformBulkReplaceResult
   mutation_class: reversible_pipeline
+  edits_target: true
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -4280,6 +4338,7 @@ commands:
   request_model: ViewTransformCombineColumnsRequest
   result_model: ViewTransformCombineColumnsResult
   mutation_class: reversible_pipeline
+  edits_target: true
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -4328,6 +4387,7 @@ commands:
   request_model: ViewTransformConvertTypeRequest
   result_model: ViewTransformConvertTypeResult
   mutation_class: reversible_pipeline
+  edits_target: true
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -4375,6 +4435,7 @@ commands:
   request_model: ViewTransformCopyColumnsRequest
   result_model: ViewTransformCopyColumnsResult
   mutation_class: reversible_pipeline
+  edits_target: true
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -4422,6 +4483,7 @@ commands:
   request_model: ViewTransformCrosstabRequest
   result_model: ViewTransformCrosstabResult
   mutation_class: reversible_pipeline
+  edits_target: true
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -4469,6 +4531,7 @@ commands:
   request_model: ViewTransformDateDiffRequest
   result_model: ViewTransformDateDiffResult
   mutation_class: reversible_pipeline
+  edits_target: true
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -4524,6 +4587,7 @@ commands:
   request_model: ViewTransformDeleteColumnsRequest
   result_model: ViewTransformDeleteColumnsResult
   mutation_class: reversible_pipeline
+  edits_target: true
   confirmation: prompt_or_yes
   wait_policy: always_wait
   pagination_policy: none
@@ -4572,6 +4636,7 @@ commands:
   request_model: ViewTransformDiscardDuplicatesRequest
   result_model: ViewTransformDiscardDuplicatesResult
   mutation_class: reversible_pipeline
+  edits_target: true
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -4617,6 +4682,7 @@ commands:
   request_model: ViewTransformExtractDateRequest
   result_model: ViewTransformExtractDateResult
   mutation_class: reversible_pipeline
+  edits_target: true
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -4663,6 +4729,7 @@ commands:
   request_model: ViewTransformFillMissingRequest
   result_model: ViewTransformFillMissingResult
   mutation_class: reversible_pipeline
+  edits_target: true
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -4709,6 +4776,7 @@ commands:
   request_model: ViewTransformFilterRequest
   result_model: ViewTransformFilterResult
   mutation_class: reversible_pipeline
+  edits_target: true
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -4756,6 +4824,7 @@ commands:
   request_model: ViewTransformGenerateSqlRequest
   result_model: ViewTransformGenerateSqlResult
   mutation_class: reversible_pipeline
+  edits_target: false
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -4804,6 +4873,7 @@ commands:
   request_model: ViewTransformIncrementDateRequest
   result_model: ViewTransformIncrementDateResult
   mutation_class: reversible_pipeline
+  edits_target: true
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -4850,6 +4920,7 @@ commands:
   request_model: ViewTransformJoinRequest
   result_model: ViewTransformJoinResult
   mutation_class: reversible_pipeline
+  edits_target: true
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -4898,6 +4969,7 @@ commands:
   request_model: ViewTransformJsonExtractRequest
   result_model: ViewTransformJsonExtractResult
   mutation_class: reversible_pipeline
+  edits_target: true
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -4947,6 +5019,7 @@ commands:
   request_model: ViewTransformLimitRowsRequest
   result_model: ViewTransformLimitRowsResult
   mutation_class: reversible_pipeline
+  edits_target: true
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -4992,6 +5065,7 @@ commands:
   request_model: ViewTransformLookupRequest
   result_model: ViewTransformLookupResult
   mutation_class: reversible_pipeline
+  edits_target: true
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -5038,6 +5112,7 @@ commands:
   request_model: ViewTransformMathRequest
   result_model: ViewTransformMathResult
   mutation_class: reversible_pipeline
+  edits_target: true
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -5084,6 +5159,7 @@ commands:
   request_model: ViewTransformPivotRequest
   result_model: ViewTransformPivotResult
   mutation_class: reversible_pipeline
+  edits_target: true
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -5133,6 +5209,7 @@ commands:
   request_model: ViewTransformRenameColumnsRequest
   result_model: ViewTransformRenameColumnsResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -5180,6 +5257,7 @@ commands:
   request_model: ViewTransformReplaceRequest
   result_model: ViewTransformReplaceResult
   mutation_class: reversible_pipeline
+  edits_target: true
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -5228,6 +5306,7 @@ commands:
   request_model: ViewTransformSetValuesRequest
   result_model: ViewTransformSetValuesResult
   mutation_class: reversible_pipeline
+  edits_target: true
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -5274,6 +5353,7 @@ commands:
   request_model: ViewTransformSmallLargeRequest
   result_model: ViewTransformSmallLargeResult
   mutation_class: reversible_pipeline
+  edits_target: true
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -5320,6 +5400,7 @@ commands:
   request_model: ViewTransformSortRequest
   result_model: ViewTransformSortResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -5367,6 +5448,7 @@ commands:
   request_model: ViewTransformSplitRequest
   result_model: ViewTransformSplitResult
   mutation_class: reversible_pipeline
+  edits_target: true
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -5413,6 +5495,7 @@ commands:
   request_model: ViewTransformSubstringRequest
   result_model: ViewTransformSubstringResult
   mutation_class: reversible_pipeline
+  edits_target: true
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -5458,6 +5541,7 @@ commands:
   request_model: ViewTransformTextRequest
   result_model: ViewTransformTextResult
   mutation_class: reversible_pipeline
+  edits_target: true
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -5503,6 +5587,7 @@ commands:
   request_model: ViewTransformUnnestRequest
   result_model: ViewTransformUnnestResult
   mutation_class: reversible_pipeline
+  edits_target: true
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -5549,6 +5634,7 @@ commands:
   request_model: ViewTransformWindowRequest
   result_model: ViewTransformWindowResult
   mutation_class: reversible_pipeline
+  edits_target: true
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -5602,6 +5688,7 @@ commands:
   request_model: ViewTrashRequest
   result_model: ViewTrashResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -5654,6 +5741,7 @@ commands:
   request_model: ViewUpdateRequest
   result_model: ViewUpdateResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -5714,6 +5802,7 @@ commands:
   request_model: ViewVersionApplyRequest
   result_model: ViewVersionApplyResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -5773,6 +5862,7 @@ commands:
   request_model: ViewVersionDeleteRequest
   result_model: ViewVersionDeleteResult
   mutation_class: destructive
+  edits_target: true
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -5930,6 +6020,7 @@ commands:
   request_model: ViewVersionUpdateRequest
   result_model: ViewVersionUpdateResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: not_async
   pagination_policy: none

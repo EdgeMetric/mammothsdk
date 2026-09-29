@@ -19,6 +19,7 @@ commands:
   request_model: AnnotationCommentAddRequest
   result_model: AnnotationCommentAddResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -56,6 +57,7 @@ commands:
   request_model: AnnotationCreateRequest
   result_model: AnnotationCreateResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -103,6 +105,7 @@ commands:
   request_model: AnnotationDeleteRequest
   result_model: AnnotationDeleteResult
   mutation_class: destructive
+  edits_target: true
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -181,6 +184,7 @@ commands:
   request_model: AnnotationUpdateRequest
   result_model: AnnotationUpdateResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: not_async
   pagination_policy: none

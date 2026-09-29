@@ -19,6 +19,7 @@ commands:
   request_model: AutomationCreateRequest
   result_model: AutomationCreateResult
   mutation_class: external_effect
+  edits_target: false
   confirmation: yes_always
   wait_policy: not_async
   pagination_policy: none
@@ -70,6 +71,7 @@ commands:
   request_model: AutomationDeleteRequest
   result_model: AutomationDeleteResult
   mutation_class: destructive
+  edits_target: true
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -193,6 +195,7 @@ commands:
   request_model: AutomationRestoreRequest
   result_model: AutomationRestoreResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -238,6 +241,7 @@ commands:
   request_model: AutomationTrashRequest
   result_model: AutomationTrashResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -283,6 +287,7 @@ commands:
   request_model: AutomationUpdateRequest
   result_model: AutomationUpdateResult
   mutation_class: external_effect
+  edits_target: true
   confirmation: yes_always
   wait_policy: not_async
   pagination_policy: none

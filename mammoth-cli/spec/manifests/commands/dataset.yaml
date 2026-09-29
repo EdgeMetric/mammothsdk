@@ -97,6 +97,7 @@ commands:
   request_model: DatasetBulkDeleteRequest
   result_model: DatasetBulkDeleteResult
   mutation_class: destructive
+  edits_target: true
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -135,6 +136,7 @@ commands:
   request_model: DatasetBulkUpdateRequest
   result_model: DatasetBulkUpdateResult
   mutation_class: high_impact
+  edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -173,6 +175,7 @@ commands:
   request_model: DatasetCreateRequest
   result_model: DatasetCreateResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -224,6 +227,7 @@ commands:
   request_model: DatasetCreateFromPdfRequest
   result_model: DatasetCreateFromPdfResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -308,6 +312,7 @@ commands:
   request_model: DatasetDeleteRequest
   result_model: DatasetDeleteResult
   mutation_class: destructive
+  edits_target: true
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -392,6 +397,7 @@ commands:
   request_model: DatasetFileSettingsUndoRequest
   result_model: DatasetFileSettingsUndoResult
   mutation_class: destructive
+  edits_target: true
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -437,6 +443,7 @@ commands:
   request_model: DatasetFileSettingsUpdateRequest
   result_model: DatasetFileSettingsUpdateResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -596,6 +603,7 @@ commands:
   request_model: DatasetRenameRequest
   result_model: DatasetRenameResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -642,6 +650,7 @@ commands:
   request_model: DatasetRestoreRequest
   result_model: DatasetRestoreResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -687,6 +696,7 @@ commands:
   request_model: DatasetTrashRequest
   result_model: DatasetTrashResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -726,6 +736,7 @@ commands:
   request_model: DatasetUpdateRequest
   result_model: DatasetUpdateResult
   mutation_class: high_impact
+  edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none

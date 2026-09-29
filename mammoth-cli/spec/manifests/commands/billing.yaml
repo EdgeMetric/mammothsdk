@@ -53,6 +53,7 @@ commands:
   request_model: BillingHostedPageRequest
   result_model: BillingHostedPageResult
   mutation_class: high_impact
+  edits_target: false
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -88,6 +89,7 @@ commands:
   request_model: BillingInvoiceChargeRequest
   result_model: BillingInvoiceChargeResult
   mutation_class: high_impact
+  edits_target: false
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -159,6 +161,7 @@ commands:
   request_model: BillingStripeCancelRequest
   result_model: BillingStripeCancelResult
   mutation_class: high_impact
+  edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -197,6 +200,7 @@ commands:
   request_model: BillingStripeCheckoutUrlRequest
   result_model: BillingStripeCheckoutUrlResult
   mutation_class: high_impact
+  edits_target: false
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -239,6 +243,7 @@ commands:
   request_model: BillingStripeCreateRequest
   result_model: BillingStripeCreateResult
   mutation_class: high_impact
+  edits_target: false
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -277,6 +282,7 @@ commands:
   request_model: BillingStripeEndTrialRequest
   result_model: BillingStripeEndTrialResult
   mutation_class: high_impact
+  edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -390,6 +396,7 @@ commands:
   request_model: BillingStripePaymentMethodDeleteRequest
   result_model: BillingStripePaymentMethodDeleteResult
   mutation_class: high_impact
+  edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -470,6 +477,7 @@ commands:
   request_model: BillingStripePaymentMethodSetDefaultRequest
   result_model: BillingStripePaymentMethodSetDefaultResult
   mutation_class: high_impact
+  edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -508,6 +516,7 @@ commands:
   request_model: BillingStripePortalUrlRequest
   result_model: BillingStripePortalUrlResult
   mutation_class: high_impact
+  edits_target: false
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -577,6 +586,7 @@ commands:
   request_model: BillingStripeRetryPaymentRequest
   result_model: BillingStripeRetryPaymentResult
   mutation_class: high_impact
+  edits_target: false
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -649,6 +659,7 @@ commands:
   request_model: BillingStripeSyncRequest
   result_model: BillingStripeSyncResult
   mutation_class: high_impact
+  edits_target: false
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -789,6 +800,7 @@ commands:
   request_model: BillingSubscriptionUpdateRequest
   result_model: BillingSubscriptionUpdateResult
   mutation_class: high_impact
+  edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none

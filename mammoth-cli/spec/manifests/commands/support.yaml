@@ -26,6 +26,7 @@ commands:
   request_model: SupportConnectorProfileAddConnectorRequest
   result_model: SupportConnectorProfileAddConnectorResult
   mutation_class: high_impact
+  edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -71,6 +72,7 @@ commands:
   request_model: SupportConnectorProfileCreateRequest
   result_model: SupportConnectorProfileCreateResult
   mutation_class: high_impact
+  edits_target: false
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -116,6 +118,7 @@ commands:
   request_model: SupportConnectorProfileDeleteRequest
   result_model: SupportConnectorProfileDeleteResult
   mutation_class: high_impact
+  edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -195,6 +198,7 @@ commands:
   request_model: SupportConnectorProfileUpdateRequest
   result_model: SupportConnectorProfileUpdateResult
   mutation_class: high_impact
+  edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -239,6 +243,7 @@ commands:
   request_model: SupportConnectorCreateRequest
   result_model: SupportConnectorCreateResult
   mutation_class: high_impact
+  edits_target: false
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -283,6 +288,7 @@ commands:
   request_model: SupportConnectorDeleteRequest
   result_model: SupportConnectorDeleteResult
   mutation_class: high_impact
+  edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -361,6 +367,7 @@ commands:
   request_model: SupportConnectorUpdateRequest
   result_model: SupportConnectorUpdateResult
   mutation_class: high_impact
+  edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -412,6 +419,7 @@ commands:
   request_model: SupportFeatureProfileAddFeatureRequest
   result_model: SupportFeatureProfileAddFeatureResult
   mutation_class: high_impact
+  edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -456,6 +464,7 @@ commands:
   request_model: SupportFeatureProfileCreateRequest
   result_model: SupportFeatureProfileCreateResult
   mutation_class: high_impact
+  edits_target: false
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -500,6 +509,7 @@ commands:
   request_model: SupportFeatureProfileDeleteRequest
   result_model: SupportFeatureProfileDeleteResult
   mutation_class: high_impact
+  edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -578,6 +588,7 @@ commands:
   request_model: SupportFeatureProfileUpdateRequest
   result_model: SupportFeatureProfileUpdateResult
   mutation_class: high_impact
+  edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -622,6 +633,7 @@ commands:
   request_model: SupportFeatureCreateRequest
   result_model: SupportFeatureCreateResult
   mutation_class: high_impact
+  edits_target: false
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -666,6 +678,7 @@ commands:
   request_model: SupportFeatureDeleteRequest
   result_model: SupportFeatureDeleteResult
   mutation_class: high_impact
+  edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -744,6 +757,7 @@ commands:
   request_model: SupportFeatureUpdateRequest
   result_model: SupportFeatureUpdateResult
   mutation_class: high_impact
+  edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -794,6 +808,7 @@ commands:
   request_model: SupportOwnershipTransferRequest
   result_model: SupportOwnershipTransferResult
   mutation_class: high_impact
+  edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -839,6 +854,7 @@ commands:
   request_model: SupportPlanArchiveRequest
   result_model: SupportPlanArchiveResult
   mutation_class: high_impact
+  edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -918,6 +934,7 @@ commands:
   request_model: SupportPlanCreateRequest
   result_model: SupportPlanCreateResult
   mutation_class: high_impact
+  edits_target: false
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -964,6 +981,7 @@ commands:
   request_model: SupportPlanDeleteRequest
   result_model: SupportPlanDeleteResult
   mutation_class: high_impact
+  edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -1116,6 +1134,7 @@ commands:
   request_model: SupportPlanUpdateRequest
   result_model: SupportPlanUpdateResult
   mutation_class: high_impact
+  edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -1162,6 +1181,7 @@ commands:
   request_model: SupportPlanUpdateStorageTiersRequest
   result_model: SupportPlanUpdateStorageTiersResult
   mutation_class: high_impact
+  edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -1214,6 +1234,7 @@ commands:
   request_model: SupportSubscriptionCreateRequest
   result_model: SupportSubscriptionCreateResult
   mutation_class: high_impact
+  edits_target: false
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -1305,6 +1326,7 @@ commands:
   request_model: SupportSubscriptionUpdateRequest
   result_model: SupportSubscriptionUpdateResult
   mutation_class: high_impact
+  edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -1384,6 +1406,7 @@ commands:
   request_model: SupportUserRegisterRequest
   result_model: SupportUserRegisterResult
   mutation_class: high_impact
+  edits_target: false
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -1429,6 +1452,7 @@ commands:
   request_model: SupportUserUpdateRequest
   result_model: SupportUserUpdateResult
   mutation_class: high_impact
+  edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -1473,6 +1497,7 @@ commands:
   request_model: SupportWorkspaceCreateRequest
   result_model: SupportWorkspaceCreateResult
   mutation_class: high_impact
+  edits_target: false
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -1519,6 +1544,7 @@ commands:
   request_model: SupportWorkspaceDeleteRequest
   result_model: SupportWorkspaceDeleteResult
   mutation_class: high_impact
+  edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -1638,6 +1664,7 @@ commands:
   request_model: SupportWorkspaceRestoreAccessRequest
   result_model: SupportWorkspaceRestoreAccessResult
   mutation_class: high_impact
+  edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -1684,6 +1711,7 @@ commands:
   request_model: SupportWorkspaceSuspendAccessRequest
   result_model: SupportWorkspaceSuspendAccessResult
   mutation_class: high_impact
+  edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -1729,6 +1757,7 @@ commands:
   request_model: SupportWorkspaceUpdateRequest
   result_model: SupportWorkspaceUpdateResult
   mutation_class: high_impact
+  edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -1775,6 +1804,7 @@ commands:
   request_model: SupportWorkspaceUserAddRequest
   result_model: SupportWorkspaceUserAddResult
   mutation_class: high_impact
+  edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -1867,6 +1897,7 @@ commands:
   request_model: SupportWorkspaceUserRemoveRequest
   result_model: SupportWorkspaceUserRemoveResult
   mutation_class: high_impact
+  edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -1918,6 +1949,7 @@ commands:
   request_model: SupportWorkspaceUserTransferRequest
   result_model: SupportWorkspaceUserTransferResult
   mutation_class: high_impact
+  edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none

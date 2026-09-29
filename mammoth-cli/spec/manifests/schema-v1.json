@@ -192,6 +192,7 @@
         "request_model": {"$ref": "#/$defs/no_placeholder"},
         "result_model": {"$ref": "#/$defs/no_placeholder"},
         "mutation_class": {"$ref": "#/$defs/mutation_class"},
+        "edits_target": {"type": "boolean"},
         "confirmation": {"$ref": "#/$defs/confirmation"},
         "wait_policy": {"$ref": "#/$defs/wait_policy"},
         "pagination_policy": {"$ref": "#/$defs/pagination_policy"},
@@ -213,6 +214,10 @@
         "reviewed_by": {"$ref": "#/$defs/no_placeholder"}
       },
       "allOf": [
+        {
+          "if": {"properties": {"mutation_class": {"not": {"const": "read"}}}},
+          "then": {"required": ["edits_target"]}
+        },
         {
           "if": {"properties": {"disposition": {"const": "alias"}}},
           "then": {"required": ["alias_of"], "properties": {"alias_of": {"$ref": "#/$defs/no_placeholder"}}}

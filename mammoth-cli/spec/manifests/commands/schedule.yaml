@@ -13,6 +13,7 @@ commands:
   request_model: ScheduleCreateRequest
   result_model: ScheduleCreateResult
   mutation_class: external_effect
+  edits_target: false
   confirmation: yes_always
   wait_policy: not_async
   pagination_policy: none
@@ -59,6 +60,7 @@ commands:
   request_model: ScheduleDeleteRequest
   result_model: ScheduleDeleteResult
   mutation_class: destructive
+  edits_target: true
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -183,6 +185,7 @@ commands:
   request_model: ScheduleUpdateRequest
   result_model: ScheduleUpdateResult
   mutation_class: external_effect
+  edits_target: true
   confirmation: yes_always
   wait_policy: not_async
   pagination_policy: none

@@ -47,6 +47,7 @@ commands:
   request_model: ConnectorAiChatRequest
   result_model: ConnectorAiChatResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -202,6 +203,7 @@ commands:
   request_model: ConnectorAiSubmitColumnSelectionRequest
   result_model: ConnectorAiSubmitColumnSelectionResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -242,6 +244,7 @@ commands:
   request_model: ConnectorAiSubmitCredentialsRequest
   result_model: ConnectorAiSubmitCredentialsResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -287,6 +290,7 @@ commands:
   request_model: ConnectorConnectionCreateRequest
   result_model: ConnectorConnectionCreateResult
   mutation_class: external_effect
+  edits_target: false
   confirmation: yes_always
   wait_policy: not_async
   pagination_policy: none
@@ -339,6 +343,7 @@ commands:
   request_model: ConnectorConnectionDeleteRequest
   result_model: ConnectorConnectionDeleteResult
   mutation_class: destructive
+  edits_target: true
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -476,6 +481,7 @@ commands:
   request_model: ConnectorConnectionUpdateRequest
   result_model: ConnectorConnectionUpdateResult
   mutation_class: external_effect
+  edits_target: true
   confirmation: yes_always
   wait_policy: not_async
   pagination_policy: none
@@ -529,6 +535,7 @@ commands:
   request_model: ConnectorDsConfigCreateRequest
   result_model: ConnectorDsConfigCreateResult
   mutation_class: external_effect
+  edits_target: false
   confirmation: yes_always
   wait_policy: not_async
   pagination_policy: none
@@ -587,6 +594,7 @@ commands:
   request_model: ConnectorDsConfigDeleteRequest
   result_model: ConnectorDsConfigDeleteResult
   mutation_class: destructive
+  edits_target: true
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -640,6 +648,7 @@ commands:
   request_model: ConnectorDsConfigDeleteAllRequest
   result_model: ConnectorDsConfigDeleteAllResult
   mutation_class: destructive
+  edits_target: true
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -796,6 +805,7 @@ commands:
   request_model: ConnectorDsConfigUpdateRequest
   result_model: ConnectorDsConfigUpdateResult
   mutation_class: external_effect
+  edits_target: true
   confirmation: yes_always
   wait_policy: not_async
   pagination_policy: none

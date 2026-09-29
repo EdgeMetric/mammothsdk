@@ -13,6 +13,7 @@ commands:
   request_model: AddonConnectorAddRequest
   result_model: AddonConnectorAddResult
   mutation_class: high_impact
+  edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -51,6 +52,7 @@ commands:
   request_model: AddonConnectorRemoveRequest
   result_model: AddonConnectorRemoveResult
   mutation_class: high_impact
+  edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -122,6 +124,7 @@ commands:
   request_model: AddonStorageAddRequest
   result_model: AddonStorageAddResult
   mutation_class: high_impact
+  edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -160,6 +163,7 @@ commands:
   request_model: AddonStorageRemoveRequest
   result_model: AddonStorageRemoveResult
   mutation_class: high_impact
+  edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -198,6 +202,7 @@ commands:
   request_model: AddonUserAddRequest
   result_model: AddonUserAddResult
   mutation_class: high_impact
+  edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -236,6 +241,7 @@ commands:
   request_model: AddonUserRemoveRequest
   result_model: AddonUserRemoveResult
   mutation_class: high_impact
+  edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none

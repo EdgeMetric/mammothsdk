@@ -19,6 +19,7 @@ commands:
   request_model: ClientAppCreateRequest
   result_model: ClientAppCreateResult
   mutation_class: high_impact
+  edits_target: false
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -65,6 +66,7 @@ commands:
   request_model: ClientAppDeleteRequest
   result_model: ClientAppDeleteResult
   mutation_class: destructive
+  edits_target: true
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -183,6 +185,7 @@ commands:
   request_model: ClientAppUpdateRequest
   result_model: ClientAppUpdateResult
   mutation_class: high_impact
+  edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none

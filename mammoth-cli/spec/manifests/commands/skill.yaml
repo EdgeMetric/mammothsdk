@@ -12,6 +12,7 @@ commands:
   request_model: SkillInstallRequest
   result_model: SkillInstallResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -115,6 +116,7 @@ commands:
   request_model: SkillAgentsMdInstallRequest
   result_model: SkillAgentsMdInstallResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -183,6 +185,7 @@ commands:
   request_model: SkillUninstallRequest
   result_model: SkillUninstallResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -220,6 +223,7 @@ commands:
   request_model: SkillUpdateRequest
   result_model: SkillUpdateResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: not_async
   pagination_policy: none

@@ -19,6 +19,7 @@ commands:
   request_model: DashboardActionRequest
   result_model: DashboardActionResult
   mutation_class: external_effect
+  edits_target: true
   confirmation: yes_always
   wait_policy: returns_job
   pagination_policy: none
@@ -104,6 +105,7 @@ commands:
   request_model: DashboardArchiveRequest
   result_model: DashboardArchiveResult
   mutation_class: high_impact
+  edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -321,6 +323,7 @@ commands:
   request_model: DashboardCancelGenerationRequest
   result_model: DashboardCancelGenerationResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -407,6 +410,7 @@ commands:
   request_model: DashboardCanvasRestoreRequest
   result_model: DashboardCanvasRestoreResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -456,6 +460,7 @@ commands:
   request_model: DashboardCanvasSaveRequest
   result_model: DashboardCanvasSaveResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -510,6 +515,7 @@ commands:
   request_model: DashboardChatEditRequest
   result_model: DashboardChatEditResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -596,6 +602,7 @@ commands:
   request_model: DashboardContextCreateRequest
   result_model: DashboardContextCreateResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -641,6 +648,7 @@ commands:
   request_model: DashboardContextDeleteRequest
   result_model: DashboardContextDeleteResult
   mutation_class: destructive
+  edits_target: true
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -680,6 +688,7 @@ commands:
   request_model: ContextExtractSpec
   result_model: ContextExtractResponse
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -755,6 +764,7 @@ commands:
   request_model: DashboardContextUpdateRequest
   result_model: DashboardContextUpdateResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -794,6 +804,7 @@ commands:
   request_model: DashboardCreateBlankRequest
   result_model: DashboardCreateBlankResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -923,6 +934,7 @@ commands:
   request_model: DashboardDeleteRequest
   result_model: DashboardDeleteResult
   mutation_class: destructive
+  edits_target: true
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -968,6 +980,7 @@ commands:
   request_model: DashboardDescriptorDataRequest
   result_model: DashboardDescriptorDataResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -1017,6 +1030,7 @@ commands:
   request_model: DashboardDuplicateRequest
   result_model: DashboardDuplicateResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -1103,6 +1117,7 @@ commands:
   request_model: DashboardEmbedConfigSetRequest
   result_model: DashboardEmbedConfigSetResult
   mutation_class: high_impact
+  edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -1149,6 +1164,7 @@ commands:
   request_model: DashboardEmbedKeyRotateRequest
   result_model: DashboardEmbedKeyRotateResult
   mutation_class: high_impact
+  edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -1235,6 +1251,7 @@ commands:
   request_model: DashboardEmbedOriginRevokeRequest
   result_model: DashboardEmbedOriginRevokeResult
   mutation_class: high_impact
+  edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -1283,6 +1300,7 @@ commands:
   request_model: DashboardEmbedPreviewTokenCreateRequest
   result_model: DashboardEmbedPreviewTokenCreateResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -1327,6 +1345,7 @@ commands:
   request_model: DashboardEmbedSecretRotateRequest
   result_model: DashboardEmbedSecretRotateResult
   mutation_class: high_impact
+  edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -1370,6 +1389,7 @@ commands:
   request_model: DashboardEmbedLifetimeSetRequest
   result_model: DashboardEmbedLifetimeSetResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -1407,6 +1427,7 @@ commands:
   request_model: ExemplarExtractSpec
   result_model: ExemplarExtractResponse
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -1448,6 +1469,7 @@ commands:
   request_model: DashboardFigureIntentRequest
   result_model: DashboardFigureIntentResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -1575,6 +1597,7 @@ commands:
   request_model: DashboardImportWorkbookRequest
   result_model: ImportDatasetResponse
   mutation_class: high_impact
+  edits_target: false
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -1739,6 +1762,7 @@ commands:
   request_model: DashboardPagePlanRequest
   result_model: DashboardPagePlanResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -1782,6 +1806,7 @@ commands:
   request_model: DashboardPagesAddRequest
   result_model: DashboardPagesAddResult
   mutation_class: high_impact
+  edits_target: true
   confirmation: confirm_target
   wait_policy: returns_job
   pagination_policy: none
@@ -1881,6 +1906,7 @@ commands:
   request_model: DashboardPdfExportRequest
   result_model: DashboardPdfExportResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -1931,6 +1957,7 @@ commands:
   request_model: DashboardPublishedDataByUrlRequest
   result_model: DashboardPublishedDataByUrlResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -2015,6 +2042,7 @@ commands:
   request_model: DashboardPublishedDataRequest
   result_model: DashboardPublishedDataResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -2147,6 +2175,7 @@ commands:
   request_model: DashboardPublishedPdfExportRequest
   result_model: DashboardPublishedPdfExportResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -2278,6 +2307,7 @@ commands:
   request_model: DashboardPublishedVideoExportRequest
   result_model: DashboardPublishedVideoExportResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -2330,6 +2360,7 @@ commands:
   request_model: DashboardQaAskRequest
   result_model: DashboardQaAskResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -2384,6 +2415,7 @@ commands:
   request_model: DashboardQaCommentCreateRequest
   result_model: DashboardQaCommentCreateResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -2443,6 +2475,7 @@ commands:
   request_model: DashboardQaCommentDeleteRequest
   result_model: DashboardQaCommentDeleteResult
   mutation_class: destructive
+  edits_target: true
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -2502,6 +2535,7 @@ commands:
   request_model: DashboardQaFeedbackRequest
   result_model: DashboardQaFeedbackResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -2549,6 +2583,7 @@ commands:
   request_model: DashboardQaSessionCreateRequest
   result_model: DashboardQaSessionCreateResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -2603,6 +2638,7 @@ commands:
   request_model: DashboardQaSessionDeleteRequest
   result_model: DashboardQaSessionDeleteResult
   mutation_class: destructive
+  edits_target: true
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -2655,6 +2691,7 @@ commands:
   request_model: DashboardQaSessionForkRequest
   result_model: DashboardQaSessionForkResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -2794,6 +2831,7 @@ commands:
   request_model: DashboardQaSessionRenameRequest
   result_model: DashboardQaSessionRenameResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -2849,6 +2887,7 @@ commands:
   request_model: DashboardQaSessionSetVisibilityRequest
   result_model: DashboardQaSessionSetVisibilityResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -2937,6 +2976,7 @@ commands:
   request_model: DashboardQaSettingsSetRequest
   result_model: DashboardQaSettingsSetResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -2984,6 +3024,7 @@ commands:
   request_model: DashboardQueryRequest
   result_model: DashboardQueryResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -3028,6 +3069,7 @@ commands:
   request_model: DashboardRestoreRequest
   result_model: DashboardRestoreResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -3116,6 +3158,7 @@ commands:
   request_model: DashboardRlsAssignmentSetRequest
   result_model: DashboardRlsAssignmentSetResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -3243,6 +3286,7 @@ commands:
   request_model: DashboardShareRequest
   result_model: DashboardShareResult
   mutation_class: external_effect
+  edits_target: true
   confirmation: yes_always
   wait_policy: not_async
   pagination_policy: none
@@ -3283,6 +3327,7 @@ commands:
   request_model: DashboardSignatureCreateRequest
   result_model: DashboardSignatureCreateResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -3328,6 +3373,7 @@ commands:
   request_model: DashboardSignatureDeleteRequest
   result_model: DashboardSignatureDeleteResult
   mutation_class: destructive
+  edits_target: true
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -3407,6 +3453,7 @@ commands:
   request_model: DashboardSignatureUpdateRequest
   result_model: DashboardSignatureUpdateResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -3482,6 +3529,7 @@ commands:
   request_model: DashboardStyleCustomCreateRequest
   result_model: DashboardStyleCustomCreateResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -3528,6 +3576,7 @@ commands:
   request_model: DashboardStyleCustomDeleteRequest
   result_model: DashboardStyleCustomDeleteResult
   mutation_class: destructive
+  edits_target: true
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -3608,6 +3657,7 @@ commands:
   request_model: DashboardStyleCustomUpdateRequest
   result_model: DashboardStyleCustomUpdateResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -3682,6 +3732,7 @@ commands:
   request_model: DashboardStyleDefaultSetRequest
   result_model: DashboardStyleDefaultSetResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -3721,6 +3772,7 @@ commands:
   request_model: DashboardStyleDeriveRequest
   result_model: DashboardStyleDeriveResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -3759,6 +3811,7 @@ commands:
   request_model: DashboardStyleExtractBrandRequest
   result_model: DashboardStyleExtractBrandResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -3916,6 +3969,7 @@ commands:
   request_model: SwapDataSpec
   result_model: ObjectJobSchema
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: confirm_target
   wait_policy: always_wait
   pagination_policy: none
@@ -3960,6 +4014,7 @@ commands:
   request_model: DashboardTagsDeleteRequest
   result_model: DashboardTagsDeleteResult
   mutation_class: destructive
+  edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -4039,6 +4094,7 @@ commands:
   request_model: DashboardTagsMergeRequest
   result_model: DashboardTagsMergeResult
   mutation_class: destructive
+  edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -4084,6 +4140,7 @@ commands:
   request_model: DashboardTagsRenameRequest
   result_model: DashboardTagsRenameResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -4129,6 +4186,7 @@ commands:
   request_model: DashboardTagsSetRequest
   result_model: DashboardTagsSetResult
   mutation_class: high_impact
+  edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -4168,6 +4226,7 @@ commands:
   request_model: DashboardTemplateApplyRequest
   result_model: DashboardTemplateApplyResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -4209,6 +4268,7 @@ commands:
   request_model: DashboardTemplateCreateRequest
   result_model: DashboardTemplateCreateResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -4258,6 +4318,7 @@ commands:
   request_model: DashboardTemplateDeleteRequest
   result_model: DashboardTemplateDeleteResult
   mutation_class: destructive
+  edits_target: true
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -4411,6 +4472,7 @@ commands:
   request_model: DashboardTemplatePreviewRequest
   result_model: DashboardTemplatePreviewResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -4455,6 +4517,7 @@ commands:
   request_model: DashboardTemplateRenameRequest
   result_model: DashboardTemplateRenameResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -4497,6 +4560,7 @@ commands:
   request_model: DashboardTemplateResolveMappingRequest
   result_model: DashboardTemplateResolveMappingResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -4535,6 +4599,7 @@ commands:
   request_model: DashboardTemplatePendingRequest
   result_model: PendingTemplateResponse
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -4577,6 +4642,7 @@ commands:
   request_model: UseTemplateSpec
   result_model: ObjectJobSchema | JobResponse
   mutation_class: high_impact
+  edits_target: false
   confirmation: confirm_target
   wait_policy: always_wait
   pagination_policy: none
@@ -4621,6 +4687,7 @@ commands:
   request_model: DashboardTrashRequest
   result_model: DashboardTrashResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -4666,6 +4733,7 @@ commands:
   request_model: DashboardUpdateRequest
   result_model: DashboardUpdateResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: returns_job
   pagination_policy: none
@@ -4707,6 +4775,7 @@ commands:
   request_model: DashboardV3GenerateRequest
   result_model: DashboardV3GenerateResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -4797,6 +4866,7 @@ commands:
   request_model: DashboardVideoExportRequest
   result_model: DashboardVideoExportResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -4843,6 +4913,7 @@ commands:
   request_model: DashboardWidgetDataRequest
   result_model: DashboardWidgetDataResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -4888,6 +4959,7 @@ commands:
   request_model: DashboardWidgetDataByUrlRequest
   result_model: DashboardWidgetDataByUrlResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none

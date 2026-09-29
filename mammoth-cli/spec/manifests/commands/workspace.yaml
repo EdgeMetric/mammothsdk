@@ -13,6 +13,7 @@ commands:
   request_model: WorkspaceAcceptInviteRequest
   result_model: WorkspaceAcceptInviteResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -86,6 +87,7 @@ commands:
   request_model: WorkspaceCheckExpressionRequest
   result_model: WorkspaceCheckExpressionResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -122,6 +124,7 @@ commands:
   request_model: WorkspaceCreateRequest
   result_model: WorkspaceCreateResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -167,6 +170,7 @@ commands:
   request_model: WorkspaceDeleteRequest
   result_model: WorkspaceDeleteResult
   mutation_class: high_impact
+  edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -279,6 +283,7 @@ commands:
   request_model: WorkspaceLlmTaskRequest
   result_model: WorkspaceLlmTaskResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -325,6 +330,7 @@ commands:
   request_model: WorkspaceReactivateRequest
   result_model: WorkspaceReactivateResult
   mutation_class: high_impact
+  edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -398,6 +404,7 @@ commands:
   request_model: WorkspaceSegmentUpdateRequest
   result_model: WorkspaceSegmentUpdateResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -478,6 +485,7 @@ commands:
   request_model: WorkspaceUpdateRequest
   result_model: WorkspaceUpdateResult
   mutation_class: high_impact
+  edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -518,6 +526,7 @@ commands:
   request_model: WorkspaceUserAddRequest
   result_model: WorkspaceUserAddResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: yes_always
   wait_policy: not_async
   pagination_policy: none
@@ -635,6 +644,7 @@ commands:
   request_model: WorkspaceUserRemoveRequest
   result_model: WorkspaceUserRemoveResult
   mutation_class: destructive
+  edits_target: true
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -673,6 +683,7 @@ commands:
   request_model: WorkspaceUserRemoveBatchRequest
   result_model: WorkspaceUserRemoveBatchResult
   mutation_class: destructive
+  edits_target: true
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -717,6 +728,7 @@ commands:
   request_model: WorkspaceUserUpdateRequest
   result_model: WorkspaceUserUpdateResult
   mutation_class: high_impact
+  edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -757,6 +769,7 @@ commands:
   request_model: WorkspaceUserUpdateBatchRequest
   result_model: WorkspaceUserUpdateBatchResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: not_async
   pagination_policy: none

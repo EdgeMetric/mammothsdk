@@ -13,6 +13,7 @@ commands:
   request_model: FolderBulkDeleteRequest
   result_model: FolderBulkDeleteResult
   mutation_class: destructive
+  edits_target: true
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -57,6 +58,7 @@ commands:
   request_model: FolderCreateRequest
   result_model: FolderCreateResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -102,6 +104,7 @@ commands:
   request_model: FolderDeleteRequest
   result_model: FolderDeleteResult
   mutation_class: destructive
+  edits_target: true
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -254,6 +257,7 @@ commands:
   request_model: FolderMoveRequest
   result_model: FolderMoveResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: returns_job
   pagination_policy: none
@@ -337,6 +341,7 @@ commands:
   request_model: FolderTrashRequest
   result_model: FolderTrashResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -382,6 +387,7 @@ commands:
   request_model: FolderUpdateRequest
   result_model: FolderUpdateResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: not_async
   pagination_policy: none

@@ -19,6 +19,7 @@ commands:
   request_model: WorkflowBlockAddRequest
   result_model: WorkflowBlockAddResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -70,6 +71,7 @@ commands:
   request_model: WorkflowBlockAuthRequest
   result_model: WorkflowBlockAuthResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -121,6 +123,7 @@ commands:
   request_model: WorkflowBlockConfigRequest
   result_model: WorkflowBlockConfigResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -172,6 +175,7 @@ commands:
   request_model: WorkflowBlockTypeRequest
   result_model: WorkflowBlockTypeResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -217,6 +221,7 @@ commands:
   request_model: WorkflowCanvasRequest
   result_model: WorkflowCanvasResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -256,6 +261,7 @@ commands:
   request_model: WorkflowCleanupRequest
   result_model: WorkflowCleanupResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -300,6 +306,7 @@ commands:
   request_model: WorkflowCreateRequest
   result_model: WorkflowCreateResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -345,6 +352,7 @@ commands:
   request_model: WorkflowDeleteRequest
   result_model: WorkflowDeleteResult
   mutation_class: destructive
+  edits_target: true
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -389,6 +397,7 @@ commands:
   request_model: WorkflowFromTemplateRequest
   result_model: WorkflowFromTemplateResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -542,6 +551,7 @@ commands:
   request_model: WorkflowUpdateRequest
   result_model: WorkflowUpdateResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: not_async
   pagination_policy: none

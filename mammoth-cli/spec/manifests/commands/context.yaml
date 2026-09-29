@@ -12,6 +12,7 @@ commands:
   request_model: ContextProjectClearRequest
   result_model: ContextProjectClearResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -88,6 +89,7 @@ commands:
   request_model: ContextProjectUseRequest
   result_model: ContextProjectUseResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: not_async
   pagination_policy: none

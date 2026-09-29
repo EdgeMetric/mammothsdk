@@ -19,6 +19,7 @@ commands:
   request_model: BatchBulkDeleteRequest
   result_model: BatchBulkDeleteResult
   mutation_class: destructive
+  edits_target: true
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -70,6 +71,7 @@ commands:
   request_model: BatchCreateRequest
   result_model: BatchCreateResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: returns_job
   pagination_policy: none
@@ -115,6 +117,7 @@ commands:
   request_model: BatchCreateSpecRequest
   result_model: BatchCreateSpecResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: returns_job
   pagination_policy: none
@@ -167,6 +170,7 @@ commands:
   request_model: BatchDeleteRequest
   result_model: BatchDeleteResult
   mutation_class: destructive
+  edits_target: true
   confirmation: prompt_or_yes
   wait_policy: returns_job
   pagination_policy: none
@@ -298,6 +302,7 @@ commands:
   request_model: BatchUpdateRequest
   result_model: BatchUpdateResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: returns_job
   pagination_policy: none

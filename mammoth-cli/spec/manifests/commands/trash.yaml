@@ -13,6 +13,7 @@ commands:
   request_model: TrashAddRequest
   result_model: TrashAddResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -85,6 +86,7 @@ commands:
   request_model: TrashRestoreRequest
   result_model: TrashRestoreResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none

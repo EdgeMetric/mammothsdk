@@ -53,6 +53,7 @@ commands:
   request_model: DataAppCreateRequest
   result_model: DataAppCreateResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -99,6 +100,7 @@ commands:
   request_model: DataAppDeleteRequest
   result_model: DataAppDeleteResult
   mutation_class: destructive
+  edits_target: true
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -303,6 +305,7 @@ commands:
   request_model: DataAppShareRequest
   result_model: DataAppShareResult
   mutation_class: external_effect
+  edits_target: true
   confirmation: yes_always
   wait_policy: not_async
   pagination_policy: none
@@ -349,6 +352,7 @@ commands:
   request_model: DataAppUpdateRequest
   result_model: DataAppUpdateResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -400,6 +404,7 @@ commands:
   request_model: DataAppUploadRequest
   result_model: DataAppUploadResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -491,6 +496,7 @@ commands:
   request_model: DataAppUserRemoveRequest
   result_model: DataAppUserRemoveResult
   mutation_class: destructive
+  edits_target: true
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none

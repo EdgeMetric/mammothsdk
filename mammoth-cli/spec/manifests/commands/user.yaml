@@ -13,6 +13,7 @@ commands:
   request_model: UserAvatarDeleteRequest
   result_model: UserAvatarDeleteResult
   mutation_class: destructive
+  edits_target: true
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -57,6 +58,7 @@ commands:
   request_model: UserAvatarUploadRequest
   result_model: UserAvatarUploadResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -96,6 +98,7 @@ commands:
   request_model: UserChangePasswordRequest
   result_model: UserChangePasswordResult
   mutation_class: high_impact
+  edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -138,6 +141,7 @@ commands:
   request_model: UserDeleteAccountRequest
   result_model: UserDeleteAccountResult
   mutation_class: high_impact
+  edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -243,6 +247,7 @@ commands:
   request_model: UserPreferenceUpdateRequest
   result_model: UserPreferenceUpdateResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -283,6 +288,7 @@ commands:
   request_model: UserUpdateRequest
   result_model: UserUpdateResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
