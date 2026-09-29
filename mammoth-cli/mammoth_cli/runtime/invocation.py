@@ -151,7 +151,7 @@ class Invocation:
                 continue
             try:
                 value = float(raw)
-            except TypeError, ValueError:
+            except (TypeError, ValueError):
                 continue
             if value > 0:
                 object.__setattr__(self, key, value)
@@ -233,7 +233,7 @@ class Invocation:
                     resource_dataset = int(resource_dataset)
                     if resource_dataset <= 0:
                         raise ValueError
-                except TypeError, ValueError:
+                except (TypeError, ValueError):
                     raise CliError(
                         code="invalid_resource_context",
                         message="Input field 'dataset_id' must be a positive integer.",
@@ -256,7 +256,7 @@ class Invocation:
                     expected_tasks = int(expected_tasks)
                     if expected_tasks < 0:
                         raise ValueError
-                except TypeError, ValueError:
+                except (TypeError, ValueError):
                     raise CliError(
                         code="invalid_resource_context",
                         message=f"Input field '{TASK_COUNT_FIELD}' must be a non-negative integer.",
