@@ -25,14 +25,11 @@ from enum import Enum
 from functools import lru_cache
 from typing import Any
 
-from mammoth_cli.errors.envelope import CODE_RESOURCE_NOT_FOUND, EXIT_NOT_FOUND, CliError
 from mammoth_cli.manifest.loader import command_by_id, load_commands
-from mammoth_cli.services.protocol import MammothService
 
 Gate = Callable[..., None]
 
 NOTE_OWN = "No request was sent for this operation; the reads needed to resolve it did run."
-DATASET_GET = "mammoth.api.datasets.DatasetsAPI.get"
 DATAVIEW_GET = "mammoth.api.dataviews.DataviewsAPI.get"
 #: The manifest ``mutation_class`` that marks a command as irreversible: the
 #: only class whose commands the manifest describes as permanent (no undo).
@@ -141,82 +138,3 @@ def make_gate(command_id: str) -> Gate:
         stop(symbol, arguments, own=composed)
 
     return gate
-
-
-def _ids(value: Any) -> list[int]:
-    """Return ``value`` as a list of ids (an int, a list of ints, or nothing)."""
-    if isinstance(value, bool):
-        return []
-    if isinstance(value, int):
-        return [value]
-    if isinstance(value, list):
-        return [item for item in value if isinstance(item, int) and not isinstance(item, bool)]
-    return []
-
-
-def _unresolved(kind: str, target_id: int, why: str) -> CliError:
-    return CliError(
-        code=CODE_RESOURCE_NOT_FOUND,
-        message=f"Could not resolve the name of {kind} {target_id} for the dry-run report: {why}.",
-        exit_status=EXIT_NOT_FOUND,
-        hint=f"Check the id with `mammoth {kind} list`; nothing was changed.",
-        details={"type": kind, "id": target_id},
-    )
-
-
-def _named(kind: str, target_id: int, record: Any) -> dict[str, Any]:
-    name = record.get("name") if isinstance(record, dict) else None
-    if not isinstance(name, str) or not name:
-        raise _unresolved(kind, target_id, "the read returned no display name")
-    return {"type": kind, "id": target_id, "name": name}
-
-
-def resolve_targets(
-    service: MammothService, command_id: str, would_call: Mapping[str, Any]
-) -> list[dict[str, Any]]:
-    """Name every dataset or view the reported call would change.
-
-    The names come from the same reads the read commands use
-    (``DatasetsAPI.get``, ``DataviewsAPI.get``). Commands outside the dataset
-    and view families report no targets.
-
-    Args:
-        service: An open service (its dry-run gate lets these reads through).
-        command_id: The dry-run command's manifest id.
-        would_call: The ``would_call`` block of the dry-run report.
-
-    Returns:
-        ``[{"type", "id", "name"}, ...]`` in argument order.
-
-    Raises:
-        CliError: ``resource_not_found`` when a target has no resolvable name,
-            or the read itself fails.
-    """
-    arguments = would_call.get("arguments") or {}
-    project_id = arguments.get("project_id")
-    scope = {} if project_id is None else {"project_id": project_id}
-    family = command_id.split(".", 1)[0]
-    if family == "dataset":
-        return [
-            _named("dataset", item, service.call(DATASET_GET, dataset_id=item, **scope))
-            for item in _ids(arguments.get("dataset_ids") or arguments.get("dataset_id"))
-        ]
-    if family != "view":
-        return []
-    view_ids = _ids(
-        arguments.get("dataview_ids")
-        or arguments.get("dataview_id")
-        or arguments.get("view_id")
-        or would_call.get("view_id")
-    )
-    dataset_id = arguments.get("dataset_id") or would_call.get("dataset_id")
-    if view_ids and not isinstance(dataset_id, int):
-        raise _unresolved("view", view_ids[0], "its parent dataset id is unknown")
-    return [
-        _named(
-            "view",
-            item,
-            service.call(DATAVIEW_GET, dataset_id=dataset_id, dataview_id=item, **scope),
-        )
-        for item in view_ids
-    ]

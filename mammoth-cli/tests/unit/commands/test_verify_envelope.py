@@ -72,7 +72,6 @@ def test_a_read_command_gets_no_verify_block(fake_service: FakeMammothService) -
 
 
 def test_a_dry_run_gets_no_verify_block(fake_service: FakeMammothService) -> None:
-    fake_service.responses["mammoth.api.datasets.DatasetsAPI.get"] = {"id": 7, "name": "sales.csv"}
     result = make_runner().invoke(
         ["dataset", "delete", "7", "--project", "180", "--dry-run", *_JSON_NO_INPUT]
     )

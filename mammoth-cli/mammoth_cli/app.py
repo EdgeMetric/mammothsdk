@@ -884,7 +884,8 @@ def _dry_run(handler: Handler, invocation: Invocation) -> tuple[Any, dict[str, A
     An API-backed handler that returns normally under ``--dry-run`` made no
     gated SDK call at all (a pure read path); its result is returned as is.
     """
-    from mammoth_cli.runtime.dryrun import DryRunStop, resolve_targets
+    from mammoth_cli.runtime.dryrun import DryRunStop
+    from mammoth_cli.runtime.dryrun_targets import resolve_targets
     from mammoth_cli.runtime.session import open_service, resolved_project
 
     try:
