@@ -13,6 +13,7 @@ from mammoth.exceptions import (
     MammothError,
     MammothJobFailedError,
     MammothJobTimeoutError,
+    MammothPipelineTimeoutError,
     MammothValidationError,
     safe_response_body,
 )
@@ -104,6 +105,15 @@ def _job_recovery(job_id: object, *, profile: str | None = None) -> list[str]:
     return [
         f"mammoth job get {job_id}{profile_option}",
         f"mammoth job wait {job_id}{profile_option}",
+    ]
+
+
+def _pipeline_recovery(exc: MammothPipelineTimeoutError, *, profile: str | None) -> list[str]:
+    scope = f" --project {exc.project_id}" if exc.project_id is not None else ""
+    scope += f" --profile {shlex.quote(profile)}" if profile else ""
+    return [
+        f"mammoth view pipeline get {exc.dataview_id}{scope}",
+        f"mammoth view pipeline wait {exc.dataview_id}{scope}",
     ]
 
 
@@ -204,6 +214,17 @@ def map_sdk_exception(
             details=_metadata(exc),
             request_id=exc.request_id,
             recovery_commands=["mammoth auth login"],
+        )
+
+    if isinstance(exc, MammothPipelineTimeoutError):
+        return CliError(
+            code="timeout",
+            message="The view pipeline did not finish before the timeout.",
+            exit_status=EXIT_RETRYABLE,
+            hint="No job is involved; read the view's pipeline state and wait for it to finish.",
+            details=dict(exc.details),
+            retryable=True,
+            recovery_commands=_pipeline_recovery(exc, profile=profile),
         )
 
     if isinstance(exc, MammothJobTimeoutError):

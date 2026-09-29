@@ -9,7 +9,12 @@ from __future__ import annotations
 from unittest.mock import MagicMock
 
 import pytest
-from mammoth.exceptions import MammothAPIError, MammothAuthError, MammothJobTimeoutError
+from mammoth.exceptions import (
+    MammothAPIError,
+    MammothAuthError,
+    MammothJobTimeoutError,
+    MammothPipelineTimeoutError,
+)
 
 from mammoth_cli.context.resolver import ResolvedAuth
 from mammoth_cli.errors.envelope import (
@@ -396,3 +401,24 @@ def test_unknown_write_without_a_job_names_the_read_that_settles_it(
     mapped = map_sdk_exception(error, project_id=12)
     assert mapped.code == "outcome_unknown"
     assert mapped.recovery_commands == [expected]
+
+
+def test_pipeline_timeout_identifies_view_and_recovers_via_pipeline_commands() -> None:
+    mapped = map_sdk_exception(
+        MammothPipelineTimeoutError(5, 60, dataset_id=7, project_id=3), profile="p"
+    )
+
+    assert mapped.code == "timeout"
+    assert mapped.retryable is True
+    assert mapped.details == {
+        "dataview_id": 5,
+        "timeout": 60,
+        "operation_state": "running",
+        "phase": "pipeline",
+        "dataset_id": 7,
+        "project_id": 3,
+    }
+    assert mapped.recovery_commands == [
+        "mammoth view pipeline get 5 --project 3 --profile p",
+        "mammoth view pipeline wait 5 --project 3 --profile p",
+    ]

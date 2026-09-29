@@ -11,6 +11,7 @@ from mammoth.exceptions import (
     MammothError,
     MammothJobFailedError,
     MammothJobTimeoutError,
+    MammothPipelineTimeoutError,
     MammothTransformError,
 )
 from mammoth.models.pipeline import (
@@ -180,3 +181,34 @@ class TestTransformationInputErrors:
                 new_column="rn",
                 partition_by=["nope"],
             )
+
+
+class TestMammothPipelineTimeoutError:
+    def test_identifies_view_not_job(self):
+        err = MammothPipelineTimeoutError(5, 60, dataset_id=7, project_id=3)
+        assert isinstance(err, MammothJobTimeoutError)
+        assert err.details == {
+            "dataview_id": 5,
+            "timeout": 60,
+            "operation_state": "running",
+            "phase": "pipeline",
+            "dataset_id": 7,
+            "project_id": 3,
+        }
+        assert not hasattr(err, "job_id")
+        assert "job_handle" not in err.details
+
+    def test_wait_for_pipeline_raises_it(self, monkeypatch):
+        from types import SimpleNamespace
+        from unittest.mock import MagicMock
+
+        from mammoth.api.pipeline import PipelineAPI
+
+        client = SimpleNamespace(workspace_id=1, project_id=3, pipeline_timeout=1)
+        client._request_json = MagicMock(return_value={"state": "running"})
+        clock = iter([0.0, 2.0])
+        monkeypatch.setattr("mammoth.api.pipeline.time.monotonic", lambda: next(clock))
+        with pytest.raises(MammothPipelineTimeoutError) as raised:
+            PipelineAPI(client).wait_for_pipeline(5, dataset_id=7)
+        assert raised.value.details["dataview_id"] == 5
+        assert "job_id" not in raised.value.details

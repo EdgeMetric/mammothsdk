@@ -53,6 +53,7 @@ from mammoth.exceptions import (
     MammothExportError,
     MammothJobFailedError,
     MammothJobTimeoutError,
+    MammothPipelineTimeoutError,
     MammothTransformError,
     MammothValidationError,
 )
@@ -265,6 +266,7 @@ __all__ = [
     "MammothTransformError",
     "MammothColumnError",
     "MammothJobTimeoutError",
+    "MammothPipelineTimeoutError",
     "MammothJobFailedError",
     "MammothValidationError",
     "MammothExportError",

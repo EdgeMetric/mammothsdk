@@ -218,6 +218,47 @@ class MammothJobTimeoutError(MammothError):
         self.phase = phase
 
 
+class MammothPipelineTimeoutError(MammothJobTimeoutError):
+    """Exception raised when waiting for a view's pipeline exceeds the timeout.
+
+    Identifies the VIEW, not a job: there is no job to poll. Subclasses
+    :class:`MammothJobTimeoutError` so existing ``except`` clauses keep working.
+
+    Attributes:
+        details: ``{"dataview_id": int, "timeout": int, "operation_state": "running",
+            "phase": "pipeline"}`` plus ``dataset_id`` / ``project_id`` when known.
+    """
+
+    def __init__(
+        self,
+        dataview_id: int,
+        timeout_seconds: int,
+        *,
+        dataset_id: int | None = None,
+        project_id: int | None = None,
+    ) -> None:
+        message = (
+            f"Pipeline for dataview {dataview_id} still running after {timeout_seconds} seconds"
+        )
+        details: dict[str, Any] = {
+            "dataview_id": dataview_id,
+            "timeout": timeout_seconds,
+            "operation_state": "running",
+            "phase": "pipeline",
+        }
+        if dataset_id is not None:
+            details["dataset_id"] = dataset_id
+        if project_id is not None:
+            details["project_id"] = project_id
+        MammothError.__init__(self, message, details)
+        self.dataview_id = dataview_id
+        self.dataset_id = dataset_id
+        self.project_id = project_id
+        self.timeout_seconds = timeout_seconds
+        self.operation_state = "running"
+        self.phase = "pipeline"
+
+
 class MammothJobFailedError(MammothError):
     """Exception raised when a job completes with a failure status.
 
