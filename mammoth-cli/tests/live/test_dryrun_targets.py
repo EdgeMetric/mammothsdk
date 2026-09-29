@@ -7,9 +7,10 @@ each destructive command is then dry-run and its ``targets`` are compared with t
 the resources were created with. The resources are
 deleted at the end, and a dry run is checked to have deleted nothing.
 
-Credentials come from ``MAMMOTH_LIVE_LOGIN_FACTORY`` (``module:callable``
-returning an :class:`~mammoth_cli.context.resolver.ExplicitLogin`); the suite
-skips without it. Run it on the box that has the test identity::
+Credentials come from the shared ``login`` fixture in ``conftest.py``:
+``MAMMOTH_LIVE_LOGIN_FACTORY`` (``module:callable`` returning an
+:class:`~mammoth_cli.context.resolver.ExplicitLogin`) when set, else the
+key/secret variables; the suite skips without either. Run it on the box that has the test identity::
 
     MAMMOTH_LIVE_LOGIN_FACTORY=api.agents.evals.world:build_login \\
         pytest tests/live/test_dryrun_targets.py -m live -v
@@ -17,9 +18,7 @@ skips without it. Run it on the box that has the test identity::
 
 from __future__ import annotations
 
-import importlib
 import json
-import os
 import time
 from collections.abc import Iterator
 from dataclasses import dataclass, field
@@ -39,31 +38,9 @@ from mammoth_cli.runtime.dryrun_targets import (
 
 pytestmark = pytest.mark.live
 
-ENV_LOGIN_FACTORY = "MAMMOTH_LIVE_LOGIN_FACTORY"
 PREFIX = "dryrun-targets"
 _QUIET = ["--no-input"]
 _YES = ["--yes", "--no-input"]
-
-
-@pytest.fixture(scope="module")
-def live_env() -> dict[str, str]:
-    """Override the key/secret gate: this suite logs in through a factory."""
-    if not os.environ.get(ENV_LOGIN_FACTORY):
-        pytest.skip(f"{ENV_LOGIN_FACTORY} is not set")
-    return {}
-
-
-@pytest.fixture(autouse=True)
-def _live_login() -> None:
-    """Override the conftest's key/secret login; :func:`login` is used instead."""
-
-
-@pytest.fixture(scope="module")
-def login(live_env: dict[str, str]) -> ExplicitLogin:
-    module, _, name = os.environ[ENV_LOGIN_FACTORY].partition(":")
-    factory = getattr(importlib.import_module(module), name)
-    login: ExplicitLogin = factory()
-    return login
 
 
 @dataclass

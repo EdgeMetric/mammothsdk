@@ -3,10 +3,11 @@
 Uploads a CSV whose first lines are a title block above the header (the shape
 of the World Bank exports), then follows the backend's own stored suggestion
 through ``dataset interpretation preview`` and ``confirm``. Runs the real CLI
-in-process against a real tenant (no doubles) and removes its dataset.
+in-process against a real tenant (no doubles) in its own scratch project, and
+removes its dataset and the project.
 
-    set -a; . ../.env.plan; set +a
-    pytest tests/live/test_dataset_interpretation.py -m live -v
+    MAMMOTH_LIVE_LOGIN_FACTORY=api.agents.evals.world:build_login \\
+        pytest tests/live/test_dataset_interpretation.py -m live -v
 """
 
 from __future__ import annotations
@@ -17,8 +18,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
-
-from mammoth_cli.testing import make_runner
+from live_harness import LiveCli
 
 pytestmark = pytest.mark.live
 
@@ -37,17 +37,6 @@ _PREAMBLE = (
 _SETTLE_SECONDS = 180
 
 
-def _run(args: list[str], env: dict[str, str], *, input_doc: dict[str, Any] | None = None) -> Any:
-    argv = [*args, "--output", "json", "--no-input"]
-    if input_doc is not None:
-        argv += ["--input", json.dumps(input_doc)]
-    result = make_runner().invoke(argv, env=env)
-    assert result.exit_code == 0, result.output
-    envelope = json.loads(result.output)
-    assert not envelope.get("error"), envelope.get("error")
-    return envelope["data"]
-
-
 def _wait_for(read: Any, done: Any) -> Any:
     deadline = time.monotonic() + _SETTLE_SECONDS
     while True:
@@ -58,16 +47,17 @@ def _wait_for(read: Any, done: Any) -> Any:
 
 
 def test_preamble_csv_is_held_then_read_by_the_stored_suggestion(
-    live_env: dict[str, str], live_project: str, tmp_path: Path
+    live_cli: LiveCli, scratch_project: int, tmp_path: Path
 ) -> None:
     """Preview shows the file read by the stored suggestion; confirm creates the table and view."""
+    project = scratch_project
     source = tmp_path / "w5_interpretation_preamble.csv"
     source.write_text(_PREAMBLE, encoding="utf-8")
-    uploaded = _run(["file", "upload", str(source), "--project", live_project, "--yes"], live_env)
+    uploaded, _ = live_cli.ok("file", "upload", str(source), "--yes", project=project)
     dataset = str(uploaded["dataset_id"])
     try:
         record = _wait_for(
-            lambda: _run(["dataset", "get", dataset, "--project", live_project], live_env),
+            lambda: live_cli.ok("dataset", "get", dataset, project=project)[0],
             lambda r: bool((r.get("additional_info") or {}).get("interpretation")),
         )
         stored = (record.get("additional_info") or {}).get("interpretation") or {}
@@ -75,44 +65,28 @@ def test_preamble_csv_is_held_then_read_by_the_stored_suggestion(
         if not suggestions:
             pytest.skip("the backend read this file without holding it for interpretation")
 
-        instruction = {"user_instruction": suggestions[0]}
-        preview = _run(
-            ["dataset", "interpretation", "preview", dataset, "--project", live_project],
-            live_env,
-            input_doc=instruction,
+        instruction = json.dumps({"user_instruction": suggestions[0]})
+        preview, _ = live_cli.ok(
+            *("dataset", "interpretation", "preview", dataset, "--input", instruction),
+            project=project,
         )
         assert preview["preview_rows"][0][:2] == ["Country Name", "Country Code"]
         assert preview["total_row_count"] == 5
 
-        _run(
-            ["dataset", "interpretation", "confirm", dataset, "--project", live_project],
-            live_env,
-            input_doc=instruction,
+        live_cli.ok(
+            *("dataset", "interpretation", "confirm", dataset, "--input", instruction),
+            project=project,
         )
         views = _wait_for(
-            lambda: _run(["view", "list", dataset, "--project", live_project], live_env),
+            lambda: live_cli.ok("view", "list", dataset, project=project)[0],
             lambda v: bool(v.get("dataviews")),
         )
         assert views["dataviews"], "confirm did not produce a view"
-        data = _run(
-            ["view", "data", "get", str(views["dataviews"][0]["id"]), "--project", live_project],
-            live_env,
+        data, _ = live_cli.ok(
+            "view", "data", "get", str(views["dataviews"][0]["id"]), project=project
         )
         assert data["data"][0]["Country Name"] == "Aruba"
     finally:
-        make_runner().invoke(
-            [
-                "dataset",
-                "delete",
-                dataset,
-                "--yes",
-                "--confirm",
-                dataset,
-                "--project",
-                live_project,
-                "--no-input",
-                "--output",
-                "json",
-            ],
-            env=live_env,
+        live_cli.run(
+            *("dataset", "delete", dataset, "--yes", "--confirm", dataset), project=project
         )

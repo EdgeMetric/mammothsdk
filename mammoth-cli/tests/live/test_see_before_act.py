@@ -1,13 +1,14 @@
 """Live checks that reads show the data and tell the truth (PLAN-021 W4-CLI-SEE).
 
-Run on a server with real credentials; skipped without them. Everything here is
-read-only against the configured test project's existing data::
+Runs the real CLI in-process against a real tenant. The module uploads its own
+sales CSV into a scratch project (TEXT, NUMERIC and text-date columns) and
+deletes the project at the end::
 
-    set -a; . ../.env.plan; set +a
-    pytest tests/live/test_see_before_act.py -m live -v
+    MAMMOTH_LIVE_LOGIN_FACTORY=api.agents.evals.world:build_login \\
+        pytest tests/live/test_see_before_act.py -m live -v
 
 Each test names the fix it proves. The text-date tests need a view whose TEXT
-column holds dates; they skip (never pass vacuously) when the project has none.
+column holds dates; they skip (never pass vacuously) when the data has none.
 """
 
 from __future__ import annotations
@@ -17,8 +18,7 @@ import re
 from typing import Any
 
 import pytest
-
-from mammoth_cli.testing import make_runner
+from live_harness import LiveCli, SalesData, envelope_size
 
 pytestmark = pytest.mark.live
 
@@ -27,35 +27,13 @@ _TOOL_CAP = 4000
 _ISO_DAY = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
 
-def _invoke(args: list[str], env: dict[str, str], project: str) -> Any:
-    return make_runner().invoke(
-        [*args, "--project", project, "--output", "json", "--no-input"], env=env
-    )
-
-
-def _ok(args: list[str], env: dict[str, str], project: str) -> tuple[Any, dict[str, Any]]:
-    result = _invoke(args, env, project)
-    assert result.exit_code == 0, f"`{' '.join(args)}` failed: {result.output}"
-    envelope = json.loads(result.output)
-    return envelope["data"], envelope["meta"]
-
-
-def _err(args: list[str], env: dict[str, str], project: str) -> dict[str, Any]:
-    result = _invoke(args, env, project)
-    assert result.exit_code != 0, f"`{' '.join(args)}` should have failed: {result.output}"
-    error: dict[str, Any] = json.loads(result.output)["error"]
-    return error
-
-
 def _input(payload: dict[str, Any]) -> list[str]:
     return ["--input", json.dumps(payload)]
 
 
-def _first_view_with(
-    env: dict[str, str], project: str, wanted: Any
-) -> tuple[int, dict[str, str]] | None:
+def _first_view_with(cli: LiveCli, project: int, wanted: Any) -> tuple[int, dict[str, str]] | None:
     """(view id, {column: type}) of the first project view whose columns satisfy ``wanted``."""
-    raw, _ = _ok(["view", "list", *_input({"full": True})], env, project)
+    raw, _ = cli.ok("view", "list", *_input({"full": True}), project=project)
     for record in raw.get("dataviews", []):
         types = {
             c["display_name"]: c["type"]
@@ -75,14 +53,13 @@ def _text_date_column(types: dict[str, str]) -> str | None:
 
 
 def test_dataset_list_items_are_self_describing_and_fit_the_tool_cap(
-    live_env: dict[str, str], live_project: str
+    live_cli: LiveCli, sales_data: SalesData
 ) -> None:
-    result = _invoke(["dataset", "list"], live_env, live_project)
-    assert result.exit_code == 0, result.output
-    assert len(result.output) < _TOOL_CAP + 1500, "a page must stay near the agent tool cap"
-    data = json.loads(result.output)["data"]
-    if not data["datasets"]:
-        pytest.skip("the project has no datasets")
+    envelope = live_cli.run("dataset", "list", project=sales_data.project)
+    assert "error" not in envelope, envelope
+    assert envelope_size(envelope) < _TOOL_CAP + 1500, "a page must stay near the agent tool cap"
+    data = envelope["data"]
+    assert data["datasets"], "the scratch project has the uploaded dataset"
     for item in data["datasets"]:
         assert {"id", "name", "created", "source"} <= item.keys(), item
         assert "rows" in item or "columns" in item, item
@@ -91,11 +68,10 @@ def test_dataset_list_items_are_self_describing_and_fit_the_tool_cap(
 
 
 def test_view_list_names_the_dataset_of_every_view(
-    live_env: dict[str, str], live_project: str
+    live_cli: LiveCli, sales_data: SalesData
 ) -> None:
-    data, _ = _ok(["view", "list"], live_env, live_project)
-    if not data["dataviews"]:
-        pytest.skip("the project has no views")
+    data, _ = live_cli.ok("view", "list", project=sales_data.project)
+    assert data["dataviews"], "the scratch project has the uploaded dataset's view"
     for item in data["dataviews"]:
         assert item.get("dataset_name"), f"view {item.get('id')} does not name its dataset"
         assert "sample_values" in item, f"view {item.get('id')} carries no stored sample values"
@@ -108,9 +84,9 @@ def test_view_list_names_the_dataset_of_every_view(
 
 
 def test_a_read_names_its_dataset_and_view_in_meta(
-    live_env: dict[str, str], live_project: str
+    live_cli: LiveCli, sales_data: SalesData
 ) -> None:
-    found = _first_view_with(live_env, live_project, lambda t: bool(t))
+    found = _first_view_with(live_cli, sales_data.project, lambda t: bool(t))
     if found is None:
         pytest.skip("no view to read")
     view_id, _ = found
@@ -125,7 +101,7 @@ def test_a_read_names_its_dataset_and_view_in_meta(
             *_input({"aggregations": [{"function": "COUNT"}]}),
         ],
     ):
-        _, meta = _ok(args, live_env, live_project)
+        _, meta = live_cli.ok(*args, project=sales_data.project)
         assert meta["view"]["id"] == view_id and meta["view"]["name"], (args, meta)
         assert meta["dataset"]["id"] and meta["dataset"]["name"], (args, meta)
 
@@ -134,9 +110,11 @@ def test_a_read_names_its_dataset_and_view_in_meta(
 
 
 def test_group_by_month_on_a_text_date_states_its_format_and_returns_months(
-    live_env: dict[str, str], live_project: str
+    live_cli: LiveCli, sales_data: SalesData
 ) -> None:
-    found = _first_view_with(live_env, live_project, lambda t: _text_date_column(t) is not None)
+    found = _first_view_with(
+        live_cli, sales_data.project, lambda t: _text_date_column(t) is not None
+    )
     if found is None:
         pytest.skip("no view with a TEXT date column")
     view_id, types = found
@@ -145,25 +123,25 @@ def test_group_by_month_on_a_text_date_states_its_format_and_returns_months(
         "aggregations": [{"function": "COUNT", "as_name": "n"}],
         "group_by": [{"column": column, "truncate": "MONTH"}],
     }
-    result = _invoke(
-        ["view", "data", "aggregate", str(view_id), *_input(payload)], live_env, live_project
+    envelope = live_cli.run(
+        "view", "data", "aggregate", str(view_id), *_input(payload), project=sales_data.project
     )
-    if result.exit_code != 0:
-        error = json.loads(result.output).get("error") or {}
+    if "error" in envelope:
+        error = envelope["error"]
         # Loud, with the reason -- never raw rows.
-        assert error.get("code") == "invalid_arguments", result.output
-        assert error.get("message"), result.output
+        assert error.get("code") == "invalid_arguments", envelope
+        assert error.get("message"), envelope
         return
-    data = json.loads(result.output)["data"]
+    data = envelope["data"]
     assert data["text_dates"][0]["assumed_format"], "the assumed format must be stated"
     buckets = [row[column] for row in data["data"]]
     assert buckets and all(b is None or _ISO_DAY.match(b) and b.endswith("-01") for b in buckets)
 
 
 def test_truncate_on_a_non_date_column_is_refused_not_ignored(
-    live_env: dict[str, str], live_project: str
+    live_cli: LiveCli, sales_data: SalesData
 ) -> None:
-    found = _first_view_with(live_env, live_project, lambda t: "NUMERIC" in t.values())
+    found = _first_view_with(live_cli, sales_data.project, lambda t: "NUMERIC" in t.values())
     if found is None:
         pytest.skip("no view with a NUMERIC column")
     view_id, types = found
@@ -172,53 +150,51 @@ def test_truncate_on_a_non_date_column_is_refused_not_ignored(
         "aggregations": [{"function": "COUNT"}],
         "group_by": [{"column": column, "truncate": "MONTH"}],
     }
-    error = _err(
-        ["view", "data", "aggregate", str(view_id), *_input(payload)], live_env, live_project
+    error = live_cli.err(
+        "view", "data", "aggregate", str(view_id), *_input(payload), project=sales_data.project
     )
     assert "DATE column" in error["message"]
 
 
 def test_explore_refuses_a_column_type_that_disagrees_with_the_stored_type(
-    live_env: dict[str, str], live_project: str
+    live_cli: LiveCli, sales_data: SalesData
 ) -> None:
-    found = _first_view_with(live_env, live_project, lambda t: "NUMERIC" in t.values())
+    found = _first_view_with(live_cli, sales_data.project, lambda t: "NUMERIC" in t.values())
     if found is None:
         pytest.skip("no view with a NUMERIC column")
     view_id, types = found
     column = next(c for c, t in types.items() if t == "NUMERIC")
-    error = _err(
-        ["view", "data", "explore", str(view_id), column, *_input({"column_type": "DATE"})],
-        live_env,
-        live_project,
+    error = live_cli.err(
+        *("view", "data", "explore", str(view_id), column, *_input({"column_type": "DATE"})),
+        project=sales_data.project,
     )
     assert "does not match" in error["message"]
 
 
 def test_explore_by_year_on_a_text_date_states_its_format(
-    live_env: dict[str, str], live_project: str
+    live_cli: LiveCli, sales_data: SalesData
 ) -> None:
-    found = _first_view_with(live_env, live_project, lambda t: _text_date_column(t) is not None)
+    found = _first_view_with(
+        live_cli, sales_data.project, lambda t: _text_date_column(t) is not None
+    )
     if found is None:
         pytest.skip("no view with a TEXT date column")
     view_id, types = found
     column = _text_date_column(types)
-    result = _invoke(
-        [
-            "view",
-            "data",
-            "explore",
-            str(view_id),
-            str(column),
-            *_input({"column_type": "DATE", "level": "YEAR"}),
-        ],
-        live_env,
-        live_project,
+    envelope = live_cli.run(
+        "view",
+        "data",
+        "explore",
+        str(view_id),
+        str(column),
+        *_input({"column_type": "DATE", "level": "YEAR"}),
+        project=sales_data.project,
     )
-    if result.exit_code != 0:
-        error = json.loads(result.output).get("error") or {}
-        assert error.get("code") == "invalid_arguments" and error.get("message"), result.output
+    if "error" in envelope:
+        error = envelope["error"]
+        assert error.get("code") == "invalid_arguments" and error.get("message"), envelope
         return
-    data = json.loads(result.output)["data"]
+    data = envelope["data"]
     assert data["text_dates"][0]["assumed_format"]
     years = [row["bucket"] for row in data["data"] if row["bucket"] is not None]
     assert years == sorted(years) and all(y.endswith("-01-01") for y in years)
@@ -233,10 +209,10 @@ def _category_and_number(types: dict[str, str]) -> tuple[str, str] | None:
     return (text, number) if text and number else None
 
 
-def test_top_returns_the_highest_groups_in_order(
-    live_env: dict[str, str], live_project: str
-) -> None:
-    found = _first_view_with(live_env, live_project, lambda t: _category_and_number(t) is not None)
+def test_top_returns_the_highest_groups_in_order(live_cli: LiveCli, sales_data: SalesData) -> None:
+    found = _first_view_with(
+        live_cli, sales_data.project, lambda t: _category_and_number(t) is not None
+    )
     if found is None:
         pytest.skip("no view with a TEXT and a NUMERIC column")
     view_id, types = found
@@ -247,8 +223,8 @@ def test_top_returns_the_highest_groups_in_order(
         "order_by": ["Total desc"],
         "top": 3,
     }
-    data, _ = _ok(
-        ["view", "data", "aggregate", str(view_id), *_input(payload)], live_env, live_project
+    data, _ = live_cli.ok(
+        "view", "data", "aggregate", str(view_id), *_input(payload), project=sales_data.project
     )
     totals = [row["Total"] for row in data["data"] if row["Total"] is not None]
     assert 0 < len(data["data"]) <= 3
@@ -257,9 +233,11 @@ def test_top_returns_the_highest_groups_in_order(
 
 
 def test_a_limit_without_order_by_is_flagged_unordered(
-    live_env: dict[str, str], live_project: str
+    live_cli: LiveCli, sales_data: SalesData
 ) -> None:
-    found = _first_view_with(live_env, live_project, lambda t: _category_and_number(t) is not None)
+    found = _first_view_with(
+        live_cli, sales_data.project, lambda t: _category_and_number(t) is not None
+    )
     if found is None:
         pytest.skip("no view with a TEXT and a NUMERIC column")
     view_id, types = found
@@ -269,8 +247,8 @@ def test_a_limit_without_order_by_is_flagged_unordered(
         "aggregations": [{"column": number, "function": "SUM", "as_name": "Total"}],
         "limit": 2,
     }
-    data, _ = _ok(
-        ["view", "data", "aggregate", str(view_id), *_input(payload)], live_env, live_project
+    data, _ = live_cli.ok(
+        "view", "data", "aggregate", str(view_id), *_input(payload), project=sales_data.project
     )
     assert data["ordered"] is False
     assert "order_by" in data["note"]
@@ -280,11 +258,11 @@ def test_a_limit_without_order_by_is_flagged_unordered(
 
 
 def test_an_empty_result_states_the_observed_range_of_the_filtered_column(
-    live_env: dict[str, str], live_project: str
+    live_cli: LiveCli, sales_data: SalesData
 ) -> None:
     found = _first_view_with(
-        live_env,
-        live_project,
+        live_cli,
+        sales_data.project,
         lambda t: _text_date_column(t) is not None or "DATE" in t.values(),
     )
     if found is None:
@@ -300,14 +278,14 @@ def test_an_empty_result_states_the_observed_range_of_the_filtered_column(
             "value": ["1900-01-01", "1900-01-02"],
         },
     }
-    result = _invoke(
-        ["view", "data", "aggregate", str(view_id), *_input(payload)], live_env, live_project
+    envelope = live_cli.run(
+        "view", "data", "aggregate", str(view_id), *_input(payload), project=sales_data.project
     )
-    if result.exit_code != 0:
-        error = json.loads(result.output).get("error") or {}
-        assert error.get("code") == "invalid_arguments" and error.get("message"), result.output
+    if "error" in envelope:
+        error = envelope["error"]
+        assert error.get("code") == "invalid_arguments" and error.get("message"), envelope
         return
-    data = json.loads(result.output)["data"]
+    data = envelope["data"]
     assert data["data"] == []
     (covered,) = [r for r in data["observed_range"] if r["column"] == column]
     assert covered["min"] and covered["max"]
