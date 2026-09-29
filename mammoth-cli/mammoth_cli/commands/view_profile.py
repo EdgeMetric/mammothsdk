@@ -469,7 +469,7 @@ def _numeric_effects(
     for batch in batches:
         groups = {
             "positive": _group_moments(scope, target, positive, "EQ", batch),
-            "rest": _group_moments(scope, target, positive, "NEQ", batch),
+            "rest": _group_moments(scope, target, positive, "NE", batch),
         }
         for name in batch:
             d = dp.standardized_difference(groups["positive"][name], groups["rest"][name])
