@@ -274,6 +274,31 @@ _TEXT_ARTIFACT_TYPES = frozenset(
 )
 
 
+def _read_error_detail(body: dict[str, Any]) -> str | None:
+    """The sentence a server sent with a refusal, whichever field carries it.
+
+    Mammoth puts it in `message`, and on a 404 sends `detail: null` beside it —
+    a key that is present and empty, so reading `detail` with `message` as a
+    fallback found the null and stopped there. On a business error `detail` is
+    an object instead of a sentence. Either way the reason was lost and the
+    caller was handed a bare status code, which nobody can act on.
+
+    Args:
+        body: The parsed response body of a failed request.
+
+    Returns:
+        The first sentence found, or None when the body carries none.
+    """
+    for value in (body.get("message"), body.get("detail")):
+        if isinstance(value, str) and value.strip():
+            return value
+        if isinstance(value, dict):
+            nested = value.get("message") or value.get("detail")
+            if isinstance(nested, str) and nested.strip():
+                return nested
+    return None
+
+
 class MammothClient:
     """Main client for interacting with the Mammoth Analytics API.
 
@@ -742,12 +767,7 @@ class MammothClient:
                 return {"status_code": response.status_code, "response": parsed_response}
             return parsed_response
 
-        error_detail = "Unknown error"
-        candidate_detail = body.get("detail", body.get("message"))
-        if isinstance(candidate_detail, str) and candidate_detail:
-            error_detail = candidate_detail
-        else:
-            error_detail = f"HTTP {response.status_code}"
+        error_detail = _read_error_detail(body) or f"HTTP {response.status_code}"
 
         # A mutation is definitively not applied only when the server returns
         # an ordinary client-side rejection.  Redirects, timeouts/rate limits,
