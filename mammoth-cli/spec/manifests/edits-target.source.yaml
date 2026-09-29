@@ -81,6 +81,7 @@ edits_target_commands:
 - dataset.delete
 - dataset.file-settings.undo
 - dataset.file-settings.update
+- dataset.interpretation.confirm
 - dataset.rename
 - dataset.restore
 - dataset.trash
