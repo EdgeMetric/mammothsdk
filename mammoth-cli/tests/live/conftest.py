@@ -29,14 +29,20 @@ from __future__ import annotations
 
 import importlib
 import os
+import sys
 import time
 from collections.abc import Iterator
 from pathlib import Path
 
 import pytest
-from live_harness import LiveCli, SalesData
 
 from mammoth_cli.context.resolver import ExplicitLogin
+
+# ``tests/live`` is not a package and pytest has not put it on ``sys.path`` when
+# this conftest is imported, so make the sibling helper module importable.
+sys.path.append(str(Path(__file__).parent))
+
+from live_harness import LiveCli, SalesData  # noqa: E402
 
 # Variables the live harness reads a developer's credentials from. The resolver
 # never reads these; the ``_live_login`` fixture logs them into a profile.
