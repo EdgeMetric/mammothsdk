@@ -12,6 +12,7 @@ import pytest
 from mammoth.exceptions import (
     MammothAPIError,
     MammothAuthError,
+    MammothJobFailedError,
     MammothJobTimeoutError,
     MammothPipelineTimeoutError,
 )
@@ -26,7 +27,7 @@ from mammoth_cli.errors.envelope import (
     EXIT_USAGE,
     CliError,
 )
-from mammoth_cli.services.mapping import map_sdk_exception
+from mammoth_cli.services.mapping import map_sdk_exception, with_dashboard_scope
 from mammoth_cli.services.sdk_service import SdkMammothService
 
 
@@ -422,3 +423,42 @@ def test_pipeline_timeout_identifies_view_and_recovers_via_pipeline_commands() -
         "mammoth view pipeline get 5 --project 3 --profile p",
         "mammoth view pipeline wait 5 --project 3 --profile p",
     ]
+
+
+def test_job_failure_carries_the_reason_status_and_job() -> None:
+    mapped = map_sdk_exception(
+        MammothJobFailedError(
+            44, "column X missing", observed_job={"operation": "TRANSFORM", "path": "/x"}
+        )
+    )
+
+    assert mapped.code == "job_failed"
+    assert mapped.details["job_id"] == 44
+    assert mapped.details["status"] == "failure"
+    assert mapped.details["reason"] == "column X missing"
+    assert (mapped.details["operation"], mapped.details["path"]) == ("TRANSFORM", "/x")
+    assert "column X missing" in mapped.message
+    assert mapped.recovery_commands == ["mammoth job get 44"]
+
+
+def test_job_failure_without_a_reason_says_so() -> None:
+    mapped = map_sdk_exception(MammothJobFailedError(44, None))
+
+    assert mapped.details["reason"] == "no reason recorded by the job"
+
+
+def test_job_timeout_details_carry_wait_and_resume() -> None:
+    mapped = map_sdk_exception(MammothJobTimeoutError(44, 300))
+
+    assert mapped.details["waited_seconds"] == 300
+    assert mapped.details["operation_state"] == "running"
+    assert mapped.details["resume"] == "mammoth job wait 44"
+
+
+def test_dashboard_job_timeout_resumes_through_the_url_scoped_wait() -> None:
+    mapped = with_dashboard_scope(map_sdk_exception(MammothJobTimeoutError(44, 300)), "sales")
+
+    assert mapped.details["resume"] == (
+        'mammoth job wait 44 --input \'{"dashboard_url": "sales"}\''
+    )
+    assert mapped.recovery_commands[0] == "mammoth dashboard job-by-url sales 44"

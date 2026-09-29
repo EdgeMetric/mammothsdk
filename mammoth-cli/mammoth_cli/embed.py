@@ -41,6 +41,8 @@ def invoke(
     project_id: int | None = None,
     timeout: float | None = None,
     pipeline_timeout: float | None = None,
+    job_timeout: float | None = None,
+    return_running: bool = False,
 ) -> dict[str, Any]:
     """Run ``mammoth <args>`` as ``login`` and return its envelope.
 
@@ -54,12 +56,23 @@ def invoke(
             ``args`` already sets one.
         pipeline_timeout: Pipeline wait timeout in seconds, sent as
             ``--pipeline-timeout`` unless ``args`` already sets one.
+        job_timeout: Job wait timeout in seconds, sent as ``--job-timeout``
+            unless ``args`` already sets one.
+        return_running: Send ``--return-running`` so a wait that runs out
+            returns a ``status: running`` handle instead of a timeout error.
 
     Returns:
         The success envelope (``data`` + ``meta``) or the error envelope
         (``error``). A CLI error is returned, never raised.
     """
-    argv = _argv(args, project_id=project_id, timeout=timeout, pipeline_timeout=pipeline_timeout)
+    argv = _argv(
+        args,
+        project_id=project_id,
+        timeout=timeout,
+        pipeline_timeout=pipeline_timeout,
+        job_timeout=job_timeout,
+        return_running=return_running,
+    )
     call = embedded.EmbeddedCall(login=login)
     token = embedded.enter(call)
     try:
@@ -77,6 +90,8 @@ def _argv(
     project_id: int | None,
     timeout: float | None,
     pipeline_timeout: float | None,
+    job_timeout: float | None,
+    return_running: bool,
 ) -> list[str]:
     """``args`` plus the options an embedded call always runs with."""
     argv = list(args)
@@ -86,6 +101,10 @@ def _argv(
         argv += ["--timeout", str(timeout)]
     if pipeline_timeout is not None and not _has_option(argv, "--pipeline-timeout"):
         argv += ["--pipeline-timeout", str(pipeline_timeout)]
+    if job_timeout is not None and not _has_option(argv, "--job-timeout"):
+        argv += ["--job-timeout", str(job_timeout)]
+    if return_running and not _has_option(argv, "--return-running"):
+        argv.append("--return-running")
     # Last, so they win over any output or input option in ``args``.
     return [*argv, "--output", "json", "--no-input"]
 

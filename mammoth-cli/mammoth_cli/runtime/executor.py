@@ -24,7 +24,7 @@ from mammoth_cli.output.render import render
 from mammoth_cli.runtime import embedded, updates
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.runlog import RunLog
-from mammoth_cli.services.mapping import map_sdk_exception
+from mammoth_cli.services.mapping import map_sdk_exception, running_handle
 
 Producer = Callable[[], tuple[Any, dict[str, Any]]]
 
@@ -193,8 +193,17 @@ def run(
         emit_success(command_id, data, output, update_available=update, **meta_extra)
         updates.emit_hint(update, output=output)
     except CliError as error:
-        fail(error)
-        raise typer.Exit(error.exit_status) from None
+        running = (
+            running_handle(error, command_id)
+            if invocation is not None and invocation.return_running
+            else None
+        )
+        if running is None:
+            fail(error)
+            raise typer.Exit(error.exit_status) from None
+        # --return-running: a wait that ran out is not a failure; hand back the
+        # handle to resume with.
+        emit_success(command_id, running, output, profile=profile)
     except KeyboardInterrupt as exc:
         # Polling can be interrupted after a job handle was observed.  Keep
         # that handle when an SDK exception exposes one; never turn Ctrl-C
