@@ -93,6 +93,12 @@ commands:
     metavar: PROJECT_ID
     falls_back_to_field: null
     help: ID of the project to act on; defaults to the active project.
+  - name: dataset_id
+    type: int
+    required: false
+    metavar: DATASET_ID
+    falls_back_to_field: null
+    help: Check only this dataset's first view; no other dataset or dashboard is read.
   options: []
   sdk_symbol: mammoth_cli.commands.project.project_check
   sdk_conversion: Call mammoth_cli.commands.project.project_check with validated request fields.
@@ -109,7 +115,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth project check --help
-  agent_example: mammoth project check 123
+  agent_example: mammoth project check 123 456
   unit_tests:
   - UT-PROJECT-CHECK
   contract_tests:
@@ -118,7 +124,7 @@ commands:
   - CT-PROJECT-CHECK-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: Reads the first view of each dataset (the one uploads and the playbooks use) and one data page per view.
+  known_restrictions: Reads the first view of each dataset (the one uploads and the playbooks use) and one data page per view. Given DATASET_ID it reads only that dataset's first view and skips the dashboards.
   reviewed_by: primary
 - command_id: project.checkpoint.list
   command_path: project checkpoint list

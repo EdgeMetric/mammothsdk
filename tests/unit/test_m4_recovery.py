@@ -154,7 +154,7 @@ def test_job_wait_uses_monotonic_budget_for_request_and_sleep(
         jobs.wait_for_job(44, timeout=1, poll_interval=30)
 
     assert jobs.get_job.call_args.kwargs["timeout"] == 1
-    assert sleeps == [0.75]
+    assert sleeps == [0.2]
 
 
 def test_job_observation_timeout_reaches_transport() -> None:

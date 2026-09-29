@@ -23,6 +23,16 @@ if TYPE_CHECKING:
 #: Job polling log; silent unless a handler is attached (see the CLI run log).
 _JOB_LOG = logging.getLogger("mammoth.jobs")
 
+#: The backend has no server-side wait (``GET /jobs/{id}`` answers at once), so
+#: the first check is immediate and the gap grows from here up to ``poll_interval``.
+_POLL_FIRST_DELAY = 0.2
+_POLL_GROWTH = 1.5
+
+
+def _poll_delay(attempt: int, cap: float) -> float:
+    """Gap before poll ``attempt + 1``: short first, growing, never above ``cap``."""
+    return min(cap, _POLL_FIRST_DELAY * _POLL_GROWTH**attempt)
+
 
 class JobsAPI:
     """Client for interacting with Mammoth Jobs API."""
@@ -108,7 +118,10 @@ class JobsAPI:
         Args:
             job_id: ID of the job to wait for
             timeout: Maximum time to wait in seconds (default: client.job_timeout)
-            poll_interval: Time between polling attempts in seconds (default: 2)
+            poll_interval: Upper bound on the time between polls in seconds
+                (default: 2). The first check is immediate and the gap then
+                grows from ``_POLL_FIRST_DELAY`` up to this bound, so a
+                sub-second job is not held for a full interval.
             fetch: Optional observer ``(job_id, remaining_timeout) -> job dict``
                 used instead of ``GET /jobs/{id}``. Published-dashboard jobs
                 are only readable through the URL-scoped job route, for
@@ -129,6 +142,7 @@ class JobsAPI:
 
         deadline = time.monotonic() + timeout
         last_observed: dict[str, Any] | None = None
+        attempt = 0
         while True:
             remaining = deadline - time.monotonic()
             if remaining <= 0:
@@ -185,12 +199,11 @@ class JobsAPI:
                     observed_job=last_observed,
                     phase=observed_phase,
                 )
-            elif status == "processing":
-                # Job still running, continue polling
-                time.sleep(min(poll_interval, max(0.0, deadline - time.monotonic())))
             else:
-                # Unknown status, continue polling
-                time.sleep(min(poll_interval, max(0.0, deadline - time.monotonic())))
+                # Still running (or an unknown status): poll again shortly.
+                gap = _poll_delay(attempt, poll_interval)
+                time.sleep(min(gap, max(0.0, deadline - time.monotonic())))
+                attempt += 1
 
         # Timeout reached
         timeout_phase = "polling"
@@ -211,7 +224,8 @@ class JobsAPI:
         Args:
             job_ids: List of job IDs or comma-separated string
             timeout: Maximum time to wait in seconds (default: client.job_timeout)
-            poll_interval: Time between polling attempts in seconds (default: 2)
+            poll_interval: Upper bound on the time between polls in seconds
+                (default: 2); gaps start short and grow to this bound.
 
         Returns:
             Dict containing all completed jobs information
@@ -240,6 +254,7 @@ class JobsAPI:
         deadline = time.monotonic() + timeout
         completed_jobs = {}
         last_observed: dict[int, dict[str, Any]] = {}
+        attempt = 0
 
         while True:
             remaining = deadline - time.monotonic()
@@ -301,7 +316,9 @@ class JobsAPI:
             if requested_ids <= set(completed_jobs):
                 return {"jobs": [completed_jobs[job_id] for job_id in job_ids_list]}
 
-            time.sleep(min(poll_interval, max(0.0, deadline - time.monotonic())))
+            gap = _poll_delay(attempt, poll_interval)
+            time.sleep(min(gap, max(0.0, deadline - time.monotonic())))
+            attempt += 1
 
         # Timeout reached — use first pending job ID for error
         pending_ids = [jid for jid in job_ids_list if jid not in completed_jobs]

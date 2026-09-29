@@ -324,7 +324,7 @@ def _apply_downstream_export_check(verify: dict[str, Any], invocation: Invocatio
     view_id = _pipeline_view_id(invocation)
     if view_id is None:
         return
-    broken = _broken_downstream_exports(invocation, view_id)
+    broken = _broken_downstream_exports(invocation, view_id, _known_dataset_id(invocation))
     if isinstance(broken, str):
         verify["warnings"] = [*verify["warnings"], broken]
         return
@@ -361,7 +361,31 @@ def _pipeline_view_id(invocation: Invocation) -> int | None:
     return None
 
 
-def _broken_downstream_exports(invocation: Invocation, view_id: int) -> list[dict[str, Any]] | str:
+def _known_dataset_id(invocation: Invocation) -> int | None:
+    """The parent dataset id the write itself already carried, or None.
+
+    From the DATASET_ID positional or the ``dataset_id`` input field. When it
+    is absent the read falls back to the local parent memory, never a scan.
+    """
+    value = invocation.positional("dataset_id")
+    if value is None:
+        try:
+            document = invocation.load_input() or {}
+        except Exception:  # noqa: BLE001 -- the write already ran on this input
+            document = {}
+        value = document.get("dataset_id")
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, int):
+        return value if value > 0 else None
+    if isinstance(value, str) and value.strip().isdigit():
+        return int(value) or None
+    return None
+
+
+def _broken_downstream_exports(
+    invocation: Invocation, view_id: int, dataset_id: int | None = None
+) -> list[dict[str, Any]] | str:
     """Exports on ``view_id`` now in error, read via the existing ``view.export.list``.
 
     Each export the backend hands back already carries its own ``error_info``
@@ -384,8 +408,8 @@ def _broken_downstream_exports(invocation: Invocation, view_id: int) -> list[dic
         job_timeout=invocation.job_timeout,
         pipeline_timeout=invocation.pipeline_timeout,
         no_input=True,
-        positionals={"dataview_id": view_id},
-        extra_args=[str(view_id)],
+        positionals={"dataview_id": view_id, "dataset_id": dataset_id},
+        extra_args=[str(view_id)] if dataset_id is None else [str(view_id), str(dataset_id)],
     )
     try:
         read_data, _meta = handler(read_invocation)

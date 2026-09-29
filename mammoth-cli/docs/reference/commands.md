@@ -1,10 +1,10 @@
 # Command reference
 
-Generated from the reviewed command manifests for mammoth-cli 2.0.84.
+Generated from the reviewed command manifests for mammoth-cli 2.0.86.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
-Total commands: 573.
+Total commands: 574.
 
 ## activity
 
@@ -3005,11 +3005,12 @@ Total commands: 573.
 **Arguments**
 
 - `PROJECT_ID` (int, optional) — ID of the project to act on; defaults to the active project.
+- `DATASET_ID` (int, optional) — Check only this dataset's first view; no other dataset or dashboard is read.
 
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth_cli.commands.project.project_check`
-- Agent example: `mammoth project check 123`
+- Agent example: `mammoth project check 123 456`
 
 ### `mammoth project checkpoint list`
 
@@ -4317,6 +4318,18 @@ Total commands: 573.
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dataviews.DataviewsAPI.get_data`
 - Agent example: `mammoth view data get 123 123`
+
+### `mammoth view data profile`
+
+**Arguments**
+
+- `VIEW_ID` (int, required) — ID of the view to act on.
+- `DATASET_ID` (int, optional) — ID of the dataset the view belongs to; resolved from the view when omitted.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.dataviews.DataviewsAPI.aggregate`
+- Agent example: `mammoth view data profile 123 --input '{"target": "Churn"}'`
 
 ### `mammoth view data query`
 

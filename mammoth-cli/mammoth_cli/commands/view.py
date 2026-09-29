@@ -2345,6 +2345,11 @@ def view_export_list(invocation: Invocation) -> HandlerResult:
     if dataset_id is not None:
         kwargs["dataset_id"] = dataset_id
     with open_service(invocation) as (service, auth):
+        if kwargs.get("dataset_id") is None:
+            # A remembered parent spares the SDK its scan of every dataset.
+            remembered = parents.lookup(_profile_name(invocation), auth.workspace_id, dataview_id)
+            if remembered is not None:
+                kwargs["dataset_id"] = remembered
         data = service.call(_symbol(invocation), **kwargs)
     return data, _meta(invocation, auth.workspace_id, None)
 

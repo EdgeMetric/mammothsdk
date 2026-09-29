@@ -543,8 +543,9 @@ commands:
   draft_test: null
   undo_test: null
   known_restrictions: 'Changes an existing board from one sentence (add, remove or change a chart, KPI
-    or page): {"body": {"params": {"prompt": "<the change>"}}}; returns changed, a one-line message and
-    the rebaked canvas. Use it rather than dashboard pages add or canvas save.'
+    or page): {"body": {"params": {"prompt": "<the change>"}}}; returns changed, a one-line message, the
+    rebaked canvas, dashboard_link and values (the evaluated number of each KPI card and tile after the
+    edit). Use it rather than dashboard pages add or canvas save.'
   reviewed_by: primary
 - command_id: dashboard.chat.history
   command_path: dashboard chat history
@@ -4804,7 +4805,9 @@ commands:
   undo_test: null
   known_restrictions: 'This is how to make a dashboard: it builds and bakes a whole board from one sentence
     on one view. Input {"body": {"params": {"intent": "<what the board should show>", "dataview_id": VIEW_ID,
-    "title": "<optional name>"}}}; waits (about 30 s) and returns the baked canvas. Change it afterwards
+    "title": "<optional name>"}}}; waits (about 30 s) and returns the baked canvas, plus dashboard_link and values:
+    the evaluated number of every KPI card and tile (one descriptor-data read of the baked board), so compare
+    them with what you saw in the data before you report. Change it afterwards
     with dashboard chat edit. dashboard create-blank is only for authoring a canvas by hand.'
   reviewed_by: primary
 - command_id: dashboard.video-state

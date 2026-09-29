@@ -26,7 +26,7 @@ Status on release: ran once on CLI 2.0.15 — re-verification 2026-09-18: exit 0
 
 Run: `mammoth project check`. Exact input fields: `mammoth schema get project.check`.
 
-Example: `mammoth project check 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth project check 123 456`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ProjectCheckResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 

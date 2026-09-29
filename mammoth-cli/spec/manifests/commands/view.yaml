@@ -1356,6 +1356,66 @@ commands:
     export csv''. Example: --input ''{"level": "MONTH", "condition": {"column": "Results", "operator":
     "EQ", "value": "Fail"}}''.'
   reviewed_by: primary
+- command_id: view.data.profile
+  command_path: view data profile
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - ExecuteVolatileQuery
+  positionals:
+  - name: view_id
+    type: int
+    required: true
+    metavar: VIEW_ID
+    falls_back_to_field: null
+    help: ID of the view to act on.
+  - name: dataset_id
+    type: int
+    required: false
+    metavar: DATASET_ID
+    falls_back_to_field: dataset_id
+    help: ID of the dataset the view belongs to; resolved from the view when omitted.
+  options: []
+  sdk_symbol: mammoth.api.dataviews.DataviewsAPI.aggregate
+  sdk_conversion: Runs whole-view aggregate jobs (mammoth.api.dataviews.DataviewsAPI.aggregate) from
+    mammoth_cli.commands.view_profile and computes the profile from their answers; the accepted document
+    fields are _VIEW_DATA_PROFILE_FIELDS in command_contract.py.
+  request_model: ViewDataProfileRequest
+  result_model: ViewDataProfileResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: null
+  live_exemption_reason: Live coverage is tests/live/test_view_profile.py (runs on the test server); the
+    arithmetic is unit-tested in tests/unit/services/test_data_profile.py.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view data profile VIEW_ID --help
+  agent_example: 'mammoth view data profile 123 --input ''{"target": "Churn"}'''
+  unit_tests:
+  - UT-VIEW-DATA-PROFILE
+  contract_tests:
+  - CT-VIEW-DATA-PROFILE
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Read-only profile of the WHOLE view (every row, not a page of 50): per column the
+    blank count, distinct count, min and max (NUMERIC and DATE) and top values; a "summary" of constant,
+    all-blank and mostly-blank columns; "spelling_variants" per TEXT column -- spellings of one value
+    that differ by case, punctuation or legal form (Ltd = Limited, Inc = Incorporated, Corp, Co, LLC,
+    PLC ...) -- with a ready "bulk_replace" input and the full "command" to merge them. Use it to explore,
+    understand or profile a dataset, find blanks, duplicates and dirty categories, or see what is in
+    the data before building anything. --input: "target" (a column with 2-20 values, e.g. churn) adds
+    the target distribution (positive_rate of its rarest class) and a ranking of every other column
+    by association with it (cramers_v, blank-vs-filled rate, the values whose rate differs most) -- the
+    churn drivers; "columns" (names) profiles only those; "top" values per column (default 5); "limit"
+    columns shown in detail (default 50; the summary always covers all). Runs one backend job per question
+    (a few pivots plus about one grouped count per column), so a 200-column view takes tens of seconds.
+    A column with more than 5000 distinct values gets counts and min/max but no value list. Example:
+    --input ''{"target": "CHURN", "limit": 20}''.'
+  reviewed_by: primary
 - command_id: view.delete
   command_path: view delete
   disposition: command

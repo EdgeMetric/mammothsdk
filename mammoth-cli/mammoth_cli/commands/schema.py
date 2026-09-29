@@ -311,6 +311,14 @@ _COMMAND_DISCOVERY_PURPOSES = {
     # view.data.explore's own purpose text already uses both for its trend
     # feature.
     "view.data.aggregate": "group and sum totals by month week without changing the pipeline",
+    # Goals stated as "what is in this data" / "why do customers churn": one
+    # whole-view profile answers both, so the phrasing must reach it.
+    "view.data.profile": (
+        "profile explore what is in this data understand a dataset every column blanks missing "
+        "empty nulls distinct unique duplicates dirty inconsistent categories spelling variants "
+        "check look at overview summary statistics churn drivers drive driving feature "
+        "importance correlation which columns predict affect influence the target outcome"
+    ),
     # Goals users state in their own words, one entry per command the agent's
     # system prompt used to spell out by hand.
     "dashboard.suggestion.list": "ideas suggest suggestions what to show put on a board chart",
@@ -1402,9 +1410,7 @@ def _schema_common(record: dict[str, Any]) -> dict[str, Any]:
     contract_level = (
         "opaque_expert"
         if record["command_id"] in _OPAQUE_EXPERT_COMMANDS
-        else "partially_typed"
-        if opaque_fields
-        else "typed"
+        else "partially_typed" if opaque_fields else "typed"
     )
     return {
         "positionals": _positionals(record["command_id"]),

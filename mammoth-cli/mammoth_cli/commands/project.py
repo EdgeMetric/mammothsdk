@@ -563,13 +563,37 @@ def _report_line(where: str, warning: dict[str, Any]) -> str:
     return f"{subject}: {warning.get('issue')}. {warning.get('detail', '')}".strip()
 
 
+def _scoped_dataset_id(invocation: Invocation) -> int | None:
+    """The DATASET_ID that narrows ``project check`` to one dataset, or None."""
+    raw = invocation.positional("dataset_id")
+    if raw is None:
+        return None
+    try:
+        return int(raw)
+    except ValueError as exc:
+        raise CliError(
+            code=CODE_INVALID_ARGUMENT,
+            message=f"The dataset id argument '{raw}' is not an integer.",
+            exit_status=EXIT_USAGE,
+        ) from exc
+
+
+def _datasets_to_check(service: Any, project_id: int, scoped: int | None) -> list[Any]:
+    """Every dataset of the project, or only the named one -- never a walk when scoped."""
+    if scoped is not None:
+        return [{"id": scoped, "name": f"dataset {scoped}"}]
+    listing = service.call(_DATASETS_LIST_SYMBOL, project_id=project_id)
+    return listing.get("datasets", []) if isinstance(listing, dict) else []
+
+
 def project_check(invocation: Invocation) -> HandlerResult:
     """List what a report on this project must still account for.
 
     Read-only local composite, run before reporting: for each dataset, the
     first view's ``column_warnings`` and ``before_dashboard``; for each
     dashboard, its ``deliverable_check``. ``to_report`` flattens them into
-    one line per finding. Cold-agent evals (2.0.41) left one column's blanks
+    one line per finding. Given a DATASET_ID it reads only that dataset's first
+    view (no dataset list, no dashboards). Cold-agent evals (2.0.41) left one column's blanks
     undecided in every run, because the warning sat in an earlier result.
     """
     from mammoth_cli.commands.dashboard import _with_deliverable_check
@@ -579,9 +603,9 @@ def project_check(invocation: Invocation) -> HandlerResult:
     views: list[dict[str, Any]] = []
     dashboards: list[dict[str, Any]] = []
     to_report: list[str] = []
+    scoped_dataset = _scoped_dataset_id(invocation)
     with open_service(invocation) as (service, auth):
-        listing = service.call(_DATASETS_LIST_SYMBOL, project_id=project_id)
-        datasets = listing.get("datasets", []) if isinstance(listing, dict) else []
+        datasets = _datasets_to_check(service, project_id, scoped_dataset)
         for dataset in datasets:
             dataset_id = dataset.get("id") if isinstance(dataset, dict) else None
             if not isinstance(dataset_id, int):
@@ -615,7 +639,9 @@ def project_check(invocation: Invocation) -> HandlerResult:
             views.append(entry)
             where = f"view {preview['view_id']} ({dataset.get('name')})"
             to_report += [_report_line(where, w) for w in entry["column_warnings"]]
-        boards = service.call(_DASHBOARDS_LIST_SYMBOL, project_id=project_id)
+        boards = (
+            [] if scoped_dataset else service.call(_DASHBOARDS_LIST_SYMBOL, project_id=project_id)
+        )
         for board in boards if isinstance(boards, list) else []:
             dashboard_id = board.get("id") if isinstance(board, dict) else None
             if not isinstance(dashboard_id, int):
@@ -634,6 +660,11 @@ def project_check(invocation: Invocation) -> HandlerResult:
         "project_id": project_id,
         "views": views,
         "dashboards": dashboards,
+        **(
+            {"scope": {"dataset_id": scoped_dataset, "dashboards": "not checked"}}
+            if scoped_dataset
+            else {}
+        ),
         "to_report": to_report,
         "note": (
             "Before you report: fix each finding, or give it one line in the report "

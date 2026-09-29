@@ -252,6 +252,16 @@ Result: `ViewDataGetResult`; mutation `read`, confirmation `none`, wait policy `
 
 Status on release: ran once on CLI 2.0.28 — ILG simulation 2026-09-19: exit 0 on release with CLI 2.0.28. Paged reads (limit up to 500) used for every value check; envelope data.data rows keyed by display name. Single invocation only.
 
+### `view.data.profile`
+
+Run: `mammoth view data profile`. Exact input fields: `mammoth schema get view.data.profile`.
+
+Example: `mammoth view data profile 123 --input '{"target": "Churn"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `ViewDataProfileResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
 ### `view.data.query`
 
 Run: `mammoth view data query`. Exact input fields: `mammoth schema get view.data.query`.

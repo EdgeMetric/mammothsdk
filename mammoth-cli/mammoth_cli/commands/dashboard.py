@@ -39,6 +39,7 @@ from mammoth_cli.runtime.confirm import (
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.session import open_service, require_project, resolved_project
 from mammoth_cli.services.argspec import arg_spec
+from mammoth_cli.services.board_values import board_values, dashboard_link
 from mammoth_cli.services.command_contract import bind_command_inputs
 from mammoth_cli.services.dashboard_pages import check_added_pages
 from mammoth_cli.services.dashboard_review import (
@@ -670,7 +671,36 @@ def generated_dashboard(invocation: Invocation) -> HandlerResult:
             data = check_added_pages(service, positionals["dashboard_id"], requested, data)
         if invocation.command_id in _REVIEWED_COMMANDS:
             data = _with_deliverable_check(invocation, service, auth, positionals, data)
+        if invocation.command_id in _VALUED_COMMANDS:
+            data = _with_board_values(service, auth, positionals, data)
     return data, _meta(invocation, auth.workspace_id)
+
+
+#: Board-building steps whose result carries the evaluated card/tile numbers.
+_VALUED_COMMANDS = frozenset({"dashboard.v3.generate", "dashboard.chat.edit"})
+
+
+def _with_board_values(service: Any, auth: Any, positionals: dict[str, Any], data: Any) -> Any:
+    """Add ``dashboard_link`` and each KPI card's and tile's evaluated number.
+
+    The result of a build/edit is definitions; the agent must see the numbers
+    it is about to report (a rate that reads 21.9% where the data says 14.9%).
+    """
+    data = _dump_model(data)
+    if not isinstance(data, dict):
+        return data
+    dashboard_id = positionals.get("dashboard_id") or data.get("id") or data.get("dashboard_id")
+    if not isinstance(dashboard_id, int):
+        return {**data, "values": {"unavailable": "the result names no dashboard id"}}
+    return {
+        **data,
+        "dashboard_link": dashboard_link(auth.base_url, auth.workspace_id, dashboard_id),
+        "values": board_values(service, dashboard_id),
+    }
+
+
+def _dump_model(value: Any) -> Any:
+    return value.model_dump(mode="json") if hasattr(value, "model_dump") else value
 
 
 #: Authoring steps whose result carries ``deliverable_check``.

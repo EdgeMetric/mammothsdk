@@ -340,6 +340,17 @@ _VIEW_DATA_COMPARE_FIELDS = (
     FieldSpec("limit", required=False, annotation=int | None, default=None),
 )
 
+# view.data.profile's handler is a CLI composite: it asks the backend for
+# whole-view aggregates (DataviewsAPI.aggregate, named in the manifest so
+# discovery has an SDK anchor) and never forwards these fields to it. The
+# accepted document fields are authored here.
+_VIEW_DATA_PROFILE_FIELDS = (
+    FieldSpec("target", required=False, annotation=str | None, default=None),
+    FieldSpec("columns", required=False, annotation=list[str] | None, default=None),
+    FieldSpec("top", required=False, annotation=int, default=5),
+    FieldSpec("limit", required=False, annotation=int, default=50),
+)
+
 # The remaining S1 commands are intentionally closed zero-input commands.  A
 # command may still receive ordinary positional/context values; those are
 # represented by ``positionals`` and never become structured-input keys.
@@ -697,6 +708,8 @@ def resolve_command_contract(command_id: str) -> ResolvedCommandContract | None:
         special_fields = _RELEASE_BATCH_SPEC_FIELDS
     elif command_id == "view.data.compare":
         special_fields = _VIEW_DATA_COMPARE_FIELDS
+    elif command_id == "view.data.profile":
+        special_fields = _VIEW_DATA_PROFILE_FIELDS
     local_fields = _LOCAL_CONTRACT_FIELDS.get(command_id, ()) if is_local else None
     fields = tuple(
         field

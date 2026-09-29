@@ -259,7 +259,16 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
     # active project). The SDK signature marks it required or omits it, so the
     # dual-sourced optional locator is authored here.
     "project.get": _optional_project_id(),
-    "project.check": _optional_project_id(),
+    # ``project check PROJECT_ID DATASET_ID`` narrows the check to one dataset.
+    "project.check": (
+        *_optional_project_id(),
+        PositionalSpec(
+            name="dataset_id",
+            type=int,
+            required=False,
+            help="Check only this dataset's first view; no other dataset or dashboard is read.",
+        ),
+    ),
     "project.pending-changes": _optional_project_id(),
     "project.memory.list": _optional_project_id(),
     "project.memory.add": _optional_project_id(),
@@ -548,7 +557,13 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
                 falls_back_to_field="dataset_id",
             ),
         )
-        for command in ("view.preview", "view.data.get", "view.data.query", "view.data.aggregate")
+        for command in (
+            "view.preview",
+            "view.data.get",
+            "view.data.query",
+            "view.data.aggregate",
+            "view.data.profile",
+        )
     },
     # `view data compare` runs the same aggregate against two views and joins
     # the results -- both ids are required and neither is dual-sourced or

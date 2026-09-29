@@ -33,6 +33,11 @@ STATE_SIZE_CAP_BYTES = 1500
 _SAMPLE_ROW_CAP = 5
 _CELL_CHAR_CAP = 80
 
+#: Input fields of a view edit that name the column(s) it wrote; the new
+#: values of exactly those columns are echoed back (``renames`` maps old -> new).
+_CHANGED_COLUMN_FIELDS = ("new_column", "existing_column", "column", "columns", "new_columns")
+_CHANGED_VALUES_CAP = 8
+
 _VIEW_GET_COMMAND = "view.get"
 _VIEW_DATA_COMMAND = "view.data.get"
 _VIEW_LIST_COMMAND = "view.list"
@@ -298,12 +303,54 @@ def _data_state(resolved_ids: dict[str, Any], base: Invocation) -> dict[str, Any
     page = _call_read(_VIEW_DATA_COMMAND, view_ids, base)
     rows = page.get("data") if isinstance(page, dict) else None
     sample = [_trim_row(row) for row in (rows or [])[:_SAMPLE_ROW_CAP]]
-    return {
+    state: dict[str, Any] = {
         "kind": "data",
         "read_by": f"{_VIEW_DATA_COMMAND} {view_id}",
         "columns": _columns(info),
         "row_count": info.get("row_count") if isinstance(info, dict) else None,
         "sample": sample,
+    }
+    known = [column["name"] for column in state["columns"]]
+    changed = changed_column_values(changed_columns(base.bound_input()), rows or [], known)
+    if changed:
+        state["changed_columns"] = changed
+    return state
+
+
+def changed_columns(document: Any) -> list[str]:
+    """Names of the columns a view edit's input says it wrote."""
+    if not isinstance(document, dict):
+        return []
+    names: list[str] = []
+    for field in _CHANGED_COLUMN_FIELDS:
+        value = document.get(field)
+        names += (
+            [value] if isinstance(value, str) else list(value) if isinstance(value, list) else []
+        )
+    renames = document.get("renames")
+    if isinstance(renames, dict):
+        names += list(renames.values())
+    return list(dict.fromkeys(name for name in names if isinstance(name, str) and name))
+
+
+def changed_column_values(names: list[str], rows: list[Any], known: list[str]) -> dict[str, Any]:
+    """The first values of each named column as the view now holds them.
+
+    A name the view no longer has (a deleted column, a typo) says so instead
+    of vanishing, so the caller never mistakes silence for success.
+    """
+    present = set(known) | {key for row in rows if isinstance(row, dict) for key in row}
+    return {
+        name: (
+            [
+                _trim_cell(row.get(name))
+                for row in rows[:_CHANGED_VALUES_CAP]
+                if isinstance(row, dict)
+            ]
+            if name in present
+            else "not a column of the view after this change"
+        )
+        for name in names
     }
 
 
@@ -371,7 +418,7 @@ def _enforce_cap(state: dict[str, Any]) -> dict[str, Any]:
         sample = list(state.get("sample") or [])
         while sample and _size({**state, "sample": sample}) > STATE_SIZE_CAP_BYTES:
             sample.pop()
-        return {**state, "sample": sample}
+        return _trim_changed({**state, "sample": sample})
     if kind == "object":
         capped = {**state, "object": _capped_object(state)}
         original = state.get("object")
@@ -384,6 +431,19 @@ def _enforce_cap(state: dict[str, Any]) -> dict[str, Any]:
             overflow = _size(state) - STATE_SIZE_CAP_BYTES
             keep = max(0, len(detail) - overflow - 3)
             return {**state, "detail": detail[:keep] + "..."}
+    return state
+
+
+def _trim_changed(state: dict[str, Any]) -> dict[str, Any]:
+    """Shorten the changed-column value lists after the sample rows are gone."""
+    changed = state.get("changed_columns")
+    if not isinstance(changed, dict):
+        return state
+    keep = _CHANGED_VALUES_CAP
+    while keep > 3 and _size(state) > STATE_SIZE_CAP_BYTES:
+        keep -= 1
+        changed = {k: v[:keep] if isinstance(v, list) else v for k, v in changed.items()}
+        state = {**state, "changed_columns": changed}
     return state
 
 

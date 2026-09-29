@@ -53,6 +53,7 @@ from mammoth_cli.commands import trash as trash_cmd
 from mammoth_cli.commands import user as user_cmd
 from mammoth_cli.commands import view as view_cmd
 from mammoth_cli.commands import view_ops as view_ops_cmd
+from mammoth_cli.commands import view_profile as view_profile_cmd
 from mammoth_cli.commands import webhook as webhook_cmd
 from mammoth_cli.commands import workflow as workflow_cmd
 from mammoth_cli.commands import workspace as workspace_cmd
@@ -648,6 +649,7 @@ HANDLERS: dict[str, Handler] = {
     "view.data.aggregate": view_cmd.view_data_aggregate,
     "view.data.compare": view_cmd.view_data_compare,
     "view.data.explore": view_cmd.view_data_explore,
+    "view.data.profile": view_profile_cmd.view_data_profile,
     "view.exportable-config.get": view_cmd.view_exportable_config_get,
     "view.exportable-config.apply": view_cmd.view_exportable_config_apply,
     "view.conditional-format.create": view_cmd.view_conditional_format_create,
