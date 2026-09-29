@@ -23,10 +23,6 @@ DATASET_LIST_FIELDS = (
 )
 
 _MAX_COLUMNS = 4
-_MAX_SAMPLE_CELLS = 4
-_MAX_CELL_CHARS = 14
-#: Room reserved per view for the sample row fetched after the size check.
-SAMPLE_ALLOWANCE = 140
 _SOURCE_KINDS = {
     "file": "file",
     "cloud": "connector",
@@ -61,12 +57,6 @@ def compact_columns(columns: list[tuple[str, Any]]) -> str:
     return ", ".join(shown) + (f" (+{extra} more)" if extra > 0 else "")
 
 
-def compact_sample(row: dict[str, Any]) -> dict[str, str]:
-    """The first cells of one real row, each cut short."""
-    cells = list(row.items())[:_MAX_SAMPLE_CELLS]
-    return {str(k): str(v)[:_MAX_CELL_CHARS] for k, v in cells}
-
-
 def source_of(dataset: dict[str, Any]) -> str:
     """How the dataset's data arrived: the stored source type and, for a file, its name."""
     info = dataset.get("additional_info")
@@ -76,7 +66,10 @@ def source_of(dataset: dict[str, Any]) -> str:
     first = sources[0] if isinstance(sources, list) and sources else None
     if not isinstance(first, dict):
         return "unknown"
-    kind = _SOURCE_KINDS.get(str(first.get("type")), str(first.get("type")))
+    raw_kind = first.get("type")
+    if not raw_kind:
+        return "unknown"
+    kind = _SOURCE_KINDS.get(str(raw_kind), str(raw_kind))
     details = first.get("details")
     label = (
         details.get("file_name") or details.get("connector_key")
@@ -96,7 +89,9 @@ def dataset_summary(record: dict[str, Any]) -> dict[str, Any]:
     raw_stats, raw_schema = record.get("stats"), record.get("data_schema")
     stats = raw_stats if isinstance(raw_stats, dict) else {}
     schema = raw_schema if isinstance(raw_schema, list) else []
-    columns = [(c.get("c_name"), c.get("c_type")) for c in schema if isinstance(c, dict)]
+    columns = [
+        (c["c_name"], c.get("c_type")) for c in schema if isinstance(c, dict) and c.get("c_name")
+    ]
     summary: dict[str, Any] = {
         "id": record.get("id"),
         "name": record.get("name"),
@@ -116,7 +111,11 @@ def view_summary(
     """Summary of one view, naming its dataset (a bare ``View 1`` says nothing)."""
     raw_metadata = view.get("metadata")
     metadata = raw_metadata if isinstance(raw_metadata, list) else []
-    columns = [(str(c.get("display_name")), c.get("type")) for c in metadata if isinstance(c, dict)]
+    columns = [
+        (str(c["display_name"]), c.get("type"))
+        for c in metadata
+        if isinstance(c, dict) and c.get("display_name")
+    ]
     summary: dict[str, Any] = {
         "id": view.get("id"),
         "name": view.get("name"),
@@ -155,49 +154,6 @@ def fit_budget(
     return kept, len(items) - len(kept)
 
 
-_PREVIEW_SYMBOL = "mammoth.api.dataviews.DataviewsAPI.preview"
-
-
-def sample_row(
-    service: Any, dataset_id: Any, view_id: Any, project_id: int | None, view: dict[str, Any]
-) -> dict[str, str] | str:
-    """One real row of a view (a one-row preview), keyed by display names.
-
-    A view that cannot be previewed says why instead of failing the whole list.
-    """
-    names = {
-        c.get("internal_name"): c.get("display_name")
-        for c in view.get("metadata") or []
-        if isinstance(c, dict)
-    }
-    try:
-        page = service.call(
-            _PREVIEW_SYMBOL,
-            dataset_id=dataset_id,
-            dataview_id=view_id,
-            project_id=project_id,
-            rows=1,
-            cols=_MAX_SAMPLE_CELLS,
-        )
-    except Exception as exc:  # noqa: BLE001 -- one unreadable view must not sink the list
-        return f"unavailable: {str(exc)[:80]}"
-    return _first_row(page, names)
-
-
-def _first_row(page: Any, names: dict[Any, Any]) -> dict[str, str] | str:
-    rows = page.get("rows") if isinstance(page, dict) else None
-    columns = page.get("columns") if isinstance(page, dict) else None
-    if not isinstance(rows, list) or not rows:
-        return "no rows"
-    first = rows[0]
-    if isinstance(first, dict):
-        return compact_sample({str(names.get(k, k)): v for k, v in first.items() if k != "hash"})
-    if isinstance(first, list) and isinstance(columns, list):
-        labelled = {str(names.get(c, c)): v for c, v in zip(columns, first, strict=False)}
-        return compact_sample(labelled)
-    return "no rows"
-
-
 def _dataset_of(view: dict[str, Any]) -> Any:
     return view.get("dataset_id") if view.get("dataset_id") is not None else view.get("ds_id")
 
@@ -223,13 +179,13 @@ def _choose_views(
     chosen: list[tuple[dict[str, Any], dict[str, Any]]] = []
     used = 200
     for dataset_id, pairs in groups.items():
-        cost = sum(json_size(s) + SAMPLE_ALLOWANCE + 1 for _v, s in pairs)
+        cost = sum(json_size(s) + 1 for _v, s in pairs)
         if chosen and used + cost > LIST_DATA_BUDGET:
             return chosen, dataset_id, 0
         if not chosen and cost > LIST_DATA_BUDGET - used:
             fitted: list[tuple[dict[str, Any], dict[str, Any]]] = []
             for pair in pairs:
-                step = json_size(pair[1]) + SAMPLE_ALLOWANCE + 1
+                step = json_size(pair[1]) + 1
                 if fitted and used + step > LIST_DATA_BUDGET:
                     break
                 fitted.append(pair)
@@ -241,14 +197,12 @@ def _choose_views(
 
 
 def compact_view_list(
-    service: Any,
-    views: list[dict[str, Any]],
-    datasets: dict[Any, dict[str, Any]],
-    project_id: int | None,
+    views: list[dict[str, Any]], datasets: dict[Any, dict[str, Any]]
 ) -> dict[str, Any]:
     """Summaries of ``views`` (records with renames applied), within the output cap.
 
-    Adds a real sample row per kept view. Returns ``{"dataviews", "shown"}`` plus
+    Built only from the records already fetched: no per-view backend call.
+    Returns ``{"dataviews", "shown"}`` plus
     ``first_dropped_dataset`` / ``views_omitted`` when something was cut, for the
     caller to turn into a way to the next page.
     """
@@ -256,11 +210,7 @@ def compact_view_list(
     for ds_id, group in _group_by_dataset(views).items():
         groups[ds_id] = [(v, view_summary(v, datasets.get(ds_id), ds_id)) for v in group]
     chosen, dropped_dataset, omitted = _choose_views(groups)
-    items = []
-    for view, summary in chosen:
-        sample = sample_row(service, _dataset_of(view), view.get("id"), project_id, view)
-        items.append({**summary, "sample": sample})
-    kept, cut = fit_budget(items)
+    kept, cut = fit_budget([summary for _view, summary in chosen])
     result: dict[str, Any] = {"dataviews": kept, "shown": len(kept)}
     if dropped_dataset is not None:
         result["first_dropped_dataset"] = dropped_dataset

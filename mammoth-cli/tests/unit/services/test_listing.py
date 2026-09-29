@@ -109,18 +109,3 @@ def test_one_oversized_item_is_still_shown() -> None:
     kept, omitted = listing.fit_budget([{"blob": "x" * 9000}])
     assert len(kept) == 1
     assert omitted == 0
-
-
-def test_a_sample_row_is_cut_short_per_cell() -> None:
-    sample = listing.compact_sample({"Order ID": "CA-2018-140151-with-a-very-long-suffix"})
-    assert sample["Order ID"] == "CA-2018-140151"
-
-
-def test_the_sample_row_is_relabelled_to_display_names() -> None:
-    names = {"column_0": "Order ID", "column_1": "Order Date"}
-    page = {"columns": ["column_0", "column_1"], "rows": [["CA-1", "11/8/2017"]]}
-    assert listing._first_row(page, names) == {"Order ID": "CA-1", "Order Date": "11/8/2017"}
-
-
-def test_a_view_with_no_rows_says_so() -> None:
-    assert listing._first_row({"columns": ["column_0"], "rows": []}, {}) == "no rows"

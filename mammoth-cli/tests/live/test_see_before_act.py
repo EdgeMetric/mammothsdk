@@ -97,7 +97,7 @@ def test_view_list_names_the_dataset_of_every_view(
         pytest.skip("the project has no views")
     for item in data["dataviews"]:
         assert item.get("dataset_name"), f"view {item.get('id')} does not name its dataset"
-        assert "sample" in item
+        assert "sample" not in item, "a list must not read data per view"
 
 
 # -- 2. every read names the dataset and view it read ------------------------
