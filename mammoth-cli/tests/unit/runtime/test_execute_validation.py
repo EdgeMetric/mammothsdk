@@ -14,7 +14,7 @@ from pathlib import Path
 import pytest
 import typer
 
-from mammoth_cli.errors.envelope import EXIT_USAGE, CliError
+from mammoth_cli.errors.envelope import ERROR_SUMMARIES, EXIT_USAGE, CliError
 from mammoth_cli.runtime.executor import _profile_scope_recovery, run
 from mammoth_cli.testing import make_runner
 
@@ -52,6 +52,7 @@ def test_ndjson_error_is_one_terminal_frame_on_stderr(capsys: pytest.CaptureFixt
             "recovery_commands": [],
             "request_id": None,
             "retryable": False,
+            "summary": ERROR_SUMMARIES["interrupted"],
         },
         "event": "error",
         "meta": None,

@@ -341,7 +341,8 @@ def validate_input_fields(command_id: str, document: dict[str, Any] | None) -> N
             code=CODE_UNKNOWN_INPUT_FIELD,
             message=(
                 f"Unknown input field(s) for '{command_id.replace('.', ' ')}': "
-                f"{', '.join(unknown)}."
+                f"{', '.join(unknown)}. "
+                f"Accepted fields: {', '.join(sorted(fields_by_name)) or '(none)'}."
             ),
             exit_status=EXIT_USAGE,
             hint=_unknown_field_hint(command_id, document, sorted(fields_by_name)),

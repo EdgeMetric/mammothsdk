@@ -2591,7 +2591,8 @@ def view_export_specialized(invocation: Invocation) -> HandlerResult:
             code="unknown_input_field",
             message=(
                 f"Unknown input field(s) for '{invocation.command_id.replace('.', ' ')}': "
-                f"{', '.join(unknown)}."
+                f"{', '.join(unknown)}. "
+                f"Accepted fields: {', '.join(sorted(allowed - {_DATASET_ID_FIELD}))}."
             ),
             exit_status=EXIT_USAGE,
             hint=f"Accepted fields: {', '.join(sorted(allowed - {_DATASET_ID_FIELD}))}.",

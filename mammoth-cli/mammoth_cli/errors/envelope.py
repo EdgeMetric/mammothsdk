@@ -52,6 +52,123 @@ CODE_JOB_FAILED = "job_failed"
 CODE_INTERRUPTED = "interrupted"
 CODE_UNSUPPORTED_CONTRACT = "unsupported_contract"
 
+# User-safe, one-line summaries shown to the customer instead of the model-facing
+# ``message``/``hint``. Plain language only: no command names, ids, field names
+# or jargon. Exactly one entry per error code the CLI can raise;
+# ``tests/unit/test_error_summaries.py`` fails if a raised code has none.
+_S_BAD_REQUEST = "The assistant's request wasn't valid, so it is trying a different way."
+_S_BAD_INPUT = "Some of the information provided couldn't be used."
+_S_SIGN_IN = "The assistant isn't signed in to Mammoth."
+_S_INTERNAL = "The assistant hit an internal problem with this step."
+_S_NOT_FOUND = "Something the assistant looked for couldn't be found."
+_S_MISSING_INFO = "The assistant's request was missing some information."
+_S_SETUP = "A setting needed for this step isn't set up correctly."
+_S_UNAVAILABLE = "This step isn't available right now."
+
+ERROR_SUMMARIES: dict[str, str] = {
+    "aborted": "This step was stopped before it finished.",
+    "ambiguous_resource_identity": (
+        "More than one item matched, so the assistant needs to be more specific."
+    ),
+    "api_error": "Mammoth couldn't complete this step.",
+    "append_schema_mismatch": "The new data doesn't line up with the existing columns.",
+    "append_schema_unreadable": "The columns of the existing data couldn't be read.",
+    "authentication_failed": "Mammoth didn't accept the sign-in for this step.",
+    "authorization_required": "You don't have permission to do this.",
+    "capability_not_found": "The assistant tried something Mammoth doesn't support.",
+    "confirmation_declined": "This step was not confirmed, so nothing was changed.",
+    "confirmation_required": "This step needs your confirmation before it can go ahead.",
+    "confirmation_target_mismatch": (
+        "The confirmation was for a different item, so nothing was changed."
+    ),
+    "conflict": "This conflicts with the current state of your data, so nothing was changed.",
+    "download_failed": "A download didn't complete.",
+    "duplicate_input_key": _S_BAD_INPUT,
+    "empty_search_query": "The search was empty.",
+    "export_already_exists": "An export with that name already exists.",
+    "incomplete_environment_auth": _S_SIGN_IN,
+    "input_file_not_found": _S_NOT_FOUND,
+    "input_format_required": _S_BAD_INPUT,
+    "input_not_found": _S_NOT_FOUND,
+    "input_too_deep": _S_BAD_INPUT,
+    "input_too_large": "The information provided was too large.",
+    "input_unreadable": _S_BAD_INPUT,
+    "insecure_credential_file": _S_SETUP,
+    "insecure_input_file": _S_BAD_INPUT,
+    "internal_column_name": "That column is internal to Mammoth and can't be used.",
+    "internal_error": _S_INTERNAL,
+    "interrupted": "This step was interrupted before it finished.",
+    "invalid_argument": _S_BAD_REQUEST,
+    "invalid_argument_combination": _S_BAD_REQUEST,
+    "invalid_arguments": _S_BAD_REQUEST,
+    "invalid_condition": "A filter condition wasn't valid.",
+    "invalid_condition_value": "A filter condition used a value that isn't valid.",
+    "invalid_config_value": _S_SETUP,
+    "invalid_credentials": "The sign-in details weren't accepted.",
+    "invalid_input_document": _S_BAD_INPUT,
+    "invalid_input_encoding": _S_BAD_INPUT,
+    "invalid_input_field_type": _S_BAD_INPUT,
+    "invalid_input_format": _S_BAD_INPUT,
+    "invalid_login_document": "The sign-in details weren't valid.",
+    "invalid_option_value": _S_BAD_REQUEST,
+    "invalid_output_mode": _S_BAD_REQUEST,
+    "invalid_profile_name": _S_SETUP,
+    "invalid_project_id": "The project couldn't be identified.",
+    "invalid_resource_context": _S_BAD_REQUEST,
+    "invalid_server_prefix": _S_SETUP,
+    "invalid_storage_mode": _S_SETUP,
+    "invalid_workspace_id": "The workspace couldn't be identified.",
+    "job_failed": "A background task didn't finish successfully.",
+    "keyring_unavailable": _S_SETUP,
+    "keyring_unresponsive": _S_SETUP,
+    "login_input_required": _S_SIGN_IN,
+    "missing_argument": _S_MISSING_INFO,
+    "missing_field": _S_MISSING_INFO,
+    "no_output": "This step didn't return anything.",
+    "nonfinite_input_number": _S_BAD_INPUT,
+    "not_authenticated": _S_SIGN_IN,
+    "not_implemented": _S_UNAVAILABLE,
+    "outcome_unknown": "It isn't clear whether this step went through. Check before trying again.",
+    "pipeline_changed": "The pipeline was changed by someone else while this step ran.",
+    "pipeline_reference_error": "A step in the pipeline refers to something that no longer exists.",
+    "profile_not_found": _S_SETUP,
+    "profile_write_failed": _S_SETUP,
+    "project_required": "No project has been chosen for this step.",
+    "pypi_response_invalid": "An update check didn't return a usable answer.",
+    "pypi_unreachable": "An update check couldn't connect.",
+    "resource_identity_required": "The assistant needs to say which item it means.",
+    "resource_not_found": _S_NOT_FOUND,
+    "retryable_error": "Mammoth was temporarily unavailable. Trying again may work.",
+    "schema_not_found": _S_NOT_FOUND,
+    "sdk_symbol_unresolved": _S_INTERNAL,
+    "skill_conflict": _S_SETUP,
+    "task_runtime_error": "A background task hit an error while running.",
+    "timeout": "This step took too long. It may still be running.",
+    "too_many_goals": _S_BAD_REQUEST,
+    "unexpected_argument": _S_BAD_REQUEST,
+    "unknown_agent": _S_SETUP,
+    "unknown_column": "A column the assistant referred to doesn't exist.",
+    "unknown_config_key": _S_SETUP,
+    "unknown_input_field": _S_BAD_REQUEST,
+    "unknown_option": _S_BAD_REQUEST,
+    "unknown_scope": _S_SETUP,
+    "unsupported_contract": _S_UNAVAILABLE,
+    "unsupported_profile_base_url": _S_SETUP,
+    "unsupported_shell": _S_UNAVAILABLE,
+    "upgrade_failed": "The update didn't complete.",
+    "usage_error": _S_BAD_REQUEST,
+    "view_in_draft": "This view is still a draft and can't be used yet.",
+}
+
+#: Shown for a code with no entry (a runtime backstop only; the exhaustiveness
+#: test keeps every raised code out of this path).
+DEFAULT_ERROR_SUMMARY = "Something went wrong with this step."
+
+
+def user_summary(code: str) -> str:
+    """The user-safe one-line summary for an error code."""
+    return ERROR_SUMMARIES.get(code, DEFAULT_ERROR_SUMMARY)
+
 
 @dataclass
 class CliError(Exception):
@@ -77,6 +194,7 @@ class CliError(Exception):
     def to_envelope(self) -> dict[str, Any]:
         error: dict[str, Any] = {
             "code": self.code,
+            "summary": user_summary(self.code),
             "message": self.message,
             "hint": self.hint,
             "details": self.details,
