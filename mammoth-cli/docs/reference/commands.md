@@ -4,7 +4,7 @@ Generated from the reviewed command manifests for mammoth-cli 2.0.86.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
-Total commands: 574.
+Total commands: 576.
 
 ## activity
 
@@ -2456,6 +2456,28 @@ Total commands: 574.
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.datasets.DatasetsAPI.get`
 - Agent example: `mammoth dataset get 123`
+
+### `mammoth dataset interpretation confirm`
+
+**Arguments**
+
+- `DATASET_ID` (int, required) — ID of the dataset.
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.datasets.DatasetsAPI.interpretation_confirm`
+- Agent example: `mammoth dataset interpretation confirm 123`
+
+### `mammoth dataset interpretation preview`
+
+**Arguments**
+
+- `DATASET_ID` (int, required) — ID of the dataset.
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.datasets.DatasetsAPI.interpretation_preview`
+- Agent example: `mammoth dataset interpretation preview 123`
 
 ### `mammoth dataset list`
 

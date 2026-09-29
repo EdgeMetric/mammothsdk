@@ -1,6 +1,6 @@
 # Published CLI command catalog
 
-This generated catalog is a lookup table for every command in the published CLI manifest, currently 574; each entry carries its release status line. It is a command-contract index, not an assertion that every backend/OpenAPI operation has a CLI binding. For an exact local CLI contract, run `mammoth schema get COMMAND_ID`; `mammoth capability list` is an API-binding inventory and can omit typed/local CLI routes. For focused workflows, read the [recipes index](recipes/index.md). Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
+This generated catalog is a lookup table for every command in the published CLI manifest, currently 576; each entry carries its release status line. It is a command-contract index, not an assertion that every backend/OpenAPI operation has a CLI binding. For an exact local CLI contract, run `mammoth schema get COMMAND_ID`; `mammoth capability list` is an API-binding inventory and can omit typed/local CLI routes. For focused workflows, read the [recipes index](recipes/index.md). Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
 Load only the applicable domain file:
 
@@ -24,7 +24,7 @@ Load only the applicable domain file:
 - [dashboard-qa](commands/dashboard-qa.md) — 13 published commands
 - [dashboard](commands/dashboard.md) — 100 published commands
 - [data-app](commands/data-app.md) — 12 published commands
-- [dataset](commands/dataset.md) — 18 published commands
+- [dataset](commands/dataset.md) — 20 published commands
 - [doctor](commands/doctor.md) — 1 published commands
 - [external-key](commands/external-key.md) — 4 published commands
 - [file](commands/file.md) — 9 published commands

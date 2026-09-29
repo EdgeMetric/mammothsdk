@@ -664,6 +664,98 @@ class DatasetsAPI:
             "DELETE", f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/file_settings"
         )
 
+    def interpretation_preview(
+        self,
+        dataset_id: int,
+        user_instruction: str | None = None,
+        structure_map: dict[str, Any] | None = None,
+        destination_dataset_id: int | None = None,
+        workspace_id: int | None = None,
+        project_id: int | None = None,
+    ) -> dict[str, Any]:
+        """Preview how a file that could be read several ways would look once interpreted.
+
+        Applies a plain-English instruction (for example one of the dataset's stored
+        suggestions, "Skip preamble rows, row 5 is the header") or a ready structure
+        map to the cached sample rows. Nothing is finalised; the dataset stays as it is.
+
+        Args:
+            dataset_id: ID of the dataset (must be > 0).
+            user_instruction: Plain-English description of how to read the file.
+            structure_map: A SheetStructureMap from an earlier preview; no model call.
+            destination_dataset_id: Replay the saved recipe of this destination dataset.
+            workspace_id: ID of the workspace (uses client default if not provided).
+            project_id: ID of the project (uses client default if not provided).
+
+        Returns:
+            Dict with ``preview_rows``, ``total_row_count``, ``structure_map`` and
+            ``header_types``.
+
+        Raises:
+            MammothValidationError: If *dataset_id* ≤ 0.
+        """
+        if dataset_id <= 0:
+            raise MammothValidationError(ERR_DATASET_ID_POSITIVE.format(dataset_id))
+        ws = workspace_id or self._ws()
+        proj = self._proj(project_id)
+        return self._client._request_json(
+            "POST",
+            f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/interpretation/preview",
+            json=self._interpretation_body(user_instruction, structure_map, destination_dataset_id),
+        )
+
+    def interpretation_confirm(
+        self,
+        dataset_id: int,
+        user_instruction: str | None = None,
+        structure_map: dict[str, Any] | None = None,
+        destination_dataset_id: int | None = None,
+        workspace_id: int | None = None,
+        project_id: int | None = None,
+    ) -> dict[str, Any]:
+        """Apply an interpretation to the whole file and finalise the dataset.
+
+        Moves the dataset out of the state where its file has more than one plausible
+        reading. Pass the ``structure_map`` a preview returned, or the same
+        ``user_instruction``.
+
+        Args:
+            dataset_id: ID of the dataset (must be > 0).
+            user_instruction: Plain-English description of how to read the file.
+            structure_map: The confirmed SheetStructureMap.
+            destination_dataset_id: Replay the saved recipe of this destination dataset.
+            workspace_id: ID of the workspace (uses client default if not provided).
+            project_id: ID of the project (uses client default if not provided).
+
+        Returns:
+            Dict, empty when the backend answers with no body.
+
+        Raises:
+            MammothValidationError: If *dataset_id* ≤ 0.
+        """
+        if dataset_id <= 0:
+            raise MammothValidationError(ERR_DATASET_ID_POSITIVE.format(dataset_id))
+        ws = workspace_id or self._ws()
+        proj = self._proj(project_id)
+        return self._client._request_json(
+            "PATCH",
+            f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/interpretation",
+            json=self._interpretation_body(user_instruction, structure_map, destination_dataset_id),
+        )
+
+    @staticmethod
+    def _interpretation_body(
+        user_instruction: str | None,
+        structure_map: dict[str, Any] | None,
+        destination_dataset_id: int | None,
+    ) -> dict[str, Any]:
+        fields = {
+            "user_instruction": user_instruction,
+            "structure_map": structure_map,
+            "destination_dataset_id": destination_dataset_id,
+        }
+        return {name: value for name, value in fields.items() if value is not None}
+
     def restore(
         self,
         dataset_id: int,

@@ -550,6 +550,93 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+- command_id: dataset.interpretation.confirm
+  command_path: dataset interpretation confirm
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - ConfirmDatasetInterpretation
+  positionals:
+  - name: dataset_id
+    type: int
+    required: true
+    metavar: DATASET_ID
+    falls_back_to_field: null
+    help: ID of the dataset.
+  options: []
+  sdk_symbol: mammoth.api.datasets.DatasetsAPI.interpretation_confirm
+  sdk_conversion: Call mammoth.api.datasets.DatasetsAPI.interpretation_confirm with validated request fields.
+  request_model: DatasetInterpretationConfirmRequest
+  result_model: DatasetInterpretationConfirmResult
+  mutation_class: benign_mutation
+  edits_target: true
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  readback:
+    command: dataset.get
+    ids:
+      dataset_id: positional.0
+    kind: object
+  live_test: null
+  live_exemption_reason: Live coverage is tests/live/test_dataset_interpretation.py (runs on the test server against a preamble CSV).
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dataset interpretation confirm DATASET_ID --help
+  agent_example: mammoth dataset interpretation confirm 123
+  unit_tests:
+  - UT-DATASET-INTERPRETATION-CONFIRM
+  contract_tests:
+  - CT-DATASET-INTERPRETATION-CONFIRM-HUMAN
+  - CT-DATASET-INTERPRETATION-CONFIRM-JSON
+  - CT-DATASET-INTERPRETATION-CONFIRM-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Finalizes a dataset whose file has more than one plausible reading (status has_unstructured_data): applies the interpretation to the whole file and creates the table. Run interpretation preview first and pass the same input here, or the structure_map it returned. The suggestions stored on the dataset are under additional_info.interpretation.instruction_suggestions in dataset get. The result state shows the dataset afterwards. Example: --input ''{"user_instruction": "Skip preamble rows, row 5 is the header"}''.'
+  reviewed_by: primary
+- command_id: dataset.interpretation.preview
+  command_path: dataset interpretation preview
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - PreviewDatasetInterpretation
+  positionals:
+  - name: dataset_id
+    type: int
+    required: true
+    metavar: DATASET_ID
+    falls_back_to_field: null
+    help: ID of the dataset.
+  options: []
+  sdk_symbol: mammoth.api.datasets.DatasetsAPI.interpretation_preview
+  sdk_conversion: Call mammoth.api.datasets.DatasetsAPI.interpretation_preview with validated request fields.
+  request_model: DatasetInterpretationPreviewRequest
+  result_model: DatasetInterpretationPreviewResult
+  mutation_class: benign_mutation
+  edits_target: false
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: null
+  live_exemption_reason: Live coverage is tests/live/test_dataset_interpretation.py (runs on the test server against a preamble CSV).
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dataset interpretation preview DATASET_ID --help
+  agent_example: mammoth dataset interpretation preview 123
+  unit_tests:
+  - UT-DATASET-INTERPRETATION-PREVIEW
+  contract_tests:
+  - CT-DATASET-INTERPRETATION-PREVIEW-HUMAN
+  - CT-DATASET-INTERPRETATION-PREVIEW-JSON
+  - CT-DATASET-INTERPRETATION-PREVIEW-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Shows the rows the dataset would have under an interpretation, without finalizing it: preview_rows (header plus up to 50 rows), total_row_count, structure_map and header_types. --input needs user_instruction (plain English; the suggestions stored on the dataset are in dataset get under additional_info.interpretation.instruction_suggestions), a structure_map from an earlier preview, or destination_dataset_id. Nothing is applied to the file until interpretation confirm. Example: --input ''{"user_instruction": "Skip preamble rows, row 5 is the header"}''.'
+  reviewed_by: primary
 - command_id: dataset.list
   command_path: dataset list
   disposition: command

@@ -552,6 +552,10 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth dataset find sales
 - `mammoth dataset get` [read/none] -> mammoth.api.datasets.DatasetsAPI.get
   example: mammoth dataset get 123
+- `mammoth dataset interpretation confirm` [benign_mutation/none] -> mammoth.api.datasets.DatasetsAPI.interpretation_confirm
+  example: mammoth dataset interpretation confirm 123
+- `mammoth dataset interpretation preview` [benign_mutation/none] -> mammoth.api.datasets.DatasetsAPI.interpretation_preview
+  example: mammoth dataset interpretation preview 123
 - `mammoth dataset list` [read/none] -> mammoth.api.datasets.DatasetsAPI.list
   example: mammoth dataset list
 - `mammoth dataset rename` [benign_mutation/none] -> mammoth.api.datasets.DatasetsAPI.rename

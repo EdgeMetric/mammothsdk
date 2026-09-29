@@ -132,6 +132,26 @@ Result: `DatasetGetResult`; mutation `read`, confirmation `none`, wait policy `n
 
 Status on release: ran once on CLI 2.0.18 — golden-data check 2026-09-19: exit 0 on release with CLI 2.0.18. Single invocation only.
 
+### `dataset.interpretation.confirm`
+
+Run: `mammoth dataset interpretation confirm`. Exact input fields: `mammoth schema get dataset.interpretation.confirm`.
+
+Example: `mammoth dataset interpretation confirm 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `DatasetInterpretationConfirmResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `dataset.interpretation.preview`
+
+Run: `mammoth dataset interpretation preview`. Exact input fields: `mammoth schema get dataset.interpretation.preview`.
+
+Example: `mammoth dataset interpretation preview 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `DatasetInterpretationPreviewResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
 ### `dataset.list`
 
 Run: `mammoth dataset list`. Exact input fields: `mammoth schema get dataset.list`.

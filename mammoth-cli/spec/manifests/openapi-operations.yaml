@@ -6853,6 +6853,45 @@ operations:
   alias_of: null
   sdk_symbol: mammoth.api.datasets.DatasetsAPI.file_settings_update
   reviewed_by: primary
+- identity: PATCH /workspaces/{workspace_id}/projects/{project_id}/datasets/{dataset_id}/interpretation
+  method: PATCH
+  path: /workspaces/{workspace_id}/projects/{project_id}/datasets/{dataset_id}/interpretation
+  operation_id: ConfirmDatasetInterpretation
+  tags:
+  - DatasetInterpretation
+  summary: Confirm dataset interpretation
+  security:
+  - apiKey
+  - apiSecret
+  request_schema: ConfirmDatasetInterpretationRequest
+  response_schemas: []
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: dataset.interpretation.confirm
+  alias_of: null
+  sdk_symbol: mammoth.api.datasets.DatasetsAPI.interpretation_confirm
+  reviewed_by: primary
+- identity: POST /workspaces/{workspace_id}/projects/{project_id}/datasets/{dataset_id}/interpretation/preview
+  method: POST
+  path: /workspaces/{workspace_id}/projects/{project_id}/datasets/{dataset_id}/interpretation/preview
+  operation_id: PreviewDatasetInterpretation
+  tags:
+  - DatasetInterpretation
+  summary: Preview dataset interpretation
+  security:
+  - apiKey
+  - apiSecret
+  request_schema: PreviewDatasetInterpretationRequest
+  response_schemas:
+  - PreviewDatasetInterpretationResponse
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: dataset.interpretation.preview
+  alias_of: null
+  sdk_symbol: mammoth.api.datasets.DatasetsAPI.interpretation_preview
+  reviewed_by: primary
 - identity: POST /workspaces/{workspace_id}/projects/{project_id}/datasets/{dataset_id}/restore
   method: POST
   path: /workspaces/{workspace_id}/projects/{project_id}/datasets/{dataset_id}/restore

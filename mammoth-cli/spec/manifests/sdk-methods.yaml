@@ -3563,6 +3563,30 @@ methods:
   pagination_policy: none
   secret_fields: []
   reviewed_by: primary
+- sdk_symbol: mammoth.api.datasets.DatasetsAPI.interpretation_confirm
+  implementation_origin: mammoth.api.datasets.DatasetsAPI.interpretation_confirm
+  signature: 'interpretation_confirm(self, dataset_id: ''int'', user_instruction: ''str | None'' = None, structure_map: ''dict[str, Any] | None'' = None, destination_dataset_id: ''int | None'' = None, workspace_id: ''int | None'' = None, project_id: ''int | None'' = None) -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: dataset.interpretation.confirm
+  alias_of: null
+  no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.datasets.DatasetsAPI.interpretation_preview
+  implementation_origin: mammoth.api.datasets.DatasetsAPI.interpretation_preview
+  signature: 'interpretation_preview(self, dataset_id: ''int'', user_instruction: ''str | None'' = None, structure_map: ''dict[str, Any] | None'' = None, destination_dataset_id: ''int | None'' = None, workspace_id: ''int | None'' = None, project_id: ''int | None'' = None) -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: dataset.interpretation.preview
+  alias_of: null
+  no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
 - sdk_symbol: mammoth.api.datasets.DatasetsAPI.list
   implementation_origin: mammoth.api.datasets.DatasetsAPI.list
   signature: 'list(self, workspace_id: ''int | None'' = None, project_id: ''int | None'' = None, limit:

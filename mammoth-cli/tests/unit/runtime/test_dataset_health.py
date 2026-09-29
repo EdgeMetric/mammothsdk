@@ -17,8 +17,41 @@ def test_a_dataset_that_loaded_badly_carries_its_health_and_fix() -> None:
     health = with_dataset_health(data)["dataset_health"]
 
     assert [h["dataset_id"] for h in health] == [2759]
-    assert "could not be split into columns" in health[0]["detail"]
-    assert health[0]["fix"].startswith("mammoth dataset broken-rows list 2759")
+    assert "more than one plausible way to be read" in health[0]["detail"]
+    assert "delimiter" not in health[0]["detail"]
+    assert health[0]["fix"].startswith("mammoth dataset get 2759")
+
+
+def test_the_backends_stored_suggestion_is_quoted_not_replaced_by_a_guess() -> None:
+    data = {
+        "id": 3108,
+        "status": "has_unstructured_data",
+        "additional_info": {
+            "interpretation": {
+                "reasons": ["no header candidates but first_data_row=4"],
+                "instruction_suggestions": ["Skip preamble rows, row 5 is the header"],
+            }
+        },
+    }
+
+    entry = with_dataset_health(data)["dataset_health"][0]
+
+    assert entry["stored_suggestions"] == ["Skip preamble rows, row 5 is the header"]
+    assert "no header candidates but first_data_row=4" in entry["detail"]
+    assert "delimiter" not in entry["detail"]
+    assert entry["fix"].startswith("mammoth dataset interpretation preview 3108 --input ")
+    assert "Skip preamble rows, row 5 is the header" in entry["fix"]
+
+
+def test_a_job_result_names_its_dataset_ds_id_and_still_carries_the_health() -> None:
+    # `job get` answers {"job": {"response": {"ds_id": 3108, "status": ...}}}: no "id" key.
+    data = {
+        "job": {"status": "success", "response": {"ds_id": 3108, "status": "has_unstructured_data"}}
+    }
+
+    health = with_dataset_health(data)["dataset_health"]
+
+    assert [h["dataset_id"] for h in health] == [3108]
 
 
 def test_datasets_in_a_listing_are_checked_too() -> None:

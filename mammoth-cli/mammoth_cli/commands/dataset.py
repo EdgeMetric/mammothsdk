@@ -429,6 +429,34 @@ def dataset_file_settings_undo(invocation: Invocation) -> HandlerResult:
     return data, _meta(invocation, auth.workspace_id, project_id)
 
 
+_INTERPRETATION_FIELDS = ("user_instruction", "structure_map", "destination_dataset_id")
+
+
+def dataset_interpretation(invocation: Invocation) -> HandlerResult:
+    """Preview or confirm how a file that can be read several ways is interpreted.
+
+    ``--input`` carries ``user_instruction`` (plain English, e.g. one of the
+    suggestions ``dataset get`` shows), a ``structure_map`` from an earlier
+    preview, or a ``destination_dataset_id``; at least one is required.
+    """
+    project_id = require_project(invocation)
+    dataset_id = _require_int_positional(invocation, "dataset id")
+    document = invocation.load_input() or {}
+    kwargs: dict[str, Any] = {"dataset_id": dataset_id, "project_id": project_id}
+    _forward_optional(document, kwargs, _INTERPRETATION_FIELDS)
+    if not any(field in kwargs for field in _INTERPRETATION_FIELDS):
+        raise CliError(
+            code=CODE_MISSING_ARGUMENT,
+            message="Say how to read the file: pass one of " + ", ".join(_INTERPRETATION_FIELDS),
+            exit_status=EXIT_USAGE,
+            hint="Use a suggestion from 'mammoth dataset get DATASET_ID' "
+            "(additional_info.interpretation.instruction_suggestions) as user_instruction.",
+        )
+    with open_service(invocation) as (service, auth):
+        data = service.call(_symbol(invocation), **kwargs)
+    return data, _meta(invocation, auth.workspace_id, project_id)
+
+
 def dataset_create(invocation: Invocation) -> HandlerResult:
     """Create a dataset from a spec and creation type (required ``--input`` fields)."""
     project_id = require_project(invocation)
