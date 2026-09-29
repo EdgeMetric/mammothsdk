@@ -162,3 +162,39 @@ def test_generate_returns_evaluated_kpi_numbers_and_the_link(
                 *("dashboard", "delete", str(board), "--yes", "--confirm", str(board)),
                 project=project,
             )
+
+
+def test_waiting_on_a_generate_that_outlived_its_wait_returns_the_link_and_numbers(
+    live_cli: LiveCli, sales_data: SalesData
+) -> None:
+    """UQA-RT2-05: a build handed back as a running job reported its board only by id."""
+    project = sales_data.project
+    started, _ = live_cli.ok(
+        *("dashboard", "v3", "generate"),
+        *_input(
+            {
+                "body": {
+                    "params": {
+                        "intent": "Overview of the key totals",
+                        "dataview_id": sales_data.view,
+                    }
+                }
+            }
+        ),
+        "--job-timeout",
+        "1",
+        "--return-running",
+        project=project,
+    )
+    waited, _ = live_cli.ok("job", "wait", str(started["job_id"]), project=project)
+    board = waited["result"]["id"]
+    try:
+        link = waited["dashboard_link"]
+        assert "/#/workspaces/" in link and link.endswith(f"/publish/{board}")
+        cards = [v for v in waited["values"]["values"] if v["kind"] == "kpi"]
+        assert cards and all("value" in card or "error" in card for card in cards)
+    finally:
+        live_cli.run(
+            *("dashboard", "delete", str(board), "--yes", "--confirm", str(board)),
+            project=project,
+        )

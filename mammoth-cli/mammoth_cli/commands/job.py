@@ -26,6 +26,7 @@ from mammoth_cli.errors.envelope import (
 from mammoth_cli.manifest.loader import command_by_id
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.session import open_service
+from mammoth_cli.services.board_values import board_values, dashboard_link
 
 HandlerResult = tuple[Any, dict[str, Any]]
 
@@ -169,7 +170,7 @@ def job_wait(invocation: Invocation) -> HandlerResult:
     symbol, kwargs = _wait_call(invocation, document, kwargs)
     try:
         with open_service(invocation) as (service, auth):
-            data = _wait_result(job_id, service.call(symbol, **kwargs))
+            data = _with_board(service, auth, _wait_result(job_id, service.call(symbol, **kwargs)))
     except KeyboardInterrupt as exc:
         # Keep the explicit handle even when the polling implementation raises
         # a bare SIGINT.  A caller can inspect/resume it without replaying the
@@ -184,6 +185,25 @@ def job_wait(invocation: Invocation) -> HandlerResult:
             invocation.profile,
         ) from exc
     return data, _meta(invocation, auth.workspace_id)
+
+
+#: Jobs that build a board. A build that outlived its own wait hands back a running
+#: job; waiting on it here must report what the build would have: the board's link
+#: and its evaluated numbers (UQA-RT2-05).
+_BOARD_BUILD_OPERATIONS = frozenset({"generate_dashboard_v3"})
+
+
+def _with_board(service: Any, auth: Any, data: dict[str, Any]) -> dict[str, Any]:
+    """Add ``dashboard_link`` and the board's evaluated numbers to a finished board build."""
+    result = data.get("result")
+    board = result.get("id") if isinstance(result, dict) else None
+    if data.get("operation") not in _BOARD_BUILD_OPERATIONS or not isinstance(board, int):
+        return data
+    return {
+        **data,
+        "dashboard_link": dashboard_link(auth.base_url, auth.workspace_id, board),
+        "values": board_values(service, board),
+    }
 
 
 def job_wait_many(invocation: Invocation) -> HandlerResult:

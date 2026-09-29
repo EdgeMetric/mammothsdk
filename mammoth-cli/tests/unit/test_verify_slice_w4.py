@@ -215,5 +215,5 @@ def test_descriptor_data_results_are_found_at_top_level_or_under_response() -> N
 def test_dashboard_link_is_the_web_address_of_the_board() -> None:
     assert (
         dashboard_link("https://app.mammoth.io/api/v2", 4, 140)
-        == "https://app.mammoth.io/workspaces/4/publish/140"
+        == "https://app.mammoth.io/#/workspaces/4/publish/140"
     )

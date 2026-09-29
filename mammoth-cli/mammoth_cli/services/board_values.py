@@ -31,10 +31,13 @@ def _dump(value: Any) -> Any:
 
 
 def dashboard_link(base_url: str, workspace_id: int, dashboard_id: int) -> str:
-    """The web app address of a v3 board, from the API base url."""
+    """The web app address of a v3 board, from the API base url.
+
+    The web app routes by hash: without ``#/`` the address is a 404 (UQA-RT2-04).
+    """
     origin = base_url.rstrip("/")
     origin = origin[: -len(_API_SUFFIX)] if origin.endswith(_API_SUFFIX) else origin
-    return f"{origin}/workspaces/{workspace_id}/publish/{dashboard_id}"
+    return f"{origin}/#/workspaces/{workspace_id}/publish/{dashboard_id}"
 
 
 def figure_bindings(canvas_doc: Mapping[str, Any]) -> list[dict[str, Any]]:
