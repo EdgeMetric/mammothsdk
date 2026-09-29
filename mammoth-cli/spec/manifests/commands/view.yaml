@@ -1377,9 +1377,10 @@ commands:
     help: ID of the dataset the view belongs to; resolved from the view when omitted.
   options: []
   sdk_symbol: mammoth.api.dataviews.DataviewsAPI.aggregate
-  sdk_conversion: Runs whole-view aggregate jobs (mammoth.api.dataviews.DataviewsAPI.aggregate) from
-    mammoth_cli.commands.view_profile and computes the profile from their answers; the accepted document
-    fields are _VIEW_DATA_PROFILE_FIELDS in command_contract.py.
+  sdk_conversion: Reads the stored column stats (mammoth.api.ai.AIAPI.generate_profile, action stats), then
+    runs whole-view aggregate jobs (mammoth.api.dataviews.DataviewsAPI.aggregate) only for what is not
+    stored, from mammoth_cli.commands.view_profile; the accepted document fields are
+    _VIEW_DATA_PROFILE_FIELDS in command_contract.py.
   request_model: ViewDataProfileRequest
   result_model: ViewDataProfileResult
   mutation_class: read
@@ -1404,15 +1405,18 @@ commands:
   known_restrictions: 'Read-only profile of the WHOLE view (every row, not a page of 50): per column the
     blank count, distinct count, min and max (NUMERIC and DATE) and top values; a "summary" of constant,
     all-blank and mostly-blank columns; "spelling_variants" per TEXT column -- spellings of one value
-    that differ by case, punctuation or legal form (Ltd = Limited, Inc = Incorporated, Corp, Co, LLC,
-    PLC ...) -- with a ready "bulk_replace" input and the full "command" to merge them. Use it to explore,
-    understand or profile a dataset, find blanks, duplicates and dirty categories, or see what is in
-    the data before building anything. --input: "target" (a column with 2-20 values, e.g. churn) adds
-    the target distribution (positive_rate of its rarest class) and a ranking of every other column
-    by association with it (cramers_v, blank-vs-filled rate, the values whose rate differs most) -- the
-    churn drivers; "columns" (names) profiles only those; "top" values per column (default 5); "limit"
-    columns shown in detail (default 50; the summary always covers all). Runs one backend job per question
-    (a few pivots plus about one grouped count per column), so a 200-column view takes tens of seconds.
+    that differ by case, punctuation or legal form (Ltd = Limited, Inc = Incorporated ...) -- with a ready
+    "bulk_replace" input and the full "command" to merge them. Use it to explore, understand or profile
+    a dataset, find blanks, duplicates and dirty categories. Blanks, distinct counts and min/max come
+    from the stats the backend stored for the view when their row count equals the view row count now;
+    otherwise (stale after a pipeline step, or none stored) they are queried in a few multi-column
+    pivots. The "sources" block says which, and that the backend records no as-of time; each column
+    "from" says stored or query. Top values, spelling variants and the target comparison are always
+    queried. --input: "target" (a column with 2-20 values, e.g. churn) adds the target distribution
+    (positive_rate of its rarest class) and "association": "categorical" columns ranked by cramers_v
+    (one grouped count per column) and "numeric" columns ranked by standardized_difference (two
+    multi-column pivots) -- the churn drivers; "columns" (names) profiles only those; "top" values per
+    column (default 5); "limit" columns shown in detail (default 50; the summary always covers all).
     A column with more than 5000 distinct values gets counts and min/max but no value list. Example:
     --input ''{"target": "CHURN", "limit": 20}''.'
   reviewed_by: primary

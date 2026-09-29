@@ -99,7 +99,12 @@ def test_profile_with_target_reports_the_class_share_and_a_ranking(
     assert profile["target"]["positive_rate"] == round(
         rarest["rows"] / sum(c["rows"] for c in classes), 4
     )
-    assert all("cramers_v" in item for item in profile["target"]["association"])
+    association = profile["target"]["association"]
+    assert all("cramers_v" in item for item in association["categorical"])
+    assert all("standardized_difference" in item for item in association["numeric"])
+    sources = profile["sources"]
+    assert sources["stored_stats"]["as_of"] == "not recorded by the backend"
+    assert sources["queried"]["backend_jobs"] < 3 * len(profile["columns_detail"]) + 10
 
 
 def test_scoped_project_check_reads_only_the_named_dataset(

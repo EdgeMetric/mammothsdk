@@ -233,3 +233,22 @@ def _signals(
 def rank_associations(items: Sequence[dict[str, Any]], limit: int) -> list[dict[str, Any]]:
     """Columns ordered by Cramer's V, strongest first, capped at ``limit``."""
     return sorted(items, key=lambda item: -item["cramers_v"])[:limit]
+
+
+def standardized_difference(
+    positive: Mapping[str, float | None], rest: Mapping[str, float | None]
+) -> float | None:
+    """Cohen's d of a NUMERIC column between two groups from ``{n, mean, stddev}`` each.
+
+    Positive when the column runs higher in the positive class. ``None`` when a
+    group is too small or the pooled spread is zero, so nothing is invented.
+    """
+    n1, n0 = positive.get("n"), rest.get("n")
+    m1, m0 = positive.get("mean"), rest.get("mean")
+    s1, s0 = positive.get("stddev"), rest.get("stddev")
+    if n1 is None or n0 is None or m1 is None or m0 is None or s1 is None or s0 is None:
+        return None
+    if n1 < 2 or n0 < 2:
+        return None
+    pooled = math.sqrt(((n1 - 1) * s1**2 + (n0 - 1) * s0**2) / (n1 + n0 - 2))
+    return round((m1 - m0) / pooled, 4) if pooled else None
