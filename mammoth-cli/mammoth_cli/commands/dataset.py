@@ -225,6 +225,10 @@ def _compact_dataset_list(data: Any, offset: int, sort: str | None) -> Any:
         "datasets": kept,
         "shown": len(kept),
         "order": sort or "newest first (created_at desc)",
+        "note": (
+            "A dataset record holds no sample values; 'view list DATASET_ID' shows "
+            "stored sample_values per view."
+        ),
     }
     if omitted or data.get("next"):
         result["more"] = True

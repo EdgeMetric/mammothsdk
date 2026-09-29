@@ -3502,7 +3502,8 @@ commands:
   draft_test: null
   undo_test: null
   known_restrictions: 'B01. Each view names its dataset (dataset_id and dataset_name) and carries rows
-    and cols, created and updated time, the dataset''s source kind, its column names with types, cut to fit the agent tool output cap (next_dataset_offset and views_omitted say where
+    and cols, created and updated time, the dataset''s source kind, its column names with types and stored per-column sample_values (one stored-stats read per
+    listed view, no query), cut to fit the agent tool output cap (next_dataset_offset and views_omitted say where
     the rest is). Newest first. full true returns the raw records.'
   reviewed_by: primary
 - command_id: view.parameter-context

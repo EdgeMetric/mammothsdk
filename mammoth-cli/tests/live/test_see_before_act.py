@@ -87,6 +87,7 @@ def test_dataset_list_items_are_self_describing_and_fit_the_tool_cap(
         assert {"id", "name", "created", "source"} <= item.keys(), item
         assert "rows" in item or "columns" in item, item
     assert data["order"], "the list must state its order"
+    assert "sample_values" in data["note"], "the list must say where sample values are"
 
 
 def test_view_list_names_the_dataset_of_every_view(
@@ -97,7 +98,10 @@ def test_view_list_names_the_dataset_of_every_view(
         pytest.skip("the project has no views")
     for item in data["dataviews"]:
         assert item.get("dataset_name"), f"view {item.get('id')} does not name its dataset"
-        assert "sample" not in item, "a list must not read data per view"
+        assert "sample_values" in item, f"view {item.get('id')} carries no stored sample values"
+        values = item["sample_values"]
+        assert isinstance(values, str) or all(len(v) <= 2 for v in values.values()), item
+        assert isinstance(values, str) or len(values) <= 6, item
 
 
 # -- 2. every read names the dataset and view it read ------------------------

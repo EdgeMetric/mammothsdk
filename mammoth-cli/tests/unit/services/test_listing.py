@@ -109,3 +109,36 @@ def test_one_oversized_item_is_still_shown() -> None:
     kept, omitted = listing.fit_budget([{"blob": "x" * 9000}])
     assert len(kept) == 1
     assert omitted == 0
+
+
+_METADATA = [
+    {"internal_name": f"column_{i}", "display_name": name}
+    for i, name in enumerate(["Order ID", "Order Date", "Region", "Sales", "A", "B", "C", "D"])
+]
+
+
+def _stats(sample: list[object]) -> dict[str, object]:
+    """A stats payload in the shape the backend stores it."""
+    return {
+        "profile": {
+            key: {
+                "column_name": key,
+                "schema_analysis": {"num_unique": 3},
+                "statistical_summary": {"data_sample": sample},
+            }
+            for key in (f"column_{i}" for i in range(8))
+        }
+    }
+
+
+def test_sample_values_are_stored_values_for_the_first_columns_only() -> None:
+    found = listing.sample_values(
+        _stats(["CA-2018-140151-with-a-long-suffix", "b", "c"]), _METADATA
+    )
+    assert list(found) == ["Order ID", "Order Date", "Region", "Sales", "A", "B"]
+    assert found["Order ID"] == ["CA-2018-1401", "b"]
+
+
+def test_a_column_with_no_stored_sample_is_left_out_not_invented() -> None:
+    assert listing.sample_values({"profile": {}}, _METADATA) == {}
+    assert listing.sample_values(None, _METADATA) == {}

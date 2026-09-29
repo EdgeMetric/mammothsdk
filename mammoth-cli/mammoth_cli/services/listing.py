@@ -13,7 +13,11 @@ Pure functions over the payloads; no requests.
 from __future__ import annotations
 
 import json
+from collections.abc import Callable
+from concurrent.futures import ThreadPoolExecutor
 from typing import Any
+
+from mammoth_cli.services.stored_stats import stored_facts
 
 #: Characters of ``data`` a list may use; the agent tool caps a whole result at 4,000.
 LIST_DATA_BUDGET = 3500
@@ -23,6 +27,14 @@ DATASET_LIST_FIELDS = (
 )
 
 _MAX_COLUMNS = 4
+#: Columns whose stored sample values a view summary shows, and values per column.
+_SAMPLE_COLUMNS = 6
+_SAMPLE_VALUES = 2
+_MAX_CELL_CHARS = 12
+#: Room reserved per view for its sample values, added after the size check.
+SAMPLE_ALLOWANCE = 150
+#: Concurrent stored-stats reads for one list.
+_STATS_WORKERS = 8
 _SOURCE_KINDS = {
     "file": "file",
     "cloud": "connector",
@@ -154,6 +166,36 @@ def fit_budget(
     return kept, len(items) - len(kept)
 
 
+def sample_values(payload: Any, metadata: list[Any]) -> dict[str, list[str]]:
+    """Stored per-column sample values (first columns only) from a stats payload.
+
+    These are values the backend keeps per column, not one real row.
+    """
+    columns = [
+        (str(c["display_name"]), c["internal_name"])
+        for c in metadata
+        if isinstance(c, dict) and c.get("display_name") and c.get("internal_name")
+    ]
+    facts, _rows = stored_facts(payload, dict(columns))
+    found: dict[str, list[str]] = {}
+    for name, _internal in columns[:_SAMPLE_COLUMNS]:
+        values = facts.get(name, {}).get("sample")
+        if values:
+            found[name] = [str(v)[:_MAX_CELL_CHARS] for v in values[:_SAMPLE_VALUES]]
+    return found
+
+
+def _view_samples(
+    view: dict[str, Any], read_stats: Callable[[dict[str, Any]], Any]
+) -> dict[str, list[str]] | str:
+    """One view's stored samples, or why they are not available (never a silent gap)."""
+    try:
+        found = sample_values(read_stats(view), view.get("metadata") or [])
+    except Exception as exc:  # noqa: BLE001 -- one unreadable view must not sink the list
+        return f"unavailable: {str(exc)[:80]}"
+    return found or "none stored"
+
+
 def _dataset_of(view: dict[str, Any]) -> Any:
     return view.get("dataset_id") if view.get("dataset_id") is not None else view.get("ds_id")
 
@@ -179,13 +221,13 @@ def _choose_views(
     chosen: list[tuple[dict[str, Any], dict[str, Any]]] = []
     used = 200
     for dataset_id, pairs in groups.items():
-        cost = sum(json_size(s) + 1 for _v, s in pairs)
+        cost = sum(json_size(s) + SAMPLE_ALLOWANCE + 1 for _v, s in pairs)
         if chosen and used + cost > LIST_DATA_BUDGET:
             return chosen, dataset_id, 0
         if not chosen and cost > LIST_DATA_BUDGET - used:
             fitted: list[tuple[dict[str, Any], dict[str, Any]]] = []
             for pair in pairs:
-                step = json_size(pair[1]) + 1
+                step = json_size(pair[1]) + SAMPLE_ALLOWANCE + 1
                 if fitted and used + step > LIST_DATA_BUDGET:
                     break
                 fitted.append(pair)
@@ -197,11 +239,15 @@ def _choose_views(
 
 
 def compact_view_list(
-    views: list[dict[str, Any]], datasets: dict[Any, dict[str, Any]]
+    views: list[dict[str, Any]],
+    datasets: dict[Any, dict[str, Any]],
+    read_stats: Callable[[dict[str, Any]], Any],
 ) -> dict[str, Any]:
     """Summaries of ``views`` (records with renames applied), within the output cap.
 
-    Built only from the records already fetched: no per-view backend call.
+    Sizes and columns come from the records already fetched. Each kept view then
+    gets ``sample_values`` from the backend's stored column stats via ``read_stats``
+    (one stored-stats read per kept view, run concurrently; no query runs).
     Returns ``{"dataviews", "shown"}`` plus
     ``first_dropped_dataset`` / ``views_omitted`` when something was cut, for the
     caller to turn into a way to the next page.
@@ -210,7 +256,13 @@ def compact_view_list(
     for ds_id, group in _group_by_dataset(views).items():
         groups[ds_id] = [(v, view_summary(v, datasets.get(ds_id), ds_id)) for v in group]
     chosen, dropped_dataset, omitted = _choose_views(groups)
-    kept, cut = fit_budget([summary for _view, summary in chosen])
+    with ThreadPoolExecutor(max_workers=_STATS_WORKERS) as pool:
+        samples = list(pool.map(lambda pair: _view_samples(pair[0], read_stats), chosen))
+    items = [
+        {**summary, "sample_values": found}
+        for (_v, summary), found in zip(chosen, samples, strict=True)
+    ]
+    kept, cut = fit_budget(items)
     result: dict[str, Any] = {"dataviews": kept, "shown": len(kept)}
     if dropped_dataset is not None:
         result["first_dropped_dataset"] = dropped_dataset

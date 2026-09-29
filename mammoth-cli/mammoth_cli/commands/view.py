@@ -368,8 +368,9 @@ def view_list(invocation: Invocation) -> HandlerResult:
     an explicit id still does for a single dataset.
 
     Each view is summarised with what tells views apart: its dataset's name, size,
-    times, source, and column names and types, cut to fit the agent
-    tool output cap. Built from stored records only (no per-view data read).
+    times, source, column names and types, and per-column ``sample_values`` (values the
+    backend stored, not one real row), cut to fit the agent tool output cap. No
+    query runs: one stored-stats read per listed view.
     ``full: true`` returns the raw records instead.
     """
     project_id = require_project(invocation)
@@ -394,7 +395,7 @@ def view_list(invocation: Invocation) -> HandlerResult:
             _profile_name(invocation), auth.workspace_id, data, project_id=project_id
         )
         if compact and isinstance(data, dict) and isinstance(data.get("dataviews"), list):
-            data = _compact_view_list(data, datasets, document)
+            data = _compact_view_list(service, data, datasets, document)
     return data, _meta(invocation, auth.workspace_id, project_id)
 
 
@@ -410,13 +411,40 @@ def _dataset_record(service: Any, dataset_id: int, project_id: int) -> dict[str,
     return {**record, "id": record.get("id", dataset_id)}
 
 
+_PROFILE_SYMBOL = "mammoth.api.ai.AIAPI.generate_profile"
+
+
+def _stored_stats_reader(service: Any) -> Any:
+    """A reader of one view's stored column stats (``view ai profile`` action ``stats``).
+
+    The backend answers from the stats it stored after ingest / the last pipeline
+    run: no job is queued and no query runs.
+    """
+
+    def read(view: dict[str, Any]) -> Any:
+        dataset_id = (
+            view.get("dataset_id") if view.get("dataset_id") is not None else view.get("ds_id")
+        )
+        return service.call(
+            _PROFILE_SYMBOL,
+            dataview_id=view.get("id"),
+            dataset_id=dataset_id,
+            action="stats",
+        )
+
+    return read
+
+
 def _compact_view_list(
-    data: dict[str, Any], datasets: list[dict[str, Any]], document: dict[str, Any]
+    service: Any,
+    data: dict[str, Any],
+    datasets: list[dict[str, Any]],
+    document: dict[str, Any],
 ) -> dict[str, Any]:
     """Summarise a view-list result and turn any cut into a way to the next page."""
     views = [apply_column_renames(v) for v in data["dataviews"] if isinstance(v, dict)]
     by_id = {d.get("id"): d for d in datasets if isinstance(d, dict)}
-    summary = compact_view_list(views, by_id)
+    summary = compact_view_list(views, by_id, _stored_stats_reader(service))
     dropped = summary.pop("first_dropped_dataset", None)
     result: dict[str, Any] = {**summary, "order": document.get("sort") or "newest first"}
     for key in ("datasets_visited", "next_dataset_offset"):
