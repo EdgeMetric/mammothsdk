@@ -114,15 +114,6 @@ def test_list_requires_project(fake_service: FakeMammothService) -> None:
     assert excinfo.value.code == "project_required"
 
 
-def test_list_gives_each_dataset_its_views(fake_service: FakeMammothService) -> None:
-    fake_service.responses[_LIST] = {"datasets": [{"id": 9, "name": "Sales"}]}
-    fake_service.responses[_VIEW_LIST] = {"dataviews": [{"id": 501, "name": "View 1"}]}
-    data, _ = dataset_cmd.dataset_list(_inv("dataset.list", project=180))
-    assert data["datasets"][0]["views"] == [{"id": 501, "name": "View 1"}]
-    view_calls = [c for c in fake_service.call_log if c[0] == _VIEW_LIST]
-    assert view_calls == [(_VIEW_LIST, {"dataset_id": 9, "project_id": 180})]
-
-
 def test_list_passes_project_and_optional_fields(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:

@@ -33,8 +33,6 @@ _SAMPLE_VALUES = 2
 _MAX_CELL_CHARS = 12
 #: Room reserved per view for its sample values, added after the size check.
 SAMPLE_ALLOWANCE = 150
-#: Room reserved per dataset for its ``views`` list, added after the size check.
-VIEWS_ALLOWANCE = 60
 #: Concurrent stored-stats reads for one list.
 _STATS_WORKERS = 8
 _SOURCE_KINDS = {
@@ -123,26 +121,6 @@ def dataset_summary(record: dict[str, Any]) -> dict[str, Any]:
     return {k: v for k, v in summary.items() if v is not None}
 
 
-def attach_views(
-    items: list[dict[str, Any]], read_views: Callable[[int], list[dict[str, Any]]]
-) -> None:
-    """Give each dataset summary its ``views`` as ``[{id, name}]`` (in place).
-
-    One read per item, run concurrently. A dataset whose views cannot be read
-    says why instead of showing none.
-    """
-
-    def one(item: dict[str, Any]) -> Any:
-        try:
-            return [{"id": v.get("id"), "name": v.get("name")} for v in read_views(item["id"])]
-        except Exception as exc:  # noqa: BLE001 -- one unreadable dataset must not sink the list
-            return f"unavailable: {str(exc)[:80]}"
-
-    with ThreadPoolExecutor(max_workers=_STATS_WORKERS) as pool:
-        for item, found in zip(items, pool.map(one, items), strict=True):
-            item["views"] = found
-
-
 def name_matches(records: list[dict[str, Any]], needle: str) -> list[dict[str, Any]]:
     """Records whose name contains ``needle``, case-insensitively, in list order."""
     lowered = needle.lower()
@@ -219,17 +197,15 @@ def fit_budget(
     items: list[dict[str, Any]],
     budget: int = LIST_DATA_BUDGET,
     overhead: int = 200,
-    per_item: int = 0,
 ) -> tuple[list[dict[str, Any]], int]:
     """Keep leading items while they fit ``budget``; return them and how many were cut.
 
     The first item is always kept, so a single oversized record still shows.
-    ``per_item`` reserves room for fields added to each kept item afterwards.
     """
     kept: list[dict[str, Any]] = []
     used = overhead
     for item in items:
-        size = json_size(item) + 1 + per_item
+        size = json_size(item) + 1
         if kept and used + size > budget:
             break
         kept.append(item)

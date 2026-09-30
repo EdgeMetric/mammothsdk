@@ -157,21 +157,3 @@ def test_a_view_summary_lists_every_column_when_asked() -> None:
     full = listing.view_summary(_view(1), _dataset(1), 3001, all_columns=True)
     assert "more)" not in full["columns"]
     assert full["columns"].count(":text") == 21
-
-
-def test_dataset_summaries_carry_their_views() -> None:
-    items = [listing.dataset_summary(_dataset(1)), listing.dataset_summary(_dataset(2))]
-    by_dataset = {3001: [{"id": 3601, "name": "View 1"}, {"id": 3602, "name": "Cleaned"}]}
-    listing.attach_views(items, lambda dataset_id: by_dataset.get(dataset_id, []))
-    assert items[0]["views"] == [{"id": 3601, "name": "View 1"}, {"id": 3602, "name": "Cleaned"}]
-    assert items[1]["views"] == []
-
-
-def test_a_dataset_whose_views_cannot_be_read_says_so() -> None:
-    items = [listing.dataset_summary(_dataset(1))]
-
-    def unreadable(dataset_id: int) -> list[dict[str, Any]]:
-        raise RuntimeError("boom")
-
-    listing.attach_views(items, unreadable)
-    assert items[0]["views"] == "unavailable: boom"

@@ -32,8 +32,6 @@ from mammoth_cli.runtime.new_data import with_file_upload_path
 from mammoth_cli.runtime.session import open_service, require_project
 from mammoth_cli.services.listing import (
     DATASET_LIST_FIELDS,
-    VIEWS_ALLOWANCE,
-    attach_views,
     dataset_summary,
     fit_budget,
     search_page,
@@ -222,9 +220,8 @@ def dataset_list(invocation: Invocation) -> HandlerResult:
         kwargs["fields"] = DATASET_LIST_FIELDS
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), **kwargs)
-        if compact:
-            data = _compact_dataset_list(data, kwargs.get("offset", 0), kwargs.get("sort"))
-            _attach_dataset_views(service, project_id, data)
+    if compact:
+        data = _compact_dataset_list(data, kwargs.get("offset", 0), kwargs.get("sort"))
     return data, _meta(invocation, auth.workspace_id, project_id)
 
 
@@ -243,26 +240,10 @@ def _dataset_name_search(
             sort=document.get("sort", "(created_at:desc)"),
             fields=DATASET_LIST_FIELDS,
         )
-        records = data.get("datasets", []) if isinstance(data, dict) else []
-        page = search_page(records, name, int(document.get("offset", 0)), document.get("limit"))
-        page["name"] = name
+    records = data.get("datasets", []) if isinstance(data, dict) else []
+    page = search_page(records, name, int(document.get("offset", 0)), document.get("limit"))
+    page["name"] = name
     return page, _meta(invocation, auth.workspace_id, project_id)
-
-
-_VIEW_LIST_SYMBOL = "mammoth.api.dataviews.DataviewsAPI.list"
-
-
-def _attach_dataset_views(service: Any, project_id: int, result: Any) -> None:
-    """Add ``views: [{id, name}]`` to every summary in a compact dataset result."""
-    if not isinstance(result, dict) or not isinstance(result.get("datasets"), list):
-        return
-
-    def read_views(dataset_id: int) -> list[dict[str, Any]]:
-        page = service.call(_VIEW_LIST_SYMBOL, dataset_id=dataset_id, project_id=project_id)
-        views = page.get("dataviews", []) if isinstance(page, dict) else []
-        return [v for v in views if isinstance(v, dict)]
-
-    attach_views(result["datasets"], read_views)
 
 
 def _compact_dataset_list(data: Any, offset: int, sort: str | None) -> Any:
@@ -271,15 +252,14 @@ def _compact_dataset_list(data: Any, offset: int, sort: str | None) -> Any:
     if not isinstance(datasets, list):
         return data
     summaries = [dataset_summary(item) for item in datasets if isinstance(item, dict)]
-    kept, omitted = fit_budget(summaries, per_item=VIEWS_ALLOWANCE)
+    kept, omitted = fit_budget(summaries)
     result: dict[str, Any] = {
         "datasets": kept,
         "shown": len(kept),
         "order": sort or "newest first (created_at desc)",
         "note": (
-            "'views' lists each dataset's views (id, name). A dataset record holds no "
-            "sample values; 'view list DATASET_ID' shows stored sample_values per view, "
-            "and 'view list DATASET_ID' with all_columns: true lists every column."
+            "A dataset record holds no sample values; 'view list DATASET_ID' shows "
+            "stored sample_values per view (all_columns: true lists every column)."
         ),
     }
     if omitted or data.get("next"):
