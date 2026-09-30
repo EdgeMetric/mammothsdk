@@ -229,7 +229,7 @@ def test_list_passes_no_kwargs(fake_service: FakeMammothService) -> None:
 
 def test_get_uses_positional_dashboard_id(fake_service: FakeMammothService) -> None:
     dashboard_cmd.dashboard_get(_inv("dashboard.get", extra_args=["7"]))
-    assert fake_service.call_log == [(_GET, {"dashboard_id": 7})]
+    assert fake_service.call_log[0] == (_GET, {"dashboard_id": 7})
 
 
 def test_get_without_id_is_usage_error(fake_service: FakeMammothService) -> None:
@@ -248,7 +248,9 @@ def test_get_invalid_id_is_usage_error(fake_service: FakeMammothService) -> None
 def test_get_returns_programmed_response(fake_service: FakeMammothService) -> None:
     fake_service.responses[_GET] = {"id": 7, "name": "Sales"}
     data, meta = dashboard_cmd.dashboard_get(_inv("dashboard.get", extra_args=["7"]))
-    assert data == {"id": 7, "name": "Sales"}
+    assert {key: data[key] for key in ("id", "name")} == {"id": 7, "name": "Sales"}
+    assert data["dashboard_link"].endswith("/publish/7")
+    assert "values" in data
     assert meta == {"profile": None, "workspace_id": 4, "project_id": None}
 
 

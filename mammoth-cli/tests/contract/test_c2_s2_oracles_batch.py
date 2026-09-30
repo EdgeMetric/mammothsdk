@@ -117,7 +117,9 @@ def _sdk_api(client: _RecordingClient, name: str) -> Any:
         "browse": BrowseAPI,
         "dashboards": DashboardsAPI,
         "projects": ProjectsAPI,
-    }[name](client)  # type: ignore[arg-type]
+    }[name](
+        client
+    )  # type: ignore[arg-type]
 
 
 def _invoke_sdk(case: dict[str, Any], client: _RecordingClient) -> None:
@@ -149,9 +151,17 @@ def test_cli_binding_reaches_real_sdk_transport(
 
     result = make_runner().invoke(_cli_argv(case))
     assert result.exit_code == 0, result.output
-    # Dashboard authoring steps end with one canvas read (deliverable_check);
-    # the oracle is the mutation itself.
-    request = next(r for r in reversed(api.requests) if r.method == expected[0])
+    # Dashboard authoring steps end with one canvas read (deliverable_check),
+    # and ``dashboard get`` reads the board's numbers after the board itself;
+    # the oracle is the request to the command's own route.
+    request = next(
+        (
+            r
+            for r in reversed(api.requests)
+            if r.method == expected[0] and r.path.removeprefix("/api/v2") == expected[1]
+        ),
+        next(r for r in reversed(api.requests) if r.method == expected[0]),
+    )
     assert (request.method, request.path.removeprefix("/api/v2")) == expected[:2]
     assert request.json_body == case["expected"]["json"]
     actual_query = {key: values[-1] for key, values in request.query.items()}

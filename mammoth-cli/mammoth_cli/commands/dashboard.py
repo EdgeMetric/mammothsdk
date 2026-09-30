@@ -377,7 +377,8 @@ def dashboard_get(invocation: Invocation) -> HandlerResult:
     dashboard_id = _require_int_positional(invocation, "dashboard id")
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), dashboard_id=dashboard_id)
-        data = _with_board_values(service, auth, {"dashboard_id": dashboard_id}, data)
+        if not invocation.readback:
+            data = _with_board_values(service, auth, {"dashboard_id": dashboard_id}, data)
     return data, _meta(invocation, auth.workspace_id)
 
 
