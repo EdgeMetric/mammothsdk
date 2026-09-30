@@ -112,3 +112,132 @@ def test_a_zero_metric_under_a_date_condition_reports_the_observed_range(
     )
     assert "may mean no rows matched" in data["empty_result"]
     assert data["observed_range"][0]["max"] == "2024-11-30"
+
+
+_WEEKDAY_INPUT: dict[str, Any] = {
+    "group_by": [{"column": "Order Date", "part": "weekday"}],
+    "aggregations": [{"column": "Sales", "function": "SUM", "as_name": "Total"}],
+}
+
+
+def _invoke_failing(args: list[str], payload: dict[str, Any], tmp_path: Path) -> dict[str, Any]:
+    doc = tmp_path / "in.json"
+    doc.write_text(json.dumps(payload), encoding="utf-8")
+    result = make_runner().invoke(
+        [*args, "--project", "180", "--input", str(doc), "--output", "json", "--no-input"]
+    )
+    assert result.exit_code != 0, result.output
+    return json.loads(result.output)["error"]
+
+
+def test_aggregate_by_weekday_of_a_date_column_names_and_orders_the_days(
+    monkeypatch: pytest.MonkeyPatch,
+    real_service: ServiceFactory,
+    isolated_cli_config: Path,
+    tmp_path: Path,
+) -> None:
+    api = _bind(monkeypatch, real_service)
+    metadata = [
+        {"internal_name": "column_3", "display_name": "Order Date", "type": "DATE"},
+        {"internal_name": "column_4", "display_name": "Sales", "type": "NUMERIC"},
+    ]
+    api.on("GET", _VIEW, body={"id": 7, "metadata": metadata})
+    days = [  # two Saturdays, a Tuesday, a Wednesday
+        {"group_0": "2024-01-13", "agg_0": 300.5},
+        {"group_0": "2024-01-06", "agg_0": 200.25},
+        {"group_0": "2024-01-09", "agg_0": 400.0},
+        {"group_0": "2024-01-10", "agg_0": 50.0},
+    ]
+    api.on("POST", _QUERY, body={"data": days})
+
+    data = _invoke(["view", "data", "aggregate", "7", "9"], _WEEKDAY_INPUT, tmp_path)
+
+    assert data["data"] == [
+        {"Order Date": "Tuesday", "Total": 400.0},
+        {"Order Date": "Wednesday", "Total": 50.0},
+        {"Order Date": "Saturday", "Total": 500.75},
+    ]
+    pivots = [r.json_body["param"]["PIVOT"] for r in api.requests if r.method == "POST"]
+    grouped = next(p for p in pivots if "GROUP_BY" in p)
+    assert json.dumps(grouped["GROUP_BY"]).count("DAY") == 1  # the backend groups by day only
+
+
+def test_aggregate_by_weekday_ranks_the_named_days_with_order_by_and_top(
+    monkeypatch: pytest.MonkeyPatch,
+    real_service: ServiceFactory,
+    isolated_cli_config: Path,
+    tmp_path: Path,
+) -> None:
+    api = _bind(monkeypatch, real_service)
+    metadata = [
+        {"internal_name": "column_3", "display_name": "Order Date", "type": "DATE"},
+        {"internal_name": "column_4", "display_name": "Sales", "type": "NUMERIC"},
+    ]
+    api.on("GET", _VIEW, body={"id": 7, "metadata": metadata})
+    api.on(
+        "POST",
+        _QUERY,
+        body={
+            "data": [
+                {"group_0": "2024-01-13", "agg_0": 300.5},
+                {"group_0": "2024-01-09", "agg_0": 400.0},
+                {"group_0": "2024-01-06", "agg_0": 200.25},
+            ]
+        },
+    )
+
+    data = _invoke(
+        ["view", "data", "aggregate", "7", "9"],
+        {**_WEEKDAY_INPUT, "order_by": ["Total desc"], "top": 1},
+        tmp_path,
+    )
+
+    assert data["data"] == [{"Order Date": "Saturday", "Total": 500.75}]
+
+
+def test_aggregate_by_month_of_a_text_date_column_states_the_assumed_format(
+    monkeypatch: pytest.MonkeyPatch,
+    real_service: ServiceFactory,
+    isolated_cli_config: Path,
+    tmp_path: Path,
+) -> None:
+    api = _bind(monkeypatch, real_service)
+    metadata = [
+        {"internal_name": "column_3", "display_name": "Order Date", "type": "TEXT"},
+        {"internal_name": "column_4", "display_name": "Sales", "type": "NUMERIC"},
+    ]
+    api.on("GET", _VIEW, body={"id": 7, "metadata": metadata})
+
+    rows = [
+        {"group_0": "13/03/2024", "agg_0": 10.0},
+        {"group_0": "20/03/2024", "agg_0": 5.0},
+        {"group_0": "02/01/2023", "agg_0": 7.0},
+    ]
+    api.on("POST", _QUERY, body={"data": rows})
+    payload = {**_WEEKDAY_INPUT, "group_by": [{"column": "Order Date", "part": "month"}]}
+
+    data = _invoke(["view", "data", "aggregate", "7", "9"], payload, tmp_path)
+
+    assert data["data"] == [
+        {"Order Date": "January", "Total": 7.0},
+        {"Order Date": "March", "Total": 15.0},
+    ]
+    assumed = data["text_dates"][0]
+    assert assumed["column"] == "Order Date" and assumed["assumed_format"] == "D/M/YYYY"
+
+
+def test_a_date_part_on_a_numeric_column_is_refused_with_the_reason(
+    monkeypatch: pytest.MonkeyPatch,
+    real_service: ServiceFactory,
+    isolated_cli_config: Path,
+    tmp_path: Path,
+) -> None:
+    api = _bind(monkeypatch, real_service)
+    metadata = [{"internal_name": "column_4", "display_name": "Sales", "type": "NUMERIC"}]
+    api.on("GET", _VIEW, body={"id": 7, "metadata": metadata})
+    payload = {**_WEEKDAY_INPUT, "group_by": [{"column": "Sales", "part": "weekday"}]}
+
+    error = _invoke_failing(["view", "data", "aggregate", "7", "9"], payload, tmp_path)
+
+    assert "'Sales' is NUMERIC" in error["message"]
+    assert not [r for r in api.requests if r.method == "POST"]

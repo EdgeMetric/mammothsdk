@@ -27,6 +27,25 @@ MAX_DISTINCT_VALUES = 5000
 LEVELS = ("DAY", "WEEK", "MONTH", "QUARTER", "YEAR", "DECADE")
 #: Aggregate functions that can be recombined from per-day groups.
 ADDITIVE_FUNCTIONS = frozenset({"SUM", "COUNT", "MIN", "MAX"})
+#: Date parts a group_by ``part`` can name: the part of the date, not a period start.
+PARTS = ("weekday", "month", "quarter", "year")
+#: Prefix that marks a date part (rather than a truncation level) in a bucket level.
+PART_PREFIX = "part:"
+_WEEKDAY_NAMES = ("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")
+_MONTH_NAMES = (
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+)
 
 _MAX_EXAMPLES = 5
 _MONTHS = {
@@ -238,6 +257,40 @@ def require_level(level: Any) -> str:
     return name
 
 
+def require_part(part: Any) -> str:
+    """Return a supported date part as a bucket level (``part:weekday``), or fail loud."""
+    name = str(part or "").lower()
+    if name not in PARTS:
+        raise _fail(
+            f"A date can be grouped by part: {', '.join(PARTS)}; got {part!r}.",
+            'Use {"column": "Order Date", "part": "weekday"}; use "truncate" for a period start.',
+        )
+    return PART_PREFIX + name
+
+
+def part_bucket(day: date, part: str) -> tuple[int, str | int]:
+    """``(sort order, value)`` of ``part`` for ``day``: weekday and month by name."""
+    if part == "weekday":
+        return day.weekday(), _WEEKDAY_NAMES[day.weekday()]
+    if part == "month":
+        return day.month, _MONTH_NAMES[day.month - 1]
+    if part == "quarter":
+        quarter = (day.month - 1) // 3 + 1
+        return quarter, f"Q{quarter}"
+    return day.year, day.year
+
+
+def _bucket(day: date | None, level: str) -> tuple[Any, Any]:
+    """``(sort key, value)`` of the bucket ``day`` falls in; a blank sorts last."""
+    if day is None:
+        return (1, 0), None
+    if level.startswith(PART_PREFIX):
+        order, value = part_bucket(day, level.removeprefix(PART_PREFIX))
+        return (0, order), value
+    start = bucket_start(day, level)
+    return (0, start.toordinal()), start.isoformat()
+
+
 def bucket_start(day: date, level: str) -> date:
     """First day of the ``level`` period containing ``day``."""
     if level == "DAY":
@@ -277,16 +330,20 @@ def rebucket(
     """Regroup per-stored-value rows into ``level`` buckets.
 
     ``functions`` maps each aggregate result key to SUM/COUNT/MIN/MAX. Each output
-    row carries the bucket as its period start (ISO date, or ``None`` for blank).
+    row carries the bucket as its period start (ISO date, or ``None`` for blank), or,
+    for a date part, the part's value in calendar order (``Monday``..``Sunday``).
     """
     merged: dict[tuple[Any, ...], dict[str, Any]] = {}
+    order: dict[tuple[Any, ...], Any] = {}
     for row in rows:
-        day = days.get(raw_key(row.get(date_key)))
-        bucket = bucket_start(day, level).isoformat() if day is not None else None
+        sort_key, bucket = _bucket(days.get(raw_key(row.get(date_key))), level)
         key = (bucket, *(row.get(k) for k in other_keys))
         target = merged.setdefault(key, {date_key: bucket, **{k: row.get(k) for k in other_keys}})
+        order[key] = sort_key
         for result_key, function in functions.items():
             target[result_key] = _merge(function, target.get(result_key), row.get(result_key))
+    if level.startswith(PART_PREFIX):
+        return [merged[key] for key in sorted(merged, key=order.__getitem__)]
     return list(merged.values())
 
 
