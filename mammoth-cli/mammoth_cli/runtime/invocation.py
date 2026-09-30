@@ -76,6 +76,9 @@ class Invocation:
     # handler so its verify and readback reads address the view directly
     # instead of walking every dataset to find it.
     known_dataset_id: int | None = field(default=None, repr=False, compare=False)
+    #: What a dry-run transform predicted it would change; set by its handler,
+    #: added to the dry-run report.
+    predicted_impact: dict[str, Any] | None = field(default=None, repr=False, compare=False)
     # Set on the read a write's ``state`` block issues: that read confirms the
     # write, so a command's extra evaluation (a board's numbers) is skipped.
     readback: bool = field(default=False, repr=False, compare=False)
@@ -154,7 +157,7 @@ class Invocation:
                 continue
             try:
                 value = float(raw)
-            except (TypeError, ValueError):
+            except TypeError, ValueError:
                 continue
             if value > 0:
                 object.__setattr__(self, key, value)
@@ -236,7 +239,7 @@ class Invocation:
                     resource_dataset = int(resource_dataset)
                     if resource_dataset <= 0:
                         raise ValueError
-                except (TypeError, ValueError):
+                except TypeError, ValueError:
                     raise CliError(
                         code="invalid_resource_context",
                         message="Input field 'dataset_id' must be a positive integer.",
@@ -259,7 +262,7 @@ class Invocation:
                     expected_tasks = int(expected_tasks)
                     if expected_tasks < 0:
                         raise ValueError
-                except (TypeError, ValueError):
+                except TypeError, ValueError:
                     raise CliError(
                         code="invalid_resource_context",
                         message=f"Input field '{TASK_COUNT_FIELD}' must be a non-negative integer.",

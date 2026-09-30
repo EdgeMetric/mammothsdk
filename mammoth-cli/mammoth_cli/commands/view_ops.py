@@ -56,6 +56,7 @@ from mammoth_cli.runtime.session import open_service, resolved_project
 from mammoth_cli.services.command_contract import bind_command_inputs
 from mammoth_cli.services.conditions import CONDITION_KWARG
 from mammoth_cli.services.input_fields import TASK_COUNT_FIELD
+from mammoth_cli.services.write_impact import duplicate_rows_removed, no_op_error
 
 HandlerResult = tuple[Any, dict[str, Any]]
 
@@ -1002,11 +1003,89 @@ def view_transform_delete_columns(invocation: Invocation) -> HandlerResult:
 
 
 def view_transform_discard_duplicates(invocation: Invocation) -> HandlerResult:
-    """Discard duplicate rows. ``ignore_columns`` is optional."""
+    """Discard duplicate rows. ``ignore_columns`` is optional.
+
+    ``--dry-run`` counts the duplicates first: it reports ``predicted_impact``,
+    or fails with ``no_op`` when there are none (nothing to discard).
+    """
     view_id = _view_id(invocation)
     document = invocation.load_input() or {}
     kwargs = _bind_transform_inputs(invocation, document)
-    return _dispatch_view(invocation, view_id, "discard_duplicates", **kwargs)
+    prepare = _duplicates_dry_run_check(invocation, view_id) if invocation.dry_run else None
+    return _dispatch_view(invocation, view_id, "discard_duplicates", prepare=prepare, **kwargs)
+
+
+def _duplicates_dry_run_check(
+    invocation: Invocation, view_id: int
+) -> Callable[[Any, int, dict[str, Any]], None]:
+    """A ``prepare`` hook: count the duplicate rows this step would remove, by a read."""
+
+    def check(service: Any, dataset_id: int, kwargs: dict[str, Any]) -> None:
+        project_id = resolved_project(invocation)
+        info = apply_column_renames(
+            service.call(
+                _DATAVIEW_GET_SYMBOL,
+                dataset_id=dataset_id,
+                dataview_id=view_id,
+                project_id=project_id,
+            )
+        )
+        ignored = list(kwargs.get("ignore_columns") or [])
+        columns = _compared_columns(info, ignored)
+        if not columns:
+            _set_unchecked(invocation, "the view has no columns to compare")
+            return
+        try:
+            removed, exact = duplicate_rows_removed(
+                service,
+                dataset_id=dataset_id,
+                view_id=view_id,
+                project_id=project_id,
+                columns=columns,
+            )
+        except CliError as exc:
+            # The count is advice; say it could not run rather than block the step.
+            _set_unchecked(invocation, exc.message)
+            return
+        row_count = int(info.get("row_count") or 0)
+        if removed == 0:
+            raise no_op_error(_no_duplicates_message(view_id, row_count, ignored), view_id=view_id)
+        object.__setattr__(
+            invocation,
+            "predicted_impact",
+            {
+                "rows_removed": removed,
+                "row_count": row_count,
+                "rows_after": row_count - removed,
+                "exact": exact,
+            },
+        )
+
+    return check
+
+
+def _set_unchecked(invocation: Invocation, reason: str) -> None:
+    """Record that the dry run could not count what the step would change."""
+    object.__setattr__(invocation, "predicted_impact", {"checked": False, "reason": reason})
+
+
+def _compared_columns(info: dict[str, Any], ignored: list[str]) -> list[str]:
+    """Internal names of the view's columns a duplicate check compares."""
+    metadata = [c for c in info.get("metadata") or [] if isinstance(c, dict)]
+    return [
+        str(c["internal_name"])
+        for c in metadata
+        if c.get("internal_name") and c.get("display_name") not in ignored
+    ]
+
+
+def _no_duplicates_message(view_id: int, row_count: int, ignored: list[str]) -> str:
+    """The ``no_op`` text: nothing to remove, and how much was checked."""
+    scope = f", ignoring {', '.join(ignored)}" if ignored else ""
+    return (
+        f"View {view_id} has no exact duplicate rows ({row_count} of {row_count} checked{scope}); "
+        "nothing to change."
+    )
 
 
 def view_transform_extract_date(invocation: Invocation) -> HandlerResult:

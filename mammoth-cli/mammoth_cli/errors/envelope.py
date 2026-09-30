@@ -53,6 +53,7 @@ CODE_OUTCOME_UNKNOWN = "outcome_unknown"
 CODE_JOB_FAILED = "job_failed"
 CODE_INTERRUPTED = "interrupted"
 CODE_UNSUPPORTED_CONTRACT = "unsupported_contract"
+CODE_NO_OP = "no_op"
 
 # User-safe, one-line summaries shown to the customer instead of the model-facing
 # ``message``/``hint``. Plain language only: no command names, ids, field names
@@ -129,6 +130,7 @@ ERROR_SUMMARIES: dict[str, str] = {
     "login_input_required": _S_SIGN_IN,
     "missing_argument": _S_MISSING_INFO,
     "missing_field": _S_MISSING_INFO,
+    "no_op": "There is nothing to change, so this step isn't needed.",
     "no_output": "This step didn't return anything.",
     "nonfinite_input_number": _S_BAD_INPUT,
     "not_authenticated": _S_SIGN_IN,

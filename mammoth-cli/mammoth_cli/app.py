@@ -893,7 +893,11 @@ def _dry_run(handler: Handler, invocation: Invocation) -> tuple[Any, dict[str, A
     except DryRunStop as stop:
         with open_service(invocation) as (service, _auth):
             targets = resolve_targets(service, invocation.command_id, stop.record["would_call"])
-        return {**stop.record, "targets": targets}, {
+        impact = invocation.predicted_impact
+        report = {**stop.record, "targets": targets}
+        if impact is not None:
+            report["predicted_impact"] = impact
+        return report, {
             "profile": invocation.profile,
             "project_id": resolved_project(invocation),
         }
