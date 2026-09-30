@@ -24,15 +24,11 @@ ServiceFactory = Callable[..., Any]
 
 
 def _wire_resolution(api: Any) -> None:
-    """Register the browse + dataview probes the view resolution performs."""
+    """Register the dataset-listing + dataview probes the view resolution performs."""
     api.on(
         "GET",
-        r"/browse",
-        body={
-            "resources": [
-                {"id": PROJECT_ID, "children": [{"type": "datasource", "id": DATASET_ID}]}
-            ]
-        },
+        r"/datasets$",
+        body={"datasets": [{"id": DATASET_ID, "name": "ds"}], "limit": 100, "offset": 0},
     )
     api.on("GET", rf"/datasets/{DATASET_ID}/dataviews/{VIEW_ID}$", body={"id": VIEW_ID})
 

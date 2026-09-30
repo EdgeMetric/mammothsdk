@@ -49,11 +49,11 @@ All methods accept **display names** (user-friendly). The SDK auto-resolves to i
 |------|---------|
 | `_filter_ops.py` | filter_rows, set_values |
 | `_math_ops.py` | math |
-| `_column_ops.py` | add_column, delete_columns, copy_columns, combine_columns, convert_type |
+| `_column_ops.py` | add_column, delete_columns, copy_columns, combine_columns, convert_type, rename_columns |
 | `_text_ops.py` | text_transform, replace_values, bulk_replace, split_column, substring |
 | `_date_ops.py` | extract_date, date_diff, increment_date |
 | `_aggregate_ops.py` | pivot, window, crosstab |
-| `_row_ops.py` | fill_missing, limit_rows, discard_duplicates, unnest |
+| `_row_ops.py` | fill_missing, limit_rows, discard_duplicates, unnest, sort_rows |
 | `_advanced_ops.py` | join, lookup, json_extract, gen_ai, generate_sql, add_sql |
 
 ### Other key files
@@ -80,4 +80,5 @@ All methods accept **display names** (user-friendly). The SDK auto-resolves to i
 - Python target: 3.12–3.14 (`from __future__ import annotations` used throughout)
 - mypy strict mode with overrides for `api/` (return-value), `_mixins/` (attr-defined), and `view` (return-any)
 - Backend reference code lives in `mvc-service/` (param_templates, constants) — useful for verifying payload formats
-- CSV date columns upload as TEXT — must `convert_type` before date operations
+- Upload types numbers and ISO dates (`2026-01-31`) on its own; other date formats and number columns with text (`N/A`) upload as TEXT and need `convert_type` before date or math operations. Never convert a column to the type it already has: the pipeline goes to `ref_error` (verified on release, 2026-09-25)
+- `FillDirection.FIRST_VALUE` is the forward fill (previous row); `LAST_VALUE` is the back-fill (next row)

@@ -28,7 +28,9 @@ from mammoth_cli.runtime.confirm import (
     enforce_confirmation,
 )
 from mammoth_cli.runtime.invocation import Invocation
+from mammoth_cli.runtime.new_data import with_file_upload_path
 from mammoth_cli.runtime.session import open_service, require_project
+from mammoth_cli.services.listing import DATASET_LIST_FIELDS, dataset_summary, fit_budget
 
 HandlerResult = tuple[Any, dict[str, Any]]
 
@@ -184,20 +186,92 @@ def dataset_find(invocation: Invocation) -> HandlerResult:
     return {
         "matches": matches,
         "projects_searched": len(projects),
-        "projects_truncated": invocation.project is None
-        and len(projects) >= _MAX_PROJECTS_SEARCHED,
+        "projects_truncated": (
+            invocation.project is None and len(projects) >= _MAX_PROJECTS_SEARCHED
+        ),
     }, meta
 
 
 def dataset_list(invocation: Invocation) -> HandlerResult:
-    """List datasets in the active project."""
+    """List datasets in the active project, newest first, each with what tells them apart.
+
+    Every item carries its size, created/updated time, how its data arrived, and
+    its column names and types (from the list route's stored ``stats``,
+    ``sources`` and ``data_schema``), cut to fit the agent tool output cap.
+    ``full: true`` returns the raw ``{id, name}`` list instead.
+    """
     project_id = require_project(invocation)
     document = invocation.load_input() or {}
     kwargs: dict[str, Any] = {"project_id": project_id}
     _forward_optional(document, kwargs, ("limit", "offset", "sort"))
+    compact = not document.get("full")
+    if compact:
+        kwargs["fields"] = DATASET_LIST_FIELDS
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), **kwargs)
+    if compact:
+        data = _compact_dataset_list(data, kwargs.get("offset", 0), kwargs.get("sort"))
     return data, _meta(invocation, auth.workspace_id, project_id)
+
+
+def _compact_dataset_list(data: Any, offset: int, sort: str | None) -> Any:
+    """Summarise a dataset-list page and fit it to the tool output cap."""
+    datasets = data.get("datasets") if isinstance(data, dict) else None
+    if not isinstance(datasets, list):
+        return data
+    summaries = [dataset_summary(item) for item in datasets if isinstance(item, dict)]
+    kept, omitted = fit_budget(summaries)
+    result: dict[str, Any] = {
+        "datasets": kept,
+        "shown": len(kept),
+        "order": sort or "newest first (created_at desc)",
+        "note": (
+            "A dataset record holds no sample values; 'view list DATASET_ID' shows "
+            "stored sample_values per view."
+        ),
+    }
+    if omitted or data.get("next"):
+        result["more"] = True
+        result["next_offset"] = int(offset) + len(kept)
+    return result
+
+
+def _export_write_hint(data: dict[str, Any]) -> str | None:
+    """Name the recurring export that writes into this dataset, if any.
+
+    A dataset produced by ``view export dataset`` carries its source view and
+    export ids in ``additional_info`` (``DATAVIEW_ID``/``TRIGGER_ID`` — an
+    export is a ``DataviewActionTrigger`` row, so ``TRIGGER_ID`` is exactly the
+    ``export_id`` argument ``view export delete`` takes). Deleting the dataset
+    does not stop that export from writing into it again; name the export and
+    the command that stops it (T1-O-10: an agent deleted the dataset instead).
+    """
+    additional_info = data.get("additional_info")
+    if not isinstance(additional_info, dict):
+        return None
+    dataview_id = additional_info.get("DATAVIEW_ID")
+    export_id = additional_info.get("TRIGGER_ID")
+    if not isinstance(dataview_id, int) or not isinstance(export_id, int):
+        return None
+    return (
+        f"This dataset is written by a recurring export from view {dataview_id} "
+        f"(export {export_id}); deleting the dataset does not stop the export. "
+        f"Run 'mammoth view export delete {dataview_id} {export_id}' to stop it."
+    )
+
+
+def _zero_view_hint(dataset_id: int) -> str:
+    """Name the fix for a dataset with no queryable views yet (T1-I-13).
+
+    Nothing is queryable until a view exists (transforms, joins, exports and
+    previews all take a view id, not a dataset id) — an agent that only reads
+    dataset-level metadata and never sees a zero view count can conclude "no
+    correction needed" while nothing it changed is visible anywhere.
+    """
+    return (
+        f"This dataset has no views yet; nothing is queryable until one exists. "
+        f"Run 'mammoth view create {dataset_id}' to create one."
+    )
 
 
 def dataset_get(invocation: Invocation) -> HandlerResult:
@@ -206,7 +280,36 @@ def dataset_get(invocation: Invocation) -> HandlerResult:
     dataset_id = _require_int_positional(invocation, "dataset id")
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), dataset_id=dataset_id, project_id=project_id)
+        views = service.call(
+            "mammoth.api.dataviews.DataviewsAPI.list",
+            dataset_id=dataset_id,
+            project_id=project_id,
+        )
+    _strip_file_ingestion_automation_possible(data)
+    hint = _export_write_hint(data) if isinstance(data, dict) else None
+    if isinstance(data, dict) and isinstance(views, dict):
+        view_count = len(views.get("dataviews") or [])
+        data = {**data, "view_count": view_count}
+        if view_count == 0:
+            zero_hint = _zero_view_hint(dataset_id)
+            hint = f"{hint} {zero_hint}" if hint else zero_hint
+    if hint is not None:
+        data = {**data, "hint": hint}
     return data, _meta(invocation, auth.workspace_id, project_id)
+
+
+def _strip_file_ingestion_automation_possible(data: Any) -> None:
+    """Drop ``automation_possible`` (T1-R-01/T1-R-07): CSV-ingestion metadata
+    about whether the header-parsing pipeline can auto-process this upload
+    (``api/api/file/unprocessed.py``), unrelated to whether the dataset has a
+    connector to put on a scheduled refresh. Left in, an agent checking a
+    dataset's automation options reads it as contradicting a correct "no
+    refreshable source" claim."""
+    if not isinstance(data, dict):
+        return
+    params = data.get("additional_info", {}).get("all_data_backup", {}).get("PARAMS", {})
+    if isinstance(params, dict):
+        params.pop("automation_possible", None)
 
 
 def dataset_data(invocation: Invocation) -> HandlerResult:
@@ -254,6 +357,17 @@ def dataset_batch_data(invocation: Invocation) -> HandlerResult:
 
 def dataset_file_settings(invocation: Invocation) -> HandlerResult:
     """Get file settings (delimiter, header, dates, ...) for a dataset."""
+    data, meta = _read_dataset(invocation)
+    return with_file_upload_path(data, _require_int_positional(invocation, "dataset id")), meta
+
+
+def dataset_broken_rows(invocation: Invocation) -> HandlerResult:
+    """List the lines of a dataset's uploaded file that could not be parsed."""
+    return _read_dataset(invocation)
+
+
+def _read_dataset(invocation: Invocation) -> HandlerResult:
+    """Call this command's SDK read with the DATASET_ID positional."""
     project_id = require_project(invocation)
     dataset_id = _require_int_positional(invocation, "dataset id")
     if dataset_id <= 0:
@@ -312,6 +426,34 @@ def dataset_file_settings_undo(invocation: Invocation) -> HandlerResult:
     )
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), dataset_id=dataset_id, project_id=project_id)
+    return data, _meta(invocation, auth.workspace_id, project_id)
+
+
+_INTERPRETATION_FIELDS = ("user_instruction", "structure_map", "destination_dataset_id")
+
+
+def dataset_interpretation(invocation: Invocation) -> HandlerResult:
+    """Preview or confirm how a file that can be read several ways is interpreted.
+
+    ``--input`` carries ``user_instruction`` (plain English, e.g. one of the
+    suggestions ``dataset get`` shows), a ``structure_map`` from an earlier
+    preview, or a ``destination_dataset_id``; at least one is required.
+    """
+    project_id = require_project(invocation)
+    dataset_id = _require_int_positional(invocation, "dataset id")
+    document = invocation.load_input() or {}
+    kwargs: dict[str, Any] = {"dataset_id": dataset_id, "project_id": project_id}
+    _forward_optional(document, kwargs, _INTERPRETATION_FIELDS)
+    if not any(field in kwargs for field in _INTERPRETATION_FIELDS):
+        raise CliError(
+            code=CODE_MISSING_ARGUMENT,
+            message="Say how to read the file: pass one of " + ", ".join(_INTERPRETATION_FIELDS),
+            exit_status=EXIT_USAGE,
+            hint="Use a suggestion from 'mammoth dataset get DATASET_ID' "
+            "(additional_info.interpretation.instruction_suggestions) as user_instruction.",
+        )
+    with open_service(invocation) as (service, auth):
+        data = service.call(_symbol(invocation), **kwargs)
     return data, _meta(invocation, auth.workspace_id, project_id)
 
 
@@ -432,11 +574,21 @@ def dataset_delete(invocation: Invocation) -> HandlerResult:
     """Permanently delete one dataset by id. Prompt or ``--yes`` required."""
     project_id = require_project(invocation)
     dataset_id = _require_int_positional(invocation, "dataset id")
-    enforce_confirmation(
-        invocation, policy=POLICY_PROMPT_OR_YES, action=f"delete dataset {dataset_id}"
-    )
+    action = f"delete dataset {dataset_id}"
     with open_service(invocation) as (service, auth):
+        # A read, not a mutation: the dry-run gate lets it through so the
+        # confirmation message below can name the export writing into this
+        # dataset (T1-O-10), the same as a real run would see.
+        preview = service.call(
+            "mammoth.api.datasets.DatasetsAPI.get", dataset_id=dataset_id, project_id=project_id
+        )
+        hint = _export_write_hint(preview) if isinstance(preview, dict) else None
+        if hint is not None:
+            action = f"{action}. {hint}"
+        enforce_confirmation(invocation, policy=POLICY_PROMPT_OR_YES, action=action)
         data = service.call(_symbol(invocation), dataset_id=dataset_id, project_id=project_id)
+    if hint is not None and isinstance(data, dict):
+        data = {**data, "hint": hint}
     return data, _meta(invocation, auth.workspace_id, project_id)
 
 

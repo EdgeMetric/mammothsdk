@@ -49,7 +49,14 @@ def test_resolver_defines_no_base_url_env_var() -> None:
 def test_explicit_login_has_no_base_url_field() -> None:
     fields = {f.name for f in dataclasses.fields(ExplicitLogin)}
     assert "base_url" not in fields
-    assert fields == {"api_token", "api_key", "api_secret", "workspace_id", "server_prefix"}
+    assert fields == {
+        "api_token",
+        "api_key",
+        "api_secret",
+        "workspace_id",
+        "server_prefix",
+        "headers",
+    }
 
 
 def test_profile_record_has_no_base_url_field() -> None:

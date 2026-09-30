@@ -306,9 +306,24 @@ def test_user_add_requires_email_ids(fake_service: FakeMammothService) -> None:
     assert excinfo.value.code == "missing_field"
 
 
+def test_user_add_blocked_without_confirmation(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    """RCA evidence (T1-W-09): the manifest declared confirmation: none while
+    its own acceptance_evidence called this contract_only_high_impact --
+    inviting a real person is high-impact and must raise a card like
+    automation.create does, not go through silently.
+    """
+    doc = _write(tmp_path, {"email_ids": ["a@x.com"]})
+    with pytest.raises(CliError) as excinfo:
+        workspace_cmd.workspace_user_add(_inv("workspace.user.add", input_file=doc))
+    assert excinfo.value.code == "confirmation_required"
+    assert fake_service.call_log == []
+
+
 def test_user_add_forwards_projects(fake_service: FakeMammothService, tmp_path: Path) -> None:
     doc = _write(tmp_path, {"email_ids": ["a@x.com"], "projects": [{"project_id": 1}]})
-    workspace_cmd.workspace_user_add(_inv("workspace.user.add", input_file=doc))
+    workspace_cmd.workspace_user_add(_inv("workspace.user.add", input_file=doc, yes=True))
     assert fake_service.call_log == [
         (_USER_ADD, {"email_ids": ["a@x.com"], "projects": [{"project_id": 1}]})
     ]
@@ -332,7 +347,14 @@ def test_user_get_uses_positional_never_passes_workspace_id(
 
 def test_user_list_never_passes_workspace_id(fake_service: FakeMammothService) -> None:
     workspace_cmd.workspace_user_list(_inv("workspace.user.list"))
-    assert fake_service.call_log == [(_USER_LIST, {})]
+    assert fake_service.call_log == [(_USER_LIST, {"fields": "__full"})]
+
+
+def test_user_list_forwards_fields(fake_service: FakeMammothService, tmp_path: Path) -> None:
+    """A ``fields`` the caller names wins over the ``__full`` default."""
+    doc = _write(tmp_path, {"fields": "__standard"})
+    workspace_cmd.workspace_user_list(_inv("workspace.user.list", input_file=doc))
+    assert fake_service.call_log == [(_USER_LIST, {"fields": "__standard"})]
 
 
 # --- user remove / remove-batch --------------------------------------------------

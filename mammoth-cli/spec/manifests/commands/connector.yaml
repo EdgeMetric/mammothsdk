@@ -47,6 +47,7 @@ commands:
   request_model: ConnectorAiChatRequest
   result_model: ConnectorAiChatResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -69,6 +70,10 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: connector.ai.session.list
+    ids: {}
+    kind: object
 - command_id: connector.ai.history
   command_path: connector ai history
   disposition: command
@@ -198,6 +203,7 @@ commands:
   request_model: ConnectorAiSubmitColumnSelectionRequest
   result_model: ConnectorAiSubmitColumnSelectionResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -220,6 +226,10 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: connector.ai.session.list
+    ids: {}
+    kind: object
 - command_id: connector.ai.submit-credentials
   command_path: connector ai submit-credentials
   disposition: command
@@ -234,6 +244,7 @@ commands:
   request_model: ConnectorAiSubmitCredentialsRequest
   result_model: ConnectorAiSubmitCredentialsResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -256,6 +267,10 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: connector.ai.session.list
+    ids: {}
+    kind: object
 - command_id: connector.connection.create
   command_path: connector connection create
   disposition: command
@@ -275,6 +290,7 @@ commands:
   request_model: ConnectorConnectionCreateRequest
   result_model: ConnectorConnectionCreateResult
   mutation_class: external_effect
+  edits_target: false
   confirmation: yes_always
   wait_policy: not_async
   pagination_policy: none
@@ -283,9 +299,10 @@ commands:
   live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
   contract_fixture: null
   required_fixture_guard: null
-  secret_fields: []
+  secret_fields:
+  - config
   human_example: mammoth connector connection create CONNECTOR_KEY --help
-  agent_example: 'mammoth connector connection create sample --input ''{"config": {"sample_key": "Status"}}'''
+  agent_example: mammoth connector connection create sample --input /private/path/request.json
   unit_tests:
   - UT-CONNECTOR-CONNECTION-CREATE
   contract_tests:
@@ -296,6 +313,11 @@ commands:
   undo_test: null
   known_restrictions: Fixture required; connection documents are discriminated by connector_key.
   reviewed_by: primary
+  readback:
+    command: connector.connection.list
+    ids:
+      connector_key: positional.0
+    kind: object
 - command_id: connector.connection.delete
   command_path: connector connection delete
   disposition: command
@@ -321,6 +343,7 @@ commands:
   request_model: ConnectorConnectionDeleteRequest
   result_model: ConnectorConnectionDeleteResult
   mutation_class: destructive
+  edits_target: true
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -342,6 +365,11 @@ commands:
   undo_test: null
   known_restrictions: Resolve immutable key before confirmation; fixture required.
   reviewed_by: primary
+  readback:
+    command: connector.connection.list
+    ids:
+      connector_key: positional.0
+    kind: object
 - command_id: connector.connection.get
   command_path: connector connection get
   disposition: command
@@ -453,6 +481,7 @@ commands:
   request_model: ConnectorConnectionUpdateRequest
   result_model: ConnectorConnectionUpdateResult
   mutation_class: external_effect
+  edits_target: true
   confirmation: yes_always
   wait_policy: not_async
   pagination_policy: none
@@ -461,10 +490,10 @@ commands:
   live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
   contract_fixture: null
   required_fixture_guard: null
-  secret_fields: []
+  secret_fields:
+  - credentials
   human_example: mammoth connector connection update CONNECTOR_KEY CONNECTION_KEY --help
-  agent_example: 'mammoth connector connection update sample sample --input ''{"credentials": {"sample_key":
-    "Status"}}'''
+  agent_example: mammoth connector connection update sample sample --input /private/path/request.json
   unit_tests:
   - UT-CONNECTOR-CONNECTION-UPDATE
   contract_tests:
@@ -475,6 +504,12 @@ commands:
   undo_test: null
   known_restrictions: Require --yes if validation contacts the destination; fixture required.
   reviewed_by: primary
+  readback:
+    command: connector.connection.get
+    ids:
+      connector_key: positional.0
+      connection_key: positional.1
+    kind: object
 - command_id: connector.ds-config.create
   command_path: connector ds-config create
   disposition: command
@@ -500,6 +535,7 @@ commands:
   request_model: ConnectorDsConfigCreateRequest
   result_model: ConnectorDsConfigCreateResult
   mutation_class: external_effect
+  edits_target: false
   confirmation: yes_always
   wait_policy: not_async
   pagination_policy: none
@@ -521,6 +557,12 @@ commands:
   undo_test: null
   known_restrictions: Require exactly one source and reject validate && data_sample; fixture required.
   reviewed_by: primary
+  readback:
+    command: connector.ds-config.list
+    ids:
+      connector_key: positional.0
+      connection_key: positional.1
+    kind: object
 - command_id: connector.ds-config.delete
   command_path: connector ds-config delete
   disposition: command
@@ -552,6 +594,7 @@ commands:
   request_model: ConnectorDsConfigDeleteRequest
   result_model: ConnectorDsConfigDeleteResult
   mutation_class: destructive
+  edits_target: true
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -573,6 +616,12 @@ commands:
   undo_test: null
   known_restrictions: Resolve immutable key before confirmation; fixture required.
   reviewed_by: primary
+  readback:
+    command: connector.ds-config.list
+    ids:
+      connector_key: positional.0
+      connection_key: positional.1
+    kind: object
 - command_id: connector.ds-config.delete-all
   command_path: connector ds-config delete-all
   disposition: command
@@ -599,6 +648,7 @@ commands:
   request_model: ConnectorDsConfigDeleteAllRequest
   result_model: ConnectorDsConfigDeleteAllResult
   mutation_class: destructive
+  edits_target: true
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -620,6 +670,12 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: connector.ds-config.list
+    ids:
+      connector_key: positional.0
+      connection_key: positional.1
+    kind: object
 - command_id: connector.ds-config.get
   command_path: connector ds-config get
   disposition: command
@@ -749,6 +805,7 @@ commands:
   request_model: ConnectorDsConfigUpdateRequest
   result_model: ConnectorDsConfigUpdateResult
   mutation_class: external_effect
+  edits_target: true
   confirmation: yes_always
   wait_policy: not_async
   pagination_policy: none
@@ -772,6 +829,13 @@ commands:
   known_restrictions: Only query has current server support; other enum paths remain blocked pending successful
     server evidence. Fixture required.
   reviewed_by: primary
+  readback:
+    command: connector.ds-config.get
+    ids:
+      connector_key: positional.0
+      connection_key: positional.1
+      ds_config_key: positional.2
+    kind: object
 - command_id: connector.get
   command_path: connector get
   disposition: command

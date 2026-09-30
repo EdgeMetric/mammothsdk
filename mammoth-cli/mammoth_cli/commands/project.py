@@ -100,12 +100,28 @@ def _meta(invocation: Invocation, auth_workspace_id: int, project_id: int | None
     }
 
 
+def _forward_optional(
+    document: dict[str, Any], kwargs: dict[str, Any], fields: tuple[str, ...]
+) -> None:
+    """Copy any of ``fields`` present in ``document`` into ``kwargs``."""
+    for field in fields:
+        if field in document:
+            kwargs[field] = document[field]
+
+
 def project_list(invocation: Invocation) -> HandlerResult:
-    """List projects in the active workspace."""
+    """List projects in the active workspace, one page at a time.
+
+    ``offset`` forwards for pagination past the server's 100-row page, the
+    same as ``dataset list``; a short page's ``next`` in the response is
+    empty. The server has no name filter for this route (unlike ``dataset
+    list``'s discovery search), so none is exposed here.
+    """
     document = invocation.load_input() or {}
-    limit = int(document.get("limit", 100))
+    kwargs: dict[str, Any] = {"limit": int(document.get("limit", 100))}
+    _forward_optional(document, kwargs, ("offset",))
     with open_service(invocation) as (service, auth):
-        data = service.call(_symbol(invocation), limit=limit)
+        data = service.call(_symbol(invocation), **kwargs)
     return data, _meta(invocation, auth.workspace_id, resolved_project(invocation))
 
 
@@ -122,6 +138,32 @@ def project_pending_changes(invocation: Invocation) -> HandlerResult:
     project_id = _project_id(invocation)
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), project_id=project_id)
+    return data, _meta(invocation, auth.workspace_id, project_id)
+
+
+def project_memory_list(invocation: Invocation) -> HandlerResult:
+    """List the caller's saved agent preferences for a project."""
+    project_id = _project_id(invocation)
+    with open_service(invocation) as (service, auth):
+        data = service.call(_symbol(invocation), project_id=project_id)
+    return data, _meta(invocation, auth.workspace_id, project_id)
+
+
+def project_memory_add(invocation: Invocation) -> HandlerResult:
+    """Save one agent preference (``text`` from ``--input``) for the caller."""
+    project_id = _project_id(invocation)
+    text = _require_input_field(invocation.load_input(), "text")
+    with open_service(invocation) as (service, auth):
+        data = service.call(_symbol(invocation), project_id=project_id, text=text)
+    return data, _meta(invocation, auth.workspace_id, project_id)
+
+
+def project_memory_remove(invocation: Invocation) -> HandlerResult:
+    """Remove the caller's saved preference at ``index`` (from ``--input``)."""
+    project_id = _project_id(invocation)
+    index = _require_input_field(invocation.load_input(), "index")
+    with open_service(invocation) as (service, auth):
+        data = service.call(_symbol(invocation), project_id=project_id, index=index)
     return data, _meta(invocation, auth.workspace_id, project_id)
 
 
@@ -509,3 +551,120 @@ def project_user_update(invocation: Invocation) -> HandlerResult:
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), **kwargs)
     return data, _meta(invocation, auth.workspace_id, project_id)
+
+
+_DATASETS_LIST_SYMBOL = "mammoth.api.datasets.DatasetsAPI.list_all"
+_DASHBOARDS_LIST_SYMBOL = "mammoth.api.dashboards.DashboardsAPI.list"
+
+
+def _report_line(where: str, warning: dict[str, Any]) -> str:
+    column = warning.get("column")
+    subject = f"{where}, column {column}" if column else where
+    return f"{subject}: {warning.get('issue')}. {warning.get('detail', '')}".strip()
+
+
+def _scoped_dataset_id(invocation: Invocation) -> int | None:
+    """The DATASET_ID that narrows ``project check`` to one dataset, or None."""
+    raw = invocation.positional("dataset_id")
+    if raw is None:
+        return None
+    try:
+        return int(raw)
+    except ValueError as exc:
+        raise CliError(
+            code=CODE_INVALID_ARGUMENT,
+            message=f"The dataset id argument '{raw}' is not an integer.",
+            exit_status=EXIT_USAGE,
+        ) from exc
+
+
+def _datasets_to_check(service: Any, project_id: int, scoped: int | None) -> list[Any]:
+    """Every dataset of the project, or only the named one -- never a walk when scoped."""
+    if scoped is not None:
+        return [{"id": scoped, "name": f"dataset {scoped}"}]
+    listing = service.call(_DATASETS_LIST_SYMBOL, project_id=project_id)
+    return listing.get("datasets", []) if isinstance(listing, dict) else []
+
+
+def project_check(invocation: Invocation) -> HandlerResult:
+    """List what a report on this project must still account for.
+
+    Read-only local composite, run before reporting: for each dataset, the
+    first view's ``column_warnings`` and ``before_dashboard``; for each
+    dashboard, its ``deliverable_check``. ``to_report`` flattens them into
+    one line per finding. Given a DATASET_ID it reads only that dataset's first
+    view (no dataset list, no dashboards). Cold-agent evals (2.0.41) left one column's blanks
+    undecided in every run, because the warning sat in an earlier result.
+    """
+    from mammoth_cli.commands.dashboard import _with_deliverable_check
+    from mammoth_cli.commands.view import upload_preview
+
+    project_id = _project_id(invocation)
+    views: list[dict[str, Any]] = []
+    dashboards: list[dict[str, Any]] = []
+    to_report: list[str] = []
+    scoped_dataset = _scoped_dataset_id(invocation)
+    with open_service(invocation) as (service, auth):
+        datasets = _datasets_to_check(service, project_id, scoped_dataset)
+        for dataset in datasets:
+            dataset_id = dataset.get("id") if isinstance(dataset, dict) else None
+            if not isinstance(dataset_id, int):
+                continue
+            preview = upload_preview(service, dataset_id, project_id)
+            if preview is None:
+                continue
+            entry = {
+                "dataset_id": dataset_id,
+                "dataset_name": dataset.get("name"),
+                "view_id": preview["view_id"],
+                "row_count": preview.get("row_count"),
+                "column_warnings": preview.get("column_warnings", []),
+            }
+            if "before_dashboard" in preview:
+                entry["before_dashboard"] = preview["before_dashboard"]
+            other_views = preview.get("other_views")
+            if other_views:
+                # Only the first (most recent) view is previewed and checked.
+                # Say so explicitly instead of letting silence read as "this
+                # is the only view" -- which view to change is the user's
+                # call unless they already named one.
+                entry["other_views"] = other_views
+                other_desc = ", ".join(f"{v['id']} ({v.get('name')})" for v in other_views)
+                to_report.append(
+                    f"dataset {dataset.get('name')} (id {dataset_id}) has "
+                    f"{len(other_views) + 1} views; only view {preview['view_id']} was "
+                    f"checked (others: {other_desc}). Which view to change is the "
+                    "user's pick unless they named one."
+                )
+            views.append(entry)
+            where = f"view {preview['view_id']} ({dataset.get('name')})"
+            to_report += [_report_line(where, w) for w in entry["column_warnings"]]
+        boards = (
+            [] if scoped_dataset else service.call(_DASHBOARDS_LIST_SYMBOL, project_id=project_id)
+        )
+        for board in boards if isinstance(boards, list) else []:
+            dashboard_id = board.get("id") if isinstance(board, dict) else None
+            if not isinstance(dashboard_id, int):
+                continue
+            checked = _with_deliverable_check(
+                invocation, service, auth, {"dashboard_id": dashboard_id}, {"id": dashboard_id}
+            )
+            check = checked.get("deliverable_check") if isinstance(checked, dict) else None
+            warnings = check.get("warnings", []) if isinstance(check, dict) else []
+            dashboards.append(
+                {"id": dashboard_id, "title": board.get("title"), "warnings": warnings}
+            )
+            to_report += [_report_line(f"dashboard {dashboard_id}", w) for w in warnings]
+        meta = _meta(invocation, auth.workspace_id, project_id)
+    return {
+        "project_id": project_id,
+        "views": views,
+        "dashboards": dashboards,
+        **(
+            {"scope": {"dataset_id": scoped_dataset, "dashboards": "not checked"}}
+            if scoped_dataset
+            else {}
+        ),
+        "to_report": to_report,
+        **({} if to_report else {"note": "Nothing open in the views or dashboards."}),
+    }, meta

@@ -189,7 +189,7 @@ def test_delete_batch_proceeds_with_yes_and_forwards_ids(
     assert fake_service.call_log == [(_DELETE_BATCH, {"ids": [1, 2]})]
 
 
-def test_delete_batch_proceeds_with_filter_only_and_no_workspace_id(
+def test_delete_batch_rejects_a_workspace_id_in_the_filter(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
     doc = _write_doc(
@@ -200,6 +200,18 @@ def test_delete_batch_proceeds_with_filter_only_and_no_workspace_id(
             _inv("notification.delete-batch", input_file=doc, yes=True)
         )
     assert excinfo.value.code == "unknown_input_field"
+
+
+def test_delete_batch_proceeds_with_a_filter_and_no_ids(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    doc = _write_doc(tmp_path, {"last_updated_at__lt": "2026-01-01", "is_read": True})
+    notification_cmd.notification_delete_batch(
+        _inv("notification.delete-batch", input_file=doc, yes=True)
+    )
+    assert fake_service.call_log == [
+        (_DELETE_BATCH, {"last_updated_at__lt": "2026-01-01", "is_read": True})
+    ]
 
 
 def test_delete_batch_with_no_input_still_requires_confirmation(

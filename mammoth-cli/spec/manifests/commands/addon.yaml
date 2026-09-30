@@ -13,6 +13,7 @@ commands:
   request_model: AddonConnectorAddRequest
   result_model: AddonConnectorAddResult
   mutation_class: high_impact
+  edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -34,6 +35,10 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: addon.list
+    ids: {}
+    kind: object
 - command_id: addon.connector.remove
   command_path: addon connector remove
   disposition: command
@@ -47,6 +52,7 @@ commands:
   request_model: AddonConnectorRemoveRequest
   result_model: AddonConnectorRemoveResult
   mutation_class: high_impact
+  edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -68,6 +74,10 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: addon.list
+    ids: {}
+    kind: object
 - command_id: addon.list
   command_path: addon list
   disposition: command
@@ -114,6 +124,7 @@ commands:
   request_model: AddonStorageAddRequest
   result_model: AddonStorageAddResult
   mutation_class: high_impact
+  edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -135,6 +146,10 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: addon.list
+    ids: {}
+    kind: object
 - command_id: addon.storage.remove
   command_path: addon storage remove
   disposition: command
@@ -148,6 +163,7 @@ commands:
   request_model: AddonStorageRemoveRequest
   result_model: AddonStorageRemoveResult
   mutation_class: high_impact
+  edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -169,6 +185,10 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: addon.list
+    ids: {}
+    kind: object
 - command_id: addon.user.add
   command_path: addon user add
   disposition: command
@@ -182,6 +202,7 @@ commands:
   request_model: AddonUserAddRequest
   result_model: AddonUserAddResult
   mutation_class: high_impact
+  edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -203,6 +224,10 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: addon.list
+    ids: {}
+    kind: object
 - command_id: addon.user.remove
   command_path: addon user remove
   disposition: command
@@ -216,6 +241,7 @@ commands:
   request_model: AddonUserRemoveRequest
   result_model: AddonUserRemoveResult
   mutation_class: high_impact
+  edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -237,3 +263,7 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: addon.list
+    ids: {}
+    kind: object

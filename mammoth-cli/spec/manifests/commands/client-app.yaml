@@ -19,6 +19,7 @@ commands:
   request_model: ClientAppCreateRequest
   result_model: ClientAppCreateResult
   mutation_class: high_impact
+  edits_target: false
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -41,6 +42,11 @@ commands:
   known_restrictions: App key/token emitted only once through approved secret output and redacted from
     diagnostics. B20.
   reviewed_by: primary
+  readback:
+    command: client-app.get
+    ids:
+      client_key: result.app_key
+    kind: object
 - command_id: client-app.delete
   command_path: client-app delete
   disposition: command
@@ -60,6 +66,7 @@ commands:
   request_model: ClientAppDeleteRequest
   result_model: ClientAppDeleteResult
   mutation_class: destructive
+  edits_target: true
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -81,6 +88,10 @@ commands:
   undo_test: null
   known_restrictions: Exact client-key confirmation. B20.
   reviewed_by: primary
+  readback:
+    command: client-app.list
+    ids: {}
+    kind: object
 - command_id: client-app.get
   command_path: client-app get
   disposition: command
@@ -174,6 +185,7 @@ commands:
   request_model: ClientAppUpdateRequest
   result_model: ClientAppUpdateResult
   mutation_class: high_impact
+  edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -197,3 +209,8 @@ commands:
   known_restrictions: 'BLOCKED[B21 CLIENT_APP_PATCH_UNCONSTRAINED]: op/path/value are arbitrary strings;
     reserved, not registered.'
   reviewed_by: primary
+  readback:
+    command: client-app.get
+    ids:
+      client_key: positional.0
+    kind: object

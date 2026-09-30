@@ -12,6 +12,7 @@ commands:
   request_model: UpgradeRequest
   result_model: UpgradeResult
   mutation_class: external_effect
+  edits_target: false
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -33,3 +34,7 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: version
+    ids: {}
+    kind: object

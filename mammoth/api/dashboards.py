@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+import base64
 import builtins
 import os
+import tempfile
+from contextlib import suppress
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 from urllib.parse import quote
 
 from pydantic import ValidationError
@@ -23,13 +26,22 @@ from mammoth.models.dashboards import (
     DashboardPatchPath,
     DashboardShareUser,
     DashboardTagsParams,
+    EmbedConfigParams,
+    EmbedConfigResponse,
+    EmbedKeyResponse,
+    EmbedLifetimeResponse,
+    EmbedPreviewTokenResponse,
+    EmbedSecretResponse,
+    EmbedUsageResponse,
     ExemplarExtractResponse,
     ExemplarExtractSpec,
     GenerateV3Params,
     ImportDatasetResponse,
     PbixAssessResponse,
     PendingTemplateResponse,
+    PowerBiPreflightResponse,
     SwapDataSpec,
+    TableauPreflightResponse,
     TagMergeParams,
     TagRenameParams,
     TwbAssessResponse,
@@ -45,9 +57,6 @@ _list = list  # Alias to avoid shadowing by method name
 # ── Validation error constants ────────────────────────────────────────────────
 
 ERR_DASHBOARD_ID_POSITIVE = "`dashboard_id` must be a positive integer, got {0}."
-ERR_INTENT_TOO_SHORT = "`intent` must be at least 10 characters, got {0!r}."
-ERR_SOURCE_EMPTY = "`source` must be a non-empty list of dataview IDs."
-ERR_SOURCE_IDS_POSITIVE = "All `source` IDs must be positive integers; got invalid ID {0}."
 ERR_PATCH_EMPTY = "`patch` must be a non-empty list of patch operations."
 ERR_INTENT_VALUE_TOO_SHORT = "Patch value for `intent` must be at least 10 characters, got {0!r}."
 ERR_INTENT_VALUE_NOT_STR = "Patch value for `intent` must be a string."
@@ -59,8 +68,17 @@ ERR_AUTO_PUBLISH_NEEDS_ENABLED = "`auto-publish` action requires `params_enabled
 ERR_DELETE_SOURCE_NEEDS_VIEW_ID = "`delete-source` action requires `params_view_id` (int > 0)."
 ERR_VIEW_ID_POSITIVE = "`params_view_id` must be a positive integer, got {0}."
 ERR_JOB_ID_POSITIVE = "`job_id` must be a positive integer, got {0}."
+ERR_WORKSPACE_ID_POSITIVE = "`workspace_id` must be a positive integer, got {0}."
+ERR_EMBED_ORIGIN_EMPTY = "`origin` must be a non-empty string."
+ERR_EMBED_TOKEN_TTL_RANGE = "`token_ttl` must be between 60 and 3600 seconds, got {0}."
 
 _INTENT_MIN_LEN = 10
+
+# Local filename extension for each BI export target's downloaded artifact.
+_BI_EXPORT_EXTENSIONS: dict[Literal["powerbi", "tableau"], str] = {
+    "powerbi": "zip",
+    "tableau": "twbx",
+}
 
 
 class DashboardsAPI:
@@ -69,9 +87,8 @@ class DashboardsAPI:
     Access via ``client.dashboards``::
 
         dashboards = client.dashboards.list()
-        dashboard = client.dashboards.create(
-            intent="Show quarterly revenue by region",
-            source=[101, 102],
+        dashboard = client.dashboards.create_blank(
+            CreateBlankParams(dataview_id=101, title="Revenue by region"),
         )
         client.dashboards.share(
             dashboard_id=5,
@@ -147,50 +164,6 @@ class DashboardsAPI:
         return await self._client._request_json(
             "POST", f"/dashboards/tags/{tag_id}/merge", json=typed.model_dump(mode="json")
         )
-
-    async def create(
-        self,
-        intent: str,
-        source: _list[int],
-        enable_filters: bool = True,
-        enable_pages: bool = False,
-    ) -> dict[str, Any]:
-        """Create a new AI-generated dashboard.
-
-        Args:
-            intent: Natural-language description of what the dashboard should
-                show (minimum 10 characters).
-            source: Non-empty list of dataview IDs to use as the data source.
-                All IDs must be positive integers; existence is validated
-                server-side.
-            enable_filters: Whether to include filter widgets (default ``True``).
-            enable_pages: Whether to generate multiple pages (default ``False``).
-
-        Returns:
-            Dict with created dashboard info (may include a job ID for async
-            creation).
-
-        Raises:
-            MammothValidationError: If *intent* is shorter than 10 characters,
-                *source* is empty, or any source ID is not a positive integer.
-        """
-        if len(intent) < _INTENT_MIN_LEN:
-            raise MammothValidationError(ERR_INTENT_TOO_SHORT.format(intent))
-        if not source:
-            raise MammothValidationError(ERR_SOURCE_EMPTY)
-        for sid in source:
-            if sid <= 0:
-                raise MammothValidationError(ERR_SOURCE_IDS_POSITIVE.format(sid))
-
-        body: dict[str, Any] = {
-            "params": {
-                "intent": intent,
-                "source": source,
-                "enable_filters": enable_filters,
-                "enable_pages": enable_pages,
-            }
-        }
-        return await self._client._request_json("POST", "/dashboards", json=body)
 
     async def create_blank(self, params: CreateBlankParams) -> dict[str, Any]:
         """Create an empty v3 dashboard bound to a dataview.
@@ -428,6 +401,111 @@ class DashboardsAPI:
             return model.model_validate(response)
         except ValidationError as exc:
             raise MammothValidationError(f"Invalid workbook assessment response: {exc}") from exc
+
+    async def powerbi_preflight(self, dashboard_id: int) -> PowerBiPreflightResponse:
+        """What a Power BI export of this dashboard would carry (release route)."""
+        if isinstance(dashboard_id, bool) or not isinstance(dashboard_id, int) or dashboard_id <= 0:
+            raise MammothValidationError(ERR_DASHBOARD_ID_POSITIVE.format(dashboard_id))
+        response = await self._client._request_json("GET", f"/dashboards/{dashboard_id}/powerbi")
+        try:
+            return PowerBiPreflightResponse.model_validate(response)
+        except ValidationError as exc:
+            raise MammothValidationError(f"Invalid Power BI preflight response: {exc}") from exc
+
+    async def tableau_preflight(self, dashboard_id: int) -> TableauPreflightResponse:
+        """What a Tableau export of this dashboard would carry (release route)."""
+        if isinstance(dashboard_id, bool) or not isinstance(dashboard_id, int) or dashboard_id <= 0:
+            raise MammothValidationError(ERR_DASHBOARD_ID_POSITIVE.format(dashboard_id))
+        response = await self._client._request_json("GET", f"/dashboards/{dashboard_id}/tableau")
+        try:
+            return TableauPreflightResponse.model_validate(response)
+        except ValidationError as exc:
+            raise MammothValidationError(f"Invalid Tableau preflight response: {exc}") from exc
+
+    async def powerbi_export_artifact(self, dashboard_id: int) -> dict[str, Any]:
+        """Fetch the raw Power BI export artifact (release route).
+
+        SDK-only: :meth:`export_powerbi` decodes ``content_base64`` and writes
+        the result to disk; that is the reviewed CLI command.
+        """
+        if isinstance(dashboard_id, bool) or not isinstance(dashboard_id, int) or dashboard_id <= 0:
+            raise MammothValidationError(ERR_DASHBOARD_ID_POSITIVE.format(dashboard_id))
+        return await self._client._request_binary(
+            "GET", f"/dashboards/{dashboard_id}/powerbi/export"
+        )
+
+    async def tableau_export_artifact(self, dashboard_id: int) -> dict[str, Any]:
+        """Fetch the raw Tableau export artifact (release route).
+
+        SDK-only: :meth:`export_tableau` decodes ``content_base64`` and writes
+        the result to disk; that is the reviewed CLI command.
+        """
+        if isinstance(dashboard_id, bool) or not isinstance(dashboard_id, int) or dashboard_id <= 0:
+            raise MammothValidationError(ERR_DASHBOARD_ID_POSITIVE.format(dashboard_id))
+        return await self._client._request_binary(
+            "GET", f"/dashboards/{dashboard_id}/tableau/export"
+        )
+
+    async def export_powerbi(
+        self, dashboard_id: int, output_path: str | Path | None = None
+    ) -> Path:
+        """Download this dashboard as a Power BI project (.zip) to a local file.
+
+        The zip holds the PBIP project, a CSV snapshot of the data, and a
+        readme written for someone who has never seen the Mammoth original.
+        See :meth:`powerbi_preflight` for what will convert before committing
+        to the download.
+
+        Args:
+            dashboard_id: ID of the dashboard (must be > 0).
+            output_path: Path for the .zip file (auto-generated if not provided).
+
+        Returns:
+            Path to the downloaded file.
+        """
+        return await self._download_bi_export(dashboard_id, "powerbi", output_path)
+
+    async def export_tableau(
+        self, dashboard_id: int, output_path: str | Path | None = None
+    ) -> Path:
+        """Download this dashboard as a Tableau workbook (.twbx) to a local file.
+
+        One file, no refresh step and no gateway -- a .twbx carries its own
+        data. See :meth:`tableau_preflight` for what will convert before
+        committing to the download.
+
+        Args:
+            dashboard_id: ID of the dashboard (must be > 0).
+            output_path: Path for the .twbx file (auto-generated if not provided).
+
+        Returns:
+            Path to the downloaded file.
+        """
+        return await self._download_bi_export(dashboard_id, "tableau", output_path)
+
+    async def _download_bi_export(
+        self,
+        dashboard_id: int,
+        target: Literal["powerbi", "tableau"],
+        output_path: str | Path | None,
+    ) -> Path:
+        if isinstance(dashboard_id, bool) or not isinstance(dashboard_id, int) or dashboard_id <= 0:
+            raise MammothValidationError(ERR_DASHBOARD_ID_POSITIVE.format(dashboard_id))
+        artifact = (
+            await self.powerbi_export_artifact(dashboard_id)
+            if target == "powerbi"
+            else await self.tableau_export_artifact(dashboard_id)
+        )
+        try:
+            content = base64.b64decode(artifact["content_base64"])
+        except (KeyError, ValueError) as exc:
+            raise MammothValidationError(f"Invalid {target} export artifact response.") from exc
+        path = (
+            Path(output_path)
+            if output_path
+            else Path(f"dashboard_{dashboard_id}_{target}.{_BI_EXPORT_EXTENSIONS[target]}")
+        )
+        return _write_bytes_atomic(content, path)
 
     async def update(
         self,
@@ -849,8 +927,245 @@ class DashboardsAPI:
             "POST", f"/dashboards/url/{url}/widgets/data", json=body
         )
 
+    # ── embed: config / key / usage / preview-token / workspace secret ──────
+
+    async def embed_config_get(self, dashboard_id: int) -> EmbedConfigResponse:
+        """Read a board's embed settings.
+
+        Args:
+            dashboard_id: ID of the dashboard (must be > 0).
+
+        Returns:
+            The board's embed settings plus the URLs a snippet needs.
+
+        Raises:
+            MammothValidationError: If *dashboard_id* ≤ 0.
+        """
+        if isinstance(dashboard_id, bool) or not isinstance(dashboard_id, int) or dashboard_id <= 0:
+            raise MammothValidationError(ERR_DASHBOARD_ID_POSITIVE.format(dashboard_id))
+        response = await self._client._request_json(
+            "GET", f"/dashboards/{dashboard_id}/embed/config"
+        )
+        return EmbedConfigResponse.model_validate(response)
+
+    async def embed_config_set(
+        self,
+        dashboard_id: int,
+        mode: Literal["key", "signed"] = "key",
+        allow_any_origin: bool = True,
+        allowed_origins: _list[str] | None = None,
+        appearance: dict[str, Any] | None = None,
+        snippet: dict[str, Any] | None = None,
+    ) -> EmbedConfigResponse:
+        """Save a board's embed settings (mode, origin allowlist, appearance).
+
+        Args:
+            dashboard_id: ID of the dashboard (must be > 0).
+            mode: ``key`` (the board's embed key) or ``signed`` (a host-signed
+                token). Ignored while the board is public.
+            allow_any_origin: Any site may frame the board. Set false to
+                restrict framing to *allowed_origins*.
+            allowed_origins: Origin patterns allowed to frame the board while
+                *allow_any_origin* is false. At most 20.
+            appearance: The board's saved embed look (theme, filters, tile, ...).
+            snippet: How the embed snippet is shaped (``height`` etc.).
+
+        Returns:
+            The board's updated embed settings.
+
+        Raises:
+            MammothValidationError: If *dashboard_id* ≤ 0 or the parameters
+                fail validation (e.g. more than 20 *allowed_origins*).
+        """
+        if isinstance(dashboard_id, bool) or not isinstance(dashboard_id, int) or dashboard_id <= 0:
+            raise MammothValidationError(ERR_DASHBOARD_ID_POSITIVE.format(dashboard_id))
+        try:
+            typed = EmbedConfigParams(
+                mode=mode,
+                allow_any_origin=allow_any_origin,
+                allowed_origins=allowed_origins or [],
+                appearance=appearance or {},
+                snippet=snippet or {},
+            )
+        except ValidationError as exc:
+            raise MammothValidationError(f"Invalid embed config parameters: {exc}") from exc
+        response = await self._client._request_json(
+            "PUT",
+            f"/dashboards/{dashboard_id}/embed/config",
+            json={"params": typed.model_dump(mode="json")},
+        )
+        return EmbedConfigResponse.model_validate(response)
+
+    async def embed_key_rotate(
+        self, dashboard_id: int, keep_previous: bool = True
+    ) -> EmbedKeyResponse:
+        """Create or rotate a board's embed key (Basic embeds).
+
+        Args:
+            dashboard_id: ID of the dashboard (must be > 0).
+            keep_previous: Keep the replaced key usable for 24h (the default,
+                for a planned rotation). Pass ``False`` to end it at once,
+                for a leaked key.
+
+        Returns:
+            The board's new embed key (shown once here; readable again via
+            :meth:`embed_config_get`).
+
+        Raises:
+            MammothValidationError: If *dashboard_id* ≤ 0.
+        """
+        if isinstance(dashboard_id, bool) or not isinstance(dashboard_id, int) or dashboard_id <= 0:
+            raise MammothValidationError(ERR_DASHBOARD_ID_POSITIVE.format(dashboard_id))
+        response = await self._client._request_json(
+            "POST",
+            f"/dashboards/{dashboard_id}/embed/key",
+            json={"params": {"keep_previous": keep_previous}},
+        )
+        return EmbedKeyResponse.model_validate(response)
+
+    async def embed_usage_get(self, dashboard_id: int) -> EmbedUsageResponse:
+        """Get one board's embed registry: origins, tiles and render counts.
+
+        Args:
+            dashboard_id: ID of the dashboard (must be > 0).
+
+        Returns:
+            Per-origin render/health counts and the active-origin total.
+
+        Raises:
+            MammothValidationError: If *dashboard_id* ≤ 0.
+        """
+        if isinstance(dashboard_id, bool) or not isinstance(dashboard_id, int) or dashboard_id <= 0:
+            raise MammothValidationError(ERR_DASHBOARD_ID_POSITIVE.format(dashboard_id))
+        response = await self._client._request_json(
+            "GET", f"/dashboards/{dashboard_id}/embed/usage"
+        )
+        return EmbedUsageResponse.model_validate(response)
+
+    async def embed_origin_revoke(self, dashboard_id: int, origin: str) -> EmbedConfigResponse:
+        """Remove one origin from a board's embed allowlist.
+
+        Args:
+            dashboard_id: ID of the dashboard (must be > 0).
+            origin: The origin to remove (non-empty).
+
+        Returns:
+            The board's embed settings after the origin is removed.
+
+        Raises:
+            MammothValidationError: If *dashboard_id* ≤ 0 or *origin* is empty.
+        """
+        if isinstance(dashboard_id, bool) or not isinstance(dashboard_id, int) or dashboard_id <= 0:
+            raise MammothValidationError(ERR_DASHBOARD_ID_POSITIVE.format(dashboard_id))
+        if not origin:
+            raise MammothValidationError(ERR_EMBED_ORIGIN_EMPTY)
+        response = await self._client._request_json(
+            "DELETE",
+            f"/dashboards/{dashboard_id}/embed/origin",
+            json={"params": {"origin": origin}},
+        )
+        return EmbedConfigResponse.model_validate(response)
+
+    async def embed_preview_token_create(
+        self, dashboard_id: int, claims: dict[str, Any] | None = None
+    ) -> EmbedPreviewTokenResponse:
+        """Mint a preview token for the embed simulator (editor-only).
+
+        Args:
+            dashboard_id: ID of the dashboard (must be > 0).
+            claims: Row-level-security claims, keyed by the board's RLS
+                column name, exactly as a host's token would carry them.
+
+        Returns:
+            A short-lived token, its expiry, and the embed URL to use it with.
+
+        Raises:
+            MammothValidationError: If *dashboard_id* ≤ 0.
+        """
+        if isinstance(dashboard_id, bool) or not isinstance(dashboard_id, int) or dashboard_id <= 0:
+            raise MammothValidationError(ERR_DASHBOARD_ID_POSITIVE.format(dashboard_id))
+        response = await self._client._request_json(
+            "POST",
+            f"/dashboards/{dashboard_id}/embed/preview-token",
+            json={"params": {"claims": claims or {}}},
+        )
+        return EmbedPreviewTokenResponse.model_validate(response)
+
+    async def embed_secret_rotate(self, workspace_id: int) -> EmbedSecretResponse:
+        """Create or rotate the workspace's embed signing secret (owners/admins).
+
+        The plaintext secret is returned once, here, and never by a read route.
+        Rotating keeps the previous secret valid for 24 hours.
+
+        Args:
+            workspace_id: ID of the workspace (must be > 0).
+
+        Returns:
+            The new plaintext secret, its session token TTL, and rotation time.
+
+        Raises:
+            MammothValidationError: If *workspace_id* ≤ 0.
+        """
+        if isinstance(workspace_id, bool) or not isinstance(workspace_id, int) or workspace_id <= 0:
+            raise MammothValidationError(ERR_WORKSPACE_ID_POSITIVE.format(workspace_id))
+        response = await self._client._request_json(
+            "POST", f"/workspaces/{workspace_id}/embed/secret"
+        )
+        return EmbedSecretResponse.model_validate(response)
+
+    async def embed_lifetime_set(self, workspace_id: int, token_ttl: int) -> EmbedLifetimeResponse:
+        """Set how long an embed viewer session lives for a workspace.
+
+        Args:
+            workspace_id: ID of the workspace (must be > 0).
+            token_ttl: Session lifetime in seconds, 60 to 3600 inclusive.
+
+        Returns:
+            The saved session lifetime.
+
+        Raises:
+            MammothValidationError: If *workspace_id* ≤ 0 or *token_ttl* is
+                outside [60, 3600].
+        """
+        if isinstance(workspace_id, bool) or not isinstance(workspace_id, int) or workspace_id <= 0:
+            raise MammothValidationError(ERR_WORKSPACE_ID_POSITIVE.format(workspace_id))
+        if not (60 <= token_ttl <= 3600):
+            raise MammothValidationError(ERR_EMBED_TOKEN_TTL_RANGE.format(token_ttl))
+        response = await self._client._request_json(
+            "PUT",
+            f"/workspaces/{workspace_id}/embed/lifetime",
+            json={"params": {"token_ttl": token_ttl}},
+        )
+        return EmbedLifetimeResponse.model_validate(response)
+
 
 # ── Private helpers ───────────────────────────────────────────────────────────
+
+
+def _write_bytes_atomic(content: bytes, output_path: Path) -> Path:
+    """Write ``content`` to ``output_path``, publishing it only once complete.
+
+    Uses a same-directory temporary file so the final ``os.replace`` is atomic
+    even when the destination is on a different filesystem from the process
+    temp dir; the destination is never opened for writing until the full
+    content has been flushed and fsynced.
+    """
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    fd, raw_temp_path = tempfile.mkstemp(
+        prefix=f".{output_path.name}.", suffix=".part", dir=output_path.parent
+    )
+    temp_path = Path(raw_temp_path)
+    try:
+        with os.fdopen(fd, "wb") as stream:
+            stream.write(content)
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.replace(temp_path, output_path)
+    except OSError:
+        with suppress(OSError):
+            temp_path.unlink()
+        raise
+    return output_path
 
 
 def _validate_patch_item(item: DashboardPatchItem) -> None:

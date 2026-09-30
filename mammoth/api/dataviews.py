@@ -15,6 +15,214 @@ _list = list  # Alias to avoid shadowing by method name
 
 ERR_DATAVIEW_ID_POSITIVE = "`dataview_id` must be a positive integer, got {0}."
 
+#: Aggregate functions supported by :meth:`DataviewsAPI.aggregate`. Deliberately
+#: a small, exact-match subset of the backend's ``PivotAggregationFunction``
+#: wire vocabulary (which also has PERCENTAGE, CONCAT) — what an agent needs for
+#: "total/count/average/min/max/spread/distinct values of a column", and every
+#: aggregation the web app's Explore card offers (COUNT, SUM, AVG, MIN, MAX, STDDEV).
+_AGGREGATE_FUNCTIONS = frozenset({"SUM", "COUNT", "AVG", "MIN", "MAX", "STDDEV", "DISTINCT_COUNT"})
+ERR_AGGREGATE_FUNCTION_UNSUPPORTED = (
+    "`function` must be one of SUM, COUNT, AVG, MIN, MAX, STDDEV, DISTINCT_COUNT for a volatile "
+    "aggregation query, "
+    "got {0!r}."
+)
+ERR_AGGREGATE_COLUMN_REQUIRED = "`column` is required for {0} aggregation."
+ERR_AGGREGATE_EXACTLY_ONE = (
+    "Pass exactly one of `aggregations` (a PIVOT; `group_by` is optional) or `metric`."
+)
+
+#: Date-truncation levels the backend's PIVOT GROUP_BY ``TRUNCATE`` accepts
+#: (``apiv2.dataview.consts.DateTruncUnit``).
+_DATE_TRUNCATE_LEVELS = frozenset(
+    {
+        "SECOND",
+        "MINUTE",
+        "HOUR",
+        "DAY",
+        "WEEK",
+        "MONTH",
+        "QUARTER",
+        "YEAR",
+        "DECADE",
+        "CENTURY",
+        "MILLENNIUM",
+        "AUTO",
+    }
+)
+ERR_GROUP_BY_COLUMN_REQUIRED = "`column` is required for a PIVOT `group_by` entry."
+ERR_GROUP_BY_TRUNCATE_UNSUPPORTED = (
+    "`truncate` must be one of SECOND, MINUTE, HOUR, DAY, WEEK, MONTH, QUARTER, YEAR, DECADE, "
+    "CENTURY, MILLENNIUM, AUTO for a PIVOT `group_by` entry, got {0!r}."
+)
+
+
+def _build_aggregate_select_item(agg: dict[str, Any], internal_name: str) -> dict[str, Any]:
+    """Build one volatile-query PIVOT/METRIC aggregate item from ``{column, function, as_name}``.
+
+    Raises:
+        MammothValidationError: If *agg*'s function is not one of SUM, COUNT,
+            AVG, MIN, MAX, or its column is missing for a non-COUNT function.
+    """
+    function = str(agg.get("function") or "").upper()
+    if function not in _AGGREGATE_FUNCTIONS:
+        raise MammothValidationError(ERR_AGGREGATE_FUNCTION_UNSUPPORTED.format(agg.get("function")))
+    column = agg.get("column")
+    if not column and function != "COUNT":
+        raise MammothValidationError(ERR_AGGREGATE_COLUMN_REQUIRED.format(function))
+    as_name = agg.get("as_name") or (f"{function}_{column}" if column else function)
+    item: dict[str, Any] = {"FUNCTION": function, "AS": as_name, "INTERNAL_NAME": internal_name}
+    if column:
+        item["COLUMN"] = column
+    return item
+
+
+def _build_pivot_group_by_item(entry: str | dict[str, Any], index: int) -> dict[str, Any]:
+    """Build one volatile-query PIVOT GROUP_BY item.
+
+    *entry* is either a plain column name (a TEXT-style group, unchanged
+    behaviour), or a ``{"column": ..., "truncate": ...}`` / ``{"column": ...,
+    "resolution": ...}`` dict bucketing a DATE column by truncation level or a
+    NUMERIC column by resolution level, mirroring the web app's Explore card
+    (``getPivotGroupByParam``).
+
+    Raises:
+        MammothValidationError: If *entry* is a dict without ``column``, or its
+            ``truncate`` is not one of the backend's allowed date-truncation
+            levels.
+    """
+    if isinstance(entry, str):
+        return {"COLUMN": entry, "INTERNAL_NAME": f"group_{index}"}
+    column = entry.get("column")
+    if not column:
+        raise MammothValidationError(ERR_GROUP_BY_COLUMN_REQUIRED)
+    item: dict[str, Any] = {"COLUMN": column, "INTERNAL_NAME": f"group_{index}"}
+    truncate = entry.get("truncate")
+    if truncate is not None:
+        truncate = str(truncate).upper()
+        if truncate not in _DATE_TRUNCATE_LEVELS:
+            raise MammothValidationError(
+                ERR_GROUP_BY_TRUNCATE_UNSUPPORTED.format(entry.get("truncate"))
+            )
+        item["TRUNCATE"] = truncate
+    resolution = entry.get("resolution")
+    if resolution is not None:
+        item["RESOLUTION"] = resolution
+    return item
+
+
+def _build_pivot_param(
+    aggregations: list[dict[str, Any]], group_by: list[str | dict[str, Any]] | None
+) -> dict[str, Any]:
+    """Build a volatile-query PIVOT param (distinct from the pipeline PIVOT task).
+
+    Raises:
+        MammothValidationError: If *aggregations* is empty, or (from
+            :func:`_build_aggregate_select_item` or
+            :func:`_build_pivot_group_by_item`) an aggregation or group_by
+            entry is invalid.
+    """
+    if not aggregations:
+        raise MammothValidationError("`aggregations` must be a non-empty list.")
+    pivot: dict[str, Any] = {
+        "SELECT": [
+            _build_aggregate_select_item(agg, f"agg_{index}")
+            for index, agg in enumerate(aggregations)
+        ]
+    }
+    if group_by:
+        pivot["GROUP_BY"] = [
+            _build_pivot_group_by_item(entry, index) for index, entry in enumerate(group_by)
+        ]
+    return pivot
+
+
+ERR_AGGREGATE_SORT_INVALID = (
+    "`sort` must be at most three [result_column, 'ASC'|'DESC'] pairs, got {0!r}."
+)
+
+
+def _build_query_display_properties(
+    limit: int | None, sort: _list[_list[str]] | None
+) -> dict[str, Any]:
+    """Build a volatile query's ``display_properties`` (LIMIT and SORT)."""
+    display: dict[str, Any] = {}
+    if limit is not None:
+        display["LIMIT"] = limit
+    if sort:
+        valid = len(sort) <= 3 and all(
+            len(pair) == 2 and str(pair[1]).upper() in ("ASC", "DESC") for pair in sort
+        )
+        if not valid:
+            raise MammothValidationError(ERR_AGGREGATE_SORT_INVALID.format(sort))
+        display["SORT"] = [[str(pair[0]), str(pair[1]).upper()] for pair in sort]
+    return display
+
+
+def _build_metric_param(metric: dict[str, Any]) -> dict[str, Any]:
+    """Build a volatile-query METRIC param from a single ``{column, function, as_name}`` dict."""
+    item = _build_aggregate_select_item(metric, "metric")
+    value: dict[str, Any] = {"FUNCTION": item["FUNCTION"]}
+    if "COLUMN" in item:
+        value["ARGUMENT"] = item["COLUMN"]
+    return {
+        "EXPRESSION": [{"TYPE": "FUNCTION", "VALUE": value}],
+        "AS": item["AS"],
+        "INTERNAL_NAME": item["INTERNAL_NAME"],
+    }
+
+
+#: Rows a TEXT :meth:`DataviewsAPI.explore` returns unless ``limit`` says
+#: otherwise -- the same default the web app's Explore card top-values list
+#: uses.
+_EXPLORE_DEFAULT_TEXT_LIMIT = 20
+
+
+def _add_explore_percentages(rows: list[dict[str, Any]]) -> None:
+    """Add a local ``percentage`` (of the total count across every bucket) to each row.
+
+    Mirrors the Explore card's PERCENTAGE(AGGREGATION=COUNT) select item
+    without asking the backend for it (:func:`_build_aggregate_select_item`
+    sends no PERCENTAGE), so the percentage is always against
+    every bucket the query returned, never just a page truncated by ``limit``.
+    """
+    total = sum(row.get("agg_0") or 0 for row in rows)
+    for row in rows:
+        row["percentage"] = round((row.get("agg_0") or 0) / total * 100, 2) if total else 0.0
+
+
+#: ``sort`` values :meth:`DataviewsAPI.explore` accepts: by count or by bucket value.
+_EXPLORE_SORTS = frozenset({"count_desc", "count_asc", "value_asc", "value_desc"})
+ERR_EXPLORE_SORT_UNSUPPORTED = (
+    "`sort` must be one of count_desc, count_asc, value_asc, value_desc, got {0!r}."
+)
+
+
+def _explore_sort_and_limit(
+    rows: list[dict[str, Any]],
+    column_type: str,
+    sort: str | None,
+    page: tuple[int | None, int | None],
+) -> list[dict[str, Any]]:
+    """Order explore rows the way the Explore card does, then page by ``(offset, limit)``.
+
+    Default order: a DATE/NUMERIC bucket ascending by value (a trend or
+    distribution reads left to right); a TEXT top-values list by count
+    descending, defaulting to the top 20 when no ``limit`` is given. ``sort``
+    overrides it (the card's sort menu). Blanks sort last either way.
+    """
+    order = sort or ("count_desc" if column_type not in ("DATE", "NUMERIC") else "value_asc")
+    if order not in _EXPLORE_SORTS:
+        raise MammothValidationError(ERR_EXPLORE_SORT_UNSUPPORTED.format(sort))
+    field = "agg_0" if order.startswith("count") else "group_0"
+    present = [row for row in rows if row.get(field) is not None]
+    blank = [row for row in rows if row.get(field) is None]
+    ordered = sorted(present, key=lambda row: row[field], reverse=order.endswith("desc")) + blank
+    offset, limit = page
+    if limit is None and column_type not in ("DATE", "NUMERIC"):
+        limit = _EXPLORE_DEFAULT_TEXT_LIMIT
+    start = offset or 0
+    return ordered[start : start + limit] if limit else ordered[start:]
+
 
 class DataviewsAPI:
     """Client for interacting with Mammoth Dataviews API.
@@ -46,6 +254,7 @@ class DataviewsAPI:
         project_id: int | None = None,
         limit: int = 100,
         sort: str = "(created_at:desc)",
+        offset: int = 0,
     ) -> dict[str, Any]:
         """Get list of dataviews in a dataset.
 
@@ -55,13 +264,16 @@ class DataviewsAPI:
             project_id: ID of the project (uses client default if not provided).
             limit: Maximum number of results (default 100).
             sort: Sort order (default "(created_at:desc)").
+            offset: Number of dataviews to skip (default 0).
 
         Returns:
             Dict containing dataviews list.
         """
         ws = workspace_id or self._ws()
         proj = project_id or self._proj()
-        params = {"limit": limit, "sort": sort}
+        params: dict[str, Any] = {"limit": limit, "sort": sort}
+        if offset:
+            params["offset"] = offset
         return await self._client._request_json(
             "GET",
             f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/dataviews",
@@ -330,6 +542,207 @@ class DataviewsAPI:
             json=payload,
         )
         return await self._client._wait_if_job(response)
+
+    async def aggregate(
+        self,
+        dataset_id: int,
+        dataview_id: int,
+        aggregations: _list[dict[str, Any]] | None = None,
+        group_by: _list[str | dict[str, Any]] | None = None,
+        metric: dict[str, Any] | None = None,
+        condition: dict[str, Any] | None = None,
+        sequence: int | None = None,
+        limit: int | None = None,
+        sort: _list[_list[str]] | None = None,
+        workspace_id: int | None = None,
+        project_id: int | None = None,
+        timeout: int | None = None,
+        poll_interval: int = 2,
+    ) -> dict[str, Any]:
+        """Run a read-only aggregation query against a dataview (POST .../data/query).
+
+        This is a volatile query: it computes and returns an aggregated result
+        (a PIVOT group-by, or a single METRIC value) without adding a task to
+        the view's pipeline or otherwise changing it — unlike :meth:`View.pivot`,
+        which adds a PIVOT task. Exactly one of *aggregations* or *metric* is
+        required.
+
+        Args:
+            dataset_id: ID of the dataset.
+            dataview_id: ID of the dataview.
+            aggregations: One or more ``{"column": ..., "function": ...,
+                "as_name": ...}`` dicts for a PIVOT query (mutually exclusive
+                with *metric*). ``function`` is one of SUM, COUNT, AVG, MIN,
+                MAX; ``column`` is required unless ``function`` is COUNT;
+                ``as_name`` defaults to ``f"{function}_{column}"``.
+            group_by: Columns to group the PIVOT by (optional; a PIVOT with no
+                ``group_by`` aggregates the whole view into one row). Each
+                entry is either a plain column name, or a ``{"column": ...,
+                "truncate": ...}`` dict bucketing a DATE column by truncation
+                level (one of SECOND, MINUTE, HOUR, DAY, WEEK, MONTH, QUARTER,
+                YEAR, DECADE, CENTURY, MILLENNIUM, AUTO), or a ``{"column":
+                ..., "resolution": ...}`` dict bucketing a NUMERIC column by
+                resolution level.
+            metric: A single ``{"column": ..., "function": ..., "as_name": ...}``
+                dict for a METRIC query (mutually exclusive with
+                *aggregations*/*group_by*), same shape as an *aggregations* entry.
+            condition: Filter condition dict applied before aggregating (optional).
+            sequence: Pipeline step to read data at (default: latest).
+            limit: Maximum number of result rows to return (optional). Without
+                *sort* the rows kept are arbitrary, not the top ones.
+            sort: Up to three ``[result_column, "ASC"|"DESC"]`` pairs, applied by
+                the backend before *limit*. ``result_column`` is the internal name
+                of a result column: ``agg_<n>`` for the n-th aggregation, ``group_<n>``
+                for the n-th group_by entry, ``metric`` for a METRIC.
+            workspace_id: ID of the workspace (uses client default if not provided).
+            project_id: ID of the project (uses client default if not provided).
+            timeout: Max job wait time in seconds (default: client.job_timeout).
+            poll_interval: Seconds between job polls (default: 2).
+
+        Returns:
+            Dict with the aggregated result rows.
+
+        Raises:
+            MammothValidationError: If neither or both of *aggregations*/
+                *group_by* and *metric* are given, if a *function* is not one
+                of SUM, COUNT, AVG, MIN, MAX, STDDEV, DISTINCT_COUNT, or if *column* is missing for a
+                non-COUNT aggregation.
+
+        Example::
+
+            client.dataviews.aggregate(
+                dataset_id=500, dataview_id=42,
+                group_by=["Channel"],
+                aggregations=[{"column": "Spend", "function": "SUM", "as_name": "Total Spend"}],
+            )
+        """
+        if (aggregations is not None or group_by is not None) == (metric is not None):
+            raise MammothValidationError(ERR_AGGREGATE_EXACTLY_ONE)
+        ws = workspace_id or self._ws()
+        proj = project_id or self._proj()
+        param: dict[str, Any] = (
+            {"METRIC": _build_metric_param(metric)}
+            if metric is not None
+            else {"PIVOT": _build_pivot_param(aggregations or [], group_by)}
+        )
+        if condition is not None:
+            param["CONDITION"] = condition
+        if sequence is not None:
+            param["SEQUENCE_NUMBER"] = sequence
+        payload: dict[str, Any] = {"param": param}
+        display_properties = _build_query_display_properties(limit, sort)
+        if display_properties:
+            payload["display_properties"] = display_properties
+        response = await self._client._request_json(
+            "POST",
+            f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/dataviews/{dataview_id}/data/query",
+            json=payload,
+        )
+        return await self._client._wait_if_job(
+            response, timeout=timeout, poll_interval=poll_interval
+        )
+
+    async def explore(
+        self,
+        dataset_id: int,
+        dataview_id: int,
+        column: str,
+        column_type: str | None = None,
+        level: str | None = None,
+        metric: dict[str, Any] | None = None,
+        condition: dict[str, Any] | None = None,
+        sequence: int | None = None,
+        limit: int | None = None,
+        offset: int | None = None,
+        sort: str | None = None,
+        workspace_id: int | None = None,
+        project_id: int | None = None,
+        timeout: int | None = None,
+        poll_interval: int = 2,
+    ) -> dict[str, Any]:
+        """Explore one column: trend/distribution/top values (a PIVOT convenience).
+
+        A read-only wrapper over :meth:`aggregate` that buckets *column* by its
+        type the way the web app's Explore card does: a DATE column by
+        ``level`` truncation (default "AUTO"), a NUMERIC column by ``level``
+        resolution (default "AUTO"), and any other column (TEXT) by its own
+        distinct values. Every bucket carries a ``count`` and a ``percentage``
+        of the column's total (computed locally, against every bucket the
+        query returns, never just a page truncated by *limit*). An optional
+        *metric* adds a second aggregation over another column.
+
+        Buckets are ordered the way the Explore card orders them: a DATE or
+        NUMERIC bucket ascending (a trend or distribution reads left to
+        right); a TEXT top-values list by ``count`` descending, defaulting to
+        the top 20 when no *limit* is given. A DATE/NUMERIC result returns
+        every bucket unless *limit* is given.
+
+        Args:
+            dataset_id: ID of the dataset.
+            dataview_id: ID of the dataview.
+            column: Column to explore (internal name).
+            column_type: The column's type ("DATE", "NUMERIC", or "TEXT"/None);
+                selects the bucketing and ordering strategy.
+            level: Truncation level (DATE) or resolution level (NUMERIC);
+                ignored for other column types. Defaults to "AUTO".
+            metric: An optional ``{"column": ..., "function": ..., "as_name":
+                ...}`` dict (SUM, COUNT, AVG, MIN, MAX, STDDEV or DISTINCT_COUNT) computed per bucket
+                in addition to the COUNT.
+            condition: Filter condition dict applied before exploring (optional).
+            sequence: Pipeline step to read data at (default: latest).
+            limit: Maximum number of buckets to return (default: 20 for TEXT,
+                unlimited for DATE/NUMERIC).
+            offset: Buckets to skip first ("load more"; default 0).
+            sort: count_desc, count_asc, value_asc or value_desc (default:
+                count_desc for TEXT, value_asc for DATE/NUMERIC).
+            workspace_id: ID of the workspace (uses client default if not provided).
+            project_id: ID of the project (uses client default if not provided).
+            timeout: Max job wait time in seconds (default: client.job_timeout).
+            poll_interval: Seconds between job polls (default: 2).
+
+        Returns:
+            Dict with one result row per bucket.
+
+        Raises:
+            MammothValidationError: If *level* is not one of the backend's
+                allowed date-truncation levels, or (from :meth:`aggregate`) if
+                *metric*'s function is unsupported.
+
+        Example::
+
+            client.dataviews.explore(
+                dataset_id=500, dataview_id=42,
+                column="column_3", column_type="DATE", level="MONTH",
+            )
+        """
+        group_by: dict[str, Any] = {"column": column}
+        normalized_type = str(column_type or "").upper()
+        if normalized_type == "DATE":
+            group_by["truncate"] = level or "AUTO"
+        elif normalized_type == "NUMERIC":
+            group_by["resolution"] = level or "AUTO"
+        aggregations: list[dict[str, Any]] = [{"function": "COUNT", "as_name": "count"}]
+        if metric is not None:
+            aggregations.append(metric)
+        response = await self.aggregate(
+            dataset_id=dataset_id,
+            dataview_id=dataview_id,
+            aggregations=aggregations,
+            group_by=[group_by],
+            condition=condition,
+            sequence=sequence,
+            workspace_id=workspace_id,
+            project_id=project_id,
+            timeout=timeout,
+            poll_interval=poll_interval,
+        )
+        rows = response.get("data")
+        if isinstance(rows, list):
+            typed_rows = [row for row in rows if isinstance(row, dict)]
+            _add_explore_percentages(typed_rows)
+            typed_rows = _explore_sort_and_limit(typed_rows, normalized_type, sort, (offset, limit))
+            response = {**response, "data": typed_rows}
+        return response
 
     async def get_exportable_config(
         self,

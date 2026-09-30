@@ -15,6 +15,8 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
+from mammoth_cli.commands.view import upload_preview
+from mammoth_cli.context import profiles
 from mammoth_cli.errors.envelope import (
     CODE_INVALID_ARGUMENT,
     CODE_MISSING_ARGUMENT,
@@ -24,6 +26,7 @@ from mammoth_cli.errors.envelope import (
     CliError,
 )
 from mammoth_cli.manifest.loader import command_by_id
+from mammoth_cli.runtime import parents
 from mammoth_cli.runtime.confirm import (
     POLICY_CONFIRM_TARGET,
     POLICY_PROMPT_OR_YES,
@@ -215,6 +218,13 @@ def file_upload(invocation: Invocation) -> HandlerResult:
         **({"files": list(invocation.extra_args)} if invocation.extra_args else {}),
     )
     _require_local_files(kwargs.get("files"))
+    if kwargs.get("append_to_ds_id") is not None and not kwargs.get("files"):
+        raise CliError(
+            code=CODE_MISSING_ARGUMENT,
+            message="This command requires 'files' when append_to_ds_id is set.",
+            exit_status=EXIT_USAGE,
+            hint="Pass the file(s) as positional arguments or a 'files' input field.",
+        )
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), **kwargs)
         # The SDK waits for the upload job and returns the created dataset
@@ -226,6 +236,18 @@ def file_upload(invocation: Invocation) -> HandlerResult:
         # ambiguous date column lands in ``need_action`` with no view. Report
         # the status the platform holds for each dataset, not an assumed one.
         result = _upload_result(data, lambda dataset_id: _dataset_status(service, dataset_id))
+        project_id = resolved_project(invocation)
+        for entry in result["datasets"]:
+            if entry.get("status") != "ready":
+                continue
+            preview = upload_preview(service, int(entry["id"]), project_id)
+            if preview is not None:
+                entry["view"] = preview
+                parents.remember(
+                    invocation.profile or profiles.get_selected(),
+                    auth.workspace_id,
+                    {preview["view_id"]: int(entry["id"])},
+                )
     return result, _meta(invocation, auth.workspace_id, resolved_project(invocation))
 
 

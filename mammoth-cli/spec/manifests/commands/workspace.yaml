@@ -13,6 +13,7 @@ commands:
   request_model: WorkspaceAcceptInviteRequest
   result_model: WorkspaceAcceptInviteResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -35,6 +36,10 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: workspace.list
+    ids: {}
+    kind: object
 - command_id: workspace.app-usage
   command_path: workspace app-usage
   disposition: command
@@ -82,6 +87,7 @@ commands:
   request_model: WorkspaceCheckExpressionRequest
   result_model: WorkspaceCheckExpressionResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -104,6 +110,7 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  no_readback: "generates a preview expression only; nothing is persisted to read back"
 - command_id: workspace.create
   command_path: workspace create
   disposition: command
@@ -117,6 +124,7 @@ commands:
   request_model: WorkspaceCreateRequest
   result_model: WorkspaceCreateResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -138,6 +146,11 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: workspace.get
+    ids:
+      workspace_id: result.id
+    kind: object
 - command_id: workspace.delete
   command_path: workspace delete
   disposition: command
@@ -157,6 +170,7 @@ commands:
   request_model: WorkspaceDeleteRequest
   result_model: WorkspaceDeleteResult
   mutation_class: high_impact
+  edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -178,6 +192,10 @@ commands:
   undo_test: null
   known_restrictions: Exact immutable workspace-ID confirmation, not --yes alone.
   reviewed_by: primary
+  readback:
+    command: workspace.list
+    ids: {}
+    kind: object
 - command_id: workspace.get
   command_path: workspace get
   disposition: command
@@ -265,6 +283,7 @@ commands:
   request_model: WorkspaceLlmTaskRequest
   result_model: WorkspaceLlmTaskResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -287,6 +306,11 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: job.get
+    ids:
+      job_id: result.job.id
+    kind: delivery
 - command_id: workspace.reactivate
   command_path: workspace reactivate
   disposition: command
@@ -306,6 +330,7 @@ commands:
   request_model: WorkspaceReactivateRequest
   result_model: WorkspaceReactivateResult
   mutation_class: high_impact
+  edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -327,6 +352,11 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: workspace.get
+    ids:
+      workspace_id: positional.0
+    kind: object
 - command_id: workspace.segment.list
   command_path: workspace segment list
   disposition: command
@@ -374,6 +404,7 @@ commands:
   request_model: WorkspaceSegmentUpdateRequest
   result_model: WorkspaceSegmentUpdateResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -395,6 +426,10 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: workspace.segment.list
+    ids: {}
+    kind: object
 - command_id: workspace.storage-breakdown
   command_path: workspace storage-breakdown
   disposition: command
@@ -427,7 +462,9 @@ commands:
   - CT-WORKSPACE-STORAGE-BREAKDOWN-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: This is a paginated per-item list of storage-consuming resources (limit/offset);
+    it carries no workspace total and can page through thousands of items. For the workspace's total
+    storage used/allowed, use `workspace app-usage` instead.
   reviewed_by: primary
 - command_id: workspace.update
   command_path: workspace update
@@ -448,6 +485,7 @@ commands:
   request_model: WorkspaceUpdateRequest
   result_model: WorkspaceUpdateResult
   mutation_class: high_impact
+  edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -470,6 +508,11 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: workspace.get
+    ids:
+      workspace_id: positional.0
+    kind: object
 - command_id: workspace.user.add
   command_path: workspace user add
   disposition: command
@@ -483,7 +526,8 @@ commands:
   request_model: WorkspaceUserAddRequest
   result_model: WorkspaceUserAddResult
   mutation_class: benign_mutation
-  confirmation: none
+  edits_target: true
+  confirmation: yes_always
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: contract_only_high_impact
@@ -493,7 +537,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth workspace user add --help
-  agent_example: 'mammoth workspace user add --input ''{"email_ids": ["analyst@example.com"]}'''
+  agent_example: 'mammoth workspace user add --input ''{"email_ids": ["analyst@example.com"]}'' --yes'
   unit_tests:
   - UT-WORKSPACE-USER-ADD
   contract_tests:
@@ -504,6 +548,10 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: workspace.user.list
+    ids: {}
+    kind: object
 - command_id: workspace.user.get
   command_path: workspace user get
   disposition: command
@@ -596,6 +644,7 @@ commands:
   request_model: WorkspaceUserRemoveRequest
   result_model: WorkspaceUserRemoveResult
   mutation_class: destructive
+  edits_target: true
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -617,6 +666,10 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: workspace.user.list
+    ids: {}
+    kind: object
 - command_id: workspace.user.remove-batch
   command_path: workspace user remove-batch
   disposition: command
@@ -630,6 +683,7 @@ commands:
   request_model: WorkspaceUserRemoveBatchRequest
   result_model: WorkspaceUserRemoveBatchResult
   mutation_class: destructive
+  edits_target: true
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -651,6 +705,10 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: workspace.user.list
+    ids: {}
+    kind: object
 - command_id: workspace.user.update
   command_path: workspace user update
   disposition: command
@@ -670,6 +728,7 @@ commands:
   request_model: WorkspaceUserUpdateRequest
   result_model: WorkspaceUserUpdateResult
   mutation_class: high_impact
+  edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -692,6 +751,11 @@ commands:
   undo_test: null
   known_restrictions: Exact user-ID confirmation for owner/admin role changes.
   reviewed_by: primary
+  readback:
+    command: workspace.user.get
+    ids:
+      user_id: positional.0
+    kind: object
 - command_id: workspace.user.update-batch
   command_path: workspace user update-batch
   disposition: command
@@ -705,6 +769,7 @@ commands:
   request_model: WorkspaceUserUpdateBatchRequest
   result_model: WorkspaceUserUpdateBatchResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -726,3 +791,7 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: workspace.user.list
+    ids: {}
+    kind: object

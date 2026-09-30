@@ -13,10 +13,15 @@ commands:
   request_model: FileBulkDeleteRequest
   result_model: FileBulkDeleteResult
   mutation_class: destructive
+  edits_target: true
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: live_disposable_project
+  readback:
+    command: file.list
+    ids: {}
+    kind: object
   live_test: LT-FILE-BULK-DELETE
   live_exemption_reason: null
   contract_fixture: null
@@ -53,10 +58,15 @@ commands:
   request_model: FileDeleteRequest
   result_model: FileDeleteResult
   mutation_class: destructive
+  edits_target: true
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: live_disposable_project
+  readback:
+    command: file.list
+    ids: {}
+    kind: object
   live_test: LT-FILE-DELETE
   live_exemption_reason: null
   contract_fixture: null
@@ -94,10 +104,16 @@ commands:
   request_model: FileExtractSheetsRequest
   result_model: FileExtractSheetsResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
   acceptance_evidence: live_disposable_project
+  readback:
+    command: file.get
+    ids:
+      file_id: positional.0
+    kind: object
   live_test: LT-FILE-EXTRACT-SHEETS
   live_exemption_reason: null
   contract_fixture: null
@@ -208,10 +224,16 @@ commands:
   request_model: FileSetPasswordRequest
   result_model: FileSetPasswordResult
   mutation_class: high_impact
+  edits_target: true
   confirmation: confirm_target
   wait_policy: always_wait
   pagination_policy: none
   acceptance_evidence: contract_only_high_impact
+  readback:
+    command: file.get
+    ids:
+      file_id: positional.0
+    kind: object
   live_test: null
   live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
   contract_fixture: null
@@ -249,10 +271,16 @@ commands:
   request_model: FileUpdateRequest
   result_model: FileUpdateResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
   acceptance_evidence: live_disposable_project
+  readback:
+    command: file.get
+    ids:
+      file_id: positional.0
+    kind: object
   live_test: LT-FILE-UPDATE
   live_exemption_reason: null
   contract_fixture: null
@@ -291,10 +319,13 @@ commands:
   request_model: FileUploadRequest
   result_model: FileUploadResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: start_or_wait
   pagination_policy: none
   acceptance_evidence: live_disposable_project
+  no_readback: the upload result already carries each ready dataset's post-processing view (columns, row_count,
+    sample rows) from a real read
   live_test: LT-FILE-UPLOAD
   live_exemption_reason: null
   contract_fixture: null
@@ -310,14 +341,15 @@ commands:
   - CT-FILE-UPLOAD-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: 'Accepted extensions: csv tsv psv txt xls xlsx xml pdf tiff jpeg jpg png heic
-    webp and archives zip gz bz2 tar 7z (not json). Request size is capped by the ingress in front of
-    the API: a 60 MB upload is refused with HTTP 413 (invalid_argument) before the API sees it; 16 MB
-    is accepted (measured on release 2026-09-19; the cap between them is not pinned down). Keep one
-    upload well under 16 MB: split larger files or upload a zip/gz. Parsing is asynchronous; use --timeout 300 for files past a few MB and poll the returned
-    job on timeout. Upload authorization is tenant- and scope-specific; a permission failure does not
-    make this route universally unavailable. On success retain returned IDs, read them back, and
-    verify owned cleanup; do not assume other upload variants are qualified.'
+  known_restrictions: 'Accepted extensions: csv tsv psv txt xls xlsx xml pdf tiff jpeg jpg png heic webp
+    and archives zip gz bz2 tar 7z (not json). Request size is capped by the ingress in front of the API:
+    a 60 MB upload is refused with HTTP 413 (invalid_argument) before the API sees it; 16 MB is accepted
+    (measured on release 2026-09-19; the cap between them is not pinned down). Keep one upload well under
+    16 MB: split larger files or upload a zip/gz. Parsing is asynchronous; use --timeout 300 for files
+    past a few MB and poll the returned job on timeout. Upload authorization is tenant- and scope-specific;
+    a permission failure does not make this route universally unavailable. On success retain returned
+    IDs, read them back, and verify owned cleanup; do not assume other upload variants are qualified.
+    Each sheet of an Excel file becomes its own dataset.'
   reviewed_by: primary
 - command_id: file.upload-folder
   command_path: file upload-folder
@@ -338,10 +370,15 @@ commands:
   request_model: FileUploadFolderRequest
   result_model: FileUploadFolderResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: start_or_wait
   pagination_policy: none
   acceptance_evidence: live_disposable_project
+  readback:
+    command: file.list
+    ids: {}
+    kind: object
   live_test: LT-FILE-UPLOAD-FOLDER
   live_exemption_reason: null
   contract_fixture: null

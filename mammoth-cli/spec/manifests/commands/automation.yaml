@@ -19,6 +19,7 @@ commands:
   request_model: AutomationCreateRequest
   result_model: AutomationCreateResult
   mutation_class: external_effect
+  edits_target: false
   confirmation: yes_always
   wait_policy: not_async
   pagination_policy: none
@@ -40,8 +41,17 @@ commands:
   draft_test: null
   undo_test: null
   known_restrictions: 'B15 AUTOMATION_EXTERNAL_EFFECTS: task models can pull cloud files and send email;
-    requires connector/email allowlists and dedicated fixtures.'
+    requires connector/email allowlists and dedicated fixtures. Delete old rows on a schedule with
+    task apply_retention_policy (datasource_id, rule_type time_based, count_based or
+    condition_based). An emailed file is task send_an_alert with attachments.dataview_ids: each
+    selected view is emailed as a CSV file. The combined row count of all attached views must stay
+    within 100,000 -- over that, the automation is refused (and a run that grows past it fails).'
   reviewed_by: primary
+  readback:
+    command: automation.get
+    ids:
+      automation_id: result.id
+    kind: object
 - command_id: automation.delete
   command_path: automation delete
   disposition: command
@@ -61,6 +71,7 @@ commands:
   request_model: AutomationDeleteRequest
   result_model: AutomationDeleteResult
   mutation_class: destructive
+  edits_target: true
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -82,6 +93,10 @@ commands:
   undo_test: null
   known_restrictions: Immutable ID confirmation.
   reviewed_by: primary
+  readback:
+    command: automation.list
+    ids: {}
+    kind: object
 - command_id: automation.get
   command_path: automation get
   disposition: command
@@ -120,7 +135,12 @@ commands:
   - CT-AUTOMATION-GET-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: 'B04 SERVER_VARIANCE: observed on release returning HTTP 500 with an
+    empty body for an automation automation.create just returned (deterministic, not eventual
+    consistency; see docs/capability-evidence/fixture-sweep-20260919/). Backend defect, not a CLI
+    request-shape issue; root-caused (not live-reproduced) to mvc-service apiv2/apiv2/automations/utils.py
+    get_automation_tasks() indexing automation_tasks[0] unconditionally -- see REL-181 in
+    docs/release-capability-matrix.json for the full trace. Do not retry more than once.'
   reviewed_by: primary
 - command_id: automation.list
   command_path: automation list
@@ -175,6 +195,7 @@ commands:
   request_model: AutomationRestoreRequest
   result_model: AutomationRestoreResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -196,6 +217,11 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: automation.get
+    ids:
+      automation_id: positional.0
+    kind: object
 - command_id: automation.trash
   command_path: automation trash
   disposition: command
@@ -215,6 +241,7 @@ commands:
   request_model: AutomationTrashRequest
   result_model: AutomationTrashResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -236,6 +263,11 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: automation.get
+    ids:
+      automation_id: positional.0
+    kind: object
 - command_id: automation.update
   command_path: automation update
   disposition: command
@@ -255,6 +287,7 @@ commands:
   request_model: AutomationUpdateRequest
   result_model: AutomationUpdateResult
   mutation_class: external_effect
+  edits_target: true
   confirmation: yes_always
   wait_policy: not_async
   pagination_policy: none
@@ -277,3 +310,8 @@ commands:
   undo_test: null
   known_restrictions: run/status patches require exact ID confirmation. B15.
   reviewed_by: primary
+  readback:
+    command: automation.get
+    ids:
+      automation_id: positional.0
+    kind: object

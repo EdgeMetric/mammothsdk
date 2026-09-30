@@ -18,12 +18,13 @@ import typer
 
 from mammoth_cli.errors.envelope import EXIT_USAGE, CliError
 from mammoth_cli.output.envelope import Meta, Result
+from mammoth_cli.output.normalize import normalize
 from mammoth_cli.output.policy import MACHINE_OUTPUTS, VALID_OUTPUTS
 from mammoth_cli.output.render import render
-from mammoth_cli.runtime import updates
+from mammoth_cli.runtime import embedded, updates
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.runlog import RunLog
-from mammoth_cli.services.mapping import map_sdk_exception
+from mammoth_cli.services.mapping import map_sdk_exception, running_handle
 
 Producer = Callable[[], tuple[Any, dict[str, Any]]]
 
@@ -75,6 +76,8 @@ def emit_success(
     project_id: int | None = None,
     pagination: dict[str, Any] | None = None,
     update_available: dict[str, Any] | None = None,
+    dataset: dict[str, Any] | None = None,
+    view: dict[str, Any] | None = None,
 ) -> None:
     """Render one success envelope to stdout.
 
@@ -88,6 +91,8 @@ def emit_success(
         project_id: The resolved project id, if any.
         pagination: Pagination metadata, if any.
         update_available: The cached newer-release notice, if any.
+        dataset: ``{"id", "name"}`` of the dataset a data read came from, if any.
+        view: ``{"id", "name"}`` of the view a data read came from, if any.
     """
     meta = Meta(
         command=command_id.replace(".", " "),
@@ -96,8 +101,12 @@ def emit_success(
         project_id=project_id,
         pagination=pagination,
         update_available=update_available,
+        dataset=dataset,
+        view=view,
     )
     envelope = Result(data=data, meta=meta).to_envelope()
+    if embedded.capture(normalize(envelope)):
+        return
     render(envelope, output=output)
 
 
@@ -113,6 +122,8 @@ def emit_error(error: CliError, *, machine: bool, output: str = "json") -> None:
         output: The selected machine mode. Only ``ndjson`` selects lifecycle
             framing; all other machine errors retain the JSON envelope.
     """
+    if embedded.capture(normalize(error.to_envelope())):
+        return
     if machine:
         render(
             error.to_envelope(),
@@ -150,7 +161,7 @@ def run(
         producer: A zero-argument callable returning ``(data, meta_extra)``.
             ``meta_extra`` is forwarded as keyword arguments to
             :func:`emit_success` (``profile``, ``workspace_id``,
-            ``project_id``, ``pagination``).
+            ``project_id``, ``pagination``, ``dataset``, ``view``).
         agent_mode: Whether the invocation explicitly disabled interaction
             (``--no-input``). This is used only when an invalid output mode
             needs an error renderer before a concrete machine mode exists.
@@ -188,8 +199,17 @@ def run(
         emit_success(command_id, data, output, update_available=update, **meta_extra)
         updates.emit_hint(update, output=output)
     except CliError as error:
-        fail(error)
-        raise typer.Exit(error.exit_status) from None
+        running = (
+            running_handle(error, command_id)
+            if invocation is not None and invocation.return_running
+            else None
+        )
+        if running is None:
+            fail(error)
+            raise typer.Exit(error.exit_status) from None
+        # --return-running: a wait that ran out is not a failure; hand back the
+        # handle to resume with.
+        emit_success(command_id, running, output, profile=profile)
     except KeyboardInterrupt as exc:
         # Polling can be interrupted after a job handle was observed.  Keep
         # that handle when an SDK exception exposes one; never turn Ctrl-C
@@ -237,7 +257,7 @@ def _sync_skill_installs(command_id: str, output: str) -> None:
 
 def _open_run_log(command_id: str, invocation: Invocation | None) -> RunLog | None:
     """Open the run log for ``invocation``; never let logging break a command."""
-    if invocation is None:
+    if invocation is None or embedded.active():
         return None
     try:
         return RunLog.start(

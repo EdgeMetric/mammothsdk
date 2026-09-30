@@ -25,6 +25,20 @@ CLI_ROOT = Path(__file__).resolve().parent.parent.parent
 VALID_DISPOSITIONS = {"command", "alias", "protocol_only", "deprecated", "server_unavailable"}
 LIVE_EVIDENCE = {"live_disposable_project", "live_dedicated_external_fixture", "live_read_only"}
 
+# A command whose backing operation(s) are all HTTP GET never mutates
+# anything, so `schema find`/`get` and the confirmation gate must treat it as
+# `read`/`none` -- not `high_impact`/`confirm_target`, which was the default
+# for the entire billing/support command groups regardless of method. Each
+# entry here is a documented, narrow exception: a GET-verbed operation that
+# nonetheless has a genuine external side effect, or that reveals a secret.
+_GET_MUTATION_CLASS_ALLOWLIST: dict[str, str] = {
+    "webhook.send-get": (
+        "AddDataToWebhookUsingGetMethod is a GET route that adds data to an "
+        "external webhook -- a genuine side effect despite the HTTP verb, not "
+        "a read."
+    ),
+}
+
 
 def _resolve_symbol(symbol: str) -> object | None:
     """Resolve a dotted ``module.Class.attr`` symbol, or return None."""
@@ -196,6 +210,47 @@ def test_every_mutation_has_safety_class() -> None:
             continue
         assert record.get("mutation_class") in valid, record["command_id"]
         assert record.get("confirmation"), f"{record['command_id']} missing confirmation"
+
+
+def test_every_get_backed_command_is_read_and_unconfirmed() -> None:
+    """A GET operation never mutates, so its command must be `read`/`none`.
+
+    Item 11 (tier1 trace): billing.subscription.get, support.workspace.user.list
+    and every other billing/support GET command carried `high_impact` +
+    `confirm_target`, an entire command-group default applied regardless of
+    HTTP method. Reveals a secret (non-empty `secret_fields`, or a
+    reveal/export-secret operation id) or a documented allowlist entry are the
+    only exceptions.
+    """
+    method_by_operation = {op["operation_id"]: op.get("method") for op in load_operations()}
+    for record in load_commands():
+        if record.get("disposition") == "alias":
+            continue
+        operation_ids = record.get("operation_ids") or []
+        if not operation_ids:
+            continue
+        methods = {method_by_operation.get(op_id) for op_id in operation_ids}
+        if methods != {"GET"}:
+            continue
+        command_id = record["command_id"]
+        if command_id in _GET_MUTATION_CLASS_ALLOWLIST:
+            continue
+
+        def _reveals_a_secret(op_id: str) -> bool:
+            lowered = op_id.casefold()
+            return "reveal" in lowered or ("export" in lowered and "secret" in lowered)
+
+        if record.get("secret_fields") or any(_reveals_a_secret(op_id) for op_id in operation_ids):
+            continue
+        assert record.get("mutation_class") == "read", (
+            f"{command_id} is backed only by GET operation(s) {operation_ids} but is "
+            f"{record.get('mutation_class')!r}; add it to _GET_MUTATION_CLASS_ALLOWLIST "
+            "with a reason if this is a genuine exception."
+        )
+        assert record.get("confirmation") == "none", (
+            f"{command_id} is backed only by GET operation(s) {operation_ids} but requires "
+            f"confirmation {record.get('confirmation')!r}."
+        )
 
 
 def test_every_async_operation_has_wait_policy() -> None:

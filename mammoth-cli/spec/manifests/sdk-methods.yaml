@@ -1,5 +1,5 @@
 manifest_schema_version: 1
-method_count: 573
+method_count: 574
 generator_version: '1'
 methods:
 - sdk_symbol: mammoth._mixins._advanced_ops.AdvancedOpsMixin.add_sql
@@ -170,6 +170,18 @@ methods:
   pagination_policy: null
   secret_fields: []
   reviewed_by: primary
+- sdk_symbol: mammoth._mixins._column_ops.ColumnOpsMixin.rename_columns
+  implementation_origin: mammoth._mixins._column_ops.ColumnOpsMixin.rename_columns
+  signature: 'rename_columns(self, renames: ''dict[str, str]'') -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: view.transform.rename-columns
+  alias_of: null
+  no_command_reason: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
 - sdk_symbol: mammoth._mixins._date_ops.DateOpsMixin.date_diff
   implementation_origin: mammoth._mixins._date_ops.DateOpsMixin.date_diff
   signature: 'date_diff(self, component: ''DateDiffUnit'', start: ''str'', end: ''str'', new_column: ''str | None'' = None, existing_column: ''str | None'' = None) -> ''dict[str, Any]'''
@@ -314,6 +326,18 @@ methods:
   pagination_policy: null
   secret_fields: []
   reviewed_by: primary
+- sdk_symbol: mammoth._mixins._row_ops.RowOpsMixin.sort_rows
+  implementation_origin: mammoth._mixins._row_ops.RowOpsMixin.sort_rows
+  signature: 'sort_rows(self, order_by: ''list[list[str | SortDirection]]'') -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: view.transform.sort
+  alias_of: null
+  no_command_reason: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
 - sdk_symbol: mammoth._mixins._row_ops.RowOpsMixin.unnest
   implementation_origin: mammoth._mixins._row_ops.RowOpsMixin.unnest
   signature: 'unnest(self, columns: ''list[str]'', label_column: ''str'' = ''Label'', value_column: ''str'' = ''Value'', value_type: ''str | None'' = None) -> ''dict[str, Any]'''
@@ -400,7 +424,12 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.activity_logs.ActivityLogsAPI.list
   implementation_origin: mammoth.api.activity_logs.ActivityLogsAPI.list
-  signature: 'list(self, limit: ''int'' = 50, offset: ''int'' = 0, sort: ''str | None'' = None, **filters: ''Any'') -> ''dict[str, Any]'''
+  signature: 'list(self, limit: ''int'' = 50, offset: ''int'' = 0, sort: ''str | None'' = None, project_id:
+    ''int | None'' = None, categories: ''list[Any] | None'' = None, activities: ''list[Any] | None''
+    = None, resource_id: ''str | None'' = None, result: ''str | None'' = None, start_time: ''str |
+    None'' = None, end_time: ''str | None'' = None, origin: ''str | None'' = None, user_ids: ''list[Any]
+    | None'' = None, parent_id: ''int | None'' = None, search_text: ''str | None'' = None) -> ''dict[str,
+    Any]'''
   openapi_operation_ids: []
   canonical_command: activity.list
   alias_of: null
@@ -988,21 +1017,9 @@ methods:
   pagination_policy: null
   secret_fields: []
   reviewed_by: primary
-- sdk_symbol: mammoth.api.billing.BillingAPI.invoice_get
-  implementation_origin: mammoth.api.billing.BillingAPI.invoice_get
-  signature: 'invoice_get(self, invoice_id: ''int'') -> ''dict[str, Any]'''
-  openapi_operation_ids: []
-  canonical_command: billing.invoice.get
-  alias_of: null
-  no_command_reason: null
-  mutation_class: null
-  wait_policy: null
-  pagination_policy: null
-  secret_fields: []
-  reviewed_by: primary
 - sdk_symbol: mammoth.api.billing.BillingAPI.invoice_list
   implementation_origin: mammoth.api.billing.BillingAPI.invoice_list
-  signature: 'invoice_list(self, limit: ''int | None'' = None, sort: ''str | None'' = None) -> ''dict[str, Any]'''
+  signature: 'invoice_list(self) -> ''dict[str, Any]'''
   openapi_operation_ids: []
   canonical_command: billing.invoice.list
   alias_of: null
@@ -1526,7 +1543,8 @@ methods:
   mutation_class: external_effect
   wait_policy: not_async
   pagination_policy: none
-  secret_fields: []
+  secret_fields:
+  - config
   reviewed_by: primary
 - sdk_symbol: mammoth.api.connectors.ConnectorsAPI.create_ds_config
   implementation_origin: mammoth.api.connectors.ConnectorsAPI.create_ds_config
@@ -1658,7 +1676,8 @@ methods:
   mutation_class: external_effect
   wait_policy: not_async
   pagination_policy: none
-  secret_fields: []
+  secret_fields:
+  - credentials
   reviewed_by: primary
 - sdk_symbol: mammoth.api.connectors.ConnectorsAPI.update_ds_config
   implementation_origin: mammoth.api.connectors.ConnectorsAPI.update_ds_config
@@ -1868,18 +1887,6 @@ methods:
   pagination_policy: null
   secret_fields: []
   reviewed_by: primary
-- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.create
-  implementation_origin: mammoth.api.dashboards.DashboardsAPI.create
-  signature: 'create(self, intent: ''str'', source: ''_list[int]'', enable_filters: ''bool'' = True, enable_pages: ''bool'' = False) -> ''dict[str, Any]'''
-  openapi_operation_ids: []
-  canonical_command: dashboard.create
-  alias_of: null
-  no_command_reason: null
-  mutation_class: benign_mutation
-  wait_policy: returns_job
-  pagination_policy: none
-  secret_fields: []
-  reviewed_by: primary
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.create_blank
   implementation_origin: mammoth.api.dashboards.DashboardsAPI.create_blank
   signature: 'create_blank(self, params: ''CreateBlankParams'') -> ''dict[str, Any]'''
@@ -1964,6 +1971,140 @@ methods:
   mutation_class: null
   wait_policy: null
   pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.embed_config_get
+  implementation_origin: mammoth.api.dashboards.DashboardsAPI.embed_config_get
+  signature: 'embed_config_get(self, dashboard_id: ''int'') -> ''EmbedConfigResponse'''
+  openapi_operation_ids:
+  - GetEmbedConfig
+  canonical_command: dashboard.embed.config.get
+  alias_of: null
+  no_command_reason: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.embed_config_set
+  implementation_origin: mammoth.api.dashboards.DashboardsAPI.embed_config_set
+  signature: 'embed_config_set(self, dashboard_id: ''int'', mode: "Literal[''key'', ''signed'']"
+  = ''key'', allow_any_origin: ''bool'' = True, allowed_origins: ''_list[str] | None''
+  = None, appearance: ''dict[str, Any] | None'' = None, snippet: ''dict[str, Any]
+  | None'' = None) -> ''EmbedConfigResponse'''
+  openapi_operation_ids:
+  - PutEmbedConfig
+  canonical_command: dashboard.embed.config.set
+  alias_of: null
+  no_command_reason: null
+  mutation_class: high_impact
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.embed_key_rotate
+  implementation_origin: mammoth.api.dashboards.DashboardsAPI.embed_key_rotate
+  signature: 'embed_key_rotate(self, dashboard_id: ''int'', keep_previous: ''bool'' = True) ->
+  ''EmbedKeyResponse'''
+  openapi_operation_ids:
+  - RotateEmbedKey
+  canonical_command: dashboard.embed.key.rotate
+  alias_of: null
+  no_command_reason: null
+  mutation_class: high_impact
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.embed_usage_get
+  implementation_origin: mammoth.api.dashboards.DashboardsAPI.embed_usage_get
+  signature: 'embed_usage_get(self, dashboard_id: ''int'') -> ''EmbedUsageResponse'''
+  openapi_operation_ids:
+  - GetEmbedUsage
+  canonical_command: dashboard.embed.usage.get
+  alias_of: null
+  no_command_reason: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.embed_origin_revoke
+  implementation_origin: mammoth.api.dashboards.DashboardsAPI.embed_origin_revoke
+  signature: 'embed_origin_revoke(self, dashboard_id: ''int'', origin: ''str'') -> ''EmbedConfigResponse'''
+  openapi_operation_ids:
+  - RevokeOrigin
+  canonical_command: dashboard.embed.origin.revoke
+  alias_of: null
+  no_command_reason: null
+  mutation_class: high_impact
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.embed_preview_token_create
+  implementation_origin: mammoth.api.dashboards.DashboardsAPI.embed_preview_token_create
+  signature: 'embed_preview_token_create(self, dashboard_id: ''int'', claims: ''dict[str, Any]
+  | None'' = None) -> ''EmbedPreviewTokenResponse'''
+  openapi_operation_ids:
+  - PreviewToken
+  canonical_command: dashboard.embed.preview-token.create
+  alias_of: null
+  no_command_reason: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.embed_secret_rotate
+  implementation_origin: mammoth.api.dashboards.DashboardsAPI.embed_secret_rotate
+  signature: 'embed_secret_rotate(self, workspace_id: ''int'') -> ''EmbedSecretResponse'''
+  openapi_operation_ids:
+  - RotateEmbedSecret
+  canonical_command: dashboard.embed.secret.rotate
+  alias_of: null
+  no_command_reason: null
+  mutation_class: high_impact
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.embed_lifetime_set
+  implementation_origin: mammoth.api.dashboards.DashboardsAPI.embed_lifetime_set
+  signature: 'embed_lifetime_set(self, workspace_id: ''int'', token_ttl: ''int'') -> ''EmbedLifetimeResponse'''
+  openapi_operation_ids:
+  - SetEmbedLifetime
+  canonical_command: dashboard.embed.lifetime.set
+  alias_of: null
+  no_command_reason: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.export_powerbi
+  implementation_origin: mammoth.api.dashboards.DashboardsAPI.export_powerbi
+  signature: 'export_powerbi(self, dashboard_id: ''int'', output_path: ''str | Path | None'' = None) -> ''Path'''
+  openapi_operation_ids: []
+  canonical_command: dashboard.bi-export
+  alias_of: null
+  no_command_reason: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.export_tableau
+  implementation_origin: mammoth.api.dashboards.DashboardsAPI.export_tableau
+  signature: 'export_tableau(self, dashboard_id: ''int'', output_path: ''str | Path | None'' = None) -> ''Path'''
+  openapi_operation_ids: []
+  canonical_command: null
+  alias_of: null
+  no_command_reason: One of two target-specific implementations behind `dashboard bi-export`
+    (--input target=tableau); export_powerbi is the manifest's representative sdk_symbol.
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
   secret_fields: []
   reviewed_by: primary
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.extract_context
@@ -2210,6 +2351,31 @@ methods:
   no_command_reason: null
   mutation_class: null
   wait_policy: always_wait
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.powerbi_export_artifact
+  implementation_origin: mammoth.api.dashboards.DashboardsAPI.powerbi_export_artifact
+  signature: 'powerbi_export_artifact(self, dashboard_id: ''int'') -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: null
+  alias_of: null
+  no_command_reason: SDK-only artifact fetch (content_base64) export_powerbi decodes and writes
+    to disk; dashboard bi-export is the reviewed CLI command.
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.powerbi_preflight
+  implementation_origin: mammoth.api.dashboards.DashboardsAPI.powerbi_preflight
+  signature: 'powerbi_preflight(self, dashboard_id: ''int'') -> ''PowerBiPreflightResponse'''
+  openapi_operation_ids: []
+  canonical_command: dashboard.bi-preflight
+  alias_of: null
+  no_command_reason: null
+  mutation_class: null
+  wait_policy: null
   pagination_policy: null
   secret_fields: []
   reviewed_by: primary
@@ -2792,6 +2958,32 @@ methods:
   pagination_policy: none
   secret_fields: []
   reviewed_by: primary
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.tableau_export_artifact
+  implementation_origin: mammoth.api.dashboards.DashboardsAPI.tableau_export_artifact
+  signature: 'tableau_export_artifact(self, dashboard_id: ''int'') -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: null
+  alias_of: null
+  no_command_reason: SDK-only artifact fetch (content_base64) export_tableau decodes and writes
+    to disk; dashboard bi-export is the reviewed CLI command.
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.tableau_preflight
+  implementation_origin: mammoth.api.dashboards.DashboardsAPI.tableau_preflight
+  signature: 'tableau_preflight(self, dashboard_id: ''int'') -> ''TableauPreflightResponse'''
+  openapi_operation_ids: []
+  canonical_command: null
+  alias_of: null
+  no_command_reason: One of two target-specific implementations behind `dashboard bi-preflight`
+    (--input target=tableau); powerbi_preflight is the manifest's representative sdk_symbol.
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.take_pending_template
   implementation_origin: mammoth.api.dashboards.DashboardsAPI.take_pending_template
   signature: 'take_pending_template(self) -> ''dict[str, Any]'''
@@ -3313,7 +3505,8 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.datasets.DatasetsAPI.get
   implementation_origin: mammoth.api.datasets.DatasetsAPI.get
-  signature: 'get(self, dataset_id: ''int'', workspace_id: ''int | None'' = None, project_id: ''int | None'' = None, fields: ''str | None'' = None) -> ''dict[str, Any]'''
+  signature: 'get(self, dataset_id: ''int'', workspace_id: ''int | None'' = None, project_id: ''int | None''
+    = None, fields: ''str | None'' = None) -> ''dict[str, Any]'''
   openapi_operation_ids: []
   canonical_command: dataset.get
   alias_of: null
@@ -3420,9 +3613,47 @@ methods:
   pagination_policy: none
   secret_fields: []
   reviewed_by: primary
+- sdk_symbol: mammoth.api.datasets.DatasetsAPI.get_unstructured_rows
+  implementation_origin: mammoth.api.datasets.DatasetsAPI.get_unstructured_rows
+  signature: 'get_unstructured_rows(self, dataset_id: ''int'', workspace_id: ''int | None'' = None, project_id: ''int | None'' = None) -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: dataset.broken-rows.list
+  alias_of: null
+  no_command_reason: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.datasets.DatasetsAPI.interpretation_confirm
+  implementation_origin: mammoth.api.datasets.DatasetsAPI.interpretation_confirm
+  signature: 'interpretation_confirm(self, dataset_id: ''int'', user_instruction: ''str | None'' = None, structure_map: ''dict[str, Any] | None'' = None, destination_dataset_id: ''int | None'' = None, workspace_id: ''int | None'' = None, project_id: ''int | None'' = None) -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: dataset.interpretation.confirm
+  alias_of: null
+  no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.datasets.DatasetsAPI.interpretation_preview
+  implementation_origin: mammoth.api.datasets.DatasetsAPI.interpretation_preview
+  signature: 'interpretation_preview(self, dataset_id: ''int'', user_instruction: ''str | None'' = None, structure_map: ''dict[str, Any] | None'' = None, destination_dataset_id: ''int | None'' = None, workspace_id: ''int | None'' = None, project_id: ''int | None'' = None) -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: dataset.interpretation.preview
+  alias_of: null
+  no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
 - sdk_symbol: mammoth.api.datasets.DatasetsAPI.list
   implementation_origin: mammoth.api.datasets.DatasetsAPI.list
-  signature: 'list(self, workspace_id: ''int | None'' = None, project_id: ''int | None'' = None, limit: ''int'' = 100, offset: ''int'' = 0, sort: ''str'' = ''(created_at:desc)'') -> ''dict[str, Any]'''
+  signature: 'list(self, workspace_id: ''int | None'' = None, project_id: ''int | None'' = None, limit:
+    ''int'' = 100, offset: ''int'' = 0, sort: ''str'' = ''(created_at:desc)'', fields: ''str'' = ''id,name'')
+    -> ''dict[str, Any]'''
   openapi_operation_ids: []
   canonical_command: dataset.list
   alias_of: null
@@ -3434,7 +3665,9 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.datasets.DatasetsAPI.list_all
   implementation_origin: mammoth.api.datasets.DatasetsAPI.list_all
-  signature: 'list_all(self, workspace_id: ''int | None'' = None, project_id: ''int | None'' = None, limit: ''int'' = 100, sort: ''str'' = ''(created_at:desc)'', max_pages: ''int'' = 1000) -> ''dict[str, Any]'''
+  signature: 'list_all(self, workspace_id: ''int | None'' = None, project_id: ''int | None'' = None, limit:
+    ''int'' = 100, sort: ''str'' = ''(created_at:desc)'', max_pages: ''int'' = 1000, fields: ''str'' = ''id,name'')
+    -> ''dict[str, Any]'''
   openapi_operation_ids: []
   canonical_command: null
   alias_of: null
@@ -3514,6 +3747,23 @@ methods:
   mutation_class: read
   wait_policy: not_async
   pagination_policy: single_page
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.dataviews.DataviewsAPI.aggregate
+  implementation_origin: mammoth.api.dataviews.DataviewsAPI.aggregate
+  signature: 'aggregate(self, dataset_id: ''int'', dataview_id: ''int'', aggregations: ''_list[dict[str,
+    Any]] | None'' = None, group_by: ''_list[str | dict[str, Any]] | None'' = None, metric: ''dict[str,
+    Any] | None'' = None, condition: ''dict[str, Any] | None'' = None, sequence: ''int | None'' = None,
+    limit: ''int | None'' = None, sort: ''_list[_list[str]] | None'' = None, workspace_id: ''int | None''
+    = None, project_id: ''int | None'' = None, timeout: ''int | None'' = None, poll_interval: ''int'' =
+    2) -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: view.data.aggregate
+  alias_of: null
+  no_command_reason: null
+  mutation_class: read
+  wait_policy: always_wait
+  pagination_policy: none
   secret_fields: []
   reviewed_by: primary
 - sdk_symbol: mammoth.api.dataviews.DataviewsAPI.apply_exportable_config
@@ -3625,6 +3875,18 @@ methods:
   pagination_policy: none
   secret_fields: []
   reviewed_by: primary
+- sdk_symbol: mammoth.api.dataviews.DataviewsAPI.explore
+  implementation_origin: mammoth.api.dataviews.DataviewsAPI.explore
+  signature: 'explore(self, dataset_id: ''int'', dataview_id: ''int'', column: ''str'', column_type: ''str | None'' = None, level: ''str | None'' = None, metric: ''dict[str, Any] | None'' = None, condition: ''dict[str, Any] | None'' = None, sequence: ''int | None'' = None, limit: ''int | None'' = None, offset: ''int | None'' = None, sort: ''str | None'' = None, workspace_id: ''int | None'' = None, project_id: ''int | None'' = None, timeout: ''int | None'' = None, poll_interval: ''int'' = 2) -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: view.data.explore
+  alias_of: null
+  no_command_reason: null
+  mutation_class: read
+  wait_policy: always_wait
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
 - sdk_symbol: mammoth.api.dataviews.DataviewsAPI.get
   implementation_origin: mammoth.api.dataviews.DataviewsAPI.get
   signature: 'get(self, dataset_id: ''int'', dataview_id: ''int'', workspace_id: ''int | None'' = None, project_id: ''int | None'' = None, sequence: ''int | None'' = None, fields: ''str | None'' = None) -> ''dict[str, Any]'''
@@ -3664,7 +3926,9 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.dataviews.DataviewsAPI.list
   implementation_origin: mammoth.api.dataviews.DataviewsAPI.list
-  signature: 'list(self, dataset_id: ''int'', workspace_id: ''int | None'' = None, project_id: ''int | None'' = None, limit: ''int'' = 100, sort: ''str'' = ''(created_at:desc)'') -> ''dict[str, Any]'''
+  signature: 'list(self, dataset_id: ''int'', workspace_id: ''int | None'' = None, project_id: ''int | None''
+    = None, limit: ''int'' = 100, sort: ''str'' = ''(created_at:desc)'', offset: ''int'' = 0) -> ''dict[str,
+    Any]'''
   openapi_operation_ids: []
   canonical_command: view.list
   alias_of: null
@@ -3897,6 +4161,19 @@ methods:
   canonical_command: view.export.csv
   alias_of: null
   no_command_reason: null
+  mutation_class: benign_mutation
+  wait_policy: always_wait
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.exports.ExportsAPI.to_csv_url
+  implementation_origin: mammoth.api.exports.ExportsAPI.to_csv_url
+  signature: 'to_csv_url(self, dataview_id: ''int'', timeout: ''int'' = 300, dataset_id: ''int | None'' = None) -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: null
+  alias_of: null
+  no_command_reason: SDK-only seam view.export.csv dispatches to instead of to_csv for an embedded
+    call (mammoth_cli.runtime.embedded); returns the signed URL without downloading a local file.
   mutation_class: benign_mutation
   wait_policy: always_wait
   pagination_policy: none
@@ -4168,7 +4445,7 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.folders.FoldersAPI.move
   implementation_origin: mammoth.api.folders.FoldersAPI.move
-  signature: 'move(self, resource_ids: ''_list[str]'', target_folder_resource_id: ''str | None'' = None, source_folder_resource_id: ''str | None'' = None, workspace_id: ''int | None'' = None, project_id: ''int | None'' = None) -> ''ObjectJobSchema'''
+  signature: 'move(self, resource_ids: ''_list[str] | None'' = None, target_folder_resource_id: ''str | None'' = None, source_folder_resource_id: ''str | None'' = None, workspace_id: ''int | None'' = None, project_id: ''int | None'' = None, *, dataset_ids: ''_list[int] | None'' = None, view_ids: ''_list[int] | None'' = None) -> ''ObjectJobSchema'''
   openapi_operation_ids: []
   canonical_command: folder.move
   alias_of: null
@@ -4757,6 +5034,18 @@ methods:
   pagination_policy: null
   secret_fields: []
   reviewed_by: primary
+- sdk_symbol: mammoth.api.projects.ProjectsAPI.add_agent_memory
+  implementation_origin: mammoth.api.projects.ProjectsAPI.add_agent_memory
+  signature: 'add_agent_memory(self, project_id: ''int'', text: ''str'', workspace_id: ''int | None'' = None) -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: project.memory.add
+  alias_of: null
+  no_command_reason: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
 - sdk_symbol: mammoth.api.projects.ProjectsAPI.add_users
   implementation_origin: mammoth.api.projects.ProjectsAPI.add_users
   signature: 'add_users(self, project_id: ''int'', user_ids: ''_list[int]'', role: ''str | None'' = None, workspace_id: ''int | None'' = None) -> ''dict[str, Any]'''
@@ -4865,9 +5154,21 @@ methods:
   pagination_policy: single_page
   secret_fields: []
   reviewed_by: primary
+- sdk_symbol: mammoth.api.projects.ProjectsAPI.list_agent_memory
+  implementation_origin: mammoth.api.projects.ProjectsAPI.list_agent_memory
+  signature: 'list_agent_memory(self, project_id: ''int'', workspace_id: ''int | None'' = None) -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: project.memory.list
+  alias_of: null
+  no_command_reason: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
 - sdk_symbol: mammoth.api.projects.ProjectsAPI.list
   implementation_origin: mammoth.api.projects.ProjectsAPI.list
-  signature: 'list(self, workspace_id: ''int | None'' = None, limit: ''int'' = 100, offset: ''int'' = 0) -> ''dict[str, Any]'''
+  signature: 'list(self, workspace_id: ''int | None'' = None, limit: ''int'' = 100, offset: ''int'' = 0, fields: ''str'' = ''id,name'') -> ''dict[str, Any]'''
   openapi_operation_ids: []
   canonical_command: project.list
   alias_of: null
@@ -4879,7 +5180,7 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.projects.ProjectsAPI.list_all
   implementation_origin: mammoth.api.projects.ProjectsAPI.list_all
-  signature: 'list_all(self, workspace_id: ''int | None'' = None) -> ''_list[dict[str, Any]]'''
+  signature: 'list_all(self, workspace_id: ''int | None'' = None, fields: ''str'' = ''id,name'') -> ''_list[dict[str, Any]]'''
   openapi_operation_ids: []
   canonical_command: null
   alias_of: null
@@ -4912,6 +5213,18 @@ methods:
   mutation_class: null
   wait_policy: null
   pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.projects.ProjectsAPI.remove_agent_memory
+  implementation_origin: mammoth.api.projects.ProjectsAPI.remove_agent_memory
+  signature: 'remove_agent_memory(self, project_id: ''int'', index: ''int'', workspace_id: ''int | None'' = None) -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: project.memory.remove
+  alias_of: null
+  no_command_reason: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
   secret_fields: []
   reviewed_by: primary
 - sdk_symbol: mammoth.api.projects.ProjectsAPI.remove_users
@@ -5841,12 +6154,13 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.user_profile.UserProfileAPI.update
   implementation_origin: mammoth.api.user_profile.UserProfileAPI.update
-  signature: 'update(self, **fields: ''Any'') -> ''dict[str, Any]'''
+  signature: 'update(self, *, first_name: ''str | None'' = None, last_name: ''str | None''
+    = None) -> ''dict[str, Any]'''
   openapi_operation_ids: []
   canonical_command: user.update
   alias_of: null
   no_command_reason: null
-  mutation_class: high_impact
+  mutation_class: benign_mutation
   wait_policy: not_async
   pagination_policy: none
   secret_fields: []
@@ -6225,7 +6539,7 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.workspace.WorkspaceAPI.list_users
   implementation_origin: mammoth.api.workspace.WorkspaceAPI.list_users
-  signature: 'list_users(self, workspace_id: ''int | None'' = None) -> ''_list[dict[str, Any]]'''
+  signature: 'list_users(self, workspace_id: ''int | None'' = None, fields: ''str | None'' = None) -> ''_list[dict[str, Any]]'''
   openapi_operation_ids: []
   canonical_command: workspace.user.list
   alias_of: null

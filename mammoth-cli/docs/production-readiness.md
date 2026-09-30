@@ -1,6 +1,6 @@
 # mammoth-cli production readiness
 
-Last updated 2026-09-25 (mammoth-cli 2.0.37, mammoth-io 0.7.16).
+Last updated 2026-09-28 (mammoth-cli 2.0.75, mammoth-io 0.7.34).
 
 Read this page to learn what the CLI is, what is proven, and what is not. It
 also says where the evidence for each claim is. Update it with every release.
@@ -21,6 +21,14 @@ start, with no notes other than the bundled skill:
 5. Delete only what it created, and prove it is gone.
 
 Report: `docs/capability-evidence/haiku-etl-20260919/REPORT-2.md`.
+
+The two-file dashboard eval (`evals/two-files-dashboard`, three cold Haiku
+runs on 2.0.41) scored 9, 8 and 6 of 10. Every run joined on the key it
+found in the data, reported the match rate, and added revenue before the
+dashboard. The open gap is blanks: each run left one blank column
+undecided. 2.0.43 adds `mammoth project check`, which lists every open
+finding (blanks included) before the report; it has not been through the
+eval yet. See `docs/release-status.md` (2.0.42, 2.0.43).
 
 A second live run (2026-09-19, `docs/capability-evidence/ilg-sim-20260919/`)
 replayed a real customer rebuild brief on synthetic data. It proved:

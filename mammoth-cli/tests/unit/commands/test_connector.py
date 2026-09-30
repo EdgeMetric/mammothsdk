@@ -83,6 +83,47 @@ def test_list_dispatches(fake_service: FakeMammothService) -> None:
     assert fake_service.call_log == [(_LIST, {})]
 
 
+# A premium connector not yet added to the workspace must say why it cannot
+# be connected -- T2-WPP-W7: the agent routed the user to sales but never
+# explained that the connector is premium and not enabled in this workspace.
+
+
+def test_list_marks_a_premium_not_added_connector(fake_service: FakeMammothService) -> None:
+    # ConnectorsAPI.list returns a plain list (live koyal connector list)
+    fake_service.responses[_LIST] = [
+        {
+            "api_type": "DB",
+            "disp_name": "Google BigQuery",
+            "is_added": False,
+            "is_premium": True,
+            "name_key": "bigquery",
+        },
+        {
+            "api_type": "DB",
+            "disp_name": "Postgres SQL",
+            "is_added": True,
+            "is_premium": False,
+            "name_key": "postgres",
+        },
+    ]
+    data, _meta = connector_cmd.connector_list(_inv("connector.list"))
+    bigquery, postgres = data
+    assert bigquery["availability"] == "premium_not_enabled"
+    assert "sales" in bigquery["availability_note"].lower()
+    assert "availability" not in postgres
+
+
+def test_list_leaves_ordinary_connectors_unmarked(
+    fake_service: FakeMammothService,
+) -> None:
+    fake_service.responses[_LIST] = [
+        {"disp_name": "Postgres SQL", "is_added": True, "is_premium": False},
+        {"disp_name": "MySQL", "is_added": False, "is_premium": False},
+    ]
+    data, _meta = connector_cmd.connector_list(_inv("connector.list"))
+    assert all("availability" not in item for item in data)
+
+
 # --- ai chat ---------------------------------------------------------------------
 
 

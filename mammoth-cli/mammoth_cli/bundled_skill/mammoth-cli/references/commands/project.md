@@ -22,6 +22,16 @@ Result: `ProjectBulkUpdateResult`; mutation `high_impact`, confirmation `confirm
 
 Status on release: ran once on CLI 2.0.15 — re-verification 2026-09-18: exit 0 on release with CLI 2.0.15. Fix held: body accepted as ProjectsPatch naming project_id in every value item; confirmation named the workspace scope (message: 'bulk-update roles in projects 23 of workspace 4', hint 'Pass --con…
 
+### `project.check`
+
+Run: `mammoth project check`. Exact input fields: `mammoth schema get project.check`.
+
+Example: `mammoth project check 123 456`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `ProjectCheckResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
 ### `project.checkpoint.list`
 
 Run: `mammoth project checkpoint list`. Exact input fields: `mammoth schema get project.checkpoint.list`.
@@ -91,6 +101,36 @@ Example: `mammoth project list`. Placeholders are illustrative; resolve IDs and 
 Result: `ProjectListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
 Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Final check: only project 3 (API Tests_project, pre-existing, not touched) remains; project 41 is gone. Project 40 (golden-... concurrent run) was also gone by this point but was never tou…
+
+### `project.memory.add`
+
+Run: `mammoth project memory add`. Exact input fields: `mammoth schema get project.memory.add`.
+
+Example: `mammoth project memory add 123 --input '{"text": "sample"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `ProjectMemoryAddResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `project.memory.list`
+
+Run: `mammoth project memory list`. Exact input fields: `mammoth schema get project.memory.list`.
+
+Example: `mammoth project memory list 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `ProjectMemoryListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `project.memory.remove`
+
+Run: `mammoth project memory remove`. Exact input fields: `mammoth schema get project.memory.remove`.
+
+Example: `mammoth project memory remove 123 --input '{"index": 1}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `ProjectMemoryRemoveResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
 
 ### `project.pending-changes`
 

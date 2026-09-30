@@ -21,6 +21,7 @@ from mammoth_cli.context.resolver import ResolvedAuth, resolve_auth, resolve_pro
 from mammoth_cli.errors.envelope import missing_project_error
 from mammoth_cli.manifest.loader import command_by_id
 from mammoth_cli.output.policy import resolve_policy
+from mammoth_cli.runtime import embedded
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.services import factory
 from mammoth_cli.services.protocol import MammothService
@@ -31,9 +32,17 @@ from mammoth_cli.services.protocol import MammothService
 #: pass ``--timeout 300`` by hand. Reads keep the SDK default.
 DEFAULT_MUTATION_JOB_TIMEOUT = 300.0
 
+#: Wait budget for ``job wait`` / ``job wait-many`` when no timeout was given:
+#: long enough for a big transform, and never unbounded, so a resuming agent
+#: is always told the job's state (success, failure, or still running).
+DEFAULT_JOB_WAIT_TIMEOUT = 900.0
+_JOB_WAIT_COMMANDS = ("job.wait", "job.wait-many")
+
 
 def default_job_timeout(command_id: str) -> float | None:
     """The job-wait timeout for ``command_id`` when none was configured."""
+    if command_id in _JOB_WAIT_COMMANDS:
+        return DEFAULT_JOB_WAIT_TIMEOUT
     record = command_by_id(command_id) or {}
     if record.get("mutation_class", "read") in (None, "read"):
         return None
@@ -101,6 +110,10 @@ def resolved_project(invocation: Invocation) -> int | None:
     Returns:
         The resolved project id, or None when none is set.
     """
+    if embedded.active():
+        # An embedded call has no profile: the host's saved profiles belong to
+        # the host's OS user, not to the user the call runs for.
+        return invocation.project
     profile_name = invocation.profile or profiles.get_selected()
     return resolve_project(invocation, profiles.get_profile(profile_name))
 

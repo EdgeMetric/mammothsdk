@@ -19,16 +19,28 @@ enum-typed fields are forwarded as the plain string given on ``--input``.
 
 from __future__ import annotations
 
+import json
+from collections.abc import Callable
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from mammoth_cli.commands.view import (
+    _DATAVIEW_GET_SYMBOL,
+    _FIND_DATASET_SYMBOL,
     BRIEF_VIEW_FIELDS,
+    _dataview_metadata,
     _require_discovery_allowed,
+    apply_column_renames,
     brief_view_record,
+    join_after_snapshot,
+    join_snapshot,
+    wait_for_view_row_count,
+    with_join_check,
 )
 from mammoth_cli.context import profiles
 from mammoth_cli.errors.envelope import (
     CODE_INVALID_ARGUMENT,
+    CODE_INVALID_ARGUMENTS,
     CODE_MISSING_ARGUMENT,
     CODE_MISSING_FIELD,
     CODE_SDK_SYMBOL_UNRESOLVED,
@@ -49,9 +61,15 @@ HandlerResult = tuple[Any, dict[str, Any]]
 
 #: Error code for a task the backend accepted but could not bind to the view.
 CODE_PIPELINE_REFERENCE_ERROR = "pipeline_reference_error"
+#: Error code for a task that bound fine but errored while it ran.
+CODE_TASK_RUNTIME_ERROR = "task_runtime_error"
 _PIPELINE_SYMBOL = "mammoth.api.pipeline.PipelineAPI.get_pipeline"
 _PIPELINE_ITEMS_SYMBOL = "mammoth.api.pipeline.PipelineAPI.items"
 _PIPELINE_ITEMS_FULL = "__full"
+_ERROR_TRANSFORM_STATUSES = {"ERROR", "REFERROR"}
+#: Tolerance for clock skew between this process and the server when deciding
+#: whether a task's ``created_at`` falls at or after this call's submit time.
+_TASK_CLOCK_SKEW = timedelta(seconds=5)
 _REFERROR_REASON_HINTS = {
     "type mismatch": (
         "the task needs a different column type (find/replace and text operations "
@@ -230,10 +248,43 @@ def _meta(invocation: Invocation, workspace_id: int) -> dict[str, Any]:
     }
 
 
+def _view_row_count(service: Any, dataset_id: int, view_id: int, project_id: int | None) -> Any:
+    """Return a view's current row count via the cheapest read (best effort)."""
+    try:
+        info = service.call(
+            _DATAVIEW_GET_SYMBOL, dataset_id=dataset_id, dataview_id=view_id, project_id=project_id
+        )
+    except Exception:  # noqa: BLE001 -- the check is advice; the write already ran
+        return None
+    return info.get("row_count") if isinstance(info, dict) else None
+
+
 def _dispatch_view(
-    invocation: Invocation, view_id: int, method: str, **kwargs: Any
+    invocation: Invocation,
+    view_id: int,
+    method: str,
+    *,
+    before: Callable[[Any, int], Any] | None = None,
+    after: Callable[[Any, int, Any, Any], Any] | None = None,
+    prepare: Callable[[Any, int, dict[str, Any]], Any] | None = None,
+    **kwargs: Any,
 ) -> HandlerResult:
-    """Open the service, dispatch a View method call, and build the envelope."""
+    """Open the service, dispatch a View method call, and build the envelope.
+
+    ``before(service, dataset_id)`` runs ahead of the call and its value is
+    handed to ``after(service, dataset_id, state, data)``, which returns the
+    result to emit. ``prepare(service, dataset_id, kwargs)`` may edit the call
+    arguments in place; when it returns a value, that value is emitted and no
+    call is made. All three need the exact parent; without one they are skipped.
+
+    When neither ``before`` nor ``after`` is given (every plain transform),
+    the view's row count is read before and after the call and added to the
+    result as ``row_check``, so a caller always sees whether the write changed
+    the row count -- the join path builds its own richer ``join_check`` instead.
+    A result staged as a draft never ran the pipeline, so no ``row_check`` is
+    added and there is nothing to wait for.
+    """
+    auto_row_check = before is None and after is None
     # ``dataset_id`` is invocation-local resource context.  It is not a View
     # transform argument, but passing it through lets the service fetch the
     # exact parent endpoint and prevents the SDK's legacy bare-view resolver
@@ -252,7 +303,20 @@ def _dispatch_view(
     with open_service(invocation) as (service, auth):
         if dataset_id is None:
             dataset_id = parents.lookup(_profile_name(invocation), auth.workspace_id, view_id)
+        if dataset_id is not None:
+            # Verify and the state readback reuse it; neither may walk datasets.
+            object.__setattr__(invocation, "known_dataset_id", int(dataset_id))
         require_expected_task_count(service, view_id, dataset_id, document)
+        if prepare is not None and dataset_id is not None:
+            early = prepare(service, int(dataset_id), kwargs)
+            if early is not None:
+                return early, _meta(invocation, auth.workspace_id)
+        state = before(service, int(dataset_id)) if before and dataset_id is not None else None
+        rows_before = (
+            _view_row_count(service, int(dataset_id), view_id, invocation.project)
+            if auto_row_check and dataset_id is not None
+            else None
+        )
         try:
             if dataset_id is None:
                 _require_discovery_allowed(invocation, view_id)
@@ -265,6 +329,29 @@ def _dispatch_view(
             reject_pipeline_reference_errors(service, view_id, dataset_id, response)
             raise
         reject_pipeline_reference_errors(service, view_id, dataset_id, data)
+        if dataset_id is not None:
+            # Later commands that know only the view (a dashboard's check) use it.
+            parents.remember(
+                _profile_name(invocation), auth.workspace_id, {view_id: int(dataset_id)}
+            )
+        if after is not None and dataset_id is not None:
+            data = after(service, int(dataset_id), state, data)
+        elif (
+            auto_row_check
+            and dataset_id is not None
+            and isinstance(data, dict)
+            and data.get("status") != "staged"
+        ):
+            # A read taken right away can catch the pipeline still
+            # recomputing and read back no row_count at all; wait for it to
+            # settle (bounded) before trusting this one. A staged draft never
+            # ran the pipeline, so there is nothing to wait for or read.
+            rows_after, pipeline_error = wait_for_view_row_count(
+                service, int(dataset_id), view_id, invocation.project
+            )
+            data["row_check"] = {"rows_before": rows_before, "rows_after": rows_after}
+            if pipeline_error is not None:
+                data["pipeline_error"] = pipeline_error
     return data, _meta(invocation, auth.workspace_id)
 
 
@@ -401,9 +488,106 @@ def reject_pipeline_reference_errors(
             "response": data,
         },
         recovery_commands=[
-            f"mammoth view task delete {view_id} {task_id} --yes" for task_id in task_ids
+            f"mammoth view task delete {view_id} {task_id} --yes"
+            + (
+                f" --input '{{\"dataset_id\": {kwargs['dataset_id']}}}'"
+                if "dataset_id" in kwargs
+                else ""
+            )
+            for task_id in task_ids
         ]
         or [f'mammoth view pipeline items {view_id} --input \'{{"fields": "__full"}}\''],
+    )
+
+
+def _parse_created_at(value: Any) -> datetime | None:
+    if not isinstance(value, str):
+        return None
+    try:
+        parsed = datetime.fromisoformat(value)
+    except ValueError:
+        return None
+    return parsed if parsed.tzinfo is not None else parsed.replace(tzinfo=UTC)
+
+
+def _newest_task_created_at_or_after(tasks: list[Any], floor: datetime) -> dict[str, Any] | None:
+    """The task with the latest ``created_at`` at or after ``floor``, if any."""
+    newest: dict[str, Any] | None = None
+    newest_created: datetime | None = None
+    for task in tasks:
+        if not isinstance(task, dict):
+            continue
+        created = _parse_created_at(task.get("created_at"))
+        if created is None or created < floor:
+            continue
+        if newest_created is None or created > newest_created:
+            newest_created, newest = created, task
+    return newest
+
+
+def reject_task_runtime_error(
+    service: Any, view_id: int, dataset_id: Any, data: Any, submitted_at: datetime
+) -> None:
+    """Fail a task add whose step errored at run time without flipping has_error.
+
+    A GEN_AI (or other runtime-dependent) step can fail after the backend has
+    already accepted and bound the task -- a workspace AI quota outage, for
+    example -- leaving the new column blank while the SDK's ``has_error``
+    stays false and ``pipeline_state`` reads ``ready``. The only signal is
+    the task's own ``transform_status`` (``ERROR``/``REFERROR``), which
+    ``list_tasks`` now reads back at ``__full``. A reference-binding failure
+    already raised via :func:`reject_pipeline_reference_errors` before this
+    runs, so ``has_error`` here is always false or absent.
+
+    Checks the task *this call* created, not the pipeline's last step by
+    sequence: a task can be inserted mid-pipeline (lower sequence than an
+    existing later step), and a step already in ERROR before this call must
+    not fail every later add just because it sorts last. Neither the add
+    response nor its job names the created task's id (the server's
+    ``PipelineModificationResp`` has none; ``process_single_task`` only
+    echoes the submitted ``task_param`` back), so the newest task by
+    ``created_at`` -- accepted only if created at or after ``submitted_at``,
+    with a small clock-skew allowance -- stands in for it.
+    """
+    kwargs: dict[str, Any] = {"dataview_id": view_id}
+    if dataset_id is not None:
+        kwargs["dataset_id"] = int(dataset_id)
+    listing = service.call(_TASK_LIST_SYMBOL, **kwargs)
+    tasks = listing.get("tasks") if isinstance(listing, dict) else None
+    if not isinstance(tasks, list) or not tasks:
+        return
+    newest = _newest_task_created_at_or_after(tasks, submitted_at - _TASK_CLOCK_SKEW)
+    if newest is None:
+        return
+    status = newest.get("transform_status")
+    if status not in _ERROR_TRANSFORM_STATUSES:
+        return
+    task_id = newest.get("id")
+    dataset_kwarg = kwargs.get("dataset_id")
+    recovery = f"mammoth view task get {view_id} {task_id}"
+    if dataset_kwarg is not None:
+        recovery += f" --input '{{\"dataset_id\": {dataset_kwarg}}}'"
+    raise CliError(
+        code=CODE_TASK_RUNTIME_ERROR,
+        message=(
+            f"Task {task_id} was added to view {view_id} but failed at run time "
+            f"(transform_status {status}); its output may be blank or wrong even "
+            "though the pipeline reports ready."
+        ),
+        exit_status=EXIT_API,
+        hint=(
+            "The API does not expose the failure reason (the server keeps only "
+            "transform_status). Likely causes: a GEN_AI step hitting the "
+            f"workspace AI quota, or a bad step config. Run `{recovery}` to "
+            "confirm the status."
+        ),
+        details={
+            "view_id": view_id,
+            "dataset_id": dataset_kwarg,
+            "task_id": task_id,
+            "transform_status": status,
+        },
+        recovery_commands=[recovery],
     )
 
 
@@ -461,9 +645,54 @@ def view_create(invocation: Invocation) -> HandlerResult:
     document = invocation.load_input() or {}
     kwargs = bind_command_inputs(invocation.command_id, document, dataset_id=dataset_id)
     with open_service(invocation) as (service, auth):
+        clone_from = kwargs.get("clone_from")
+        if clone_from is not None:
+            _require_clone_from_same_dataset(service, int(clone_from), dataset_id)
         data = service.call(_symbol(invocation), **kwargs)
     # The SDK returns a rich ``View``; emit its dataview record like ``view get``.
     return _view_payload(data), _meta(invocation, auth.workspace_id)
+
+
+def _require_clone_from_same_dataset(service: Any, clone_from: int, dataset_id: int) -> None:
+    """Refuse ``clone_from`` when it is a view of a different dataset.
+
+    The backend accepts a cross-dataset clone and produces a broken view (no
+    columns; every later data read fails), so this is checked here before the
+    request is sent rather than surfaced by the server.
+    """
+    source_dataset_id = int(service.call(_FIND_DATASET_SYMBOL, dataview_id=clone_from))
+    if source_dataset_id != dataset_id:
+        raise CliError(
+            code=CODE_INVALID_ARGUMENTS,
+            message="clone_from must be a view of the same dataset.",
+            exit_status=EXIT_USAGE,
+            hint=(
+                f"View {clone_from} belongs to dataset {source_dataset_id}, not "
+                f"{dataset_id}. Create a plain view (omit clone_from) instead."
+            ),
+            details={
+                "clone_from": clone_from,
+                "source_dataset_id": source_dataset_id,
+                "dataset_id": dataset_id,
+            },
+        )
+
+
+_DASHBOARDS_LIST_SYMBOL = "mammoth.api.dashboards.DashboardsAPI.list"
+
+
+def _with_dashboards(service: Any, view_id: int, record: Any) -> Any:
+    """Add the dashboards built on this view, so a user on the view's page who
+    says "this board" is understood (eval T1-D-22); unchanged when none."""
+    if not isinstance(record, dict):
+        return record
+    boards = service.call(_DASHBOARDS_LIST_SYMBOL)
+    built_on = [
+        {"id": board.get("id"), "title": board.get("title")}
+        for board in (boards if isinstance(boards, list) else [])
+        if isinstance(board, dict) and view_id in (board.get("sources") or [])
+    ]
+    return {**record, "dashboards": built_on} if built_on else record
 
 
 def view_get(invocation: Invocation) -> HandlerResult:
@@ -478,20 +707,32 @@ def view_get(invocation: Invocation) -> HandlerResult:
         kwargs: dict[str, Any] = {
             "dataset_id": dataset_id,
             "dataview_id": view_id,
-            # Server-side projection; the brief set unless the caller asks.
-            "fields": document.get("fields")
-            or ",".join(key for key in BRIEF_VIEW_FIELDS if key != "dataset_id"),
+            # Server-side projection; the brief set (plus the display
+            # properties that carry column renames) unless the caller asks.
+            "fields": (
+                document.get("fields")
+                or ",".join(
+                    [key for key in BRIEF_VIEW_FIELDS if key != "dataset_id"]
+                    + ["display_properties"]
+                )
+            ),
         }
         with open_service(invocation) as (service, auth):
             data = service.call("mammoth.api.dataviews.DataviewsAPI.get", **kwargs)
             parents.remember(_profile_name(invocation), auth.workspace_id, {view_id: dataset_id})
+            data = apply_column_renames(data) if document.get("fields") else brief_view_record(data)
+            data = _with_dashboards(service, view_id, data)
         return data, _meta(invocation, auth.workspace_id)
     context: dict[str, Any] = {"view_id": view_id}
     if dataset_id is not None:
         context["dataset_id"] = dataset_id
     # The generated contract predates the optional parent context; preserve
     # its declared fields, then add the validated SDK parent explicitly.
-    binding_document = {key: value for key, value in document.items() if key != "dataset_id"}
+    # ``fields`` projects the exact-parent route only; the discovery route
+    # returns the full record, trimmed below unless ``fields`` was asked for.
+    binding_document = {
+        key: value for key, value in document.items() if key not in ("dataset_id", "fields")
+    }
     kwargs = bind_command_inputs(invocation.command_id, binding_document, view_id=view_id)
     if dataset_id is not None:
         kwargs["dataset_id"] = dataset_id
@@ -499,10 +740,13 @@ def view_get(invocation: Invocation) -> HandlerResult:
         data = service.call(_symbol(invocation), **kwargs)
         payload = _view_payload(data)
         parents.remember_records(_profile_name(invocation), auth.workspace_id, payload)
-    if not document.get("fields"):
-        # The discovery path returns the standard record; trim it to the same
-        # brief shape the exact path asks the server for.
-        payload = brief_view_record(payload)
+        if not document.get("fields"):
+            # The discovery path returns the standard record; trim it to the same
+            # brief shape the exact path asks the server for.
+            payload = brief_view_record(payload)
+        else:
+            payload = apply_column_renames(payload)
+        payload = _with_dashboards(service, view_id, payload)
     return payload, _meta(invocation, auth.workspace_id)
 
 
@@ -651,7 +895,56 @@ def view_transform_convert_type(invocation: Invocation) -> HandlerResult:
     _require_field(document, "conversions")
     assert document is not None
     kwargs = _bind_transform_inputs(invocation, document)
-    return _dispatch_view(invocation, view_id, "convert_type", **kwargs)
+    project_id = invocation.project
+
+    def drop_same_type(service: Any, dataset_id: int, call: dict[str, Any]) -> Any:
+        # Converting a column to the type it already has puts the pipeline in
+        # ref_error ("type mismatch") and every read of the view fails until
+        # the task is removed (release, 2026-09-25). Uploads type numbers and
+        # ISO dates on their own, so this is easy to hit: skip those entries.
+        conversions = call.get("conversions")
+        if not isinstance(conversions, list):
+            return None
+        current = {
+            column.get("display_name"): str(column.get("type") or "").upper()
+            for column in _dataview_metadata(service, dataset_id, view_id, project_id)
+            if isinstance(column, dict)
+        }
+        kept, skipped = [], []
+        for entry in conversions:
+            name = entry.get("column") if isinstance(entry, dict) else None
+            target = str(entry.get("to") or "").upper() if isinstance(entry, dict) else ""
+            if name is not None and target and current.get(name) == target:
+                skipped.append({"column": name, "type": target})
+            else:
+                kept.append(entry)
+        if not skipped:
+            return None
+        if not kept:
+            return {
+                "status": "no_change",
+                "skipped": skipped,
+                "note": "Every column already has the requested type; no task was added.",
+            }
+        call["conversions"] = kept
+        skipped_record.extend(skipped)
+        return None
+
+    skipped_record: list[dict[str, Any]] = []
+
+    def note_skipped(service: Any, dataset_id: int, state: Any, data: Any) -> Any:
+        if skipped_record and isinstance(data, dict):
+            data = {**data, "skipped": skipped_record}
+        return data
+
+    return _dispatch_view(
+        invocation,
+        view_id,
+        "convert_type",
+        prepare=drop_same_type,
+        after=note_skipped,
+        **kwargs,
+    )
 
 
 def view_transform_copy_columns(invocation: Invocation) -> HandlerResult:
@@ -691,8 +984,11 @@ def view_transform_date_diff(invocation: Invocation) -> HandlerResult:
 
 
 def view_transform_delete_columns(invocation: Invocation) -> HandlerResult:
-    """Delete columns. ``columns`` is required."""
+    """Delete columns. ``columns`` is required. Prompt or ``--yes`` required."""
     view_id = _view_id(invocation)
+    enforce_confirmation(
+        invocation, policy=POLICY_PROMPT_OR_YES, action=f"delete columns on view {view_id}"
+    )
     document = invocation.load_input()
     _require_field(document, "columns")
     assert document is not None
@@ -747,7 +1043,22 @@ def view_transform_generate_sql(invocation: Invocation) -> HandlerResult:
     _require_field(document, "intent")
     assert document is not None
     kwargs = _bind_transform_inputs(invocation, document)
-    return _dispatch_view(invocation, view_id, "generate_sql", **kwargs)
+
+    def describe(service: Any, dataset_id: int, state: Any, data: Any) -> Any:
+        # The route writes and validates a query but adds no task (release,
+        # 2026-09-25); a bare string read as "done" by an agent that expected
+        # the view to change. Say so, and give the command that applies it.
+        if not isinstance(data, str):
+            return data
+        spec = json.dumps({"dataset_id": dataset_id, "query": data})
+        return {
+            "sql": data,
+            "applied": False,
+            "note": "The view is unchanged. Run 'apply' to add the query as a SQL task.",
+            "apply": f"mammoth view transform add-sql {view_id} --input '{spec}'",
+        }
+
+    return _dispatch_view(invocation, view_id, "generate_sql", after=describe, **kwargs)
 
 
 def view_transform_increment_date(invocation: Invocation) -> HandlerResult:
@@ -771,7 +1082,20 @@ def view_transform_join(invocation: Invocation) -> HandlerResult:
     _require_field(document, "select")
     assert document is not None
     kwargs = _bind_transform_inputs(invocation, document)
-    return _dispatch_view(invocation, view_id, "join", **kwargs)
+    project_id = invocation.project
+
+    def before(service: Any, dataset_id: int) -> Any:
+        return join_snapshot(service, dataset_id, view_id, project_id)
+
+    def after(service: Any, dataset_id: int, state: Any, data: Any) -> Any:
+        return with_join_check(
+            data,
+            state,
+            join_after_snapshot(service, dataset_id, view_id, project_id, state),
+            document,
+        )
+
+    return _dispatch_view(invocation, view_id, "join", before=before, after=after, **kwargs)
 
 
 def view_transform_json_extract(invocation: Invocation) -> HandlerResult:
@@ -792,6 +1116,26 @@ def view_transform_limit_rows(invocation: Invocation) -> HandlerResult:
     assert document is not None
     kwargs = _bind_transform_inputs(invocation, document)
     return _dispatch_view(invocation, view_id, "limit_rows", **kwargs)
+
+
+def view_transform_rename_columns(invocation: Invocation) -> HandlerResult:
+    """Rename columns (a view display setting, not a task). ``renames`` is required."""
+    view_id = _view_id(invocation)
+    document = invocation.load_input()
+    _require_field(document, "renames")
+    assert document is not None
+    kwargs = _bind_transform_inputs(invocation, document)
+    return _dispatch_view(invocation, view_id, "rename_columns", **kwargs)
+
+
+def view_transform_sort(invocation: Invocation) -> HandlerResult:
+    """Set the view's row order (a display setting, not a task). ``order_by`` is required."""
+    view_id = _view_id(invocation)
+    document = invocation.load_input()
+    _require_field(document, "order_by")
+    assert document is not None
+    kwargs = _bind_transform_inputs(invocation, document)
+    return _dispatch_view(invocation, view_id, "sort_rows", **kwargs)
 
 
 def view_transform_lookup(invocation: Invocation) -> HandlerResult:

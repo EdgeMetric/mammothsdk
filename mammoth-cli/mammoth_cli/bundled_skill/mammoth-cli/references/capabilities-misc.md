@@ -34,7 +34,7 @@ Ran once: `automation.create`, `automation.delete`, `automation.list`
 | Command | State | Note |
 |---|---|---|
 | `automation.get` | observed blocker | backend_error: SUSPECTED DEFECT: automation.get on the id that automation.create returned (id=1) returns HTTP 500 empty body every time (3 retries, several seconds apart), not even |
-| `automation.update` | observed blocker | cli_error: CLI rejected 'name' field; error message says accepted field is 'patch' (nested patch object), not documented in agent_example |
+| `automation.update` | CLI defect fixed, untried since | mammoth-io 0.7.19 / mammoth-cli 2.0.46: AutomationsAPI.update sent path=status value='resume' to the backend verbatim |
 
 ## `batch`
 
@@ -47,8 +47,6 @@ Ran once: `billing.stripe.history`, `billing.stripe.payment-method.list`, `billi
 | Command | State | Note |
 |---|---|---|
 | `billing.chargebee-plan` | observed blocker | backend_error: The CLI gates this GET behind --yes --confirm WORKSPACE_ID; with confirmation: HTTP 400 4SUBS014 'Chargebee plan not found for the given workspace' (workspace 4 is n |
-| `billing.invoice.get` | observed blocker | blocked_missing_fixture: The CLI gates this GET behind --yes --confirm WORKSPACE_ID; with confirmation: billing invoice list answered HTTP 500, so no invoice id was observed |
-| `billing.invoice.list` | observed blocker | backend_error: The CLI gates this GET behind --yes --confirm WORKSPACE_ID; with confirmation: HTTP 500 with empty body on GET /workspaces/4/subscription_v1/invoices |
 | `billing.stripe.preview-invoice` | observed blocker | backend_error: The CLI gates this GET behind --yes --confirm WORKSPACE_ID; with confirmation: HTTP 400 4SUBS037 'Failed to perform subscription operation' |
 | `billing.stripe.upcoming-invoice` | observed blocker | backend_error: The CLI gates this GET behind --yes --confirm WORKSPACE_ID; with confirmation: HTTP 400 4SUBS074 'Upcoming invoice not found' (no active Stripe subscription on works |
 | `billing.stripe.usage` | observed blocker | backend_error: The CLI gates this GET behind --yes --confirm WORKSPACE_ID; with confirmation: HTTP 400 5GENR010 UNKNOWN_ERROR 'Unknown error occurred |
@@ -140,4 +138,4 @@ Ran once: `workflow.create`, `workflow.delete`, `workflow.get`, `workflow.graph`
 
 Ran once: `workspace.app-usage`, `workspace.get`, `workspace.list`, `workspace.segment.list`, `workspace.segment.update`, `workspace.storage-breakdown`, `workspace.user.list`
 
-Evidence collected on CLI releases 1.1.5 through 2.0.28; each row's release is recorded in `docs/release-capability-matrix.json` (`evidence_version`). A row that ran on an older release has not been re-run since unless its note says so. Details: `docs/capability-evidence/` in the repository.
+Evidence collected on CLI releases 1.1.5 through 2.0.40; each row's release is recorded in `docs/release-capability-matrix.json` (`evidence_version`). A row that ran on an older release has not been re-run since unless its note says so. Details: `docs/capability-evidence/` in the repository.

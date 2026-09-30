@@ -67,6 +67,5 @@ commands:
   - CT-ACTIVITY-LIST-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: 'BLOCKED[B17 VARIADIC_INPUT_UNTYPED]: **filters is unconstrained; reserved, not
-    registered.'
+  known_restrictions: null
   reviewed_by: primary

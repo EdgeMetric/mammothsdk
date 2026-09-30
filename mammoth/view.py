@@ -43,6 +43,7 @@ import datetime
 import random
 import string
 import time
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
@@ -93,6 +94,13 @@ _K = ExportTargetKey  # short alias for the export target_properties wire keys
 ERR_EXPORT_DATASET_UNRESOLVED = (
     "Export for dataset {name!r} completed but its dataset id did not resolve "
     "before the timeout; the materialisation may still be in progress."
+)
+
+# Raised when a write into an EXISTING dataset (APPEND_TO_DS/REPLACE_IN_DS)
+# never reaches EXECUTED in time.
+ERR_EXPORT_DATASET_WRITE_UNRESOLVED = (
+    "Export into dataset {dataset_id} was submitted but did not reach EXECUTED "
+    "before the timeout; the write may still be in progress."
 )
 
 # Export-method argument validation (raised before any API call).
@@ -225,9 +233,16 @@ class View(
             properties = data.get("properties", {})
             columns_list = properties.get("columns", []) if isinstance(properties, dict) else []
 
+        # A column renamed in the grid (``rename_columns``) keeps its task
+        # metadata name; the new name lives in display_properties.COLUMN_NAMES.
+        display_props = data.get("display_properties")
+        renamed = display_props.get("COLUMN_NAMES") if isinstance(display_props, dict) else None
+        if not isinstance(renamed, dict):
+            renamed = {}
+
         for col in columns_list:
-            display = col.get("display_name") or col.get("name", "")
             internal = col.get("internal_name") or col.get("name", "")
+            display = renamed.get(internal) or col.get("display_name") or col.get("name", "")
             col_type = col.get("type", "TEXT")
 
             if display:
@@ -319,7 +334,11 @@ class View(
             ``pipeline_state`` carries the final state (``"ready"``); the
             server's submit record said ``"processing"``, which described the
             job at submit time and misled callers into polling it. In draft
-            mode the response is returned unchanged: the task is only queued.
+            mode the task is only staged, never run, so ``status`` is
+            ``"staged"`` and ``message`` names the exact command
+            (``submit_draft()`` / ``mammoth view draft submit``) that runs it
+            — the server's own ``"processing"`` would otherwise read as if the
+            step were already running.
         """
         # Read draft state *before* submitting: the server flips a view's
         # draft flag to "dirty" when the new task carries a reference error
@@ -381,6 +400,21 @@ class View(
             if isinstance(result, dict):
                 state = pipeline.get("state") if isinstance(pipeline, dict) else None
                 result = {**result, "status": "done", "pipeline_state": state or "ready"}
+        elif isinstance(result, dict):
+            # Auto-run is off (whether from the workspace's AUTO_RUN flag or an
+            # explicit enter_draft_mode()): the server queued the task but will
+            # never run it on its own. Name the exact command that will,
+            # rather than leaving the server's submit-time "processing" to be
+            # misread as "already running".
+            result = {
+                **result,
+                "status": "staged",
+                "message": (
+                    f"Auto-run is off for view {self.id}; this step is staged, "
+                    "not run. Run 'mammoth view draft submit "
+                    f"{self.id}' (or call submit_draft()) to run staged steps."
+                ),
+            }
         return result
 
     async def _run_internal_dataset_export(
@@ -396,18 +430,34 @@ class View(
         object (the wire dict is built here, so callers never deal with the raw
         payload).
 
-        The submit job returns with an empty ``response`` *before* the dataset
-        is created (the materialisation is a fire-and-forget downstream action),
-        so the new id is resolved from the export trigger once it reaches
-        ``EXECUTED``. When writing into a known existing dataset
-        (``TARGET_DS_ID`` set) that id is returned directly.
+        The submit job returns with an empty ``response`` immediately, but
+        the materialisation is NOT a fire-and-forget downstream action: the
+        server runs it synchronously inside that same job (validate, write,
+        then flip the trigger to ``EXECUTED``), so the job's own completion
+        already implies the write landed --
+        ``api/api/dataview/actions/actions_manager.py``'s ``_execute_action``
+        (~L1382) sets ``executing`` and calls the handler *before*
+        ``_finalize_trigger_run`` (~L1483) sets ``executed`` at L1537, and
+        for ``internal_dataset`` the handler
+        (``api/api/dataflow/internal_ds.py``'s ``SelfDataDistributary.execute``,
+        L55) calls ``DataFlowShepherd.execute`` -> ``DsDataManager
+        .execute_table_append`` (``api/api/dataflow/shepherd/shepherd.py``
+        ~L279) inline, before returning. This still waits for the export
+        trigger to reach ``EXECUTED`` rather than trusting the submit job
+        alone: for a new dataset (``DS_NAME``) that also resolves its id;
+        for a known existing dataset (``TARGET_DS_ID`` set, e.g.
+        ``APPEND_TO_DS``/``REPLACE_IN_DS``) the id is already known, but
+        "most recent EXECUTED export to the target" can otherwise match an
+        EARLIER append to the same dataset (see
+        :meth:`_wait_for_dataset_export_write`), so the id alone is not
+        enough to trust the read that follows.
 
         Returns:
             The id of the dataset the export wrote to (new or existing).
 
         Raises:
-            MammothExportError: If a new dataset's id does not resolve within
-                the timeout.
+            MammothExportError: If the write does not reach ``EXECUTED``
+                within the timeout.
         """
         spec = AddExportSpec(
             DATAVIEW_ID=self.id,
@@ -420,14 +470,56 @@ class View(
             validate_only=False,
             end_of_pipeline=True,
         )
+        existing_id = target_properties.get("TARGET_DS_ID")
+        # Snapshot the highest export id that already exists for this
+        # dataview BEFORE submitting, so the write-confirmation poll below
+        # can tell this call's own export apart from an earlier one already
+        # sitting at EXECUTED against the same target.
+        floor = await self._highest_export_id() if existing_id is not None else None
+
         result = await self._client.exports.create(self.id, spec, self.dataset_id)
         if isinstance(result, JobResponse):
             await self._client.jobs.wait_for_job(result.job.id, timeout)
 
-        existing_id = target_properties.get("TARGET_DS_ID")
         if existing_id is not None:
+            await self._wait_for_dataset_export_write(int(existing_id), timeout, floor)
             return int(existing_id)
         return await self._resolve_exported_dataset_id(target_properties["DS_NAME"], timeout)
+
+    async def _highest_export_id(self) -> int:
+        """The highest existing internal-dataset export id for this dataview.
+
+        The floor a write-confirmation poll uses to tell this call's own
+        export apart from an earlier one already at EXECUTED against the
+        same target dataset (see :meth:`_wait_for_dataset_export_write`).
+        """
+        page = await self._client.exports.list(
+            self.id, handler_type=HandlerType.INTERNAL_DATASET, dataset_id=self.dataset_id
+        )
+        return max((export.id or 0 for export in page.exports), default=0)
+
+    async def _poll_internal_dataset_exports(
+        self, match: Callable[[Any], bool], timeout: int | None
+    ) -> Any:
+        """Poll this dataview's ``internal_dataset`` export triggers for the
+        most recent one satisfying *match* until it reaches ``EXECUTED``.
+
+        Returns the matched, executed export, or None if the timeout elapsed
+        without one.
+        """
+        deadline = time.monotonic() + (timeout or getattr(self._client, "job_timeout", 60) or 60)
+        poll_interval = 2.0
+        while time.monotonic() < deadline:
+            page = await self._client.exports.list(
+                self.id, handler_type=HandlerType.INTERNAL_DATASET, dataset_id=self.dataset_id
+            )
+            matches = [e for e in page.exports if match(e)]
+            if matches:
+                export = max(matches, key=lambda e: e.id or 0)
+                if export.status == ExportStatus.EXECUTED:
+                    return export
+            await asyncio.sleep(poll_interval)
+        return None
 
     async def _resolve_exported_dataset_id(
         self, dataset_name: str, timeout: int | None = None
@@ -438,27 +530,55 @@ class View(
         named *dataset_name* (the most recent, by id) until it reaches
         ``EXECUTED`` and exposes ``TARGET_DS_ID``.
         """
-        deadline = time.monotonic() + (timeout or getattr(self._client, "job_timeout", 60) or 60)
-        poll_interval = 2.0
-        while time.monotonic() < deadline:
-            page = await self._client.exports.list(
-                self.id, handler_type=HandlerType.INTERNAL_DATASET
-            )
-            matches = [
-                e
-                for e in page.exports
-                if (e.target_properties or {}).get("DS_NAME") == dataset_name
-            ]
-            if matches:
-                export = max(matches, key=lambda e: e.id or 0)
-                target_id = (export.target_properties or {}).get("TARGET_DS_ID")
-                if export.status == ExportStatus.EXECUTED and target_id is not None:
-                    return int(target_id)
-            await asyncio.sleep(poll_interval)
+        export = await self._poll_internal_dataset_exports(
+            lambda e: (e.target_properties or {}).get("DS_NAME") == dataset_name, timeout
+        )
+        if export is not None:
+            target_id = (export.target_properties or {}).get("TARGET_DS_ID")
+            if target_id is not None:
+                return int(target_id)
         raise MammothExportError(
             ERR_EXPORT_DATASET_UNRESOLVED.format(name=dataset_name),
             {"dataset_name": dataset_name, "timeout": timeout},
         )
+
+    async def _wait_for_dataset_export_write(
+        self, target_ds_id: int, timeout: int | None = None, floor: int | None = None
+    ) -> None:
+        """Block until THIS call's write into *target_ds_id* reaches ``EXECUTED``.
+
+        Called after submitting an ``APPEND_TO_DS``/``REPLACE_IN_DS`` export,
+        so a caller reading the target dataset's row count right after this
+        returns sees the write's rows rather than racing it.
+
+        Matches only an export with id greater than *floor* -- the highest
+        export id that already existed for this dataview before this call
+        submitted (see :meth:`_highest_export_id`). Without it, "the most
+        recent EXECUTED export to the target" can match an EARLIER append to
+        the same dataset that is already EXECUTED while this call's own
+        export has not yet been listed, and return before this call's rows
+        have landed. ``TARGET_DS_ID`` is compared as ``int``: the wire value
+        can come back as a string, which would otherwise never match.
+        """
+
+        def match(export: Any) -> bool:
+            target = (export.target_properties or {}).get("TARGET_DS_ID")
+            if target is None:
+                return False
+            try:
+                target_matches = int(target) == target_ds_id
+            except (TypeError, ValueError):
+                target_matches = False
+            if not target_matches:
+                return False
+            return floor is None or (export.id or 0) > floor
+
+        export = await self._poll_internal_dataset_exports(match, timeout)
+        if export is None:
+            raise MammothExportError(
+                ERR_EXPORT_DATASET_WRITE_UNRESOLVED.format(dataset_id=target_ds_id),
+                {"dataset_id": target_ds_id, "timeout": timeout},
+            )
 
     # ── Data Access ─────────────────────────────────────────────
 
@@ -784,7 +904,7 @@ class View(
         """
         result = await self._client.pipeline.edit_pipeline(
             self.id,
-            [{"op": "command", "path": "auto_run", "value": enabled}],
+            [{"op": "replace", "path": "auto_run", "value": enabled}],
             self.dataset_id,
         )
         self._draft_mode = not enabled
@@ -855,7 +975,7 @@ class View(
 
             new_id = view.branch_out(dataset_name="Q1 snapshot")
         """
-        return self.export.to_dataset(
+        return await self.export.to_dataset(
             dataset_name,
             target_ds_id=target_ds_id,
             save_as_mode=save_as_mode,
@@ -1058,6 +1178,14 @@ class ViewExport:
             target_ds_id: Existing dataset to write into; None creates a new one.
             save_as_mode: Replace or append when writing the output dataset.
             column_mapping: Source -> destination column-name map (empty = all).
+                Renames only: when ``target_ds_id`` is None (a new dataset),
+                any view column left out of this map is kept under its
+                current name automatically, so a rename-only map (for
+                example ``{"petal_width": "width_cm"}``) still copies every
+                other column instead of silently dropping them. Writing into
+                an EXISTING dataset (``target_ds_id`` set) maps exactly the
+                listed columns, as before -- there the caller is matching a
+                specific target schema.
             label_ids: Folder/label ids for the new dataset.
             condition: Optional row filter applied before copying.
             timeout: Max seconds to wait for the job.
@@ -1083,6 +1211,16 @@ class ViewExport:
                 "target_project_id": target_project_id,
                 "source_project_id": getattr(self._client, "project_id", None),
                 "user_id": user.get("id") if isinstance(user, dict) else None,
+            }
+        if column_mapping and target_ds_id is None:
+            # A rename-only map (e.g. {"petal_width": "width_cm"}) must not
+            # silently drop every other column: the backend treats a
+            # non-empty COLUMN_MAPPING as an allow-list, so any view column
+            # left out never reaches the new dataset. Fill every other
+            # current column in as an identity entry; explicit keys win.
+            column_mapping = {
+                **{name: name for name in self._view.display_names if name not in column_mapping},
+                **column_mapping,
             }
         target_properties = build_branch_out_params(
             dataset_name,
@@ -1777,7 +1915,9 @@ class ViewExport:
             for exp in exports:
                 print(f"{exp['id']}: {exp['handler_type']}")
         """
-        result = await self._client.exports.list(dataview_id=self._view.id)
+        result = await self._client.exports.list(
+            dataview_id=self._view.id, dataset_id=self._view.dataset_id
+        )
         if hasattr(result, "exports"):
             return result.exports
         return result.get("exports", []) if isinstance(result, dict) else []

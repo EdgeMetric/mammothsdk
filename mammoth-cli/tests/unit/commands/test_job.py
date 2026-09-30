@@ -139,6 +139,54 @@ def test_wait_interrupt_recovery_stays_on_selected_profile(
     ]
 
 
+def test_wait_success_reports_status_job_and_result(fake_service: FakeMammothService) -> None:
+    fake_service.responses[_WAIT] = {
+        "id": 9,
+        "status": "success",
+        "operation": "TRANSFORM",
+        "path": "/x",
+        "response": {"dataview_id": 3},
+    }
+    data, _ = job_cmd.job_wait(_inv("job.wait", extra_args=["9"]))
+    assert data == {
+        "status": "success",
+        "job_id": 9,
+        "operation": "TRANSFORM",
+        "path": "/x",
+        "result": {"dataview_id": 3},
+    }
+
+
+def test_wait_success_without_response_key_returns_the_job(
+    fake_service: FakeMammothService,
+) -> None:
+    fake_service.responses[_WAIT] = {"id": 9, "status": "success"}
+    data, _ = job_cmd.job_wait(_inv("job.wait", extra_args=["9"]))
+    assert data == {"status": "success", "job_id": 9, "result": {"id": 9, "status": "success"}}
+
+
+def test_wait_with_dashboard_url_uses_the_url_scoped_wait(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    input_file = _write(tmp_path, {"dashboard_url": "sales", "timeout": 30})
+    job_cmd.job_wait(_inv("job.wait", extra_args=["9"], input_file=input_file))
+    assert fake_service.call_log == [
+        (
+            "mammoth.api.dashboards.DashboardsAPI.wait_for_job_by_url",
+            {"job_id": 9, "timeout": 30, "url": "sales"},
+        )
+    ]
+
+
+def test_wait_default_budgets_are_15_minutes() -> None:
+    from mammoth_cli.runtime.session import DEFAULT_JOB_WAIT_TIMEOUT, default_job_timeout
+
+    assert DEFAULT_JOB_WAIT_TIMEOUT == 900.0
+    assert default_job_timeout("job.wait") == 900.0
+    assert default_job_timeout("job.wait-many") == 900.0
+    assert default_job_timeout("job.get") is None
+
+
 # --- job wait-many ---------------------------------------------------------
 
 

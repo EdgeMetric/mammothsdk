@@ -349,9 +349,11 @@ view.limit_rows(10, bottom=True, order_by=[["Sales", SortDirection.ASC]])
 ### Fill missing values
 
 ```python
+# FIRST_VALUE carries the previous row's value down (forward fill);
+# LAST_VALUE takes the next row's value (back-fill).
 view.fill_missing(
     "Price",
-    direction=FillDirection.LAST_VALUE,
+    direction=FillDirection.FIRST_VALUE,
     order_by=[["Date", SortDirection.ASC]],
 )
 ```
@@ -415,8 +417,10 @@ view.gen_ai(
 
 ```python
 # Generate SQL from natural language
+# Returns the query only; the view does not change until add_sql
 sql = view.generate_sql("count employees by department and sort by count descending")
 print(sql)
+view.add_sql(sql)
 
 # Add raw SQL
 view.add_sql('SELECT region, SUM(sales) AS total FROM "view:123" GROUP BY region')

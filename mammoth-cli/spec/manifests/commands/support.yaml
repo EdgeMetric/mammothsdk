@@ -26,6 +26,7 @@ commands:
   request_model: SupportConnectorProfileAddConnectorRequest
   result_model: SupportConnectorProfileAddConnectorResult
   mutation_class: high_impact
+  edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -47,6 +48,10 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: support.connector-profile.list
+    ids: {}
+    kind: object
 - command_id: support.connector-profile.create
   command_path: support connector-profile create
   disposition: command
@@ -67,6 +72,7 @@ commands:
   request_model: SupportConnectorProfileCreateRequest
   result_model: SupportConnectorProfileCreateResult
   mutation_class: high_impact
+  edits_target: false
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -88,6 +94,10 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: support.connector-profile.list
+    ids: {}
+    kind: object
 - command_id: support.connector-profile.delete
   command_path: support connector-profile delete
   disposition: command
@@ -108,6 +118,7 @@ commands:
   request_model: SupportConnectorProfileDeleteRequest
   result_model: SupportConnectorProfileDeleteResult
   mutation_class: high_impact
+  edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -129,6 +140,10 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: support.connector-profile.list
+    ids: {}
+    kind: object
 - command_id: support.connector-profile.list
   command_path: support connector-profile list
   disposition: command
@@ -141,8 +156,8 @@ commands:
   sdk_conversion: Call mammoth.api.support.SupportAPI.connector_profile_list with validated request fields.
   request_model: SupportConnectorProfileListRequest
   result_model: SupportConnectorProfileListResult
-  mutation_class: high_impact
-  confirmation: confirm_target
+  mutation_class: read
+  confirmation: none
   wait_policy: not_async
   pagination_policy: single_page
   acceptance_evidence: contract_only_high_impact
@@ -183,6 +198,7 @@ commands:
   request_model: SupportConnectorProfileUpdateRequest
   result_model: SupportConnectorProfileUpdateResult
   mutation_class: high_impact
+  edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -204,6 +220,10 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: support.connector-profile.list
+    ids: {}
+    kind: object
 - command_id: support.connector.create
   command_path: support connector create
   disposition: command
@@ -223,6 +243,7 @@ commands:
   request_model: SupportConnectorCreateRequest
   result_model: SupportConnectorCreateResult
   mutation_class: high_impact
+  edits_target: false
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -244,6 +265,10 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: support.connector.list
+    ids: {}
+    kind: object
 - command_id: support.connector.delete
   command_path: support connector delete
   disposition: command
@@ -263,6 +288,7 @@ commands:
   request_model: SupportConnectorDeleteRequest
   result_model: SupportConnectorDeleteResult
   mutation_class: high_impact
+  edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -284,6 +310,10 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: support.connector.list
+    ids: {}
+    kind: object
 - command_id: support.connector.list
   command_path: support connector list
   disposition: command
@@ -296,8 +326,8 @@ commands:
   sdk_conversion: Call mammoth.api.support.SupportAPI.connector_list with validated request fields.
   request_model: SupportConnectorListRequest
   result_model: SupportConnectorListResult
-  mutation_class: high_impact
-  confirmation: confirm_target
+  mutation_class: read
+  confirmation: none
   wait_policy: not_async
   pagination_policy: single_page
   acceptance_evidence: contract_only_high_impact
@@ -337,6 +367,7 @@ commands:
   request_model: SupportConnectorUpdateRequest
   result_model: SupportConnectorUpdateResult
   mutation_class: high_impact
+  edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -358,6 +389,10 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: support.connector.list
+    ids: {}
+    kind: object
 - command_id: support.feature-profile.add-feature
   command_path: support feature-profile add-feature
   disposition: command
@@ -384,6 +419,7 @@ commands:
   request_model: SupportFeatureProfileAddFeatureRequest
   result_model: SupportFeatureProfileAddFeatureResult
   mutation_class: high_impact
+  edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -405,6 +441,10 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: support.feature-profile.list
+    ids: {}
+    kind: object
 - command_id: support.feature-profile.create
   command_path: support feature-profile create
   disposition: command
@@ -424,6 +464,7 @@ commands:
   request_model: SupportFeatureProfileCreateRequest
   result_model: SupportFeatureProfileCreateResult
   mutation_class: high_impact
+  edits_target: false
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -445,6 +486,10 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: support.feature-profile.list
+    ids: {}
+    kind: object
 - command_id: support.feature-profile.delete
   command_path: support feature-profile delete
   disposition: command
@@ -464,6 +509,7 @@ commands:
   request_model: SupportFeatureProfileDeleteRequest
   result_model: SupportFeatureProfileDeleteResult
   mutation_class: high_impact
+  edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -485,6 +531,10 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: support.feature-profile.list
+    ids: {}
+    kind: object
 - command_id: support.feature-profile.list
   command_path: support feature-profile list
   disposition: command
@@ -497,8 +547,8 @@ commands:
   sdk_conversion: Call mammoth.api.support.SupportAPI.feature_profile_list with validated request fields.
   request_model: SupportFeatureProfileListRequest
   result_model: SupportFeatureProfileListResult
-  mutation_class: high_impact
-  confirmation: confirm_target
+  mutation_class: read
+  confirmation: none
   wait_policy: not_async
   pagination_policy: single_page
   acceptance_evidence: contract_only_high_impact
@@ -538,6 +588,7 @@ commands:
   request_model: SupportFeatureProfileUpdateRequest
   result_model: SupportFeatureProfileUpdateResult
   mutation_class: high_impact
+  edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -559,6 +610,10 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: support.feature-profile.list
+    ids: {}
+    kind: object
 - command_id: support.feature.create
   command_path: support feature create
   disposition: command
@@ -578,6 +633,7 @@ commands:
   request_model: SupportFeatureCreateRequest
   result_model: SupportFeatureCreateResult
   mutation_class: high_impact
+  edits_target: false
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -599,6 +655,10 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: support.feature.list
+    ids: {}
+    kind: object
 - command_id: support.feature.delete
   command_path: support feature delete
   disposition: command
@@ -618,6 +678,7 @@ commands:
   request_model: SupportFeatureDeleteRequest
   result_model: SupportFeatureDeleteResult
   mutation_class: high_impact
+  edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -639,6 +700,10 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: support.feature.list
+    ids: {}
+    kind: object
 - command_id: support.feature.list
   command_path: support feature list
   disposition: command
@@ -651,8 +716,8 @@ commands:
   sdk_conversion: Call mammoth.api.support.SupportAPI.feature_list with validated request fields.
   request_model: SupportFeatureListRequest
   result_model: SupportFeatureListResult
-  mutation_class: high_impact
-  confirmation: confirm_target
+  mutation_class: read
+  confirmation: none
   wait_policy: not_async
   pagination_policy: single_page
   acceptance_evidence: contract_only_high_impact
@@ -692,6 +757,7 @@ commands:
   request_model: SupportFeatureUpdateRequest
   result_model: SupportFeatureUpdateResult
   mutation_class: high_impact
+  edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -713,6 +779,10 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: support.feature.list
+    ids: {}
+    kind: object
 - command_id: support.ownership.transfer
   command_path: support ownership transfer
   disposition: command
@@ -738,6 +808,7 @@ commands:
   request_model: SupportOwnershipTransferRequest
   result_model: SupportOwnershipTransferResult
   mutation_class: high_impact
+  edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -759,6 +830,11 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: support.workspace.user.list
+    ids:
+      workspace_id: positional.0
+    kind: object
 - command_id: support.plan.archive
   command_path: support plan archive
   disposition: command
@@ -778,6 +854,7 @@ commands:
   request_model: SupportPlanArchiveRequest
   result_model: SupportPlanArchiveResult
   mutation_class: high_impact
+  edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -799,6 +876,11 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: support.plan.get
+    ids:
+      plan_id: positional.0
+    kind: object
 - command_id: support.plan.chargebee-list
   command_path: support plan chargebee-list
   disposition: command
@@ -811,8 +893,8 @@ commands:
   sdk_conversion: Call mammoth.api.support.SupportAPI.plan_chargebee_list with validated request fields.
   request_model: SupportPlanChargebeeListRequest
   result_model: SupportPlanChargebeeListResult
-  mutation_class: high_impact
-  confirmation: confirm_target
+  mutation_class: read
+  confirmation: none
   wait_policy: not_async
   pagination_policy: single_page
   acceptance_evidence: contract_only_high_impact
@@ -852,6 +934,7 @@ commands:
   request_model: SupportPlanCreateRequest
   result_model: SupportPlanCreateResult
   mutation_class: high_impact
+  edits_target: false
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -874,6 +957,11 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: support.plan.get
+    ids:
+      plan_id: result.plan.id
+    kind: object
 - command_id: support.plan.delete
   command_path: support plan delete
   disposition: command
@@ -893,6 +981,7 @@ commands:
   request_model: SupportPlanDeleteRequest
   result_model: SupportPlanDeleteResult
   mutation_class: high_impact
+  edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -914,6 +1003,10 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: support.plan.list
+    ids: {}
+    kind: object
 - command_id: support.plan.get
   command_path: support plan get
   disposition: command
@@ -932,8 +1025,8 @@ commands:
   sdk_conversion: Call mammoth.api.support.SupportAPI.plan_get with validated request fields.
   request_model: SupportPlanGetRequest
   result_model: SupportPlanGetResult
-  mutation_class: high_impact
-  confirmation: confirm_target
+  mutation_class: read
+  confirmation: none
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: contract_only_high_impact
@@ -966,8 +1059,8 @@ commands:
   sdk_conversion: Call mammoth.api.support.SupportAPI.plan_list with validated request fields.
   request_model: SupportPlanListRequest
   result_model: SupportPlanListResult
-  mutation_class: high_impact
-  confirmation: confirm_target
+  mutation_class: read
+  confirmation: none
   wait_policy: not_async
   pagination_policy: single_page
   acceptance_evidence: contract_only_high_impact
@@ -1000,8 +1093,8 @@ commands:
   sdk_conversion: Call mammoth.api.support.SupportAPI.plan_self_serve_list with validated request fields.
   request_model: SupportPlanSelfServeListRequest
   result_model: SupportPlanSelfServeListResult
-  mutation_class: high_impact
-  confirmation: confirm_target
+  mutation_class: read
+  confirmation: none
   wait_policy: not_async
   pagination_policy: single_page
   acceptance_evidence: contract_only_high_impact
@@ -1041,6 +1134,7 @@ commands:
   request_model: SupportPlanUpdateRequest
   result_model: SupportPlanUpdateResult
   mutation_class: high_impact
+  edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -1062,6 +1156,11 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: support.plan.get
+    ids:
+      plan_id: positional.0
+    kind: object
 - command_id: support.plan.update-storage-tiers
   command_path: support plan update-storage-tiers
   disposition: command
@@ -1082,6 +1181,7 @@ commands:
   request_model: SupportPlanUpdateStorageTiersRequest
   result_model: SupportPlanUpdateStorageTiersResult
   mutation_class: high_impact
+  edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -1104,6 +1204,11 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: support.plan.get
+    ids:
+      plan_id: positional.0
+    kind: object
 - command_id: support.subscription.create
   command_path: support subscription create
   disposition: command
@@ -1129,6 +1234,7 @@ commands:
   request_model: SupportSubscriptionCreateRequest
   result_model: SupportSubscriptionCreateResult
   mutation_class: high_impact
+  edits_target: false
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -1150,6 +1256,11 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: support.subscription.get
+    ids:
+      workspace_id: positional.0
+    kind: object
 - command_id: support.subscription.get
   command_path: support subscription get
   disposition: command
@@ -1168,8 +1279,8 @@ commands:
   sdk_conversion: Call mammoth.api.support.SupportAPI.subscription_get with validated request fields.
   request_model: SupportSubscriptionGetRequest
   result_model: SupportSubscriptionGetResult
-  mutation_class: high_impact
-  confirmation: confirm_target
+  mutation_class: read
+  confirmation: none
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: contract_only_high_impact
@@ -1215,6 +1326,7 @@ commands:
   request_model: SupportSubscriptionUpdateRequest
   result_model: SupportSubscriptionUpdateResult
   mutation_class: high_impact
+  edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -1236,6 +1348,11 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: support.subscription.get
+    ids:
+      workspace_id: positional.0
+    kind: object
 - command_id: support.user.list-all
   command_path: support user list-all
   disposition: command
@@ -1248,8 +1365,8 @@ commands:
   sdk_conversion: Call mammoth.api.support.SupportAPI.user_list_all with validated request fields.
   request_model: SupportUserListAllRequest
   result_model: SupportUserListAllResult
-  mutation_class: high_impact
-  confirmation: confirm_target
+  mutation_class: read
+  confirmation: none
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: contract_only_high_impact
@@ -1289,6 +1406,7 @@ commands:
   request_model: SupportUserRegisterRequest
   result_model: SupportUserRegisterResult
   mutation_class: high_impact
+  edits_target: false
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -1311,6 +1429,10 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: support.user.list-all
+    ids: {}
+    kind: object
 - command_id: support.user.update
   command_path: support user update
   disposition: command
@@ -1330,6 +1452,7 @@ commands:
   request_model: SupportUserUpdateRequest
   result_model: SupportUserUpdateResult
   mutation_class: high_impact
+  edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -1351,6 +1474,10 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: support.user.list-all
+    ids: {}
+    kind: object
 - command_id: support.workspace.create
   command_path: support workspace create
   disposition: command
@@ -1370,6 +1497,7 @@ commands:
   request_model: SupportWorkspaceCreateRequest
   result_model: SupportWorkspaceCreateResult
   mutation_class: high_impact
+  edits_target: false
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -1392,6 +1520,11 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: job.get
+    ids:
+      job_id: result.id
+    kind: delivery
 - command_id: support.workspace.delete
   command_path: support workspace delete
   disposition: command
@@ -1411,6 +1544,7 @@ commands:
   request_model: SupportWorkspaceDeleteRequest
   result_model: SupportWorkspaceDeleteResult
   mutation_class: high_impact
+  edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -1432,6 +1566,10 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: support.workspace.list
+    ids: {}
+    kind: object
 - command_id: support.workspace.get
   command_path: support workspace get
   disposition: command
@@ -1450,8 +1588,8 @@ commands:
   sdk_conversion: Call mammoth.api.support.SupportAPI.workspace_get with validated request fields.
   request_model: SupportWorkspaceGetRequest
   result_model: SupportWorkspaceGetResult
-  mutation_class: high_impact
-  confirmation: confirm_target
+  mutation_class: read
+  confirmation: none
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: contract_only_high_impact
@@ -1484,8 +1622,8 @@ commands:
   sdk_conversion: Call mammoth.api.support.SupportAPI.workspace_list with validated request fields.
   request_model: SupportWorkspaceListRequest
   result_model: SupportWorkspaceListResult
-  mutation_class: high_impact
-  confirmation: confirm_target
+  mutation_class: read
+  confirmation: none
   wait_policy: not_async
   pagination_policy: single_page
   acceptance_evidence: contract_only_high_impact
@@ -1526,6 +1664,7 @@ commands:
   request_model: SupportWorkspaceRestoreAccessRequest
   result_model: SupportWorkspaceRestoreAccessResult
   mutation_class: high_impact
+  edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -1547,6 +1686,11 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: support.workspace.get
+    ids:
+      workspace_id: positional.0
+    kind: object
 - command_id: support.workspace.suspend-access
   command_path: support workspace suspend-access
   disposition: command
@@ -1567,6 +1711,7 @@ commands:
   request_model: SupportWorkspaceSuspendAccessRequest
   result_model: SupportWorkspaceSuspendAccessResult
   mutation_class: high_impact
+  edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -1588,6 +1733,11 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: support.workspace.get
+    ids:
+      workspace_id: positional.0
+    kind: object
 - command_id: support.workspace.update
   command_path: support workspace update
   disposition: command
@@ -1607,6 +1757,7 @@ commands:
   request_model: SupportWorkspaceUpdateRequest
   result_model: SupportWorkspaceUpdateResult
   mutation_class: high_impact
+  edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -1629,6 +1780,11 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: support.workspace.get
+    ids:
+      workspace_id: positional.0
+    kind: object
 - command_id: support.workspace.user.add
   command_path: support workspace user add
   disposition: command
@@ -1648,6 +1804,7 @@ commands:
   request_model: SupportWorkspaceUserAddRequest
   result_model: SupportWorkspaceUserAddResult
   mutation_class: high_impact
+  edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -1670,6 +1827,11 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: support.workspace.user.list
+    ids:
+      workspace_id: positional.0
+    kind: object
 - command_id: support.workspace.user.list
   command_path: support workspace user list
   disposition: command
@@ -1688,8 +1850,8 @@ commands:
   sdk_conversion: Call mammoth.api.support.SupportAPI.workspace_user_list with validated request fields.
   request_model: SupportWorkspaceUserListRequest
   result_model: SupportWorkspaceUserListResult
-  mutation_class: high_impact
-  confirmation: confirm_target
+  mutation_class: read
+  confirmation: none
   wait_policy: not_async
   pagination_policy: single_page
   acceptance_evidence: contract_only_high_impact
@@ -1735,6 +1897,7 @@ commands:
   request_model: SupportWorkspaceUserRemoveRequest
   result_model: SupportWorkspaceUserRemoveResult
   mutation_class: high_impact
+  edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -1756,6 +1919,11 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: support.workspace.user.list
+    ids:
+      workspace_id: positional.0
+    kind: object
 - command_id: support.workspace.user.transfer
   command_path: support workspace user transfer
   disposition: command
@@ -1781,6 +1949,7 @@ commands:
   request_model: SupportWorkspaceUserTransferRequest
   result_model: SupportWorkspaceUserTransferResult
   mutation_class: high_impact
+  edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -1802,3 +1971,8 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: support.workspace.user.list
+    ids:
+      workspace_id: positional.0
+    kind: object

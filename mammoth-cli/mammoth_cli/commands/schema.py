@@ -42,6 +42,19 @@ _OUTPUT_JSON_NO_INPUT: tuple[str, ...] = ()
 # the published example points at a protected owner-only file instead, so no
 # generated or copied command line ever puts a credential in argv.
 _PROTECTED_INPUT_PATH = "/private/path/request.json"
+# Commands whose useful example the SDK signature cannot express: a distinct
+# second id, an optional-but-central input field, or two views to compare.
+_FIXED_EXAMPLES: dict[str, tuple[tuple[str, ...], dict[str, Any]]] = {
+    "project.check": (("123", "456"), {}),
+    "view.data.profile": (("123",), {"target": "Churn"}),
+    "view.data.compare": (
+        ("111", "222"),
+        {
+            "group_by": ["Campaign"],
+            "aggregations": [{"column": "Spend", "function": "SUM", "as_name": "Spend"}],
+        },
+    ),
+}
 _OPAQUE_EXPERT_COMMANDS = frozenset({"view.task.add", "view.task.preview", "view.task.update"})
 _TYPED_TRANSFORM_ALTERNATIVES = [
     "view.transform.filter",
@@ -63,12 +76,134 @@ _GROUP_DISCOVERY_PURPOSES = {
 _COMMAND_DISCOVERY_PURPOSES = {
     "file.upload": (
         "upload import CSV spreadsheet XLSX source data append add rows union stack "
-        "a file into an existing dataset"
+        "a file into an existing dataset excel workbook tabs sheets drop in"
     ),
     "file.upload-folder": "upload source-data directory folder",
     "view.export.csv": "export download local CSV file artifact",
     "view.export.dataset": (
-        "send copy branch out rows into a dataset in another project append union stack rows"
+        "send copy branch out create save the result rows into a new project from an "
+        "existing append appending union stack monthly rows across datasets views"
+    ),
+    # One entry per typed export destination, in the way users name the
+    # destination rather than Mammoth's route spelling (which a two-word
+    # phrase like "power bi" may not literally contain -- see the adjacent
+    # term-pair match in find_schemas for "powerbi"/"bigquery"/etc).
+    "view.export.azure-blob": "azure blob storage container",
+    "view.export.bigquery": "big query bigquery google cloud database table",
+    "view.export.elasticsearch": "elasticsearch elastic search index",
+    "view.export.email": "email send mail attachment",
+    "view.export.ftp": "ftp file transfer protocol server",
+    "view.export.managed-s3": "s3 amazon aws bucket managed storage",
+    "view.export.mssql": "sql server mssql microsoft database",
+    "view.export.mysql": "mysql database",
+    "view.export.onedrive": "one drive onedrive microsoft cloud storage",
+    "view.export.postgres": "postgres postgresql database",
+    "view.export.powerbi": "power bi powerbi microsoft dashboard workspace",
+    "view.export.publish-db": (
+        "publish database live connection odbc bi tool reads table point straight at always latest"
+    ),
+    "view.export.publish-db-update": "publish database update refresh live connection",
+    "view.export.redshift": "redshift amazon aws database warehouse",
+    "view.export.rest": "webhook http endpoint api push rest",
+    "view.export.sftp": "sftp secure file transfer server",
+    "view.export.sharepoint": "share point sharepoint microsoft",
+    "view.export.tableau": "tableau server dashboard",
+    # "Run"/"execute"/"apply"/"refresh" the pipeline is ambiguous between
+    # re-running its tasks and applying a pending draft; both need to surface.
+    "view.pipeline.rerun": (
+        "run execute rerun re-run refresh recompute apply pipeline tasks "
+        "from a point in the task sequence"
+    ),
+    "view.draft.submit": "apply submit run execute a pending draft changes",
+    "webhook.update": "webhook http endpoint api update",
+    "webhook.get": "webhook http endpoint api get",
+    "webhook.list": "webhook http endpoint api list",
+    "webhook.delete": "webhook http endpoint api delete",
+    "webhook.send": "webhook http endpoint api push send",
+    "webhook.send-get": "webhook http endpoint api pull send get",
+    # "What did I ask you about earlier this week?" is a lookup over past
+    # agent conversations. Live-eval evidence: `schema find` on that phrasing
+    # never matched `agent.session.list`/`agent.session.messages` because
+    # neither command's own text says "conversation", "chat", "history", or
+    # "asked" -- and the unrelated per-project `connector.ai.session.*`
+    # family, whose OpenAPI summary literally says "chat session", outranked
+    # them. These two ARE the past-conversation lookup: list the sessions,
+    # then read one's messages.
+    # "Pick up where we left off last time" / "continue where I left off" /
+    # "resume my previous conversation" is the same past-conversation lookup
+    # under different wording -- the model instead searched "recent project
+    # activity" and "activity list", since neither command said "left off",
+    # "last time", "resume", "pick up", or "continue".
+    "agent.session.list": (
+        "chat conversation conversations history past previous asked earlier week "
+        "messages sessions where left off last time resume pick up continue"
+    ),
+    "agent.session.messages": (
+        "chat conversation conversations history past previous asked earlier week read "
+        "where left off last time resume pick up continue"
+    ),
+    "workspace.user.add": (
+        "invite add member teammate email role editor viewer admin assign permission access"
+    ),
+    # Client apps ARE the product's API keys: the key + secret credentials a
+    # script or integration uses to call Mammoth. Live-eval evidence: "list
+    # active API keys" only ever reached external-key.list (LLM provider
+    # keys), never this command, because nothing in its text said "API key".
+    "client-app.list": (
+        "api keys api key secret credentials workspace active script integration list"
+    ),
+    # "How much storage am I using, and what plan am I on?" only ever reached
+    # workspace.storage-breakdown -- a paginated per-item list with no total
+    # that pages through every project before giving up. This command's own
+    # text says neither "storage" nor "usage"; it is the one that carries the
+    # actual total (storage_used/current_storage_allowed/plan_storage_value/
+    # max_storage_allowed).
+    "workspace.app-usage": (
+        "storage usage used space how much plan current allowed total quota limit"
+    ),
+    # "Which datasets use the most storage" / "storage used by each dataset"
+    # / "per-project storage breakdown" only ever reached dataset.get,
+    # workflow.workspace-datasets or workspace.app-usage (the total, not a
+    # breakdown) -- never this command, the one whose result actually is a
+    # per-dataset (and per-project) size list (dataset_id, dataset_name,
+    # project_id, dataset_size, total_size, views). Deliberately omits
+    # "storage" (already an id/path token here, unlike app-usage) so a bare
+    # "storage used" query keeps ranking app-usage's own total first.
+    "workspace.storage-breakdown": (
+        "size used use per dataset datasets project projects largest biggest most which top"
+    ),
+    # "Give me this board as a Power BI file" / "open this in Tableau" is the
+    # dashboard-to-BI-file export pair, not `view.export.powerbi`/`.tableau`
+    # (those publish a live ODBC connection for a dataview, not a downloadable
+    # file for a dashboard). Both destinations' vocabulary lives on both
+    # commands: the dialog answers "what will I get" the same way for either
+    # tool (see PowerBiPreflightResponse/TableauPreflightResponse), and the
+    # export downloads whichever the caller names via input `target`.
+    # "publish a dashboard OR ITS UNDERLYING VIEW to Power BI" (T1-D-22) hedges
+    # with "view" even though the export is dashboard-only; without "view" in
+    # this text the strict all-terms gate drops these two and the unrelated
+    # view.export.powerbi (a raw ODBC connector, literally named "view") wins.
+    "dashboard.bi-preflight": (
+        "power bi powerbi pbix pbip tableau twb twbx workbook file board view open this "
+        "dashboard board in power bi desktop or tableau desktop preview dry run what would "
+        "convert figures rows before downloading export"
+    ),
+    "dashboard.bi-export": (
+        "power bi powerbi pbix pbip tableau twb twbx workbook file board view open this "
+        "dashboard board in power bi desktop or tableau desktop download export save project "
+        "convert"
+    ),
+    # "Bring my old Power BI report in" / "move my dashboards over" is the
+    # workbook-to-Mammoth-dataset import, the opposite direction of
+    # `dashboard.bi-export`. The command id's own tokens ("import",
+    # "workbook") already cover half of this -- "workbook" is deliberately
+    # NOT repeated below: it would double-score (command-id token AND purpose
+    # match) and outrank `dashboard.bi-export`/`.bi-preflight` on the bare
+    # "tableau workbook" phrasing those two must win instead. Only "tableau"
+    # (its own text says neither tool's name) and the migration verbs are new.
+    "dashboard.import-workbook": (
+        "bring in migrate move transfer switch old existing dashboards dashboard over power "
+        "bi report tableau file upload"
     ),
     # One entry per ``view transform`` command, in the words a user states a
     # goal in rather than Mammoth's own task names.  This is the CLI's version
@@ -89,14 +224,21 @@ _COMMAND_DISCOVERY_PURPOSES = {
     "view.transform.convert-type": (
         "convert type cast numeric number text date column parse to number to date"
     ),
-    "view.transform.copy-columns": "copy duplicate rename column into a new column name",
+    "view.transform.copy-columns": "copy duplicate column into a new column",
     "view.transform.crosstab": (
         "crosstab cross tab pivot table matrix rows by columns summary into a new dataset"
     ),
-    "view.transform.date-diff": "date difference days between two date columns age duration",
+    "view.transform.date-diff": "date dates difference days between two date columns age duration",
     "view.transform.delete-columns": "delete drop remove columns",
     "view.transform.discard-duplicates": (
-        "duplicate duplicates dedup dedupe deduplicate remove repeated rows unique distinct"
+        "duplicate duplicates dedup dedupe deduplicate remove repeated rows unique distinct "
+        # "order"/"number" are kept as generic identifying-column vocabulary
+        # ("dedupe by an order/number/key"), not the specific business noun
+        # "order id" -- "order" also can't be dropped as a data word since
+        # view.transform.sort's own purpose text already uses it (sort
+        # order), so any query pairing "order" with dedupe words needs it
+        # covered here to reach a full match.
+        "by order number key column"
     ),
     "view.transform.extract-date": (
         "extract date part year month day hour minute second week quarter weekday "
@@ -106,36 +248,46 @@ _COMMAND_DISCOVERY_PURPOSES = {
         "fill missing null empty blank blanks impute carry forward fill down values"
     ),
     "view.transform.filter": (
-        "filter rows keep drop exclude remove delete rows where condition subset"
+        "filter rows keep drop exclude remove delete rows where condition subset "
+        "bind bound binding parameter"
     ),
-    "view.transform.generate-sql": (
-        "generate sql from natural language intent question and run it as a task"
-    ),
+    "view.transform.generate-sql": "generate write sql query from natural language intent question",
     "view.transform.increment-date": "add subtract days months years to a date column shift",
     "view.transform.join": (
-        "join blend merge combine enrich match matching keys rows add columns from another "
-        "second view views dataset datasets table tables vlookup"
+        "join blend merge combine enrich match matching key keys rows add columns from "
+        "another second view views dataset datasets table tables vlookup"
     ),
-    "view.transform.json-extract": "json extract parse nested fields keys into columns",
-    "view.transform.limit-rows": "limit top bottom first last n rows order by sorted head",
+    "view.transform.json-extract": (
+        "json extract parse nested fields keys into columns list rows item index "
+        "one row per element explode array"
+    ),
+    "view.transform.limit-rows": "limit top bottom first last n rows head",
     "view.transform.lookup": (
         "lookup look up vlookup reference table map code to name enrich one value "
         "from another view dataset"
     ),
     "view.transform.math": (
-        "math arithmetic multiply divide add subtract formula expression amount "
-        "calculate compute ratio percentage round"
+        "math arithmetic multiply multiplication divide add subtract formula "
+        "expression amount calculate compute ratio percentage round new column "
+        "conditional threshold greater than if text times"
     ),
     "view.transform.pivot": (
         "pivot group by aggregate aggregation sum count average summary summarize "
         "summarise per region total"
     ),
+    "view.transform.rename-columns": (
+        "rename column columns header headers relabel change column name names title"
+    ),
     "view.transform.replace": "find replace substitute text value in columns",
     "view.transform.set-values": (
         "set values assign overwrite blank empty default where condition label "
-        "category bucket flag if then conditional value"
+        "category bucket flag if then conditional add a column with a constant value"
     ),
     "view.transform.small-large": "nth smallest largest value across columns",
+    "view.transform.sort": (
+        "sort sorting order rows by column ascending descending asc desc arrange "
+        "highest lowest newest oldest latest earliest date dates alphabetical"
+    ),
     "view.transform.split": "split column by delimiter separator into columns",
     "view.transform.substring": "substring left right characters regex pattern extract part text",
     "view.transform.text": (
@@ -148,6 +300,141 @@ _COMMAND_DISCOVERY_PURPOSES = {
         "window rank row number running total cumulative sum moving average lag lead "
         "previous next row partition"
     ),
+    # The web app's column Explore cards: what is trending, how a column is
+    # spread, its top values, a count over time.
+    "view.data.explore": (
+        "explore trend trends trending over time per day week month quarter year by date "
+        "distribution spread histogram top most common frequent values breakdown share "
+        "percentage profile"
+    ),
+    # "Give the West team their own copy they can change" / "duplicate this
+    # dataset as an independent copy" / "clone it without changing the
+    # source pipeline" -- a new view on the same dataset IS that editable
+    # copy (its own pipeline, the source view untouched) but none of these
+    # phrasings ever reached it; the query's own incidental words (schema
+    # find is an AND-term search) needed saying explicitly.
+    "view.create": (
+        "start a new one from an existing dataset, duplicate copy clone "
+        "independent without changing the source pipeline"
+    ),
+    "dataset.list": "list every dataset in a project workspace",
+    # "month"/"week" are kept as generic calendar-grouping vocabulary (a
+    # group-by dimension any dataset can have), not a specific business
+    # value -- and neither can be dropped as a data word anyway, since
+    # view.data.explore's own purpose text already uses both for its trend
+    # feature.
+    "view.data.aggregate": "group and sum totals by month week without changing the pipeline",
+    # Goals stated as "what is in this data" / "why do customers churn": one
+    # whole-view profile answers both, so the phrasing must reach it.
+    "view.data.profile": (
+        "profile explore what is in this data understand a dataset every column blanks missing "
+        "empty nulls distinct unique duplicates dirty inconsistent categories spelling variants "
+        "check look at overview summary statistics churn drivers drive driving feature "
+        "importance correlation which columns predict affect influence the target outcome"
+    ),
+    # Goals users state in their own words, one entry per command the agent's
+    # system prompt used to spell out by hand.
+    "dashboard.suggestion.list": "ideas suggest suggestions what to show put on a board chart",
+    "dashboard.analytics": "who viewed seen opened views visitors usage of a board",
+    "dashboard.share": "share make live publish board for the team link access",
+    "connector.connection.list": "which outside external sources connected connections list",
+    "project.pending-changes": (
+        "source changes new rows not taken in yet pending updates waiting to apply"
+    ),
+    "project.resource-status": "stuck stale failing broken error status anything wrong health",
+    "connector.ai.chat": (
+        "connect our own internal custom api build a connector for an unsupported source"
+    ),
+    "file.set-password": "locked password protected file pdf excel unlock",
+    "project.sample-flow": "sample example demo starter data dataset try start from",
+    "webhook.create": (
+        "webhook http endpoint api push create data pushed in sent from another system receive "
+        "url app post posts events rows straight in"
+    ),
+    "dataset.create-from-pdf": "pdf table document extract get the table out of into a dataset",
+    # "import data from a public URL or JSON API into a dataset" / "fetch or
+    # retrieve JSON from a public URL" (T1-I-16) never matched dataset.create
+    # (ds_creation_type=weburl) -- the capability exists and works once found,
+    # it just had no discovery-purpose text at all.
+    "dataset.create": (
+        "url web link fetch retrieve pull import public website endpoint api json data weburl"
+    ),
+    "dashboard.v3.generate": (
+        "create build make new generate dashboard board report from a view description "
+        "intent sentence ai combined showing"
+    ),
+    "dashboard.chat.edit": (
+        "add change edit update chart charts kpi to an existing dashboard board "
+        "by description sentence ai show instead"
+    ),
+    # "I messed up the board, put it back to how it was before" (T1-D-09) --
+    # this is the version list dashboard.canvas.restore's target_sequence
+    # comes from (revisions[]: sequence, updated_at, updated_by_name), but
+    # nothing in its own path/purpose said undo/revert/before.
+    "dashboard.chat.history": (
+        "undo revert put back previous version before restore history versions saved "
+        "last change board"
+    ),
+    "dashboard.pdf.export": "pdf of a board dashboard download print meeting export",
+    # "single dashboard per-user or row-level region security" (T1-D-03) --
+    # none of the dashboard.rls.* commands had any discovery-purpose text.
+    "dashboard.rls.assignment.list": (
+        "row row-level level security per user per-user per manager per-manager restrict "
+        "each viewer to their own rows region"
+    ),
+    # "publish dashboard" / "make it live" (T1-D-15) -- dashboard.action is the
+    # publish step dashboard.share depends on (fails with 4DASH010 otherwise),
+    # but it had no discovery-purpose text at all.
+    "dashboard.action": "publish make live go live unpublish share delete-source",
+    # "list browse available dashboard templates styles; apply template to
+    # current dashboard" (T1-D-12) returned 0 matches -- dashboard.template.*
+    # had no discovery-purpose text (and the query's plural "templates" never
+    # matches the family's singular path token "template").
+    "dashboard.template.list": (
+        "ready-made pre-built layout gallery browse choose templates styles available"
+    ),
+    "dashboard.template.apply": "apply a ready-made template layout to this board",
+    "view.checkpoint.create": (
+        "stop halt pause pipeline alert notify flag when if row rows match matches a rule "
+        "condition checkpoint value changes"
+    ),
+    "view.data-check.create": "data quality check rule validate rows match condition flag",
+    "view.derivative.create": "metric kpi number single value to check track daily monitor",
+    "view.draft.auto-run": (
+        "stop prevent re-running rerun automatically when source changes auto run enable disable"
+    ),
+    "data-app.create": (
+        "page portal form others drop upload a file cleaned the same way self service"
+    ),
+    "automation.create": (
+        "schedule scheduled recurring repeat refresh rerun run every day daily week weekly "
+        "hour hourly month monthly automatically trigger alert email a dataset pipeline "
+        "retention purge old data send an emailed file attachment view views csv new folder "
+        "arrives lands dropped"
+    ),
+    # "current subscription plan tier for workspace; billing plan and storage
+    # allowance" (T1-W-06) never matched -- "plan and storage allowance"/
+    # "subscription tier" phrasing had no discovery-purpose text on either
+    # billing command. Deliberately no "much"/generic "how much" wording here:
+    # that would also fully-match the bare "how much storage" query and tie
+    # workspace.app-usage on score (alphabetical tie-break would then wrongly
+    # rank this ahead of it -- see storage_usage_intent guard test).
+    "billing.chargebee-plan": (
+        "current subscription tier plan storage allowance space included for workspace"
+    ),
+    "billing.subscription.update": "upgrade downgrade bigger plan change subscription tier",
+    "billing.invoice.list": "past bills billed billing history invoices payments receipts so far",
+    "project.memory.add": (
+        "remember save preference prefer prefers always from now on note for next time "
+        "amounts currency format style"
+    ),
+    # A rule about what a board's data means ("Returned orders are refunds") is
+    # the board's own context, not the user's preference.
+    "dashboard.context.create": (
+        "remember for this board dashboard rule meaning definition counts treat as business context"
+    ),
+    "project.memory.list": "remembered saved preferences what do you remember memory",
+    "project.memory.remove": "forget remove delete saved preference memory",
 }
 
 # A compact string scope is retained for existing discovery consumers.  These
@@ -176,7 +463,33 @@ _SCOPE_REQUIREMENTS: dict[str, dict[str, Any]] = {
 }
 
 _MAX_FIND_RESULTS = 20
+# Outranks any word-overlap score: a command named by its full path comes first.
+_NAMED_COMMAND_BOOST = 10_000
+# Bag-of-words scoring cannot tell "create a NEW VIEW from an existing
+# DATASET" (view.create) apart from "create a DATASET from an existing
+# VIEW" (view.export.dataset): the two goals share the exact same word set,
+# and only word order says which resource is being made and which already
+# exists. No purpose text or synonym can encode that; this pair of small
+# adjacency checks is the intentionally scoped exception. Extend the two
+# dicts, never the regex, if another goal collides the same way.
+_NEW_OBJECT_HINTS: dict[str, str] = {
+    "view.create": "view",
+    "view.export.dataset": "dataset",
+}
+_EXISTING_OBJECT_HINTS: dict[str, str] = {
+    "view.create": "dataset",
+    "view.export.dataset": "view",
+}
+_OBJECT_ADJACENCY_BOOST = 150
 _MAX_FIND_LIMIT = 100
+# How many of a find's top matches carry inline accepted_fields/agent_example.
+# 35% of all eval tool calls were command discovery (schema find -> schema
+# get) because find's compact entry gave a command_id but not what to pass
+# it; inlining the top few lets an agent act without a second round trip in
+# the common case where one of them is right. Bounded to a few commands so a
+# broad query never balloons the result (the tool result goes into the
+# model's context).
+_INLINE_DETAIL_COUNT = 3
 
 # Search is intentionally a small, deterministic intent matcher rather than a
 # fuzzy/remote search service.  The aliases describe language users commonly
@@ -191,6 +504,17 @@ _DISCOVERY_SYNONYMS: dict[str, tuple[str, ...]] = {
     "csv": ("spreadsheet", "file", "upload"),
     "local": ("file", "download", "csv", "artifact"),
     "download": ("export", "file", "csv", "artifact", "local"),
+    # "combine" alone is ambiguous between joining on a key and appending
+    # rows; kept a weak alias match (not a literal word) here so a bare
+    # "combine datasets" still favors join's own literal "combine" purpose
+    # text, while "combine ... by appending rows" still resolves to the
+    # export -- its own literal "append"/"union"/"stack" carry that case.
+    "combine": ("append", "union", "stack", "merge"),
+    # "publish" a dataset almost always means one of the typed exports
+    # (Power BI, a live DB connection, a webhook, ...); every export
+    # command's path literally contains "export", so this one alias covers
+    # any "publish data to X" phrasing without a per-destination entry.
+    "publish": ("export",),
     "column": ("columns", "field", "fields", "schema"),
     "columns": ("column", "field", "fields", "schema"),
     "display-name": ("name", "column", "columns", "field", "fields", "schema"),
@@ -205,6 +529,23 @@ _DISCOVERY_SYNONYMS: dict[str, tuple[str, ...]] = {
     "asynchronous": ("async", "job", "wait"),
     "async": ("job", "wait", "poll"),
     "poll": ("job", "wait", "status"),
+    # "API keys" in the app (Settings > API keys) are client apps; `external-key`
+    # holds other services' keys and wrongly won "list active API keys".
+    "api": ("client-app",),
+    "key": ("client-app",),
+    "keys": ("client-app",),
+    # "What did I ask you earlier?" is a past-conversation lookup: an agent
+    # session. Nothing in `agent.session.list`/`agent.session.messages` text
+    # says "conversation", "chat", or "history", so a query phrased that way
+    # (rather than with the literal word "session") never found them.
+    "conversation": ("session",),
+    "conversations": ("session",),
+    "chat": ("session",),
+    "chats": ("session",),
+    "history": ("session",),
+    "previous": ("session",),
+    "earlier": ("session",),
+    "asked": ("session",),
     # British spellings search the same as the American ones.
     "summarise": ("summarize",),
     "standardise": ("standardize",),
@@ -229,28 +570,57 @@ _DISCOVERY_STOPWORDS = frozenset(
         # turns on these words, so they must not sink an otherwise good match.
         "my",
         "our",
+        "one",
         "two",
         "another",
         "other",
         "into",
         "from",
         "and",
+        # Same as "and" -- an incidental conjunction ("Power BI or Tableau")
+        # must not become a required match term.
+        "or",
         "all",
         "each",
         "this",
         "that",
         "how",
+        "what",
+        "is",
+        # The tail of "what's"/"it's" once the apostrophe splits the word.
+        "s",
         "do",
         "want",
         "need",
+        "using",
+        "than",
+        "via",
+        # Filler prepositions in goal phrasing ("datasets as rows", "datasets
+        # in a project", "join two datasets on a key"); no command turns on
+        # any of these.
+        "as",
+        "in",
+        "on",
     }
 )
 # How many near misses a search with no full match returns.
 _MAX_SUGGESTIONS = 5
-_NO_MATCH_HINT = (
-    "No command matched every word. 'suggestions' match some of them; try fewer or other "
-    "words. 'mammoth view transform --help' lists every data transformation (join, pivot, "
-    "filter, dedupe, math, ...), and 'mammoth schema list' is the complete inventory."
+# Cap on the curated purpose text a match's ``matched_on`` field quotes back,
+# so one long entry can't bloat every result in a page.
+_MATCHED_ON_MAX_CHARS = 120
+# T1-R-06: an agent reading "No command matched every word" stopped there and
+# never tried what 'suggestions' actually held (automation.create among
+# them) -- the framing read as a dead end even when it wasn't one. Word the
+# two cases (some candidates vs. none at all) differently so the presence of
+# 'suggestions' reads as "try these" rather than "nothing found".
+_NO_MATCH_HINT_WITH_SUGGESTIONS = (
+    "No single command matched every word, but 'suggestions' lists the closest candidates "
+    "-- each with its own matched_terms. Try one of those before rephrasing."
+)
+_NO_MATCH_HINT_NO_SUGGESTIONS = (
+    "No command matched any word; try fewer or other words. 'mammoth view transform --help' "
+    "lists every data transformation (join, pivot, filter, dedupe, math, ...), and 'mammoth "
+    "schema list' is the complete inventory."
 )
 _TOKEN_RE = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*")
 
@@ -310,6 +680,19 @@ def _accepted_fields(record: dict[str, Any]) -> list[dict[str, Any]] | None:
     ]
 
 
+def _compact_accepted_fields(record: dict[str, Any]) -> list[dict[str, Any]] | None:
+    """``_accepted_fields`` without the per-field JSON Schema.
+
+    A find result inlines this for its top matches: enough to compose a call
+    (name, type, required, enum) without the nested-schema detail ``schema
+    get`` returns.
+    """
+    fields = _accepted_fields(record)
+    if fields is None:
+        return None
+    return [{key: field[key] for key in ("name", "type", "required", "enum")} for field in fields]
+
+
 def _externally_supplied_fields(command_id: str) -> frozenset[str]:
     """Fields supplied by positionals or authenticated CLI context."""
     if command_id in LOCAL_COMMANDS:
@@ -320,7 +703,16 @@ def _externally_supplied_fields(command_id: str) -> frozenset[str]:
                 if item.falls_back_to_field is None
             }
         )
-    return excluded_input_fields(command_id)
+    excluded = excluded_input_fields(command_id)
+    if command_id == "activity.list":
+        # ``excluded_input_fields`` treats "project_id" as the active-project
+        # context on every command, but here it is an ActivityFiltersSchema
+        # request-body filter (any workspace project, not the active one) --
+        # the command's own contract already admits and forwards it (see
+        # ``_S7_ADDITIONAL_INPUT_FIELDS["activity.list"]``). Only
+        # "workspace_id" is the legacy-admitted, never-forwarded field here.
+        excluded -= {"project_id"}
+    return excluded
 
 
 def _positionals(command_id: str) -> list[dict[str, Any]]:
@@ -404,12 +796,72 @@ def _tokens(value: str) -> frozenset[str]:
 
 
 def _query_tokens(query: str) -> tuple[str, ...]:
-    return tuple(token for token in _tokens(query) if token not in _DISCOVERY_STOPWORDS)
+    # Bare numbers ("top 10") are values, not intent words.
+    return tuple(
+        token
+        for token in _tokens(query)
+        if token not in _DISCOVERY_STOPWORDS and not token.isdigit()
+    )
 
 
 def _token_aliases(token: str) -> frozenset[str]:
     """Return the finite synonym neighborhood for one intent token."""
     return frozenset((token, *_DISCOVERY_SYNONYMS.get(token, ())))
+
+
+def _adjacent_compound_forms(terms: tuple[str, ...]) -> dict[str, frozenset[str]]:
+    """Map each query term to the compound spellings an adjacent pair makes.
+
+    A route's un-hyphenated compound name (``powerbi``, ``bigquery``,
+    ``onedrive``, ``sharepoint``, ...) never shares a token with the natural
+    two-word phrasing a user types ("power bi", "big query"), since neither
+    half is a substring match in the token-set membership test. Generalizes
+    over any adjacent pair rather than hardcoding destination names: "azure
+    blob" -> "azureblob"/"azure-blob", "share point" -> "sharepoint", and so
+    on for whatever the query happens to contain.
+    """
+    forms: dict[str, set[str]] = {}
+    for left, right in zip(terms, terms[1:], strict=False):
+        for compound in (left + right, f"{left}-{right}"):
+            forms.setdefault(left, set()).add(compound)
+            forms.setdefault(right, set()).add(compound)
+    return {term: frozenset(compounds) for term, compounds in forms.items()}
+
+
+@cache
+def _command_vocabulary_tokens() -> frozenset[str]:
+    """Every token that names a command or appears in its curated purpose text.
+
+    Distinguishes genuine CLI vocabulary from a data word -- a column,
+    table, or other business noun from the caller's own data (``orders``,
+    ``revenue``, ``store``) -- riding along in a goal. Counts a command's own
+    id/path (``user``, ``workspace``, ``invoice`` are real resource nouns a
+    command is named after) plus ``_COMMAND_DISCOVERY_PURPOSES``/
+    ``_GROUP_DISCOVERY_PURPOSES`` -- text hand-curated specifically to
+    describe what a command is for. Deliberately excludes ``human_example``/
+    ``agent_example`` and OpenAPI-derived operation hints: those are
+    illustrative sample values (a placeholder project name like "Revenue
+    report", a sample filename like "sales.csv") reused verbatim across
+    dozens of unrelated commands, so counting them would make almost any
+    plausible business noun look like real vocabulary and defeat this
+    check. A term absent from this set is not something any command is
+    named after or actually about, so :func:`find_schemas` drops it from a
+    goal's required terms rather than letting it sink an otherwise complete
+    match.
+    """
+    vocabulary: set[str] = set()
+    for record in load_commands():
+        if record.get("disposition") == "alias":
+            continue
+        command_id = str(record["command_id"])
+        command_path = str(record["command_path"])
+        text = (
+            f"{command_id} {command_path} "
+            f"{_COMMAND_DISCOVERY_PURPOSES.get(command_id, '')} "
+            f"{_GROUP_DISCOVERY_PURPOSES.get(command_path.split()[0], '')}"
+        )
+        vocabulary.update(_tokens(text))
+    return frozenset(vocabulary)
 
 
 def _compact_contract(record: dict[str, Any]) -> dict[str, Any]:
@@ -624,6 +1076,17 @@ def runnable_example(
                 *_OUTPUT_JSON_NO_INPUT,
             ]
         )
+    if record["command_id"] in _FIXED_EXAMPLES:
+        positional_samples, sample_input = _FIXED_EXAMPLES[record["command_id"]]
+        return shlex.join(
+            [
+                "mammoth",
+                *record["command_path"].split(),
+                *positional_samples,
+                *(["--input", json.dumps(sample_input)] if sample_input else []),
+                *_OUTPUT_JSON_NO_INPUT,
+            ]
+        )
     if record["command_id"] == "batch.create-spec":
         return shlex.join(
             [
@@ -632,6 +1095,24 @@ def runnable_example(
                 "123",
                 "--input",
                 json.dumps({"file_id": 94}),
+                *_OUTPUT_JSON_NO_INPUT,
+            ]
+        )
+    if record["command_id"] == "view.data.aggregate":
+        return shlex.join(
+            [
+                "mammoth",
+                *record["command_path"].split(),
+                "123",
+                "--input",
+                json.dumps(
+                    {
+                        "group_by": ["Channel"],
+                        "aggregations": [
+                            {"column": "Spend", "function": "SUM", "as_name": "Total Spend"}
+                        ],
+                    }
+                ),
                 *_OUTPUT_JSON_NO_INPUT,
             ]
         )
@@ -766,13 +1247,19 @@ def runnable_example(
         else:
             tokens.extend(["--input", json.dumps(document)])
     tokens.extend(_OUTPUT_JSON_NO_INPUT)
-    if record["command_id"] in {"project.user.update", "data-app.share"}:
+    if record["command_id"] in {"project.user.update", "data-app.share", "workspace.user.add"}:
         # These published high-impact examples must satisfy the same policy
         # their manifests advertise; otherwise discovery emits a command that
         # deterministically fails before dispatch.
         tokens.append("--yes")
-    if record["command_id"] == "project.resource-dependencies.update":
-        # This command has a confirm_target policy.  Keep its generated
+    if record["command_id"] in {
+        "project.resource-dependencies.update",
+        "dashboard.embed.key.rotate",
+        "dashboard.embed.secret.rotate",
+        "dashboard.embed.config.set",
+        "dashboard.embed.origin.revoke",
+    }:
+        # These commands have a confirm_target policy.  Keep their generated
         # example executable in non-interactive mode instead of advertising a
         # request that the safety guard will reject.
         tokens.extend(["--yes", "--confirm", str(_sample_positional_value(positionals[0]))])
@@ -1047,20 +1534,67 @@ def schema_index(family: str | None = None) -> dict[str, Any]:
     }
 
 
+def _is_scalar_field_schema(schema: Any) -> bool:
+    """Whether a field's JSON Schema is a plain scalar with no nested shape.
+
+    A caller composing ``--input`` for a scalar field just needs its type
+    name. An object, an array of objects, or a union that includes an
+    object (e.g. increment-date's ``delta``, convert-type's
+    ``conversions``, a ``condition``) needs its nested shape too, or the
+    bare type name (``DateDelta``) leaves it to guess.
+    """
+    if not isinstance(schema, dict):
+        return True
+    branches = schema.get("anyOf") or schema.get("oneOf")
+    if branches:
+        return all(_is_scalar_field_schema(branch) for branch in branches)
+    schema_type = schema.get("type")
+    if schema_type == "object":
+        return False
+    if schema_type == "array":
+        return _is_scalar_field_schema(schema.get("items"))
+    return True
+
+
 def brief_schema(entry: dict[str, Any]) -> dict[str, Any]:
     """Reduce a full ``schema get`` record to what composing one call needs."""
     brief = {key: entry[key] for key in _BRIEF_SCHEMA_KEYS if key in entry}
     accepted = brief.get("accepted_fields")
     if isinstance(accepted, list):
-        # Type and requirement are what a caller reads; the per-field JSON
-        # Schema is available under ``full``.
+        # Type and requirement are what a caller reads for a scalar; a
+        # non-scalar field keeps its JSON Schema too, since a bare type name
+        # does not say what shape it needs. ``full`` still has everything.
         brief["accepted_fields"] = [
-            {key: value for key, value in field.items() if key != "schema"}
+            {
+                key: value
+                for key, value in field.items()
+                if key != "schema" or not _is_scalar_field_schema(field.get("schema"))
+            }
             for field in accepted
             if isinstance(field, dict)
         ]
     brief["full"] = f"mammoth schema get {entry['command_id']} --input '{{\"full\": true}}'"
     return brief
+
+
+def _inline_call_detail(entries: list[dict[str, Any]]) -> None:
+    """Add each entry's compact accepted fields and agent example in place."""
+    for entry in entries:
+        record = command_by_id(entry["command_id"])
+        if record is None:
+            continue
+        fields = _compact_accepted_fields(record)
+        if fields is not None:
+            entry["accepted_fields"] = fields
+        if record.get("agent_example"):
+            entry["agent_example"] = record["agent_example"]
+
+
+#: How to drill down from a find: a family's full command list, or every family.
+_BROWSE_NEXT = (
+    "mammoth schema list FAMILY lists every command in a family; mammoth schema list "
+    "lists the families"
+)
 
 
 def find_schemas(
@@ -1084,7 +1618,26 @@ def find_schemas(
     """
     # A query made only of filler words keeps them, rather than matching
     # every command.
-    terms = _query_tokens(query) or tuple(_tokens(query))
+    raw_terms = _query_tokens(query) or tuple(_tokens(query))
+    compound_forms = _adjacent_compound_forms(raw_terms)
+    # A term no command's discovery-purpose text would ever say is a data
+    # word (a column/table/business noun from the caller's own data, not CLI
+    # vocabulary) riding along in the goal; drop it before the all-terms
+    # rule and scoring so it can't sink an otherwise complete match. If
+    # every term would be dropped, keep them all -- a query that is nothing
+    # but data words still deserves its ordinary near-miss treatment rather
+    # than becoming a match-everything wildcard. A literal full-path lookup
+    # (the ``named`` check below) always uses the un-dropped ``raw_terms``,
+    # so naming a command by its exact path never depends on this filter.
+    vocabulary = _command_vocabulary_tokens()
+    cli_terms = tuple(
+        term
+        for term in raw_terms
+        if (_token_aliases(term) & vocabulary)
+        or (compound_forms.get(term, frozenset()) & vocabulary)
+    )
+    terms = cli_terms or raw_terms
+    query_cf = query.casefold()
     # Clamp caller-provided bounds instead of allowing an accidental unbounded
     # discovery response.  A negative cursor is a usage mistake, not a request
     # to wrap around the catalog.
@@ -1110,7 +1663,12 @@ def find_schemas(
         )
         searchable = " ".join(source for _, source in sources).casefold()
         searchable_tokens = _tokens(f"{primary_text} {searchable}")
-        matched_terms = [term for term in terms if _token_aliases(term) & searchable_tokens]
+        matched_terms = [
+            term
+            for term in terms
+            if (_token_aliases(term) & searchable_tokens)
+            or (compound_forms.get(term, frozenset()) & searchable_tokens)
+        ]
         if not matched_terms:
             continue
         score = 0
@@ -1137,20 +1695,63 @@ def find_schemas(
         action = command_path.split()[1] if len(command_path.split()) > 1 else ""
         if "show" in matched_terms and action in {"list", "get", "browse"}:
             score += 80
+        new_object = _NEW_OBJECT_HINTS.get(command_id)
+        if new_object and re.search(rf"\bnew\s+{new_object}s?\b", query_cf):
+            score += _OBJECT_ADJACENCY_BOOST
+        existing_object = _EXISTING_OBJECT_HINTS.get(command_id)
+        if existing_object and re.search(rf"\bexisting\s+{existing_object}s?\b", query_cf):
+            score += _OBJECT_ADJACENCY_BOOST
+        is_support = command_id.startswith("support.")
         entry = {
             "command_id": command_id,
             "command_path": command_path,
             "mutation_class": record["mutation_class"],
             "confirmation": record["confirmation"],
-            "full_schema_command": (f"mammoth schema get {command_id}"),
+            "full_schema_command": f"mammoth schema get {command_id}",
         }
-        if len(matched_terms) == len(terms):
+        # A match on hidden curated purpose text (T1-I-07) is otherwise
+        # invisible to the caller: only command_id/command_path/matched_terms
+        # come back, and a terse docstring-derived example can read as
+        # something else entirely (connector.ai.chat's own example reads as
+        # "ask the AI a question", not "build a connector for an unsupported
+        # API"). Echo the purpose text that matched, capped so a long entry
+        # doesn't bloat every result.
+        if command_purpose and any(term in _tokens(command_purpose) for term in matched_terms):
+            purpose_text = _COMMAND_DISCOVERY_PURPOSES[command_id]
+            entry["matched_on"] = (
+                purpose_text
+                if len(purpose_text) <= _MATCHED_ON_MAX_CHARS
+                else purpose_text[:_MATCHED_ON_MAX_CHARS].rstrip() + "..."
+            )
+        if is_support:
+            # These operate on another workspace/customer on the caller's
+            # behalf (Mammoth-operator tooling), not the caller's own
+            # workspace. A query that also has an ordinary match should
+            # never surface the operator command first.
+            entry["operator_only"] = (
+                "support.* commands act on another workspace as an operator, not the "
+                "caller's own; ordinary workspace work uses the non-support command."
+            )
+        # A query that spells out this command's whole path (``aggregate view
+        # data ...``) asks for it by name, whatever goal words ride along.
+        path_tokens = set(_tokens(command_path))
+        named = len(path_tokens) >= 3 and path_tokens <= set(raw_terms)
+        if named:
+            score += _NAMED_COMMAND_BOOST
+        if named or len(matched_terms) == len(terms):
             ranked_matches.append((score, entry))
         else:
             near_misses.append((len(matched_terms), score, entry, matched_terms))
-    ranked_matches.sort(key=lambda item: (-item[0], item[1]["command_id"]))
+    ranked_matches.sort(
+        key=lambda item: (
+            item[1]["command_id"].startswith("support."),
+            -item[0],
+            item[1]["command_id"],
+        )
+    )
     total_matches = len(ranked_matches)
     page = [match for _, match in ranked_matches[offset : offset + bounded_limit]]
+    _inline_call_detail(page[: max(0, _INLINE_DETAIL_COUNT - offset)])
     has_more = offset + len(page) < total_matches
     continuation = (
         {
@@ -1177,8 +1778,23 @@ def find_schemas(
             {**entry, "matched_terms": matched}
             for _, _, entry, matched in near_misses[:_MAX_SUGGESTIONS]
         ]
-        result["hint"] = _NO_MATCH_HINT
+        # A goal phrased in the user's words rarely carries every term; the
+        # best near misses still say how to call them, so one find suffices.
+        _inline_call_detail(result["suggestions"][:_INLINE_DETAIL_COUNT])
+        result["hint"] = (
+            _NO_MATCH_HINT_WITH_SUGGESTIONS
+            if result["suggestions"]
+            else _NO_MATCH_HINT_NO_SUGGESTIONS
+        )
+    result["browse"] = _browse(page or result.get("suggestions", []))
     return result
+
+
+def _browse(entries: list[dict[str, Any]]) -> dict[str, Any]:
+    """The families behind *entries* and how to list each one in full: a keyword
+    find surfaces one way to do a thing, its family holds the siblings."""
+    families = list(dict.fromkeys(entry["command_path"].split()[0] for entry in entries))
+    return {"families": families, "next": _BROWSE_NEXT}
 
 
 def get_schema(command_id: str) -> dict[str, Any] | None:

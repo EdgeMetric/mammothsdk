@@ -13,6 +13,7 @@ commands:
   request_model: TrashAddRequest
   result_model: TrashAddResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -34,6 +35,10 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: trash.list
+    ids: {}
+    kind: object
 - command_id: trash.list
   command_path: trash list
   disposition: command
@@ -81,6 +86,7 @@ commands:
   request_model: TrashRestoreRequest
   result_model: TrashRestoreResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -102,3 +108,7 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: trash.list
+    ids: {}
+    kind: object

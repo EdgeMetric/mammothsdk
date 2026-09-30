@@ -91,13 +91,36 @@ def is_opaque_mapping(annotation: Any) -> bool:
     return not args or (len(args) == 2 and args[1] is Any)
 
 
+#: A leaf condition's ``value`` may be a literal, or a marker that binds it to
+#: a project/workspace parameter's live value instead. The server deep-walks
+#: task params for this exact shape and substitutes the parameter's current
+#: value at execution time (``api/api/parameters/binding_extractor.py`` /
+#: ``consts.py`` in mvc-service); the SDK's ``Condition.value`` already
+#: forwards it untouched, so no SDK change is needed — only this schema was
+#: silent about the shape existing.
+_PARAMETER_BINDING_SCHEMA = {
+    "type": "object",
+    "description": (
+        "Bind to a project/workspace parameter's live value instead of a literal. "
+        "Create one first with 'parameter create' if it does not exist yet."
+    ),
+    "properties": {
+        "type": {"const": "parameter"},
+        "parameter_id": {"type": "integer"},
+    },
+    "required": ["type", "parameter_id"],
+    "additionalProperties": False,
+    "example": {"type": "parameter", "parameter_id": 12},
+}
+
+
 def _condition_schema() -> dict[str, Any]:
     leaf = {
         "type": "object",
         "properties": {
             "column": {"type": "string", "example": "Status"},
             "operator": {"type": "string", "example": "EQ"},
-            "value": {"example": "Active"},
+            "value": {"anyOf": [{"example": "Active"}, _PARAMETER_BINDING_SCHEMA]},
             "case_sensitive": {"type": "boolean"},
             "value_is_column": {"type": "boolean"},
             "component": {"type": "string"},

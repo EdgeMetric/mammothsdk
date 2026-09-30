@@ -10,17 +10,20 @@ import pytest
 from mammoth_cli.commands import dataset as dataset_cmd
 from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.runtime.invocation import Invocation
+from mammoth_cli.services.listing import DATASET_LIST_FIELDS
 from mammoth_cli.services.testing import FakeMammothService
 from mammoth_cli.testing import login_default_profile
 
 _LIST = "mammoth.api.datasets.DatasetsAPI.list"
 _LIST_ALL = "mammoth.api.datasets.DatasetsAPI.list_all"
 _GET = "mammoth.api.datasets.DatasetsAPI.get"
+_VIEW_LIST = "mammoth.api.dataviews.DataviewsAPI.list"
 _DATA = "mammoth.api.datasets.DatasetsAPI.get_data"
 _BATCH_DATA = "mammoth.api.datasets.DatasetsAPI.get_batch_data"
 _FILE_SETTINGS = "mammoth.api.datasets.DatasetsAPI.get_file_settings"
 _FILE_SETTINGS_UPDATE = "mammoth.api.datasets.DatasetsAPI.file_settings_update"
 _FILE_SETTINGS_UNDO = "mammoth.api.datasets.DatasetsAPI.file_settings_undo"
+_BROKEN_ROWS = "mammoth.api.datasets.DatasetsAPI.get_unstructured_rows"
 _CREATE = "mammoth.api.datasets.DatasetsAPI.create"
 _CREATE_FROM_PDF = "mammoth.api.datasets.DatasetsAPI.create_from_pdf"
 _RENAME = "mammoth.api.datasets.DatasetsAPI.rename"
@@ -117,7 +120,10 @@ def test_list_passes_project_and_optional_fields(
     input_file = _write(tmp_path, {"limit": 10, "sort": "(name:asc)"})
     dataset_cmd.dataset_list(_inv("dataset.list", project=180, input_file=input_file))
     assert fake_service.call_log == [
-        (_LIST, {"project_id": 180, "limit": 10, "sort": "(name:asc)"})
+        (
+            _LIST,
+            {"project_id": 180, "limit": 10, "sort": "(name:asc)", "fields": DATASET_LIST_FIELDS},
+        )
     ]
 
 
@@ -126,13 +132,70 @@ def test_list_passes_project_and_optional_fields(
 
 def test_get_uses_positional_dataset_id(fake_service: FakeMammothService) -> None:
     dataset_cmd.dataset_get(_inv("dataset.get", project=180, extra_args=["7"]))
-    assert fake_service.call_log == [(_GET, {"dataset_id": 7, "project_id": 180})]
+    assert fake_service.call_log == [
+        (_GET, {"dataset_id": 7, "project_id": 180}),
+        (_VIEW_LIST, {"dataset_id": 7, "project_id": 180}),
+    ]
 
 
 def test_get_without_dataset_id_is_usage_error(fake_service: FakeMammothService) -> None:
     with pytest.raises(CliError) as excinfo:
         dataset_cmd.dataset_get(_inv("dataset.get", project=180))
     assert excinfo.value.code == "missing_argument"
+
+
+def test_get_strips_file_ingestion_automation_possible_flag(
+    fake_service: FakeMammothService,
+) -> None:
+    """RCA evidence (T1-R-01/T1-R-07): automation_possible is CSV-ingestion
+    metadata (api/api/file/unprocessed.py) about whether the header-parsing
+    pipeline can auto-process this upload -- unrelated to whether the
+    dataset can be put on a scheduled refresh. An agent reading it next to a
+    'no refreshable source' claim misreads it as contradicting that claim.
+    It must not appear in dataset get's output.
+    """
+    fake_service.responses[_GET] = {
+        "id": 7,
+        "additional_info": {"all_data_backup": {"PARAMS": {"automation_possible": True}}},
+    }
+    data, _meta = dataset_cmd.dataset_get(_inv("dataset.get", project=180, extra_args=["7"]))
+    all_data_params = data["additional_info"]["all_data_backup"]["PARAMS"]
+    assert "automation_possible" not in all_data_params
+
+
+def test_get_names_the_export_that_writes_into_this_dataset(
+    fake_service: FakeMammothService,
+) -> None:
+    # T1-O-10: a dataset built by a recurring `view export dataset` carries its
+    # source view/export ids in additional_info; name the export and the exact
+    # command that stops it instead of leaving that as raw additional_info.
+    fake_service.responses[_GET] = {
+        "id": 2625,
+        "additional_info": {"DATAVIEW_ID": 3229, "TRIGGER_ID": 225},
+    }
+    result, _meta = dataset_cmd.dataset_get(_inv("dataset.get", project=180, extra_args=["2625"]))
+    assert "mammoth view export delete 3229 225" in result["hint"]
+
+
+def test_get_without_additional_info_has_no_hint(fake_service: FakeMammothService) -> None:
+    fake_service.responses[_GET] = {"id": 7}
+    fake_service.responses[_VIEW_LIST] = {"dataviews": [{"id": 1}]}
+    result, _meta = dataset_cmd.dataset_get(_inv("dataset.get", project=180, extra_args=["7"]))
+    assert "hint" not in result
+    assert result["view_count"] == 1
+
+
+def test_get_hints_view_create_when_dataset_has_zero_views(
+    fake_service: FakeMammothService,
+) -> None:
+    # T1-I-13: an agent that only reads dataset-level metadata has no signal
+    # nothing is queryable yet; a corrected dataset with zero views is
+    # invisible to every downstream Mammoth feature (and to the grader).
+    fake_service.responses[_GET] = {"id": 2643}
+    fake_service.responses[_VIEW_LIST] = {"dataviews": []}
+    result, _meta = dataset_cmd.dataset_get(_inv("dataset.get", project=180, extra_args=["2643"]))
+    assert result["view_count"] == 0
+    assert "mammoth view create 2643" in result["hint"]
 
 
 def test_batch_data_rejects_invalid_paging_before_service(
@@ -212,6 +275,30 @@ def test_file_settings_passes_dataset_and_project(fake_service: FakeMammothServi
         _inv("dataset.file-settings.get", project=180, extra_args=["7"])
     )
     assert fake_service.call_log == [(_FILE_SETTINGS, {"dataset_id": 7, "project_id": 180})]
+
+
+def test_file_settings_of_an_upload_say_how_the_next_file_joins(
+    fake_service: FakeMammothService,
+) -> None:
+    """Asked to keep Power BI on the latest data of an uploaded CSV, the agent read
+    its file settings, concluded nothing new could ever arrive, and stopped
+    without publishing (eval T1-O-08)."""
+    fake_service.responses[_FILE_SETTINGS] = {"info": {"delimiter": ",", "has_header": True}}
+
+    data, _ = dataset_cmd.dataset_file_settings(
+        _inv("dataset.file-settings.get", project=180, extra_args=["7"])
+    )
+
+    (path,) = data["new_data"]
+    assert path["dataset_id"] == 7
+    assert "append_to_ds_id" in path["how"]
+
+
+def test_broken_rows_list_reads_the_dataset_s_unparsed_lines(
+    fake_service: FakeMammothService,
+) -> None:
+    dataset_cmd.dataset_broken_rows(_inv("dataset.broken-rows.list", project=180, extra_args=["7"]))
+    assert fake_service.call_log == [(_BROKEN_ROWS, {"dataset_id": 7, "project_id": 180})]
 
 
 def test_file_settings_update_requires_delimiter(fake_service: FakeMammothService) -> None:
@@ -406,12 +493,33 @@ def test_delete_blocked_without_confirmation(fake_service: FakeMammothService) -
             _inv("dataset.delete", project=180, extra_args=["7"], output="json")
         )
     assert excinfo.value.code == "confirmation_required"
-    assert fake_service.call_log == []
+    # The preview read that builds the confirmation message is a read, not a
+    # mutation; only the delete call itself must be withheld.
+    assert fake_service.call_log == [(_GET, {"dataset_id": 7, "project_id": 180})]
+
+
+def test_delete_blocked_without_confirmation_names_the_writing_export(
+    fake_service: FakeMammothService,
+) -> None:
+    # T1-O-10: the confirmation preview must name the export writing into this
+    # dataset and the command that stops it, not just "delete dataset 2625".
+    fake_service.responses[_GET] = {
+        "id": 2625,
+        "additional_info": {"DATAVIEW_ID": 3229, "TRIGGER_ID": 225},
+    }
+    with pytest.raises(CliError) as excinfo:
+        dataset_cmd.dataset_delete(
+            _inv("dataset.delete", project=180, extra_args=["2625"], output="json")
+        )
+    assert "mammoth view export delete 3229 225" in excinfo.value.message
 
 
 def test_delete_proceeds_with_yes(fake_service: FakeMammothService) -> None:
     dataset_cmd.dataset_delete(_inv("dataset.delete", project=180, extra_args=["7"], yes=True))
-    assert fake_service.call_log == [(_DELETE, {"dataset_id": 7, "project_id": 180})]
+    assert fake_service.call_log == [
+        (_GET, {"dataset_id": 7, "project_id": 180}),
+        (_DELETE, {"dataset_id": 7, "project_id": 180}),
+    ]
 
 
 # -- bulk-delete --------------------------------------------------------

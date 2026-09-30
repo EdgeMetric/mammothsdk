@@ -17,7 +17,7 @@ from __future__ import annotations
 
 import json
 from typing import Any
-from urllib.parse import urlparse
+from urllib.parse import parse_qs, urlparse
 
 import pytest
 import httpx
@@ -55,10 +55,10 @@ def _make_response(
 class _FakeTransport(httpx.AsyncBaseTransport):
     """An httpx transport that fakes only the HTTP layer.
 
-    The workspace-browse call always succeeds and reports a single project
-    holding a single dataset, so resolution proceeds to the dataview lookup.
-    The dataview lookup then returns a configurable status code + body, which
-    is exactly the response whose classification is under test.
+    The project dataset listing always succeeds and reports a single
+    dataset, so resolution proceeds to the dataview lookup. The dataview
+    lookup then returns a configurable status code + body, which is exactly
+    the response whose classification is under test.
     """
 
     def __init__(self, dataview_status: int, dataview_body: dict[str, Any]) -> None:
@@ -69,16 +69,14 @@ class _FakeTransport(httpx.AsyncBaseTransport):
     async def handle_async_request(self, request: httpx.Request) -> httpx.Response:
         path = urlparse(str(request.url)).path
 
-        # Workspace browse — the first call resolution makes. Return one
-        # project with one dataset child so the dataview scan has a target.
-        if path.endswith("/browse"):
+        # Project dataset listing — the first call resolution makes. Return
+        # one dataset so the dataview scan has a target.
+        if path.endswith("/datasets"):
             body: dict[str, Any] = {
-                "resources": [
-                    {
-                        "id": PROJECT_ID,
-                        "children": [{"id": DATASET_ID, "type": "datasource"}],
-                    }
-                ]
+                "datasets": [{"id": DATASET_ID, "name": "ds"}],
+                "limit": 100,
+                "offset": 0,
+                "next": None,
             }
             return _make_response(200, body, request)
 
@@ -183,17 +181,12 @@ async def test_wrong_parent_403_is_disambiguated_by_collection_membership() -> N
     class TwoDatasetTransport(httpx.AsyncBaseTransport):
         async def handle_async_request(self, request: httpx.Request) -> httpx.Response:
             path = urlparse(str(request.url)).path
-            if path.endswith("/browse"):
+            if path.endswith("/datasets"):
                 body = {
-                    "resources": [
-                        {
-                            "id": PROJECT_ID,
-                            "children": [
-                                {"id": 500, "type": "datasource"},
-                                {"id": 501, "type": "datasource"},
-                            ],
-                        }
-                    ]
+                    "datasets": [{"id": 500, "name": "a"}, {"id": 501, "name": "b"}],
+                    "limit": 100,
+                    "offset": 0,
+                    "next": None,
                 }
                 return _make_response(200, body, request)
             if path.endswith("/datasets/500/dataviews/1039"):
@@ -215,5 +208,56 @@ async def test_wrong_parent_403_is_disambiguated_by_collection_membership() -> N
     client = _client_with_transport(TwoDatasetTransport())
     try:
         assert await client.pipeline.find_dataset_for_dataview(DATAVIEW_ID) == 501
+    finally:
+        await client.close()
+
+
+async def test_a_dataset_beyond_the_first_page_is_still_discovered() -> None:
+    """A project with more than one page of datasets must not be truncated.
+
+    Regression (PR25 item A): resolution used to enumerate candidate
+    datasets via a single, unpaginated workspace/folder browse call (a
+    default page size of 100, with the server's ``next`` continuation never
+    followed). A project holding more than 100 datasets silently lost every
+    dataset past the first page -- and a freshly created dataset, which
+    sorts onto the *last* page, was exactly the one most likely to be
+    dropped. That made ``view get VIEW_ID`` (no dataset id) on a fresh, idle
+    view deterministically resource_not_found, even though the view plainly
+    existed and a scoped ``view get VIEW_ID DATASET_ID`` worked. Enumeration
+    must fully paginate ``dataset.list`` instead.
+    """
+    first_page_ids = list(range(1, 101))
+
+    class PagedDatasetsTransport(httpx.AsyncBaseTransport):
+        async def handle_async_request(self, request: httpx.Request) -> httpx.Response:
+            path = urlparse(str(request.url)).path
+            if path.endswith("/datasets"):
+                query = urlparse(str(request.url)).query
+                offset = int(parse_qs(query).get("offset", ["0"])[0])
+                if offset == 0:
+                    body = {
+                        "datasets": [{"id": i, "name": f"ds{i}"} for i in first_page_ids],
+                        "limit": 100,
+                        "offset": 0,
+                        "next": "https://example.test/datasets?offset=100",
+                    }
+                else:
+                    body = {
+                        "datasets": [{"id": DATASET_ID, "name": "target"}],
+                        "limit": 100,
+                        "offset": 100,
+                        "next": None,
+                    }
+                return _make_response(200, body, request)
+            if "/dataviews/" in path:
+                dataset_id = int(path.split("/datasets/")[1].split("/")[0])
+                if dataset_id == DATASET_ID:
+                    return _make_response(200, {"id": DATAVIEW_ID}, request)
+                return _make_response(404, {"detail": "not found"}, request)
+            raise AssertionError(f"Unexpected request: {path}")
+
+    client = _client_with_transport(PagedDatasetsTransport())
+    try:
+        assert await client.pipeline.find_dataset_for_dataview(DATAVIEW_ID) == DATASET_ID
     finally:
         await client.close()

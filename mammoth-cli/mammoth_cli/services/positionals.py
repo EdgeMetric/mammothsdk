@@ -168,6 +168,23 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
     "dashboard.tags.merge": (
         PositionalSpec(name="tag_id", type=int, required=True, help="ID of the source tag."),
     ),
+    # Item G: an agent's first move is often `view list` before it has any
+    # dataset id; omitting it now walks every dataset in the active project
+    # (paged) instead of failing with missing_argument.
+    "view.list": (
+        PositionalSpec(
+            name="dataset_id",
+            type=int,
+            required=False,
+            falls_back_to_field="dataset_id",
+            help=(
+                "ID of the dataset. Omit it to list dataviews across every "
+                "dataset in the active project instead (paged; see the "
+                "'dataset_offset' input field and the 'next_dataset_offset' "
+                "result field)."
+            ),
+        ),
+    ),
     # Explicit parent avoids rich-view discovery for the release-scoped GET.
     "view.get": (
         PositionalSpec(name="view_id", type=int, required=True, help="ID of the view."),
@@ -242,7 +259,20 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
     # active project). The SDK signature marks it required or omits it, so the
     # dual-sourced optional locator is authored here.
     "project.get": _optional_project_id(),
+    # ``project check PROJECT_ID DATASET_ID`` narrows the check to one dataset.
+    "project.check": (
+        *_optional_project_id(),
+        PositionalSpec(
+            name="dataset_id",
+            type=int,
+            required=False,
+            help="Check only this dataset's first view; no other dataset or dashboard is read.",
+        ),
+    ),
     "project.pending-changes": _optional_project_id(),
+    "project.memory.list": _optional_project_id(),
+    "project.memory.add": _optional_project_id(),
+    "project.memory.remove": _optional_project_id(),
     "project.resource-status": _optional_project_id(),
     "project.resource-dependencies": _optional_project_id(),
     "project.resource-dependencies.update": _optional_project_id(),
@@ -383,7 +413,6 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
         for command, field, label in (
             ("automation.create", "name", "Name of the new automation"),
             ("client-app.create", "app_name", "Name of the new client app"),
-            ("dashboard.create", "intent", "Generation intent for the new dashboard"),
             ("folder.create", "name", "Name of the new folder"),
             ("parameter.create", "name", "Name of the new parameter"),
             ("parameter.group.create", "name", "Name of the new parameter group"),
@@ -428,6 +457,18 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
             required=True,
             help="Match command names, examples, or purpose (e.g. view transform).",
             example_value="view transform",
+        ),
+    ),
+    "calc": (
+        PositionalSpec(
+            name="expression",
+            type=str,
+            required=True,
+            help=(
+                "Arithmetic expression: + - * / and parentheses, unary +/-, a "
+                "trailing %% (divides by 100), and round(x[, ndigits])."
+            ),
+            example_value="2063664 - 1917815",
         ),
     ),
     "capability.find": (
@@ -516,8 +557,32 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
                 falls_back_to_field="dataset_id",
             ),
         )
-        for command in ("view.preview", "view.data.get", "view.data.query")
+        for command in (
+            "view.preview",
+            "view.data.get",
+            "view.data.query",
+            "view.data.aggregate",
+            "view.data.profile",
+        )
     },
+    # `view data compare` runs the same aggregate against two views and joins
+    # the results -- both ids are required and neither is dual-sourced or
+    # forwarded into an SDK parameter, so the handler reads them directly via
+    # ``_require_int_positional_at`` rather than a ``fills_sdk_param`` binding.
+    "view.data.compare": (
+        PositionalSpec(
+            name="view_id_a",
+            type=int,
+            required=True,
+            help="ID of the first view to compare.",
+        ),
+        PositionalSpec(
+            name="view_id_b",
+            type=int,
+            required=True,
+            help="ID of the second view to compare.",
+        ),
+    ),
     # The view sub-resource commands take VIEW_ID first, then an OPTIONAL trailing
     # DATASET_ID resolved from the view -- mirroring the view data commands so the
     # whole view.* surface is uniformly view-first. The SDK signatures lead with a
@@ -600,6 +665,34 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
             ("view.version.update", "version_id", "ID of the pipeline version."),
         )
     },
+    # ``view data explore`` takes VIEW_ID first, then the required COLUMN (a
+    # display name, not an id -- the only ``str``-typed sub-positional in this
+    # family), then the OPTIONAL trailing DATASET_ID resolved from the view,
+    # mirroring the sub-resource commands above. ``column`` is a real,
+    # positional-sourced parameter of ``DataviewsAPI.explore``, so it stays out
+    # of the advertised --input fields without needing ``fills_sdk_param``.
+    "view.data.explore": (
+        PositionalSpec(
+            name="view_id",
+            type=int,
+            required=True,
+            help="ID of the view to act on.",
+            fills_sdk_param="dataview_id",
+        ),
+        PositionalSpec(
+            name="column",
+            type=str,
+            required=True,
+            help="Display name of the column to explore.",
+        ),
+        PositionalSpec(
+            name="dataset_id",
+            type=int,
+            required=False,
+            help="ID of the dataset the view belongs to; resolved from the view when omitted.",
+            falls_back_to_field="dataset_id",
+        ),
+    ),
     # ``billing hosted-page`` takes the page's object type as a positional OR an
     # ``object_type`` --input field (handler dual-sources
     # ``_string_positional(invocation) or document.get("object_type")``). The SDK
@@ -913,6 +1006,22 @@ EXACT_PARENT_HELP = (
     "'dataset_id' input field; only read commands may omit it and discover the parent."
 )
 
+# Per-command overrides of ``EXACT_PARENT_HELP`` for a command whose own
+# fields could otherwise be mistaken for this positional. ``view.export.dataset``
+# also takes a ``target_ds_id`` input field naming the destination dataset;
+# an agent that read only the generic text passed a destination id here
+# instead and hit a not-found on the (unrelated) source view's own parent
+# (WPP evidence c38/c39).
+_EXACT_PARENT_HELP_OVERRIDES: dict[str, str] = {
+    "view.export.dataset": (
+        "Exact parent dataset ID of the SOURCE view being exported -- not the "
+        "destination. Required for this command: pass it here or as the "
+        "'dataset_id' input field. To write into an existing destination dataset "
+        "instead of creating one, use the 'target_ds_id' input field, not this "
+        "positional."
+    ),
+}
+
 
 def _with_exact_parent_help(
     command_id: str, specs: tuple[PositionalSpec, ...]
@@ -926,13 +1035,14 @@ def _with_exact_parent_help(
     record = command_by_id(command_id)
     if record is None or record.get("mutation_class", "read") == "read":
         return specs
+    help_text = _EXACT_PARENT_HELP_OVERRIDES.get(command_id, EXACT_PARENT_HELP)
     return tuple(
         (
             PositionalSpec(
                 name=spec.name,
                 type=spec.type,
                 required=spec.required,
-                help=EXACT_PARENT_HELP,
+                help=help_text,
                 falls_back_to_field=spec.falls_back_to_field,
                 fills_sdk_param=spec.fills_sdk_param,
                 example_value=spec.example_value,

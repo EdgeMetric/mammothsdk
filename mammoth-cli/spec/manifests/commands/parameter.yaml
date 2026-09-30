@@ -19,6 +19,7 @@ commands:
   request_model: ParameterCreateRequest
   result_model: ParameterCreateResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -41,6 +42,11 @@ commands:
   undo_test: null
   known_restrictions: param_type is NUMERIC, TEXT or DATE (uppercase; 4PARM008 otherwise).
   reviewed_by: primary
+  readback:
+    command: parameter.get
+    ids:
+      parameter_id: result.id
+    kind: object
 - command_id: parameter.delete
   command_path: parameter delete
   disposition: command
@@ -60,6 +66,7 @@ commands:
   request_model: ParameterDeleteRequest
   result_model: ParameterDeleteResult
   mutation_class: destructive
+  edits_target: true
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -81,6 +88,10 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: parameter.list
+    ids: {}
+    kind: object
 - command_id: parameter.dependencies
   command_path: parameter dependencies
   disposition: command
@@ -140,6 +151,7 @@ commands:
   request_model: ParameterDuplicateRequest
   result_model: ParameterDuplicateResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -161,6 +173,11 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: parameter.get
+    ids:
+      parameter_id: result.id
+    kind: object
 - command_id: parameter.get
   command_path: parameter get
   disposition: command
@@ -220,6 +237,7 @@ commands:
   request_model: ParameterGroupCreateRequest
   result_model: ParameterGroupCreateResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -241,6 +259,10 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: parameter.group.list
+    ids: {}
+    kind: object
 - command_id: parameter.group.delete
   command_path: parameter group delete
   disposition: command
@@ -260,6 +282,7 @@ commands:
   request_model: ParameterGroupDeleteRequest
   result_model: ParameterGroupDeleteResult
   mutation_class: destructive
+  edits_target: true
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -281,6 +304,10 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: parameter.group.list
+    ids: {}
+    kind: object
 - command_id: parameter.group.list
   command_path: parameter group list
   disposition: command
@@ -328,6 +355,7 @@ commands:
   request_model: ParameterGroupReorderRequest
   result_model: ParameterGroupReorderResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -349,6 +377,10 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: parameter.group.list
+    ids: {}
+    kind: object
 - command_id: parameter.group.update
   command_path: parameter group update
   disposition: command
@@ -368,6 +400,7 @@ commands:
   request_model: ParameterGroupUpdateRequest
   result_model: ParameterGroupUpdateResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -389,6 +422,10 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: parameter.group.list
+    ids: {}
+    kind: object
 - command_id: parameter.list
   command_path: parameter list
   disposition: command
@@ -442,6 +479,7 @@ commands:
   request_model: ParameterRerunRequest
   result_model: ParameterRerunResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -463,6 +501,11 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: parameter.get
+    ids:
+      parameter_id: positional.0
+    kind: object
 - command_id: parameter.rerun-all-stale
   command_path: parameter rerun-all-stale
   disposition: command
@@ -476,6 +519,7 @@ commands:
   request_model: ParameterRerunAllStaleRequest
   result_model: ParameterRerunAllStaleResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -497,6 +541,10 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: parameter.list
+    ids: {}
+    kind: object
 - command_id: parameter.update
   command_path: parameter update
   disposition: command
@@ -516,6 +564,7 @@ commands:
   request_model: ParameterUpdateRequest
   result_model: ParameterUpdateResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -537,3 +586,8 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: parameter.get
+    ids:
+      parameter_id: positional.0
+    kind: object

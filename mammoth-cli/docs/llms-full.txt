@@ -111,15 +111,13 @@ Sensitive structured input must come from a private file or pipe; never put secr
 
 ## billing
 
-- `mammoth billing chargebee-plan` [high_impact/confirm_target] -> mammoth.api.billing.BillingAPI.chargebee_plan
+- `mammoth billing chargebee-plan` [read/none] -> mammoth.api.billing.BillingAPI.chargebee_plan
   example: mammoth billing chargebee-plan
 - `mammoth billing hosted-page` [high_impact/confirm_target] -> mammoth.api.billing.BillingAPI.hosted_page
   example: mammoth billing hosted-page sample
 - `mammoth billing invoice charge` [high_impact/confirm_target] -> mammoth.api.billing.BillingAPI.invoice_charge
   example: mammoth billing invoice charge
-- `mammoth billing invoice get` [high_impact/confirm_target] -> mammoth.api.billing.BillingAPI.invoice_get
-  example: mammoth billing invoice get 123
-- `mammoth billing invoice list` [high_impact/confirm_target] -> mammoth.api.billing.BillingAPI.invoice_list
+- `mammoth billing invoice list` [read/none] -> mammoth.api.billing.BillingAPI.invoice_list
   example: mammoth billing invoice list
 - `mammoth billing stripe cancel` [high_impact/confirm_target] -> mammoth.api.billing.BillingAPI.stripe_cancel
   example: mammoth billing stripe cancel
@@ -129,31 +127,31 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth billing stripe create 123
 - `mammoth billing stripe end-trial` [high_impact/confirm_target] -> mammoth.api.billing.BillingAPI.stripe_end_trial
   example: mammoth billing stripe end-trial
-- `mammoth billing stripe get` [high_impact/confirm_target] -> mammoth.api.billing.BillingAPI.stripe_get
+- `mammoth billing stripe get` [read/none] -> mammoth.api.billing.BillingAPI.stripe_get
   example: mammoth billing stripe get
-- `mammoth billing stripe history` [high_impact/confirm_target] -> mammoth.api.billing.BillingAPI.stripe_history
+- `mammoth billing stripe history` [read/none] -> mammoth.api.billing.BillingAPI.stripe_history
   example: mammoth billing stripe history
 - `mammoth billing stripe payment-method delete` [high_impact/confirm_target] -> mammoth.api.billing.BillingAPI.stripe_payment_method_delete
   example: mammoth billing stripe payment-method delete resource-123
-- `mammoth billing stripe payment-method list` [high_impact/confirm_target] -> mammoth.api.billing.BillingAPI.stripe_payment_method_list
+- `mammoth billing stripe payment-method list` [read/none] -> mammoth.api.billing.BillingAPI.stripe_payment_method_list
   example: mammoth billing stripe payment-method list
 - `mammoth billing stripe payment-method set-default` [high_impact/confirm_target] -> mammoth.api.billing.BillingAPI.stripe_payment_method_set_default
   example: mammoth billing stripe payment-method set-default resource-123
 - `mammoth billing stripe portal-url` [high_impact/confirm_target] -> mammoth.api.billing.BillingAPI.stripe_portal_url
   example: mammoth billing stripe portal-url
-- `mammoth billing stripe preview-invoice` [high_impact/confirm_target] -> mammoth.api.billing.BillingAPI.stripe_preview_invoice
+- `mammoth billing stripe preview-invoice` [read/none] -> mammoth.api.billing.BillingAPI.stripe_preview_invoice
   example: mammoth billing stripe preview-invoice
 - `mammoth billing stripe retry-payment` [high_impact/confirm_target] -> mammoth.api.billing.BillingAPI.stripe_retry_payment
   example: mammoth billing stripe retry-payment
-- `mammoth billing stripe status` [high_impact/confirm_target] -> mammoth.api.billing.BillingAPI.stripe_status
+- `mammoth billing stripe status` [read/none] -> mammoth.api.billing.BillingAPI.stripe_status
   example: mammoth billing stripe status
 - `mammoth billing stripe sync` [high_impact/confirm_target] -> mammoth.api.billing.BillingAPI.stripe_sync
   example: mammoth billing stripe sync
-- `mammoth billing stripe upcoming-invoice` [high_impact/confirm_target] -> mammoth.api.billing.BillingAPI.stripe_upcoming_invoice
+- `mammoth billing stripe upcoming-invoice` [read/none] -> mammoth.api.billing.BillingAPI.stripe_upcoming_invoice
   example: mammoth billing stripe upcoming-invoice
-- `mammoth billing stripe usage` [high_impact/confirm_target] -> mammoth.api.billing.BillingAPI.stripe_usage
+- `mammoth billing stripe usage` [read/none] -> mammoth.api.billing.BillingAPI.stripe_usage
   example: mammoth billing stripe usage
-- `mammoth billing subscription get` [high_impact/confirm_target] -> mammoth.api.billing.BillingAPI.subscription_get
+- `mammoth billing subscription get` [read/none] -> mammoth.api.billing.BillingAPI.subscription_get
   example: mammoth billing subscription get
 - `mammoth billing subscription update` [high_impact/confirm_target] -> mammoth.api.billing.BillingAPI.subscription_update
   example: mammoth billing subscription update --input '{"patch": [{"sample_key": "Status"}]}'
@@ -168,6 +166,11 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth browse root
 - `mammoth browse workspace` [read/none] -> mammoth.api.browse.BrowseAPI.workspace_resources
   example: mammoth browse workspace
+
+## calc
+
+- `mammoth calc` [read/none] -> mammoth_cli.commands.calc.calc
+  example: mammoth calc '2063664 - 1917815'
 
 ## capability
 
@@ -226,7 +229,7 @@ Sensitive structured input must come from a private file or pipe; never put secr
 - `mammoth connector ai submit-credentials` [benign_mutation/none] -> mammoth.api.connector_ai.ConnectorAIAPI.submit_credentials
   example: mammoth connector ai submit-credentials --input '{"body": {"credentials": {}, "session_id": "resource-123"}}'
 - `mammoth connector connection create` [external_effect/yes_always] -> mammoth.api.connectors.ConnectorsAPI.create_connection
-  example: mammoth connector connection create sample --input '{"config": {"sample_key": "Status"}}'
+  example: mammoth connector connection create sample --input /private/path/request.json
 - `mammoth connector connection delete` [destructive/prompt_or_yes] -> mammoth.api.connectors.ConnectorsAPI.delete_connection
   example: mammoth connector connection delete sample sample
 - `mammoth connector connection get` [read/none] -> mammoth.api.connectors.ConnectorsAPI.get_connection
@@ -234,7 +237,7 @@ Sensitive structured input must come from a private file or pipe; never put secr
 - `mammoth connector connection list` [read/none] -> mammoth.api.connectors.ConnectorsAPI.list_connections
   example: mammoth connector connection list sample
 - `mammoth connector connection update` [external_effect/yes_always] -> mammoth.api.connectors.ConnectorsAPI.update_connection
-  example: mammoth connector connection update sample sample --input '{"credentials": {"sample_key": "Status"}}'
+  example: mammoth connector connection update sample sample --input /private/path/request.json
 - `mammoth connector ds-config create` [external_effect/yes_always] -> mammoth.api.connectors.ConnectorsAPI.create_ds_config
   example: mammoth connector ds-config create sample sample
 - `mammoth connector ds-config delete` [destructive/prompt_or_yes] -> mammoth.api.connectors.ConnectorsAPI.delete_ds_config
@@ -277,6 +280,10 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth dashboard assess-pbix sample.pbix
 - `mammoth dashboard assess-twb` [read/none] -> mammoth.api.dashboards.DashboardsAPI.assess_twb
   example: mammoth dashboard assess-twb sample.twb
+- `mammoth dashboard bi-export` [read/none] -> mammoth.api.dashboards.DashboardsAPI.export_powerbi
+  example: mammoth dashboard bi-export 123 --input '{"target": "powerbi"}'
+- `mammoth dashboard bi-preflight` [read/none] -> mammoth.api.dashboards.DashboardsAPI.powerbi_preflight
+  example: mammoth dashboard bi-preflight 123 --input '{"target": "powerbi"}'
 - `mammoth dashboard cancel-generation` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.cancel_generation
   example: mammoth dashboard cancel-generation 123
 - `mammoth dashboard canvas get` [read/none] -> mammoth.api.dashboards.DashboardsAPI.canvas_get
@@ -299,8 +306,6 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth dashboard context list
 - `mammoth dashboard context update` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.context_update
   example: mammoth dashboard context update resource-123 --input '{"body": {"params": {"name": "Revenue report"}}}'
-- `mammoth dashboard create` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.create
-  example: mammoth dashboard create 'Summarize revenue by region' --input '{"source": [1]}'
 - `mammoth dashboard create-blank` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.create_blank
   example: mammoth dashboard create-blank --input '{"params": {"dataview_id": 1}}' --yes
 - `mammoth dashboard data draft` [read/none] -> mammoth.api.dashboards.DashboardsAPI.get_draft_data
@@ -313,6 +318,22 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth dashboard descriptor-data 123 --input '{"body": {"params": {"descriptor_ids": ["ef28f9bcc263c0f7"], "filter_state": {"Month": ["2025-01-01", "2025-03-31"]}}}}'
 - `mammoth dashboard duplicate` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.duplicate
   example: mammoth dashboard duplicate 123
+- `mammoth dashboard embed config get` [read/none] -> mammoth.api.dashboards.DashboardsAPI.embed_config_get
+  example: mammoth dashboard embed config get 123
+- `mammoth dashboard embed config set` [high_impact/confirm_target] -> mammoth.api.dashboards.DashboardsAPI.embed_config_set
+  example: mammoth dashboard embed config set 123 --yes --confirm 123
+- `mammoth dashboard embed key rotate` [high_impact/confirm_target] -> mammoth.api.dashboards.DashboardsAPI.embed_key_rotate
+  example: mammoth dashboard embed key rotate 123 --yes --confirm 123
+- `mammoth dashboard embed lifetime set` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.embed_lifetime_set
+  example: mammoth dashboard embed lifetime set 123 --input '{"token_ttl": 1}'
+- `mammoth dashboard embed origin revoke` [high_impact/confirm_target] -> mammoth.api.dashboards.DashboardsAPI.embed_origin_revoke
+  example: mammoth dashboard embed origin revoke 123 --input '{"origin": "sample"}' --yes --confirm 123
+- `mammoth dashboard embed preview-token create` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.embed_preview_token_create
+  example: mammoth dashboard embed preview-token create 123
+- `mammoth dashboard embed secret rotate` [high_impact/confirm_target] -> mammoth.api.dashboards.DashboardsAPI.embed_secret_rotate
+  example: mammoth dashboard embed secret rotate 123 --yes --confirm 123
+- `mammoth dashboard embed usage get` [read/none] -> mammoth.api.dashboards.DashboardsAPI.embed_usage_get
+  example: mammoth dashboard embed usage get 123
 - `mammoth dashboard exemplar extract` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.extract_exemplar
   example: mammoth dashboard exemplar extract --input '{"body": {"params": {"name": "Revenue report"}}}'
 - `mammoth dashboard figure-intent` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.figure_intent
@@ -507,6 +528,8 @@ Sensitive structured input must come from a private file or pipe; never put secr
 
 - `mammoth dataset batch-data` [read/none] -> mammoth.api.datasets.DatasetsAPI.get_batch_data
   example: mammoth dataset batch-data 123 123
+- `mammoth dataset broken-rows list` [read/none] -> mammoth.api.datasets.DatasetsAPI.get_unstructured_rows
+  example: mammoth dataset broken-rows list 123
 - `mammoth dataset bulk-delete` [destructive/prompt_or_yes] -> mammoth.api.datasets.DatasetsAPI.bulk_delete
   example: mammoth dataset bulk-delete --input '{"dataset_ids": [456, 457]}'
 - `mammoth dataset bulk-update` [high_impact/confirm_target] -> mammoth.api.datasets.DatasetsAPI.bulk_update
@@ -529,6 +552,10 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth dataset find sales
 - `mammoth dataset get` [read/none] -> mammoth.api.datasets.DatasetsAPI.get
   example: mammoth dataset get 123
+- `mammoth dataset interpretation confirm` [benign_mutation/none] -> mammoth.api.datasets.DatasetsAPI.interpretation_confirm
+  example: mammoth dataset interpretation confirm 123
+- `mammoth dataset interpretation preview` [benign_mutation/none] -> mammoth.api.datasets.DatasetsAPI.interpretation_preview
+  example: mammoth dataset interpretation preview 123
 - `mammoth dataset list` [read/none] -> mammoth.api.datasets.DatasetsAPI.list
   example: mammoth dataset list
 - `mammoth dataset rename` [benign_mutation/none] -> mammoth.api.datasets.DatasetsAPI.rename
@@ -549,7 +576,7 @@ Sensitive structured input must come from a private file or pipe; never put secr
 ## external-key
 
 - `mammoth external-key create` [high_impact/confirm_target] -> mammoth.api.external_keys.ExternalKeysAPI.create
-  example: mammoth external-key create --input '{"key_type": "open_ai", "key_name": "Revenue report", "secure_key": "sample"}'
+  example: mammoth external-key create --input /private/path/request.json
 - `mammoth external-key delete` [destructive/prompt_or_yes] -> mammoth.api.external_keys.ExternalKeysAPI.delete
   example: mammoth external-key delete 123
 - `mammoth external-key get` [read/none] -> mammoth.api.external_keys.ExternalKeysAPI.get
@@ -669,6 +696,8 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth project bulk-delete --input '{"project_ids": [1]}'
 - `mammoth project bulk-update` [high_impact/confirm_target] -> mammoth.api.projects.ProjectsAPI.bulk_update
   example: mammoth project bulk-update --input '{"patch_data": {"patches": [{"op": "add", "path": "role", "value": [{"project_id": 456, "user_roles": [{"user_id": 123, "role": "project_analyst"}]}]}]}}'
+- `mammoth project check` [read/none] -> mammoth_cli.commands.project.project_check
+  example: mammoth project check 123 456
 - `mammoth project checkpoint list` [read/none] -> mammoth.api.projects.ProjectsAPI.checkpoint_list
   example: mammoth project checkpoint list 123
 - `mammoth project create` [benign_mutation/none] -> mammoth.api.projects.ProjectsAPI.create
@@ -683,6 +712,12 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth project get 123
 - `mammoth project list` [read/none] -> mammoth.api.projects.ProjectsAPI.list
   example: mammoth project list
+- `mammoth project memory add` [benign_mutation/none] -> mammoth.api.projects.ProjectsAPI.add_agent_memory
+  example: mammoth project memory add 123 --input '{"text": "sample"}'
+- `mammoth project memory list` [read/none] -> mammoth.api.projects.ProjectsAPI.list_agent_memory
+  example: mammoth project memory list 123
+- `mammoth project memory remove` [benign_mutation/none] -> mammoth.api.projects.ProjectsAPI.remove_agent_memory
+  example: mammoth project memory remove 123 --input '{"index": 1}'
 - `mammoth project pending-changes` [read/none] -> mammoth.api.projects.ProjectsAPI.pending_changes
   example: mammoth project pending-changes 123
 - `mammoth project publish-credentials` [read/none] -> mammoth.api.projects.ProjectsAPI.publish_credentials
@@ -773,7 +808,7 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth support connector create 'Revenue report'
 - `mammoth support connector delete` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.connector_delete
   example: mammoth support connector delete 123
-- `mammoth support connector list` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.connector_list
+- `mammoth support connector list` [read/none] -> mammoth.api.support.SupportAPI.connector_list
   example: mammoth support connector list
 - `mammoth support connector update` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.connector_update
   example: mammoth support connector update 123
@@ -783,7 +818,7 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth support connector-profile create 'Revenue report'
 - `mammoth support connector-profile delete` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.connector_profile_delete
   example: mammoth support connector-profile delete 123
-- `mammoth support connector-profile list` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.connector_profile_list
+- `mammoth support connector-profile list` [read/none] -> mammoth.api.support.SupportAPI.connector_profile_list
   example: mammoth support connector-profile list
 - `mammoth support connector-profile update` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.connector_profile_update
   example: mammoth support connector-profile update 123
@@ -791,7 +826,7 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth support feature create 'Revenue report'
 - `mammoth support feature delete` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.feature_delete
   example: mammoth support feature delete 123
-- `mammoth support feature list` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.feature_list
+- `mammoth support feature list` [read/none] -> mammoth.api.support.SupportAPI.feature_list
   example: mammoth support feature list
 - `mammoth support feature update` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.feature_update
   example: mammoth support feature update 123
@@ -801,7 +836,7 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth support feature-profile create 'Revenue report'
 - `mammoth support feature-profile delete` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.feature_profile_delete
   example: mammoth support feature-profile delete 123
-- `mammoth support feature-profile list` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.feature_profile_list
+- `mammoth support feature-profile list` [read/none] -> mammoth.api.support.SupportAPI.feature_profile_list
   example: mammoth support feature-profile list
 - `mammoth support feature-profile update` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.feature_profile_update
   example: mammoth support feature-profile update 123
@@ -809,17 +844,17 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth support ownership transfer 123 123
 - `mammoth support plan archive` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.plan_archive
   example: mammoth support plan archive 123
-- `mammoth support plan chargebee-list` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.plan_chargebee_list
+- `mammoth support plan chargebee-list` [read/none] -> mammoth.api.support.SupportAPI.plan_chargebee_list
   example: mammoth support plan chargebee-list
 - `mammoth support plan create` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.plan_create
   example: mammoth support plan create 'Revenue report' --input '{"monthly_price": 1.0, "is_self_serve": true}'
 - `mammoth support plan delete` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.plan_delete
   example: mammoth support plan delete 123
-- `mammoth support plan get` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.plan_get
+- `mammoth support plan get` [read/none] -> mammoth.api.support.SupportAPI.plan_get
   example: mammoth support plan get 123
-- `mammoth support plan list` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.plan_list
+- `mammoth support plan list` [read/none] -> mammoth.api.support.SupportAPI.plan_list
   example: mammoth support plan list
-- `mammoth support plan self-serve-list` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.plan_self_serve_list
+- `mammoth support plan self-serve-list` [read/none] -> mammoth.api.support.SupportAPI.plan_self_serve_list
   example: mammoth support plan self-serve-list
 - `mammoth support plan update` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.plan_update
   example: mammoth support plan update 123
@@ -827,11 +862,11 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth support plan update-storage-tiers 123 --input '{"storage_tiers": [{"sample_key": "Status"}]}'
 - `mammoth support subscription create` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.subscription_create
   example: mammoth support subscription create 123 resource-123
-- `mammoth support subscription get` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.subscription_get
+- `mammoth support subscription get` [read/none] -> mammoth.api.support.SupportAPI.subscription_get
   example: mammoth support subscription get 123
 - `mammoth support subscription update` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.subscription_update
   example: mammoth support subscription update 123 resource-123
-- `mammoth support user list-all` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.user_list_all
+- `mammoth support user list-all` [read/none] -> mammoth.api.support.SupportAPI.user_list_all
   example: mammoth support user list-all
 - `mammoth support user register` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.user_register
   example: mammoth support user register analyst@example.com --input '{"first_name": "Revenue report", "last_name": "Revenue report", "verified": true}'
@@ -841,9 +876,9 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth support workspace create 'Revenue report' --input '{"user_email": "analyst@example.com", "payment_frequency": "sample"}'
 - `mammoth support workspace delete` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.workspace_delete
   example: mammoth support workspace delete 123
-- `mammoth support workspace get` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.workspace_get
+- `mammoth support workspace get` [read/none] -> mammoth.api.support.SupportAPI.workspace_get
   example: mammoth support workspace get 123
-- `mammoth support workspace list` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.workspace_list
+- `mammoth support workspace list` [read/none] -> mammoth.api.support.SupportAPI.workspace_list
   example: mammoth support workspace list
 - `mammoth support workspace restore-access` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.workspace_restore_access
   example: mammoth support workspace restore-access 123
@@ -853,7 +888,7 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth support workspace update 123 --input '{"name": "Revenue report", "payment_frequency": "sample", "plan_id": 1}'
 - `mammoth support workspace user add` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.workspace_user_add
   example: mammoth support workspace user add 123 --input '{"email": "analyst@example.com", "role": "sample"}'
-- `mammoth support workspace user list` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.workspace_user_list
+- `mammoth support workspace user list` [read/none] -> mammoth.api.support.SupportAPI.workspace_user_list
   example: mammoth support workspace user list 123
 - `mammoth support workspace user remove` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.workspace_user_remove
   example: mammoth support workspace user remove 123 123
@@ -903,8 +938,8 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth user preference get
 - `mammoth user preference update` [benign_mutation/none] -> mammoth.api.user_profile.UserProfileAPI.update_preferences
   example: mammoth user preference update --input '{"patch": [{"op": "replace", "path": "GLOBAL.PREFERENCES.TOP_TABS", "value": []}]}'
-- `mammoth user update` [high_impact/confirm_target] -> mammoth.api.user_profile.UserProfileAPI.update
-  example: mammoth user update
+- `mammoth user update` [benign_mutation/none] -> mammoth.api.user_profile.UserProfileAPI.update
+  example: mammoth user update --input '{"first_name": "Jane"}'
 
 ## version
 
@@ -945,8 +980,16 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth view conditional-format update 123 123 --input '{"rule": {"sample_key": "Status"}}'
 - `mammoth view create` [benign_mutation/none] -> mammoth.client.ViewsResource.create
   example: mammoth view create 123
+- `mammoth view data aggregate` [read/none] -> mammoth.api.dataviews.DataviewsAPI.aggregate
+  example: mammoth view data aggregate 123 --input '{"group_by": ["Channel"], "aggregations": [{"column": "Spend", "function": "SUM", "as_name": "Total Spend"}]}'
+- `mammoth view data compare` [read/none] -> mammoth.api.dataviews.DataviewsAPI.aggregate
+  example: mammoth view data compare 111 222 --input '{"group_by": ["Campaign"], "aggregations": [{"column": "Spend", "function": "SUM", "as_name": "Spend"}]}'
+- `mammoth view data explore` [read/none] -> mammoth.api.dataviews.DataviewsAPI.explore
+  example: mammoth view data explore 123 Status 123
 - `mammoth view data get` [read/none] -> mammoth.api.dataviews.DataviewsAPI.get_data
   example: mammoth view data get 123 123
+- `mammoth view data profile` [read/none] -> mammoth.api.dataviews.DataviewsAPI.aggregate
+  example: mammoth view data profile 123 --input '{"target": "Churn"}'
 - `mammoth view data query` [read/none] -> mammoth.api.dataviews.DataviewsAPI.query_data
   example: mammoth view data query 123 123
 - `mammoth view data-check create` [benign_mutation/none] -> mammoth.api.data_checks.DataChecksAPI.create
@@ -1092,7 +1135,7 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth view transform crosstab 123 --input '{"rows": ["sample"], "pivot_column": "Status", "select": {"function": "SUM"}, "dataset_name": "Revenue report", "dataset_id": 456}'
 - `mammoth view transform date-diff` [reversible_pipeline/none] -> mammoth.View.date_diff
   example: mammoth view transform date-diff 123 --input '{"component": "YEAR", "start": "sample", "end": "sample", "dataset_id": 456}'
-- `mammoth view transform delete-columns` [reversible_pipeline/none] -> mammoth.View.delete_columns
+- `mammoth view transform delete-columns` [reversible_pipeline/prompt_or_yes] -> mammoth.View.delete_columns
   example: mammoth view transform delete-columns 123 --input '{"columns": ["Status"], "dataset_id": 456}'
 - `mammoth view transform discard-duplicates` [reversible_pipeline/none] -> mammoth.View.discard_duplicates
   example: mammoth view transform discard-duplicates 123 --input '{"dataset_id": 456}'
@@ -1118,12 +1161,16 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth view transform math 123 --input '{"expression": "price * quantity", "dataset_id": 456}'
 - `mammoth view transform pivot` [reversible_pipeline/none] -> mammoth.View.pivot
   example: mammoth view transform pivot 123 --input '{"group_by": ["sample"], "aggregations": [{"column": "Status", "function": "SUM"}], "dataset_id": 456}'
+- `mammoth view transform rename-columns` [benign_mutation/none] -> mammoth.View.rename_columns
+  example: mammoth view transform rename-columns 123 --input '{"renames": {"cust_id": "Customer ID"}, "dataset_id": 456}'
 - `mammoth view transform replace` [reversible_pipeline/none] -> mammoth.View.replace_values
   example: mammoth view transform replace 123 --input '{"columns": ["Status"], "find": "sample", "replace": "sample", "dataset_id": 456}'
 - `mammoth view transform set-values` [reversible_pipeline/none] -> mammoth.View.set_values
   example: mammoth view transform set-values 123 --input '{"values": [{"value": "sample"}], "existing_column": "Status", "condition": {"column": "Status", "operator": "IS_EMPTY"}, "dataset_id": 456}'
 - `mammoth view transform small-large` [reversible_pipeline/none] -> mammoth.View.small_large
   example: mammoth view transform small-large 123 --input '{"function": "SMALL", "columns": ["Status"], "dataset_id": 456}'
+- `mammoth view transform sort` [benign_mutation/none] -> mammoth.View.sort_rows
+  example: mammoth view transform sort 123 --input '{"order_by": [["Revenue", "DESC"]], "dataset_id": 456}'
 - `mammoth view transform split` [reversible_pipeline/none] -> mammoth.View.split_column
   example: mammoth view transform split 123 --input '{"column": "Status", "delimiter": "sample", "new_columns": [{"name": "Revenue report"}], "dataset_id": 456}'
 - `mammoth view transform substring` [reversible_pipeline/none] -> mammoth.View.substring
@@ -1230,8 +1277,8 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth workspace storage-breakdown
 - `mammoth workspace update` [high_impact/confirm_target] -> mammoth.api.workspace.WorkspaceAPI.update
   example: mammoth workspace update 123 --input '{"patches": [{"op": "replace", "path": "name", "value": "sample"}]}'
-- `mammoth workspace user add` [benign_mutation/none] -> mammoth.api.workspaces.WorkspacesAPI.user_add
-  example: mammoth workspace user add --input '{"email_ids": ["analyst@example.com"]}'
+- `mammoth workspace user add` [benign_mutation/yes_always] -> mammoth.api.workspaces.WorkspacesAPI.user_add
+  example: mammoth workspace user add --input '{"email_ids": ["analyst@example.com"]}' --yes
 - `mammoth workspace user get` [read/none] -> mammoth.api.workspace.WorkspaceAPI.get_user
   example: mammoth workspace user get resource-123
 - `mammoth workspace user list` [read/none] -> mammoth.api.workspace.WorkspaceAPI.list_users

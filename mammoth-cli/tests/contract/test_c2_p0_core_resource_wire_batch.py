@@ -32,8 +32,18 @@ def _bind(monkeypatch: pytest.MonkeyPatch, module: Any, service: Any):
     yield
 
 
-def _path(api: Any) -> str:
-    return api.last().path.removeprefix("/api/v2")
+#: Commands whose handler issues a trailing read after its own request; the
+#: command's own wire call is that many requests back from the last one.
+#: dataset.get also reads the dataview count for its "hint" (T1-I-13).
+_TRAILING_READS = {"dataset.get": 1}
+
+
+def _own_request(api: Any, command: str) -> Any:
+    return api.requests[-1 - _TRAILING_READS.get(command, 0)]
+
+
+def _path(api: Any, command: str) -> str:
+    return _own_request(api, command).path.removeprefix("/api/v2")
 
 
 def test_core_resource_reads_and_lifecycle_wire(
@@ -95,4 +105,7 @@ def test_core_resource_reads_and_lifecycle_wire(
     for module, command, args, expected, method in cases:
         with _bind(monkeypatch, module, service):
             getattr(module, command.replace(".", "_"))(_inv(command, args))
-        assert (api.last().method, _path(api)) == (method, expected), command
+        assert (_own_request(api, command).method, _path(api, command)) == (
+            method,
+            expected,
+        ), command

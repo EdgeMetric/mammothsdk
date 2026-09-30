@@ -1,17 +1,23 @@
 # Dashboards
 
-Release has retired `dashboard create` (legacy engine; HTTP 409
-`4DASH012`): `schema find "dashboard create"` lists it first, do not use it.
-Create with `create-blank` (or `v3 generate` when the task allows an AI route).
+`dashboard create` (the legacy AI-generation engine) does not exist as a
+command: it has no handler in current apiv2 (always 404s; historically HTTP
+409 `4DASH012 DASHBOARD_LEGACY_CREATION_RETIRED`). Build a board from one
+sentence with `v3 generate`, and change it with `chat edit`; author a canvas by
+hand (`create-blank`, `canvas save`, `pages add`) only when asked to.
 `dashboard source list` is an observed blocker on release (see
 capabilities); verify the view binding with `dashboard get DASHBOARD_ID`
-(`data.dataview_id`) instead.
+(`data.sources`) instead.
 
 ```bash
-mammoth schema get dashboard.create-blank
-mammoth dashboard create-blank --input INPUT_JSON --project PROJECT_ID
+mammoth dashboard v3 generate --input '{"body": {"params": {"intent": "Monthly revenue by region, with top customers", "dataview_id": VIEW_ID}}}'
+mammoth dashboard chat edit DASHBOARD_ID --input '{"body": {"params": {"prompt": "Add a chart of orders by status"}}}'
 mammoth dashboard get DASHBOARD_ID
 ```
+
+`v3 generate` waits for the bake (about 30 s) and returns the baked canvas;
+`chat edit` returns `changed` and a one-line `message`. Quote one number from
+the board before you report it done.
 
 Discover page/widget/publish routes and verify the binding, draft/published
 data and terminal jobs. Use only returned IDs and schema confirmation policy;
@@ -65,7 +71,43 @@ correct aggregation for a "distinct people" card under a date filter);
 ID --input '{"body": {"params": {"pages": [{"title": ..., "focus": {...},
 "charts": [...]}]}}}'` adds a page, but that route runs through the LLM
 guard and may drop a unit it cannot evidence (it says so in `data.message`);
-`canvas save` keeps what you wrote.
+`canvas save` keeps what you wrote. When the route refuses a chart (for
+example a `pie` that the data does not support), `data.chart_check.refused`
+names it. A new page that got no charts is removed, and
+`data.chart_check.removed_pages` lists it. Add a chart of a different kind
+(`hbar`, `line`, `table`) for that page.
+
+## Put the money on the board
+
+If the data has money (a price, an amount, revenue or cost), the dashboard
+must show it. A board that shows only counts or quantities has left out the
+number the user most likely wants.
+
+- A money column must be `NUMERIC` first. `view data get` flags a money
+  column that is stored as text in `column_warnings`.
+- A unit price is not revenue. Do not sum a price. If the data has a
+  quantity and a unit price, add a revenue column before you build the
+  board, then chart the sum of that column:
+
+```bash
+mammoth view transform math VIEW_ID --project PROJECT_ID \
+  --input '{"dataset_id":DATASET_ID,"expression":"qty * price","new_column":"revenue"}'
+```
+
+- Add every column the board needs before `create-blank`. A dashboard sees
+  only the columns the view had when the dashboard was made: `pages add`
+  refuses a later column ("isn't a measure in this data"). If you added it
+  after, make a new dashboard and delete the old one if you made it for this
+  task. The upload result's `before_dashboard` names the column to add.
+- Put revenue in a KPI (`focus.kpis`, `agg` `sum`, `unit.prefix` for the
+  currency) and in one or more charts (revenue by product, by segment, by
+  month). Rows with an empty price give an empty revenue. Say how many there
+  are in your report.
+- `create-blank`, `canvas save` and `pages add` return `deliverable_check`:
+  `money_not_shown` (with the `math` command in `fix`), `unit_price_summed`,
+  `columns_not_on_dashboard` (view columns added after the dashboard was
+  made, with the `create-blank` command in `fix`), and one `blank_values` entry for each column on the board that has blanks.
+  Fix each warning, or say in your report why you kept it.
 
 **Read the bindings back, then the numbers.** `dashboard canvas get` returns
 `data.meta.figures` — `"p1:kpi:2": {"descriptors": {"value": "<id>"}}` per
@@ -117,4 +159,37 @@ before that they return 404 `DASHBOARD_NOT_FOUND`. Legacy widget routes
 `data published`) answer 409 `DASHBOARD_WRONG_ENGINE` on a v3 dashboard.
 `video export` needs a motion-story dashboard. Revert the share
 (`type_of_auth: "mammoth"`) before trashing a temporary dashboard.
+
+## Embedding a board on a third-party page
+
+`dashboard embed config get DASHBOARD_ID` reads the board's embed settings
+(mode, origin allowlist, the `embed_url`/`sdk_url` a snippet needs); the first
+read on a non-public board without a key auto-mints one, so there is always a
+key to copy. `dashboard embed config set DASHBOARD_ID --yes --confirm
+DASHBOARD_ID --input '{"allow_any_origin": false, "allowed_origins":
+["https://intranet.example.com"]}'` restricts which sites may frame it —
+`allow_any_origin` defaults to true (any site). `mode: "signed"` requires a
+host-signed token instead of the board's key, and only applies while the
+board has no public link. `config set` is a `confirm_target` command, like
+`dashboard archive`: it can expose the board outside Mammoth (enabling
+embedding or widening the allowlist) or break every live embed on that board
+(disabling it or narrowing the allowlist).
+
+`dashboard embed key rotate DASHBOARD_ID --yes --confirm DASHBOARD_ID`
+replaces the board's embed key (the old key keeps working for 24h unless
+`keep_previous: false` is passed) — also `confirm_target`. `dashboard embed
+origin revoke DASHBOARD_ID --yes --confirm DASHBOARD_ID --input
+'{"origin": "https://old.example.com"}'` removes one origin from the
+allowlist without touching the rest — also `confirm_target`: it immediately
+breaks the embed on that origin's site. `dashboard embed usage get
+DASHBOARD_ID` reports per-origin render counts and health from the embed
+registry. `dashboard embed preview-token create DASHBOARD_ID` mints a
+short-lived signed token for testing a row-level-security-scoped embed
+before publishing.
+
+Two settings are workspace-scoped, not board-scoped: `dashboard embed secret
+rotate WORKSPACE_ID --yes --confirm WORKSPACE_ID` (also `confirm_target`;
+returns the plaintext signing secret once, never on a read) and `dashboard
+embed lifetime set WORKSPACE_ID --input '{"token_ttl": 900}'` (60-3600
+seconds, how long a minted embed viewer session lives).
 

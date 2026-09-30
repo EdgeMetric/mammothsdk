@@ -1,4 +1,4 @@
-"""Independent five-shape M2 command-contract pilot oracles."""
+"""Independent four-shape M2 command-contract pilot oracles."""
 
 from __future__ import annotations
 
@@ -27,7 +27,6 @@ from mammoth_cli.services.testing import FakeMammothService
 from mammoth_cli.testing import login_default_profile
 
 from .m2_oracles import (
-    ASYNC_DASHBOARD_ORACLE,
     FOREIGN_LOOKUP_ORACLE,
     MATH_CONDITION_ORACLE,
     UPLOAD_INPUT_ORACLE,
@@ -143,27 +142,6 @@ def test_foreign_lookup_forwards_new_column_type(fake_service, tmp_path: Path) -
     assert fake_service.view_call_log == [(oracle["view_id"], oracle["method"], document)]
 
 
-def test_async_dashboard_generation_preserves_job_response(fake_service, tmp_path: Path) -> None:
-    oracle = ASYNC_DASHBOARD_ORACLE
-    fake_service.responses[oracle["sdk_symbol"]] = oracle["response"]
-    data, _ = dashboard_cmd.dashboard_create(
-        _inv(
-            "dashboard.create",
-            extra_args=[oracle["kwargs"]["intent"]],
-            input_file=_write(
-                tmp_path,
-                {
-                    "source": oracle["kwargs"]["source"],
-                    "enable_filters": oracle["kwargs"]["enable_filters"],
-                    "enable_pages": oracle["kwargs"]["enable_pages"],
-                },
-            ),
-        )
-    )
-    assert fake_service.call_log == [(oracle["sdk_symbol"], oracle["kwargs"])]
-    assert data == oracle["response"]
-
-
 def test_contract_is_immutable_and_rejects_an_undeclared_binding() -> None:
     contract = resolve_command_contract("view.transform.lookup")
     assert contract is not None
@@ -183,12 +161,11 @@ def test_contract_rejects_an_undeclared_context_binding() -> None:
 
 
 def test_pilot_adapters_are_explicit_and_bound_to_registered_handlers() -> None:
-    """The five-case pilot is explicit; it is not a claim of full migration."""
+    """The four-case pilot is explicit; it is not a claim of full migration."""
     assert PILOT_COMMANDS == {
         "file.upload",
         "view.transform.math",
         "view.transform.lookup",
-        "dashboard.create",
         "dashboard.source.list",
     }
     for command_id in PILOT_COMMANDS:

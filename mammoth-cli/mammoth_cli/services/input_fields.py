@@ -24,6 +24,12 @@ _HANDLER_OWNED_FIELDS: dict[str, frozenset[str]] = {
     # These handlers supply the SDK dataview_id from the VIEW_ID positional.
     "view.exportable-config.get": frozenset({"dataview_id"}),
     "view.exportable-config.apply": frozenset({"dataview_id"}),
+    # The list summary picks its own ``fields``; the get handler returns the standard set.
+    "dataset.list": frozenset({"fields"}),
+    "dataset.get": frozenset({"fields"}),
+    # ``sort`` is the backend's internal result-column pairs; the CLI takes
+    # ``order_by`` (result labels) and maps it, so a raw ``sort`` would be dropped.
+    "view.data.aggregate": frozenset({"sort"}),
 }
 
 # CLI-only commands whose complete request is carried by positionals/context.
@@ -41,6 +47,10 @@ _CLOSED_ZERO_INPUT_COMMANDS = frozenset({"config.get"})
 _EXAMPLE_INPUT_HINTS: dict[str, dict[str, Any]] = {
     # Every field is optional; the useful call narrows to failures.
     "log.tail": {"errors_only": True, "limit": 20},
+    # first_name/last_name are each individually optional (either one alone is
+    # a valid update), so neither is `required`; show one so the example is a
+    # real call rather than the bare command, which the handler rejects.
+    "user.update": {"first_name": "Jane"},
     # The signature marks the target column and the condition optional, but a
     # SET with neither ``existing_column`` nor ``new_column`` has no target and
     # an unconditional SET rewrites every row; show the verified conditional form.
@@ -48,6 +58,9 @@ _EXAMPLE_INPUT_HINTS: dict[str, dict[str, Any]] = {
         "existing_column": "Status",
         "condition": {"column": "Status", "operator": "IS_EMPTY"},
     },
+    # View display settings: real column names read better than sample keys.
+    "view.transform.rename-columns": {"renames": {"cust_id": "Customer ID"}},
+    "view.transform.sort": {"order_by": [["Revenue", "DESC"]]},
     # The backend requires integer resource ids ("resource_ids must be
     # comma-separated integers"); the SDK annotation is a plain list[str].
     "project.resource-dependencies": {"resource_ids": [456]},

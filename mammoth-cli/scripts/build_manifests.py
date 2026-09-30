@@ -44,6 +44,26 @@ from _sdk_catalog import CLI_ONLY_COMMANDS, EXTRA_OP_HINTS, load_sdk_catalog  # 
 from mammoth_cli.services.positionals import positionals_for  # noqa: E402
 
 REVIEWER = "primary"
+EDITS_TARGET_SOURCE = MANIFESTS / "edits-target.source.yaml"
+
+
+def _load_edits_target_commands() -> set[str]:
+    import yaml
+
+    data = yaml.safe_load(EDITS_TARGET_SOURCE.read_text(encoding="utf-8"))
+    return set(data["edits_target_commands"])
+
+
+def _with_edits_target(record: dict[str, Any], edits: set[str]) -> dict[str, Any]:
+    """Return the record with ``edits_target`` placed right after ``mutation_class``."""
+    if record["mutation_class"] == "read":
+        return record
+    out: dict[str, Any] = {}
+    for key, value in record.items():
+        out[key] = value
+        if key == "mutation_class":
+            out["edits_target"] = record["command_id"] in edits
+    return out
 
 
 def _yaml_dump(data: Any) -> str:
@@ -90,7 +110,11 @@ def _operations_with_job_id(document: dict[str, Any]) -> set[str]:
 
 def derive_mutation(command_id: str, method: str) -> str:
     group = command_id.split(".", 1)[0]
-    if group in HIGH_IMPACT_GROUPS:
+    # A GET-backed billing/support command never mutates anything; only a
+    # write within these groups is high-impact (item 11: billing.*.get/list
+    # and support.*.get/list carried high_impact/confirm_target regardless
+    # of HTTP method).
+    if group in HIGH_IMPACT_GROUPS and method not in READ_METHODS:
         return "high_impact"
     if command_id in {"workspace.delete", "user.delete-account", "support.ownership.transfer"}:
         return "high_impact"
@@ -235,8 +259,10 @@ def build_command_record(
         "positionals": [p.as_manifest() for p in positionals],
         "options": [],
         "sdk_symbol": sdk_symbol,
-        "sdk_conversion": (catalog or {}).get("sdk_conversion")
-        or f"Call {sdk_symbol} with validated request fields.",
+        "sdk_conversion": (
+            (catalog or {}).get("sdk_conversion")
+            or f"Call {sdk_symbol} with validated request fields."
+        ),
         "request_model": f"{base}Request",
         "result_model": f"{base}Result",
         "mutation_class": mutation,
@@ -249,10 +275,14 @@ def build_command_record(
         "contract_fixture": None,
         "required_fixture_guard": None,
         "secret_fields": list((catalog or {}).get("secret_fields") or []),
-        "human_example": (catalog or {}).get("human_example")
-        or f"mammoth {command_path}{required_metavars} --help",
-        "agent_example": (catalog or {}).get("agent_example")
-        or f"mammoth {command_path}{positional_samples} --output json --no-input",
+        "human_example": (
+            (catalog or {}).get("human_example")
+            or f"mammoth {command_path}{required_metavars} --help"
+        ),
+        "agent_example": (
+            (catalog or {}).get("agent_example")
+            or f"mammoth {command_path}{positional_samples} --output json --no-input"
+        ),
         "unit_tests": [f"UT-{op_token}"],
         "contract_tests": [f"CT-{op_token}-HUMAN", f"CT-{op_token}-JSON", f"CT-{op_token}-ERROR"],
         "draft_test": None,
@@ -556,9 +586,25 @@ def build() -> dict[str, int]:
                 live_exemption_reason=(
                     "Release-only multipart binding; no approved workbook fixture."
                 ),
-                known_restrictions="Release snapshot provenance only; unverified against release.",
+                known_restrictions=(
+                    "Release snapshot provenance only; unverified against release. "
+                    "These take a workbook file from the local disk. Inside the Mammoth app the "
+                    "user's file cannot reach the agent: send the user to the dashboard import "
+                    "page at /workspaces/{workspace_id}/publish/import (Publish → Import), where "
+                    "they upload the .pbix/.twb/.twbx themselves."
+                ),
                 contract_tests=[f"mammoth-cli/tests/contract/{test}.py::{test}"],
             )
+
+    edits = _load_edits_target_commands()
+    unknown = sorted(
+        c for c in edits if c not in commands or commands[c]["mutation_class"] == "read"
+    )
+    if unknown:
+        raise SystemExit(
+            f"edits-target.source.yaml lists non-mutating or unknown commands: {unknown}"
+        )
+    commands = {cid: _with_edits_target(rec, edits) for cid, rec in commands.items()}
 
     # write grouped by top-level group
     grouped: dict[str, list[dict[str, Any]]] = defaultdict(list)

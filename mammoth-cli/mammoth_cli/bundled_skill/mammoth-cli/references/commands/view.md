@@ -212,6 +212,36 @@ Result: `ViewDataCheckUpdateResult`; mutation `benign_mutation`, confirmation `n
 
 Status on release: observed blocker — backend_error: PATCH with the schema's documented {op: command, path: enable|disable, value: null} shape returns HTTP 500 empty body (CLI outcome_unknown, exit 7) while the mutatio. Re-check before relying on it.
 
+### `view.data.aggregate`
+
+Run: `mammoth view data aggregate`. Exact input fields: `mammoth schema get view.data.aggregate`.
+
+Example: `mammoth view data aggregate 123 --input '{"group_by": ["Channel"], "aggregations": [{"column": "Spend", "function": "SUM", "as_name": "Total Spend"}]}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `ViewDataAggregateResult`; mutation `read`, confirmation `none`, wait policy `always_wait`.
+
+Status on release: untried; no live run recorded.
+
+### `view.data.compare`
+
+Run: `mammoth view data compare`. Exact input fields: `mammoth schema get view.data.compare`.
+
+Example: `mammoth view data compare 111 222 --input '{"group_by": ["Campaign"], "aggregations": [{"column": "Spend", "function": "SUM", "as_name": "Spend"}]}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `ViewDataCompareResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `view.data.explore`
+
+Run: `mammoth view data explore`. Exact input fields: `mammoth schema get view.data.explore`.
+
+Example: `mammoth view data explore 123 Status 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `ViewDataExploreResult`; mutation `read`, confirmation `none`, wait policy `always_wait`.
+
+Status on release: untried; no live run recorded.
+
 ### `view.data.get`
 
 Run: `mammoth view data get`. Exact input fields: `mammoth schema get view.data.get`.
@@ -221,6 +251,16 @@ Example: `mammoth view data get 123 123`. Placeholders are illustrative; resolve
 Result: `ViewDataGetResult`; mutation `read`, confirmation `none`, wait policy `always_wait`.
 
 Status on release: ran once on CLI 2.0.28 — ILG simulation 2026-09-19: exit 0 on release with CLI 2.0.28. Paged reads (limit up to 500) used for every value check; envelope data.data rows keyed by display name. Single invocation only.
+
+### `view.data.profile`
+
+Run: `mammoth view data profile`. Exact input fields: `mammoth schema get view.data.profile`.
+
+Example: `mammoth view data profile 123 --input '{"target": "Churn"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `ViewDataProfileResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
 
 ### `view.data.query`
 
@@ -762,7 +802,7 @@ Example: `mammoth view task add 123 --input '{"task_spec": {"DATAVIEW_ID": 123, 
 
 Result: `ViewTaskAddResult`; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`.
 
-Status on release: ran once on CLI 2.0.18 — golden-data check golden-20260919 (CLI 2.0.18): typed transforms bulk-replace, convert-type, discard-duplicates, filter, join, pivot, set-values, text each run once on an owned fixture on release and read back with view data get against a known answer (values…
+Status on release: ran once on CLI 2.0.40 — golden-data check golden-20260919 (CLI 2.0.18): typed transforms bulk-replace, convert-type, discard-duplicates, filter, join, pivot, set-values, text each run once on an owned fixture on release and read back with view data get against a known answer (values…
 
 ### `view.task.delete`
 
@@ -813,306 +853,6 @@ Example: `mammoth view task update 123 123 --input '{"task_spec": {"DATAVIEW_ID"
 Result: `ViewTaskUpdateResult`; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`.
 
 Status on release: ran once on CLI 2.0.15 — re-verification 2026-09-18: exit 0 on release with CLI 2.0.15. Fix held: {"patches":[{"op":"replace","path":"params","value":task_spec}]} shape accepted; response: {"data":{"future_id":365,"has_error":false,"status":"processing","type_of_modification":"edit_r…
-
-### `view.transform.add-column`
-
-Run: `mammoth view transform add-column`. Exact input fields: `mammoth schema get view.transform.add-column`.
-
-Example: `mammoth view transform add-column 123 --input '{"name": "Revenue report", "dataset_id": 456}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
-
-Result: `ViewTransformAddColumnResult`; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`.
-
-Status on release: untried; it submits through `view.task.add`, but this transform was not among those run.
-
-### `view.transform.add-sql`
-
-Run: `mammoth view transform add-sql`. Exact input fields: `mammoth schema get view.transform.add-sql`.
-
-Example: `mammoth view transform add-sql 123 --input '{"query": "SELECT region, SUM(revenue) AS revenue FROM \"view:123\" GROUP BY region", "dataset_id": 456}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
-
-Result: `ViewTransformAddSqlResult`; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`.
-
-Status on release: ran once on CLI 2.0.18 through `view.task.add` and was read back with `view data get`; other inputs for this transform are untried.
-
-### `view.transform.ai`
-
-Run: `mammoth view transform ai`. Exact input fields: `mammoth schema get view.transform.ai`.
-
-Example: `mammoth view transform ai 123 --input '{"prompt": "Summarize revenue by region", "context_columns": ["Status"], "dataset_id": 456}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
-
-Result: `ViewTransformAiResult`; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`.
-
-Status on release: untried; it submits through `view.task.add`, but this transform was not among those run.
-
-### `view.transform.bulk-replace`
-
-Run: `mammoth view transform bulk-replace`. Exact input fields: `mammoth schema get view.transform.bulk-replace`.
-
-Example: `mammoth view transform bulk-replace 123 --input '{"columns": ["Status"], "mapping": [{"search": ["sample"], "replace": "sample"}], "dataset_id": 456}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
-
-Result: `ViewTransformBulkReplaceResult`; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`.
-
-Status on release: ran once on CLI 2.0.18 through `view.task.add` and was read back with `view data get`; other inputs for this transform are untried.
-
-### `view.transform.combine-columns`
-
-Run: `mammoth view transform combine-columns`. Exact input fields: `mammoth schema get view.transform.combine-columns`.
-
-Example: `mammoth view transform combine-columns 123 --input '{"sources": ["Status"], "dataset_id": 456}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
-
-Result: `ViewTransformCombineColumnsResult`; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`.
-
-Status on release: untried; it submits through `view.task.add`, but this transform was not among those run.
-
-### `view.transform.convert-type`
-
-Run: `mammoth view transform convert-type`. Exact input fields: `mammoth schema get view.transform.convert-type`.
-
-Example: `mammoth view transform convert-type 123 --input '{"conversions": [{"column": "Status", "to": "TEXT"}], "dataset_id": 456}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
-
-Result: `ViewTransformConvertTypeResult`; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`.
-
-Status on release: ran once on CLI 2.0.18 through `view.task.add` and was read back with `view data get`; other inputs for this transform are untried.
-
-### `view.transform.copy-columns`
-
-Run: `mammoth view transform copy-columns`. Exact input fields: `mammoth schema get view.transform.copy-columns`.
-
-Example: `mammoth view transform copy-columns 123 --input '{"copies": [{"source": "Status"}], "dataset_id": 456}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
-
-Result: `ViewTransformCopyColumnsResult`; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`.
-
-Status on release: untried; it submits through `view.task.add`, but this transform was not among those run.
-
-### `view.transform.crosstab`
-
-Run: `mammoth view transform crosstab`. Exact input fields: `mammoth schema get view.transform.crosstab`.
-
-Example: `mammoth view transform crosstab 123 --input '{"rows": ["sample"], "pivot_column": "Status", "select": {"function": "SUM"}, "dataset_name": "Revenue report", "dataset_id": 456}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
-
-Result: `ViewTransformCrosstabResult`; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`.
-
-Status on release: untried; it submits through `view.task.add`, but this transform was not among those run.
-
-### `view.transform.date-diff`
-
-Run: `mammoth view transform date-diff`. Exact input fields: `mammoth schema get view.transform.date-diff`.
-
-Example: `mammoth view transform date-diff 123 --input '{"component": "YEAR", "start": "sample", "end": "sample", "dataset_id": 456}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
-
-Result: `ViewTransformDateDiffResult`; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`.
-
-Status on release: untried; it submits through `view.task.add`, but this transform was not among those run.
-
-### `view.transform.delete-columns`
-
-Run: `mammoth view transform delete-columns`. Exact input fields: `mammoth schema get view.transform.delete-columns`.
-
-Example: `mammoth view transform delete-columns 123 --input '{"columns": ["Status"], "dataset_id": 456}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
-
-Result: `ViewTransformDeleteColumnsResult`; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`.
-
-Status on release: untried; it submits through `view.task.add`, but this transform was not among those run.
-
-### `view.transform.discard-duplicates`
-
-Run: `mammoth view transform discard-duplicates`. Exact input fields: `mammoth schema get view.transform.discard-duplicates`.
-
-Example: `mammoth view transform discard-duplicates 123 --input '{"dataset_id": 456}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
-
-Result: `ViewTransformDiscardDuplicatesResult`; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`.
-
-Status on release: ran once on CLI 2.0.18 through `view.task.add` and was read back with `view data get`; other inputs for this transform are untried.
-
-### `view.transform.extract-date`
-
-Run: `mammoth view transform extract-date`. Exact input fields: `mammoth schema get view.transform.extract-date`.
-
-Example: `mammoth view transform extract-date 123 --input '{"column": "Status", "component": "year", "dataset_id": 456}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
-
-Result: `ViewTransformExtractDateResult`; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`.
-
-Status on release: ran once on CLI 2.0.18 through `view.task.add` and was read back with `view data get`; other inputs for this transform are untried.
-
-### `view.transform.fill-missing`
-
-Run: `mammoth view transform fill-missing`. Exact input fields: `mammoth schema get view.transform.fill-missing`.
-
-Example: `mammoth view transform fill-missing 123 --input '{"column": "Status", "direction": "FIRST_VALUE", "dataset_id": 456}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
-
-Result: `ViewTransformFillMissingResult`; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`.
-
-Status on release: ran once on CLI 2.0.18 through `view.task.add` and was read back with `view data get`; other inputs for this transform are untried.
-
-### `view.transform.filter`
-
-Run: `mammoth view transform filter`. Exact input fields: `mammoth schema get view.transform.filter`.
-
-Example: `mammoth view transform filter 123 --input '{"condition": {"column": "Status", "operator": "EQ", "value": "Active"}, "dataset_id": 456}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
-
-Result: `ViewTransformFilterResult`; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`.
-
-Status on release: ran once on CLI 2.0.18 through `view.task.add` and was read back with `view data get`; other inputs for this transform are untried.
-
-### `view.transform.generate-sql`
-
-Run: `mammoth view transform generate-sql`. Exact input fields: `mammoth schema get view.transform.generate-sql`.
-
-Example: `mammoth view transform generate-sql 123 --input '{"intent": "Summarize revenue by region", "dataset_id": 456}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
-
-Result: `ViewTransformGenerateSqlResult`; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`.
-
-Status on release: untried; it submits through `view.task.add`, but this transform was not among those run.
-
-### `view.transform.increment-date`
-
-Run: `mammoth view transform increment-date`. Exact input fields: `mammoth schema get view.transform.increment-date`.
-
-Example: `mammoth view transform increment-date 123 --input '{"column": "Status", "delta": {}, "dataset_id": 456}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
-
-Result: `ViewTransformIncrementDateResult`; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`.
-
-Status on release: untried; it submits through `view.task.add`, but this transform was not among those run.
-
-### `view.transform.join`
-
-Run: `mammoth view transform join`. Exact input fields: `mammoth schema get view.transform.join`.
-
-Example: `mammoth view transform join 123 --input '{"foreign_view": 1, "join_type": "INNER", "on": [{"left": "sample", "right": "sample"}], "select": ["sample"], "dataset_id": 456, "foreign_dataset_id": 457}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
-
-Result: `ViewTransformJoinResult`; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`.
-
-Status on release: ran once on CLI 2.0.18 through `view.task.add` and was read back with `view data get`; other inputs for this transform are untried.
-
-### `view.transform.json-extract`
-
-Run: `mammoth view transform json-extract`. Exact input fields: `mammoth schema get view.transform.json-extract`.
-
-Example: `mammoth view transform json-extract 123 --input '{"column": "Status", "dataset_id": 456}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
-
-Result: `ViewTransformJsonExtractResult`; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`.
-
-Status on release: untried; it submits through `view.task.add`, but this transform was not among those run.
-
-### `view.transform.limit-rows`
-
-Run: `mammoth view transform limit-rows`. Exact input fields: `mammoth schema get view.transform.limit-rows`.
-
-Example: `mammoth view transform limit-rows 123 --input '{"n": 1, "dataset_id": 456}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
-
-Result: `ViewTransformLimitRowsResult`; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`.
-
-Status on release: untried; it submits through `view.task.add`, but this transform was not among those run.
-
-### `view.transform.lookup`
-
-Run: `mammoth view transform lookup`. Exact input fields: `mammoth schema get view.transform.lookup`.
-
-Example: `mammoth view transform lookup 123 --input '{"source": "Status", "lookup_view_id": 1, "key": "Status", "value": "sample", "dataset_id": 456, "lookup_dataset_id": 457}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
-
-Result: `ViewTransformLookupResult`; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`.
-
-Status on release: untried; it submits through `view.task.add`, but this transform was not among those run.
-
-### `view.transform.math`
-
-Run: `mammoth view transform math`. Exact input fields: `mammoth schema get view.transform.math`.
-
-Example: `mammoth view transform math 123 --input '{"expression": "price * quantity", "dataset_id": 456}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
-
-Result: `ViewTransformMathResult`; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`.
-
-Status on release: untried; it submits through `view.task.add`, but this transform was not among those run.
-
-### `view.transform.pivot`
-
-Run: `mammoth view transform pivot`. Exact input fields: `mammoth schema get view.transform.pivot`.
-
-Example: `mammoth view transform pivot 123 --input '{"group_by": ["sample"], "aggregations": [{"column": "Status", "function": "SUM"}], "dataset_id": 456}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
-
-Result: `ViewTransformPivotResult`; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`.
-
-Status on release: ran once on CLI 2.0.18 through `view.task.add` and was read back with `view data get`; other inputs for this transform are untried.
-
-### `view.transform.replace`
-
-Run: `mammoth view transform replace`. Exact input fields: `mammoth schema get view.transform.replace`.
-
-Example: `mammoth view transform replace 123 --input '{"columns": ["Status"], "find": "sample", "replace": "sample", "dataset_id": 456}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
-
-Result: `ViewTransformReplaceResult`; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`.
-
-Status on release: untried; it submits through `view.task.add`, but this transform was not among those run.
-
-### `view.transform.set-values`
-
-Run: `mammoth view transform set-values`. Exact input fields: `mammoth schema get view.transform.set-values`.
-
-Example: `mammoth view transform set-values 123 --input '{"values": [{"value": "sample"}], "existing_column": "Status", "condition": {"column": "Status", "operator": "IS_EMPTY"}, "dataset_id": 456}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
-
-Result: `ViewTransformSetValuesResult`; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`.
-
-Status on release: ran once on CLI 2.0.18 through `view.task.add` and was read back with `view data get`; other inputs for this transform are untried.
-
-### `view.transform.small-large`
-
-Run: `mammoth view transform small-large`. Exact input fields: `mammoth schema get view.transform.small-large`.
-
-Example: `mammoth view transform small-large 123 --input '{"function": "SMALL", "columns": ["Status"], "dataset_id": 456}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
-
-Result: `ViewTransformSmallLargeResult`; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`.
-
-Status on release: untried; it submits through `view.task.add`, but this transform was not among those run.
-
-### `view.transform.split`
-
-Run: `mammoth view transform split`. Exact input fields: `mammoth schema get view.transform.split`.
-
-Example: `mammoth view transform split 123 --input '{"column": "Status", "delimiter": "sample", "new_columns": [{"name": "Revenue report"}], "dataset_id": 456}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
-
-Result: `ViewTransformSplitResult`; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`.
-
-Status on release: untried; it submits through `view.task.add`, but this transform was not among those run.
-
-### `view.transform.substring`
-
-Run: `mammoth view transform substring`. Exact input fields: `mammoth schema get view.transform.substring`.
-
-Example: `mammoth view transform substring 123 --input '{"column": "Status", "dataset_id": 456}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
-
-Result: `ViewTransformSubstringResult`; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`.
-
-Status on release: untried; it submits through `view.task.add`, but this transform was not among those run.
-
-### `view.transform.text`
-
-Run: `mammoth view transform text`. Exact input fields: `mammoth schema get view.transform.text`.
-
-Example: `mammoth view transform text 123 --input '{"columns": ["Status"], "dataset_id": 456}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
-
-Result: `ViewTransformTextResult`; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`.
-
-Status on release: ran once on CLI 2.0.18 through `view.task.add` and was read back with `view data get`; other inputs for this transform are untried.
-
-### `view.transform.unnest`
-
-Run: `mammoth view transform unnest`. Exact input fields: `mammoth schema get view.transform.unnest`.
-
-Example: `mammoth view transform unnest 123 --input '{"columns": ["Status"], "dataset_id": 456}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
-
-Result: `ViewTransformUnnestResult`; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`.
-
-Status on release: untried; it submits through `view.task.add`, but this transform was not among those run.
-
-### `view.transform.window`
-
-Run: `mammoth view transform window`. Exact input fields: `mammoth schema get view.transform.window`.
-
-Example: `mammoth view transform window 123 --input '{"function": "ROW_NUMBER", "dataset_id": 456}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
-
-Result: `ViewTransformWindowResult`; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`.
-
-Status on release: ran once on CLI 2.0.18 through `view.task.add` and was read back with `view data get`; other inputs for this transform are untried.
 
 ### `view.trash`
 

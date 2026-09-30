@@ -213,8 +213,10 @@ def test_connector_ds_config_executes_exact_body(
 
     request = api.last()
     assert request.method == "POST"
+    # connector_key travels base64-encoded on the wire (server decodes it via
+    # decode_connector_key); "postgres" -> "cG9zdGdyZXM=".
     assert request.path == (
-        "/api/v2/workspaces/4/projects/180/connectors/postgres/connections/warehouse/ds_configs"
+        "/api/v2/workspaces/4/projects/180/connectors/cG9zdGdyZXM=/connections/warehouse/ds_configs"
     )
     assert request.json_body == {
         "query": "SELECT sentinel_value",

@@ -119,7 +119,7 @@ def test_core_read_batch02_matches_literal_release_wire(
     )
 
     # REL-197 dataview list.
-    run(view, "view.list", [str(DATASET)], {"limit": 13, "sort": "-created_at"})
+    run(view, "view.list", [str(DATASET)], {"limit": 13, "sort": "-created_at", "full": True})
     assert (_path(api), api.last().method, api.last().query) == (
         f"/workspaces/4/projects/{PROJECT}/datasets/{DATASET}/dataviews",
         "GET",
@@ -200,3 +200,60 @@ def test_core_read_batch02_matches_literal_release_wire(
         "GET",
         {"rows": ["9"], "cols": ["4"]},
     )
+
+
+def test_project_memory_commands_match_the_project_patch_wire(
+    real_service: Any, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """``project memory`` reads the project list and writes via the project PATCH."""
+    service, api = real_service(project_id=PROJECT)
+    memory = ["Show amounts in EUR"]
+    api.on(
+        "GET",
+        r"/workspaces/4/projects$",
+        body={"projects": [{"id": PROJECT, "properties": {"agent_memory": memory}}]},
+    )
+    api.on(
+        "PATCH",
+        rf"/workspaces/4/projects/{PROJECT}$",
+        body={"id": PROJECT, "properties": {"agent_memory": memory}},
+    )
+    route = f"/workspaces/4/projects/{PROJECT}"
+    patch_add = {"patches": [{"op": "add", "path": "agent_memory", "value": memory[0]}]}
+    patch_remove = {"patches": [{"op": "remove", "path": "agent_memory", "value": 0}]}
+    cases = [
+        ("project.memory.list", "project_memory_list", None, "GET", "/workspaces/4/projects", None),
+        (
+            "project.memory.add",
+            "project_memory_add",
+            {"text": memory[0]},
+            "PATCH",
+            route,
+            patch_add,
+        ),
+        (
+            "project.memory.remove",
+            "project_memory_remove",
+            {"index": 0},
+            "PATCH",
+            route,
+            patch_remove,
+        ),
+    ]
+    for command, handler_name, payload, method, path, body in cases:
+        input_file = None
+        if payload is not None:
+            input_file = str(tmp_path / f"{handler_name}.json")
+            Path(input_file).write_text(json.dumps(payload), encoding="utf-8")
+        with _bind(monkeypatch, project, service):
+            data, _ = getattr(project, handler_name)(_inv(command, [str(PROJECT)], input_file))
+        assert (_path(api), api.last().method, api.last().json_body) == (path, method, body)
+        assert data == {"items": memory}
+
+
+def test_project_memory_add_requires_text() -> None:
+    """Without ``text`` the add fails as a usage error before any request."""
+    from mammoth_cli.errors.envelope import CliError
+
+    with pytest.raises(CliError, match="'text'"):
+        project.project_memory_add(_inv("project.memory.add", [str(PROJECT)]))

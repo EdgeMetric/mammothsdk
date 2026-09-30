@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-from mammoth.exceptions import MammothValidationError
+from mammoth.exceptions import MammothAPIError, MammothValidationError
 from mammoth.models.workspaces import UserRolePatchOp, WorkspacePatchOp
 
 if TYPE_CHECKING:
@@ -117,26 +117,33 @@ class WorkspaceAPI:
         ws = workspace_id or self._ws()
         return await self._client._request_json("POST", f"/workspaces/{ws}/reactivate")
 
-    async def list_users(self, workspace_id: int | None = None) -> _list[dict[str, Any]]:
+    async def list_users(
+        self, workspace_id: int | None = None, fields: str | None = None
+    ) -> _list[dict[str, Any]]:
         """List all users in a workspace.
 
         Args:
             workspace_id: ID of the workspace (uses client default if not provided).
+            fields: Field set to return (e.g. ``"__full"`` adds ``user_roles`` and
+                ``status``); server default if omitted.
 
         Returns:
             List of user dicts.
         """
         ws = workspace_id or self._ws()
-        response = await self._client._request_json("GET", f"/workspaces/{ws}/users")
+        request_kwargs: dict[str, Any] = {}
+        if fields is not None:
+            request_kwargs["params"] = {"fields": fields}
+        response = await self._client._request_json(
+            "GET", f"/workspaces/{ws}/users", **request_kwargs
+        )
         return response.get("users", response if isinstance(response, _list) else [])
 
     async def get_user(self, user_id: str, workspace_id: int | None = None) -> dict[str, Any]:
-        """Get details of a specific user.
+        """Get one workspace user, with roles and status.
 
-        .. note::
-
-            Requires workspace admin permissions. Non-admin users may
-            receive HTTP 405.
+        The API has no GET for a single workspace user, so this reads the
+        member list (``__full`` fields) and returns the matching entry.
 
         Args:
             user_id: ID of the user.
@@ -144,9 +151,14 @@ class WorkspaceAPI:
 
         Returns:
             Dict with user details.
+
+        Raises:
+            MammothAPIError: 404 when the user is not in the workspace.
         """
-        ws = workspace_id or self._ws()
-        return await self._client._request_json("GET", f"/workspaces/{ws}/users/{user_id}")
+        for user in await self.list_users(workspace_id=workspace_id, fields="__full"):
+            if str(user.get("id")) == str(user_id):
+                return user
+        raise MammothAPIError(f"User {user_id} is not in this workspace.", status_code=404)
 
     async def update_user(
         self,

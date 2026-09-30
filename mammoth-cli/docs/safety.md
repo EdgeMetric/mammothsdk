@@ -50,7 +50,11 @@ view exactly as in a real run; the SDK call that the command exists for is
 then reported instead of made (`data.dry_run: true`, `data.would_call`). The
 gate that stops it also stops any SDK write the command's manifest does not
 declare, so a dry run cannot mutate through a side path. Confirmation flags
-are not required for a dry run. Local commands (`auth`, `config`, `skill`,
+are not required for a dry run. The report also carries `irreversible`
+(true for the manifest's `destructive` class) and `targets`, the
+`{"type", "id", "name"}` of every dataset or view the call would change,
+named by a read; a target whose name cannot be read fails the dry run with
+`resource_not_found` instead of reporting a nameless target. Local commands (`auth`, `config`, `skill`,
 `context`, `upgrade`) send nothing and do not take the option.
 
 Pipeline writes (`view transform *`, `view task add`) accept

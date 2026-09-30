@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+import ast
+import os
+from pathlib import Path
+
 import pytest
 
 from mammoth.models.pipeline import (
@@ -85,6 +89,64 @@ class TestDateComponent:
         assert DateComponent.MONTH == "month"
         assert DateComponent.DAY == "day"
         assert DateComponent.WEEKDAY_TEXT == "weekday_text"
+
+
+# Pinned copy of the keys of EXTRACT_DATE_FORMAT_MAPS, the only components the backend
+# accepts: mvc-service CommonConstants/CommonConstants/dba_const.py:389-412, checked by
+# api/api/dataview/helpers/validators/extract_date.py:52-56. Update it with that map.
+_BACKEND_EXTRACT_DATE_COMPONENTS = frozenset(
+    {
+        "month_text",
+        "weekday_text",
+        "weekday",
+        "week",
+        "year",
+        "month_year",
+        "year_month",
+        "year_month_number",
+        "year_month_day",
+        "year_month_day_as_date",
+        "month_day_year",
+        "month_day_year_hour_minute_second",
+        "hour_minute_second",
+        "month",
+        "quarter",
+        "day",
+        "hour",
+        "minute",
+        "second",
+        "day_of_year",
+        "millisecond",
+        "hour_minute_second_millisecond",
+    }
+)
+
+
+def _backend_extract_date_components() -> frozenset[str]:
+    """The backend map's keys, read from the repo at $MVC_SERVICE_PATH when set."""
+    root = os.environ.get("MVC_SERVICE_PATH")
+    if not root:
+        return _BACKEND_EXTRACT_DATE_COMPONENTS
+    source = Path(root) / "CommonConstants" / "CommonConstants" / "dba_const.py"
+    for node in ast.parse(source.read_text(encoding="utf-8")).body:
+        if (
+            isinstance(node, ast.AnnAssign)
+            and isinstance(node.target, ast.Name)
+            and node.target.id == "EXTRACT_DATE_FORMAT_MAPS"
+            and isinstance(node.value, ast.Dict)
+        ):
+            return frozenset(ast.literal_eval(key) for key in node.value.keys if key)
+    raise AssertionError(f"EXTRACT_DATE_FORMAT_MAPS not found in {source}")
+
+
+class TestDateComponentMatchesBackend:
+    def test_sdk_components_are_exactly_the_backend_components(self):
+        assert {m.value for m in DateComponent} == _backend_extract_date_components()
+
+    def test_pinned_copy_still_matches_the_backend_when_it_is_present(self):
+        if not os.environ.get("MVC_SERVICE_PATH"):
+            pytest.skip("set MVC_SERVICE_PATH to the mvc-service checkout to compare the pin")
+        assert _backend_extract_date_components() == _BACKEND_EXTRACT_DATE_COMPONENTS
 
 
 class TestDateDiffUnit:

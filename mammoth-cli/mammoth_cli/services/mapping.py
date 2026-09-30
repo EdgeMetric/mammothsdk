@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+import re
 import shlex
 from typing import Any
 
@@ -12,6 +14,7 @@ from mammoth.exceptions import (
     MammothError,
     MammothJobFailedError,
     MammothJobTimeoutError,
+    MammothPipelineTimeoutError,
     MammothValidationError,
     safe_response_body,
 )
@@ -106,6 +109,127 @@ def _job_recovery(job_id: object, *, profile: str | None = None) -> list[str]:
     ]
 
 
+def _pipeline_recovery(exc: MammothPipelineTimeoutError, *, profile: str | None) -> list[str]:
+    scope = f" --project {exc.project_id}" if exc.project_id is not None else ""
+    scope += f" --profile {shlex.quote(profile)}" if profile else ""
+    return [
+        f"mammoth view pipeline get {exc.dataview_id}{scope}",
+        f"mammoth view pipeline wait {exc.dataview_id}{scope}",
+    ]
+
+
+def _observed_job_fields(details: dict[str, Any]) -> dict[str, Any]:
+    """The ``operation``/``path`` of the last observed job, when the server sent them."""
+    observed = details.get("observed_job")
+    if not isinstance(observed, dict):
+        return {}
+    return {key: observed[key] for key in ("operation", "path") if observed.get(key) is not None}
+
+
+_PROJECT_DELETE = re.compile(r"/workspaces/\d+/projects/(\d+)/?$")
+_DASHBOARD_WRITE = re.compile(r"/dashboards/(\d+)(?:/|$)")
+_ENDPOINT_WORKSPACE = re.compile(r"/workspaces/(\d+)")
+
+
+def _workspace_mismatch_error(exc: MammothAuthError, workspace_id: int | None) -> CliError | None:
+    """A 401 whose endpoint targets a workspace other than the profile's own
+    is a scoping mistake, not invalid credentials, so it must not tell the
+    user to reauthenticate (release evidence T4-L-002 — the in-product agent
+    parroted "reauthenticate" to a web user for exactly this case).
+    """
+    if workspace_id is None:
+        return None
+    endpoint = getattr(exc, "endpoint", None)
+    if not isinstance(endpoint, str):
+        return None
+    match = _ENDPOINT_WORKSPACE.search(endpoint)
+    if match is None:
+        return None
+    target_workspace_id = int(match.group(1))
+    if target_workspace_id == workspace_id:
+        return None
+    return CliError(
+        code=CODE_AUTHORIZATION_REQUIRED,
+        message=(
+            f"No access to workspace {target_workspace_id} "
+            f"(this sign-in is for workspace {workspace_id})."
+        ),
+        exit_status=EXIT_AUTH,
+        hint="Pass --workspace or use a profile signed in for that workspace.",
+        details=_metadata(exc),
+        request_id=exc.request_id,
+        authorization_required=True,
+    )
+
+
+def _resource_recovery(
+    method: object, endpoint: object, project_id: object, *, profile: str | None = None
+) -> list[str]:
+    """Reads that settle an unknown outcome for writes with no job handle.
+
+    Seen on release during an outage: ``dashboard create-blank`` and
+    ``project delete`` timed out with nothing to inspect, and agents could
+    not tell whether to replay. Each command here answers that question.
+    """
+    if not isinstance(endpoint, str):
+        return []
+    options = f"{' --profile ' + shlex.quote(profile) if profile else ''}"
+    verb = str(method or "").upper()
+    if verb == "DELETE" and (match := _PROJECT_DELETE.search(endpoint)):
+        # Deletion is asynchronous (202): read until resource_not_found.
+        return [f"mammoth project get {match.group(1)}{options}"]
+    if verb == "POST" and endpoint.rstrip("/").endswith("/dashboards/v3/blank"):
+        project = f" --project {project_id}" if isinstance(project_id, int) else ""
+        # Look for a dashboard with the title you sent before creating another.
+        return [f"mammoth dashboard list{project}{options}"]
+    if verb in {"POST", "PUT", "PATCH"} and (match := _DASHBOARD_WRITE.search(endpoint)):
+        return [f"mammoth dashboard canvas get {match.group(1)}{options}"]
+    return []
+
+
+def with_dashboard_scope(error: CliError, dashboard_url: str) -> CliError:
+    """Point a timed-out published-dashboard job's recovery at the URL-scoped route.
+
+    ``GET /jobs/{id}`` answers ``4PERM002`` for these jobs, so the generic
+    ``job get``/``job wait`` recovery would fail; ``job wait`` takes the
+    dashboard URL as an ``--input`` field and polls the URL-scoped route.
+    """
+    job_id = error.details.get("job_id")
+    if error.code != "timeout" or job_id is None:
+        return error
+    document = shlex.quote(json.dumps({"dashboard_url": dashboard_url}))
+    error.details["resume"] = f"mammoth job wait {job_id} --input {document}"
+    error.recovery_commands = [
+        f"mammoth dashboard job-by-url {shlex.quote(dashboard_url)} {job_id}",
+        error.details["resume"],
+    ]
+    return error
+
+
+def running_handle(error: CliError, command_id: str) -> dict[str, Any] | None:
+    """The ``status: running`` payload for a wait that ran out, else ``None``.
+
+    Used by ``--return-running``: a job wait or pipeline wait that timed out is
+    not a failure, so the caller gets the handle to resume with instead.
+    """
+    details = error.details
+    if error.code != "timeout" or "resume" not in details:
+        return None
+    if details.get("phase") == "pipeline" and "dataview_id" in details:
+        handle: dict[str, Any] = {"dataview_id": details["dataview_id"]}
+    elif "job_id" in details:
+        handle = {"job_id": details["job_id"], **_observed_job_fields(details)}
+    else:
+        return None
+    return {
+        "status": "running",
+        **handle,
+        "command": command_id,
+        "waited_seconds": details.get("waited_seconds"),
+        "resume": details["resume"],
+    }
+
+
 def map_sdk_exception(
     exc: BaseException,
     *,
@@ -131,6 +255,9 @@ def map_sdk_exception(
         )
 
     if isinstance(exc, MammothAuthError):
+        mismatch = _workspace_mismatch_error(exc, workspace_id)
+        if mismatch is not None:
+            return mismatch
         return CliError(
             code=CODE_AUTHENTICATION_FAILED,
             message="Mammoth rejected the provided credentials.",
@@ -141,6 +268,21 @@ def map_sdk_exception(
             recovery_commands=["mammoth auth login"],
         )
 
+    if isinstance(exc, MammothPipelineTimeoutError):
+        recovery = _pipeline_recovery(exc, profile=profile)
+        details = dict(exc.details)
+        details["waited_seconds"] = details.get("timeout")
+        details["resume"] = recovery[1]
+        return CliError(
+            code="timeout",
+            message="The view pipeline did not finish before the timeout.",
+            exit_status=EXIT_RETRYABLE,
+            hint="No job is involved; read the view's pipeline state and wait for it to finish.",
+            details=details,
+            retryable=True,
+            recovery_commands=recovery,
+        )
+
     if isinstance(exc, MammothJobTimeoutError):
         job_id = getattr(exc, "job_handle", None) or getattr(exc, "job_id", None)
         details = dict(getattr(exc, "details", {}) or {})
@@ -148,6 +290,10 @@ def map_sdk_exception(
             details.setdefault("job_id", job_id)
         details.setdefault("operation_state", "running")
         details.setdefault("phase", getattr(exc, "phase", None) or "polling")
+        details.update(_observed_job_fields(details))
+        details["waited_seconds"] = details.get("timeout")
+        if job_id is not None:
+            details["resume"] = _job_recovery(job_id, profile=profile)[1]
         return CliError(
             code="timeout",
             message="The operation did not finish before the timeout.",
@@ -161,13 +307,18 @@ def map_sdk_exception(
     if isinstance(exc, MammothJobFailedError):
         details = dict(getattr(exc, "details", {}) or {})
         job_id = getattr(exc, "job_handle", None) or getattr(exc, "job_id", None)
+        details["status"] = "failure"
+        details["reason"] = details.get("failure_reason") or "no reason recorded by the job"
+        details.update(_observed_job_fields(details))
         return CliError(
             code=CODE_JOB_FAILED,
-            message="The Mammoth job failed.",
+            message=f"The Mammoth job failed: {details['reason']}",
             exit_status=EXIT_API,
             hint="Inspect the job response for the failure reason.",
             details=details,
-            recovery_commands=_job_recovery(job_id, profile=profile) if job_id is not None else [],
+            recovery_commands=(
+                _job_recovery(job_id, profile=profile)[:1] if job_id is not None else []
+            ),
         )
 
     if isinstance(exc, MammothAPIError):
@@ -250,6 +401,10 @@ def map_sdk_exception(
             )
         )
         if uncertain_effect:
+            if not recovery:
+                recovery = _resource_recovery(
+                    method, details.get("endpoint"), project_id, profile=profile
+                )
             details.setdefault("operation_state", CODE_OUTCOME_UNKNOWN)
             if method is None:
                 details.setdefault("metadata_missing", ["method", "operation_state"])

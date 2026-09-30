@@ -11,3 +11,4 @@ build/
 .ruff_cache/
 __pycache__/
 .coverage
+release-assets/

@@ -9,7 +9,9 @@ happens with the job, so you do not have to guess:
   envelope says `"status": "done"` and `"pipeline_state": "ready"`: the
   pipeline has finished, so do not poll its `future_id`; verify the values
   with `view data get`. (With SDK ≤ 0.7.13 the same envelope said
-  `"processing"`; it meant the same thing.)
+  `"processing"`; it meant the same thing.) If the view's auto-run is off,
+  the same call instead returns `"status": "staged"` with a `message`
+  naming `view draft submit VIEW_ID` — run that to actually execute it.
 - Only a `returns_job` command normally needs you to wait on the job id
   explicitly:
   ```bash
@@ -22,12 +24,23 @@ or wait that job — inspect it rather than submitting the original mutation.
 The `--job-timeout` /
 `--pipeline-timeout` options bound the wait.
 
+With `--return-running` a wait that runs out exits 0 with `{status: running, job_id, resume}`
+(`dataview_id` for a pipeline wait). `mammoth job wait JOB_ID` resumes: it returns
+`{status: success, job_id, result}`, a `job_failed` error with the reason, or the running handle
+again, and waits at most 15 minutes by default.
+
 A transport failure during a mutation without a confirmed job/resource handle
 is `outcome_unknown`. Re-read the exact target and scope before replaying it;
 the operation may already have committed.
 
 ## Draft mode
-Batch several pipeline edits, then submit them together:
+With auto-run on (the normal mode), every pipeline change reruns the whole
+pipeline. On a big view, say 1M rows, adding 3 rules runs it 3 times. When you
+know up front that you will make several changes, enter draft mode, add them
+all, then submit: the pipeline runs once. A staged change has no data until the
+submit, so read back after it, not before. A view already in draft mode (auto-run
+off) answers each change with `"status": "staged"`; add the rest, then submit
+once.
 ```bash
 mammoth view draft enter 1039 --project 180
 mammoth view transform add-column 1039 --project 180 \

@@ -17,5 +17,6 @@ hashes; stop on ambiguous schemas, authorization errors, or unknown effects.
 - [typed ETL discovery](typed-etl-discovery.md)
 - [exports and artifacts](exports.md)
 - [dashboards](dashboards.md)
+- [recurring work: automations and schedules](scheduling.md)
 - [trash, recovery and cleanup](cleanup.md)
 - [deliverable retention and cleanup authorization](../retention.md)

@@ -42,8 +42,12 @@ from mammoth_cli.output.policy import (
     resolve_output,
 )
 from mammoth_cli.runtime import executor, validate
+from mammoth_cli.runtime.dataset_health import with_dataset_health
+from mammoth_cli.runtime.new_data import with_new_data_path
 from mammoth_cli.runtime.invocation import Invocation
+from mammoth_cli.runtime.state import with_state
 from mammoth_cli.runtime.strict import validate_extra_args
+from mammoth_cli.runtime.verify import with_verify
 from mammoth_cli.services.positionals import PositionalSpec, resolve_positionals
 
 OUTPUT_MODES = VALID_OUTPUTS
@@ -64,7 +68,10 @@ _GROUP_DESCRIPTIONS = {
     "billing": "Manage billing and hosted checkout flows.",
     "browse": "Browse projects and workspace resources.",
     "capability": "Discover API operation support and policies.",
-    "client-app": "Manage client applications.",
+    "client-app": (
+        "Manage the workspace's API keys (client apps): key + secret credentials "
+        "for scripts and integrations."
+    ),
     "completion": "Install or print shell completion.",
     "config": "Read and update local CLI configuration.",
     "connector": "Manage data connectors and connector profiles.",
@@ -73,7 +80,7 @@ _GROUP_DESCRIPTIONS = {
     "dashboard": "Build, query, and publish dashboards.",
     "data-app": "Create and manage data applications.",
     "dataset": "Create, inspect, and manage datasets.",
-    "external-key": "Manage external keys.",
+    "external-key": "Manage LLM provider keys (OpenAI, Anthropic, etc.) used by AI features.",
     "file": "Upload and manage source files.",
     "folder": "Organize folders and their contents.",
     "job": "Inspect and wait for asynchronous jobs.",
@@ -384,7 +391,7 @@ class _EnvelopeGroup(TyperGroup):
             argv = kwargs.get("args")
             if argv is None:
                 argv = args[0] if args else None
-            self._render_usage_error(error, argv)
+            self.render_usage_error(error, argv)
             raise SystemExit(getattr(error, "exit_code", EXIT_USAGE)) from None
         except _ABORT_ERRORS:
             typer.echo("Aborted!", err=True)
@@ -395,7 +402,7 @@ class _EnvelopeGroup(TyperGroup):
         # in-process test runner observe the exit status as before.
         raise SystemExit(result if isinstance(result, int) else 0)
 
-    def _render_usage_error(self, error: Any, argv: Sequence[str] | None) -> None:
+    def render_usage_error(self, error: Any, argv: Sequence[str] | None) -> None:
         """Emit a usage error as the JSON envelope (machine) or Click prose (human).
 
         A *missing required argument* is reported with the stable
@@ -568,6 +575,24 @@ def _shared_option_params() -> list[inspect.Parameter]:
                 typer.Option(
                     "--job-timeout",
                     help="Job wait timeout seconds.",
+                    rich_help_panel="Context and timeouts",
+                ),
+            ],
+        ),
+        opt(
+            "return_running",
+            False,
+            Annotated[
+                bool,
+                typer.Option(
+                    "--return-running",
+                    help=(
+                        "When a job or pipeline wait runs out, exit 0 with "
+                        "{status: running, job_id or dataview_id, resume} instead of a "
+                        "timeout error; resume with 'mammoth job wait JOB_ID' "
+                        "(reports success, failure or still running; waits at most "
+                        "15 minutes by default)."
+                    ),
                     rich_help_panel="Context and timeouts",
                 ),
             ],
@@ -820,7 +845,8 @@ def _execute(invocation: Invocation) -> None:
             raise not_implemented_error(invocation.command_id, sdk_symbol)
         if invocation.dry_run:
             return _dry_run(handler, invocation)
-        return handler(invocation)
+        data, meta = handler(invocation)
+        return with_new_data_path(with_dataset_health(_apply_verify(invocation, data))), meta
 
     executor.run(
         invocation.command_id,
@@ -832,6 +858,25 @@ def _execute(invocation: Invocation) -> None:
     )
 
 
+def _apply_verify(invocation: Invocation, data: Any) -> Any:
+    """Add the automatic write read-back to a real, mutating, API-backed result.
+
+    A read command and a command with no reviewed ``sdk_symbol`` (a local or
+    not-yet-backed command) are returned unchanged; ``--dry-run`` never
+    reaches this at all, since it returns before the handler's real call.
+
+    Two independent read-backs are layered on top of the raw result: ``verify``
+    (status/row-count signals derived from the write's own response) and
+    ``state`` (a fresh read of what the write actually produced, per the
+    command's manifest ``readback``/``no_readback`` declaration -- see
+    :mod:`mammoth_cli.runtime.state`).
+    """
+    record = command_by_id(invocation.command_id) or {}
+    if record.get("mutation_class") == "read" or not record.get("sdk_symbol"):
+        return data
+    return with_state(invocation, with_verify(data, invocation))
+
+
 def _dry_run(handler: Handler, invocation: Invocation) -> tuple[Any, dict[str, Any]]:
     """Run ``handler`` until its request would leave; report that request.
 
@@ -840,12 +885,15 @@ def _dry_run(handler: Handler, invocation: Invocation) -> tuple[Any, dict[str, A
     gated SDK call at all (a pure read path); its result is returned as is.
     """
     from mammoth_cli.runtime.dryrun import DryRunStop
-    from mammoth_cli.runtime.session import resolved_project
+    from mammoth_cli.runtime.dryrun_targets import resolve_targets
+    from mammoth_cli.runtime.session import open_service, resolved_project
 
     try:
         return handler(invocation)
     except DryRunStop as stop:
-        return stop.record, {
+        with open_service(invocation) as (service, _auth):
+            targets = resolve_targets(service, invocation.command_id, stop.record["would_call"])
+        return {**stop.record, "targets": targets}, {
             "profile": invocation.profile,
             "project_id": resolved_project(invocation),
         }

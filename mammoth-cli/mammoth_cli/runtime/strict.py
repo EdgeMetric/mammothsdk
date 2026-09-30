@@ -271,6 +271,31 @@ def _coerce_document_fields(
             ) from None
 
 
+#: Commands whose request nests the payload: name the nesting on a wrong key.
+_UNKNOWN_FIELD_HINTS: dict[str, str] = {
+    "dashboard.canvas.save": (
+        "Accepted field: body. Wrap the canvas: "
+        '{"body": {"params": {"canvas": CANVAS}}}, where CANVAS is data.canvas '
+        "from 'mammoth dashboard canvas get DASHBOARD_ID', edited. An --input file "
+        "takes the same wrapped document."
+    ),
+}
+
+
+def _unknown_field_hint(command_id: str, document: dict[str, Any], accepted: list[str]) -> str:
+    """Name the fix for an unknown ``--input`` key, with the caller's own value."""
+    if command_id in _UNKNOWN_FIELD_HINTS:
+        return _UNKNOWN_FIELD_HINTS[command_id]
+    if "project_id" in document and "project_id" not in accepted:
+        return (
+            "project_id is not an --input field; put --project "
+            f"{document['project_id']} after the command: "
+            f"mammoth {command_id.replace('.', ' ')} ... --project {document['project_id']} "
+            "(or omit it to use the active project)."
+        )
+    return f"Accepted fields: {', '.join(accepted) or '(none)' }."
+
+
 def validate_input_fields(command_id: str, document: dict[str, Any] | None) -> None:
     """Reject unknown ``--input`` keys, then coerce known keys to their type.
 
@@ -316,10 +341,11 @@ def validate_input_fields(command_id: str, document: dict[str, Any] | None) -> N
             code=CODE_UNKNOWN_INPUT_FIELD,
             message=(
                 f"Unknown input field(s) for '{command_id.replace('.', ' ')}': "
-                f"{', '.join(unknown)}."
+                f"{', '.join(unknown)}. "
+                f"Accepted fields: {', '.join(sorted(fields_by_name)) or '(none)'}."
             ),
             exit_status=EXIT_USAGE,
-            hint=f"Accepted fields: {', '.join(sorted(fields_by_name)) or '(none)' }.",
+            hint=_unknown_field_hint(command_id, document, sorted(fields_by_name)),
             details={"unknown": unknown, "accepted": sorted(fields_by_name)},
         )
     if is_closed_zero_input(command_id) and document == {}:

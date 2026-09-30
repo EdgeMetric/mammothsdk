@@ -859,6 +859,141 @@ class TestLimitRows:
         assert "ORDER_BY" in p
 
 
+# ── Display properties: rename and sort (view PATCH, not pipeline tasks) ──
+
+
+def _patch_view(mock_view, monkeypatch):
+    """Capture dataviews.update calls and make refresh re-read SAMPLE data."""
+    from unittest.mock import AsyncMock, MagicMock
+
+    from tests.unit.conftest import SAMPLE_VIEW_DATA
+
+    calls = []
+    mock_view._client.dataviews = MagicMock()
+    mock_view._client.dataviews.update = AsyncMock(side_effect=lambda *a, **k: calls.append(a))
+    stored = {"COLUMN_NAMES": {}}
+
+    async def fake_refresh():
+        for op in calls[-1][2]:
+            if op["path"] == "display_properties/COLUMN_NAMES":
+                stored["COLUMN_NAMES"].update(op["value"])
+        mock_view._build_column_maps({**SAMPLE_VIEW_DATA, "display_properties": dict(stored)})
+        return mock_view
+
+    monkeypatch.setattr(mock_view, "refresh", fake_refresh)
+    return calls
+
+
+class TestRenameColumns:
+    async def test_patches_column_names_by_internal_name(self, mock_view, monkeypatch):
+        calls = _patch_view(mock_view, monkeypatch)
+        result = await mock_view.rename_columns({"emp_id": "Employee ID"})
+        dataset_id, view_id, patch = calls[-1]
+        assert (dataset_id, view_id) == (500, 1001)
+        assert patch == [
+            {
+                "op": "replace",
+                "path": "display_properties/COLUMN_NAMES",
+                "value": {"column_abc1234567": "Employee ID"},
+            }
+        ]
+        assert result["renamed"] == {"emp_id": "Employee ID"}
+        assert "Employee ID" in result["columns"] and "emp_id" not in result["columns"]
+        # The new name resolves for later operations; no pipeline task was added.
+        assert mock_view._resolve_column("Employee ID") == "column_abc1234567"
+        assert mock_view._captured_payloads == []
+
+    async def test_unknown_column_raises(self, mock_view, monkeypatch):
+        from mammoth.exceptions import MammothColumnError
+
+        calls = _patch_view(mock_view, monkeypatch)
+        with pytest.raises(MammothColumnError):
+            await mock_view.rename_columns({"nope": "X"})
+        assert calls == []
+
+    async def test_duplicate_target_name_refused(self, mock_view, monkeypatch):
+        calls = _patch_view(mock_view, monkeypatch)
+        with pytest.raises(ValueError, match="same name"):
+            await mock_view.rename_columns({"emp_id": "Full_Name"})
+        assert calls == []
+
+    async def test_a_rename_the_server_did_not_apply_raises(self, mock_view, monkeypatch):
+        """A PATCH the server accepted but did not apply must not read as done:
+        the refreshed columns are the proof, and they still show the old name."""
+        from unittest.mock import AsyncMock, MagicMock
+
+        from mammoth.exceptions import MammothError
+        from tests.unit.conftest import SAMPLE_VIEW_DATA
+
+        mock_view._client.dataviews = MagicMock()
+        mock_view._client.dataviews.update = AsyncMock()
+
+        async def refresh_without_the_rename():
+            mock_view._build_column_maps(SAMPLE_VIEW_DATA)
+            return mock_view
+
+        monkeypatch.setattr(mock_view, "refresh", refresh_without_the_rename)
+        with pytest.raises(MammothError, match="did not apply") as excinfo:
+            await mock_view.rename_columns({"emp_id": "Employee ID"})
+        assert excinfo.value.details["not_applied"] == {"emp_id": "Employee ID"}
+        assert "emp_id" in excinfo.value.details["columns_after"]
+
+    async def test_blank_and_empty_refused(self, mock_view, monkeypatch):
+        _patch_view(mock_view, monkeypatch)
+        with pytest.raises(ValueError):
+            await mock_view.rename_columns({})
+        with pytest.raises(ValueError, match="blank"):
+            await mock_view.rename_columns({"emp_id": "   "})
+
+    def test_column_names_overlay_on_load(self, mock_client):
+        from mammoth.view import View
+        from tests.unit.conftest import SAMPLE_VIEW_DATA
+
+        data = {
+            **SAMPLE_VIEW_DATA,
+            "display_properties": {"COLUMN_NAMES": {"column_abc1234567": "Employee ID"}},
+        }
+        view = View(mock_client, data, 500)
+        assert view.columns["Employee ID"] == "column_abc1234567"
+        assert "emp_id" not in view.columns
+
+
+class TestSortRows:
+    async def test_patches_sort_with_internal_names(self, mock_view, monkeypatch):
+        calls = _patch_view(mock_view, monkeypatch)
+        result = await mock_view.sort_rows([["base_salary", SortDirection.DESC], ["emp_id"]])
+        assert calls[-1][2] == [
+            {
+                "op": "replace",
+                "path": "display_properties/SORT",
+                "value": [["column_jkl1234567", "DESC"], ["column_abc1234567", "ASC"]],
+            }
+        ]
+        assert result == {"sort": [["base_salary", "DESC"], ["emp_id", "ASC"]]}
+        assert mock_view._captured_payloads == []
+
+    async def test_lowercase_direction_and_clear(self, mock_view, monkeypatch):
+        calls = _patch_view(mock_view, monkeypatch)
+        await mock_view.sort_rows([["emp_id", "desc"]])
+        assert calls[-1][2][0]["value"] == [["column_abc1234567", "DESC"]]
+        await mock_view.sort_rows([])
+        assert calls[-1][2][0]["value"] == []
+
+    @pytest.mark.parametrize(
+        "order_by",
+        [
+            [["emp_id", "UP"]],
+            [["emp_id"], ["emp_id", "DESC"]],
+            [["emp_id"], ["full_name"], ["department"], ["base_salary"]],
+        ],
+    )
+    async def test_invalid_refused(self, mock_view, monkeypatch, order_by):
+        calls = _patch_view(mock_view, monkeypatch)
+        with pytest.raises(ValueError):
+            await mock_view.sort_rows(order_by)
+        assert calls == []
+
+
 class TestDiscardDuplicates:
     async def test_all_columns(self, mock_view):
         await mock_view.discard_duplicates()
@@ -1268,14 +1403,19 @@ class TestJsonExtract:
         assert p["JSON_HANDLE"]["JSON_OBJECT_OP_TYPE"] == "JSON_OBJECT_TO_COLUMNS"
 
     async def test_list_type(self, mock_view):
+        # No keys/extractions: JSON_LIST_TO_ROWS defaults to the product's own
+        # Item + Index pair (DBAdapter's json_handle op requires exactly two).
         await mock_view.json_extract(
             column="department",
             json_type=JsonType.LIST,
-            keys=["item"],
         )
         p = last_payload(mock_view)
         assert p["JSON_HANDLE"]["TYPE"] == "JSON_LIST"
         assert p["JSON_HANDLE"]["JSON_LIST_OP_TYPE"] == "JSON_LIST_TO_ROWS"
+        extracts = p["JSON_HANDLE"]["JSON_EXTRACT"]
+        assert len(extracts) == 2
+        assert extracts[0]["COLUMN"] == "Item"
+        assert extracts[1]["COLUMN"] == "Index"
 
     async def test_advanced_extractions(self, mock_view):
         await mock_view.json_extract(
@@ -1735,10 +1875,11 @@ class TestGoldenReference:
         assert jh["JSON_EXTRACT"][0]["KEY"] == "name"
 
     async def test_golden_json_list(self, mock_view):
+        # No keys/extractions: JSON_LIST_TO_ROWS defaults to the product's own
+        # Item + Index pair (DBAdapter's json_handle op requires exactly two).
         await mock_view.json_extract(
             column="department",
             json_type=JsonType.LIST,
-            keys=["item"],
         )
         p = last_payload(mock_view)
         jh = p["JSON_HANDLE"]

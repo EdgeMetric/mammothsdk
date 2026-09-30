@@ -12,8 +12,8 @@ commands:
   sdk_conversion: Call mammoth.api.billing.BillingAPI.chargebee_plan with validated request fields.
   request_model: BillingChargebeePlanRequest
   result_model: BillingChargebeePlanResult
-  mutation_class: high_impact
-  confirmation: confirm_target
+  mutation_class: read
+  confirmation: none
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: contract_only_high_impact
@@ -53,6 +53,7 @@ commands:
   request_model: BillingHostedPageRequest
   result_model: BillingHostedPageResult
   mutation_class: high_impact
+  edits_target: false
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -74,6 +75,7 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  no_readback: "returns a one-time hosted checkout page URL; nothing persisted to read back"
 - command_id: billing.invoice.charge
   command_path: billing invoice charge
   disposition: command
@@ -87,6 +89,7 @@ commands:
   request_model: BillingInvoiceChargeRequest
   result_model: BillingInvoiceChargeResult
   mutation_class: high_impact
+  edits_target: false
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -108,60 +111,23 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
-- command_id: billing.invoice.get
-  command_path: billing invoice get
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - GetInvoice
-  positionals:
-  - name: invoice_id
-    type: int
-    required: true
-    metavar: INVOICE_ID
-    falls_back_to_field: null
-    help: ID of the invoice.
-  options: []
-  sdk_symbol: mammoth.api.billing.BillingAPI.invoice_get
-  sdk_conversion: Call mammoth.api.billing.BillingAPI.invoice_get with validated request fields.
-  request_model: BillingInvoiceGetRequest
-  result_model: BillingInvoiceGetResult
-  mutation_class: high_impact
-  confirmation: confirm_target
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: contract_only_high_impact
-  live_test: null
-  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth billing invoice get INVOICE_ID --help
-  agent_example: mammoth billing invoice get 123
-  unit_tests:
-  - UT-BILLING-INVOICE-GET
-  contract_tests:
-  - CT-BILLING-INVOICE-GET-HUMAN
-  - CT-BILLING-INVOICE-GET-JSON
-  - CT-BILLING-INVOICE-GET-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: null
-  reviewed_by: primary
+  readback:
+    command: billing.invoice.list
+    ids: {}
+    kind: object
 - command_id: billing.invoice.list
   command_path: billing invoice list
   disposition: command
   alias_of: null
-  operation_ids:
-  - ListInvoices
+  operation_ids: []
   positionals: []
   options: []
   sdk_symbol: mammoth.api.billing.BillingAPI.invoice_list
   sdk_conversion: Call mammoth.api.billing.BillingAPI.invoice_list with validated request fields.
   request_model: BillingInvoiceListRequest
   result_model: BillingInvoiceListResult
-  mutation_class: high_impact
-  confirmation: confirm_target
+  mutation_class: read
+  confirmation: none
   wait_policy: not_async
   pagination_policy: single_page
   acceptance_evidence: contract_only_high_impact
@@ -195,6 +161,7 @@ commands:
   request_model: BillingStripeCancelRequest
   result_model: BillingStripeCancelResult
   mutation_class: high_impact
+  edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -216,6 +183,10 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: billing.stripe.status
+    ids: {}
+    kind: object
 - command_id: billing.stripe.checkout-url
   command_path: billing stripe checkout-url
   disposition: command
@@ -229,6 +200,7 @@ commands:
   request_model: BillingStripeCheckoutUrlRequest
   result_model: BillingStripeCheckoutUrlResult
   mutation_class: high_impact
+  edits_target: false
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -251,6 +223,7 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  no_readback: "returns a one-time Stripe checkout URL; nothing persisted to read back"
 - command_id: billing.stripe.create
   command_path: billing stripe create
   disposition: command
@@ -270,6 +243,7 @@ commands:
   request_model: BillingStripeCreateRequest
   result_model: BillingStripeCreateResult
   mutation_class: high_impact
+  edits_target: false
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -291,6 +265,10 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: billing.stripe.status
+    ids: {}
+    kind: object
 - command_id: billing.stripe.end-trial
   command_path: billing stripe end-trial
   disposition: command
@@ -304,6 +282,7 @@ commands:
   request_model: BillingStripeEndTrialRequest
   result_model: BillingStripeEndTrialResult
   mutation_class: high_impact
+  edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -325,6 +304,10 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: billing.stripe.status
+    ids: {}
+    kind: object
 - command_id: billing.stripe.get
   command_path: billing stripe get
   disposition: command
@@ -337,8 +320,8 @@ commands:
   sdk_conversion: Call mammoth.api.billing.BillingAPI.stripe_get with validated request fields.
   request_model: BillingStripeGetRequest
   result_model: BillingStripeGetResult
-  mutation_class: high_impact
-  confirmation: confirm_target
+  mutation_class: read
+  confirmation: none
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: contract_only_high_impact
@@ -371,8 +354,8 @@ commands:
   sdk_conversion: Call mammoth.api.billing.BillingAPI.stripe_history with validated request fields.
   request_model: BillingStripeHistoryRequest
   result_model: BillingStripeHistoryResult
-  mutation_class: high_impact
-  confirmation: confirm_target
+  mutation_class: read
+  confirmation: none
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: contract_only_high_impact
@@ -413,6 +396,7 @@ commands:
   request_model: BillingStripePaymentMethodDeleteRequest
   result_model: BillingStripePaymentMethodDeleteResult
   mutation_class: high_impact
+  edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -434,6 +418,10 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: billing.stripe.payment-method.list
+    ids: {}
+    kind: object
 - command_id: billing.stripe.payment-method.list
   command_path: billing stripe payment-method list
   disposition: command
@@ -447,8 +435,8 @@ commands:
     fields.
   request_model: BillingStripePaymentMethodListRequest
   result_model: BillingStripePaymentMethodListResult
-  mutation_class: high_impact
-  confirmation: confirm_target
+  mutation_class: read
+  confirmation: none
   wait_policy: not_async
   pagination_policy: single_page
   acceptance_evidence: contract_only_high_impact
@@ -489,6 +477,7 @@ commands:
   request_model: BillingStripePaymentMethodSetDefaultRequest
   result_model: BillingStripePaymentMethodSetDefaultResult
   mutation_class: high_impact
+  edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -510,6 +499,10 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: billing.stripe.payment-method.list
+    ids: {}
+    kind: object
 - command_id: billing.stripe.portal-url
   command_path: billing stripe portal-url
   disposition: command
@@ -523,6 +516,7 @@ commands:
   request_model: BillingStripePortalUrlRequest
   result_model: BillingStripePortalUrlResult
   mutation_class: high_impact
+  edits_target: false
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -544,6 +538,7 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  no_readback: "returns a one-time Stripe customer-portal URL; nothing persisted to read back"
 - command_id: billing.stripe.preview-invoice
   command_path: billing stripe preview-invoice
   disposition: command
@@ -556,8 +551,8 @@ commands:
   sdk_conversion: Call mammoth.api.billing.BillingAPI.stripe_preview_invoice with validated request fields.
   request_model: BillingStripePreviewInvoiceRequest
   result_model: BillingStripePreviewInvoiceResult
-  mutation_class: high_impact
-  confirmation: confirm_target
+  mutation_class: read
+  confirmation: none
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: contract_only_high_impact
@@ -591,6 +586,7 @@ commands:
   request_model: BillingStripeRetryPaymentRequest
   result_model: BillingStripeRetryPaymentResult
   mutation_class: high_impact
+  edits_target: false
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -612,6 +608,10 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: billing.stripe.status
+    ids: {}
+    kind: object
 - command_id: billing.stripe.status
   command_path: billing stripe status
   disposition: command
@@ -624,8 +624,8 @@ commands:
   sdk_conversion: Call mammoth.api.billing.BillingAPI.stripe_status with validated request fields.
   request_model: BillingStripeStatusRequest
   result_model: BillingStripeStatusResult
-  mutation_class: high_impact
-  confirmation: confirm_target
+  mutation_class: read
+  confirmation: none
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: contract_only_high_impact
@@ -659,6 +659,7 @@ commands:
   request_model: BillingStripeSyncRequest
   result_model: BillingStripeSyncResult
   mutation_class: high_impact
+  edits_target: false
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -680,6 +681,10 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: billing.stripe.status
+    ids: {}
+    kind: object
 - command_id: billing.stripe.upcoming-invoice
   command_path: billing stripe upcoming-invoice
   disposition: command
@@ -692,8 +697,8 @@ commands:
   sdk_conversion: Call mammoth.api.billing.BillingAPI.stripe_upcoming_invoice with validated request fields.
   request_model: BillingStripeUpcomingInvoiceRequest
   result_model: BillingStripeUpcomingInvoiceResult
-  mutation_class: high_impact
-  confirmation: confirm_target
+  mutation_class: read
+  confirmation: none
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: contract_only_high_impact
@@ -726,8 +731,8 @@ commands:
   sdk_conversion: Call mammoth.api.billing.BillingAPI.stripe_usage with validated request fields.
   request_model: BillingStripeUsageRequest
   result_model: BillingStripeUsageResult
-  mutation_class: high_impact
-  confirmation: confirm_target
+  mutation_class: read
+  confirmation: none
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: contract_only_high_impact
@@ -760,8 +765,8 @@ commands:
   sdk_conversion: Call mammoth.api.billing.BillingAPI.subscription_get with validated request fields.
   request_model: BillingSubscriptionGetRequest
   result_model: BillingSubscriptionGetResult
-  mutation_class: high_impact
-  confirmation: confirm_target
+  mutation_class: read
+  confirmation: none
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: contract_only_high_impact
@@ -795,6 +800,7 @@ commands:
   request_model: BillingSubscriptionUpdateRequest
   result_model: BillingSubscriptionUpdateResult
   mutation_class: high_impact
+  edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -814,5 +820,9 @@ commands:
   - CT-BILLING-SUBSCRIPTION-UPDATE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: 'Plans: storage 1 GB Free, 10 GB Starter, 50 GB Pro; users 1, 5, 10.'
   reviewed_by: primary
+  readback:
+    command: billing.subscription.get
+    ids: {}
+    kind: object

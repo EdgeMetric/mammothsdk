@@ -1,20 +1,20 @@
 [project]
 name = "mammoth-cli"
-version = "2.0.37"
+version = "2.0.86"
 description = "Command-line interface for the Mammoth Analytics platform"
 authors = [{name = "Mammoth Analytics", email = "support@mammoth.io"}]
 readme = "README.md"
 license = "LicenseRef-Proprietary"
 requires-python = ">=3.12,<3.15"
 dependencies = [
-    "mammoth-io (>=0.7.16,<0.8)",
+    "mammoth-io (>=0.7.40,<0.8)",
     "typer (>=0.27,<0.28)",
     "rich (>=15,<16)",
     "platformdirs (>=4.10,<5)",
     "tomlkit (>=0.15.1,<0.16)",
     "keyring (>=25.7,<26)",
     "PyYAML (>=6,<7)",
-    "pydantic (>=2.13,<3)",
+    "pydantic (>=2.12.5,<3)",
     "jsonschema (>=4.20)",
 ]
 urls = {homepage = "https://mammoth.io", repository = "https://github.com/EdgeMetric/mammothsdk"}

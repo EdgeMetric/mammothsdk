@@ -56,6 +56,7 @@ class DatasetsAPI:
         limit: int = 100,
         offset: int = 0,
         sort: str = "(created_at:desc)",
+        fields: str = "id,name",
     ) -> dict[str, Any]:
         """Get list of datasets in a project.
 
@@ -65,13 +66,18 @@ class DatasetsAPI:
             limit: Maximum number of results (default 100).
             offset: Number of results to skip (default 0).
             sort: Sort order (default "(created_at:desc)").
+            fields: Comma-separated dataset fields to return, or "__min" /
+                "__standard" / "__full" (default "id,name"). ``stats`` carries
+                the row/column counts, ``data_schema`` the column names and types,
+                ``sources`` how the dataset was made, plus ``created_at`` and
+                ``updated_at``.
 
         Returns:
-            Dict containing datasets list with id, name and other info.
+            Dict containing datasets list with the requested fields.
         """
         ws = workspace_id or self._ws()
         proj = self._proj(project_id)
-        params = {"fields": "id,name", "limit": limit, "offset": offset, "sort": sort}
+        params = {"fields": fields, "limit": limit, "offset": offset, "sort": sort}
         return await self._client._request_json(
             "GET", f"/workspaces/{ws}/projects/{proj}/datasets", params=params
         )
@@ -83,6 +89,7 @@ class DatasetsAPI:
         limit: int = 100,
         sort: str = "(created_at:desc)",
         max_pages: int = 1000,
+        fields: str = "id,name",
     ) -> dict[str, Any]:
         """List all datasets with bounded, progress-checked pagination.
 
@@ -98,6 +105,7 @@ class DatasetsAPI:
                 limit=limit,
                 offset=offset,
                 sort=sort,
+                fields=fields,
             ),
             item_key="datasets",
             limit=limit,
@@ -117,19 +125,18 @@ class DatasetsAPI:
             dataset_id: ID of the dataset.
             workspace_id: ID of the workspace (uses client default if not provided).
             project_id: ID of the project (uses client default if not provided).
-            fields: Field set to return, e.g. ``"__standard"``; server default
-                if omitted.
+            fields: Comma-separated fields to return, or "__min" / "__standard" /
+                "__full" (default: the standard set).
 
         Returns:
             Dict with complete dataset information.
         """
         ws = workspace_id or self._ws()
         proj = self._proj(project_id)
-        return await self._client._request_json(
-            "GET",
-            f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}",
-            params={"fields": fields} if fields is not None else None,
-        )
+        path = f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}"
+        if fields:
+            return await self._client._request_json("GET", path, params={"fields": fields})
+        return await self._client._request_json("GET", path)
 
     async def get_data(
         self,
@@ -599,6 +606,29 @@ class DatasetsAPI:
             "GET", f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/file_settings"
         )
 
+    async def get_unstructured_rows(
+        self,
+        dataset_id: int,
+        workspace_id: int | None = None,
+        project_id: int | None = None,
+    ) -> dict[str, Any]:
+        """Get the lines of an uploaded file that could not be parsed.
+
+        Args:
+            dataset_id: ID of the dataset.
+            workspace_id: ID of the workspace (uses client default if not provided).
+            project_id: ID of the project (uses client default if not provided).
+
+        Returns:
+            Dict with ``unstructured_rows`` (the first 100: ``line_num``, ``line``,
+            ``batch_id``, ``is_compatible``, ``reason``) and ``row_count``, the total.
+        """
+        ws = workspace_id or self._ws()
+        proj = self._proj(project_id)
+        return await self._client._request_json(
+            "GET", f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/unstructured_rows"
+        )
+
     async def create_from_pdf(
         self,
         file_object_id: int,
@@ -752,6 +782,98 @@ class DatasetsAPI:
         return await self._client._request_json(
             "DELETE", f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/file_settings"
         )
+
+    async def interpretation_preview(
+        self,
+        dataset_id: int,
+        user_instruction: str | None = None,
+        structure_map: dict[str, Any] | None = None,
+        destination_dataset_id: int | None = None,
+        workspace_id: int | None = None,
+        project_id: int | None = None,
+    ) -> dict[str, Any]:
+        """Preview how a file that could be read several ways would look once interpreted.
+
+        Applies a plain-English instruction (for example one of the dataset's stored
+        suggestions, "Skip preamble rows, row 5 is the header") or a ready structure
+        map to the cached sample rows. Nothing is finalised; the dataset stays as it is.
+
+        Args:
+            dataset_id: ID of the dataset (must be > 0).
+            user_instruction: Plain-English description of how to read the file.
+            structure_map: A SheetStructureMap from an earlier preview; no model call.
+            destination_dataset_id: Replay the saved recipe of this destination dataset.
+            workspace_id: ID of the workspace (uses client default if not provided).
+            project_id: ID of the project (uses client default if not provided).
+
+        Returns:
+            Dict with ``preview_rows``, ``total_row_count``, ``structure_map`` and
+            ``header_types``.
+
+        Raises:
+            MammothValidationError: If *dataset_id* ≤ 0.
+        """
+        if dataset_id <= 0:
+            raise MammothValidationError(ERR_DATASET_ID_POSITIVE.format(dataset_id))
+        ws = workspace_id or self._ws()
+        proj = self._proj(project_id)
+        return await self._client._request_json(
+            "POST",
+            f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/interpretation/preview",
+            json=self._interpretation_body(user_instruction, structure_map, destination_dataset_id),
+        )
+
+    async def interpretation_confirm(
+        self,
+        dataset_id: int,
+        user_instruction: str | None = None,
+        structure_map: dict[str, Any] | None = None,
+        destination_dataset_id: int | None = None,
+        workspace_id: int | None = None,
+        project_id: int | None = None,
+    ) -> dict[str, Any]:
+        """Apply an interpretation to the whole file and finalise the dataset.
+
+        Moves the dataset out of the state where its file has more than one plausible
+        reading. Pass the ``structure_map`` a preview returned, or the same
+        ``user_instruction``.
+
+        Args:
+            dataset_id: ID of the dataset (must be > 0).
+            user_instruction: Plain-English description of how to read the file.
+            structure_map: The confirmed SheetStructureMap.
+            destination_dataset_id: Replay the saved recipe of this destination dataset.
+            workspace_id: ID of the workspace (uses client default if not provided).
+            project_id: ID of the project (uses client default if not provided).
+
+        Returns:
+            Dict, empty when the backend answers with no body.
+
+        Raises:
+            MammothValidationError: If *dataset_id* ≤ 0.
+        """
+        if dataset_id <= 0:
+            raise MammothValidationError(ERR_DATASET_ID_POSITIVE.format(dataset_id))
+        ws = workspace_id or self._ws()
+        proj = self._proj(project_id)
+        return await self._client._request_json(
+            "PATCH",
+            f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/interpretation",
+            json=self._interpretation_body(user_instruction, structure_map, destination_dataset_id),
+        )
+
+    @staticmethod
+    def _interpretation_body(
+        user_instruction: str | None,
+        structure_map: dict[str, Any] | None,
+        destination_dataset_id: int | None,
+    ) -> dict[str, Any]:
+        fields = {
+            "user_instruction": user_instruction,
+            "structure_map": structure_map,
+            "destination_dataset_id": destination_dataset_id,
+        }
+        return {name: value for name, value in fields.items() if value is not None}
 
     async def restore(
         self,

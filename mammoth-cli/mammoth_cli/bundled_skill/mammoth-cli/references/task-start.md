@@ -9,11 +9,13 @@ or secrets in an argument, prompt, transcript, or checkpoint.
    from PyPI into a fresh environment and verify it:
 
    ```bash
-   python3 -m venv .mammoth && .mammoth/bin/python -m pip install --upgrade mammoth-cli
+   python3 -m venv .mammoth && .mammoth/bin/python -m pip install --no-cache-dir --upgrade mammoth-cli
    .mammoth/bin/mammoth --version      # or: uv tool install mammoth-cli
    ```
 
-   Pin `mammoth-cli==X.Y.Z` when the task names an approved release. Use the
+   Pin `mammoth-cli==X.Y.Z` when the task names an approved release, and
+   check that `mammoth --version` prints it (a pip cache can serve an older
+   release for a few minutes after a new one is published). Use the
    host installer script (`installers/mammoth-install.sh` in the repository)
    only when the operator names it; do not pipe a remote script to a shell on
    your own initiative. The SDK (`mammoth-io`) comes with the CLI. If a later

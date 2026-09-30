@@ -1,4 +1,4 @@
-"""Row operation mixins: fill_missing, limit_rows, discard_duplicates, unnest."""
+"""Row operation mixins: fill_missing, limit_rows, discard_duplicates, unnest, sort_rows."""
 
 from __future__ import annotations
 
@@ -32,9 +32,10 @@ class RowOpsMixin(ViewHost):
 
         Args:
             column: Display name of column to fill.
-            direction: Fill direction — ``FillDirection.LAST_VALUE``
-                fills downward (forward-fill), ``FillDirection.FIRST_VALUE``
-                fills upward (back-fill).
+            direction: Fill direction — ``FillDirection.FIRST_VALUE``
+                fills downward (forward-fill: a blank takes the previous
+                row's value), ``FillDirection.LAST_VALUE`` fills upward
+                (back-fill: a blank takes the next row's value).
             partition_by: Display name of column to partition by (optional).
                 Fill restarts at each partition boundary.
             order_by: Sort order applied before filling (optional)::
@@ -48,12 +49,12 @@ class RowOpsMixin(ViewHost):
 
             from mammoth import FillDirection, SortDirection
 
-            # Forward-fill missing values
-            view.fill_missing("Price", FillDirection.LAST_VALUE)
+            # Forward-fill missing values (carry the previous value down)
+            view.fill_missing("Price", FillDirection.FIRST_VALUE)
 
-            # Fill within partitions, ordered by date
+            # Forward-fill within partitions, ordered by date
             view.fill_missing(
-                "Metric", FillDirection.LAST_VALUE,
+                "Metric", FillDirection.FIRST_VALUE,
                 partition_by="Region",
                 order_by=[["Date", SortDirection.ASC]],
             )
@@ -181,3 +182,54 @@ class RowOpsMixin(ViewHost):
             if only:
                 return only
         return "TEXT"
+
+    async def sort_rows(self, order_by: list[list[str | SortDirection]]) -> dict[str, Any]:
+        """Set the view's row order (the web grid's sort; not a pipeline task).
+
+        The order is a view display property (``SORT``), the same change as
+        sorting in the web app. Data reads and exports return rows in this
+        order. It does not add a pipeline task; to keep only the top N rows,
+        use :meth:`limit_rows` with ``order_by``.
+
+        Args:
+            order_by: Up to three ``[display name, direction]`` pairs, where
+                direction is ``"ASC"`` or ``"DESC"`` (default ``"ASC"``). An
+                empty list clears the sort.
+
+        Returns:
+            ``{"sort": [[display name, direction], ...]}``.
+
+        Raises:
+            MammothColumnError: A column is not in the view.
+            ValueError: More than three columns, a column listed twice, or a
+                direction other than ASC/DESC.
+
+        Example::
+
+            view.sort_rows([["Revenue", "DESC"], ["Region", "ASC"]])
+        """
+        if len(order_by) > 3:
+            raise ValueError("sort takes at most three columns")
+        value: list[list[str]] = []
+        shown: list[list[str]] = []
+        seen: set[str] = set()
+        for item in order_by:
+            if not item:
+                raise ValueError("each sort entry is [column, direction]")
+            name = str(item[0])
+            raw = item[1] if len(item) > 1 else SortDirection.ASC
+            direction = str(getattr(raw, "value", raw)).upper()
+            if direction not in ("ASC", "DESC"):
+                raise ValueError(f"direction for {name!r} must be ASC or DESC")
+            internal = self._resolve_column(name)
+            if internal in seen:
+                raise ValueError(f"{name!r} is listed twice")
+            seen.add(internal)
+            value.append([internal, direction])
+            shown.append([name, direction])
+        await self._client.dataviews.update(
+            self.dataset_id,
+            self.id,
+            [{"op": "replace", "path": "display_properties/SORT", "value": value}],
+        )
+        return {"sort": shown}

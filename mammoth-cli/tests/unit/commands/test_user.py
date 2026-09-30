@@ -196,34 +196,32 @@ def test_preference_update_forwards_fields(
 # --- update ----------------------------------------------------------------------
 
 
-def test_update_requires_fields(fake_service: FakeMammothService) -> None:
+def test_update_requires_a_name_part(fake_service: FakeMammothService) -> None:
+    """Item 12: user.update has no name/email fields -- the backend's self-update
+    route only accepts first_name/last_name (SelfPatchData's path enum)."""
     with pytest.raises(CliError) as excinfo:
-        user_cmd.user_update(_inv("user.update", yes=True, confirm="4"))
+        user_cmd.user_update(_inv("user.update"))
     assert excinfo.value.code == "missing_field"
     assert fake_service.call_log == []
 
 
-def test_update_blocked_without_confirmation(
-    fake_service: FakeMammothService, tmp_path: Path
-) -> None:
-    doc = _write(tmp_path, {"name": "New Name"})
+def test_update_needs_no_confirmation(fake_service: FakeMammothService, tmp_path: Path) -> None:
+    """Changing only your own name is benign_mutation/none, not high_impact."""
+    doc = _write(tmp_path, {"first_name": "Jane"})
+    user_cmd.user_update(_inv("user.update", input_file=doc, output="json"))
+    assert fake_service.call_log == [(_UPDATE, {"first_name": "Jane"})]
+
+
+def test_update_forwards_both_name_parts(fake_service: FakeMammothService, tmp_path: Path) -> None:
+    doc = _write(tmp_path, {"first_name": "Jane", "last_name": "Doe"})
+    user_cmd.user_update(_inv("user.update", input_file=doc))
+    assert fake_service.call_log == [(_UPDATE, {"first_name": "Jane", "last_name": "Doe"})]
+
+
+def test_update_rejects_an_unknown_field(fake_service: FakeMammothService, tmp_path: Path) -> None:
+    """email/name are not accepted: they never matched a real backend field."""
+    doc = _write(tmp_path, {"email": "a@x.com"})
     with pytest.raises(CliError) as excinfo:
-        user_cmd.user_update(_inv("user.update", input_file=doc, output="json"))
-    assert excinfo.value.code == "confirmation_required"
+        user_cmd.user_update(_inv("user.update", input_file=doc))
+    assert excinfo.value.code == "unknown_input_field"
     assert fake_service.call_log == []
-
-
-def test_update_requires_confirm_target(fake_service: FakeMammothService, tmp_path: Path) -> None:
-    doc = _write(tmp_path, {"name": "New Name"})
-    with pytest.raises(CliError) as excinfo:
-        user_cmd.user_update(_inv("user.update", input_file=doc, yes=True, confirm="999"))
-    assert excinfo.value.code == "confirmation_target_mismatch"
-    assert fake_service.call_log == []
-
-
-def test_update_proceeds_with_matching_target(
-    fake_service: FakeMammothService, tmp_path: Path
-) -> None:
-    doc = _write(tmp_path, {"name": "New Name", "email": "a@x.com"})
-    user_cmd.user_update(_inv("user.update", input_file=doc, yes=True, confirm="4"))
-    assert fake_service.call_log == [(_UPDATE, {"name": "New Name", "email": "a@x.com"})]

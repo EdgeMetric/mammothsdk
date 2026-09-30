@@ -8,7 +8,10 @@ from pathlib import Path
 import pytest
 
 from mammoth_cli.commands import dashboard as dashboard_cmd
+from mammoth_cli.context.resolver import ExplicitLogin
 from mammoth_cli.errors.envelope import CliError
+from mammoth_cli.manifest.loader import load_commands
+from mammoth_cli.runtime import embedded
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.services.testing import FakeMammothService
 from mammoth_cli.testing import login_default_profile
@@ -17,7 +20,6 @@ _ACTION = "mammoth.api.dashboards.DashboardsAPI.action"
 _ARCHIVE = "mammoth.api.dashboards.DashboardsAPI.archive"
 _ANALYTICS = "mammoth.api.dashboards.DashboardsAPI.get_analytics"
 _CANCEL_GENERATION = "mammoth.api.dashboards.DashboardsAPI.cancel_generation"
-_CREATE = "mammoth.api.dashboards.DashboardsAPI.create"
 _CREATE_BLANK = "mammoth.api.dashboards.DashboardsAPI.create_blank"
 _DATA_DRAFT = "mammoth.api.dashboards.DashboardsAPI.get_draft_data"
 _DATA_PUBLISHED = "mammoth.api.dashboards.DashboardsAPI.get_publish_data"
@@ -133,7 +135,9 @@ def test_pages_add_forwards_exact_body_and_target_confirmation(
                     }
                 },
             },
-        )
+        ),
+        # deliverable_check: one canvas read after the authoring step
+        (_CANVAS_GET, {"dashboard_id": 7}),
     ]
 
 
@@ -451,53 +455,6 @@ def test_source_list_passes_no_kwargs(fake_service: FakeMammothService) -> None:
     assert fake_service.call_log == [(_SOURCE_LIST, {})]
 
 
-# --- dashboard create --------------------------------------------------------
-
-
-def test_create_uses_positional_intent(fake_service: FakeMammothService, tmp_path: Path) -> None:
-    doc = _write_doc(tmp_path, {"source": [1, 2]})
-    dashboard_cmd.dashboard_create(
-        _inv("dashboard.create", extra_args=["Sales overview"], input_file=doc)
-    )
-    assert fake_service.call_log == [(_CREATE, {"intent": "Sales overview", "source": [1, 2]})]
-
-
-def test_create_without_intent_is_usage_error(
-    fake_service: FakeMammothService, tmp_path: Path
-) -> None:
-    doc = _write_doc(tmp_path, {"source": [1]})
-    with pytest.raises(CliError) as excinfo:
-        dashboard_cmd.dashboard_create(_inv("dashboard.create", input_file=doc))
-    assert excinfo.value.code == "missing_argument"
-    assert fake_service.call_log == []
-
-
-def test_create_requires_source(fake_service: FakeMammothService) -> None:
-    with pytest.raises(CliError) as excinfo:
-        dashboard_cmd.dashboard_create(_inv("dashboard.create", extra_args=["Sales"]))
-    assert excinfo.value.code == "missing_field"
-    assert fake_service.call_log == []
-
-
-def test_create_forwards_optional_flags(fake_service: FakeMammothService, tmp_path: Path) -> None:
-    doc = _write_doc(
-        tmp_path,
-        {"intent": "Sales", "source": [1], "enable_filters": False, "enable_pages": True},
-    )
-    dashboard_cmd.dashboard_create(_inv("dashboard.create", input_file=doc))
-    assert fake_service.call_log == [
-        (
-            _CREATE,
-            {
-                "intent": "Sales",
-                "source": [1],
-                "enable_filters": False,
-                "enable_pages": True,
-            },
-        )
-    ]
-
-
 def test_create_blank_is_an_ordinary_create_and_needs_no_confirmation(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
@@ -514,6 +471,35 @@ def test_create_blank_is_an_ordinary_create_and_needs_no_confirmation(
             {"params": {"dataview_id": 42, "style": "presentation", "title": "Revenue"}},
         )
     ]
+
+
+def test_create_blank_checks_the_view_itself_when_the_canvas_has_no_profile(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    # A blank canvas has no backend profile until its first bake; the check
+    # reads the view (parent recorded by an earlier view command) instead.
+    from mammoth_cli.runtime import parents
+
+    parents.remember("default", 4, {42: 84})
+    fake_service.responses[_CREATE_BLANK] = {"id": 9}
+    fake_service.responses[_CANVAS_GET] = {"canvas": {"dataset": {"dataview_id": 42}}}
+    fake_service.responses["mammoth.api.dataviews.DataviewsAPI.get"] = {
+        "metadata": [
+            {"display_name": "qty", "internal_name": "column_1", "type": "NUMERIC"},
+            {"display_name": "price", "internal_name": "column_2", "type": "NUMERIC"},
+        ]
+    }
+    fake_service.responses["mammoth.api.dataviews.DataviewsAPI.get_data"] = {
+        "data": [{"column_1": 2, "column_2": None}, {"column_1": 1, "column_2": 4}]
+    }
+    doc = _write_doc(tmp_path, {"params": {"dataview_id": 42}})
+    data, _ = dashboard_cmd.generated_dashboard(
+        _inv("dashboard.create-blank", input_file=doc, project=94)
+    )
+    check = data["deliverable_check"]
+    assert [w["issue"] for w in check["warnings"]] == ["money_not_shown", "blank_values"]
+    assert '"dataset_id": 84' in check["warnings"][0]["fix"]
+    assert "make a new dashboard" in check["note"]
 
 
 # --- dashboard update ---------------------------------------------------------
@@ -719,3 +705,306 @@ def test_dashboard_tag_merge_is_destructive_and_target_confirmed() -> None:
     assert record is not None
     assert record["mutation_class"] == "destructive"
     assert record["confirmation"] == "confirm_target"
+
+
+_CANVAS_GET = "mammoth.api.dashboards.DashboardsAPI.canvas_get"
+_CANVAS_SAVE = "mammoth.api.dashboards.DashboardsAPI.canvas_save"
+_REFUSED_MESSAGE = (
+    "\n\n_Built: Page added · Bad, Page added · Good. "
+    "Couldn’t do: a pie isn't a chart type this data supports._"
+)
+
+
+def _pages_doc(tmp_path: Path) -> str:
+    chart = {"title": "Qty", "dim": "product", "measure": "qty", "agg": "sum"}
+    return _write_doc(
+        tmp_path,
+        {
+            "body": {
+                "params": {
+                    "pages": [
+                        {"title": "Bad", "charts": [{**chart, "kind": "pie"}]},
+                        {"title": "Good", "charts": [{**chart, "kind": "hbar"}]},
+                    ]
+                }
+            }
+        },
+    )
+
+
+def test_pages_add_removes_a_new_page_whose_charts_were_all_refused(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    fake_service.responses[_ADD_PAGES] = {
+        "added_page_ids": ["p2", "p3"],
+        "bake_job_id": 221,
+        "message": _REFUSED_MESSAGE,
+        "sequence": 2,
+    }
+    fake_service.responses[_CANVAS_GET] = {
+        "canvas": {
+            "active_page_id": "p2",
+            "title": "probe",
+            "pages": [
+                {"id": "p1", "title": "Overview", "added": [], "focus": None},
+                {"id": "p2", "title": "Bad", "added": [], "focus": None},
+                {"id": "p3", "title": "Good", "added": [{"kind": "hbar"}], "focus": None},
+            ],
+        },
+        "meta": {"sequence": 2},
+    }
+    fake_service.responses[_CANVAS_SAVE] = {"sequence": 3, "bake_job_id": 223}
+    data, _ = dashboard_cmd.generated_dashboard(
+        _inv(
+            "dashboard.pages.add",
+            extra_args=["7"],
+            input_file=_pages_doc(tmp_path),
+            yes=True,
+            confirm="7",
+        )
+    )
+    assert [symbol for symbol, _ in fake_service.call_log] == [
+        _ADD_PAGES,
+        _CANVAS_GET,
+        _CANVAS_SAVE,
+        _CANVAS_GET,  # deliverable_check
+    ]
+    saved = fake_service.call_log[2][1]
+    assert saved["dashboard_id"] == 7
+    params = saved["body"]["params"]
+    assert params["base_sequence"] == 2
+    # The pre-existing blank page stays; only the new, empty page goes.
+    assert [page["id"] for page in params["canvas"]["pages"]] == ["p1", "p3"]
+    assert params["canvas"]["active_page_id"] == "p1"
+    assert data["chart_check"] == {
+        "refused": ["a pie isn't a chart type this data supports"],
+        "removed_pages": [{"id": "p2", "title": "Bad"}],
+    }
+    assert data["added_page_ids"] == ["p3"]
+    assert (data["sequence"], data["bake_job_id"]) == (3, 223)
+
+
+def test_pages_add_without_refusals_makes_no_extra_request(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    fake_service.responses[_ADD_PAGES] = {
+        "added_page_ids": ["p2", "p3"],
+        "bake_job_id": 221,
+        "message": "\n\n_Built: Page added · Bad, Page added · Good._",
+        "sequence": 2,
+    }
+    data, _ = dashboard_cmd.generated_dashboard(
+        _inv(
+            "dashboard.pages.add",
+            extra_args=["7"],
+            input_file=_pages_doc(tmp_path),
+            yes=True,
+            confirm="7",
+        )
+    )
+    assert [symbol for symbol, _ in fake_service.call_log] == [_ADD_PAGES, _CANVAS_GET]
+    assert data["chart_check"] == {"refused": [], "removed_pages": []}
+
+
+def test_pages_add_reports_the_fix_when_the_cleanup_save_fails(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    fake_service.responses[_ADD_PAGES] = {
+        "added_page_ids": ["p2", "p3"],
+        "bake_job_id": 221,
+        "message": _REFUSED_MESSAGE,
+        "sequence": 2,
+    }
+    fake_service.responses[_CANVAS_GET] = {
+        "canvas": {"pages": [{"id": "p2", "title": "Bad", "added": []}]},
+        "meta": {"sequence": 2},
+    }
+    fake_service.responses[_CANVAS_SAVE] = RuntimeError("conflict")
+    data, _ = dashboard_cmd.generated_dashboard(
+        _inv(
+            "dashboard.pages.add",
+            extra_args=["7"],
+            input_file=_pages_doc(tmp_path),
+            yes=True,
+            confirm="7",
+        )
+    )
+    check = data["chart_check"]
+    assert check["removed_pages"] == []
+    assert check["empty_pages"] == [{"id": "p2", "title": "Bad"}]
+    assert "dashboard canvas get 7" in check["fix"]
+    assert data["bake_job_id"] == 221
+
+
+# ── BI export (Power BI / Tableau) ───────────────────────────────────────────
+
+_POWERBI_PREFLIGHT = "mammoth.api.dashboards.DashboardsAPI.powerbi_preflight"
+_TABLEAU_PREFLIGHT = "mammoth.api.dashboards.DashboardsAPI.tableau_preflight"
+_EXPORT_POWERBI = "mammoth.api.dashboards.DashboardsAPI.export_powerbi"
+_EXPORT_TABLEAU = "mammoth.api.dashboards.DashboardsAPI.export_tableau"
+
+
+def _bi_doc(tmp_path: Path, payload: dict[str, object]) -> str:
+    return _write_doc(tmp_path, payload)
+
+
+def _enter_embedded_call() -> object:
+    """Make an embedded call current; returns the token for ``embedded.leave``."""
+    login = ExplicitLogin(
+        api_key=None,
+        api_secret=None,
+        workspace_id=1,
+        api_token="jwt-user",
+        server_prefix="app",
+        headers={},
+    )
+    return embedded.enter(embedded.EmbeddedCall(login=login))
+
+
+def test_bi_preflight_dispatches_powerbi(fake_service: FakeMammothService, tmp_path: Path) -> None:
+    doc = _bi_doc(tmp_path, {"target": "powerbi"})
+    fake_service.responses[_POWERBI_PREFLIGHT] = {"exportable": True, "figures_total": 4}
+    data, _ = dashboard_cmd.dashboard_bi_preflight(
+        _inv("dashboard.bi-preflight", extra_args=["42"], input_file=doc)
+    )
+    assert fake_service.call_log == [(_POWERBI_PREFLIGHT, {"dashboard_id": 42})]
+    assert data == {"exportable": True, "figures_total": 4}
+
+
+def test_bi_preflight_dispatches_tableau(fake_service: FakeMammothService, tmp_path: Path) -> None:
+    doc = _bi_doc(tmp_path, {"target": "tableau"})
+    fake_service.responses[_TABLEAU_PREFLIGHT] = {"exportable": False, "figures_total": 0}
+    data, _ = dashboard_cmd.dashboard_bi_preflight(
+        _inv("dashboard.bi-preflight", extra_args=["42"], input_file=doc)
+    )
+    assert fake_service.call_log == [(_TABLEAU_PREFLIGHT, {"dashboard_id": 42})]
+    assert data == {"exportable": False, "figures_total": 0}
+
+
+def test_bi_preflight_rejects_missing_target_without_a_request(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    doc = _bi_doc(tmp_path, {})
+    with pytest.raises(CliError) as excinfo:
+        dashboard_cmd.dashboard_bi_preflight(
+            _inv("dashboard.bi-preflight", extra_args=["42"], input_file=doc)
+        )
+    assert excinfo.value.code == "invalid_argument"
+    assert fake_service.call_log == []
+
+
+@pytest.mark.parametrize("bad_input", [{"target": "csv"}, {"target": "PowerBI"}])
+def test_bi_preflight_rejects_unknown_target_value_without_a_request(
+    fake_service: FakeMammothService, tmp_path: Path, bad_input: dict[str, object]
+) -> None:
+    """The enum on the required `target` input field (see command_contract's
+    ``_S7_ADDITIONAL_INPUT_FIELDS``) is strict-validated before the handler
+    even runs, which is stricter than -- and takes precedence over -- the
+    handler's own defensive check.
+    """
+    doc = _bi_doc(tmp_path, bad_input)
+    with pytest.raises(CliError) as excinfo:
+        dashboard_cmd.dashboard_bi_preflight(
+            _inv("dashboard.bi-preflight", extra_args=["42"], input_file=doc)
+        )
+    assert excinfo.value.code == "invalid_input_field_type"
+    assert fake_service.call_log == []
+
+
+def test_bi_export_writes_file_in_terminal_mode(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    destination = tmp_path / "board.zip"
+    doc = _bi_doc(tmp_path, {"target": "powerbi", "output_path": str(destination)})
+    fake_service.responses[_EXPORT_POWERBI] = destination
+    data, _ = dashboard_cmd.dashboard_bi_export(
+        _inv("dashboard.bi-export", extra_args=["42"], input_file=doc)
+    )
+    assert fake_service.call_log == [
+        (_EXPORT_POWERBI, {"dashboard_id": 42, "output_path": str(destination)})
+    ]
+    assert data == {"output_path": str(destination)}
+
+
+def test_bi_export_dispatches_tableau_in_terminal_mode(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    doc = _bi_doc(tmp_path, {"target": "tableau"})
+    fake_service.responses[_EXPORT_TABLEAU] = Path("dashboard_42_tableau.twbx")
+    data, _ = dashboard_cmd.dashboard_bi_export(
+        _inv("dashboard.bi-export", extra_args=["42"], input_file=doc)
+    )
+    assert fake_service.call_log == [(_EXPORT_TABLEAU, {"dashboard_id": 42})]
+    assert data == {"output_path": "dashboard_42_tableau.twbx"}
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [{"target": "powerbi"}, {"target": "tableau"}, {"target": "powerbi", "output_path": "o.zip"}],
+)
+def test_bi_export_embedded_points_user_to_export_dialog(
+    fake_service: FakeMammothService,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    payload: dict[str, object],
+) -> None:
+    """The export route needs the Authorization header, so a link handed to the
+    user's browser 401s: embedded, the command refuses and names the dialog."""
+    cwd = tmp_path / "server-cwd"
+    cwd.mkdir()
+    monkeypatch.chdir(cwd)
+    doc = _bi_doc(tmp_path, payload)
+    token = _enter_embedded_call()
+    try:
+        with pytest.raises(CliError) as excinfo:
+            dashboard_cmd.dashboard_bi_export(
+                _inv("dashboard.bi-export", extra_args=["42"], input_file=doc)
+            )
+    finally:
+        embedded.leave(token)
+
+    assert excinfo.value.code == "unsupported_contract"
+    assert "Publish" in excinfo.value.message
+    assert "Export to Power BI / Export to Tableau" in excinfo.value.message
+    assert fake_service.call_log == []
+    assert list(cwd.iterdir()) == []
+
+
+@pytest.mark.parametrize(
+    "command_id",
+    ["dashboard.assess-pbix", "dashboard.assess-twb", "dashboard.import-workbook"],
+)
+def test_workbook_upload_commands_point_agent_to_import_page(command_id: str) -> None:
+    """These commands take a local workbook file the in-product agent can never
+    receive; the manifest must tell the agent to send the user to the import page
+    instead of retrying the upload itself."""
+    commands = {str(record["command_id"]): record for record in load_commands()}
+    restrictions = str(commands[command_id]["known_restrictions"])
+    assert "cannot reach the agent" in restrictions
+    assert "/workspaces/{workspace_id}/publish/import" in restrictions
+    assert "Publish → Import" in restrictions
+
+
+def test_canvas_restore_hint_points_to_chat_history_for_target_sequence() -> None:
+    """Live-eval evidence (T1-D-09): 'I messed up the board, put it back to how
+    it was before' -- dashboard.canvas.restore takes a target_sequence but
+    nothing told the agent where a valid one comes from. dashboard chat
+    history's revisions[] is that version list (sequence/updated_at/
+    updated_by_name, oldest first); the restore hint must say so.
+    """
+    commands = {str(record["command_id"]): record for record in load_commands()}
+    restrictions = str(commands["dashboard.canvas.restore"]["known_restrictions"])
+    assert "dashboard chat history" in restrictions
+    assert "revisions" in restrictions
+    assert "target_sequence" in restrictions
+
+
+def test_chat_history_hint_documents_revisions_field() -> None:
+    """revisions[] is real on the wire (extra=allow passthrough -- the pinned
+    SDK response model only declares messages/sequence/history_index) but was
+    never documented, so an agent had no a-priori reason to look for it."""
+    commands = {str(record["command_id"]): record for record in load_commands()}
+    restrictions = str(commands["dashboard.chat.history"]["known_restrictions"])
+    assert "revisions" in restrictions
+    assert "sequence" in restrictions
+    assert "canvas restore" in restrictions

@@ -11,6 +11,7 @@ Tests every public method on every API sub-client:
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -221,6 +222,61 @@ class TestProjectsAPI:
         assert_called_with_method_and_endpoint(
             client._request_json, "GET", "/workspaces/1/projects/42/pending-changes"
         )
+
+    async def test_list_agent_memory(self, client: MammothClient):
+        client._request_json.return_value = {
+            "projects": [
+                {"id": 7, "properties": {"agent_memory": ["other"]}},
+                {"id": 42, "properties": {"agent_memory": ["Show amounts in EUR"]}},
+            ]
+        }
+        result = await client.projects.list_agent_memory(project_id=42)
+        assert_called_with_method_and_endpoint(
+            client._request_json, "GET", "/workspaces/1/projects"
+        )
+        assert client._request_json.call_args.kwargs["params"]["fields"] == "id,properties"
+        assert result == {"items": ["Show amounts in EUR"]}
+
+    async def test_list_agent_memory_absent_is_empty(self, client: MammothClient):
+        client._request_json.return_value = {"projects": [{"id": 42, "properties": {}}]}
+        assert await client.projects.list_agent_memory(project_id=42) == {"items": []}
+
+    async def test_list_agent_memory_unknown_project_raises(self, client: MammothClient):
+        client._request_json.return_value = {"projects": [{"id": 7}]}
+        with pytest.raises(ValueError, match="42"):
+            await client.projects.list_agent_memory(project_id=42)
+
+    async def test_add_agent_memory(self, client: MammothClient):
+        client._request_json.return_value = {
+            "properties": {"agent_memory": ["Show amounts in EUR"]}
+        }
+        result = await client.projects.add_agent_memory(project_id=42, text="Show amounts in EUR")
+        assert_called_with_method_and_endpoint(
+            client._request_json, "PATCH", "/workspaces/1/projects/42"
+        )
+        assert_json_body(
+            client._request_json,
+            {"patches": [{"op": "add", "path": "agent_memory", "value": "Show amounts in EUR"}]},
+        )
+        assert result == {"items": ["Show amounts in EUR"]}
+
+    async def test_remove_agent_memory(self, client: MammothClient):
+        client._request_json.return_value = {"properties": {}}
+        result = await client.projects.remove_agent_memory(project_id=42, index=3)
+        assert_called_with_method_and_endpoint(
+            client._request_json, "PATCH", "/workspaces/1/projects/42"
+        )
+        assert_json_body(
+            client._request_json,
+            {"patches": [{"op": "remove", "path": "agent_memory", "value": 3}]},
+        )
+        assert result == {"items": []}
+
+    async def test_agent_memory_writes_reject_non_positive_project_id(self, client: MammothClient):
+        with pytest.raises(MammothValidationError):
+            await client.projects.add_agent_memory(project_id=0, text="x")
+        with pytest.raises(MammothValidationError):
+            await client.projects.remove_agent_memory(project_id=0, index=0)
 
     async def test_publish_credentials(self, client: MammothClient):
         await client.projects.publish_credentials(project_id=42, odbc_type="postgres")
@@ -468,6 +524,12 @@ class TestDatasetsAPI:
             client._request_json, "GET", "/datasets/500/file_settings"
         )
 
+    async def test_get_unstructured_rows(self, client: MammothClient):
+        await client.datasets.get_unstructured_rows(dataset_id=500)
+        assert_called_with_method_and_endpoint(
+            client._request_json, "GET", "/datasets/500/unstructured_rows"
+        )
+
     async def test_bulk_update(self, client: MammothClient):
         await client.datasets.bulk_update(patch_data={"name": "x"})
         assert_called_with_method_and_endpoint(client._request_json, "PATCH", "/datasets")
@@ -596,9 +658,7 @@ class TestDataviewsAPI:
         await client.dataviews.get(dataset_id=500, dataview_id=42, sequence=0)
         assert_called_with_method_and_endpoint(client._request_json, "GET", "/dataviews/42")
 
-    async def test_get_leaves_the_sequence_to_the_server_when_omitted(
-        self, client: MammothClient
-    ):
+    async def test_get_leaves_the_sequence_to_the_server_when_omitted(self, client: MammothClient):
         """No sequence means "the last task in the pipeline" to the API itself.
 
         Working it out here took an extra request and got it wrong while a
@@ -644,6 +704,322 @@ class TestDataviewsAPI:
         # call is made.
         await client.dataviews.query_data(dataset_id=500, dataview_id=42, sequence=0)
         assert_called_with_method_and_endpoint(client._request_json, "POST", "/dataviews/42/data")
+
+    async def test_aggregate_pivot(self, client: MammothClient):
+        await client.dataviews.aggregate(
+            dataset_id=500,
+            dataview_id=42,
+            group_by=["column_1"],
+            aggregations=[{"column": "column_2", "function": "SUM", "as_name": "Total"}],
+        )
+        assert_called_with_method_and_endpoint(
+            client._request_json, "POST", "/dataviews/42/data/query"
+        )
+        assert_json_body(
+            client._request_json,
+            {
+                "param": {
+                    "PIVOT": {
+                        "SELECT": [
+                            {
+                                "FUNCTION": "SUM",
+                                "AS": "Total",
+                                "INTERNAL_NAME": "agg_0",
+                                "COLUMN": "column_2",
+                            }
+                        ],
+                        "GROUP_BY": [{"COLUMN": "column_1", "INTERNAL_NAME": "group_0"}],
+                    }
+                }
+            },
+        )
+
+    async def test_aggregate_metric(self, client: MammothClient):
+        await client.dataviews.aggregate(
+            dataset_id=500,
+            dataview_id=42,
+            metric={"function": "COUNT"},
+        )
+        assert_json_body(
+            client._request_json,
+            {
+                "param": {
+                    "METRIC": {
+                        "EXPRESSION": [{"TYPE": "FUNCTION", "VALUE": {"FUNCTION": "COUNT"}}],
+                        "AS": "COUNT",
+                        "INTERNAL_NAME": "metric",
+                    }
+                }
+            },
+        )
+
+    async def test_aggregate_forwards_condition_sequence_and_limit(self, client: MammothClient):
+        await client.dataviews.aggregate(
+            dataset_id=500,
+            dataview_id=42,
+            metric={"function": "COUNT"},
+            condition={"column_1": {"GT": {"VALUE": 0}}},
+            sequence=3,
+            limit=10,
+        )
+        body = client._request_json.call_args.kwargs.get("json")
+        assert body["param"]["CONDITION"] == {"column_1": {"GT": {"VALUE": 0}}}
+        assert body["param"]["SEQUENCE_NUMBER"] == 3
+        assert body["display_properties"] == {"LIMIT": 10}
+
+    async def test_aggregate_requires_exactly_one_of_aggregations_or_metric(
+        self, client: MammothClient
+    ):
+        with pytest.raises(MammothValidationError):
+            await client.dataviews.aggregate(dataset_id=500, dataview_id=42)
+        with pytest.raises(MammothValidationError):
+            await client.dataviews.aggregate(
+                dataset_id=500,
+                dataview_id=42,
+                group_by=["column_1"],
+                metric={"function": "COUNT"},
+            )
+
+    async def test_aggregate_rejects_unsupported_function(self, client: MammothClient):
+        with pytest.raises(MammothValidationError):
+            await client.dataviews.aggregate(
+                dataset_id=500,
+                dataview_id=42,
+                metric={"column": "column_1", "function": "MEDIAN"},
+            )
+
+    async def test_aggregate_requires_column_unless_count(self, client: MammothClient):
+        with pytest.raises(MammothValidationError):
+            await client.dataviews.aggregate(
+                dataset_id=500,
+                dataview_id=42,
+                metric={"function": "SUM"},
+            )
+
+    async def test_aggregate_group_by_date_truncate(self, client: MammothClient):
+        await client.dataviews.aggregate(
+            dataset_id=500,
+            dataview_id=42,
+            group_by=[{"column": "column_1", "truncate": "month"}],
+            aggregations=[{"function": "COUNT"}],
+        )
+        assert_json_body(
+            client._request_json,
+            {
+                "param": {
+                    "PIVOT": {
+                        "SELECT": [{"FUNCTION": "COUNT", "AS": "COUNT", "INTERNAL_NAME": "agg_0"}],
+                        "GROUP_BY": [
+                            {
+                                "COLUMN": "column_1",
+                                "INTERNAL_NAME": "group_0",
+                                "TRUNCATE": "MONTH",
+                            }
+                        ],
+                    }
+                }
+            },
+        )
+
+    async def test_aggregate_group_by_numeric_resolution(self, client: MammothClient):
+        await client.dataviews.aggregate(
+            dataset_id=500,
+            dataview_id=42,
+            group_by=[{"column": "column_2", "resolution": "AUTO"}],
+            aggregations=[{"function": "COUNT"}],
+        )
+        body = client._request_json.call_args.kwargs.get("json")
+        assert body["param"]["PIVOT"]["GROUP_BY"] == [
+            {"COLUMN": "column_2", "INTERNAL_NAME": "group_0", "RESOLUTION": "AUTO"}
+        ]
+
+    async def test_aggregate_group_by_rejects_unsupported_truncate(self, client: MammothClient):
+        with pytest.raises(MammothValidationError):
+            await client.dataviews.aggregate(
+                dataset_id=500,
+                dataview_id=42,
+                group_by=[{"column": "column_1", "truncate": "FORTNIGHT"}],
+                aggregations=[{"function": "COUNT"}],
+            )
+
+    async def test_aggregate_group_by_dict_requires_column(self, client: MammothClient):
+        with pytest.raises(MammothValidationError):
+            await client.dataviews.aggregate(
+                dataset_id=500,
+                dataview_id=42,
+                group_by=[{"truncate": "MONTH"}],
+                aggregations=[{"function": "COUNT"}],
+            )
+
+    async def test_explore_date_column_buckets_by_truncate(self, client: MammothClient):
+        await client.dataviews.explore(
+            dataset_id=500,
+            dataview_id=42,
+            column="column_3",
+            column_type="DATE",
+            level="MONTH",
+        )
+        assert_json_body(
+            client._request_json,
+            {
+                "param": {
+                    "PIVOT": {
+                        "SELECT": [{"FUNCTION": "COUNT", "AS": "count", "INTERNAL_NAME": "agg_0"}],
+                        "GROUP_BY": [
+                            {
+                                "COLUMN": "column_3",
+                                "INTERNAL_NAME": "group_0",
+                                "TRUNCATE": "MONTH",
+                            }
+                        ],
+                    }
+                }
+            },
+        )
+
+    async def test_explore_numeric_column_buckets_by_resolution_default_auto(
+        self, client: MammothClient
+    ):
+        await client.dataviews.explore(
+            dataset_id=500, dataview_id=42, column="column_2", column_type="NUMERIC"
+        )
+        body = client._request_json.call_args.kwargs.get("json")
+        assert body["param"]["PIVOT"]["GROUP_BY"] == [
+            {"COLUMN": "column_2", "INTERNAL_NAME": "group_0", "RESOLUTION": "AUTO"}
+        ]
+
+    async def test_explore_text_column_groups_by_raw_column(self, client: MammothClient):
+        await client.dataviews.explore(
+            dataset_id=500, dataview_id=42, column="column_1", column_type="TEXT"
+        )
+        body = client._request_json.call_args.kwargs.get("json")
+        assert body["param"]["PIVOT"]["GROUP_BY"] == [
+            {"COLUMN": "column_1", "INTERNAL_NAME": "group_0"}
+        ]
+
+    async def test_explore_metric_adds_second_aggregation(self, client: MammothClient):
+        await client.dataviews.explore(
+            dataset_id=500,
+            dataview_id=42,
+            column="column_1",
+            column_type="TEXT",
+            metric={"column": "column_2", "function": "SUM", "as_name": "Total Spend"},
+        )
+        body = client._request_json.call_args.kwargs.get("json")
+        assert body["param"]["PIVOT"]["SELECT"] == [
+            {"FUNCTION": "COUNT", "AS": "count", "INTERNAL_NAME": "agg_0"},
+            {
+                "FUNCTION": "SUM",
+                "AS": "Total Spend",
+                "INTERNAL_NAME": "agg_1",
+                "COLUMN": "column_2",
+            },
+        ]
+
+    async def test_explore_forwards_condition_and_sequence(self, client: MammothClient):
+        await client.dataviews.explore(
+            dataset_id=500,
+            dataview_id=42,
+            column="column_1",
+            condition={"column_1": {"GT": {"VALUE": 0}}},
+            sequence=3,
+        )
+        body = client._request_json.call_args.kwargs.get("json")
+        assert body["param"]["CONDITION"] == {"column_1": {"GT": {"VALUE": 0}}}
+        assert body["param"]["SEQUENCE_NUMBER"] == 3
+
+    async def test_explore_date_result_sorted_ascending_with_percentage(
+        self, client: MammothClient
+    ):
+        client._request_json.return_value = {
+            "data": [
+                {"group_0": "2024-02-01", "agg_0": 30},
+                {"group_0": "2024-01-01", "agg_0": 10},
+            ]
+        }
+        result = await client.dataviews.explore(
+            dataset_id=500, dataview_id=42, column="column_1", column_type="DATE", level="MONTH"
+        )
+        assert result["data"] == [
+            {"group_0": "2024-01-01", "agg_0": 10, "percentage": 25.0},
+            {"group_0": "2024-02-01", "agg_0": 30, "percentage": 75.0},
+        ]
+
+    async def test_explore_text_result_sorted_desc_and_defaults_limit_20(
+        self, client: MammothClient
+    ):
+        client._request_json.return_value = {
+            "data": [{"group_0": f"v{i}", "agg_0": i} for i in range(25)]
+        }
+        result = await client.dataviews.explore(
+            dataset_id=500, dataview_id=42, column="column_1", column_type="TEXT"
+        )
+        assert len(result["data"]) == 20
+        assert result["data"][0]["group_0"] == "v24"
+        assert result["data"][-1]["group_0"] == "v5"
+
+    async def test_explore_limit_trims_after_computing_percentage_of_the_full_total(
+        self, client: MammothClient
+    ):
+        client._request_json.return_value = {
+            "data": [
+                {"group_0": "Email", "agg_0": 5},
+                {"group_0": "Search", "agg_0": 15},
+            ]
+        }
+        result = await client.dataviews.explore(
+            dataset_id=500, dataview_id=42, column="column_1", column_type="TEXT", limit=1
+        )
+        assert result["data"] == [{"group_0": "Search", "agg_0": 15, "percentage": 75.0}]
+
+    async def test_explore_sort_value_desc_and_offset_page_the_buckets(self, client: MammothClient):
+        client._request_json.return_value = {
+            "data": (
+                [{"group_0": f"v{i}", "agg_0": 1} for i in range(5)]
+                + [{"group_0": None, "agg_0": 1}]
+            )
+        }
+        result = await client.dataviews.explore(
+            dataset_id=500,
+            dataview_id=42,
+            column="column_1",
+            column_type="TEXT",
+            sort="value_desc",
+            offset=1,
+            limit=2,
+        )
+        assert [row["group_0"] for row in result["data"]] == ["v3", "v2"]
+
+    async def test_explore_blank_bucket_sorts_last(self, client: MammothClient):
+        client._request_json.return_value = {
+            "data": [{"group_0": None, "agg_0": 9}, {"group_0": "2024-01-01", "agg_0": 1}]
+        }
+        result = await client.dataviews.explore(
+            dataset_id=500, dataview_id=42, column="column_1", column_type="DATE"
+        )
+        assert [row["group_0"] for row in result["data"]] == ["2024-01-01", None]
+
+    async def test_explore_rejects_unknown_sort(self, client: MammothClient):
+        client._request_json.return_value = {"data": [{"group_0": "a", "agg_0": 1}]}
+        with pytest.raises(MammothValidationError):
+            await client.dataviews.explore(
+                dataset_id=500, dataview_id=42, column="column_1", column_type="TEXT", sort="up"
+            )
+
+    async def test_aggregate_accepts_stddev_and_distinct_count(self, client: MammothClient):
+        await client.dataviews.aggregate(
+            dataset_id=500,
+            dataview_id=42,
+            aggregations=[
+                {"column": "column_2", "function": "STDDEV"},
+                {"column": "column_1", "function": "DISTINCT_COUNT"},
+            ],
+        )
+        body = client._request_json.call_args.kwargs.get("json")
+        assert [item["FUNCTION"] for item in body["param"]["PIVOT"]["SELECT"]] == [
+            "STDDEV",
+            "DISTINCT_COUNT",
+        ]
 
     async def test_exportable_config_get(self, client: MammothClient):
         await client.dataviews.get_exportable_config(dataset_id=500, dataview_id=42)
@@ -807,6 +1183,15 @@ class TestPipelineAPI:
         await client.pipeline.list_tasks(dataview_id=42, dataset_id=500)
         assert_called_with_method_and_endpoint(client._request_json, "GET", "/pipeline/tasks")
 
+    async def test_list_tasks_requests_full_fields(self, client: MammothClient):
+        # __standard (the server default) omits transform_status and
+        # reference_errors, so a task that failed at run time (a GEN_AI step
+        # hitting a workspace AI quota, for example) is invisible: has_error
+        # stays false and pipeline_state reads ready. __full is the only mode
+        # that carries transform_status.
+        await client.pipeline.list_tasks(dataview_id=42, dataset_id=500)
+        assert client._request_json.call_args.kwargs["params"] == {"fields": "__full"}
+
     async def test_add_task(self, client: MammothClient):
         await client.pipeline.add_task(dataview_id=42, task_spec={"MATH": {}}, dataset_id=500)
         assert_called_with_method_and_endpoint(client._request_json, "POST", "/pipeline/tasks")
@@ -814,6 +1199,10 @@ class TestPipelineAPI:
     async def test_get_task(self, client: MammothClient):
         await client.pipeline.get_task(dataview_id=42, task_id=7, dataset_id=500)
         assert_called_with_method_and_endpoint(client._request_json, "GET", "/pipeline/tasks/7")
+
+    async def test_get_task_requests_full_fields(self, client: MammothClient):
+        await client.pipeline.get_task(dataview_id=42, task_id=7, dataset_id=500)
+        assert client._request_json.call_args.kwargs["params"] == {"fields": "__full"}
 
     async def test_update_task(self, client: MammothClient):
         # TaskPatch: ``patches``; task_spec is the replace-params shortcut.
@@ -830,9 +1219,7 @@ class TestPipelineAPI:
         await client.pipeline.delete_task(dataview_id=42, task_id=7, dataset_id=500)
         assert_called_with_method_and_endpoint(client._request_json, "DELETE", "/pipeline/tasks/7")
 
-    async def test_preview_task_can_say_how_many_rows_to_sample(
-        self, client: MammothClient
-    ):
+    async def test_preview_task_can_say_how_many_rows_to_sample(self, client: MammothClient):
         """A caller showing a preview to a person chooses how much to show."""
         await client.pipeline.preview_task(
             dataview_id=42, task_spec={"MATH": {}}, dataset_id=500, sample_size=25
@@ -1281,6 +1668,71 @@ class TestExportsAPILowLevel:
         client._request_json.assert_not_called()
 
 
+class TestExportsAPICsv:
+    """``to_csv`` downloads a local file; ``to_csv_url`` shares its create-and-wait
+    logic but returns the signed URL undownloaded, for an embedded CLI caller
+    that must never write to the host process's disk (see mammoth-cli's
+    ``mammoth_cli/embed.py`` and ``commands/view.py::view_export_csv``)."""
+
+    def _job_created_response(self, job_id: int) -> dict:
+        now = datetime.now(timezone.utc)
+        return {
+            "job": {
+                "id": job_id,
+                "status": "processing",
+                "response": {},
+                "last_updated_at": now,
+                "created_at": now,
+                "path": "/pipeline/exports",
+                "operation": "add_export",
+            }
+        }
+
+    async def test_to_csv_url_returns_signed_url_without_downloading(self, client: MammothClient):
+        client._request_json.return_value = self._job_created_response(9001)
+        client.exports._jobs_api.wait_for_job = AsyncMock(
+            return_value={
+                "status": "success",
+                "response": {"url": "https://signed.example/file.csv", "trigger_id": 77},
+            }
+        )
+
+        result = await client.exports.to_csv_url(dataview_id=42, dataset_id=500)
+
+        assert result == {
+            "url": "https://signed.example/file.csv",
+            "trigger_id": 77,
+            "job_id": 9001,
+        }
+        assert_called_with_method_and_endpoint(client._request_json, "POST", "/pipeline/exports")
+
+    async def test_to_csv_url_rejects_missing_project_id(self, client: MammothClient):
+        client.project_id = None
+        with pytest.raises(ValueError, match="project_id must be set"):
+            await client.exports.to_csv_url(dataview_id=42, dataset_id=500)
+        client._request_json.assert_not_called()
+
+    async def test_to_csv_downloads_using_to_csv_url_result(self, client: MammothClient):
+        client.exports.to_csv_url = AsyncMock(
+            return_value={
+                "url": "https://signed.example/file.csv",
+                "trigger_id": None,
+                "job_id": 9001,
+            }
+        )
+        client.exports._download_file = MagicMock(return_value=Path("/tmp/out.csv"))
+
+        result = await client.exports.to_csv(
+            dataview_id=42, output_path="/tmp/out.csv", dataset_id=500
+        )
+
+        client.exports.to_csv_url.assert_called_once_with(42, timeout=300, dataset_id=500)
+        client.exports._download_file.assert_called_once_with(
+            "https://signed.example/file.csv", Path("/tmp/out.csv"), job_handle=9001
+        )
+        assert result == Path("/tmp/out.csv")
+
+
 # ======================================================================
 # ConnectorsAPI
 # ======================================================================
@@ -1292,15 +1744,18 @@ class TestConnectorsAPI:
         assert_called_with_method_and_endpoint(client._request, "GET", "/connectors")
 
     async def test_get(self, client: MammothClient):
+        # The server base64-decodes the connector_key path segment (see
+        # decode_connector_key in mvc-service); the SDK sends it encoded
+        # while callers keep passing the plain name_key.
         await client.connectors.get(connector_key="salesforce")
         assert_called_with_method_and_endpoint(
-            client._request_json, "GET", "/connectors/salesforce"
+            client._request_json, "GET", "/connectors/c2FsZXNmb3JjZQ=="
         )
 
     async def test_list_connections(self, client: MammothClient):
         await client.connectors.list_connections(connector_key="salesforce")
         assert_called_with_method_and_endpoint(
-            client._request, "GET", "/connectors/salesforce/connections"
+            client._request, "GET", "/connectors/c2FsZXNmb3JjZQ==/connections"
         )
 
     async def test_create_connection(self, client: MammothClient):
@@ -1308,7 +1763,7 @@ class TestConnectorsAPI:
             connector_key="salesforce", config={"code": "oauth_code"}
         )
         assert_called_with_method_and_endpoint(
-            client._request_json, "POST", "/connectors/salesforce/connections"
+            client._request_json, "POST", "/connectors/c2FsZXNmb3JjZQ==/connections"
         )
         assert_json_body(client._request_json, {"code": "oauth_code"})
 
@@ -1573,44 +2028,7 @@ class TestDashboardsAPI:
             await client.dashboards.get_draft_data(dashboard_id=5, widget_id="")
         client._request_json.assert_not_called()
 
-    # ── create ───────────────────────────────────────────────────────────────
-
-    async def test_create_sends_correct_body(self, client: MammothClient):
-        await client.dashboards.create(
-            intent="Show quarterly revenue by region",
-            source=[101, 102],
-        )
-        assert_called_with_method_and_endpoint(client._request_json, "POST", "/dashboards")
-        assert_json_body(
-            client._request_json,
-            {
-                "params": {
-                    "intent": "Show quarterly revenue by region",
-                    "source": [101, 102],
-                    "enable_filters": True,
-                    "enable_pages": False,
-                }
-            },
-        )
-
-    async def test_create_explicit_flags(self, client: MammothClient):
-        await client.dashboards.create(
-            intent="Sales performance breakdown for EMEA",
-            source=[7],
-            enable_filters=False,
-            enable_pages=True,
-        )
-        assert_json_body(
-            client._request_json,
-            {
-                "params": {
-                    "intent": "Sales performance breakdown for EMEA",
-                    "source": [7],
-                    "enable_filters": False,
-                    "enable_pages": True,
-                }
-            },
-        )
+    # ── create_blank ─────────────────────────────────────────────────────────
 
     async def test_create_blank_sends_release_wire(self, client: MammothClient):
         await client.dashboards.create_blank(
@@ -1633,21 +2051,6 @@ class TestDashboardsAPI:
     ):
         with pytest.raises(MammothValidationError, match="dataview_id"):
             await client.dashboards.create_blank({"dataview_id": 0})
-        client._request_json.assert_not_called()
-
-    async def test_create_rejects_short_intent(self, client: MammothClient):
-        with pytest.raises(MammothValidationError, match="intent"):
-            await client.dashboards.create(intent="too short", source=[1])
-        client._request_json.assert_not_called()
-
-    async def test_create_rejects_empty_source(self, client: MammothClient):
-        with pytest.raises(MammothValidationError, match="source"):
-            await client.dashboards.create(intent="Show quarterly revenue by region", source=[])
-        client._request_json.assert_not_called()
-
-    async def test_create_rejects_nonpositive_source_id(self, client: MammothClient):
-        with pytest.raises(MammothValidationError, match="source"):
-            await client.dashboards.create(intent="Show quarterly revenue by region", source=[1, 0])
         client._request_json.assert_not_called()
 
     # ── update ───────────────────────────────────────────────────────────────
@@ -2762,8 +3165,31 @@ class TestUserProfileAPI:
         assert_called_with_method_and_endpoint(client._request_json, "GET", "/self")
 
     async def test_update(self, client: MammothClient):
-        await client.user_profile.update(first_name="Alice")
+        # SelfPatchData: the backend takes a JSON-Patch envelope keyed by
+        # `path` (first_name/last_name/password/mfa), not a flat field dict.
+        await client.user_profile.update(first_name="Alice", last_name="Doe")
         assert_called_with_method_and_endpoint(client._request_json, "PATCH", "/self")
+        assert_json_body(
+            client._request_json,
+            {
+                "patch": [
+                    {"op": "replace", "path": "first_name", "value": "Alice"},
+                    {"op": "replace", "path": "last_name", "value": "Doe"},
+                ]
+            },
+        )
+
+    async def test_update_one_name_part(self, client: MammothClient):
+        await client.user_profile.update(first_name="Alice")
+        assert_json_body(
+            client._request_json,
+            {"patch": [{"op": "replace", "path": "first_name", "value": "Alice"}]},
+        )
+
+    async def test_update_requires_a_name_part(self, client: MammothClient):
+        with pytest.raises(MammothValidationError, match="first_name.*last_name"):
+            await client.user_profile.update()
+        client._request_json.assert_not_called()
 
     async def test_change_password(self, client: MammothClient):
         await client.user_profile.change_password(current_password="old", new_password="new")
@@ -2851,9 +3277,21 @@ class TestWorkspaceAPI:
         await client.workspaces.list_users()
         assert_called_with_method_and_endpoint(client._request_json, "GET", "/workspaces/1/users")
 
+    async def test_list_users_forwards_fields(self, client: MammothClient):
+        """``fields=__full`` adds ``user_roles`` and ``status`` per the backend
+        (apiv2/apiv2/workspaces/user_schema.py:29); the SDK must pass it through."""
+        await client.workspaces.list_users(fields="__full")
+        assert_called_with_method_and_endpoint(client._request_json, "GET", "/workspaces/1/users")
+        assert client._request_json.call_args.kwargs["params"] == {"fields": "__full"}
+
     async def test_get_user(self, client: MammothClient):
-        await client.workspaces.get_user(user_id="u1")
-        assert_called_with_method_and_endpoint(client._request_json, "GET", "/users/u1")
+        client._request_json.return_value = {
+            "users": [{"id": 5, "email": "a@x.io"}, {"id": 6, "email": "b@x.io"}]
+        }
+        user = await client.workspaces.get_user(user_id="6")
+        assert user == {"id": 6, "email": "b@x.io"}
+        assert_called_with_method_and_endpoint(client._request_json, "GET", "/workspaces/1/users")
+        assert client._request_json.call_args.kwargs["params"] == {"fields": "__full"}
 
     async def test_update_user_sends_patch_envelope(self, client: MammothClient):
         op = UserRolePatchOp(op="replace", path="role", value=WorkspaceRoleType.WORKSPACE_ADMIN)

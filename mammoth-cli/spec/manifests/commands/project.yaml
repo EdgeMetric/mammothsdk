@@ -13,6 +13,7 @@ commands:
   request_model: ProjectBulkDeleteRequest
   result_model: ProjectBulkDeleteResult
   mutation_class: destructive
+  edits_target: true
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -34,6 +35,10 @@ commands:
   undo_test: null
   known_restrictions: Sorted comma-separated ID-set confirmation.
   reviewed_by: primary
+  readback:
+    command: project.list
+    ids: {}
+    kind: object
 - command_id: project.bulk-update
   command_path: project bulk-update
   disposition: command
@@ -47,6 +52,7 @@ commands:
   request_model: ProjectBulkUpdateRequest
   result_model: ProjectBulkUpdateResult
   mutation_class: high_impact
+  edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -70,6 +76,55 @@ commands:
   known_restrictions: Release contract is ProjectsPatch (role add/replace/remove across projects).
     The CLI requires every patches[].value item to name a project_id and the confirmation names
     those ids; a body that names no project is refused before dispatch. Not verified live.
+  reviewed_by: primary
+  readback:
+    command: project.list
+    ids: {}
+    kind: object
+- command_id: project.check
+  command_path: project check
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - name: project_id
+    type: int
+    required: false
+    metavar: PROJECT_ID
+    falls_back_to_field: null
+    help: ID of the project to act on; defaults to the active project.
+  - name: dataset_id
+    type: int
+    required: false
+    metavar: DATASET_ID
+    falls_back_to_field: null
+    help: Check only this dataset's first view; no other dataset or dashboard is read.
+  options: []
+  sdk_symbol: mammoth_cli.commands.project.project_check
+  sdk_conversion: Call mammoth_cli.commands.project.project_check with validated request fields.
+  request_model: ProjectCheckRequest
+  result_model: ProjectCheckResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: null
+  live_exemption_reason: Local composite over already-covered dataset, view and dashboard reads.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth project check --help
+  agent_example: mammoth project check 123 456
+  unit_tests:
+  - UT-PROJECT-CHECK
+  contract_tests:
+  - CT-PROJECT-CHECK-HUMAN
+  - CT-PROJECT-CHECK-JSON
+  - CT-PROJECT-CHECK-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Reads the first view of each dataset (the one uploads and the playbooks use) and one data page per view. Given DATASET_ID it reads only that dataset's first view and skips the dashboards.
   reviewed_by: primary
 - command_id: project.checkpoint.list
   command_path: project checkpoint list
@@ -130,6 +185,7 @@ commands:
   request_model: ProjectCreateRequest
   result_model: ProjectCreateResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -151,6 +207,11 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: project.get
+    ids:
+      project_id: result.id
+    kind: object
 - command_id: project.ensure
   command_path: project ensure
   disposition: command
@@ -169,6 +230,7 @@ commands:
   request_model: ProjectEnsureRequest
   result_model: ProjectEnsureResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -192,6 +254,11 @@ commands:
     to the lowest id and the rest are listed under 'duplicates'. Creating a project is a benign mutation;
     sweep with 'project delete ID --yes --confirm ID'.
   reviewed_by: primary
+  readback:
+    command: project.get
+    ids:
+      project_id: result.id
+    kind: object
 - command_id: project.data-check.list
   command_path: project data-check list
   disposition: command
@@ -251,6 +318,7 @@ commands:
   request_model: ProjectDeleteRequest
   result_model: ProjectDeleteResult
   mutation_class: high_impact
+  edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -272,6 +340,10 @@ commands:
   undo_test: null
   known_restrictions: Immutable project-ID confirmation.
   reviewed_by: primary
+  readback:
+    command: project.list
+    ids: {}
+    kind: object
 - command_id: project.get
   command_path: project get
   disposition: command
@@ -345,6 +417,135 @@ commands:
   undo_test: null
   known_restrictions: 'B01 FIRST_PAGE_ONLY: no offset/cursor continuation proven yet.'
   reviewed_by: primary
+- command_id: project.memory.list
+  command_path: project memory list
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - name: project_id
+    type: int
+    required: false
+    metavar: PROJECT_ID
+    falls_back_to_field: null
+    help: ID of the project to act on; defaults to the active project.
+  options: []
+  sdk_symbol: mammoth.api.projects.ProjectsAPI.list_agent_memory
+  sdk_conversion: Call mammoth.api.projects.ProjectsAPI.list_agent_memory with validated request fields.
+  request_model: ProjectMemoryListRequest
+  result_model: ProjectMemoryListResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: No automated disposable-project fixture wired into tests/live yet for this command.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth project memory list --help
+  agent_example: 'mammoth project memory list 123'
+  unit_tests:
+  - UT-PROJECT-MEMORY-LIST
+  contract_tests:
+  - CT-PROJECT-MEMORY-LIST-HUMAN
+  - CT-PROJECT-MEMORY-LIST-JSON
+  - CT-PROJECT-MEMORY-LIST-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'The saved preferences are the caller''s own, per project, oldest first; the in-app agent reads them at the start of every turn. Remove one by its zero-based position in this list.'
+  reviewed_by: primary
+- command_id: project.memory.add
+  command_path: project memory add
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - name: project_id
+    type: int
+    required: false
+    metavar: PROJECT_ID
+    falls_back_to_field: null
+    help: ID of the project to act on; defaults to the active project.
+  options: []
+  sdk_symbol: mammoth.api.projects.ProjectsAPI.add_agent_memory
+  sdk_conversion: Call mammoth.api.projects.ProjectsAPI.add_agent_memory with validated request fields.
+  request_model: ProjectMemoryAddRequest
+  result_model: ProjectMemoryAddResult
+  mutation_class: benign_mutation
+  edits_target: false
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: No automated disposable-project fixture wired into tests/live yet for this command.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth project memory add --help
+  agent_example: 'mammoth project memory add 123 --input ''{"text": "sample"}'''
+  unit_tests:
+  - UT-PROJECT-MEMORY-ADD
+  contract_tests:
+  - CT-PROJECT-MEMORY-ADD-HUMAN
+  - CT-PROJECT-MEMORY-ADD-JSON
+  - CT-PROJECT-MEMORY-ADD-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Save only a preference the user stated for how the agent works or shows things (at most 20, each at most 200 characters); never data, results or secrets. The in-app agent applies them in every later turn in this project. A rule about what a board''s data means (for example, Returned orders are refunds) belongs to that board: dashboard context create.'
+  reviewed_by: primary
+  readback:
+    command: project.memory.list
+    ids:
+      project_id: positional.0
+    kind: object
+- command_id: project.memory.remove
+  command_path: project memory remove
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - name: project_id
+    type: int
+    required: false
+    metavar: PROJECT_ID
+    falls_back_to_field: null
+    help: ID of the project to act on; defaults to the active project.
+  options: []
+  sdk_symbol: mammoth.api.projects.ProjectsAPI.remove_agent_memory
+  sdk_conversion: Call mammoth.api.projects.ProjectsAPI.remove_agent_memory with validated request fields.
+  request_model: ProjectMemoryRemoveRequest
+  result_model: ProjectMemoryRemoveResult
+  mutation_class: benign_mutation
+  edits_target: false
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: No automated disposable-project fixture wired into tests/live yet for this command.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth project memory remove --help
+  agent_example: 'mammoth project memory remove 123 --input ''{"index": 1}'''
+  unit_tests:
+  - UT-PROJECT-MEMORY-REMOVE
+  contract_tests:
+  - CT-PROJECT-MEMORY-REMOVE-HUMAN
+  - CT-PROJECT-MEMORY-REMOVE-JSON
+  - CT-PROJECT-MEMORY-REMOVE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'index is the zero-based position from project memory list; use it when the user asks to forget a preference.'
+  reviewed_by: primary
+  readback:
+    command: project.memory.list
+    ids:
+      project_id: positional.0
+    kind: object
 - command_id: project.pending-changes
   command_path: project pending-changes
   disposition: command
@@ -484,6 +685,7 @@ commands:
   request_model: ProjectResourceDependenciesUpdateRequest
   result_model: ProjectResourceDependenciesUpdateResult
   mutation_class: high_impact
+  edits_target: true
   confirmation: confirm_target
   wait_policy: always_wait
   pagination_policy: none
@@ -506,6 +708,11 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: project.resource-dependencies
+    ids:
+      project_id: positional.0
+    kind: object
 - command_id: project.resource-status
   command_path: project resource-status
   disposition: command
@@ -565,6 +772,7 @@ commands:
   request_model: ProjectSampleFlowRequest
   result_model: ProjectSampleFlowResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -586,6 +794,11 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: job.get
+    ids:
+      job_id: result.job_id
+    kind: delivery
 - command_id: project.update
   command_path: project update
   disposition: command
@@ -605,6 +818,7 @@ commands:
   request_model: ProjectUpdateRequest
   result_model: ProjectUpdateResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -626,6 +840,11 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: project.get
+    ids:
+      project_id: positional.0
+    kind: object
 - command_id: project.user.add
   command_path: project user add
   disposition: command
@@ -645,6 +864,7 @@ commands:
   request_model: ProjectUserAddRequest
   result_model: ProjectUserAddResult
   mutation_class: high_impact
+  edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -664,8 +884,12 @@ commands:
   - CT-PROJECT-USER-ADD-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: B03 PROJECT_USER_ID_ROLE_UNTYPED.
+  known_restrictions: 'B03 PROJECT_USER_ID_ROLE_UNTYPED. Takes existing workspace users'' ids. To add
+    someone by email who is not in the workspace yet, use workspace user add with
+    {"email_ids": [EMAIL], "projects": [{"project_id": PROJECT_ID, "role": ROLE}]}: it invites them as a workspace member
+    with that project role, which is how a project gets a new person.'
   reviewed_by: primary
+  no_readback: "no CLI read command exposes per-project user role assignments"
 - command_id: project.user.remove
   command_path: project user remove
   disposition: command
@@ -685,6 +909,7 @@ commands:
   request_model: ProjectUserRemoveRequest
   result_model: ProjectUserRemoveResult
   mutation_class: high_impact
+  edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -706,6 +931,7 @@ commands:
   undo_test: null
   known_restrictions: B03 PROJECT_USER_ID_ROLE_UNTYPED; sorted target-set confirmation.
   reviewed_by: primary
+  no_readback: "no CLI read command exposes per-project user role assignments"
 - command_id: project.user.update
   command_path: project user update
   disposition: command
@@ -725,6 +951,7 @@ commands:
   request_model: ProjectUserUpdateRequest
   result_model: ProjectUserUpdateResult
   mutation_class: high_impact
+  edits_target: true
   confirmation: yes_always
   wait_policy: not_async
   pagination_policy: none
@@ -747,3 +974,4 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  no_readback: "no CLI read command exposes per-project user role assignments"

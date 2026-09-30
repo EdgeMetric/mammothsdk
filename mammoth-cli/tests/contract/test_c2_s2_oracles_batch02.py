@@ -308,14 +308,29 @@ CASES = [
         "input": {"limit": 21, "offset": 0, "sort": "(name:asc)"},
         "api": DatasetsAPI,
         "method": "list",
-        "kwargs": {"project_id": 41, "limit": 21, "offset": 0, "sort": "(name:asc)"},
+        "kwargs": {
+            "project_id": 41,
+            "limit": 21,
+            "offset": 0,
+            "sort": "(name:asc)",
+            "fields": "id,name,created_at,updated_at,status,stats,sources,data_schema,additional_info",
+        },
         "wire": [
             "GET",
             "/workspaces/4/projects/41/datasets",
-            {"params": {"fields": "id,name", "limit": 21, "offset": 0, "sort": "(name:asc)"}},
+            {
+                "params": {
+                    "fields": "id,name,created_at,updated_at,status,stats,sources,data_schema,additional_info",
+                    "limit": 21,
+                    "offset": 0,
+                    "sort": "(name:asc)",
+                }
+            },
         ],
         "response": {"datasets": []},
     },
+    # dataset.get also reads the dataview count for its "hint" (T1-I-13); that
+    # follow-up read is the *last* wire call, so assert against the *first*.
     {
         "route": "dataset.get",
         "argv": ["dataset", "get", "763"],
@@ -324,10 +339,9 @@ CASES = [
         "api": DatasetsAPI,
         "method": "get",
         "kwargs": {"dataset_id": 763, "project_id": 41},
-        # `fields` is optional and unset here, so the kwarg is sent as None and
-        # nothing reaches the query string.
-        "wire": ["GET", "/workspaces/4/projects/41/datasets/763", {"params": None}],
+        "wire": ["GET", "/workspaces/4/projects/41/datasets/763", {}],
         "response": {},
+        "wire_index": 0,
     },
     {
         "route": "dataset.rename",
@@ -812,8 +826,8 @@ CASES = [
         "input": None,
         "api": WorkspaceAPI,
         "method": "list_users",
-        "kwargs": {},
-        "wire": ["GET", "/workspaces/4/users", {}],
+        "kwargs": {"fields": "__full"},
+        "wire": ["GET", "/workspaces/4/users", {"params": {"fields": "__full"}}],
         "response": {"users": []},
     },
     {
@@ -1031,17 +1045,34 @@ def _argv(case: dict[str, Any]) -> list[str]:
     return out
 
 
+# `addon list` is fail-loud by design (7363d74): the backend has no GET
+# /workspaces/{id}/addons route.  The SDK wire stays pinned below; the CLI must
+# refuse before any request leaves the process.
+CLI_UNSUPPORTED_ROUTES = frozenset({"addon.list"})
+
+
 @pytest.mark.parametrize("case", CASES, ids=lambda c: c["route"])
 def test_cli_to_recording_transport_uses_independent_wire(
     case: dict[str, Any], monkeypatch: pytest.MonkeyPatch, real_service: Any
 ) -> None:
     service, api = real_service(project_id=case.get("project"))
-    _drive(monkeypatch.setattr(factory, "build_service", lambda *args, **kwargs: service))
+    monkeypatch.setattr(factory, "build_service", lambda *args, **kwargs: service)
+    if case["route"] in CLI_UNSUPPORTED_ROUTES:
+        result = make_runner().invoke(_argv(case))
+        assert result.exit_code == 2, result.output
+        assert json.loads(result.output)["error"]["code"] == "unsupported_contract"
+        assert api.requests == []
+        return
     method, path, kwargs = case["wire"]
     _drive(api.on(method, "/api/v2" + path, body=case["response"]))
     result = make_runner().invoke(_argv(case))
     assert result.exit_code == 0, result.output
-    request = api.last()
+    # A settled write is followed by one automatic read-back GET (runtime/verify.py);
+    # the oracle is the mutation itself, so select it by method, not by position.
+    if "wire_index" in case:
+        request = api.requests[case["wire_index"]]
+    else:
+        request = next(r for r in reversed(api.requests) if r.method == method)
     assert request.method == method
     assert request.path.removeprefix("/api/v2") == path
     assert request.json_body == kwargs.get("json")
@@ -1274,7 +1305,7 @@ def test_dataset_list_nonzero_offset_cli_wire_in_venv314(
     assert seen and seen[0].get("offset") == 6, seen
     request = api.last()
     assert {key: values[-1] for key, values in request.query.items()} == {
-        "fields": "id,name",
+        "fields": "id,name,created_at,updated_at,status,stats,sources,data_schema,additional_info",
         "limit": "1",
         "offset": "6",
         "sort": "(name:asc)",
@@ -1315,7 +1346,7 @@ def test_dataset_list_nonzero_offset_cli_wire_in_mandatory_no_input_mode(
     assert seen and seen[0].get("offset") == 6, seen
     request = api.last()
     assert {key: values[-1] for key, values in request.query.items()} == {
-        "fields": "id,name",
+        "fields": "id,name,created_at,updated_at,status,stats,sources,data_schema,additional_info",
         "limit": "1",
         "offset": "6",
         "sort": "(name:asc)",

@@ -208,7 +208,8 @@ view.discard_duplicates(ignore_columns=["Timestamp"])
 # Fill missing values
 from mammoth import FillDirection
 
-view.fill_missing(column="Price", direction=FillDirection.LAST_VALUE)
+# FIRST_VALUE: forward fill (previous row); LAST_VALUE: back-fill (next row)
+view.fill_missing(column="Price", direction=FillDirection.FIRST_VALUE)
 
 # Remove rows with missing values
 view.filter_rows(Condition("Email", Operator.IS_NOT_EMPTY))
@@ -270,9 +271,10 @@ view.branch_out(dest_dataset_id=42)
 ## AI Features
 
 ```python
-# Generate SQL from natural language (also adds pipeline task automatically)
+# Generate SQL from natural language (returns the query; the view is unchanged)
 sql = view.generate_sql("count employees by department")
 print(sql)  # "SELECT department, COUNT(*) FROM ..."
+view.add_sql(sql)  # apply it
 
 # Generate SQL for a different intent
 sql = view.generate_sql("show top 10 products by revenue")

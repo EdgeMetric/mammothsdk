@@ -12,6 +12,7 @@ commands:
   request_model: SkillInstallRequest
   result_model: SkillInstallResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -33,6 +34,10 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: skill.list
+    ids: {}
+    kind: object
 - command_id: skill.list
   command_path: skill list
   disposition: command
@@ -111,6 +116,7 @@ commands:
   request_model: SkillAgentsMdInstallRequest
   result_model: SkillAgentsMdInstallResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -132,6 +138,7 @@ commands:
   undo_test: null
   known_restrictions: 'Writes one <mammoth-cli>…</mammoth-cli> block into AGENTS.md in the current directory (--input ''{"path": "CLAUDE.md"}'' for another file); re-running replaces the block in place. Local file write only.'
   reviewed_by: primary
+  no_readback: "writes a local AGENTS.md file; no read command in this manifest reports its installed state"
 - command_id: skill.show
   command_path: skill show
   disposition: command
@@ -178,6 +185,7 @@ commands:
   request_model: SkillUninstallRequest
   result_model: SkillUninstallResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -199,6 +207,10 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: skill.list
+    ids: {}
+    kind: object
 - command_id: skill.update
   command_path: skill update
   disposition: command
@@ -211,6 +223,7 @@ commands:
   request_model: SkillUpdateRequest
   result_model: SkillUpdateResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -232,3 +245,7 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: skill.list
+    ids: {}
+    kind: object

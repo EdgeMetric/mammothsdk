@@ -274,38 +274,17 @@ class TestStripePaymentMethods:
 
 
 class TestInvoices:
-    async def test_invoice_list_no_params(self):
+    async def test_invoice_list_uses_stripe_billing_history(self):
         api, mock_client = _make_api()
-        mock_client._request_json = AsyncMock(return_value={"invoices": []})
-        await api.invoice_list()
+        mock_client._request_json = AsyncMock(return_value={"billing_history": []})
+        assert await api.invoice_list() == {"billing_history": []}
         mock_client._request_json.assert_called_once_with(
-            "GET",
-            "/workspaces/2/subscription_v1/invoices",
-            params=None,
+            "GET", "/workspaces/2/subscription/billing-history"
         )
 
-    async def test_invoice_list_with_params(self):
-        api, mock_client = _make_api()
-        mock_client._request_json = AsyncMock(return_value={"invoices": []})
-        await api.invoice_list(limit=10, sort="(date:desc)")
-        mock_client._request_json.assert_called_once_with(
-            "GET",
-            "/workspaces/2/subscription_v1/invoices",
-            params={"limit": 10, "sort": "(date:desc)"},
-        )
-
-    async def test_invoice_get(self):
-        api, mock_client = _make_api()
-        mock_client._request_json = AsyncMock(return_value={"id": 4})
-        await api.invoice_get(4)
-        mock_client._request_json.assert_called_once_with(
-            "GET", "/workspaces/2/subscription_v1/invoices/4"
-        )
-
-    async def test_invoice_get_non_positive_raises(self):
+    def test_invoice_get_removed(self):
         api, _ = _make_api()
-        with pytest.raises(MammothValidationError, match="invoice_id"):
-            await api.invoice_get(0)
+        assert not hasattr(api, "invoice_get")
 
     async def test_invoice_charge(self):
         api, mock_client = _make_api()

@@ -13,6 +13,7 @@ commands:
   request_model: ScheduleCreateRequest
   result_model: ScheduleCreateResult
   mutation_class: external_effect
+  edits_target: false
   confirmation: yes_always
   wait_policy: not_async
   pagination_policy: none
@@ -35,6 +36,11 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: schedule.get
+    ids:
+      schedule_id: result.id
+    kind: object
 - command_id: schedule.delete
   command_path: schedule delete
   disposition: command
@@ -54,6 +60,7 @@ commands:
   request_model: ScheduleDeleteRequest
   result_model: ScheduleDeleteResult
   mutation_class: destructive
+  edits_target: true
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -75,6 +82,10 @@ commands:
   undo_test: null
   known_restrictions: Immutable ID confirmation.
   reviewed_by: primary
+  readback:
+    command: schedule.list
+    ids: {}
+    kind: object
 - command_id: schedule.get
   command_path: schedule get
   disposition: command
@@ -147,7 +158,13 @@ commands:
   - CT-SCHEDULE-LIST-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: 'B04 SERVER_VARIANCE: schedule list may return 405.'
+  known_restrictions: 'B04 SERVER_VARIANCE: unconditionally unimplemented on every backend
+    release tested, not intermittent -- GET .../schedules always returns HTTP 400 with error
+    code 5GENR011 NOT_IMPLEMENTED (mvc-service apiv2/apiv2/schedules/controller.py
+    ScheduleController.list_schedules always raises ClientError(not_implemented_error); its
+    own docstring says schedules carry no workspace/project reference to list by). Do not poll
+    it; there is no way to list schedules for a project from the CLI today. Use `schedule get
+    SCHEDULE_ID` with an id obtained elsewhere.'
   reviewed_by: primary
 - command_id: schedule.update
   command_path: schedule update
@@ -168,6 +185,7 @@ commands:
   request_model: ScheduleUpdateRequest
   result_model: ScheduleUpdateResult
   mutation_class: external_effect
+  edits_target: true
   confirmation: yes_always
   wait_policy: not_async
   pagination_policy: none
@@ -192,3 +210,8 @@ commands:
   undo_test: null
   known_restrictions: status=resume requires exact ID confirmation.
   reviewed_by: primary
+  readback:
+    command: schedule.get
+    ids:
+      schedule_id: positional.0
+    kind: object

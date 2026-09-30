@@ -14,7 +14,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from functools import cache
 from types import MappingProxyType
-from typing import Any, cast
+from typing import Any, Literal, cast
 
 from mammoth.models.batches import (
     ColumnIdMapping,
@@ -244,7 +244,6 @@ _PILOT_ADAPTER_INPUTS: dict[str, frozenset[str]] = {
     "file.upload": frozenset({"files"}),
     "view.transform.math": frozenset({"condition"}),
     "view.transform.lookup": frozenset(),
-    "dashboard.create": frozenset({"intent"}),
     "dashboard.source.list": frozenset(),
 }
 
@@ -257,6 +256,7 @@ _PILOT_ADAPTER_INPUTS: dict[str, frozenset[str]] = {
 # values that may cross the structured-input boundary.
 _LOCAL_CONTRACT_FIELDS: dict[str, tuple[FieldSpec, ...]] = {
     "project.ensure": (FieldSpec("name", required=False, annotation=str),),
+    "doctor": (FieldSpec("wait", required=False, annotation=int, default=0),),
     "schema.get": (FieldSpec("full", required=False, annotation=bool, default=False),),
     "schema.list": (
         FieldSpec("family", required=False, annotation=str | None, default=None),
@@ -324,6 +324,33 @@ _RELEASE_BATCH_SPEC_FIELDS = (
     ),
 )
 
+# view.data.compare's own handler never calls its manifest sdk_symbol directly
+# -- it runs view.data.aggregate's own handler once per view and joins
+# client-side (see mammoth_cli.commands.view.view_data_compare). The manifest
+# still names that symbol so discovery is accurate, but the accepted document
+# fields are authored here rather than introspected, minus view.data.aggregate's
+# own dataset_id override (compare has no per-view dataset positional) and its
+# async-wait fields (compare's wait_policy is not_async).
+_VIEW_DATA_COMPARE_FIELDS = (
+    FieldSpec("aggregations", required=False, annotation=list[Any] | None, default=None),
+    FieldSpec("group_by", required=False, annotation=list[Any] | None, default=None),
+    FieldSpec("metric", required=False, annotation=dict[str, Any] | None, default=None),
+    FieldSpec("condition", required=False, annotation=dict[str, Any] | None, default=None),
+    FieldSpec("sequence", required=False, annotation=int | None, default=None),
+    FieldSpec("limit", required=False, annotation=int | None, default=None),
+)
+
+# view.data.profile's handler is a CLI composite: it asks the backend for
+# whole-view aggregates (DataviewsAPI.aggregate, named in the manifest so
+# discovery has an SDK anchor) and never forwards these fields to it. The
+# accepted document fields are authored here.
+_VIEW_DATA_PROFILE_FIELDS = (
+    FieldSpec("target", required=False, annotation=str | None, default=None),
+    FieldSpec("columns", required=False, annotation=list[str] | None, default=None),
+    FieldSpec("top", required=False, annotation=int, default=5),
+    FieldSpec("limit", required=False, annotation=int, default=50),
+)
+
 # The remaining S1 commands are intentionally closed zero-input commands.  A
 # command may still receive ordinary positional/context values; those are
 # represented by ``positionals`` and never become structured-input keys.
@@ -332,6 +359,7 @@ _LOCAL_COMMANDS = frozenset(
         "auth.login",
         "auth.logout",
         "auth.status",
+        "calc",
         "capability.find",
         "capability.get",
         "capability.list",
@@ -346,6 +374,7 @@ _LOCAL_COMMANDS = frozenset(
         "context.project.use",
         "dataset.find",
         "doctor",
+        "project.check",
         "project.ensure",
         "folder.find",
         "log.path",
@@ -434,6 +463,9 @@ S2_COMMANDS = frozenset(
         "project.delete",
         "project.get",
         "project.list",
+        "project.memory.add",
+        "project.memory.list",
+        "project.memory.remove",
         "project.pending-changes",
         "project.publish-credentials",
         "project.resource-dependencies",
@@ -582,14 +614,40 @@ S7_COMMANDS = frozenset(
 # admission, and handler binding agree instead of treating every arbitrary
 # keyword as valid.
 _S7_ADDITIONAL_INPUT_FIELDS: dict[str, tuple[FieldSpec, ...]] = {
+    # Published-dashboard jobs are readable only through the URL-scoped job
+    # route; ``job wait`` polls it when the dashboard URL slug is given.
+    "job.wait": (FieldSpec("dashboard_url", required=False, annotation=str | None, default=None),),
     # The GET data route has no server-side page size; the CLI trims the row
     # list so a read-back costs a screen of tokens, not the whole view.
-    "view.data.get": (FieldSpec("limit", required=False, annotation=int, default=50),),
+    "view.data.get": (
+        FieldSpec("limit", required=False, annotation=int, default=50),
+        FieldSpec("offset", required=False, annotation=int, default=1),
+    ),
     # The dataview GET takes a server-side projection: "__min", "__standard",
     # "__full" or a comma-separated field list.
     "view.get": (FieldSpec("fields", required=False, annotation=str | None, default=None),),
-    # ``view list`` records are trimmed to the brief shape; ``full`` keeps them.
-    "view.list": (FieldSpec("full", required=False, annotation=bool, default=False),),
+    # ``order_by`` (result labels, ``"Total desc"``) and ``top`` rank the groups on the
+    # backend; ``text_date_format`` settles a day/month-ambiguous TEXT date column.
+    "view.data.aggregate": (
+        FieldSpec("order_by", required=False, annotation=list[Any] | None, default=None),
+        FieldSpec("top", required=False, annotation=int | None, default=None),
+        FieldSpec("text_date_format", required=False, annotation=str | None, default=None),
+    ),
+    "view.data.explore": (
+        FieldSpec("text_date_format", required=False, annotation=str | None, default=None),
+    ),
+    "view.data.query": (
+        FieldSpec("text_date_format", required=False, annotation=str | None, default=None),
+    ),
+    # ``full`` returns the raw ``{id, name}`` list instead of the summaries.
+    "dataset.list": (FieldSpec("full", required=False, annotation=bool, default=False),),
+    # ``view list`` records are trimmed to the brief shape; ``full`` keeps
+    # them. ``dataset_offset`` resumes the no-DATASET_ID, every-dataset-in-
+    # the-project walk (item G) at a later dataset index.
+    "view.list": (
+        FieldSpec("full", required=False, annotation=bool, default=False),
+        FieldSpec("dataset_offset", required=False, annotation=int, default=0),
+    ),
     "activity.list": (
         FieldSpec("project_id", required=False, annotation=int | None, default=None),
         FieldSpec("workspace_id", required=False, annotation=int | None, default=None),
@@ -617,16 +675,29 @@ _S7_ADDITIONAL_INPUT_FIELDS: dict[str, tuple[FieldSpec, ...]] = {
         # GLOBAL or WORKSPACE_PREFERENCES.
         FieldSpec("patch", required=False, annotation=list[Any] | None, default=None),
     ),
-    "user.update": (
-        FieldSpec("name", required=False, annotation=str | None, default=None),
-        FieldSpec("email", required=False, annotation=str | None, default=None),
+    # ``target`` picks which of the two backing SDK methods the handler calls
+    # (powerbi_preflight/tableau_preflight, export_powerbi/export_tableau); it
+    # is CLI-side dispatch, never forwarded into either SDK call, so neither
+    # signature can introspect it.
+    "dashboard.bi-preflight": (
+        FieldSpec("target", required=True, annotation=Literal["powerbi", "tableau"]),
     ),
+    "dashboard.bi-export": (
+        FieldSpec("target", required=True, annotation=Literal["powerbi", "tableau"]),
+    ),
+    # user.update previously pinned name/email here as a guess, from when
+    # UserProfileAPI.update took **fields and so had nothing introspectable.
+    # The SDK method is now typed (first_name, last_name -- the backend's
+    # real SelfPatchData path values), so its own signature is the source of
+    # truth and this override is gone rather than fixed to match: keeping a
+    # hardcoded shadow of a typed signature is exactly how it drifted wrong
+    # the first time.
 }
 CONTRACT_BOUND_COMMANDS = frozenset(
     S2_COMMANDS | S3_COMMANDS | S4_COMMANDS | S6_COMMANDS | S7_COMMANDS
 )
 
-# The five reviewed adapter shapes remain separately named for compatibility
+# The four reviewed adapter shapes remain separately named for compatibility
 # with existing pilot tests and release notes.
 PILOT_COMMANDS = frozenset(_PILOT_ADAPTER_INPUTS)
 LOCAL_COMMANDS = _LOCAL_COMMANDS
@@ -650,6 +721,10 @@ def resolve_command_contract(command_id: str) -> ResolvedCommandContract | None:
     special_fields = _special_export_fields(command_id, spec)
     if command_id == "batch.create-spec":
         special_fields = _RELEASE_BATCH_SPEC_FIELDS
+    elif command_id == "view.data.compare":
+        special_fields = _VIEW_DATA_COMPARE_FIELDS
+    elif command_id == "view.data.profile":
+        special_fields = _VIEW_DATA_PROFILE_FIELDS
     local_fields = _LOCAL_CONTRACT_FIELDS.get(command_id, ()) if is_local else None
     fields = tuple(
         field

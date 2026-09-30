@@ -61,14 +61,3 @@ FOREIGN_LOOKUP_ORACLE = {
         "existing_column": None,
     },
 }
-
-ASYNC_DASHBOARD_ORACLE = {
-    "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.create",
-    "kwargs": {
-        "intent": "Build a pilot dashboard",
-        "source": [9001],
-        "enable_filters": False,
-        "enable_pages": True,
-    },
-    "response": {"job_id": 8811, "status": "queued"},
-}

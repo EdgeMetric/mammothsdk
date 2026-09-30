@@ -18,6 +18,8 @@ from mammoth_cli.testing import login_default_profile
 _CREATE = "mammoth.client.ViewsResource.create"
 _GET = "mammoth.client.ViewsResource.get"
 _DELETE = "mammoth.client.ViewsResource.delete"
+_FIND_DATASET = "mammoth.api.pipeline.PipelineAPI.find_dataset_for_dataview"
+_DASHBOARDS_LIST = "mammoth.api.dashboards.DashboardsAPI.list"
 
 
 @pytest.fixture(autouse=True)
@@ -51,9 +53,28 @@ def test_create_requires_dataset_id(fake_service: FakeMammothService) -> None:
 
 
 def test_create_forwards_optional_fields(fake_service: FakeMammothService, tmp_path: Path) -> None:
+    # clone_from's own dataset is looked up first; program it as dataset 5 (the
+    # target) so the same-dataset check passes and the create call proceeds.
+    fake_service.responses[_FIND_DATASET] = 5
     doc = _write(tmp_path, {"name": "Copy", "clone_from": 9})
     view_ops_cmd.view_create(_inv("view.create", extra_args=["5"], input_file=doc))
-    assert fake_service.call_log == [(_CREATE, {"dataset_id": 5, "name": "Copy", "clone_from": 9})]
+    assert fake_service.call_log == [
+        (_FIND_DATASET, {"dataview_id": 9}),
+        (_CREATE, {"dataset_id": 5, "name": "Copy", "clone_from": 9}),
+    ]
+
+
+def test_create_rejects_clone_from_view_of_a_different_dataset(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    fake_service.responses[_FIND_DATASET] = 8
+    doc = _write(tmp_path, {"name": "Copy", "clone_from": 9})
+    with pytest.raises(CliError) as excinfo:
+        view_ops_cmd.view_create(_inv("view.create", extra_args=["5"], input_file=doc))
+    assert excinfo.value.code == "invalid_arguments"
+    assert excinfo.value.hint is not None
+    assert "plain view" in excinfo.value.hint
+    assert fake_service.call_log == [(_FIND_DATASET, {"dataview_id": 9})]
 
 
 def test_get_requires_view_id(fake_service: FakeMammothService) -> None:
@@ -64,7 +85,7 @@ def test_get_requires_view_id(fake_service: FakeMammothService) -> None:
 
 def test_get_uses_positional_view_id(fake_service: FakeMammothService) -> None:
     view_ops_cmd.view_get(_inv("view.get", extra_args=["7"]))
-    assert fake_service.call_log == [(_GET, {"view_id": 7})]
+    assert fake_service.call_log == [(_GET, {"view_id": 7}), (_DASHBOARDS_LIST, {})]
 
 
 class _RichView:
@@ -413,6 +434,50 @@ def test_transform_convert_type_forwards(fake_service: FakeMammothService, tmp_p
     ]
 
 
+_DATAVIEW_GET = "mammoth.api.dataviews.DataviewsAPI.get"
+_TYPED_METADATA = {
+    "metadata": [
+        {"display_name": "a", "internal_name": "column_1", "type": "NUMERIC"},
+        {"display_name": "b", "internal_name": "column_2", "type": "TEXT"},
+    ]
+}
+
+
+def test_transform_convert_type_skips_a_column_that_already_has_the_type(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    # Converting NUMERIC -> NUMERIC puts the pipeline in ref_error on release.
+    fake_service.responses[_DATAVIEW_GET] = _TYPED_METADATA
+    doc = _write(
+        tmp_path,
+        {"conversions": [{"column": "a", "to": "NUMERIC"}, {"column": "b", "to": "NUMERIC"}]},
+    )
+    data, _ = view_ops_cmd.view_transform_convert_type(
+        _inv(
+            "view.transform.convert-type", extra_args=["3"], resource_ref=_parent(3), input_file=doc
+        )
+    )
+    assert fake_service.view_call_log == [
+        (3, "convert_type", {"dataset_id": 122, "conversions": [{"column": "b", "to": "NUMERIC"}]})
+    ]
+    assert data["skipped"] == [{"column": "a", "type": "NUMERIC"}]
+
+
+def test_transform_convert_type_adds_no_task_when_every_column_has_the_type(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    fake_service.responses[_DATAVIEW_GET] = _TYPED_METADATA
+    doc = _write(tmp_path, {"conversions": [{"column": "a", "to": "NUMERIC"}]})
+    data, _ = view_ops_cmd.view_transform_convert_type(
+        _inv(
+            "view.transform.convert-type", extra_args=["3"], resource_ref=_parent(3), input_file=doc
+        )
+    )
+    assert fake_service.view_call_log == []
+    assert data["status"] == "no_change"
+    assert data["skipped"] == [{"column": "a", "type": "NUMERIC"}]
+
+
 def test_transform_copy_columns_requires_copies(fake_service: FakeMammothService) -> None:
     with pytest.raises(CliError) as excinfo:
         view_ops_cmd.view_transform_copy_columns(
@@ -496,7 +561,7 @@ def test_transform_date_diff_forwards_optional(
 def test_transform_delete_columns_requires_columns(fake_service: FakeMammothService) -> None:
     with pytest.raises(CliError) as excinfo:
         view_ops_cmd.view_transform_delete_columns(
-            _inv("view.transform.delete-columns", extra_args=["3"])
+            _inv("view.transform.delete-columns", extra_args=["3"], yes=True)
         )
     assert excinfo.value.code == "missing_field"
 
@@ -511,11 +576,30 @@ def test_transform_delete_columns_forwards(
             extra_args=["3"],
             resource_ref=_parent(3),
             input_file=doc,
+            yes=True,
         )
     )
     assert fake_service.view_call_log == [
         (3, "delete_columns", {"dataset_id": 122, "columns": ["a", "b"]})
     ]
+
+
+def test_transform_delete_columns_blocked_without_confirmation(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    doc = _write(tmp_path, {"columns": ["a", "b"]})
+    with pytest.raises(CliError) as excinfo:
+        view_ops_cmd.view_transform_delete_columns(
+            _inv(
+                "view.transform.delete-columns",
+                extra_args=["3"],
+                resource_ref=_parent(3),
+                input_file=doc,
+                output="json",
+            )
+        )
+    assert excinfo.value.code == "confirmation_required"
+    assert fake_service.view_call_log == []
 
 
 def test_transform_discard_duplicates_no_input(fake_service: FakeMammothService) -> None:
@@ -634,6 +718,25 @@ def test_transform_generate_sql_requires_intent(fake_service: FakeMammothService
     assert excinfo.value.code == "missing_field"
 
 
+def test_transform_generate_sql_says_the_view_is_unchanged(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    # The route returns a validated query and adds no task (release).
+    query = 'SELECT "city", COUNT(*) AS n FROM "View 1" GROUP BY "city"'
+    fake_service.view_responses[(3, "generate_sql")] = query
+    doc = _write(tmp_path, {"intent": "Count rows per city"})
+    data, _ = view_ops_cmd.view_transform_generate_sql(
+        _inv(
+            "view.transform.generate-sql", extra_args=["3"], resource_ref=_parent(3), input_file=doc
+        )
+    )
+    assert data["sql"] == query
+    assert data["applied"] is False
+    assert data["apply"].startswith("mammoth view transform add-sql 3 --input '")
+    applied = json.loads(data["apply"].split("--input ", 1)[1].strip("'"))
+    assert applied == {"dataset_id": 122, "query": query}
+
+
 def test_transform_generate_sql_forwards(fake_service: FakeMammothService, tmp_path: Path) -> None:
     doc = _write(tmp_path, {"intent": "Top customers"})
     view_ops_cmd.view_transform_generate_sql(
@@ -748,6 +851,48 @@ def test_transform_limit_rows_forwards_optional(
     )
     assert fake_service.view_call_log == [
         (3, "limit_rows", {"dataset_id": 122, "n": 10, "bottom": True})
+    ]
+
+
+@pytest.mark.parametrize(
+    "command_id,handler,field",
+    [
+        ("view.transform.rename-columns", "view_transform_rename_columns", "renames"),
+        ("view.transform.sort", "view_transform_sort", "order_by"),
+    ],
+)
+def test_display_setting_transforms_require_field(
+    fake_service: FakeMammothService, command_id: str, handler: str, field: str
+) -> None:
+    with pytest.raises(CliError) as excinfo:
+        getattr(view_ops_cmd, handler)(_inv(command_id, extra_args=["3"]))
+    assert excinfo.value.code == "missing_field"
+
+
+def test_transform_rename_columns_forwards(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    doc = _write(tmp_path, {"renames": {"cust_id": "Customer ID"}})
+    view_ops_cmd.view_transform_rename_columns(
+        _inv(
+            "view.transform.rename-columns",
+            extra_args=["3"],
+            resource_ref=_parent(3),
+            input_file=doc,
+        )
+    )
+    assert fake_service.view_call_log == [
+        (3, "rename_columns", {"dataset_id": 122, "renames": {"cust_id": "Customer ID"}})
+    ]
+
+
+def test_transform_sort_forwards(fake_service: FakeMammothService, tmp_path: Path) -> None:
+    doc = _write(tmp_path, {"order_by": [["Revenue", "DESC"]]})
+    view_ops_cmd.view_transform_sort(
+        _inv("view.transform.sort", extra_args=["3"], resource_ref=_parent(3), input_file=doc)
+    )
+    assert fake_service.view_call_log == [
+        (3, "sort_rows", {"dataset_id": 122, "order_by": [["Revenue", "DESC"]]})
     ]
 
 
@@ -1070,7 +1215,7 @@ def test_non_read_view_ops_refuse_parent_discovery(
 _DV_GET = "mammoth.api.dataviews.DataviewsAPI.get"
 _BRIEF = (
     "id,ds_id,name,status,row_count,column_count,metadata,pipeline_status,"
-    "is_pipeline_running,is_dataview_data_in_sync,data_updated_at,updated_at"
+    "is_pipeline_running,is_dataview_data_in_sync,data_updated_at,updated_at,display_properties"
 )
 
 
@@ -1081,7 +1226,8 @@ def test_get_with_exact_parent_asks_the_server_for_the_brief_projection(
     # display trees); the GET route projects server-side.
     view_ops_cmd.view_get(_inv("view.get", extra_args=["7", "63"]))
     assert fake_service.call_log == [
-        (_DV_GET, {"dataset_id": 63, "dataview_id": 7, "fields": _BRIEF})
+        (_DV_GET, {"dataset_id": 63, "dataview_id": 7, "fields": _BRIEF}),
+        (_DASHBOARDS_LIST, {}),
     ]
 
 
@@ -1091,7 +1237,7 @@ def test_get_fields_input_overrides_the_projection(
     doc = tmp_path / "in.json"
     doc.write_text('{"fields": "__full"}', encoding="utf-8")
     view_ops_cmd.view_get(_inv("view.get", extra_args=["7", "63"], input_file=str(doc)))
-    assert fake_service.call_log[-1][1]["fields"] == "__full"
+    assert fake_service.call_log[0][1]["fields"] == "__full"
 
 
 def test_get_via_discovery_trims_to_the_brief_shape(fake_service: FakeMammothService) -> None:
@@ -1110,6 +1256,49 @@ def test_get_via_discovery_trims_to_the_brief_shape(fake_service: FakeMammothSer
     data, _ = view_ops_cmd.view_get(_inv("view.get", extra_args=["7"]))
     assert "dependencies_info" not in data and "display_properties" not in data
     assert data["row_count"] == 3 and data["dataset_id"] == 63 and data["ds_id"] == 63
+
+
+_RENAMED = {
+    "id": 7,
+    "metadata": [
+        {"display_name": "cust_ref", "internal_name": "column_2"},
+        {"display_name": "qty", "internal_name": "column_5"},
+    ],
+    "display_properties": {"COLUMN_NAMES": {"column_2": "Customer Ref"}},
+}
+
+
+def test_exact_get_shows_renamed_columns_and_drops_display_properties(
+    fake_service: FakeMammothService,
+) -> None:
+    fake_service.responses[_DV_GET] = dict(_RENAMED)
+    data, _ = view_ops_cmd.view_get(_inv("view.get", extra_args=["7", "63"]))
+    assert [c["display_name"] for c in data["metadata"]] == ["Customer Ref", "qty"]
+    assert "display_properties" not in data
+
+
+def test_discovery_get_shows_renamed_columns(fake_service: FakeMammothService) -> None:
+    rich = _RichView()
+    rich.raw = dict(_RENAMED)
+    fake_service.responses[_GET] = rich
+    data, _ = view_ops_cmd.view_get(_inv("view.get", extra_args=["7"]))
+    assert [c["display_name"] for c in data["metadata"]] == ["Customer Ref", "qty"]
+
+
+def test_discovery_get_with_fields_keeps_the_full_record(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    # The discovery route has no projection: ``fields`` must not reach the
+    # SDK (it raised "unexpected keyword argument 'fields'") and the full
+    # record comes back.
+    rich = _RichView()
+    rich.raw = dict(_RENAMED)
+    fake_service.responses[_GET] = rich
+    doc = _write(tmp_path, {"fields": "__full"})
+    data, _ = view_ops_cmd.view_get(_inv("view.get", extra_args=["7"], input_file=doc))
+    assert fake_service.call_log == [(_GET, {"view_id": 7}), (_DASHBOARDS_LIST, {})]
+    assert data["display_properties"] == _RENAMED["display_properties"]
+    assert data["metadata"][0]["display_name"] == "Customer Ref"
 
 
 # --- reference errors after a pipeline mutation ---------------------------
@@ -1180,7 +1369,9 @@ def test_transform_with_reference_errors_fails_with_the_repair_command(
             "error_code": 7003,
         }
     ]
-    assert error.recovery_commands == ["mammoth view task delete 132 107 --yes"]
+    assert error.recovery_commands == [
+        "mammoth view task delete 132 107 --yes --input '{\"dataset_id\": 122}'"
+    ]
     assert "amount" in error.message and "TEXT" in (error.hint or "")
     # The follow-up reads carry the exact parent so they never fall into discovery.
     assert (
@@ -1204,8 +1395,16 @@ def test_transform_without_has_error_is_untouched(
             ),
         )
     )
-    assert data == {"has_error": False, "status": "done"}
-    assert view_ops_cmd._PIPELINE_SYMBOL not in fake_service.calls
+    assert data == {
+        "has_error": False,
+        "status": "done",
+        "row_check": {"rows_before": None, "rows_after": None},
+    }
+    # reject_pipeline_reference_errors's own read (a follow-up items list) is
+    # the reference-error-specific signal; it must not fire when has_error is
+    # false. A plain PipelineAPI.get_pipeline call still happens as part of
+    # the settle step's execution_state check, which is unrelated.
+    assert view_ops_cmd._PIPELINE_ITEMS_SYMBOL not in fake_service.calls
 
 
 def test_reference_error_survives_a_failed_follow_up_read(
@@ -1259,7 +1458,9 @@ def test_sdk_raised_reference_error_is_enriched_the_same_way(
             )
         )
     assert excinfo.value.code == view_ops_cmd.CODE_PIPELINE_REFERENCE_ERROR
-    assert excinfo.value.recovery_commands == ["mammoth view task delete 132 107 --yes"]
+    assert excinfo.value.recovery_commands == [
+        "mammoth view task delete 132 107 --yes --input '{\"dataset_id\": 122}'"
+    ]
 
 
 # -- expected_task_count precondition --------------------------------------
@@ -1337,3 +1538,18 @@ def test_expected_task_count_must_be_a_non_negative_integer(
         )
     assert excinfo.value.code == "invalid_resource_context"
     assert fake_service.call_log == []
+
+
+def test_get_names_the_dashboards_built_on_the_view(fake_service: FakeMammothService) -> None:
+    """Asked to send "this board" to Power BI from a view's page, the agent read
+    the view, found no board on it, and never looked for the one built on it
+    (eval T1-D-22)."""
+    fake_service.responses[_GET] = _RichView()
+    fake_service.responses[_DASHBOARDS_LIST] = [
+        {"id": 132, "title": "Sales board", "sources": [7]},
+        {"id": 133, "title": "Other board", "sources": [8]},
+    ]
+
+    data, _ = view_ops_cmd.view_get(_inv("view.get", extra_args=["7"]))
+
+    assert data["dashboards"] == [{"id": 132, "title": "Sales board"}]

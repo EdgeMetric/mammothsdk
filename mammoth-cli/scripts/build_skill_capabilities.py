@@ -93,6 +93,11 @@ def build_all() -> dict[Path, str]:
     unsupported = sum(1 for row in rows if row["status"] == "Not supported")
     published = sum(1 for _ in load_commands())
     total_operations = len(matrix["rows"])
+    task_add = next(
+        (row for row in matrix["rows"] if row.get("canonical_command") == "view.task.add"), {}
+    )
+    proven = (task_add.get("evidence") or {}).get("proven_transforms") or []
+    proven_text = ", ".join(f"`{name}`" for name in sorted(proven)) or "none yet"
     lines = [
         "# What is proven on release",
         "",
@@ -100,8 +105,9 @@ def build_all() -> dict[Path, str]:
         f"The CLI publishes {published} commands. {len(rows)} of them bind one of the "
         f"{total_operations} API operations in the matrix; the remainder are local "
         "commands (`schema`, `auth`, `doctor`, `log`, ...) or typed variants that share "
-        "an operation (every `view transform *` command submits through "
-        f"`view.task.add`). {verified} bound commands ran once successfully on release, "
+        "an operation (`view transform *` commands submit through `view.task.add`, "
+        "except `rename-columns` and `sort`, which set view display properties "
+        f"through `view.update`). {verified} bound commands ran once successfully on release, "
         f"{unsupported} are not supported there, and the rest are untried. Untried is "
         "not broken: discover the contract with "
         "`mammoth schema get COMMAND_ID`, run it, and "
@@ -120,11 +126,11 @@ def build_all() -> dict[Path, str]:
         "and this release repairs it; nobody has re-run the route yet.",
         "- Commands not listed under a family are untried.",
         "",
-        "The typed `view transform *` commands all submit through `view.task.add`; "
-        "its matrix row names the transformations that ran end to end and were read "
-        "back (filter, fill-missing, join, pivot, set-values with a condition, text, "
-        "bulk-replace, convert-type, discard-duplicates). A transformation not named "
-        "there has the same untried status as any other command.",
+        "The typed `view transform *` commands all submit through `view.task.add` "
+        "(`rename-columns` and `sort` through `view.update`); its matrix row names the "
+        "transformations that ran end to end and were read back against a known "
+        f"answer: {proven_text}. A transformation not named there has the same "
+        "untried status as any other command.",
         "",
         "## Coverage by family",
         "",

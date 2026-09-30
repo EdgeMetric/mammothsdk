@@ -4,6 +4,62 @@ All notable changes to `mammoth-io` are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.20]
+
+### Fixed
+
+- `AutomationPatchItem.value` (`mammoth/models/automations.py`) is typed
+  `str | dict[str, Any] | PatchAutomationDetails`. Pydantic's default
+  "smart" union mode picked the exact `dict[str, Any]` match over coercing
+  a dict into `PatchAutomationDetails`, so any `op="replace",
+  path="details"` patch built from parsed JSON — every real caller,
+  including the CLI's `--input` and `mammoth_cli.embed.invoke` — left
+  `value` a bare `dict` and failed `_validate_automation_patch_item`'s
+  `isinstance(item.value, PatchAutomationDetails)` check with "must
+  include at least one of: name, description, tasks, conditions" even
+  when a field was set. Renaming an automation, or changing its
+  description/tasks/conditions, was unreachable through any caller that
+  builds the patch from JSON. The field now sets
+  `union_mode="left_to_right"` with `PatchAutomationDetails` ordered
+  before `dict[str, Any]`, so a dict is coerced into the structured model
+  first. Reproduced live on koyal (mammoth-cli 2.0.46); see
+  `tests/unit/test_automations.py::TestUpdate::test_update_details_patch_from_raw_dict_value`.
+
+## [0.7.19]
+
+### Fixed
+
+- `AutomationsAPI.update` sent `path="status", value="resume"` to the backend
+  verbatim. The backend's wire vocabulary for that path is `"suspend"` /
+  `"restore"` (`apiv2/apiv2/automations/schema.py` `AutomationStatusValueEnum`
+  in mvc-service), so a `"resume"` patch was rejected with
+  `invalid_status_to_update` (400) and an automation could never be
+  re-enabled once suspended. The SDK keeps `"resume"` as its own public
+  value — consistent with `ScheduleStatus`'s `"pause"`/`"resume"` — and now
+  translates it to `"restore"` on the wire.
+
+## [0.7.18]
+
+### Fixed
+
+- `View.fill_missing` and `FillDirection` documented the directions the wrong
+  way round. `FIRST_VALUE` is the forward fill (a blank takes the previous
+  row's value in the `order_by` order); `LAST_VALUE` is the back-fill (the
+  next row's value). Verified on release; behaviour is unchanged.
+
+## [0.7.17]
+
+### Added
+
+- `View.rename_columns({"old": "new"})` and `View.sort_rows([["Col", "DESC"]])`:
+  the web grid's column rename and sort, set as view display properties
+  (`COLUMN_NAMES`, `SORT`). They add no pipeline task.
+
+### Fixed
+
+- A column renamed in the web app resolves by its new name: `View` applies
+  the view's `COLUMN_NAMES` display property when it reads column metadata.
+
 ## [0.7.16]
 
 ### Added

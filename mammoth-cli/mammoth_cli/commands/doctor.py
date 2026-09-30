@@ -13,6 +13,7 @@ import platform
 import re
 import shlex
 import sys
+import time
 from pathlib import Path
 from typing import Any, cast
 from urllib.parse import urlsplit
@@ -132,6 +133,25 @@ def _nearest_existing(path: Path) -> Path:
     return path
 
 
+#: ``doctor --input '{"wait": N}'``: retry a failing connection for up to N
+#: seconds (capped), probing every ``_WAIT_INTERVAL`` seconds.
+_WAIT_INTERVAL = 15
+_WAIT_MAX = 900
+
+
+def _wait_seconds(invocation: Invocation) -> float:
+    document = invocation.load_input() or {}
+    try:
+        value = float(document.get("wait") or 0)
+    except (TypeError, ValueError):
+        raise CliError(
+            code="invalid_argument",
+            message="wait must be a number of seconds.",
+            hint="mammoth doctor --input '{\"wait\": 300}'",
+        ) from None
+    return max(0.0, min(value, _WAIT_MAX))
+
+
 def doctor(invocation: Invocation) -> HandlerResult:
     """Run environment and connectivity diagnostics.
 
@@ -241,13 +261,30 @@ def doctor(invocation: Invocation) -> HandlerResult:
     connection_ok = False
     connection_detail = "not attempted"
     projects: list[dict[str, Any]] | None = None
+    wait_seconds = _wait_seconds(invocation)
     if auth_ok:
+        started = time.monotonic()
+        retries = 0
         try:
-            with open_service(invocation) as (service, _auth):
-                service.check_connection()
-                projects = _visible_projects(service)
+            while True:
+                try:
+                    with open_service(invocation) as (service, _auth):
+                        service.check_connection()
+                        projects = _visible_projects(service)
+                    break
+                except CliError as error:
+                    # A 502/504 or timeout during an outage: with ``wait``,
+                    # probe again instead of failing on the first try.
+                    remaining = wait_seconds - (time.monotonic() - started)
+                    if not error.retryable or remaining <= 0:
+                        raise
+                    time.sleep(min(_WAIT_INTERVAL, remaining))
+                    retries += 1
+            waited = time.monotonic() - started
             connection_ok = True
-            connection_detail = "authenticated request succeeded"
+            connection_detail = "authenticated request succeeded" + (
+                f" after {retries} retries over {round(waited)}s" if retries else ""
+            )
         except CliError as error:
             diagnostics = _safe_connection_diagnostics(error, debug=invocation.debug)
             connection_detail = diagnostics.pop("detail")

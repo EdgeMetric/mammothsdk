@@ -18,6 +18,7 @@ commands:
   request_model: CompletionInstallRequest
   result_model: CompletionInstallResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -39,6 +40,11 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: completion.show
+    ids:
+      shell: positional.0
+    kind: object
 - command_id: completion.show
   command_path: completion show
   disposition: command

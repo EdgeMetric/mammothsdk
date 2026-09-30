@@ -12,6 +12,16 @@ Result: `DatasetBatchDataResult`; mutation `read`, confirmation `none`, wait pol
 
 Status on release: ran once on CLI 1.1.11 — Published PyPI CLI 1.1.11 / SDK 0.7.1 batch-data read succeeded for an ID observed from retained dataset 29; bounded 50-row page. One observed-ID chain and page; not Full.
 
+### `dataset.broken-rows.list`
+
+Run: `mammoth dataset broken-rows list`. Exact input fields: `mammoth schema get dataset.broken-rows.list`.
+
+Example: `mammoth dataset broken-rows list 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `DatasetBrokenRowsListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
 ### `dataset.bulk-delete`
 
 Run: `mammoth dataset bulk-delete`. Exact input fields: `mammoth schema get dataset.bulk-delete`.
@@ -121,6 +131,26 @@ Example: `mammoth dataset get 123`. Placeholders are illustrative; resolve IDs a
 Result: `DatasetGetResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
 Status on release: ran once on CLI 2.0.18 — golden-data check 2026-09-19: exit 0 on release with CLI 2.0.18. Single invocation only.
+
+### `dataset.interpretation.confirm`
+
+Run: `mammoth dataset interpretation confirm`. Exact input fields: `mammoth schema get dataset.interpretation.confirm`.
+
+Example: `mammoth dataset interpretation confirm 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `DatasetInterpretationConfirmResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `dataset.interpretation.preview`
+
+Run: `mammoth dataset interpretation preview`. Exact input fields: `mammoth schema get dataset.interpretation.preview`.
+
+Example: `mammoth dataset interpretation preview 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `DatasetInterpretationPreviewResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
 
 ### `dataset.list`
 

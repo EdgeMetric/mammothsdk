@@ -55,7 +55,6 @@ S7_ROUTE_INVENTORY = frozenset(
         "billing.chargebee-plan",
         "billing.hosted-page",
         "billing.invoice.charge",
-        "billing.invoice.get",
         "billing.invoice.list",
         "billing.stripe.cancel",
         "billing.stripe.checkout-url",
@@ -184,13 +183,13 @@ def fake_family_service(monkeypatch: pytest.MonkeyPatch) -> FakeMammothService:
 def test_s7_inventory_and_ledger_are_exact() -> None:
     ledger = json.loads(LEDGER.read_text(encoding="utf-8"))
     assert S7_COMMANDS == S7_ROUTE_INVENTORY
-    assert ledger["route_count"] == 104
+    assert ledger["route_count"] == 103
     assert ledger["families"] == {
         "activity": 2,
         "agent": 5,
         "ai": 4,
         "automation": 7,
-        "billing": 23,
+        "billing": 22,
         "client-app": 5,
         "schedule": 5,
         "support": 45,
@@ -444,11 +443,11 @@ def test_unknown_s7_field_is_rejected_before_service_dispatch(
         (
             user_cmd.user_update,
             "user.update",
-            {"name": "S7-NAME", "email": "s7@example.com"},
+            {"first_name": "S7-NAME"},
             "mammoth.api.user_profile.UserProfileAPI.update",
-            {"name": "S7-NAME", "email": "s7@example.com"},
+            {"first_name": "S7-NAME"},
             [],
-            {"yes": True, "confirm": "4"},
+            {},
         ),
     ],
 )

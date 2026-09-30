@@ -21,9 +21,10 @@ Prefer typed operations such as convert-type, fill-missing, replace, join,
 lookup, filter and math only when the live schema
 lists them. Pick the operation by what it does, not by its name:
 
-- `fill-missing` copies the previous/next row's value into blanks
-  (`direction` = `LAST_VALUE` forward-fill or `FIRST_VALUE`). It cannot write a
-  literal. To fill blanks with a constant (for example `0`), use `set-values`
+- `fill-missing` copies an adjacent row's value into blanks, in the
+  `order_by` order. `direction` `FIRST_VALUE` takes the previous row's value
+  (forward fill, the usual choice); `LAST_VALUE` takes the next row's value
+  (back-fill). It cannot write a literal. To fill blanks with a constant (for example `0`), use `set-values`
   on the existing column with an `IS_EMPTY` condition:
 
 ```bash
@@ -44,6 +45,28 @@ Use `view data get` (paged, 400 rows per page) for this, not `view preview`
   rows, say so: `{"condition":{"column":"units","operator":"LT","value":0},"filter_type":"REMOVE"}`. For each operation, a successful result should contain a returned
 task/job reference or updated view envelope; then verify with `view task list`,
 `view task get`, `view pipeline items`, or preview according to its schema.
+A step can run and still fail at run time -- a GEN_AI step hitting a
+workspace AI quota, for example -- leaving the column blank while the
+envelope's `has_error` stays false and `pipeline_state` reads `ready`; the
+only signal is the task's own `transform_status` (`view task get`/`view task
+list` always read it at full detail). `DONE` means the step actually
+produced output; `ERROR` or `REFERROR` means it did not, even though the
+mutation "succeeded".
+- `split` makes new columns and `unnest` turns columns into label/value
+  rows; neither gives one row per delimited value. For one row per value,
+  use `add-sql` over `"view:VIEW_ID"`, selecting the other columns plus
+  `TRIM(UNNEST(string_split(COALESCE(tags, ''), ','))) AS tag`. Keep every
+  row -- a blank or NULL value stays as one row with an empty tag, and
+  `COALESCE` is what keeps the NULL rows, since DuckDB's `UNNEST` of NULL
+  yields zero rows (verified: drop the `COALESCE` and a NULL row vanishes).
+  Never add a `WHERE` that drops rows the user did not ask to drop. Verify
+  by row count: the result should equal the sum of each row's value count,
+  with a blank or NULL counting as 1.
+
+```bash
+mammoth view transform add-sql VIEW_ID --project PROJECT_ID \
+  --input '{"dataset_id":DATASET_ID,"query":"SELECT event_id, user_id, event_time, payload, TRIM(UNNEST(string_split(COALESCE(tags, '\'''\''), '\'','\''))) AS tag FROM \"view:VIEW_ID\""}'
+```
 
 These examples use the released route IDs and input shapes documented by the
 command manifest; substitute only observed view IDs and display names:
@@ -72,6 +95,44 @@ mammoth view transform discard-duplicates VIEW_ID --project PROJECT_ID \
 mammoth schema get view.transform.join
 mammoth view transform join VIEW_ID --project PROJECT_ID --input INPUT_JSON
 ```
+
+## What most pipelines look like
+
+These patterns come from how Mammoth pipelines are usually built. Use them
+as defaults, and let the user's request override them:
+
+- Keep it short. Most pipelines have one to three steps and touch a few
+  columns. Add only the steps the deliverable needs.
+- New column or overwrite? `set-values`, `math` and `lookup` take
+  `new_column` (add a column) or `existing_column` (replace the values in
+  place), never both. Overwriting is as common as adding. If the user said
+  "fix", "clean" or "change" a column, use `existing_column`. If they said
+  "add", "calculate" or "flag", use `new_column`. If it is not clear, ask.
+- Joins are nearly always `LEFT` on one key column. Use `INNER`, `RIGHT`,
+  `OUTER` or a key of two or more columns only when the user asks for it or
+  the data needs it, and say why in your report.
+- Check the key before a join or lookup. Most keys go in without a prep
+  step, so a type, case or padding difference shows up as unmatched rows. Read
+  both key columns first (`view data get`) and act on `join_check`.
+- Date steps (`increment-date`, `extract-date`, and `text` on date columns)
+  fail more often than other steps. Before a date step, confirm that the
+  column type is `DATE` (`view get`); if it is `TEXT`, run `convert-type`
+  first. Check the result on a few rows.
+- Convert several columns to the same type in one `convert-type` call (one
+  `conversions` entry for each column), not one call for each column.
+  Upload already types numbers and ISO dates, so read the types (`view get`)
+  first and convert only the columns that are wrong. The CLI skips a column
+  that already has the type (`skipped` in the result).
+- Remove duplicates near the end, after the cleanup and joins, so the check
+  uses the final columns.
+- `filter` also takes a plain-language `prompt` instead of a `condition`.
+  Use a `condition` when the rule is exact (a column, an operator, a value).
+  Use `prompt` only when the user described the rule in words and no exact
+  condition expresses it, then check the kept rows.
+- "Top N" means the largest values first. Use the smallest values first only
+  when the user says "bottom", "lowest" or "smallest".
+- The last step of a pipeline is not a signal that it is finished. Say that
+  the work is done only after you verify the deliverable.
 
 ## Aggregate or summarise
 

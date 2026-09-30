@@ -19,6 +19,7 @@ commands:
   request_model: AiConditionGenerateRequest
   result_model: AiConditionGenerateResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -40,6 +41,7 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  no_readback: "generates a condition preview; nothing is persisted to read back"
 - command_id: ai.expression.generate
   command_path: ai expression generate
   disposition: command
@@ -59,6 +61,7 @@ commands:
   request_model: AiExpressionGenerateRequest
   result_model: AiExpressionGenerateResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -81,6 +84,7 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  no_readback: "generates an expression preview; nothing is persisted to read back"
 - command_id: ai.retention.condition
   command_path: ai retention condition
   disposition: command
@@ -99,6 +103,7 @@ commands:
   request_model: AiRetentionConditionRequest
   result_model: AiRetentionConditionResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: start_or_wait
   pagination_policy: none
@@ -122,6 +127,7 @@ commands:
   known_restrictions: Requires explicit project context. Mode generate may return a job-backed result;
     mode test follows the release response union and must not be assumed to synchronously return row counts.
   reviewed_by: primary
+  no_readback: "generates a retention condition preview; nothing is persisted to read back"
 - command_id: ai.sql.generate
   command_path: ai sql generate
   disposition: command

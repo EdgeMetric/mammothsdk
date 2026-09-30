@@ -40,11 +40,18 @@ from mammoth_cli.runtime import parents
 from mammoth_cli.services.coerce import coerce_arguments
 from mammoth_cli.services.conditions import CONDITION_KWARG, compile_condition
 from mammoth_cli.services.dispatch import resolve_sdk_method
-from mammoth_cli.services.mapping import map_sdk_exception
+from mammoth_cli.services.mapping import map_sdk_exception, with_dashboard_scope
 
 #: Largest ``limit`` the projects route accepts (``4GENR007`` above it).
 _PROJECT_MISS = re.compile(r"^Project (ID \d+|'.*') not found\.")
 _PROJECT_PAGE_SIZE = 100
+
+#: Verbatim message every project-scoped SDK sub-client's ``_proj()`` raises
+#: when ``project_id`` is unset (identical across every ``mammoth/api/*.py``
+#: call site). Matched by exact text, not by ``sdk_symbol``, so ``call()``
+#: reports ``project_required`` for any project-scoped method, not only the
+#: ones a hand-kept list happens to name.
+_PROJECT_ID_UNSET = "project_id must be set on the client using client.set_project_id()"
 
 
 _TOKEN_POSITION = re.compile(r"Unrecognized token at position (\d+)")
@@ -126,6 +133,10 @@ class SdkMammothService:
         # One loop for the process, not one per call: the client's connection
         # pool lives on the loop that opened it.
         self._loop = asyncio.new_event_loop()
+        if auth.headers:
+            # After construction: the client sets its credential headers in
+            # ``__init__``, and a forwarded session must replace them.
+            self._client.session.headers.update(auth.headers)
         if project_id is not None:
             self._client.set_project_id(project_id)
 
@@ -156,20 +167,6 @@ class SdkMammothService:
                 method signature; otherwise the mapped SDK exception.
         """
         method = resolve_sdk_method(self._client, sdk_symbol)
-        # These public seams ultimately build project-scoped URLs and otherwise
-        # raise a raw SDK ValueError when ``--project`` was omitted.  Validate
-        # the CLI precondition here so release commands fail as stable usage
-        # errors before any transport call (or generic ``api_error`` envelope).
-        if (
-            sdk_symbol
-            in {
-                "mammoth.api.pipeline.PipelineAPI.items_all",
-                "mammoth.client.ViewsResource.delete",
-                "mammoth.client.ViewsResource.get",
-            }
-            and self._client.project_id is None
-        ):
-            raise missing_project_error()
         kwargs = self._coerce_call_arguments(method, kwargs)
         if self.gate is not None:
             self.gate(sdk_symbol, kwargs)
@@ -185,6 +182,14 @@ class SdkMammothService:
                 details={"reason": str(exc)},
             ) from exc
         except ValueError as exc:
+            # Every project-scoped SDK sub-client raises this exact message
+            # when ``project_id`` is unset (23 call sites across mammoth/api/
+            # *.py); catching it by text, rather than special-casing each
+            # sdk_symbol ahead of time, covers all of them at once instead of
+            # needing a new allowlist entry for every command group that
+            # reaches ``_proj()``.
+            if str(exc) == _PROJECT_ID_UNSET:
+                raise missing_project_error() from exc
             # ``ViewsResource.get`` and the view-scoped API methods reach the
             # same project-wide parent discovery as ``call_view``; a miss must
             # read as not_found here too, not "operation failed unexpectedly".
@@ -305,7 +310,10 @@ class SdkMammothService:
                     )
                 )
         except Exception as exc:
-            raise map_sdk_exception(exc) from exc
+            mapped = map_sdk_exception(exc)
+            if dashboard_url is not None:
+                mapped = with_dashboard_scope(mapped, dashboard_url)
+            raise mapped from exc
 
     def call_view(
         self,
@@ -510,6 +518,7 @@ class SdkMammothService:
         local_columns = getattr(view, "columns", {}) or {}
         local_internal = {value for value in local_columns.values() if isinstance(value, str)}
         local_display = set(local_columns)
+        local_types = getattr(view, "column_types", {}) or {}
 
         def check(value: Any, *, scope: str, columns: dict[str, str], display: set[str]) -> None:
             internal = {item for item in columns.values() if isinstance(item, str)}
@@ -604,6 +613,8 @@ class SdkMammothService:
                     columns=local_columns,
                     display=local_display,
                 )
+                if not spec.get("value_is_column") and "value" in spec:
+                    SdkMammothService.coerce_numeric_condition_value(spec, local_types)
             if spec.get("value_is_column") and "value" in spec:
                 check(
                     spec["value"],
@@ -659,6 +670,54 @@ class SdkMammothService:
                 columns=foreign_columns,
                 display=foreign_display,
             )
+
+    @staticmethod
+    def coerce_numeric_condition_value(spec: dict[str, Any], column_types: dict[str, str]) -> None:
+        """Convert a numeric-string condition value against a NUMERIC column.
+
+        The backend accepts a filter/set-values/pivot condition whose value is
+        a string even when the column is NUMERIC, then puts the whole pipeline
+        into ref_error (7003 "type mismatch") on the next read. The CLI already
+        knows the column's type, so it converts what it can and fails locally,
+        before any request, for what it can't. DATE columns are left as is.
+        """
+        column = spec.get("column")
+        if not isinstance(column, str) or column_types.get(column) != "NUMERIC":
+            return
+
+        def convert(item: Any) -> Any:
+            if not isinstance(item, str):
+                return item
+            try:
+                return int(item)
+            except ValueError:
+                pass
+            try:
+                number = float(item)
+            except ValueError:
+                raise SdkMammothService.condition_value_type_error(
+                    column, "NUMERIC", item
+                ) from None
+            return int(number) if number.is_integer() else number
+
+        value = spec["value"]
+        spec["value"] = (
+            [convert(item) for item in value] if isinstance(value, list) else convert(value)
+        )
+
+    @staticmethod
+    def condition_value_type_error(column: str, column_type: str, value: str) -> CliError:
+        """Build a stable pre-mutation condition-value type error."""
+        return CliError(
+            code="invalid_condition_value",
+            message=(
+                f"Condition value {value!r} for column '{column}' ({column_type}) "
+                "is not a valid number."
+            ),
+            exit_status=EXIT_USAGE,
+            hint="Use a numeric value for a NUMERIC column.",
+            details={"column": column, "column_type": column_type, "value": value},
+        )
 
     @staticmethod
     def column_input_error(

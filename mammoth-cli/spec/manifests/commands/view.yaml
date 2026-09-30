@@ -72,10 +72,16 @@ commands:
   request_model: ViewActiveUserMarkRequest
   result_model: ViewActiveUserMarkResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: live_disposable_project
+  readback:
+    command: view.active-user.list
+    ids:
+      view_id: positional.0
+    kind: object
   live_test: LT-VIEW-ACTIVE-USER-MARK
   live_exemption_reason: null
   contract_fixture: null
@@ -112,10 +118,16 @@ commands:
   request_model: ViewAiGenerateDataRequest
   result_model: ViewAiGenerateDataResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
   acceptance_evidence: live_disposable_project
+  readback:
+    command: view.data.get
+    ids:
+      view_id: positional.0
+    kind: data
   live_test: LT-VIEW-AI-GENERATE-DATA
   live_exemption_reason: null
   contract_fixture: null
@@ -193,10 +205,16 @@ commands:
   request_model: ViewAiProfileRequest
   result_model: ViewAiProfileResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
   acceptance_evidence: live_disposable_project
+  readback:
+    command: view.ai.generation-info
+    ids:
+      dataview_id: positional.0
+    kind: object
   live_test: LT-VIEW-AI-PROFILE
   live_exemption_reason: null
   contract_fixture: null
@@ -233,10 +251,16 @@ commands:
   request_model: ViewBulkDeleteRequest
   result_model: ViewBulkDeleteResult
   mutation_class: destructive
+  edits_target: true
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: live_disposable_project
+  readback:
+    command: view.list
+    ids:
+      dataset_id: positional.0
+    kind: object
   live_test: LT-VIEW-BULK-DELETE
   live_exemption_reason: null
   contract_fixture: null
@@ -280,10 +304,16 @@ commands:
   request_model: ViewCheckpointCreateRequest
   result_model: ViewCheckpointCreateResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: live_disposable_project
+  readback:
+    command: view.checkpoint.list
+    ids:
+      view_id: positional.0
+    kind: object
   live_test: LT-VIEW-CHECKPOINT-CREATE
   live_exemption_reason: null
   contract_fixture: null
@@ -334,10 +364,16 @@ commands:
   request_model: ViewCheckpointDeleteRequest
   result_model: ViewCheckpointDeleteResult
   mutation_class: destructive
+  edits_target: true
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: live_disposable_project
+  readback:
+    command: view.checkpoint.list
+    ids:
+      view_id: positional.0
+    kind: object
   live_test: LT-VIEW-CHECKPOINT-DELETE
   live_exemption_reason: null
   contract_fixture: null
@@ -485,10 +521,17 @@ commands:
   request_model: ViewCheckpointUpdateRequest
   result_model: ViewCheckpointUpdateResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: live_disposable_project
+  readback:
+    command: view.checkpoint.get
+    ids:
+      view_id: positional.0
+      checkpoint_id: positional.1
+    kind: object
   live_test: LT-VIEW-CHECKPOINT-UPDATE
   live_exemption_reason: null
   contract_fixture: null
@@ -534,10 +577,16 @@ commands:
   request_model: ViewConditionalFormatCreateRequest
   result_model: ViewConditionalFormatCreateResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: live_disposable_project
+  readback:
+    command: view.conditional-format.list
+    ids:
+      view_id: positional.0
+    kind: object
   live_test: LT-VIEW-CONDITIONAL-FORMAT-CREATE
   live_exemption_reason: null
   contract_fixture: null
@@ -555,9 +604,9 @@ commands:
   - CT-VIEW-CONDITIONAL-FORMAT-CREATE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: 'rule is forwarded verbatim and dispatches. The release backend requires
-    {"cf_type": "RULE"|"COLOR_SCALE", "payload": {...}} with a CONDITION (RULE) or scale (COLOR_SCALE)
-    inside payload; other shapes return HTTP 400 4GENR007. Untyped; no working payload observed yet.'
+  known_restrictions: 'rule is forwarded verbatim and dispatches. The release backend requires {"cf_type":
+    "RULE"|"COLOR_SCALE", "payload": {...}} with a CONDITION (RULE) or scale (COLOR_SCALE) inside payload;
+    other shapes return HTTP 400 4GENR007. Untyped; no working payload observed yet.'
   reviewed_by: primary
 - command_id: view.conditional-format.delete-all
   command_path: view conditional-format delete-all
@@ -586,10 +635,16 @@ commands:
   request_model: ViewConditionalFormatDeleteAllRequest
   result_model: ViewConditionalFormatDeleteAllResult
   mutation_class: destructive
+  edits_target: true
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: live_disposable_project
+  readback:
+    command: view.conditional-format.list
+    ids:
+      view_id: positional.0
+    kind: object
   live_test: LT-VIEW-CONDITIONAL-FORMAT-DELETE-ALL
   live_exemption_reason: null
   contract_fixture: null
@@ -681,10 +736,16 @@ commands:
   request_model: ViewConditionalFormatUpdateRequest
   result_model: ViewConditionalFormatUpdateResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: live_disposable_project
+  readback:
+    command: view.conditional-format.list
+    ids:
+      view_id: positional.0
+    kind: object
   live_test: LT-VIEW-CONDITIONAL-FORMAT-UPDATE
   live_exemption_reason: null
   contract_fixture: null
@@ -721,10 +782,16 @@ commands:
   request_model: ViewCreateRequest
   result_model: ViewCreateResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
   acceptance_evidence: live_disposable_project
+  readback:
+    command: view.data.get
+    ids:
+      view_id: result.id
+    kind: data
   live_test: LT-VIEW-CREATE
   live_exemption_reason: null
   contract_fixture: null
@@ -768,18 +835,25 @@ commands:
   request_model: ViewDataCheckCreateRequest
   result_model: ViewDataCheckCreateResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: live_disposable_project
+  readback:
+    command: view.data-check.list
+    ids:
+      view_id: positional.0
+    kind: object
   live_test: LT-VIEW-DATA-CHECK-CREATE
   live_exemption_reason: null
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view data-check create VIEW_ID --help
-  agent_example: 'mammoth view data-check create 123 123 --input ''{"body": {"checks": [{"check_type": "null_percentage",
-    "config": {"column": "Status", "condition": "lt"}}], "name": "Revenue report", "pinned_to_end": true}}'''
+  agent_example: 'mammoth view data-check create 123 123 --input ''{"body": {"checks": [{"check_type":
+    "null_percentage", "config": {"column": "Status", "condition": "lt"}}], "name": "Revenue report",
+    "pinned_to_end": true}}'''
   unit_tests:
   - UT-VIEW-DATA-CHECK-CREATE
   contract_tests:
@@ -788,7 +862,8 @@ commands:
   - CT-VIEW-DATA-CHECK-CREATE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: 'body needs a placement: pinned_to_end true or a task_sequence (4GENR007 "Either task_sequence or pinned_to_end must be set" otherwise).'
+  known_restrictions: 'body needs a placement: pinned_to_end true or a task_sequence (4GENR007 "Either
+    task_sequence or pinned_to_end must be set" otherwise).'
   reviewed_by: primary
 - command_id: view.data-check.delete
   command_path: view data-check delete
@@ -822,10 +897,16 @@ commands:
   request_model: ViewDataCheckDeleteRequest
   result_model: ViewDataCheckDeleteResult
   mutation_class: destructive
+  edits_target: true
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: live_disposable_project
+  readback:
+    command: view.data-check.list
+    ids:
+      view_id: positional.0
+    kind: object
   live_test: LT-VIEW-DATA-CHECK-DELETE
   live_exemption_reason: null
   contract_fixture: null
@@ -973,10 +1054,17 @@ commands:
   request_model: ViewDataCheckUpdateRequest
   result_model: ViewDataCheckUpdateResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: live_disposable_project
+  readback:
+    command: view.data-check.get
+    ids:
+      view_id: positional.0
+      data_check_id: positional.1
+    kind: object
   live_test: LT-VIEW-DATA-CHECK-UPDATE
   live_exemption_reason: null
   contract_fixture: null
@@ -993,7 +1081,10 @@ commands:
   - CT-VIEW-DATA-CHECK-UPDATE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: 'patches are {op: command, path: enable|disable, value: null} or {op: replace, path: spec, value: AddDataCheckSpec}, the same body the web app sends. On release the PATCH returns HTTP 500 (outcome_unknown) from backend validation that runs after the change is committed; read the check back with view data-check get before retrying.'
+  known_restrictions: 'patches are {op: command, path: enable|disable, value: null} or {op: replace, path:
+    spec, value: AddDataCheckSpec}, the same body the web app sends. On release the PATCH returns HTTP
+    500 (outcome_unknown) from backend validation that runs after the change is committed; read the check
+    back with view data-check get before retrying.'
   reviewed_by: primary
 - command_id: view.data.get
   command_path: view data get
@@ -1046,7 +1137,7 @@ commands:
   disposition: command
   alias_of: null
   operation_ids:
-  - ExecuteVolatileQuery
+  - GetDataviewDataPost
   positionals:
   - name: view_id
     type: int
@@ -1088,6 +1179,256 @@ commands:
   known_restrictions: 'B11 QUERY_OFFSET_SEMANTICS: one-indexed (offset=1) with no proven continuation;
     --all is blocked.'
   reviewed_by: primary
+- command_id: view.data.aggregate
+  command_path: view data aggregate
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - ExecuteVolatileQuery
+  positionals:
+  - name: view_id
+    type: int
+    required: true
+    metavar: VIEW_ID
+    falls_back_to_field: null
+    help: ID of the view to act on.
+  - name: dataset_id
+    type: int
+    required: false
+    metavar: DATASET_ID
+    falls_back_to_field: dataset_id
+    help: ID of the dataset the view belongs to; resolved from the view when omitted.
+  options: []
+  sdk_symbol: mammoth.api.dataviews.DataviewsAPI.aggregate
+  sdk_conversion: Call mammoth.api.dataviews.DataviewsAPI.aggregate with validated request fields.
+  request_model: ViewDataAggregateRequest
+  result_model: ViewDataAggregateResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: always_wait
+  pagination_policy: none
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: No automated disposable-view fixture wired into tests/live yet for this command.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view data aggregate VIEW_ID --help
+  agent_example: 'mammoth view data aggregate 123 --input ''{"group_by": ["Channel"], "aggregations":
+    [{"column": "Spend", "function": "SUM", "as_name": "Total Spend"}]}'''
+  unit_tests:
+  - UT-VIEW-DATA-AGGREGATE
+  contract_tests:
+  - CT-VIEW-DATA-AGGREGATE-HUMAN
+  - CT-VIEW-DATA-AGGREGATE-JSON
+  - CT-VIEW-DATA-AGGREGATE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Read-only: computes and returns an aggregated result without adding a task to the
+    view''s pipeline or otherwise changing it. Pass exactly one of ''aggregations'' (a PIVOT group-by;
+    ''group_by'' is optional) or ''metric'' (a single METRIC value). ''function'' is one of SUM, COUNT,
+    AVG, MIN, MAX, STDDEV, DISTINCT_COUNT. A group_by item is a column name, or {"column": C, "truncate":
+    DAY|WEEK|MONTH|QUARTER|YEAR} to bucket a DATE (a trend over time), or {"column": C, "resolution":
+    N} to bucket a NUMERIC; grouping by a raw date gives one row per day. A metric is a number: only COUNT
+    and DISTINCT_COUNT work on a DATE or TEXT column. For one column''s trend, top values or spread, view
+    data explore is the shorter call. order_by (result labels; a string like ''Total desc'' or {column,
+    direction}) with top ranks the groups on the backend; a limit without order_by keeps arbitrary rows
+    and the result says ordered false. A group_by truncate on a TEXT column of dates is bucketed by the
+    CLI: the stored format is detected from the data and stated in text_dates, an ambiguous day/month
+    order (settle it with text_date_format) or an unreadable value fails loud, and a range condition
+    (GT, GTE, LT, LTE, IN_RANGE with a YYYY-MM-DD value) on such a column works the same way. A truncate on
+    a NUMERIC column, or a resolution on a non-NUMERIC one, is refused. An empty result carries
+    observed_range: the min and max of the filtered or date column.'
+  reviewed_by: primary
+- command_id: view.data.compare
+  command_path: view data compare
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - ExecuteVolatileQuery
+  positionals:
+  - name: view_id_a
+    type: int
+    required: true
+    metavar: VIEW_ID_A
+    falls_back_to_field: null
+    help: ID of the first view to compare.
+  - name: view_id_b
+    type: int
+    required: true
+    metavar: VIEW_ID_B
+    falls_back_to_field: null
+    help: ID of the second view to compare.
+  options: []
+  sdk_symbol: mammoth.api.dataviews.DataviewsAPI.aggregate
+  sdk_conversion: Runs view.data.aggregate's own handler once per view (which calls mammoth.api.dataviews.DataviewsAPI.aggregate),
+    then joins client-side; recorded here so discovery advertises the same accepted document fields view.data.aggregate
+    does, not this command's own dispatch (see _VIEW_DATA_COMPARE_FIELDS in command_contract.py).
+  request_model: ViewDataCompareRequest
+  result_model: ViewDataCompareResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: null
+  live_exemption_reason: Delegates to view.data.aggregate's own live coverage for the actual SDK call;
+    the join/compare step itself is local and deterministic.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view data compare VIEW_ID_A VIEW_ID_B --help
+  agent_example: 'mammoth view data compare 111 222 --input ''{"group_by": ["Campaign"], "aggregations":
+    [{"column": "Spend", "function": "SUM", "as_name": "Spend"}]}'''
+  unit_tests:
+  - UT-VIEW-DATA-COMPARE
+  contract_tests:
+  - CT-VIEW-DATA-COMPARE
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Every number reported to the user comes from a tool result: use this to compare
+    the same PIVOT/METRIC aggregate across two views (e.g. two platforms'' totals per campaign) instead
+    of subtracting two ''view data aggregate'' reads by hand -- calc is the tool for a single expression.
+    Takes the exact same --input shape as view data aggregate (aggregations/group_by, or metric); rows
+    are joined on the group-by key (or compared as a single row for a bare metric) using exact Decimal
+    arithmetic. A key present in only one view''s result fails loud rather than silently reporting a partial
+    diff.'
+  reviewed_by: primary
+- command_id: view.data.explore
+  command_path: view data explore
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - ExecuteVolatileQuery
+  positionals:
+  - name: view_id
+    type: int
+    required: true
+    metavar: VIEW_ID
+    falls_back_to_field: null
+    help: ID of the view to act on.
+  - name: column
+    type: str
+    required: true
+    metavar: COLUMN
+    falls_back_to_field: null
+    help: Display name of the column to explore.
+  - name: dataset_id
+    type: int
+    required: false
+    metavar: DATASET_ID
+    falls_back_to_field: dataset_id
+    help: ID of the dataset the view belongs to; resolved from the view when omitted.
+  options: []
+  sdk_symbol: mammoth.api.dataviews.DataviewsAPI.explore
+  sdk_conversion: Call mammoth.api.dataviews.DataviewsAPI.explore with validated request fields.
+  request_model: ViewDataExploreRequest
+  result_model: ViewDataExploreResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: always_wait
+  pagination_policy: none
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: No automated disposable-view fixture wired into tests/live yet for this command.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view data explore VIEW_ID COLUMN --help
+  agent_example: mammoth view data explore 123 Status 123
+  unit_tests:
+  - UT-VIEW-DATA-EXPLORE
+  contract_tests:
+  - CT-VIEW-DATA-EXPLORE-HUMAN
+  - CT-VIEW-DATA-EXPLORE-JSON
+  - CT-VIEW-DATA-EXPLORE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Read-only: explore one column the way the web app''s column Explore card does --
+    trend, distribution, histogram, or top values -- without adding a task to the view''s pipeline (never
+    use ''view transform pivot'' just to explore). DATE column: counts per ''level'' bucket (AUTO default;
+    SECOND, MINUTE, HOUR, DAY, WEEK, MONTH, QUARTER, YEAR, DECADE, CENTURY, MILLENNIUM) for "what''s trending",
+    "over time", "by month", "by year". NUMERIC column: counts per ''level'' resolution (AUTO default;
+    a power of 10) for a distribution or histogram. TEXT column: top values by count, ''limit'' default
+    20 -- "what''s in this column". Every bucket has ''count'' and ''percentage'' of the total. Options
+    (--input): ''metric'' {"column","function"} adds a per-bucket SUM, COUNT, AVG, MIN, MAX, STDDEV or
+    DISTINCT_COUNT over another column (the custom card); ''condition'' filters rows first -- include/exclude
+    values, blanks, a date or number range, text contains -- and several cards'' selections combine as
+    one AND condition (cross-filter); drill down by re-running at a finer ''level'' with a ''condition''
+    on the chosen bucket''s range; ''sort'' count_desc, count_asc, value_asc or value_desc; ''limit''
+    and ''offset'' page the buckets ("load more"); ''sequence'' explores at a pipeline step. Related:
+    distinct raw values of a DATE/NUMERIC column, a summary (min/max/sum/avg) or a matching-row count
+    -> ''view data aggregate''; keep the filter as a pipeline step -> ''view transform filter''; save
+    it as a new view -> ''view create'' then ''view transform filter'' on it; download all rows -> ''view
+    export csv''. A TEXT column of dates takes a level (or column_type DATE): the format is detected from the data and
+    stated in text_dates; ambiguous or unreadable dates fail loud. A column_type that disagrees with the
+    stored type is refused, never dropped. Example: --input ''{"level": "MONTH", "condition": {"column": "Results", "operator":
+    "EQ", "value": "Fail"}}''.'
+  reviewed_by: primary
+- command_id: view.data.profile
+  command_path: view data profile
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - ExecuteVolatileQuery
+  positionals:
+  - name: view_id
+    type: int
+    required: true
+    metavar: VIEW_ID
+    falls_back_to_field: null
+    help: ID of the view to act on.
+  - name: dataset_id
+    type: int
+    required: false
+    metavar: DATASET_ID
+    falls_back_to_field: dataset_id
+    help: ID of the dataset the view belongs to; resolved from the view when omitted.
+  options: []
+  sdk_symbol: mammoth.api.dataviews.DataviewsAPI.aggregate
+  sdk_conversion: Reads the stored column stats (mammoth.api.ai.AIAPI.generate_profile, action stats), then
+    runs whole-view aggregate jobs (mammoth.api.dataviews.DataviewsAPI.aggregate) only for what is not
+    stored, from mammoth_cli.commands.view_profile; the accepted document fields are
+    _VIEW_DATA_PROFILE_FIELDS in command_contract.py.
+  request_model: ViewDataProfileRequest
+  result_model: ViewDataProfileResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: null
+  live_exemption_reason: Live coverage is tests/live/test_view_profile.py (runs on the test server); the
+    arithmetic is unit-tested in tests/unit/services/test_data_profile.py.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view data profile VIEW_ID --help
+  agent_example: 'mammoth view data profile 123 --input ''{"target": "Churn"}'''
+  unit_tests:
+  - UT-VIEW-DATA-PROFILE
+  contract_tests:
+  - CT-VIEW-DATA-PROFILE
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Read-only profile of the WHOLE view (every row, not a page of 50): per column the
+    blank count, distinct count, min and max (NUMERIC and DATE) and top values; a "summary" of constant,
+    all-blank and mostly-blank columns; "spelling_variants" per TEXT column -- spellings of one value
+    that differ by case, punctuation or legal form (Ltd = Limited, Inc = Incorporated ...) -- with a ready
+    "bulk_replace" input and the full "command" to merge them. Use it to explore, understand or profile
+    a dataset, find blanks, duplicates and dirty categories. Blanks, distinct counts and min/max come
+    from the stats the backend stored for the view when their row count equals the view row count now;
+    otherwise (stale after a pipeline step, or none stored) they are queried in a few multi-column
+    pivots. The "sources" block says which, and that the backend records no as-of time; each column
+    "from" says stored or query. Top values, spelling variants and the target comparison are always
+    queried. --input: "target" (a column with 2-20 values, e.g. churn) adds the target distribution
+    (positive_rate of its rarest class) and "association": "categorical" columns ranked by cramers_v
+    (one grouped count per column) and "numeric" columns ranked by standardized_difference (two
+    multi-column pivots) -- the churn drivers; "columns" (names) profiles only those; "top" values per
+    column (default 5); "limit" columns shown in detail (default 50; the summary always covers all).
+    A column with more than 5000 distinct values gets counts and min/max but no value list. Example:
+    --input ''{"target": "CHURN", "limit": 20}''.'
+  reviewed_by: primary
 - command_id: view.delete
   command_path: view delete
   disposition: command
@@ -1114,10 +1455,15 @@ commands:
   request_model: ViewDeleteRequest
   result_model: ViewDeleteResult
   mutation_class: destructive
+  edits_target: true
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: live_disposable_project
+  readback:
+    command: view.list
+    ids: {}
+    kind: object
   live_test: LT-VIEW-DELETE
   live_exemption_reason: null
   contract_fixture: null
@@ -1162,10 +1508,16 @@ commands:
   request_model: ViewDerivativeCreateRequest
   result_model: ViewDerivativeCreateResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: live_disposable_project
+  readback:
+    command: view.derivative.list
+    ids:
+      view_id: positional.0
+    kind: object
   live_test: LT-VIEW-DERIVATIVE-CREATE
   live_exemption_reason: null
   contract_fixture: null
@@ -1183,8 +1535,8 @@ commands:
   draft_test: null
   undo_test: null
   known_restrictions: 'ARGUMENT and any column reference in the METRIC expression are internal names (metadata[].internal_name
-    from view get, e.g. column_1), not display names; a display name makes the backend fail with HTTP 500. The
-    result is {"id": N}; read the value with view derivative data.'
+    from view get, e.g. column_1), not display names; a display name makes the backend fail with HTTP
+    500. The result is {"id": N}; read the value with view derivative data.'
   reviewed_by: primary
 - command_id: view.derivative.data
   command_path: view derivative data
@@ -1218,10 +1570,16 @@ commands:
   request_model: ViewDerivativeDataRequest
   result_model: ViewDerivativeDataResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: live_disposable_project
+  readback:
+    command: view.derivative.list
+    ids:
+      view_id: positional.0
+    kind: object
   live_test: LT-VIEW-DERIVATIVE-DATA
   live_exemption_reason: null
   contract_fixture: null
@@ -1237,9 +1595,9 @@ commands:
   - CT-VIEW-DERIVATIVE-DATA-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: 'body is {"condition": CONDITION_OR_NULL, "limit": null}, the same document the web app posts;
-    {"limit": null} is the minimal accepted body and an empty body is rejected (4GENR007). Returns STATUS, the
-    metric row(s) under data and their metadata.'
+  known_restrictions: 'body is {"condition": CONDITION_OR_NULL, "limit": null}, the same document the
+    web app posts; {"limit": null} is the minimal accepted body and an empty body is rejected (4GENR007).
+    Returns STATUS, the metric row(s) under data and their metadata.'
   reviewed_by: primary
 - command_id: view.derivative.delete
   command_path: view derivative delete
@@ -1273,10 +1631,16 @@ commands:
   request_model: ViewDerivativeDeleteRequest
   result_model: ViewDerivativeDeleteResult
   mutation_class: destructive
+  edits_target: true
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: live_disposable_project
+  readback:
+    command: view.derivative.list
+    ids:
+      view_id: positional.0
+    kind: object
   live_test: LT-VIEW-DERIVATIVE-DELETE
   live_exemption_reason: null
   contract_fixture: null
@@ -1372,10 +1736,16 @@ commands:
   request_model: ViewDerivativeUpdateRequest
   result_model: ViewDerivativeUpdateResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: live_disposable_project
+  readback:
+    command: view.derivative.list
+    ids:
+      view_id: positional.0
+    kind: object
   live_test: LT-VIEW-DERIVATIVE-UPDATE
   live_exemption_reason: null
   contract_fixture: null
@@ -1383,8 +1753,8 @@ commands:
   secret_fields: []
   human_example: mammoth view derivative update VIEW_ID DERIVATIVE_ID --help
   agent_example: 'mammoth view derivative update 123 123 123 --input ''{"body": {"patches": [{"op": "replace",
-    "path": "param", "value": {"METRIC": {"AS": "sample", "EXPRESSION": [{"TYPE": "FUNCTION", "VALUE": {"ARGUMENT":
-    "sample", "FUNCTION": "SUM"}}]}}}]}}'''
+    "path": "param", "value": {"METRIC": {"AS": "sample", "EXPRESSION": [{"TYPE": "FUNCTION", "VALUE":
+    {"ARGUMENT": "sample", "FUNCTION": "SUM"}}]}}}]}}'''
   unit_tests:
   - UT-VIEW-DERIVATIVE-UPDATE
   contract_tests:
@@ -1414,10 +1784,16 @@ commands:
   request_model: ViewDraftAutoRunRequest
   result_model: ViewDraftAutoRunResult
   mutation_class: reversible_pipeline
+  edits_target: true
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
   acceptance_evidence: live_disposable_project
+  readback:
+    command: view.data.get
+    ids:
+      view_id: positional.0
+    kind: data
   live_test: LT-VIEW-DRAFT-AUTO-RUN
   live_exemption_reason: null
   contract_fixture: null
@@ -1454,10 +1830,13 @@ commands:
   request_model: ViewDraftCommandRequest
   result_model: ViewDraftCommandResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: live_disposable_project
+  no_readback: a draft command stages a change in the draft session; the real view is unchanged until
+    the draft is submitted
   live_test: LT-VIEW-DRAFT-COMMAND
   live_exemption_reason: null
   contract_fixture: null
@@ -1494,10 +1873,16 @@ commands:
   request_model: ViewDraftDiscardRequest
   result_model: ViewDraftDiscardResult
   mutation_class: destructive
+  edits_target: true
   confirmation: prompt_or_yes
   wait_policy: always_wait
   pagination_policy: none
   acceptance_evidence: live_disposable_project
+  readback:
+    command: view.data.get
+    ids:
+      view_id: positional.0
+    kind: data
   live_test: LT-VIEW-DRAFT-DISCARD
   live_exemption_reason: null
   contract_fixture: null
@@ -1534,10 +1919,12 @@ commands:
   request_model: ViewDraftEnterRequest
   result_model: ViewDraftEnterResult
   mutation_class: reversible_pipeline
+  edits_target: true
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
   acceptance_evidence: live_disposable_project
+  no_readback: entering draft mode stages a session; the real view is unchanged until the draft is submitted
   live_test: LT-VIEW-DRAFT-ENTER
   live_exemption_reason: null
   contract_fixture: null
@@ -1615,10 +2002,16 @@ commands:
   request_model: ViewDraftSubmitRequest
   result_model: ViewDraftSubmitResult
   mutation_class: reversible_pipeline
+  edits_target: true
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
   acceptance_evidence: live_disposable_project
+  readback:
+    command: view.data.get
+    ids:
+      view_id: positional.0
+    kind: data
   live_test: LT-VIEW-DRAFT-SUBMIT
   live_exemption_reason: null
   contract_fixture: null
@@ -1661,10 +2054,16 @@ commands:
   request_model: ViewExportAzureBlobRequest
   result_model: ViewExportAzureBlobResult
   mutation_class: external_effect
+  edits_target: false
   confirmation: yes_always
   wait_policy: returns_job
   pagination_policy: none
   acceptance_evidence: contract_only_high_impact
+  readback:
+    command: job.get
+    ids:
+      job_id: result.future_id|result.job.id
+    kind: delivery
   live_test: null
   live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
   contract_fixture: null
@@ -1708,10 +2107,16 @@ commands:
   request_model: ViewExportBigqueryRequest
   result_model: ViewExportBigqueryResult
   mutation_class: external_effect
+  edits_target: false
   confirmation: yes_always
   wait_policy: returns_job
   pagination_policy: none
   acceptance_evidence: contract_only_high_impact
+  readback:
+    command: job.get
+    ids:
+      job_id: result.future_id|result.job.id
+    kind: delivery
   live_test: null
   live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
   contract_fixture: null
@@ -1749,10 +2154,16 @@ commands:
   request_model: ViewExportCreateRequest
   result_model: ViewExportCreateResult
   mutation_class: external_effect
+  edits_target: false
   confirmation: yes_always
   wait_policy: returns_job
   pagination_policy: none
   acceptance_evidence: contract_only_high_impact
+  readback:
+    command: job.get
+    ids:
+      job_id: result.future_id|result.job.id
+    kind: delivery
   live_test: null
   live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
   contract_fixture: null
@@ -1790,10 +2201,13 @@ commands:
   request_model: ViewExportCsvRequest
   result_model: ViewExportCsvResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
   acceptance_evidence: live_disposable_project
+  no_readback: a CSV export returns a one-time download link that settles synchronously; no CLI read command
+    can re-fetch it
   live_test: LT-VIEW-EXPORT-CSV
   live_exemption_reason: null
   contract_fixture: null
@@ -1829,18 +2243,25 @@ commands:
     required: false
     metavar: DATASET_ID
     falls_back_to_field: dataset_id
-    help: 'Exact parent dataset ID. Required for this command: pass it here or as the ''dataset_id'' input
-      field; only read commands may omit it and discover the parent.'
+    help: 'Exact parent dataset ID of the SOURCE view being exported -- not the destination. Required
+      for this command: pass it here or as the ''dataset_id'' input field. To write into an existing destination
+      dataset instead of creating one, use the ''target_ds_id'' input field, not this positional.'
   options: []
   sdk_symbol: mammoth.view.ViewExport.to_dataset
   sdk_conversion: Call mammoth.view.ViewExport.to_dataset with validated request fields.
   request_model: ViewExportDatasetRequest
   result_model: ViewExportDatasetResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
   acceptance_evidence: live_disposable_project
+  readback:
+    command: view.data.get
+    ids:
+      view_id: result.view_id
+    kind: data
   live_test: LT-VIEW-EXPORT-DATASET
   live_exemption_reason: null
   contract_fixture: null
@@ -1857,9 +2278,9 @@ commands:
   draft_test: null
   undo_test: null
   known_restrictions: 'Mutation class dynamic: benign_mutation for a new target, destructive when replacing
-    an existing target. The export is appended to the source pipeline (end_of_pipeline) and re-runs with it;
-    target_project_id sends the dataset into another project (cross-project branch-out, proven on release).
-    Result: {dataset_id, project_id, source_view_id, next}.'
+    an existing target. The export is appended to the source pipeline (end_of_pipeline) and re-runs with
+    it; target_project_id sends the dataset into another project (cross-project branch-out, proven on
+    release). Result: {dataset_id, project_id, source_view_id, next}.'
   reviewed_by: primary
 - command_id: view.export.delete
   command_path: view export delete
@@ -1886,10 +2307,16 @@ commands:
   request_model: ViewExportDeleteRequest
   result_model: ViewExportDeleteResult
   mutation_class: external_effect
+  edits_target: true
   confirmation: yes_always
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: contract_only_high_impact
+  readback:
+    command: view.export.list
+    ids:
+      dataview_id: positional.0
+    kind: object
   live_test: null
   live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
   contract_fixture: null
@@ -1932,10 +2359,16 @@ commands:
   request_model: ViewExportElasticsearchRequest
   result_model: ViewExportElasticsearchResult
   mutation_class: external_effect
+  edits_target: false
   confirmation: yes_always
   wait_policy: returns_job
   pagination_policy: none
   acceptance_evidence: contract_only_high_impact
+  readback:
+    command: job.get
+    ids:
+      job_id: result.future_id|result.job.id
+    kind: delivery
   live_test: null
   live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
   contract_fixture: null
@@ -1979,10 +2412,16 @@ commands:
   request_model: ViewExportEmailRequest
   result_model: ViewExportEmailResult
   mutation_class: external_effect
+  edits_target: false
   confirmation: yes_always
   wait_policy: returns_job
   pagination_policy: none
   acceptance_evidence: contract_only_high_impact
+  readback:
+    command: job.get
+    ids:
+      job_id: result.future_id|result.job.id
+    kind: delivery
   live_test: null
   live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
   contract_fixture: null
@@ -2026,10 +2465,16 @@ commands:
   request_model: ViewExportFtpRequest
   result_model: ViewExportFtpResult
   mutation_class: external_effect
+  edits_target: false
   confirmation: yes_always
   wait_policy: returns_job
   pagination_policy: none
   acceptance_evidence: contract_only_high_impact
+  readback:
+    command: job.get
+    ids:
+      job_id: result.future_id|result.job.id
+    kind: delivery
   live_test: null
   live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
   contract_fixture: null
@@ -2165,10 +2610,12 @@ commands:
   request_model: ViewExportManagedS3Request
   result_model: ViewExportManagedS3Result
   mutation_class: external_effect
+  edits_target: false
   confirmation: yes_always
   wait_policy: always_wait
   pagination_policy: none
   acceptance_evidence: contract_only_high_impact
+  no_readback: S3 delivery is external; no CLI read command can confirm the object landed in the bucket
   live_test: null
   live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
   contract_fixture: null
@@ -2212,10 +2659,16 @@ commands:
   request_model: ViewExportMssqlRequest
   result_model: ViewExportMssqlResult
   mutation_class: external_effect
+  edits_target: false
   confirmation: yes_always
   wait_policy: returns_job
   pagination_policy: none
   acceptance_evidence: contract_only_high_impact
+  readback:
+    command: job.get
+    ids:
+      job_id: result.future_id|result.job.id
+    kind: delivery
   live_test: null
   live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
   contract_fixture: null
@@ -2259,10 +2712,16 @@ commands:
   request_model: ViewExportMysqlRequest
   result_model: ViewExportMysqlResult
   mutation_class: external_effect
+  edits_target: false
   confirmation: yes_always
   wait_policy: returns_job
   pagination_policy: none
   acceptance_evidence: contract_only_high_impact
+  readback:
+    command: job.get
+    ids:
+      job_id: result.future_id|result.job.id
+    kind: delivery
   live_test: null
   live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
   contract_fixture: null
@@ -2306,10 +2765,16 @@ commands:
   request_model: ViewExportOnedriveRequest
   result_model: ViewExportOnedriveResult
   mutation_class: external_effect
+  edits_target: false
   confirmation: yes_always
   wait_policy: returns_job
   pagination_policy: none
   acceptance_evidence: contract_only_high_impact
+  readback:
+    command: job.get
+    ids:
+      job_id: result.future_id|result.job.id
+    kind: delivery
   live_test: null
   live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
   contract_fixture: null
@@ -2353,10 +2818,16 @@ commands:
   request_model: ViewExportPostgresRequest
   result_model: ViewExportPostgresResult
   mutation_class: external_effect
+  edits_target: false
   confirmation: yes_always
   wait_policy: returns_job
   pagination_policy: none
   acceptance_evidence: contract_only_high_impact
+  readback:
+    command: job.get
+    ids:
+      job_id: result.future_id|result.job.id
+    kind: delivery
   live_test: null
   live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
   contract_fixture: null
@@ -2400,10 +2871,16 @@ commands:
   request_model: ViewExportPowerbiRequest
   result_model: ViewExportPowerbiResult
   mutation_class: external_effect
+  edits_target: false
   confirmation: yes_always
   wait_policy: returns_job
   pagination_policy: none
   acceptance_evidence: contract_only_high_impact
+  readback:
+    command: job.get
+    ids:
+      job_id: result.future_id|result.job.id
+    kind: delivery
   live_test: null
   live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
   contract_fixture: null
@@ -2420,8 +2897,10 @@ commands:
   - CT-VIEW-EXPORT-POWERBI-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: The handler enum and helper exist, but the pure contract omits it; confirm camel-case
-    clientId against the pinned server before enabling. See IO-EXPORT-HANDLERS blocker.
+  known_restrictions: Needs the Power BI account username and password, the Azure AD app's client_id,
+    and the target Power BI dataset and table; the password is a secret field, so pass it in the request
+    file, never in argv. Becomes a persistent pipeline step, like 'view export dataset'; the target refreshes
+    automatically every time the source view's pipeline reruns, not just once at call time.
   reviewed_by: primary
 - command_id: view.export.publish-db
   command_path: view export publish-db
@@ -2442,10 +2921,12 @@ commands:
   request_model: ViewExportPublishDbRequest
   result_model: ViewExportPublishDbResult
   mutation_class: external_effect
+  edits_target: false
   confirmation: yes_always
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: contract_only_high_impact
+  no_readback: ODBC publish-to-database has no CLI read command to confirm the external table was written
   live_test: null
   live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
   contract_fixture: null
@@ -2462,7 +2943,8 @@ commands:
   - CT-VIEW-EXPORT-PUBLISH-DB-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: Becomes a persistent pipeline step, like 'view export dataset'; the published target
+    refreshes automatically every time the source view's pipeline reruns, not just once at call time.
   reviewed_by: primary
 - command_id: view.export.publish-db-update
   command_path: view export publish-db-update
@@ -2483,10 +2965,12 @@ commands:
   request_model: ViewExportPublishDbUpdateRequest
   result_model: ViewExportPublishDbUpdateResult
   mutation_class: external_effect
+  edits_target: true
   confirmation: yes_always
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: contract_only_high_impact
+  no_readback: ODBC publish-to-database has no CLI read command to confirm the external table was written
   live_test: null
   live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
   contract_fixture: null
@@ -2530,10 +3014,16 @@ commands:
   request_model: ViewExportRedshiftRequest
   result_model: ViewExportRedshiftResult
   mutation_class: external_effect
+  edits_target: false
   confirmation: yes_always
   wait_policy: returns_job
   pagination_policy: none
   acceptance_evidence: contract_only_high_impact
+  readback:
+    command: job.get
+    ids:
+      job_id: result.future_id|result.job.id
+    kind: delivery
   live_test: null
   live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
   contract_fixture: null
@@ -2577,10 +3067,16 @@ commands:
   request_model: ViewExportRestRequest
   result_model: ViewExportRestResult
   mutation_class: external_effect
+  edits_target: false
   confirmation: yes_always
   wait_policy: returns_job
   pagination_policy: none
   acceptance_evidence: contract_only_high_impact
+  readback:
+    command: job.get
+    ids:
+      job_id: result.future_id|result.job.id
+    kind: delivery
   live_test: null
   live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
   contract_fixture: null
@@ -2626,10 +3122,16 @@ commands:
   request_model: ViewExportSftpRequest
   result_model: ViewExportSftpResult
   mutation_class: external_effect
+  edits_target: false
   confirmation: yes_always
   wait_policy: returns_job
   pagination_policy: none
   acceptance_evidence: contract_only_high_impact
+  readback:
+    command: job.get
+    ids:
+      job_id: result.future_id|result.job.id
+    kind: delivery
   live_test: null
   live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
   contract_fixture: null
@@ -2675,10 +3177,16 @@ commands:
   request_model: ViewExportSharepointRequest
   result_model: ViewExportSharepointResult
   mutation_class: external_effect
+  edits_target: false
   confirmation: yes_always
   wait_policy: returns_job
   pagination_policy: none
   acceptance_evidence: contract_only_high_impact
+  readback:
+    command: job.get
+    ids:
+      job_id: result.future_id|result.job.id
+    kind: delivery
   live_test: null
   live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
   contract_fixture: null
@@ -2722,10 +3230,16 @@ commands:
   request_model: ViewExportTableauRequest
   result_model: ViewExportTableauResult
   mutation_class: external_effect
+  edits_target: false
   confirmation: yes_always
   wait_policy: returns_job
   pagination_policy: none
   acceptance_evidence: contract_only_high_impact
+  readback:
+    command: job.get
+    ids:
+      job_id: result.future_id|result.job.id
+    kind: delivery
   live_test: null
   live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
   contract_fixture: null
@@ -2769,10 +3283,17 @@ commands:
   request_model: ViewExportUpdateRequest
   result_model: ViewExportUpdateResult
   mutation_class: external_effect
+  edits_target: true
   confirmation: yes_always
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: contract_only_high_impact
+  readback:
+    command: view.export.get
+    ids:
+      dataview_id: positional.0
+      export_id: positional.1
+    kind: object
   live_test: null
   live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
   contract_fixture: null
@@ -2816,10 +3337,16 @@ commands:
   request_model: ViewExportableConfigApplyRequest
   result_model: ViewExportableConfigApplyResult
   mutation_class: reversible_pipeline
+  edits_target: true
   confirmation: confirm_target
   wait_policy: returns_job
   pagination_policy: none
   acceptance_evidence: live_disposable_project
+  readback:
+    command: view.exportable-config.get
+    ids:
+      view_id: positional.0
+    kind: object
   live_test: LT-VIEW-EXPORTABLE-CONFIG-APPLY
   live_exemption_reason: null
   contract_fixture: null
@@ -2942,10 +3469,11 @@ commands:
   positionals:
   - name: dataset_id
     type: int
-    required: true
+    required: false
     metavar: DATASET_ID
-    falls_back_to_field: null
-    help: ID of the dataset.
+    falls_back_to_field: dataset_id
+    help: ID of the dataset. Omit it to list dataviews across every dataset in the active project instead
+      (paged; see the 'dataset_offset' input field and the 'next_dataset_offset' result field).
   options: []
   sdk_symbol: mammoth.api.dataviews.DataviewsAPI.list
   sdk_conversion: Call mammoth.api.dataviews.DataviewsAPI.list with validated request fields.
@@ -2961,7 +3489,7 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view list DATASET_ID --help
+  human_example: mammoth view list --help
   agent_example: mammoth view list 123
   unit_tests:
   - UT-VIEW-LIST
@@ -2971,7 +3499,10 @@ commands:
   - CT-VIEW-LIST-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: B01.
+  known_restrictions: 'B01. Each view names its dataset (dataset_id and dataset_name) and carries rows
+    and cols, created and updated time, the dataset''s source kind, its column names with types and stored per-column sample_values (one stored-stats read per
+    listed view, no query), cut to fit the agent tool output cap (next_dataset_offset and views_omitted say where
+    the rest is). Newest first. full true returns the raw records.'
   reviewed_by: primary
 - command_id: view.parameter-context
   command_path: view parameter-context
@@ -3038,10 +3569,16 @@ commands:
   request_model: ViewPipelineEditRequest
   result_model: ViewPipelineEditResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
   acceptance_evidence: live_disposable_project
+  readback:
+    command: view.data.get
+    ids:
+      view_id: positional.0
+    kind: data
   live_test: LT-VIEW-PIPELINE-EDIT
   live_exemption_reason: null
   contract_fixture: null
@@ -3207,10 +3744,16 @@ commands:
   request_model: ViewPipelineRerunRequest
   result_model: ViewPipelineRerunResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: live_disposable_project
+  readback:
+    command: view.data.get
+    ids:
+      view_id: positional.0
+    kind: data
   live_test: LT-VIEW-PIPELINE-RERUN
   live_exemption_reason: null
   contract_fixture: null
@@ -3339,10 +3882,16 @@ commands:
   request_model: ViewRestoreRequest
   result_model: ViewRestoreResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: live_disposable_project
+  readback:
+    command: view.get
+    ids:
+      view_id: positional.0
+    kind: object
   live_test: LT-VIEW-RESTORE
   live_exemption_reason: null
   contract_fixture: null
@@ -3379,10 +3928,16 @@ commands:
   request_model: ViewTaskAddRequest
   result_model: ViewTaskAddResult
   mutation_class: reversible_pipeline
+  edits_target: true
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
   acceptance_evidence: live_disposable_project
+  readback:
+    command: view.data.get
+    ids:
+      view_id: positional.0
+    kind: data
   live_test: LT-VIEW-TASK-ADD
   live_exemption_reason: null
   contract_fixture: null
@@ -3427,10 +3982,16 @@ commands:
   request_model: ViewTaskDeleteRequest
   result_model: ViewTaskDeleteResult
   mutation_class: destructive
+  edits_target: true
   confirmation: prompt_or_yes
   wait_policy: always_wait
   pagination_policy: none
   acceptance_evidence: live_disposable_project
+  readback:
+    command: view.data.get
+    ids:
+      view_id: positional.0
+    kind: data
   live_test: LT-VIEW-TASK-DELETE
   live_exemption_reason: null
   contract_fixture: null
@@ -3603,10 +4164,16 @@ commands:
   request_model: ViewTaskUpdateRequest
   result_model: ViewTaskUpdateResult
   mutation_class: reversible_pipeline
+  edits_target: true
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
   acceptance_evidence: live_disposable_project
+  readback:
+    command: view.data.get
+    ids:
+      view_id: positional.0
+    kind: data
   live_test: LT-VIEW-TASK-UPDATE
   live_exemption_reason: null
   contract_fixture: null
@@ -3645,10 +4212,16 @@ commands:
   request_model: ViewTransformAddColumnRequest
   result_model: ViewTransformAddColumnResult
   mutation_class: reversible_pipeline
+  edits_target: true
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
   acceptance_evidence: live_disposable_project
+  readback:
+    command: view.data.get
+    ids:
+      view_id: positional.0
+    kind: data
   live_test: LT-VIEW-TRANSFORM-ADD-COLUMN
   live_exemption_reason: null
   contract_fixture: null
@@ -3686,18 +4259,24 @@ commands:
   request_model: ViewTransformAddSqlRequest
   result_model: ViewTransformAddSqlResult
   mutation_class: reversible_pipeline
+  edits_target: true
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
   acceptance_evidence: live_disposable_project
+  readback:
+    command: view.data.get
+    ids:
+      view_id: positional.0
+    kind: data
   live_test: LT-VIEW-TRANSFORM-ADD-SQL
   live_exemption_reason: null
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view transform add-sql VIEW_ID --help
-  agent_example: 'mammoth view transform add-sql 123 --input ''{"query": "SELECT region, SUM(revenue) AS
-    revenue FROM \"view:123\" GROUP BY region", "dataset_id": 456}'''
+  agent_example: 'mammoth view transform add-sql 123 --input ''{"query": "SELECT region, SUM(revenue)
+    AS revenue FROM \"view:123\" GROUP BY region", "dataset_id": 456}'''
   unit_tests:
   - UT-VIEW-TRANSFORM-ADD-SQL
   contract_tests:
@@ -3706,7 +4285,13 @@ commands:
   - CT-VIEW-TRANSFORM-ADD-SQL-ERROR
   draft_test: LT-VIEW-TRANSFORM-ADD-SQL-DRAFT
   undo_test: LT-VIEW-TRANSFORM-ADD-SQL-UNDO
-  known_restrictions: 'Single-view SQL: the only table is "view:VIEW_ID" (the view the task is added to); a second view in FROM or JOIN is rejected (5GENR010 "only one table allowed"), use view transform join for that. UNION ALL over the same view, CASE, DATE_TRUNC, GROUP BY and COUNT(DISTINCT ...) run on release. Result columns must be NUMERIC, TEXT or TIMESTAMPTZ: CAST(x AS DATE) is rejected (5GENR010 "Invalid column type DATE"); CAST(x AS TIMESTAMPTZ) or DATE_TRUNC land as a DATE column. The task replaces every column of the view; run it on a copy (view export dataset) when the source columns are still needed. Read the result back with view data get. Evidence: docs/capability-evidence/ilg-sim-20260919.'
+  known_restrictions: 'Single-view SQL: the only table is "view:VIEW_ID" (the view the task is added to);
+    a second view in FROM or JOIN is rejected (5GENR010 "only one table allowed"), use view transform
+    join for that. UNION ALL over the same view, CASE, DATE_TRUNC, GROUP BY and COUNT(DISTINCT ...) run
+    on release. Result columns must be NUMERIC, TEXT or TIMESTAMPTZ: CAST(x AS DATE) is rejected (5GENR010
+    "Invalid column type DATE"); CAST(x AS TIMESTAMPTZ) or DATE_TRUNC land as a DATE column. The task
+    replaces every column of the view; run it on a copy (view export dataset) when the source columns
+    are still needed. Read the result back with view data get. Evidence: docs/capability-evidence/ilg-sim-20260919.'
   reviewed_by: primary
 - command_id: view.transform.ai
   command_path: view transform ai
@@ -3727,10 +4312,16 @@ commands:
   request_model: ViewTransformAiRequest
   result_model: ViewTransformAiResult
   mutation_class: reversible_pipeline
+  edits_target: true
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
   acceptance_evidence: live_disposable_project
+  readback:
+    command: view.data.get
+    ids:
+      view_id: positional.0
+    kind: data
   live_test: LT-VIEW-TRANSFORM-AI
   live_exemption_reason: null
   contract_fixture: null
@@ -3769,18 +4360,24 @@ commands:
   request_model: ViewTransformBulkReplaceRequest
   result_model: ViewTransformBulkReplaceResult
   mutation_class: reversible_pipeline
+  edits_target: true
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
   acceptance_evidence: live_disposable_project
+  readback:
+    command: view.data.get
+    ids:
+      view_id: positional.0
+    kind: data
   live_test: LT-VIEW-TRANSFORM-BULK-REPLACE
   live_exemption_reason: null
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view transform bulk-replace VIEW_ID --help
-  agent_example: 'mammoth view transform bulk-replace 123 --input ''{"columns": ["Status"], "mapping": [{"search":
-    ["sample"], "replace": "sample"}], "dataset_id": 456}'''
+  agent_example: 'mammoth view transform bulk-replace 123 --input ''{"columns": ["Status"], "mapping":
+    [{"search": ["sample"], "replace": "sample"}], "dataset_id": 456}'''
   unit_tests:
   - UT-VIEW-TRANSFORM-BULK-REPLACE
   contract_tests:
@@ -3789,7 +4386,11 @@ commands:
   - CT-VIEW-TRANSFORM-BULK-REPLACE-ERROR
   draft_test: LT-VIEW-TRANSFORM-BULK-REPLACE-DRAFT
   undo_test: LT-VIEW-TRANSFORM-BULK-REPLACE-UNDO
-  known_restrictions: 'Complete flags/defaults/result/draft/undo/live contract is specified in plan 02''s ''Complete bulk-replace command contract''; this appendix does not narrow or replace it. columns must be TEXT (metadata[].type from view get): a NUMERIC or DATE column is stored with a type-mismatch reference error, the view enters ref_error and the CLI answers pipeline_reference_error with the view task delete that removes the task.'
+  known_restrictions: 'Complete flags/defaults/result/draft/undo/live contract is specified in plan 02''s
+    ''Complete bulk-replace command contract''; this appendix does not narrow or replace it. columns must
+    be TEXT (metadata[].type from view get): a NUMERIC or DATE column is stored with a type-mismatch reference
+    error, the view enters ref_error and the CLI answers pipeline_reference_error with the view task delete
+    that removes the task.'
   reviewed_by: primary
 - command_id: view.transform.combine-columns
   command_path: view transform combine-columns
@@ -3811,10 +4412,16 @@ commands:
   request_model: ViewTransformCombineColumnsRequest
   result_model: ViewTransformCombineColumnsResult
   mutation_class: reversible_pipeline
+  edits_target: true
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
   acceptance_evidence: live_disposable_project
+  readback:
+    command: view.data.get
+    ids:
+      view_id: positional.0
+    kind: data
   live_test: LT-VIEW-TRANSFORM-COMBINE-COLUMNS
   live_exemption_reason: null
   contract_fixture: null
@@ -3854,10 +4461,16 @@ commands:
   request_model: ViewTransformConvertTypeRequest
   result_model: ViewTransformConvertTypeResult
   mutation_class: reversible_pipeline
+  edits_target: true
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
   acceptance_evidence: live_disposable_project
+  readback:
+    command: view.data.get
+    ids:
+      view_id: positional.0
+    kind: data
   live_test: LT-VIEW-TRANSFORM-CONVERT-TYPE
   live_exemption_reason: null
   contract_fixture: null
@@ -3896,18 +4509,24 @@ commands:
   request_model: ViewTransformCopyColumnsRequest
   result_model: ViewTransformCopyColumnsResult
   mutation_class: reversible_pipeline
+  edits_target: true
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
   acceptance_evidence: live_disposable_project
+  readback:
+    command: view.data.get
+    ids:
+      view_id: positional.0
+    kind: data
   live_test: LT-VIEW-TRANSFORM-COPY-COLUMNS
   live_exemption_reason: null
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view transform copy-columns VIEW_ID --help
-  agent_example: 'mammoth view transform copy-columns 123 --input ''{"copies": [{"source": "Status"}], "dataset_id":
-    456}'''
+  agent_example: 'mammoth view transform copy-columns 123 --input ''{"copies": [{"source": "Status"}],
+    "dataset_id": 456}'''
   unit_tests:
   - UT-VIEW-TRANSFORM-COPY-COLUMNS
   contract_tests:
@@ -3938,10 +4557,16 @@ commands:
   request_model: ViewTransformCrosstabRequest
   result_model: ViewTransformCrosstabResult
   mutation_class: reversible_pipeline
+  edits_target: true
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
   acceptance_evidence: live_disposable_project
+  readback:
+    command: view.data.get
+    ids:
+      view_id: positional.0
+    kind: data
   live_test: LT-VIEW-TRANSFORM-CROSSTAB
   live_exemption_reason: null
   contract_fixture: null
@@ -3980,10 +4605,16 @@ commands:
   request_model: ViewTransformDateDiffRequest
   result_model: ViewTransformDateDiffResult
   mutation_class: reversible_pipeline
+  edits_target: true
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
   acceptance_evidence: live_disposable_project
+  readback:
+    command: view.data.get
+    ids:
+      view_id: positional.0
+    kind: data
   live_test: LT-VIEW-TRANSFORM-DATE-DIFF
   live_exemption_reason: null
   contract_fixture: null
@@ -4000,7 +4631,15 @@ commands:
   - CT-VIEW-TRANSFORM-DATE-DIFF-ERROR
   draft_test: LT-VIEW-TRANSFORM-DATE-DIFF-DRAFT
   undo_test: LT-VIEW-TRANSFORM-DATE-DIFF-UNDO
-  known_restrictions: null
+  known_restrictions: 'start/end must both be existing DATE columns; there is no today input here. To
+    diff against the current execution time (e.g. days since order), the server task itself supports it
+    but this typed command does not expose it: use view task add with a raw task_spec: {"DATE_DIFF": {"COMPONENT":
+    "DAY", "MINUEND": {"TYPE": "__TIME__"}, "SUBTRAHEND": {"TYPE": "COLUMN", "VALUE": "INTERNAL_COLUMN_NAME"},
+    "AS": {"COLUMN": "Days Since Order", "TYPE": "NUMERIC", "INTERNAL_NAME": "column_days_since_order"}}},
+    where INTERNAL_COLUMN_NAME is that column''s internal_name from view get (not its display name --
+    a raw task skips display-name resolution). MINUEND minus SUBTRAHEND; swap them to flip the sign. Evidence:
+    mvc-service api/api/dataview/helpers/validators/date_diff.py (allowed TYPE values COLUMN/VALUE/SYSTEM_TIME)
+    and CommonConstants/dba_const.py KEYWORDS.SYSTEM_TIME = "__TIME__".'
   reviewed_by: primary
 - command_id: view.transform.delete-columns
   command_path: view transform delete-columns
@@ -4022,10 +4661,16 @@ commands:
   request_model: ViewTransformDeleteColumnsRequest
   result_model: ViewTransformDeleteColumnsResult
   mutation_class: reversible_pipeline
-  confirmation: none
+  edits_target: true
+  confirmation: prompt_or_yes
   wait_policy: always_wait
   pagination_policy: none
   acceptance_evidence: live_disposable_project
+  readback:
+    command: view.data.get
+    ids:
+      view_id: positional.0
+    kind: data
   live_test: LT-VIEW-TRANSFORM-DELETE-COLUMNS
   live_exemption_reason: null
   contract_fixture: null
@@ -4065,10 +4710,16 @@ commands:
   request_model: ViewTransformDiscardDuplicatesRequest
   result_model: ViewTransformDiscardDuplicatesResult
   mutation_class: reversible_pipeline
+  edits_target: true
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
   acceptance_evidence: live_disposable_project
+  readback:
+    command: view.data.get
+    ids:
+      view_id: positional.0
+    kind: data
   live_test: LT-VIEW-TRANSFORM-DISCARD-DUPLICATES
   live_exemption_reason: null
   contract_fixture: null
@@ -4105,18 +4756,24 @@ commands:
   request_model: ViewTransformExtractDateRequest
   result_model: ViewTransformExtractDateResult
   mutation_class: reversible_pipeline
+  edits_target: true
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
   acceptance_evidence: live_disposable_project
+  readback:
+    command: view.data.get
+    ids:
+      view_id: positional.0
+    kind: data
   live_test: LT-VIEW-TRANSFORM-EXTRACT-DATE
   live_exemption_reason: null
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view transform extract-date VIEW_ID --help
-  agent_example: 'mammoth view transform extract-date 123 --input ''{"column": "Status", "component": "year",
-    "dataset_id": 456}'''
+  agent_example: 'mammoth view transform extract-date 123 --input ''{"column": "Status", "component":
+    "year", "dataset_id": 456}'''
   unit_tests:
   - UT-VIEW-TRANSFORM-EXTRACT-DATE
   contract_tests:
@@ -4146,18 +4803,24 @@ commands:
   request_model: ViewTransformFillMissingRequest
   result_model: ViewTransformFillMissingResult
   mutation_class: reversible_pipeline
+  edits_target: true
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
   acceptance_evidence: live_disposable_project
+  readback:
+    command: view.data.get
+    ids:
+      view_id: positional.0
+    kind: data
   live_test: LT-VIEW-TRANSFORM-FILL-MISSING
   live_exemption_reason: null
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view transform fill-missing VIEW_ID --help
-  agent_example: 'mammoth view transform fill-missing 123 --input ''{"column": "Status", "direction": "FIRST_VALUE",
-    "dataset_id": 456}'''
+  agent_example: 'mammoth view transform fill-missing 123 --input ''{"column": "Status", "direction":
+    "FIRST_VALUE", "dataset_id": 456}'''
   unit_tests:
   - UT-VIEW-TRANSFORM-FILL-MISSING
   contract_tests:
@@ -4187,10 +4850,16 @@ commands:
   request_model: ViewTransformFilterRequest
   result_model: ViewTransformFilterResult
   mutation_class: reversible_pipeline
+  edits_target: true
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
   acceptance_evidence: live_disposable_project
+  readback:
+    command: view.data.get
+    ids:
+      view_id: positional.0
+    kind: data
   live_test: LT-VIEW-TRANSFORM-FILTER
   live_exemption_reason: null
   contract_fixture: null
@@ -4229,10 +4898,16 @@ commands:
   request_model: ViewTransformGenerateSqlRequest
   result_model: ViewTransformGenerateSqlResult
   mutation_class: reversible_pipeline
+  edits_target: false
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
   acceptance_evidence: live_disposable_project
+  readback:
+    command: view.data.get
+    ids:
+      view_id: positional.0
+    kind: data
   live_test: LT-VIEW-TRANSFORM-GENERATE-SQL
   live_exemption_reason: null
   contract_fixture: null
@@ -4249,8 +4924,9 @@ commands:
   - CT-VIEW-TRANSFORM-GENERATE-SQL-ERROR
   draft_test: LT-VIEW-TRANSFORM-GENERATE-SQL-DRAFT
   undo_test: LT-VIEW-TRANSFORM-GENERATE-SQL-UNDO
-  known_restrictions: Adds and executes a SQL task; it is not a read-only generator. Differs from ai sql
-    generate (AIAPI.generate_sql), which only returns a query.
+  known_restrictions: 'Writes and validates a SQL query from the intent and returns it as data.sql; it
+    does not change the view (release, 2026-09-25: no task was added). Apply the query with view transform
+    add-sql (data.apply is the exact command); add-sql replaces the view''s columns with the result.'
   reviewed_by: primary
 - command_id: view.transform.increment-date
   command_path: view transform increment-date
@@ -4271,10 +4947,16 @@ commands:
   request_model: ViewTransformIncrementDateRequest
   result_model: ViewTransformIncrementDateResult
   mutation_class: reversible_pipeline
+  edits_target: true
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
   acceptance_evidence: live_disposable_project
+  readback:
+    command: view.data.get
+    ids:
+      view_id: positional.0
+    kind: data
   live_test: LT-VIEW-TRANSFORM-INCREMENT-DATE
   live_exemption_reason: null
   contract_fixture: null
@@ -4312,18 +4994,24 @@ commands:
   request_model: ViewTransformJoinRequest
   result_model: ViewTransformJoinResult
   mutation_class: reversible_pipeline
+  edits_target: true
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
   acceptance_evidence: live_disposable_project
+  readback:
+    command: view.data.get
+    ids:
+      view_id: positional.0
+    kind: data
   live_test: LT-VIEW-TRANSFORM-JOIN
   live_exemption_reason: null
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view transform join VIEW_ID --help
-  agent_example: 'mammoth view transform join 123 --input ''{"foreign_view": 1, "join_type": "INNER", "on":
-    [{"left": "sample", "right": "sample"}], "select": ["sample"], "dataset_id": 456, "foreign_dataset_id":
+  agent_example: 'mammoth view transform join 123 --input ''{"foreign_view": 1, "join_type": "INNER",
+    "on": [{"left": "sample", "right": "sample"}], "select": ["sample"], "dataset_id": 456, "foreign_dataset_id":
     457}'''
   unit_tests:
   - UT-VIEW-TRANSFORM-JOIN
@@ -4355,17 +5043,24 @@ commands:
   request_model: ViewTransformJsonExtractRequest
   result_model: ViewTransformJsonExtractResult
   mutation_class: reversible_pipeline
+  edits_target: true
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
   acceptance_evidence: live_disposable_project
+  readback:
+    command: view.data.get
+    ids:
+      view_id: positional.0
+    kind: data
   live_test: LT-VIEW-TRANSFORM-JSON-EXTRACT
   live_exemption_reason: null
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view transform json-extract VIEW_ID --help
-  agent_example: 'mammoth view transform json-extract 123 --input ''{"column": "Status", "dataset_id": 456}'''
+  agent_example: 'mammoth view transform json-extract 123 --input ''{"column": "Status", "dataset_id":
+    456}'''
   unit_tests:
   - UT-VIEW-TRANSFORM-JSON-EXTRACT
   contract_tests:
@@ -4374,7 +5069,10 @@ commands:
   - CT-VIEW-TRANSFORM-JSON-EXTRACT-ERROR
   draft_test: LT-VIEW-TRANSFORM-JSON-EXTRACT-DRAFT
   undo_test: LT-VIEW-TRANSFORM-JSON-EXTRACT-UNDO
-  known_restrictions: null
+  known_restrictions: json_type=LIST (JSON_LIST_TO_ROWS) gives one row per list element, landing in an
+    Item column (plus an Index column for its original position); with no keys/extractions this is the
+    default. An object element does not get columns from this call -- run a second json-extract (json_type=OBJECT)
+    on Item to turn its keys into columns.
   reviewed_by: primary
 - command_id: view.transform.limit-rows
   command_path: view transform limit-rows
@@ -4395,10 +5093,16 @@ commands:
   request_model: ViewTransformLimitRowsRequest
   result_model: ViewTransformLimitRowsResult
   mutation_class: reversible_pipeline
+  edits_target: true
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
   acceptance_evidence: live_disposable_project
+  readback:
+    command: view.data.get
+    ids:
+      view_id: positional.0
+    kind: data
   live_test: LT-VIEW-TRANSFORM-LIMIT-ROWS
   live_exemption_reason: null
   contract_fixture: null
@@ -4435,10 +5139,16 @@ commands:
   request_model: ViewTransformLookupRequest
   result_model: ViewTransformLookupResult
   mutation_class: reversible_pipeline
+  edits_target: true
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
   acceptance_evidence: live_disposable_project
+  readback:
+    command: view.data.get
+    ids:
+      view_id: positional.0
+    kind: data
   live_test: LT-VIEW-TRANSFORM-LOOKUP
   live_exemption_reason: null
   contract_fixture: null
@@ -4476,10 +5186,16 @@ commands:
   request_model: ViewTransformMathRequest
   result_model: ViewTransformMathResult
   mutation_class: reversible_pipeline
+  edits_target: true
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
   acceptance_evidence: live_disposable_project
+  readback:
+    command: view.data.get
+    ids:
+      view_id: positional.0
+    kind: data
   live_test: LT-VIEW-TRANSFORM-MATH
   live_exemption_reason: null
   contract_fixture: null
@@ -4517,18 +5233,24 @@ commands:
   request_model: ViewTransformPivotRequest
   result_model: ViewTransformPivotResult
   mutation_class: reversible_pipeline
+  edits_target: true
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
   acceptance_evidence: live_disposable_project
+  readback:
+    command: view.data.get
+    ids:
+      view_id: positional.0
+    kind: data
   live_test: LT-VIEW-TRANSFORM-PIVOT
   live_exemption_reason: null
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view transform pivot VIEW_ID --help
-  agent_example: 'mammoth view transform pivot 123 --input ''{"group_by": ["sample"], "aggregations": [{"column":
-    "Status", "function": "SUM"}], "dataset_id": 456}'''
+  agent_example: 'mammoth view transform pivot 123 --input ''{"group_by": ["sample"], "aggregations":
+    [{"column": "Status", "function": "SUM"}], "dataset_id": 456}'''
   unit_tests:
   - UT-VIEW-TRANSFORM-PIVOT
   contract_tests:
@@ -4537,9 +5259,58 @@ commands:
   - CT-VIEW-TRANSFORM-PIVOT-ERROR
   draft_test: LT-VIEW-TRANSFORM-PIVOT-DRAFT
   undo_test: LT-VIEW-TRANSFORM-PIVOT-UNDO
-  known_restrictions: 'Replaces the view''s columns with the summary, so run it last (export rows first). Every as_name
-    must be a display name that does not already exist on the view (4DTVW018 SAME_DISPLAY_NAME_CANNOT_BE_REUSED):
+  known_restrictions: 'Replaces the view''s columns with the summary, so run it last (export rows first).
+    Every as_name must be a display name that does not already exist on the view (4DTVW018 SAME_DISPLAY_NAME_CANNOT_BE_REUSED):
     aggregate a joined column under a new name.'
+  reviewed_by: primary
+- command_id: view.transform.rename-columns
+  command_path: view transform rename-columns
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - Patch
+  positionals:
+  - name: view_id
+    type: int
+    required: true
+    metavar: VIEW_ID
+    falls_back_to_field: null
+    help: ID of the view to act on.
+  options: []
+  sdk_symbol: mammoth._mixins._column_ops.ColumnOpsMixin.rename_columns
+  sdk_conversion: Call mammoth._mixins._column_ops.ColumnOpsMixin.rename_columns with validated request
+    fields.
+  request_model: ViewTransformRenameColumnsRequest
+  result_model: ViewTransformRenameColumnsResult
+  mutation_class: benign_mutation
+  edits_target: true
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  readback:
+    command: view.data.get
+    ids:
+      view_id: positional.0
+    kind: data
+  live_test: LT-VIEW-TRANSFORM-RENAME-COLUMNS
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view transform rename-columns VIEW_ID --help
+  agent_example: 'mammoth view transform rename-columns 123 --input ''{"renames": {"cust_id": "Customer
+    ID"}, "dataset_id": 456}'''
+  unit_tests:
+  - UT-VIEW-TRANSFORM-RENAME-COLUMNS
+  contract_tests:
+  - CT-VIEW-TRANSFORM-RENAME-COLUMNS-HUMAN
+  - CT-VIEW-TRANSFORM-RENAME-COLUMNS-JSON
+  - CT-VIEW-TRANSFORM-RENAME-COLUMNS-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'A view display setting (the web grid''s column rename), not a pipeline task: it
+    changes no data and adds no task.'
   reviewed_by: primary
 - command_id: view.transform.replace
   command_path: view transform replace
@@ -4560,10 +5331,16 @@ commands:
   request_model: ViewTransformReplaceRequest
   result_model: ViewTransformReplaceResult
   mutation_class: reversible_pipeline
+  edits_target: true
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
   acceptance_evidence: live_disposable_project
+  readback:
+    command: view.data.get
+    ids:
+      view_id: positional.0
+    kind: data
   live_test: LT-VIEW-TRANSFORM-REPLACE
   live_exemption_reason: null
   contract_fixture: null
@@ -4580,7 +5357,9 @@ commands:
   - CT-VIEW-TRANSFORM-REPLACE-ERROR
   draft_test: LT-VIEW-TRANSFORM-REPLACE-DRAFT
   undo_test: LT-VIEW-TRANSFORM-REPLACE-UNDO
-  known_restrictions: 'columns must be TEXT (metadata[].type from view get): a NUMERIC or DATE column is stored with a type-mismatch reference error, the view enters ref_error and the CLI answers pipeline_reference_error with the view task delete that removes the task.'
+  known_restrictions: 'columns must be TEXT (metadata[].type from view get): a NUMERIC or DATE column
+    is stored with a type-mismatch reference error, the view enters ref_error and the CLI answers pipeline_reference_error
+    with the view task delete that removes the task.'
   reviewed_by: primary
 - command_id: view.transform.set-values
   command_path: view transform set-values
@@ -4601,10 +5380,16 @@ commands:
   request_model: ViewTransformSetValuesRequest
   result_model: ViewTransformSetValuesResult
   mutation_class: reversible_pipeline
+  edits_target: true
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
   acceptance_evidence: live_disposable_project
+  readback:
+    command: view.data.get
+    ids:
+      view_id: positional.0
+    kind: data
   live_test: LT-VIEW-TRANSFORM-SET-VALUES
   live_exemption_reason: null
   contract_fixture: null
@@ -4642,10 +5427,16 @@ commands:
   request_model: ViewTransformSmallLargeRequest
   result_model: ViewTransformSmallLargeResult
   mutation_class: reversible_pipeline
+  edits_target: true
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
   acceptance_evidence: live_disposable_project
+  readback:
+    command: view.data.get
+    ids:
+      view_id: positional.0
+    kind: data
   live_test: LT-VIEW-TRANSFORM-SMALL-LARGE
   live_exemption_reason: null
   contract_fixture: null
@@ -4663,6 +5454,54 @@ commands:
   draft_test: LT-VIEW-TRANSFORM-SMALL-LARGE-DRAFT
   undo_test: LT-VIEW-TRANSFORM-SMALL-LARGE-UNDO
   known_restrictions: null
+  reviewed_by: primary
+- command_id: view.transform.sort
+  command_path: view transform sort
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - Patch
+  positionals:
+  - name: view_id
+    type: int
+    required: true
+    metavar: VIEW_ID
+    falls_back_to_field: null
+    help: ID of the view to act on.
+  options: []
+  sdk_symbol: mammoth._mixins._row_ops.RowOpsMixin.sort_rows
+  sdk_conversion: Call mammoth._mixins._row_ops.RowOpsMixin.sort_rows with validated request fields.
+  request_model: ViewTransformSortRequest
+  result_model: ViewTransformSortResult
+  mutation_class: benign_mutation
+  edits_target: true
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  readback:
+    command: view.data.get
+    ids:
+      view_id: positional.0
+    kind: data
+  live_test: LT-VIEW-TRANSFORM-SORT
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view transform sort VIEW_ID --help
+  agent_example: 'mammoth view transform sort 123 --input ''{"order_by": [["Revenue", "DESC"]], "dataset_id":
+    456}'''
+  unit_tests:
+  - UT-VIEW-TRANSFORM-SORT
+  contract_tests:
+  - CT-VIEW-TRANSFORM-SORT-HUMAN
+  - CT-VIEW-TRANSFORM-SORT-JSON
+  - CT-VIEW-TRANSFORM-SORT-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'A view display setting (the web grid''s sort), not a pipeline task: data reads
+    and exports return rows in this order. At most three columns.'
   reviewed_by: primary
 - command_id: view.transform.split
   command_path: view transform split
@@ -4683,10 +5522,16 @@ commands:
   request_model: ViewTransformSplitRequest
   result_model: ViewTransformSplitResult
   mutation_class: reversible_pipeline
+  edits_target: true
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
   acceptance_evidence: live_disposable_project
+  readback:
+    command: view.data.get
+    ids:
+      view_id: positional.0
+    kind: data
   live_test: LT-VIEW-TRANSFORM-SPLIT
   live_exemption_reason: null
   contract_fixture: null
@@ -4724,10 +5569,16 @@ commands:
   request_model: ViewTransformSubstringRequest
   result_model: ViewTransformSubstringResult
   mutation_class: reversible_pipeline
+  edits_target: true
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
   acceptance_evidence: live_disposable_project
+  readback:
+    command: view.data.get
+    ids:
+      view_id: positional.0
+    kind: data
   live_test: LT-VIEW-TRANSFORM-SUBSTRING
   live_exemption_reason: null
   contract_fixture: null
@@ -4764,10 +5615,16 @@ commands:
   request_model: ViewTransformTextRequest
   result_model: ViewTransformTextResult
   mutation_class: reversible_pipeline
+  edits_target: true
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
   acceptance_evidence: live_disposable_project
+  readback:
+    command: view.data.get
+    ids:
+      view_id: positional.0
+    kind: data
   live_test: LT-VIEW-TRANSFORM-TEXT
   live_exemption_reason: null
   contract_fixture: null
@@ -4804,10 +5661,16 @@ commands:
   request_model: ViewTransformUnnestRequest
   result_model: ViewTransformUnnestResult
   mutation_class: reversible_pipeline
+  edits_target: true
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
   acceptance_evidence: live_disposable_project
+  readback:
+    command: view.data.get
+    ids:
+      view_id: positional.0
+    kind: data
   live_test: LT-VIEW-TRANSFORM-UNNEST
   live_exemption_reason: null
   contract_fixture: null
@@ -4845,17 +5708,24 @@ commands:
   request_model: ViewTransformWindowRequest
   result_model: ViewTransformWindowResult
   mutation_class: reversible_pipeline
+  edits_target: true
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
   acceptance_evidence: live_disposable_project
+  readback:
+    command: view.data.get
+    ids:
+      view_id: positional.0
+    kind: data
   live_test: LT-VIEW-TRANSFORM-WINDOW
   live_exemption_reason: null
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view transform window VIEW_ID --help
-  agent_example: 'mammoth view transform window 123 --input ''{"function": "ROW_NUMBER", "dataset_id": 456}'''
+  agent_example: 'mammoth view transform window 123 --input ''{"function": "ROW_NUMBER", "dataset_id":
+    456}'''
   unit_tests:
   - UT-VIEW-TRANSFORM-WINDOW
   contract_tests:
@@ -4892,10 +5762,16 @@ commands:
   request_model: ViewTrashRequest
   result_model: ViewTrashResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: live_disposable_project
+  readback:
+    command: view.get
+    ids:
+      view_id: positional.0
+    kind: object
   live_test: LT-VIEW-TRASH
   live_exemption_reason: null
   contract_fixture: null
@@ -4939,10 +5815,16 @@ commands:
   request_model: ViewUpdateRequest
   result_model: ViewUpdateResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: live_disposable_project
+  readback:
+    command: view.get
+    ids:
+      view_id: positional.0
+    kind: object
   live_test: LT-VIEW-UPDATE
   live_exemption_reason: null
   contract_fixture: null
@@ -4994,10 +5876,16 @@ commands:
   request_model: ViewVersionApplyRequest
   result_model: ViewVersionApplyResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: live_disposable_project
+  readback:
+    command: view.data.get
+    ids:
+      view_id: positional.0
+    kind: data
   live_test: LT-VIEW-VERSION-APPLY
   live_exemption_reason: null
   contract_fixture: null
@@ -5048,10 +5936,16 @@ commands:
   request_model: ViewVersionDeleteRequest
   result_model: ViewVersionDeleteResult
   mutation_class: destructive
+  edits_target: true
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: live_disposable_project
+  readback:
+    command: view.version.list
+    ids:
+      view_id: positional.0
+    kind: object
   live_test: LT-VIEW-VERSION-DELETE
   live_exemption_reason: null
   contract_fixture: null
@@ -5200,10 +6094,17 @@ commands:
   request_model: ViewVersionUpdateRequest
   result_model: ViewVersionUpdateResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: live_disposable_project
+  readback:
+    command: view.version.get
+    ids:
+      view_id: positional.0
+      version_id: positional.1
+    kind: object
   live_test: LT-VIEW-VERSION-UPDATE
   live_exemption_reason: null
   contract_fixture: null

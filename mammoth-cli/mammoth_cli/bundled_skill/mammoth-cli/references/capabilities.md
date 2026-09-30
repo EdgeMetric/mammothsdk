@@ -1,7 +1,7 @@
 # What is proven on release
 
 Generated from `docs/release-capability-matrix.json`; do not edit by hand.
-The CLI publishes 554 commands. 455 of them bind one of the 528 API operations in the matrix; the remainder are local commands (`schema`, `auth`, `doctor`, `log`, ...) or typed variants that share an operation (every `view transform *` command submits through `view.task.add`). 262 bound commands ran once successfully on release, 2 are not supported there, and the rest are untried. Untried is not broken: discover the contract with `mammoth schema get COMMAND_ID`, run it, and treat the structured error envelope as the answer.
+The CLI publishes 573 commands. 453 of them bind one of the 528 API operations in the matrix; the remainder are local commands (`schema`, `auth`, `doctor`, `log`, ...) or typed variants that share an operation (`view transform *` commands submit through `view.task.add`, except `rename-columns` and `sort`, which set view display properties through `view.update`). 262 bound commands ran once successfully on release, 2 are not supported there, and the rest are untried. Untried is not broken: discover the contract with `mammoth schema get COMMAND_ID`, run it, and treat the structured error envelope as the answer.
 
 Status meanings:
 
@@ -11,7 +11,7 @@ Status meanings:
 - **CLI defect fixed, untried since**: the failure was on the CLI side and this release repairs it; nobody has re-run the route yet.
 - Commands not listed under a family are untried.
 
-The typed `view transform *` commands all submit through `view.task.add`; its matrix row names the transformations that ran end to end and were read back (filter, fill-missing, join, pivot, set-values with a condition, text, bulk-replace, convert-type, discard-duplicates). A transformation not named there has the same untried status as any other command.
+The typed `view transform *` commands all submit through `view.task.add` (`rename-columns` and `sort` through `view.update`); its matrix row names the transformations that ran end to end and were read back against a known answer: `add-column`, `add-sql`, `ai`, `bulk-replace`, `combine-columns`, `convert-type`, `copy-columns`, `crosstab`, `date-diff`, `delete-columns`, `discard-duplicates`, `extract-date`, `fill-missing`, `filter`, `generate-sql`, `increment-date`, `join`, `json-extract`, `limit-rows`, `lookup`, `math`, `pivot`, `rename-columns`, `replace`, `set-values`, `small-large`, `sort`, `split`, `substring`, `text`, `unnest`, `window`. A transformation not named there has the same untried status as any other command.
 
 ## Coverage by family
 
@@ -20,8 +20,8 @@ The typed `view transform *` commands all submit through `view.task.add`; its ma
 | `dashboard` | 104 | 81 | 2 | 21 |
 | `view` | 62 | 58 | 0 | 4 |
 | `support` | 45 | 9 | 0 | 36 |
-| `billing` | 23 | 4 | 0 | 19 |
 | `connector` | 22 | 3 | 0 | 19 |
+| `billing` | 21 | 4 | 0 | 17 |
 | `workspace` | 19 | 7 | 0 | 12 |
 | `project` | 17 | 15 | 0 | 2 |
 | `workflow` | 16 | 9 | 0 | 7 |
@@ -118,4 +118,4 @@ Ran once: `view.active-user.list`, `view.active-user.mark`, `view.ai.generate-da
 | `view.data-check.update` | observed blocker | backend_error: PATCH with the schema's documented {op: command, path: enable/disable, value: null} shape returns HTTP 500 empty body (CLI outcome_unknown, exit 7) while the mutatio |
 | `view.export.publish-db-update` | CLI defect fixed, untried since | 2.0.16 (example value is the documented {"odbc_type": "postgres"} object (a bare string is rejected)) |
 
-Evidence collected on CLI releases 1.1.5 through 2.0.28; each row's release is recorded in `docs/release-capability-matrix.json` (`evidence_version`). A row that ran on an older release has not been re-run since unless its note says so. Details: `docs/capability-evidence/` in the repository.
+Evidence collected on CLI releases 1.1.5 through 2.0.40; each row's release is recorded in `docs/release-capability-matrix.json` (`evidence_version`). A row that ran on an older release has not been re-run since unless its note says so. Details: `docs/capability-evidence/` in the repository.

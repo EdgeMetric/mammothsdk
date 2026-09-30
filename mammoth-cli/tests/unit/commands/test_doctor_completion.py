@@ -290,3 +290,49 @@ def test_doctor_reports_unresponsive_keyring_as_a_failed_check(
     assert checks["credentials"]["detail"] == "keyring_unresponsive"
     assert "mammoth auth login --profile default --storage file" in data["recommendations"]
     assert data["ok"] is False
+
+
+def test_doctor_wait_probes_again_through_an_outage(
+    isolated_cli_config: Path,
+    fake_service: FakeMammothService,
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    login_default_profile()
+    outage = CliError(code="retryable_error", message="502", retryable=True)
+    attempts: list[int] = []
+
+    def flaky() -> dict[str, object]:
+        attempts.append(1)
+        if len(attempts) < 3:
+            raise outage
+        return {}
+
+    fake_service.check_connection = flaky  # type: ignore[method-assign]
+    clock = iter(float(n) for n in range(0, 1000, 15))
+    monkeypatch.setattr(doctor_cmd.time, "monotonic", lambda: next(clock))
+    monkeypatch.setattr(doctor_cmd.time, "sleep", lambda _s: None)
+    doc = tmp_path / "wait.json"
+    doc.write_text('{"wait": 120}', encoding="utf-8")
+
+    data, _ = doctor_cmd.doctor(_inv("doctor", input_file=str(doc)))
+    connection = next(check for check in data["checks"] if check["name"] == "connection")
+    assert len(attempts) == 3
+    assert connection["ok"] is True
+    assert connection["detail"].startswith("authenticated request succeeded after 2 retries")
+
+
+def test_doctor_without_wait_reports_the_first_outage(
+    isolated_cli_config: Path, fake_service: FakeMammothService
+) -> None:
+    login_default_profile()
+    calls: list[int] = []
+
+    def down() -> dict[str, object]:
+        calls.append(1)
+        raise CliError(code="retryable_error", message="502", retryable=True)
+
+    fake_service.check_connection = down  # type: ignore[method-assign]
+    data, _ = doctor_cmd.doctor(_inv("doctor"))
+    assert calls == [1]
+    assert data["ok"] is False

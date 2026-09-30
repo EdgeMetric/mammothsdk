@@ -19,6 +19,7 @@ commands:
   request_model: BatchBulkDeleteRequest
   result_model: BatchBulkDeleteResult
   mutation_class: destructive
+  edits_target: true
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -40,6 +41,11 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: batch.list
+    ids:
+      dataset_id: positional.0
+    kind: object
 - command_id: batch.create
   command_path: batch create
   disposition: command
@@ -65,6 +71,7 @@ commands:
   request_model: BatchCreateRequest
   result_model: BatchCreateResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: returns_job
   pagination_policy: none
@@ -87,6 +94,11 @@ commands:
   undo_test: null
   known_restrictions: SOURCE_ID is a standalone dataset in the same project (4BATC010 INVALID_SOURCE_DATASET for a file id or an append child); to append a file use file upload with append_to_ds_id. delete_source_ds=true changes the mutation class to destructive and requires confirmation.
   reviewed_by: primary
+  readback:
+    command: batch.list
+    ids:
+      dataset_id: positional.0
+    kind: object
 - command_id: batch.create-spec
   command_path: batch create-spec
   disposition: command
@@ -105,6 +117,7 @@ commands:
   request_model: BatchCreateSpecRequest
   result_model: BatchCreateSpecResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: returns_job
   pagination_policy: none
@@ -127,6 +140,11 @@ commands:
   known_restrictions: Release BatchesPostRequest; file_id-only or source_id plus homogeneous mapping array.
     Dynamic confirmation applies only to delete_source_ds.
   reviewed_by: primary
+  readback:
+    command: batch.list
+    ids:
+      dataset_id: positional.0
+    kind: object
 - command_id: batch.delete
   command_path: batch delete
   disposition: command
@@ -152,6 +170,7 @@ commands:
   request_model: BatchDeleteRequest
   result_model: BatchDeleteResult
   mutation_class: destructive
+  edits_target: true
   confirmation: prompt_or_yes
   wait_policy: returns_job
   pagination_policy: none
@@ -173,6 +192,11 @@ commands:
   undo_test: null
   known_restrictions: Resolve the batch before confirmation.
   reviewed_by: primary
+  readback:
+    command: batch.list
+    ids:
+      dataset_id: positional.0
+    kind: object
 - command_id: batch.get
   command_path: batch get
   disposition: command
@@ -278,6 +302,7 @@ commands:
   request_model: BatchUpdateRequest
   result_model: BatchUpdateResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: returns_job
   pagination_policy: none
@@ -299,3 +324,8 @@ commands:
   undo_test: null
   known_restrictions: Any remove operation in the discriminated patch changes the mutation class to destructive.
   reviewed_by: primary
+  readback:
+    command: batch.list
+    ids:
+      dataset_id: positional.0
+    kind: object

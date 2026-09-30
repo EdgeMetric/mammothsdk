@@ -706,6 +706,50 @@ class TestToDataset:
         assert tp["SAVE_AS_DS_MODE"] == "APPEND_TO_DS"
         assert tp["COLUMN_MAPPING"] == mapping
 
+    async def test_new_dataset_partial_mapping_keeps_other_columns(self, mock_client):
+        # Reproduces the koyal QA-smoke bug (2026-09-28, RCA cause (a)):
+        # "rename petal_width, save as new dataset" sent column_mapping=
+        # {"petal_width": "..."} alone. The backend treats a non-empty
+        # COLUMN_MAPPING as an allow-list (api/api/ds/sketch.py), so every
+        # column NOT in the mapping was silently dropped -- a 4-column view
+        # exported as a 1-column dataset. A rename-only mapping on a NEW
+        # dataset (target_ds_id=None) must keep every other view column.
+        view = View(
+            mock_client,
+            {
+                "id": 2001,
+                "name": "Multi Col View",
+                "properties": {
+                    "columns": [
+                        {
+                            "display_name": "col_a",
+                            "internal_name": "column_aaa",
+                            "type": "TEXT",
+                        },
+                        {
+                            "display_name": "col_b",
+                            "internal_name": "column_bbb",
+                            "type": "TEXT",
+                        },
+                        {
+                            "display_name": "col_c",
+                            "internal_name": "column_ccc",
+                            "type": "TEXT",
+                        },
+                    ],
+                },
+            },
+            501,
+        )
+        captured = self._capture_run(view)
+        await view.export.to_dataset("New DS", column_mapping={"col_b": "renamed_b"})
+        tp = captured["target_properties"]
+        assert tp["COLUMN_MAPPING"] == {
+            "col_a": "col_a",
+            "col_b": "renamed_b",
+            "col_c": "col_c",
+        }
+
     async def test_condition_forwarded_to_seam_untouched(self, export_view):
         captured = self._capture_run(export_view)
         cond = Condition("col_a", Operator.EQ, "x")
@@ -719,23 +763,36 @@ class TestToDataset:
 
     async def test_seam_builds_typed_condition_into_export_spec(self, export_view):
         # Exercise the REAL seam and capture the spec it builds, proving the
-        # typed condition becomes the correct wire dict. target_ds_id is set so
-        # the seam returns it directly (no new-dataset id resolution needed) —
-        # this isolates the condition-building behaviour AND verifies the
-        # existing-target id is returned.
+        # typed condition becomes the correct wire dict. target_ds_id is set,
+        # so once the write is confirmed EXECUTED the seam returns it
+        # directly (no new-dataset id resolution needed) — this isolates the
+        # condition-building behaviour AND verifies the existing-target id is
+        # returned.
         captured_spec: dict[str, Any] = {}
 
         async def fake_create(dataview_id, export_spec, dataset_id):
             captured_spec["spec"] = export_spec
             return MagicMock()  # non-JobResponse → wait_for_job skipped
 
+        executed_write = MagicMock()
+        executed_write.id = 5
+        executed_write.status = ExportStatus.EXECUTED
+        executed_write.target_properties = {"TARGET_DS_ID": 77}
+        write_page = MagicMock()
+        write_page.exports = [executed_write]
+        empty_page = MagicMock()
+        empty_page.exports = []
+
         export_view._client.exports = AsyncMock()
         export_view._client.exports.create = fake_create
+        # First call is the pre-submit floor (nothing existed yet); the poll
+        # after submit then sees this call's own export.
+        export_view._client.exports.list.side_effect = [empty_page, write_page]
 
         new_id = await export_view.export.to_dataset(
             "Filtered DS", target_ds_id=77, condition=Condition("col_a", Operator.EQ, "x")
         )
-        assert new_id == 77  # existing-target id returned directly
+        assert new_id == 77  # existing-target id returned once the write is confirmed
         spec = captured_spec["spec"]
         # TEXT column + EQ is remapped to IN_LIST and keyed by the INTERNAL name.
         assert "column_aaa" in spec.condition
@@ -797,6 +854,189 @@ class TestExportedDatasetIdResolution:
             with pytest.raises(MammothExportError) as exc:
                 await export_view._resolve_exported_dataset_id("Pending", timeout=1)
         assert exc.value.details["dataset_name"] == "Pending"
+
+
+class TestRunInternalDatasetExportWaitsForExistingWrite:
+    """Writing into an EXISTING dataset (TARGET_DS_ID set — APPEND_TO_DS or
+    REPLACE_IN_DS) must not return until the write actually lands, exactly
+    like the new-dataset path. Returning the already-known id the instant the
+    submit job acks left callers reading row_count before the append/replace
+    had materialised."""
+
+    @staticmethod
+    def _export(target_ds_id, status, export_id=1):
+        e = MagicMock()
+        e.id = export_id
+        e.status = status
+        e.target_properties = {"TARGET_DS_ID": target_ds_id}
+        return e
+
+    def _page(self, exports):
+        page = MagicMock()
+        page.exports = exports
+        return page
+
+    def _target_properties(self, target_ds_id=42):
+        return {
+            "TARGET_DS_ID": target_ds_id,
+            "SAVE_AS_DS_MODE": "APPEND_TO_DS",
+            "DS_NAME": None,
+            "COLUMN_MAPPING": {},
+            "TRANSFORM": None,
+        }
+
+    async def test_does_not_return_early_when_not_yet_executed_on_first_poll(self, export_view):
+        # First poll: still EXECUTING. Second poll: EXECUTED. The call must
+        # not return after the first poll — this is the regression the fix
+        # closes: the old code returned the id synchronously, never polling.
+        export_view._client.exports = AsyncMock()
+        export_view._client.exports.create.return_value = MagicMock()  # non-JobResponse
+        export_view._client.exports.list.side_effect = [
+            self._page([]),  # pre-submit floor: nothing existed yet
+            self._page([self._export(42, ExportStatus.EXECUTING, export_id=1)]),
+            self._page([self._export(42, ExportStatus.EXECUTED, export_id=1)]),
+        ]
+        with (
+            patch("mammoth.view.time") as fake_time,
+            patch("mammoth.view.asyncio.sleep", new=AsyncMock()),
+        ):
+            fake_time.monotonic.side_effect = [0.0, 0.5, 1.0]
+            result = await export_view._run_internal_dataset_export(self._target_properties())
+        assert result == 42
+        assert export_view._client.exports.list.call_count == 3  # floor + 2 polls
+
+    async def test_times_out_if_write_never_executes(self, export_view):
+        export_view._client.exports = AsyncMock()
+        export_view._client.exports.create.return_value = MagicMock()
+        export_view._client.exports.list.return_value = self._page(
+            [self._export(42, ExportStatus.EXECUTING, export_id=1)]
+        )
+        with (
+            patch("mammoth.view.time") as fake_time,
+            patch("mammoth.view.asyncio.sleep", new=AsyncMock()),
+        ):
+            fake_time.monotonic.side_effect = [0.0, 0.5, 99.0]
+            with pytest.raises(MammothExportError) as exc:
+                await export_view._run_internal_dataset_export(self._target_properties(), timeout=1)
+        assert exc.value.details["dataset_id"] == 42
+
+    async def test_waits_for_job_before_polling_the_write(self, export_view):
+        # An async submit (JobResponse) must wait for the submit job, then
+        # still poll for the write itself — the submit job completing only
+        # means the request was accepted, not that the write landed.
+        from datetime import UTC, datetime
+
+        from mammoth.models.jobs import JobResponse, JobSchema
+
+        export_view._client.exports = AsyncMock()
+        export_view._client.exports.create.return_value = JobResponse(
+            job=JobSchema(
+                id=9001,
+                status="success",
+                response={},
+                last_updated_at=datetime.now(UTC),
+                created_at=datetime.now(UTC),
+                path="/exports",
+                operation="create_export",
+            )
+        )
+        export_view._client.exports.list.side_effect = [
+            self._page([]),  # pre-submit floor: nothing existed yet
+            self._page([self._export(42, ExportStatus.EXECUTED, export_id=1)]),
+        ]
+        result = await export_view._run_internal_dataset_export(self._target_properties())
+        export_view._client.jobs.wait_for_job.assert_called_once_with(9001, None)
+        assert result == 42
+
+    async def test_target_ds_id_matches_when_returned_as_a_string(self, export_view):
+        """The wire value can come back as a string; comparison must not
+        fail closed by comparing it to the int ``target_ds_id`` directly.
+        """
+        export_view._client.exports = AsyncMock()
+        export_view._client.exports.create.return_value = MagicMock()
+        export_view._client.exports.list.side_effect = [
+            self._page([]),  # pre-submit floor: nothing existed yet
+            self._page([self._export("42", ExportStatus.EXECUTED, export_id=5)]),
+        ]
+        result = await export_view._run_internal_dataset_export(self._target_properties(42))
+        assert result == 42
+
+    async def test_ignores_an_earlier_already_executed_append_to_the_same_target(self, export_view):
+        """ "The most recent EXECUTED export to the target" must not match an
+        EARLIER append to the same dataset that is already EXECUTED while
+        this call's own export has not yet been listed -- the original race.
+        """
+        export_view._client.exports = AsyncMock()
+        export_view._client.exports.create.return_value = MagicMock()
+        earlier_append = self._export(42, ExportStatus.EXECUTED, export_id=3)
+        this_calls_export = self._export(42, ExportStatus.EXECUTED, export_id=8)
+        export_view._client.exports.list.side_effect = [
+            self._page([earlier_append]),  # pre-submit floor = 3
+            self._page([earlier_append]),  # first poll: only the earlier one listed yet
+            self._page([earlier_append, this_calls_export]),  # second poll: the new one appears
+        ]
+        with (
+            patch("mammoth.view.time") as fake_time,
+            patch("mammoth.view.asyncio.sleep", new=AsyncMock()),
+        ):
+            fake_time.monotonic.side_effect = [0.0, 0.5, 1.0]
+            result = await export_view._run_internal_dataset_export(self._target_properties())
+        assert result == 42
+        assert export_view._client.exports.list.call_count == 3  # floor + 2 polls
+
+
+class TestToDatasetPollSkipsDatasetDiscovery:
+    """The write-confirmation poll already knows the view's dataset_id --
+    it must pass it straight through to ``exports.list`` instead of leaving
+    ``ExportsAPI.list`` to fall back to ``_find_dataset_for_dataview``'s
+    project-wide ``datasets.list_all`` scan. That fallback raced a
+    just-created dataset's auth registration in production (koyal,
+    2026-09-26 02:30 UTC) and made a successful export look failed, and it
+    is a wasted project-wide scan on every poll regardless.
+
+    Exercises the REAL ``ExportsAPI`` (only the HTTP transport is faked) so
+    the assertion has teeth: if the poll ever drops ``dataset_id`` again,
+    ``ExportsAPI.list`` really does call dataset discovery here, exactly as
+    it does against the live API.
+    """
+
+    async def test_poll_passes_dataset_id_and_skips_discovery(self, export_view):
+        calls: list[tuple[str, str]] = []
+
+        def fake_request_json(method: str, url: str, **kwargs: Any) -> dict[str, Any]:
+            calls.append((method, url))
+            if method == "POST":
+                return {"trigger_id": 1}
+            get_calls = sum(1 for m, _ in calls if m == "GET")
+            if get_calls == 1:
+                return {"next": "", "exports": []}  # pre-submit floor: nothing yet
+            return {
+                "next": "",
+                "exports": [
+                    {
+                        "id": 43,
+                        "status": "executed",
+                        "target_properties": {"TARGET_DS_ID": 42},
+                    }
+                ],
+            }
+
+        export_view._client._request_json = AsyncMock(side_effect=fake_request_json)
+
+        result = await export_view.export.to_dataset("Existing DS", target_ds_id=42)
+
+        assert result == 42
+        # The bug: ExportsAPI.list(dataset_id=None) falls back to
+        # PipelineAPI.find_dataset_for_dataview -> datasets.list_all, a
+        # project-wide scan the poll has no reason to make.
+        export_view._client.pipeline.find_dataset_for_dataview.assert_not_called()
+        get_urls = [url for method, url in calls if method == "GET"]
+        assert len(get_urls) == 2  # floor + one poll
+        expected_path = (
+            f"/datasets/{export_view.dataset_id}/dataviews/{export_view.id}/pipeline/exports"
+        )
+        for url in get_urls:
+            assert expected_path in url
 
 
 # ── CSV export ────────────────────────────────────────────────

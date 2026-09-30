@@ -193,7 +193,11 @@ OVERRIDES: dict[str, str] = {
     "ListSelfServePlans": "support.plan.self-serve-list",
     # Dashboards.
     "ListDashboard": "dashboard.list",
-    "GenerateDashboard": "dashboard.create",
+    # GenerateDashboard (POST /dashboards) has no handler in current apiv2 and
+    # always 404s; retired as server_unavailable directly in
+    # spec/manifests/openapi-operations.yaml (no command, no SDK symbol). Not
+    # mapped here so a future `build_manifests.py` run does not regenerate a
+    # dead `dashboard.create` command or `DashboardsAPI.create` wrapper.
     "GetDashboardSources": "dashboard.source.list",
     "GetDashboardByUrl": "dashboard.get-by-url",
     "GetPublishDataFromSqlByUrl": "dashboard.published-data-by-url",

@@ -76,7 +76,9 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth connector connection create`. Exact input fields: `mammoth schema get connector.connection.create`.
 
-Example: `mammoth connector connection create sample --input '{"config": {"sample_key": "Status"}}'`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth connector connection create sample --input /private/path/request.json`. Illustrative only: append `--yes` after observing an owned target.
+
+Secret fields: pass the body as `--input FILE` (mode 0600); never inline.
 
 Result: `ConnectorConnectionCreateResult`; mutation `external_effect`, confirmation `yes_always`, wait policy `not_async`.
 
@@ -116,7 +118,9 @@ Status on release: observed blocker — server_error: see sweep report. Re-check
 
 Run: `mammoth connector connection update`. Exact input fields: `mammoth schema get connector.connection.update`.
 
-Example: `mammoth connector connection update sample sample --input '{"credentials": {"sample_key": "Status"}}'`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth connector connection update sample sample --input /private/path/request.json`. Illustrative only: append `--yes` after observing an owned target.
+
+Secret fields: pass the body as `--input FILE` (mode 0600); never inline.
 
 Result: `ConnectorConnectionUpdateResult`; mutation `external_effect`, confirmation `yes_always`, wait policy `not_async`.
 

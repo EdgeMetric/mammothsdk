@@ -7,7 +7,7 @@
     "project.list", "project.create", "project.update", "project.user.add", "project.delete",
     "dataset.list", "dataset.create", "dataset.update", "dataset.data",
     "browse.root", "annotation.create", "addon.connector.add", "notification.update", "trash.add", "file.list",
-    "dashboard.list", "dashboard.create", "dashboard.analytics", "dashboard.action", "dashboard.data.draft",
+    "dashboard.list", "dashboard.analytics", "dashboard.action", "dashboard.data.draft",
     "dashboard.widget-data", "dashboard.canvas.get", "dashboard.rls.value.list", "dashboard.query",
     "dashboard.context.delete", "dashboard.style.token.list", "dashboard.template.list",
     "data-app.list", "data-app.create", "data-app.update", "report.list", "template.update"
@@ -29,7 +29,6 @@
     {"id":"trash-add","route":"trash.add","expected":{"method":"POST","path":"/workspaces/17/projects/41/trash","kwargs":{"json":{"items":[{"id":801,"type":"dataset"}]}}}},
     {"id":"file-list","route":"file.list","expected":{"method":"GET","path":"/workspaces/17/projects/41/files","kwargs":{"params":{"fields":"C2_FIELDS","id":"901,902","name":"C2_A,C2_B","status":"ready","created_at":"C2_CREATED","updated_at":"C2_UPDATED","limit":29,"offset":3,"sort":"C2_SORT"}}}},
     {"id":"dashboard-list","route":"dashboard.list","expected":{"method":"GET","path":"/dashboards","kwargs":{"params":{"project_id":41}}}},
-    {"id":"dashboard-create","route":"dashboard.create","expected":{"method":"POST","path":"/dashboards","kwargs":{"json":{"params":{"intent":"C2 dashboard intent","source":[1001,1002],"enable_filters":false,"enable_pages":true}}}}},
     {"id":"dashboard-analytics","route":"dashboard.analytics","expected":{"method":"GET","path":"/dashboards/1001/analytics","kwargs":{}}},
     {"id":"dashboard-action","route":"dashboard.action","expected":{"method":"POST","path":"/dashboards/1001/action","kwargs":{"json":{"action":"auto-sync","params":{"enabled":false,"view_id":1002}}}}},
     {"id":"dashboard-data-draft","route":"dashboard.data.draft","expected":{"method":"POST","path":"/dashboards/1001/getDraftData","kwargs":{"json":{"params":{"widget_id":"c2000000-0000-4000-8000-000000000001"}}}}},

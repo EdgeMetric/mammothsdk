@@ -53,6 +53,7 @@ class Invocation:
     timeout: float | None = None
     job_timeout: float | None = None
     pipeline_timeout: float | None = None
+    return_running: bool = False
     color: str = "auto"
     no_input: bool = False
     no_progress: bool = False
@@ -71,6 +72,10 @@ class Invocation:
     input_preflight: Callable[[str | None], None] | None = field(
         default=None, repr=False, compare=False
     )
+    # The parent dataset a write resolved for its view, set once by the write
+    # handler so its verify and readback reads address the view directly
+    # instead of walking every dataset to find it.
+    known_dataset_id: int | None = field(default=None, repr=False, compare=False)
     _prepared_input: object = field(
         default=_UNINITIALIZED_INPUT, init=False, repr=False, compare=False
     )

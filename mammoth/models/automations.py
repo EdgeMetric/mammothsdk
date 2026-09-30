@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from enum import Enum
-from typing import Any, Literal
+from typing import Annotated, Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -50,6 +50,23 @@ class RruleFrequency(str, Enum):
     WEEKLY = "weekly"
     MONTHLY = "monthly"
     YEARLY = "yearly"
+
+
+class Weekday(str, Enum):
+    """Lowercase day-of-week code accepted by ``by_week_day``.
+
+    The backend rejects anything else, including the uppercase ``"MO"``
+    style RFC 5545 normally uses, with a 400 on
+    ``conditions.0.details.by_week_day.0``.
+    """
+
+    MONDAY = "mo"
+    TUESDAY = "tu"
+    WEDNESDAY = "we"
+    THURSDAY = "th"
+    FRIDAY = "fr"
+    SATURDAY = "sa"
+    SUNDAY = "su"
 
 
 class ScheduleStatus(str, Enum):
@@ -103,14 +120,14 @@ class RruleSpec(BaseModel):
         frequency: How often the schedule fires.
         start: When the schedule starts (UTC).
         interval: Optional repeat interval (must be > 0 if supplied).
-        by_week_day: Days of the week, e.g. ``["MO", "WE"]``.
+        by_week_day: Days of the week, e.g. ``["mo", "we"]``.
         by_month_day: Days of the month (1–31).
     """
 
     frequency: RruleFrequency
     start: datetime
     interval: int | None = None
-    by_week_day: list[str] | None = None
+    by_week_day: list[Weekday] | None = None
     by_month_day: list[int] | None = None
 
 
@@ -224,6 +241,9 @@ class AutomationStatus(str, Enum):
 
     SUSPEND = "suspend"
     RESTORE = "restore"
+    # The backend's own word is "restore"; "resume" is the SDK's friendlier
+    # alias, kept for parity with ScheduleStatus and translated on the wire.
+    RESUME = "resume"
 
 
 class AlertType(str, Enum):
@@ -274,18 +294,36 @@ class TaskDetailsSpec(BaseModel):
     subject: str | None = None
     recipients: list[str] | None = None
     message: str | None = None
-    attachments: dict[str, Any] | None = None
+    attachments: dict[str, Any] | None = Field(
+        None,
+        description=(
+            "dataview_ids: view ids to email as attachments; each view is sent "
+            "as a CSV file. The combined row count of all attached views must "
+            "stay within 100,000 -- over that, the automation is refused (and "
+            "a run that grows past it fails)."
+        ),
+    )
     test_email: bool = False
 
     # apply_retention_policy
-    datasource_id: int | None = None
+    datasource_id: int | None = Field(
+        default=None, description="Dataset the retention policy applies to"
+    )
     rule_type: Literal["time_based", "count_based", "condition_based"] | None = None
-    threshold_value: int | None = Field(default=None, ge=1)
+    threshold_value: int | None = Field(
+        default=None,
+        description="Number of minutes/hours/days/weeks/months for time_based",
+        ge=1,
+    )
     threshold_unit: Literal["minutely", "hourly", "daily", "weekly", "monthly", "yearly"] | None = (
         None
     )
-    keep_count: int | None = Field(default=None, ge=1)
-    condition_sql: str | None = None
+    keep_count: int | None = Field(
+        default=None, description="Most-recent batches to keep for count_based", ge=1
+    )
+    condition_sql: str | None = Field(
+        default=None, description="WHERE clause predicate for condition_based"
+    )
     intent: str | None = None
     notify: bool = False
     notify_recipients: list[str] = Field(default_factory=list)
@@ -336,7 +374,7 @@ class ConditionDetailsSpec(BaseModel):
     start_at: datetime | None = None
     until: datetime | None = None
     by_month_day: list[int] | None = None
-    by_week_day: list[str] | None = None
+    by_week_day: list[Weekday] | None = None
     start_now: bool = True
     file_contains: str | None = None
     execution_mode: Literal["parallel", "sequential"] = "parallel"
@@ -389,4 +427,15 @@ class AutomationPatchItem(BaseModel):
 
     op: AutomationPatchOp
     path: AutomationPatchPath
-    value: str | dict[str, Any] | PatchAutomationDetails
+    # ``union_mode="left_to_right"``, with ``PatchAutomationDetails`` ordered
+    # before the catch-all ``dict[str, Any]``: pydantic's default "smart"
+    # union mode picks the exact ``dict[str, Any]`` match over coercing a
+    # dict into ``PatchAutomationDetails`` (which needs nested-model
+    # construction), so a ``path="details"`` patch built from a plain dict --
+    # every real caller, since ``AutomationsAPI.update`` is invoked from
+    # parsed JSON -- left ``value`` a bare dict and failed
+    # ``_validate_automation_patch_item``'s ``isinstance`` check even when a
+    # field like ``name`` was set.
+    value: Annotated[
+        str | PatchAutomationDetails | dict[str, Any], Field(union_mode="left_to_right")
+    ]

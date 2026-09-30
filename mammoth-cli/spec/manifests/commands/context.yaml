@@ -12,6 +12,7 @@ commands:
   request_model: ContextProjectClearRequest
   result_model: ContextProjectClearResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -33,6 +34,10 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: context.project.status
+    ids: {}
+    kind: object
 - command_id: context.project.status
   command_path: context project status
   disposition: command
@@ -84,6 +89,7 @@ commands:
   request_model: ContextProjectUseRequest
   result_model: ContextProjectUseResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -105,3 +111,7 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: context.project.status
+    ids: {}
+    kind: object

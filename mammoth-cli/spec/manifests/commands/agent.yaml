@@ -13,6 +13,7 @@ commands:
   request_model: AgentChatRequest
   result_model: AgentChatResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -35,6 +36,10 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: agent.session.list
+    ids: {}
+    kind: object
 - command_id: agent.session.delete
   command_path: agent session delete
   disposition: command
@@ -54,6 +59,7 @@ commands:
   request_model: AgentSessionDeleteRequest
   result_model: AgentSessionDeleteResult
   mutation_class: destructive
+  edits_target: true
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -75,6 +81,10 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: agent.session.list
+    ids: {}
+    kind: object
 - command_id: agent.session.list
   command_path: agent session list
   disposition: command
@@ -168,6 +178,7 @@ commands:
   request_model: AgentSessionSetVisibilityRequest
   result_model: AgentSessionSetVisibilityResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -189,3 +200,7 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: agent.session.list
+    ids: {}
+    kind: object

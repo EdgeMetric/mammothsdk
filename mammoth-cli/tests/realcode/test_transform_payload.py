@@ -35,15 +35,11 @@ _VIEW_METADATA = {
 def test_bulk_replace_json_becomes_real_task_payload(real_service: ServiceFactory) -> None:
     """Raw JSON mapping flows through real code into the correct task payload."""
     service, api = real_service(project_id=PROJECT_ID)
-    # Resolve the view: workspace browse locates the dataset, then the dataview.
+    # Resolve the view: the dataset listing locates the dataset, then the dataview.
     api.on(
         "GET",
-        r"/browse",
-        body={
-            "resources": [
-                {"id": PROJECT_ID, "children": [{"type": "datasource", "id": DATASET_ID}]}
-            ]
-        },
+        r"/datasets$",
+        body={"datasets": [{"id": DATASET_ID, "name": "ds"}], "limit": 100, "offset": 0},
     )
     api.on("GET", rf"/datasets/{DATASET_ID}/dataviews/{VIEW_ID}$", body=_VIEW_METADATA)
     # The transform posts the task, then the SDK polls the pipeline to ready.

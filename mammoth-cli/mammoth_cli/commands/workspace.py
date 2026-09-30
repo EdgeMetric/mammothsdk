@@ -27,6 +27,7 @@ from mammoth_cli.manifest.loader import command_by_id
 from mammoth_cli.runtime.confirm import (
     POLICY_CONFIRM_TARGET,
     POLICY_PROMPT_OR_YES,
+    POLICY_YES_ALWAYS,
     enforce_confirmation,
 )
 from mammoth_cli.runtime.invocation import Invocation
@@ -273,12 +274,15 @@ def workspace_update(invocation: Invocation) -> HandlerResult:
 
 
 def workspace_user_add(invocation: Invocation) -> HandlerResult:
-    """Invite one or more users to the workspace."""
+    """Invite one or more users to the workspace. High-impact: ``--yes``."""
     document = invocation.load_input()
     email_ids = _require_field(document, "email_ids")
     kwargs: dict[str, Any] = {"email_ids": email_ids}
     assert document is not None
     _forward_optional(document, kwargs, ("projects",))
+    enforce_confirmation(
+        invocation, policy=POLICY_YES_ALWAYS, action=f"invite {email_ids} to the workspace"
+    )
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), **kwargs)
     return data, _meta(invocation, auth.workspace_id)
@@ -292,10 +296,21 @@ def workspace_user_get(invocation: Invocation) -> HandlerResult:
     return data, _meta(invocation, auth.workspace_id)
 
 
+#: The backend field set that includes each user's roles and status.
+_USER_LIST_FIELDS = "__full"
+
+
 def workspace_user_list(invocation: Invocation) -> HandlerResult:
-    """List users in the client's own workspace."""
+    """List users in the client's own workspace, with their roles and status.
+
+    Asks for the backend's ``__full`` field set unless ``--input`` names another,
+    so each user carries ``user_roles`` and ``status``.
+    """
+    document = invocation.load_input() or {}
+    kwargs: dict[str, Any] = {"fields": _USER_LIST_FIELDS}
+    _forward_optional(document, kwargs, ("fields",))
     with open_service(invocation) as (service, auth):
-        data = service.call(_symbol(invocation))
+        data = service.call(_symbol(invocation), **kwargs)
     return data, _meta(invocation, auth.workspace_id)
 
 

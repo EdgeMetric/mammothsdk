@@ -13,6 +13,7 @@ commands:
   request_model: UserAvatarDeleteRequest
   result_model: UserAvatarDeleteResult
   mutation_class: destructive
+  edits_target: true
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -34,6 +35,10 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: user.get
+    ids: {}
+    kind: object
 - command_id: user.avatar.upload
   command_path: user avatar upload
   disposition: command
@@ -53,6 +58,7 @@ commands:
   request_model: UserAvatarUploadRequest
   result_model: UserAvatarUploadResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -74,6 +80,10 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: user.get
+    ids: {}
+    kind: object
 - command_id: user.change-password
   command_path: user change-password
   disposition: command
@@ -88,6 +98,7 @@ commands:
   request_model: UserChangePasswordRequest
   result_model: UserChangePasswordResult
   mutation_class: high_impact
+  edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -113,6 +124,10 @@ commands:
     reserved and contract-only. Secrets use hidden prompt/permission-checked input/stdin, never normal
     flags.'
   reviewed_by: primary
+  readback:
+    command: user.get
+    ids: {}
+    kind: object
 - command_id: user.delete-account
   command_path: user delete-account
   disposition: command
@@ -126,6 +141,7 @@ commands:
   request_model: UserDeleteAccountRequest
   result_model: UserDeleteAccountResult
   mutation_class: high_impact
+  edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -147,6 +163,7 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  no_readback: "deletes the caller's own account; no parent listing exists and the account can no longer be read afterward"
 - command_id: user.get
   command_path: user get
   disposition: command
@@ -230,6 +247,7 @@ commands:
   request_model: UserPreferenceUpdateRequest
   result_model: UserPreferenceUpdateResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -253,6 +271,10 @@ commands:
   known_restrictions: 'Body is the release {"patch": [{"op", "path", "value"}]} list; the CLI does not
     validate preference paths (observed key GLOBAL.PREFERENCES.TOP_TABS). Not verified live.'
   reviewed_by: primary
+  readback:
+    command: user.preference.get
+    ids: {}
+    kind: object
 - command_id: user.update
   command_path: user update
   disposition: command
@@ -265,18 +287,19 @@ commands:
   sdk_conversion: Call mammoth.api.user_profile.UserProfileAPI.update with validated request fields.
   request_model: UserUpdateRequest
   result_model: UserUpdateResult
-  mutation_class: high_impact
-  confirmation: confirm_target
+  mutation_class: benign_mutation
+  edits_target: true
+  confirmation: none
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: contract_only_high_impact
   live_test: null
-  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  live_exemption_reason: Account or workspace mutation without a disposable fixture.
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth user update --help
-  agent_example: mammoth user update
+  agent_example: 'mammoth user update --input ''{"first_name": "Jane"}'''
   unit_tests:
   - UT-USER-UPDATE
   contract_tests:
@@ -285,5 +308,9 @@ commands:
   - CT-USER-UPDATE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: 'BLOCKED[B17 VARIADIC_INPUT_UNTYPED]: **fields is unconstrained; reserved, not registered.'
+  known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: user.get
+    ids: {}
+    kind: object

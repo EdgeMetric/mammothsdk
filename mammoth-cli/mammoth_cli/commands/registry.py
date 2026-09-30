@@ -26,6 +26,7 @@ from mammoth_cli.commands import automation as automation_cmd
 from mammoth_cli.commands import batch as batch_cmd
 from mammoth_cli.commands import billing as billing_cmd
 from mammoth_cli.commands import browse as browse_cmd
+from mammoth_cli.commands import calc as calc_cmd
 from mammoth_cli.commands import capability as capability_cmd
 from mammoth_cli.commands import client_app as client_app_cmd
 from mammoth_cli.commands import completion as completion_cmd
@@ -52,6 +53,7 @@ from mammoth_cli.commands import trash as trash_cmd
 from mammoth_cli.commands import user as user_cmd
 from mammoth_cli.commands import view as view_cmd
 from mammoth_cli.commands import view_ops as view_ops_cmd
+from mammoth_cli.commands import view_profile as view_profile_cmd
 from mammoth_cli.commands import webhook as webhook_cmd
 from mammoth_cli.commands import workflow as workflow_cmd
 from mammoth_cli.commands import workspace as workspace_cmd
@@ -152,16 +154,60 @@ def _schema_get(invocation: Invocation) -> HandlerResult:
     return schema_cmd.brief_schema(entry), {}
 
 
+#: Above this many ';'-separated goals in one 'schema find' call, an agent is
+#: almost certainly pasting something else (a whole plan, a sentence with
+#: semicolons) rather than a real goal list; reject with a clear message
+#: instead of silently running dozens of searches.
+_MAX_FIND_GOALS = 12
+
+_EMPTY_QUERY_ERROR = CliError(
+    code="empty_search_query",
+    message="The schema search query must contain at least one word.",
+    exit_status=EXIT_USAGE,
+    hint="For the complete inventory, use 'mammoth schema list'.",
+)
+
+
+def _cap_inline_detail(result: dict[str, Any], keep: int) -> None:
+    """Strip inline ``accepted_fields``/``agent_example`` past the top `keep`."""
+    for key in ("matches", "suggestions"):
+        for entry in (result.get(key) or [])[keep:]:
+            entry.pop("accepted_fields", None)
+            entry.pop("agent_example", None)
+
+
 def _schema_find(invocation: Invocation) -> HandlerResult:
     query = _require_arg(invocation, "search query")
     if not query.strip():
+        raise _EMPTY_QUERY_ERROR
+    if ";" not in query:
+        return schema_cmd.find_schemas(query), {}
+    # Several goals in one call ("join customers onto orders; remove
+    # duplicate rows; build a dashboard"): run the existing single-goal
+    # search per goal instead of round-tripping once per goal.
+    goals = [goal.strip() for goal in query.split(";") if goal.strip()]
+    if not goals:
+        raise _EMPTY_QUERY_ERROR
+    if len(goals) > _MAX_FIND_GOALS:
         raise CliError(
-            code="empty_search_query",
-            message="The schema search query must contain at least one word.",
+            code="too_many_goals",
+            message=(
+                f"schema find accepts at most {_MAX_FIND_GOALS} ';'-separated goals per "
+                f"call; got {len(goals)}."
+            ),
             exit_status=EXIT_USAGE,
-            hint="For the complete inventory, use 'mammoth schema list'.",
+            hint="Split the goals across more than one 'schema find' call.",
         )
-    return schema_cmd.find_schemas(query), {}
+    results = [schema_cmd.find_schemas(goal) for goal in goals]
+    if len(results) > 1:
+        # Cap inline accepted_fields/agent_example to the top match per goal
+        # so a multi-goal envelope stays small even when every goal has
+        # several candidates.
+        for result in results:
+            _cap_inline_detail(result, 1)
+    return {
+        "goals": [{"goal": goal, **result} for goal, result in zip(goals, results, strict=True)]
+    }, {}
 
 
 def _log_path(_: Invocation) -> HandlerResult:
@@ -187,6 +233,7 @@ HANDLERS: dict[str, Handler] = {
     "log.path": _log_path,
     "log.tail": _log_tail,
     "doctor": doctor_cmd.doctor,
+    "calc": calc_cmd.calc,
     "completion.show": completion_cmd.completion_show,
     "completion.install": completion_cmd.completion_install,
     "skill.agents-md.install": skill_cmd.skill_agents_md_install,
@@ -205,7 +252,11 @@ HANDLERS: dict[str, Handler] = {
     # project family (read-only)
     "project.list": project_cmd.project_list,
     "project.get": project_cmd.project_get,
+    "project.check": project_cmd.project_check,
     "project.pending-changes": project_cmd.project_pending_changes,
+    "project.memory.list": project_cmd.project_memory_list,
+    "project.memory.add": project_cmd.project_memory_add,
+    "project.memory.remove": project_cmd.project_memory_remove,
     "project.resource-status": project_cmd.project_resource_status,
     "project.resource-dependencies": project_cmd.project_resource_dependencies,
     "project.resource-dependencies.update": project_cmd.project_resource_dependencies_update,
@@ -264,6 +315,9 @@ HANDLERS: dict[str, Handler] = {
     "dataset.file-settings.get": dataset_cmd.dataset_file_settings,
     "dataset.file-settings.update": dataset_cmd.dataset_file_settings_update,
     "dataset.file-settings.undo": dataset_cmd.dataset_file_settings_undo,
+    "dataset.broken-rows.list": dataset_cmd.dataset_broken_rows,
+    "dataset.interpretation.preview": dataset_cmd.dataset_interpretation,
+    "dataset.interpretation.confirm": dataset_cmd.dataset_interpretation,
     "dataset.create": dataset_cmd.dataset_create,
     "dataset.create-from-pdf": dataset_cmd.dataset_create_from_pdf,
     "dataset.rename": dataset_cmd.dataset_rename,
@@ -345,7 +399,6 @@ HANDLERS: dict[str, Handler] = {
     "dashboard.archive": dashboard_cmd.dashboard_archive,
     "dashboard.analytics": dashboard_cmd.dashboard_analytics,
     "dashboard.cancel-generation": dashboard_cmd.dashboard_cancel_generation,
-    "dashboard.create": dashboard_cmd.dashboard_create,
     "dashboard.create-blank": dashboard_cmd.generated_dashboard,
     "dashboard.data.draft": dashboard_cmd.dashboard_data_draft,
     "dashboard.data.published": dashboard_cmd.dashboard_data_published,
@@ -376,6 +429,16 @@ HANDLERS: dict[str, Handler] = {
     "dashboard.assess-twb": dashboard_cmd.dashboard_assess_twb,
     "dashboard.assess-pbix": dashboard_cmd.dashboard_assess_pbix,
     "dashboard.import-workbook": dashboard_cmd.dashboard_import_workbook,
+    "dashboard.bi-preflight": dashboard_cmd.dashboard_bi_preflight,
+    "dashboard.bi-export": dashboard_cmd.dashboard_bi_export,
+    "dashboard.embed.config.get": dashboard_cmd.generated_dashboard,
+    "dashboard.embed.config.set": dashboard_cmd.generated_dashboard,
+    "dashboard.embed.key.rotate": dashboard_cmd.generated_dashboard,
+    "dashboard.embed.usage.get": dashboard_cmd.generated_dashboard,
+    "dashboard.embed.origin.revoke": dashboard_cmd.generated_dashboard,
+    "dashboard.embed.preview-token.create": dashboard_cmd.generated_dashboard,
+    "dashboard.embed.secret.rotate": dashboard_cmd.generated_dashboard,
+    "dashboard.embed.lifetime.set": dashboard_cmd.generated_dashboard,
     # workflow family
     "workflow.block.add": workflow_cmd.workflow_block_add,
     "workflow.block.auth": workflow_cmd.workflow_block_auth,
@@ -506,7 +569,6 @@ HANDLERS: dict[str, Handler] = {
     "billing.chargebee-plan": billing_cmd.billing_chargebee_plan,
     "billing.hosted-page": billing_cmd.billing_hosted_page,
     "billing.invoice.charge": billing_cmd.billing_invoice_charge,
-    "billing.invoice.get": billing_cmd.billing_invoice_get,
     "billing.invoice.list": billing_cmd.billing_invoice_list,
     "billing.stripe.cancel": billing_cmd.billing_stripe_cancel,
     "billing.stripe.checkout-url": billing_cmd.billing_stripe_checkout_url,
@@ -586,6 +648,10 @@ HANDLERS: dict[str, Handler] = {
     "view.update": view_cmd.view_update,
     "view.data.get": view_cmd.view_data_get,
     "view.data.query": view_cmd.view_data_query,
+    "view.data.aggregate": view_cmd.view_data_aggregate,
+    "view.data.compare": view_cmd.view_data_compare,
+    "view.data.explore": view_cmd.view_data_explore,
+    "view.data.profile": view_profile_cmd.view_data_profile,
     "view.exportable-config.get": view_cmd.view_exportable_config_get,
     "view.exportable-config.apply": view_cmd.view_exportable_config_apply,
     "view.conditional-format.create": view_cmd.view_conditional_format_create,
@@ -684,9 +750,11 @@ HANDLERS: dict[str, Handler] = {
     "view.transform.lookup": view_ops_cmd.view_transform_lookup,
     "view.transform.math": view_ops_cmd.view_transform_math,
     "view.transform.pivot": view_ops_cmd.view_transform_pivot,
+    "view.transform.rename-columns": view_ops_cmd.view_transform_rename_columns,
     "view.transform.replace": view_ops_cmd.view_transform_replace,
     "view.transform.set-values": view_ops_cmd.view_transform_set_values,
     "view.transform.small-large": view_ops_cmd.view_transform_small_large,
+    "view.transform.sort": view_ops_cmd.view_transform_sort,
     "view.transform.split": view_ops_cmd.view_transform_split,
     "view.transform.substring": view_ops_cmd.view_transform_substring,
     "view.transform.text": view_ops_cmd.view_transform_text,

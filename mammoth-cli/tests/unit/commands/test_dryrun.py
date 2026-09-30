@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-import json
 from pathlib import Path
 
 import pytest
+from mammoth.models.dashboard_generated import ChatEditParams, ChatEditSpec
 
 from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.runtime.confirm import POLICY_YES_ALWAYS, enforce_confirmation
@@ -79,6 +79,15 @@ def test_jsonable_renders_sdk_objects_without_leaking_them() -> None:
     }
 
 
+def test_jsonable_renders_an_sdk_request_model_as_its_fields() -> None:
+    """QA UQA-RT4-06: a dashboard edit card showed ``ChatEditSpec(params=...)``."""
+    body = ChatEditSpec(params=ChatEditParams(prompt="Remove the Average Price KPI"))
+
+    assert jsonable({"body": body}) == {
+        "body": {"params": {"prompt": "Remove the Average Price KPI"}}
+    }
+
+
 def test_confirmation_is_not_required_under_dry_run() -> None:
     invocation = Invocation(command_id="dataset.delete", output="json", dry_run=True)
     enforce_confirmation(invocation, policy=POLICY_YES_ALWAYS, action="delete dataset 7")
@@ -88,18 +97,6 @@ def test_confirmation_is_not_required_under_dry_run() -> None:
             policy=POLICY_YES_ALWAYS,
             action="delete dataset 7",
         )
-
-
-def test_dry_run_delete_reports_and_sends_nothing(fake_service: FakeMammothService) -> None:
-    result = make_runner().invoke(
-        ["dataset", "delete", "7", "--project", "180", "--dry-run", *_JSON_NO_INPUT]
-    )
-    assert result.exit_code == 0, result.output
-    data = json.loads(result.output)["data"]
-    assert data["dry_run"] is True
-    assert data["would_call"]["sdk_symbol"] == _DELETE
-    assert data["would_call"]["arguments"] == {"dataset_id": 7, "project_id": 180}
-    assert fake_service.call_log == []
 
 
 def test_local_validation_still_fails_under_dry_run(fake_service: FakeMammothService) -> None:

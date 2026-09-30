@@ -26,10 +26,12 @@ from mammoth_cli.errors.envelope import (
 from mammoth_cli.manifest.loader import command_by_id
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.session import open_service
+from mammoth_cli.services.board_values import board_values, dashboard_link
 
 HandlerResult = tuple[Any, dict[str, Any]]
 
 _WAIT_OPTIONAL = ("timeout", "poll_interval")
+_DASHBOARD_WAIT_SYMBOL = "mammoth.api.dashboards.DashboardsAPI.wait_for_job_by_url"
 
 
 def _symbol(invocation: Invocation) -> str:
@@ -127,20 +129,48 @@ def job_get_many(invocation: Invocation) -> HandlerResult:
     return data, _meta(invocation, auth.workspace_id)
 
 
-def job_wait(invocation: Invocation) -> HandlerResult:
-    """Block until one job completes, or raise on failure/timeout.
+def _wait_call(
+    invocation: Invocation, document: dict[str, Any], kwargs: dict[str, Any]
+) -> tuple[str, dict[str, Any]]:
+    """The SDK symbol and arguments for one job wait.
 
-    The job id is a positional argument; optional ``timeout`` and
-    ``poll_interval`` fields are forwarded from the ``--input`` document when
-    present.
+    A ``dashboard_url`` field switches to the URL-scoped wait: jobs dispatched
+    by published-dashboard routes are unreadable through ``GET /jobs/{id}``.
+    """
+    if "dashboard_url" not in document:
+        return _symbol(invocation), kwargs
+    return _DASHBOARD_WAIT_SYMBOL, {**kwargs, "url": document["dashboard_url"]}
+
+
+def _wait_result(job_id: int, job: Any) -> dict[str, Any]:
+    """The ``job wait`` success payload: the job's response, plus what the job was."""
+    data: dict[str, Any] = {"status": "success", "job_id": job_id}
+    if isinstance(job, dict):
+        data.update({key: job[key] for key in ("operation", "path") if job.get(key) is not None})
+        data["result"] = job.get("response", job)
+    else:
+        data["result"] = job
+    return data
+
+
+def job_wait(invocation: Invocation) -> HandlerResult:
+    """Wait for one job and report success, failure, or still running (15 min default).
+
+    The job id is a positional argument; optional ``timeout``, ``poll_interval``
+    and ``dashboard_url`` (a published dashboard's URL slug) fields are read from
+    the ``--input`` document. Success returns ``{status, job_id, result}``; a
+    failed job is a ``job_failed`` error with its reason; a wait that runs out is
+    a ``timeout`` error, or with ``--return-running`` ``{status: running, job_id,
+    resume}``.
     """
     job_id = _require_int_positional(invocation, "job id")
     document = invocation.load_input() or {}
     kwargs: dict[str, Any] = {"job_id": job_id}
     _forward_optional(document, kwargs, _WAIT_OPTIONAL)
+    symbol, kwargs = _wait_call(invocation, document, kwargs)
     try:
         with open_service(invocation) as (service, auth):
-            data = service.call(_symbol(invocation), **kwargs)
+            data = _with_board(service, auth, _wait_result(job_id, service.call(symbol, **kwargs)))
     except KeyboardInterrupt as exc:
         # Keep the explicit handle even when the polling implementation raises
         # a bare SIGINT.  A caller can inspect/resume it without replaying the
@@ -155,6 +185,25 @@ def job_wait(invocation: Invocation) -> HandlerResult:
             invocation.profile,
         ) from exc
     return data, _meta(invocation, auth.workspace_id)
+
+
+#: Jobs that build a board. A build that outlived its own wait hands back a running
+#: job; waiting on it here must report what the build would have: the board's link
+#: and its evaluated numbers (UQA-RT2-05).
+_BOARD_BUILD_OPERATIONS = frozenset({"generate_dashboard_v3"})
+
+
+def _with_board(service: Any, auth: Any, data: dict[str, Any]) -> dict[str, Any]:
+    """Add ``dashboard_link`` and the board's evaluated numbers to a finished board build."""
+    result = data.get("result")
+    board = result.get("id") if isinstance(result, dict) else None
+    if data.get("operation") not in _BOARD_BUILD_OPERATIONS or not isinstance(board, int):
+        return data
+    return {
+        **data,
+        "dashboard_link": dashboard_link(auth.base_url, auth.workspace_id, board),
+        "values": board_values(service, board),
+    }
 
 
 def job_wait_many(invocation: Invocation) -> HandlerResult:

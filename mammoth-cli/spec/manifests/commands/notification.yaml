@@ -19,6 +19,7 @@ commands:
   request_model: NotificationDeleteRequest
   result_model: NotificationDeleteResult
   mutation_class: destructive
+  edits_target: true
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -40,6 +41,10 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: notification.list
+    ids: {}
+    kind: object
 - command_id: notification.delete-batch
   command_path: notification delete-batch
   disposition: command
@@ -54,6 +59,7 @@ commands:
   request_model: NotificationDeleteBatchRequest
   result_model: NotificationDeleteBatchResult
   mutation_class: destructive
+  edits_target: true
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -75,6 +81,10 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: notification.list
+    ids: {}
+    kind: object
 - command_id: notification.list
   command_path: notification list
   disposition: command
@@ -128,6 +138,7 @@ commands:
   request_model: NotificationUpdateRequest
   result_model: NotificationUpdateResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -149,6 +160,10 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: notification.list
+    ids: {}
+    kind: object
 - command_id: notification.update-batch
   command_path: notification update-batch
   disposition: command
@@ -163,6 +178,7 @@ commands:
   request_model: NotificationUpdateBatchRequest
   result_model: NotificationUpdateBatchResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -184,3 +200,7 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: notification.list
+    ids: {}
+    kind: object

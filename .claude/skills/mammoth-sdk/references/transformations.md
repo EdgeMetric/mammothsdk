@@ -346,6 +346,16 @@ view.limit_rows(n=5, order_by=[["Sales", SortDirection.DESC]])
 view.limit_rows(n=5, bottom=True)
 ```
 
+### sort_rows(order_by) and rename_columns(renames)
+
+View settings, like the web grid's sort and column rename: no pipeline task
+is added. Data reads and exports use the order and the new names.
+
+```python
+view.sort_rows([["Sales", "DESC"]])          # up to three columns; [] clears
+view.rename_columns({"cust_id": "Customer ID"})
+```
+
 ### discard_duplicates(ignore_columns=None)
 
 Remove duplicate rows.
@@ -508,11 +518,13 @@ view.lookup(
 
 ### generate_sql(intent) -> str
 
-Generate SQL from natural language using the LLM backend.
+Generate SQL from natural language using the LLM backend. It returns the
+query only; the view does not change until you pass it to `add_sql`.
 
 ```python
 sql = view.generate_sql("count employees by department")
 # Returns: "SELECT department, COUNT(*) FROM ... GROUP BY department"
+view.add_sql(sql)  # apply it
 ```
 
 ### add_sql(query) -> dict

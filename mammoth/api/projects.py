@@ -26,6 +26,11 @@ ERR_USER_OR_INVITE_ID_REQUIRED = (
 )
 
 
+def _agent_memory_items(project: dict[str, Any]) -> _list[str]:
+    """Return the caller's ``properties.agent_memory`` list (empty when absent)."""
+    return _list((project.get("properties") or {}).get("agent_memory") or [])
+
+
 class ProjectsAPI:
     """Client for interacting with Mammoth Projects API.
 
@@ -48,6 +53,7 @@ class ProjectsAPI:
         workspace_id: int | None = None,
         limit: int = 100,
         offset: int = 0,
+        fields: str = "id,name",
     ) -> dict[str, Any]:
         """List one page of projects in a workspace.
 
@@ -59,31 +65,37 @@ class ProjectsAPI:
             workspace_id: ID of the workspace (uses client default if not provided).
             limit: Maximum number of results (default and maximum 100).
             offset: Number of leading projects to skip (server-side).
+            fields: Comma-separated project fields to return (default ``id,name``).
 
         Returns:
-            Dict containing projects list with id and name, plus ``limit``,
+            Dict containing projects list with the requested fields, plus ``limit``,
             ``offset`` and ``next`` (empty when this is the last page).
         """
         ws = workspace_id or self._ws()
-        params: dict[str, Any] = {"fields": "id,name", "limit": limit}
+        params: dict[str, Any] = {"fields": fields, "limit": limit}
         if offset:
             params["offset"] = offset
         return await self._client._request_json("GET", f"/workspaces/{ws}/projects", params=params)
 
-    async def list_all(self, workspace_id: int | None = None) -> _list[dict[str, Any]]:
+    async def list_all(
+        self, workspace_id: int | None = None, fields: str = "id,name"
+    ) -> _list[dict[str, Any]]:
         """Return every project in the workspace, following the 100-row pages.
 
         Args:
             workspace_id: ID of the workspace (uses client default if not provided).
+            fields: Comma-separated project fields to return (default ``id,name``).
 
         Returns:
-            List of ``{"id", "name"}`` dicts across all pages.
+            List of project dicts with the requested fields across all pages.
         """
         projects: _list[dict[str, Any]] = []
         seen: set[Any] = set()
         offset = 0
         while True:
-            page = await self.list(workspace_id=workspace_id, limit=MAX_PAGE_SIZE, offset=offset)
+            page = await self.list(
+                workspace_id=workspace_id, limit=MAX_PAGE_SIZE, offset=offset, fields=fields
+            )
             batch = page.get("projects", []) if isinstance(page, dict) else []
             fresh = [p for p in batch if p.get("id") not in seen]
             seen.update(p.get("id") for p in fresh)
@@ -505,6 +517,92 @@ class ProjectsAPI:
         return await self._client._request_json(
             "GET", f"/workspaces/{ws}/projects/{project_id}/pending-changes"
         )
+
+    async def list_agent_memory(
+        self,
+        project_id: int,
+        workspace_id: int | None = None,
+    ) -> dict[str, Any]:
+        """List the caller's saved agent preferences for a project.
+
+        Reads the project's ``properties.agent_memory`` (the caller's own list).
+
+        Args:
+            project_id: ID of the project (must be a positive integer).
+            workspace_id: ID of the workspace (uses client default if not provided).
+
+        Returns:
+            Dict with ``items``: the saved preferences, oldest first.
+
+        Raises:
+            MammothValidationError: If project_id is not a positive integer.
+            ValueError: If the project is not visible to the caller.
+        """
+        if project_id <= 0:
+            raise MammothValidationError(ERR_PROJECT_ID_POSITIVE.format(project_id))
+        projects = await self.list_all(workspace_id=workspace_id, fields="id,properties")
+        for project in projects:
+            if project.get("id") == project_id:
+                return {"items": _agent_memory_items(project)}
+        raise ValueError(f"Project ID {project_id} not found.")
+
+    async def add_agent_memory(
+        self,
+        project_id: int,
+        text: str,
+        workspace_id: int | None = None,
+    ) -> dict[str, Any]:
+        """Save one agent preference for the caller in a project.
+
+        Args:
+            project_id: ID of the project (must be a positive integer).
+            text: The preference, in the user's words.
+            workspace_id: ID of the workspace (uses client default if not provided).
+
+        Returns:
+            Dict with ``items``: the saved preferences after the add.
+
+        Raises:
+            MammothValidationError: If project_id is not a positive integer.
+        """
+        return await self._patch_agent_memory(
+            project_id, {"op": "add", "path": "agent_memory", "value": text}, workspace_id
+        )
+
+    async def remove_agent_memory(
+        self,
+        project_id: int,
+        index: int,
+        workspace_id: int | None = None,
+    ) -> dict[str, Any]:
+        """Remove one of the caller's saved agent preferences in a project.
+
+        Args:
+            project_id: ID of the project (must be a positive integer).
+            index: Zero-based position of the preference in ``list_agent_memory``.
+            workspace_id: ID of the workspace (uses client default if not provided).
+
+        Returns:
+            Dict with ``items``: the saved preferences after the removal.
+
+        Raises:
+            MammothValidationError: If project_id is not a positive integer.
+        """
+        return await self._patch_agent_memory(
+            project_id, {"op": "remove", "path": "agent_memory", "value": index}, workspace_id
+        )
+
+    async def _patch_agent_memory(
+        self, project_id: int, patch: dict[str, Any], workspace_id: int | None
+    ) -> dict[str, Any]:
+        """PATCH one agent_memory op onto the project and return the caller's list."""
+        if project_id <= 0:
+            raise MammothValidationError(ERR_PROJECT_ID_POSITIVE.format(project_id))
+        ws = workspace_id or self._ws()
+        project = await self._client._request_json(
+            "PATCH", f"/workspaces/{ws}/projects/{project_id}", json={"patches": [patch]}
+        )
+        return {"items": _agent_memory_items(project)}
 
     async def publish_credentials(
         self,

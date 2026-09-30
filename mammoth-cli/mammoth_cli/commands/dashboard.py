@@ -11,20 +11,24 @@ SDK method named by the command's reviewed manifest ``sdk_symbol``.
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal, cast
 
 from mammoth.models.dashboards import AddPagesSpec
 from pydantic import ValidationError
 
+from mammoth_cli.commands.view import view_profiles
+from mammoth_cli.context import profiles
 from mammoth_cli.errors.envelope import (
     CODE_INVALID_ARGUMENT,
     CODE_MISSING_ARGUMENT,
     CODE_MISSING_FIELD,
     CODE_SDK_SYMBOL_UNRESOLVED,
+    CODE_UNSUPPORTED_CONTRACT,
     EXIT_USAGE,
     CliError,
 )
 from mammoth_cli.manifest.loader import command_by_id
+from mammoth_cli.runtime import embedded, parents
 from mammoth_cli.runtime.confirm import (
     POLICY_CONFIRM_TARGET,
     POLICY_NONE,
@@ -33,9 +37,18 @@ from mammoth_cli.runtime.confirm import (
     enforce_confirmation,
 )
 from mammoth_cli.runtime.invocation import Invocation
-from mammoth_cli.runtime.session import open_service, require_project
+from mammoth_cli.runtime.session import open_service, require_project, resolved_project
 from mammoth_cli.services.argspec import arg_spec
+from mammoth_cli.services.board_values import board_values, dashboard_link
 from mammoth_cli.services.command_contract import bind_command_inputs
+from mammoth_cli.services.dashboard_pages import check_added_pages
+from mammoth_cli.services.dashboard_review import (
+    CANVAS_GET,
+    NEW_COLUMN_NOTE,
+    columns_not_on_dashboard,
+    has_profiles,
+    review,
+)
 from mammoth_cli.services.positionals import resolve_positionals
 
 HandlerResult = tuple[Any, dict[str, Any]]
@@ -479,24 +492,6 @@ def dashboard_source_list(invocation: Invocation) -> HandlerResult:
     return data, _meta(invocation, auth.workspace_id)
 
 
-def dashboard_create(invocation: Invocation) -> HandlerResult:
-    """Create a dashboard. Intent comes from a positional or the ``intent`` field."""
-    document = invocation.load_input() or {}
-    intent = _string_positional(invocation) or document.get("intent")
-    if not intent:
-        raise CliError(
-            code=CODE_MISSING_ARGUMENT,
-            message="A dashboard intent is required.",
-            exit_status=EXIT_USAGE,
-            hint="Pass the intent as a positional argument or an 'intent' input field.",
-        )
-    _require_field(document, "source")
-    kwargs = bind_command_inputs(invocation.command_id, document, intent=intent)
-    with open_service(invocation) as (service, auth):
-        data = service.call(_symbol(invocation), **kwargs)
-    return data, _meta(invocation, auth.workspace_id)
-
-
 def dashboard_update(invocation: Invocation) -> HandlerResult:
     """Apply a JSON Patch to one dashboard. Dashboard id is positional."""
     dashboard_id = _require_int_positional(invocation, "dashboard id")
@@ -671,7 +666,109 @@ def generated_dashboard(invocation: Invocation) -> HandlerResult:
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), **kwargs)
         data = _resolve_job(service, invocation, data)
+        if invocation.command_id == "dashboard.pages.add" and "body" in kwargs:
+            requested = kwargs["body"].get("params", {}).get("pages", [])
+            data = check_added_pages(service, positionals["dashboard_id"], requested, data)
+        if invocation.command_id in _REVIEWED_COMMANDS:
+            data = _with_deliverable_check(invocation, service, auth, positionals, data)
+        if invocation.command_id in _VALUED_COMMANDS:
+            data = _with_board_values(service, auth, positionals, data)
     return data, _meta(invocation, auth.workspace_id)
+
+
+#: Board-building steps whose result carries the evaluated card/tile numbers.
+_VALUED_COMMANDS = frozenset({"dashboard.v3.generate", "dashboard.chat.edit"})
+
+
+def _with_board_values(service: Any, auth: Any, positionals: dict[str, Any], data: Any) -> Any:
+    """Add ``dashboard_link`` and each KPI card's and tile's evaluated number.
+
+    The result of a build/edit is definitions; the agent must see the numbers
+    it is about to report (a rate that reads 21.9% where the data says 14.9%).
+    """
+    data = _dump_model(data)
+    if not isinstance(data, dict):
+        return data
+    dashboard_id = positionals.get("dashboard_id") or data.get("id") or data.get("dashboard_id")
+    if not isinstance(dashboard_id, int):
+        return {**data, "values": {"unavailable": "the result names no dashboard id"}}
+    return {
+        **data,
+        "dashboard_link": dashboard_link(auth.base_url, auth.workspace_id, dashboard_id),
+        "values": board_values(service, dashboard_id),
+    }
+
+
+def _dump_model(value: Any) -> Any:
+    return value.model_dump(mode="json") if hasattr(value, "model_dump") else value
+
+
+#: Authoring steps whose result carries ``deliverable_check``.
+_REVIEWED_COMMANDS = frozenset(
+    {"dashboard.create-blank", "dashboard.canvas.save", "dashboard.pages.add"}
+)
+
+
+def _with_deliverable_check(
+    invocation: Invocation, service: Any, auth: Any, positionals: dict[str, Any], data: Any
+) -> Any:
+    """Add ``deliverable_check`` (money shown? blanks decided?) to an authoring result.
+
+    One canvas read; advice only, so a failed read leaves the result as it was.
+    """
+    if hasattr(data, "model_dump"):
+        data = data.model_dump(mode="json")
+    if not isinstance(data, dict):
+        return data
+    dashboard_id = positionals.get("dashboard_id") or data.get("id")
+    if not isinstance(dashboard_id, int):
+        return data
+    try:
+        canvas_doc = service.call(CANVAS_GET, dashboard_id=dashboard_id)
+        if hasattr(canvas_doc, "model_dump"):
+            canvas_doc = canvas_doc.model_dump(mode="json")
+        source = (canvas_doc.get("canvas") or {}).get("dataset") or {}
+        view_id = source.get("dataview_id")
+        profile = invocation.profile or profiles.get_selected()
+        dataset_id = (
+            parents.lookup(profile, auth.workspace_id, view_id)
+            if isinstance(view_id, int)
+            else None
+        )
+        current = (
+            view_profiles(service, dataset_id, view_id, resolved_project(invocation))
+            if isinstance(view_id, int) and dataset_id is not None
+            else None
+        )
+        if has_profiles(canvas_doc):
+            stale = columns_not_on_dashboard(canvas_doc, current)
+            warnings = stale + [
+                warning
+                for warning in review(canvas_doc, dataset_id)
+                # On a stale board the money advice is the rebuild, not a new column.
+                if not (stale and warning["issue"] in {"money_not_shown", "unit_price_summed"})
+            ]
+        else:
+            warnings = review(canvas_doc, dataset_id, current)
+    except Exception:  # noqa: BLE001 -- advice must never fail the authoring step
+        return data
+    if warnings:
+        data = {
+            **data,
+            "deliverable_check": {
+                "warnings": warnings,
+                "note": (
+                    "Fix these before you report the dashboard as done, or say in your "
+                    "report why not."
+                    + (
+                        " " + NEW_COLUMN_NOTE
+                        if any("fix" in warning for warning in warnings)
+                        else ""
+                    )
+                ),
+            },
+        }
+    return data
 
 
 def dashboard_assess_twb(invocation: Invocation) -> HandlerResult:
@@ -737,3 +834,72 @@ def dashboard_import_workbook(invocation: Invocation) -> HandlerResult:
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), file=file_path, project_id=project_id)
     return data, _meta(invocation, auth.workspace_id)
+
+
+# ── BI export (Power BI / Tableau) ───────────────────────────────────────────
+
+_BI_TARGETS: tuple[Literal["powerbi", "tableau"], ...] = ("powerbi", "tableau")
+_BI_EXPORT_EMBEDDED_REFUSAL = (
+    "The file cannot be downloaded from here. Send the user to the dashboard's Publish menu"
+    " (the arrow next to Publish) -> Export to Power BI / Export to Tableau."
+)
+
+
+def _bi_target(document: dict[str, Any]) -> Literal["powerbi", "tableau"]:
+    """Read and validate the required ``target`` input field."""
+    target = document.get("target")
+    if target not in _BI_TARGETS:
+        raise CliError(
+            code=CODE_INVALID_ARGUMENT,
+            message="Input `target` must be 'powerbi' or 'tableau'.",
+            exit_status=EXIT_USAGE,
+            hint='Pass --input \'{"target": "powerbi"}\' or \'{"target": "tableau"}\'.',
+        )
+    return cast(Literal["powerbi", "tableau"], target)
+
+
+def dashboard_bi_preflight(invocation: Invocation) -> HandlerResult:
+    """What a Power BI or Tableau export of this dashboard would carry.
+
+    Side-effect free -- nothing is built and nothing is logged, so the export
+    dialog can be opened and dismissed freely. Required input ``target``
+    (``powerbi`` or ``tableau``) selects which release route answers.
+    """
+    dashboard_id = _require_int_positional(invocation, "dashboard id")
+    document = invocation.load_input() or {}
+    target = _bi_target(document)
+    symbol = f"mammoth.api.dashboards.DashboardsAPI.{target}_preflight"
+    with open_service(invocation) as (service, auth):
+        data = service.call(symbol, dashboard_id=dashboard_id)
+    return data, _meta(invocation, auth.workspace_id)
+
+
+def dashboard_bi_export(invocation: Invocation) -> HandlerResult:
+    """Download this dashboard as a Power BI project (.zip) or Tableau workbook (.twbx).
+
+    Required input ``target`` (``powerbi`` or ``tableau``) selects the release
+    route. With no ``output_path`` the file is written to the current
+    directory under an auto-generated name.
+
+    Embedded (see ``mammoth_cli.runtime.embedded``) it is refused: the route
+    needs the Authorization header, so a link handed to the user's browser
+    401s. The user downloads it from the dashboard's own export dialog.
+    """
+    dashboard_id = _require_int_positional(invocation, "dashboard id")
+    document = invocation.load_input() or {}
+    target = _bi_target(document)
+    if embedded.active():
+        raise CliError(
+            code=CODE_UNSUPPORTED_CONTRACT,
+            message=_BI_EXPORT_EMBEDDED_REFUSAL,
+            exit_status=EXIT_USAGE,
+            hint="Run `dashboard bi-preflight` to tell the user what will convert first.",
+        )
+    symbol = f"mammoth.api.dashboards.DashboardsAPI.export_{target}"
+    kwargs: dict[str, Any] = {"dashboard_id": dashboard_id}
+    _forward_optional(document, kwargs, ("output_path",))
+    with open_service(invocation) as (service, auth):
+        data = service.call(symbol, **kwargs)
+    # The SDK returns a Path; render it as a string so the written location is
+    # visible in every output mode and serializes cleanly to JSON.
+    return {"output_path": str(data)}, _meta(invocation, auth.workspace_id)

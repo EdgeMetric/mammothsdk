@@ -48,6 +48,26 @@ def test_project_list_reads_limit_from_input(
     assert fake_service.call_log[0] == (_LIST_SYMBOL, {"limit": 5})
 
 
+def test_project_list_forwards_offset_for_pagination(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    """``offset`` is already an accepted --input field (the SDK method takes
+    one), but the handler silently dropped it, making any project past the
+    first page unreachable. It must reach the SDK call, like dataset list.
+    """
+    fake_service.responses[_LIST_SYMBOL] = {
+        "projects": [{"id": 101}],
+        "limit": 100,
+        "offset": 100,
+        "next": "",
+    }
+    doc = tmp_path / "in.json"
+    doc.write_text(json.dumps({"limit": 100, "offset": 100}), encoding="utf-8")
+    data, _ = project_cmd.project_list(_invocation("project.list", input_file=str(doc)))
+    assert fake_service.call_log == [(_LIST_SYMBOL, {"limit": 100, "offset": 100})]
+    assert data["next"] == ""
+
+
 def test_project_get_uses_positional_id(fake_service: FakeMammothService) -> None:
     fake_service.responses[_GET_SYMBOL] = {"id": 180}
     data, meta = project_cmd.project_get(_invocation("project.get", extra_args=["180"]))
@@ -198,3 +218,96 @@ def test_publish_credentials_forwards_odbc_type(
         _invocation("project.publish-credentials", project=9, input_file=str(doc))
     )
     assert fake_service.call_log == [(_PUBCRED_SYMBOL, {"project_id": 9, "odbc_type": "postgres"})]
+
+
+def test_project_check_lists_every_open_finding_for_the_report(
+    fake_service: FakeMammothService,
+) -> None:
+    # Two datasets (orders with a TEXT price and a blank, customers with a
+    # blank segment) and one dashboard whose canvas shows only counts.
+    fake_service.responses["mammoth.api.datasets.DatasetsAPI.list_all"] = {
+        "datasets": [{"id": 84, "name": "t_a"}, {"id": 85, "name": "t_b"}]
+    }
+    fake_service.responses["mammoth.api.dataviews.DataviewsAPI.list"] = {
+        "dataviews": [
+            {
+                "id": 81,
+                "row_count": 4,
+                "metadata": [
+                    {"display_name": "qty", "internal_name": "column_1", "type": "NUMERIC"},
+                    {"display_name": "segment", "internal_name": "column_2", "type": "TEXT"},
+                ],
+            }
+        ]
+    }
+    fake_service.responses["mammoth.api.dataviews.DataviewsAPI.get_data"] = {
+        "data": [
+            {"column_1": 1, "column_2": "SMB"},
+            {"column_1": 2, "column_2": None},
+            {"column_1": 3, "column_2": "SMB"},
+            {"column_1": 4, "column_2": "Enterprise"},
+        ]
+    }
+    fake_service.responses["mammoth.api.dashboards.DashboardsAPI.list"] = [
+        {"id": 7, "title": "Orders"}
+    ]
+    fake_service.responses["mammoth.api.dashboards.DashboardsAPI.canvas_get"] = {
+        "canvas": {"dataset": {"dataview_id": 81}, "pages": []},
+        "plan": {
+            "hints": {
+                "_profiles": [
+                    {"name": "qty", "type": "measure"},
+                    {"name": "amount", "type": "measure"},
+                ]
+            }
+        },
+    }
+    data, meta = project_cmd.project_check(_invocation("project.check", extra_args=["12"]))
+    assert meta["project_id"] == 12
+    assert [v["dataset_id"] for v in data["views"]] == [84, 85]
+    assert [d["id"] for d in data["dashboards"]] == [7]
+    assert any(
+        line.startswith("view 81 (t_b), column segment: blank_values") for line in data["to_report"]
+    )
+    assert any(line.startswith("dashboard 7: money_not_shown") for line in data["to_report"])
+    assert "note" not in data
+
+
+def test_project_check_flags_other_views_instead_of_checking_only_one(
+    fake_service: FakeMammothService,
+) -> None:
+    # T3-F-003: a dataset with two live views. ``project.check`` previews and
+    # checks only the first (most recent) one; it must say the other exists
+    # rather than let its absence from the report read as "there is only one".
+    fake_service.responses["mammoth.api.datasets.DatasetsAPI.list_all"] = {
+        "datasets": [{"id": 90, "name": "orders"}]
+    }
+    fake_service.responses["mammoth.api.dataviews.DataviewsAPI.list"] = {
+        "dataviews": [
+            {"id": 1632, "name": "View 1", "row_count": 4, "metadata": []},
+            {"id": 1633, "name": "View 2", "row_count": 4, "metadata": []},
+        ]
+    }
+    fake_service.responses["mammoth.api.dataviews.DataviewsAPI.get_data"] = {"data": []}
+    fake_service.responses["mammoth.api.dashboards.DashboardsAPI.list"] = []
+    data, _ = project_cmd.project_check(_invocation("project.check", extra_args=["12"]))
+    entry = data["views"][0]
+    assert entry["view_id"] == 1632
+    assert entry["other_views"] == [{"id": 1633, "name": "View 2"}]
+    assert any(
+        "orders" in line and "has 2 views" in line and "checked (others: 1633 (View 2))" in line
+        for line in data["to_report"]
+    )
+    # The second view is never independently checked -- one line, not
+    # duplicate findings that would push an agent to edit both views.
+    assert sum("1633" in line for line in data["to_report"]) == 1
+
+
+def test_project_check_on_a_clean_project_says_nothing_is_open(
+    fake_service: FakeMammothService,
+) -> None:
+    fake_service.responses["mammoth.api.datasets.DatasetsAPI.list_all"] = {"datasets": []}
+    fake_service.responses["mammoth.api.dashboards.DashboardsAPI.list"] = []
+    data, _ = project_cmd.project_check(_invocation("project.check", extra_args=["12"]))
+    assert data["to_report"] == []
+    assert data["note"] == "Nothing open in the views or dashboards."

@@ -9,7 +9,13 @@ from __future__ import annotations
 from unittest.mock import MagicMock
 
 import pytest
-from mammoth.exceptions import MammothAPIError, MammothJobTimeoutError
+from mammoth.exceptions import (
+    MammothAPIError,
+    MammothAuthError,
+    MammothJobFailedError,
+    MammothJobTimeoutError,
+    MammothPipelineTimeoutError,
+)
 
 from mammoth_cli.context.resolver import ResolvedAuth
 from mammoth_cli.errors.envelope import (
@@ -21,7 +27,7 @@ from mammoth_cli.errors.envelope import (
     EXIT_USAGE,
     CliError,
 )
-from mammoth_cli.services.mapping import map_sdk_exception
+from mammoth_cli.services.mapping import map_sdk_exception, with_dashboard_scope
 from mammoth_cli.services.sdk_service import SdkMammothService
 
 
@@ -82,6 +88,46 @@ def test_unknown_mutation_is_not_advertised_as_safe_retry() -> None:
     assert mapped.retryable is False
     assert mapped.details["job_handle"] == 44
     assert any("job get 44" in command for command in mapped.recovery_commands)
+
+
+def test_cross_workspace_401_is_no_access_not_bad_credentials() -> None:
+    """A 401 whose endpoint targets a workspace other than the profile's own
+    is a scoping mistake, not invalid credentials: it must not tell the user
+    to reauthenticate (release evidence T4-L-002 — the in-product agent
+    parroted "reauthenticate" to a web user for exactly this case)."""
+    error = MammothAuthError(
+        "Token is invalid",
+        endpoint="/workspaces/7/projects",
+        method="GET",
+    )
+
+    mapped = map_sdk_exception(error, workspace_id=4)
+
+    assert mapped.code == "authorization_required"
+    assert mapped.exit_status == EXIT_AUTH
+    assert "workspace 7" in mapped.message
+    assert "workspace 4" in mapped.message
+    assert mapped.authorization_required is True
+    assert mapped.recovery_commands == []
+    assert "mammoth auth login" not in mapped.recovery_commands
+
+
+def test_401_without_a_workspace_mismatch_is_still_bad_credentials() -> None:
+    error = MammothAuthError("Token is invalid", endpoint="/workspaces/4/projects", method="GET")
+
+    mapped = map_sdk_exception(error, workspace_id=4)
+
+    assert mapped.code == "authentication_failed"
+    assert mapped.recovery_commands == ["mammoth auth login"]
+
+
+def test_401_with_no_workspace_id_context_is_still_bad_credentials() -> None:
+    error = MammothAuthError("Token is invalid", endpoint="/workspaces/7/projects", method="GET")
+
+    mapped = map_sdk_exception(error)
+
+    assert mapped.code == "authentication_failed"
+    assert mapped.recovery_commands == ["mammoth auth login"]
 
 
 @pytest.mark.parametrize(
@@ -333,3 +379,88 @@ def test_sdk_validation_error_surfaces_its_message_as_invalid_arguments() -> Non
     assert error.message == "mode must be 'math' or 'metric', got 'sample'."
     assert error.details == {"exception_type": "MammothValidationError", "mode": "sample"}
     assert "no request was sent" in (error.hint or "")
+
+
+@pytest.mark.parametrize(
+    ("method", "endpoint", "expected"),
+    [
+        ("DELETE", "/workspaces/4/projects/97", "mammoth project get 97"),
+        ("POST", "/dashboards/v3/blank", "mammoth dashboard list --project 12"),
+        ("POST", "/dashboards/54/pages", "mammoth dashboard canvas get 54"),
+    ],
+)
+def test_unknown_write_without_a_job_names_the_read_that_settles_it(
+    method: str, endpoint: str, expected: str
+) -> None:
+    error = MammothAPIError(
+        "read timeout",
+        status_code=None,
+        method=method,
+        endpoint=endpoint,
+        operation_state="outcome_unknown",
+    )
+    mapped = map_sdk_exception(error, project_id=12)
+    assert mapped.code == "outcome_unknown"
+    assert mapped.recovery_commands == [expected]
+
+
+def test_pipeline_timeout_identifies_view_and_recovers_via_pipeline_commands() -> None:
+    mapped = map_sdk_exception(
+        MammothPipelineTimeoutError(5, 60, dataset_id=7, project_id=3), profile="p"
+    )
+
+    assert mapped.code == "timeout"
+    assert mapped.retryable is True
+    assert mapped.details == {
+        "dataview_id": 5,
+        "timeout": 60,
+        "operation_state": "running",
+        "phase": "pipeline",
+        "dataset_id": 7,
+        "project_id": 3,
+        "waited_seconds": 60,
+        "resume": "mammoth view pipeline wait 5 --project 3 --profile p",
+    }
+    assert mapped.recovery_commands == [
+        "mammoth view pipeline get 5 --project 3 --profile p",
+        "mammoth view pipeline wait 5 --project 3 --profile p",
+    ]
+
+
+def test_job_failure_carries_the_reason_status_and_job() -> None:
+    mapped = map_sdk_exception(
+        MammothJobFailedError(
+            44, "column X missing", observed_job={"operation": "TRANSFORM", "path": "/x"}
+        )
+    )
+
+    assert mapped.code == "job_failed"
+    assert mapped.details["job_id"] == 44
+    assert mapped.details["status"] == "failure"
+    assert mapped.details["reason"] == "column X missing"
+    assert (mapped.details["operation"], mapped.details["path"]) == ("TRANSFORM", "/x")
+    assert "column X missing" in mapped.message
+    assert mapped.recovery_commands == ["mammoth job get 44"]
+
+
+def test_job_failure_without_a_reason_says_so() -> None:
+    mapped = map_sdk_exception(MammothJobFailedError(44, None))
+
+    assert mapped.details["reason"] == "no reason recorded by the job"
+
+
+def test_job_timeout_details_carry_wait_and_resume() -> None:
+    mapped = map_sdk_exception(MammothJobTimeoutError(44, 300))
+
+    assert mapped.details["waited_seconds"] == 300
+    assert mapped.details["operation_state"] == "running"
+    assert mapped.details["resume"] == "mammoth job wait 44"
+
+
+def test_dashboard_job_timeout_resumes_through_the_url_scoped_wait() -> None:
+    mapped = with_dashboard_scope(map_sdk_exception(MammothJobTimeoutError(44, 300)), "sales")
+
+    assert mapped.details["resume"] == (
+        'mammoth job wait 44 --input \'{"dashboard_url": "sales"}\''
+    )
+    assert mapped.recovery_commands[0] == "mammoth dashboard job-by-url sales 44"

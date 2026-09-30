@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "task": "C2/S6 dashboards-analytics",
-  "route_count": 106,
+  "route_count": 105,
   "families": {
-    "dashboard": 88,
+    "dashboard": 87,
     "data-app": 12,
     "report": 1,
     "template": 5
@@ -434,55 +434,6 @@
         "method": "PUT",
         "path": "/dashboards/v3/contexts/{context_id}",
         "body": "json:body",
-        "checks": [
-          "method",
-          "path",
-          "body"
-        ]
-      },
-      "dropped_field_sentinel": "__s6_dropped_field__",
-      "wire_verification": {
-        "status": "unverified",
-        "executed_controls": [],
-        "planned_controls": [
-          "exact_sdk_symbol",
-          "field_consumption",
-          "wire_method_path_body",
-          "reject_dropped_field"
-        ]
-      }
-    },
-    {
-      "command_id": "dashboard.create",
-      "operation_id": "GenerateDashboard",
-      "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.create",
-      "field_destinations": {
-        "intent": {
-          "source": "positional_or_input",
-          "destination": "intent",
-          "wire": "sdk_argument"
-        },
-        "source": {
-          "source": "input",
-          "destination": "source",
-          "wire": "sdk_argument"
-        },
-        "enable_filters": {
-          "source": "input",
-          "destination": "enable_filters",
-          "wire": "sdk_argument"
-        },
-        "enable_pages": {
-          "source": "input",
-          "destination": "enable_pages",
-          "wire": "sdk_argument"
-        }
-      },
-      "context_destinations": {},
-      "wire": {
-        "method": "POST",
-        "path": "/dashboards",
-        "body": "json:params(intent,source,enable_filters,enable_pages)",
         "checks": [
           "method",
           "path",

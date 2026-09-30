@@ -12,6 +12,7 @@ overrides no project at all.
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass
 
 from mammoth_cli.context import credentials, profiles
@@ -23,6 +24,7 @@ from mammoth_cli.errors.envelope import (
     EXIT_USAGE,
     CliError,
 )
+from mammoth_cli.runtime import embedded
 from mammoth_cli.runtime.invocation import Invocation
 
 
@@ -39,6 +41,9 @@ class ExplicitLogin:
         workspace_id: The Mammoth workspace id.
         server_prefix: A one-label server prefix, or None.
         api_token: The ``mm_...`` Bearer token, instead of a key + secret.
+        headers: Extra request headers sent on every API call, after the
+            credential headers so they override them. Set only by an
+            embedding host that forwards its caller's session.
     """
 
     api_key: str | None
@@ -46,6 +51,7 @@ class ExplicitLogin:
     workspace_id: int
     server_prefix: str | None = None
     api_token: str | None = None
+    headers: Mapping[str, str] | None = None
 
 
 @dataclass(frozen=True)
@@ -58,6 +64,7 @@ class ResolvedAuth:
         workspace_id: The Mammoth workspace id.
         base_url: The resolved API base url.
         api_token: The ``mm_...`` Bearer token, or None with a key + secret.
+        headers: Extra request headers from an embedding host, or None.
     """
 
     api_key: str | None
@@ -65,6 +72,7 @@ class ResolvedAuth:
     workspace_id: int
     base_url: str
     api_token: str | None = None
+    headers: Mapping[str, str] | None = None
 
 
 def not_authenticated_error() -> CliError:
@@ -110,7 +118,8 @@ def resolve_auth(
     """Resolve credentials, workspace id, and base url for one invocation.
 
     Credentials come from an explicit login (a secure prompt or ``--input``
-    document handed to :func:`resolve_auth` by ``auth login``), otherwise from
+    document handed to :func:`resolve_auth` by ``auth login``, or the login of
+    the current embedded call, :mod:`mammoth_cli.runtime.embedded`), otherwise from
     the selected or ``--profile`` saved profile. There is no environment
     credential path; ``mammoth auth login`` is the only way to authenticate.
 
@@ -126,6 +135,8 @@ def resolve_auth(
             ``invalid_workspace_id`` when the resolved workspace id is not a
             positive integer; endpoint errors from :func:`resolve_base_url`.
     """
+    if explicit_login is None and (call := embedded.current()) is not None:
+        explicit_login = call.login
     if explicit_login is not None:
         base_url = _endpoint(explicit_login.server_prefix)
         return ResolvedAuth(
@@ -134,6 +145,7 @@ def resolve_auth(
             workspace_id=_require_positive_workspace(explicit_login.workspace_id, source="login"),
             base_url=base_url,
             api_token=explicit_login.api_token,
+            headers=explicit_login.headers,
         )
 
     profile_name = invocation.profile or profiles.get_selected()

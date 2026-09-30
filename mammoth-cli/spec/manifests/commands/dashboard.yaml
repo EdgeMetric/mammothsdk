@@ -19,10 +19,16 @@ commands:
   request_model: DashboardActionRequest
   result_model: DashboardActionResult
   mutation_class: external_effect
+  edits_target: true
   confirmation: yes_always
   wait_policy: returns_job
   pagination_policy: none
   acceptance_evidence: contract_only_high_impact
+  readback:
+    command: dashboard.get
+    ids:
+      dashboard_id: positional.0
+    kind: object
   live_test: null
   live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
   contract_fixture: null
@@ -99,10 +105,16 @@ commands:
   request_model: DashboardArchiveRequest
   result_model: DashboardArchiveResult
   mutation_class: high_impact
+  edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: contract_only_high_impact
+  readback:
+    command: dashboard.get
+    ids:
+      dashboard_id: positional.0
+    kind: object
   live_test: null
   live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
   contract_fixture: null
@@ -156,7 +168,10 @@ commands:
   - mammoth-cli/tests/contract/test_rel341_schema_preserves_release_overlay.py::test_rel341_schema_preserves_release_overlay
   draft_test: null
   undo_test: null
-  known_restrictions: Release snapshot provenance only; unverified against release.
+  known_restrictions: 'Release snapshot provenance only; unverified against release. These take a workbook
+    file from the local disk. Inside the Mammoth app the user''s file cannot reach the agent: send the
+    user to the dashboard import page at /workspaces/{workspace_id}/publish/import (Publish → Import),
+    where they upload the .pbix/.twb/.twbx themselves.'
   reviewed_by: primary
 - command_id: dashboard.assess-twb
   command_path: dashboard assess-twb
@@ -194,7 +209,100 @@ commands:
   - mammoth-cli/tests/contract/test_rel357_schema_preserves_release_overlay.py::test_rel357_schema_preserves_release_overlay
   draft_test: null
   undo_test: null
-  known_restrictions: Release snapshot provenance only; unverified against release.
+  known_restrictions: 'Release snapshot provenance only; unverified against release. These take a workbook
+    file from the local disk. Inside the Mammoth app the user''s file cannot reach the agent: send the
+    user to the dashboard import page at /workspaces/{workspace_id}/publish/import (Publish → Import),
+    where they upload the .pbix/.twb/.twbx themselves.'
+  reviewed_by: primary
+- command_id: dashboard.bi-preflight
+  command_path: dashboard bi-preflight
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - PowerbiPreflight
+  - TableauPreflightHandler
+  positionals:
+  - name: dashboard_id
+    type: int
+    required: true
+    metavar: DASHBOARD_ID
+    falls_back_to_field: null
+    help: ID of the dashboard.
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.powerbi_preflight
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.powerbi_preflight or .tableau_preflight, chosen
+    by input `target`, with validated request fields.
+  request_model: DashboardBiPreflightRequest
+  result_model: PowerBiPreflightResponse
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Release-only supplemental binding; no disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard bi-preflight DASHBOARD_ID --help
+  agent_example: 'mammoth dashboard bi-preflight 123 --input ''{"target": "powerbi"}'''
+  unit_tests:
+  - mammoth-cli/tests/unit/commands/test_dashboard.py::test_bi_preflight_dispatches_powerbi
+  - mammoth-cli/tests/unit/commands/test_dashboard.py::test_bi_preflight_dispatches_tableau
+  - mammoth-cli/tests/unit/commands/test_dashboard.py::test_bi_preflight_rejects_unknown_target_value_without_a_request
+  contract_tests:
+  - mammoth-cli/tests/contract/test_rel360_bi_export.py::test_rel360_schema_preserves_release_overlay
+  draft_test: null
+  undo_test: null
+  known_restrictions: Release snapshot provenance only; unverified against release. Author-only, like
+    the release routes it calls -- a non-author caller is refused, unlike `dashboard pdf export` (which
+    any viewer can run).
+  reviewed_by: primary
+- command_id: dashboard.bi-export
+  command_path: dashboard bi-export
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - PowerbiExport
+  - TableauExport
+  positionals:
+  - name: dashboard_id
+    type: int
+    required: true
+    metavar: DASHBOARD_ID
+    falls_back_to_field: null
+    help: ID of the dashboard.
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.export_powerbi
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.export_powerbi or .export_tableau, chosen
+    by input `target`, with validated request fields.
+  request_model: DashboardBiExportRequest
+  result_model: DashboardBiExportResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Release-only supplemental binding; no disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard bi-export DASHBOARD_ID --help
+  agent_example: 'mammoth dashboard bi-export 123 --input ''{"target": "powerbi"}'''
+  unit_tests:
+  - mammoth-cli/tests/unit/commands/test_dashboard.py::test_bi_export_writes_file_in_terminal_mode
+  - mammoth-cli/tests/unit/commands/test_dashboard.py::test_bi_export_embedded_points_user_to_export_dialog
+  contract_tests:
+  - mammoth-cli/tests/contract/test_rel361_bi_export.py::test_rel361_schema_preserves_release_overlay
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Release snapshot provenance only; unverified against release. Author-only, like
+    bi-preflight. Terminal mode writes `output_path` to local disk. Inside the Mammoth app the download
+    cannot reach the user: run `dashboard bi-preflight` to tell them what will convert, then send them
+    to the dashboard''s Publish menu (the arrow next to Publish) -> Export to Power BI / Export to Tableau,
+    where they download the file themselves. No command makes a PDF of a board: that is the board''s Download
+    PDF in the app.'
   reviewed_by: primary
 - command_id: dashboard.cancel-generation
   command_path: dashboard cancel-generation
@@ -215,10 +323,16 @@ commands:
   request_model: DashboardCancelGenerationRequest
   result_model: DashboardCancelGenerationResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: contract_only_no_disposable_fixture
+  readback:
+    command: dashboard.get
+    ids:
+      dashboard_id: positional.0
+    kind: object
   live_test: null
   live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
     fixture in tests/live.
@@ -296,10 +410,16 @@ commands:
   request_model: DashboardCanvasRestoreRequest
   result_model: DashboardCanvasRestoreResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
   acceptance_evidence: contract_only_no_disposable_fixture
+  readback:
+    command: dashboard.canvas.get
+    ids:
+      dashboard_id: positional.0
+    kind: object
   live_test: null
   live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
     fixture in tests/live.
@@ -317,7 +437,9 @@ commands:
   - CT-DASHBOARD-CANVAS-RESTORE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: target_sequence must be an existing draft version -- get the list from dashboard
+    chat history DASHBOARD_ID, whose revisions[] gives {sequence, updated_at, updated_by_name} for every
+    saved version, oldest first; pick the sequence to undo/redo/revert to.
   reviewed_by: primary
 - command_id: dashboard.canvas.save
   command_path: dashboard canvas save
@@ -338,10 +460,16 @@ commands:
   request_model: DashboardCanvasSaveRequest
   result_model: DashboardCanvasSaveResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: contract_only_no_disposable_fixture
+  readback:
+    command: dashboard.canvas.get
+    ids:
+      dashboard_id: positional.0
+    kind: object
   live_test: null
   live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
     fixture in tests/live.
@@ -358,7 +486,15 @@ commands:
   - CT-DASHBOARD-CANVAS-SAVE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: 'Read the canvas with dashboard canvas get, edit, write back; a canvas with pages[] bakes the ACTIVE page (pages[i].focus / pages[i].added), a root-level focus is stored but produces no descriptors. focus.kpis entries are {field, agg, label, unit, decimals, filters}; agg countDistinct persists and bakes (ILG simulation 2026-09-19). added[].measure is a column name; a ratio goes in canvas.derived[] as {id, numerator, denominator} and is referenced by id from measure or a KPI field. Validation errors return the pydantic path (e.g. pages.0.added.2.measure). The response carries bake_job_id: job wait it, then dashboard canvas get for meta.figures (figure key -> descriptor id) and dashboard descriptor-data to evaluate. This raw route does not pass the LLM unit guard that pages add / chat edit apply.'
+  known_restrictions: 'Read the canvas with dashboard canvas get, edit, write back; a canvas with pages[]
+    bakes the ACTIVE page (pages[i].focus / pages[i].added), a root-level focus is stored but produces
+    no descriptors. focus.kpis entries are {field, agg, label, unit, decimals, filters}; agg countDistinct
+    persists and bakes (ILG simulation 2026-09-19). added[].measure is a column name; a ratio goes in
+    canvas.derived[] as {id, numerator, denominator} and is referenced by id from measure or a KPI field.
+    Validation errors return the pydantic path (e.g. pages.0.added.2.measure). The response carries bake_job_id:
+    job wait it, then dashboard canvas get for meta.figures (figure key -> descriptor id) and dashboard
+    descriptor-data to evaluate. This raw route does not pass the LLM unit guard that pages add / chat
+    edit apply.'
   reviewed_by: primary
 - command_id: dashboard.chat.edit
   command_path: dashboard chat edit
@@ -379,10 +515,16 @@ commands:
   request_model: DashboardChatEditRequest
   result_model: DashboardChatEditResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
   acceptance_evidence: contract_only_no_disposable_fixture
+  readback:
+    command: dashboard.canvas.get
+    ids:
+      dashboard_id: positional.0
+    kind: object
   live_test: null
   live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
     fixture in tests/live.
@@ -390,8 +532,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard chat edit DASHBOARD_ID --help
-  agent_example: 'mammoth dashboard chat edit 123 --input ''{"body": {"params": {"prompt": "Summarize revenue
-    by region"}}}'''
+  agent_example: 'mammoth dashboard chat edit 123 --input ''{"body": {"params": {"prompt": "Summarize
+    revenue by region"}}}'''
   unit_tests:
   - UT-DASHBOARD-CHAT-EDIT
   contract_tests:
@@ -400,7 +542,10 @@ commands:
   - CT-DASHBOARD-CHAT-EDIT-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: 'Changes an existing board from one sentence (add, remove or change a chart, KPI
+    or page): {"body": {"params": {"prompt": "<the change>"}}}; returns changed, a one-line message, the
+    rebaked canvas, dashboard_link and values (the evaluated number of each KPI card and tile after the
+    edit). Use it rather than dashboard pages add or canvas save.'
   reviewed_by: primary
 - command_id: dashboard.chat.history
   command_path: dashboard chat history
@@ -440,7 +585,10 @@ commands:
   - CT-DASHBOARD-CHAT-HISTORY-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: 'The response carries a revisions[] list (one {sequence, updated_at, updated_by_name}
+    per saved version, oldest first) -- real on the wire but not yet in the typed SDK model, so read it
+    from --output json. It is the version list for dashboard canvas restore''s target_sequence: to undo/revert
+    the board, find the sequence to go back to here and pass it there.'
   reviewed_by: primary
 - command_id: dashboard.context.create
   command_path: dashboard context create
@@ -455,10 +603,15 @@ commands:
   request_model: DashboardContextCreateRequest
   result_model: DashboardContextCreateResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: contract_only_no_disposable_fixture
+  readback:
+    command: dashboard.context.list
+    ids: {}
+    kind: object
   live_test: null
   live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
     fixture in tests/live.
@@ -496,10 +649,15 @@ commands:
   request_model: DashboardContextDeleteRequest
   result_model: DashboardContextDeleteResult
   mutation_class: destructive
+  edits_target: true
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: contract_only_no_disposable_fixture
+  readback:
+    command: dashboard.context.list
+    ids: {}
+    kind: object
   live_test: null
   live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
     fixture in tests/live.
@@ -531,10 +689,13 @@ commands:
   request_model: ContextExtractSpec
   result_model: ContextExtractResponse
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: contract_only_no_disposable_fixture
+  no_readback: ExtractContext returns an extracted preview (condensed/figure data) from an uploaded file;
+    nothing is persisted, so no read command can show it.
   live_test: null
   live_exemption_reason: Release-only supplemental binding; no disposable fixture.
   contract_fixture: null
@@ -604,10 +765,15 @@ commands:
   request_model: DashboardContextUpdateRequest
   result_model: DashboardContextUpdateResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: contract_only_no_disposable_fixture
+  readback:
+    command: dashboard.context.list
+    ids: {}
+    kind: object
   live_test: null
   live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
     fixture in tests/live.
@@ -615,8 +781,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard context update CONTEXT_ID --help
-  agent_example: 'mammoth dashboard context update resource-123 --input ''{"body": {"params": {"name": "Revenue
-    report"}}}'''
+  agent_example: 'mammoth dashboard context update resource-123 --input ''{"body": {"params": {"name":
+    "Revenue report"}}}'''
   unit_tests:
   - UT-DASHBOARD-CONTEXT-UPDATE
   contract_tests:
@@ -626,48 +792,6 @@ commands:
   draft_test: null
   undo_test: null
   known_restrictions: null
-  reviewed_by: primary
-- command_id: dashboard.create
-  command_path: dashboard create
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - GenerateDashboard
-  positionals:
-  - name: intent
-    type: str
-    required: false
-    metavar: INTENT
-    falls_back_to_field: intent
-    help: Generation intent for the new dashboard; or pass it via the 'intent' input field.
-  options: []
-  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.create
-  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.create with validated request fields.
-  request_model: DashboardCreateRequest
-  result_model: DashboardCreateResult
-  mutation_class: benign_mutation
-  confirmation: none
-  wait_policy: returns_job
-  pagination_policy: none
-  acceptance_evidence: contract_only_no_disposable_fixture
-  live_test: null
-  live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
-    fixture in tests/live.
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth dashboard create --help
-  agent_example: 'mammoth dashboard create ''Summarize revenue by region'' --input ''{"source": [1]}'''
-  unit_tests:
-  - UT-DASHBOARD-CREATE
-  contract_tests:
-  - CT-DASHBOARD-CREATE-HUMAN
-  - CT-DASHBOARD-CREATE-JSON
-  - CT-DASHBOARD-CREATE-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: 'B13 DASHBOARD_ASYNC_UNTYPED: no stable typed job or waiter exposed; keep returns_job,
-    do not claim completion.'
   reviewed_by: primary
 - command_id: dashboard.create-blank
   command_path: dashboard create-blank
@@ -681,10 +805,16 @@ commands:
   request_model: DashboardCreateBlankRequest
   result_model: DashboardCreateBlankResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: contract_only_no_disposable_fixture
+  readback:
+    command: dashboard.get
+    ids:
+      dashboard_id: result.id
+    kind: object
   live_test: null
   live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
     fixture in tests/live.
@@ -701,7 +831,10 @@ commands:
   - CT-DASHBOARD-CREATE-BLANK-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: 'Input is {"params": {"dataview_id": VIEW_ID, "title": ...}} with --yes; returns {id, sequence}. The blank canvas has one page (p1) and no figures: author it with dashboard canvas get -> edit -> dashboard canvas save or dashboard pages add. One dataview per dashboard.'
+  known_restrictions: 'To build a board from a description, use dashboard v3 generate instead. Input is
+    {"params": {"dataview_id": VIEW_ID, "title": ...}} with --yes; returns {id, sequence}. The blank canvas
+    has one page (p1) and no figures: author it with dashboard chat edit, or by hand with dashboard canvas
+    get -> edit -> dashboard canvas save or dashboard pages add. One dataview per dashboard.'
   reviewed_by: primary
 - command_id: dashboard.data.draft
   command_path: dashboard data draft
@@ -802,10 +935,15 @@ commands:
   request_model: DashboardDeleteRequest
   result_model: DashboardDeleteResult
   mutation_class: destructive
+  edits_target: true
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: contract_only_no_disposable_fixture
+  readback:
+    command: dashboard.list
+    ids: {}
+    kind: object
   live_test: null
   live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
     fixture in tests/live.
@@ -843,10 +981,14 @@ commands:
   request_model: DashboardDescriptorDataRequest
   result_model: DashboardDescriptorDataResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
   acceptance_evidence: contract_only_no_disposable_fixture
+  no_readback: 'DescriptorData evaluates already-baked descriptors and returns their computed values directly
+    in the result ({descriptor_id: {status, value|data}}); it does not change persisted dashboard state
+    for a read command to show.'
   live_test: null
   live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
     fixture in tests/live.
@@ -854,7 +996,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard descriptor-data DASHBOARD_ID --help
-  agent_example: 'mammoth dashboard descriptor-data 123 --input ''{"body": {"params": {"descriptor_ids": ["ef28f9bcc263c0f7"], "filter_state": {"Month": ["2025-01-01", "2025-03-31"]}}}}'''
+  agent_example: 'mammoth dashboard descriptor-data 123 --input ''{"body": {"params": {"descriptor_ids":
+    ["ef28f9bcc263c0f7"], "filter_state": {"Month": ["2025-01-01", "2025-03-31"]}}}}'''
   unit_tests:
   - UT-DASHBOARD-DESCRIPTOR-DATA
   contract_tests:
@@ -863,7 +1006,11 @@ commands:
   - CT-DASHBOARD-DESCRIPTOR-DATA-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: 'Evaluates baked descriptors by id. Ids come from dashboard canvas get data.meta.figures[<page>:<kpi|add>:<n>].descriptors.value (rows for a table figure) and data.meta.filters. body.params.filter_state is {"<filter field>": value} against the canvas''''s declared filters: a range control takes [start, end] (dates as YYYY-MM-DD), categorical controls a list of values; an undeclared field is rejected. Results are {descriptor_id: {status, value | data}}. Used to prove a countDistinct card under a Month range (ILG simulation 2026-09-19).'
+  known_restrictions: 'Evaluates baked descriptors by id. Ids come from dashboard canvas get data.meta.figures[<page>:<kpi|add>:<n>].descriptors.value
+    (rows for a table figure) and data.meta.filters. body.params.filter_state is {"<filter field>": value}
+    against the canvas''''s declared filters: a range control takes [start, end] (dates as YYYY-MM-DD),
+    categorical controls a list of values; an undeclared field is rejected. Results are {descriptor_id:
+    {status, value | data}}. Used to prove a countDistinct card under a Month range (ILG simulation 2026-09-19).'
   reviewed_by: primary
 - command_id: dashboard.duplicate
   command_path: dashboard duplicate
@@ -884,10 +1031,16 @@ commands:
   request_model: DashboardDuplicateRequest
   result_model: DashboardDuplicateResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: contract_only_no_disposable_fixture
+  readback:
+    command: dashboard.get
+    ids:
+      dashboard_id: result.id
+    kind: object
   live_test: null
   live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
     fixture in tests/live.
@@ -906,6 +1059,362 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+- command_id: dashboard.embed.config.get
+  command_path: dashboard embed config get
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetEmbedConfig
+  positionals:
+  - name: dashboard_id
+    type: int
+    required: true
+    metavar: DASHBOARD_ID
+    falls_back_to_field: null
+    help: ID of the dashboard.
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.embed_config_get
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.embed_config_get with validated request fields.
+  request_model: DashboardEmbedConfigGetRequest
+  result_model: DashboardEmbedConfigGetResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-DASHBOARD-EMBED-CONFIG-GET
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard embed config get DASHBOARD_ID --help
+  agent_example: mammoth dashboard embed config get 123
+  unit_tests:
+  - UT-DASHBOARD-EMBED-CONFIG-GET
+  contract_tests:
+  - CT-DASHBOARD-EMBED-CONFIG-GET-HUMAN
+  - CT-DASHBOARD-EMBED-CONFIG-GET-JSON
+  - CT-DASHBOARD-EMBED-CONFIG-GET-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: dashboard.embed.config.set
+  command_path: dashboard embed config set
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - PutEmbedConfig
+  positionals:
+  - name: dashboard_id
+    type: int
+    required: true
+    metavar: DASHBOARD_ID
+    falls_back_to_field: null
+    help: ID of the dashboard.
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.embed_config_set
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.embed_config_set with validated request fields.
+  request_model: DashboardEmbedConfigSetRequest
+  result_model: DashboardEmbedConfigSetResult
+  mutation_class: high_impact
+  edits_target: true
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_no_disposable_fixture
+  readback:
+    command: dashboard.embed.config.get
+    ids:
+      dashboard_id: positional.0
+    kind: object
+  live_test: null
+  live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
+    fixture in tests/live.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard embed config set DASHBOARD_ID --help
+  agent_example: mammoth dashboard embed config set 123 --yes --confirm 123
+  unit_tests:
+  - UT-DASHBOARD-EMBED-CONFIG-SET
+  contract_tests:
+  - CT-DASHBOARD-EMBED-CONFIG-SET-HUMAN
+  - CT-DASHBOARD-EMBED-CONFIG-SET-JSON
+  - CT-DASHBOARD-EMBED-CONFIG-SET-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: dashboard.embed.key.rotate
+  command_path: dashboard embed key rotate
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - RotateEmbedKey
+  positionals:
+  - name: dashboard_id
+    type: int
+    required: true
+    metavar: DASHBOARD_ID
+    falls_back_to_field: null
+    help: ID of the dashboard.
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.embed_key_rotate
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.embed_key_rotate with validated request fields.
+  request_model: DashboardEmbedKeyRotateRequest
+  result_model: DashboardEmbedKeyRotateResult
+  mutation_class: high_impact
+  edits_target: true
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  readback:
+    command: dashboard.embed.config.get
+    ids:
+      dashboard_id: positional.0
+    kind: object
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard embed key rotate DASHBOARD_ID --help
+  agent_example: mammoth dashboard embed key rotate 123 --yes --confirm 123
+  unit_tests:
+  - UT-DASHBOARD-EMBED-KEY-ROTATE
+  contract_tests:
+  - CT-DASHBOARD-EMBED-KEY-ROTATE-HUMAN
+  - CT-DASHBOARD-EMBED-KEY-ROTATE-JSON
+  - CT-DASHBOARD-EMBED-KEY-ROTATE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: dashboard.embed.usage.get
+  command_path: dashboard embed usage get
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetEmbedUsage
+  positionals:
+  - name: dashboard_id
+    type: int
+    required: true
+    metavar: DASHBOARD_ID
+    falls_back_to_field: null
+    help: ID of the dashboard.
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.embed_usage_get
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.embed_usage_get with validated request fields.
+  request_model: DashboardEmbedUsageGetRequest
+  result_model: DashboardEmbedUsageGetResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-DASHBOARD-EMBED-USAGE-GET
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard embed usage get DASHBOARD_ID --help
+  agent_example: mammoth dashboard embed usage get 123
+  unit_tests:
+  - UT-DASHBOARD-EMBED-USAGE-GET
+  contract_tests:
+  - CT-DASHBOARD-EMBED-USAGE-GET-HUMAN
+  - CT-DASHBOARD-EMBED-USAGE-GET-JSON
+  - CT-DASHBOARD-EMBED-USAGE-GET-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: dashboard.embed.origin.revoke
+  command_path: dashboard embed origin revoke
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - RevokeOrigin
+  positionals:
+  - name: dashboard_id
+    type: int
+    required: true
+    metavar: DASHBOARD_ID
+    falls_back_to_field: null
+    help: ID of the dashboard.
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.embed_origin_revoke
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.embed_origin_revoke with validated request
+    fields.
+  request_model: DashboardEmbedOriginRevokeRequest
+  result_model: DashboardEmbedOriginRevokeResult
+  mutation_class: high_impact
+  edits_target: true
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_no_disposable_fixture
+  readback:
+    command: dashboard.embed.config.get
+    ids:
+      dashboard_id: positional.0
+    kind: object
+  live_test: null
+  live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
+    fixture in tests/live.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard embed origin revoke DASHBOARD_ID --help
+  agent_example: 'mammoth dashboard embed origin revoke 123 --input ''{"origin": "sample"}'' --yes --confirm
+    123'
+  unit_tests:
+  - UT-DASHBOARD-EMBED-ORIGIN-REVOKE
+  contract_tests:
+  - CT-DASHBOARD-EMBED-ORIGIN-REVOKE-HUMAN
+  - CT-DASHBOARD-EMBED-ORIGIN-REVOKE-JSON
+  - CT-DASHBOARD-EMBED-ORIGIN-REVOKE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: dashboard.embed.preview-token.create
+  command_path: dashboard embed preview-token create
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - PreviewToken
+  positionals:
+  - name: dashboard_id
+    type: int
+    required: true
+    metavar: DASHBOARD_ID
+    falls_back_to_field: null
+    help: ID of the dashboard.
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.embed_preview_token_create
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.embed_preview_token_create with validated
+    request fields.
+  request_model: DashboardEmbedPreviewTokenCreateRequest
+  result_model: DashboardEmbedPreviewTokenCreateResult
+  mutation_class: benign_mutation
+  edits_target: false
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_no_disposable_fixture
+  no_readback: PreviewToken's created token (embed_url/expires_at/token) is returned directly in the result
+    and is not listed anywhere; no read command retrieves embed preview tokens.
+  live_test: null
+  live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
+    fixture in tests/live.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard embed preview-token create DASHBOARD_ID --help
+  agent_example: mammoth dashboard embed preview-token create 123
+  unit_tests:
+  - UT-DASHBOARD-EMBED-PREVIEW-TOKEN-CREATE
+  contract_tests:
+  - CT-DASHBOARD-EMBED-PREVIEW-TOKEN-CREATE-HUMAN
+  - CT-DASHBOARD-EMBED-PREVIEW-TOKEN-CREATE-JSON
+  - CT-DASHBOARD-EMBED-PREVIEW-TOKEN-CREATE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: dashboard.embed.secret.rotate
+  command_path: dashboard embed secret rotate
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - RotateEmbedSecret
+  positionals:
+  - name: workspace_id
+    type: int
+    required: true
+    metavar: WORKSPACE_ID
+    falls_back_to_field: null
+    help: ID of the workspace.
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.embed_secret_rotate
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.embed_secret_rotate with validated request
+    fields.
+  request_model: DashboardEmbedSecretRotateRequest
+  result_model: DashboardEmbedSecretRotateResult
+  mutation_class: high_impact
+  edits_target: true
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  no_readback: RotateEmbedSecret's new secret (rotated_at/secret/token_ttl) is workspace-scoped and returned
+    directly in the result; no read command exposes workspace-level embed secret state.
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard embed secret rotate WORKSPACE_ID --help
+  agent_example: mammoth dashboard embed secret rotate 123 --yes --confirm 123
+  unit_tests:
+  - UT-DASHBOARD-EMBED-SECRET-ROTATE
+  contract_tests:
+  - CT-DASHBOARD-EMBED-SECRET-ROTATE-HUMAN
+  - CT-DASHBOARD-EMBED-SECRET-ROTATE-JSON
+  - CT-DASHBOARD-EMBED-SECRET-ROTATE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: dashboard.embed.lifetime.set
+  command_path: dashboard embed lifetime set
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - SetEmbedLifetime
+  positionals:
+  - name: workspace_id
+    type: int
+    required: true
+    metavar: WORKSPACE_ID
+    falls_back_to_field: null
+    help: ID of the workspace.
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.embed_lifetime_set
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.embed_lifetime_set with validated request
+    fields.
+  request_model: DashboardEmbedLifetimeSetRequest
+  result_model: DashboardEmbedLifetimeSetResult
+  mutation_class: benign_mutation
+  edits_target: true
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_no_disposable_fixture
+  no_readback: SetEmbedLifetime's new token_ttl is workspace-scoped and returned directly in the result;
+    no read command exposes workspace-level embed token lifetime.
+  live_test: null
+  live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
+    fixture in tests/live.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard embed lifetime set WORKSPACE_ID --help
+  agent_example: 'mammoth dashboard embed lifetime set 123 --input ''{"token_ttl": 1}'''
+  unit_tests:
+  - UT-DASHBOARD-EMBED-LIFETIME-SET
+  contract_tests:
+  - CT-DASHBOARD-EMBED-LIFETIME-SET-HUMAN
+  - CT-DASHBOARD-EMBED-LIFETIME-SET-JSON
+  - CT-DASHBOARD-EMBED-LIFETIME-SET-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
 - command_id: dashboard.exemplar.extract
   command_path: dashboard exemplar extract
   disposition: command
@@ -919,10 +1428,13 @@ commands:
   request_model: ExemplarExtractSpec
   result_model: ExemplarExtractResponse
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: contract_only_no_disposable_fixture
+  no_readback: ExtractExemplar returns an extracted style/exemplar preview from an uploaded file; nothing
+    is persisted, so no read command can show it.
   live_test: null
   live_exemption_reason: Release-only supplemental binding; no disposable fixture.
   contract_fixture: null
@@ -958,10 +1470,16 @@ commands:
   request_model: DashboardFigureIntentRequest
   result_model: DashboardFigureIntentResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: contract_only_no_disposable_fixture
+  readback:
+    command: dashboard.canvas.get
+    ids:
+      dashboard_id: positional.0
+    kind: object
   live_test: null
   live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
     fixture in tests/live.
@@ -1080,10 +1598,14 @@ commands:
   request_model: DashboardImportWorkbookRequest
   result_model: ImportDatasetResponse
   mutation_class: high_impact
+  edits_target: false
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: contract_only_no_disposable_fixture
+  no_readback: ImportWorkbookDataset's result gives dataview_id only; the matching read (view.get) also
+    requires dataset_id, which the response does not include, and this route is release-only / unverified
+    against release besides.
   live_test: null
   live_exemption_reason: Release-only multipart binding; no approved workbook fixture.
   contract_fixture: null
@@ -1097,7 +1619,10 @@ commands:
   - mammoth-cli/tests/contract/test_rel340_schema_preserves_release_overlay.py::test_rel340_schema_preserves_release_overlay
   draft_test: null
   undo_test: null
-  known_restrictions: Release snapshot provenance only; unverified against release.
+  known_restrictions: 'Release snapshot provenance only; unverified against release. These take a workbook
+    file from the local disk. Inside the Mammoth app the user''s file cannot reach the agent: send the
+    user to the dashboard import page at /workspaces/{workspace_id}/publish/import (Publish → Import),
+    where they upload the .pbix/.twb/.twbx themselves.'
   reviewed_by: primary
 - command_id: dashboard.job-by-url
   command_path: dashboard job-by-url
@@ -1238,10 +1763,13 @@ commands:
   request_model: DashboardPagePlanRequest
   result_model: DashboardPagePlanResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: contract_only_no_disposable_fixture
+  no_readback: PlanPage only proposes a page (composed/message/page in the result); nothing is persisted
+    until dashboard chat edit or dashboard pages add applies it.
   live_test: null
   live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
     fixture in tests/live.
@@ -1249,8 +1777,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard page plan DASHBOARD_ID --help
-  agent_example: 'mammoth dashboard page plan 123 --input ''{"body": {"params": {"intent": "Summarize revenue
-    by region"}}}'''
+  agent_example: 'mammoth dashboard page plan 123 --input ''{"body": {"params": {"intent": "Summarize
+    revenue by region"}}}'''
   unit_tests:
   - UT-DASHBOARD-PAGE-PLAN
   contract_tests:
@@ -1279,17 +1807,26 @@ commands:
   request_model: DashboardPagesAddRequest
   result_model: DashboardPagesAddResult
   mutation_class: high_impact
+  edits_target: true
   confirmation: confirm_target
   wait_policy: returns_job
   pagination_policy: none
   acceptance_evidence: contract_only_high_impact
+  readback:
+    command: dashboard.canvas.get
+    ids:
+      dashboard_id: positional.0
+    kind: object
   live_test: null
   live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard pages add DASHBOARD_ID --help
-  agent_example: 'mammoth dashboard pages add 123 --input ''{"body": {"params": {"pages": [{"title": "By region", "focus": {"measure": "Revenue", "dim": "Region", "kpis": [{"field": "Revenue", "agg": "sum", "label": "Revenue"}]}, "charts": [{"kind": "hbar", "title": "Revenue by region", "dim": "Region", "measure": "Revenue", "agg": "sum"}]}]}}}'''
+  agent_example: 'mammoth dashboard pages add 123 --input ''{"body": {"params": {"pages": [{"title": "By
+    region", "focus": {"measure": "Revenue", "dim": "Region", "kpis": [{"field": "Revenue", "agg": "sum",
+    "label": "Revenue"}]}, "charts": [{"kind": "hbar", "title": "Revenue by region", "dim": "Region",
+    "measure": "Revenue", "agg": "sum"}]}]}}}'''
   unit_tests:
   - UT-DASHBOARD-PAGES-ADD
   contract_tests:
@@ -1298,7 +1835,12 @@ commands:
   - CT-DASHBOARD-PAGES-ADD-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: 'Requires --yes --confirm DASHBOARD_ID. body.params.pages is a list of PageAdd objects: {title, focus: {measure, dim, kpis: [...]}, charts: [{kind, title, dim, measure, agg}]}; the schema example''''s {} entry is not a usable page. The route runs through the LLM control guard: in the ILG simulation it dropped unit.prefix on a money card ("nothing in this data says which currency") that dashboard canvas save had kept, and reports that in data.message.'
+  known_restrictions: 'To add or change content by description, use dashboard chat edit instead. Requires
+    --yes --confirm DASHBOARD_ID. body.params.pages is a list of PageAdd objects: {title, focus: {measure,
+    dim, kpis: [...]}, charts: [{kind, title, dim, measure, agg}]}; the schema example''''s {} entry is
+    not a usable page. The route runs through the LLM control guard: in the ILG simulation it dropped
+    unit.prefix on a money card ("nothing in this data says which currency") that dashboard canvas save
+    had kept, and reports that in data.message.'
   reviewed_by: primary
 - command_id: dashboard.pdf-artifact
   command_path: dashboard pdf-artifact
@@ -1365,10 +1907,17 @@ commands:
   request_model: DashboardPdfExportRequest
   result_model: DashboardPdfExportResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
   acceptance_evidence: contract_only_no_disposable_fixture
+  readback:
+    command: dashboard.pdf-artifact
+    ids:
+      dashboard_id: positional.0
+      job_id: result.job_id
+    kind: delivery
   live_test: null
   live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
     fixture in tests/live.
@@ -1385,9 +1934,9 @@ commands:
   - CT-DASHBOARD-PDF-EXPORT-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: Backend requires params.data to be the browser-hydrated DashboardData map
-    (pre-rendered widget results); the server stores only query descriptors and cannot rebuild
-    it, so a PDF cannot be produced from the CLI alone.
+  known_restrictions: Backend requires params.data to be the browser-hydrated DashboardData map (pre-rendered
+    widget results); the server stores only query descriptors and cannot rebuild it, so a PDF cannot be
+    produced from the CLI alone; point the user to the board's Download PDF in the app.
   reviewed_by: primary
 - command_id: dashboard.published-data-by-url
   command_path: dashboard published-data-by-url
@@ -1409,10 +1958,13 @@ commands:
   request_model: DashboardPublishedDataByUrlRequest
   result_model: DashboardPublishedDataByUrlResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
   acceptance_evidence: contract_only_no_disposable_fixture
+  no_readback: GetPublishDataFromSqlByUrl evaluates an existing published descriptor and returns its data
+    directly in the result; it does not change persisted dashboard state.
   live_test: null
   live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
     fixture in tests/live.
@@ -1491,10 +2043,13 @@ commands:
   request_model: DashboardPublishedDataRequest
   result_model: DashboardPublishedDataResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
   acceptance_evidence: contract_only_no_disposable_fixture
+  no_readback: DescriptorDataByUrl evaluates existing published descriptors and returns their computed
+    values; it does not change persisted dashboard state for a read command to show.
   live_test: null
   live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
     fixture in tests/live.
@@ -1621,10 +2176,17 @@ commands:
   request_model: DashboardPublishedPdfExportRequest
   result_model: DashboardPublishedPdfExportResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
   acceptance_evidence: contract_only_no_disposable_fixture
+  readback:
+    command: dashboard.published.pdf-artifact
+    ids:
+      url: positional.0
+      job_id: result.job_id
+    kind: delivery
   live_test: null
   live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
     fixture in tests/live.
@@ -1746,10 +2308,16 @@ commands:
   request_model: DashboardPublishedVideoExportRequest
   result_model: DashboardPublishedVideoExportResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
   acceptance_evidence: contract_only_no_disposable_fixture
+  readback:
+    command: dashboard.published.video-artifact
+    ids:
+      url: positional.0
+    kind: delivery
   live_test: null
   live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
     fixture in tests/live.
@@ -1793,10 +2361,17 @@ commands:
   request_model: DashboardQaAskRequest
   result_model: DashboardQaAskResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
   acceptance_evidence: contract_only_no_disposable_fixture
+  readback:
+    command: dashboard.qa.session.get
+    ids:
+      dashboard_id: positional.0
+      session_id: positional.1
+    kind: object
   live_test: null
   live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
     fixture in tests/live.
@@ -1841,10 +2416,17 @@ commands:
   request_model: DashboardQaCommentCreateRequest
   result_model: DashboardQaCommentCreateResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: contract_only_no_disposable_fixture
+  readback:
+    command: dashboard.qa.session.get
+    ids:
+      dashboard_id: positional.0
+      session_id: positional.1
+    kind: object
   live_test: null
   live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
     fixture in tests/live.
@@ -1894,10 +2476,17 @@ commands:
   request_model: DashboardQaCommentDeleteRequest
   result_model: DashboardQaCommentDeleteResult
   mutation_class: destructive
+  edits_target: true
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: contract_only_no_disposable_fixture
+  readback:
+    command: dashboard.qa.session.get
+    ids:
+      dashboard_id: positional.0
+      session_id: positional.1
+    kind: object
   live_test: null
   live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
     fixture in tests/live.
@@ -1947,10 +2536,17 @@ commands:
   request_model: DashboardQaFeedbackRequest
   result_model: DashboardQaFeedbackResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: contract_only_no_disposable_fixture
+  readback:
+    command: dashboard.qa.session.get
+    ids:
+      dashboard_id: positional.0
+      session_id: positional.1
+    kind: object
   live_test: null
   live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
     fixture in tests/live.
@@ -1988,10 +2584,17 @@ commands:
   request_model: DashboardQaSessionCreateRequest
   result_model: DashboardQaSessionCreateResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: contract_only_no_disposable_fixture
+  readback:
+    command: dashboard.qa.session.get
+    ids:
+      dashboard_id: positional.0
+      session_id: result.session.id
+    kind: object
   live_test: null
   live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
     fixture in tests/live.
@@ -2036,10 +2639,16 @@ commands:
   request_model: DashboardQaSessionDeleteRequest
   result_model: DashboardQaSessionDeleteResult
   mutation_class: destructive
+  edits_target: true
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: contract_only_no_disposable_fixture
+  readback:
+    command: dashboard.qa.session.list
+    ids:
+      dashboard_id: positional.0
+    kind: object
   live_test: null
   live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
     fixture in tests/live.
@@ -2083,10 +2692,17 @@ commands:
   request_model: DashboardQaSessionForkRequest
   result_model: DashboardQaSessionForkResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: contract_only_no_disposable_fixture
+  readback:
+    command: dashboard.qa.session.get
+    ids:
+      dashboard_id: positional.0
+      session_id: result.session.id
+    kind: object
   live_test: null
   live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
     fixture in tests/live.
@@ -2216,10 +2832,17 @@ commands:
   request_model: DashboardQaSessionRenameRequest
   result_model: DashboardQaSessionRenameResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: contract_only_no_disposable_fixture
+  readback:
+    command: dashboard.qa.session.get
+    ids:
+      dashboard_id: positional.0
+      session_id: positional.1
+    kind: object
   live_test: null
   live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
     fixture in tests/live.
@@ -2227,8 +2850,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard qa session rename DASHBOARD_ID SESSION_ID --help
-  agent_example: 'mammoth dashboard qa session rename 123 123 --input ''{"body": {"params": {"title": "Revenue
-    report"}}}'''
+  agent_example: 'mammoth dashboard qa session rename 123 123 --input ''{"body": {"params": {"title":
+    "Revenue report"}}}'''
   unit_tests:
   - UT-DASHBOARD-QA-SESSION-RENAME
   contract_tests:
@@ -2265,10 +2888,17 @@ commands:
   request_model: DashboardQaSessionSetVisibilityRequest
   result_model: DashboardQaSessionSetVisibilityResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: contract_only_no_disposable_fixture
+  readback:
+    command: dashboard.qa.session.get
+    ids:
+      dashboard_id: positional.0
+      session_id: positional.1
+    kind: object
   live_test: null
   live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
     fixture in tests/live.
@@ -2347,10 +2977,16 @@ commands:
   request_model: DashboardQaSettingsSetRequest
   result_model: DashboardQaSettingsSetResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: contract_only_no_disposable_fixture
+  readback:
+    command: dashboard.qa.settings.get
+    ids:
+      dashboard_id: positional.0
+    kind: object
   live_test: null
   live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
     fixture in tests/live.
@@ -2389,10 +3025,13 @@ commands:
   request_model: DashboardQueryRequest
   result_model: DashboardQueryResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: contract_only_no_disposable_fixture
+  no_readback: AdhocQuery returns a computed descriptor_id/job_id for one-off exploration; evaluating
+    it further (dashboard descriptor-data) is itself a mutation, so no read command can show its value.
   live_test: null
   live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
     fixture in tests/live.
@@ -2431,10 +3070,16 @@ commands:
   request_model: DashboardRestoreRequest
   result_model: DashboardRestoreResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
   acceptance_evidence: contract_only_no_disposable_fixture
+  readback:
+    command: dashboard.get
+    ids:
+      dashboard_id: positional.0
+    kind: object
   live_test: null
   live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
     fixture in tests/live.
@@ -2514,10 +3159,16 @@ commands:
   request_model: DashboardRlsAssignmentSetRequest
   result_model: DashboardRlsAssignmentSetResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: contract_only_no_disposable_fixture
+  readback:
+    command: dashboard.rls.assignment.list
+    ids:
+      dashboard_id: positional.0
+    kind: object
   live_test: null
   live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
     fixture in tests/live.
@@ -2636,10 +3287,16 @@ commands:
   request_model: DashboardShareRequest
   result_model: DashboardShareResult
   mutation_class: external_effect
+  edits_target: true
   confirmation: yes_always
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: contract_only_high_impact
+  readback:
+    command: dashboard.get
+    ids:
+      dashboard_id: positional.0
+    kind: object
   live_test: null
   live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
   contract_fixture: null
@@ -2671,10 +3328,15 @@ commands:
   request_model: DashboardSignatureCreateRequest
   result_model: DashboardSignatureCreateResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: contract_only_no_disposable_fixture
+  readback:
+    command: dashboard.signature.list
+    ids: {}
+    kind: object
   live_test: null
   live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
     fixture in tests/live.
@@ -2712,10 +3374,15 @@ commands:
   request_model: DashboardSignatureDeleteRequest
   result_model: DashboardSignatureDeleteResult
   mutation_class: destructive
+  edits_target: true
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: contract_only_no_disposable_fixture
+  readback:
+    command: dashboard.signature.list
+    ids: {}
+    kind: object
   live_test: null
   live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
     fixture in tests/live.
@@ -2787,10 +3454,15 @@ commands:
   request_model: DashboardSignatureUpdateRequest
   result_model: DashboardSignatureUpdateResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: contract_only_no_disposable_fixture
+  readback:
+    command: dashboard.signature.list
+    ids: {}
+    kind: object
   live_test: null
   live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
     fixture in tests/live.
@@ -2858,10 +3530,15 @@ commands:
   request_model: DashboardStyleCustomCreateRequest
   result_model: DashboardStyleCustomCreateResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: contract_only_no_disposable_fixture
+  readback:
+    command: dashboard.style.custom.list
+    ids: {}
+    kind: object
   live_test: null
   live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
     fixture in tests/live.
@@ -2900,10 +3577,15 @@ commands:
   request_model: DashboardStyleCustomDeleteRequest
   result_model: DashboardStyleCustomDeleteResult
   mutation_class: destructive
+  edits_target: true
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: contract_only_no_disposable_fixture
+  readback:
+    command: dashboard.style.custom.list
+    ids: {}
+    kind: object
   live_test: null
   live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
     fixture in tests/live.
@@ -2976,10 +3658,15 @@ commands:
   request_model: DashboardStyleCustomUpdateRequest
   result_model: DashboardStyleCustomUpdateResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: contract_only_no_disposable_fixture
+  readback:
+    command: dashboard.style.custom.list
+    ids: {}
+    kind: object
   live_test: null
   live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
     fixture in tests/live.
@@ -3046,10 +3733,15 @@ commands:
   request_model: DashboardStyleDefaultSetRequest
   result_model: DashboardStyleDefaultSetResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: contract_only_no_disposable_fixture
+  readback:
+    command: dashboard.style.default.get
+    ids: {}
+    kind: object
   live_test: null
   live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
     fixture in tests/live.
@@ -3081,10 +3773,13 @@ commands:
   request_model: DashboardStyleDeriveRequest
   result_model: DashboardStyleDeriveResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: contract_only_no_disposable_fixture
+  no_readback: DeriveStyle returns computed style_tokens directly in the result; nothing is persisted
+    for dashboard style token list (which needs an unrelated dashboard id) to show.
   live_test: null
   live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
     fixture in tests/live.
@@ -3117,10 +3812,13 @@ commands:
   request_model: DashboardStyleExtractBrandRequest
   result_model: DashboardStyleExtractBrandResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
   acceptance_evidence: contract_only_no_disposable_fixture
+  no_readback: ExtractBrand returns computed brand style tokens as a preview; nothing is persisted for
+    a read command to show.
   live_test: null
   live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
     fixture in tests/live.
@@ -3272,10 +3970,16 @@ commands:
   request_model: SwapDataSpec
   result_model: ObjectJobSchema
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: confirm_target
   wait_policy: always_wait
   pagination_policy: none
   acceptance_evidence: contract_only_no_disposable_fixture
+  readback:
+    command: dashboard.canvas.get
+    ids:
+      dashboard_id: positional.0
+    kind: object
   live_test: null
   live_exemption_reason: Release-only supplemental binding; no disposable fixture.
   contract_fixture: null
@@ -3311,10 +4015,15 @@ commands:
   request_model: DashboardTagsDeleteRequest
   result_model: DashboardTagsDeleteResult
   mutation_class: destructive
+  edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: contract_only_no_disposable_fixture
+  readback:
+    command: dashboard.tags.list
+    ids: {}
+    kind: object
   live_test: null
   live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
     fixture in tests/live.
@@ -3386,10 +4095,15 @@ commands:
   request_model: DashboardTagsMergeRequest
   result_model: DashboardTagsMergeResult
   mutation_class: destructive
+  edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: contract_only_no_disposable_fixture
+  readback:
+    command: dashboard.tags.list
+    ids: {}
+    kind: object
   live_test: null
   live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
     fixture in tests/live.
@@ -3427,10 +4141,15 @@ commands:
   request_model: DashboardTagsRenameRequest
   result_model: DashboardTagsRenameResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: contract_only_no_disposable_fixture
+  readback:
+    command: dashboard.tags.list
+    ids: {}
+    kind: object
   live_test: null
   live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
     fixture in tests/live.
@@ -3468,10 +4187,16 @@ commands:
   request_model: DashboardTagsSetRequest
   result_model: DashboardTagsSetResult
   mutation_class: high_impact
+  edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: contract_only_high_impact
+  readback:
+    command: dashboard.get
+    ids:
+      dashboard_id: positional.0
+    kind: object
   live_test: null
   live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
   contract_fixture: null
@@ -3502,10 +4227,16 @@ commands:
   request_model: DashboardTemplateApplyRequest
   result_model: DashboardTemplateApplyResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
   acceptance_evidence: contract_only_no_disposable_fixture
+  readback:
+    command: job.get
+    ids:
+      job_id: result.job_id
+    kind: delivery
   live_test: null
   live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
     fixture in tests/live.
@@ -3538,10 +4269,16 @@ commands:
   request_model: DashboardTemplateCreateRequest
   result_model: DashboardTemplateCreateResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: contract_only_no_disposable_fixture
+  readback:
+    command: dashboard.template.get
+    ids:
+      template_id: result.template.id
+    kind: object
   live_test: null
   live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
     fixture in tests/live.
@@ -3549,8 +4286,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard template create --help
-  agent_example: 'mammoth dashboard template create --input ''{"body": {"params": {"dashboard_id": 1, "title":
-    "Revenue report"}}}'''
+  agent_example: 'mammoth dashboard template create --input ''{"body": {"params": {"dashboard_id": 1,
+    "title": "Revenue report"}}}'''
   unit_tests:
   - UT-DASHBOARD-TEMPLATE-CREATE
   contract_tests:
@@ -3559,9 +4296,9 @@ commands:
   - CT-DASHBOARD-TEMPLATE-CREATE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: 'dashboard_id must name a dashboard whose widgets bind dataset columns; a blank dashboard
-    fails with "None of the columns this template binds are in the dataset". Build the dashboard first (dashboard
-    create, then widgets), then save it as a template.'
+  known_restrictions: dashboard_id must name a dashboard whose widgets bind dataset columns; a blank dashboard
+    fails with "None of the columns this template binds are in the dataset". Build the dashboard first
+    (dashboard create, then widgets), then save it as a template.
   reviewed_by: primary
 - command_id: dashboard.template.delete
   command_path: dashboard template delete
@@ -3582,10 +4319,15 @@ commands:
   request_model: DashboardTemplateDeleteRequest
   result_model: DashboardTemplateDeleteResult
   mutation_class: destructive
+  edits_target: true
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: contract_only_no_disposable_fixture
+  readback:
+    command: dashboard.template.list
+    ids: {}
+    kind: object
   live_test: null
   live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
     fixture in tests/live.
@@ -3731,10 +4473,13 @@ commands:
   request_model: DashboardTemplatePreviewRequest
   result_model: DashboardTemplatePreviewResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: contract_only_no_disposable_fixture
+  no_readback: PreviewTemplate returns a computed preview (canvas/mapping/plan/specs) only; nothing is
+    persisted until dashboard template apply.
   live_test: null
   live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
     fixture in tests/live.
@@ -3773,10 +4518,16 @@ commands:
   request_model: DashboardTemplateRenameRequest
   result_model: DashboardTemplateRenameResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: contract_only_no_disposable_fixture
+  readback:
+    command: dashboard.template.get
+    ids:
+      template_id: positional.0
+    kind: object
   live_test: null
   live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
     fixture in tests/live.
@@ -3810,10 +4561,12 @@ commands:
   request_model: DashboardTemplateResolveMappingRequest
   result_model: DashboardTemplateResolveMappingResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: contract_only_no_disposable_fixture
+  no_readback: ResolveTemplateMapping computes a mapping preview only; nothing is persisted.
   live_test: null
   live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
     fixture in tests/live.
@@ -3847,10 +4600,15 @@ commands:
   request_model: DashboardTemplatePendingRequest
   result_model: PendingTemplateResponse
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: contract_only_no_disposable_fixture
+  readback:
+    command: dashboard.template.list
+    ids: {}
+    kind: object
   live_test: null
   live_exemption_reason: Release-only supplemental binding; no disposable fixture.
   contract_fixture: null
@@ -3885,17 +4643,24 @@ commands:
   request_model: UseTemplateSpec
   result_model: ObjectJobSchema | JobResponse
   mutation_class: high_impact
+  edits_target: false
   confirmation: confirm_target
   wait_policy: always_wait
   pagination_policy: none
   acceptance_evidence: contract_only_no_disposable_fixture
+  readback:
+    command: job.get
+    ids:
+      job_id: result.job_id
+    kind: delivery
   live_test: null
   live_exemption_reason: Release-only supplemental binding; no disposable fixture.
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard templates use SLUG --help
-  agent_example: 'mammoth dashboard templates use sample --input ''{"body": {"params": {"project_id": 1}}}'''
+  agent_example: 'mammoth dashboard templates use sample --input ''{"body": {"params": {"project_id":
+    1}}}'''
   unit_tests:
   - tests/unit/test_template_bindings.py::test_use_template_posts_exact_route
   contract_tests:
@@ -3923,10 +4688,15 @@ commands:
   request_model: DashboardTrashRequest
   result_model: DashboardTrashResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
   acceptance_evidence: contract_only_no_disposable_fixture
+  readback:
+    command: dashboard.list
+    ids: {}
+    kind: object
   live_test: null
   live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
     fixture in tests/live.
@@ -3964,10 +4734,16 @@ commands:
   request_model: DashboardUpdateRequest
   result_model: DashboardUpdateResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: returns_job
   pagination_policy: none
   acceptance_evidence: contract_only_no_disposable_fixture
+  readback:
+    command: dashboard.get
+    ids:
+      dashboard_id: positional.0
+    kind: object
   live_test: null
   live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
     fixture in tests/live.
@@ -3975,8 +4751,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard update DASHBOARD_ID --help
-  agent_example: 'mammoth dashboard update 123 --input ''{"patch": [{"op": "replace", "path": "title", "value":
-    "Renamed dashboard"}]}'''
+  agent_example: 'mammoth dashboard update 123 --input ''{"patch": [{"op": "replace", "path": "title",
+    "value": "Renamed dashboard"}]}'''
   unit_tests:
   - UT-DASHBOARD-UPDATE
   contract_tests:
@@ -4000,10 +4776,16 @@ commands:
   request_model: DashboardV3GenerateRequest
   result_model: DashboardV3GenerateResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
   acceptance_evidence: contract_only_no_disposable_fixture
+  readback:
+    command: job.get
+    ids:
+      job_id: result.job_id
+    kind: delivery
   live_test: null
   live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
     fixture in tests/live.
@@ -4021,7 +4803,12 @@ commands:
   - CT-DASHBOARD-V3-GENERATE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: 'This is how to make a dashboard: it builds and bakes a whole board from one sentence
+    on one view. Input {"body": {"params": {"intent": "<what the board should show>", "dataview_id": VIEW_ID,
+    "title": "<optional name>"}}}; waits (about 30 s) and returns the baked canvas, plus dashboard_link and values:
+    the evaluated number of every KPI card and tile (one descriptor-data read of the baked board), so compare
+    them with what you saw in the data before you report. Change it afterwards
+    with dashboard chat edit. dashboard create-blank is only for authoring a canvas by hand.'
   reviewed_by: primary
 - command_id: dashboard.video-state
   command_path: dashboard video-state
@@ -4082,10 +4869,16 @@ commands:
   request_model: DashboardVideoExportRequest
   result_model: DashboardVideoExportResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
   acceptance_evidence: contract_only_no_disposable_fixture
+  readback:
+    command: dashboard.video-state
+    ids:
+      dashboard_id: positional.0
+    kind: delivery
   live_test: null
   live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
     fixture in tests/live.
@@ -4123,10 +4916,13 @@ commands:
   request_model: DashboardWidgetDataRequest
   result_model: DashboardWidgetDataResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
   acceptance_evidence: contract_only_no_disposable_fixture
+  no_readback: BulkWidgetData fetches data for existing widget descriptors and returns it directly in
+    the result; it does not change persisted dashboard state.
   live_test: null
   live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
     fixture in tests/live.
@@ -4166,10 +4962,13 @@ commands:
   request_model: DashboardWidgetDataByUrlRequest
   result_model: DashboardWidgetDataByUrlResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
   acceptance_evidence: contract_only_no_disposable_fixture
+  no_readback: BulkWidgetDataByUrl fetches data for existing widget descriptors and returns it directly
+    in the result; it does not change persisted dashboard state.
   live_test: null
   live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
     fixture in tests/live.
@@ -4177,8 +4976,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard widget-data-by-url URL --help
-  agent_example: 'mammoth dashboard widget-data-by-url https://example.com/data.csv --input ''{"body": {"params":
-    {"widgets": [{"widget_id": "00000000-0000-4000-8000-000000000001"}]}}}'''
+  agent_example: 'mammoth dashboard widget-data-by-url https://example.com/data.csv --input ''{"body":
+    {"params": {"widgets": [{"widget_id": "00000000-0000-4000-8000-000000000001"}]}}}'''
   unit_tests:
   - UT-DASHBOARD-WIDGET-DATA-BY-URL
   contract_tests:

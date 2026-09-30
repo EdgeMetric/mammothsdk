@@ -19,6 +19,7 @@ commands:
   request_model: WebhookCreateRequest
   result_model: WebhookCreateResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -40,6 +41,11 @@ commands:
   undo_test: null
   known_restrictions: Secure creation uses the secret-output rule (--secret-out/--show-secret).
   reviewed_by: primary
+  readback:
+    command: webhook.get
+    ids:
+      webhook_id: result.webhook.id
+    kind: object
 - command_id: webhook.delete
   command_path: webhook delete
   disposition: command
@@ -59,6 +65,7 @@ commands:
   request_model: WebhookDeleteRequest
   result_model: WebhookDeleteResult
   mutation_class: destructive
+  edits_target: true
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -80,6 +87,10 @@ commands:
   undo_test: null
   known_restrictions: Resolve webhook before confirmation.
   reviewed_by: primary
+  readback:
+    command: webhook.list
+    ids: {}
+    kind: object
 - command_id: webhook.get
   command_path: webhook get
   disposition: command
@@ -167,6 +178,7 @@ commands:
   request_model: WebhookSendRequest
   result_model: WebhookSendResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -190,6 +202,7 @@ commands:
   known_restrictions: Never retry; requires a disposable webhook and dataset fixture; current dataset
     permission blocks live evidence.
   reviewed_by: primary
+  no_readback: "posts data to an external webhook URL; the external receiver's state is not something this CLI can read back"
 - command_id: webhook.send-get
   command_path: webhook send-get
   disposition: command
@@ -203,6 +216,7 @@ commands:
   request_model: WebhookSendGetRequest
   result_model: WebhookSendGetResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -225,6 +239,7 @@ commands:
   known_restrictions: webhook send-get is a mutation despite HTTP GET, and it is never retried. Reject
     an empty query; never log the URI if the server treats it as a capability.
   reviewed_by: primary
+  no_readback: "posts data to an external webhook URL; the external receiver's state is not something this CLI can read back"
 - command_id: webhook.update
   command_path: webhook update
   disposition: command
@@ -244,6 +259,7 @@ commands:
   request_model: WebhookUpdateRequest
   result_model: WebhookUpdateResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -265,3 +281,8 @@ commands:
   undo_test: null
   known_restrictions: Reject an empty patch; a newly issued secret uses the secret-output rule.
   reviewed_by: primary
+  readback:
+    command: webhook.get
+    ids:
+      webhook_id: positional.0
+    kind: object

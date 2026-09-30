@@ -261,6 +261,18 @@ def test_upload_with_no_files_omits_files_kwarg(fake_service: FakeMammothService
     assert fake_service.call_log == [(_UPLOAD, {})]
 
 
+def test_upload_with_append_to_ds_id_and_no_files_is_missing_argument(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    doc = tmp_path / "in.json"
+    doc.write_text(json.dumps({"append_to_ds_id": 9}), encoding="utf-8")
+    with pytest.raises(CliError) as excinfo:
+        file_cmd.file_upload(_inv("file.upload", input_file=str(doc)))
+    assert excinfo.value.code == "missing_argument"
+    assert "files" in excinfo.value.message
+    assert fake_service.call_log == []
+
+
 def test_upload_reports_ready_dataset(fake_service: FakeMammothService) -> None:
     # The SDK waits and returns the new dataset id as a bare int; the handler
     # labels it and reports the status the platform holds for that dataset.
@@ -395,3 +407,72 @@ def test_upload_names_a_missing_local_file_before_any_request(
     assert "missing.csv" in excinfo.value.message
     assert excinfo.value.details["cwd"] == str(Path.cwd())
     assert fake_service.call_log == []
+
+
+def test_upload_result_shows_what_mammoth_made_of_each_file(
+    fake_service: FakeMammothService,
+) -> None:
+    fake_service.responses[_UPLOAD] = 84
+    fake_service.responses["mammoth.api.datasets.DatasetsAPI.get"] = {
+        "id": 84,
+        "status": "ready",
+    }
+    fake_service.responses["mammoth.api.dataviews.DataviewsAPI.list"] = {
+        "dataviews": [
+            {
+                "id": 81,
+                "row_count": 4,
+                "metadata": [
+                    {"display_name": "id", "internal_name": "column_1", "type": "TEXT"},
+                    {"display_name": "price", "internal_name": "column_2", "type": "TEXT"},
+                ],
+            }
+        ]
+    }
+    fake_service.responses["mammoth.api.dataviews.DataviewsAPI.get_data"] = {
+        "data": [
+            {"column_1": "a", "column_2": "10.5"},
+            {"column_1": "b", "column_2": "4"},
+            {"column_1": "c", "column_2": "N/A"},
+            {"column_1": "d", "column_2": "7"},
+            {"column_1": "e", "column_2": "12"},
+        ]
+    }
+    data, _ = file_cmd.file_upload(_inv("file.upload", extra_args=["a.csv"]))
+    view = data["datasets"][0]["view"]
+    assert view["view_id"] == 81
+    assert view["columns"] == {"id": "TEXT", "price": "TEXT"}
+    assert view["sample_rows"][0] == {"id": "a", "price": "10.5"}
+    assert [w["issue"] for w in view["column_warnings"]] == ["numbers_stored_as_text"]
+    # A price read as TEXT still counts as money: convert it, then add revenue.
+    hint = view["before_dashboard"]["warnings"][0]
+    assert hint["issue"] == "money_not_shown"
+    assert hint["detail"].startswith("Convert price to NUMERIC first")
+
+
+def test_upload_result_names_revenue_to_add_before_a_dashboard(
+    fake_service: FakeMammothService,
+) -> None:
+    fake_service.responses[_UPLOAD] = 84
+    fake_service.responses["mammoth.api.datasets.DatasetsAPI.get"] = {"id": 84, "status": "ready"}
+    fake_service.responses["mammoth.api.dataviews.DataviewsAPI.list"] = {
+        "dataviews": [
+            {
+                "id": 81,
+                "row_count": 2,
+                "metadata": [
+                    {"display_name": "qty", "internal_name": "column_1", "type": "NUMERIC"},
+                    {"display_name": "price", "internal_name": "column_2", "type": "NUMERIC"},
+                ],
+            }
+        ]
+    }
+    fake_service.responses["mammoth.api.dataviews.DataviewsAPI.get_data"] = {
+        "data": [{"column_1": 2, "column_2": 3.5}, {"column_1": 1, "column_2": 4}]
+    }
+    data, _ = file_cmd.file_upload(_inv("file.upload", extra_args=["a.csv"]))
+    hint = data["datasets"][0]["view"]["before_dashboard"]
+    assert [w["issue"] for w in hint["warnings"]] == ["money_not_shown"]
+    assert '"expression": "qty * price"' in hint["warnings"][0]["fix"]
+    assert hint["note"].startswith("Run these before you make a dashboard")
+    assert "no chart" not in hint["warnings"][0]["detail"]

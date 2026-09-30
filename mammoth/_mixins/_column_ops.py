@@ -11,6 +11,7 @@ from mammoth._pure.builders import (
     build_copy_params,
     build_delete_params,
 )
+from mammoth.exceptions import MammothError
 from mammoth.models.pipeline import ColumnType, ConversionSpec, CopySpec
 
 if TYPE_CHECKING:
@@ -165,3 +166,64 @@ class ColumnOpsMixin(ViewHost):
         return await self._add_task(
             build_convert_params(conversions, self.columns, self._internal_names)
         )
+
+    async def rename_columns(self, renames: dict[str, str]) -> dict[str, Any]:
+        """Rename columns (the web grid's rename; not a pipeline task).
+
+        The new name is a view display property (``COLUMN_NAMES``), the same
+        change as renaming a column header in the web app. The column keeps
+        its internal name, so pipeline tasks that use it keep working, and
+        later operations, data reads, exports and dashboards use the new name.
+
+        Args:
+            renames: ``{current display name: new display name}``.
+
+        Returns:
+            ``{"renamed": {old: new}, "columns": [display names after]}``.
+
+        Raises:
+            MammothColumnError: A current name is not a column of the view.
+            MammothError: A new name is not among the view's columns after the
+                rename (the server accepted the change but did not apply it).
+            ValueError: ``renames`` is empty, a new name is blank, or two
+                columns would end up with the same name.
+
+        Example::
+
+            view.rename_columns({"cust_id": "Customer ID", "amt": "Amount"})
+        """
+        if not renames:
+            raise ValueError("renames must name at least one column")
+        value: dict[str, str] = {}
+        cleaned: dict[str, str] = {}
+        for old, new in renames.items():
+            new_name = " ".join(str(new).split())
+            if not new_name:
+                raise ValueError(f"new name for {old!r} is blank")
+            value[self._resolve_column(old)] = new_name
+            cleaned[old] = new_name
+        final = [cleaned.get(name, name).lower() for name in self.columns]
+        if len(final) != len(set(final)):
+            raise ValueError("two columns would have the same name after the rename")
+        await self._client.dataviews.update(
+            self.dataset_id,
+            self.id,
+            [{"op": "replace", "path": "display_properties/COLUMN_NAMES", "value": value}],
+        )
+        await self.refresh()
+        # The refreshed columns are the proof: a PATCH the server accepted
+        # but did not apply must not read as a rename that happened.
+        not_applied = {old: new for old, new in cleaned.items() if new not in self.columns}
+        if not_applied:
+            raise MammothError(
+                "The server accepted the rename but did not apply it.",
+                details={
+                    "reason": (
+                        "rename not applied: the view's columns after the change"
+                        " do not show the new name"
+                    ),
+                    "not_applied": not_applied,
+                    "columns_after": list(self.columns),
+                },
+            )
+        return {"renamed": cleaned, "columns": list(self.columns)}

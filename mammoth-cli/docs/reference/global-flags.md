@@ -15,6 +15,7 @@ schema get COMMAND.ID`.
 | `--timeout` | Per-request timeout in seconds. |
 | `--job-timeout` | Job-wait timeout in seconds. |
 | `--pipeline-timeout` | Pipeline-wait timeout in seconds. |
+| `--return-running` | When a job or pipeline wait runs out, exit 0 with `{status: "running", job_id or dataview_id, resume}` instead of a timeout error. `mammoth job wait JOB_ID` resumes: it reports success, failure or still running, and waits at most 15 minutes by default. |
 | `--color` | Color policy: `auto`, `always`, or `never`. Default `auto`. |
 | `--no-input` | Never prompt; fail instead. It turns on automatically off a terminal. |
 | `--no-progress` | Never render progress. |

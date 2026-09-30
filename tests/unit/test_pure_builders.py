@@ -1280,24 +1280,58 @@ class TestAdvanced:
             {"COLUMN": "Age", "KEY": "age", "TYPE": "NUMERIC", "INTERNAL_NAME": "gen2"},
         ]
 
-    def test_json_extract_keys_list_op_override(self) -> None:
+    def test_json_extract_keys_list_op_override_wrong_count_raises(self) -> None:
+        """DBAdapter's json_handle asserts ``len(column_spec) == 2`` for
+        JSON_LIST_TO_ROWS; a single key used to sail through and reach the
+        backend as a one-element JSON_EXTRACT, which emptied the view (task
+        runtime error 7000). It must never leave this builder.
+        """
+        with pytest.raises(ValueError, match="exactly two"):
+            b.build_json_extract_params(
+                "Notes",
+                COLS,
+                INTERNALS,
+                json_type=JsonType.LIST,
+                keys=["a"],
+                keep_source=True,
+                op_type=JsonOpType.JSON_LIST_TO_ROWS,
+                name_gen=gen(),
+            )
+
+    def test_json_extract_list_to_rows_defaults_to_item_and_index(self) -> None:
+        """With no ``keys``/``extractions``, JSON_LIST_TO_ROWS gets the
+        product's own Item (TEXT) + Index (NUMERIC) pair, each with an
+        INTERNAL_NAME like every other extract spec.
+        """
         spec = b.build_json_extract_params(
             "Notes",
             COLS,
             INTERNALS,
             json_type=JsonType.LIST,
-            keys=["a"],
-            keep_source=True,
-            op_type=JsonOpType.JSON_LIST_TO_ROWS,
             name_gen=gen(),
         )
         jh = spec["JSON_HANDLE"]
         assert jh["TYPE"] == "JSON_LIST"
-        assert jh["JSON_KEEP_SOURCE"] is True
         assert jh["JSON_LIST_OP_TYPE"] == "JSON_LIST_TO_ROWS"
         assert jh["JSON_EXTRACT"] == [
-            {"COLUMN": "a", "KEY": "a", "TYPE": "TEXT", "INTERNAL_NAME": "gen1"}
+            {"COLUMN": "Item", "TYPE": "TEXT", "_IS_ITEM": 0, "INTERNAL_NAME": "gen1"},
+            {"COLUMN": "Index", "TYPE": "NUMERIC", "_IS_INDEX": 0, "INTERNAL_NAME": "gen2"},
         ]
+
+    def test_json_extract_list_to_rows_explicit_two_specs_passes_through(self) -> None:
+        extractions = [
+            JsonExtractionSpec(key="item", as_name="Item"),
+            JsonExtractionSpec(key="index", as_name="Index", type=ColumnType.NUMERIC),
+        ]
+        spec = b.build_json_extract_params(
+            "Notes",
+            COLS,
+            INTERNALS,
+            json_type=JsonType.LIST,
+            extractions=extractions,
+            name_gen=gen(),
+        )
+        assert len(spec["JSON_HANDLE"]["JSON_EXTRACT"]) == 2
 
     def test_json_extract_empty(self) -> None:
         spec = b.build_json_extract_params("Notes", COLS, INTERNALS)

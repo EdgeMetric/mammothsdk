@@ -30,9 +30,13 @@ from mammoth_cli.manifest.loader import command_by_id, load_commands
 Gate = Callable[..., None]
 
 NOTE_OWN = "No request was sent for this operation; the reads needed to resolve it did run."
+DATAVIEW_GET = "mammoth.api.dataviews.DataviewsAPI.get"
+#: The manifest ``mutation_class`` that marks a command as irreversible: the
+#: only class whose commands the manifest describes as permanent (no undo).
+IRREVERSIBLE_CLASS = "destructive"
+
 NOTE_UNDECLARED = (
-    "Stopped before an SDK call the command's manifest does not declare; "
-    "nothing was sent for it."
+    "Stopped before an SDK call the command's manifest does not declare; nothing was sent for it."
 )
 
 
@@ -71,6 +75,9 @@ def jsonable(value: Any) -> Any:
         return [jsonable(item) for item in value]
     if value is None or isinstance(value, (str, int, float, bool)):
         return value
+    model_dump = getattr(value, "model_dump", None)
+    if callable(model_dump):  # an SDK request model (pydantic)
+        return jsonable(model_dump(mode="json", exclude_none=True))
     to_dict = getattr(value, "to_dict", None)
     if callable(to_dict):
         try:
@@ -92,7 +99,8 @@ def make_gate(command_id: str) -> Gate:
     # A CLI-composed command (project ensure, ...) is backed by a CLI function
     # and reaches the SDK through whichever writes it needs; those are its own.
     composed = own_symbol.startswith("mammoth_cli.")
-    reads = _read_symbols()
+    # The target-name read is a read whichever command asked for it.
+    reads = _read_symbols() | {DATAVIEW_GET}
     view_reads = _read_view_methods()
 
     def stop(symbol: str, arguments: dict[str, Any], *, own: bool, **scope: Any) -> None:
@@ -101,6 +109,7 @@ def make_gate(command_id: str) -> Gate:
                 "dry_run": True,
                 "command": command_id.replace(".", " "),
                 "mutation_class": mutation_class,
+                "irreversible": mutation_class == IRREVERSIBLE_CLASS,
                 "would_call": {
                     "sdk_symbol": symbol,
                     **{key: value for key, value in scope.items() if value is not None},

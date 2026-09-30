@@ -13,6 +13,7 @@ commands:
   request_model: FolderBulkDeleteRequest
   result_model: FolderBulkDeleteResult
   mutation_class: destructive
+  edits_target: true
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -34,6 +35,10 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: folder.list
+    ids: {}
+    kind: object
 - command_id: folder.create
   command_path: folder create
   disposition: command
@@ -53,6 +58,7 @@ commands:
   request_model: FolderCreateRequest
   result_model: FolderCreateResult
   mutation_class: benign_mutation
+  edits_target: false
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -74,6 +80,11 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: folder.get
+    ids:
+      folder_id: result.folder.id
+    kind: object
 - command_id: folder.delete
   command_path: folder delete
   disposition: command
@@ -93,6 +104,7 @@ commands:
   request_model: FolderDeleteRequest
   result_model: FolderDeleteResult
   mutation_class: destructive
+  edits_target: true
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -115,6 +127,10 @@ commands:
   known_restrictions: Sorted ID-set confirmation, plus exact project ID and phrase DELETE FOLDER CONTENTS
     when removing contents.
   reviewed_by: primary
+  readback:
+    command: folder.list
+    ids: {}
+    kind: object
 - command_id: folder.find
   command_path: folder find
   disposition: command
@@ -241,6 +257,7 @@ commands:
   request_model: FolderMoveRequest
   result_model: FolderMoveResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: returns_job
   pagination_policy: none
@@ -260,9 +277,17 @@ commands:
   - CT-FOLDER-MOVE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: 'B05 FOLDER_MOVE_NO_WAIT: SDK returns ObjectJobSchema but exposes no public wait
-    method; do not advertise --wait/--no-wait.'
+  known_restrictions: Prefer dataset_ids/view_ids (the plain ids dataset get/view get return) over resource_ids
+    -- the SDK resolves them to resource ids for you. resource_ids itself takes each item's resource id,
+    not a dataset/view's own id. target_folder_resource_id is the destination folder's id field, exactly
+    as folder list/folder get/folder create return it (NOT the folder's resource_id field, despite this
+    parameter's name).
   reviewed_by: primary
+  readback:
+    command: job.get
+    ids:
+      job_id: result.job_id
+    kind: delivery
 - command_id: folder.root
   command_path: folder root
   disposition: command
@@ -316,6 +341,7 @@ commands:
   request_model: FolderTrashRequest
   result_model: FolderTrashResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -337,6 +363,11 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: folder.get
+    ids:
+      folder_id: positional.0
+    kind: object
 - command_id: folder.update
   command_path: folder update
   disposition: command
@@ -356,6 +387,7 @@ commands:
   request_model: FolderUpdateRequest
   result_model: FolderUpdateResult
   mutation_class: benign_mutation
+  edits_target: true
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -377,3 +409,8 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+  readback:
+    command: folder.get
+    ids:
+      folder_id: positional.0
+    kind: object

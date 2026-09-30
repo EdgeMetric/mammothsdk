@@ -26,6 +26,12 @@ MATRIX = ROOT / "docs" / "release-capability-matrix.json"
 SKILL = ROOT / "mammoth_cli" / "bundled_skill" / "mammoth-cli"
 REFS = SKILL / "references" / "commands"
 INDEX = SKILL / "references" / "command-index.md"
+
+#: An agent's skill-reference reader refuses a file over this many bytes
+#: (observed on ``commands/view.md`` at 71,702 bytes). A family whose combined
+#: entries exceed it is split by its second command-id segment (``view
+#: transform``, ``view export``, ...) until every shipped file is under it.
+_MAX_REFERENCE_BYTES = 65536
 _FAIL_CLOSED_PATCH_RESTRICTIONS = (
     "BLOCKED[B07",
     "BLOCKED[B09",
@@ -177,6 +183,53 @@ _GROUP_PREAMBLE = (
 )
 
 
+def _rendered_bytes(
+    name: str, records: list[dict[str, object]], matrix: dict[str, dict[str, object]]
+) -> int:
+    text = _page_text(name, records, matrix)
+    return len(text.encode("utf-8"))
+
+
+def _page_text(
+    name: str, records: list[dict[str, object]], matrix: dict[str, dict[str, object]]
+) -> str:
+    return (
+        f"# `{name}` commands\n\n"
+        + _GROUP_PREAMBLE
+        + "".join(body(record, matrix) for record in records)
+    ).rstrip() + "\n"
+
+
+def _shard(
+    group: str, records: list[dict[str, object]], matrix: dict[str, dict[str, object]]
+) -> list[tuple[str, list[dict[str, object]]]]:
+    """Split one family's records into cap-sized pages, named by sub-topic.
+
+    Under the cap, the family stays a single page. Over it, its largest
+    second-command-id-segment groups (``view.transform``, ``view.export``,
+    ...) are peeled off into their own page, largest first, until what is
+    left fits; each peeled group keeps its own topic name so an agent still
+    loads exactly the file its goal needs.
+    """
+    if _rendered_bytes(group, records, matrix) <= _MAX_REFERENCE_BYTES:
+        return [(group, records)]
+    by_sub: dict[str, list[dict[str, object]]] = defaultdict(list)
+    for record in records:
+        parts = str(record["command_id"]).split(".")
+        by_sub[parts[1] if len(parts) > 1 else "misc"].append(record)
+    remaining = list(records)
+    pages: list[tuple[str, list[dict[str, object]]]] = []
+    for sub in sorted(by_sub, key=lambda key: -len(by_sub[key])):
+        if _rendered_bytes(group, remaining, matrix) <= _MAX_REFERENCE_BYTES:
+            break
+        peeled = by_sub[sub]
+        peeled_ids = {record["command_id"] for record in peeled}
+        remaining = [record for record in remaining if record["command_id"] not in peeled_ids]
+        pages.append((f"{group}-{sub}", peeled))
+    pages.append((group, remaining))
+    return pages
+
+
 def render() -> dict[Path, str]:
     matrix = _load_matrix()
     groups: dict[str, list[dict[str, object]]] = defaultdict(list)
@@ -185,13 +238,9 @@ def render() -> dict[Path, str]:
     output: dict[Path, str] = {}
     links: list[str] = []
     for group, records in sorted(groups.items()):
-        path = REFS / f"{group}.md"
-        output[path] = (
-            f"# `{group}` commands\n\n"
-            + _GROUP_PREAMBLE
-            + "".join(body(record, matrix) for record in records)
-        )
-        links.append(f"- [{group}](commands/{group}.md) — {len(records)} published commands")
+        for name, page_records in _shard(group, records, matrix):
+            output[REFS / f"{name}.md"] = _page_text(name, page_records, matrix)
+            links.append(f"- [{name}](commands/{name}.md) — {len(page_records)} published commands")
     output[INDEX] = (
         "# Published CLI command catalog\n\n"
         "This generated catalog is a lookup table for every command in the published CLI "
