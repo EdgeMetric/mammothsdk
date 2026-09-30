@@ -196,6 +196,7 @@ def _read_invocation(command_id: str, resolved_ids: dict[str, Any], base: Invoca
         no_input=True,
         positionals=positionals,
         extra_args=extra_args,
+        readback=True,
     )
     object.__setattr__(invocation, "_prepared_input", document or None)
     return invocation

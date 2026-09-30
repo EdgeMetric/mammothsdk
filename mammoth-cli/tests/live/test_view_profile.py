@@ -164,6 +164,40 @@ def test_generate_returns_evaluated_kpi_numbers_and_the_link(
             )
 
 
+def test_reading_an_existing_board_returns_its_numbers_and_their_period(
+    live_cli: LiveCli, sales_data: SalesData
+) -> None:
+    """UQA-RT10-02: asked what period a chart covers, the agent answered from memory;
+    ``dashboard get`` returned definitions only, so reading the board told it nothing."""
+    project = sales_data.project
+    built, _ = live_cli.ok(
+        *("dashboard", "v3", "generate"),
+        *_input(
+            {
+                "body": {
+                    "params": {
+                        "intent": "Overview of the key totals",
+                        "dataview_id": sales_data.view,
+                    }
+                }
+            }
+        ),
+        project=project,
+    )
+    board = built.get("id") or built.get("dashboard_id")
+    try:
+        read, _ = live_cli.ok("dashboard", "get", str(board), project=project)
+        assert read["dashboard_link"].endswith(f"/publish/{board}")
+        cards = [v for v in read["values"]["values"] if v["kind"] == "kpi"]
+        assert cards and all("value" in card or "error" in card for card in cards)
+    finally:
+        if board:
+            live_cli.run(
+                *("dashboard", "delete", str(board), "--yes", "--confirm", str(board)),
+                project=project,
+            )
+
+
 def test_waiting_on_a_generate_that_outlived_its_wait_returns_the_link_and_numbers(
     live_cli: LiveCli, sales_data: SalesData
 ) -> None:

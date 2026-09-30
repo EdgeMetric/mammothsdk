@@ -3,8 +3,11 @@
 `dashboard create` (the legacy AI-generation engine) does not exist as a
 command: it has no handler in current apiv2 (always 404s; historically HTTP
 409 `4DASH012 DASHBOARD_LEGACY_CREATION_RETIRED`). Build a board from one
-sentence with `v3 generate`, and change it with `chat edit`; author a canvas by
-hand (`create-blank`, `canvas save`, `pages add`) only when asked to.
+sentence with `v3 generate`, and change it with `chat edit`. Author or edit the
+canvas yourself (`create-blank`, `canvas get` then `canvas save`, `pages add`)
+for what a sentence cannot say exactly: units, hiding a built-in tile or
+insight, an exact layout. `dashboard filter add` puts a filter control on a
+board (below).
 `dashboard source list` is an observed blocker on release (see
 capabilities); verify the view binding with `dashboard get DASHBOARD_ID`
 (`data.sources`) instead.
@@ -18,6 +21,11 @@ mammoth dashboard get DASHBOARD_ID
 `v3 generate` waits for the bake (about 30 s) and returns the baked canvas;
 `chat edit` returns `changed` and a one-line `message`. Quote one number from
 the board before you report it done.
+
+Before you say anything about a board that already exists (what a chart shows,
+its numbers, the period it covers), run `dashboard get DASHBOARD_ID`: its
+`values` carry every KPI card's and tile's number and the `period` it counts.
+Answer from those, never from an earlier turn.
 
 Discover page/widget/publish routes and verify the binding, draft/published
 data and terminal jobs. Use only returned IDs and schema confirmation policy;
@@ -76,6 +84,62 @@ example a `pie` that the data does not support), `data.chart_check.refused`
 names it. A new page that got no charts is removed, and
 `data.chart_check.removed_pages` lists it. Add a chart of a different kind
 (`hbar`, `line`, `table`) for that page.
+
+## "Per region", "per month", "for each X": one board and a filter control
+
+A request for a board "per <dimension>" (per region, per month, per rep, by
+status) is ONE board with a **filter control** on that column: the viewer picks
+the value. Do not build a copy of the board for each value. Build the board
+once, then add the control:
+
+```bash
+mammoth dashboard filter add DASHBOARD_ID --input '{"field": "Region"}'
+mammoth dashboard filter list DASHBOARD_ID
+mammoth dashboard filter remove DASHBOARD_ID --input '{"field": "Region"}'
+```
+
+`field` is a column of the board's data. `control` is optional: leave it out
+and the column's type picks one (a category gets a selection list, a number or
+a date gets a range). Set it to choose: `dropdown`, `chips`, `multi` or
+`search` for a category, `range` for a number or a date, `motion` for a date
+that plays over time. `label` is the text the viewer sees, and `default` (a
+list of values) is what is selected when the board opens:
+`--input '{"field": "Region", "control": "dropdown", "label": "Region", "default": ["North"]}'`.
+A second `add` on the same column replaces the first. The command refuses a
+column the board does not have (and names the columns it has) and a control
+the column's type cannot take. Its result carries the declared `filters` and a
+`bake_job_id`; `dashboard filter list` reads them back. Say "per month" the same
+way: a filter on the date column with `range`, or `dashboard chat edit` for a
+chart that groups by month (`date_bucket`).
+
+Build only the board you were asked for. If the user wants the board for one
+region only, that is the control's `default`, not a second board.
+
+## Hide a built-in tile or insight
+
+A board's built-in parts (Key insights, the KPI strip, the breakdown, trend and
+table tiles) re-derive from the data, so they cannot be deleted; the product's
+"Remove" hides them: it adds the tile's key to `hidden` on the page. Do the
+same with `canvas save`: read the canvas, add the key to the page's `hidden`,
+write it back.
+
+```bash
+mammoth dashboard canvas get DASHBOARD_ID > canvas.json     # data.canvas is the object to edit
+# pages[0].hidden = ["summary"]            Key insights tile
+#                   ["kpis"]               the whole KPI strip
+#                   ["breakdown", "mix", "secondary", "trend", "table"]   the other built-in tiles
+# canvas.hidden (no pages) is the same list on a canvas without pages
+mammoth dashboard canvas save DASHBOARD_ID --input '{"body": {"params": {"canvas": <edited data.canvas>}}}'
+mammoth job wait BAKE_JOB_ID                                # data.bake_job_id from the save
+```
+
+`hidden` sits on the page you mean (`pages[i]`, the page the tile is on), not
+on the canvas root, when the canvas has `pages`. Keep the keys already in the
+list. A single KPI card is removed by taking its entry out of
+`pages[i].focus.kpis`. To hide one insight rather than the whole tile, put its
+tag in `insights.hide` (tags: `leader`, `momentum`, `gap`, `laggard`,
+`concentration`, `secondary`, `peak`, `quality`, `spread`). Read the board back
+with `dashboard canvas get` and check the key is in `hidden`.
 
 ## Put the money on the board
 

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import threading
+from pathlib import Path
 from typing import Any
 
 import pytest
@@ -212,3 +213,32 @@ def test_args_that_already_set_job_timeout_and_return_running_win() -> None:
 
     assert argv.count("--return-running") == 1
     assert not any(token == "--job-timeout" for token in argv)
+
+
+def test_project_use_says_to_pass_project_when_embedded(isolated_cli_config: Path) -> None:
+    """An embedded call has no profile to save a project in (runtime/session.py), so
+    ``context project use`` failed with profile_not_found and the host's agent kept
+    retrying it. It must say what works instead."""
+    envelope = invoke(["context", "project", "use", "6600"], login=_login(4))
+
+    assert envelope["error"]["code"] == "no_saved_project"
+    assert "--project" in envelope["error"]["hint"]
+
+
+def test_project_clear_says_to_pass_project_when_embedded(isolated_cli_config: Path) -> None:
+    envelope = invoke(["context", "project", "clear"], login=_login(4))
+
+    assert envelope["error"]["code"] == "no_saved_project"
+
+
+def test_a_missing_project_does_not_point_an_embedded_call_at_project_use() -> None:
+    from mammoth_cli.errors.envelope import missing_project_error
+
+    token = embedded.enter(embedded.EmbeddedCall(login=_login(4)))
+    try:
+        error = missing_project_error()
+    finally:
+        embedded.leave(token)
+
+    assert not any("context project use" in c for c in error.recovery_commands)
+    assert "--project" in (error.hint or "")

@@ -4,7 +4,7 @@ Generated from the reviewed command manifests for mammoth-cli 2.1.0.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
-Total commands: 576.
+Total commands: 579.
 
 ## activity
 
@@ -1386,6 +1386,39 @@ Total commands: 576.
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.figure_intent`
 - Agent example: `mammoth dashboard figure-intent 123 --input '{"body": {"params": {"intent": "Summarize revenue by region"}}}'`
+
+### `mammoth dashboard filter add`
+
+**Arguments**
+
+- `DASHBOARD_ID` (int, required) — ID of the dashboard.
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.dashboards.DashboardsAPI.canvas_save`
+- Agent example: `mammoth dashboard filter add 123 --input '{"field": "sample"}'`
+
+### `mammoth dashboard filter list`
+
+**Arguments**
+
+- `DASHBOARD_ID` (int, required) — ID of the dashboard.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.dashboards.DashboardsAPI.canvas_get`
+- Agent example: `mammoth dashboard filter list 123`
+
+### `mammoth dashboard filter remove`
+
+**Arguments**
+
+- `DASHBOARD_ID` (int, required) — ID of the dashboard.
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.dashboards.DashboardsAPI.canvas_save`
+- Agent example: `mammoth dashboard filter remove 123 --input '{"field": "sample"}'`
 
 ### `mammoth dashboard get`
 

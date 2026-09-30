@@ -51,6 +51,50 @@ def test_a_single_spelling_is_not_a_group() -> None:
     assert dp.variant_groups({"Acme Ltd": 3, "Beta Inc": 2, None: 5, "": 1}) == []  # type: ignore[dict-item]
 
 
+# Supplier names from the World Bank Argentina awards file QA replayed (UQA-RT3-01): a name with
+# and without its legal form, and with an extra "DE", is one supplier the sure groups missed.
+_AWARD_NAMES = {
+    "TECNOLAB S.A.": 3,
+    "TECNOLAB SA": 2,
+    "TECNOLAB": 2,
+    "APPLIED BIOSYSTEMS SA": 1,
+    "APPLIED BIOSYSTEMS.": 1,
+    "LATINOCONSULT S.A.": 2,
+    "LATINOCONSULT": 1,
+    "SIGMA-ALDRICH ARGENTINA S.A.": 2,
+    "SIGMA-ALDRICH DE ARGENTINA S.R.L.": 1,
+    "SIGMA-ALDRICH DE ARGENTINA SA": 1,
+    "Acme Holdings SA": 4,
+    "Acme SA": 3,
+}
+
+
+def test_likely_groups_join_a_name_with_and_without_its_legal_form() -> None:
+    likely = {group["keep"]: group for group in dp.likely_groups(_AWARD_NAMES)}
+
+    assert set(likely) == {
+        "TECNOLAB S.A.",
+        "APPLIED BIOSYSTEMS.",
+        "LATINOCONSULT S.A.",
+        "SIGMA-ALDRICH ARGENTINA S.A.",
+    }
+    assert [v["value"] for v in likely["TECNOLAB S.A."]["variants"]] == [
+        "TECNOLAB S.A.",
+        "TECNOLAB",
+        "TECNOLAB SA",
+    ]
+    assert likely["SIGMA-ALDRICH ARGENTINA S.A."]["rows"] == 4
+
+
+def test_likely_groups_never_join_a_different_name() -> None:
+    groups = dp.likely_groups({"Acme Holdings SA": 4, "Acme SA": 3, "Pepsi": 2, "Pepsi Cola": 2})
+    assert groups == []
+
+
+def test_likely_groups_leave_out_what_the_sure_groups_already_join() -> None:
+    assert dp.likely_groups({"Acme Ltd": 3, "ACME Limited": 2}) == []
+
+
 def test_summarize_column_counts_null_and_blank_text_together() -> None:
     summary = dp.summarize_column({None: 6, "  ": 4, "a": 30, "b": 60}, total_rows=100, top=1)
 

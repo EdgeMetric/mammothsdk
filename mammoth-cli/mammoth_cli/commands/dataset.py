@@ -30,7 +30,12 @@ from mammoth_cli.runtime.confirm import (
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.new_data import with_file_upload_path
 from mammoth_cli.runtime.session import open_service, require_project
-from mammoth_cli.services.listing import DATASET_LIST_FIELDS, dataset_summary, fit_budget
+from mammoth_cli.services.listing import (
+    DATASET_LIST_FIELDS,
+    dataset_summary,
+    fit_budget,
+    search_page,
+)
 
 HandlerResult = tuple[Any, dict[str, Any]]
 
@@ -198,12 +203,18 @@ def dataset_list(invocation: Invocation) -> HandlerResult:
     Every item carries its size, created/updated time, how its data arrived, and
     its column names and types (from the list route's stored ``stats``,
     ``sources`` and ``data_schema``), cut to fit the agent tool output cap.
-    ``full: true`` returns the raw ``{id, name}`` list instead.
+    ``full: true`` returns the raw ``{id, name}`` list instead. ``name`` keeps only datasets
+    whose name contains it (case-insensitive) across every page, as short rows without
+    column lists; ``limit``/``offset`` then page over the matches.
     """
     project_id = require_project(invocation)
     document = invocation.load_input() or {}
+    _validate_paging(document)
     kwargs: dict[str, Any] = {"project_id": project_id}
     _forward_optional(document, kwargs, ("limit", "offset", "sort"))
+    name = document.get("name")
+    if isinstance(name, str) and name.strip():
+        return _dataset_name_search(invocation, project_id, name.strip(), document)
     compact = not document.get("full")
     if compact:
         kwargs["fields"] = DATASET_LIST_FIELDS
@@ -212,6 +223,27 @@ def dataset_list(invocation: Invocation) -> HandlerResult:
     if compact:
         data = _compact_dataset_list(data, kwargs.get("offset", 0), kwargs.get("sort"))
     return data, _meta(invocation, auth.workspace_id, project_id)
+
+
+def _dataset_name_search(
+    invocation: Invocation, project_id: int, name: str, document: dict[str, Any]
+) -> HandlerResult:
+    """``dataset list`` with ``name``: every page is read here, then filtered by substring.
+
+    The list route only filters by exact name, so the substring match is local; the
+    reads are bounded by the SDK's ``max_pages``.
+    """
+    with open_service(invocation) as (service, auth):
+        data = service.call(
+            "mammoth.api.datasets.DatasetsAPI.list_all",
+            project_id=project_id,
+            sort=document.get("sort", "(created_at:desc)"),
+            fields=DATASET_LIST_FIELDS,
+        )
+    records = data.get("datasets", []) if isinstance(data, dict) else []
+    page = search_page(records, name, int(document.get("offset", 0)), document.get("limit"))
+    page["name"] = name
+    return page, _meta(invocation, auth.workspace_id, project_id)
 
 
 def _compact_dataset_list(data: Any, offset: int, sort: str | None) -> Any:
@@ -324,12 +356,8 @@ def dataset_data(invocation: Invocation) -> HandlerResult:
     return data, _meta(invocation, auth.workspace_id, project_id)
 
 
-def dataset_batch_data(invocation: Invocation) -> HandlerResult:
-    """Fetch data for a specific dataset batch."""
-    project_id = require_project(invocation)
-    dataset_id = _require_int_positional(invocation, "dataset id")
-    batch_id = _require_int_positional_at(invocation, 1, "batch id")
-    document = invocation.load_input() or {}
+def _validate_paging(document: dict[str, Any]) -> None:
+    """Refuse a ``limit`` outside 0..100 or a negative ``offset`` before any call is made."""
     for field, minimum, maximum in (("limit", 0, 100), ("offset", 0, None)):
         value = document.get(field)
         if value is not None and (
@@ -344,6 +372,15 @@ def dataset_batch_data(invocation: Invocation) -> HandlerResult:
                 message=f"'{field}' must be {bound}.",
                 exit_status=EXIT_USAGE,
             )
+
+
+def dataset_batch_data(invocation: Invocation) -> HandlerResult:
+    """Fetch data for a specific dataset batch."""
+    project_id = require_project(invocation)
+    dataset_id = _require_int_positional(invocation, "dataset id")
+    batch_id = _require_int_positional_at(invocation, 1, "batch id")
+    document = invocation.load_input() or {}
+    _validate_paging(document)
     kwargs: dict[str, Any] = {
         "dataset_id": dataset_id,
         "batch_id": batch_id,

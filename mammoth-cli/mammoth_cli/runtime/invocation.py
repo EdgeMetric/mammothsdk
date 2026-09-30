@@ -76,6 +76,9 @@ class Invocation:
     # handler so its verify and readback reads address the view directly
     # instead of walking every dataset to find it.
     known_dataset_id: int | None = field(default=None, repr=False, compare=False)
+    # Set on the read a write's ``state`` block issues: that read confirms the
+    # write, so a command's extra evaluation (a board's numbers) is skipped.
+    readback: bool = field(default=False, repr=False, compare=False)
     _prepared_input: object = field(
         default=_UNINITIALIZED_INPUT, init=False, repr=False, compare=False
     )

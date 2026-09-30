@@ -243,11 +243,11 @@ def test_project_positional_alias_has_an_explicit_sdk_destination() -> None:
         (
             dataset_cmd.dataset_list,
             "dataset.list",
-            {"limit": 917, "offset": 918, "sort": "S2-DATASET-SORT"},
+            {"limit": 97, "offset": 918, "sort": "S2-DATASET-SORT"},
             "mammoth.api.datasets.DatasetsAPI.list",
             {
                 "project_id": 42,
-                "limit": 917,
+                "limit": 97,
                 "offset": 918,
                 "sort": "S2-DATASET-SORT",
                 "fields": "id,name,created_at,updated_at,status,stats,sources,data_schema,additional_info",

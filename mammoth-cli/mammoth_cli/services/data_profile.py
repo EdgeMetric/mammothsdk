@@ -16,7 +16,7 @@ from __future__ import annotations
 import math
 import re
 from collections import defaultdict
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from typing import Any
 
 #: Distinct values above which a column's values are not listed or grouped.
@@ -53,6 +53,9 @@ _LEGAL_FORMS: dict[str, str] = {
     "bv": "bv",
     "nv": "nv",
 }
+#: Dropped by :func:`loose_key` only: every legal form, the Spanish/Portuguese
+#: ``SA`` and the connector ``DE`` (``SIGMA-ALDRICH DE ARGENTINA``).
+_LOOSE_DROP = frozenset({*_LEGAL_FORMS.values(), "sa", "de"})
 _DOTTED_INITIALS = re.compile(r"(?<=\b\w)\.(?=\w\b)")
 _NON_WORD = re.compile(r"[^\w]+", re.UNICODE)
 
@@ -75,19 +78,51 @@ def spelling_key(text: str) -> str:
     return " ".join(_LEGAL_FORMS.get(token, token) for token in tokens)
 
 
+def loose_key(text: str) -> str:
+    """:func:`spelling_key` without legal forms and connector words.
+
+    ``TECNOLAB``, ``TECNOLAB S.A.`` and ``SIGMA-ALDRICH DE ARGENTINA SRL`` /
+    ``SIGMA-ALDRICH ARGENTINA S.A.`` share a key; ``Acme`` and ``Acme Holdings``
+    still do not. Too loose to merge on its own: it only proposes.
+    """
+    tokens = spelling_key(text).split()
+    kept = [token for token in tokens if token not in _LOOSE_DROP]
+    return " ".join(kept or tokens)
+
+
 def variant_groups(counts: Mapping[str, int]) -> list[dict[str, Any]]:
     """Groups of distinct spellings that share :func:`spelling_key`, most rows first.
 
     Each group names the spelling to keep (the most frequent, ties broken by
     the shorter then alphabetical spelling) and every variant with its count.
     """
+    return _grouped(counts, spelling_key, lambda spellings: len(spellings) >= 2)
+
+
+def likely_groups(counts: Mapping[str, int]) -> list[dict[str, Any]]:
+    """Groups that differ only by a legal form or a connector word (:func:`loose_key`).
+
+    Only groups the sure :func:`variant_groups` do not already make on their own:
+    their spellings span two or more :func:`spelling_key` s. A person confirms
+    these before they are merged (``SRL`` and ``SA`` can be two companies).
+    """
+    return _grouped(
+        counts, loose_key, lambda spellings: len({spelling_key(t) for t in spellings}) >= 2
+    )
+
+
+def _grouped(
+    counts: Mapping[str, int],
+    key: Callable[[str], str],
+    is_group: Callable[[list[str]], bool],
+) -> list[dict[str, Any]]:
     by_key: dict[str, list[str]] = defaultdict(list)
     for value in counts:
         if isinstance(value, str) and not is_blank(value):
-            by_key[spelling_key(value)].append(value)
+            by_key[key(value)].append(value)
     groups: list[dict[str, Any]] = []
     for spellings in by_key.values():
-        if len(spellings) < 2:
+        if not is_group(spellings):
             continue
         keep = min(spellings, key=lambda text: (-counts[text], len(text), text))
         groups.append(

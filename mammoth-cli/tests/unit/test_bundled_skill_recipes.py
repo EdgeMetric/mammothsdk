@@ -37,3 +37,16 @@ def test_dashboards_recipe_names_the_real_view_binding_field() -> None:
     text = (ROOT / "dashboards.md").read_text(encoding="utf-8")
     assert "`data.sources`" in text
     assert "data.dataview_id" not in text
+
+
+def test_dashboards_recipe_routes_per_dimension_asks_to_a_filter_control() -> None:
+    text = (ROOT / "dashboards.md").read_text(encoding="utf-8")
+    assert "dashboard filter add DASHBOARD_ID --input" in text
+    assert "Do not build a copy of the board for each value" in text
+
+
+def test_dashboards_recipe_hides_built_in_tiles_through_canvas_save() -> None:
+    text = (ROOT / "dashboards.md").read_text(encoding="utf-8")
+    assert "pages[0].hidden" in text and '"summary"' in text
+    assert "dashboard canvas save DASHBOARD_ID" in text
+    assert "only when asked to" not in text

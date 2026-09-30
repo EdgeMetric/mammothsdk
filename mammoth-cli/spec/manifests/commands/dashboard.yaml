@@ -545,7 +545,8 @@ commands:
   known_restrictions: 'Changes an existing board from one sentence (add, remove or change a chart, KPI
     or page): {"body": {"params": {"prompt": "<the change>"}}}; returns changed, a one-line message, the
     rebaked canvas, dashboard_link and values (the evaluated number of each KPI card and tile after the
-    edit). Use it rather than dashboard pages add or canvas save.'
+    edit). Use it for a change you can say in a sentence; use dashboard canvas save to author the canvas
+    yourself (units, hiding built-in tiles).'
   reviewed_by: primary
 - command_id: dashboard.chat.history
   command_path: dashboard chat history
@@ -1498,6 +1499,132 @@ commands:
   draft_test: null
   undo_test: null
   known_restrictions: null
+  reviewed_by: primary
+- command_id: dashboard.filter.add
+  command_path: dashboard filter add
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - SaveCanvas
+  positionals:
+  - name: dashboard_id
+    type: int
+    required: true
+    metavar: DASHBOARD_ID
+    falls_back_to_field: null
+    help: ID of the dashboard.
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.canvas_save
+  sdk_conversion: 'CLI composite: reads the draft canvas (DashboardsAPI.canvas_get), edits root filters[], and saves it back (mammoth.api.dashboards.DashboardsAPI.canvas_save) from mammoth_cli.commands.dashboard; the accepted document fields are in command_contract.py.'
+  request_model: DashboardFilterAddRequest
+  result_model: DashboardFilterResult
+  mutation_class: benign_mutation
+  edits_target: true
+  readback:
+    command: dashboard.canvas.get
+    ids:
+      dashboard_id: positional.0
+    kind: object
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: null
+  live_exemption_reason: 'Live coverage is tests/live/test_dashboard_filter.py (runs on the test server); the canvas edit is unit-tested in tests/unit/services/test_dashboard_filters.py.'
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard filter add DASHBOARD_ID --help
+  agent_example: 'mammoth dashboard filter add 123 --input ''{"field": "sample"}'''
+  unit_tests:
+  - UT-DASHBOARD-FILTER-ADD
+  contract_tests:
+  - CT-DASHBOARD-FILTER-ADD
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Adds a filter control on one column to ONE board so the viewer picks the value (Region, Month, Status). Use this for any "per <column>" or "by <column>" ask instead of building a board per value. --input: "field" (a column of the board''s data, required), optional "control" (multi, dropdown, chips, search for a category; range for a number or date; the backend rejects a control the column type does not take), "label", "default" (list of values selected at first). A second add on the same field replaces the first. Reads the draft canvas, edits filters[], saves it; returns the declared filters, sequence and bake_job_id (dashboard job wait). Example: --input ''{"field": "Region", "control": "dropdown", "label": "Region"}''.'
+  reviewed_by: primary
+- command_id: dashboard.filter.list
+  command_path: dashboard filter list
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetCanvasDraft
+  positionals:
+  - name: dashboard_id
+    type: int
+    required: true
+    metavar: DASHBOARD_ID
+    falls_back_to_field: null
+    help: ID of the dashboard.
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.canvas_get
+  sdk_conversion: 'CLI read: DashboardsAPI.canvas_get, returning only the declared filters.'
+  request_model: DashboardFilterListRequest
+  result_model: DashboardFilterResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: null
+  live_exemption_reason: 'Live coverage is tests/live/test_dashboard_filter.py (runs on the test server); the canvas edit is unit-tested in tests/unit/services/test_dashboard_filters.py.'
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard filter list DASHBOARD_ID --help
+  agent_example: mammoth dashboard filter list 123
+  unit_tests:
+  - UT-DASHBOARD-FILTER-LIST
+  contract_tests:
+  - CT-DASHBOARD-FILTER-LIST
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Lists the filter controls a board declares ({field, control, label, default}); read it before adding one.'
+  reviewed_by: primary
+- command_id: dashboard.filter.remove
+  command_path: dashboard filter remove
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - SaveCanvas
+  positionals:
+  - name: dashboard_id
+    type: int
+    required: true
+    metavar: DASHBOARD_ID
+    falls_back_to_field: null
+    help: ID of the dashboard.
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.canvas_save
+  sdk_conversion: 'CLI composite: reads the draft canvas (DashboardsAPI.canvas_get), edits root filters[], and saves it back (mammoth.api.dashboards.DashboardsAPI.canvas_save) from mammoth_cli.commands.dashboard; the accepted document fields are in command_contract.py.'
+  request_model: DashboardFilterRemoveRequest
+  result_model: DashboardFilterResult
+  mutation_class: benign_mutation
+  edits_target: true
+  readback:
+    command: dashboard.canvas.get
+    ids:
+      dashboard_id: positional.0
+    kind: object
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: null
+  live_exemption_reason: 'Live coverage is tests/live/test_dashboard_filter.py (runs on the test server); the canvas edit is unit-tested in tests/unit/services/test_dashboard_filters.py.'
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard filter remove DASHBOARD_ID --help
+  agent_example: 'mammoth dashboard filter remove 123 --input ''{"field": "sample"}'''
+  unit_tests:
+  - UT-DASHBOARD-FILTER-REMOVE
+  contract_tests:
+  - CT-DASHBOARD-FILTER-REMOVE
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Removes the filter control on one column from a board; fails and names the declared filters when the column has none. --input: {"field": COLUMN}. Returns the filters that remain, sequence and bake_job_id.'
   reviewed_by: primary
 - command_id: dashboard.get
   command_path: dashboard get

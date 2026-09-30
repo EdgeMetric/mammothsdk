@@ -674,7 +674,10 @@ commands:
     time (updated is left out when it equals created), the source kind (file, connector, created in Mammoth,
     export of a view), and its column names with types, from the list route''s stored stats, sources and
     data_schema, cut to fit the agent tool output cap: more is true with next_offset when the page was
-    cut. full true returns the raw id and name list.'
+    cut. full true returns the raw id and name list. name (input field, a case-insensitive
+    substring) reads every page and returns only the matching datasets as short rows (id, name, rows,
+    cols; no column lists) with matched, and more with next_offset when cut; limit and offset then
+    page over the matches. limit must be at most 100. Without a project use dataset find NAME_SUBSTRING.'
   reviewed_by: primary
 - command_id: dataset.rename
   command_path: dataset rename
