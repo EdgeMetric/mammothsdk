@@ -171,7 +171,7 @@ mammoth automation trash AUTOMATION_ID           # reversible; automation.restor
 ```bash
 mammoth schema get schedule.create
 mammoth schedule create --yes --input '{"spec": {
-  "rrule": {"frequency": "daily", "start": "2026-01-01T02:00:00Z"},
+  "rrule": {"frequency": "daily", "start": "2027-01-01T02:00:00Z"},
   "work_items": [{"name": "pull_cloud_data", "execution_params": {
     "schedule_type": "moment", "first_pull_at": "now", "on_refresh_action": "replace"
   }, "args": [DATASET_ID]}]
