@@ -11,9 +11,15 @@ public SDK method named by the command's reviewed manifest ``sdk_symbol``.
 
 from __future__ import annotations
 
+import json
 from typing import Any
 
-from mammoth_cli.errors.envelope import CODE_SDK_SYMBOL_UNRESOLVED, EXIT_USAGE, CliError
+from mammoth_cli.errors.envelope import (
+    CODE_INVALID_ARGUMENT,
+    CODE_SDK_SYMBOL_UNRESOLVED,
+    EXIT_USAGE,
+    CliError,
+)
 from mammoth_cli.manifest.loader import command_by_id
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.session import open_service, resolved_project
@@ -36,6 +42,16 @@ _LIST_OPTIONAL = (
     "user_ids",
     "parent_id",
     "search_text",
+)
+
+# How the activity log keys an entry's resource: ``<type>_<id>``. A bare id names no
+# type, so the backend's exact match on it finds nothing and reads as "no activity".
+_RESOURCE_TYPES = (
+    ("dataview", "a view"),
+    ("datasource", "a dataset"),
+    ("project", "a project"),
+    ("dashboard", "a dashboard"),
+    ("automation", "an automation"),
 )
 
 _EXPORT_OPTIONAL = (
@@ -97,6 +113,32 @@ def _forward_optional(
         kwargs[field] = value
 
 
+def _refuse_bare_resource_id(document: dict[str, Any]) -> None:
+    """Refuse a ``resource_id`` that is a bare id: it matches no log entry.
+
+    Raises:
+        CliError: ``invalid_argument`` naming each typed form, with the retry for a
+            view and for a dataset as recovery commands.
+    """
+    resource = str(document.get("resource_id", "")).strip()
+    if not resource.isdigit():
+        return
+    forms = "; ".join(f"{kind}_{resource} for {label}" for kind, label in _RESOURCE_TYPES)
+    retries = [
+        json.dumps({**document, "resource_id": f"{kind}_{resource}"})
+        for kind, _ in _RESOURCE_TYPES[:2]
+    ]
+    raise CliError(
+        code=CODE_INVALID_ARGUMENT,
+        message=(
+            f"resource_id {resource} is a bare id, which no activity entry has: the log"
+            f" keys each resource by its type — {forms}."
+        ),
+        exit_status=EXIT_USAGE,
+        recovery_commands=[f"mammoth activity list --input '{retry}'" for retry in retries],
+    )
+
+
 def _meta(invocation: Invocation, workspace_id: int, project_id: int | None) -> dict[str, Any]:
     """Build the common envelope metadata for an activity command.
 
@@ -118,6 +160,7 @@ def _meta(invocation: Invocation, workspace_id: int, project_id: int | None) -> 
 def activity_list(invocation: Invocation) -> HandlerResult:
     """List activity logs in the active workspace, with optional filters."""
     document = _bound_document(invocation)
+    _refuse_bare_resource_id(document)
     kwargs: dict[str, Any] = {}
     _forward_optional(document, kwargs, _LIST_OPTIONAL)
     with open_service(invocation) as (service, auth):
