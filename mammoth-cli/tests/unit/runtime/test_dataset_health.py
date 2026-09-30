@@ -64,7 +64,22 @@ def test_datasets_in_a_listing_are_checked_too() -> None:
 
     health = with_dataset_health(data)["dataset_health"]
 
-    assert [h["dataset_id"] for h in health] == [2]
+    assert [(h["dataset_id"], h["health"]) for h in health] == [(1, "healthy"), (2, "unhealthy")]
+
+
+def test_a_listed_dataset_with_an_unclassified_status_is_unknown_not_silent() -> None:
+    data = {"datasets": [{"id": 5, "name": "x.csv", "status": "processing"}, {"id": 6}]}
+
+    health = with_dataset_health(data)["dataset_health"]
+
+    assert [(h["dataset_id"], h["health"]) for h in health] == [(5, "unknown"), (6, "unknown")]
+    assert "processing" in health[0]["detail"]
+
+
+def test_a_dataset_get_result_says_healthy() -> None:
+    health = with_dataset_health({"dataset": {"id": 1, "status": "ready"}})["dataset_health"]
+
+    assert health[0]["health"] == "healthy"
 
 
 def test_healthy_results_are_left_exactly_as_they_were() -> None:
