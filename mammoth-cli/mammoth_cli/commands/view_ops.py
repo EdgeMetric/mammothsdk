@@ -277,6 +277,7 @@ def _dispatch_view(
     before: Callable[[Any, int], Any] | None = None,
     after: Callable[[Any, int, Any, Any], Any] | None = None,
     prepare: Callable[[Any, int, dict[str, Any]], Any] | None = None,
+    reduces_rows: bool = False,
     **kwargs: Any,
 ) -> HandlerResult:
     """Open the service, dispatch a View method call, and build the envelope.
@@ -291,6 +292,8 @@ def _dispatch_view(
     the view's row count is read before and after the call and added to the
     result as ``row_check``, so a caller always sees whether the write changed
     the row count -- the join path builds its own richer ``join_check`` instead.
+    ``reduces_rows`` marks a write meant to remove rows (a filter, a discard of
+    duplicates), so verify can flag one that removed none.
     A result staged as a draft never ran the pipeline, so no ``row_check`` is
     added and there is nothing to wait for.
     """
@@ -357,9 +360,11 @@ def _dispatch_view(
             # settle (bounded) before trusting this one. A staged draft never
             # ran the pipeline, so there is nothing to wait for or read.
             rows_after, pipeline_error = wait_for_view_row_count(
-                service, int(dataset_id), view_id, invocation.project
+                service, int(dataset_id), view_id, invocation.project, write_result=data
             )
             data["row_check"] = {"rows_before": rows_before, "rows_after": rows_after}
+            if reduces_rows:
+                data["row_check"]["expected_row_decrease"] = True
             if pipeline_error is not None:
                 data["pipeline_error"] = pipeline_error
     return data, _meta(invocation, auth.workspace_id)
@@ -1022,7 +1027,9 @@ def view_transform_discard_duplicates(invocation: Invocation) -> HandlerResult:
     document = invocation.load_input() or {}
     kwargs = _bind_transform_inputs(invocation, document)
     prepare = _impact_check(invocation, view_id, measure_duplicates)
-    return _dispatch_view(invocation, view_id, "discard_duplicates", prepare=prepare, **kwargs)
+    return _dispatch_view(
+        invocation, view_id, "discard_duplicates", prepare=prepare, reduces_rows=True, **kwargs
+    )
 
 
 def _impact_check(
@@ -1099,7 +1106,9 @@ def view_transform_filter(invocation: Invocation) -> HandlerResult:
     assert document is not None
     kwargs = _bind_transform_inputs(invocation, document)
     prepare = _impact_check(invocation, view_id, measure_filter)
-    return _dispatch_view(invocation, view_id, "filter_rows", prepare=prepare, **kwargs)
+    return _dispatch_view(
+        invocation, view_id, "filter_rows", prepare=prepare, reduces_rows=True, **kwargs
+    )
 
 
 def view_transform_generate_sql(invocation: Invocation) -> HandlerResult:

@@ -560,7 +560,7 @@ class PipelineAPI:
 
         while True:
             pipeline = self._client._request_json("GET", url)
-            state = pipeline.get("state", "").lower()
+            state = str(pipeline.get("state") or "").lower()
 
             if state in PIPELINE_TERMINAL_STATES:
                 if state in ("runtime_error", "ref_error"):

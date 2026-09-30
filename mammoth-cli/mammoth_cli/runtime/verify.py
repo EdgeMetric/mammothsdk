@@ -86,6 +86,8 @@ def with_verify(data: Any, invocation: Invocation | None = None) -> Any:
     if row_count_attempted:
         verify["rows_before"] = rows_before
         verify["rows_after"] = rows_after
+        if _removed_nothing(check, rows_before, rows_after):
+            verify["changed"] = False
     warnings = _warnings(data)
     if row_count_attempted and rows_after is None:
         warnings.append(_UNREADABLE_ROW_COUNT_WARNING)
@@ -96,6 +98,16 @@ def with_verify(data: Any, invocation: Invocation | None = None) -> Any:
     )
     _apply_downstream_export_check(verify, invocation)
     return {**data, "verify": verify}
+
+
+def _removed_nothing(check: dict[str, Any] | None, before: Any, after: Any) -> bool:
+    """A write meant to remove rows whose row count did not move."""
+    return (
+        check is not None
+        and bool(check.get("expected_row_decrease"))
+        and isinstance(before, int)
+        and before == after
+    )
 
 
 def _job_status(data: dict[str, Any]) -> str | None:
@@ -175,7 +187,15 @@ def _pipeline_error_reason(pipeline_error: dict[str, Any]) -> str:
     came back malformed) -- fail loud: this is never reported as verified,
     just because nothing came back that named an error.
     """
-    if pipeline_error.get("execution_state") == "unknown":
+    state = pipeline_error.get("execution_state")
+    if state == "unfinished":
+        return (
+            f"not finished: the pipeline was still running when checked "
+            f"({pipeline_error.get('wait_error')}); read the view before building on it"
+        )
+    if state == "job_failed":
+        return f"the follow-on pipeline run failed: {pipeline_error.get('wait_error')}"
+    if state == "unknown":
         return (
             "the pipeline state after this change could not be read; read the "
             "view before building on it"
@@ -237,6 +257,11 @@ def _verify_and_reason(
         # flagged a failure.
         if rows_after is None:
             return False, _UNREADABLE_ROW_COUNT_WARNING
+        if check is not None and check.get("expected_row_decrease"):
+            if rows_before is None:
+                return False, "the row count before the change could not be read"
+            if rows_before == rows_after:
+                return False, f"no rows removed ({rows_before} -> {rows_after})"
         if (
             check is not None
             and check.get("expected_row_increase")

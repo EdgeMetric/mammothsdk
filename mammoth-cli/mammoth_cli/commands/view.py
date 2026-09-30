@@ -3315,6 +3315,8 @@ def _dataset_view_info(
 #: large.
 _ROW_CHECK_SETTLE_TIMEOUT = 60.0
 
+UNFINISHED_STATE = "unfinished"
+JOB_FAILED_STATE = "job_failed"
 _PIPELINE_GET_SYMBOL = "mammoth.api.pipeline.PipelineAPI.get_pipeline"
 _TASK_LIST_SYMBOL = "mammoth.api.pipeline.PipelineAPI.list_tasks"
 _ERROR_TRANSFORM_STATUSES = {"ERROR", "REFERROR"}
@@ -3326,34 +3328,60 @@ _PIPELINE_ERROR_EXECUTION_STATES = frozenset({"runtime_error", "ref_error"})
 
 
 def wait_for_pipeline_to_settle(
-    service: Any, dataset_id: int, view_id: int
+    service: Any, dataset_id: int, view_id: int, settle_timeout: float = _ROW_CHECK_SETTLE_TIMEOUT
 ) -> dict[str, Any] | None:
-    """Best-effort, bounded wait for a view's pipeline to reach a terminal state.
+    """Bounded wait for a view's pipeline to reach a terminal state.
 
     A row-count read taken immediately after a write can catch the pipeline
     still recomputing and return a stale or missing count (evidence: a
     `view transform filter`/`view transform json-extract` whose result held
     0 rows still read back an unreadable count right after the write).
     Bounded so a slow recompute cannot turn a fast command into a slow one.
-    Whichever way this ends -- settled, errored, or timed out -- the caller
-    still reads the row count afterward; a failed wait is no reason to skip
-    a read that might now succeed anyway, and :mod:`mammoth_cli.runtime.
-    verify` treats an unreadable count as unverified either way.
+    Whichever way this ends the caller still reads the row count afterward.
 
-    Returns the pipeline's execution error (see :func:`_pipeline_execution_error`),
-    if a fresh read finds one, so the caller can flag it even when the
-    write's own envelope said ``status: done`` / ``pipeline_state: ready``.
+    Returns the pipeline's problem, or ``None`` when it settled cleanly: its
+    execution error (see :func:`_pipeline_execution_error`) if a fresh read
+    finds one, so the caller can flag it even when the write's own envelope
+    said ``status: done`` / ``pipeline_state: ready``; else, when the wait
+    itself failed (a timeout, a failed read) and the pipeline is not known to
+    have settled, ``execution_state: "unfinished"`` with the wait's error --
+    never a silent success on a count read mid-run.
     """
+    wait_error: str | None = None
     try:
         service.call(
             _WAIT_FOR_PIPELINE_SYMBOL,
             dataview_id=view_id,
             dataset_id=dataset_id,
-            timeout=_ROW_CHECK_SETTLE_TIMEOUT,
+            timeout=settle_timeout,
         )
-    except Exception:  # noqa: BLE001, S110 -- best effort; the write already ran
-        pass
-    return _pipeline_execution_error(service, dataset_id, view_id)
+    except CliError as exc:
+        wait_error = exc.message
+    error = _pipeline_execution_error(service, dataset_id, view_id)
+    if wait_error is None:
+        return error
+    if error is None:
+        return {"execution_state": UNFINISHED_STATE, "wait_error": wait_error}
+    return {**error, "wait_error": wait_error}
+
+
+def wait_for_followon_job(service: Any, write_result: Any) -> dict[str, Any] | None:
+    """Wait for the job a write result names (``future_id``/``job_id``), if any.
+
+    The backend runs the pipeline as a follow-on job; a readback taken before
+    it finishes races it. Returns ``None`` when there is nothing to wait for or
+    the job succeeded, else ``execution_state: "job_failed"`` with the job's own
+    error text -- reported, never swallowed.
+    """
+    if not isinstance(write_result, dict) or not any(
+        isinstance(write_result.get(key), int) for key in ("future_id", "job_id")
+    ):
+        return None
+    try:
+        service.wait_if_job(write_result)
+    except CliError as exc:
+        return {"execution_state": JOB_FAILED_STATE, "wait_error": exc.message}
+    return None
 
 
 def _pipeline_execution_error(service: Any, dataset_id: int, view_id: int) -> dict[str, Any] | None:
@@ -3416,7 +3444,12 @@ def _pipeline_execution_error(service: Any, dataset_id: int, view_id: int) -> di
 
 
 def wait_for_view_row_count(
-    service: Any, dataset_id: int, view_id: int, project_id: int | None
+    service: Any,
+    dataset_id: int,
+    view_id: int,
+    project_id: int | None,
+    write_result: Any = None,
+    settle_timeout: float = _ROW_CHECK_SETTLE_TIMEOUT,
 ) -> tuple[Any, dict[str, Any] | None]:
     """A view's row count once its pipeline has settled, best effort.
 
@@ -3426,7 +3459,9 @@ def wait_for_view_row_count(
     as a known count. ``pipeline_error`` is the settled pipeline's own
     execution error (see :func:`_pipeline_execution_error`), if any.
     """
-    pipeline_error = wait_for_pipeline_to_settle(service, dataset_id, view_id)
+    job_error = wait_for_followon_job(service, write_result)
+    pipeline_error = wait_for_pipeline_to_settle(service, dataset_id, view_id, settle_timeout)
+    pipeline_error = job_error or pipeline_error
     try:
         info = service.call(
             _DATAVIEW_GET_SYMBOL, dataset_id=dataset_id, dataview_id=view_id, project_id=project_id
