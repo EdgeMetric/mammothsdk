@@ -245,6 +245,52 @@ def test_a_bucketed_tile_whose_rows_lost_their_axis_is_reported_as_drawing_nothi
     assert region["series"]["value"]["rows"] == [{"key": "West", "n": 3203, "value": 725457.8}]
 
 
+JUNE = {"origin": "period", "field": "InvoiceDate", "month": "2011-06", "label": "June 2011"}
+PERIOD_DOC = {
+    "canvas": {"added": [{"id": "country", "title": "Revenue by Country", "dim": "Country"}]},
+    "meta": {
+        "figures": {
+            "p1:kpi:0": {"descriptors": {"value": "d-rev"}},
+            "p1:add:country": {"descriptors": {"value": "d-country"}},
+            "p1:add:trend": {"descriptors": {"value": "d-trend"}},
+        },
+        "receipts": {
+            "p1:kpi:0": {"series": {"value": {"filters": [JUNE]}}},
+            "p1:add:country": {
+                "series": {
+                    "value": {
+                        "filters": [
+                            {
+                                "origin": "chart",
+                                "term": {"field": "Country", "op": "neq", "value": "UK"},
+                            },
+                            JUNE,
+                        ]
+                    }
+                }
+            },
+            "p1:add:trend": {"series": {"value": {"filters": []}}},
+        },
+    },
+}
+
+
+def test_a_card_or_tile_the_board_period_scopes_says_which_period_it_counts() -> None:
+    """UQA-RT9-03: board 171 scoped its country tile to June 2011 (the board period), and
+    the agent, reading bare numbers, told the user the tile summed January to June."""
+    results = {
+        "d-rev": {"status": "success", "value": 10.0},
+        "d-country": {"status": "success", "data": [{"key": "France", "value": 3.0}]},
+        "d-trend": {"status": "success", "data": [{"key": "2011-01", "value": 1.0}]},
+    }
+
+    kpi, country, trend = attach_values(figure_bindings(PERIOD_DOC), results)
+
+    assert kpi["period"] == "June 2011"
+    assert country["period"] == "June 2011"
+    assert "period" not in trend
+
+
 def test_descriptor_data_results_are_found_at_top_level_or_under_response() -> None:
     assert results_of({"results": {"a": 1}}) == {"a": 1}
     assert results_of({"response": {"results": {"a": 1}}}) == {"a": 1}

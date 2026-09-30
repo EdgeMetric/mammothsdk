@@ -53,6 +53,7 @@ def figure_bindings(canvas_doc: Mapping[str, Any]) -> list[dict[str, Any]]:
         return []
     labels = _labels(canvas_doc)
     axes = _tile_axes(canvas_doc)
+    periods = _periods(meta)
     bindings: list[dict[str, Any]] = []
     for figure, entry in figures.items():
         parts = str(figure).split(":")
@@ -67,9 +68,30 @@ def figure_bindings(canvas_doc: Mapping[str, Any]) -> list[dict[str, Any]]:
                 "label": labels.get(str(figure)),
                 "descriptors": {str(name): str(did) for name, did in descriptors.items()},
                 "axis": axes.get(str(figure)),
+                "period": periods.get(str(figure)),
             }
         )
     return bindings
+
+
+def _periods(meta: Any) -> dict[str, str]:
+    """The board period each figure counts (``"June 2011"``), from its bake receipt: a
+    board period scopes every card and tile not bucketed by its date (UQA-RT9-03)."""
+    receipts = meta.get("receipts") if isinstance(meta, Mapping) else None
+    if not isinstance(receipts, Mapping):
+        return {}
+    periods = {str(figure): _period_of(receipt) for figure, receipt in receipts.items()}
+    return {figure: period for figure, period in periods.items() if period}
+
+
+def _period_of(receipt: Any) -> str | None:
+    series = receipt.get("series") if isinstance(receipt, Mapping) else None
+    entries = series.values() if isinstance(series, Mapping) else ()
+    terms = [t for e in entries if isinstance(e, Mapping) for t in e.get("filters") or ()]
+    for term in terms:
+        if isinstance(term, Mapping) and term.get("origin") == "period":
+            return str(term.get("label") or term.get("month"))
+    return None
 
 
 def _pages(canvas_doc: Mapping[str, Any]) -> list[tuple[str, Mapping[str, Any]]]:
@@ -181,7 +203,7 @@ def attach_values(
             name: _drawable(_entry_values(results.get(did)), binding["axis"])
             for name, did in binding["descriptors"].items()
         }
-        item = {key: binding[key] for key in ("figure", "kind", "label") if binding[key]}
+        item = {key: binding[key] for key in ("figure", "kind", "label", "period") if binding[key]}
         if binding["kind"] == "kpi" and set(series) == {"value"}:
             item.update(series["value"])
         else:
