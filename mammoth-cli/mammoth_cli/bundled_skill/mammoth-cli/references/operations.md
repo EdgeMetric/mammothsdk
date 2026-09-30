@@ -31,7 +31,12 @@ need no project and no stored credentials. `dataset list`, `folder list`, and
 `view list` call the live API, and `--project` scopes them to one
 project. `dataset find NAME` and `folder find NAME` search every project
 the credential can see (or one, with `--project`); they still need
-credentials because they call the live API.
+credentials because they call the live API. To find a dataset by name, run
+`dataset find NAME` (no project needed), or
+`dataset list --input '{"name": "NAME"}'` inside one project: a
+case-insensitive substring match over every page, returned as short rows
+(id, name, rows, cols) with `matched`. Do not page `dataset list` by hand;
+`limit` is at most 100.
 
 ```bash
 mammoth capability find "transform"

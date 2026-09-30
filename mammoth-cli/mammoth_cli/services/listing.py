@@ -117,6 +117,39 @@ def dataset_summary(record: dict[str, Any]) -> dict[str, Any]:
     return {k: v for k, v in summary.items() if v is not None}
 
 
+def name_matches(records: list[dict[str, Any]], needle: str) -> list[dict[str, Any]]:
+    """Records whose name contains ``needle``, case-insensitively, in list order."""
+    lowered = needle.lower()
+    return [r for r in records if isinstance(r.get("name"), str) and lowered in r["name"].lower()]
+
+
+def _name_hit(record: dict[str, Any]) -> dict[str, Any]:
+    """One name-search row: identity and size only (no column list, so many rows fit)."""
+    stats = record.get("stats") if isinstance(record.get("stats"), dict) else {}
+    hit: dict[str, Any] = {
+        "id": record.get("id"),
+        "name": record.get("name"),
+        **_size(stats.get("row_count"), stats.get("column_count")),
+    }
+    if record.get("status") not in (None, "ready"):
+        hit["status"] = record["status"]
+    return {k: v for k, v in hit.items() if v is not None}
+
+
+def search_page(
+    records: list[dict[str, Any]], needle: str, offset: int, limit: int | None
+) -> dict[str, Any]:
+    """One page of a name search over ``records`` (paged over the matches, not the project)."""
+    matches = name_matches(records, needle)
+    end = None if limit is None else offset + limit
+    kept, _omitted = fit_budget([_name_hit(r) for r in matches[offset:end]])
+    result: dict[str, Any] = {"datasets": kept, "shown": len(kept), "matched": len(matches)}
+    if offset + len(kept) < len(matches):
+        result["more"] = True
+        result["next_offset"] = offset + len(kept)
+    return result
+
+
 def view_summary(
     view: dict[str, Any], dataset: dict[str, Any] | None, dataset_id: Any
 ) -> dict[str, Any]:

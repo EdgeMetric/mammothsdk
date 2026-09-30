@@ -223,6 +223,7 @@ def missing_project_error() -> CliError:
         recovery_commands=[
             "mammoth project list",
             "mammoth context project use PROJECT_ID",
+            "mammoth dataset find SUBSTRING",
         ],
     )
 

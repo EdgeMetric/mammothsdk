@@ -655,8 +655,12 @@ _S7_ADDITIONAL_INPUT_FIELDS: dict[str, tuple[FieldSpec, ...]] = {
     "view.data.query": (
         FieldSpec("text_date_format", required=False, annotation=str | None, default=None),
     ),
-    # ``full`` returns the raw ``{id, name}`` list instead of the summaries.
-    "dataset.list": (FieldSpec("full", required=False, annotation=bool, default=False),),
+    # ``full`` returns the raw ``{id, name}`` list instead of the summaries; ``name`` keeps
+    # only datasets whose name contains it (case-insensitive) and drops the column lists.
+    "dataset.list": (
+        FieldSpec("full", required=False, annotation=bool, default=False),
+        FieldSpec("name", required=False, annotation=str | None, default=None),
+    ),
     # ``view list`` records are trimmed to the brief shape; ``full`` keeps
     # them. ``dataset_offset`` resumes the no-DATASET_ID, every-dataset-in-
     # the-project walk (item G) at a later dataset index.
