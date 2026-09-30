@@ -146,43 +146,65 @@ def _require_string_positional(invocation: Invocation, name: str) -> str:
 _MAX_PROJECTS_SEARCHED = 100
 
 
+def _visible_projects(service: Any) -> list[dict[str, Any]]:
+    """The projects the credential can see (at most ``_MAX_PROJECTS_SEARCHED``)."""
+    listing = service.list_projects(limit=_MAX_PROJECTS_SEARCHED)
+    return list(listing.get("projects", [])) if isinstance(listing, dict) else []
+
+
+def _find_in_projects(
+    service: Any, needle: str, projects: list[dict[str, Any]]
+) -> list[dict[str, Any]]:
+    """Datasets whose name contains ``needle`` (case-insensitive), in each of ``projects``."""
+    matches: list[dict[str, Any]] = []
+    for project in projects:
+        project_id = project.get("id")
+        if project_id is None:
+            continue
+        response = service.call("mammoth.api.datasets.DatasetsAPI.list_all", project_id=project_id)
+        datasets = response.get("datasets", []) if isinstance(response, dict) else []
+        for dataset in datasets:
+            name = dataset.get("name") if isinstance(dataset, dict) else None
+            if isinstance(name, str) and needle in name.lower():
+                matches.append(
+                    {
+                        "project_id": project_id,
+                        "project_name": project.get("name"),
+                        "id": dataset.get("id"),
+                        "name": name,
+                    }
+                )
+    return matches
+
+
+def _other_projects(service: Any, project_id: int) -> list[dict[str, Any]]:
+    """Every visible project except ``project_id``."""
+    return [p for p in _visible_projects(service) if p.get("id") != project_id]
+
+
 def dataset_find(invocation: Invocation) -> HandlerResult:
     """Search dataset names for a substring across every visible project.
 
-    Read-only local composite: lists the projects the credential can see (or
-    just the one named by ``--project``), then lists datasets in each and
-    keeps a case-insensitive substring match. Does not require an active
-    project.
+    Read-only local composite: lists the projects the credential can see, then
+    lists datasets in each and keeps a case-insensitive substring match. With
+    ``--project`` that project is searched first, and the rest only when it holds
+    no match: the in-product agent runs every call under the project the user
+    last opened, which is often not the one the named dataset is in. Does not
+    require an active project.
     """
     name_substring = _require_string_positional(invocation, "name substring")
     needle = name_substring.lower()
-    matches: list[dict[str, Any]] = []
     with open_service(invocation) as (service, auth):
         if invocation.project is not None:
             projects: list[dict[str, Any]] = [{"id": invocation.project, "name": None}]
+            matches = _find_in_projects(service, needle, projects)
+            if not matches:
+                others = _other_projects(service, invocation.project)
+                matches = _find_in_projects(service, needle, others)
+                projects += others
         else:
-            listing = service.list_projects(limit=_MAX_PROJECTS_SEARCHED)
-            projects = list(listing.get("projects", [])) if isinstance(listing, dict) else []
-        for project in projects:
-            project_id = project.get("id")
-            if project_id is None:
-                continue
-            project_name = project.get("name")
-            response = service.call(
-                "mammoth.api.datasets.DatasetsAPI.list_all", project_id=project_id
-            )
-            datasets = response.get("datasets", []) if isinstance(response, dict) else []
-            for dataset in datasets:
-                name = dataset.get("name") if isinstance(dataset, dict) else None
-                if isinstance(name, str) and needle in name.lower():
-                    matches.append(
-                        {
-                            "project_id": project_id,
-                            "project_name": project_name,
-                            "id": dataset.get("id"),
-                            "name": name,
-                        }
-                    )
+            projects = _visible_projects(service)
+            matches = _find_in_projects(service, needle, projects)
         meta = {
             "profile": invocation.profile,
             "workspace_id": auth.workspace_id,
@@ -191,9 +213,7 @@ def dataset_find(invocation: Invocation) -> HandlerResult:
     return {
         "matches": matches,
         "projects_searched": len(projects),
-        "projects_truncated": (
-            invocation.project is None and len(projects) >= _MAX_PROJECTS_SEARCHED
-        ),
+        "projects_truncated": len(projects) >= _MAX_PROJECTS_SEARCHED,
     }, meta
 
 
@@ -240,8 +260,18 @@ def _dataset_name_search(
             sort=document.get("sort", "(created_at:desc)"),
             fields=DATASET_LIST_FIELDS,
         )
-    records = data.get("datasets", []) if isinstance(data, dict) else []
-    page = search_page(records, name, int(document.get("offset", 0)), document.get("limit"))
+        records = data.get("datasets", []) if isinstance(data, dict) else []
+        page = search_page(records, name, int(document.get("offset", 0)), document.get("limit"))
+        if page["matched"] == 0:
+            elsewhere = _find_in_projects(
+                service, name.lower(), _other_projects(service, project_id)
+            )
+            if elsewhere:
+                page["in_other_projects"] = elsewhere
+                page["note"] = (
+                    f"No dataset in project {project_id} matches; the ones listed in "
+                    "in_other_projects do. Run the next call with --project <its project_id>."
+                )
     page["name"] = name
     return page, _meta(invocation, auth.workspace_id, project_id)
 
