@@ -56,7 +56,16 @@ from mammoth_cli.runtime.session import open_service, resolved_project
 from mammoth_cli.services.command_contract import bind_command_inputs
 from mammoth_cli.services.conditions import CONDITION_KWARG
 from mammoth_cli.services.input_fields import TASK_COUNT_FIELD
-from mammoth_cli.services.write_impact import duplicate_rows_removed, no_op_error
+from mammoth_cli.services.write_impact import (
+    ImpactRead,
+    Measure,
+    measure_bulk_replace,
+    measure_duplicates,
+    measure_fill_missing,
+    measure_filter,
+    measure_replace,
+    no_op_error,
+)
 
 HandlerResult = tuple[Any, dict[str, Any]]
 
@@ -881,7 +890,8 @@ def view_transform_bulk_replace(invocation: Invocation) -> HandlerResult:
     _require_field(document, "mapping")
     assert document is not None
     kwargs = _bind_transform_inputs(invocation, document)
-    return _dispatch_view(invocation, view_id, "bulk_replace", **kwargs)
+    prepare = _impact_check(invocation, view_id, measure_bulk_replace)
+    return _dispatch_view(invocation, view_id, "bulk_replace", prepare=prepare, **kwargs)
 
 
 def view_transform_combine_columns(invocation: Invocation) -> HandlerResult:
@@ -1011,81 +1021,51 @@ def view_transform_discard_duplicates(invocation: Invocation) -> HandlerResult:
     view_id = _view_id(invocation)
     document = invocation.load_input() or {}
     kwargs = _bind_transform_inputs(invocation, document)
-    prepare = _duplicates_dry_run_check(invocation, view_id) if invocation.dry_run else None
+    prepare = _impact_check(invocation, view_id, measure_duplicates)
     return _dispatch_view(invocation, view_id, "discard_duplicates", prepare=prepare, **kwargs)
 
 
-def _duplicates_dry_run_check(
-    invocation: Invocation, view_id: int
-) -> Callable[[Any, int, dict[str, Any]], None]:
-    """A ``prepare`` hook: count the duplicate rows this step would remove, by a read."""
+def _impact_check(
+    invocation: Invocation, view_id: int, measure: Measure
+) -> Callable[[Any, int, dict[str, Any]], Any]:
+    """A ``prepare`` hook: measure what the step would change, by a read.
 
-    def check(service: Any, dataset_id: int, kwargs: dict[str, Any]) -> None:
+    A count of zero is a no-op: ``--dry-run`` fails with ``no_op`` and a real run
+    adds no task (``status: no_change``, like a same-type convert). Otherwise a
+    dry run reports the count as ``predicted_impact``. A count that cannot run
+    is reported as unchecked in a dry run, never as zero, and never blocks a write.
+    """
+
+    def check(service: Any, dataset_id: int, kwargs: dict[str, Any]) -> Any:
         project_id = resolved_project(invocation)
-        info = apply_column_renames(
-            service.call(
-                _DATAVIEW_GET_SYMBOL,
-                dataset_id=dataset_id,
-                dataview_id=view_id,
-                project_id=project_id,
-            )
+        info = service.call(
+            _DATAVIEW_GET_SYMBOL, dataset_id=dataset_id, dataview_id=view_id, project_id=project_id
         )
-        ignored = list(kwargs.get("ignore_columns") or [])
-        columns = _compared_columns(info, ignored)
-        if not columns:
-            _set_unchecked(invocation, "the view has no columns to compare")
-            return
+        read = ImpactRead(
+            service,
+            dataset_id,
+            view_id,
+            project_id,
+            apply_column_renames(info),
+            invocation.load_input() or {},
+        )
         try:
-            removed, exact = duplicate_rows_removed(
-                service,
-                dataset_id=dataset_id,
-                view_id=view_id,
-                project_id=project_id,
-                columns=columns,
-            )
+            measured = measure(read, kwargs)
         except CliError as exc:
-            # The count is advice; say it could not run rather than block the step.
-            _set_unchecked(invocation, exc.message)
-            return
-        row_count = int(info.get("row_count") or 0)
-        if removed == 0:
-            raise no_op_error(_no_duplicates_message(view_id, row_count, ignored), view_id=view_id)
-        object.__setattr__(
-            invocation,
-            "predicted_impact",
-            {
-                "rows_removed": removed,
-                "row_count": row_count,
-                "rows_after": row_count - removed,
-                "exact": exact,
-            },
-        )
+            if invocation.dry_run:
+                object.__setattr__(
+                    invocation, "predicted_impact", {"checked": False, "reason": exc.message}
+                )
+            return None
+        if measured.changes == 0:
+            if invocation.dry_run:
+                raise no_op_error(measured.no_op_message, view_id=view_id)
+            return {"status": "no_change", "note": f"{measured.no_op_message} No task was added."}
+        if invocation.dry_run:
+            object.__setattr__(invocation, "predicted_impact", measured.report)
+        return None
 
     return check
-
-
-def _set_unchecked(invocation: Invocation, reason: str) -> None:
-    """Record that the dry run could not count what the step would change."""
-    object.__setattr__(invocation, "predicted_impact", {"checked": False, "reason": reason})
-
-
-def _compared_columns(info: dict[str, Any], ignored: list[str]) -> list[str]:
-    """Internal names of the view's columns a duplicate check compares."""
-    metadata = [c for c in info.get("metadata") or [] if isinstance(c, dict)]
-    return [
-        str(c["internal_name"])
-        for c in metadata
-        if c.get("internal_name") and c.get("display_name") not in ignored
-    ]
-
-
-def _no_duplicates_message(view_id: int, row_count: int, ignored: list[str]) -> str:
-    """The ``no_op`` text: nothing to remove, and how much was checked."""
-    scope = f", ignoring {', '.join(ignored)}" if ignored else ""
-    return (
-        f"View {view_id} has no exact duplicate rows ({row_count} of {row_count} checked{scope}); "
-        "nothing to change."
-    )
 
 
 def view_transform_extract_date(invocation: Invocation) -> HandlerResult:
@@ -1107,7 +1087,8 @@ def view_transform_fill_missing(invocation: Invocation) -> HandlerResult:
     _require_field(document, "direction")
     assert document is not None
     kwargs = _bind_transform_inputs(invocation, document)
-    return _dispatch_view(invocation, view_id, "fill_missing", **kwargs)
+    prepare = _impact_check(invocation, view_id, measure_fill_missing)
+    return _dispatch_view(invocation, view_id, "fill_missing", prepare=prepare, **kwargs)
 
 
 def view_transform_filter(invocation: Invocation) -> HandlerResult:
@@ -1117,7 +1098,8 @@ def view_transform_filter(invocation: Invocation) -> HandlerResult:
     _require_field(document, CONDITION_KWARG)
     assert document is not None
     kwargs = _bind_transform_inputs(invocation, document)
-    return _dispatch_view(invocation, view_id, "filter_rows", **kwargs)
+    prepare = _impact_check(invocation, view_id, measure_filter)
+    return _dispatch_view(invocation, view_id, "filter_rows", prepare=prepare, **kwargs)
 
 
 def view_transform_generate_sql(invocation: Invocation) -> HandlerResult:
@@ -1266,7 +1248,8 @@ def view_transform_replace(invocation: Invocation) -> HandlerResult:
     _require_field(document, "replace")
     assert document is not None
     kwargs = _bind_transform_inputs(invocation, document)
-    return _dispatch_view(invocation, view_id, "replace_values", **kwargs)
+    prepare = _impact_check(invocation, view_id, measure_replace)
+    return _dispatch_view(invocation, view_id, "replace_values", prepare=prepare, **kwargs)
 
 
 def view_transform_set_values(invocation: Invocation) -> HandlerResult:

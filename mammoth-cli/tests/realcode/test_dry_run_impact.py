@@ -127,3 +127,120 @@ def test_discard_duplicates_dry_run_says_so_when_the_count_could_not_run(
     assert result.exit_code == 0, result.output
     impact = json.loads(result.output)["data"]["predicted_impact"]
     assert impact["checked"] is False and impact["reason"]
+
+
+def _run(
+    monkeypatch: pytest.MonkeyPatch,
+    real_service: ServiceFactory,
+    command: str,
+    doc: dict[str, Any],
+    matching: int,
+) -> tuple[Any, Any]:
+    """Dry-run ``view transform <command>``; every count read answers ``matching``."""
+    service, api = real_service(project_id=180)
+    monkeypatch.setattr(factory, "build_service", lambda *a, **k: service)
+    api.on("GET", r"/datasets/55/dataviews/3062$", body=_VIEW)
+    api.on("POST", r"/data/query$", body={"data": [{"agg_0": matching}]})
+    result = make_runner().invoke(
+        [
+            "view",
+            "transform",
+            command,
+            "3062",
+            "--project",
+            "180",
+            "--input",
+            json.dumps({"dataset_id": 55, **doc}),
+            "--dry-run",
+            "--output",
+            "json",
+            "--no-input",
+        ]
+    )
+    return result, api
+
+
+_KEEP_ALL = {"condition": {"column": "Gift", "operator": "GTE", "value": 0}}
+
+
+def test_filter_that_keeps_every_row_is_a_no_op(
+    monkeypatch: pytest.MonkeyPatch, real_service: ServiceFactory
+) -> None:
+    result, _ = _run(monkeypatch, real_service, "filter", _KEEP_ALL, matching=50)
+    error = json.loads(result.output)["error"]
+    assert error["code"] == "no_op" and "keeps all of them" in error["message"]
+
+
+def test_filter_reports_the_rows_it_would_remove(
+    monkeypatch: pytest.MonkeyPatch, real_service: ServiceFactory
+) -> None:
+    result, _ = _run(monkeypatch, real_service, "filter", _KEEP_ALL, matching=20)
+    impact = json.loads(result.output)["data"]["predicted_impact"]
+    assert impact["rows_removed"] == 30 and impact["rows_after"] == 20
+
+
+def test_remove_filter_matching_nothing_is_a_no_op(
+    monkeypatch: pytest.MonkeyPatch, real_service: ServiceFactory
+) -> None:
+    doc = {**_KEEP_ALL, "filter_type": "REMOVE"}
+    result, _ = _run(monkeypatch, real_service, "filter", doc, matching=0)
+    assert json.loads(result.output)["error"]["code"] == "no_op"
+    result, _ = _run(monkeypatch, real_service, "filter", doc, matching=7)
+    assert json.loads(result.output)["data"]["predicted_impact"]["rows_removed"] == 7
+
+
+_FILL = {"column": "Gift", "direction": "FIRST_VALUE"}
+
+
+def test_fill_missing_on_a_column_without_blanks_is_a_no_op(
+    monkeypatch: pytest.MonkeyPatch, real_service: ServiceFactory
+) -> None:
+    result, api = _run(monkeypatch, real_service, "fill-missing", _FILL, matching=0)
+    assert json.loads(result.output)["error"]["code"] == "no_op"
+    sent = [r for r in api.requests if r.path.endswith("/data/query")][0].json_body
+    assert "IS_EMPTY" in json.dumps(sent) and "col_b" in json.dumps(sent)
+
+
+def test_fill_missing_reports_the_blank_cells(
+    monkeypatch: pytest.MonkeyPatch, real_service: ServiceFactory
+) -> None:
+    result, _ = _run(monkeypatch, real_service, "fill-missing", _FILL, matching=4)
+    impact = json.loads(result.output)["data"]["predicted_impact"]
+    assert impact["blank_cells"] == 4
+
+
+def test_replace_of_text_no_row_holds_is_a_no_op(
+    monkeypatch: pytest.MonkeyPatch, real_service: ServiceFactory
+) -> None:
+    doc = {"columns": ["Donor"], "find": "Acme", "replace": "ACME"}
+    result, api = _run(monkeypatch, real_service, "replace", doc, matching=0)
+    assert json.loads(result.output)["error"]["code"] == "no_op"
+    sent = json.dumps([r for r in api.requests if r.path.endswith("/data/query")][0].json_body)
+    assert "ICONTAINS" in sent and "col_a" in sent and "Acme" in sent
+    result, _ = _run(monkeypatch, real_service, "replace", doc, matching=6)
+    assert json.loads(result.output)["data"]["predicted_impact"]["rows_matching"] == 6
+
+
+def test_bulk_replace_of_values_no_row_holds_is_a_no_op(
+    monkeypatch: pytest.MonkeyPatch, real_service: ServiceFactory
+) -> None:
+    doc = {"columns": ["Donor"], "mapping": [{"search": ["a", "b"], "replace": "c"}]}
+    result, _ = _run(monkeypatch, real_service, "bulk-replace", doc, matching=0)
+    assert json.loads(result.output)["error"]["code"] == "no_op"
+    result, _ = _run(monkeypatch, real_service, "bulk-replace", doc, matching=3)
+    assert json.loads(result.output)["data"]["predicted_impact"]["rows_matching"] == 3
+
+
+def test_replace_scoped_by_a_condition_counts_only_rows_in_scope(
+    monkeypatch: pytest.MonkeyPatch, real_service: ServiceFactory
+) -> None:
+    doc = {
+        "columns": ["Donor"],
+        "find": "Acme",
+        "replace": "ACME",
+        "condition": {"column": "Gift", "operator": "GT", "value": 10},
+    }
+    result, api = _run(monkeypatch, real_service, "replace", doc, matching=0)
+    assert json.loads(result.output)["error"]["code"] == "no_op"
+    sent = json.dumps([r for r in api.requests if r.path.endswith("/data/query")][0].json_body)
+    assert "ICONTAINS" in sent and "col_b" in sent
