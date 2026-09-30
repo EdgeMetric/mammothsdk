@@ -281,7 +281,7 @@ def _dataset_name_search(
         page = search_page(records, name, int(document.get("offset", 0)), document.get("limit"))
         if page["matched"] == 0:
             elsewhere = _find_in_projects(
-                service, name.lower(), _other_projects(service, project_id)
+                service, name.lower(), _other_projects(_visible_projects(service), project_id)
             )
             if elsewhere:
                 page["in_other_projects"] = elsewhere

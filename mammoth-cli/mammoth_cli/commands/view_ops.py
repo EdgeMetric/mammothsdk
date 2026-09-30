@@ -35,6 +35,7 @@ from mammoth_cli.commands.view import (
     join_after_snapshot,
     join_dry_run_preview,
     join_snapshot,
+    wait_for_followon_job,
     wait_for_pipeline_to_settle,
     wait_for_view_row_count,
     with_join_check,
@@ -1183,6 +1184,9 @@ def view_transform_join(invocation: Invocation) -> HandlerResult:
         return join_snapshot(service, dataset_id, view_id, project_id)
 
     def after(service: Any, dataset_id: int, state: Any, data: Any) -> Any:
+        # The join runs as a follow-on job; a pipeline read taken before it finishes
+        # still shows the old view (no columns added, no rows to check).
+        wait_for_followon_job(service, data)
         return with_join_check(
             data,
             state,
