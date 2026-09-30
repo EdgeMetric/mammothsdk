@@ -10,8 +10,15 @@ requested dataset, dashboard, view, or export artifact as incidental tidy-up.
 mammoth schema find "trash"
 mammoth schema find "restore"
 mammoth schema get dataset.delete
+mammoth dataset delete OWNED_DATASET_ID --project PROJECT_ID --dry-run
 mammoth dataset delete OWNED_DATASET_ID --project PROJECT_ID --yes
 ```
+
+Run the `--dry-run` first for a dataset, view, task or column delete. Its
+`dependents` block lists the views, dashboards and pipelines that read the
+resource (from `project resource-dependencies`); show it at the confirm step.
+`dependents.checked: false` means the lookup failed, not that nothing depends
+on it: run `project resource-dependencies` yourself before you delete.
 
 Keep an immutable typed baseline: before creating anything, record every
 pre-existing id by type (`project list`, `dataset list`, `dashboard list`,

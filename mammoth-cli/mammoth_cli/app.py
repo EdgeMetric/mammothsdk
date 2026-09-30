@@ -885,18 +885,22 @@ def _dry_run(handler: Handler, invocation: Invocation) -> tuple[Any, dict[str, A
     gated SDK call at all (a pure read path); its result is returned as is.
     """
     from mammoth_cli.runtime.dryrun import DryRunStop
-    from mammoth_cli.runtime.dryrun_targets import resolve_targets
+    from mammoth_cli.runtime.dryrun_targets import resolve_dependents, resolve_targets
     from mammoth_cli.runtime.session import open_service, resolved_project
 
     try:
         return handler(invocation)
     except DryRunStop as stop:
         with open_service(invocation) as (service, _auth):
-            targets = resolve_targets(service, invocation.command_id, stop.record["would_call"])
-        return {**stop.record, "targets": targets}, {
-            "profile": invocation.profile,
-            "project_id": resolved_project(invocation),
-        }
+            would_call = stop.record["would_call"]
+            targets = resolve_targets(service, invocation.command_id, would_call)
+            dependents = resolve_dependents(
+                service, invocation.command_id, would_call, resolved_project(invocation)
+            )
+        report = {**stop.record, "targets": targets}
+        if dependents is not None:
+            report["dependents"] = dependents
+        return report, {"profile": invocation.profile, "project_id": resolved_project(invocation)}
 
 
 def _command_help(command_id: str, record: dict[str, Any] | None) -> str | None:

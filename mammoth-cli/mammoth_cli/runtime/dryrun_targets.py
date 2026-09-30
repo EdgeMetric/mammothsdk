@@ -573,3 +573,52 @@ def resolve_targets(
     if "dataset_id" not in parent and would_call.get("dataset_id") is not None:
         parent["dataset_id"] = would_call["dataset_id"]
     return [_read_name(service, kind, item, parent) for item in ids]
+
+
+#: Deletes whose dry run also lists what depends on the resource: command ->
+#: the reported-call arguments holding the resource ids. A step or column
+#: delete changes a view, so the view's dependents are what could break.
+DEPENDENT_IDS: dict[str, tuple[str, ...]] = {
+    "dataset.delete": ("dataset_id",),
+    "dataset.bulk-delete": ("dataset_ids",),
+    "view.delete": ("view_id",),
+    "view.bulk-delete": ("dataview_ids",),
+    "view.task.delete": ("dataview_id", "view_id"),
+    "view.transform.delete-columns": ("dataview_id", "view_id"),
+}
+_DEPENDENCIES_SYMBOL = "mammoth.api.projects.ProjectsAPI.resource_dependencies"
+
+
+def resolve_dependents(
+    service: MammothService,
+    command_id: str,
+    would_call: Mapping[str, Any],
+    project_id: int | None,
+) -> dict[str, Any] | None:
+    """What depends on the resources a delete would change, or None for other commands.
+
+    Never raises: a read that fails is reported as ``checked: false`` with the
+    error, so the confirm step never mistakes "not looked up" for "nothing
+    depends on it".
+    """
+    keys = DEPENDENT_IDS.get(command_id)
+    if keys is None:
+        return None
+    arguments = {
+        **{k: v for k, v in would_call.items() if k in keys},
+        **(would_call.get("arguments") or {}),
+    }
+    ids = [str(item) for key in keys for item in _ids(arguments.get(key))]
+    if not ids or project_id is None:
+        reason = "no project is active" if project_id is None else "the call names no resource id"
+        return {"checked": False, "error": f"could not look up dependents: {reason}"}
+    try:
+        graph = service.call(_DEPENDENCIES_SYMBOL, project_id=project_id, resource_ids=ids)
+    except Exception as exc:  # noqa: BLE001 -- the dry run itself must still report
+        return {"checked": False, "resource_ids": ids, "error": f"{type(exc).__name__}: {exc}"}
+    return {
+        "checked": True,
+        "resource_ids": ids,
+        "dependencies": graph,
+        "note": "Deleting these can break what depends on them; check this before you confirm.",
+    }
