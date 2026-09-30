@@ -215,6 +215,7 @@ def test_pages_add_returns_async_bake_without_waiting(
     data, _ = dashboard_cmd.generated_dashboard(
         _inv("dashboard.pages.add", extra_args=["7"], input_file=doc, yes=True, confirm="7")
     )
+    assert data.pop("deliverable_check")["checked"] is True
     assert data == {"sequence": 4, "bake_job_id": 99}
     assert fake_service.wait_log == []
 

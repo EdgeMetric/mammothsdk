@@ -38,9 +38,7 @@ def test_rel335_approved_cli_emits_exact_wire_and_returns_response(
 ) -> None:
     service, api = real_service()
     api.default(201, {"id": 88, "sequence": 1})
-    payload = {
-        "params": {"dataview_id": 42, "style": "presentation", "title": "Revenue"}
-    }
+    payload = {"params": {"dataview_id": 42, "style": "presentation", "title": "Revenue"}}
     source = tmp_path / "blank.json"
     source.write_text(json.dumps(payload), encoding="utf-8")
     with _bind(monkeypatch, service):
@@ -49,6 +47,7 @@ def test_rel335_approved_cli_emits_exact_wire_and_returns_response(
     assert request.method == "POST"
     assert request.path.removeprefix("/api/v2") == "/dashboards/v3/blank"
     assert request.json_body == payload
+    assert data.pop("deliverable_check")["checked"] is True
     assert data == {"id": 88, "sequence": 1}
 
 
@@ -61,3 +60,19 @@ def test_rel335_create_blank_needs_no_confirmation_flag(
     with _bind(monkeypatch, service):
         dashboard_cmd.generated_dashboard(_invocation(str(source)))
     assert api.requests[0].method == "POST"
+
+
+def test_a_failed_deliverable_check_is_reported_not_omitted(
+    real_service: Any, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    service, api = real_service()
+    api.on("GET", r"/dashboards/88/canvas", status=500, body={"message": "boom"})
+    api.default(201, {"id": 88, "sequence": 1})
+    source = tmp_path / "blank.json"
+    source.write_text(json.dumps({"params": {"dataview_id": 42}}), encoding="utf-8")
+    with _bind(monkeypatch, service):
+        data, _meta = dashboard_cmd.generated_dashboard(_invocation(str(source)))
+    check = data["deliverable_check"]
+    assert check["checked"] is False
+    assert check["warnings"] == []
+    assert check["error"]

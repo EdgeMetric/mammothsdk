@@ -718,7 +718,13 @@ def _dump_model(value: Any) -> Any:
 
 #: Authoring steps whose result carries ``deliverable_check``.
 _REVIEWED_COMMANDS = frozenset(
-    {"dashboard.create-blank", "dashboard.canvas.save", "dashboard.pages.add"}
+    {
+        "dashboard.create-blank",
+        "dashboard.canvas.save",
+        "dashboard.pages.add",
+        "dashboard.v3.generate",
+        "dashboard.chat.edit",
+    }
 )
 
 
@@ -735,53 +741,59 @@ def _with_deliverable_check(
         return data
     dashboard_id = positionals.get("dashboard_id") or data.get("id")
     if not isinstance(dashboard_id, int):
-        return data
-    try:
-        canvas_doc = service.call(CANVAS_GET, dashboard_id=dashboard_id)
-        if hasattr(canvas_doc, "model_dump"):
-            canvas_doc = canvas_doc.model_dump(mode="json")
-        source = (canvas_doc.get("canvas") or {}).get("dataset") or {}
-        view_id = source.get("dataview_id")
-        profile = invocation.profile or profiles.get_selected()
-        dataset_id = (
-            parents.lookup(profile, auth.workspace_id, view_id)
-            if isinstance(view_id, int)
-            else None
-        )
-        current = (
-            view_profiles(service, dataset_id, view_id, resolved_project(invocation))
-            if isinstance(view_id, int) and dataset_id is not None
-            else None
-        )
-        if has_profiles(canvas_doc):
-            stale = columns_not_on_dashboard(canvas_doc, current)
-            warnings = stale + [
-                warning
-                for warning in review(canvas_doc, dataset_id)
-                # On a stale board the money advice is the rebuild, not a new column.
-                if not (stale and warning["issue"] in {"money_not_shown", "unit_price_summed"})
-            ]
-        else:
-            warnings = review(canvas_doc, dataset_id, current)
-    except Exception:  # noqa: BLE001 -- advice must never fail the authoring step
-        return data
-    if warnings:
-        data = {
+        return {
             **data,
             "deliverable_check": {
-                "warnings": warnings,
-                "note": (
-                    "Fix these before you report the dashboard as done, or say in your "
-                    "report why not."
-                    + (
-                        " " + NEW_COLUMN_NOTE
-                        if any("fix" in warning for warning in warnings)
-                        else ""
-                    )
-                ),
+                "checked": False,
+                "warnings": [],
+                "error": "the result names no dashboard id, so no canvas was read",
             },
         }
-    return data
+    try:
+        warnings = _deliverable_warnings(invocation, service, auth, dashboard_id)
+    except Exception as exc:  # noqa: BLE001 -- advice must never fail the authoring step
+        error = f"{type(exc).__name__}: {exc}"
+        return {
+            **data,
+            "deliverable_check": {"checked": False, "warnings": [], "error": error},
+        }
+    check: dict[str, Any] = {"checked": True, "warnings": warnings}
+    if warnings:
+        check["note"] = (
+            "Fix these before you report the dashboard as done, or say in your "
+            "report why not."
+            + (" " + NEW_COLUMN_NOTE if any("fix" in warning for warning in warnings) else "")
+        )
+    return {**data, "deliverable_check": check}
+
+
+def _deliverable_warnings(
+    invocation: Invocation, service: Any, auth: Any, dashboard_id: int
+) -> list[dict[str, Any]]:
+    """Read the canvas (and its view) once and return the review's warnings."""
+    canvas_doc = service.call(CANVAS_GET, dashboard_id=dashboard_id)
+    if hasattr(canvas_doc, "model_dump"):
+        canvas_doc = canvas_doc.model_dump(mode="json")
+    source = (canvas_doc.get("canvas") or {}).get("dataset") or {}
+    view_id = source.get("dataview_id")
+    profile = invocation.profile or profiles.get_selected()
+    dataset_id = (
+        parents.lookup(profile, auth.workspace_id, view_id) if isinstance(view_id, int) else None
+    )
+    current = (
+        view_profiles(service, dataset_id, view_id, resolved_project(invocation))
+        if isinstance(view_id, int) and dataset_id is not None
+        else None
+    )
+    if not has_profiles(canvas_doc):
+        return review(canvas_doc, dataset_id, current)
+    stale = columns_not_on_dashboard(canvas_doc, current)
+    return stale + [
+        warning
+        for warning in review(canvas_doc, dataset_id)
+        # On a stale board the money advice is the rebuild, not a new column.
+        if not (stale and warning["issue"] in {"money_not_shown", "unit_price_summed"})
+    ]
 
 
 _CANVAS_SAVE = "mammoth.api.dashboards.DashboardsAPI.canvas_save"
