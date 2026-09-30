@@ -470,6 +470,7 @@ class PdfExportParams(BaseModel):
     data: dict[str, Any] | None = None
     paper: str | None = None
     compare: dict[str, Any] | None = None
+    carousel: bool | None = None
 
 
 class PdfExportSpec(BaseModel):

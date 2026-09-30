@@ -134,10 +134,24 @@ that canvas: `--input '{"widget_id": "WIDGET_UUID"}'` (optional
 descriptor with a `kind` (`scalar`, `group`, `rate`, `detail`, `options`,
 `range`); `{"kind":"scalar","agg":"count"}` is the smallest that runs.
 
-`dashboard pdf export` and `dashboard video export` cannot be completed from
-the CLI: the backend requires the browser-hydrated `DashboardData` map
-(pre-rendered widget results) in `params.data` and refuses to rebuild it. Report
-this as a known limitation instead of retrying with `{}`.
+There is NO slide/PowerPoint export. Never answer "turn this into a slide deck"
+by editing the user's board (`dashboard chat edit`, `canvas save`) into a
+"brief"; say plainly that a slide file is not possible and offer a PDF instead.
+
+PDF from the CLI:
+
+```bash
+mammoth dashboard pdf export DASHBOARD_ID --input '{"body":{"params":{"carousel":true}}}'
+# -> job_id; wait for it, then: mammoth dashboard pdf-artifact DASHBOARD_ID JOB_ID
+```
+
+`carousel:true` prints the board's narrative as 1080x1350 cards, one claim per
+card (the closest thing to a short deck), and needs no `params.data`. A layout
+print (no `carousel`) needs the browser-hydrated `DashboardData` map in
+`params.data` ONLY for `dashboard`/`qa` style boards; the backend refuses to
+rebuild it (HTTP 400 `params.data`). For that print, offer the carousel or tell
+the user to use Download PDF in the app; never retry with `{"data": {}}`.
+`dashboard video export` needs a motion-story dashboard.
 
 ## Publishing and the url routes
 

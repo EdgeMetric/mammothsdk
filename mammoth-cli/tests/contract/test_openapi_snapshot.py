@@ -282,3 +282,12 @@ def test_mixed_typed_untyped_response_accepts_arbitrary_object() -> None:
 
 if __name__ == "__main__":
     raise SystemExit(pytest.main([__file__, "-v"]))
+
+
+def test_pdf_export_params_accept_carousel_without_data() -> None:
+    """A carousel PDF needs no hydrated data map; the CLI must be able to send it."""
+    from mammoth.models.dashboard_generated import PdfExportSpec
+
+    spec = PdfExportSpec.model_validate({"params": {"carousel": True}})
+    assert spec.params.carousel is True
+    assert spec.params.data is None
