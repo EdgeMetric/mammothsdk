@@ -23,7 +23,8 @@ reconciliation before replay.
 Representative successful local export data is typically an envelope with a
 returned export/artifact identifier or path under `data`; verify that path is
 owned, exists, has the expected schema/row count, and hash it. If the command
-returns `job_id`, read it until terminal success before inspecting the artifact.
+returns `job_id`, run `mammoth job wait JOB_ID` (not a hand-rolled poll of
+`job get`) and read the result once before inspecting the artifact.
 If `schema get view.export.csv` rejects requested fields, preserve the
 structured error and discover another declared export route rather than using
 raw HTTP.
