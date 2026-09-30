@@ -177,9 +177,25 @@ def _find_in_projects(
     return matches
 
 
-def _other_projects(service: Any, project_id: int) -> list[dict[str, Any]]:
+def _other_projects(visible: list[dict[str, Any]], project_id: int) -> list[dict[str, Any]]:
     """Every visible project except ``project_id``."""
-    return [p for p in _visible_projects(service) if p.get("id") != project_id]
+    return [p for p in visible if p.get("id") != project_id]
+
+
+def named_project(service: Any, project_id: int, visible: list[dict[str, Any]]) -> dict[str, Any]:
+    """``{"id", "name"}`` of ``project_id``, so a match can say where it was found.
+
+    A search scoped by ``--project`` knew only the id, and its matches came back
+    with ``project_name: None``: the agent could not tell the user which project
+    held the dataset.
+    """
+    for project in visible:
+        if project.get("id") == project_id:
+            return project
+    record = service.call("mammoth.api.projects.ProjectsAPI.get", project_id=project_id)
+    record = record.model_dump(mode="json") if hasattr(record, "model_dump") else record
+    record = record.get("project", record) if isinstance(record, dict) else {}
+    return {"id": project_id, "name": record.get("name")}
 
 
 def dataset_find(invocation: Invocation) -> HandlerResult:
@@ -195,15 +211,16 @@ def dataset_find(invocation: Invocation) -> HandlerResult:
     name_substring = _require_string_positional(invocation, "name substring")
     needle = name_substring.lower()
     with open_service(invocation) as (service, auth):
+        visible = _visible_projects(service)
         if invocation.project is not None:
-            projects: list[dict[str, Any]] = [{"id": invocation.project, "name": None}]
+            projects: list[dict[str, Any]] = [named_project(service, invocation.project, visible)]
             matches = _find_in_projects(service, needle, projects)
             if not matches:
-                others = _other_projects(service, invocation.project)
+                others = _other_projects(visible, invocation.project)
                 matches = _find_in_projects(service, needle, others)
                 projects += others
         else:
-            projects = _visible_projects(service)
+            projects = visible
             matches = _find_in_projects(service, needle, projects)
         meta = {
             "profile": invocation.profile,

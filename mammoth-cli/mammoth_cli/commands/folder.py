@@ -11,6 +11,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from mammoth_cli.commands.dataset import named_project
 from mammoth_cli.errors.envelope import (
     CODE_INVALID_ARGUMENT,
     CODE_MISSING_ARGUMENT,
@@ -121,11 +122,12 @@ def folder_find(invocation: Invocation) -> HandlerResult:
     needle = name_substring.lower()
     matches: list[dict[str, Any]] = []
     with open_service(invocation) as (service, auth):
+        listing = service.list_projects(limit=_MAX_PROJECTS_SEARCHED)
+        visible = list(listing.get("projects", [])) if isinstance(listing, dict) else []
         if invocation.project is not None:
-            projects: list[dict[str, Any]] = [{"id": invocation.project, "name": None}]
+            projects: list[dict[str, Any]] = [named_project(service, invocation.project, visible)]
         else:
-            listing = service.list_projects(limit=_MAX_PROJECTS_SEARCHED)
-            projects = list(listing.get("projects", [])) if isinstance(listing, dict) else []
+            projects = visible
         for project in projects:
             project_id = project.get("id")
             if project_id is None:
@@ -136,8 +138,7 @@ def folder_find(invocation: Invocation) -> HandlerResult:
             response = service.call(
                 "mammoth.api.folders.FoldersAPI.list", project_id=project_id, limit=100
             )
-            folders = response.get("folders", []) if isinstance(response, dict) else []
-            for folder in folders:
+            for folder in _folders_of(response):
                 name = folder.get("name") if isinstance(folder, dict) else None
                 if isinstance(name, str) and needle in name.lower():
                     matches.append(
@@ -265,9 +266,7 @@ def folder_move(invocation: Invocation) -> HandlerResult:
     if not any(field in kwargs for field in ("resource_ids", "dataset_ids", "view_ids")):
         raise CliError(
             code=CODE_MISSING_FIELD,
-            message=(
-                "This command requires one of 'resource_ids', 'dataset_ids', " "or 'view_ids'."
-            ),
+            message=("This command requires one of 'resource_ids', 'dataset_ids', or 'view_ids'."),
             exit_status=EXIT_USAGE,
             hint=(
                 "Pass it via --input, e.g. "
@@ -275,8 +274,65 @@ def folder_move(invocation: Invocation) -> HandlerResult:
             ),
         )
     with open_service(invocation) as (service, auth):
+        _resolve_folder_fields(service, project_id, kwargs)
         data = service.call(_symbol(invocation), **kwargs)
     return data, _meta(invocation, auth.workspace_id, project_id)
+
+
+_FOLDER_LIST_SYMBOL = "mammoth.api.folders.FoldersAPI.list"
+_FOLDER_PAGE = 100
+
+
+def _folders_of(page: Any) -> list[dict[str, Any]]:
+    """The folder records of a ``FoldersAPI.list`` page (a model or a dict)."""
+    page = page.model_dump(mode="json") if hasattr(page, "model_dump") else page
+    folders = page.get("folders", []) if isinstance(page, dict) else []
+    return [f for f in folders if isinstance(f, dict)]
+
+
+def _project_folders(service: Any, project_id: int) -> list[dict[str, Any]]:
+    """Every folder of the project (``id`` and ``resource_id`` each), page by page."""
+    folders: list[dict[str, Any]] = []
+    while True:
+        page = service.call(
+            _FOLDER_LIST_SYMBOL, project_id=project_id, limit=_FOLDER_PAGE, offset=len(folders)
+        )
+        batch = _folders_of(page)
+        folders += batch
+        if len(batch) < _FOLDER_PAGE:
+            return folders
+
+
+def _resolve_folder_fields(service: Any, project_id: int, kwargs: dict[str, Any]) -> None:
+    """Turn a folder's ``resource_id`` into the ``id`` the backend wants, in place.
+
+    ``target_folder_resource_id`` is named for a resource id but the backend
+    wants the folder's own ``id``. A value that is a folder's ``id`` is sent
+    as it is; one that is only some folder's ``resource_id`` is replaced by
+    that folder's ``id``; one that is both (two different folders) is refused.
+    """
+    for field in ("target_folder_resource_id", "source_folder_resource_id"):
+        value = kwargs.get(field)
+        if value in (None, "", "root"):
+            continue
+        folders = _project_folders(service, project_id)
+        by_id = [f for f in folders if str(f.get("id")) == str(value)]
+        by_resource = [f for f in folders if str(f.get("resource_id")) == str(value)]
+        if by_id and by_resource and by_id != by_resource:
+            raise CliError(
+                code=CODE_INVALID_ARGUMENT,
+                message=(
+                    f"'{field}' {value} is the id of folder '{by_id[0].get('name')}' and the "
+                    f"resource_id of folder '{by_resource[0].get('name')}'."
+                ),
+                exit_status=EXIT_USAGE,
+                hint=(
+                    f"Pass the folder's id ({by_id[0].get('id')} or {by_resource[0].get('id')}) "
+                    "as it appears in 'folder list'."
+                ),
+            )
+        if not by_id and by_resource:
+            kwargs[field] = by_resource[0].get("id")
 
 
 def folder_trash(invocation: Invocation) -> HandlerResult:
