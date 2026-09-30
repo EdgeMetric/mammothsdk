@@ -977,20 +977,38 @@ def _match_counts(
 _JOIN_PREVIEW_KEYS = 10000
 
 
-def key_overlap(left_counts: dict[Any, int], right_keys: set[Any]) -> dict[str, Any]:
-    """Share of left rows whose key appears on the right (blank keys never match)."""
+def _unmatched(counts: dict[Any, int], other: set[Any]) -> list[str]:
+    """Keys of ``counts`` absent from ``other`` (blank keys always), most rows first."""
+    missing = [k for k in counts if k in (None, "") or k not in other]
+    missing.sort(key=lambda key: -counts[key])
+    return [str(k) for k in missing[:_MAX_UNMATCHED_KEYS]]
+
+
+def key_overlap(left_counts: dict[Any, int], right_counts: dict[Any, int]) -> dict[str, Any]:
+    """Match rate of each side against the other (blank keys never match).
+
+    ``unmatched_keys`` are left keys with no right partner, ``right_unmatched_keys``
+    the reverse, each most rows first: both lists show a spelling mismatch
+    (``EIRE`` here, ``Ireland`` there) that one side alone would hide.
+    """
+    right_keys, left_keys = set(right_counts), set(left_counts)
     total = sum(left_counts.values())
     matched = sum(
         n for key, n in left_counts.items() if key not in (None, "") and key in right_keys
+    )
+    right_total = sum(right_counts.values())
+    right_matched = sum(
+        n for key, n in right_counts.items() if key not in (None, "") and key in left_keys
     )
     return {
         "rows_checked": total,
         "matched_rows": matched,
         "unmatched_rows": total - matched,
         "match_rate": round(matched / total, 3) if total else None,
-        "unmatched_keys": [str(k) for k in left_counts if k in (None, "") or k not in right_keys][
-            :_MAX_UNMATCHED_KEYS
-        ],
+        "unmatched_keys": _unmatched(left_counts, right_keys),
+        "right_rows_checked": right_total,
+        "right_match_rate": round(right_matched / right_total, 3) if right_total else None,
+        "right_unmatched_keys": _unmatched(right_counts, left_keys),
     }
 
 
@@ -1039,11 +1057,12 @@ def join_dry_run_preview(
         "checked": True,
         "left_key": pair["left"],
         "right_key": pair["right"],
-        **key_overlap(left_counts, set(right_counts)),
+        **key_overlap(left_counts, right_counts),
         "truncated": left_cut or right_cut,
         "note": (
-            "Key overlap by exact value, before any write; a low match_rate means "
-            "compare type, case and padding of the two key columns first."
+            "Key overlap by exact value, before any write, for each side: a low match_rate "
+            "or keys unmatched on both sides (EIRE / Ireland) mean compare type, case, "
+            "padding and spelling of the two key columns, or ask the user how they relate."
         ),
     }
 
