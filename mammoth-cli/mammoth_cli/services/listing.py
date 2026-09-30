@@ -33,6 +33,8 @@ _SAMPLE_VALUES = 2
 _MAX_CELL_CHARS = 12
 #: Room reserved per view for its sample values, added after the size check.
 SAMPLE_ALLOWANCE = 150
+#: Room reserved per dataset for its ``views`` list, added after the size check.
+VIEWS_ALLOWANCE = 60
 #: Concurrent stored-stats reads for one list.
 _STATS_WORKERS = 8
 _SOURCE_KINDS = {
@@ -62,10 +64,14 @@ def _type_word(column_type: Any) -> str:
     return str(column_type or "?").lower()
 
 
-def compact_columns(columns: list[tuple[str, Any]]) -> str:
-    """``"Order ID:text, Sales:numeric (+15 more)"`` -- names and types, capped."""
-    shown = [f"{name}:{_type_word(kind)}" for name, kind in columns[:_MAX_COLUMNS]]
-    extra = len(columns) - _MAX_COLUMNS
+def compact_columns(columns: list[tuple[str, Any]], limit: int | None = _MAX_COLUMNS) -> str:
+    """``"Order ID:text, Sales:numeric (+15 more)"`` -- names and types, capped.
+
+    ``limit=None`` lists every column.
+    """
+    cap = len(columns) if limit is None else limit
+    shown = [f"{name}:{_type_word(kind)}" for name, kind in columns[:cap]]
+    extra = len(columns) - cap
     return ", ".join(shown) + (f" (+{extra} more)" if extra > 0 else "")
 
 
@@ -117,6 +123,26 @@ def dataset_summary(record: dict[str, Any]) -> dict[str, Any]:
     return {k: v for k, v in summary.items() if v is not None}
 
 
+def attach_views(
+    items: list[dict[str, Any]], read_views: Callable[[int], list[dict[str, Any]]]
+) -> None:
+    """Give each dataset summary its ``views`` as ``[{id, name}]`` (in place).
+
+    One read per item, run concurrently. A dataset whose views cannot be read
+    says why instead of showing none.
+    """
+
+    def one(item: dict[str, Any]) -> Any:
+        try:
+            return [{"id": v.get("id"), "name": v.get("name")} for v in read_views(item["id"])]
+        except Exception as exc:  # noqa: BLE001 -- one unreadable dataset must not sink the list
+            return f"unavailable: {str(exc)[:80]}"
+
+    with ThreadPoolExecutor(max_workers=_STATS_WORKERS) as pool:
+        for item, found in zip(items, pool.map(one, items), strict=True):
+            item["views"] = found
+
+
 def name_matches(records: list[dict[str, Any]], needle: str) -> list[dict[str, Any]]:
     """Records whose name contains ``needle``, case-insensitively, in list order."""
     lowered = needle.lower()
@@ -151,9 +177,15 @@ def search_page(
 
 
 def view_summary(
-    view: dict[str, Any], dataset: dict[str, Any] | None, dataset_id: Any
+    view: dict[str, Any],
+    dataset: dict[str, Any] | None,
+    dataset_id: Any,
+    all_columns: bool = False,
 ) -> dict[str, Any]:
-    """Summary of one view, naming its dataset (a bare ``View 1`` says nothing)."""
+    """Summary of one view, naming its dataset (a bare ``View 1`` says nothing).
+
+    ``all_columns`` lists every column with its type instead of the first few.
+    """
     raw_metadata = view.get("metadata")
     metadata = raw_metadata if isinstance(raw_metadata, list) else []
     columns = [
@@ -169,7 +201,9 @@ def view_summary(
         **_size(view.get("row_count"), view.get("column_count")),
         **_times(view.get("created_at"), view.get("data_updated_at") or view.get("updated_at")),
         "source": source_of(dataset) if dataset else None,
-        "columns": compact_columns(columns) if columns else None,
+        "columns": (
+            compact_columns(columns, None if all_columns else _MAX_COLUMNS) if columns else None
+        ),
     }
     if view.get("pipeline_status") not in (None, "ready"):
         summary["pipeline_status"] = view["pipeline_status"]
@@ -182,21 +216,31 @@ def json_size(value: Any) -> int:
 
 
 def fit_budget(
-    items: list[dict[str, Any]], budget: int = LIST_DATA_BUDGET, overhead: int = 200
+    items: list[dict[str, Any]],
+    budget: int = LIST_DATA_BUDGET,
+    overhead: int = 200,
+    per_item: int = 0,
 ) -> tuple[list[dict[str, Any]], int]:
     """Keep leading items while they fit ``budget``; return them and how many were cut.
 
     The first item is always kept, so a single oversized record still shows.
+    ``per_item`` reserves room for fields added to each kept item afterwards.
     """
     kept: list[dict[str, Any]] = []
     used = overhead
     for item in items:
-        size = json_size(item) + 1
+        size = json_size(item) + 1 + per_item
         if kept and used + size > budget:
             break
         kept.append(item)
         used += size
     return kept, len(items) - len(kept)
+
+
+def _cell_text(stored: Any) -> str:
+    """A stored sample as text: the inner ``value`` of a ``{"value": ...}`` record."""
+    inner = stored.get("value", stored) if isinstance(stored, dict) else stored
+    return str(inner)[:_MAX_CELL_CHARS]
 
 
 def sample_values(payload: Any, metadata: list[Any]) -> dict[str, list[str]]:
@@ -214,7 +258,7 @@ def sample_values(payload: Any, metadata: list[Any]) -> dict[str, list[str]]:
     for name, _internal in columns[:_SAMPLE_COLUMNS]:
         values = facts.get(name, {}).get("sample")
         if values:
-            found[name] = [str(v)[:_MAX_CELL_CHARS] for v in values[:_SAMPLE_VALUES]]
+            found[name] = [_cell_text(v) for v in values[:_SAMPLE_VALUES]]
     return found
 
 
@@ -275,6 +319,7 @@ def compact_view_list(
     views: list[dict[str, Any]],
     datasets: dict[Any, dict[str, Any]],
     read_stats: Callable[[dict[str, Any]], Any],
+    all_columns: bool = False,
 ) -> dict[str, Any]:
     """Summaries of ``views`` (records with renames applied), within the output cap.
 
@@ -287,7 +332,9 @@ def compact_view_list(
     """
     groups: dict[Any, list[tuple[dict[str, Any], dict[str, Any]]]] = {}
     for ds_id, group in _group_by_dataset(views).items():
-        groups[ds_id] = [(v, view_summary(v, datasets.get(ds_id), ds_id)) for v in group]
+        groups[ds_id] = [
+            (v, view_summary(v, datasets.get(ds_id), ds_id, all_columns)) for v in group
+        ]
     chosen, dropped_dataset, omitted = _choose_views(groups)
     with ThreadPoolExecutor(max_workers=_STATS_WORKERS) as pool:
         samples = list(pool.map(lambda pair: _view_samples(pair[0], read_stats), chosen))

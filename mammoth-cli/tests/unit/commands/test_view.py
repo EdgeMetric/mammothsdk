@@ -805,10 +805,41 @@ def test_data_aggregate_group_by_buckets_a_date_by_month(
     data = view_cmd.view_data_aggregate(
         _inv("view.data.aggregate", project=180, extra_args=["7", "9"], input_file=doc)
     )[0]
-    assert _without_meta(fake_service.call_log)[-1][1]["group_by"] == [
-        {"column": "column_3", "truncate": "MONTH"}
-    ]
+    (grouped,) = [c for c in _without_meta(fake_service.call_log) if "group_by" in c[1]]
+    assert grouped[1]["group_by"] == [{"column": "column_3", "truncate": "MONTH"}]
     assert data["data"] == [{"inspection_date": "2024-01-01", "inspections": 1500}]
+
+
+def test_data_aggregate_on_a_date_column_says_what_dates_the_view_covers(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    """ISS-021: a non-empty answer over a filtered/bucketed DATE column states the
+    column's min/max with one extra query, so "last year" cannot pass for the data."""
+    fake_service.responses[_DATAVIEW_GET] = {
+        "metadata": [
+            {"internal_name": "column_3", "display_name": "inspection_date", "type": "DATE"}
+        ]
+    }
+    fake_service.responses[_DATA_AGGREGATE] = {
+        "data": [{"group_0": "2024-01-01", "agg_0": "2019-02-03", "agg_1": "2024-11-30"}]
+    }
+    doc = _doc(
+        tmp_path,
+        {
+            "group_by": [{"column": "inspection_date", "truncate": "MONTH"}],
+            "aggregations": [{"function": "COUNT", "as_name": "inspections"}],
+        },
+    )
+    data = view_cmd.view_data_aggregate(
+        _inv("view.data.aggregate", project=180, extra_args=["7", "9"], input_file=doc)
+    )[0]
+    assert data["coverage"] == {
+        "column": "inspection_date",
+        "min": "2019-02-03",
+        "max": "2024-11-30",
+    }
+    aggregates = [c for c in _without_meta(fake_service.call_log) if c[0] == _DATA_AGGREGATE]
+    assert len(aggregates) == 2
 
 
 def test_data_aggregate_pivot_count_no_group_by(
@@ -2772,3 +2803,23 @@ def test_view_list_trims_records_unless_full(
     data, _ = view_cmd.view_list(_inv("view.list", project=180, extra_args=["9"], input_file=doc))
     assert data["dataviews"] == [record]
     assert "full" not in _without_meta(fake_service.call_log)[-1][1]
+
+
+def test_view_list_all_columns_lists_every_column_with_its_type(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    metadata = [
+        {"internal_name": f"column_{i}", "display_name": f"Col {i}", "type": "NUMERIC"}
+        for i in range(9)
+    ]
+    fake_service.responses[_DATASET_GET] = {"dataset": {"id": 9, "name": "Sales"}}
+    fake_service.responses[_VIEW_LIST] = {
+        "dataviews": [{"id": 501, "name": "View 1", "metadata": metadata}]
+    }
+    default, _ = view_cmd.view_list(_inv("view.list", project=180, extra_args=["9"]))
+    assert "(+5 more)" in default["dataviews"][0]["columns"]
+    doc = _doc(tmp_path, {"all_columns": True})
+    data, _ = view_cmd.view_list(_inv("view.list", project=180, extra_args=["9"], input_file=doc))
+    columns = data["dataviews"][0]["columns"]
+    assert "more)" not in columns
+    assert columns.startswith("Col 0:numeric") and columns.endswith("Col 8:numeric")

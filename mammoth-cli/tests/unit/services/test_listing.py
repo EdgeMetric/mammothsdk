@@ -142,3 +142,36 @@ def test_sample_values_are_stored_values_for_the_first_columns_only() -> None:
 def test_a_column_with_no_stored_sample_is_left_out_not_invented() -> None:
     assert listing.sample_values({"profile": {}}, _METADATA) == {}
     assert listing.sample_values(None, _METADATA) == {}
+
+
+def test_stored_sample_dicts_show_their_inner_value_not_a_repr() -> None:
+    stored = [{"value": "Monday", "count": 3}, {"value": 42}, {"other": 1}]
+    found = listing.sample_values(_stats(stored), _METADATA)
+    assert found["Order ID"] == ["Monday", "42"]
+    assert "{" not in "".join(found["Order ID"])
+
+
+def test_a_view_summary_lists_every_column_when_asked() -> None:
+    truncated = listing.view_summary(_view(1), _dataset(1), 3001)
+    assert "(+17 more)" in truncated["columns"]
+    full = listing.view_summary(_view(1), _dataset(1), 3001, all_columns=True)
+    assert "more)" not in full["columns"]
+    assert full["columns"].count(":text") == 21
+
+
+def test_dataset_summaries_carry_their_views() -> None:
+    items = [listing.dataset_summary(_dataset(1)), listing.dataset_summary(_dataset(2))]
+    by_dataset = {3001: [{"id": 3601, "name": "View 1"}, {"id": 3602, "name": "Cleaned"}]}
+    listing.attach_views(items, lambda dataset_id: by_dataset.get(dataset_id, []))
+    assert items[0]["views"] == [{"id": 3601, "name": "View 1"}, {"id": 3602, "name": "Cleaned"}]
+    assert items[1]["views"] == []
+
+
+def test_a_dataset_whose_views_cannot_be_read_says_so() -> None:
+    items = [listing.dataset_summary(_dataset(1))]
+
+    def unreadable(dataset_id: int) -> list[dict[str, Any]]:
+        raise RuntimeError("boom")
+
+    listing.attach_views(items, unreadable)
+    assert items[0]["views"] == "unavailable: boom"

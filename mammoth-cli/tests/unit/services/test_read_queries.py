@@ -6,6 +6,7 @@ import pytest
 
 from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.services import read_queries
+from mammoth_cli.services.testing import FakeMammothService
 
 _AS_MAP = {"group_0": "Region", "agg_0": "Total Sales"}
 
@@ -130,3 +131,73 @@ def test_condition_columns_walks_and_or_not() -> None:
         ]
     }
     assert read_queries.condition_columns(spec) == ["Order Date", "Region"]
+
+
+# -- date coverage on reads ---------------------------------------------------
+
+_DATE_RANGE = {"data": [{"agg_0": "2014-01-03", "agg_1": "2017-12-30"}]}
+
+
+def _reads(response: dict[str, object], column_types: dict[str, str]) -> read_queries.ReadContext:
+    service = FakeMammothService()
+    service.responses[read_queries.AGGREGATE_SYMBOL] = response
+    return read_queries.ReadContext(service, 1, 2, 3, {"Order Date": "column_1"}, column_types)
+
+
+def test_a_zero_metric_under_a_condition_is_reported_like_no_match() -> None:
+    reads = _reads(_DATE_RANGE, {"Order Date": "DATE"})
+    for zero in (0, 0.0):
+        data = read_queries.with_observed_range(reads, {"data": [{"RESULT": zero}]}, ["Order Date"])
+        assert "empty_result" in data
+        assert data["observed_range"][0]["max"] == "2017-12-30"
+
+
+def test_a_nonzero_or_grouped_result_is_not_treated_as_no_match() -> None:
+    reads = _reads(_DATE_RANGE, {"Order Date": "DATE"})
+    for rows in ([{"RESULT": 5}], [{"group_0": "A", "agg_0": 0}], [{"a": 0}, {"a": 0}]):
+        data = read_queries.with_observed_range(reads, {"data": rows}, ["Order Date"])
+        assert "empty_result" not in data
+    assert reads.service.calls == []
+
+
+def test_a_zero_metric_without_any_condition_column_is_left_alone() -> None:
+    reads = _reads(_DATE_RANGE, {})
+    data = {"data": [{"RESULT": 0}]}
+    assert read_queries.with_observed_range(reads, data, []) == data
+
+
+def test_a_non_empty_aggregate_on_a_date_column_carries_coverage_from_one_query() -> None:
+    reads = _reads(_DATE_RANGE, {"Order Date": "DATE", "Region": "TEXT"})
+    data = read_queries.with_observed_range(
+        reads, {"data": [{"RESULT": 5}]}, ["Region", "Order Date"], coverage=True
+    )
+    assert data["coverage"] == {"column": "Order Date", "min": "2014-01-03", "max": "2017-12-30"}
+    assert "empty_result" not in data
+    assert len(reads.service.calls) == 1
+
+
+def test_coverage_is_only_added_when_asked_for() -> None:
+    reads = _reads(_DATE_RANGE, {"Order Date": "DATE"})
+    data = read_queries.with_observed_range(reads, {"data": [{"RESULT": 5}]}, ["Order Date"])
+    assert "coverage" not in data and reads.service.calls == []
+
+
+def test_a_text_date_column_gets_coverage_from_its_parsed_values() -> None:
+    distinct = {"data": [{"group_0": "3/27/2018"}, {"group_0": "1/13/2014"}]}
+    reads = _reads(distinct, {"Order Date": "TEXT"})
+    reads.column_days("Order Date")  # what a text-date condition or truncate already did
+    calls_before = len(reads.service.calls)
+    data = read_queries.with_observed_range(
+        reads, {"data": [{"RESULT": 5}]}, ["Order Date"], coverage=True
+    )
+    assert data["coverage"]["column"] == "Order Date"
+    assert (data["coverage"]["min"], data["coverage"]["max"]) == ("2014-01-13", "2018-03-27")
+    assert len(reads.service.calls) == calls_before
+
+
+def test_a_plain_text_filter_column_gets_no_coverage_and_costs_no_query() -> None:
+    reads = _reads({"data": []}, {"Region": "TEXT"})
+    data = read_queries.with_observed_range(
+        reads, {"data": [{"RESULT": 5}]}, ["Region"], coverage=True
+    )
+    assert "coverage" not in data and reads.service.calls == []

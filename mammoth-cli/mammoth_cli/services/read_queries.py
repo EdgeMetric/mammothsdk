@@ -443,19 +443,57 @@ def _column_range(ctx: ReadContext, column: str) -> dict[str, Any] | None:
     }
 
 
-def with_observed_range(ctx: ReadContext, data: Any, columns: list[str]) -> Any:
-    """On an empty result, add the observed min/max of the filtered/date columns."""
+def _is_zero_scalar(rows: Any) -> bool:
+    """One row whose every value is a numeric zero (a metric that may have matched nothing)."""
+    if not isinstance(rows, list) or len(rows) != 1 or not isinstance(rows[0], dict):
+        return False
+    values = list(rows[0].values())
+    return bool(values) and all(
+        isinstance(v, int | float) and not isinstance(v, bool) and v == 0 for v in values
+    )
+
+
+def _coverage(ctx: ReadContext, columns: list[str]) -> dict[str, Any] | None:
+    """Min/max of the first DATE or text-date column of ``columns`` (one query at most).
+
+    A TEXT column counts only once a text-date condition or bucket has already
+    read it as dates, so a plain text filter costs nothing.
+    """
+    for column in columns:
+        if ctx.column_types.get(column) == "DATE" or column in ctx.assumptions:
+            found = _column_range(ctx, column)
+            if found and found.get("min") is not None and found.get("max") is not None:
+                return {"column": column, "min": found["min"], "max": found["max"]}
+            return None
+    return None
+
+
+def with_observed_range(
+    ctx: ReadContext, data: Any, columns: list[str], coverage: bool = False
+) -> Any:
+    """On an empty (or scalar-zero) result, add the observed min/max of the filtered columns.
+
+    With ``coverage``, a non-empty result gets ``coverage: {column, min, max}`` for
+    the first date column among ``columns``, so a filter that reached past the
+    data is visible.
+    """
     rows = data.get("data") if isinstance(data, dict) else None
-    if not isinstance(data, dict) or rows != [] or not columns:
+    if not isinstance(data, dict) or not columns:
         return data
+    zero = _is_zero_scalar(rows)
+    if rows != [] and not zero:
+        found = _coverage(ctx, columns) if coverage and rows else None
+        return {**data, "coverage": found} if found else data
     ranges = [r for c in columns[:_MAX_RANGE_COLUMNS] if (r := _column_range(ctx, c))]
     if not ranges:
         return data
-    return {
-        **data,
-        "empty_result": "No rows matched. The data covers, per filtered/date column:",
-        "observed_range": ranges,
-    }
+    message = (
+        "The result is 0, which may mean no rows matched. The data covers, "
+        "per filtered/date column:"
+        if zero
+        else "No rows matched. The data covers, per filtered/date column:"
+    )
+    return {**data, "empty_result": message, "observed_range": ranges}
 
 
 def with_assumptions(ctx: ReadContext, data: Any) -> Any:
