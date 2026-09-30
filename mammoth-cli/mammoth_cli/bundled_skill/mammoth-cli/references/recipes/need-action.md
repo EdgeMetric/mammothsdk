@@ -28,11 +28,13 @@ mammoth dataset file-settings update DATASET_ID --project PROJECT_ID \
   --input '{"delimiter": ",", "has_header": true, "initial_skip_count": 0, "quotechar": "\"", "date_format": "US"}'
 ```
 
-The response is a job (`operation: "understand_csv"`). Poll `dataset get`
-(the record is under `data.dataset`, so read `data.dataset.status`) until
-the status leaves `need_action`. It usually reaches `ready` within seconds;
-on prague an ISO `YYYY-MM-DD` column was flagged ambiguous and took about
-three minutes, so poll for up to five minutes before treating it as stuck.
+The response is a job (`operation: "understand_csv"`). Run
+`mammoth job wait JOB_ID` on its `job_id` instead of polling by hand, then
+read `dataset get` once (the record is under `data.dataset`, so read
+`data.dataset.status`) to confirm the status left `need_action`. It usually
+reaches `ready` within seconds; on prague an ISO `YYYY-MM-DD` column was
+flagged ambiguous and took about three minutes, so allow up to five minutes
+before treating it as stuck.
 Then `view list` returns the generated view and typed transforms can
 proceed. Every environment can ask, release included: on 2026-09-24 release
 flagged an ISO `YYYY-MM-DD` column too and reached `ready` within seconds of

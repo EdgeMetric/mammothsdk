@@ -33,6 +33,7 @@ from mammoth_cli.commands.view import (
     apply_column_renames,
     brief_view_record,
     join_after_snapshot,
+    join_dry_run_preview,
     join_snapshot,
     wait_for_view_row_count,
     with_join_check,
@@ -51,6 +52,7 @@ from mammoth_cli.errors.envelope import (
 from mammoth_cli.manifest.loader import command_by_id
 from mammoth_cli.runtime import parents
 from mammoth_cli.runtime.confirm import POLICY_PROMPT_OR_YES, enforce_confirmation
+from mammoth_cli.runtime.dryrun import DryRunStop
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.session import open_service, resolved_project
 from mammoth_cli.services.command_contract import bind_command_inputs
@@ -1083,8 +1085,11 @@ def view_transform_join(invocation: Invocation) -> HandlerResult:
     assert document is not None
     kwargs = _bind_transform_inputs(invocation, document)
     project_id = invocation.project
+    preview: dict[str, Any] = {}
 
     def before(service: Any, dataset_id: int) -> Any:
+        if invocation.dry_run:
+            preview.update(_join_preview(service, dataset_id, view_id, document, project_id))
         return join_snapshot(service, dataset_id, view_id, project_id)
 
     def after(service: Any, dataset_id: int, state: Any, data: Any) -> Any:
@@ -1095,7 +1100,27 @@ def view_transform_join(invocation: Invocation) -> HandlerResult:
             document,
         )
 
-    return _dispatch_view(invocation, view_id, "join", before=before, after=after, **kwargs)
+    try:
+        return _dispatch_view(invocation, view_id, "join", before=before, after=after, **kwargs)
+    except DryRunStop as stop:
+        if preview:
+            stop.record["join_preview"] = preview
+        raise
+
+
+def _join_preview(
+    service: Any, dataset_id: int, view_id: int, document: dict[str, Any], project_id: int | None
+) -> dict[str, Any]:
+    """The dry run's key overlap; the other view's dataset is ``foreign_dataset_id``."""
+    foreign, foreign_dataset = document.get("foreign_view"), document.get("foreign_dataset_id")
+    if isinstance(foreign, dict):
+        foreign_dataset = foreign_dataset or foreign.get("dataset_id")
+        foreign = foreign.get("view_id", foreign.get("dataview_id", foreign.get("id")))
+    if not isinstance(foreign, int) or not isinstance(foreign_dataset, int):
+        return {"checked": False, "error": "foreign_view/foreign_dataset_id unknown"}
+    return join_dry_run_preview(
+        service, (dataset_id, view_id), (foreign_dataset, foreign), document, project_id
+    )
 
 
 def view_transform_json_extract(invocation: Invocation) -> HandlerResult:

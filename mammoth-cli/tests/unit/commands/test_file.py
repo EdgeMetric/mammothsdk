@@ -282,7 +282,13 @@ def test_upload_reports_ready_dataset(fake_service: FakeMammothService) -> None:
     assert data == {
         "status": "ready",
         "dataset_ids": [303694],
-        "datasets": [{"id": 303694, "status": "ready"}],
+        "datasets": [
+            {
+                "id": 303694,
+                "status": "ready",
+                "preview_error": "dataset 303694 has no view to preview",
+            }
+        ],
         "dataset_id": 303694,
     }
     assert fake_service.call_log[1] == (_DATASET_GET, {"dataset_id": 303694})
@@ -337,11 +343,9 @@ def test_upload_reports_multiple_dataset_ids(fake_service: FakeMammothService) -
     fake_service.responses[_UPLOAD] = [11, 22]
     fake_service.responses[_DATASET_GET] = {"dataset": {"status": "ready"}}
     data, _ = file_cmd.file_upload(_inv("file.upload", extra_args=["a.csv", "b.csv"]))
-    assert data == {
-        "status": "ready",
-        "dataset_ids": [11, 22],
-        "datasets": [{"id": 11, "status": "ready"}, {"id": 22, "status": "ready"}],
-    }
+    assert data["dataset_ids"] == [11, 22]
+    assert [(d["id"], d["status"]) for d in data["datasets"]] == [(11, "ready"), (22, "ready")]
+    assert all("preview_error" in d for d in data["datasets"])
 
 
 def test_upload_status_is_unknown_when_the_read_back_fails(

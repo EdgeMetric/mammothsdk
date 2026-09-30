@@ -38,8 +38,9 @@ Compare the two reads: the row count is unchanged, the rows that were blank
 now read `0`, and every non-blank value is identical to the before-sample.
 If every row now reads `0`, or a non-blank value changed, the condition was
 dropped: stop, do not build joins or summaries on this view, and report it.
-Use `view data get` (paged, 400 rows per page) for this, not `view preview`
-(50 rows), and sample from more than one page on a large view.
+Use `view data get` (paged, 50 rows per page by default; pass `limit` and
+`offset` for more) for this, not `view preview`, and sample from more than
+one page on a large view.
 
 - `filter` keeps matching rows by default (`filter_type: "SHOW"`); to drop
   rows, say so: `{"condition":{"column":"units","operator":"LT","value":0},"filter_type":"REMOVE"}`. For each operation, a successful result should contain a returned
@@ -111,9 +112,12 @@ as defaults, and let the user's request override them:
 - Joins are nearly always `LEFT` on one key column. Use `INNER`, `RIGHT`,
   `OUTER` or a key of two or more columns only when the user asks for it or
   the data needs it, and say why in your report.
-- Check the key before a join or lookup. Most keys go in without a prep
-  step, so a type, case or padding difference shows up as unmatched rows. Read
-  both key columns first (`view data get`) and act on `join_check`.
+- Always read both key columns before a join or lookup (`view data get`, and
+  `view data profile` for blanks and spelling), then run the join with
+  `--dry-run`: its `join_preview` gives `match_rate` and `unmatched_keys`
+  without writing. A low rate means a type, case or padding difference: fix
+  the keys first (`convert-type`, `text`). After the real join, act on
+  `join_check`.
 - Date steps (`increment-date`, `extract-date`, and `text` on date columns)
   fail more often than other steps. Before a date step, confirm that the
   column type is `DATE` (`view get`); if it is `TEXT`, run `convert-type`

@@ -446,6 +446,7 @@ def test_data_get_relabels_and_drops_system_columns(
         "data": [{"column_1": "A", "column_2": "10", "hash": "deadbeef"}]
     }
     data, _ = view_cmd.view_data_get(_inv("view.data.get", project=180, extra_args=["7", "9"]))
+    assert data.pop("column_checks")["rows_checked"] == 1
     assert data == {
         "data": [{"store": "A", "revenue": "10"}],
         "rows_returned": 1,

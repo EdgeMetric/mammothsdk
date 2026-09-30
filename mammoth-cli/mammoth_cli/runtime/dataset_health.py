@@ -27,28 +27,38 @@ _UNHEALTHY: dict[str, str] = {
 _MAX_DEPTH = 3
 
 
+#: Keys under which a result carries dataset records; every record there gets a health entry.
+_DATASET_KEYS = frozenset({"datasets", "dataset"})
+_HEALTHY_STATUS = "ready"
+
+
 def with_dataset_health(data: Any) -> Any:
-    """Return ``data`` with a ``dataset_health`` list when any dataset in it is
-    unhealthy; anything else is returned unchanged."""
+    """Return ``data`` with a ``dataset_health`` list.
+
+    Every dataset under ``datasets``/``dataset`` gets an entry (``health`` is
+    ``healthy``, ``unhealthy`` or ``unknown``), so a clean listing says it was
+    looked at. A record elsewhere gets one only when its status is unhealthy.
+    Anything without dataset records is returned unchanged.
+    """
     if not isinstance(data, dict):
         return data
-    health = [_entry(record) for record in _unhealthy(data, 0)]
+    health = [_entry(record) for record in _dataset_records(data, 0, False)]
     if not health:
         return data
     return {**data, "dataset_health": health}
 
 
-def _unhealthy(value: Any, depth: int) -> Iterator[dict[str, Any]]:
+def _dataset_records(value: Any, depth: int, listed: bool) -> Iterator[dict[str, Any]]:
     if depth > _MAX_DEPTH:
         return
     if isinstance(value, dict):
-        if value.get("status") in _UNHEALTHY and _dataset_id(value) is not None:
+        if _dataset_id(value) is not None and (listed or value.get("status") in _UNHEALTHY):
             yield value
-        for child in value.values():
-            yield from _unhealthy(child, depth + 1)
+        for key, child in value.items():
+            yield from _dataset_records(child, depth + 1, key in _DATASET_KEYS)
     elif isinstance(value, list):
         for child in value:
-            yield from _unhealthy(child, depth + 1)
+            yield from _dataset_records(child, depth + 1, listed)
 
 
 def _dataset_id(record: dict[str, Any]) -> int | None:
@@ -79,6 +89,9 @@ def _status_info_text(record: dict[str, Any]) -> str:
 
 
 def _entry(record: dict[str, Any]) -> dict[str, Any]:
+    status = record.get("status")
+    if status not in _UNHEALTHY:
+        return _clean_entry(record, status)
     dataset_id = _dataset_id(record)
     stored = _stored_interpretation(record)
     reasons = _stored_strings(stored, "reasons")
@@ -93,6 +106,7 @@ def _entry(record: dict[str, Any]) -> dict[str, Any]:
         "dataset_id": dataset_id,
         "name": record.get("name"),
         "status": record["status"],
+        "health": "unhealthy",
         "detail": detail,
     }
     if suggestions:
@@ -110,3 +124,20 @@ def _entry(record: dict[str, Any]) -> dict[str, Any]:
             "shows the rows that did not fit"
         )
     return entry
+
+
+def _clean_entry(record: dict[str, Any], status: Any) -> dict[str, Any]:
+    """A healthy dataset, or one whose status this CLI does not classify."""
+    healthy = status == _HEALTHY_STATUS
+    return {
+        "dataset_id": _dataset_id(record),
+        "name": record.get("name"),
+        "status": status,
+        "health": "healthy" if healthy else "unknown",
+        "detail": (
+            "Loaded and readable."
+            if healthy
+            else f"Status {status!r} is not one this CLI classifies; read the dataset "
+            "before relying on its rows."
+        ),
+    }

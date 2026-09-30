@@ -37,7 +37,7 @@ mammoth automation create 'Nightly refresh' --yes --input '{
   ],
   "conditions": [
     {"condition_type": "at_specific_time", "details": {
-      "frequency": "daily", "interval": 1, "start_at": "2026-01-01T02:00:00Z"
+      "frequency": "daily", "interval": 1, "start_at": "2027-01-01T02:00:00Z"
     }}
   ]
 }'
@@ -71,7 +71,7 @@ mammoth automation create 'Monthly brand spend to client' --yes --input '{
   ],
   "conditions": [
     {"condition_type": "at_specific_time", "details": {
-      "frequency": "monthly", "interval": 1, "start_at": "2026-01-01T02:00:00Z"
+      "frequency": "monthly", "interval": 1, "start_at": "2027-01-01T02:00:00Z"
     }}
   ]
 }'
@@ -102,6 +102,21 @@ automation.create` under `tasks[].details`:
 or via its other condition types (new file in a folder, etc.), not on a
 recurrence.
 
+## Create once: list first, update instead of create
+
+`automation create` is not idempotent: running it twice makes two
+automations that both fire (two client emails a month). Before every create:
+
+```bash
+mammoth automation list        # is there already one with this name or these recipients?
+```
+
+If one exists, change it with `automation update AUTOMATION_ID` (see below)
+instead of creating another. Before a schedule that emails a client, send the
+same email to the user first (or `--dry-run` the create and show the
+recipients, subject and attached views) and get a yes. Give `start_at` a time
+in the future; a past `start_at` may fire straight away or never.
+
 ## Read it back
 
 ```bash
@@ -123,7 +138,8 @@ matching the empty response body (a normal validation error returns a JSON
 envelope; this does not). Do not report "the automation vanished"; if `get`
 or `list` fail this way right after a create, treat the create's own 200/202
 response and `automation_id` as the source of truth, and say so in the
-report. This is not something the CLI can work around — do not retry
+report as "created, unconfirmed" (the create returned 200 but the read-back
+failed): never re-run the create to "fix" it, which makes a duplicate. This is not something the CLI can work around — do not retry
 `automation get` more than once for this.
 
 ## Update: disable / enable, change tasks, run now
@@ -155,7 +171,7 @@ mammoth automation trash AUTOMATION_ID           # reversible; automation.restor
 ```bash
 mammoth schema get schedule.create
 mammoth schedule create --yes --input '{"spec": {
-  "rrule": {"frequency": "daily", "start": "2026-01-01T02:00:00Z"},
+  "rrule": {"frequency": "daily", "start": "2027-01-01T02:00:00Z"},
   "work_items": [{"name": "pull_cloud_data", "execution_params": {
     "schedule_type": "moment", "first_pull_at": "now", "on_refresh_action": "replace"
   }, "args": [DATASET_ID]}]

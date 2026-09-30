@@ -106,13 +106,16 @@ def build_profile(scope: _Scope, document: dict[str, Any], workers: int) -> dict
         name: _detail(name, scope, facts[name], tables, live_rows, top, sources["stored_columns"])
         for name in names
     }
+    variants, variants_checked, variants_skipped = _variant_report(scope, names, tables)
     result: dict[str, Any] = {
         "view_id": scope.view_id,
         "dataset_id": scope.dataset_id,
         "row_count": live_rows,
         "summary": _summary(details, live_rows),
         **_paged_columns(details, int(document.get("limit", _DEFAULT_DETAIL_LIMIT))),
-        "spelling_variants": _variant_report(scope, names, tables),
+        "spelling_variants": variants,
+        "spelling_variants_checked": variants_checked,
+        "spelling_variants_skipped": variants_skipped,
     }
     if target:
         result["target"] = _target_report(
@@ -360,18 +363,25 @@ def _paged_columns(details: dict[str, dict[str, Any]], limit: int) -> dict[str, 
 
 def _variant_report(
     scope: _Scope, names: list[str], tables: dict[str, dict[Any, int] | None]
-) -> list[dict[str, Any]]:
+) -> tuple[list[dict[str, Any]], list[str], list[dict[str, str]]]:
     """Per TEXT column, spellings of one value (Ltd/Limited, case, punctuation) and the fix.
 
     ``likely_groups`` are names that differ only by a legal form or a connector
     (``TECNOLAB`` / ``TECNOLAB S.A.``): proposed, never merged without a yes.
+    Also returns the columns that were checked and ``{column, reason}`` for each
+    that was not, so an empty report never reads as "no variants" for a column
+    whose values were never compared.
     """
     report: list[dict[str, Any]] = []
+    checked: list[str] = []
+    skipped: list[dict[str, str]] = []
     for name in names:
-        table = tables.get(name)
-        if table is None or scope.types.get(name) != "TEXT":
+        reason = _variant_skip_reason(scope, name, tables)
+        if reason:
+            skipped.append({"column": name, "reason": reason})
             continue
-        texts = {k: v for k, v in table.items() if isinstance(k, str)}
+        checked.append(name)
+        texts = {k: v for k, v in (tables[name] or {}).items() if isinstance(k, str)}
         groups, likely = dp.variant_groups(texts), dp.likely_groups(texts)
         if not groups and not likely:
             continue
@@ -379,7 +389,21 @@ def _variant_report(
         if likely:
             entry["likely_groups"] = {"note": _LIKELY_NOTE, **_merge_fix(scope, name, likely)}
         report.append(entry)
-    return report
+    return report, checked, skipped
+
+
+def _variant_skip_reason(
+    scope: _Scope, name: str, tables: dict[str, dict[Any, int] | None]
+) -> str | None:
+    """Why ``name``'s spellings were not compared, or ``None`` when they were."""
+    column_type = scope.types.get(name)
+    if column_type != "TEXT":
+        return f"type is {column_type}, not TEXT"
+    if name not in tables:
+        return "values not listed (fewer than 2 distinct values, or too many to list)"
+    if tables[name] is None:
+        return f"more than {dp.MAX_LISTED_DISTINCT} distinct values, too many to compare"
+    return None
 
 
 _LIKELY_NOTE = (

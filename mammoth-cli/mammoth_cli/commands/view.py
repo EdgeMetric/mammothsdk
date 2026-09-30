@@ -970,6 +970,81 @@ def _match_counts(
     return unmatched, len(rows), False
 
 
+#: Most distinct key values read per side for a dry-run key overlap.
+_JOIN_PREVIEW_KEYS = 10000
+
+
+def key_overlap(left_counts: dict[Any, int], right_keys: set[Any]) -> dict[str, Any]:
+    """Share of left rows whose key appears on the right (blank keys never match)."""
+    total = sum(left_counts.values())
+    matched = sum(
+        n for key, n in left_counts.items() if key not in (None, "") and key in right_keys
+    )
+    return {
+        "rows_checked": total,
+        "matched_rows": matched,
+        "unmatched_rows": total - matched,
+        "match_rate": round(matched / total, 3) if total else None,
+        "unmatched_keys": [str(k) for k in left_counts if k in (None, "") or k not in right_keys][
+            :_MAX_UNMATCHED_KEYS
+        ],
+    }
+
+
+def _key_values(
+    service: Any, dataset_id: int, view_id: int, project_id: int | None, column: str
+) -> tuple[dict[Any, int], bool]:
+    """``({key value: rows}, truncated)`` of one display-named column, via one aggregate."""
+    mapping, _types = _column_profile(service, dataset_id, view_id, project_id)
+    internal = next((i for i, display in mapping.items() if display == column), column)
+    result = service.call(
+        read_queries.AGGREGATE_SYMBOL,
+        dataset_id=dataset_id,
+        dataview_id=view_id,
+        project_id=project_id,
+        aggregations=[{"function": "COUNT", "as_name": "n"}],
+        group_by=[internal],
+        limit=_JOIN_PREVIEW_KEYS + 1,
+    )
+    rows = [r for r in (result or {}).get("data") or [] if isinstance(r, dict)]
+    counts = {r.get("group_0"): int(r.get("agg_0") or 0) for r in rows[:_JOIN_PREVIEW_KEYS]}
+    return counts, len(rows) > _JOIN_PREVIEW_KEYS
+
+
+def join_dry_run_preview(
+    service: Any,
+    left: tuple[int, int],
+    right: tuple[int, int],
+    document: dict[str, Any],
+    project_id: int | None,
+) -> dict[str, Any]:
+    """Key overlap of the join a dry run describes: reads both key columns, writes nothing.
+
+    ``left``/``right`` are ``(dataset_id, view_id)``. Never raises: a failed
+    read comes back as ``{"checked": False, "error": ...}``.
+    """
+    try:
+        on = document.get("on")
+        pair = on[0] if isinstance(on, list) and on and isinstance(on[0], dict) else {}
+        if not pair.get("left") or not pair.get("right"):
+            return {"checked": False, "error": "the join has no left/right key to compare"}
+        left_counts, left_cut = _key_values(service, *left, project_id, str(pair["left"]))
+        right_counts, right_cut = _key_values(service, *right, project_id, str(pair["right"]))
+    except Exception as exc:  # noqa: BLE001 -- the dry run itself must still report
+        return {"checked": False, "error": f"{type(exc).__name__}: {exc}"}
+    return {
+        "checked": True,
+        "left_key": pair["left"],
+        "right_key": pair["right"],
+        **key_overlap(left_counts, set(right_counts)),
+        "truncated": left_cut or right_cut,
+        "note": (
+            "Key overlap by exact value, before any write; a low match_rate means "
+            "compare type, case and padding of the two key columns first."
+        ),
+    }
+
+
 def with_join_check(data: Any, before: Any, after: dict[str, Any], document: dict[str, Any]) -> Any:
     """Add ``join_check`` (row counts, columns added, match rate) to a join result.
 
@@ -1065,24 +1140,60 @@ def _relabel_and_check(
     """
     rows = data.get(_ROWS_KEY) if isinstance(data, dict) else None
     if not isinstance(rows, list) or not rows:
-        return _relabel_columns(service, dataset_id, view_id, project_id, data, mapping)
+        data = _relabel_columns(service, dataset_id, view_id, project_id, data, mapping)
+        return _with_column_warnings(data, types or {}, view_id, dataset_id)
     if mapping is None or types is None:
         mapping, types = _column_profile(service, dataset_id, view_id, project_id)
     data = _relabel_columns(service, dataset_id, view_id, project_id, data, mapping)
     return _with_column_warnings(data, types, view_id, dataset_id)
 
 
+#: Issue types ``column_warnings`` looks for; ``column_checks.checked`` names them.
+COLUMN_CHECK_ISSUES = (
+    "numbers_stored_as_text",
+    "dates_stored_as_text",
+    "variant_spellings",
+    "renamed_label",
+    "blank_values",
+    "duplicate_rows",
+)
+
+
 def _with_column_warnings(
     data: Any, types: dict[str, str], view_id: int, dataset_id: int | None = None
 ) -> Any:
-    """Add ``column_warnings`` for the rows of a data page (never fatal)."""
-    if not isinstance(data, dict) or not isinstance(data.get(_ROWS_KEY), list) or not types:
+    """Add ``column_checks`` (always) and ``column_warnings`` (when found).
+
+    ``column_checks`` says the page was checked, over how many rows and for
+    which issues, so an absent ``column_warnings`` reads as "clean" and never
+    as "not checked". A check that throws is reported in ``column_checks.error``.
+    """
+    if not isinstance(data, dict) or not isinstance(data.get(_ROWS_KEY, []), list):
         return data
-    try:
-        warnings = column_warnings(data[_ROWS_KEY], types, view_id, dataset_id)
-    except Exception:  # noqa: BLE001 -- a presentation aid must not fail the read
-        return data
-    return {**data, "column_warnings": warnings} if warnings else data
+    checks, warnings = _check_columns(data.get(_ROWS_KEY) or [], types, view_id, dataset_id)
+    out = {**data, "column_checks": checks}
+    return {**out, "column_warnings": warnings} if warnings else out
+
+
+def _check_columns(
+    rows: list[Any], types: dict[str, str], view_id: int, dataset_id: int | None
+) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+    """Run ``column_warnings`` and describe what was checked (never raises)."""
+    checks: dict[str, Any] = {
+        "scope": "page",
+        "rows_checked": len(rows),
+        "checked": list(COLUMN_CHECK_ISSUES) if rows and types else [],
+        "found": 0,
+    }
+    warnings: list[dict[str, Any]] = []
+    if rows and types:
+        try:
+            warnings = column_warnings(rows, types, view_id, dataset_id)
+        except Exception as exc:  # noqa: BLE001 -- a presentation aid must not fail the read
+            checks["checked"] = []
+            checks["error"] = f"{type(exc).__name__}: {exc}"
+    checks["found"] = len(warnings)
+    return checks, warnings
 
 
 #: Rows a plain ``view data get`` returns unless ``limit`` says otherwise.
@@ -3531,7 +3642,7 @@ _DATAVIEW_LIST_SYMBOL = "mammoth.api.dataviews.DataviewsAPI.list"
 _UPLOAD_SAMPLE_ROWS = 3
 
 
-def upload_preview(service: Any, dataset_id: int, project_id: int | None) -> dict[str, Any] | None:
+def upload_preview(service: Any, dataset_id: int, project_id: int | None) -> dict[str, Any]:
     """The first view of a new dataset: columns, types, sample rows, warnings.
 
     ``before_dashboard`` names the columns to add before any dashboard is
@@ -3541,14 +3652,16 @@ def upload_preview(service: Any, dataset_id: int, project_id: int | None) -> dic
     An agent that has just uploaded files tends to read the local copies
     instead of the data in Mammoth, and so misses what Mammoth made of them
     (a price read as TEXT, blanks). The upload result carries the answer.
-    Best effort: any failure returns ``None`` and the upload result is
-    unchanged.
+    Best effort, but never silent: a preview that could not be built comes
+    back as ``{"preview_error": reason}`` (no ``view_id``), and one that was
+    built says so with ``column_checks`` and an always-present
+    ``column_warnings`` list.
     """
     try:
         listing = service.call(_DATAVIEW_LIST_SYMBOL, dataset_id=dataset_id, project_id=project_id)
         views = listing.get("dataviews") if isinstance(listing, dict) else None
         if not isinstance(views, list) or not views or not isinstance(views[0], dict):
-            return None
+            return {"preview_error": f"dataset {dataset_id} has no view to preview"}
         # A dataset with more than one live view has one previewed here; the
         # rest are named (id + name) so a caller (``project.check``) can say
         # a view besides the one checked exists, rather than silently acting
@@ -3561,7 +3674,7 @@ def upload_preview(service: Any, dataset_id: int, project_id: int | None) -> dic
         record = apply_column_renames(views[0])
         view_id = record.get("id")
         if not isinstance(view_id, int):
-            return None
+            return {"preview_error": f"dataset {dataset_id}'s first view has no id"}
         mapping: dict[str, str] = {}
         types: dict[str, str] = {}
         for column in record.get(_METADATA_KEY) or []:
@@ -3578,20 +3691,17 @@ def upload_preview(service: Any, dataset_id: int, project_id: int | None) -> dic
         page = _relabel_columns(service, dataset_id, view_id, project_id, page, mapping)
         rows = page.get(_ROWS_KEY) if isinstance(page, dict) else None
         rows = [row for row in rows or [] if isinstance(row, dict)]
-    except Exception:  # noqa: BLE001 -- a preview must never fail the upload
-        return None
+    except Exception as exc:  # noqa: BLE001 -- a preview must never fail the upload
+        return {"preview_error": f"{type(exc).__name__}: {exc}"}
+    checks, warnings = _check_columns(rows, types, view_id, dataset_id)
     preview: dict[str, Any] = {
         "view_id": view_id,
         "row_count": record.get("row_count"),
         "columns": types,
         "sample_rows": rows[:_UPLOAD_SAMPLE_ROWS],
+        "column_checks": {**checks, "scope": "first_page"},
+        "column_warnings": warnings,
     }
-    try:
-        warnings = column_warnings(rows, types, view_id, dataset_id) if rows else []
-    except Exception:  # noqa: BLE001
-        warnings = []
-    if warnings:
-        preview["column_warnings"] = warnings
     try:
         text_numbers = [
             str(w.get("column"))

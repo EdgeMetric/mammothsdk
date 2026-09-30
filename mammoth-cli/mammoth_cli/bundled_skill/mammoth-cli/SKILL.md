@@ -109,7 +109,7 @@ dashboard from t_a and t_b"). Work it out from the data before building:
 2. Find the keys. A column in one view whose values appear in a column of
    the other (`customer_id` and `id`, `order_ref` and `order_no`) is a
    foreign key; the view with many rows per key is the main one.
-3. Make the keys match before the join: same type (`convert-type`), same
+3. Read both key columns, then match the keys: same type (`convert-type`), same
    case and padding (`text`), no blanks (`set-values`, `filter`).
 4. Act on every `column_warnings` entry for a column the deliverable uses:
    run its `fix` (`convert-type` to `NUMERIC`/`DATE`; non-numeric values
@@ -177,8 +177,8 @@ your report. If no column links the files, ask before you combine them.
 - Check an answer with no write against the question (a trend: time
   buckets, a partial period named; no `project check`); a reported number
   comes from `calc`/`view data compare`, never mental math.
-- After a write, run `mammoth project check PROJECT_ID` and fix each
-  `to_report` line, or note it in the report.
+- After a write, run `mammoth project check PROJECT_ID DATASET_ID`; fix the
+  `to_report` lines your request touches, no others.
 - Run the [report checklist](references/report-checklist.md) before stating
   a number or calling a step done. When files disagree,
   [capabilities](references/capabilities.md) wins over a recipe, then the
