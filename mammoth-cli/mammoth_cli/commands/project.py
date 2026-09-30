@@ -24,6 +24,7 @@ from mammoth_cli.errors.envelope import (
     missing_project_error,
 )
 from mammoth_cli.manifest.loader import command_by_id
+from mammoth_cli.runtime import embedded
 from mammoth_cli.runtime.confirm import (
     POLICY_CONFIRM_TARGET,
     POLICY_PROMPT_OR_YES,
@@ -319,9 +320,10 @@ def _make_active_project(invocation: Invocation, project_id: Any) -> bool:
 
     ``project ensure`` exists so an agent picks its working project once;
     saving it here means no later command needs ``--project``. A profile-less
-    run (environment login) has nowhere to save, and reports ``active: false``.
+    run (environment login) and an embedded call (the host's profile is not
+    ours to write) have nowhere to save, and report ``active: false``.
     """
-    if not isinstance(project_id, int) or project_id <= 0:
+    if embedded.active() or not isinstance(project_id, int) or project_id <= 0:
         return False
     profile_name = invocation.profile or profiles.get_selected()
     existing = profiles.get_profile(profile_name)

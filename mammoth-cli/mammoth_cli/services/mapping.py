@@ -30,6 +30,7 @@ from mammoth_cli.errors.envelope import (
     CODE_OUTCOME_UNKNOWN,
     CODE_RESOURCE_NOT_FOUND,
     CODE_RETRYABLE,
+    EMBEDDED_AUTH_HINT,
     EXIT_API,
     EXIT_AUTH,
     EXIT_CONFLICT,
@@ -39,6 +40,7 @@ from mammoth_cli.errors.envelope import (
     CliError,
     interrupted_error,
 )
+from mammoth_cli.runtime import embedded
 
 _RETRYABLE_READ_STATUSES = frozenset({408, 425, 429, 502, 503, 504})
 
@@ -258,14 +260,15 @@ def map_sdk_exception(
         mismatch = _workspace_mismatch_error(exc, workspace_id)
         if mismatch is not None:
             return mismatch
+        in_app = embedded.active()
         return CliError(
             code=CODE_AUTHENTICATION_FAILED,
             message="Mammoth rejected the provided credentials.",
             exit_status=EXIT_AUTH,
-            hint="Check the API key, secret, and workspace id.",
+            hint=(EMBEDDED_AUTH_HINT if in_app else "Check the API key, secret, and workspace id."),
             details=_metadata(exc),
             request_id=exc.request_id,
-            recovery_commands=["mammoth auth login"],
+            recovery_commands=[] if in_app else ["mammoth auth login"],
         )
 
     if isinstance(exc, MammothPipelineTimeoutError):

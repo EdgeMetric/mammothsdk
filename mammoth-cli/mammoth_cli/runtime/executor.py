@@ -16,7 +16,7 @@ from typing import Any
 
 import typer
 
-from mammoth_cli.errors.envelope import EXIT_USAGE, CliError
+from mammoth_cli.errors.envelope import EXIT_USAGE, CliError, not_available_embedded_error
 from mammoth_cli.output.envelope import Meta, Result
 from mammoth_cli.output.normalize import normalize
 from mammoth_cli.output.policy import MACHINE_OUTPUTS, VALID_OUTPUTS
@@ -27,6 +27,27 @@ from mammoth_cli.runtime.runlog import RunLog
 from mammoth_cli.services.mapping import map_sdk_exception, running_handle
 
 Producer = Callable[[], tuple[Any, dict[str, Any]]]
+
+# Commands that act on the host machine (login, config, installs, upgrade); an
+# embedded call has no profile, keyring or shell to act on.
+EMBEDDED_UNAVAILABLE = frozenset(
+    {
+        "auth.login",
+        "auth.logout",
+        "config.set",
+        "upgrade",
+        "skill.install",
+        "skill.uninstall",
+        "skill.update",
+        "skill.agents-md.install",
+        "completion.install",
+    }
+)
+
+
+def _refuse_if_embedded(command_id: str) -> None:
+    if embedded.active() and command_id in EMBEDDED_UNAVAILABLE:
+        raise not_available_embedded_error(command_id.replace(".", " "))
 
 
 def _profile_scope_recovery(error: CliError, profile: str | None) -> CliError:
@@ -191,6 +212,7 @@ def run(
     update = updates.available_update(command_id)
     try:
         _validate_output(output)
+        _refuse_if_embedded(command_id)
         updates.auto_upgrade(command_id, run_log)
         data, meta_extra = producer()
         # Re-read: a command that asked PyPI itself (doctor) refreshed the

@@ -22,15 +22,31 @@ from mammoth_cli import __version__
 from mammoth_cli.context import credentials, profiles
 from mammoth_cli.context.resolver import resolve_auth
 from mammoth_cli.errors.envelope import CliError
-from mammoth_cli.runtime import runlog, updates
+from mammoth_cli.runtime import embedded, runlog, updates
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.session import open_service, resolved_project
 
 HandlerResult = tuple[Any, dict[str, Any]]
 
 
+_NO_PROJECTS_DETAIL = {
+    False: "no projects visible yet; 'mammoth project ensure NAME' creates one",
+    True: "no projects visible yet",
+}
+
+
 def _check(name: str, ok: bool, detail: str) -> dict[str, Any]:
     return {"name": name, "ok": ok, "detail": detail}
+
+
+def _check_not_applicable(name: str) -> dict[str, Any]:
+    """A check that has no meaning in an embedded call; it never fails doctor."""
+    return {
+        "name": name,
+        "ok": True,
+        "status": "not_applicable",
+        "detail": "the host application supplies the login",
+    }
 
 
 def _safe_connection_diagnostics(error: CliError, *, debug: bool) -> dict[str, Any]:
@@ -225,28 +241,32 @@ def doctor(invocation: Invocation) -> HandlerResult:
     # Informational, like cli_version: an older skill still works.
     checks.append(_check("skill", True, skill_detail))
 
-    record = profiles.get_profile(profile_name)
-    checks.append(
-        _check(
-            "profile",
-            record is not None,
-            f"profile '{profile_name}' found" if record else f"no profile '{profile_name}'",
-        )
-    )
+    in_app = embedded.active()
+    record = None if in_app else profiles.get_profile(profile_name)
     keyring_error: str | None = None
     legacy_credential = False
-    try:
-        stored = credentials.load_credential(profile_name)
-        creds_present = stored is not None
-        legacy_credential = stored is not None and stored.kind == "key_secret"
-    except CliError as error:
-        creds_present = False
-        keyring_error = error.code
-    if legacy_credential:
-        creds_detail = "legacy API key + secret stored; log in again with an API token"
+    creds_present = False
+    if in_app:
+        checks.extend(_check_not_applicable(name) for name in ("profile", "credentials"))
     else:
-        creds_detail = "api token present" if creds_present else "none stored"
-    checks.append(_check("credentials", creds_present, keyring_error or creds_detail))
+        checks.append(
+            _check(
+                "profile",
+                record is not None,
+                f"profile '{profile_name}' found" if record else f"no profile '{profile_name}'",
+            )
+        )
+        try:
+            stored = credentials.load_credential(profile_name)
+            creds_present = stored is not None
+            legacy_credential = stored is not None and stored.kind == "key_secret"
+        except CliError as error:
+            keyring_error = error.code
+        if legacy_credential:
+            creds_detail = "legacy API key + secret stored; log in again with an API token"
+        else:
+            creds_detail = "api token present" if creds_present else "none stored"
+        checks.append(_check("credentials", creds_present, keyring_error or creds_detail))
 
     endpoint_detail = "unresolved"
     auth_ok = False
@@ -313,7 +333,7 @@ def doctor(invocation: Invocation) -> HandlerResult:
                     (
                         f"{len(projects)} project(s) visible in workspace"
                         if projects
-                        else "no projects visible yet; 'mammoth project ensure NAME' creates one"
+                        else _NO_PROJECTS_DETAIL[embedded.active()]
                     ),
                 ),
                 "projects": [
@@ -341,7 +361,9 @@ def doctor(invocation: Invocation) -> HandlerResult:
         )
 
     recommendations: list[str] = []
-    if record is None or not creds_present or legacy_credential:
+    if in_app:
+        pass  # the host owns the login and the project; nothing here is the agent's to fix
+    elif record is None or not creds_present or legacy_credential:
         login_profile = f" --profile {shlex.quote(profile_name)}" if profile_name else ""
         login_storage = " --storage file" if keyring_error else ""
         recommendations.append(f"mammoth auth login{login_profile}{login_storage}")

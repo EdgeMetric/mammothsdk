@@ -14,6 +14,7 @@ import typer
 from mammoth_cli.context import profiles
 from mammoth_cli.errors.envelope import (
     CODE_PROFILE_NOT_FOUND,
+    EMBEDDED_NO_PROFILE_HINT,
     EXIT_USAGE,
     CliError,
     no_saved_project_error,
@@ -36,6 +37,13 @@ def _project_source(invocation: Invocation, record: profiles.ProfileRecord | Non
 
 
 def _profile_not_found_error(profile_name: str) -> CliError:
+    if embedded.active():
+        return CliError(
+            code=CODE_PROFILE_NOT_FOUND,
+            message=f"No profile named '{profile_name}' exists.",
+            exit_status=EXIT_USAGE,
+            hint=EMBEDDED_NO_PROFILE_HINT,
+        )
     return CliError(
         code=CODE_PROFILE_NOT_FOUND,
         message=f"No profile named '{profile_name}' exists yet.",
