@@ -88,6 +88,9 @@ def test_task_draft_and_math_routes_have_literal_wires(
     """Exercise routes not covered by the existing pipeline-read batch."""
     service, api = real_service(project_id=PROJECT)
     api.default(200, {})
+    # A settled pipeline: without a terminal state the task writes' settle wait
+    # polls for its full 60 s timeout.
+    api.on("GET", r"/pipeline$", body={"state": "ready"})
 
     def invoke(
         module: Any,

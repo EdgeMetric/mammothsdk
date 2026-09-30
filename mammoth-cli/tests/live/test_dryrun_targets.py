@@ -117,12 +117,16 @@ def _build(world: World, tmp: Path, stamp: int) -> None:
         world.ids[key], world.names[key] = int(record["id"]), name
     _build_view_parts(world, a)
     made = world.ok(
-        "dashboard",
-        "create-blank",
-        *("--input", json.dumps({"params": {"dataview_id": world.ids["view"]}})),
+        *("dashboard", "v3", "generate"),
+        *(
+            "--input",
+            json.dumps(
+                {"body": {"params": {"intent": "Row count", "dataview_id": world.ids["view"]}}}
+            ),
+        ),
         *_YES,
     )
-    world.ids["dashboard"] = int(made["id"])
+    world.ids["dashboard"] = int(made.get("id") or made["dashboard_id"])
     world.names["dashboard"] = made["state"]["object"]["title"]
     members = world.run("workspace", "user", "list")["data"]
     me = next(u for u in (members if isinstance(members, list) else members["users"]) if u["email"])

@@ -4909,10 +4909,10 @@ commands:
   pagination_policy: none
   acceptance_evidence: contract_only_no_disposable_fixture
   readback:
-    command: job.get
+    command: dashboard.get
     ids:
-      job_id: result.job_id
-    kind: delivery
+      dashboard_id: result.dashboard_id
+    kind: object
   live_test: null
   live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
     fixture in tests/live.

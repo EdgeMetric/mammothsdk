@@ -15,6 +15,7 @@ import json
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlparse
 
 import pytest
 
@@ -153,11 +154,14 @@ def test_generated_dashboard_async_result_waits_for_job(
         return real_wait(self, job_id, timeout, poll_interval, fetch=fetch)
 
     monkeypatch.setattr(JobsAPI, "wait_for_job", recording_wait)
-    service, api = real_service()
+    _, api = real_service()
 
     def build_with_cli_timeouts(*_args: Any, **kwargs: Any) -> Any:
-        service._client.job_timeout = kwargs["job_timeout"]
-        return service
+        # A fresh service per call, as in production: the write's service is closed
+        # before the read-back opens its own, and both record into the one fake api.
+        fresh, _ = real_service(api=api)
+        fresh._client.job_timeout = kwargs["job_timeout"]
+        return fresh
 
     monkeypatch.setattr(factory, "build_service", build_with_cli_timeouts)
     api.on("POST", r"/dashboards/v3/generate$", status=202, body={"job_id": 91})
@@ -166,6 +170,12 @@ def test_generated_dashboard_async_result_waits_for_job(
         r"/jobs/91$",
         body={"id": 91, "status": "success", "response": {"dashboard_id": 73}},
     )
+    api.on(
+        "GET",
+        r"/dashboards/73/canvas$",
+        body={"dashboard_id": 73, "canvas": {}, "meta": {"sequence": 1}},
+    )
+    api.on("GET", r"/dashboards/73$", body={"id": 73, "title": "Revenue by quarter"})
     doc = tmp_path / "generate.json"
     doc.write_text(
         json.dumps({"body": {"params": {"dataview_id": 1, "intent": "Revenue by quarter"}}}),
@@ -188,18 +198,29 @@ def test_generated_dashboard_async_result_waits_for_job(
     )
 
     assert result.exit_code == 0, result.output
-    assert [request.method for request in api.requests] == ["POST", "GET"]
+    # The job, the canvas twice (deliverable check, board values), then the
+    # read-back (dashboard.get) of the new board.
+    assert [(r.method, urlparse(r.url).path) for r in api.requests] == [
+        ("POST", "/api/v2/dashboards/v3/generate"),
+        ("GET", "/api/v2/jobs/91"),
+        ("GET", "/api/v2/dashboards/73/canvas"),
+        ("GET", "/api/v2/dashboards/73/canvas"),
+        ("GET", "/api/v2/dashboards/73"),
+    ]
     assert observed_timeouts == [7]
-    assert json.loads(result.output)["data"] == {
-        "dashboard_id": 73,
-        "verify": {
-            "verified": True,
-            "state": "done",
-            "warnings": [],
-            "reason": None,
-            "needs_user": None,
-        },
+    data = json.loads(result.output)["data"]
+    assert data["dashboard_id"] == 73
+    assert data["verify"] == {
+        "verified": True,
+        "state": "done",
+        "warnings": [],
+        "reason": None,
+        "needs_user": None,
     }
+    assert data["deliverable_check"]["checked"] is True
+    assert data["state"]["kind"] == "object"
+    assert data["state"]["read_by"] == "dashboard.get 73"
+    assert data["state"]["object"]["id"] == 73
 
 
 def test_generated_dashboard_delete_requires_confirmation_and_routes(

@@ -790,7 +790,7 @@ def _with_deliverable_check(
         data = data.model_dump(mode="json")
     if not isinstance(data, dict):
         return data
-    dashboard_id = positionals.get("dashboard_id") or data.get("id")
+    dashboard_id = positionals.get("dashboard_id") or data.get("id") or data.get("dashboard_id")
     if not isinstance(dashboard_id, int):
         return {
             **data,
