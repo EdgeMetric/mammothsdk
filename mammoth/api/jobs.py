@@ -29,6 +29,23 @@ _POLL_FIRST_DELAY = 0.2
 _POLL_GROWTH = 1.5
 
 
+def _failure_message(job: dict[str, Any]) -> str:
+    """The failure text of a failed job record.
+
+    It may sit at ``response.error``, at ``response.response.detail`` /
+    ``.error``, or at ``response.reason`` (where failed futures carry it).
+    """
+    resp = job.get("response")
+    if not isinstance(resp, dict):
+        return "Job failed"
+    message = resp.get("error")
+    if not message and isinstance(resp.get("response"), dict):
+        inner = resp["response"]
+        message = inner.get("detail") or inner.get("error")
+    message = message or resp.get("reason")
+    return str(message) if message else "Job failed"
+
+
 def _poll_delay(attempt: int, cap: float) -> float:
     """Gap before poll ``attempt + 1``: short first, growing, never above ``cap``."""
     return min(cap, _POLL_FIRST_DELAY * _POLL_GROWTH**attempt)
@@ -186,13 +203,7 @@ class JobsAPI:
             if status == "success":
                 return job
             elif status in ["failure", "error"]:
-                resp = job.get("response", {})
-                # Error may be at resp.error, resp.response.detail, or resp.response.error
-                error_msg = resp.get("error")
-                if not error_msg and isinstance(resp.get("response"), dict):
-                    inner = resp["response"]
-                    error_msg = inner.get("detail") or inner.get("error")
-                error_msg = error_msg or "Job failed"
+                error_msg = _failure_message(job)
                 raise MammothJobFailedError(
                     job_id,
                     error_msg,
@@ -303,7 +314,7 @@ class JobsAPI:
                 if status == "success":
                     completed_jobs[job_id] = job
                 elif status in ["failure", "error"]:
-                    error_msg = job.get("response", {}).get("error", "Job failed")
+                    error_msg = _failure_message(job)
                     raise MammothJobFailedError(
                         job_id,
                         error_msg,
