@@ -7,11 +7,12 @@ these commands are not blanket permission to replay a mutation.
 
 | exit | error.code (examples) | next step |
 |---|---|---|
-| 4 | not_authenticated, authentication_failed | `mammoth auth login` |
-| 2 | keyring_unavailable, keyring_unresponsive | operator runs `mammoth auth login --storage file` (or unlocks the OS keychain) |
+| 4 | not_authenticated, authentication_failed | `mammoth auth login`; in the Mammoth app, ask the user to reload the page |
+| 2 | keyring_unavailable, keyring_unresponsive | operator runs `mammoth auth login --storage file` (or unlocks the OS keychain); not seen in the app |
 | 5 | resource_not_found | re-list to find the correct id |
-| 2 | project_required | `mammoth context project use ID` or `--project` |
+| 2 | project_required | `mammoth context project use ID` or `--project` (in the app: `--project` only) |
 | 2 | confirmation_required | re-run with `--yes` (and `--confirm TARGET`) |
+| 2 | not_available_embedded | the command is not offered in the Mammoth app; use another route |
 | 6 | conflict | inspect current remote state and resolve it |
 | 7 | `timeout` with a known job | inspect or wait that job; do not replay the mutation |
 | 7 | `outcome_unknown` | reconcile exact target/scope before any replay |
@@ -47,8 +48,8 @@ the `run_id` when you report a backend fault.
 
 Do not run the next mutation on any of these; report the state (with
 `log_ref.run_id`) and either recover per the tables above or hand off:
-- `auth status` is missing or its `endpoint` does not match the intended environment
-- `mammoth doctor` fails
+- `auth status` is missing or its `endpoint` does not match the intended environment (in the app there is no `auth status` or `doctor`: an auth error means ask the user to reload the page)
+- `mammoth doctor` fails (CLI only)
 - a dataset is still `need_action` after the settings update
 - a read-back after a value-changing step shows a uniform column (all 0 / all one value / all null) or a changed row the condition should not have touched
 - a join leaves most rows unmatched and the key samples on both sides do not explain it

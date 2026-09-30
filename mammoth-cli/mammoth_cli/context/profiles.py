@@ -23,7 +23,8 @@ import platformdirs
 import tomlkit
 from tomlkit import TOMLDocument
 
-from mammoth_cli.errors.envelope import EXIT_USAGE, CliError
+from mammoth_cli.errors.envelope import EMBEDDED_NO_PROFILE_HINT, EXIT_USAGE, CliError
+from mammoth_cli.runtime import embedded
 
 PROFILE_NAME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$")
 DEFAULT_PROFILE_NAME = "default"
@@ -337,7 +338,11 @@ def set_selected(name: str) -> None:
             code="profile_not_found",
             message=f"Profile '{name}' has no stored record, so it cannot be selected.",
             exit_status=EXIT_USAGE,
-            hint=f"Run 'mammoth auth login --profile {name}' to create it first.",
+            hint=(
+                EMBEDDED_NO_PROFILE_HINT
+                if embedded.active()
+                else f"Run 'mammoth auth login --profile {name}' to create it first."
+            ),
         )
     document["selected"] = name
     _write_document(document)

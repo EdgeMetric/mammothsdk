@@ -43,6 +43,7 @@ CODE_API_ERROR = "api_error"
 CODE_RESOURCE_NOT_FOUND = "resource_not_found"
 CODE_PROFILE_NOT_FOUND = "profile_not_found"
 CODE_NO_SAVED_PROJECT = "no_saved_project"
+CODE_NOT_AVAILABLE_EMBEDDED = "not_available_embedded"
 CODE_CONFIRMATION_REQUIRED = "confirmation_required"
 CODE_CONFIRMATION_DECLINED = "confirmation_declined"
 CODE_AUTHENTICATION_FAILED = "authentication_failed"
@@ -138,6 +139,7 @@ ERROR_SUMMARIES: dict[str, str] = {
     "pipeline_reference_error": "A step in the pipeline refers to something that no longer exists.",
     "profile_not_found": _S_SETUP,
     "no_saved_project": "This step can't save a project here; each step names its own.",
+    "not_available_embedded": "This step isn't available inside the Mammoth app.",
     "profile_write_failed": _S_SETUP,
     "project_required": "No project has been chosen for this step.",
     "pypi_response_invalid": "An update check didn't return a usable answer.",
@@ -248,6 +250,20 @@ def no_saved_project_error() -> CliError:
         exit_status=EXIT_USAGE,
         hint="Pass --project PROJECT_ID on each command.",
         recovery_commands=["mammoth project list"],
+    )
+
+
+EMBEDDED_AUTH_HINT = "Your session expired or is not authorised; ask the user to reload the page."
+EMBEDDED_NO_PROFILE_HINT = "This environment keeps no profiles; the login comes from the host."
+
+
+def not_available_embedded_error(command: str) -> CliError:
+    """A host-machine-only command (login, install, upgrade...) run in an embedded call."""
+    return CliError(
+        code=CODE_NOT_AVAILABLE_EMBEDDED,
+        message=f"'{command}' is not available inside the Mammoth app.",
+        exit_status=EXIT_USAGE,
+        hint="The app supplies the login, project and tools; use the other commands.",
     )
 
 

@@ -10,6 +10,10 @@ Discover exact contracts, then upload and read back explicit parents.
 
 ## Where uploads land
 
+In the Mammoth app, use the project you are given and never run `project
+ensure` or `project create` for a scratch project; the rest of this section is
+for the CLI in a terminal.
+
 Unless the task names a project, work in one project of your own and put
 every dataset of the task there. The user's real projects then stay clean, and
 one sweep removes everything. `project ensure` is idempotent get-or-create

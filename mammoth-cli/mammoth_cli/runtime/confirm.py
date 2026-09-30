@@ -23,6 +23,7 @@ from mammoth_cli.errors.envelope import (
     CliError,
 )
 from mammoth_cli.output.policy import MACHINE_OUTPUTS
+from mammoth_cli.runtime import embedded
 from mammoth_cli.runtime.invocation import Invocation
 
 POLICY_NONE = "none"
@@ -47,7 +48,11 @@ def _required_error(action: str, *, target: str | None, need_target: bool) -> Cl
         code=CODE_CONFIRMATION_REQUIRED,
         message=f"This command needs explicit confirmation to {action}.",
         exit_status=EXIT_USAGE,
-        hint=f"Re-run the same command with {flags}, or run it interactively at a terminal.",
+        hint=(
+            f"Re-run the same command with {flags}."
+            if embedded.active()
+            else f"Re-run the same command with {flags}, or run it interactively at a terminal."
+        ),
     )
 
 

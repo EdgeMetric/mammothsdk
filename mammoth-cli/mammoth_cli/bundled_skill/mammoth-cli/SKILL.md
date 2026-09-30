@@ -25,30 +25,31 @@ transform` command. The data model, capabilities and full web-to-CLI map:
 ## Start
 
 ```bash
-mammoth doctor                          # auth, endpoint, connectivity, version; must succeed
-mammoth project ensure 'PROJECT NAME'   # get-or-create; becomes the active project
+mammoth doctor                          # auth, endpoint, connectivity; must succeed
+mammoth project ensure 'PROJECT NAME'   # get-or-create; active project
 ```
 
-`doctor` failing is a precondition failure; never proceed anyway.
-When the connection check fails with a 502, 504 or timeout, `mammoth doctor
---input '{"wait": 300}'` probes again for up to that many seconds; continue
-only once it passes. Production is the `app` endpoint; use `release` only
-when named, and check `meta.profile`/`auth status` `endpoint` match before
-continuing. If no profile has credentials, tell the operator to run
-`mammoth auth login` in their own terminal (add
-`--profile NAME` only if not `default`; [auth](references/auth.md)
-says where the token comes from) and wait; never ask for the token in chat,
-never read one from a file/env var, never run `auth login`
-yourself. If any envelope carries `meta.update_available`, run its `command`
-before the next step.
+Never proceed if `doctor` fails.
+On a 502, 504 or timeout, `mammoth doctor --input '{"wait": 300}'`
+re-probes that many seconds; continue only once it passes. Production is the `app` endpoint; use `release` only
+when named, and check `meta.profile`/`auth status` `endpoint` match. If no profile has credentials, tell the operator to run
+`mammoth auth login` in their own terminal (`--profile NAME` unless
+`default`; [auth](references/auth.md) says where the token comes from) and
+wait; never ask for the token in chat, read one from a file/env var, or run
+`auth login` yourself. If an envelope carries `meta.update_available`, run its `command` first.
 
-In a shell: piped stdout is compact JSON and prompts are off; in a session
-that is not piped, `export MAMMOTH_OUTPUT=json MAMMOTH_NO_INPUT=1` once.
-`project ensure` saves the active project (`--project`, `MAMMOTH_PROFILE`
-and `MAMMOTH_PROJECT` override it). `mammoth skill show --input '{"file":
-"references/recipes/transforms.md"}'` prints any file of this skill;
-`mammoth skill agents-md install` writes a steering block into a
-repository's AGENTS.md so later sessions start here.
+Piped stdout is compact JSON with prompts off; if not piped, `export
+MAMMOTH_OUTPUT=json MAMMOTH_NO_INPUT=1` once.
+`project ensure` saves the active project (`--project`, `MAMMOTH_PROFILE`,
+`MAMMOTH_PROJECT` override it). `mammoth skill show --input '{"file":
+"references/recipes/transforms.md"}'` prints any file of this skill.
+
+## Running inside the Mammoth app
+
+Use the project you are given; never `project ensure`. No `doctor`, auth,
+profiles, `config set`, `upgrade`, `skill install`, env vars, local files,
+stdin, `--input FILE` or `output_path` (they fail `not_available_embedded`);
+downloads return `download_url`. On an auth error, ask the user to reload.
 
 ## Defaults you do not repeat
 

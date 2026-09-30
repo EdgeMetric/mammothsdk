@@ -20,6 +20,7 @@ from mammoth_cli.context.endpoint import resolve_base_url
 from mammoth_cli.context.profiles import ProfileRecord
 from mammoth_cli.errors.envelope import (
     CODE_INVALID_WORKSPACE_ID,
+    EMBEDDED_AUTH_HINT,
     EXIT_AUTH,
     EXIT_USAGE,
     CliError,
@@ -77,6 +78,13 @@ class ResolvedAuth:
 
 def not_authenticated_error() -> CliError:
     """Build the stable error for a command with no available credentials."""
+    if embedded.active():
+        return CliError(
+            code="not_authenticated",
+            message="No Mammoth credentials are available for this command.",
+            exit_status=EXIT_AUTH,
+            hint=EMBEDDED_AUTH_HINT,
+        )
     return CliError(
         code="not_authenticated",
         message="No Mammoth credentials are available for this command.",

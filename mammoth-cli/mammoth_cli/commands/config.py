@@ -16,11 +16,12 @@ from mammoth_cli.context.endpoint import resolve_base_url
 from mammoth_cli.errors.envelope import (
     CODE_INVALID_CONFIG_VALUE,
     CODE_PROFILE_NOT_FOUND,
+    EMBEDDED_NO_PROFILE_HINT,
     EXIT_USAGE,
     CliError,
 )
 from mammoth_cli.output.policy import VALID_OUTPUTS
-from mammoth_cli.runtime import executor
+from mammoth_cli.runtime import embedded, executor
 from mammoth_cli.runtime import options as go
 from mammoth_cli.runtime.invocation import Invocation
 
@@ -46,6 +47,13 @@ def _unknown_key_error(key: str) -> CliError:
 
 
 def _profile_not_found_error(profile_name: str) -> CliError:
+    if embedded.active():
+        return CliError(
+            code=CODE_PROFILE_NOT_FOUND,
+            message=f"No profile named '{profile_name}' exists.",
+            exit_status=EXIT_USAGE,
+            hint=EMBEDDED_NO_PROFILE_HINT,
+        )
     return CliError(
         code=CODE_PROFILE_NOT_FOUND,
         message=f"No profile named '{profile_name}' exists yet.",
