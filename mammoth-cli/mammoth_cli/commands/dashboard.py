@@ -753,7 +753,7 @@ def _with_board_values(service: Any, auth: Any, positionals: dict[str, Any], dat
     data = _dump_model(data)
     if not isinstance(data, dict):
         return data
-    dashboard_id = positionals.get("dashboard_id") or data.get("id") or data.get("dashboard_id")
+    dashboard_id = positionals.get("dashboard_id") or data.get("id")
     if not isinstance(dashboard_id, int):
         return {**data, "values": {"unavailable": "the result names no dashboard id"}}
     return {
@@ -790,7 +790,7 @@ def _with_deliverable_check(
         data = data.model_dump(mode="json")
     if not isinstance(data, dict):
         return data
-    dashboard_id = positionals.get("dashboard_id") or data.get("id") or data.get("dashboard_id")
+    dashboard_id = positionals.get("dashboard_id") or data.get("id")
     if not isinstance(dashboard_id, int):
         return {
             **data,

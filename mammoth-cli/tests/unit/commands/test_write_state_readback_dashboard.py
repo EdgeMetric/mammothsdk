@@ -56,13 +56,13 @@ def test_dashboard_archive_readback_is_kind_object(fake_service: FakeMammothServ
 
 # ---------------------------------------------------------------------------
 # kind: object -- a generate is waited on by the CLI, so its result carries the
-# new board's ``dashboard_id`` (never a ``job_id``); it reads back that board.
+# new board's ``id`` (the job's own response, never a ``job_id``); it reads back that board.
 # ---------------------------------------------------------------------------
 
 
 def test_dashboard_v3_generate_readback_is_kind_object(fake_service: FakeMammothService) -> None:
     fake_service.responses[_DASHBOARD_GET] = {"id": 456, "title": "Revenue"}
-    result = with_state(_inv("dashboard.v3.generate", []), {"dashboard_id": 456})
+    result = with_state(_inv("dashboard.v3.generate", []), {"id": 456})
     assert result["state"] == {
         "kind": "object",
         "read_by": "dashboard.get 456",

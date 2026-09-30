@@ -168,7 +168,11 @@ def test_generated_dashboard_async_result_waits_for_job(
     api.on(
         "GET",
         r"/jobs/91$",
-        body={"id": 91, "status": "success", "response": {"dashboard_id": 73}},
+        body={
+            "id": 91,
+            "status": "success",
+            "response": {"id": 73, "sequence": 1, "title": "Revenue by quarter", "bake_ok": True},
+        },
     )
     api.on(
         "GET",
@@ -209,7 +213,7 @@ def test_generated_dashboard_async_result_waits_for_job(
     ]
     assert observed_timeouts == [7]
     data = json.loads(result.output)["data"]
-    assert data["dashboard_id"] == 73
+    assert data["id"] == 73
     assert data["verify"] == {
         "verified": True,
         "state": "done",

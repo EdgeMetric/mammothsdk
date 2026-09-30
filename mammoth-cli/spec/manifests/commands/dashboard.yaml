@@ -4911,7 +4911,7 @@ commands:
   readback:
     command: dashboard.get
     ids:
-      dashboard_id: result.dashboard_id
+      dashboard_id: result.id
     kind: object
   live_test: null
   live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
