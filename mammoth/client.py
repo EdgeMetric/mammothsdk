@@ -25,9 +25,9 @@ Example::
 
 from __future__ import annotations
 
+import asyncio
 import base64
 import hashlib
-import asyncio
 import logging
 import math
 import time
@@ -146,6 +146,23 @@ def _log_http(
             }
         },
     )
+
+
+_RETRY_STATUSES = frozenset({502, 503, 504})
+_RETRY_METHODS = frozenset({"GET", "HEAD"})
+_MAX_READ_RETRIES = 2
+_RETRY_BACKOFF_S = 0.25
+_RETRY_AFTER_CAP_S = 5.0
+
+
+def _retry_delay(attempt: int, retry_after: str | None) -> float:
+    """Backoff before retry ``attempt`` (0-based); honours a numeric Retry-After, capped."""
+    if retry_after is not None:
+        try:
+            return min(max(float(retry_after), 0.0), _RETRY_AFTER_CAP_S)
+        except ValueError:
+            pass
+    return min(_RETRY_BACKOFF_S * 2**attempt, _RETRY_AFTER_CAP_S)
 
 
 class ViewsResource:
@@ -516,6 +533,35 @@ class MammothClient:
             return await self.pipeline.find_dataset_for_dataview(dataview_id)
         return await self.pipeline.find_dataset_for_dataview(dataview_id, dataset_id)
 
+    async def _send_with_read_retry(
+        self, method: str, endpoint: str, url: str, request_kwargs: dict[str, Any]
+    ) -> httpx.Response:
+        """Send once; retry only GET/HEAD on 502/503/504 or connect errors, at most twice.
+
+        A draining worker answers a read with one transient gateway error.
+        Writes are never replayed. When retries run out the last response (or
+        connect error) is returned/raised for the normal error mapping.
+        """
+        retryable = method in _RETRY_METHODS
+        for attempt in range(_MAX_READ_RETRIES + 1):
+            started = time.perf_counter()
+            last = attempt == _MAX_READ_RETRIES or not retryable
+            try:
+                response = await self.session.request(method, url, **request_kwargs)
+            except httpx.ConnectError:
+                if last:
+                    raise
+                _log_http(method, endpoint, started=started, status=None, outcome="retry")
+                await asyncio.sleep(_retry_delay(attempt, None))
+                continue
+            if last or response.status_code not in _RETRY_STATUSES:
+                return response
+            _log_http(
+                method, endpoint, started=started, status=response.status_code, outcome="retry"
+            )
+            await asyncio.sleep(_retry_delay(attempt, response.headers.get("Retry-After")))
+        raise AssertionError("unreachable")
+
     async def _request(
         self,
         method: str,
@@ -594,7 +640,9 @@ class MammothClient:
 
         started = time.perf_counter()
         try:
-            response = await self.session.request(method, url, **request_kwargs)
+            response = await self._send_with_read_retry(
+                request_method, endpoint, url, request_kwargs
+            )
         except httpx.TimeoutException as e:
             _log_http(request_method, endpoint, started=started, status=None, outcome="timeout")
             raise MammothAPIError(
