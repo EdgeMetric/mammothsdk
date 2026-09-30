@@ -334,3 +334,30 @@ def columns_not_on_dashboard(
 def has_profiles(canvas_doc: Any) -> bool:
     """Whether a canvas read carries the backend's column profile."""
     return isinstance(canvas_doc, Mapping) and bool(_profiles(canvas_doc))
+
+
+def reporting_month(canvas_doc: Any, dashboard_id: int) -> list[dict[str, Any]]:
+    """``board_scoped_to_month`` when the board reports one month of its data.
+
+    The builder opens a new board on the data's latest month when the ask names
+    no period, so "total sales and sales by region" came back as December 2018
+    only (UQA-RT22-01). Only the agent knows whether the user asked for a month,
+    so it is shown the scope and the one edit that widens it.
+    """
+    canvas = canvas_doc.get("canvas") if isinstance(canvas_doc, Mapping) else None
+    period = canvas.get("period") if isinstance(canvas, Mapping) else None
+    month = period.get("value") if isinstance(period, Mapping) else None
+    if not isinstance(month, str):
+        return []
+    prompt = json.dumps({"body": {"params": {"prompt": "Cover all dates: no reporting month"}}})
+    return [
+        {
+            "issue": "board_scoped_to_month",
+            "detail": (
+                f"This board reports only {month}: its KPI cards, breakdowns and table count "
+                "that month, while trend charts still plot every date. If the user did not "
+                "ask for that month, widen it with the fix."
+            ),
+            "fix": f"mammoth dashboard chat edit {dashboard_id} --input '{prompt}'",
+        }
+    ]

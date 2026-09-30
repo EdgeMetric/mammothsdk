@@ -54,6 +54,7 @@ from mammoth_cli.services.dashboard_review import (
     NEW_COLUMN_NOTE,
     columns_not_on_dashboard,
     has_profiles,
+    reporting_month,
     review,
 )
 from mammoth_cli.services.positionals import resolve_positionals
@@ -796,15 +797,20 @@ def _deliverable_warnings(
         if isinstance(view_id, int) and dataset_id is not None
         else None
     )
+    scope = reporting_month(canvas_doc, dashboard_id)
     if not has_profiles(canvas_doc):
-        return review(canvas_doc, dataset_id, current)
+        return scope + review(canvas_doc, dataset_id, current)
     stale = columns_not_on_dashboard(canvas_doc, current)
-    return stale + [
-        warning
-        for warning in review(canvas_doc, dataset_id)
-        # On a stale board the money advice is the rebuild, not a new column.
-        if not (stale and warning["issue"] in {"money_not_shown", "unit_price_summed"})
-    ]
+    return (
+        scope
+        + stale
+        + [
+            warning
+            for warning in review(canvas_doc, dataset_id)
+            # On a stale board the money advice is the rebuild, not a new column.
+            if not (stale and warning["issue"] in {"money_not_shown", "unit_price_summed"})
+        ]
+    )
 
 
 _CANVAS_SAVE = "mammoth.api.dashboards.DashboardsAPI.canvas_save"

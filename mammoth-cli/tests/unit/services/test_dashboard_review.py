@@ -7,6 +7,7 @@ from typing import Any
 from mammoth_cli.services.dashboard_review import (
     columns_not_on_dashboard,
     profiles_from_view,
+    reporting_month,
     review,
     upload_hints,
 )
@@ -138,3 +139,18 @@ def test_a_view_column_the_dashboard_profile_lacks_is_named_with_the_rebuild() -
     )
     assert columns_not_on_dashboard(board, [{"name": "qty"}]) == []
     assert columns_not_on_dashboard(_doc([], profiles=[]), view) == []
+
+
+def test_a_board_on_one_month_names_the_month_and_the_edit_that_widens_it() -> None:
+    """UQA-RT22-01: "total sales and sales by region" opened on December 2018."""
+    doc = {"canvas": {"dataset": {"dataview_id": 81}, "period": {"value": "2018-12"}}}
+    [warning] = reporting_month(doc, 196)
+    assert warning["issue"] == "board_scoped_to_month"
+    assert "only 2018-12" in warning["detail"]
+    assert warning["fix"].startswith("mammoth dashboard chat edit 196 --input '")
+    assert "no reporting month" in warning["fix"]
+
+
+def test_a_board_over_all_dates_gets_no_scope_warning() -> None:
+    assert reporting_month(_doc([]), 196) == []
+    assert reporting_month({"canvas": {"period": None}}, 196) == []
