@@ -371,6 +371,7 @@ def view_list(invocation: Invocation) -> HandlerResult:
     times, source, column names and types, and per-column ``sample_values`` (values the
     backend stored, not one real row), cut to fit the agent tool output cap. No
     query runs: one stored-stats read per listed view.
+    ``all_columns: true`` lists every column with its type instead of the first few.
     ``full: true`` returns the raw records instead.
     """
     project_id = require_project(invocation)
@@ -444,7 +445,9 @@ def _compact_view_list(
     """Summarise a view-list result and turn any cut into a way to the next page."""
     views = [apply_column_renames(v) for v in data["dataviews"] if isinstance(v, dict)]
     by_id = {d.get("id"): d for d in datasets if isinstance(d, dict)}
-    summary = compact_view_list(views, by_id, _stored_stats_reader(service))
+    summary = compact_view_list(
+        views, by_id, _stored_stats_reader(service), bool(document.get("all_columns"))
+    )
     dropped = summary.pop("first_dropped_dataset", None)
     result: dict[str, Any] = {**summary, "order": document.get("sort") or "newest first"}
     for key in ("datasets_visited", "next_dataset_offset"):
@@ -1400,7 +1403,7 @@ def view_data_aggregate(invocation: Invocation) -> HandlerResult:
         data = _relabel_columns(service, dataset_id, view_id, project_id, data, as_map)
         data = read_queries.mark_unordered(document, data)
         data = read_queries.with_observed_range(
-            reads, data, _aggregate_range_columns(document, column_types)
+            reads, data, _aggregate_range_columns(document, column_types), coverage=True
         )
         data = read_queries.with_assumptions(reads, data)
     return data, meta

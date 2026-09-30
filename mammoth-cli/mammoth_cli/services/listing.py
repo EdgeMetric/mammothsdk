@@ -62,10 +62,14 @@ def _type_word(column_type: Any) -> str:
     return str(column_type or "?").lower()
 
 
-def compact_columns(columns: list[tuple[str, Any]]) -> str:
-    """``"Order ID:text, Sales:numeric (+15 more)"`` -- names and types, capped."""
-    shown = [f"{name}:{_type_word(kind)}" for name, kind in columns[:_MAX_COLUMNS]]
-    extra = len(columns) - _MAX_COLUMNS
+def compact_columns(columns: list[tuple[str, Any]], limit: int | None = _MAX_COLUMNS) -> str:
+    """``"Order ID:text, Sales:numeric (+15 more)"`` -- names and types, capped.
+
+    ``limit=None`` lists every column.
+    """
+    cap = len(columns) if limit is None else limit
+    shown = [f"{name}:{_type_word(kind)}" for name, kind in columns[:cap]]
+    extra = len(columns) - cap
     return ", ".join(shown) + (f" (+{extra} more)" if extra > 0 else "")
 
 
@@ -151,9 +155,15 @@ def search_page(
 
 
 def view_summary(
-    view: dict[str, Any], dataset: dict[str, Any] | None, dataset_id: Any
+    view: dict[str, Any],
+    dataset: dict[str, Any] | None,
+    dataset_id: Any,
+    all_columns: bool = False,
 ) -> dict[str, Any]:
-    """Summary of one view, naming its dataset (a bare ``View 1`` says nothing)."""
+    """Summary of one view, naming its dataset (a bare ``View 1`` says nothing).
+
+    ``all_columns`` lists every column with its type instead of the first few.
+    """
     raw_metadata = view.get("metadata")
     metadata = raw_metadata if isinstance(raw_metadata, list) else []
     columns = [
@@ -169,7 +179,9 @@ def view_summary(
         **_size(view.get("row_count"), view.get("column_count")),
         **_times(view.get("created_at"), view.get("data_updated_at") or view.get("updated_at")),
         "source": source_of(dataset) if dataset else None,
-        "columns": compact_columns(columns) if columns else None,
+        "columns": (
+            compact_columns(columns, None if all_columns else _MAX_COLUMNS) if columns else None
+        ),
     }
     if view.get("pipeline_status") not in (None, "ready"):
         summary["pipeline_status"] = view["pipeline_status"]
@@ -182,7 +194,9 @@ def json_size(value: Any) -> int:
 
 
 def fit_budget(
-    items: list[dict[str, Any]], budget: int = LIST_DATA_BUDGET, overhead: int = 200
+    items: list[dict[str, Any]],
+    budget: int = LIST_DATA_BUDGET,
+    overhead: int = 200,
 ) -> tuple[list[dict[str, Any]], int]:
     """Keep leading items while they fit ``budget``; return them and how many were cut.
 
@@ -197,6 +211,12 @@ def fit_budget(
         kept.append(item)
         used += size
     return kept, len(items) - len(kept)
+
+
+def _cell_text(stored: Any) -> str:
+    """A stored sample as text: the inner ``value`` of a ``{"value": ...}`` record."""
+    inner = stored.get("value", stored) if isinstance(stored, dict) else stored
+    return str(inner)[:_MAX_CELL_CHARS]
 
 
 def sample_values(payload: Any, metadata: list[Any]) -> dict[str, list[str]]:
@@ -214,7 +234,7 @@ def sample_values(payload: Any, metadata: list[Any]) -> dict[str, list[str]]:
     for name, _internal in columns[:_SAMPLE_COLUMNS]:
         values = facts.get(name, {}).get("sample")
         if values:
-            found[name] = [str(v)[:_MAX_CELL_CHARS] for v in values[:_SAMPLE_VALUES]]
+            found[name] = [_cell_text(v) for v in values[:_SAMPLE_VALUES]]
     return found
 
 
@@ -275,6 +295,7 @@ def compact_view_list(
     views: list[dict[str, Any]],
     datasets: dict[Any, dict[str, Any]],
     read_stats: Callable[[dict[str, Any]], Any],
+    all_columns: bool = False,
 ) -> dict[str, Any]:
     """Summaries of ``views`` (records with renames applied), within the output cap.
 
@@ -287,7 +308,9 @@ def compact_view_list(
     """
     groups: dict[Any, list[tuple[dict[str, Any], dict[str, Any]]]] = {}
     for ds_id, group in _group_by_dataset(views).items():
-        groups[ds_id] = [(v, view_summary(v, datasets.get(ds_id), ds_id)) for v in group]
+        groups[ds_id] = [
+            (v, view_summary(v, datasets.get(ds_id), ds_id, all_columns)) for v in group
+        ]
     chosen, dropped_dataset, omitted = _choose_views(groups)
     with ThreadPoolExecutor(max_workers=_STATS_WORKERS) as pool:
         samples = list(pool.map(lambda pair: _view_samples(pair[0], read_stats), chosen))

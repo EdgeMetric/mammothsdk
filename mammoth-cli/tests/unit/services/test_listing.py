@@ -142,3 +142,18 @@ def test_sample_values_are_stored_values_for_the_first_columns_only() -> None:
 def test_a_column_with_no_stored_sample_is_left_out_not_invented() -> None:
     assert listing.sample_values({"profile": {}}, _METADATA) == {}
     assert listing.sample_values(None, _METADATA) == {}
+
+
+def test_stored_sample_dicts_show_their_inner_value_not_a_repr() -> None:
+    stored = [{"value": "Monday", "count": 3}, {"value": 42}, {"other": 1}]
+    found = listing.sample_values(_stats(stored), _METADATA)
+    assert found["Order ID"] == ["Monday", "42"]
+    assert "{" not in "".join(found["Order ID"])
+
+
+def test_a_view_summary_lists_every_column_when_asked() -> None:
+    truncated = listing.view_summary(_view(1), _dataset(1), 3001)
+    assert "(+17 more)" in truncated["columns"]
+    full = listing.view_summary(_view(1), _dataset(1), 3001, all_columns=True)
+    assert "more)" not in full["columns"]
+    assert full["columns"].count(":text") == 21

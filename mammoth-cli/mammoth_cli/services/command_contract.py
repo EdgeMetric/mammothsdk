@@ -667,6 +667,7 @@ _S7_ADDITIONAL_INPUT_FIELDS: dict[str, tuple[FieldSpec, ...]] = {
     "view.list": (
         FieldSpec("full", required=False, annotation=bool, default=False),
         FieldSpec("dataset_offset", required=False, annotation=int, default=0),
+        FieldSpec("all_columns", required=False, annotation=bool, default=False),
     ),
     "activity.list": (
         FieldSpec("project_id", required=False, annotation=int | None, default=None),

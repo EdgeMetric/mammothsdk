@@ -805,9 +805,8 @@ def test_data_aggregate_group_by_buckets_a_date_by_month(
     data = view_cmd.view_data_aggregate(
         _inv("view.data.aggregate", project=180, extra_args=["7", "9"], input_file=doc)
     )[0]
-    assert _without_meta(fake_service.call_log)[-1][1]["group_by"] == [
-        {"column": "column_3", "truncate": "MONTH"}
-    ]
+    (grouped,) = [c for c in _without_meta(fake_service.call_log) if "group_by" in c[1]]
+    assert grouped[1]["group_by"] == [{"column": "column_3", "truncate": "MONTH"}]
     assert data["data"] == [{"inspection_date": "2024-01-01", "inspections": 1500}]
 
 
