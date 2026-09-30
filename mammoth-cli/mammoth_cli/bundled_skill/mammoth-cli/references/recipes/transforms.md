@@ -85,9 +85,12 @@ In a math `expression`, write a multi-word display name bare (`Quantity * Unit
 Price`) or quoted (`Quantity * \"Unit Price\"` inside the JSON string).
 
 The released catalog exposes typed dedupe through `schema find duplicate` as
-`view.transform.discard-duplicates`. Inspect its optional `ignore_columns`
-field before submitting. For a join, verify both schemas and
-expected multiplicity:
+`view.transform.discard-duplicates`. Observe before writing: `view data get`
+states `duplicates` (`exact_duplicate_rows` over `rows_checked` of `row_count`;
+on a later page it names the table-wide check). When it is 0, report "none,
+no change needed" and add no step. Only then inspect its optional
+`ignore_columns` field and submit; `--dry-run` reports `predicted_impact` or
+fails `no_op`. For a join, verify both schemas and expected multiplicity:
 
 ```bash
 mammoth schema get view.transform.discard-duplicates

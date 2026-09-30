@@ -61,7 +61,21 @@ def with_state(invocation: Invocation, data: Any) -> Any:
         return data
     unfinished = _unfinished_state(data)
     state = unfinished or _enforce_cap(_build_state(invocation, data, readback))
-    return {**data, "state": state}
+    return {**_unverified_if_unreadable(data, state), "state": state}
+
+
+def _unverified_if_unreadable(data: dict[str, Any], state: dict[str, Any]) -> dict[str, Any]:
+    """A write whose read-back failed is not verified, whatever its own response said."""
+    verify = data.get("verify")
+    if state.get("kind") != "unreadable" or not isinstance(verify, dict):
+        return data
+    if not verify.get("verified"):
+        return data
+    reason = (
+        f"the read-back after this write failed ({state.get('reason')}); "
+        "read the view before building on it"
+    )
+    return {**data, "verify": {**verify, "verified": False, "reason": reason}}
 
 
 def _unfinished_state(data: dict[str, Any]) -> dict[str, Any] | None:

@@ -53,7 +53,7 @@ from mammoth_cli.runtime.session import open_service, require_project
 from mammoth_cli.services import read_queries, text_dates
 from mammoth_cli.services.conditions import CONDITION_KWARG, compile_condition
 from mammoth_cli.services.dashboard_review import UPLOAD_NOTE, upload_hints
-from mammoth_cli.services.data_quality import column_warnings
+from mammoth_cli.services.data_quality import column_warnings, duplicate_rows_fact
 from mammoth_cli.services.listing import DATASET_LIST_FIELDS, compact_view_list
 from mammoth_cli.services.read_queries import ReadContext
 
@@ -850,7 +850,10 @@ def view_data_get(invocation: Invocation) -> HandlerResult:
         else:
             _forward_optional(document, kwargs, ("timeout", "poll_interval", "sequence"))
             data = service.call(_symbol(invocation), **kwargs)
-        data = _relabel_and_check(service, dataset_id, view_id, project_id, data)
+        whole_view = document.get("offset") is None
+        data = _relabel_and_check(
+            service, dataset_id, view_id, project_id, data, whole_view=whole_view
+        )
     return _trim_rows(data, limit), meta
 
 
@@ -1132,8 +1135,9 @@ def _relabel_and_check(
     data: Any,
     mapping: dict[str, str] | None = None,
     types: dict[str, str] | None = None,
+    whole_view: bool = False,
 ) -> Any:
-    """Relabel a data page to display names and add ``column_warnings``.
+    """Relabel a data page to display names and add ``column_warnings`` and ``duplicates``.
 
     The metadata read happens only when the page has rows and the caller has
     not read it already (one read serves both the names and the types).
@@ -1145,7 +1149,16 @@ def _relabel_and_check(
     if mapping is None or types is None:
         mapping, types = _column_profile(service, dataset_id, view_id, project_id)
     data = _relabel_columns(service, dataset_id, view_id, project_id, data, mapping)
-    return _with_column_warnings(data, types, view_id, dataset_id)
+    data = _with_column_warnings(data, types, view_id, dataset_id)
+    return _with_duplicates_fact(data, view_id, dataset_id, whole_view)
+
+
+def _with_duplicates_fact(data: Any, view_id: int, dataset_id: int | None, whole_view: bool) -> Any:
+    """Add ``duplicates``: the read's own statement about exact duplicate rows."""
+    if not isinstance(data, dict) or not isinstance(data.get(_ROWS_KEY), list):
+        return data
+    fact = duplicate_rows_fact(data[_ROWS_KEY], view_id, dataset_id, whole_view=whole_view)
+    return {**data, "duplicates": fact} if fact is not None else data
 
 
 #: Issue types ``column_warnings`` looks for; ``column_checks.checked`` names them.
@@ -3442,6 +3455,8 @@ def _dataset_view_info(
 #: large.
 _ROW_CHECK_SETTLE_TIMEOUT = 60.0
 
+UNFINISHED_STATE = "unfinished"
+JOB_FAILED_STATE = "job_failed"
 _PIPELINE_GET_SYMBOL = "mammoth.api.pipeline.PipelineAPI.get_pipeline"
 _TASK_LIST_SYMBOL = "mammoth.api.pipeline.PipelineAPI.list_tasks"
 _ERROR_TRANSFORM_STATUSES = {"ERROR", "REFERROR"}
@@ -3453,34 +3468,60 @@ _PIPELINE_ERROR_EXECUTION_STATES = frozenset({"runtime_error", "ref_error"})
 
 
 def wait_for_pipeline_to_settle(
-    service: Any, dataset_id: int, view_id: int
+    service: Any, dataset_id: int, view_id: int, settle_timeout: float = _ROW_CHECK_SETTLE_TIMEOUT
 ) -> dict[str, Any] | None:
-    """Best-effort, bounded wait for a view's pipeline to reach a terminal state.
+    """Bounded wait for a view's pipeline to reach a terminal state.
 
     A row-count read taken immediately after a write can catch the pipeline
     still recomputing and return a stale or missing count (evidence: a
     `view transform filter`/`view transform json-extract` whose result held
     0 rows still read back an unreadable count right after the write).
     Bounded so a slow recompute cannot turn a fast command into a slow one.
-    Whichever way this ends -- settled, errored, or timed out -- the caller
-    still reads the row count afterward; a failed wait is no reason to skip
-    a read that might now succeed anyway, and :mod:`mammoth_cli.runtime.
-    verify` treats an unreadable count as unverified either way.
+    Whichever way this ends the caller still reads the row count afterward.
 
-    Returns the pipeline's execution error (see :func:`_pipeline_execution_error`),
-    if a fresh read finds one, so the caller can flag it even when the
-    write's own envelope said ``status: done`` / ``pipeline_state: ready``.
+    Returns the pipeline's problem, or ``None`` when it settled cleanly: its
+    execution error (see :func:`_pipeline_execution_error`) if a fresh read
+    finds one, so the caller can flag it even when the write's own envelope
+    said ``status: done`` / ``pipeline_state: ready``; else, when the wait
+    itself failed (a timeout, a failed read) and the pipeline is not known to
+    have settled, ``execution_state: "unfinished"`` with the wait's error --
+    never a silent success on a count read mid-run.
     """
+    wait_error: str | None = None
     try:
         service.call(
             _WAIT_FOR_PIPELINE_SYMBOL,
             dataview_id=view_id,
             dataset_id=dataset_id,
-            timeout=_ROW_CHECK_SETTLE_TIMEOUT,
+            timeout=settle_timeout,
         )
-    except Exception:  # noqa: BLE001, S110 -- best effort; the write already ran
-        pass
-    return _pipeline_execution_error(service, dataset_id, view_id)
+    except CliError as exc:
+        wait_error = exc.message
+    error = _pipeline_execution_error(service, dataset_id, view_id)
+    if wait_error is None:
+        return error
+    if error is None:
+        return {"execution_state": UNFINISHED_STATE, "wait_error": wait_error}
+    return {**error, "wait_error": wait_error}
+
+
+def wait_for_followon_job(service: Any, write_result: Any) -> dict[str, Any] | None:
+    """Wait for the job a write result names (``future_id``/``job_id``), if any.
+
+    The backend runs the pipeline as a follow-on job; a readback taken before
+    it finishes races it. Returns ``None`` when there is nothing to wait for or
+    the job succeeded, else ``execution_state: "job_failed"`` with the job's own
+    error text -- reported, never swallowed.
+    """
+    if not isinstance(write_result, dict) or not any(
+        isinstance(write_result.get(key), int) for key in ("future_id", "job_id")
+    ):
+        return None
+    try:
+        service.wait_if_job(write_result)
+    except CliError as exc:
+        return {"execution_state": JOB_FAILED_STATE, "wait_error": exc.message}
+    return None
 
 
 def _pipeline_execution_error(service: Any, dataset_id: int, view_id: int) -> dict[str, Any] | None:
@@ -3543,7 +3584,12 @@ def _pipeline_execution_error(service: Any, dataset_id: int, view_id: int) -> di
 
 
 def wait_for_view_row_count(
-    service: Any, dataset_id: int, view_id: int, project_id: int | None
+    service: Any,
+    dataset_id: int,
+    view_id: int,
+    project_id: int | None,
+    write_result: Any = None,
+    settle_timeout: float = _ROW_CHECK_SETTLE_TIMEOUT,
 ) -> tuple[Any, dict[str, Any] | None]:
     """A view's row count once its pipeline has settled, best effort.
 
@@ -3553,7 +3599,9 @@ def wait_for_view_row_count(
     as a known count. ``pipeline_error`` is the settled pipeline's own
     execution error (see :func:`_pipeline_execution_error`), if any.
     """
-    pipeline_error = wait_for_pipeline_to_settle(service, dataset_id, view_id)
+    job_error = wait_for_followon_job(service, write_result)
+    pipeline_error = wait_for_pipeline_to_settle(service, dataset_id, view_id, settle_timeout)
+    pipeline_error = job_error or pipeline_error
     try:
         info = service.call(
             _DATAVIEW_GET_SYMBOL, dataset_id=dataset_id, dataview_id=view_id, project_id=project_id

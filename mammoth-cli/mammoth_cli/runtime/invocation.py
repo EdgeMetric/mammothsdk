@@ -76,6 +76,9 @@ class Invocation:
     # handler so its verify and readback reads address the view directly
     # instead of walking every dataset to find it.
     known_dataset_id: int | None = field(default=None, repr=False, compare=False)
+    #: What a dry-run transform predicted it would change; set by its handler,
+    #: added to the dry-run report.
+    predicted_impact: dict[str, Any] | None = field(default=None, repr=False, compare=False)
     # Set on the read a write's ``state`` block issues: that read confirms the
     # write, so a command's extra evaluation (a board's numbers) is skipped.
     readback: bool = field(default=False, repr=False, compare=False)

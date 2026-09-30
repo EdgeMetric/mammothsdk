@@ -146,10 +146,12 @@ No command:
   appends again into the target dataset, not just the first run. To stack
   rows into a brand-new dataset instead of an existing one, omit
   `target_ds_id`. A row present in both sources lands twice: note the
-  appended view's `row_count` (`view get`), run `view transform
-  discard-duplicates` on it (`ignore_columns` for any column you added per
-  source, e.g. a region tag, since it would make shared rows differ), read
-  `row_count` again, and report the difference as duplicates removed.
+  appended view's `row_count` (`view get`) and its `duplicates` fact
+  (`view data get`; zero means nothing to remove: report that and stop). If
+  there are duplicates, run `view transform discard-duplicates` on it
+  (`ignore_columns` for any column you added per source, e.g. a region tag,
+  since it would make shared rows differ), read `row_count` again, and
+  report the difference as duplicates removed.
 - **Hide or reorder columns.** Display changes in the web app; they do not
   change the data.
 

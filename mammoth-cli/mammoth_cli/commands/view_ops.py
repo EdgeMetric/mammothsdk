@@ -35,6 +35,7 @@ from mammoth_cli.commands.view import (
     join_after_snapshot,
     join_dry_run_preview,
     join_snapshot,
+    wait_for_pipeline_to_settle,
     wait_for_view_row_count,
     with_join_check,
 )
@@ -58,6 +59,16 @@ from mammoth_cli.runtime.session import open_service, resolved_project
 from mammoth_cli.services.command_contract import bind_command_inputs
 from mammoth_cli.services.conditions import CONDITION_KWARG
 from mammoth_cli.services.input_fields import TASK_COUNT_FIELD
+from mammoth_cli.services.write_impact import (
+    ImpactRead,
+    Measure,
+    measure_bulk_replace,
+    measure_duplicates,
+    measure_fill_missing,
+    measure_filter,
+    measure_replace,
+    no_op_error,
+)
 
 HandlerResult = tuple[Any, dict[str, Any]]
 
@@ -269,6 +280,7 @@ def _dispatch_view(
     before: Callable[[Any, int], Any] | None = None,
     after: Callable[[Any, int, Any, Any], Any] | None = None,
     prepare: Callable[[Any, int, dict[str, Any]], Any] | None = None,
+    reduces_rows: bool = False,
     **kwargs: Any,
 ) -> HandlerResult:
     """Open the service, dispatch a View method call, and build the envelope.
@@ -283,6 +295,8 @@ def _dispatch_view(
     the view's row count is read before and after the call and added to the
     result as ``row_check``, so a caller always sees whether the write changed
     the row count -- the join path builds its own richer ``join_check`` instead.
+    ``reduces_rows`` marks a write meant to remove rows (a filter, a discard of
+    duplicates), so verify can flag one that removed none.
     A result staged as a draft never ran the pipeline, so no ``row_check`` is
     added and there is nothing to wait for.
     """
@@ -338,6 +352,7 @@ def _dispatch_view(
             )
         if after is not None and dataset_id is not None:
             data = after(service, int(dataset_id), state, data)
+            _flag_unsettled_pipeline(service, int(dataset_id), view_id, data)
         elif (
             auto_row_check
             and dataset_id is not None
@@ -349,12 +364,27 @@ def _dispatch_view(
             # settle (bounded) before trusting this one. A staged draft never
             # ran the pipeline, so there is nothing to wait for or read.
             rows_after, pipeline_error = wait_for_view_row_count(
-                service, int(dataset_id), view_id, invocation.project
+                service, int(dataset_id), view_id, invocation.project, write_result=data
             )
             data["row_check"] = {"rows_before": rows_before, "rows_after": rows_after}
+            if reduces_rows:
+                data["row_check"]["expected_row_decrease"] = True
             if pipeline_error is not None:
                 data["pipeline_error"] = pipeline_error
     return data, _meta(invocation, auth.workspace_id)
+
+
+def _flag_unsettled_pipeline(service: Any, dataset_id: int, view_id: int, data: Any) -> None:
+    """Wait for the pipeline after a write with no row check, and record what it finds.
+
+    A ``pipeline_error`` (an execution error, or a wait that ended unfinished)
+    keeps the write from reading ``done`` and verified. A staged draft ran nothing.
+    """
+    if not isinstance(data, dict) or data.get("status") == "staged":
+        return
+    error = wait_for_pipeline_to_settle(service, dataset_id, view_id)
+    if error is not None:
+        data["pipeline_error"] = error
 
 
 CODE_PIPELINE_CHANGED = "pipeline_changed"
@@ -765,7 +795,12 @@ def _view_payload(value: Any) -> Any:
     if not isinstance(raw, dict):
         return value
     record = dict(raw)
-    dataset_id = getattr(value, "dataset_id", None)
+    # The record's own ``ds_id`` is the parent; the resolver's probed dataset is
+    # only a fallback, since the backend serves a view under a dataset that does
+    # not own it.
+    own_parent = record.get("ds_id")
+    probed = getattr(value, "dataset_id", None)
+    dataset_id = own_parent if isinstance(own_parent, int) else probed
     if isinstance(dataset_id, int) and "dataset_id" not in record:
         record["dataset_id"] = dataset_id
     return record
@@ -877,7 +912,8 @@ def view_transform_bulk_replace(invocation: Invocation) -> HandlerResult:
     _require_field(document, "mapping")
     assert document is not None
     kwargs = _bind_transform_inputs(invocation, document)
-    return _dispatch_view(invocation, view_id, "bulk_replace", **kwargs)
+    prepare = _impact_check(invocation, view_id, measure_bulk_replace)
+    return _dispatch_view(invocation, view_id, "bulk_replace", prepare=prepare, **kwargs)
 
 
 def view_transform_combine_columns(invocation: Invocation) -> HandlerResult:
@@ -999,11 +1035,61 @@ def view_transform_delete_columns(invocation: Invocation) -> HandlerResult:
 
 
 def view_transform_discard_duplicates(invocation: Invocation) -> HandlerResult:
-    """Discard duplicate rows. ``ignore_columns`` is optional."""
+    """Discard duplicate rows. ``ignore_columns`` is optional.
+
+    ``--dry-run`` counts the duplicates first: it reports ``predicted_impact``,
+    or fails with ``no_op`` when there are none (nothing to discard).
+    """
     view_id = _view_id(invocation)
     document = invocation.load_input() or {}
     kwargs = _bind_transform_inputs(invocation, document)
-    return _dispatch_view(invocation, view_id, "discard_duplicates", **kwargs)
+    prepare = _impact_check(invocation, view_id, measure_duplicates)
+    return _dispatch_view(
+        invocation, view_id, "discard_duplicates", prepare=prepare, reduces_rows=True, **kwargs
+    )
+
+
+def _impact_check(
+    invocation: Invocation, view_id: int, measure: Measure
+) -> Callable[[Any, int, dict[str, Any]], Any]:
+    """A ``prepare`` hook: measure what the step would change, by a read.
+
+    A count of zero is a no-op: ``--dry-run`` fails with ``no_op`` and a real run
+    adds no task (``status: no_change``, like a same-type convert). Otherwise a
+    dry run reports the count as ``predicted_impact``. A count that cannot run
+    is reported as unchecked in a dry run, never as zero, and never blocks a write.
+    """
+
+    def check(service: Any, dataset_id: int, kwargs: dict[str, Any]) -> Any:
+        project_id = resolved_project(invocation)
+        info = service.call(
+            _DATAVIEW_GET_SYMBOL, dataset_id=dataset_id, dataview_id=view_id, project_id=project_id
+        )
+        read = ImpactRead(
+            service,
+            dataset_id,
+            view_id,
+            project_id,
+            apply_column_renames(info),
+            invocation.load_input() or {},
+        )
+        try:
+            measured = measure(read, kwargs)
+        except CliError as exc:
+            if invocation.dry_run:
+                object.__setattr__(
+                    invocation, "predicted_impact", {"checked": False, "reason": exc.message}
+                )
+            return None
+        if measured.changes == 0:
+            if invocation.dry_run:
+                raise no_op_error(measured.no_op_message, view_id=view_id)
+            return {"status": "no_change", "note": f"{measured.no_op_message} No task was added."}
+        if invocation.dry_run:
+            object.__setattr__(invocation, "predicted_impact", measured.report)
+        return None
+
+    return check
 
 
 def view_transform_extract_date(invocation: Invocation) -> HandlerResult:
@@ -1025,7 +1111,8 @@ def view_transform_fill_missing(invocation: Invocation) -> HandlerResult:
     _require_field(document, "direction")
     assert document is not None
     kwargs = _bind_transform_inputs(invocation, document)
-    return _dispatch_view(invocation, view_id, "fill_missing", **kwargs)
+    prepare = _impact_check(invocation, view_id, measure_fill_missing)
+    return _dispatch_view(invocation, view_id, "fill_missing", prepare=prepare, **kwargs)
 
 
 def view_transform_filter(invocation: Invocation) -> HandlerResult:
@@ -1035,7 +1122,10 @@ def view_transform_filter(invocation: Invocation) -> HandlerResult:
     _require_field(document, CONDITION_KWARG)
     assert document is not None
     kwargs = _bind_transform_inputs(invocation, document)
-    return _dispatch_view(invocation, view_id, "filter_rows", **kwargs)
+    prepare = _impact_check(invocation, view_id, measure_filter)
+    return _dispatch_view(
+        invocation, view_id, "filter_rows", prepare=prepare, reduces_rows=True, **kwargs
+    )
 
 
 def view_transform_generate_sql(invocation: Invocation) -> HandlerResult:
@@ -1207,7 +1297,8 @@ def view_transform_replace(invocation: Invocation) -> HandlerResult:
     _require_field(document, "replace")
     assert document is not None
     kwargs = _bind_transform_inputs(invocation, document)
-    return _dispatch_view(invocation, view_id, "replace_values", **kwargs)
+    prepare = _impact_check(invocation, view_id, measure_replace)
+    return _dispatch_view(invocation, view_id, "replace_values", prepare=prepare, **kwargs)
 
 
 def view_transform_set_values(invocation: Invocation) -> HandlerResult:

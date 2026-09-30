@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -449,6 +450,12 @@ def test_data_get_relabels_and_drops_system_columns(
     assert data.pop("column_checks")["rows_checked"] == 1
     assert data == {
         "data": [{"store": "A", "revenue": "10"}],
+        "duplicates": {
+            "exact_duplicate_rows": 0,
+            "rows_checked": 1,
+            "row_count": 1,
+            "scope": "every row of the view",
+        },
         "rows_returned": 1,
         "rows_total_in_page": 1,
         "truncated": False,
@@ -504,6 +511,53 @@ def test_data_get_adds_column_warnings(fake_service: FakeMammothService) -> None
     data, _ = view_cmd.view_data_get(_inv("view.data.get", project=180, extra_args=["7", "9"]))
     assert [w["issue"] for w in data["column_warnings"]] == ["numbers_stored_as_text"]
     assert "convert-type 7" in data["column_warnings"][0]["fix"]
+
+
+def _duplicates_read(fake_service: FakeMammothService, rows: list[dict[str, Any]]) -> None:
+    fake_service.responses["mammoth.api.dataviews.DataviewsAPI.get"] = {
+        "metadata": [{"internal_name": "column_1", "display_name": "n", "type": "NUMERIC"}]
+    }
+    fake_service.responses[_DATA_GET] = {"data": rows}
+    fake_service.responses["mammoth.api.dataviews.DataviewsAPI.query_data"] = {"data": rows}
+
+
+def test_data_get_says_positively_that_no_row_is_duplicated(
+    fake_service: FakeMammothService,
+) -> None:
+    _duplicates_read(fake_service, [{"column_1": n} for n in range(50)])
+    data, _ = view_cmd.view_data_get(_inv("view.data.get", project=180, extra_args=["7", "9"]))
+    assert data["duplicates"] == {
+        "exact_duplicate_rows": 0,
+        "rows_checked": 50,
+        "row_count": 50,
+        "scope": "every row of the view",
+    }
+    assert "column_warnings" not in data
+
+
+def test_data_get_counts_exact_duplicates_over_the_whole_view(
+    fake_service: FakeMammothService,
+) -> None:
+    _duplicates_read(fake_service, [{"column_1": n % 4} for n in range(10)])
+    data, _ = view_cmd.view_data_get(_inv("view.data.get", project=180, extra_args=["7", "9"]))
+    assert data["duplicates"]["exact_duplicate_rows"] == 6
+    assert data["duplicates"]["row_count"] == 10
+
+
+def test_a_later_page_names_the_table_wide_duplicate_check(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    _duplicates_read(fake_service, [{"column_1": n} for n in range(2)])
+    doc = tmp_path / "in.json"
+    doc.write_text('{"offset": 36, "limit": 2}', encoding="utf-8")
+    data, _ = view_cmd.view_data_get(
+        _inv("view.data.get", project=180, extra_args=["7", "9"], input_file=str(doc))
+    )
+    facts = data["duplicates"]
+    assert facts["scope"] == "this page only" and "row_count" not in facts
+    assert facts["exact_duplicate_rows_in_page"] == 0 and facts["rows_checked"] == 2
+    assert "discard-duplicates 7" in facts["table_wide_check"]
+    assert "--dry-run" in facts["table_wide_check"]
 
 
 def test_join_check_reports_match_rate_and_unmatched_keys() -> None:

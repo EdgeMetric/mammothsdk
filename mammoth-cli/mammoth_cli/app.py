@@ -899,9 +899,12 @@ def _dry_run(handler: Handler, invocation: Invocation) -> tuple[Any, dict[str, A
             dependents = resolve_dependents(
                 service, invocation.command_id, would_call, resolved_project(invocation)
             )
+        impact = invocation.predicted_impact
         report = {**stop.record, "targets": targets}
         if dependents is not None:
             report["dependents"] = dependents
+        if impact is not None:
+            report["predicted_impact"] = impact
         return report, {"profile": invocation.profile, "project_id": resolved_project(invocation)}
 
 

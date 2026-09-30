@@ -267,3 +267,18 @@ def test_a_dataset_beyond_the_first_page_is_still_discovered() -> None:
         assert client.pipeline.find_dataset_for_dataview(DATAVIEW_ID) == DATASET_ID
     finally:
         client.close()
+
+
+def test_resolution_trusts_the_record_own_parent_over_the_probed_dataset() -> None:
+    """The backend serves a view under a dataset that does not own it.
+
+    The probe hit dataset 500, but the returned record says ``ds_id`` 777: the
+    record names the real parent, so that is what resolution returns and caches.
+    """
+    transport = _FakeTransport(200, {"id": DATAVIEW_ID, "ds_id": 777})
+    client = _client_with_transport(transport)
+    try:
+        assert client.pipeline.find_dataset_for_dataview(DATAVIEW_ID) == 777
+        assert client.pipeline.find_dataset_for_dataview(DATAVIEW_ID) == 777
+    finally:
+        client.close()

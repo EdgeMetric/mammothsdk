@@ -1,5 +1,5 @@
 manifest_schema_version: 1
-method_count: 574
+method_count: 575
 generator_version: '1'
 methods:
 - sdk_symbol: mammoth._mixins._advanced_ops.AdvancedOpsMixin.add_sql
@@ -6823,6 +6823,18 @@ methods:
   no_command_reason: null
   mutation_class: null
   wait_policy: always_wait
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.view.View.build_only
+  implementation_origin: mammoth.view.View.build_only
+  signature: build_only(self) -> 'Iterator[View]'
+  openapi_operation_ids: []
+  canonical_command: null
+  alias_of: null
+  no_command_reason: SDK-only helper; no reviewed CLI command.
+  mutation_class: null
+  wait_policy: null
   pagination_policy: null
   secret_fields: []
   reviewed_by: primary

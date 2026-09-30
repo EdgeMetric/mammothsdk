@@ -41,7 +41,8 @@ import datetime
 import random
 import string
 import time
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Any
 
@@ -193,6 +194,7 @@ class View(
 
         # Draft mode tracking
         self._draft_mode: bool = False
+        self._build_only: bool = False
 
         # Attach export helper
         self.export = ViewExport(self)
@@ -317,6 +319,28 @@ class View(
         _validate_condition_columns(condition, self.columns, self._internal_names)
         return condition.build(self.columns, self.column_types)
 
+    @contextmanager
+    def build_only(self) -> Iterator[View]:
+        """Build and validate transforms inside the block, sending nothing.
+
+        Within the block a transform method (``math``, ``filter_rows``, ...)
+        runs all of its validation and builds its task exactly as a real call
+        does, then returns ``{"status": "validated", "task_spec": ...}``
+        instead of adding the task, so a caller can check an input, or stop
+        before the network (a dry run), without touching the pipeline.
+
+        Example::
+
+            with view.build_only():
+                checked = view.math("Price * Quantity", new_column="Total")
+        """
+        previous = self._build_only
+        self._build_only = True
+        try:
+            yield self
+        finally:
+            self._build_only = previous
+
     def _add_task(self, task_spec: dict[str, Any]) -> dict[str, Any]:
         """Add a task to the pipeline, wait for completion, and refresh metadata.
 
@@ -345,6 +369,8 @@ class View(
         # The server owns draft state.  The local flag is retained only as a
         # compatibility fallback for older injected clients that do not return
         # a status mapping; it is never authoritative for a real transport.
+        if self._build_only:
+            return {"status": "validated", "task_spec": task_spec}
         in_draft = self.is_draft_mode
         result = self._client.pipeline.add_task(self.id, task_spec, self.dataset_id)
         if isinstance(result, dict) and result.get("has_error") is True:
