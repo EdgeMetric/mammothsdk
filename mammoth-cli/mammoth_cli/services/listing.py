@@ -238,15 +238,41 @@ def sample_values(payload: Any, metadata: list[Any]) -> dict[str, list[str]]:
     return found
 
 
-def _view_samples(
+def _view_stats(
     view: dict[str, Any], read_stats: Callable[[dict[str, Any]], Any]
-) -> dict[str, list[str]] | str:
-    """One view's stored samples, or why they are not available (never a silent gap)."""
+) -> tuple[dict[str, list[str]] | str, dict[str, str]]:
+    """One view's stored samples (or why there are none) and its date columns' ranges.
+
+    One stored-stats read serves both; a failed read says so instead of a silent gap.
+    """
     try:
-        found = sample_values(read_stats(view), view.get("metadata") or [])
+        payload = read_stats(view)
+        metadata = view.get("metadata") or []
+        return sample_values(payload, metadata) or "none stored", date_ranges(payload, metadata)
     except Exception as exc:  # noqa: BLE001 -- one unreadable view must not sink the list
-        return f"unavailable: {str(exc)[:80]}"
-    return found or "none stored"
+        return f"unavailable: {str(exc)[:80]}", {}
+
+
+def date_ranges(payload: Any, metadata: list[Any]) -> dict[str, str]:
+    """``{date column: "first .. last"}`` from a stats payload, to read a period against."""
+    columns = {
+        str(c["display_name"]): c["internal_name"]
+        for c in metadata
+        if isinstance(c, dict)
+        and c.get("display_name")
+        and c.get("internal_name")
+        and str(c.get("type")).upper() == "DATE"
+    }
+    facts, _rows = stored_facts(payload, columns)
+    return {
+        name: f"{_stamp_day(fact['min'])} .. {_stamp_day(fact['max'])}"
+        for name, fact in facts.items()
+        if fact.get("min") is not None and fact.get("max") is not None
+    }
+
+
+def _stamp_day(value: Any) -> str:
+    return str(value)[:10]
 
 
 def _dataset_of(view: dict[str, Any]) -> Any:
@@ -313,10 +339,10 @@ def compact_view_list(
         ]
     chosen, dropped_dataset, omitted = _choose_views(groups)
     with ThreadPoolExecutor(max_workers=_STATS_WORKERS) as pool:
-        samples = list(pool.map(lambda pair: _view_samples(pair[0], read_stats), chosen))
+        stats = list(pool.map(lambda pair: _view_stats(pair[0], read_stats), chosen))
     items = [
-        {**summary, "sample_values": found}
-        for (_v, summary), found in zip(chosen, samples, strict=True)
+        {**summary, "sample_values": found, **({"date_range": dates} if dates else {})}
+        for (_v, summary), (found, dates) in zip(chosen, stats, strict=True)
     ]
     kept, cut = fit_budget(items)
     result: dict[str, Any] = {"dataviews": kept, "shown": len(kept)}
