@@ -1,5 +1,69 @@
 # Changelog
 
+## v0.8.0
+
+### Changed — breaking
+
+- The SDK is async. Every method that calls the API is a coroutine and must be
+  awaited: `await client.views.get(1039)`, `await view.filter_rows(...)`,
+  `await client.datasets.list()`. `View.is_draft_mode` is an async property:
+  `await view.is_draft_mode`. Pure builders and setters stay sync
+  (`client.set_project_id`, `Condition`, the spec models).
+- The transport is `httpx` instead of `requests`, which is no longer a
+  dependency. API calls still raise `MammothAPIError` for transport failures;
+  only code that uses `client.session` or `client.download_session` directly
+  sees the change — both are `httpx.AsyncClient`s now.
+- `MammothClient` is an async context manager: `async with MammothClient(...)
+  as client:`. `close()` is a coroutine. The sync `with` form is gone.
+- One client belongs to one event loop: its connection pool lives on the loop
+  that first used it.
+
+Migrating from 0.7.x:
+
+1. Run SDK calls inside a coroutine, e.g. `asyncio.run(main())`.
+2. Put `await` in front of every call that reaches the API.
+3. Replace `with MammothClient(...)` with `async with MammothClient(...)`, or
+   call `await client.close()`.
+
+Code that must stay sync should pin `mammoth-io<0.8`.
+
+### Added
+
+- `MammothClient(api_root=...)` addresses the API server directly, for a
+  caller inside the network. The default stays `"/api/v2"`.
+- `MammothClient(job_poll_seconds=...)` and a `poll_interval=` argument on the
+  job waits (`JobsAPI.wait_for_job`, `JobsAPI.wait_for_jobs`,
+  `MammothClient.wait_if_job`, `PipelineAPI.wait_for_pipeline` and the data
+  reads that wait) set how often a running job is asked. Default:
+  `DEFAULT_JOB_POLL_SECONDS`.
+- `fields=`, `limit=` and `offset=` on `BrowseAPI.workspaces` and `projects`
+  ask for one page of smaller records.
+- `PipelineAPI.preview_task(sample_size=...)`.
+- `DashboardsAPI.generate_v3` builds a v3 dashboard. `DashboardsAPI.action`
+  takes `params_sequence` (restore a version) and `params_filter_column`
+  (row-level security).
+- `DatasetsAPI.preview_interpretation`, `confirm_interpretation` and
+  `discard_unstructured_rows`, for a file whose dataset stopped for a decision.
+
+### Fixed
+
+- `DataviewsAPI.get` and `query_data` no longer resolve and send a pipeline
+  `sequence` when the caller gave none. The resolved value could be a staged
+  draft step that never ran, so a read in draft mode failed with "Job failed".
+  The API now picks the step, and one request fewer is made.
+- `ExportsAPI.to_csv` (and `view.export.to_csv`) failed on every call under
+  the async client: the download still used the `requests` streaming API. It
+  now streams through `httpx`, with the same atomic write and error handling.
+- `MammothClient.branch_out` returned an un-awaited coroutine instead of the
+  dataset id.
+- `DatasetsAPI.get_unstructured_rows` reads `.../unstructured_data`, the same
+  route `discard_unstructured_rows` deletes from (it read
+  `.../unstructured_rows` in 0.7.40).
+- Automations accept the task types, statuses and commands the routes accept
+  today; `"restore"` is accepted as well as `"resume"`.
+- Export specs default the properties the route defaults.
+- An API error keeps the reason the API gave instead of a bare status code.
+
 ## v0.7.18
 
 ### Fixed
