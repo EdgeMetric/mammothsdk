@@ -181,21 +181,23 @@ ServiceFactory = Callable[..., "tuple[SdkMammothService, FakeApi]"]
 def real_service() -> ServiceFactory:
     """Return a factory that builds a real service with a faked HTTP transport.
 
-    The factory accepts optional ``project_id`` and ``base_url`` keywords and
-    returns ``(service, api)``: a genuine
+    The factory accepts optional ``project_id``, ``base_url`` and ``api``
+    keywords and returns ``(service, api)``: a genuine
     :class:`~mammoth_cli.services.sdk_service.SdkMammothService` and the
-    :class:`FakeApi` given to its client. The base url is never contacted;
-    it is only recorded.
+    :class:`FakeApi` given to its client. Pass ``api`` to mount an existing
+    transport, so several services record into one. The base url is never
+    contacted; it is only recorded.
     """
 
     def _factory(
         *,
         project_id: int | None = None,
         base_url: str = "https://fake.mammoth.test/api/v2",
+        api: FakeApi | None = None,
     ) -> tuple[SdkMammothService, FakeApi]:
         auth = ResolvedAuth(api_key="k", api_secret="s", workspace_id=4, base_url=base_url)
         service = SdkMammothService(auth, project_id=project_id)
-        api = FakeApi()
+        api = api or FakeApi()
         # Keep the credentials the real session carries; swap only the wire.
         service._client.session = httpx.AsyncClient(
             transport=api, headers=service._client.session.headers, follow_redirects=False

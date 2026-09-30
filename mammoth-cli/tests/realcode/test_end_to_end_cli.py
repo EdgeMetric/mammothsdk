@@ -29,11 +29,20 @@ def _bind_real_service(
 ) -> Any:
     """Point the CLI's service factory at a real service with a fake transport.
 
-    Returns the :class:`FakeApi` mounted on the built service's client so the
-    test can assert the exact HTTP request the real stack emitted.
+    Returns the :class:`FakeApi` mounted on the built services' clients so the
+    test can assert the exact HTTP requests the real stack emitted.
+
+    Every build gets a fresh service, as in production: a command that opens
+    the service twice (a mutation, then its read-back) closes the first one,
+    event loop included, before it opens the second.
     """
-    service, api = real_service(**kwargs)
-    monkeypatch.setattr(factory, "build_service", lambda *a, **k: service)
+    first, api = real_service(**kwargs)
+    unused = iter([first])
+    monkeypatch.setattr(
+        factory,
+        "build_service",
+        lambda *a, **k: next(unused, None) or real_service(api=api, **kwargs)[0],
+    )
     return api
 
 
