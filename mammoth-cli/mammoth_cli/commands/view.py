@@ -991,7 +991,7 @@ def key_overlap(left_counts: dict[Any, int], right_keys: set[Any]) -> dict[str, 
 def _key_values(
     service: Any, dataset_id: int, view_id: int, project_id: int | None, column: str
 ) -> tuple[dict[Any, int], bool]:
-    """``({key value: rows}, truncated)`` of one display-named column, read through one aggregate."""
+    """``({key value: rows}, truncated)`` of one display-named column, via one aggregate."""
     mapping, _types = _column_profile(service, dataset_id, view_id, project_id)
     internal = next((i for i, display in mapping.items() if display == column), column)
     result = service.call(
