@@ -280,8 +280,8 @@ commands:
   known_restrictions: Prefer dataset_ids/view_ids (the plain ids dataset get/view get return) over resource_ids
     -- the SDK resolves them to resource ids for you. resource_ids itself takes each item's resource id,
     not a dataset/view's own id. target_folder_resource_id is the destination folder's id field, exactly
-    as folder list/folder get/folder create return it (NOT the folder's resource_id field, despite this
-    parameter's name).
+    as folder list/folder get/folder create return it. A folder's resource_id field is also accepted
+    and is replaced by that folder's id; a value that is one folder's id and another's resource_id is refused.
   reviewed_by: primary
   readback:
     command: job.get

@@ -298,7 +298,10 @@ commands:
   draft_test: null
   undo_test: null
   known_restrictions: Existing method waits but returns the pre-wait response; must return stable final
-    state.
+    state. Path extract_pdf_tables takes a typed value (filename, extraction_method tables_only, all_content
+    or custom, optional user_instruction with instruction and instruction_type, preview_page,
+    extract_full_document, delete_file_after_extract) - the extraction setting a dataset's saved recipe
+    replays for PDFs an automation receives.
   reviewed_by: primary
 - command_id: file.upload
   command_path: file upload

@@ -178,9 +178,25 @@ def _find_in_projects(
     return matches
 
 
-def _other_projects(service: Any, project_id: int) -> list[dict[str, Any]]:
+def _other_projects(visible: list[dict[str, Any]], project_id: int) -> list[dict[str, Any]]:
     """Every visible project except ``project_id``."""
-    return [p for p in _visible_projects(service) if p.get("id") != project_id]
+    return [p for p in visible if p.get("id") != project_id]
+
+
+def named_project(service: Any, project_id: int, visible: list[dict[str, Any]]) -> dict[str, Any]:
+    """``{"id", "name"}`` of ``project_id``, so a match can say where it was found.
+
+    A search scoped by ``--project`` knew only the id, and its matches came back
+    with ``project_name: None``: the agent could not tell the user which project
+    held the dataset.
+    """
+    for project in visible:
+        if project.get("id") == project_id:
+            return project
+    record = service.call("mammoth.api.projects.ProjectsAPI.get", project_id=project_id)
+    record = record.model_dump(mode="json") if hasattr(record, "model_dump") else record
+    record = record.get("project", record) if isinstance(record, dict) else {}
+    return {"id": project_id, "name": record.get("name")}
 
 
 def dataset_find(invocation: Invocation) -> HandlerResult:
@@ -196,15 +212,16 @@ def dataset_find(invocation: Invocation) -> HandlerResult:
     name_substring = _require_string_positional(invocation, "name substring")
     needle = name_substring.lower()
     with open_service(invocation) as (service, auth):
+        visible = _visible_projects(service)
         if invocation.project is not None:
-            projects: list[dict[str, Any]] = [{"id": invocation.project, "name": None}]
+            projects: list[dict[str, Any]] = [named_project(service, invocation.project, visible)]
             matches = _find_in_projects(service, needle, projects)
             if not matches:
-                others = _other_projects(service, invocation.project)
+                others = _other_projects(visible, invocation.project)
                 matches = _find_in_projects(service, needle, others)
                 projects += others
         else:
-            projects = _visible_projects(service)
+            projects = visible
             matches = _find_in_projects(service, needle, projects)
         meta = {
             "profile": invocation.profile,
@@ -508,14 +525,21 @@ def dataset_interpretation(invocation: Invocation) -> HandlerResult:
 
     ``--input`` carries ``user_instruction`` (plain English, e.g. one of the
     suggestions ``dataset get`` shows), a ``structure_map`` from an earlier
-    preview, or a ``destination_dataset_id``; at least one is required.
+    preview, or a ``destination_dataset_id``; at least one is required. ``confirm``
+    alone also takes ``mode``: ``"original"`` keeps the file in its uploaded layout
+    (no other field then), ``"interpreted"`` is the default.
     """
     project_id = require_project(invocation)
     dataset_id = _require_int_positional(invocation, "dataset id")
     document = invocation.load_input() or {}
     kwargs: dict[str, Any] = {"dataset_id": dataset_id, "project_id": project_id}
-    _forward_optional(document, kwargs, _INTERPRETATION_FIELDS)
-    if not any(field in kwargs for field in _INTERPRETATION_FIELDS):
+    confirming = invocation.command_id == "dataset.interpretation.confirm"
+    _forward_optional(
+        document,
+        kwargs,
+        (*_INTERPRETATION_FIELDS, "mode") if confirming else _INTERPRETATION_FIELDS,
+    )
+    if not any(field in kwargs for field in (*_INTERPRETATION_FIELDS, "mode")):
         raise CliError(
             code=CODE_MISSING_ARGUMENT,
             message="Say how to read the file: pass one of " + ", ".join(_INTERPRETATION_FIELDS),

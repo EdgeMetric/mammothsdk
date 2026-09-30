@@ -12,6 +12,7 @@ public SDK method named by the command's reviewed manifest ``sdk_symbol``.
 from __future__ import annotations
 
 import json
+from datetime import UTC, datetime
 from typing import Any
 
 from mammoth_cli.errors.envelope import (
@@ -157,14 +158,96 @@ def _meta(invocation: Invocation, workspace_id: int, project_id: int | None) -> 
     }
 
 
+_WORKSPACE_USERS_SYMBOL = "mammoth.api.workspace.WorkspaceAPI.list_users"
+_TIME_FORMAT = "%Y-%m-%d %H:%M:%S"
+_EPOCH = "1970-01-01 00:00:00"
+
+
+def _close_time_window(kwargs: dict[str, Any]) -> str | None:
+    """Give a lone ``start_time`` or ``end_time`` its missing bound; say so.
+
+    The backend applies the time filter only when BOTH bounds are present
+    (activity_logs/manager.py ``_get_time_filters``) and otherwise lists the
+    latest entries of all time -- so "what changed today" with only a
+    ``start_time`` answered from the wrong window.
+    """
+    start, end = kwargs.get("start_time"), kwargs.get("end_time")
+    if bool(start) == bool(end):
+        return None
+    if start:
+        kwargs["end_time"] = datetime.now(UTC).strftime(_TIME_FORMAT)
+        return f"end_time was not given; the window runs to now ({kwargs['end_time']} UTC)."
+    kwargs["start_time"] = _EPOCH
+    return f"start_time was not given; the window starts at {_EPOCH} UTC."
+
+
+def _local_time(stamp: Any) -> str | None:
+    """A ``created_at`` (UTC if it has no offset) as ISO in this machine's timezone."""
+    if not isinstance(stamp, str):
+        return None
+    try:
+        moment = datetime.fromisoformat(stamp)
+    except ValueError:
+        return stamp
+    if moment.tzinfo is None:
+        moment = moment.replace(tzinfo=UTC)
+    return moment.astimezone().isoformat(timespec="seconds")
+
+
+def _user_emails(service: Any) -> dict[Any, str]:
+    """Workspace users by id; empty when the caller may not list them."""
+    try:
+        users = service.call(_WORKSPACE_USERS_SYMBOL)
+    except Exception:  # noqa: BLE001 -- a name is a convenience; the id is always shown
+        return {}
+    return {u["id"]: u["email"] for u in users if isinstance(u, dict) and u.get("email")}
+
+
+def _change(entry: dict[str, Any], emails: dict[Any, str]) -> dict[str, Any]:
+    """One log entry as a line of a change list: when, who, what, on which object."""
+    details = entry.get("details") if isinstance(entry.get("details"), dict) else {}
+    primary = entry.get("primary_object") if isinstance(entry.get("primary_object"), dict) else {}
+    user_id = entry.get("user_id")
+    change = {
+        "when": _local_time(entry.get("created_at")),
+        "user_id": user_id,
+        "user": emails.get(user_id),
+        "action": entry.get("name_key"),
+        "category": entry.get("category"),
+        "object": {"name": primary.get("name"), "resource_id": primary.get("resource_id")},
+        "result": entry.get("result"),
+    }
+    if details.get("task_name"):
+        change["task"] = details["task_name"]
+    return change
+
+
+def _with_changes(service: Any, data: Any, note: str | None) -> Any:
+    """Add ``changes``: each entry with its time, user and action (no entry dropped)."""
+    logs = data.get("activity_logs") if isinstance(data, dict) else None
+    if not isinstance(logs, list):
+        return data
+    emails = _user_emails(service)
+    changes = [_change(entry, emails) for entry in logs if isinstance(entry, dict)]
+    extra = {"time_window_note": note} if note else {}
+    return {**data, "changes": changes, **extra}
+
+
 def activity_list(invocation: Invocation) -> HandlerResult:
-    """List activity logs in the active workspace, with optional filters."""
+    """List activity logs in the active workspace, with optional filters.
+
+    ``changes`` lists each entry with its ``when`` (ISO, this machine's UTC
+    offset), ``user_id`` and ``user``, ``action``, ``object`` and ``result``,
+    so "who changed this view today" is answered from the list, not from its
+    absence.
+    """
     document = _bound_document(invocation)
     _refuse_bare_resource_id(document)
     kwargs: dict[str, Any] = {}
     _forward_optional(document, kwargs, _LIST_OPTIONAL)
+    note = _close_time_window(kwargs)
     with open_service(invocation) as (service, auth):
-        data = service.call(_symbol(invocation), **kwargs)
+        data = _with_changes(service, service.call(_symbol(invocation), **kwargs), note)
     return data, _meta(invocation, auth.workspace_id, resolved_project(invocation))
 
 

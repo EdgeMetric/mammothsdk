@@ -23,6 +23,11 @@ request:
   an id you already have (for example from a dataset's own automation/task
   metadata) instead.
 
+PDF or image intake (`append_data` + `new_data_addition_in_folder`) needs one
+destination dataset that already has a saved extraction recipe and a name
+pattern the file name matches; a password-protected or unreadable file holds
+for input. Read `automation capabilities` before you promise it.
+
 `schema find "recurring work"` phrasing (e.g. "schedule a daily refresh",
 "run every week automatically") resolves to `automation create`.
 

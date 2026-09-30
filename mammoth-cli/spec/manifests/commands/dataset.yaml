@@ -594,7 +594,7 @@ commands:
   - CT-DATASET-INTERPRETATION-CONFIRM-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: 'Finalizes a dataset whose file has more than one plausible reading (status has_unstructured_data): applies the interpretation to the whole file and creates the table. Run interpretation preview first and pass the same input here, or the structure_map it returned. The suggestions stored on the dataset are under additional_info.interpretation.instruction_suggestions in dataset get. The result state shows the dataset afterwards. Example: --input ''{"user_instruction": "Skip preamble rows, row 5 is the header"}''.'
+  known_restrictions: 'Finalizes a dataset whose file has more than one plausible reading (status has_unstructured_data): applies the interpretation to the whole file and creates the table. Run interpretation preview first and pass the same input here, or the structure_map it returned. The suggestions stored on the dataset are under additional_info.interpretation.instruction_suggestions in dataset get. Pass mode "original" (alone: it takes no reshape field) to keep the file in the layout it was uploaded in; later files for the dataset are then ingested the same way, without review. The result state shows the dataset afterwards. Example: --input ''{"user_instruction": "Skip preamble rows, row 5 is the header"}''.'
   reviewed_by: primary
 - command_id: dataset.interpretation.preview
   command_path: dataset interpretation preview

@@ -316,6 +316,36 @@ BRIEF_VIEW_FIELDS: tuple[str, ...] = (
 )
 
 
+#: The dataview-record fields that say how current a view's data is.
+_FRESHNESS_FIELDS: tuple[str, ...] = (
+    "data_updated_at",
+    "updated_at",
+    "pipeline_status",
+    "is_pipeline_running",
+    "is_dataview_data_in_sync",
+)
+
+
+def view_freshness(record: dict[str, Any]) -> dict[str, Any]:
+    """How current a view's data is, apart from whether the data is any good.
+
+    The server's own fields, unchanged, plus ``state``: ``running`` (a
+    pipeline is applying now), ``out_of_sync`` (the view's data does not
+    match its pipeline), ``in_sync``, or ``unknown`` (the record says none of
+    it). Data quality is ``column_warnings``, a separate question.
+    """
+    facts = {key: record[key] for key in _FRESHNESS_FIELDS if key in record}
+    if record.get("is_pipeline_running"):
+        state = "running"
+    elif record.get("is_dataview_data_in_sync") is False:
+        state = "out_of_sync"
+    elif record.get("is_dataview_data_in_sync") is True:
+        state = "in_sync"
+    else:
+        state = "unknown"
+    return {"state": state, **facts}
+
+
 def apply_column_renames(record: Any) -> Any:
     """Show renamed columns under their new names in a dataview record.
 
@@ -3788,6 +3818,7 @@ def upload_preview(service: Any, dataset_id: int, project_id: int | None) -> dic
         "sample_rows": rows[:_UPLOAD_SAMPLE_ROWS],
         "column_checks": {**checks, "scope": "first_page"},
         "column_warnings": warnings,
+        "freshness": view_freshness(record),
     }
     try:
         text_numbers = [

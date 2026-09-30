@@ -97,7 +97,7 @@ def test_list_returns_response_and_meta(
 ) -> None:
     fake_service.responses[_LIST] = {"activity_logs": [], "limit": 50, "offset": 0}
     data, meta = activity_cmd.activity_list(_inv("activity.list", project=180))
-    assert data == {"activity_logs": [], "limit": 50, "offset": 0}
+    assert data == {"activity_logs": [], "limit": 50, "offset": 0, "changes": []}
     assert meta == {"profile": None, "workspace_id": 4, "project_id": 180}
 
 

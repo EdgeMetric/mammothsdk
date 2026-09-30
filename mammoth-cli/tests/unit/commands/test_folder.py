@@ -62,14 +62,13 @@ def test_find_without_project_searches_every_visible_project(
 
 
 def test_find_with_project_restricts_to_one_project(fake_service: FakeMammothService) -> None:
-    fake_service.projects = [{"id": 1, "name": "P1"}, {"id": 2, "name": "P2"}]
+    fake_service.projects = [{"id": 1, "name": "P1"}, {"id": 42, "name": "P42"}]
     fake_service.responses[_LIST] = {"folders": [{"id": 20, "name": "Reports 2024"}]}
     result, meta = folder_cmd.folder_find(_inv("folder.find", project=42, extra_args=["report"]))
     assert result["projects_searched"] == 1
     assert result["matches"] == [
-        {"project_id": 42, "project_name": None, "id": 20, "name": "Reports 2024"}
+        {"project_id": 42, "project_name": "P42", "id": 20, "name": "Reports 2024"}
     ]
-    assert "list_projects" not in fake_service.calls
     assert fake_service.call_log == [(_LIST, {"project_id": 42, "limit": 100})]
     assert meta["project_id"] == 42
 
@@ -146,9 +145,11 @@ def test_move_forwards_targets(fake_service: FakeMammothService, tmp_path: Path)
         json.dumps({"resource_ids": ["a"], "target_folder_resource_id": "t"}), encoding="utf-8"
     )
     folder_cmd.folder_move(_inv("folder.move", project=180, input_file=str(doc)))
-    assert fake_service.call_log == [
-        (_MOVE, {"resource_ids": ["a"], "project_id": 180, "target_folder_resource_id": "t"})
-    ]
+    # The target is looked up among the project's folders first; "t" is none, so it is sent as is.
+    assert fake_service.call_log[-1] == (
+        _MOVE,
+        {"resource_ids": ["a"], "project_id": 180, "target_folder_resource_id": "t"},
+    )
 
 
 def test_move_requires_one_of_resource_dataset_view_ids(
