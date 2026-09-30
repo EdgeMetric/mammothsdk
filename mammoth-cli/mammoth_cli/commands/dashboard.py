@@ -369,10 +369,15 @@ def dashboard_tags_merge(invocation: Invocation) -> HandlerResult:
 
 
 def dashboard_get(invocation: Invocation) -> HandlerResult:
-    """Get one dashboard by id."""
+    """Get one dashboard by id, with each KPI card's and tile's number and period.
+
+    A question about an existing board is answered from what it shows, so the
+    read carries the numbers, not only the definitions (UQA-RT10-02).
+    """
     dashboard_id = _require_int_positional(invocation, "dashboard id")
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), dashboard_id=dashboard_id)
+        data = _with_board_values(service, auth, {"dashboard_id": dashboard_id}, data)
     return data, _meta(invocation, auth.workspace_id)
 
 

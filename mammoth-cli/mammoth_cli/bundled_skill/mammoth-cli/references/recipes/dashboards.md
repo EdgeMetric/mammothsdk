@@ -19,6 +19,11 @@ mammoth dashboard get DASHBOARD_ID
 `chat edit` returns `changed` and a one-line `message`. Quote one number from
 the board before you report it done.
 
+Before you say anything about a board that already exists (what a chart shows,
+its numbers, the period it covers), run `dashboard get DASHBOARD_ID`: its
+`values` carry every KPI card's and tile's number and the `period` it counts.
+Answer from those, never from an earlier turn.
+
 Discover page/widget/publish routes and verify the binding, draft/published
 data and terminal jobs. Use only returned IDs and schema confirmation policy;
 do not invent dashboard JSON or opaque task specs.
