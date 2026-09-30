@@ -15,10 +15,11 @@ import sys
 from pathlib import Path
 
 import pytest
+import pytest_asyncio
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-pytestmark = pytest.mark.integration
+pytestmark = [pytest.mark.integration, pytest.mark.asyncio(loop_scope="session")]
 
 from mammoth import Condition, MammothClient, Operator  # noqa: E402
 
@@ -68,8 +69,8 @@ def client():
     return c
 
 
-@pytest.fixture(scope="session")
-def uploaded_dataset_id(client):
+@pytest_asyncio.fixture(scope="session", loop_scope="session")
+async def uploaded_dataset_id(client):
     """Upload employee.csv once, return dataset_id, delete after session."""
     assert CSV_PATH.exists(), f"Test CSV not found: {CSV_PATH}"
     ds_id = await client.files.upload(str(CSV_PATH))
@@ -80,8 +81,8 @@ def uploaded_dataset_id(client):
         await client.datasets.delete(ds_id)
 
 
-@pytest.fixture(scope="session")
-def base_view_id(client, uploaded_dataset_id):
+@pytest_asyncio.fixture(scope="session", loop_scope="session")
+async def base_view_id(client, uploaded_dataset_id):
     """Get the default view created by the upload."""
     views = await client.views.list(uploaded_dataset_id)
     assert len(views) > 0, "No views found for uploaded dataset"
@@ -91,8 +92,8 @@ def base_view_id(client, uploaded_dataset_id):
 # ── Per-test fixture: fresh view ──────────────────────────────
 
 
-@pytest.fixture
-def view(client, uploaded_dataset_id):
+@pytest_asyncio.fixture(loop_scope="session")
+async def view(client, uploaded_dataset_id):
     """Create a fresh view for each test, delete after."""
     v = await client.views.create(dataset_id=uploaded_dataset_id, name="pytest_temp")
     yield v
@@ -113,7 +114,7 @@ class TestUploadAndDataset:
 
     async def test_dataset_appears_in_list(self, client, uploaded_dataset_id):
         datasets = await client.datasets.list()
-        ds_ids = [d["id"] for d in await datasets.get("datasets", [])]
+        ds_ids = [d["id"] for d in datasets.get("datasets", [])]
         assert uploaded_dataset_id in ds_ids
 
     async def test_dataset_has_views(self, client, uploaded_dataset_id):

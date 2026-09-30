@@ -10,6 +10,8 @@ Run:
 
 from __future__ import annotations
 
+import pytest
+
 from mammoth import (
     AggregateFunction,
     AggregationSpec,
@@ -30,6 +32,9 @@ from mammoth import (
     WindowFunction,
 )
 
+# The session fixtures open the client's connection pool; tests must share their loop.
+pytestmark = pytest.mark.asyncio(loop_scope="session")
+
 # ═══════════════════════════════════════════════════════════════
 #  Phase 1: Upload & Dataset
 # ═══════════════════════════════════════════════════════════════
@@ -43,7 +48,7 @@ class TestUploadAndDataset:
 
     async def test_dataset_appears_in_list(self, client, uploaded_dataset_id):
         datasets = await client.datasets.list()
-        ds_ids = [d["id"] for d in await datasets.get("datasets", [])]
+        ds_ids = [d["id"] for d in datasets.get("datasets", [])]
         assert uploaded_dataset_id in ds_ids
 
     async def test_dataset_has_views(self, client, uploaded_dataset_id):

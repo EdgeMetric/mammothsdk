@@ -47,6 +47,9 @@ from mammoth import (
     WindowFunction,
 )
 
+# The session fixtures open the client's connection pool; tests must share their loop.
+pytestmark = pytest.mark.asyncio(loop_scope="session")
+
 # ── Paths ────────────────────────────────────────────────────
 
 STORE_CSV = Path(__file__).resolve().parent.parent.parent / "Store_Transactions.csv"
@@ -62,7 +65,7 @@ class TestConnection:
     """Verify connectivity and auth error handling."""
 
     async def test_connection_success(self, adv_client: MammothClient) -> None:
-        assert adv_client.test_connection() is True
+        assert await adv_client.test_connection() is True
 
     async def test_connection_bad_key(self) -> None:
         bad = MammothClient(
@@ -740,11 +743,11 @@ class TestDateOps:
     """extract_date, date_diff, increment_date with typed enums."""
 
     @staticmethod
-    def _convert_time(view: View) -> None:
+    async def _convert_time(view: View) -> None:
         await view.convert_type([ConversionSpec(column="Time", to=ColumnType.DATE)])
 
     async def test_extract_year(self, adv_view: View) -> None:
-        self._convert_time(adv_view)
+        await self._convert_time(adv_view)
         result = await adv_view.extract_date(
             column="Time", component=DateComponent.YEAR, new_column="yr"
         )
@@ -752,7 +755,7 @@ class TestDateOps:
         assert "yr" in adv_view.display_names
 
     async def test_extract_month(self, adv_view: View) -> None:
-        self._convert_time(adv_view)
+        await self._convert_time(adv_view)
         result = await adv_view.extract_date(
             column="Time", component=DateComponent.MONTH, new_column="mo"
         )
@@ -760,7 +763,7 @@ class TestDateOps:
         assert "mo" in adv_view.display_names
 
     async def test_extract_day(self, adv_view: View) -> None:
-        self._convert_time(adv_view)
+        await self._convert_time(adv_view)
         result = await adv_view.extract_date(
             column="Time", component=DateComponent.DAY, new_column="dy"
         )
@@ -768,7 +771,7 @@ class TestDateOps:
         assert "dy" in adv_view.display_names
 
     async def test_extract_quarter(self, adv_view: View) -> None:
-        self._convert_time(adv_view)
+        await self._convert_time(adv_view)
         result = await adv_view.extract_date(
             column="Time", component=DateComponent.QUARTER, new_column="qtr"
         )
@@ -776,7 +779,7 @@ class TestDateOps:
         assert "qtr" in adv_view.display_names
 
     async def test_extract_weekday_text(self, adv_view: View) -> None:
-        self._convert_time(adv_view)
+        await self._convert_time(adv_view)
         result = await adv_view.extract_date(
             column="Time", component=DateComponent.WEEKDAY_TEXT, new_column="wkday"
         )
@@ -784,7 +787,7 @@ class TestDateOps:
         assert "wkday" in adv_view.display_names
 
     async def test_extract_month_text(self, adv_view: View) -> None:
-        self._convert_time(adv_view)
+        await self._convert_time(adv_view)
         result = await adv_view.extract_date(
             column="Time", component=DateComponent.MONTH_TEXT, new_column="mo_text"
         )
@@ -792,7 +795,7 @@ class TestDateOps:
         assert "mo_text" in adv_view.display_names
 
     async def test_extract_year_month(self, adv_view: View) -> None:
-        self._convert_time(adv_view)
+        await self._convert_time(adv_view)
         result = await adv_view.extract_date(
             column="Time", component=DateComponent.YEAR_MONTH, new_column="yr_mo"
         )
@@ -800,7 +803,7 @@ class TestDateOps:
         assert "yr_mo" in adv_view.display_names
 
     async def test_date_diff_day(self, adv_view: View) -> None:
-        self._convert_time(adv_view)
+        await self._convert_time(adv_view)
         result = await adv_view.date_diff(
             component=DateDiffUnit.DAY,
             start="Time",
@@ -811,7 +814,7 @@ class TestDateOps:
         assert "diff_days" in adv_view.display_names
 
     async def test_date_diff_month(self, adv_view: View) -> None:
-        self._convert_time(adv_view)
+        await self._convert_time(adv_view)
         result = await adv_view.date_diff(
             component=DateDiffUnit.MONTH,
             start="Time",
@@ -822,7 +825,7 @@ class TestDateOps:
         assert "diff_months" in adv_view.display_names
 
     async def test_increment_days(self, adv_view: View) -> None:
-        self._convert_time(adv_view)
+        await self._convert_time(adv_view)
         result = await adv_view.increment_date(
             column="Time",
             delta=DateDelta(days=30),
@@ -832,7 +835,7 @@ class TestDateOps:
         assert "plus_30d" in adv_view.display_names
 
     async def test_increment_multi_component(self, adv_view: View) -> None:
-        self._convert_time(adv_view)
+        await self._convert_time(adv_view)
         result = await adv_view.increment_date(
             column="Time",
             delta=DateDelta(months=1, days=15),
@@ -842,7 +845,7 @@ class TestDateOps:
         assert "shifted" in adv_view.display_names
 
     async def test_increment_with_condition(self, adv_view: View) -> None:
-        self._convert_time(adv_view)
+        await self._convert_time(adv_view)
         result = await adv_view.increment_date(
             column="Time",
             delta=DateDelta(days=7),
@@ -1098,7 +1101,7 @@ class TestAdvancedOps:
     """join, lookup, generate_sql, add_sql with typed specs."""
 
     async def test_join_inner(self, adv_view: View, adv_second_view: View) -> None:
-        result = adv_view.join(
+        result = await adv_view.join(
             foreign_view=adv_second_view,
             join_type=JoinType.INNER,
             on=[JoinKeySpec(left="Cashier", right="full_name")],
@@ -1107,7 +1110,7 @@ class TestAdvancedOps:
         assert result is not None
 
     async def test_join_left(self, adv_view: View, adv_second_view: View) -> None:
-        result = adv_view.join(
+        result = await adv_view.join(
             foreign_view=adv_second_view,
             join_type=JoinType.LEFT,
             on=[JoinKeySpec(left="Cashier", right="full_name")],
@@ -1116,7 +1119,7 @@ class TestAdvancedOps:
         assert result is not None
 
     async def test_join_right(self, adv_view: View, adv_second_view: View) -> None:
-        result = adv_view.join(
+        result = await adv_view.join(
             foreign_view=adv_second_view,
             join_type=JoinType.RIGHT,
             on=[JoinKeySpec(left="Cashier", right="full_name")],
@@ -1125,7 +1128,7 @@ class TestAdvancedOps:
         assert result is not None
 
     async def test_join_outer(self, adv_view: View, adv_second_view: View) -> None:
-        result = adv_view.join(
+        result = await adv_view.join(
             foreign_view=adv_second_view,
             join_type=JoinType.OUTER,
             on=[JoinKeySpec(left="Cashier", right="full_name")],
@@ -1134,7 +1137,7 @@ class TestAdvancedOps:
         assert result is not None
 
     async def test_join_with_prefix(self, adv_view: View, adv_second_view: View) -> None:
-        result = adv_view.join(
+        result = await adv_view.join(
             foreign_view=adv_second_view,
             join_type=JoinType.LEFT,
             on=[JoinKeySpec(left="Cashier", right="full_name")],

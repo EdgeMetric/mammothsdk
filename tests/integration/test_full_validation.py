@@ -30,6 +30,9 @@ from mammoth import (
     View,
 )
 
+# The session fixtures open the client's connection pool; tests must share their loop.
+pytestmark = pytest.mark.asyncio(loop_scope="session")
+
 # ═══════════════════════════════════════════════════════════════
 #  1. Client Connection
 # ═══════════════════════════════════════════════════════════════
@@ -55,7 +58,7 @@ class TestClientConnection:
             workspace_id=int(os.environ["VAL_WORKSPACE_ID"]),
         ) as c:
             c.set_project_id(int(os.environ["VAL_PROJECT_ID"]))
-            assert c.test_connection() is True
+            assert await c.test_connection() is True
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -394,7 +397,7 @@ class TestJobsAPI:
         # The pipeline state should have the completed pipeline info
         pipeline = await val_client.pipeline.get_pipeline(val_view.id, val_view.dataset_id)
         assert isinstance(pipeline, dict)
-        assert await pipeline.get("state", "").lower() == "ready"
+        assert pipeline.get("state", "").lower() == "ready"
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -545,7 +548,7 @@ class TestBranchOut:
 
     async def test_branch_out(self, val_view: View, val_second_dataset_id: int) -> None:
         # REPLACE the target dataset's contents with this view's rows.
-        returned_id = val_view.branch_out(
+        returned_id = await val_view.branch_out(
             "branch_out_validation", target_ds_id=val_second_dataset_id
         )
         # An existing-target branch-out returns the id of the dataset it wrote

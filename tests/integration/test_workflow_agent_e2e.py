@@ -25,10 +25,11 @@ from __future__ import annotations
 
 import contextlib
 import os
-from collections.abc import Iterator
+from collections.abc import AsyncIterator
 from pathlib import Path
 
 import pytest
+import pytest_asyncio
 
 from mammoth import MammothClient
 from mammoth.condition import Condition
@@ -52,10 +53,13 @@ _REQUIRED_ENV = (
 
 _missing = [v for v in _REQUIRED_ENV if not os.environ.get(v)]
 
-pytestmark = pytest.mark.skipif(
-    bool(_missing),
-    reason=f"Missing env vars: {', '.join(_missing)}",
-)
+pytestmark = [
+    pytest.mark.skipif(
+        bool(_missing),
+        reason=f"Missing env vars: {', '.join(_missing)}",
+    ),
+    pytest.mark.asyncio(loop_scope="session"),
+]
 
 # ── Session-scoped client ─────────────────────────────────────────────────────
 
@@ -79,8 +83,8 @@ def client() -> MammothClient:
     return c
 
 
-@pytest.fixture(scope="module")
-def dataset_id(client: MammothClient) -> Iterator[int]:
+@pytest_asyncio.fixture(scope="module", loop_scope="session")
+async def dataset_id(client: MammothClient) -> AsyncIterator[int]:
     """Provide a dataset with a hydrated view to run e2e transforms against.
 
     Honors an explicit ``MAMMOTH_DATASET_ID`` when set; otherwise uploads a
@@ -102,7 +106,7 @@ def dataset_id(client: MammothClient) -> Iterator[int]:
             await client.datasets.delete(ds_id)
 
 
-def _task_ids(view) -> set[int]:
+async def _task_ids(view) -> set[int]:
     """Return the set of pipeline task ids currently on a view."""
     ids: set[int] = set()
     for t in await view.list_tasks():
@@ -112,8 +116,8 @@ def _task_ids(view) -> set[int]:
     return ids
 
 
-@pytest.fixture
-def view(client: MammothClient, dataset_id: int):
+@pytest_asyncio.fixture(loop_scope="session")
+async def view(client: MammothClient, dataset_id: int):
     """Yield an EXISTING ready view and restore its pipeline in teardown.
 
     Applying a transform mutates a real view, so we snapshot the task ids
@@ -130,11 +134,11 @@ def view(client: MammothClient, dataset_id: int):
         candidates = [c for c in await client.views.list(dataset_id=dataset_id) if c.display_names]
         assert candidates, f"No view with columns found on dataset {dataset_id}"
         v = candidates[0]
-    before = _task_ids(v)
+    before = await _task_ids(v)
     yield v
     with contextlib.suppress(Exception):
         await v.refresh()
-        for tid in _task_ids(v) - before:
+        for tid in await _task_ids(v) - before:
             with contextlib.suppress(Exception):
                 await v.delete_task(tid)
 
@@ -142,7 +146,7 @@ def view(client: MammothClient, dataset_id: int):
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 
-def _first_text_column(view) -> str:
+async def _first_text_column(view) -> str:
     """Return the display name of the first TEXT-type column in the view."""
     for name, col_type in view.column_types.items():
         if col_type.upper() in ("TEXT", "STRING"):
@@ -179,7 +183,7 @@ class TestWorkflowAgentE2E:
         Verifies the backend accepts a TEXT_TRANSFORM task with both TRIM and
         CASE set — exercises the combined optional-arg path.
         """
-        col = _first_text_column(view)
+        col = await _first_text_column(view)
         result = await view.text_transform(columns=[col], case=TextCase.UPPER, trim=True)
         assert result is not None
 
@@ -198,14 +202,14 @@ class TestWorkflowAgentE2E:
         Builds a Condition against the first column (type-agnostic EQ check)
         and verifies the SELECT task is accepted.
         """
-        col = _first_text_column(view)
+        col = await _first_text_column(view)
         cond = Condition(col, Operator.EQ, "")
         result = await view.filter_rows(cond, filter_type=FilterType.SHOW)
         assert result is not None
 
     async def test_filter_rows_remove(self, view):
         """filter_rows REMOVE: discard matching rows (REMOVE variant)."""
-        col = _first_text_column(view)
+        col = await _first_text_column(view)
         cond = Condition(col, Operator.EQ, "")
         result = await view.filter_rows(cond, filter_type=FilterType.REMOVE)
         assert result is not None
@@ -217,7 +221,7 @@ class TestWorkflowAgentE2E:
 
     async def test_text_transform_trim_only(self, view):
         """text_transform: trim only (no case change) — exercises trim=True path."""
-        col = _first_text_column(view)
+        col = await _first_text_column(view)
         result = await view.text_transform(columns=[col], trim=True)
         assert result is not None
 
@@ -228,7 +232,7 @@ class TestWorkflowAgentE2E:
         the backend accepts — previously KeyError'd on missing INTERNAL_NAME
         (validation.py:654,665).
         """
-        col = _first_text_column(view)
+        col = await _first_text_column(view)
         result = await view.unnest([col])
         assert result is not None
 
@@ -240,7 +244,7 @@ class TestWorkflowAgentE2E:
         INTERNAL_NAME (validation.py:809) and TYPE in {NUMERIC,TEXT}
         (validation.py:811-812).
         """
-        col = _first_text_column(view)
+        col = await _first_text_column(view)
         result = await view.json_extract(col, json_type=JsonType.OBJECT, keys=["key1"])
         assert result is not None
 
@@ -254,7 +258,7 @@ class TestWorkflowAgentE2E:
         """
         from mammoth._pure.builders import build_fill_value_params
 
-        col = _first_text_column(view)
+        col = await _first_text_column(view)
         task_spec = build_fill_value_params(col, "N/A", view.columns, view._internal_names)
         # Must be a SET task, not a FILL
         assert "SET" in task_spec
@@ -272,7 +276,7 @@ class TestWorkflowAgentE2E:
         """
         from mammoth._pure.builders import build_date_normalize_params
 
-        col = _first_text_column(view)
+        col = await _first_text_column(view)
         task_spec = build_date_normalize_params(
             col, view.columns, view._internal_names, formats=["%m/%d/%Y"]
         )

@@ -40,6 +40,9 @@ from mammoth import (
     WindowFunction,
 )
 
+# The session fixtures open the client's connection pool; tests must share their loop.
+pytestmark = pytest.mark.asyncio(loop_scope="session")
+
 # Fixtures adv_second_dataset_id, adv_second_view are defined in conftest.py
 
 # ── Read-back helpers (verify the EFFECT of dataset-producing exports) ──
@@ -56,12 +59,12 @@ _PAGE = 10_000
 _HASH_KEY = "hash"
 
 
-def _open_new_dataset(client: MammothClient, dataset_id: int) -> View:
+async def _open_new_dataset(client: MammothClient, dataset_id: int) -> View:
     """Open the default view of a freshly-materialised dataset."""
-    return await client.views.list(dataset_id)[0]
+    return (await client.views.list(dataset_id))[0]
 
 
-def _data_rows(view: View, columns: list[str] | None = None, condition=None):
+async def _data_rows(view: View, columns: list[str] | None = None, condition=None):
     """Yield every (optionally filtered) row of a view, paginating fully.
 
     A single large ``limit`` is unreliable, so page by ``offset`` until a short
@@ -69,10 +72,11 @@ def _data_rows(view: View, columns: list[str] | None = None, condition=None):
     """
     offset = 1
     while True:
-        page = await view.data(columns=columns, condition=condition, limit=_PAGE, offset=offset)[
+        page = (await view.data(columns=columns, condition=condition, limit=_PAGE, offset=offset))[
             "data"
         ]
-        yield from page
+        for row in page:
+            yield row
         if len(page) < _PAGE:
             return
         offset += _PAGE
@@ -83,14 +87,14 @@ def _cells(row: dict[str, object]) -> list[object]:
     return [v for k, v in row.items() if k != _HASH_KEY]
 
 
-def _count_rows(view: View, condition=None) -> int:
+async def _count_rows(view: View, condition=None) -> int:
     """Exact row count via full pagination (``paging.total`` is unreliable)."""
-    return sum(1 for _ in _data_rows(view, condition=condition))
+    return len([_ async for _ in _data_rows(view, condition=condition)])
 
 
-def _distinct_count(view: View, column: str) -> int:
+async def _distinct_count(view: View, column: str) -> int:
     """Number of distinct values in one column of a view."""
-    return len({_cells(r)[0] for r in _data_rows(view, [column])})
+    return len({_cells(r)[0] async for r in _data_rows(view, [column])})
 
 
 def _to_number(value: object) -> float | None:
@@ -101,16 +105,23 @@ def _to_number(value: object) -> float | None:
         return None
 
 
-def _sum_numeric_cells(view: View) -> float:
+async def _sum_numeric_cells(view: View) -> float:
     """Sum every numeric cell across a view (text labels and hash are skipped)."""
     return sum(
-        n for row in _data_rows(view) for v in _cells(row) if (n := _to_number(v)) is not None
+        [
+            n
+            async for row in _data_rows(view)
+            for v in _cells(row)
+            if (n := _to_number(v)) is not None
+        ]
     )
 
 
-def _sum_column(view: View, column: str) -> float:
+async def _sum_column(view: View, column: str) -> float:
     """Sum one numeric column over all rows of a view."""
-    return sum(n for r in _data_rows(view, [column]) if (n := _to_number(_cells(r)[0])) is not None)
+    return sum(
+        [n async for r in _data_rows(view, [column]) if (n := _to_number(_cells(r)[0])) is not None]
+    )
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -489,9 +500,9 @@ class TestAdvancedAggregation:
         survives, the pivot adds value columns, and aggregation collapses the
         output to exactly one row per distinct Department.
         """
-        n_depts = _distinct_count(adv_view, "Department")
-        n_types = _distinct_count(adv_view, "Transaction Type")
-        source_rows = _count_rows(adv_view)
+        n_depts = await _distinct_count(adv_view, "Department")
+        n_types = await _distinct_count(adv_view, "Transaction Type")
+        source_rows = await _count_rows(adv_view)
         new_ds_id = await adv_view.crosstab(
             rows=["Department"],
             pivot_column="Transaction Type",
@@ -500,15 +511,15 @@ class TestAdvancedAggregation:
         )
         assert isinstance(new_ds_id, int)
         try:
-            xtab = _open_new_dataset(adv_client, new_ds_id)
+            xtab = await _open_new_dataset(adv_client, new_ds_id)
             names = xtab.display_names
             assert "Department" in names, "row-grouping column must survive"
             # One label column (Department) + one value column per pivot value.
             assert len(names) >= 1 + n_types
             # Aggregation collapses to one row per distinct row-group value.
-            assert _count_rows(xtab) == n_depts
+            assert await _count_rows(xtab) == n_depts
             # The grand total of all COUNT cells equals the source row count.
-            assert _sum_numeric_cells(xtab) == source_rows
+            assert await _sum_numeric_cells(xtab) == source_rows
         finally:
             with contextlib.suppress(Exception):
                 await adv_client.datasets.delete(new_ds_id)
@@ -520,8 +531,8 @@ class TestAdvancedAggregation:
         grand total of every value cell in the crosstab must equal the SUM of
         ``Total`` over the whole source dataset.
         """
-        n_depts = _distinct_count(adv_view, "Department")
-        source_total_sum = _sum_column(adv_view, "Total")
+        n_depts = await _distinct_count(adv_view, "Department")
+        source_total_sum = await _sum_column(adv_view, "Total")
         new_ds_id = await adv_view.crosstab(
             rows=["Department"],
             pivot_column="Transaction Type",
@@ -530,11 +541,11 @@ class TestAdvancedAggregation:
         )
         assert isinstance(new_ds_id, int)
         try:
-            xtab = _open_new_dataset(adv_client, new_ds_id)
+            xtab = await _open_new_dataset(adv_client, new_ds_id)
             assert "Department" in xtab.display_names
-            assert _count_rows(xtab) == n_depts
+            assert await _count_rows(xtab) == n_depts
             # Grand total of the pivoted SUM cells == source SUM(Total).
-            assert _sum_numeric_cells(xtab) == pytest.approx(source_total_sum, rel=1e-6)
+            assert await _sum_numeric_cells(xtab) == pytest.approx(source_total_sum, rel=1e-6)
         finally:
             with contextlib.suppress(Exception):
                 await adv_client.datasets.delete(new_ds_id)
@@ -549,13 +560,13 @@ class TestBranchOut:
         Verifies the EFFECT: the new dataset is a faithful copy — same row
         count and the exact same set of columns as the source.
         """
-        full_total = _count_rows(adv_view)
+        full_total = await _count_rows(adv_view)
         source_columns = set(adv_view.display_names)
-        new_ds_id = adv_view.branch_out(dataset_name="branchout_e2e_full")
+        new_ds_id = await adv_view.branch_out(dataset_name="branchout_e2e_full")
         assert isinstance(new_ds_id, int)
         try:
-            copy = _open_new_dataset(adv_client, new_ds_id)
-            assert _count_rows(copy) == full_total, "full copy must preserve every row"
+            copy = await _open_new_dataset(adv_client, new_ds_id)
+            assert await _count_rows(copy) == full_total, "full copy must preserve every row"
             assert set(copy.display_names) == source_columns, "all columns must carry over"
         finally:
             with contextlib.suppress(Exception):
@@ -569,18 +580,22 @@ class TestBranchOut:
         the full source, and ZERO rows that violate the condition.
         """
         sale = Condition("Transaction Type", Operator.EQ, "sale")
-        full_total = _count_rows(adv_view)
-        sales_total = _count_rows(adv_view, condition=sale)
+        full_total = await _count_rows(adv_view)
+        sales_total = await _count_rows(adv_view, condition=sale)
         assert 0 < sales_total < full_total, "fixture must have both sale and non-sale rows"
 
-        new_ds_id = adv_view.branch_out(dataset_name="branchout_e2e_sales_only", condition=sale)
+        new_ds_id = await adv_view.branch_out(
+            dataset_name="branchout_e2e_sales_only", condition=sale
+        )
         assert isinstance(new_ds_id, int)
         try:
-            filtered = _open_new_dataset(adv_client, new_ds_id)
+            filtered = await _open_new_dataset(adv_client, new_ds_id)
             # Kept exactly the matching rows — no more, no fewer.
-            assert _count_rows(filtered) == sales_total
+            assert await _count_rows(filtered) == sales_total
             # And not one row that breaks the condition leaked through.
-            assert _count_rows(filtered, condition=~sale) == 0, "filter must exclude non-matches"
+            assert (
+                await _count_rows(filtered, condition=~sale) == 0
+            ), "filter must exclude non-matches"
         finally:
             with contextlib.suppress(Exception):
                 await adv_client.datasets.delete(new_ds_id)
@@ -642,7 +657,7 @@ class TestJoin:
 
     async def test_join_inner_with_view_object(self, adv_view, adv_second_view):
         """INNER join using View object (display name resolution)."""
-        result = adv_view.join(
+        result = await adv_view.join(
             foreign_view=adv_second_view,
             join_type=JoinType.INNER,
             on=[JoinKeySpec(left="Cashier", right="full_name")],
@@ -652,7 +667,7 @@ class TestJoin:
 
     async def test_join_left_with_view_object(self, adv_view, adv_second_view):
         """LEFT join — all rows from source preserved."""
-        result = adv_view.join(
+        result = await adv_view.join(
             foreign_view=adv_second_view,
             join_type=JoinType.LEFT,
             on=[JoinKeySpec(left="Cashier", right="full_name")],
@@ -662,7 +677,7 @@ class TestJoin:
 
     async def test_join_with_column_prefix(self, adv_view, adv_second_view):
         """JOIN with column prefix to avoid name collisions."""
-        result = adv_view.join(
+        result = await adv_view.join(
             foreign_view=adv_second_view,
             join_type=JoinType.LEFT,
             on=[JoinKeySpec(left="Cashier", right="full_name")],

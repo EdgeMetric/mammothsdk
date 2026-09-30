@@ -27,11 +27,12 @@ from __future__ import annotations
 
 import contextlib
 import os
-from collections.abc import Iterator
+from collections.abc import AsyncIterator
 from pathlib import Path
 from typing import Any
 
 import pytest
+import pytest_asyncio
 
 from mammoth import MammothClient
 from mammoth.condition import Condition
@@ -46,7 +47,10 @@ _REQUIRED_ENV = (
     "MAMMOTH_PROJECT_ID",
 )
 _missing = [v for v in _REQUIRED_ENV if not os.environ.get(v)]
-pytestmark = pytest.mark.skipif(bool(_missing), reason=f"Missing env vars: {', '.join(_missing)}")
+pytestmark = [
+    pytest.mark.skipif(bool(_missing), reason=f"Missing env vars: {', '.join(_missing)}"),
+    pytest.mark.asyncio(loop_scope="session"),
+]
 
 # salary values are plain integers -> the backend types this column as NUMERIC on upload.
 _CSV = """name,department,salary
@@ -69,8 +73,8 @@ def client() -> MammothClient:
     return c
 
 
-@pytest.fixture
-def uploaded_view(client: MammothClient, tmp_path: Path) -> Iterator[View]:
+@pytest_asyncio.fixture(loop_scope="session")
+async def uploaded_view(client: MammothClient, tmp_path: Path) -> AsyncIterator[View]:
     """Upload a small CSV, yield its (single) view, and delete the dataset after."""
     csv_path = tmp_path / "e2e_people.csv"
     csv_path.write_text(_CSV)
@@ -86,25 +90,25 @@ def uploaded_view(client: MammothClient, tmp_path: Path) -> Iterator[View]:
             await client.datasets.delete(ds_id)
 
 
-def _latest_sequence(view: View) -> int:
+async def _latest_sequence(view: View) -> int:
     """The highest pipeline task sequence (0 when no tasks have been applied)."""
     seqs = [int(t.get("sequence", 0)) for t in await view.list_tasks()]
     return max(seqs) if seqs else 0
 
 
-def _rows(view: View, sequence: int | None = None) -> list[dict[str, Any]]:
+async def _rows(view: View, sequence: int | None = None) -> list[dict[str, Any]]:
     """Fetch data rows at *sequence* (defaults to the latest applied task)."""
-    seq = _latest_sequence(view) if sequence is None else sequence
+    seq = await _latest_sequence(view) if sequence is None else sequence
     resp = await view._client.dataviews.query_data(
         dataset_id=view.dataset_id, dataview_id=view.id, sequence=seq, limit=100
     )
     return resp.get("data", [])
 
 
-def _values(view: View, display_name: str) -> list[Any]:
+async def _values(view: View, display_name: str) -> list[Any]:
     """Values of one column across all rows at the latest sequence."""
     internal = view.columns[display_name]
-    return [str(r.get(internal)).strip() for r in _rows(view)]
+    return [str(r.get(internal)).strip() for r in await _rows(view)]
 
 
 class TestCsvUploadPipeline:
@@ -113,13 +117,13 @@ class TestCsvUploadPipeline:
         v = uploaded_view
         assert set(v.display_names) >= {"name", "department", "salary"}
         assert v.column_types["salary"].upper() == "NUMERIC"
-        assert len(_rows(v, sequence=0)) == 4
+        assert len(await _rows(v, sequence=0)) == 4
 
     async def test_text_transform_uppercases_values(self, uploaded_view: View) -> None:
         """text_transform UPPER rewrites the data, visible at the task's sequence."""
         v = uploaded_view
         assert await v.text_transform(columns=["name"], case=TextCase.UPPER) is not None
-        assert sorted(_values(v, "name")) == ["ALICE", "ALICE", "BOB", "CAROL"]
+        assert sorted(await _values(v, "name")) == ["ALICE", "ALICE", "BOB", "CAROL"]
 
     async def test_filter_rows_keeps_only_matching(self, uploaded_view: View) -> None:
         """filter_rows SHOW keeps only rows matching the condition."""
@@ -128,13 +132,13 @@ class TestCsvUploadPipeline:
             Condition("department", Operator.EQ, "Engineering"), filter_type=FilterType.SHOW
         )
         assert result is not None
-        assert set(_values(v, "department")) == {"Engineering"}
+        assert set(await _values(v, "department")) == {"Engineering"}
 
     async def test_discard_duplicates_removes_dupe_row(self, uploaded_view: View) -> None:
         """discard_duplicates collapses the repeated alice/Engineering/100 row (4 -> 3)."""
         v = uploaded_view
         assert await v.discard_duplicates() is not None
-        assert len(_rows(v)) == 3
+        assert len(await _rows(v)) == 3
 
     async def test_convert_and_add_column_accepted(self, uploaded_view: View) -> None:
         """convert_type (NUMERIC->TEXT) and add_column both execute without backend error.
