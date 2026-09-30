@@ -12,6 +12,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from mammoth_cli import SCHEMA_VERSION
+from mammoth_cli.runtime import embedded
 
 # Exit statuses (plan 02).
 EXIT_OK = 0
@@ -41,6 +42,7 @@ CODE_INPUT_FORMAT_REQUIRED = "input_format_required"
 CODE_API_ERROR = "api_error"
 CODE_RESOURCE_NOT_FOUND = "resource_not_found"
 CODE_PROFILE_NOT_FOUND = "profile_not_found"
+CODE_NO_SAVED_PROJECT = "no_saved_project"
 CODE_CONFIRMATION_REQUIRED = "confirmation_required"
 CODE_CONFIRMATION_DECLINED = "confirmation_declined"
 CODE_AUTHENTICATION_FAILED = "authentication_failed"
@@ -135,6 +137,7 @@ ERROR_SUMMARIES: dict[str, str] = {
     "pipeline_changed": "The pipeline was changed by someone else while this step ran.",
     "pipeline_reference_error": "A step in the pipeline refers to something that no longer exists.",
     "profile_not_found": _S_SETUP,
+    "no_saved_project": "This step can't save a project here; each step names its own.",
     "profile_write_failed": _S_SETUP,
     "project_required": "No project has been chosen for this step.",
     "pypi_response_invalid": "An update check didn't return a usable answer.",
@@ -215,6 +218,15 @@ class CliError(Exception):
 
 
 def missing_project_error() -> CliError:
+    if embedded.active():
+        # An embedded call has no profile to save a project in.
+        return CliError(
+            code="project_required",
+            message="No project is set for this command.",
+            exit_status=EXIT_USAGE,
+            hint="Pass --project PROJECT_ID.",
+            recovery_commands=["mammoth project list", "mammoth dataset find SUBSTRING"],
+        )
     return CliError(
         code="project_required",
         message="No project is set for this command.",
@@ -225,6 +237,17 @@ def missing_project_error() -> CliError:
             "mammoth context project use PROJECT_ID",
             "mammoth dataset find SUBSTRING",
         ],
+    )
+
+
+def no_saved_project_error() -> CliError:
+    """``context project use``/``clear`` in an embedded call, which has no profile."""
+    return CliError(
+        code=CODE_NO_SAVED_PROJECT,
+        message="This environment keeps no active project.",
+        exit_status=EXIT_USAGE,
+        hint="Pass --project PROJECT_ID on each command.",
+        recovery_commands=["mammoth project list"],
     )
 
 
