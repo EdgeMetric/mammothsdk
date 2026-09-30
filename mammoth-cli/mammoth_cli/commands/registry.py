@@ -507,6 +507,7 @@ HANDLERS: dict[str, Handler] = {
     "user.update": user_cmd.user_update,
     # automation family
     "automation.list": automation_cmd.automation_list,
+    "automation.capabilities": automation_cmd.automation_capabilities,
     "automation.get": automation_cmd.automation_get,
     "automation.trash": automation_cmd.automation_trash,
     "automation.restore": automation_cmd.automation_restore,

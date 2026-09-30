@@ -364,6 +364,23 @@ class AutomationsAPI:
         )
         return response.get("automations", response if isinstance(response, _list) else [])
 
+    async def capabilities(self) -> dict[str, Any]:
+        """List everything an automation can be created with.
+
+        The server derives this from the same schemas it validates a create
+        with, so it cannot go stale.
+
+        Returns:
+            Dict with ``tasks`` (each: ``task_type``, ``summary``,
+            ``required_fields``, ``optional_fields``, ``options`` (accepted
+            values per field), ``formats_in`` and ``formats_out`` (file formats
+            the task reads or writes)) and ``conditions`` (each:
+            ``condition_type``, ``summary``, ``fields``, ``options``).
+        """
+        return await self._client._request_json(
+            "GET", f"/workspaces/{self._ws()}/projects/{self._proj()}/automations/capabilities"
+        )
+
     async def create(
         self,
         name: str,

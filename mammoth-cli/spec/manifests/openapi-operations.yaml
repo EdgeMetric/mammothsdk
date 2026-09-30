@@ -4846,6 +4846,25 @@ operations:
   alias_of: null
   sdk_symbol: mammoth.api.automations.AutomationsAPI.list
   reviewed_by: primary
+- identity: GET /workspaces/{workspace_id}/projects/{project_id}/automations/capabilities
+  method: GET
+  path: /workspaces/{workspace_id}/projects/{project_id}/automations/capabilities
+  operation_id: GetAutomationCapabilities
+  tags:
+  - Automations
+  summary: Get automation capabilities
+  security:
+  - apiKey
+  - apiSecret
+  request_schema: null
+  response_schemas: []
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: automation.capabilities
+  alias_of: null
+  sdk_symbol: mammoth.api.automations.AutomationsAPI.capabilities
+  reviewed_by: primary
 - identity: POST /workspaces/{workspace_id}/projects/{project_id}/automations
   method: POST
   path: /workspaces/{workspace_id}/projects/{project_id}/automations

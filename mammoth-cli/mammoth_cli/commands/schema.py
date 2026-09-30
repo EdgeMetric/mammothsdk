@@ -406,6 +406,12 @@ _COMMAND_DISCOVERY_PURPOSES = {
     "data-app.create": (
         "page portal form others drop upload a file cleaned the same way self service"
     ),
+    # "does automation support pdf" -- what an automation reads, writes, triggers on
+    # and accepts is answered by the server, not by memory.
+    "automation.capabilities": (
+        "automation automations support supports supported pdf csv format formats file types "
+        "can do what trigger triggers action actions task tasks option options capabilities"
+    ),
     "automation.create": (
         "schedule scheduled recurring repeat refresh rerun run every day daily week weekly "
         "hour hourly month monthly automatically trigger alert email a dataset pipeline "

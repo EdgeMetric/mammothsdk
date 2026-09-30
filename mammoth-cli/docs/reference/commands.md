@@ -4,7 +4,7 @@ Generated from the reviewed command manifests for mammoth-cli 2.1.2.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
-Total commands: 579.
+Total commands: 580.
 
 ## activity
 
@@ -248,6 +248,13 @@ Total commands: 579.
 - Agent example: `mammoth auth status`
 
 ## automation
+
+### `mammoth automation capabilities`
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.automations.AutomationsAPI.capabilities`
+- Agent example: `mammoth automation capabilities`
 
 ### `mammoth automation create`
 

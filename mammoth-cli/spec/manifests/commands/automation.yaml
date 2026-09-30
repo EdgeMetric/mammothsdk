@@ -1,5 +1,43 @@
 manifest_schema_version: 1
 commands:
+- command_id: automation.capabilities
+  command_path: automation capabilities
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetAutomationCapabilities
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.automations.AutomationsAPI.capabilities
+  sdk_conversion: Call mammoth.api.automations.AutomationsAPI.capabilities with validated request fields.
+  request_model: AutomationCapabilitiesRequest
+  result_model: AutomationCapabilitiesResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: null
+  live_exemption_reason: Live coverage is tests/live/test_automation_capabilities.py (runs on the test server).
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth automation capabilities --help
+  agent_example: mammoth automation capabilities
+  unit_tests:
+  - UT-AUTOMATION-CAPABILITIES
+  contract_tests:
+  - CT-AUTOMATION-CAPABILITIES-HUMAN
+  - CT-AUTOMATION-CAPABILITIES-JSON
+  - CT-AUTOMATION-CAPABILITIES-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Read-only. Lists everything an automation supports, straight from the server: tasks
+    (each with task_type, summary, required_fields, optional_fields, options = accepted values per field,
+    formats_in and formats_out = file formats it reads or writes) and conditions (the triggers: condition_type,
+    summary, fields, options). Answer "can an automation do X?" (a PDF, an email attachment, a schedule)
+    from this, never from memory. Then create with `automation create`.'
+  reviewed_by: primary
 - command_id: automation.create
   command_path: automation create
   disposition: command
@@ -40,7 +78,8 @@ commands:
   - CT-AUTOMATION-CREATE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: 'B15 AUTOMATION_EXTERNAL_EFFECTS: task models can pull cloud files and send email;
+  known_restrictions: 'B15 AUTOMATION_EXTERNAL_EFFECTS: run `automation capabilities` first: it lists every
+    task, trigger, option and file format in and out (PDF included). Task models can pull cloud files and send email;
     requires connector/email allowlists and dedicated fixtures. Delete old rows on a schedule with
     task apply_retention_policy (datasource_id, rule_type time_based, count_based or
     condition_based). An emailed file is task send_an_alert with attachments.dataview_ids: each

@@ -171,6 +171,13 @@ def automation_list(invocation: Invocation) -> HandlerResult:
     return data, _meta(invocation, auth.workspace_id, resolved_project(invocation))
 
 
+def automation_capabilities(invocation: Invocation) -> HandlerResult:
+    """List every task, trigger, option and file format automations support."""
+    with open_service(invocation) as (service, auth):
+        data = service.call(_symbol(invocation))
+    return data, _meta(invocation, auth.workspace_id, resolved_project(invocation))
+
+
 def automation_get(invocation: Invocation) -> HandlerResult:
     """Get one automation by id. Automation id is positional."""
     automation_id = _require_int_positional(invocation, "automation id")
