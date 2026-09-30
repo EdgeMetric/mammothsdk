@@ -134,10 +134,26 @@ def _name_hit(record: dict[str, Any]) -> dict[str, Any]:
         "id": record.get("id"),
         "name": record.get("name"),
         **_size(stats.get("row_count"), stats.get("column_count")),
+        **_times(record.get("created_at"), record.get("updated_at")),
     }
     if record.get("status") not in (None, "ready"):
         hit["status"] = record["status"]
     return {k: v for k, v in hit.items() if v is not None}
+
+
+def name_hit(record: dict[str, Any]) -> dict[str, Any]:
+    """One name-search row (id, name, size, created/updated): what tells look-alikes apart."""
+    return _name_hit(record)
+
+
+def ambiguity_note(matched: int, needle: str) -> str | None:
+    """Said when a name matches several datasets, so a look-alike is never picked silently."""
+    if matched < 2:
+        return None
+    return (
+        f"{matched} datasets match '{needle}' (a v2 or a copy can sit beside the one meant): "
+        "pick by id from rows/cols/created, and name the dataset you read in your answer."
+    )
 
 
 def search_page(
@@ -148,6 +164,8 @@ def search_page(
     end = None if limit is None else offset + limit
     kept, _omitted = fit_budget([_name_hit(r) for r in matches[offset:end]])
     result: dict[str, Any] = {"datasets": kept, "shown": len(kept), "matched": len(matches)}
+    if note := ambiguity_note(len(matches), needle):
+        result["note"] = note
     if offset + len(kept) < len(matches):
         result["more"] = True
         result["next_offset"] = offset + len(kept)

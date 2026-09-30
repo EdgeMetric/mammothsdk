@@ -22,7 +22,7 @@ from typing import Any
 
 from mammoth_cli.commands.view import (
     _column_profile,
-    _meta,
+    _read_meta,
     _require_int_positional_at,
     _resolve_dataset_id,
 )
@@ -87,7 +87,8 @@ def view_data_profile(invocation: Invocation) -> HandlerResult:
         )
         workers = 1 if getattr(service, "_progress", False) else _WORKERS
         profile = build_profile(scope, document, workers)
-    return profile, _meta(invocation, auth.workspace_id, project_id)
+        meta = _read_meta(service, invocation, auth.workspace_id, dataset_id, view_id, project_id)
+    return profile, meta
 
 
 def build_profile(scope: _Scope, document: dict[str, Any], workers: int) -> dict[str, Any]:

@@ -32,8 +32,10 @@ from mammoth_cli.runtime.new_data import with_file_upload_path
 from mammoth_cli.runtime.session import open_service, require_project
 from mammoth_cli.services.listing import (
     DATASET_LIST_FIELDS,
+    ambiguity_note,
     dataset_summary,
     fit_budget,
+    name_hit,
     search_page,
 )
 
@@ -170,8 +172,7 @@ def _find_in_projects(
                     {
                         "project_id": project_id,
                         "project_name": project.get("name"),
-                        "id": dataset.get("id"),
-                        "name": name,
+                        **name_hit(dataset),
                     }
                 )
     return matches
@@ -210,11 +211,14 @@ def dataset_find(invocation: Invocation) -> HandlerResult:
             "workspace_id": auth.workspace_id,
             "project_id": invocation.project,
         }
-    return {
+    result: dict[str, Any] = {
         "matches": matches,
         "projects_searched": len(projects),
         "projects_truncated": len(projects) >= _MAX_PROJECTS_SEARCHED,
-    }, meta
+    }
+    if note := ambiguity_note(len(matches), name_substring):
+        result["note"] = note
+    return result, meta
 
 
 def dataset_list(invocation: Invocation) -> HandlerResult:
