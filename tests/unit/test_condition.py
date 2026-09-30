@@ -804,3 +804,21 @@ class TestDateFunction:
         """value_is_date_fn flag does not override the non-null operator check."""
         with pytest.raises(ValueError, match="requires a value"):
             Condition("Date", Operator.GT, value_is_date_fn=True)
+
+
+class TestReadableText:
+    """``str(condition)`` reads as a sentence, for confirm cards and logs."""
+
+    def test_single_condition(self) -> None:
+        assert str(Condition("Sales", Operator.GT, 5)) == "Sales > 5"
+        assert str(Condition("Country", Operator.EQ, "US")) == "Country = US"
+        assert str(Condition("Name", Operator.IS_EMPTY)) == "Name is empty"
+        assert str(Condition("Region", Operator.IN_LIST, ["W", "E"])) == "Region in list [W, E]"
+
+    def test_compound_and_not(self) -> None:
+        a = Condition("Country", Operator.EQ, "US")
+        b = Condition("Sales", Operator.GT, 5)
+        c = Condition("Name", Operator.IS_EMPTY)
+        assert str(a & b) == "Country = US and Sales > 5"
+        assert str(~a) == "not (Country = US)"
+        assert str((a & b) | c) == "(Country = US and Sales > 5) or Name is empty"

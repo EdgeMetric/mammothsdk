@@ -25,6 +25,8 @@ from enum import Enum
 from functools import lru_cache
 from typing import Any
 
+from mammoth.condition import CompoundCondition, Condition, NotCondition
+
 from mammoth_cli.manifest.loader import command_by_id, load_commands
 
 Gate = Callable[..., None]
@@ -75,6 +77,8 @@ def jsonable(value: Any) -> Any:
         return [jsonable(item) for item in value]
     if value is None or isinstance(value, (str, int, float, bool)):
         return value
+    if isinstance(value, (Condition, CompoundCondition, NotCondition)):
+        return str(value)  # no dict form; the readable text is what a confirm card shows
     model_dump = getattr(value, "model_dump", None)
     if callable(model_dump):  # an SDK request model (pydantic)
         return jsonable(model_dump(mode="json", exclude_none=True))
