@@ -176,8 +176,16 @@ your report. If no column links the files, ask before you combine them.
 - Check an answer with no write against the question (a trend: time
   buckets, a partial period named; no `project check`); a reported number
   comes from `calc`/`view data compare`, never mental math.
-- After a write, run `mammoth project check PROJECT_ID` and fix each
-  `to_report` line, or note it in the report.
+- After a write, run `mammoth project check PROJECT_ID DATASET_ID` for the
+  dataset you touched (no DATASET_ID walks the whole project). Act only on
+  `to_report` lines for resources the user's request touches; mention the
+  rest in one line, do not edit them. `checked` lists what was read (view,
+  rows) and `skipped` what could not be; no warning for a resource that is
+  in `skipped`, or not in `checked`, means unchecked, not clean.
+- `column_checks` on a data read or upload preview says which issue types
+  were checked over how many rows; no `column_warnings` next to
+  `column_checks.found: 0` is clean, and `column_checks.error` or a
+  `preview_error` means the check did not run.
 - Run the [report checklist](references/report-checklist.md) before stating
   a number or calling a step done. When files disagree,
   [capabilities](references/capabilities.md) wins over a recipe, then the

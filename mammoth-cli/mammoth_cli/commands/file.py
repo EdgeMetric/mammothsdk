@@ -241,7 +241,9 @@ def file_upload(invocation: Invocation) -> HandlerResult:
             if entry.get("status") != "ready":
                 continue
             preview = upload_preview(service, int(entry["id"]), project_id)
-            if preview is not None:
+            if "preview_error" in preview:
+                entry["preview_error"] = preview["preview_error"]
+            else:
                 entry["view"] = preview
                 parents.remember(
                     invocation.profile or profiles.get_selected(),

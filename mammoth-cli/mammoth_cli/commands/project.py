@@ -603,15 +603,19 @@ def project_check(invocation: Invocation) -> HandlerResult:
     views: list[dict[str, Any]] = []
     dashboards: list[dict[str, Any]] = []
     to_report: list[str] = []
+    checked: list[dict[str, Any]] = []
+    skipped: list[dict[str, Any]] = []
     scoped_dataset = _scoped_dataset_id(invocation)
     with open_service(invocation) as (service, auth):
         datasets = _datasets_to_check(service, project_id, scoped_dataset)
         for dataset in datasets:
             dataset_id = dataset.get("id") if isinstance(dataset, dict) else None
             if not isinstance(dataset_id, int):
+                skipped.append({"dataset_id": None, "reason": "dataset entry has no integer id"})
                 continue
             preview = upload_preview(service, dataset_id, project_id)
-            if preview is None:
+            if "preview_error" in preview:
+                skipped.append({"dataset_id": dataset_id, "reason": preview["preview_error"]})
                 continue
             entry = {
                 "dataset_id": dataset_id,
@@ -619,6 +623,7 @@ def project_check(invocation: Invocation) -> HandlerResult:
                 "view_id": preview["view_id"],
                 "row_count": preview.get("row_count"),
                 "column_warnings": preview.get("column_warnings", []),
+                "column_checks": preview["column_checks"],
             }
             if "before_dashboard" in preview:
                 entry["before_dashboard"] = preview["before_dashboard"]
@@ -637,6 +642,13 @@ def project_check(invocation: Invocation) -> HandlerResult:
                     "user's pick unless they named one."
                 )
             views.append(entry)
+            checked.append(
+                {
+                    "dataset_id": dataset_id,
+                    "view_id": preview["view_id"],
+                    "rows_checked": preview["column_checks"]["rows_checked"],
+                }
+            )
             where = f"view {preview['view_id']} ({dataset.get('name')})"
             to_report += [_report_line(where, w) for w in entry["column_warnings"]]
         boards = (
@@ -660,6 +672,8 @@ def project_check(invocation: Invocation) -> HandlerResult:
         "project_id": project_id,
         "views": views,
         "dashboards": dashboards,
+        "checked": checked,
+        "skipped": skipped,
         **(
             {"scope": {"dataset_id": scoped_dataset, "dashboards": "not checked"}}
             if scoped_dataset
