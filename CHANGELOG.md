@@ -6,6 +6,12 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [0.8.0]
 
+### Added
+
+- GET and HEAD requests retry up to twice on a transient 502, 503 or 504, or a
+  connect error (0.25 s, then 0.5 s; a numeric `Retry-After` is honoured, capped
+  at 5 s). Writes are never retried.
+
 ### Changed — breaking
 
 - The SDK is async. Every method that calls the API is a coroutine and must be
