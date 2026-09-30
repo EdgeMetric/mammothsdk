@@ -1491,7 +1491,8 @@ def _run_aggregate(
         kwargs["sort"] = sort
     if limit is not None:
         kwargs["limit"] = limit
-    return reads.service.call(symbol, **kwargs)
+    data = reads.service.call(symbol, **kwargs)
+    return read_queries.with_leader_share(reads, data, fields, condition, limit)
 
 
 def view_data_aggregate(invocation: Invocation) -> HandlerResult:
@@ -1503,9 +1504,11 @@ def view_data_aggregate(invocation: Invocation) -> HandlerResult:
     METRIC). ``function`` is one of SUM, COUNT, AVG, MIN, MAX, STDDEV, DISTINCT_COUNT. An optional
     ``condition`` filters rows before aggregating, and ``sequence`` pins the
     read to a pipeline step (default: latest). ``order_by`` (result labels,
-    ``"Total desc"``) with ``top`` ranks the groups on the backend; a ``limit``
-    without ``order_by`` is flagged unordered. A ``truncate`` on a TEXT column of
-    dates is bucketed here from the detected format, stated in ``text_dates``.
+    ``"Total desc"``) with ``top`` ranks the groups on the backend (and adds
+    ``share_of_total``: the filtered total and the share held by the first row and
+    by the returned rows); a ``limit`` without ``order_by`` is flagged unordered.
+    A ``truncate`` on a TEXT column of dates is bucketed here from the detected
+    format, stated in ``text_dates``.
     A group_by ``{"column": ..., "part": weekday|month|quarter|year}`` on a DATE (or
     TEXT-date) column groups by the named part of the date -- ``Monday``..``Sunday``,
     ``January``..``December``, ``Q1``..``Q4``, the year -- in calendar order: the

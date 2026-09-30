@@ -27,7 +27,7 @@ from mammoth_cli.errors.envelope import (
     CliError,
 )
 from mammoth_cli.services import text_dates
-from mammoth_cli.services.conditions import _resolve_operator
+from mammoth_cli.services.conditions import CONDITION_KWARG, _resolve_operator
 
 AGGREGATE_SYMBOL = "mammoth.api.dataviews.DataviewsAPI.aggregate"
 #: A stored string no date can equal: what a range that matches nothing compiles to.
@@ -486,6 +486,51 @@ def _column_range(ctx: ReadContext, column: str) -> dict[str, Any] | None:
         "type": kind,
         "min": rows[0].get("agg_0"),
         "max": rows[0].get("agg_1"),
+    }
+
+
+_ADDITIVE = ("SUM", "COUNT")
+
+
+def _number(value: Any) -> float | None:
+    try:
+        return None if value is None or isinstance(value, bool) else float(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def with_leader_share(
+    ctx: ReadContext, data: Any, fields: dict[str, Any], condition: Any, limit: int | None
+) -> Any:
+    """On a ranked group-by, say how much of the filtered total its first rows hold.
+
+    One extra ungrouped query over the same filter for the first SUM/COUNT
+    aggregation. ``share_of_total`` names that total, the first row's share and
+    the returned rows' share, so one order holding a quarter of a month shows
+    without a second question.
+    """
+    rows = data.get("data") if isinstance(data, dict) else None
+    aggregations = fields.get("aggregations") or []
+    slot = next((i for i, a in enumerate(aggregations) if a.get("function") in _ADDITIVE), None)
+    if not (fields.get("group_by") and limit is not None and rows and slot is not None):
+        return data
+    extra: dict[str, Any] = {"aggregations": [aggregations[slot]]}
+    if condition is not None:
+        extra[CONDITION_KWARG] = condition
+    total_rows = _rows(ctx.query(**extra))
+    total = _number(total_rows[0].get("agg_0")) if total_rows else None
+    parsed = [_number(row.get(f"agg_{slot}")) for row in rows]
+    values = [v for v in parsed if v is not None]
+    if not total or len(values) != len(parsed):
+        return data
+    return {
+        **data,
+        "share_of_total": {
+            "aggregation": aggregations[slot].get("as_name"),
+            "total": total_rows[0].get("agg_0"),
+            "first_row": round(values[0] / total, 3),
+            "returned_rows": round(sum(values) / total, 3),
+        },
     }
 
 
