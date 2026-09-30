@@ -8,6 +8,7 @@ from pathlib import Path
 import pytest
 
 from mammoth_cli.commands import dashboard as dashboard_cmd
+from mammoth_cli.commands.registry import HANDLERS
 from mammoth_cli.context.resolver import ExplicitLogin
 from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.manifest.loader import load_commands
@@ -252,6 +253,26 @@ def test_get_returns_programmed_response(fake_service: FakeMammothService) -> No
     assert data["dashboard_link"].endswith("/publish/7")
     assert "values" in data
     assert meta == {"profile": None, "workspace_id": 4, "project_id": None}
+
+
+def test_get_and_canvas_get_read_by_id_whatever_project_is_active(
+    fake_service: FakeMammothService,
+) -> None:
+    """A board open in another project reads by id: no project reaches either route."""
+    fake_service.responses[_GET] = {"id": 7, "title": "Sales", "project_id": 9}
+    fake_service.responses[_CANVAS_GET] = {"canvas": {}}
+    data, _ = dashboard_cmd.dashboard_get(_inv("dashboard.get", extra_args=["7"], project=3))
+    HANDLERS["dashboard.canvas.get"](_inv("dashboard.canvas.get", extra_args=["7"], project=3))
+    assert data["project_id"] == 9
+    assert all("project_id" not in kwargs for _, kwargs in fake_service.call_log)
+
+
+def test_get_says_project_id_null_when_the_backend_does_not_name_one(
+    fake_service: FakeMammothService,
+) -> None:
+    fake_service.responses[_GET] = {"id": 7, "title": "Sales"}
+    data, _ = dashboard_cmd.dashboard_get(_inv("dashboard.get", extra_args=["7"]))
+    assert "project_id" in data and data["project_id"] is None
 
 
 # --- dashboard get-by-url --------------------------------------------------
