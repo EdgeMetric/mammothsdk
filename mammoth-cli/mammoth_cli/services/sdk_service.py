@@ -29,6 +29,7 @@ from mammoth_cli.errors.envelope import (
 )
 from mammoth_cli.output.progress import spinner
 from mammoth_cli.runtime import parents
+from mammoth_cli.runtime.dryrun import DryRunStop
 from mammoth_cli.services.coerce import coerce_arguments
 from mammoth_cli.services.conditions import CONDITION_KWARG, compile_condition
 from mammoth_cli.services.dispatch import resolve_sdk_method
@@ -391,11 +392,26 @@ class SdkMammothService:
             ) from exc
         if kwargs.get(CONDITION_KWARG) is not None:
             kwargs[CONDITION_KWARG] = compile_condition(kwargs[CONDITION_KWARG])
-        if self.gate is not None:
-            self.gate(method, kwargs, view_id=view_id, dataset_id=getattr(view, "dataset_id", None))
+        gate = self.gate
+        if gate is not None:
+            scope = {"view_id": view_id, "dataset_id": getattr(view, "dataset_id", None)}
+            if method == "math":
+                # The SDK validates the expression while building the task,
+                # before its one network call. Run that real code path and stop
+                # at the call (``_add_task``), so a dry run rejects exactly what
+                # a real run would.
+                def stop_at_request(_spec: dict[str, Any]) -> dict[str, Any]:
+                    gate(method, kwargs, **scope)
+                    raise AssertionError("the dry-run gate must stop the request")
+
+                view._add_task = stop_at_request  # type: ignore[method-assign, assignment]
+            else:
+                gate(method, kwargs, **scope)
         try:
             with spinner(self._progress):
                 return attribute(**kwargs)
+        except DryRunStop:
+            raise
         except MammothColumnError as exc:
             # Column validation happens while building the task, before the
             # SDK can POST. Preserve a useful agent-facing error envelope
