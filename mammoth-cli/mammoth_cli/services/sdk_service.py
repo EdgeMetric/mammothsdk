@@ -760,7 +760,7 @@ class SdkMammothService:
             CliError: Mapped from any SDK exception (auth, network, timeout).
         """
         try:
-            return self._client.projects.list(limit=1)
+            return self._run(self._client.projects.list(limit=1))
         except Exception as exc:
             raise map_sdk_exception(exc) from exc
 
@@ -783,9 +783,9 @@ class SdkMammothService:
         """
         try:
             if limit <= _PROJECT_PAGE_SIZE:
-                response = self._client.projects.list(limit=limit, offset=offset)
+                response = self._run(self._client.projects.list(limit=limit, offset=offset))
                 return {**response, "projects": list(response.get("projects", []))}
-            everything = self._client.projects.list_all()
+            everything = self._run(self._client.projects.list_all())
         except Exception as exc:
             raise map_sdk_exception(exc) from exc
         return {
@@ -802,7 +802,7 @@ class SdkMammothService:
             CliError: Mapped from any SDK exception.
         """
         try:
-            return list(self._client.projects.list_all())
+            return list(self._run(self._client.projects.list_all()))
         except Exception as exc:
             raise map_sdk_exception(exc) from exc
 
@@ -819,7 +819,7 @@ class SdkMammothService:
             CliError: Mapped from any SDK exception, including not-found.
         """
         try:
-            return self._client.projects.get(project=project_id)
+            return self._run(self._client.projects.get(project=project_id))
         except Exception as exc:
             raise map_sdk_exception(exc) from exc
 
@@ -839,7 +839,7 @@ class SdkMammothService:
         if self.gate is not None:
             self.gate("mammoth.api.projects.ProjectsAPI.create", {"name": name, **kwargs})
         try:
-            return self._client.projects.create(name, **kwargs)
+            return self._run(self._client.projects.create(name, **kwargs))
         except Exception as exc:
             raise map_sdk_exception(exc) from exc
 
