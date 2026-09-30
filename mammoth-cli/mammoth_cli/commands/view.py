@@ -967,6 +967,81 @@ def _match_counts(
     return unmatched, len(rows), False
 
 
+#: Most distinct key values read per side for a dry-run key overlap.
+_JOIN_PREVIEW_KEYS = 10000
+
+
+def key_overlap(left_counts: dict[Any, int], right_keys: set[Any]) -> dict[str, Any]:
+    """Share of left rows whose key appears on the right (blank keys never match)."""
+    total = sum(left_counts.values())
+    matched = sum(
+        n for key, n in left_counts.items() if key not in (None, "") and key in right_keys
+    )
+    return {
+        "rows_checked": total,
+        "matched_rows": matched,
+        "unmatched_rows": total - matched,
+        "match_rate": round(matched / total, 3) if total else None,
+        "unmatched_keys": [str(k) for k in left_counts if k in (None, "") or k not in right_keys][
+            :_MAX_UNMATCHED_KEYS
+        ],
+    }
+
+
+def _key_values(
+    service: Any, dataset_id: int, view_id: int, project_id: int | None, column: str
+) -> tuple[dict[Any, int], bool]:
+    """``({key value: rows}, truncated)`` of one display-named column, read through one aggregate."""
+    mapping, _types = _column_profile(service, dataset_id, view_id, project_id)
+    internal = next((i for i, display in mapping.items() if display == column), column)
+    result = service.call(
+        read_queries.AGGREGATE_SYMBOL,
+        dataset_id=dataset_id,
+        dataview_id=view_id,
+        project_id=project_id,
+        aggregations=[{"function": "COUNT", "as_name": "n"}],
+        group_by=[internal],
+        limit=_JOIN_PREVIEW_KEYS + 1,
+    )
+    rows = [r for r in (result or {}).get("data") or [] if isinstance(r, dict)]
+    counts = {r.get("group_0"): int(r.get("agg_0") or 0) for r in rows[:_JOIN_PREVIEW_KEYS]}
+    return counts, len(rows) > _JOIN_PREVIEW_KEYS
+
+
+def join_dry_run_preview(
+    service: Any,
+    left: tuple[int, int],
+    right: tuple[int, int],
+    document: dict[str, Any],
+    project_id: int | None,
+) -> dict[str, Any]:
+    """Key overlap of the join a dry run describes: reads both key columns, writes nothing.
+
+    ``left``/``right`` are ``(dataset_id, view_id)``. Never raises: a failed
+    read comes back as ``{"checked": False, "error": ...}``.
+    """
+    try:
+        on = document.get("on")
+        pair = on[0] if isinstance(on, list) and on and isinstance(on[0], dict) else {}
+        if not pair.get("left") or not pair.get("right"):
+            return {"checked": False, "error": "the join has no left/right key to compare"}
+        left_counts, left_cut = _key_values(service, *left, project_id, str(pair["left"]))
+        right_counts, right_cut = _key_values(service, *right, project_id, str(pair["right"]))
+    except Exception as exc:  # noqa: BLE001 -- the dry run itself must still report
+        return {"checked": False, "error": f"{type(exc).__name__}: {exc}"}
+    return {
+        "checked": True,
+        "left_key": pair["left"],
+        "right_key": pair["right"],
+        **key_overlap(left_counts, set(right_counts)),
+        "truncated": left_cut or right_cut,
+        "note": (
+            "Key overlap by exact value, before any write; a low match_rate means "
+            "compare type, case and padding of the two key columns first."
+        ),
+    }
+
+
 def with_join_check(data: Any, before: Any, after: dict[str, Any], document: dict[str, Any]) -> Any:
     """Add ``join_check`` (row counts, columns added, match rate) to a join result.
 

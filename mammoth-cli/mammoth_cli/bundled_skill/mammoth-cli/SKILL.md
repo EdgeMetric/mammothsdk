@@ -108,7 +108,8 @@ dashboard from t_a and t_b"). Work it out from the data before building:
 2. Find the keys. A column in one view whose values appear in a column of
    the other (`customer_id` and `id`, `order_ref` and `order_no`) is a
    foreign key; the view with many rows per key is the main one.
-3. Make the keys match before the join: same type (`convert-type`), same
+3. Read both key columns first, then `--dry-run` the join (`join_preview.match_rate`).
+   Make the keys match before the real join: same type (`convert-type`), same
    case and padding (`text`), no blanks (`set-values`, `filter`).
 4. Act on every `column_warnings` entry for a column the deliverable uses:
    run its `fix` (`convert-type` to `NUMERIC`/`DATE`; non-numeric values
