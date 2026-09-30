@@ -53,7 +53,7 @@ from mammoth_cli.runtime.session import open_service, require_project
 from mammoth_cli.services import read_queries, text_dates
 from mammoth_cli.services.conditions import CONDITION_KWARG, compile_condition
 from mammoth_cli.services.dashboard_review import UPLOAD_NOTE, upload_hints
-from mammoth_cli.services.data_quality import column_warnings
+from mammoth_cli.services.data_quality import column_warnings, duplicate_rows_fact
 from mammoth_cli.services.listing import DATASET_LIST_FIELDS, compact_view_list
 from mammoth_cli.services.read_queries import ReadContext
 
@@ -847,7 +847,10 @@ def view_data_get(invocation: Invocation) -> HandlerResult:
         else:
             _forward_optional(document, kwargs, ("timeout", "poll_interval", "sequence"))
             data = service.call(_symbol(invocation), **kwargs)
-        data = _relabel_and_check(service, dataset_id, view_id, project_id, data)
+        whole_view = document.get("offset") is None
+        data = _relabel_and_check(
+            service, dataset_id, view_id, project_id, data, whole_view=whole_view
+        )
     return _trim_rows(data, limit), meta
 
 
@@ -1054,8 +1057,9 @@ def _relabel_and_check(
     data: Any,
     mapping: dict[str, str] | None = None,
     types: dict[str, str] | None = None,
+    whole_view: bool = False,
 ) -> Any:
-    """Relabel a data page to display names and add ``column_warnings``.
+    """Relabel a data page to display names and add ``column_warnings`` and ``duplicates``.
 
     The metadata read happens only when the page has rows and the caller has
     not read it already (one read serves both the names and the types).
@@ -1066,7 +1070,16 @@ def _relabel_and_check(
     if mapping is None or types is None:
         mapping, types = _column_profile(service, dataset_id, view_id, project_id)
     data = _relabel_columns(service, dataset_id, view_id, project_id, data, mapping)
-    return _with_column_warnings(data, types, view_id, dataset_id)
+    data = _with_column_warnings(data, types, view_id, dataset_id)
+    return _with_duplicates_fact(data, view_id, dataset_id, whole_view)
+
+
+def _with_duplicates_fact(data: Any, view_id: int, dataset_id: int | None, whole_view: bool) -> Any:
+    """Add ``duplicates``: the read's own statement about exact duplicate rows."""
+    if not isinstance(data, dict) or not isinstance(data.get(_ROWS_KEY), list):
+        return data
+    fact = duplicate_rows_fact(data[_ROWS_KEY], view_id, dataset_id, whole_view=whole_view)
+    return {**data, "duplicates": fact} if fact is not None else data
 
 
 def _with_column_warnings(

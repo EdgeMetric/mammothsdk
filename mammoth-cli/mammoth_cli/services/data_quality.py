@@ -214,6 +214,55 @@ def _renamed_label_warning(
     }
 
 
+def _duplicate_count(rows: list[Mapping[str, Any]]) -> int:
+    """How many of ``rows`` are exact copies of an earlier row."""
+    counts: dict[str, int] = {}
+    for row in rows:
+        fingerprint = json.dumps(row, sort_keys=True, default=str)
+        counts[fingerprint] = counts.get(fingerprint, 0) + 1
+    return sum(count - 1 for count in counts.values() if count > 1)
+
+
+def duplicate_rows_fact(
+    rows: Iterable[Mapping[str, Any]],
+    view_id: int | None,
+    dataset_id: int | None,
+    *,
+    whole_view: bool,
+) -> dict[str, Any] | None:
+    """The read's positive statement about exact duplicate rows (zero included).
+
+    ``whole_view`` says the rows are every row of the view, so the count is the
+    table's; otherwise it is a page's, and the fact names the table-wide check
+    (a dry run of the transform counts the duplicates by a read, with no write).
+    Silence would read as "not checked", so "none" is stated the same way a
+    count is.
+    """
+    materialised = [row for row in rows if isinstance(row, Mapping)]
+    if not materialised:
+        return None
+    checked = len(materialised)
+    duplicates = _duplicate_count(materialised)
+    if whole_view:
+        return {
+            "exact_duplicate_rows": duplicates,
+            "rows_checked": checked,
+            "row_count": checked,
+            "scope": "every row of the view",
+        }
+    fact: dict[str, Any] = {
+        "exact_duplicate_rows_in_page": duplicates,
+        "rows_checked": checked,
+        "scope": "this page only",
+    }
+    if view_id is not None and dataset_id is not None:
+        spec = json.dumps({"dataset_id": dataset_id})
+        fact["table_wide_check"] = (
+            f"mammoth view transform discard-duplicates {view_id} --input '{spec}' --dry-run"
+        )
+    return fact
+
+
 def _duplicate_rows_warning(
     rows: list[Mapping[str, Any]],
     view_id: int | None,
@@ -225,11 +274,7 @@ def _duplicate_rows_warning(
     table-wide duplication without separately checking the full table (e.g.
     ``view data aggregate`` COUNT vs a distinct count).
     """
-    fingerprints = [json.dumps(row, sort_keys=True, default=str) for row in rows]
-    counts: dict[str, int] = {}
-    for fingerprint in fingerprints:
-        counts[fingerprint] = counts.get(fingerprint, 0) + 1
-    duplicate_count = sum(count - 1 for count in counts.values() if count > 1)
+    duplicate_count = _duplicate_count(rows)
     if not duplicate_count:
         return None
     warning: dict[str, Any] = {

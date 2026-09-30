@@ -5,7 +5,7 @@ Every "yes" must point at a command you ran in this task and its response.
 
 | Check | Evidence that satisfies it |
 |---|---|
-| State rows in and rows out for every step that can change row count (filter, discard-duplicates, join, limit, unnest, pivot) | `view data get` or `view get` (`row_count`) before and after the step, or the `view data get` around a set-values |
+| State rows in and rows out for every step that can change row count (filter, discard-duplicates, join, limit, unnest, pivot); for a dedupe, first report the read's `duplicates` count, and when it is 0 say "none, no change needed" and add no step | `view data get` or `view get` (`row_count`) before and after the step, or the `view data get` around a set-values |
 | Read back every value-changing transform | `view data get VIEW_ID DATASET_ID` (full page; `view data query` with `limit`/`condition` for a slice) after the job reached `success`; the sample shows the intended change and nothing else changed |
 | No measure column is all-zero, all-null, or all one value after a transform | inspect the readback sample; an all-`0` / all-`Unknown` column means the condition or column mapping was wrong, not that the data is like that |
 | Decide on every blank the deliverable uses | one report line for each `blank_values` entry (`project check` lists them all: from every view and dashboard): the column, the count, and filled, filtered, or kept and why. Kept is a decision only when you write it down |
