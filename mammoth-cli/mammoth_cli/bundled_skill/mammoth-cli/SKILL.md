@@ -31,7 +31,7 @@ mammoth project ensure 'PROJECT NAME'   # get-or-create; active project
 
 Never proceed if `doctor` fails.
 On a 502, 504 or timeout, `mammoth doctor --input '{"wait": 300}'`
-re-probes that many seconds; continue only once it passes. Production is the `app` endpoint; use `release` only
+re-probes that long; continue once it passes. Production is the `app` endpoint; use `release` only
 when named, and check `meta.profile`/`auth status` `endpoint` match. If no profile has credentials, tell the operator to run
 `mammoth auth login` in their own terminal (`--profile NAME` unless
 `default`; [auth](references/auth.md) says where the token comes from) and
@@ -177,8 +177,8 @@ your report. If no column links the files, ask before you combine them.
 - Check an answer with no write against the question (a trend: time
   buckets, a partial period named; no `project check`); a reported number
   comes from `calc`/`view data compare`, never mental math.
-- After a write, run `mammoth project check PROJECT_ID DATASET_ID`; fix the
-  `to_report` lines your request touches, no others.
+- After a write, run `mammoth project check PROJECT_ID DATASET_ID`; fix
+  only the `to_report` lines your request touches.
 - Run the [report checklist](references/report-checklist.md) before stating
   a number or calling a step done. When files disagree,
   [capabilities](references/capabilities.md) wins over a recipe, then the
