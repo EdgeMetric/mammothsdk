@@ -34,6 +34,7 @@ from mammoth_cli.commands.view import (
     brief_view_record,
     join_after_snapshot,
     join_snapshot,
+    wait_for_pipeline_to_settle,
     wait_for_view_row_count,
     with_join_check,
 )
@@ -349,6 +350,7 @@ def _dispatch_view(
             )
         if after is not None and dataset_id is not None:
             data = after(service, int(dataset_id), state, data)
+            _flag_unsettled_pipeline(service, int(dataset_id), view_id, data)
         elif (
             auto_row_check
             and dataset_id is not None
@@ -368,6 +370,19 @@ def _dispatch_view(
             if pipeline_error is not None:
                 data["pipeline_error"] = pipeline_error
     return data, _meta(invocation, auth.workspace_id)
+
+
+def _flag_unsettled_pipeline(service: Any, dataset_id: int, view_id: int, data: Any) -> None:
+    """Wait for the pipeline after a write with no row check, and record what it finds.
+
+    A ``pipeline_error`` (an execution error, or a wait that ended unfinished)
+    keeps the write from reading ``done`` and verified. A staged draft ran nothing.
+    """
+    if not isinstance(data, dict) or data.get("status") == "staged":
+        return
+    error = wait_for_pipeline_to_settle(service, dataset_id, view_id)
+    if error is not None:
+        data["pipeline_error"] = error
 
 
 CODE_PIPELINE_CHANGED = "pipeline_changed"
