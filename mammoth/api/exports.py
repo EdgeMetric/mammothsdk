@@ -656,9 +656,11 @@ class ExportsAPI:
         output_path = Path(output_path)
 
         result = await self.to_csv_url(dataview_id, timeout=timeout, dataset_id=dataset_id)
-        return self._download_file(result["url"], output_path, job_handle=result["job_id"])
+        return await self._download_file(result["url"], output_path, job_handle=result["job_id"])
 
-    def _download_file(self, url: str, output_path: Path, *, job_handle: int | None = None) -> Path:
+    async def _download_file(
+        self, url: str, output_path: Path, *, job_handle: int | None = None
+    ) -> Path:
         """Download a file from the given URL.
 
         Args:
@@ -740,12 +742,13 @@ class ExportsAPI:
             # session created by MammothClient.  Retain the fallback for
             # lightweight third-party client stubs that predate this seam.
             download_session = getattr(self._client, "download_session", self._client.session)
-            response = download_session.get(url, stream=True, timeout=self._client.timeout)
+            request = download_session.build_request("GET", url, timeout=self._client.timeout)
+            response = await download_session.send(request, stream=True)
             response.raise_for_status()
 
             with os.fdopen(fd, "wb") as stream:
                 fd = -1
-                for chunk in response.iter_content(chunk_size=8192):
+                async for chunk in response.aiter_bytes(chunk_size=8192):
                     if chunk:
                         stream.write(chunk)
                 stream.flush()
@@ -814,6 +817,6 @@ class ExportsAPI:
                     os.close(fd)
             if response is not None:
                 with suppress(Exception):
-                    response.close()
+                    await response.aclose()
             if not published:
                 discard_partial()

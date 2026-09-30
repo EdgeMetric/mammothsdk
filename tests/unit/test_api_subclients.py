@@ -524,12 +524,6 @@ class TestDatasetsAPI:
             client._request_json, "GET", "/datasets/500/file_settings"
         )
 
-    async def test_get_unstructured_rows(self, client: MammothClient):
-        await client.datasets.get_unstructured_rows(dataset_id=500)
-        assert_called_with_method_and_endpoint(
-            client._request_json, "GET", "/datasets/500/unstructured_rows"
-        )
-
     async def test_bulk_update(self, client: MammothClient):
         await client.datasets.bulk_update(patch_data={"name": "x"})
         assert_called_with_method_and_endpoint(client._request_json, "PATCH", "/datasets")
@@ -1720,7 +1714,7 @@ class TestExportsAPICsv:
                 "job_id": 9001,
             }
         )
-        client.exports._download_file = MagicMock(return_value=Path("/tmp/out.csv"))
+        client.exports._download_file = AsyncMock(return_value=Path("/tmp/out.csv"))
 
         result = await client.exports.to_csv(
             dataview_id=42, output_path="/tmp/out.csv", dataset_id=500

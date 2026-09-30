@@ -8,7 +8,7 @@ import asyncio
 
 import logging
 import time
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from typing import TYPE_CHECKING, Any
 
 from ..exceptions import (
@@ -114,7 +114,7 @@ class JobsAPI:
         job_id: int,
         timeout: float | None = None,
         poll_interval: float | None = None,
-        fetch: Callable[[int, float], dict[str, Any]] | None = None,
+        fetch: Callable[[int, float], Awaitable[dict[str, Any]]] | None = None,
     ) -> dict[str, Any]:
         """
         Wait for a job to complete and return the result.

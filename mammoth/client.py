@@ -31,7 +31,7 @@ import asyncio
 import logging
 import math
 import time
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from ipaddress import ip_address
 from typing import Any, cast
 from urllib.parse import urljoin, urlsplit
@@ -868,7 +868,7 @@ class MammothClient:
         response: dict[str, Any],
         timeout: int | None = None,
         poll_interval: float | None = None,
-        fetch: Callable[[int, float], dict[str, Any]] | None = None,
+        fetch: Callable[[int, float], Awaitable[dict[str, Any]]] | None = None,
     ) -> dict[str, Any]:
         """Detect job references in API responses and wait for completion.
 
@@ -925,7 +925,7 @@ class MammothClient:
         response: dict[str, Any],
         timeout: int | None = None,
         poll_interval: float | None = None,
-        fetch: Callable[[int, float], dict[str, Any]] | None = None,
+        fetch: Callable[[int, float], Awaitable[dict[str, Any]]] | None = None,
     ) -> dict[str, Any]:
         """Wait when an API response contains a recognized job reference.
 
@@ -1029,7 +1029,7 @@ class MammothClient:
             otherwise ``target_ds_id``).
         """
         view = await self.views.get(view_id)
-        return view.branch_out(
+        return await view.branch_out(
             dataset_name, target_ds_id=target_ds_id, column_mapping=column_mapping, **kwargs
         )
 

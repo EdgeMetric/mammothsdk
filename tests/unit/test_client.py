@@ -307,3 +307,19 @@ class TestViewsResource:
             dataset_id=500, name="New View", clone_config_from=None
         )
         assert view.id == 99
+
+
+class TestClientBranchOut:
+    """``MammothClient.branch_out`` hands back the view's result, not a coroutine."""
+
+    async def test_returns_the_dataset_id_the_view_wrote(self) -> None:
+        with patch("mammoth.client.httpx.AsyncClient"):
+            client = MammothClient(api_key="k", api_secret="s", workspace_id=1)
+        view = MagicMock()
+        view.branch_out = AsyncMock(return_value=321)
+        client.views.get = AsyncMock(return_value=view)
+
+        result = await client.branch_out(7, "copy", target_ds_id=321)
+
+        assert result == 321
+        view.branch_out.assert_awaited_once_with("copy", target_ds_id=321, column_mapping=None)

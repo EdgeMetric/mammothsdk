@@ -606,29 +606,6 @@ class DatasetsAPI:
             "GET", f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/file_settings"
         )
 
-    async def get_unstructured_rows(
-        self,
-        dataset_id: int,
-        workspace_id: int | None = None,
-        project_id: int | None = None,
-    ) -> dict[str, Any]:
-        """Get the lines of an uploaded file that could not be parsed.
-
-        Args:
-            dataset_id: ID of the dataset.
-            workspace_id: ID of the workspace (uses client default if not provided).
-            project_id: ID of the project (uses client default if not provided).
-
-        Returns:
-            Dict with ``unstructured_rows`` (the first 100: ``line_num``, ``line``,
-            ``batch_id``, ``is_compatible``, ``reason``) and ``row_count``, the total.
-        """
-        ws = workspace_id or self._ws()
-        proj = self._proj(project_id)
-        return await self._client._request_json(
-            "GET", f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/unstructured_rows"
-        )
-
     async def create_from_pdf(
         self,
         file_object_id: int,

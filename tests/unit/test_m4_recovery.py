@@ -5,7 +5,7 @@ from __future__ import annotations
 import errno
 from pathlib import Path
 from types import SimpleNamespace
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
 import httpx
@@ -43,12 +43,10 @@ class _Response:
         self,
         status_code: int = 200,
         body: dict[str, object] | None = None,
-        chunks: list[bytes] | None = None,
         headers: dict[str, str] | None = None,
     ) -> None:
         self.status_code = status_code
         self._body = body or {}
-        self._chunks = chunks or []
         self.headers = headers or {}
         self.content = b"{}"
         self.closed = False
@@ -59,9 +57,6 @@ class _Response:
     def raise_for_status(self) -> None:
         if self.status_code >= 400:
             raise requests.HTTPError(response=self)
-
-    def iter_content(self, chunk_size: int = 8192):  # noqa: ARG002
-        yield from self._chunks
 
     def close(self) -> None:
         self.closed = True
@@ -266,41 +261,80 @@ async def test_wait_for_jobs_rejects_duplicate_or_unrequested_server_records(
     assert raised.value.details["protocol_error"] == protocol_error
 
 
-def _export_api(session: MagicMock) -> ExportsAPI:
-    client = SimpleNamespace(session=session, timeout=5)
-    return ExportsAPI(client)  # type: ignore[arg-type]
+class _Chunks(httpx.AsyncByteStream):
+    """A download body that yields its chunks, then optionally fails mid-stream."""
+
+    def __init__(self, chunks: list[bytes], error: BaseException | None = None) -> None:
+        self.chunks = chunks
+        self.error = error
+        self.closed = False
+
+    async def __aiter__(self):
+        for chunk in self.chunks:
+            yield chunk
+        if self.error is not None:
+            raise self.error
+
+    async def aclose(self) -> None:
+        self.closed = True
+
+
+def _download_api(body: _Chunks) -> tuple[ExportsAPI, list[httpx.Request]]:
+    """An ExportsAPI whose download session is a real AsyncClient serving *body*."""
+    served: list[httpx.Request] = []
+
+    def serve(request: httpx.Request) -> httpx.Response:
+        served.append(request)
+        return httpx.Response(200, stream=body)
+
+    session = httpx.AsyncClient(transport=httpx.MockTransport(serve))
+    client = SimpleNamespace(session=session, download_session=session, timeout=5)
+    return ExportsAPI(client), served  # type: ignore[arg-type]
+
+
+async def test_download_streams_through_a_real_async_client(tmp_path: Path) -> None:
+    """The download session is an ``httpx.AsyncClient``: drive a real one."""
+    destination = tmp_path / "result.csv"
+    seen: list[httpx.Request] = []
+
+    def serve(request: httpx.Request) -> httpx.Response:
+        seen.append(request)
+        return httpx.Response(200, content=b"a,b\n1,2\n")
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(serve)) as session:
+        client = SimpleNamespace(session=session, download_session=session, timeout=5)
+        result = await ExportsAPI(client)._download_file(  # type: ignore[arg-type]
+            "https://download.invalid/file", destination
+        )
+
+    assert result == destination
+    assert destination.read_bytes() == b"a,b\n1,2\n"
+    assert [r.method for r in seen] == ["GET"]
+    assert list(tmp_path.glob("*.part")) == []
 
 
 async def test_download_publishes_atomically_and_replaces_complete_file(tmp_path: Path) -> None:
     destination = tmp_path / "result.csv"
     destination.write_bytes(b"old")
-    response = _Response(chunks=[b"new", b" content"])
-    session = MagicMock()
-    session.get.return_value = response
+    body = _Chunks([b"new", b" content"])
+    api, _ = _download_api(body)
 
-    result = _export_api(session)._download_file("https://download.invalid/file", destination)
+    result = await api._download_file("https://download.invalid/file", destination)
 
     assert result == destination
     assert destination.read_bytes() == b"new content"
     assert list(tmp_path.glob("*.part")) == []
-    assert response.closed
+    assert body.closed
 
 
 async def test_partial_download_preserves_destination_and_cleans_temp(tmp_path: Path) -> None:
     destination = tmp_path / "result.csv"
     destination.write_bytes(b"old")
 
-    class BrokenResponse(_Response):
-        def iter_content(self, chunk_size: int = 8192):  # noqa: ARG002
-            yield b"partial"
-            raise httpx.ConnectError("broken stream")
-
-    response = BrokenResponse()
-    session = MagicMock()
-    session.get.return_value = response
+    api, _ = _download_api(_Chunks([b"partial"], error=httpx.ConnectError("broken stream")))
 
     with pytest.raises(MammothAPIError) as raised:
-        _export_api(session)._download_file("https://download.invalid/file", destination)
+        await api._download_file("https://download.invalid/file", destination)
 
     assert raised.value.method == "GET"
     assert destination.read_bytes() == b"old"
@@ -312,16 +346,14 @@ async def test_enospc_preserves_destination_and_cleans_temp(
 ) -> None:
     destination = tmp_path / "result.csv"
     destination.write_bytes(b"old")
-    response = _Response(chunks=[b"new"])
-    session = MagicMock()
-    session.get.return_value = response
+    api, _ = _download_api(_Chunks([b"new"]))
 
     def full_disk(_fd: int) -> None:
         raise OSError(errno.ENOSPC, "No space left on device")
 
     monkeypatch.setattr("mammoth.api.exports.os.fsync", full_disk)
     with pytest.raises(MammothAPIError) as raised:
-        _export_api(session)._download_file("https://download.invalid/file", destination)
+        await api._download_file("https://download.invalid/file", destination)
 
     assert raised.value.details["errno"] == errno.ENOSPC
     assert destination.read_bytes() == b"old"
@@ -334,17 +366,9 @@ async def test_interrupted_download_preserves_destination_and_remote_job_handle(
     destination = tmp_path / "result.csv"
     destination.write_bytes(b"old")
 
-    class InterruptedResponse(_Response):
-        def iter_content(self, chunk_size: int = 8192):  # noqa: ARG002
-            yield b"partial"
-            raise KeyboardInterrupt
-
-    session = MagicMock()
-    session.get.return_value = InterruptedResponse()
+    api, _ = _download_api(_Chunks([b"partial"], error=KeyboardInterrupt()))
     with pytest.raises(MammothAPIError) as raised:
-        _export_api(session)._download_file(
-            "https://download.invalid/file", destination, job_handle=919
-        )
+        await api._download_file("https://download.invalid/file", destination, job_handle=919)
 
     assert raised.value.details["interrupted"] is True
     assert raised.value.job_handle == 919
@@ -362,23 +386,22 @@ async def test_symlink_destination_is_refused_without_touching_target(tmp_path: 
     target.write_bytes(b"old")
     destination = tmp_path / "result.csv"
     destination.symlink_to(target)
-    session = MagicMock()
+    api, served = _download_api(_Chunks([b"new"]))
 
     with pytest.raises(MammothAPIError) as raised:
-        _export_api(session)._download_file("https://download.invalid/file", destination)
+        await api._download_file("https://download.invalid/file", destination)
 
     assert raised.value.details["errno"] == errno.ELOOP
     assert target.read_bytes() == b"old"
     assert destination.is_symlink()
-    assert session.get.call_count == 0
+    assert served == []
 
 
 async def test_local_save_failure_marks_remote_export_succeeded_when_handle_known(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     destination = tmp_path / "result.csv"
-    session = MagicMock()
-    session.get.return_value = _Response(chunks=[b"new"])
+    api, _ = _download_api(_Chunks([b"new"]))
 
     def full_disk(_fd: int) -> None:
         raise OSError(errno.ENOSPC, "full")
@@ -386,9 +409,7 @@ async def test_local_save_failure_marks_remote_export_succeeded_when_handle_know
     monkeypatch.setattr("mammoth.api.exports.os.fsync", full_disk)
 
     with pytest.raises(MammothAPIError) as raised:
-        _export_api(session)._download_file(
-            "https://download.invalid/file", destination, job_handle=919
-        )
+        await api._download_file("https://download.invalid/file", destination, job_handle=919)
 
     assert raised.value.operation_state == "succeeded"
     assert raised.value.details["remote_export_state"] == "succeeded"

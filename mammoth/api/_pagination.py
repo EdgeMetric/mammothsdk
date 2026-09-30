@@ -8,7 +8,7 @@ progress: callers must bound pages and prove both cursor and record progress.
 from __future__ import annotations
 
 import json
-from collections.abc import Callable, Mapping
+from collections.abc import Awaitable, Callable, Mapping
 from typing import Any
 from urllib.parse import parse_qs, urlparse
 
@@ -39,7 +39,7 @@ def next_offset_from_hint(hint: object, current: int) -> int | None:
 
 
 async def collect_offset_pages(
-    fetch: Callable[[int], Mapping[str, Any]],
+    fetch: Callable[[int], Awaitable[Mapping[str, Any]]],
     *,
     item_key: str,
     limit: int,
