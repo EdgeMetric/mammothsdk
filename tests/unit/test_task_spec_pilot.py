@@ -1,6 +1,6 @@
 """Independent typed task-pilot builder and wire controls."""
 
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
@@ -16,7 +16,7 @@ from mammoth.exceptions import MammothColumnError, MammothValidationError
 from mammoth.models.pipeline import ColumnType, ConversionSpec, FilterType, JoinKeySpec, JoinType
 
 
-def test_math_builder_transport_smoke_matches_literal_wire_shape() -> None:
+async def test_math_builder_transport_smoke_matches_literal_wire_shape() -> None:
     payload = build_math_params(
         "Price * Quantity",
         {"Price": "column_1", "Quantity": "column_2"},
@@ -27,10 +27,10 @@ def test_math_builder_transport_smoke_matches_literal_wire_shape() -> None:
     client = MagicMock()
     client.workspace_id = 1
     client.project_id = 2
-    client._request_json.return_value = {"id": 9}
-    client._wait_if_job.side_effect = lambda response, **_kwargs: response
+    client._request_json = AsyncMock(return_value={"id": 9})
+    client._wait_if_job = AsyncMock(side_effect=lambda response, **_kwargs: response)
     pipeline = PipelineAPI(client)
-    pipeline.add_task(42, payload, dataset_id=7)
+    await pipeline.add_task(42, payload, dataset_id=7)
     client._request_json.assert_called_once_with(
         "POST",
         "/workspaces/1/projects/2/datasets/7/dataviews/42/pipeline/tasks",
@@ -48,7 +48,7 @@ def test_math_builder_transport_smoke_matches_literal_wire_shape() -> None:
     )
 
 
-def test_pilot_builders_emit_typed_backend_shapes() -> None:
+async def test_pilot_builders_emit_typed_backend_shapes() -> None:
     condition = Condition("Status", Operator.EQ, "Open")
     assert (
         build_filter_params(condition, {"Status": "column_1"}, filter_type=FilterType.SHOW)[
@@ -80,7 +80,7 @@ def test_pilot_builders_emit_typed_backend_shapes() -> None:
     }
 
 
-def test_typed_builders_reject_unknown_or_unresolved_names() -> None:
+async def test_typed_builders_reject_unknown_or_unresolved_names() -> None:
     with pytest.raises((MammothValidationError, ValueError)):
         build_math_params("Price * Missing", {"Price": "column_1"}, internal_names=["column_1"])
     with pytest.raises((MammothValidationError, MammothColumnError)):

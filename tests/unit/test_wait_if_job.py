@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
+import pytest
+
+from mammoth.api.jobs import JobsAPI
 from mammoth.client import MammothClient
 from mammoth.view import View
 
@@ -12,18 +15,19 @@ from .conftest import SAMPLE_DATASET_ID, SAMPLE_VIEW_DATA
 # ── Helpers ──────────────────────────────────────────────────
 
 
-def _make_client() -> MammothClient:
+def _make_client(**overrides) -> MammothClient:
     """Create a MammothClient with mocked HTTP and jobs."""
-    with patch("mammoth.client.requests.Session"):
+    with patch("mammoth.client.httpx.AsyncClient"):
         client = MammothClient(
             api_key="test-key",
             api_secret="test-secret",
             workspace_id=1,
+            **overrides,
         )
     client.project_id = 100
-    client._request_json = MagicMock(return_value={})
-    client.jobs = MagicMock()
-    client.jobs.wait_for_job = MagicMock(
+    client._request_json = AsyncMock(return_value={})
+    client.jobs = AsyncMock()
+    client.jobs.wait_for_job = AsyncMock(
         return_value={"status": "success", "response": {"rows": [1, 2, 3]}}
     )
     return client
@@ -38,57 +42,57 @@ class TestWaitIfJobPatterns:
     def setup_method(self):
         self.client = _make_client()
 
-    def test_pattern_job_id(self):
+    async def test_pattern_job_id(self):
         """Pattern 1: {"job_id": N} (ObjectJobSchema)."""
         response = {"job_id": 42}
-        result = self.client._wait_if_job(response)
+        result = await self.client._wait_if_job(response)
         self.client.jobs.wait_for_job.assert_called_once_with(
             42, timeout=60, poll_interval=2, fetch=None
         )
         assert result == {"rows": [1, 2, 3]}
 
-    def test_public_wait_seam_uses_the_same_job_contract(self):
+    async def test_public_wait_seam_uses_the_same_job_contract(self):
         """Generated integrations can wait without reaching into SDK internals."""
-        result = self.client.wait_if_job({"job_id": 42})
+        result = await self.client.wait_if_job({"job_id": 42})
         self.client.jobs.wait_for_job.assert_called_once_with(
             42, timeout=60, poll_interval=2, fetch=None
         )
         assert result == {"rows": [1, 2, 3]}
 
-    def test_pattern_job_dict(self):
+    async def test_pattern_job_dict(self):
         """Pattern 2: {"job": {"id": N}} (JobResponse)."""
         response = {"job": {"id": 99, "status": "processing"}}
-        result = self.client._wait_if_job(response)
+        result = await self.client._wait_if_job(response)
         self.client.jobs.wait_for_job.assert_called_once_with(
             99, timeout=60, poll_interval=2, fetch=None
         )
         assert result == {"rows": [1, 2, 3]}
 
-    def test_pattern_response_job_schema(self):
+    async def test_pattern_response_job_schema(self):
         """Pattern 3: {"id": N, "status": "processing"} (ResponseJobSchema)."""
         response = {"id": 77, "status": "processing"}
-        result = self.client._wait_if_job(response)
+        result = await self.client._wait_if_job(response)
         self.client.jobs.wait_for_job.assert_called_once_with(
             77, timeout=60, poll_interval=2, fetch=None
         )
         assert result == {"rows": [1, 2, 3]}
 
-    def test_pattern_response_job_schema_success(self):
+    async def test_pattern_response_job_schema_success(self):
         """Pattern 3 also triggers on status=success."""
         response = {"id": 77, "status": "success"}
-        self.client._wait_if_job(response)
+        await self.client._wait_if_job(response)
         self.client.jobs.wait_for_job.assert_called_once()
 
-    def test_pattern_response_job_schema_failure(self):
+    async def test_pattern_response_job_schema_failure(self):
         """Pattern 3 also triggers on status=failure."""
         response = {"id": 77, "status": "failure"}
-        self.client._wait_if_job(response)
+        await self.client._wait_if_job(response)
         self.client.jobs.wait_for_job.assert_called_once()
 
-    def test_pattern_response_job_schema_error(self):
+    async def test_pattern_response_job_schema_error(self):
         """Pattern 3 also triggers on status=error."""
         response = {"id": 77, "status": "error"}
-        self.client._wait_if_job(response)
+        await self.client._wait_if_job(response)
         self.client.jobs.wait_for_job.assert_called_once()
 
 
@@ -98,36 +102,36 @@ class TestWaitIfJobPassthrough:
     def setup_method(self):
         self.client = _make_client()
 
-    def test_plain_dict(self):
+    async def test_plain_dict(self):
         """Regular data dict passes through without job waiting."""
         data = {"columns": ["a", "b"], "rows": [[1, 2]]}
-        result = self.client._wait_if_job(data)
+        result = await self.client._wait_if_job(data)
         self.client.jobs.wait_for_job.assert_not_called()
         assert result == data
 
-    def test_empty_dict(self):
-        result = self.client._wait_if_job({})
+    async def test_empty_dict(self):
+        result = await self.client._wait_if_job({})
         self.client.jobs.wait_for_job.assert_not_called()
         assert result == {}
 
-    def test_dict_with_id_but_no_status(self):
+    async def test_dict_with_id_but_no_status(self):
         """A dict with 'id' but no 'status' is NOT a job reference."""
         data = {"id": 42, "name": "my_view"}
-        result = self.client._wait_if_job(data)
+        result = await self.client._wait_if_job(data)
         self.client.jobs.wait_for_job.assert_not_called()
         assert result == data
 
-    def test_dict_with_id_and_unknown_status(self):
+    async def test_dict_with_id_and_unknown_status(self):
         """A dict with 'id' + unrecognized status is NOT a job reference."""
         data = {"id": 42, "status": "active"}
-        result = self.client._wait_if_job(data)
+        result = await self.client._wait_if_job(data)
         self.client.jobs.wait_for_job.assert_not_called()
         assert result == data
 
-    def test_job_key_is_not_dict(self):
+    async def test_job_key_is_not_dict(self):
         """If 'job' key is a string/int (not a dict), skip."""
         data = {"job": "some_string"}
-        result = self.client._wait_if_job(data)
+        result = await self.client._wait_if_job(data)
         self.client.jobs.wait_for_job.assert_not_called()
         assert result == data
 
@@ -138,29 +142,29 @@ class TestWaitIfJobTimeoutForwarding:
     def setup_method(self):
         self.client = _make_client()
 
-    def test_custom_timeout(self):
-        self.client._wait_if_job({"job_id": 1}, timeout=120)
+    async def test_custom_timeout(self):
+        await self.client._wait_if_job({"job_id": 1}, timeout=120)
         self.client.jobs.wait_for_job.assert_called_once_with(
             1, timeout=120, poll_interval=2, fetch=None
         )
 
-    def test_custom_poll_interval(self):
-        self.client._wait_if_job({"job_id": 1}, poll_interval=5)
+    async def test_custom_poll_interval(self):
+        await self.client._wait_if_job({"job_id": 1}, poll_interval=5)
         self.client.jobs.wait_for_job.assert_called_once_with(
             1, timeout=60, poll_interval=5, fetch=None
         )
 
-    def test_uses_client_job_timeout_as_default(self):
+    async def test_uses_client_job_timeout_as_default(self):
         self.client.job_timeout = 300
-        self.client._wait_if_job({"job_id": 1})
+        await self.client._wait_if_job({"job_id": 1})
         self.client.jobs.wait_for_job.assert_called_once_with(
             1, timeout=300, poll_interval=2, fetch=None
         )
 
-    def test_completed_job_without_response_key(self):
+    async def test_completed_job_without_response_key(self):
         """When completed job has no 'response' key, return the whole job dict."""
         self.client.jobs.wait_for_job.return_value = {"status": "success", "id": 1}
-        result = self.client._wait_if_job({"job_id": 1})
+        result = await self.client._wait_if_job({"job_id": 1})
         assert result == {"status": "success", "id": 1}
 
 
@@ -174,38 +178,40 @@ class TestDataviewsJobWaiting:
         self.client = _make_client()
         self.client.project_id = 100
 
-    def test_get_data_with_job_response(self):
-        self.client._request_json = MagicMock(return_value={"job_id": 55})
-        result = self.client.dataviews.get_data(dataset_id=10, dataview_id=20)
+    async def test_get_data_with_job_response(self):
+        self.client._request_json = AsyncMock(return_value={"job_id": 55})
+        result = await self.client.dataviews.get_data(dataset_id=10, dataview_id=20)
         self.client.jobs.wait_for_job.assert_called_once_with(
             55, timeout=60, poll_interval=2, fetch=None
         )
         assert result == {"rows": [1, 2, 3]}
 
-    def test_get_data_without_job(self):
+    async def test_get_data_without_job(self):
         data = {"columns": [], "rows": []}
-        self.client._request_json = MagicMock(return_value=data)
-        result = self.client.dataviews.get_data(dataset_id=10, dataview_id=20)
+        self.client._request_json = AsyncMock(return_value=data)
+        result = await self.client.dataviews.get_data(dataset_id=10, dataview_id=20)
         self.client.jobs.wait_for_job.assert_not_called()
         assert result == data
 
-    def test_get_data_custom_timeout(self):
-        self.client._request_json = MagicMock(return_value={"job_id": 55})
-        self.client.dataviews.get_data(dataset_id=10, dataview_id=20, timeout=120, poll_interval=5)
+    async def test_get_data_custom_timeout(self):
+        self.client._request_json = AsyncMock(return_value={"job_id": 55})
+        await self.client.dataviews.get_data(
+            dataset_id=10, dataview_id=20, timeout=120, poll_interval=5
+        )
         self.client.jobs.wait_for_job.assert_called_once_with(
             55, timeout=120, poll_interval=5, fetch=None
         )
 
-    def test_query_data_with_job_response(self):
-        self.client._request_json = MagicMock(return_value={"id": 66, "status": "processing"})
-        result = self.client.dataviews.query_data(dataset_id=10, dataview_id=20)
+    async def test_query_data_with_job_response(self):
+        self.client._request_json = AsyncMock(return_value={"id": 66, "status": "processing"})
+        result = await self.client.dataviews.query_data(dataset_id=10, dataview_id=20)
         self.client.jobs.wait_for_job.assert_called_once()
         assert result == {"rows": [1, 2, 3]}
 
-    def test_query_data_without_job(self):
+    async def test_query_data_without_job(self):
         data = {"columns": [], "rows": [[1]]}
-        self.client._request_json = MagicMock(return_value=data)
-        result = self.client.dataviews.query_data(dataset_id=10, dataview_id=20)
+        self.client._request_json = AsyncMock(return_value=data)
+        result = await self.client.dataviews.query_data(dataset_id=10, dataview_id=20)
         self.client.jobs.wait_for_job.assert_not_called()
         assert result == data
 
@@ -223,11 +229,11 @@ class TestPipelineJobWaiting:
 
         self.client.pipeline = PipelineAPI(self.client)
 
-    def test_add_task_waits(self):
-        self.client._request_json = MagicMock(
+    async def test_add_task_waits(self):
+        self.client._request_json = AsyncMock(
             return_value={"job": {"id": 101, "status": "processing"}}
         )
-        result = self.client.pipeline.add_task(
+        result = await self.client.pipeline.add_task(
             dataview_id=20, task_spec={"TYPE": "SET"}, dataset_id=10
         )
         self.client.jobs.wait_for_job.assert_called_once_with(
@@ -235,41 +241,43 @@ class TestPipelineJobWaiting:
         )
         assert result == {"rows": [1, 2, 3]}
 
-    def test_delete_task_waits(self):
-        self.client._request_json = MagicMock(
+    async def test_delete_task_waits(self):
+        self.client._request_json = AsyncMock(
             return_value={"job": {"id": 102, "status": "processing"}}
         )
-        self.client.pipeline.delete_task(dataview_id=20, task_id=5, dataset_id=10)
+        await self.client.pipeline.delete_task(dataview_id=20, task_id=5, dataset_id=10)
         self.client.jobs.wait_for_job.assert_called_once()
 
-    def test_update_task_waits(self):
-        self.client._request_json = MagicMock(
+    async def test_update_task_waits(self):
+        self.client._request_json = AsyncMock(
             return_value={"job": {"id": 103, "status": "processing"}}
         )
-        self.client.pipeline.update_task(
+        await self.client.pipeline.update_task(
             dataview_id=20, task_id=5, task_spec={"TYPE": "SET"}, dataset_id=10
         )
         self.client.jobs.wait_for_job.assert_called_once()
 
-    def test_preview_task_waits(self):
-        self.client._request_json = MagicMock(
+    async def test_preview_task_waits(self):
+        self.client._request_json = AsyncMock(
             return_value={"job": {"id": 104, "status": "processing"}}
         )
-        self.client.pipeline.preview_task(dataview_id=20, task_spec={"TYPE": "SET"}, dataset_id=10)
+        await self.client.pipeline.preview_task(
+            dataview_id=20, task_spec={"TYPE": "SET"}, dataset_id=10
+        )
         self.client.jobs.wait_for_job.assert_called_once()
 
-    def test_draft_mode_waits(self):
-        self.client._request_json = MagicMock(
+    async def test_draft_mode_waits(self):
+        self.client._request_json = AsyncMock(
             return_value={"job": {"id": 105, "status": "processing"}}
         )
-        self.client.pipeline.draft_mode(dataview_id=20, command="enter", dataset_id=10)
+        await self.client.pipeline.draft_mode(dataview_id=20, command="enter", dataset_id=10)
         self.client.jobs.wait_for_job.assert_called_once()
 
-    def test_add_task_no_job_passthrough(self):
+    async def test_add_task_no_job_passthrough(self):
         """When pipeline returns no job reference, pass through."""
         data = {"task_id": 5, "TYPE": "SET"}
-        self.client._request_json = MagicMock(return_value=data)
-        result = self.client.pipeline.add_task(
+        self.client._request_json = AsyncMock(return_value=data)
+        result = await self.client.pipeline.add_task(
             dataview_id=20, task_spec={"TYPE": "SET"}, dataset_id=10
         )
         self.client.jobs.wait_for_job.assert_not_called()
@@ -280,7 +288,7 @@ class TestPipelineJobWaiting:
 
 
 class TestViewAddTaskSimplified:
-    """Test that view._add_task() no longer double-waits."""
+    """Test that await view._add_task() no longer double-waits."""
 
     def setup_method(self):
         self.client = _make_client()
@@ -291,7 +299,7 @@ class TestViewAddTaskSimplified:
         self.client.pipeline = PipelineAPI(self.client)
         self.client.dataviews = DataviewsAPI(self.client)
 
-    def test_add_task_waits_once(self):
+    async def test_add_task_waits_once(self):
         """pipeline.add_task waits for job; then wait_for_pipeline waits for readiness."""
 
         def counting_request_json(method, url, **kwargs):
@@ -302,10 +310,10 @@ class TestViewAddTaskSimplified:
             # refresh GET requests
             return SAMPLE_VIEW_DATA
 
-        self.client._request_json = MagicMock(side_effect=counting_request_json)
+        self.client._request_json = AsyncMock(side_effect=counting_request_json)
 
         view = View(self.client, SAMPLE_VIEW_DATA, SAMPLE_DATASET_ID)
-        view._add_task({"TYPE": "SET"})
+        await view._add_task({"TYPE": "SET"})
 
         # wait_for_job called exactly once (by pipeline.add_task)
         self.client.jobs.wait_for_job.assert_called_once_with(
@@ -325,38 +333,42 @@ class TestAIJobWaiting:
 
         self.client.ai = AIAPI(self.client)
         # Mock _find_dataset_for_dataview to avoid HTTP
-        self.client.pipeline = MagicMock()
-        self.client.pipeline._find_dataset_for_dataview = MagicMock(return_value=10)
+        self.client.pipeline = AsyncMock()
+        self.client.pipeline._find_dataset_for_dataview = AsyncMock(return_value=10)
 
-    def test_generate_profile_waits(self):
-        self.client._request_json = MagicMock(
+    async def test_generate_profile_waits(self):
+        self.client._request_json = AsyncMock(
             return_value={"job": {"id": 301, "status": "processing"}}
         )
-        self.client.ai.generate_profile(dataview_id=20)
+        await self.client.ai.generate_profile(dataview_id=20)
         self.client.jobs.wait_for_job.assert_called_once()
 
-    def test_generate_sql_waits(self):
-        self.client._request_json = MagicMock(return_value={"id": 302, "status": "processing"})
-        self.client.ai.generate_sql(intent="total sales", dataset_id=48)
+    async def test_generate_sql_waits(self):
+        self.client._request_json = AsyncMock(return_value={"id": 302, "status": "processing"})
+        await self.client.ai.generate_sql(intent="total sales", dataset_id=48)
         self.client.jobs.wait_for_job.assert_called_once()
 
-    def test_get_suggestions_waits(self):
-        self.client._request_json = MagicMock(return_value={"job_id": 303})
-        self.client.ai.get_suggestions(suggestion_type="dashboards", params={})
+    async def test_get_suggestions_waits(self):
+        self.client._request_json = AsyncMock(return_value={"job_id": 303})
+        await self.client.ai.get_suggestions(suggestion_type="dashboards", params={})
         self.client.jobs.wait_for_job.assert_called_once()
 
-    def test_generate_data_waits(self):
-        self.client._request_json = MagicMock(
+    async def test_generate_data_waits(self):
+        self.client._request_json = AsyncMock(
             return_value={"job": {"id": 304, "status": "processing"}}
         )
-        self.client.ai.generate_data(dataview_id=20, prompt="Generate test data", no_of_rows=10)
+        await self.client.ai.generate_data(
+            dataview_id=20, prompt="Generate test data", no_of_rows=10
+        )
         self.client.jobs.wait_for_job.assert_called_once()
 
-    def test_query_gen_waits(self):
-        self.client._request_json = MagicMock(
+    async def test_query_gen_waits(self):
+        self.client._request_json = AsyncMock(
             return_value={"job": {"id": 305, "status": "processing"}}
         )
-        self.client.ai.query_gen(connector_key="pg", connection_key="conn1", query="show tables")
+        await self.client.ai.query_gen(
+            connector_key="pg", connection_key="conn1", query="show tables"
+        )
         self.client.jobs.wait_for_job.assert_called_once()
 
 
@@ -372,24 +384,86 @@ class TestDatasetsGetDataRefactored:
 
         self.client.datasets = DatasetsAPI(self.client)
 
-    def test_get_data_job_id_pattern(self):
-        self.client._request_json = MagicMock(return_value={"job_id": 401})
-        result = self.client.datasets.get_data(dataset_id=10)
+    async def test_get_data_job_id_pattern(self):
+        self.client._request_json = AsyncMock(return_value={"job_id": 401})
+        result = await self.client.datasets.get_data(dataset_id=10)
         self.client.jobs.wait_for_job.assert_called_once_with(
             401, timeout=300, poll_interval=2, fetch=None
         )
         assert result == {"rows": [1, 2, 3]}
 
-    def test_get_data_no_job(self):
+    async def test_get_data_no_job(self):
         data = {"columns": [], "rows": []}
-        self.client._request_json = MagicMock(return_value=data)
-        result = self.client.datasets.get_data(dataset_id=10)
+        self.client._request_json = AsyncMock(return_value=data)
+        result = await self.client.datasets.get_data(dataset_id=10)
         self.client.jobs.wait_for_job.assert_not_called()
         assert result == data
 
-    def test_get_data_custom_timeout(self):
-        self.client._request_json = MagicMock(return_value={"job_id": 402})
-        self.client.datasets.get_data(dataset_id=10, timeout=600, poll_interval=5)
+    async def test_get_data_custom_timeout(self):
+        self.client._request_json = AsyncMock(return_value={"job_id": 402})
+        await self.client.datasets.get_data(dataset_id=10, timeout=600, poll_interval=5)
         self.client.jobs.wait_for_job.assert_called_once_with(
             402, timeout=600, poll_interval=5, fetch=None
         )
+
+
+class TestHowOftenAJobIsAsked:
+    """How long the client waits between polls is the caller's to set.
+
+    Two seconds suits a script that started a long build. It is far too long
+    for a caller answering a person in a conversation, where the job is
+    usually finished before the first sleep would end.
+    """
+
+    async def test_the_poll_interval_defaults_to_two_seconds(self):
+        client = _make_client()
+        await client._wait_if_job({"job_id": 42})
+        assert client.jobs.wait_for_job.await_args.kwargs["poll_interval"] == 2
+
+    async def test_a_client_can_ask_more_often_than_that(self):
+        client = _make_client(job_poll_seconds=0.2)
+        await client._wait_if_job({"job_id": 42})
+        assert client.jobs.wait_for_job.await_args.kwargs["poll_interval"] == 0.2
+
+    async def test_an_explicit_interval_still_wins_over_the_client_s(self):
+        client = _make_client(job_poll_seconds=0.2)
+        await client._wait_if_job({"job_id": 42}, poll_interval=5)
+        assert client.jobs.wait_for_job.await_args.kwargs["poll_interval"] == 5
+
+    @pytest.mark.parametrize("bad", [0, -1, True, float("inf")])
+    def test_an_interval_that_is_not_a_positive_number_is_refused(self, bad):
+        with pytest.raises(ValueError, match="job_poll_seconds"):
+            _make_client(job_poll_seconds=bad)
+
+    async def test_a_method_with_its_own_interval_argument_defers_to_the_client(self):
+        # `dataviews.get_data` takes a `poll_interval` of its own. Its default
+        # must not quietly overrule what the client was built with.
+        client = _make_client(job_poll_seconds=0.2)
+        client._request_json = AsyncMock(return_value={"job_id": 42})
+        client.pipeline = AsyncMock()
+        client.pipeline.latest_task_sequence = AsyncMock(return_value=3)
+
+        await client.dataviews.get_data(dataset_id=1, dataview_id=2)
+
+        assert client.jobs.wait_for_job.await_args.kwargs["poll_interval"] == 0.2
+
+    async def test_the_job_loop_itself_reads_the_client_when_asked_for_nothing(self):
+        # Every other wait funnels into this one, so it is the last place the
+        # client's interval can be lost.
+        client = _make_client(job_poll_seconds=0.2)
+        slept: list[float] = []
+
+        async def record(seconds: float) -> None:
+            slept.append(seconds)
+
+        client.jobs = JobsAPI(client)
+        client.jobs.get_job = AsyncMock(
+            side_effect=[
+                {"status": "processing", "id": 42},
+                {"status": "success", "id": 42, "response": {}},
+            ]
+        )
+        with patch("mammoth.api.jobs.asyncio.sleep", record):
+            await client.jobs.wait_for_job(42)
+
+        assert slept == [0.2]

@@ -35,6 +35,7 @@ from mammoth.models.dashboards import (
     EmbedUsageResponse,
     ExemplarExtractResponse,
     ExemplarExtractSpec,
+    GenerateV3Params,
     ImportDatasetResponse,
     PbixAssessResponse,
     PendingTemplateResponse,
@@ -85,35 +86,35 @@ class DashboardsAPI:
 
     Access via ``client.dashboards``::
 
-        dashboards = client.dashboards.list()
-        dashboard = client.dashboards.create_blank(
+        dashboards = await client.dashboards.list()
+        dashboard = await client.dashboards.create_blank(
             CreateBlankParams(dataview_id=101, title="Revenue by region"),
         )
-        client.dashboards.share(
+        await client.dashboards.share(
             dashboard_id=5,
             type_of_auth=DashboardAuthType.PUBLIC,
         )
-        client.dashboards.delete(dashboard_id=5)
+        await client.dashboards.delete(dashboard_id=5)
     """
 
     def __init__(self, client: MammothClient) -> None:
         self._client = client
 
-    def list(self, project_id: int | None = None) -> _list[dict[str, Any]]:
+    async def list(self, project_id: int | None = None) -> _list[dict[str, Any]]:
         """List all dashboards.
 
         Returns:
             List of dashboard dicts.
         """
         params = {"project_id": project_id} if project_id is not None else None
-        response = self._client._request_json("GET", "/dashboards", params=params)
+        response = await self._client._request_json("GET", "/dashboards", params=params)
         return response.get("dashboards", response if isinstance(response, _list) else [])
 
-    def list_tags(self) -> dict[str, Any]:
+    async def list_tags(self) -> dict[str, Any]:
         """List the workspace dashboard-tag vocabulary."""
-        return self._client._request_json("GET", "/dashboards/tags")
+        return await self._client._request_json("GET", "/dashboards/tags")
 
-    def rename_tag(self, tag_id: int, name: str) -> dict[str, Any]:
+    async def rename_tag(self, tag_id: int, name: str) -> dict[str, Any]:
         """Rename one workspace dashboard tag using the release request shape."""
         if isinstance(tag_id, bool) or not isinstance(tag_id, int) or tag_id <= 0:
             raise MammothValidationError(f"`tag_id` must be a positive integer, got {tag_id}.")
@@ -123,11 +124,11 @@ class DashboardsAPI:
             raise MammothValidationError(f"Invalid tag rename parameters: {exc}") from exc
         if not typed.name.strip():
             raise MammothValidationError("`name` must be non-blank.")
-        return self._client._request_json(
+        return await self._client._request_json(
             "PATCH", f"/dashboards/tags/{tag_id}", json=typed.model_dump(mode="json")
         )
 
-    def set_tags(self, dashboard_id: int, tags: builtins.list[str]) -> dict[str, Any]:
+    async def set_tags(self, dashboard_id: int, tags: builtins.list[str]) -> dict[str, Any]:
         """Replace a dashboard's complete tag set using the release request shape."""
         if isinstance(dashboard_id, bool) or not isinstance(dashboard_id, int) or dashboard_id <= 0:
             raise MammothValidationError(
@@ -135,23 +136,21 @@ class DashboardsAPI:
             )
         if not isinstance(tags, list) or any(not isinstance(tag, str) for tag in tags):
             raise MammothValidationError("`tags` must be a list of strings.")
-        if len(tags) != len(set(tags)):
-            raise MammothValidationError("`tags` must not contain duplicates.")
         try:
             typed = DashboardTagsParams(tags=tags)
         except ValidationError as exc:
             raise MammothValidationError(f"Invalid dashboard tags parameters: {exc}") from exc
-        return self._client._request_json(
+        return await self._client._request_json(
             "PUT", f"/dashboards/{dashboard_id}/tags", json=typed.model_dump(mode="json")
         )
 
-    def delete_tag(self, tag_id: int) -> dict[str, Any] | None:
+    async def delete_tag(self, tag_id: int) -> dict[str, Any] | None:
         """Delete a tag from the workspace vocabulary."""
         if isinstance(tag_id, bool) or not isinstance(tag_id, int) or tag_id <= 0:
             raise MammothValidationError(f"`tag_id` must be a positive integer, got {tag_id}.")
-        return self._client._request_json("DELETE", f"/dashboards/tags/{tag_id}")
+        return await self._client._request_json("DELETE", f"/dashboards/tags/{tag_id}")
 
-    def merge_tag(self, tag_id: int, target_id: int) -> dict[str, Any]:
+    async def merge_tag(self, tag_id: int, target_id: int) -> dict[str, Any]:
         """Merge one workspace tag into another using the release request shape."""
         for name, value in (("tag_id", tag_id), ("target_id", target_id)):
             if isinstance(value, bool) or not isinstance(value, int) or value <= 0:
@@ -162,11 +161,11 @@ class DashboardsAPI:
             typed = TagMergeParams(target_id=target_id)
         except ValidationError as exc:
             raise MammothValidationError(f"Invalid tag merge parameters: {exc}") from exc
-        return self._client._request_json(
+        return await self._client._request_json(
             "POST", f"/dashboards/tags/{tag_id}/merge", json=typed.model_dump(mode="json")
         )
 
-    def create_blank(self, params: CreateBlankParams) -> dict[str, Any]:
+    async def create_blank(self, params: CreateBlankParams) -> dict[str, Any]:
         """Create an empty v3 dashboard bound to a dataview.
 
         The release endpoint returns the created dashboard ``id`` and seeded
@@ -185,13 +184,44 @@ class DashboardsAPI:
             raise MammothValidationError(
                 f"`dataview_id` must be a positive integer, got {typed.dataview_id}."
             )
-        return self._client._request_json(
+        return await self._client._request_json(
             "POST",
             "/dashboards/v3/blank",
             json={"params": typed.model_dump(mode="json", exclude_unset=True)},
         )
 
-    def get(self, dashboard_id: int) -> dict[str, Any]:
+    async def generate_v3(self, params: GenerateV3Params | dict[str, Any]) -> dict[str, Any]:
+        """Have Mammoth build a v3 dashboard on a dataview from a brief.
+
+        The route answers with the id of the job that builds it.
+
+        Args:
+            params: What to build, as
+                :class:`~mammoth.models.dashboards.GenerateV3Params` or the
+                same fields as a dict. ``format="qa"`` opens a
+                question-and-answer notebook, which needs no ``intent``.
+
+        Returns:
+            Dict carrying the build job.
+
+        Raises:
+            MammothValidationError: If the brief is not one the route takes.
+        """
+        try:
+            typed = (
+                params
+                if isinstance(params, GenerateV3Params)
+                else GenerateV3Params.model_validate(params)
+            )
+        except ValidationError as exc:
+            raise MammothValidationError(f"Invalid dashboard generation parameters: {exc}") from exc
+        return await self._client._request_json(
+            "POST",
+            "/dashboards/v3/generate",
+            json={"params": typed.model_dump(mode="json", exclude_unset=True)},
+        )
+
+    async def get(self, dashboard_id: int) -> dict[str, Any]:
         """Get dashboard details.
 
         Args:
@@ -200,9 +230,9 @@ class DashboardsAPI:
         Returns:
             Dict with dashboard details.
         """
-        return self._client._request_json("GET", f"/dashboards/{dashboard_id}")
+        return await self._client._request_json("GET", f"/dashboards/{dashboard_id}")
 
-    def add_pages(self, dashboard_id: int, body: AddPagesSpec) -> AddPagesResponse:
+    async def add_pages(self, dashboard_id: int, body: AddPagesSpec) -> AddPagesResponse:
         """Append structural pages and start the asynchronous dashboard bake."""
         if isinstance(dashboard_id, bool) or not isinstance(dashboard_id, int) or dashboard_id <= 0:
             raise MammothValidationError(ERR_DASHBOARD_ID_POSITIVE.format(dashboard_id))
@@ -210,7 +240,7 @@ class DashboardsAPI:
             typed = body if isinstance(body, AddPagesSpec) else AddPagesSpec.model_validate(body)
         except ValidationError as exc:
             raise MammothValidationError(f"Invalid add-pages parameters: {exc}") from exc
-        response = self._client._request_json(
+        response = await self._client._request_json(
             "POST",
             f"/dashboards/{dashboard_id}/pages",
             json=typed.model_dump(mode="json", exclude_none=True),
@@ -220,7 +250,7 @@ class DashboardsAPI:
         except ValidationError as exc:
             raise MammothValidationError(f"Invalid add-pages response: {exc}") from exc
 
-    def extract_context(self, body: ContextExtractSpec) -> dict[str, Any]:
+    async def extract_context(self, body: ContextExtractSpec) -> dict[str, Any]:
         """Extract a context file into slot suggestions (release route)."""
         try:
             typed = (
@@ -230,7 +260,7 @@ class DashboardsAPI:
             )
         except ValidationError as exc:
             raise MammothValidationError(f"Invalid context-extract parameters: {exc}") from exc
-        response = self._client._request_json(
+        response = await self._client._request_json(
             "POST",
             "/dashboards/v3/contexts/extract",
             json=typed.model_dump(mode="json", exclude_none=True),
@@ -240,7 +270,7 @@ class DashboardsAPI:
         except ValidationError as exc:
             raise MammothValidationError(f"Invalid context-extract response: {exc}") from exc
 
-    def extract_exemplar(self, body: ExemplarExtractSpec) -> dict[str, Any]:
+    async def extract_exemplar(self, body: ExemplarExtractSpec) -> dict[str, Any]:
         """Extract an example report into an editable dashboard spec."""
         try:
             typed = (
@@ -250,7 +280,7 @@ class DashboardsAPI:
             )
         except ValidationError as exc:
             raise MammothValidationError(f"Invalid exemplar-extract parameters: {exc}") from exc
-        response = self._client._request_json(
+        response = await self._client._request_json(
             "POST",
             "/dashboards/v3/exemplar/extract",
             json=typed.model_dump(mode="json", exclude_none=True),
@@ -260,7 +290,7 @@ class DashboardsAPI:
         except ValidationError as exc:
             raise MammothValidationError(f"Invalid exemplar-extract response: {exc}") from exc
 
-    def swap_data(self, dashboard_id: int, body: SwapDataSpec) -> ObjectJobSchema:
+    async def swap_data(self, dashboard_id: int, body: SwapDataSpec) -> ObjectJobSchema:
         """Re-point a v3 dashboard at a different dataset."""
         if isinstance(dashboard_id, bool) or not isinstance(dashboard_id, int) or dashboard_id <= 0:
             raise MammothValidationError(ERR_DASHBOARD_ID_POSITIVE.format(dashboard_id))
@@ -268,7 +298,7 @@ class DashboardsAPI:
             typed = body if isinstance(body, SwapDataSpec) else SwapDataSpec.model_validate(body)
         except ValidationError as exc:
             raise MammothValidationError(f"Invalid swap-data parameters: {exc}") from exc
-        response = self._client._request_json(
+        response = await self._client._request_json(
             "POST",
             f"/dashboards/v3/{dashboard_id}/swap-data",
             json=typed.model_dump(mode="json", exclude_none=True),
@@ -278,15 +308,15 @@ class DashboardsAPI:
         except ValidationError as exc:
             raise MammothValidationError(f"Invalid swap-data response: {exc}") from exc
 
-    def take_pending_template(self) -> dict[str, Any]:
+    async def take_pending_template(self) -> dict[str, Any]:
         """Claim the pending dashboard template for the workspace."""
-        response = self._client._request_json("POST", "/dashboards/v3/templates/pending")
+        response = await self._client._request_json("POST", "/dashboards/v3/templates/pending")
         try:
             return PendingTemplateResponse.model_validate(response).model_dump(mode="json")
         except ValidationError as exc:
             raise MammothValidationError(f"Invalid pending-template response: {exc}") from exc
 
-    def use_template(self, slug: str, body: UseTemplateSpec) -> ObjectJobSchema | JobResponse:
+    async def use_template(self, slug: str, body: UseTemplateSpec) -> ObjectJobSchema | JobResponse:
         """Instantiate a dashboard template on its sample data."""
         if not isinstance(slug, str) or not slug:
             raise MammothValidationError("`slug` must be a non-empty string.")
@@ -296,7 +326,7 @@ class DashboardsAPI:
             )
         except ValidationError as exc:
             raise MammothValidationError(f"Invalid use-template parameters: {exc}") from exc
-        response = self._client._request_json(
+        response = await self._client._request_json(
             "POST",
             f"/dashboards/v3/templates/{quote(slug, safe='')}/use",
             json=typed.model_dump(mode="json", exclude_none=True),
@@ -308,15 +338,15 @@ class DashboardsAPI:
         except ValidationError as exc:
             raise MammothValidationError(f"Invalid use-template response: {exc}") from exc
 
-    def assess_twb(self, file: str | Path) -> TwbAssessResponse:
+    async def assess_twb(self, file: str | Path) -> TwbAssessResponse:
         """Assess a Tableau workbook without importing it."""
-        return self._assess_upload(file, "/dashboards/v3/twb/assess", TwbAssessResponse)
+        return await self._assess_upload(file, "/dashboards/v3/twb/assess", TwbAssessResponse)
 
-    def assess_pbix(self, file: str | Path) -> PbixAssessResponse:
+    async def assess_pbix(self, file: str | Path) -> PbixAssessResponse:
         """Assess a Power BI workbook without importing it."""
-        return self._assess_upload(file, "/dashboards/v3/pbix/assess", PbixAssessResponse)
+        return await self._assess_upload(file, "/dashboards/v3/pbix/assess", PbixAssessResponse)
 
-    def import_workbook(
+    async def import_workbook(
         self, file: str | Path, project_id: int | None = None
     ) -> ImportDatasetResponse:
         """Import a workbook into a project-scoped dataset."""
@@ -335,7 +365,7 @@ class DashboardsAPI:
         except OSError as exc:
             raise MammothValidationError(f"File cannot be opened: {path}") from exc
         try:
-            response = self._client._request_json(
+            response = await self._client._request_json(
                 "POST",
                 "/dashboards/v3/import/dataset",
                 data={"project_id": str(project_id)} if project_id is not None else None,
@@ -348,7 +378,7 @@ class DashboardsAPI:
         except ValidationError as exc:
             raise MammothValidationError(f"Invalid workbook import response: {exc}") from exc
 
-    def _assess_upload(self, file: str | Path, endpoint: str, model: Any) -> Any:
+    async def _assess_upload(self, file: str | Path, endpoint: str, model: Any) -> Any:
         try:
             path = Path(file)
         except (TypeError, ValueError) as exc:
@@ -360,7 +390,7 @@ class DashboardsAPI:
         except OSError as exc:
             raise MammothValidationError(f"File cannot be opened: {path}") from exc
         try:
-            response = self._client._request_json(
+            response = await self._client._request_json(
                 "POST",
                 endpoint,
                 files=[("file", (os.path.basename(path), opened, "application/octet-stream"))],
@@ -372,27 +402,27 @@ class DashboardsAPI:
         except ValidationError as exc:
             raise MammothValidationError(f"Invalid workbook assessment response: {exc}") from exc
 
-    def powerbi_preflight(self, dashboard_id: int) -> PowerBiPreflightResponse:
+    async def powerbi_preflight(self, dashboard_id: int) -> PowerBiPreflightResponse:
         """What a Power BI export of this dashboard would carry (release route)."""
         if isinstance(dashboard_id, bool) or not isinstance(dashboard_id, int) or dashboard_id <= 0:
             raise MammothValidationError(ERR_DASHBOARD_ID_POSITIVE.format(dashboard_id))
-        response = self._client._request_json("GET", f"/dashboards/{dashboard_id}/powerbi")
+        response = await self._client._request_json("GET", f"/dashboards/{dashboard_id}/powerbi")
         try:
             return PowerBiPreflightResponse.model_validate(response)
         except ValidationError as exc:
             raise MammothValidationError(f"Invalid Power BI preflight response: {exc}") from exc
 
-    def tableau_preflight(self, dashboard_id: int) -> TableauPreflightResponse:
+    async def tableau_preflight(self, dashboard_id: int) -> TableauPreflightResponse:
         """What a Tableau export of this dashboard would carry (release route)."""
         if isinstance(dashboard_id, bool) or not isinstance(dashboard_id, int) or dashboard_id <= 0:
             raise MammothValidationError(ERR_DASHBOARD_ID_POSITIVE.format(dashboard_id))
-        response = self._client._request_json("GET", f"/dashboards/{dashboard_id}/tableau")
+        response = await self._client._request_json("GET", f"/dashboards/{dashboard_id}/tableau")
         try:
             return TableauPreflightResponse.model_validate(response)
         except ValidationError as exc:
             raise MammothValidationError(f"Invalid Tableau preflight response: {exc}") from exc
 
-    def powerbi_export_artifact(self, dashboard_id: int) -> dict[str, Any]:
+    async def powerbi_export_artifact(self, dashboard_id: int) -> dict[str, Any]:
         """Fetch the raw Power BI export artifact (release route).
 
         SDK-only: :meth:`export_powerbi` decodes ``content_base64`` and writes
@@ -400,9 +430,11 @@ class DashboardsAPI:
         """
         if isinstance(dashboard_id, bool) or not isinstance(dashboard_id, int) or dashboard_id <= 0:
             raise MammothValidationError(ERR_DASHBOARD_ID_POSITIVE.format(dashboard_id))
-        return self._client._request_binary("GET", f"/dashboards/{dashboard_id}/powerbi/export")
+        return await self._client._request_binary(
+            "GET", f"/dashboards/{dashboard_id}/powerbi/export"
+        )
 
-    def tableau_export_artifact(self, dashboard_id: int) -> dict[str, Any]:
+    async def tableau_export_artifact(self, dashboard_id: int) -> dict[str, Any]:
         """Fetch the raw Tableau export artifact (release route).
 
         SDK-only: :meth:`export_tableau` decodes ``content_base64`` and writes
@@ -410,9 +442,13 @@ class DashboardsAPI:
         """
         if isinstance(dashboard_id, bool) or not isinstance(dashboard_id, int) or dashboard_id <= 0:
             raise MammothValidationError(ERR_DASHBOARD_ID_POSITIVE.format(dashboard_id))
-        return self._client._request_binary("GET", f"/dashboards/{dashboard_id}/tableau/export")
+        return await self._client._request_binary(
+            "GET", f"/dashboards/{dashboard_id}/tableau/export"
+        )
 
-    def export_powerbi(self, dashboard_id: int, output_path: str | Path | None = None) -> Path:
+    async def export_powerbi(
+        self, dashboard_id: int, output_path: str | Path | None = None
+    ) -> Path:
         """Download this dashboard as a Power BI project (.zip) to a local file.
 
         The zip holds the PBIP project, a CSV snapshot of the data, and a
@@ -427,9 +463,11 @@ class DashboardsAPI:
         Returns:
             Path to the downloaded file.
         """
-        return self._download_bi_export(dashboard_id, "powerbi", output_path)
+        return await self._download_bi_export(dashboard_id, "powerbi", output_path)
 
-    def export_tableau(self, dashboard_id: int, output_path: str | Path | None = None) -> Path:
+    async def export_tableau(
+        self, dashboard_id: int, output_path: str | Path | None = None
+    ) -> Path:
         """Download this dashboard as a Tableau workbook (.twbx) to a local file.
 
         One file, no refresh step and no gateway -- a .twbx carries its own
@@ -443,9 +481,9 @@ class DashboardsAPI:
         Returns:
             Path to the downloaded file.
         """
-        return self._download_bi_export(dashboard_id, "tableau", output_path)
+        return await self._download_bi_export(dashboard_id, "tableau", output_path)
 
-    def _download_bi_export(
+    async def _download_bi_export(
         self,
         dashboard_id: int,
         target: Literal["powerbi", "tableau"],
@@ -454,9 +492,9 @@ class DashboardsAPI:
         if isinstance(dashboard_id, bool) or not isinstance(dashboard_id, int) or dashboard_id <= 0:
             raise MammothValidationError(ERR_DASHBOARD_ID_POSITIVE.format(dashboard_id))
         artifact = (
-            self.powerbi_export_artifact(dashboard_id)
+            await self.powerbi_export_artifact(dashboard_id)
             if target == "powerbi"
-            else self.tableau_export_artifact(dashboard_id)
+            else await self.tableau_export_artifact(dashboard_id)
         )
         try:
             content = base64.b64decode(artifact["content_base64"])
@@ -469,7 +507,7 @@ class DashboardsAPI:
         )
         return _write_bytes_atomic(content, path)
 
-    def update(
+    async def update(
         self,
         dashboard_id: int,
         patch: _list[DashboardPatchItem],
@@ -513,9 +551,9 @@ class DashboardsAPI:
                 for item in patch
             ]
         }
-        return self._client._request_json("PATCH", f"/dashboards/{dashboard_id}", json=body)
+        return await self._client._request_json("PATCH", f"/dashboards/{dashboard_id}", json=body)
 
-    def delete(self, dashboard_id: int) -> dict[str, Any]:
+    async def delete(self, dashboard_id: int) -> dict[str, Any]:
         """Delete a dashboard.
 
         Args:
@@ -524,9 +562,9 @@ class DashboardsAPI:
         Returns:
             Dict with deletion result.
         """
-        return self._client._request_json("DELETE", f"/dashboards/{dashboard_id}")
+        return await self._client._request_json("DELETE", f"/dashboards/{dashboard_id}")
 
-    def archive(self, dashboard_id: int, archived: bool) -> Any:
+    async def archive(self, dashboard_id: int, archived: bool) -> Any:
         """Set whether a dashboard is archived.
 
         ``archived=True`` archives the dashboard and ``archived=False``
@@ -539,11 +577,11 @@ class DashboardsAPI:
             raise MammothValidationError(ERR_DASHBOARD_ID_POSITIVE.format(dashboard_id))
         if not isinstance(archived, bool):
             raise MammothValidationError("`archived` must be a boolean.")
-        return self._client._request(
+        return await self._client._request(
             "POST", f"/dashboards/{dashboard_id}/archive", json={"archived": archived}
         )
 
-    def get_sources(self) -> _list[dict[str, Any]]:
+    async def get_sources(self) -> _list[dict[str, Any]]:
         """Get available dashboard data sources.
 
         .. note::
@@ -553,10 +591,10 @@ class DashboardsAPI:
         Returns:
             List of source dicts.
         """
-        response = self._client._request_json("GET", "/dashboards/sources")
+        response = await self._client._request_json("GET", "/dashboards/sources")
         return response.get("sources", response if isinstance(response, _list) else [])
 
-    def get_analytics(self, dashboard_id: int) -> dict[str, Any]:
+    async def get_analytics(self, dashboard_id: int) -> dict[str, Any]:
         """Get dashboard analytics (views, users).
 
         Args:
@@ -565,9 +603,9 @@ class DashboardsAPI:
         Returns:
             Dict with analytics data.
         """
-        return self._client._request_json("GET", f"/dashboards/{dashboard_id}/analytics")
+        return await self._client._request_json("GET", f"/dashboards/{dashboard_id}/analytics")
 
-    def share(
+    async def share(
         self,
         dashboard_id: int,
         type_of_auth: DashboardAuthType,
@@ -609,14 +647,16 @@ class DashboardsAPI:
         body: dict[str, Any] = {"params": {"auth": auth_dict}}
         # Like ``archive``, the share route declares no response body schema;
         # accept whatever JSON the server returns for the committed write.
-        return self._client._request("POST", f"/dashboards/{dashboard_id}/share", json=body)
+        return await self._client._request("POST", f"/dashboards/{dashboard_id}/share", json=body)
 
-    def action(
+    async def action(
         self,
         dashboard_id: int,
         action: DashboardActionType,
         params_enabled: bool | None = None,
         params_view_id: int | None = None,
+        params_sequence: int | None = None,
+        params_filter_column: str | None = None,
     ) -> dict[str, Any]:
         """Perform an action on a dashboard.
 
@@ -627,6 +667,9 @@ class DashboardsAPI:
                 enables or disables the behaviour.
             params_view_id: Required (> 0) for ``delete-source``;
                 optional for ``sync`` and ``auto-sync`` to scope to one source.
+            params_sequence: The version to rewind to; required for ``restore``.
+            params_filter_column: The column rows are filtered on; required
+                when ``set-rls-config`` turns row-level security on.
 
         Returns:
             Dict with action result.
@@ -656,12 +699,18 @@ class DashboardsAPI:
             params["enabled"] = params_enabled
         if params_view_id is not None:
             params["view_id"] = params_view_id
+        if params_sequence is not None:
+            params["sequence"] = params_sequence
+        if params_filter_column is not None:
+            params["filter_column"] = params_filter_column
         if params:
             body["params"] = params
 
-        return self._client._request_json("POST", f"/dashboards/{dashboard_id}/action", json=body)
+        return await self._client._request_json(
+            "POST", f"/dashboards/{dashboard_id}/action", json=body
+        )
 
-    def get_by_url(self, url: str) -> dict[str, Any]:
+    async def get_by_url(self, url: str) -> dict[str, Any]:
         """Get dashboard by URL slug.
 
         Args:
@@ -670,7 +719,7 @@ class DashboardsAPI:
         Returns:
             Dict with dashboard details.
         """
-        return self._client._request_json("GET", f"/dashboards/url/{url}")
+        return await self._client._request_json("GET", f"/dashboards/url/{url}")
 
     @staticmethod
     def _widget_data_params(
@@ -687,7 +736,7 @@ class DashboardsAPI:
             params["drilldown_filters"] = drilldown_filters
         return params
 
-    def get_draft_data(
+    async def get_draft_data(
         self,
         dashboard_id: int,
         widget_id: str,
@@ -712,11 +761,11 @@ class DashboardsAPI:
             Dict with a ``data`` list of row dicts.
         """
         params = self._widget_data_params(widget_id, global_filters, drilldown_filters)
-        return self._client._request_json(
+        return await self._client._request_json(
             "POST", f"/dashboards/{dashboard_id}/getDraftData", json={"params": params}
         )
 
-    def get_publish_data(
+    async def get_publish_data(
         self,
         dashboard_id: int,
         widget_id: str,
@@ -737,11 +786,11 @@ class DashboardsAPI:
             Dict with a ``data`` list of row dicts.
         """
         params = self._widget_data_params(widget_id, global_filters, drilldown_filters)
-        return self._client._request_json(
+        return await self._client._request_json(
             "POST", f"/dashboards/{dashboard_id}/getPublishData", json={"params": params}
         )
 
-    def cancel_generation(self, dashboard_id: int) -> dict[str, Any]:
+    async def cancel_generation(self, dashboard_id: int) -> dict[str, Any]:
         """Cancel an in-progress AI dashboard generation.
 
         Args:
@@ -755,9 +804,11 @@ class DashboardsAPI:
         """
         if dashboard_id <= 0:
             raise MammothValidationError(ERR_DASHBOARD_ID_POSITIVE.format(dashboard_id))
-        return self._client._request_json("POST", f"/dashboards/{dashboard_id}/cancel-generation")
+        return await self._client._request_json(
+            "POST", f"/dashboards/{dashboard_id}/cancel-generation"
+        )
 
-    def job_by_url(self, url: str, job_id: int) -> dict[str, Any]:
+    async def job_by_url(self, url: str, job_id: int) -> dict[str, Any]:
         """Get the status/result of an async dashboard job, addressed by URL slug.
 
         Args:
@@ -772,14 +823,14 @@ class DashboardsAPI:
         """
         if job_id <= 0:
             raise MammothValidationError(ERR_JOB_ID_POSITIVE.format(job_id))
-        return self._client._request_json("GET", f"/dashboards/url/{url}/jobs/{job_id}")
+        return await self._client._request_json("GET", f"/dashboards/url/{url}/jobs/{job_id}")
 
-    def wait_for_job_by_url(
+    async def wait_for_job_by_url(
         self,
         url: str,
         job_id: int,
         timeout: float | None = None,
-        poll_interval: float = 2,
+        poll_interval: float | None = None,
     ) -> dict[str, Any]:
         """Wait for a published-dashboard job through the URL-scoped job route.
 
@@ -788,14 +839,14 @@ class DashboardsAPI:
         so poll :meth:`job_by_url` with the same timeout and failure semantics
         as :meth:`~mammoth.api.jobs.JobsAPI.wait_for_job`.
         """
-        return self._client.jobs.wait_for_job(
+        return await self._client.jobs.wait_for_job(
             job_id,
             timeout=timeout,
             poll_interval=poll_interval,
             fetch=lambda jid, _remaining: self.job_by_url(url, jid),
         )
 
-    def published_data_by_url(self, url: str, body: dict[str, Any]) -> dict[str, Any]:
+    async def published_data_by_url(self, url: str, body: dict[str, Any]) -> dict[str, Any]:
         """Get published dashboard widget data via SQL, addressed by URL slug.
 
         Args:
@@ -807,11 +858,11 @@ class DashboardsAPI:
         Returns:
             Dict with query results (may include a job ID for async execution).
         """
-        return self._client._request_json(
+        return await self._client._request_json(
             "POST", f"/dashboards/url/{url}/getPublishData", json=body
         )
 
-    def restore(self, dashboard_id: int) -> dict[str, Any]:
+    async def restore(self, dashboard_id: int) -> dict[str, Any]:
         """Restore a trashed dashboard.
 
         Args:
@@ -825,9 +876,9 @@ class DashboardsAPI:
         """
         if dashboard_id <= 0:
             raise MammothValidationError(ERR_DASHBOARD_ID_POSITIVE.format(dashboard_id))
-        return self._client._request_json("POST", f"/dashboards/{dashboard_id}/restore")
+        return await self._client._request_json("POST", f"/dashboards/{dashboard_id}/restore")
 
-    def trash(self, dashboard_id: int) -> dict[str, Any]:
+    async def trash(self, dashboard_id: int) -> dict[str, Any]:
         """Move a dashboard to trash.
 
         Args:
@@ -841,9 +892,9 @@ class DashboardsAPI:
         """
         if dashboard_id <= 0:
             raise MammothValidationError(ERR_DASHBOARD_ID_POSITIVE.format(dashboard_id))
-        return self._client._request_json("POST", f"/dashboards/{dashboard_id}/trash")
+        return await self._client._request_json("POST", f"/dashboards/{dashboard_id}/trash")
 
-    def widget_data(self, dashboard_id: int, body: dict[str, Any]) -> dict[str, Any]:
+    async def widget_data(self, dashboard_id: int, body: dict[str, Any]) -> dict[str, Any]:
         """Get data for multiple dashboard widgets in bulk.
 
         Args:
@@ -858,11 +909,11 @@ class DashboardsAPI:
         """
         if dashboard_id <= 0:
             raise MammothValidationError(ERR_DASHBOARD_ID_POSITIVE.format(dashboard_id))
-        return self._client._request_json(
+        return await self._client._request_json(
             "POST", f"/dashboards/{dashboard_id}/widgets/data", json=body
         )
 
-    def widget_data_by_url(self, url: str, body: dict[str, Any]) -> dict[str, Any]:
+    async def widget_data_by_url(self, url: str, body: dict[str, Any]) -> dict[str, Any]:
         """Get data for multiple dashboard widgets in bulk, addressed by URL slug.
 
         Args:
@@ -872,11 +923,13 @@ class DashboardsAPI:
         Returns:
             Dict with per-widget data results.
         """
-        return self._client._request_json("POST", f"/dashboards/url/{url}/widgets/data", json=body)
+        return await self._client._request_json(
+            "POST", f"/dashboards/url/{url}/widgets/data", json=body
+        )
 
     # ── embed: config / key / usage / preview-token / workspace secret ──────
 
-    def embed_config_get(self, dashboard_id: int) -> EmbedConfigResponse:
+    async def embed_config_get(self, dashboard_id: int) -> EmbedConfigResponse:
         """Read a board's embed settings.
 
         Args:
@@ -890,10 +943,12 @@ class DashboardsAPI:
         """
         if isinstance(dashboard_id, bool) or not isinstance(dashboard_id, int) or dashboard_id <= 0:
             raise MammothValidationError(ERR_DASHBOARD_ID_POSITIVE.format(dashboard_id))
-        response = self._client._request_json("GET", f"/dashboards/{dashboard_id}/embed/config")
+        response = await self._client._request_json(
+            "GET", f"/dashboards/{dashboard_id}/embed/config"
+        )
         return EmbedConfigResponse.model_validate(response)
 
-    def embed_config_set(
+    async def embed_config_set(
         self,
         dashboard_id: int,
         mode: Literal["key", "signed"] = "key",
@@ -934,14 +989,16 @@ class DashboardsAPI:
             )
         except ValidationError as exc:
             raise MammothValidationError(f"Invalid embed config parameters: {exc}") from exc
-        response = self._client._request_json(
+        response = await self._client._request_json(
             "PUT",
             f"/dashboards/{dashboard_id}/embed/config",
             json={"params": typed.model_dump(mode="json")},
         )
         return EmbedConfigResponse.model_validate(response)
 
-    def embed_key_rotate(self, dashboard_id: int, keep_previous: bool = True) -> EmbedKeyResponse:
+    async def embed_key_rotate(
+        self, dashboard_id: int, keep_previous: bool = True
+    ) -> EmbedKeyResponse:
         """Create or rotate a board's embed key (Basic embeds).
 
         Args:
@@ -959,14 +1016,14 @@ class DashboardsAPI:
         """
         if isinstance(dashboard_id, bool) or not isinstance(dashboard_id, int) or dashboard_id <= 0:
             raise MammothValidationError(ERR_DASHBOARD_ID_POSITIVE.format(dashboard_id))
-        response = self._client._request_json(
+        response = await self._client._request_json(
             "POST",
             f"/dashboards/{dashboard_id}/embed/key",
             json={"params": {"keep_previous": keep_previous}},
         )
         return EmbedKeyResponse.model_validate(response)
 
-    def embed_usage_get(self, dashboard_id: int) -> EmbedUsageResponse:
+    async def embed_usage_get(self, dashboard_id: int) -> EmbedUsageResponse:
         """Get one board's embed registry: origins, tiles and render counts.
 
         Args:
@@ -980,10 +1037,12 @@ class DashboardsAPI:
         """
         if isinstance(dashboard_id, bool) or not isinstance(dashboard_id, int) or dashboard_id <= 0:
             raise MammothValidationError(ERR_DASHBOARD_ID_POSITIVE.format(dashboard_id))
-        response = self._client._request_json("GET", f"/dashboards/{dashboard_id}/embed/usage")
+        response = await self._client._request_json(
+            "GET", f"/dashboards/{dashboard_id}/embed/usage"
+        )
         return EmbedUsageResponse.model_validate(response)
 
-    def embed_origin_revoke(self, dashboard_id: int, origin: str) -> EmbedConfigResponse:
+    async def embed_origin_revoke(self, dashboard_id: int, origin: str) -> EmbedConfigResponse:
         """Remove one origin from a board's embed allowlist.
 
         Args:
@@ -1000,14 +1059,14 @@ class DashboardsAPI:
             raise MammothValidationError(ERR_DASHBOARD_ID_POSITIVE.format(dashboard_id))
         if not origin:
             raise MammothValidationError(ERR_EMBED_ORIGIN_EMPTY)
-        response = self._client._request_json(
+        response = await self._client._request_json(
             "DELETE",
             f"/dashboards/{dashboard_id}/embed/origin",
             json={"params": {"origin": origin}},
         )
         return EmbedConfigResponse.model_validate(response)
 
-    def embed_preview_token_create(
+    async def embed_preview_token_create(
         self, dashboard_id: int, claims: dict[str, Any] | None = None
     ) -> EmbedPreviewTokenResponse:
         """Mint a preview token for the embed simulator (editor-only).
@@ -1025,14 +1084,14 @@ class DashboardsAPI:
         """
         if isinstance(dashboard_id, bool) or not isinstance(dashboard_id, int) or dashboard_id <= 0:
             raise MammothValidationError(ERR_DASHBOARD_ID_POSITIVE.format(dashboard_id))
-        response = self._client._request_json(
+        response = await self._client._request_json(
             "POST",
             f"/dashboards/{dashboard_id}/embed/preview-token",
             json={"params": {"claims": claims or {}}},
         )
         return EmbedPreviewTokenResponse.model_validate(response)
 
-    def embed_secret_rotate(self, workspace_id: int) -> EmbedSecretResponse:
+    async def embed_secret_rotate(self, workspace_id: int) -> EmbedSecretResponse:
         """Create or rotate the workspace's embed signing secret (owners/admins).
 
         The plaintext secret is returned once, here, and never by a read route.
@@ -1049,10 +1108,12 @@ class DashboardsAPI:
         """
         if isinstance(workspace_id, bool) or not isinstance(workspace_id, int) or workspace_id <= 0:
             raise MammothValidationError(ERR_WORKSPACE_ID_POSITIVE.format(workspace_id))
-        response = self._client._request_json("POST", f"/workspaces/{workspace_id}/embed/secret")
+        response = await self._client._request_json(
+            "POST", f"/workspaces/{workspace_id}/embed/secret"
+        )
         return EmbedSecretResponse.model_validate(response)
 
-    def embed_lifetime_set(self, workspace_id: int, token_ttl: int) -> EmbedLifetimeResponse:
+    async def embed_lifetime_set(self, workspace_id: int, token_ttl: int) -> EmbedLifetimeResponse:
         """Set how long an embed viewer session lives for a workspace.
 
         Args:
@@ -1070,7 +1131,7 @@ class DashboardsAPI:
             raise MammothValidationError(ERR_WORKSPACE_ID_POSITIVE.format(workspace_id))
         if not (60 <= token_ttl <= 3600):
             raise MammothValidationError(ERR_EMBED_TOKEN_TTL_RANGE.format(token_ttl))
-        response = self._client._request_json(
+        response = await self._client._request_json(
             "PUT",
             f"/workspaces/{workspace_id}/embed/lifetime",
             json={"params": {"token_ttl": token_ttl}},

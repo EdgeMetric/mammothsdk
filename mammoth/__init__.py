@@ -12,13 +12,13 @@ Quick start::
     client.set_project_id(10)
 
     # Resource-based CRUD
-    projects = client.projects.list()
-    datasets = client.datasets.list()
+    projects = await client.projects.list()
+    datasets = await client.datasets.list()
 
     # Rich View objects with transformations
-    view = client.views.get(1039)
-    view.filter_rows(Condition("Sales", Operator.GTE, 1000))
-    view.set_values(
+    view = await client.views.get(1039)
+    await view.filter_rows(Condition("Sales", Operator.GTE, 1000))
+    await view.set_values(
         new_column="Category",
         column_type=ColumnType.TEXT,
         values=[
@@ -26,7 +26,7 @@ Quick start::
             SetValue("Low"),
         ],
     )
-    view.export.to_csv("output.csv")
+    await view.export.to_csv("output.csv")
 
 Key modules:
     - ``mammoth.client``: MammothClient — main entry point.
@@ -39,6 +39,7 @@ from __future__ import annotations
 
 from mammoth.api.automations import SchedulePatchItem
 from mammoth.client import (
+    DEFAULT_JOB_POLL_SECONDS,
     DEFAULT_JOB_TIMEOUT,
     DEFAULT_PIPELINE_TIMEOUT,
     DEFAULT_TIMEOUT,
@@ -152,11 +153,12 @@ from mammoth.models.workspaces import (
 )
 from mammoth.view import View, ViewExport
 
-__version__ = "0.7.41"
+__version__ = "0.8.0"
 __all__ = [
     # Client
     "MammothClient",
     "DEFAULT_TIMEOUT",
+    "DEFAULT_JOB_POLL_SECONDS",
     "DEFAULT_JOB_TIMEOUT",
     "DEFAULT_PIPELINE_TIMEOUT",
     # Condition builder

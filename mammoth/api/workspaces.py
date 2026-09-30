@@ -45,10 +45,10 @@ class WorkspacesAPI:
 
     Example (assuming an ``api`` instance bound to a client)::
 
-        api.accept_invite("invite_token")
-        api.create({"name": "New workspace"})
-        usage = api.app_usage()
-        api.user_add(["a@example.com"])
+        await api.accept_invite("invite_token")
+        await api.create({"name": "New workspace"})
+        usage = await api.app_usage()
+        await api.user_add(["a@example.com"])
     """
 
     def __init__(self, client: MammothClient) -> None:
@@ -59,7 +59,7 @@ class WorkspacesAPI:
 
     # ── Invites & creation ───────────────────────────────────────────────────
 
-    def accept_invite(self, token: str) -> dict[str, Any]:
+    async def accept_invite(self, token: str) -> dict[str, Any]:
         """Accept a pending workspace invite.
 
         Args:
@@ -73,9 +73,9 @@ class WorkspacesAPI:
         """
         if not token:
             raise MammothValidationError(ERR_TOKEN_EMPTY)
-        return self._client._request_json("POST", "/accept-invite", json={"token": token})
+        return await self._client._request_json("POST", "/accept-invite", json={"token": token})
 
-    def create(self, body: dict[str, Any]) -> dict[str, Any]:
+    async def create(self, body: dict[str, Any]) -> dict[str, Any]:
         """Create a new workspace.
 
         Args:
@@ -84,11 +84,11 @@ class WorkspacesAPI:
         Returns:
             Dict with the created workspace info.
         """
-        return self._client._request_json("POST", "/workspaces", json=body)
+        return await self._client._request_json("POST", "/workspaces", json=body)
 
     # ── AI / LLM helpers ─────────────────────────────────────────────────────
 
-    def check_expression(self, body: dict[str, Any]) -> dict[str, Any]:
+    async def check_expression(self, body: dict[str, Any]) -> dict[str, Any]:
         """Ask the AI assistant to check/validate an expression.
 
         Args:
@@ -97,11 +97,11 @@ class WorkspacesAPI:
         Returns:
             Dict with the check result.
         """
-        return self._client._request_json(
+        return await self._client._request_json(
             "POST", f"/workspaces/{self._ws()}/ai/check-expression", json=body
         )
 
-    def llm_task(self, task_type: str, params: dict[str, Any]) -> dict[str, Any]:
+    async def llm_task(self, task_type: str, params: dict[str, Any]) -> dict[str, Any]:
         """Submit a unified LLM task (rename columns, generate dataset, generate summary).
 
         Args:
@@ -118,11 +118,11 @@ class WorkspacesAPI:
         if not task_type:
             raise MammothValidationError(ERR_TASK_TYPE_EMPTY)
         body = {"type": task_type, "params": params}
-        return self._client._request_json("POST", f"/workspaces/{self._ws()}/llm", json=body)
+        return await self._client._request_json("POST", f"/workspaces/{self._ws()}/llm", json=body)
 
     # ── Reporting ────────────────────────────────────────────────────────────
 
-    def app_usage(self, fields: str | None = None) -> dict[str, Any]:
+    async def app_usage(self, fields: str | None = None) -> dict[str, Any]:
         """Get app usage stats for the workspace.
 
         Args:
@@ -134,11 +134,11 @@ class WorkspacesAPI:
         params: dict[str, Any] = {}
         if fields is not None:
             params["fields"] = fields
-        return self._client._request_json(
+        return await self._client._request_json(
             "GET", f"/workspaces/{self._ws()}/app-usage", params=params or None
         )
 
-    def storage_breakdown(
+    async def storage_breakdown(
         self, limit: int | None = None, offset: int | None = None
     ) -> dict[str, Any]:
         """Get a breakdown of storage usage for the workspace.
@@ -155,21 +155,21 @@ class WorkspacesAPI:
             params["limit"] = limit
         if offset is not None:
             params["offset"] = offset
-        return self._client._request_json(
+        return await self._client._request_json(
             "GET", f"/workspaces/{self._ws()}/storage-breakdown", params=params or None
         )
 
     # ── Split-test segments ──────────────────────────────────────────────────
 
-    def segment_list(self) -> dict[str, Any]:
+    async def segment_list(self) -> dict[str, Any]:
         """List split-test segments for the workspace.
 
         Returns:
             Dict with the segments list.
         """
-        return self._client._request_json("GET", f"/workspaces/{self._ws()}/split-segments")
+        return await self._client._request_json("GET", f"/workspaces/{self._ws()}/split-segments")
 
-    def segment_update(self, patch: _list[dict[str, Any]]) -> dict[str, Any]:
+    async def segment_update(self, patch: _list[dict[str, Any]]) -> dict[str, Any]:
         """Update split-test segments via JSON-patch operations.
 
         Args:
@@ -184,7 +184,7 @@ class WorkspacesAPI:
         """
         if not patch:
             raise MammothValidationError(ERR_SEGMENT_PATCH_EMPTY)
-        return self._client._request_json(
+        return await self._client._request_json(
             "PATCH",
             f"/workspaces/{self._ws()}/split-segments",
             json={"patch": patch},
@@ -192,7 +192,7 @@ class WorkspacesAPI:
 
     # ── Workspace users ──────────────────────────────────────────────────────
 
-    def user_add(
+    async def user_add(
         self,
         email_ids: _list[str],
         projects: _list[dict[str, Any]] | None = None,
@@ -215,13 +215,13 @@ class WorkspacesAPI:
         invite: dict[str, Any] = {"email_ids": email_ids}
         if projects is not None:
             invite["projects"] = projects
-        return self._client._request_json(
+        return await self._client._request_json(
             "POST",
             f"/workspaces/{self._ws()}/users",
             json={"invite": invite},
         )
 
-    def user_remove(self, user_id: int) -> dict[str, Any]:
+    async def user_remove(self, user_id: int) -> dict[str, Any]:
         """Remove a single user from the workspace.
 
         Args:
@@ -235,9 +235,11 @@ class WorkspacesAPI:
         """
         if user_id <= 0:
             raise MammothValidationError(ERR_USER_ID_POSITIVE.format(user_id))
-        return self._client._request_json("DELETE", f"/workspaces/{self._ws()}/users/{user_id}")
+        return await self._client._request_json(
+            "DELETE", f"/workspaces/{self._ws()}/users/{user_id}"
+        )
 
-    def user_remove_batch(
+    async def user_remove_batch(
         self,
         ids: str | None = None,
         invite_ids: str | None = None,
@@ -256,13 +258,13 @@ class WorkspacesAPI:
             params["ids"] = ids
         if invite_ids is not None:
             params["invite_ids"] = invite_ids
-        return self._client._request_json(
+        return await self._client._request_json(
             "DELETE",
             f"/workspaces/{self._ws()}/users",
             params=params or None,
         )
 
-    def user_update_batch(self, patches: _list[dict[str, Any]]) -> dict[str, Any]:
+    async def user_update_batch(self, patches: _list[dict[str, Any]]) -> dict[str, Any]:
         """Update workspace users via JSON-patch operations.
 
         Supports role changes, invite resend, and invite role removal, e.g.
@@ -279,7 +281,7 @@ class WorkspacesAPI:
         """
         if not patches:
             raise MammothValidationError(ERR_USER_PATCHES_EMPTY)
-        return self._client._request_json(
+        return await self._client._request_json(
             "PATCH",
             f"/workspaces/{self._ws()}/users",
             json={"patches": patches},

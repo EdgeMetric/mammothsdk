@@ -13,13 +13,13 @@ class ReportsAPI:
 
     Access via client.reports::
 
-        reports = client.reports.list()
+        reports = await client.reports.list()
     """
 
     def __init__(self, client: MammothClient) -> None:
         self._client = client
 
-    def list(
+    async def list(
         self,
         limit: int = 50,
         offset: int = 0,
@@ -38,4 +38,4 @@ class ReportsAPI:
             params["limit"] = limit
         if offset != 0:
             params["offset"] = offset
-        return self._client._request_json("GET", "/reports", params=params or None)
+        return await self._client._request_json("GET", "/reports", params=params or None)

@@ -3,7 +3,7 @@
 These tests exercise the *real* resolution code path
 (``PipelineAPI.find_dataset_for_dataview`` →
 ``_find_dataset_for_dataview``) end to end. No business function is mocked:
-only the HTTP boundary is faked by mounting a custom ``requests`` transport
+only the HTTP boundary is faked by giving the session a custom httpx transport
 adapter on the genuine ``client.session``.
 
 Regression under test: a transient/authorization failure (401/403/429/5xx)
@@ -20,7 +20,7 @@ from typing import Any
 from urllib.parse import parse_qs, urlparse
 
 import pytest
-import requests
+import httpx
 
 from mammoth.client import MammothClient
 from mammoth.exceptions import MammothAPIError, MammothAuthError
@@ -32,9 +32,9 @@ DATAVIEW_ID = 1039
 
 
 def _make_response(
-    status_code: int, body: dict[str, Any], request: requests.PreparedRequest
-) -> requests.models.Response:
-    """Build a real ``requests.Response`` with a JSON body and status code.
+    status_code: int, body: dict[str, Any], request: httpx.Request
+) -> httpx.Response:
+    """Build a real ``httpx.Response`` with a JSON body and status code.
 
     Args:
         status_code: HTTP status code to report.
@@ -42,20 +42,18 @@ def _make_response(
         request: The prepared request this response answers.
 
     Returns:
-        A populated ``requests.models.Response`` instance.
+        A populated ``httpx.Response`` instance.
     """
-    response = requests.models.Response()
-    response.status_code = status_code
-    response._content = json.dumps(body).encode("utf-8")
-    response.encoding = "utf-8"
-    response.headers["Content-Type"] = "application/json"
-    response.url = request.url or ""
-    response.request = request
-    return response
+    return httpx.Response(
+        status_code,
+        content=json.dumps(body).encode("utf-8"),
+        headers={"Content-Type": "application/json"},
+        request=request,
+    )
 
 
-class _FakeTransport(requests.adapters.HTTPAdapter):
-    """A ``requests`` transport adapter that fakes only the HTTP layer.
+class _FakeTransport(httpx.AsyncBaseTransport):
+    """An httpx transport that fakes only the HTTP layer.
 
     The project dataset listing always succeeds and reports a single
     dataset, so resolution proceeds to the dataview lookup. The dataview
@@ -64,15 +62,12 @@ class _FakeTransport(requests.adapters.HTTPAdapter):
     """
 
     def __init__(self, dataview_status: int, dataview_body: dict[str, Any]) -> None:
-        super().__init__()
         self._dataview_status = dataview_status
         self._dataview_body = dataview_body
         self.dataview_calls = 0
 
-    def send(  # type: ignore[override]
-        self, request: requests.PreparedRequest, **kwargs: Any
-    ) -> requests.models.Response:
-        path = urlparse(request.url or "").path
+    async def handle_async_request(self, request: httpx.Request) -> httpx.Response:
+        path = urlparse(str(request.url)).path
 
         # Project dataset listing — the first call resolution makes. Return
         # one dataset so the dataview scan has a target.
@@ -94,10 +89,10 @@ class _FakeTransport(requests.adapters.HTTPAdapter):
 
 
 def _client_with_transport(transport: _FakeTransport) -> MammothClient:
-    """Build a genuine client and mount the fake transport on its session.
+    """Build a genuine client and give its session the fake transport.
 
     Args:
-        transport: The fake HTTP transport adapter to mount.
+        transport: The fake HTTP transport to send through.
 
     Returns:
         A ready-to-use ``MammothClient`` with project context set.
@@ -108,13 +103,15 @@ def _client_with_transport(transport: _FakeTransport) -> MammothClient:
         workspace_id=WORKSPACE_ID,
     )
     client.set_project_id(PROJECT_ID)
-    client.session.mount("https://", transport)
-    client.session.mount("http://", transport)
+    # Keep the credentials the real session carries; swap only the wire.
+    client.session = httpx.AsyncClient(
+        transport=transport, headers=client.session.headers, follow_redirects=False
+    )
     return client
 
 
 @pytest.mark.parametrize("status_code", [403, 500, 429])
-def test_non_404_during_resolution_propagates_as_api_error(status_code: int) -> None:
+async def test_non_404_during_resolution_propagates_as_api_error(status_code: int) -> None:
     """A 403/429/5xx during the dataview scan must raise MammothAPIError.
 
     It must NOT be swallowed into the generic "not found in any dataset"
@@ -124,26 +121,26 @@ def test_non_404_during_resolution_propagates_as_api_error(status_code: int) -> 
     client = _client_with_transport(transport)
     try:
         with pytest.raises(MammothAPIError) as excinfo:
-            client.pipeline.find_dataset_for_dataview(DATAVIEW_ID)
+            await client.pipeline.find_dataset_for_dataview(DATAVIEW_ID)
         assert excinfo.value.status_code == status_code
         assert not isinstance(excinfo.value, ValueError)
     finally:
-        client.close()
+        await client.close()
 
 
-def test_401_during_resolution_propagates_as_auth_error() -> None:
+async def test_401_during_resolution_propagates_as_auth_error() -> None:
     """A 401 during the dataview scan must raise MammothAuthError (401)."""
     transport = _FakeTransport(401, {"detail": "bad creds"})
     client = _client_with_transport(transport)
     try:
         with pytest.raises(MammothAuthError) as excinfo:
-            client.pipeline.find_dataset_for_dataview(DATAVIEW_ID)
+            await client.pipeline.find_dataset_for_dataview(DATAVIEW_ID)
         assert excinfo.value.status_code == 401
     finally:
-        client.close()
+        await client.close()
 
 
-def test_successful_resolution_is_cached_across_calls() -> None:
+async def test_successful_resolution_is_cached_across_calls() -> None:
     """The expensive browse-based scan runs once; repeats hit the cache.
 
     A dataview belongs to one dataset for its lifetime, so a second resolution
@@ -152,40 +149,38 @@ def test_successful_resolution_is_cached_across_calls() -> None:
     transport = _FakeTransport(200, {"id": DATAVIEW_ID})
     client = _client_with_transport(transport)
     try:
-        first = client.pipeline.find_dataset_for_dataview(DATAVIEW_ID)
+        first = await client.pipeline.find_dataset_for_dataview(DATAVIEW_ID)
         calls_after_first = transport.dataview_calls
-        second = client.pipeline.find_dataset_for_dataview(DATAVIEW_ID)
+        second = await client.pipeline.find_dataset_for_dataview(DATAVIEW_ID)
         assert first == second == DATASET_ID
         # The first resolution scanned; the second added ZERO dataview calls
         # because it was served from the per-client cache.
         assert calls_after_first >= 1
         assert transport.dataview_calls == calls_after_first
     finally:
-        client.close()
+        await client.close()
 
 
-def test_genuine_404_still_yields_not_found() -> None:
+async def test_genuine_404_still_yields_not_found() -> None:
     """A real 404 (dataview absent) must keep the not-found ValueError path."""
     transport = _FakeTransport(404, {"detail": "Not found"})
     client = _client_with_transport(transport)
     try:
         with pytest.raises(ValueError) as excinfo:
-            client.pipeline.find_dataset_for_dataview(DATAVIEW_ID)
+            await client.pipeline.find_dataset_for_dataview(DATAVIEW_ID)
         assert "not found in any dataset" in str(excinfo.value)
         # The dataset was actually scanned before concluding "not found".
         assert transport.dataview_calls == 1
     finally:
-        client.close()
+        await client.close()
 
 
-def test_wrong_parent_403_is_disambiguated_by_collection_membership() -> None:
+async def test_wrong_parent_403_is_disambiguated_by_collection_membership() -> None:
     """A tenant's wrong-parent 403 must not hide a view in the next dataset."""
 
-    class TwoDatasetTransport(requests.adapters.HTTPAdapter):
-        def send(  # type: ignore[override]
-            self, request: requests.PreparedRequest, **kwargs: Any
-        ) -> requests.models.Response:
-            path = urlparse(request.url or "").path
+    class TwoDatasetTransport(httpx.AsyncBaseTransport):
+        async def handle_async_request(self, request: httpx.Request) -> httpx.Response:
+            path = urlparse(str(request.url)).path
             if path.endswith("/datasets"):
                 body = {
                     "datasets": [{"id": 500, "name": "a"}, {"id": 501, "name": "b"}],
@@ -212,12 +207,12 @@ def test_wrong_parent_403_is_disambiguated_by_collection_membership() -> None:
 
     client = _client_with_transport(TwoDatasetTransport())
     try:
-        assert client.pipeline.find_dataset_for_dataview(DATAVIEW_ID) == 501
+        assert await client.pipeline.find_dataset_for_dataview(DATAVIEW_ID) == 501
     finally:
-        client.close()
+        await client.close()
 
 
-def test_a_dataset_beyond_the_first_page_is_still_discovered() -> None:
+async def test_a_dataset_beyond_the_first_page_is_still_discovered() -> None:
     """A project with more than one page of datasets must not be truncated.
 
     Regression (PR25 item A): resolution used to enumerate candidate
@@ -233,13 +228,12 @@ def test_a_dataset_beyond_the_first_page_is_still_discovered() -> None:
     """
     first_page_ids = list(range(1, 101))
 
-    class PagedDatasetsTransport(requests.adapters.HTTPAdapter):
-        def send(  # type: ignore[override]
-            self, request: requests.PreparedRequest, **kwargs: Any
-        ) -> requests.models.Response:
-            path = urlparse(request.url or "").path
+    class PagedDatasetsTransport(httpx.AsyncBaseTransport):
+        async def handle_async_request(self, request: httpx.Request) -> httpx.Response:
+            path = urlparse(str(request.url)).path
             if path.endswith("/datasets"):
-                offset = int(parse_qs(urlparse(request.url or "").query).get("offset", ["0"])[0])
+                query = urlparse(str(request.url)).query
+                offset = int(parse_qs(query).get("offset", ["0"])[0])
                 if offset == 0:
                     body = {
                         "datasets": [{"id": i, "name": f"ds{i}"} for i in first_page_ids],
@@ -264,12 +258,12 @@ def test_a_dataset_beyond_the_first_page_is_still_discovered() -> None:
 
     client = _client_with_transport(PagedDatasetsTransport())
     try:
-        assert client.pipeline.find_dataset_for_dataview(DATAVIEW_ID) == DATASET_ID
+        assert await client.pipeline.find_dataset_for_dataview(DATAVIEW_ID) == DATASET_ID
     finally:
-        client.close()
+        await client.close()
 
 
-def test_resolution_trusts_the_record_own_parent_over_the_probed_dataset() -> None:
+async def test_resolution_trusts_the_record_own_parent_over_the_probed_dataset() -> None:
     """The backend serves a view under a dataset that does not own it.
 
     The probe hit dataset 500, but the returned record says ``ds_id`` 777: the
@@ -278,7 +272,7 @@ def test_resolution_trusts_the_record_own_parent_over_the_probed_dataset() -> No
     transport = _FakeTransport(200, {"id": DATAVIEW_ID, "ds_id": 777})
     client = _client_with_transport(transport)
     try:
-        assert client.pipeline.find_dataset_for_dataview(DATAVIEW_ID) == 777
-        assert client.pipeline.find_dataset_for_dataview(DATAVIEW_ID) == 777
+        assert await client.pipeline.find_dataset_for_dataview(DATAVIEW_ID) == 777
+        assert await client.pipeline.find_dataset_for_dataview(DATAVIEW_ID) == 777
     finally:
-        client.close()
+        await client.close()

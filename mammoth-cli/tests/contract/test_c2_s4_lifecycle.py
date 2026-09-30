@@ -13,6 +13,9 @@ kind of proof.
 
 from __future__ import annotations
 
+import asyncio
+import inspect
+
 from contextlib import contextmanager
 from typing import Any
 
@@ -31,6 +34,13 @@ from mammoth_cli.runtime.strict import validate_input_fields
 from mammoth_cli.services.command_contract import resolve_command_contract
 
 
+def _drive(work: Any) -> Any:
+    """Run one SDK coroutine to completion; hand anything else straight back."""
+    if not inspect.isawaitable(work):
+        return work
+    return asyncio.run(work)
+
+
 class _RecordingClient:
     """Minimal public-client seam that records exact SDK request arguments."""
 
@@ -40,11 +50,11 @@ class _RecordingClient:
     def __init__(self) -> None:
         self.calls: list[tuple[str, str, dict[str, Any]]] = []
 
-    def _request_json(self, method: str, path: str, **kwargs: Any) -> dict[str, Any]:
+    async def _request_json(self, method: str, path: str, **kwargs: Any) -> dict[str, Any]:
         self.calls.append((method, path, kwargs))
         return {"ok": True}
 
-    def _request_list(self, method: str, path: str, **kwargs: Any) -> list[dict[str, Any]]:
+    async def _request_list(self, method: str, path: str, **kwargs: Any) -> list[dict[str, Any]]:
         self.calls.append((method, path, kwargs))
         return [{"ok": True}]
 
@@ -69,22 +79,24 @@ def test_batch_wire_oracles_cover_query_body_and_distinct_lifecycle_paths() -> N
     client = _RecordingClient()
     api = BatchesAPI(client)  # type: ignore[arg-type]
 
-    api.list(731, project_id=41, limit=13, offset=5)
+    _drive(api.list(731, project_id=41, limit=13, offset=5))
     assert client.calls[-1] == (
         "GET",
         "/workspaces/17/projects/41/datasets/731/batches",
         {"params": {"limit": 13, "offset": 5}},
     )
 
-    api.create(
-        731,
-        732,
-        {"S4_SOURCE": "S4_DEST"},
-        project_id=41,
-        new_ds_params={"name": "S4_DATASET"},
-        is_validation_required=True,
-        change_map={"S4_OLD": "S4_NEW"},
-        delete_source_ds=False,
+    _drive(
+        api.create(
+            731,
+            732,
+            {"S4_SOURCE": "S4_DEST"},
+            project_id=41,
+            new_ds_params={"name": "S4_DATASET"},
+            is_validation_required=True,
+            change_map={"S4_OLD": "S4_NEW"},
+            delete_source_ds=False,
+        )
     )
     assert client.calls[-1] == (
         "POST",
@@ -107,14 +119,14 @@ def test_batch_wire_oracles_cover_query_body_and_distinct_lifecycle_paths() -> N
         },
     )
 
-    api.update(731, [{"op": "replace", "value": {"S4_BATCH": [733]}}], project_id=41)
+    _drive(api.update(731, [{"op": "replace", "value": {"S4_BATCH": [733]}}], project_id=41))
     assert client.calls[-1] == (
         "PATCH",
         "/workspaces/17/projects/41/datasets/731/batches",
         {"json": {"patch": [{"op": "replace", "value": {"S4_BATCH": [733]}}]}},
     )
 
-    api.bulk_delete(731, ids=[733, 734], project_id=41)
+    _drive(api.bulk_delete(731, ids=[733, 734], project_id=41))
     assert client.calls[-1] == (
         "DELETE",
         "/workspaces/17/projects/41/datasets/731/batches",
@@ -126,14 +138,14 @@ def test_job_wire_oracles_cover_single_and_collection_queries() -> None:
     client = _RecordingClient()
     api = JobsAPI(client)  # type: ignore[arg-type]
 
-    api.get_job(811)
+    _drive(api.get_job(811))
     assert client.calls[-1] == (
         "GET",
         "/jobs/811",
         {"headers": {"x-workspace-id": "17"}},
     )
 
-    api.get_jobs([811, 812])
+    _drive(api.get_jobs([811, 812]))
     assert client.calls[-1] == (
         "GET",
         "/jobs",
@@ -145,10 +157,12 @@ def test_job_wait_interrupt_is_inspectable_and_never_replayed(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     service = _InterruptingService()
-    monkeypatch.setattr(job_cmd, "open_service", lambda _invocation: _service_context(service))
+    _drive(
+        monkeypatch.setattr(job_cmd, "open_service", lambda _invocation: _service_context(service))
+    )
 
     with pytest.raises(CliError) as excinfo:
-        job_cmd.job_wait(Invocation(command_id="job.wait", extra_args=["811"]))
+        _drive(job_cmd.job_wait(Invocation(command_id="job.wait", extra_args=["811"])))
 
     assert excinfo.value.code == "interrupted"
     assert excinfo.value.details == {
@@ -192,14 +206,16 @@ def test_parameter_wire_oracles_cover_workspace_body_and_query_bindings() -> Non
     client = _RecordingClient()
     api = ParametersAPI(client)  # type: ignore[arg-type]
 
-    api.create(
-        "S4_PARAMETER",
-        "NUMERIC",
-        17,
-        description="S4_DESCRIPTION",
-        group_id=19,
-        scope="project",
-        project_id=41,
+    _drive(
+        api.create(
+            "S4_PARAMETER",
+            "NUMERIC",
+            17,
+            description="S4_DESCRIPTION",
+            group_id=19,
+            scope="project",
+            project_id=41,
+        )
     )
     assert client.calls[-1] == (
         "POST",
@@ -217,14 +233,14 @@ def test_parameter_wire_oracles_cover_workspace_body_and_query_bindings() -> Non
         },
     )
 
-    api.group_create("S4_GROUP", color="#123456", project_id=41)
+    _drive(api.group_create("S4_GROUP", color="#123456", project_id=41))
     assert client.calls[-1] == (
         "POST",
         "/workspaces/17/parameters/groups",
         {"params": {"project_id": 41}, "json": {"name": "S4_GROUP", "color": "#123456"}},
     )
 
-    api.group_update(19, name="S4_GROUP_RENAMED", color="#654321", project_id=41)
+    _drive(api.group_update(19, name="S4_GROUP_RENAMED", color="#654321", project_id=41))
     assert client.calls[-1] == (
         "PATCH",
         "/workspaces/17/parameters/groups/19",
@@ -234,7 +250,7 @@ def test_parameter_wire_oracles_cover_workspace_body_and_query_bindings() -> Non
         },
     )
 
-    api.rerun_all_stale(41)
+    _drive(api.rerun_all_stale(41))
     assert client.calls[-1] == (
         "POST",
         "/workspaces/17/parameters/rerun-all-stale",
@@ -246,14 +262,16 @@ def test_snippet_wire_oracles_cover_body_and_dependency_paths() -> None:
     client = _RecordingClient()
     api = SnippetsAPI(client)  # type: ignore[arg-type]
 
-    api.create(
-        "S4_SNIPPET",
-        "S4_CODE",
-        "sql",
-        description="S4_DESCRIPTION",
-        group_id=19,
-        scope="project",
-        project_id=41,
+    _drive(
+        api.create(
+            "S4_SNIPPET",
+            "S4_CODE",
+            "sql",
+            description="S4_DESCRIPTION",
+            group_id=19,
+            scope="project",
+            project_id=41,
+        )
     )
     assert client.calls[-1] == (
         "POST",
@@ -271,14 +289,14 @@ def test_snippet_wire_oracles_cover_body_and_dependency_paths() -> None:
         },
     )
 
-    api.dependencies(901)
+    _drive(api.dependencies(901))
     assert client.calls[-1] == (
         "GET",
         "/workspaces/17/snippets/901/dependencies",
         {},
     )
 
-    api.update(901, code="S4_UPDATED", language="expression", group_id=22)
+    _drive(api.update(901, code="S4_UPDATED", language="expression", group_id=22))
     assert client.calls[-1] == (
         "PATCH",
         "/workspaces/17/snippets/901",
@@ -290,15 +308,17 @@ def test_workflow_wire_oracles_cover_project_parent_and_block_adapters() -> None
     client = _RecordingClient()
     api = WorkflowsAPI(client)  # type: ignore[arg-type]
 
-    api.list(project_id=41)
+    _drive(api.list(project_id=41))
     assert client.calls[-1] == ("GET", "/workspaces/17/projects/41/workflows", {})
 
-    api.create(
-        "S4_WORKFLOW",
-        shape="pipeline",
-        purpose="S4_PURPOSE",
-        seed_datasource_id=77,
-        project_id=41,
+    _drive(
+        api.create(
+            "S4_WORKFLOW",
+            shape="pipeline",
+            purpose="S4_PURPOSE",
+            seed_datasource_id=77,
+            project_id=41,
+        )
     )
     assert client.calls[-1] == (
         "POST",
@@ -313,21 +333,21 @@ def test_workflow_wire_oracles_cover_project_parent_and_block_adapters() -> None
         },
     )
 
-    api.from_template(88, "S4_FROM_TEMPLATE", project_id=41)
+    _drive(api.from_template(88, "S4_FROM_TEMPLATE", project_id=41))
     assert client.calls[-1] == (
         "POST",
         "/workspaces/17/projects/41/workflows/from-template",
         {"json": {"template_id": 88, "workflow_name": "S4_FROM_TEMPLATE"}},
     )
 
-    api.block_auth(91, 92, {"credential_ref": "S4_SECRET_REF"}, project_id=41)
+    _drive(api.block_auth(91, 92, {"credential_ref": "S4_SECRET_REF"}, project_id=41))
     assert client.calls[-1] == (
         "PATCH",
         "/workspaces/17/projects/41/workflows/91/blocks/92/auth",
         {"json": {"auth_data": {"credential_ref": "S4_SECRET_REF"}}},
     )
 
-    api.canvas(91, {"node": "S4_NODE"}, project_id=41)
+    _drive(api.canvas(91, {"node": "S4_NODE"}, project_id=41))
     assert client.calls[-1] == (
         "PATCH",
         "/workspaces/17/projects/41/workflows/91/canvas",

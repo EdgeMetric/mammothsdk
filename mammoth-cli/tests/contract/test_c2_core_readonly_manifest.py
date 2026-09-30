@@ -38,7 +38,10 @@ def test_dependent_cases_require_observed_parent_ids_and_no_mutation() -> None:
     for case in document["cases"]:
         serialized = json.dumps(case)
         assert "observed" in serialized or case["case_id"] in {
-            "P0-READ-001", "P0-READ-006", "P0-READ-008", "P0-READ-010"
+            "P0-READ-001",
+            "P0-READ-006",
+            "P0-READ-008",
+            "P0-READ-010",
         }
         assert case["method"] == "GET"
     assert document["scope"]["effect"] == "read-only"

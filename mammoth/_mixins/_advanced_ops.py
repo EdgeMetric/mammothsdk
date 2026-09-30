@@ -30,7 +30,7 @@ else:
 class AdvancedOpsMixin(ViewHost):
     """Mixin for advanced operations on a View: join, lookup, JSON, AI, SQL."""
 
-    def join(
+    async def join(
         self,
         foreign_view: int | View,
         join_type: JoinType,
@@ -67,8 +67,8 @@ class AdvancedOpsMixin(ViewHost):
         Examples::
 
             # Join with View object (display names everywhere)
-            other = client.views.get(2050)
-            view.join(
+            other = await client.views.get(2050)
+            await view.join(
                 foreign_view=other,
                 join_type=JoinType.LEFT,
                 on=[JoinKeySpec(left="Customer ID", right="Customer ID")],
@@ -76,7 +76,7 @@ class AdvancedOpsMixin(ViewHost):
             )
 
             # Join with view ID (internal names for foreign view)
-            view.join(
+            await view.join(
                 foreign_view=2050,
                 join_type=JoinType.LEFT,
                 on=[JoinKeySpec(left="Customer ID", right="column_1")],
@@ -89,7 +89,7 @@ class AdvancedOpsMixin(ViewHost):
         foreign_internal_names: list[str] | None = None
 
         if isinstance(foreign_view, int) and foreign_dataset_id is not None:
-            foreign_view = self._client.views.get(foreign_view, dataset_id=foreign_dataset_id)
+            foreign_view = await self._client.views.get(foreign_view, dataset_id=foreign_dataset_id)
 
         if isinstance(foreign_view, int):
             foreign_view_id = foreign_view
@@ -98,7 +98,7 @@ class AdvancedOpsMixin(ViewHost):
             foreign_columns = foreign_view.columns
             foreign_internal_names = foreign_view._internal_names
 
-        return self._add_task(
+        return await self._add_task(
             build_join_params(
                 foreign_view_id,
                 join_type,
@@ -112,7 +112,7 @@ class AdvancedOpsMixin(ViewHost):
             )
         )
 
-    def lookup(
+    async def lookup(
         self,
         source: str,
         lookup_view_id: int | View,
@@ -152,7 +152,7 @@ class AdvancedOpsMixin(ViewHost):
 
         Example::
 
-            view.lookup(
+            await view.lookup(
                 source="Product ID",
                 lookup_view_id=2055,
                 key="column_abc123",
@@ -165,7 +165,9 @@ class AdvancedOpsMixin(ViewHost):
         foreign_view: int | View = lookup_view_id
         effective_type = new_column_type
         if isinstance(lookup_view_id, int) and lookup_dataset_id is not None:
-            foreign_view = self._client.views.get(lookup_view_id, dataset_id=lookup_dataset_id)
+            foreign_view = await self._client.views.get(
+                lookup_view_id, dataset_id=lookup_dataset_id
+            )
         if isinstance(foreign_view, int):
             foreign_id = foreign_view
         else:
@@ -180,7 +182,7 @@ class AdvancedOpsMixin(ViewHost):
                             effective_type = foreign_view.column_types.get(display, "TEXT")
                             break
 
-        return self._add_task(
+        return await self._add_task(
             build_lookup_params(
                 source,
                 foreign_id,
@@ -197,7 +199,7 @@ class AdvancedOpsMixin(ViewHost):
             )
         )
 
-    def json_extract(
+    async def json_extract(
         self,
         column: str,
         json_type: JsonType = JsonType.OBJECT,
@@ -227,10 +229,10 @@ class AdvancedOpsMixin(ViewHost):
         Example::
 
             # Simple key extraction
-            view.json_extract("data", keys=["name", "email", "age"])
+            await view.json_extract("data", keys=["name", "email", "age"])
 
             # Advanced with custom types
-            view.json_extract(
+            await view.json_extract(
                 "data",
                 extractions=[
                     JsonExtractionSpec(key="name", as_name="Name"),
@@ -238,7 +240,7 @@ class AdvancedOpsMixin(ViewHost):
                 ],
             )
         """
-        return self._add_task(
+        return await self._add_task(
             build_json_extract_params(
                 column,
                 self.columns,
@@ -252,7 +254,7 @@ class AdvancedOpsMixin(ViewHost):
             )
         )
 
-    def gen_ai(
+    async def gen_ai(
         self,
         prompt: str,
         context_columns: list[str],
@@ -274,13 +276,13 @@ class AdvancedOpsMixin(ViewHost):
 
         Example::
 
-            view.gen_ai(
+            await view.gen_ai(
                 prompt="Classify the sentiment of the review",
                 context_columns=["Review Text"],
                 new_column="Sentiment",
             )
         """
-        return self._add_task(
+        return await self._add_task(
             build_gen_ai_params(
                 prompt,
                 context_columns,
@@ -293,14 +295,14 @@ class AdvancedOpsMixin(ViewHost):
             )
         )
 
-    def _next_sequence_number(self) -> int:
+    async def _next_sequence_number(self) -> int:
         """Return the next pipeline sequence number for this view."""
-        tasks = self.list_tasks()
+        tasks = await self.list_tasks()
         if not tasks:
             return 1
         return max(t.get("sequence", 0) for t in tasks) + 1
 
-    def generate_sql(self, intent: str) -> str:
+    async def generate_sql(self, intent: str) -> str:
         """Generate SQL from natural language using the Mammoth LLM.
 
         Calls the ``/sql_generation`` endpoint, which converts the intent
@@ -318,17 +320,17 @@ class AdvancedOpsMixin(ViewHost):
 
         Example::
 
-            sql = view.generate_sql("show total sales by region")
+            sql = await view.generate_sql("show total sales by region")
             print(sql)  # "SELECT region, SUM(sales) FROM ... GROUP BY region"
-            view.add_sql(sql)  # apply it (replaces the view's columns)
+            await view.add_sql(sql)  # apply it (replaces the view's columns)
         """
         ws = self._client.workspace_id
         proj = getattr(self._client, "project_id", None)
         if proj is None:
             raise ValueError("project_id must be set")
 
-        seq = self._next_sequence_number()
-        result = self._client._request_json(
+        seq = await self._next_sequence_number()
+        result = await self._client._request_json(
             "POST",
             f"/workspaces/{ws}/projects/{proj}/sql_generation",
             params={
@@ -340,17 +342,17 @@ class AdvancedOpsMixin(ViewHost):
 
         job_id = result.get("id")
         if job_id:
-            job = self._client.jobs.wait_for_job(job_id)
+            job = await self._client.jobs.wait_for_job(job_id)
         else:
             job = result
-        self._client.pipeline.wait_for_pipeline(self.id, self.dataset_id)
-        self.refresh()
+        await self._client.pipeline.wait_for_pipeline(self.id, self.dataset_id)
+        await self.refresh()
 
         resp = job.get("response", {})
         inner = resp.get("response", resp)
         return inner.get("result", "")
 
-    def add_sql(self, query: str) -> dict[str, Any]:
+    async def add_sql(self, query: str) -> dict[str, Any]:
         """Add a raw SQL query as a pipeline task (SQL task).
 
         The query runs against the dataview's current output. Reference the
@@ -372,8 +374,8 @@ class AdvancedOpsMixin(ViewHost):
 
         Example::
 
-            view.add_sql(
+            await view.add_sql(
                 'SELECT region, SUM(revenue) AS revenue FROM "view:123" GROUP BY region'
             )
         """
-        return self._add_task(build_sql_params(query))
+        return await self._add_task(build_sql_params(query))

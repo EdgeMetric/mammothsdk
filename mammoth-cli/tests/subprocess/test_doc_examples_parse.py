@@ -8,6 +8,7 @@ fenced, multiline, and placeholder-bearing examples are all collected.  A
 small, explicitly safe subset is also executed in a logged-out subprocess to
 prove the advertised offline semantics still work in the real entry point.
 """
+
 from __future__ import annotations
 
 import json
@@ -147,7 +148,7 @@ def _materialize(command: str) -> list[str]:
         # Abstract agent syntax is documented with a real command/typed request
         # so that its global flags are checked rather than skipped.
         command = command.replace("<command>", "view transform math 1")
-        request = "--input '{\"expression\": \"price * qty\", \"new_column\": \"total\"}'"
+        request = '--input \'{"expression": "price * qty", "new_column": "total"}\''
         command = command.replace("--input request.yaml", request)
     text = _PLACEHOLDER.sub(_replace_placeholder, command)
     tokens = _shell_tokens(text)
@@ -158,8 +159,10 @@ def _materialize(command: str) -> list[str]:
     values = ["1" if re.fullmatch(r"[A-Z][A-Z0-9_]*", token) else token for token in tokens]
     # ``mammoth COMMAND --help`` is documentation syntax, but its placeholder
     # still has to be routed through a real command group.
-    return ["schema" if token == "1" and original == "COMMAND" else token
-            for token, original in zip(values, tokens, strict=True)]
+    return [
+        "schema" if token == "1" and original == "COMMAND" else token
+        for token, original in zip(values, tokens, strict=True)
+    ]
 
 
 _COMMANDS = _extract_commands()
@@ -230,8 +233,10 @@ def test_docs_contain_examples_from_readme_and_docs() -> None:
     assert any(source.parent == _CLI_ROOT / "docs" for source in sources)
     assert len(_COMMANDS) >= 40, f"only found {len(_COMMANDS)} documentation commands"
     assert any("\n" in command.command for command in _COMMANDS), "no multiline example extracted"
-    assert any("<" in command.command or re.search(r"\b[A-Z][A-Z0-9_]*\b", command.command)
-               for command in _COMMANDS), "no placeholder example extracted"
+    assert any(
+        "<" in command.command or re.search(r"\b[A-Z][A-Z0-9_]*\b", command.command)
+        for command in _COMMANDS
+    ), "no placeholder example extracted"
 
 
 @pytest.mark.parametrize("documented", _COMMANDS, ids=lambda item: item.label)

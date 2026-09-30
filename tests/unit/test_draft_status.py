@@ -21,7 +21,7 @@ These tests exercise the *real* ``PipelineAPI.get_pipeline`` and
 
 from __future__ import annotations
 
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
@@ -50,48 +50,52 @@ def _make_api() -> tuple[PipelineAPI, MagicMock]:
 class TestGetDraftStatusStringEnum:
     """Server returns ``draft_mode`` as the OpenAPI string enum."""
 
-    def test_dirty_is_draft_true(self) -> None:
+    async def test_dirty_is_draft_true(self) -> None:
         api, mock_client = _make_api()
-        mock_client._request_json.return_value = {"state": "ready", "draft_mode": "dirty"}
+        mock_client._request_json = AsyncMock(
+            return_value={"state": "ready", "draft_mode": "dirty"}
+        )
 
-        result = api.get_draft_status(DATAVIEW_ID, dataset_id=DATASET_ID)
+        result = await api.get_draft_status(DATAVIEW_ID, dataset_id=DATASET_ID)
 
         assert result["is_draft"] is True
         assert result["dataview_id"] == DATAVIEW_ID
         assert result["draft"] == "dirty"
 
-    def test_clean_is_draft_true(self) -> None:
+    async def test_clean_is_draft_true(self) -> None:
         api, mock_client = _make_api()
-        mock_client._request_json.return_value = {"state": "ready", "draft_mode": "clean"}
+        mock_client._request_json = AsyncMock(
+            return_value={"state": "ready", "draft_mode": "clean"}
+        )
 
-        result = api.get_draft_status(DATAVIEW_ID, dataset_id=DATASET_ID)
+        result = await api.get_draft_status(DATAVIEW_ID, dataset_id=DATASET_ID)
 
         assert result["is_draft"] is True
         assert result["draft"] == "clean"
 
-    def test_off_is_draft_false(self) -> None:
+    async def test_off_is_draft_false(self) -> None:
         api, mock_client = _make_api()
-        mock_client._request_json.return_value = {"state": "ready", "draft_mode": "off"}
+        mock_client._request_json = AsyncMock(return_value={"state": "ready", "draft_mode": "off"})
 
-        result = api.get_draft_status(DATAVIEW_ID, dataset_id=DATASET_ID)
+        result = await api.get_draft_status(DATAVIEW_ID, dataset_id=DATASET_ID)
 
         assert result["is_draft"] is False
         assert result["draft"] == "off"
 
-    def test_absent_is_draft_false(self) -> None:
+    async def test_absent_is_draft_false(self) -> None:
         api, mock_client = _make_api()
-        mock_client._request_json.return_value = {"state": "ready"}
+        mock_client._request_json = AsyncMock(return_value={"state": "ready"})
 
-        result = api.get_draft_status(DATAVIEW_ID, dataset_id=DATASET_ID)
+        result = await api.get_draft_status(DATAVIEW_ID, dataset_id=DATASET_ID)
 
         assert result["is_draft"] is False
         assert result["draft"] is None
 
-    def test_null_is_draft_false(self) -> None:
+    async def test_null_is_draft_false(self) -> None:
         api, mock_client = _make_api()
-        mock_client._request_json.return_value = {"state": "ready", "draft_mode": None}
+        mock_client._request_json = AsyncMock(return_value={"state": "ready", "draft_mode": None})
 
-        result = api.get_draft_status(DATAVIEW_ID, dataset_id=DATASET_ID)
+        result = await api.get_draft_status(DATAVIEW_ID, dataset_id=DATASET_ID)
 
         assert result["is_draft"] is False
         assert result["draft"] is None
@@ -100,50 +104,56 @@ class TestGetDraftStatusStringEnum:
 class TestGetDraftStatusCompatibilityFallbacks:
     """Legacy/alternate shapes must keep working alongside the enum fix."""
 
-    def test_dict_draft_section_active_true(self) -> None:
+    async def test_dict_draft_section_active_true(self) -> None:
         api, mock_client = _make_api()
-        mock_client._request_json.return_value = {
-            "state": "ready",
-            "draft": {"active": True},
-        }
+        mock_client._request_json = AsyncMock(
+            return_value={
+                "state": "ready",
+                "draft": {"active": True},
+            }
+        )
 
-        result = api.get_draft_status(DATAVIEW_ID, dataset_id=DATASET_ID)
+        result = await api.get_draft_status(DATAVIEW_ID, dataset_id=DATASET_ID)
 
         assert result["is_draft"] is True
         assert result["draft"] == {"active": True}
 
-    def test_dict_draft_section_is_draft_true(self) -> None:
+    async def test_dict_draft_section_is_draft_true(self) -> None:
         api, mock_client = _make_api()
-        mock_client._request_json.return_value = {
-            "state": "ready",
-            "draft_mode": {"is_draft": True},
-        }
+        mock_client._request_json = AsyncMock(
+            return_value={
+                "state": "ready",
+                "draft_mode": {"is_draft": True},
+            }
+        )
 
-        result = api.get_draft_status(DATAVIEW_ID, dataset_id=DATASET_ID)
+        result = await api.get_draft_status(DATAVIEW_ID, dataset_id=DATASET_ID)
 
         assert result["is_draft"] is True
 
-    def test_bool_is_draft_true(self) -> None:
+    async def test_bool_is_draft_true(self) -> None:
         api, mock_client = _make_api()
-        mock_client._request_json.return_value = {"state": "ready", "is_draft": True}
+        mock_client._request_json = AsyncMock(return_value={"state": "ready", "is_draft": True})
 
-        result = api.get_draft_status(DATAVIEW_ID, dataset_id=DATASET_ID)
+        result = await api.get_draft_status(DATAVIEW_ID, dataset_id=DATASET_ID)
 
         assert result["is_draft"] is True
 
-    def test_bool_in_draft_mode_true(self) -> None:
+    async def test_bool_in_draft_mode_true(self) -> None:
         api, mock_client = _make_api()
-        mock_client._request_json.return_value = {"state": "ready", "in_draft_mode": True}
+        mock_client._request_json = AsyncMock(
+            return_value={"state": "ready", "in_draft_mode": True}
+        )
 
-        result = api.get_draft_status(DATAVIEW_ID, dataset_id=DATASET_ID)
+        result = await api.get_draft_status(DATAVIEW_ID, dataset_id=DATASET_ID)
 
         assert result["is_draft"] is True
 
-    def test_no_draft_fields_is_draft_false(self) -> None:
+    async def test_no_draft_fields_is_draft_false(self) -> None:
         api, mock_client = _make_api()
-        mock_client._request_json.return_value = {"state": "ready"}
+        mock_client._request_json = AsyncMock(return_value={"state": "ready"})
 
-        result = api.get_draft_status(DATAVIEW_ID, dataset_id=DATASET_ID)
+        result = await api.get_draft_status(DATAVIEW_ID, dataset_id=DATASET_ID)
 
         assert result["is_draft"] is False
         assert result["draft"] is None
@@ -152,25 +162,25 @@ class TestGetDraftStatusCompatibilityFallbacks:
 class TestNestedDraftRecovery:
     """Nested pipeline envelopes must classify recovery before any write."""
 
-    def test_nested_terminal_state_is_normalized(self) -> None:
+    async def test_nested_terminal_state_is_normalized(self) -> None:
         api, mock_client = _make_api()
-        mock_client._request_json.return_value = {
-            "pipeline": {"state": "ready", "draft": "clean"}
-        }
+        mock_client._request_json = AsyncMock(
+            return_value={"pipeline": {"state": "ready", "draft": "clean"}}
+        )
 
-        result = api.reconcile_draft_submission(DATAVIEW_ID, dataset_id=DATASET_ID)
+        result = await api.reconcile_draft_submission(DATAVIEW_ID, dataset_id=DATASET_ID)
 
         assert result["pipeline_state"] == "ready"
         assert result["mode"] == "clean"
         assert result["outcome"] == "succeeded"
 
-    def test_nested_running_state_is_normalized(self) -> None:
+    async def test_nested_running_state_is_normalized(self) -> None:
         api, mock_client = _make_api()
-        mock_client._request_json.return_value = {
-            "pipeline": {"state": "running", "draft": "dirty"}
-        }
+        mock_client._request_json = AsyncMock(
+            return_value={"pipeline": {"state": "running", "draft": "dirty"}}
+        )
 
-        result = api.reconcile_draft_submission(DATAVIEW_ID, dataset_id=DATASET_ID)
+        result = await api.reconcile_draft_submission(DATAVIEW_ID, dataset_id=DATASET_ID)
 
         assert result["pipeline_state"] == "running"
         assert result["outcome"] == "running"
@@ -183,13 +193,13 @@ class TestNestedDraftRecovery:
             {"pipeline": {"state": "ready", "draft": {"active": True}}},
         ],
     )
-    def test_missing_or_malformed_state_is_unknown_and_blocked(
+    async def test_missing_or_malformed_state_is_unknown_and_blocked(
         self, payload: dict[str, object]
     ) -> None:
         api, mock_client = _make_api()
-        mock_client._request_json.return_value = payload
+        mock_client._request_json = AsyncMock(return_value=payload)
 
-        result = api.reconcile_draft_submission(DATAVIEW_ID, dataset_id=DATASET_ID)
+        result = await api.reconcile_draft_submission(DATAVIEW_ID, dataset_id=DATASET_ID)
 
         assert result["outcome"] == "unknown"
         assert result["operation_state"] == "outcome_unknown"

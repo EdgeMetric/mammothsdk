@@ -32,7 +32,7 @@ class ClientAppsAPI:
     def _ws(self) -> int:
         return self._client.workspace_id
 
-    def list(
+    async def list(
         self,
         workspace_id: int | None = None,
         limit: int = 10,
@@ -66,10 +66,12 @@ class ClientAppsAPI:
             params["fields"] = fields
         if sort:
             params["sort"] = sort
-        response = self._client._request_json("GET", f"/workspaces/{ws}/clientapps", params=params)
+        response = await self._client._request_json(
+            "GET", f"/workspaces/{ws}/clientapps", params=params
+        )
         return ClientAppsListResponse(**response)
 
-    def create(
+    async def create(
         self,
         app_name: str,
         description: str | None = None,
@@ -89,10 +91,12 @@ class ClientAppsAPI:
         payload = {"app_name": app_name}
         if description:
             payload["description"] = description
-        response = self._client._request_json("POST", f"/workspaces/{ws}/clientapps", json=payload)
+        response = await self._client._request_json(
+            "POST", f"/workspaces/{ws}/clientapps", json=payload
+        )
         return ClientAppPostResponse(**response)
 
-    def get(
+    async def get(
         self,
         client_key: str,
         workspace_id: int | None = None,
@@ -112,12 +116,12 @@ class ClientAppsAPI:
         params = {}
         if fields:
             params["fields"] = fields
-        response = self._client._request_json(
+        response = await self._client._request_json(
             "GET", f"/workspaces/{ws}/clientapps/{client_key}", params=params
         )
         return ClientAppSchema(**response)
 
-    def update(
+    async def update(
         self,
         client_key: str,
         patch_request: PatchRequest,
@@ -134,12 +138,12 @@ class ClientAppsAPI:
             ClientAppSchema with updated details.
         """
         ws = workspace_id or self._ws()
-        response = self._client._request_json(
+        response = await self._client._request_json(
             "PATCH", f"/workspaces/{ws}/clientapps/{client_key}", json=patch_request.model_dump()
         )
         return ClientAppSchema(**response)
 
-    def delete(
+    async def delete(
         self,
         client_key: str,
         workspace_id: int | None = None,
@@ -151,4 +155,4 @@ class ClientAppsAPI:
             workspace_id: ID of the workspace (uses client default if not provided).
         """
         ws = workspace_id or self._ws()
-        self._client._request_json("DELETE", f"/workspaces/{ws}/clientapps/{client_key}")
+        await self._client._request_json("DELETE", f"/workspaces/{ws}/clientapps/{client_key}")

@@ -8,7 +8,7 @@ blocked by a separate backend defect (see docs/release-status.md 2.0.46).
 
 from __future__ import annotations
 
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock
 
 import pytest
 
@@ -31,7 +31,7 @@ from mammoth.models.automations import (
 
 
 def _make_api() -> tuple[AutomationsAPI, MagicMock]:
-    mock_client = MagicMock()
+    mock_client = AsyncMock()
     mock_client.workspace_id = 4
     mock_client.project_id = 101
     api = AutomationsAPI(mock_client)
@@ -39,10 +39,10 @@ def _make_api() -> tuple[AutomationsAPI, MagicMock]:
 
 
 class TestCreate:
-    def test_create_run_data_retrieval_with_recurrence(self) -> None:
+    async def test_create_run_data_retrieval_with_recurrence(self) -> None:
         api, mock_client = _make_api()
         mock_client._request_json.return_value = {"id": 1}
-        api.create(
+        await api.create(
             name="Nightly refresh",
             description="",
             tasks=[
@@ -105,10 +105,10 @@ class TestCreate:
             ),
         ],
     )
-    def test_create_accepts_every_required_task_type(self, task_type, details_kwargs) -> None:
+    async def test_create_accepts_every_required_task_type(self, task_type, details_kwargs) -> None:
         api, mock_client = _make_api()
         mock_client._request_json.return_value = {"id": 1}
-        api.create(
+        await api.create(
             name="x",
             description="",
             tasks=[
@@ -118,10 +118,10 @@ class TestCreate:
         body = mock_client._request_json.call_args.kwargs["json"]
         assert body["tasks"][0]["task_type"] == task_type.value
 
-    def test_create_run_data_retrieval_missing_ds_details_raises(self) -> None:
+    async def test_create_run_data_retrieval_missing_ds_details_raises(self) -> None:
         api, _ = _make_api()
         with pytest.raises(MammothValidationError, match="ds_details"):
-            api.create(
+            await api.create(
                 name="x",
                 description="",
                 tasks=[
@@ -133,10 +133,10 @@ class TestCreate:
 
 
 class TestGet:
-    def test_get(self) -> None:
+    async def test_get(self) -> None:
         api, mock_client = _make_api()
         mock_client._request_json.return_value = {"automation": {"id": 7}}
-        result = api.get(7)
+        result = await api.get(7)
         mock_client._request_json.assert_called_once_with(
             "GET", "/workspaces/4/projects/101/automations/7"
         )
@@ -144,10 +144,10 @@ class TestGet:
 
 
 class TestList:
-    def test_list_unwraps_automations_key(self) -> None:
+    async def test_list_unwraps_automations_key(self) -> None:
         api, mock_client = _make_api()
         mock_client._request_json.return_value = {"automations": [{"id": 1}], "next": ""}
-        result = api.list()
+        result = await api.list()
         mock_client._request_json.assert_called_once_with(
             "GET", "/workspaces/4/projects/101/automations"
         )
@@ -155,34 +155,34 @@ class TestList:
 
 
 class TestDelete:
-    def test_delete(self) -> None:
+    async def test_delete(self) -> None:
         api, mock_client = _make_api()
-        api.delete(7)
+        await api.delete(7)
         mock_client._request_json.assert_called_once_with(
             "DELETE", "/workspaces/4/projects/101/automations/7"
         )
 
 
 class TestTrashRestore:
-    def test_trash(self) -> None:
+    async def test_trash(self) -> None:
         api, mock_client = _make_api()
-        api.trash(7)
+        await api.trash(7)
         mock_client._request_json.assert_called_once_with(
             "POST", "/workspaces/4/projects/101/automations/7/trash"
         )
 
-    def test_restore(self) -> None:
+    async def test_restore(self) -> None:
         api, mock_client = _make_api()
-        api.restore(7)
+        await api.restore(7)
         mock_client._request_json.assert_called_once_with(
             "POST", "/workspaces/4/projects/101/automations/7/restore"
         )
 
 
 class TestUpdate:
-    def test_update_command_run(self) -> None:
+    async def test_update_command_run(self) -> None:
         api, mock_client = _make_api()
-        api.update(
+        await api.update(
             7,
             patch=[
                 AutomationPatchItem(
@@ -193,9 +193,9 @@ class TestUpdate:
         body = mock_client._request_json.call_args.kwargs["json"]
         assert body["patch"] == [{"op": "command", "path": "run", "value": {}}]
 
-    def test_update_status_suspend_sends_suspend_on_the_wire(self) -> None:
+    async def test_update_status_suspend_sends_suspend_on_the_wire(self) -> None:
         api, mock_client = _make_api()
-        api.update(
+        await api.update(
             7,
             patch=[
                 AutomationPatchItem(
@@ -208,7 +208,7 @@ class TestUpdate:
         body = mock_client._request_json.call_args.kwargs["json"]
         assert body["patch"][0]["value"] == "suspend"
 
-    def test_update_status_resume_sends_restore_on_the_wire(self) -> None:
+    async def test_update_status_resume_sends_restore_on_the_wire(self) -> None:
         """The backend's status vocabulary is 'suspend'/'restore', not
         'suspend'/'resume' (apiv2/apiv2/automations/schema.py
         AutomationStatusValueEnum, enforced in
@@ -220,7 +220,7 @@ class TestUpdate:
         never applies.
         """
         api, mock_client = _make_api()
-        api.update(
+        await api.update(
             7,
             patch=[
                 AutomationPatchItem(
@@ -233,9 +233,9 @@ class TestUpdate:
         body = mock_client._request_json.call_args.kwargs["json"]
         assert body["patch"][0]["value"] == "restore"
 
-    def test_update_details_patch(self) -> None:
+    async def test_update_details_patch(self) -> None:
         api, mock_client = _make_api()
-        api.update(
+        await api.update(
             7,
             patch=[
                 AutomationPatchItem(
@@ -248,7 +248,7 @@ class TestUpdate:
         body = mock_client._request_json.call_args.kwargs["json"]
         assert body["patch"][0]["value"] == {"name": "new name"}
 
-    def test_update_details_patch_from_raw_dict_value(self) -> None:
+    async def test_update_details_patch_from_raw_dict_value(self) -> None:
         """``AutomationPatchItem.value`` is typed ``str | dict[str, Any] |
         PatchAutomationDetails``. Constructing the item straight from a typed
         ``PatchAutomationDetails`` (the test above) never exercises pydantic's
@@ -271,19 +271,19 @@ class TestUpdate:
         item = AutomationPatchItem.model_validate(
             {"op": "replace", "path": "details", "value": {"name": "new name"}}
         )
-        api.update(7, patch=[item])
+        await api.update(7, patch=[item])
         body = mock_client._request_json.call_args.kwargs["json"]
         assert body["patch"][0]["value"] == {"name": "new name"}
 
-    def test_update_empty_patch_raises(self) -> None:
+    async def test_update_empty_patch_raises(self) -> None:
         api, _ = _make_api()
         with pytest.raises(MammothValidationError, match="patch"):
-            api.update(7, patch=[])
+            await api.update(7, patch=[])
 
-    def test_update_nonpositive_id_raises(self) -> None:
+    async def test_update_nonpositive_id_raises(self) -> None:
         api, _ = _make_api()
         with pytest.raises(MammothValidationError, match="automation_id"):
-            api.update(
+            await api.update(
                 0,
                 patch=[
                     AutomationPatchItem(

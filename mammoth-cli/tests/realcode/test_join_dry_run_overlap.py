@@ -40,7 +40,13 @@ def test_dry_run_reports_match_rate_without_writing(
     monkeypatch: pytest.MonkeyPatch, real_service: ServiceFactory, tmp_path: Path
 ) -> None:
     service, api = real_service(project_id=180)
-    monkeypatch.setattr(factory, "build_service", lambda *a, **k: service)
+    # A fresh service per build, as in production: each command closes its own.
+    unused = iter([service])
+    monkeypatch.setattr(
+        factory,
+        "build_service",
+        lambda *a, **k: next(unused, None) or real_service(api=api, project_id=180)[0],
+    )
     api.on("GET", r"/datasets/10/dataviews/1$", body=_view("cust", "column_1"))
     api.on("GET", r"/datasets/20/dataviews/2$", body={**_view("id", "column_9"), "id": 2})
 

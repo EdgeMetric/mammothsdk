@@ -90,7 +90,7 @@ try:
         api_token="mm_invalid",
         workspace_id=1,
     )
-    projects = client.projects.list()
+    projects = await client.projects.list()
 except MammothAuthError:
     print("Authentication failed -- check your API credentials")
 ```

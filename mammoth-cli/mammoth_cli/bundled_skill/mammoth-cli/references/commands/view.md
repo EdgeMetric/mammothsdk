@@ -418,7 +418,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth view export create`. Exact input fields: `mammoth schema get view.export.create`.
 
-Example: `mammoth view export create 123 --input '{"export_spec": {"DATAVIEW_ID": 1, "handler_type": "postgres", "trigger_type": "none", "target_properties": {"file": "./sales.csv", "file_type": "./sales.csv", "include_hidden": true, "is_format_set": true, "use_format": true}, "additional_properties": {}, "run_immediately": true}}'`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth view export create 123 --input '{"export_spec": {"DATAVIEW_ID": 1, "handler_type": "postgres", "trigger_type": "none", "run_immediately": true}}'`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `ViewExportCreateResult`; mutation `external_effect`, confirmation `yes_always`, wait policy `returns_job`.
 

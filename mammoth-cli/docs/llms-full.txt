@@ -1037,7 +1037,7 @@ Sensitive structured input must come from a private file or pipe; never put secr
 - `mammoth view export bigquery` [external_effect/yes_always] -> mammoth.view.ViewExport.to_bigquery
   example: mammoth view export bigquery 123 123 --input '{"selected_profile": {}, "selected_identity": {}, "table": "exports"}'
 - `mammoth view export create` [external_effect/yes_always] -> mammoth.api.exports.ExportsAPI.create
-  example: mammoth view export create 123 --input '{"export_spec": {"DATAVIEW_ID": 1, "handler_type": "postgres", "trigger_type": "none", "target_properties": {"file": "./sales.csv", "file_type": "./sales.csv", "include_hidden": true, "is_format_set": true, "use_format": true}, "additional_properties": {}, "run_immediately": true}}'
+  example: mammoth view export create 123 --input '{"export_spec": {"DATAVIEW_ID": 1, "handler_type": "postgres", "trigger_type": "none", "run_immediately": true}}'
 - `mammoth view export csv` [benign_mutation/none] -> mammoth.api.exports.ExportsAPI.to_csv
   example: mammoth view export csv 123
 - `mammoth view export dataset` [benign_mutation/none] -> mammoth.view.ViewExport.to_dataset

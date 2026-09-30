@@ -1,6 +1,6 @@
 """Independent exact-wire checks for the release-only context extract route."""
 
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from pydantic import ValidationError
@@ -9,10 +9,10 @@ from mammoth.api.dashboards import DashboardsAPI
 from mammoth.models.dashboards import ContextExtractSpec
 
 
-def test_context_extract_posts_literal_release_route_and_body() -> None:
+async def test_context_extract_posts_literal_release_route_and_body() -> None:
     client = MagicMock()
-    client._request_json.return_value = {"suggestions": {"tone": "concise"}}
-    result = DashboardsAPI(client).extract_context(
+    client._request_json = AsyncMock(return_value={"suggestions": {"tone": "concise"}})
+    result = await DashboardsAPI(client).extract_context(
         ContextExtractSpec.model_validate(
             {"params": {"name": "context.txt", "size": 12, "type": "text/plain", "text": "Revenue"}}
         )
@@ -41,6 +41,6 @@ def test_context_extract_posts_literal_release_route_and_body() -> None:
 
 
 @pytest.mark.parametrize("size", [True, 1.5])
-def test_context_extract_rejects_non_integer_size(size: object) -> None:
+async def test_context_extract_rejects_non_integer_size(size: object) -> None:
     with pytest.raises(ValidationError):
         ContextExtractSpec.model_validate({"params": {"name": "x", "size": size}})

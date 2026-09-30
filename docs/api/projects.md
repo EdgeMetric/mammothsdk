@@ -6,17 +6,17 @@ The `ProjectsAPI` manages projects within a workspace. Projects are siloed areas
 
 ```python
 # List projects (one page; the route caps limit at 100)
-projects = client.projects.list()
-page_two = client.projects.list(offset=100)
+projects = await client.projects.list()
+page_two = await client.projects.list(offset=100)
 
 # Every project across pages
-all_projects = client.projects.list_all()
+all_projects = await client.projects.list_all()
 
 # Get a specific project
-project = client.projects.get(project_id=10)
+project = await client.projects.get(project_id=10)
 
 # Create a new project
-client.projects.create(name="My Project", properties={"description": "..."})
+await client.projects.create(name="My Project", properties={"description": "..."})
 ```
 
 ---

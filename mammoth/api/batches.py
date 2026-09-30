@@ -27,8 +27,8 @@ class BatchesAPI:
 
     Access via client.batches::
 
-        batches = client.batches.list(dataset_id=123)
-        batch = client.batches.get(dataset_id=123, batch_id=1)
+        batches = await client.batches.list(dataset_id=123)
+        batch = await client.batches.get(dataset_id=123, batch_id=1)
     """
 
     def __init__(self, client: MammothClient) -> None:
@@ -45,7 +45,7 @@ class BatchesAPI:
             return proj
         raise ValueError("project_id must be set on the client using client.set_project_id()")
 
-    def list(
+    async def list(
         self,
         dataset_id: int,
         project_id: int | None = None,
@@ -70,13 +70,13 @@ class BatchesAPI:
             params["limit"] = limit
         if offset != 0:
             params["offset"] = offset
-        return self._client._request_json(
+        return await self._client._request_json(
             "GET",
             f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/batches",
             params=params or None,
         )
 
-    def get(
+    async def get(
         self,
         dataset_id: int,
         batch_id: int,
@@ -94,12 +94,12 @@ class BatchesAPI:
         """
         ws = self._ws()
         proj = self._proj(project_id)
-        return self._client._request_json(
+        return await self._client._request_json(
             "GET",
             f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/batches/{batch_id}",
         )
 
-    def create(
+    async def create(
         self,
         dataset_id: int,
         source_id: int,
@@ -185,13 +185,13 @@ class BatchesAPI:
             body["validate_only"] = is_validation_required
         if change_map is not None:
             body["change_map"] = change_map
-        return self._client._request_json(
+        return await self._client._request_json(
             "POST",
             f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/batches",
             json=body,
         )
 
-    def create_spec(
+    async def create_spec(
         self,
         dataset_id: int,
         spec: BatchesPostRequest | dict[str, Any],
@@ -238,13 +238,13 @@ class BatchesAPI:
             raise MammothValidationError("`mapping` must be omitted when `file_id` is provided.")
         ws = self._ws()
         proj = self._proj(project_id)
-        return self._client._request_json(
+        return await self._client._request_json(
             "POST",
             f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/batches",
             json=typed.model_dump(mode="json", exclude_unset=True),
         )
 
-    def update(
+    async def update(
         self,
         dataset_id: int,
         patch: _list[dict[str, Any]],
@@ -279,13 +279,13 @@ class BatchesAPI:
                 raise MammothValidationError(ERR_BATCH_PATCH_OP.format(op.get("op")))
         ws = self._ws()
         proj = self._proj(project_id)
-        return self._client._request_json(
+        return await self._client._request_json(
             "PATCH",
             f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/batches",
             json={"patch": patch},
         )
 
-    def delete(
+    async def delete(
         self,
         dataset_id: int,
         batch_id: int,
@@ -303,12 +303,12 @@ class BatchesAPI:
         """
         ws = self._ws()
         proj = self._proj(project_id)
-        return self._client._request_json(
+        return await self._client._request_json(
             "DELETE",
             f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/batches/{batch_id}",
         )
 
-    def bulk_delete(
+    async def bulk_delete(
         self,
         dataset_id: int,
         ids: _list[int] | str | None = None,
@@ -330,7 +330,7 @@ class BatchesAPI:
         params: dict[str, Any] = {}
         if ids is not None:
             params["ids"] = ",".join(str(i) for i in ids) if isinstance(ids, _list) else ids
-        return self._client._request_json(
+        return await self._client._request_json(
             "DELETE",
             f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/batches",
             params=params or None,

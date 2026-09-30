@@ -18,12 +18,12 @@ class SnippetsAPI:
 
     Access via ``client.snippets``::
 
-        snippets = client.snippets.list()
-        snippet = client.snippets.create(
+        snippets = await client.snippets.list()
+        snippet = await client.snippets.create(
             name="my_snippet", code="SELECT * FROM table", language="sql", project_id=1,
         )
-        client.snippets.rerun(snippet["id"])
-        client.snippets.delete(snippet["id"])
+        await client.snippets.rerun(snippet["id"])
+        await client.snippets.delete(snippet["id"])
     """
 
     def __init__(self, client: MammothClient) -> None:
@@ -42,7 +42,7 @@ class SnippetsAPI:
         if project_id is not None and project_id <= 0:
             raise MammothValidationError(ERR_PROJECT_ID_POSITIVE.format(project_id))
 
-    def list(
+    async def list(
         self,
         limit: int | None = None,
         offset: int | None = None,
@@ -78,11 +78,11 @@ class SnippetsAPI:
             params["sort"] = sort
         if project_id is not None:
             params["project_id"] = project_id
-        return self._client._request_json(
+        return await self._client._request_json(
             "GET", f"/workspaces/{self._ws()}/snippets", params=params or None
         )
 
-    def create(
+    async def create(
         self,
         name: str,
         code: str,
@@ -122,9 +122,11 @@ class SnippetsAPI:
             body["group_id"] = group_id
         if project_id is not None:
             body["project_id"] = project_id
-        return self._client._request_json("POST", f"/workspaces/{self._ws()}/snippets", json=body)
+        return await self._client._request_json(
+            "POST", f"/workspaces/{self._ws()}/snippets", json=body
+        )
 
-    def get(self, snippet_id: int) -> dict[str, Any]:
+    async def get(self, snippet_id: int) -> dict[str, Any]:
         """Get snippet details.
 
         Args:
@@ -137,9 +139,11 @@ class SnippetsAPI:
             MammothValidationError: If *snippet_id* <= 0.
         """
         self._check_snippet_id(snippet_id)
-        return self._client._request_json("GET", f"/workspaces/{self._ws()}/snippets/{snippet_id}")
+        return await self._client._request_json(
+            "GET", f"/workspaces/{self._ws()}/snippets/{snippet_id}"
+        )
 
-    def update(
+    async def update(
         self,
         snippet_id: int,
         name: str | None = None,
@@ -176,11 +180,11 @@ class SnippetsAPI:
             body["description"] = description
         if group_id is not None:
             body["group_id"] = group_id
-        return self._client._request_json(
+        return await self._client._request_json(
             "PATCH", f"/workspaces/{self._ws()}/snippets/{snippet_id}", json=body
         )
 
-    def delete(self, snippet_id: int) -> dict[str, Any]:
+    async def delete(self, snippet_id: int) -> dict[str, Any]:
         """Delete a snippet.
 
         Args:
@@ -193,11 +197,11 @@ class SnippetsAPI:
             MammothValidationError: If *snippet_id* <= 0.
         """
         self._check_snippet_id(snippet_id)
-        return self._client._request_json(
+        return await self._client._request_json(
             "DELETE", f"/workspaces/{self._ws()}/snippets/{snippet_id}"
         )
 
-    def dependencies(self, snippet_id: int) -> dict[str, Any]:
+    async def dependencies(self, snippet_id: int) -> dict[str, Any]:
         """Get objects that depend on a snippet.
 
         Args:
@@ -210,11 +214,11 @@ class SnippetsAPI:
             MammothValidationError: If *snippet_id* <= 0.
         """
         self._check_snippet_id(snippet_id)
-        return self._client._request_json(
+        return await self._client._request_json(
             "GET", f"/workspaces/{self._ws()}/snippets/{snippet_id}/dependencies"
         )
 
-    def duplicate(self, snippet_id: int) -> dict[str, Any]:
+    async def duplicate(self, snippet_id: int) -> dict[str, Any]:
         """Duplicate a snippet.
 
         Args:
@@ -227,11 +231,11 @@ class SnippetsAPI:
             MammothValidationError: If *snippet_id* <= 0.
         """
         self._check_snippet_id(snippet_id)
-        return self._client._request_json(
+        return await self._client._request_json(
             "POST", f"/workspaces/{self._ws()}/snippets/{snippet_id}/duplicate"
         )
 
-    def rerun(self, snippet_id: int) -> dict[str, Any]:
+    async def rerun(self, snippet_id: int) -> dict[str, Any]:
         """Rerun a snippet.
 
         Args:
@@ -244,6 +248,6 @@ class SnippetsAPI:
             MammothValidationError: If *snippet_id* <= 0.
         """
         self._check_snippet_id(snippet_id)
-        return self._client._request_json(
+        return await self._client._request_json(
             "POST", f"/workspaces/{self._ws()}/snippets/{snippet_id}/rerun"
         )

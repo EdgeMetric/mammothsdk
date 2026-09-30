@@ -57,7 +57,7 @@ client = MammothClient(..., job_timeout=300)  # 5 minutes for jobs
 Note that CSV exports have their own timeout parameter:
 
 ```python
-view.export.to_csv("output.csv", timeout=600)  # 10 minutes
+await view.export.to_csv("output.csv", timeout=600)  # 10 minutes
 ```
 
 ## No automatic retries
@@ -65,19 +65,22 @@ view.export.to_csv("output.csv", timeout=600)  # 10 minutes
 The SDK does not implement retries. If an API call fails due to a transient error, the exception is raised immediately. Implement retry logic at the application level if needed:
 
 ```python
-import time
+import asyncio
 from mammoth import MammothAPIError
 
-def with_retry(fn, max_retries=3, backoff=2):
+async def with_retry(fn, max_retries=3, backoff=2):
+    """Await ``fn()`` — a function returning a coroutine — retrying server errors."""
     for attempt in range(max_retries):
         try:
-            return fn()
+            return await fn()
         except MammothAPIError as e:
             if e.status_code and 400 <= e.status_code < 500:
                 raise  # Do not retry client errors
             if attempt == max_retries - 1:
                 raise
-            time.sleep(backoff ** attempt)
+            await asyncio.sleep(backoff ** attempt)
+
+view = await with_retry(lambda: client.views.get(1039))
 ```
 
 ## Environment-based configuration

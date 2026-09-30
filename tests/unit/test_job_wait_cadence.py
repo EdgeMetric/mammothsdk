@@ -62,9 +62,9 @@ def test_poll_delay_grows_and_is_capped() -> None:
     assert gaps[-1] == 2
 
 
-def test_fast_job_is_not_held_for_a_fixed_two_second_poll(client: MammothClient) -> None:
+async def test_fast_job_is_not_held_for_a_fixed_two_second_poll(client: MammothClient) -> None:
     started = time.monotonic()
-    job = client.jobs.wait_for_job(7, timeout=10)
+    job = await client.jobs.wait_for_job(7, timeout=10)
     elapsed = time.monotonic() - started
 
     assert job["status"] == "success"

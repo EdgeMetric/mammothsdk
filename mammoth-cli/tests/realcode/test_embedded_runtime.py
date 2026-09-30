@@ -35,7 +35,13 @@ _LOGIN = ExplicitLogin(
 
 def _bind(monkeypatch: pytest.MonkeyPatch, real_service: ServiceFactory) -> Any:
     service, api = real_service()
-    monkeypatch.setattr(factory, "build_service", lambda *a, **k: service)
+    # A fresh service per build, as in production: each command closes its own.
+    unused = iter([service])
+    monkeypatch.setattr(
+        factory,
+        "build_service",
+        lambda *a, **k: next(unused, None) or real_service(api=api)[0],
+    )
     return api
 
 

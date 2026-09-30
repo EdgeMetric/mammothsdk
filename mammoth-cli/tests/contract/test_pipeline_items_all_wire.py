@@ -58,7 +58,6 @@ def test_items_all_follows_bounded_offsets_on_exact_parent(
         {"limit": ["1"], "offset": ["1"]},
     ]
     assert all(
-        request.path
-        == "/api/v2/workspaces/4/projects/3/datasets/731/dataviews/278/pipeline/items"
+        request.path == "/api/v2/workspaces/4/projects/3/datasets/731/dataviews/278/pipeline/items"
         for request in api.requests
     )

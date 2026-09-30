@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from typing import Any, NamedTuple
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
@@ -86,22 +86,22 @@ SAMPLE_DATASET_ID = 500
 @pytest.fixture
 def mock_client() -> MammothClient:
     """MammothClient with a mocked session (no real HTTP calls)."""
-    with patch("mammoth.client.requests.Session"):
+    with patch("mammoth.client.httpx.AsyncClient"):
         client = MammothClient(
             api_key="test-key",
             api_secret="test-secret",
             workspace_id=1,
         )
     client.project_id = 100
-    client._request = MagicMock(return_value={})
-    client.jobs = MagicMock()
-    client.jobs.wait_for_job = MagicMock(return_value={"status": "SUCCESS"})
-    client.pipeline = MagicMock()
-    client.pipeline.add_task = MagicMock(return_value={"id": 999})
-    client.pipeline.get_pipeline = MagicMock(return_value={"tasks": []})
-    client.pipeline.draft_mode = MagicMock(return_value={"state": "ok"})
-    client.pipeline.edit_pipeline = MagicMock(return_value={"state": "ready"})
-    client.pipeline.wait_for_pipeline = MagicMock(return_value={"state": "ready"})
+    client._request = AsyncMock(return_value={})
+    client.jobs = AsyncMock()
+    client.jobs.wait_for_job = AsyncMock(return_value={"status": "SUCCESS"})
+    client.pipeline = AsyncMock()
+    client.pipeline.add_task = AsyncMock(return_value={"id": 999})
+    client.pipeline.get_pipeline = AsyncMock(return_value={"tasks": []})
+    client.pipeline.draft_mode = AsyncMock(return_value={"state": "ok"})
+    client.pipeline.edit_pipeline = AsyncMock(return_value={"state": "ready"})
+    client.pipeline.wait_for_pipeline = AsyncMock(return_value={"state": "ready"})
     return client
 
 
@@ -113,7 +113,7 @@ def mock_view(mock_client: MammothClient) -> View:
     # Mock _add_task to capture payloads without HTTP calls
     captured_payloads: list[dict[str, Any]] = []
 
-    def fake_add_task(params: dict[str, Any]) -> dict[str, Any]:
+    async def fake_add_task(params: dict[str, Any]) -> dict[str, Any]:
         captured_payloads.append(params)
         return {"id": len(captured_payloads), "status": "SUCCESS"}
 
@@ -125,7 +125,7 @@ def mock_view(mock_client: MammothClient) -> View:
     # target_properties + condition; returns a job-shaped success dict.
     captured_exports: list[CapturedExport] = []
 
-    def fake_run_export(
+    async def fake_run_export(
         target_properties: dict[str, Any],
         timeout: int | None = None,
         condition: Condition | CompoundCondition | NotCondition | None = None,

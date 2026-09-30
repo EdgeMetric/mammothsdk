@@ -57,7 +57,9 @@ def client() -> Iterator[MammothClient]:
     server.shutdown()
 
 
-def test_wait_polls_through_missing_and_transient_states(client: MammothClient) -> None:
-    pipeline = client.pipeline.wait_for_pipeline(7, dataset_id=9, timeout=20, poll_interval=0.05)
+async def test_wait_polls_through_missing_and_transient_states(client: MammothClient) -> None:
+    pipeline = await client.pipeline.wait_for_pipeline(
+        7, dataset_id=9, timeout=20, poll_interval=0.05
+    )
     assert pipeline["state"] == "READY"
     assert _MidRunHandler.reads == len(_BODIES)

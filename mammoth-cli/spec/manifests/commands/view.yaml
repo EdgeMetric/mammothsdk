@@ -2174,9 +2174,7 @@ commands:
   secret_fields: []
   human_example: mammoth view export create DATAVIEW_ID --help
   agent_example: 'mammoth view export create 123 --input ''{"export_spec": {"DATAVIEW_ID": 1, "handler_type":
-    "postgres", "trigger_type": "none", "target_properties": {"file": "./sales.csv", "file_type": "./sales.csv",
-    "include_hidden": true, "is_format_set": true, "use_format": true}, "additional_properties": {}, "run_immediately":
-    true}}'''
+    "postgres", "trigger_type": "none", "run_immediately": true}}'''
   unit_tests:
   - UT-VIEW-EXPORT-CREATE
   contract_tests:

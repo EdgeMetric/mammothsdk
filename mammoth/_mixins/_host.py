@@ -4,7 +4,7 @@ The ops mixins (``ColumnOpsMixin``, ``FilterOpsMixin``, ...) are never used on
 their own — they are composed into :class:`mammoth.view.View`, which supplies
 the column metadata and task-submission plumbing they call. This Protocol
 declares that surface so static type checkers can resolve ``self.columns``,
-``self._add_task(...)`` and friends inside the mixins.
+``await self._add_task(...)`` and friends inside the mixins.
 
 It has NO runtime effect: each mixin inherits it only under ``TYPE_CHECKING``
 (``else: ViewHost = object``), so at runtime the base is plain ``object`` and
@@ -30,7 +30,7 @@ class ViewHost(Protocol):
     column_types: dict[str, str]
     _internal_names: list[str]
 
-    def _add_task(self, task_spec: dict[str, Any]) -> dict[str, Any]: ...
+    async def _add_task(self, task_spec: dict[str, Any]) -> dict[str, Any]: ...
 
     def _next_internal_name(self) -> str: ...
 
@@ -40,13 +40,13 @@ class ViewHost(Protocol):
         self, condition: Condition | CompoundCondition | NotCondition | dict[str, Any] | None
     ) -> dict[str, Any] | None: ...
 
-    def _run_internal_dataset_export(
+    async def _run_internal_dataset_export(
         self,
         target_properties: dict[str, Any],
         timeout: int | None = None,
         condition: Condition | CompoundCondition | NotCondition | None = None,
     ) -> int: ...
 
-    def list_tasks(self) -> list[dict[str, Any]]: ...
+    async def list_tasks(self) -> list[dict[str, Any]]: ...
 
-    def refresh(self) -> View: ...
+    async def refresh(self) -> View: ...

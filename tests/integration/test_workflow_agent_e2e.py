@@ -25,10 +25,11 @@ from __future__ import annotations
 
 import contextlib
 import os
-from collections.abc import Iterator
+from collections.abc import AsyncIterator
 from pathlib import Path
 
 import pytest
+import pytest_asyncio
 
 from mammoth import MammothClient
 from mammoth.condition import Condition
@@ -52,10 +53,13 @@ _REQUIRED_ENV = (
 
 _missing = [v for v in _REQUIRED_ENV if not os.environ.get(v)]
 
-pytestmark = pytest.mark.skipif(
-    bool(_missing),
-    reason=f"Missing env vars: {', '.join(_missing)}",
-)
+pytestmark = [
+    pytest.mark.skipif(
+        bool(_missing),
+        reason=f"Missing env vars: {', '.join(_missing)}",
+    ),
+    pytest.mark.asyncio(loop_scope="session"),
+]
 
 # ── Session-scoped client ─────────────────────────────────────────────────────
 
@@ -79,8 +83,8 @@ def client() -> MammothClient:
     return c
 
 
-@pytest.fixture(scope="module")
-def dataset_id(client: MammothClient) -> Iterator[int]:
+@pytest_asyncio.fixture(scope="module", loop_scope="session")
+async def dataset_id(client: MammothClient) -> AsyncIterator[int]:
     """Provide a dataset with a hydrated view to run e2e transforms against.
 
     Honors an explicit ``MAMMOTH_DATASET_ID`` when set; otherwise uploads a
@@ -93,27 +97,27 @@ def dataset_id(client: MammothClient) -> Iterator[int]:
         yield int(explicit)
         return
     csv_path = Path(__file__).resolve().parent.parent.parent / "employee.csv"
-    ds_id = client.files.upload(str(csv_path))
+    ds_id = await client.files.upload(str(csv_path))
     assert isinstance(ds_id, int), f"upload did not return a single dataset id: {ds_id!r}"
     try:
         yield ds_id
     finally:
         with contextlib.suppress(Exception):
-            client.datasets.delete(ds_id)
+            await client.datasets.delete(ds_id)
 
 
-def _task_ids(view) -> set[int]:
+async def _task_ids(view) -> set[int]:
     """Return the set of pipeline task ids currently on a view."""
     ids: set[int] = set()
-    for t in view.list_tasks():
+    for t in await view.list_tasks():
         tid = t.get("id") or t.get("task_id")
         if tid is not None:
             ids.add(int(tid))
     return ids
 
 
-@pytest.fixture
-def view(client: MammothClient, dataset_id: int):
+@pytest_asyncio.fixture(loop_scope="session")
+async def view(client: MammothClient, dataset_id: int):
     """Yield an EXISTING ready view and restore its pipeline in teardown.
 
     Applying a transform mutates a real view, so we snapshot the task ids
@@ -125,24 +129,24 @@ def view(client: MammothClient, dataset_id: int):
     """
     explicit = os.environ.get("MAMMOTH_VIEW_ID")
     if explicit:
-        v = client.views.get(int(explicit))
+        v = await client.views.get(int(explicit))
     else:
-        candidates = [c for c in client.views.list(dataset_id=dataset_id) if c.display_names]
+        candidates = [c for c in await client.views.list(dataset_id=dataset_id) if c.display_names]
         assert candidates, f"No view with columns found on dataset {dataset_id}"
         v = candidates[0]
-    before = _task_ids(v)
+    before = await _task_ids(v)
     yield v
     with contextlib.suppress(Exception):
-        v.refresh()
-        for tid in _task_ids(v) - before:
+        await v.refresh()
+        for tid in await _task_ids(v) - before:
             with contextlib.suppress(Exception):
-                v.delete_task(tid)
+                await v.delete_task(tid)
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 
-def _first_text_column(view) -> str:
+async def _first_text_column(view) -> str:
     """Return the display name of the first TEXT-type column in the view."""
     for name, col_type in view.column_types.items():
         if col_type.upper() in ("TEXT", "STRING"):
@@ -163,76 +167,76 @@ def _first_text_column(view) -> str:
 class TestWorkflowAgentE2E:
     """Representative transforms exercised end-to-end against the DEV backend."""
 
-    def test_convert_type_to_text(self, view):
+    async def test_convert_type_to_text(self, view):
         """convert_type: cast first column → TEXT.
 
         Verifies the backend accepts a CONVERT task built by the SDK's pure
         build_convert_params path.
         """
         col = view.display_names[0]
-        result = view.convert_type([ConversionSpec(column=col, to=ColumnType.TEXT)])
+        result = await view.convert_type([ConversionSpec(column=col, to=ColumnType.TEXT)])
         assert result is not None
 
-    def test_text_transform_trim_upper(self, view):
+    async def test_text_transform_trim_upper(self, view):
         """text_transform: trim + UPPER on first TEXT column.
 
         Verifies the backend accepts a TEXT_TRANSFORM task with both TRIM and
         CASE set — exercises the combined optional-arg path.
         """
-        col = _first_text_column(view)
-        result = view.text_transform(columns=[col], case=TextCase.UPPER, trim=True)
+        col = await _first_text_column(view)
+        result = await view.text_transform(columns=[col], case=TextCase.UPPER, trim=True)
         assert result is not None
 
-    def test_discard_duplicates(self, view):
+    async def test_discard_duplicates(self, view):
         """discard_duplicates: no ignore_columns → consider all columns.
 
         Verifies the backend accepts DISCARD_DUPLICATES: True with an empty
         IGNORE_COLUMNS list.
         """
-        result = view.discard_duplicates()
+        result = await view.discard_duplicates()
         assert result is not None
 
-    def test_filter_rows_show(self, view):
+    async def test_filter_rows_show(self, view):
         """filter_rows: keep rows matching a simple condition.
 
         Builds a Condition against the first column (type-agnostic EQ check)
         and verifies the SELECT task is accepted.
         """
-        col = _first_text_column(view)
+        col = await _first_text_column(view)
         cond = Condition(col, Operator.EQ, "")
-        result = view.filter_rows(cond, filter_type=FilterType.SHOW)
+        result = await view.filter_rows(cond, filter_type=FilterType.SHOW)
         assert result is not None
 
-    def test_filter_rows_remove(self, view):
+    async def test_filter_rows_remove(self, view):
         """filter_rows REMOVE: discard matching rows (REMOVE variant)."""
-        col = _first_text_column(view)
+        col = await _first_text_column(view)
         cond = Condition(col, Operator.EQ, "")
-        result = view.filter_rows(cond, filter_type=FilterType.REMOVE)
+        result = await view.filter_rows(cond, filter_type=FilterType.REMOVE)
         assert result is not None
 
-    def test_add_column(self, view):
+    async def test_add_column(self, view):
         """add_column: create a new TEXT column with a fresh internal name."""
-        result = view.add_column(name="e2e_new_col", column_type=ColumnType.TEXT)
+        result = await view.add_column(name="e2e_new_col", column_type=ColumnType.TEXT)
         assert result is not None
 
-    def test_text_transform_trim_only(self, view):
+    async def test_text_transform_trim_only(self, view):
         """text_transform: trim only (no case change) — exercises trim=True path."""
-        col = _first_text_column(view)
-        result = view.text_transform(columns=[col], trim=True)
+        col = await _first_text_column(view)
+        result = await view.text_transform(columns=[col], trim=True)
         assert result is not None
 
-    def test_unnest(self, view):
+    async def test_unnest(self, view):
         """unnest: unpivot columns to rows — LABEL and VALUE dicts include INTERNAL_NAME.
 
         Verifies that the fixed build_unnest_params path (D1) produces a payload
         the backend accepts — previously KeyError'd on missing INTERNAL_NAME
         (validation.py:654,665).
         """
-        col = _first_text_column(view)
-        result = view.unnest([col])
+        col = await _first_text_column(view)
+        result = await view.unnest([col])
         assert result is not None
 
-    def test_json_extract_keys(self, view):
+    async def test_json_extract_keys(self, view):
         """json_extract: extract keys from a JSON/TEXT column.
 
         Verifies that the fixed build_json_extract_params path (D2) produces
@@ -240,11 +244,11 @@ class TestWorkflowAgentE2E:
         INTERNAL_NAME (validation.py:809) and TYPE in {NUMERIC,TEXT}
         (validation.py:811-812).
         """
-        col = _first_text_column(view)
-        result = view.json_extract(col, json_type=JsonType.OBJECT, keys=["key1"])
+        col = await _first_text_column(view)
+        result = await view.json_extract(col, json_type=JsonType.OBJECT, keys=["key1"])
         assert result is not None
 
-    def test_fill_value_emits_set_task(self, view):
+    async def test_fill_value_emits_set_task(self, view):
         """fill_value: fill empty cells with a constant → SET task with IS_EMPTY condition.
 
         The FILL task silently drops literal WITH values (data corruption).
@@ -254,15 +258,15 @@ class TestWorkflowAgentE2E:
         """
         from mammoth._pure.builders import build_fill_value_params
 
-        col = _first_text_column(view)
+        col = await _first_text_column(view)
         task_spec = build_fill_value_params(col, "N/A", view.columns, view._internal_names)
         # Must be a SET task, not a FILL
         assert "SET" in task_spec
         assert task_spec["VERSION"] == 2
-        result = view._add_task(task_spec)
+        result = await view._add_task(task_spec)
         assert result is not None
 
-    def test_convert_to_date_with_format(self, view):
+    async def test_convert_to_date_with_format(self, view):
         """convert_type to DATE with FORMAT dict — exercises the D4 fix.
 
         build_date_normalize_params now emits FORMAT as {"date_format": <fmt>}
@@ -272,20 +276,20 @@ class TestWorkflowAgentE2E:
         """
         from mammoth._pure.builders import build_date_normalize_params
 
-        col = _first_text_column(view)
+        col = await _first_text_column(view)
         task_spec = build_date_normalize_params(
             col, view.columns, view._internal_names, formats=["%m/%d/%Y"]
         )
         assert task_spec["CONVERT"][0]["FORMAT"] == {"date_format": "%m/%d/%Y"}
-        result = view._add_task(task_spec)
+        result = await view._add_task(task_spec)
         assert result is not None
 
     # ── Cleanup verification ───────────────────────────────────────────────
 
-    def test_tasks_are_recorded(self, view):
+    async def test_tasks_are_recorded(self, view):
         """After applying at least one transform, list_tasks returns a non-empty list."""
         col = view.display_names[0]
-        view.convert_type([ConversionSpec(column=col, to=ColumnType.TEXT)])
-        tasks = view.list_tasks()
+        await view.convert_type([ConversionSpec(column=col, to=ColumnType.TEXT)])
+        tasks = await view.list_tasks()
         assert isinstance(tasks, list)
         assert len(tasks) >= 1

@@ -14,12 +14,11 @@ import mammoth
 from mammoth.api.files import FilesAPI
 from mammoth.client import ViewsResource
 
-
 _ROOT = Path(__file__).resolve().parents[2]
 _SKILL = _ROOT / ".claude" / "skills" / "mammoth-sdk"
 
 
-def test_skill_version_matches_sdk_distribution() -> None:
+async def test_skill_version_matches_sdk_distribution() -> None:
     skill = (_SKILL / "SKILL.md").read_text(encoding="utf-8")
     architecture = (_SKILL / "references" / "architecture.md").read_text(encoding="utf-8")
 
@@ -27,7 +26,7 @@ def test_skill_version_matches_sdk_distribution() -> None:
     assert f"v{mammoth.__version__}" in architecture
 
 
-def test_skill_views_list_documents_required_parent() -> None:
+async def test_skill_views_list_documents_required_parent() -> None:
     parameter = inspect.signature(ViewsResource.list).parameters["dataset_id"]
     assert parameter.default is inspect.Parameter.empty
 
@@ -40,7 +39,7 @@ def test_skill_views_list_documents_required_parent() -> None:
     assert "views.list() no longer" not in api_reference
 
 
-def test_skill_upload_recipe_matches_files_api_signature() -> None:
+async def test_skill_upload_recipe_matches_files_api_signature() -> None:
     parameters = inspect.signature(FilesAPI.upload).parameters
     assert "dataset_name" not in parameters
     assert "folder_resource_id" in parameters

@@ -23,10 +23,10 @@ class DerivativesAPI:
 
     Access via ``client.derivatives``::
 
-        derivative = client.derivatives.create(
+        derivative = await client.derivatives.create(
             dataset_id=1, dataview_id=2, body={"type": "summary"}
         )
-        data = client.derivatives.data(
+        data = await client.derivatives.data(
             dataset_id=1, dataview_id=2, derivative_id=derivative["id"], body={}
         )
     """
@@ -61,7 +61,7 @@ class DerivativesAPI:
             f"/dataviews/{dataview_id}/derivatives"
         )
 
-    def list(
+    async def list(
         self,
         dataset_id: int,
         dataview_id: int,
@@ -82,9 +82,11 @@ class DerivativesAPI:
                 *project_id* is not a positive integer.
         """
         self._check_ids(dataset_id, dataview_id, project_id)
-        return self._client._request_json("GET", self._url(dataset_id, dataview_id, project_id))
+        return await self._client._request_json(
+            "GET", self._url(dataset_id, dataview_id, project_id)
+        )
 
-    def create(
+    async def create(
         self,
         dataset_id: int,
         dataview_id: int,
@@ -107,13 +109,13 @@ class DerivativesAPI:
                 *project_id* is not a positive integer.
         """
         self._check_ids(dataset_id, dataview_id, project_id)
-        return self._client._request_json(
+        return await self._client._request_json(
             "POST",
             self._url(dataset_id, dataview_id, project_id),
             json=body,
         )
 
-    def data(
+    async def data(
         self,
         dataset_id: int,
         dataview_id: int,
@@ -140,13 +142,13 @@ class DerivativesAPI:
         self._check_ids(dataset_id, dataview_id, project_id)
         if derivative_id <= 0:
             raise MammothValidationError(ERR_DERIVATIVE_ID_POSITIVE.format(derivative_id))
-        return self._client._request_json(
+        return await self._client._request_json(
             "POST",
             f"{self._url(dataset_id, dataview_id, project_id)}/{derivative_id}/data",
             json=body,
         )
 
-    def update(
+    async def update(
         self,
         dataset_id: int,
         dataview_id: int,
@@ -173,13 +175,13 @@ class DerivativesAPI:
         self._check_ids(dataset_id, dataview_id, project_id)
         if derivative_id <= 0:
             raise MammothValidationError(ERR_DERIVATIVE_ID_POSITIVE.format(derivative_id))
-        return self._client._request_json(
+        return await self._client._request_json(
             "PATCH",
             f"{self._url(dataset_id, dataview_id, project_id)}/{derivative_id}",
             json=body,
         )
 
-    def delete(
+    async def delete(
         self,
         dataset_id: int,
         dataview_id: int,
@@ -204,7 +206,7 @@ class DerivativesAPI:
         self._check_ids(dataset_id, dataview_id, project_id)
         if derivative_id <= 0:
             raise MammothValidationError(ERR_DERIVATIVE_ID_POSITIVE.format(derivative_id))
-        return self._client._request_json(
+        return await self._client._request_json(
             "DELETE",
             f"{self._url(dataset_id, dataview_id, project_id)}/{derivative_id}",
         )

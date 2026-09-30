@@ -42,9 +42,9 @@ class TrashAPI:
 
     Access via ``client.trash``::
 
-        trashed = client.trash.list()
-        client.trash.add(items=[{"id": 42, "type": "dataview"}])
-        client.trash.restore(items=[{"id": 42, "type": "dataview"}])
+        trashed = await client.trash.list()
+        await client.trash.add(items=[{"id": 42, "type": "dataview"}])
+        await client.trash.restore(items=[{"id": 42, "type": "dataview"}])
     """
 
     def __init__(self, client: MammothClient) -> None:
@@ -61,7 +61,7 @@ class TrashAPI:
             return proj
         raise ValueError("project_id must be set on the client using client.set_project_id()")
 
-    def list(
+    async def list(
         self,
         project_id: int | None = None,
         type: str | None = None,
@@ -125,13 +125,15 @@ class TrashAPI:
             params["folder_path"] = folder_path
         if folder_root is not None:
             params["folder_root"] = folder_root
-        return self._client._request_json(
+        return await self._client._request_json(
             "GET",
             f"/workspaces/{ws}/projects/{proj}/trash",
             params=params or None,
         )
 
-    def add(self, items: _list[dict[str, Any]], project_id: int | None = None) -> dict[str, Any]:
+    async def add(
+        self, items: _list[dict[str, Any]], project_id: int | None = None
+    ) -> dict[str, Any]:
         """Move resources to trash in bulk.
 
         Args:
@@ -150,13 +152,13 @@ class TrashAPI:
         _validate_items(items)
         ws = self._ws()
         proj = self._proj(project_id)
-        return self._client._request_json(
+        return await self._client._request_json(
             "POST",
             f"/workspaces/{ws}/projects/{proj}/trash",
             json={"items": items},
         )
 
-    def restore(
+    async def restore(
         self, items: _list[dict[str, Any]], project_id: int | None = None
     ) -> dict[str, Any]:
         """Restore resources from trash in bulk.
@@ -177,7 +179,7 @@ class TrashAPI:
         _validate_items(items)
         ws = self._ws()
         proj = self._proj(project_id)
-        return self._client._request_json(
+        return await self._client._request_json(
             "POST",
             f"/workspaces/{ws}/projects/{proj}/trash/restore",
             json={"items": items},

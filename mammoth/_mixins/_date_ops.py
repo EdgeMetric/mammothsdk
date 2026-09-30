@@ -21,7 +21,7 @@ else:
 class DateOpsMixin(ViewHost):
     """Mixin for date transformation operations on a View."""
 
-    def extract_date(
+    async def extract_date(
         self,
         column: str,
         component: DateComponent,
@@ -41,9 +41,9 @@ class DateOpsMixin(ViewHost):
 
         Example::
 
-            view.extract_date("Order Date", DateComponent.YEAR, new_column="Order Year")
+            await view.extract_date("Order Date", DateComponent.YEAR, new_column="Order Year")
         """
-        return self._add_task(
+        return await self._add_task(
             build_extract_date_params(
                 column,
                 component,
@@ -55,7 +55,7 @@ class DateOpsMixin(ViewHost):
             )
         )
 
-    def date_diff(
+    async def date_diff(
         self,
         component: DateDiffUnit,
         start: str,
@@ -77,10 +77,10 @@ class DateOpsMixin(ViewHost):
 
         Example::
 
-            view.date_diff(DateDiffUnit.DAY, start="Start Date", end="End Date",
+            await view.date_diff(DateDiffUnit.DAY, start="Start Date", end="End Date",
                            new_column="Duration")
         """
-        return self._add_task(
+        return await self._add_task(
             build_date_diff_params(
                 component,
                 start,
@@ -93,7 +93,7 @@ class DateOpsMixin(ViewHost):
             )
         )
 
-    def increment_date(
+    async def increment_date(
         self,
         column: str,
         delta: DateDelta,
@@ -123,21 +123,21 @@ class DateOpsMixin(ViewHost):
             from mammoth import DateDelta
 
             # Add 30 days
-            view.increment_date("Order Date", DateDelta(days=30),
+            await view.increment_date("Order Date", DateDelta(days=30),
                                 new_column="Due Date")
 
             # Subtract 1 year, add 6 months
-            view.increment_date("Start Date", DateDelta(years=-1, months=6),
+            await view.increment_date("Start Date", DateDelta(years=-1, months=6),
                                 new_column="Adjusted Date")
 
             # Conditional increment
-            view.increment_date(
+            await view.increment_date(
                 "Ship Date", DateDelta(days=7),
                 existing_column="Ship Date",
                 condition=Condition("Priority", Operator.EQ, "Low"),
             )
         """
-        return self._add_task(
+        return await self._add_task(
             build_increment_date_params(
                 column,
                 delta,

@@ -18,8 +18,8 @@ class ConnectorAIAPI:
 
     Access via ``client.connector_ai``::
 
-        client.connector_ai.chat(body={"message": "Connect to Postgres"})
-        sessions = client.connector_ai.session_list()
+        await client.connector_ai.chat(body={"message": "Connect to Postgres"})
+        sessions = await client.connector_ai.session_list()
     """
 
     def __init__(self, client: MammothClient) -> None:
@@ -40,7 +40,7 @@ class ConnectorAIAPI:
         if project_id is not None and project_id <= 0:
             raise MammothValidationError(ERR_PROJECT_ID_POSITIVE.format(project_id))
 
-    def chat(self, body: dict[str, Any], project_id: int | None = None) -> dict[str, Any]:
+    async def chat(self, body: dict[str, Any], project_id: int | None = None) -> dict[str, Any]:
         """Send a message to the connector AI chat assistant.
 
         Args:
@@ -56,13 +56,13 @@ class ConnectorAIAPI:
         self._check_project_id(project_id)
         ws = self._ws()
         proj = self._proj(project_id)
-        return self._client._request_json(
+        return await self._client._request_json(
             "POST",
             f"/workspaces/{ws}/projects/{proj}/ai/connector-chat",
             json=body,
         )
 
-    def history(self, connection_key: str, project_id: int | None = None) -> dict[str, Any]:
+    async def history(self, connection_key: str, project_id: int | None = None) -> dict[str, Any]:
         """Get chat history for a connection.
 
         Args:
@@ -78,13 +78,13 @@ class ConnectorAIAPI:
         self._check_project_id(project_id)
         ws = self._ws()
         proj = self._proj(project_id)
-        return self._client._request_json(
+        return await self._client._request_json(
             "GET",
             f"/workspaces/{ws}/projects/{proj}/ai/connector-chat/history",
             params={"connection_key": connection_key},
         )
 
-    def session_list(self, project_id: int | None = None) -> dict[str, Any]:
+    async def session_list(self, project_id: int | None = None) -> dict[str, Any]:
         """List connector chat sessions.
 
         Args:
@@ -100,12 +100,14 @@ class ConnectorAIAPI:
         self._check_project_id(project_id)
         ws = self._ws()
         proj = self._proj(project_id)
-        items = self._client._request_list(
+        items = await self._client._request_list(
             "GET", f"/workspaces/{ws}/projects/{proj}/ai/connector-chat/sessions"
         )
         return {"sessions": items}
 
-    def session_messages(self, session_id: int, project_id: int | None = None) -> dict[str, Any]:
+    async def session_messages(
+        self, session_id: int, project_id: int | None = None
+    ) -> dict[str, Any]:
         """Get messages for a connector chat session.
 
         Args:
@@ -124,12 +126,12 @@ class ConnectorAIAPI:
         self._check_project_id(project_id)
         ws = self._ws()
         proj = self._proj(project_id)
-        return self._client._request_json(
+        return await self._client._request_json(
             "GET",
             f"/workspaces/{ws}/projects/{proj}/ai/connector-chat/sessions/{session_id}/messages",
         )
 
-    def submit_column_selection(
+    async def submit_column_selection(
         self, body: dict[str, Any], project_id: int | None = None
     ) -> dict[str, Any]:
         """Submit a column selection back to the connector chat flow.
@@ -147,13 +149,13 @@ class ConnectorAIAPI:
         self._check_project_id(project_id)
         ws = self._ws()
         proj = self._proj(project_id)
-        return self._client._request_json(
+        return await self._client._request_json(
             "POST",
             f"/workspaces/{ws}/projects/{proj}/ai/connector-chat/column-selection",
             json=body,
         )
 
-    def submit_credentials(
+    async def submit_credentials(
         self, body: dict[str, Any], project_id: int | None = None
     ) -> dict[str, Any]:
         """Submit connector credentials back to the connector chat flow.
@@ -171,7 +173,7 @@ class ConnectorAIAPI:
         self._check_project_id(project_id)
         ws = self._ws()
         proj = self._proj(project_id)
-        return self._client._request_json(
+        return await self._client._request_json(
             "POST",
             f"/workspaces/{ws}/projects/{proj}/ai/connector-chat/credentials",
             json=body,

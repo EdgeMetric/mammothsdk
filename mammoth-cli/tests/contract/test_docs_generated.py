@@ -22,9 +22,9 @@ def test_generated_docs_match_committed() -> None:
     generator = _load_generator()
     for path, content in generator.build().items():  # type: ignore[attr-defined]
         assert path.exists(), f"missing generated doc: {path} (run scripts/gen_docs.py)"
-        assert path.read_text(encoding="utf-8") == content, (
-            f"stale generated doc: {path} — run scripts/gen_docs.py"
-        )
+        assert (
+            path.read_text(encoding="utf-8") == content
+        ), f"stale generated doc: {path} — run scripts/gen_docs.py"
 
 
 def test_generator_check_flag_is_clean() -> None:

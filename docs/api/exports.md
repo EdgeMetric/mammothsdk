@@ -9,24 +9,24 @@ The SDK provides two ways to export data:
 
 ```python
 # Download as CSV
-path = view.export.to_csv("output.csv")
+path = await view.export.to_csv("output.csv")
 
 # Export to S3
-view.export.to_s3(file_name="report.csv")
+await view.export.to_s3(file_name="report.csv")
 
 # Export to PostgreSQL
-view.export.to_postgres(
+await view.export.to_postgres(
     host="db.example.com", port=5432,
     database="analytics", table="sales",
     username="user", password="pass",
 )
 
 # Branch out to another dataset
-view.branch_out(dest_dataset_id=42)
+await view.branch_out(dest_dataset_id=42)
 
 # List and delete exports
-exports = view.export.list()
-view.export.delete(exports[0]["id"])
+exports = await view.export.list()
+await view.export.delete(exports[0]["id"])
 ```
 
 !!! note "External service exports"

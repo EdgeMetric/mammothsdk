@@ -6,10 +6,10 @@ The `FilesAPI` manages file uploads, listing, and deletion.
 
 ```python
 # Upload a CSV file
-result = client.files.upload("data.csv")
+result = await client.files.upload("data.csv")
 
 # Upload an Excel file
-result = client.files.upload("report.xlsx")
+result = await client.files.upload("report.xlsx")
 ```
 
 ---

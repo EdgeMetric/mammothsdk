@@ -22,15 +22,15 @@ client.set_project_id(10)
 
 ## Context manager
 
-The client supports Python's context manager protocol. The HTTP session is closed automatically on exit:
+The client is an async context manager (`async with`). The HTTP session is closed automatically on exit; without it, call `await client.close()`:
 
 ```python
-with MammothClient(
+async with MammothClient(
     api_token="mm_...", workspace_id=11
 ) as client:
     client.set_project_id(10)
-    view = client.views.get(1039)
-    view.export.to_csv("output.csv")
+    view = await client.views.get(1039)
+    await view.export.to_csv("output.csv")
 # Session closed automatically
 ```
 
@@ -116,7 +116,7 @@ from mammoth import MammothClient, MammothAPIError, MammothAuthError
 try:
     client = MammothClient(api_token="mm_...", workspace_id=11)
     client.set_project_id(10)
-    datasets = client.datasets.list()
+    datasets = await client.datasets.list()
 except MammothAuthError:
     print("Invalid credentials")
 except MammothAPIError as e:

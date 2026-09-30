@@ -39,7 +39,7 @@ class WebhooksAPI:
             raise ValueError("project_id must be set on the client using client.set_project_id()")
         return proj
 
-    def list(
+    async def list(
         self,
         limit: int = 50,
         offset: int = 0,
@@ -54,14 +54,14 @@ class WebhooksAPI:
             List of webhook dicts.
         """
         params: dict[str, Any] = {"limit": limit, "offset": offset}
-        response = self._client._request_json(
+        response = await self._client._request_json(
             "GET",
             f"/workspaces/{self._ws()}/projects/{self._proj()}/webhooks",
             params=params,
         )
         return response.get("webhooks", response if isinstance(response, _list) else [])
 
-    def create(
+    async def create(
         self,
         name: str = "Generic Webhook",
         mode: str | WebhookMode = "replace",
@@ -90,13 +90,13 @@ class WebhooksAPI:
         }
         if folder_resource_id is not None:
             payload["folder_resource_id"] = folder_resource_id
-        return self._client._request_json(
+        return await self._client._request_json(
             "POST",
             f"/workspaces/{self._ws()}/projects/{self._proj()}/webhooks",
             json=payload,
         )
 
-    def get(self, webhook_id: int) -> dict[str, Any]:
+    async def get(self, webhook_id: int) -> dict[str, Any]:
         """Get webhook details.
 
         Args:
@@ -105,12 +105,12 @@ class WebhooksAPI:
         Returns:
             Dict with webhook details.
         """
-        return self._client._request_json(
+        return await self._client._request_json(
             "GET",
             f"/workspaces/{self._ws()}/projects/{self._proj()}/webhooks/{webhook_id}",
         )
 
-    def update(
+    async def update(
         self,
         webhook_id: int,
         mode: str | WebhookMode | None = None,
@@ -136,13 +136,13 @@ class WebhooksAPI:
             patch.append({"op": "replace", "path": "origins", "value": origins})
         if is_secure is not None:
             patch.append({"op": "replace", "path": "is_secure", "value": is_secure})
-        return self._client._request_json(
+        return await self._client._request_json(
             "PATCH",
             f"/workspaces/{self._ws()}/projects/{self._proj()}/webhooks/{webhook_id}",
             json={"patch": patch},
         )
 
-    def delete(self, webhook_id: int) -> dict[str, Any]:
+    async def delete(self, webhook_id: int) -> dict[str, Any]:
         """Delete a webhook.
 
         Args:
@@ -151,12 +151,12 @@ class WebhooksAPI:
         Returns:
             Dict with deletion result.
         """
-        return self._client._request_json(
+        return await self._client._request_json(
             "DELETE",
             f"/workspaces/{self._ws()}/projects/{self._proj()}/webhooks/{webhook_id}",
         )
 
-    def send_data(self, webhook_uri: str, data: dict[str, Any]) -> dict[str, Any]:
+    async def send_data(self, webhook_uri: str, data: dict[str, Any]) -> dict[str, Any]:
         """Send data to a webhook via POST.
 
         Args:
@@ -166,13 +166,13 @@ class WebhooksAPI:
         Returns:
             Dict with the API response.
         """
-        return self._client._request_json(
+        return await self._client._request_json(
             "POST",
             f"/webhooks/data/{webhook_uri}",
             json=data,
         )
 
-    def send_data_get(
+    async def send_data_get(
         self,
         webhook_uri: str,
         params: dict[str, Any] | None = None,
@@ -186,7 +186,7 @@ class WebhooksAPI:
         Returns:
             Dict with the API response.
         """
-        return self._client._request_json(
+        return await self._client._request_json(
             "GET",
             f"/webhooks/data/{webhook_uri}",
             params=params,

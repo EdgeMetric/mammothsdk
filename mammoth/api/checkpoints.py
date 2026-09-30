@@ -23,10 +23,10 @@ class CheckpointsAPI:
 
     Access via ``client.checkpoints``::
 
-        checkpoint = client.checkpoints.create(
+        checkpoint = await client.checkpoints.create(
             dataset_id=1, dataview_id=2, body={"name": "Before cleanup"}
         )
-        client.checkpoints.delete(dataset_id=1, dataview_id=2, checkpoint_id=checkpoint["id"])
+        await client.checkpoints.delete(dataset_id=1, dataview_id=2, checkpoint_id=checkpoint["id"])
     """
 
     def __init__(self, client: MammothClient) -> None:
@@ -59,7 +59,7 @@ class CheckpointsAPI:
             f"/dataviews/{dataview_id}/pipeline/checkpoints"
         )
 
-    def list(
+    async def list(
         self,
         dataset_id: int,
         dataview_id: int,
@@ -97,13 +97,13 @@ class CheckpointsAPI:
             params["sequence"] = sequence
         if status is not None:
             params["status"] = status
-        return self._client._request_json(
+        return await self._client._request_json(
             "GET",
             self._url(dataset_id, dataview_id, project_id),
             params=params or None,
         )
 
-    def get(
+    async def get(
         self,
         dataset_id: int,
         dataview_id: int,
@@ -133,13 +133,13 @@ class CheckpointsAPI:
         params: dict[str, Any] = {}
         if fields is not None:
             params["fields"] = fields
-        return self._client._request_json(
+        return await self._client._request_json(
             "GET",
             f"{self._url(dataset_id, dataview_id, project_id)}/{checkpoint_id}",
             params=params or None,
         )
 
-    def create(
+    async def create(
         self,
         dataset_id: int,
         dataview_id: int,
@@ -162,13 +162,13 @@ class CheckpointsAPI:
                 *project_id* is not a positive integer.
         """
         self._check_ids(dataset_id, dataview_id, project_id)
-        return self._client._request_json(
+        return await self._client._request_json(
             "POST",
             self._url(dataset_id, dataview_id, project_id),
             json=body,
         )
 
-    def update(
+    async def update(
         self,
         dataset_id: int,
         dataview_id: int,
@@ -195,13 +195,13 @@ class CheckpointsAPI:
         self._check_ids(dataset_id, dataview_id, project_id)
         if checkpoint_id <= 0:
             raise MammothValidationError(ERR_CHECKPOINT_ID_POSITIVE.format(checkpoint_id))
-        return self._client._request_json(
+        return await self._client._request_json(
             "PATCH",
             f"{self._url(dataset_id, dataview_id, project_id)}/{checkpoint_id}",
             json=body,
         )
 
-    def delete(
+    async def delete(
         self,
         dataset_id: int,
         dataview_id: int,
@@ -226,7 +226,7 @@ class CheckpointsAPI:
         self._check_ids(dataset_id, dataview_id, project_id)
         if checkpoint_id <= 0:
             raise MammothValidationError(ERR_CHECKPOINT_ID_POSITIVE.format(checkpoint_id))
-        return self._client._request_json(
+        return await self._client._request_json(
             "DELETE",
             f"{self._url(dataset_id, dataview_id, project_id)}/{checkpoint_id}",
         )

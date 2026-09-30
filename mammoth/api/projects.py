@@ -48,7 +48,7 @@ class ProjectsAPI:
     def _ws(self) -> int:
         return self._client.workspace_id
 
-    def list(
+    async def list(
         self,
         workspace_id: int | None = None,
         limit: int = 100,
@@ -75,9 +75,9 @@ class ProjectsAPI:
         params: dict[str, Any] = {"fields": fields, "limit": limit}
         if offset:
             params["offset"] = offset
-        return self._client._request_json("GET", f"/workspaces/{ws}/projects", params=params)
+        return await self._client._request_json("GET", f"/workspaces/{ws}/projects", params=params)
 
-    def list_all(
+    async def list_all(
         self, workspace_id: int | None = None, fields: str = "id,name"
     ) -> _list[dict[str, Any]]:
         """Return every project in the workspace, following the 100-row pages.
@@ -93,7 +93,7 @@ class ProjectsAPI:
         seen: set[Any] = set()
         offset = 0
         while True:
-            page = self.list(
+            page = await self.list(
                 workspace_id=workspace_id, limit=MAX_PAGE_SIZE, offset=offset, fields=fields
             )
             batch = page.get("projects", []) if isinstance(page, dict) else []
@@ -106,7 +106,7 @@ class ProjectsAPI:
                 return projects
             offset += len(batch)
 
-    def get(
+    async def get(
         self,
         project: int | str | None = None,
         workspace_id: int | None = None,
@@ -128,7 +128,7 @@ class ProjectsAPI:
         Raises:
             ValueError: If project not found or multiple projects without specification.
         """
-        projects = self.list_all(workspace_id=workspace_id)
+        projects = await self.list_all(workspace_id=workspace_id)
 
         if not projects:
             raise ValueError("No projects found in workspace")
@@ -164,7 +164,7 @@ class ProjectsAPI:
 
         raise ValueError(f"Invalid project type: {type(project)}. Expected int, str, or None")
 
-    def create(
+    async def create(
         self,
         name: str,
         color: str | None = None,
@@ -190,9 +190,9 @@ class ProjectsAPI:
         if project_access:
             properties["project_access"] = project_access
         payload: dict[str, Any] = {"name": name, "properties": properties}
-        return self._client._request_json("POST", f"/workspaces/{ws}/projects", json=payload)
+        return await self._client._request_json("POST", f"/workspaces/{ws}/projects", json=payload)
 
-    def update(
+    async def update(
         self,
         project_id: int,
         name: str | None = None,
@@ -226,11 +226,11 @@ class ProjectsAPI:
         if not operations:
             raise MammothValidationError("Provide at least one of `name` or `color` to update.")
         payload = {"patches": operations}
-        return self._client._request_json(
+        return await self._client._request_json(
             "PATCH", f"/workspaces/{ws}/projects/{project_id}", json=payload
         )
 
-    def delete(
+    async def delete(
         self,
         project_id: int,
         workspace_id: int | None = None,
@@ -245,9 +245,9 @@ class ProjectsAPI:
             Dict with deletion result.
         """
         ws = workspace_id or self._ws()
-        return self._client._request_json("DELETE", f"/workspaces/{ws}/projects/{project_id}")
+        return await self._client._request_json("DELETE", f"/workspaces/{ws}/projects/{project_id}")
 
-    def bulk_update(
+    async def bulk_update(
         self,
         patch_data: dict[str, Any],
         workspace_id: int | None = None,
@@ -262,9 +262,11 @@ class ProjectsAPI:
             Dict with bulk update result.
         """
         ws = workspace_id or self._ws()
-        return self._client._request_json("PATCH", f"/workspaces/{ws}/projects", json=patch_data)
+        return await self._client._request_json(
+            "PATCH", f"/workspaces/{ws}/projects", json=patch_data
+        )
 
-    def bulk_delete(
+    async def bulk_delete(
         self,
         project_ids: _list[int],
         workspace_id: int | None = None,
@@ -280,11 +282,11 @@ class ProjectsAPI:
         """
         ws = workspace_id or self._ws()
         ids_str = ",".join(str(pid) for pid in project_ids)
-        return self._client._request_json(
+        return await self._client._request_json(
             "DELETE", f"/workspaces/{ws}/projects", params={"ids": ids_str}
         )
 
-    def add_users(
+    async def add_users(
         self,
         project_id: int,
         user_ids: _list[int],
@@ -322,11 +324,11 @@ class ProjectsAPI:
             users.append(entry)
         if not users:
             raise MammothValidationError("user_ids must contain at least one user id.")
-        return self._client._request_json(
+        return await self._client._request_json(
             "POST", f"/workspaces/{ws}/projects/{project_id}/users", json={"users": users}
         )
 
-    def remove_users(
+    async def remove_users(
         self,
         project_id: int,
         user_ids: _list[str],
@@ -344,11 +346,11 @@ class ProjectsAPI:
         """
         ws = workspace_id or self._ws()
         ids_str = ",".join(str(uid) for uid in user_ids)
-        return self._client._request_json(
+        return await self._client._request_json(
             "DELETE", f"/workspaces/{ws}/projects/{project_id}/users", params={"ids": ids_str}
         )
 
-    def browse(
+    async def browse(
         self,
         project_id: int,
         workspace_id: int | None = None,
@@ -392,13 +394,13 @@ class ProjectsAPI:
             params["offset"] = offset
         if limit is not None:
             params["limit"] = limit
-        return self._client._request_json(
+        return await self._client._request_json(
             "GET",
             f"/workspaces/{ws}/projects/{project_id}/browse",
             params=params or None,
         )
 
-    def checkpoint_list(
+    async def checkpoint_list(
         self,
         project_id: int,
         workspace_id: int | None = None,
@@ -439,13 +441,13 @@ class ProjectsAPI:
             params["sequence"] = sequence
         if status is not None:
             params["status"] = status
-        return self._client._request_json(
+        return await self._client._request_json(
             "GET",
             f"/workspaces/{ws}/projects/{project_id}/checkpoints",
             params=params or None,
         )
 
-    def data_check_list(
+    async def data_check_list(
         self,
         project_id: int,
         workspace_id: int | None = None,
@@ -486,13 +488,13 @@ class ProjectsAPI:
             params["sequence"] = sequence
         if status is not None:
             params["status"] = status
-        return self._client._request_json(
+        return await self._client._request_json(
             "GET",
             f"/workspaces/{ws}/projects/{project_id}/data-checks",
             params=params or None,
         )
 
-    def pending_changes(
+    async def pending_changes(
         self,
         project_id: int,
         workspace_id: int | None = None,
@@ -512,11 +514,11 @@ class ProjectsAPI:
         if project_id <= 0:
             raise MammothValidationError(ERR_PROJECT_ID_POSITIVE.format(project_id))
         ws = workspace_id or self._ws()
-        return self._client._request_json(
+        return await self._client._request_json(
             "GET", f"/workspaces/{ws}/projects/{project_id}/pending-changes"
         )
 
-    def list_agent_memory(
+    async def list_agent_memory(
         self,
         project_id: int,
         workspace_id: int | None = None,
@@ -538,13 +540,13 @@ class ProjectsAPI:
         """
         if project_id <= 0:
             raise MammothValidationError(ERR_PROJECT_ID_POSITIVE.format(project_id))
-        projects = self.list_all(workspace_id=workspace_id, fields="id,properties")
+        projects = await self.list_all(workspace_id=workspace_id, fields="id,properties")
         for project in projects:
             if project.get("id") == project_id:
                 return {"items": _agent_memory_items(project)}
         raise ValueError(f"Project ID {project_id} not found.")
 
-    def add_agent_memory(
+    async def add_agent_memory(
         self,
         project_id: int,
         text: str,
@@ -563,11 +565,11 @@ class ProjectsAPI:
         Raises:
             MammothValidationError: If project_id is not a positive integer.
         """
-        return self._patch_agent_memory(
+        return await self._patch_agent_memory(
             project_id, {"op": "add", "path": "agent_memory", "value": text}, workspace_id
         )
 
-    def remove_agent_memory(
+    async def remove_agent_memory(
         self,
         project_id: int,
         index: int,
@@ -586,23 +588,23 @@ class ProjectsAPI:
         Raises:
             MammothValidationError: If project_id is not a positive integer.
         """
-        return self._patch_agent_memory(
+        return await self._patch_agent_memory(
             project_id, {"op": "remove", "path": "agent_memory", "value": index}, workspace_id
         )
 
-    def _patch_agent_memory(
+    async def _patch_agent_memory(
         self, project_id: int, patch: dict[str, Any], workspace_id: int | None
     ) -> dict[str, Any]:
         """PATCH one agent_memory op onto the project and return the caller's list."""
         if project_id <= 0:
             raise MammothValidationError(ERR_PROJECT_ID_POSITIVE.format(project_id))
         ws = workspace_id or self._ws()
-        project = self._client._request_json(
+        project = await self._client._request_json(
             "PATCH", f"/workspaces/{ws}/projects/{project_id}", json={"patches": [patch]}
         )
         return {"items": _agent_memory_items(project)}
 
-    def publish_credentials(
+    async def publish_credentials(
         self,
         project_id: int,
         odbc_type: Literal["postgres", "bigquery"],
@@ -624,13 +626,13 @@ class ProjectsAPI:
         if project_id <= 0:
             raise MammothValidationError(ERR_PROJECT_ID_POSITIVE.format(project_id))
         ws = workspace_id or self._ws()
-        return self._client._request_json(
+        return await self._client._request_json(
             "GET",
             f"/workspaces/{ws}/projects/{project_id}/credentials",
             params={"odbc_type": odbc_type},
         )
 
-    def resource_dependencies(
+    async def resource_dependencies(
         self,
         project_id: int,
         resource_ids: _list[str],
@@ -657,13 +659,13 @@ class ProjectsAPI:
         params: dict[str, Any] = {"resource_ids": ",".join(resource_ids)}
         if is_recursive is not None:
             params["is_recursive"] = is_recursive
-        return self._client._request_json(
+        return await self._client._request_json(
             "GET",
             f"/workspaces/{ws}/projects/{project_id}/resource-dependencies",
             params=params,
         )
 
-    def resource_dependencies_update(
+    async def resource_dependencies_update(
         self,
         project_id: int,
         patches: _list[DataSyncPatchItem],
@@ -697,13 +699,13 @@ class ProjectsAPI:
         if len(set(targets)) != len(targets):
             raise MammothValidationError("`patches` must not repeat a resource target.")
         ws = workspace_id if workspace_id is not None else self._ws()
-        return self._client._request_json(
+        return await self._client._request_json(
             "PATCH",
             f"/workspaces/{ws}/projects/{project_id}/resource-dependencies",
             json={"patches": [item.model_dump(mode="json", exclude_unset=True) for item in typed]},
         )
 
-    def resource_status(
+    async def resource_status(
         self,
         project_id: int,
         workspace_id: int | None = None,
@@ -723,11 +725,11 @@ class ProjectsAPI:
         if project_id <= 0:
             raise MammothValidationError(ERR_PROJECT_ID_POSITIVE.format(project_id))
         ws = workspace_id or self._ws()
-        return self._client._request_json(
+        return await self._client._request_json(
             "GET", f"/workspaces/{ws}/projects/{project_id}/resource-status"
         )
 
-    def sample_flow(
+    async def sample_flow(
         self,
         project_id: int,
         label_resource_id: int | None = None,
@@ -753,11 +755,11 @@ class ProjectsAPI:
         payload: dict[str, Any] = {}
         if label_resource_id is not None:
             payload["label_resource_id"] = label_resource_id
-        return self._client._request_json(
+        return await self._client._request_json(
             "POST", f"/workspaces/{ws}/projects/{project_id}/sample-flow", json=payload
         )
 
-    def user_update(
+    async def user_update(
         self,
         project_id: int,
         role: Literal["project_admin", "project_analyst"],
@@ -795,7 +797,7 @@ class ProjectsAPI:
         if invite_id is not None:
             params["invite_id"] = invite_id
         payload = {"patch": [{"op": "replace", "path": "permissions", "value": role}]}
-        return self._client._request_json(
+        return await self._client._request_json(
             "PATCH",
             f"/workspaces/{ws}/projects/{project_id}/users",
             params=params,

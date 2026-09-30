@@ -76,7 +76,7 @@ class FoldersAPI:
             resource_path=None,
         )
 
-    def list(
+    async def list(
         self,
         workspace_id: int | None = None,
         project_id: int | None = None,
@@ -135,12 +135,12 @@ class FoldersAPI:
         if sort:
             params["sort"] = sort
 
-        response = self._client._request_json(
+        response = await self._client._request_json(
             "GET", f"/workspaces/{ws}/projects/{proj}/folders", params=params
         )
         return FoldersList(**response)
 
-    def create(
+    async def create(
         self,
         name: str,
         parent_resource_id: str | None = None,
@@ -161,14 +161,14 @@ class FoldersAPI:
         ws = workspace_id or self._ws()
         proj = self._proj(project_id)
         folder_data = CreateFolder(name=name, parent_resource_id=parent_resource_id)
-        response = self._client._request_json(
+        response = await self._client._request_json(
             "POST",
             f"/workspaces/{ws}/projects/{proj}/folders",
             json=folder_data.model_dump(exclude_none=True),
         )
         return FolderSchema(**response.get("folder", response))
 
-    def delete(
+    async def delete(
         self,
         folder_ids: _list[int],
         workspace_id: int | None = None,
@@ -192,11 +192,11 @@ class FoldersAPI:
             "check_dependency": check_dependency,
             "remove_contents": remove_contents,
         }
-        self._client._request_json(
+        await self._client._request_json(
             "DELETE", f"/workspaces/{ws}/projects/{proj}/folders", params=params
         )
 
-    def _resolve_resource_ids(
+    async def _resolve_resource_ids(
         self,
         ws: int,
         proj: int,
@@ -217,7 +217,7 @@ class FoldersAPI:
         requested = [("datasource", i) for i in dataset_ids] + [("dataview", i) for i in view_ids]
         if not requested:
             return []
-        response = self._client._request_json(
+        response = await self._client._request_json(
             "POST",
             f"/workspaces/{ws}/projects/{proj}/resources/bulk",
             json={"ids": [{"type": type_, "id": oid} for type_, oid in requested]},
@@ -247,7 +247,7 @@ class FoldersAPI:
             )
         return resolved
 
-    def move(
+    async def move(
         self,
         resource_ids: _list[str] | None = None,
         target_folder_resource_id: str | None = None,
@@ -308,7 +308,9 @@ class FoldersAPI:
                     f"resource_ids must be integer resource ids, got {resource_ids!r}"
                 ) from exc
         moved.extend(
-            self._resolve_resource_ids(ws, proj, list(dataset_ids or []), list(view_ids or []))
+            await self._resolve_resource_ids(
+                ws, proj, list(dataset_ids or []), list(view_ids or [])
+            )
         )
         if not moved:
             raise MammothValidationError(
@@ -321,14 +323,14 @@ class FoldersAPI:
                 if str(target_folder_resource_id).isdigit()
                 else str(target_folder_resource_id)
             )
-        response = self._client._request_json(
+        response = await self._client._request_json(
             "PATCH",
             f"/workspaces/{ws}/projects/{proj}/folders",
             json={"patch": [{"op": "move", "from": moved, "path": destination}]},
         )
         return ObjectJobSchema(**response)
 
-    def bulk_delete(
+    async def bulk_delete(
         self,
         folder_ids: _list[int] | None = None,
         check_dependency: bool | None = None,
@@ -360,11 +362,11 @@ class FoldersAPI:
             params["check_dependency"] = check_dependency
         if remove_contents is not None:
             params["remove_contents"] = remove_contents
-        self._client._request_json(
+        await self._client._request_json(
             "DELETE", f"/workspaces/{ws}/projects/{proj}/folders", params=params or None
         )
 
-    def get(
+    async def get(
         self,
         folder_id: int,
         workspace_id: int | None = None,
@@ -392,14 +394,14 @@ class FoldersAPI:
         params: dict[str, Any] = {}
         if fields:
             params["fields"] = fields
-        response = self._client._request_json(
+        response = await self._client._request_json(
             "GET",
             f"/workspaces/{ws}/projects/{proj}/folders/{folder_id}",
             params=params or None,
         )
         return FolderSchema(**response.get("folder", response))
 
-    def trash(
+    async def trash(
         self,
         folder_id: int,
         workspace_id: int | None = None,
@@ -422,12 +424,12 @@ class FoldersAPI:
             raise MammothValidationError(ERR_FOLDER_ID_POSITIVE.format(folder_id))
         ws = workspace_id or self._ws()
         proj = self._proj(project_id)
-        response = self._client._request_json(
+        response = await self._client._request_json(
             "POST", f"/workspaces/{ws}/projects/{proj}/folders/{folder_id}/trash"
         )
         return JobResponse(**response)
 
-    def update(
+    async def update(
         self,
         folder_id: int,
         name: str,
@@ -453,7 +455,7 @@ class FoldersAPI:
         ws = workspace_id or self._ws()
         proj = self._proj(project_id)
         payload = {"patch": [{"op": "replace", "path": "name", "value": name}]}
-        response = self._client._request_json(
+        response = await self._client._request_json(
             "PATCH", f"/workspaces/{ws}/projects/{proj}/folders/{folder_id}", json=payload
         )
         return FolderSchema(**response.get("folder", response))

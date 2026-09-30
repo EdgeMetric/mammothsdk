@@ -23,8 +23,14 @@ _QUERY = r"/projects/180/datasets/9/dataviews/7/data/query$"
 
 
 def _bind(monkeypatch: pytest.MonkeyPatch, real_service: ServiceFactory) -> Any:
-    service, api = real_service(project_id=180)
-    monkeypatch.setattr(factory, "build_service", lambda *a, **k: service)
+    """Every build gets a fresh service, as in production (a command closes its own)."""
+    first, api = real_service(project_id=180)
+    unused = iter([first])
+    monkeypatch.setattr(
+        factory,
+        "build_service",
+        lambda *a, **k: next(unused, None) or real_service(api=api, project_id=180)[0],
+    )
     return api
 
 

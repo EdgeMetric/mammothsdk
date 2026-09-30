@@ -47,13 +47,13 @@ def client() -> Iterator[MammothClient]:
     server.shutdown()
 
 
-def test_wait_for_job_reports_the_response_reason(client: MammothClient) -> None:
+async def test_wait_for_job_reports_the_response_reason(client: MammothClient) -> None:
     with pytest.raises(MammothJobFailedError) as excinfo:
-        client.jobs.wait_for_job(7, timeout=5)
+        await client.jobs.wait_for_job(7, timeout=5)
     assert excinfo.value.details["failure_reason"] == REASON
 
 
-def test_wait_for_jobs_reports_the_response_reason(client: MammothClient) -> None:
+async def test_wait_for_jobs_reports_the_response_reason(client: MammothClient) -> None:
     with pytest.raises(MammothJobFailedError) as excinfo:
-        client.jobs.wait_for_jobs([7], timeout=5)
+        await client.jobs.wait_for_jobs([7], timeout=5)
     assert excinfo.value.details["failure_reason"] == REASON

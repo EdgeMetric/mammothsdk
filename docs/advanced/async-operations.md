@@ -1,6 +1,6 @@
 # Async Operations & Timeouts
 
-All SDK operations are **synchronous** — transformation methods block until the operation completes and view metadata is refreshed. The backend processes tasks asynchronously, but the SDK handles this transparently.
+Every SDK call that reaches the API is a **coroutine**: `await` it. An awaited transformation returns once the operation completes and the view metadata is refreshed. The backend runs tasks as background jobs; the SDK polls them for you while you wait.
 
 ## Timeouts
 
@@ -19,7 +19,7 @@ If a job does not complete in time, `MammothJobTimeoutError` is raised:
 from mammoth import MammothJobTimeoutError, AggregateFunction, AggregationSpec
 
 try:
-    view.pivot(
+    await view.pivot(
         group_by=["Region"],
         aggregations=[AggregationSpec(column="Sales", function=AggregateFunction.SUM, as_name="Total")],
     )
@@ -33,15 +33,15 @@ Each View maintains an ordered list of pipeline tasks. You can inspect and manag
 
 ```python
 # List all tasks
-tasks = view.list_tasks()
+tasks = await view.list_tasks()
 for task in tasks:
     print(f"Task {task['id']}: {task.get('task_key')} (seq {task.get('sequence')})")
 
 # Delete a task (re-runs the pipeline without it)
-view.delete_task(task_id=42)
+await view.delete_task(task_id=42)
 
 # Preview a task before applying
-preview = view.preview_task(task_spec)
+preview = await view.preview_task(task_spec)
 ```
 
 ## Draft mode
@@ -52,19 +52,19 @@ By default, each transformation triggers an immediate pipeline run. For batch op
 from mammoth import Condition, Operator, SetValue, ColumnType
 
 # Context manager approach (recommended)
-with view.draft():
-    view.filter_rows(Condition("Sales", Operator.GTE, 1000))
-    view.math("Price * 2", new_column="Double")
+async with view.draft():
+    await view.filter_rows(Condition("Sales", Operator.GTE, 1000))
+    await view.math("Price * 2", new_column="Double")
 # Pipeline runs once for both tasks
 
 # Explicit approach
-view.enter_draft_mode()
-view.add_column("Notes")
-view.set_values(new_column="Flag", column_type=ColumnType.TEXT, values=[SetValue("x")])
-view.submit_draft()  # runs pipeline, refreshes metadata, exits draft mode
+await view.enter_draft_mode()
+await view.add_column("Notes")
+await view.set_values(new_column="Flag", column_type=ColumnType.TEXT, values=[SetValue("x")])
+await view.submit_draft()  # runs pipeline, refreshes metadata, exits draft mode
 ```
 
-If an exception occurs inside the `with view.draft():` block, all queued tasks are discarded automatically. You can also discard explicitly with `view.discard_draft()`.
+If an exception occurs inside the `async with view.draft():` block, all queued tasks are discarded automatically. You can also discard explicitly with `view.discard_draft()`.
 
 See [Views reference](../api/views.md#draft-mode) for the full API.
 

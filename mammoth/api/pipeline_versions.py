@@ -23,8 +23,10 @@ class PipelineVersionsAPI:
 
     Access via ``client.pipeline_versions``::
 
-        versions = client.pipeline_versions.list(dataset_id=1, dataview_id=2)
-        client.pipeline_versions.apply(dataset_id=1, dataview_id=2, version_id=versions[0]["id"])
+        versions = await client.pipeline_versions.list(dataset_id=1, dataview_id=2)
+        await client.pipeline_versions.apply(
+            dataset_id=1, dataview_id=2, version_id=versions[0]["id"]
+        )
     """
 
     def __init__(self, client: MammothClient) -> None:
@@ -57,7 +59,7 @@ class PipelineVersionsAPI:
             f"/dataviews/{dataview_id}/pipeline/versions"
         )
 
-    def list(
+    async def list(
         self,
         dataset_id: int,
         dataview_id: int,
@@ -99,13 +101,13 @@ class PipelineVersionsAPI:
             params["offset"] = offset
         if name is not None:
             params["name"] = name
-        return self._client._request_json(
+        return await self._client._request_json(
             "GET",
             self._url(dataset_id, dataview_id, project_id),
             params=params or None,
         )
 
-    def get(
+    async def get(
         self,
         dataset_id: int,
         dataview_id: int,
@@ -135,13 +137,13 @@ class PipelineVersionsAPI:
         params: dict[str, Any] = {}
         if fields is not None:
             params["fields"] = fields
-        return self._client._request_json(
+        return await self._client._request_json(
             "GET",
             f"{self._url(dataset_id, dataview_id, project_id)}/{version_id}",
             params=params or None,
         )
 
-    def apply(
+    async def apply(
         self,
         dataset_id: int,
         dataview_id: int,
@@ -166,12 +168,12 @@ class PipelineVersionsAPI:
         self._check_ids(dataset_id, dataview_id, project_id)
         if version_id <= 0:
             raise MammothValidationError(ERR_VERSION_ID_POSITIVE.format(version_id))
-        return self._client._request_json(
+        return await self._client._request_json(
             "POST",
             f"{self._url(dataset_id, dataview_id, project_id)}/{version_id}",
         )
 
-    def update(
+    async def update(
         self,
         dataset_id: int,
         dataview_id: int,
@@ -198,13 +200,13 @@ class PipelineVersionsAPI:
         self._check_ids(dataset_id, dataview_id, project_id)
         if version_id <= 0:
             raise MammothValidationError(ERR_VERSION_ID_POSITIVE.format(version_id))
-        return self._client._request_json(
+        return await self._client._request_json(
             "PATCH",
             f"{self._url(dataset_id, dataview_id, project_id)}/{version_id}",
             json=body,
         )
 
-    def delete(
+    async def delete(
         self,
         dataset_id: int,
         dataview_id: int,
@@ -229,7 +231,7 @@ class PipelineVersionsAPI:
         self._check_ids(dataset_id, dataview_id, project_id)
         if version_id <= 0:
             raise MammothValidationError(ERR_VERSION_ID_POSITIVE.format(version_id))
-        return self._client._request_json(
+        return await self._client._request_json(
             "DELETE",
             f"{self._url(dataset_id, dataview_id, project_id)}/{version_id}",
         )

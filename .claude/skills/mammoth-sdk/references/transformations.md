@@ -3,7 +3,7 @@
 All transformation methods are on the `View` class. Each method:
 1. Accepts display names (e.g. "Sales"), not internal names
 2. Sends a pipeline task to the API
-3. Blocks until the operation completes (unless in draft mode)
+3. Returns, once awaited, when the operation completes (unless in draft mode)
 4. Refreshes view metadata (unless in draft mode)
 5. Returns the add-task response; outside draft mode `status` is `"done"` and `pipeline_state` the final state (0.7.14+). Do not poll its `future_id`
 
@@ -18,8 +18,8 @@ Add an empty column.
 ```python
 from mammoth import ColumnType
 
-view.add_column("Status", column_type=ColumnType.TEXT)
-view.add_column("Score", column_type=ColumnType.NUMERIC)
+await view.add_column("Status", column_type=ColumnType.TEXT)
+await view.add_column("Score", column_type=ColumnType.NUMERIC)
 ```
 
 ### delete_columns(columns)
@@ -27,7 +27,7 @@ view.add_column("Score", column_type=ColumnType.NUMERIC)
 Remove columns by display name.
 
 ```python
-view.delete_columns(["Notes", "Temp Column"])
+await view.delete_columns(["Notes", "Temp Column"])
 ```
 
 ### copy_columns(copies)
@@ -37,7 +37,7 @@ Duplicate columns.
 ```python
 from mammoth import CopySpec, ColumnType
 
-view.copy_columns([
+await view.copy_columns([
     CopySpec(source="Sales", as_name="Sales Backup", type=ColumnType.NUMERIC),
     CopySpec(source="Name", as_name="Name Copy"),
 ])
@@ -50,7 +50,7 @@ Change column data types. Required before date operations on CSV-uploaded text c
 ```python
 from mammoth import ConversionSpec, ColumnType
 
-view.convert_type([
+await view.convert_type([
     ConversionSpec(column="joining_date", to=ColumnType.DATE),
     ConversionSpec(column="price", to=ColumnType.NUMERIC),
 ])
@@ -66,23 +66,23 @@ Filter rows by condition.
 
 ```python
 # Simple filter
-view.filter_rows(Condition("Sales", Operator.GTE, 1000))
+await view.filter_rows(Condition("Sales", Operator.GTE, 1000))
 
 # Compound filter
-view.filter_rows(
+await view.filter_rows(
     Condition("department", Operator.EQ, "Engineering")
     & Condition("base_salary", Operator.GTE, 80000)
 )
 
 # OR filter
-view.filter_rows(
+await view.filter_rows(
     Condition("department", Operator.EQ, "Engineering")
     | Condition("department", Operator.EQ, "Sales")
 )
 
 # Remove matching rows instead of keeping them
 from mammoth import FilterType
-view.filter_rows(Condition("Status", Operator.EQ, "Deleted"), filter_type=FilterType.REMOVE)
+await view.filter_rows(Condition("Status", Operator.EQ, "Deleted"), filter_type=FilterType.REMOVE)
 ```
 
 **Payload**: `{"SELECT": "ALL", "CONDITION": {..., "FILTER_TYPE": "SHOW", "PROMPT": ""}}`
@@ -99,7 +99,7 @@ Insert values into a new or existing column, optionally with conditions.
 from mammoth import SetValue, Condition, Operator, ColumnType
 
 # New column with conditional values (evaluated top-to-bottom, first match wins)
-view.set_values(
+await view.set_values(
     new_column="Risk Level",
     column_type=ColumnType.TEXT,
     values=[
@@ -110,7 +110,7 @@ view.set_values(
 )
 
 # Update existing column with a fixed value
-view.set_values(
+await view.set_values(
     existing_column="Status",
     values=[SetValue("Active")],
 )
@@ -128,13 +128,13 @@ Arithmetic operations between columns and constants.
 
 ```python
 # String expression — column names resolved automatically
-view.math("Price * Quantity", new_column="Total")
+await view.math("Price * Quantity", new_column="Total")
 
 # With a constant multiplier
-view.math("base_salary * 1.1", new_column="salary_with_raise")
+await view.math("base_salary * 1.1", new_column="salary_with_raise")
 
 # Complex expression
-view.math("(Revenue - Cost) / Revenue * 100", new_column="Margin %")
+await view.math("(Revenue - Cost) / Revenue * 100", new_column="Margin %")
 ```
 
 String expression parser: column names are auto-resolved, supports `+`, `-`, `*`, `/`, `%`, and parentheses. A multi-word name works bare (`Unit Price * Quantity`) or quoted (`"Unit Price"` or `` `Unit Price` ``, 0.7.15+).
@@ -148,13 +148,13 @@ String expression parser: column names are auto-resolved, supports `+`, `-`, `*`
 Concatenate multiple columns with a separator.
 
 ```python
-view.combine_columns(
+await view.combine_columns(
     sources=["First Name", "Last Name"],
     separator=" ",
     new_column="Full Name",
 )
 
-view.combine_columns(
+await view.combine_columns(
     sources=["City", "State", "Country"],
     separator=", ",
     new_column="Full Address",
@@ -168,7 +168,7 @@ view.combine_columns(
 Find and replace text values.
 
 ```python
-view.replace_values(
+await view.replace_values(
     columns=["department"],
     find="Engineering",
     replace="Eng",
@@ -184,7 +184,7 @@ Bulk find-and-replace mapping multiple search values to one replacement.
 ```python
 from mammoth import BulkReplaceMapping
 
-view.bulk_replace(
+await view.bulk_replace(
     columns=["Item"],
     mapping=[
         BulkReplaceMapping(search=["6 inch CAKE", "8 inch CAKE"], replace="CAKE"),
@@ -200,9 +200,9 @@ Change text case or trim whitespace.
 ```python
 from mammoth import TextCase
 
-view.text_transform(columns=["department"], case=TextCase.UPPER)
-view.text_transform(columns=["name"], trim=True)
-view.text_transform(columns=["city"], case=TextCase.TITLE, trim=True)
+await view.text_transform(columns=["department"], case=TextCase.UPPER)
+await view.text_transform(columns=["name"], trim=True)
+await view.text_transform(columns=["city"], case=TextCase.TITLE, trim=True)
 ```
 
 Case values: `TextCase.UPPER`, `TextCase.LOWER`, `TextCase.TITLE`
@@ -214,7 +214,7 @@ Split a column by delimiter into multiple new columns.
 ```python
 from mammoth import SplitColumnSpec
 
-view.split_column(
+await view.split_column(
     column="Full Name",
     delimiter=" ",
     new_columns=[
@@ -232,23 +232,23 @@ Extract text from a column.
 from mammoth import SubstringDirection
 
 # First 5 characters
-view.substring("Name", direction=SubstringDirection.START, num_char=5, new_column="Prefix")
+await view.substring("Name", direction=SubstringDirection.START, num_char=5, new_column="Prefix")
 
 # Last 3 characters
-view.substring("Code", direction=SubstringDirection.END, num_char=3, new_column="Suffix")
+await view.substring("Code", direction=SubstringDirection.END, num_char=3, new_column="Suffix")
 
 # Characters left of position 5
-view.substring("Name", direction=SubstringDirection.LEFT, char_position=5, new_column="Left Part")
+await view.substring("Name", direction=SubstringDirection.LEFT, char_position=5, new_column="Left Part")
 
 # Regex extraction (use regex_pattern string, NOT a dict)
-view.substring(
+await view.substring(
     "Email",
     regex_pattern=r"@(.+)",
     new_column="Domain",
 )
 
 # Inverted regex (return the non-matching part)
-view.substring(
+await view.substring(
     "Phone",
     regex_pattern=r"\d{3}-",
     regex_invert=True,
@@ -267,7 +267,7 @@ view.substring(
 **Important**: CSV-uploaded date columns are TEXT. Convert first:
 ```python
 from mammoth import ConversionSpec, ColumnType
-view.convert_type([ConversionSpec(column="date_col", to=ColumnType.DATE)])
+await view.convert_type([ConversionSpec(column="date_col", to=ColumnType.DATE)])
 ```
 
 ### extract_date(column, component, new_column=None, existing_column=None)
@@ -277,9 +277,9 @@ Extract a date component.
 ```python
 from mammoth import DateComponent
 
-view.extract_date("Order Date", component=DateComponent.YEAR, new_column="Order Year")
-view.extract_date("Order Date", component=DateComponent.MONTH, new_column="Order Month")
-view.extract_date("Order Date", component=DateComponent.WEEKDAY_TEXT, new_column="Day Name")
+await view.extract_date("Order Date", component=DateComponent.YEAR, new_column="Order Year")
+await view.extract_date("Order Date", component=DateComponent.MONTH, new_column="Order Month")
+await view.extract_date("Order Date", component=DateComponent.WEEKDAY_TEXT, new_column="Day Name")
 ```
 
 Components (always lowercase): `year`, `month`, `day`, `hour`, `minute`, `second`, `week`, `quarter`, `day_of_week`, `day_of_year`, `weekday_text`, `month_text`, `year_month`, `year_week`, `year_quarter`, `month_day`, `hour_minute`, `date_only`
@@ -291,8 +291,8 @@ Calculate difference between two date columns.
 ```python
 from mammoth import DateDiffUnit
 
-view.date_diff(DateDiffUnit.DAY, start="Start Date", end="End Date", new_column="Duration")
-view.date_diff(DateDiffUnit.MONTH, start="Hire Date", end="Exit Date", new_column="Tenure Months")
+await view.date_diff(DateDiffUnit.DAY, start="Start Date", end="End Date", new_column="Duration")
+await view.date_diff(DateDiffUnit.MONTH, start="Hire Date", end="Exit Date", new_column="Tenure Months")
 ```
 
 Components (uppercase): `YEAR`, `MONTH`, `DAY`, `HOUR`, `MINUTE`, `SECOND`
@@ -304,13 +304,13 @@ Add or subtract from a date.
 ```python
 from mammoth import DateDelta
 
-view.increment_date(
+await view.increment_date(
     column="Order Date",
     delta=DateDelta(days=30),
     new_column="Due Date",
 )
 
-view.increment_date(
+await view.increment_date(
     column="Start Date",
     delta=DateDelta(months=-1, days=15),
     new_column="Adjusted Date",
@@ -330,8 +330,8 @@ Fill missing values forward or backward.
 ```python
 from mammoth import FillDirection
 
-view.fill_missing(column="Price", direction=FillDirection.LAST_VALUE)
-view.fill_missing(column="Category", direction=FillDirection.FIRST_VALUE)
+await view.fill_missing(column="Price", direction=FillDirection.LAST_VALUE)
+await view.fill_missing(column="Category", direction=FillDirection.FIRST_VALUE)
 ```
 
 Directions: `FillDirection.FIRST_VALUE` (forward fill), `FillDirection.LAST_VALUE` (backward fill)
@@ -341,9 +341,9 @@ Directions: `FillDirection.FIRST_VALUE` (forward fill), `FillDirection.LAST_VALU
 Keep only the top or bottom N rows.
 
 ```python
-view.limit_rows(n=10)
-view.limit_rows(n=5, order_by=[["Sales", SortDirection.DESC]])
-view.limit_rows(n=5, bottom=True)
+await view.limit_rows(n=10)
+await view.limit_rows(n=5, order_by=[["Sales", SortDirection.DESC]])
+await view.limit_rows(n=5, bottom=True)
 ```
 
 ### sort_rows(order_by) and rename_columns(renames)
@@ -352,8 +352,8 @@ View settings, like the web grid's sort and column rename: no pipeline task
 is added. Data reads and exports use the order and the new names.
 
 ```python
-view.sort_rows([["Sales", "DESC"]])          # up to three columns; [] clears
-view.rename_columns({"cust_id": "Customer ID"})
+await view.sort_rows([["Sales", "DESC"]])          # up to three columns; [] clears
+await view.rename_columns({"cust_id": "Customer ID"})
 ```
 
 ### discard_duplicates(ignore_columns=None)
@@ -361,8 +361,8 @@ view.rename_columns({"cust_id": "Customer ID"})
 Remove duplicate rows.
 
 ```python
-view.discard_duplicates()
-view.discard_duplicates(ignore_columns=["Timestamp", "Notes"])
+await view.discard_duplicates()
+await view.discard_duplicates(ignore_columns=["Timestamp", "Notes"])
 ```
 
 ---
@@ -376,7 +376,7 @@ Group by columns and apply aggregation functions.
 ```python
 from mammoth import AggregationSpec, AggregateFunction
 
-view.pivot(
+await view.pivot(
     group_by=["department"],
     aggregations=[
         AggregationSpec(column="base_salary", function=AggregateFunction.AVG, as_name="avg_salary"),
@@ -384,7 +384,7 @@ view.pivot(
     ],
 )
 
-view.pivot(
+await view.pivot(
     group_by=["Region", "Category"],
     aggregations=[
         AggregationSpec(column="Sales", function=AggregateFunction.SUM, as_name="Total Sales"),
@@ -404,7 +404,7 @@ Pivot table: row values become columns.
 ```python
 from mammoth import CrosstabSpec, AggregateFunction
 
-view.crosstab(
+await view.crosstab(
     rows=["Region"],
     pivot_column="Quarter",
     select=CrosstabSpec(function=AggregateFunction.SUM, column="Sales"),
@@ -423,7 +423,7 @@ Apply window functions.
 from mammoth import WindowFunction, SortDirection
 
 # Row number within partitions
-view.window(
+await view.window(
     function=WindowFunction.ROW_NUMBER,
     new_column="Row #",
     partition_by=["department"],
@@ -431,7 +431,7 @@ view.window(
 )
 
 # Running sum
-view.window(
+await view.window(
     function=WindowFunction.SUM,
     column="Sales",
     new_column="Running Total",
@@ -440,7 +440,7 @@ view.window(
 )
 
 # Rank
-view.window(
+await view.window(
     function=WindowFunction.RANK,
     new_column="Sales Rank",
     partition_by=["Region"],
@@ -464,8 +464,8 @@ Join with another dataview.
 from mammoth import JoinType, JoinKeySpec, JoinSelectSpec
 
 # Join with View object (recommended — auto-resolves display names)
-other = client.views.get(2050)
-view.join(
+other = await client.views.get(2050)
+await view.join(
     foreign_view=other,
     join_type=JoinType.LEFT,
     on=[JoinKeySpec(left="Customer ID", right="Customer ID")],
@@ -473,7 +473,7 @@ view.join(
 )
 
 # Join with view ID (use internal column names for the foreign view)
-view.join(
+await view.join(
     foreign_view=2050,
     join_type=JoinType.LEFT,
     on=[JoinKeySpec(left="Customer ID", right="column_1")],
@@ -501,7 +501,7 @@ Join types: `JoinType.INNER`, `JoinType.LEFT`, `JoinType.RIGHT`, `JoinType.OUTER
 Lookup values from another dataview (like VLOOKUP).
 
 ```python
-view.lookup(
+await view.lookup(
     source="Product ID",        # column in this view
     lookup_view_id=3000,        # foreign view
     key="column_1",             # key column in foreign view (internal name)
@@ -522,9 +522,9 @@ Generate SQL from natural language using the LLM backend. It returns the
 query only; the view does not change until you pass it to `add_sql`.
 
 ```python
-sql = view.generate_sql("count employees by department")
+sql = await view.generate_sql("count employees by department")
 # Returns: "SELECT department, COUNT(*) FROM ... GROUP BY department"
-view.add_sql(sql)  # apply it
+await view.add_sql(sql)  # apply it
 ```
 
 ### add_sql(query) -> dict
@@ -534,7 +534,7 @@ Add a raw SQL query as a pipeline task. Reference the view as the quoted table
 placeholder table names are rejected. The result replaces the view's columns.
 
 ```python
-view.add_sql('SELECT department, AVG(base_salary) FROM "view:123" GROUP BY department')
+await view.add_sql('SELECT department, AVG(base_salary) FROM "view:123" GROUP BY department')
 ```
 
 ---
@@ -546,7 +546,7 @@ view.add_sql('SELECT department, AVG(base_salary) FROM "view:123" GROUP BY depar
 Unpivot columns to rows.
 
 ```python
-view.unnest(
+await view.unnest(
     columns=["Q1 Sales", "Q2 Sales", "Q3 Sales", "Q4 Sales"],
     label_column="Quarter",
     value_column="Amount",
@@ -567,10 +567,10 @@ Extract data from JSON columns.
 from mammoth import JsonExtractionSpec, JsonType, JsonOpType, ColumnType
 
 # Simple shorthand: extract keys by name (all as TEXT)
-view.json_extract("metadata", keys=["name", "email", "age"])
+await view.json_extract("metadata", keys=["name", "email", "age"])
 
 # Advanced: extract with custom types and aliases
-view.json_extract(
+await view.json_extract(
     "metadata",
     json_type=JsonType.OBJECT,
     extractions=[
@@ -580,7 +580,7 @@ view.json_extract(
 )
 
 # List: expand to rows
-view.json_extract("tags", json_type=JsonType.LIST)
+await view.json_extract("tags", json_type=JsonType.LIST)
 ```
 
 **Payload**: TYPE is `"JSON_OBJECT"`/`"JSON_LIST"`. Requires `JSON_OBJECT_OP_TYPE` or `JSON_LIST_OP_TYPE`.
@@ -594,14 +594,14 @@ view.json_extract("tags", json_type=JsonType.LIST)
 AI-powered transformation using LLM.
 
 ```python
-view.gen_ai(
+await view.gen_ai(
     prompt="Classify the sentiment of the review",
     context_columns=["Review Text"],
     new_column="Sentiment",
 )
 
 # With derivation context
-view.gen_ai(
+await view.gen_ai(
     prompt="Summarize the order details",
     context_columns=["Product", "Quantity", "Price"],
     new_column="Summary",
@@ -630,8 +630,8 @@ Many methods accept an optional `condition` parameter that limits which rows are
 ### Math String Expressions
 
 ```python
-view.math("Price * Quantity", new_column="Total")
-view.math("(Revenue - Cost) / Revenue * 100", new_column="Margin")
+await view.math("Price * Quantity", new_column="Total")
+await view.math("(Revenue - Cost) / Revenue * 100", new_column="Margin")
 ```
 
 Column names are auto-resolved. Supports: `+`, `-`, `*`, `/`, `%`, and parentheses.

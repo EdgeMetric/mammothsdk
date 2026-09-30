@@ -22,8 +22,15 @@ PROJECT, DATASET, VIEW, BATCH, CHECKPOINT, DATA_CHECK, VERSION = 3, 731, 278, 12
 
 
 def _inv(command: str, args: list[str], input_file: str | None = None, **kwargs: Any) -> Invocation:
-    return Invocation(command, output="json", project=PROJECT, no_input=True,
-                      extra_args=args, input_file=input_file, **kwargs)
+    return Invocation(
+        command,
+        output="json",
+        project=PROJECT,
+        no_input=True,
+        extra_args=args,
+        input_file=input_file,
+        **kwargs,
+    )
 
 
 @contextmanager
@@ -31,6 +38,7 @@ def _bind(monkeypatch: pytest.MonkeyPatch, module: Any, service: Any):
     @contextmanager
     def opened(_invocation: Invocation):
         yield service, type("Auth", (), {"workspace_id": 4})()
+
     monkeypatch.setattr(module, "open_service", opened)
     yield
 
@@ -61,11 +69,15 @@ def test_nine_mapped_core_routes_emit_exact_scoped_wire_requests(
     # REL-193/194: dataset-scoped batch list/get.
     run(batch, "batch.list", [str(DATASET)], {"limit": 11, "offset": 2})
     assert (_path(api), api.last().method, api.last().query) == (
-        f"/workspaces/4/projects/{PROJECT}/datasets/{DATASET}/batches", "GET",
-        {"limit": ["11"], "offset": ["2"]})
+        f"/workspaces/4/projects/{PROJECT}/datasets/{DATASET}/batches",
+        "GET",
+        {"limit": ["11"], "offset": ["2"]},
+    )
     run(batch, "batch.get", [str(DATASET), str(BATCH)])
     assert (_path(api), api.last().method) == (
-        f"/workspaces/4/projects/{PROJECT}/datasets/{DATASET}/batches/{BATCH}", "GET")
+        f"/workspaces/4/projects/{PROJECT}/datasets/{DATASET}/batches/{BATCH}",
+        "GET",
+    )
 
     # REL-207/208: checkpoint list/get.
     run(view, "view.checkpoint.list", [str(VIEW)], {"dataset_id": DATASET, "status": "success"})
@@ -110,8 +122,10 @@ def test_nine_mapped_core_routes_emit_exact_scoped_wire_requests(
     # confirmation and are covered by separate recovery controls.
     run(view, "view.draft.command", [str(VIEW)], {"dataset_id": DATASET, "command": "enter"})
     assert (_path(api), api.last().method, api.last().json_body) == (
-        f"/workspaces/4/projects/{PROJECT}/datasets/{DATASET}/dataviews/{VIEW}/draft-mode", "POST",
-        {"draft_operation": "enter"})
+        f"/workspaces/4/projects/{PROJECT}/datasets/{DATASET}/dataviews/{VIEW}/draft-mode",
+        "POST",
+        {"draft_operation": "enter"},
+    )
 
 
 def test_rel454_rejects_invalid_operation_and_gates_persisted_transitions(
@@ -155,12 +169,11 @@ def test_rel198_view_get_honors_explicit_parent(
     payload.write_text(json.dumps({"dataset_id": DATASET}), encoding="utf-8")
     with _bind(monkeypatch, view_ops, service):
         view_ops.view_get(_inv("view.get", [str(VIEW)], str(payload)))
-    # The SDK resolves the latest pipeline sequence for the exact view (a read
-    # under the explicit parent), the view read follows, and the workspace-level
-    # dashboards read names boards built on it.  No discovery probe escapes.
+    # The view read goes straight to the explicit parent -- the SDK no longer
+    # resolves a pipeline sequence first -- and the workspace-level dashboards
+    # read names boards built on it.  No discovery probe escapes.
     view_path = f"/workspaces/4/projects/{PROJECT}/datasets/{DATASET}/dataviews/{VIEW}"
     assert [(r.method, r.path.removeprefix("/api/v2")) for r in api.requests] == [
-        ("GET", f"{view_path}/pipeline/items"),
         ("GET", view_path),
         ("GET", "/dashboards"),
     ]
@@ -210,10 +223,12 @@ def test_rel456_checkpoint_create_emits_release_body_and_parent(
     api.default(201, {"id": CHECKPOINT, "sequence": 2})
     payload = tmp_path / "checkpoint.json"
     payload.write_text(
-        json.dumps({
-            "dataset_id": DATASET,
-            "body": {"checkpoint_name": "Revenue alert", "checkpoint_type": "alert"},
-        }),
+        json.dumps(
+            {
+                "dataset_id": DATASET,
+                "body": {"checkpoint_name": "Revenue alert", "checkpoint_type": "alert"},
+            }
+        ),
         encoding="utf-8",
     )
     with _bind(monkeypatch, view, service):
@@ -299,9 +314,7 @@ def test_rel268_dashboard_tag_rename_emits_exact_body_and_confirmation(
     api.default(200, {"id": 7, "name": "Sales"})
     payload = tmp_path / "tag-rename.json"
     payload.write_text(json.dumps({"name": "Sales"}), encoding="utf-8")
-    invocation = _inv(
-        "dashboard.tags.rename", ["7"], str(payload), yes=True, confirm="7"
-    )
+    invocation = _inv("dashboard.tags.rename", ["7"], str(payload), yes=True, confirm="7")
     with _bind(monkeypatch, dashboard, service):
         dashboard.dashboard_tags_rename(invocation)
     assert (_path(api), api.last().method, api.last().json_body) == (
@@ -337,7 +350,9 @@ def test_rel519_dashboard_tags_set_emits_exact_body_and_confirmation(
             _inv("dashboard.tags.set", ["12"], str(payload), yes=True, confirm="12")
         )
     assert (_path(api), api.last().method, api.last().json_body) == (
-        "/dashboards/12/tags", "PUT", {"tags": []}
+        "/dashboards/12/tags",
+        "PUT",
+        {"tags": []},
     )
 
 
@@ -376,11 +391,11 @@ def test_rel002_dashboard_tag_delete_emits_exact_wire_after_confirmation(
     service, api = real_service()
     api.default(204, None)
     with _bind(monkeypatch, dashboard, service):
-        dashboard.dashboard_tags_delete(
-            _inv("dashboard.tags.delete", ["7"], yes=True, confirm="7")
-        )
+        dashboard.dashboard_tags_delete(_inv("dashboard.tags.delete", ["7"], yes=True, confirm="7"))
     assert (_path(api), api.last().method, api.last().json_body) == (
-        "/dashboards/tags/7", "DELETE", None
+        "/dashboards/tags/7",
+        "DELETE",
+        None,
     )
 
 
@@ -409,7 +424,9 @@ def test_rel327_dashboard_tag_merge_emits_exact_wire_after_confirmation(
             _inv("dashboard.tags.merge", ["123"], str(payload), yes=True, confirm="123")
         )
     assert (_path(api), api.last().method, api.last().json_body) == (
-        "/dashboards/tags/123/merge", "POST", {"target_id": 456}
+        "/dashboards/tags/123/merge",
+        "POST",
+        {"target_id": 456},
     )
 
 

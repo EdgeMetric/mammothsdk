@@ -4,9 +4,11 @@ Jobs API client for tracking job status in Mammoth.
 
 from __future__ import annotations
 
+import asyncio
+
 import logging
 import time
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from typing import TYPE_CHECKING, Any
 
 from ..exceptions import (
@@ -57,7 +59,7 @@ class JobsAPI:
     def __init__(self, client: MammothClient) -> None:
         self._client = client
 
-    def get_job(self, job_id: int, timeout: float | None = None) -> dict[str, Any]:
+    async def get_job(self, job_id: int, timeout: float | None = None) -> dict[str, Any]:
         """
         Get job status by ID.
 
@@ -77,12 +79,14 @@ class JobsAPI:
         headers = {"x-workspace-id": str(workspace_id)}
 
         request_timeout = self._observation_timeout(timeout)
-        response = self._client._request_json(
+        response = await self._client._request_json(
             "GET", f"/jobs/{job_id}", headers=headers, **request_timeout
         )
         return response
 
-    def get_jobs(self, job_ids: list[int] | str, timeout: float | None = None) -> dict[str, Any]:
+    async def get_jobs(
+        self, job_ids: list[int] | str, timeout: float | None = None
+    ) -> dict[str, Any]:
         """
         Track multiple job IDs.
 
@@ -108,7 +112,7 @@ class JobsAPI:
         headers = {"x-workspace-id": str(workspace_id)}
 
         request_timeout = self._observation_timeout(timeout)
-        response = self._client._request_json(
+        response = await self._client._request_json(
             "GET", "/jobs", params=params, headers=headers, **request_timeout
         )
         return response
@@ -122,12 +126,12 @@ class JobsAPI:
             raise ValueError("observation timeout must be positive")
         return {"timeout": timeout}
 
-    def wait_for_job(
+    async def wait_for_job(
         self,
         job_id: int,
         timeout: float | None = None,
-        poll_interval: float = 2,
-        fetch: Callable[[int, float], dict[str, Any]] | None = None,
+        poll_interval: float | None = None,
+        fetch: Callable[[int, float], Awaitable[dict[str, Any]]] | None = None,
     ) -> dict[str, Any]:
         """
         Wait for a job to complete and return the result.
@@ -136,9 +140,10 @@ class JobsAPI:
             job_id: ID of the job to wait for
             timeout: Maximum time to wait in seconds (default: client.job_timeout)
             poll_interval: Upper bound on the time between polls in seconds
-                (default: 2). The first check is immediate and the gap then
-                grows from ``_POLL_FIRST_DELAY`` up to this bound, so a
-                sub-second job is not held for a full interval.
+                (default: ``client.job_poll_seconds``). The first check is
+                immediate and the gap then grows from ``_POLL_FIRST_DELAY`` up
+                to this bound, so a sub-second job is not held for a full
+                interval.
             fetch: Optional observer ``(job_id, remaining_timeout) -> job dict``
                 used instead of ``GET /jobs/{id}``. Published-dashboard jobs
                 are only readable through the URL-scoped job route, for
@@ -154,6 +159,8 @@ class JobsAPI:
         """
         if timeout is None:
             timeout = getattr(self._client, "job_timeout", 60)
+        if poll_interval is None:
+            poll_interval = getattr(self._client, "job_poll_seconds", 2)
         if timeout is None:
             raise TypeError("timeout must not be None — set client.job_timeout or pass explicitly")
 
@@ -165,9 +172,9 @@ class JobsAPI:
             if remaining <= 0:
                 break
             job_response = (
-                fetch(job_id, remaining)
+                await fetch(job_id, remaining)
                 if fetch is not None
-                else self.get_job(job_id, timeout=remaining)
+                else await self.get_job(job_id, timeout=remaining)
             )
 
             # Extract job from response
@@ -213,7 +220,7 @@ class JobsAPI:
             else:
                 # Still running (or an unknown status): poll again shortly.
                 gap = _poll_delay(attempt, poll_interval)
-                time.sleep(min(gap, max(0.0, deadline - time.monotonic())))
+                await asyncio.sleep(min(gap, max(0.0, deadline - time.monotonic())))
                 attempt += 1
 
         # Timeout reached
@@ -226,7 +233,7 @@ class JobsAPI:
             job_id, timeout, observed_job=last_observed, phase=timeout_phase
         )
 
-    def wait_for_jobs(
+    async def wait_for_jobs(
         self, job_ids: list[int] | str, timeout: int | None = None, poll_interval: int = 2
     ) -> dict[str, Any]:
         """
@@ -273,7 +280,7 @@ class JobsAPI:
                 break
             # get_jobs is a read-only observation.  Supplying its remaining
             # budget prevents one poll from overrunning the public wait limit.
-            jobs_response = self.get_jobs(job_ids_list, timeout=remaining)
+            jobs_response = await self.get_jobs(job_ids_list, timeout=remaining)
             jobs = jobs_response.get("jobs", [])
             if not isinstance(jobs, list):
                 raise MammothAPIError(
@@ -328,7 +335,7 @@ class JobsAPI:
                 return {"jobs": [completed_jobs[job_id] for job_id in job_ids_list]}
 
             gap = _poll_delay(attempt, poll_interval)
-            time.sleep(min(gap, max(0.0, deadline - time.monotonic())))
+            await asyncio.sleep(min(gap, max(0.0, deadline - time.monotonic())))
             attempt += 1
 
         # Timeout reached — use first pending job ID for error

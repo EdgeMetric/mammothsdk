@@ -25,9 +25,9 @@ client = MammothClient(
 client.set_project_id(10)
 
 # Get a View and apply transformations
-view = client.views.get(1039)
-view.filter_rows(Condition("Sales", Operator.GTE, 1000))
-view.set_values(
+view = await client.views.get(1039)
+await view.filter_rows(Condition("Sales", Operator.GTE, 1000))
+await view.set_values(
     new_column="Category",
     column_type=ColumnType.TEXT,
     values=[
@@ -37,8 +37,10 @@ view.set_values(
 )
 
 # Export results
-view.export.to_csv("output.csv")
+await view.export.to_csv("output.csv")
 ```
+
+The SDK is async: await every call that reaches the API. The snippet uses top-level `await`, as in a Jupyter cell; in a script, run it inside an `async def` with `asyncio.run` (see [Quick Start](quick-start.md)).
 
 ## Documentation
 

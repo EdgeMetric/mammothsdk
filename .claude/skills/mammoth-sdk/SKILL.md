@@ -3,7 +3,7 @@ name: mammoth-sdk
 description: Practical knowledge base for the Mammoth Analytics Python SDK — client setup, View transformations, condition building, exports, and documented API sub-clients. Use this skill when the user asks to "use the SDK", "write SDK code", "apply a transformation", "build a condition", "export data", mentions "MammothClient", "View", "Condition", "Operator", "filter_rows", "set_values", "pivot", "window", "join", "export", or needs to understand or write code using the Mammoth Python SDK. Covers documented SDK workflows from authentication through transformations to exports.
 ---
 
-# Mammoth Python SDK Knowledge Base (v0.7.40)
+# Mammoth Python SDK Knowledge Base (v0.8.0)
 
 The Mammoth Python SDK (`mammoth` package) provides programmatic access to the Mammoth Analytics platform. It wraps the REST API with Pythonic classes, rich View objects, a condition builder with operator overloading, and export helpers.
 
@@ -20,9 +20,9 @@ client = MammothClient(
 client.set_project_id(10)
 
 # Get a View and transform
-view = client.views.get(1039)
-view.filter_rows(Condition("Sales", Operator.GTE, 1000))
-view.set_values(
+view = await client.views.get(1039)
+await view.filter_rows(Condition("Sales", Operator.GTE, 1000))
+await view.set_values(
     new_column="Category",
     column_type=ColumnType.TEXT,
     values=[
@@ -30,8 +30,10 @@ view.set_values(
         SetValue("Low"),
     ],
 )
-view.export.to_csv("output.csv")
+await view.export.to_csv("output.csv")
 ```
+
+The SDK is async (0.8.0+): every method that reaches the API is a coroutine — `await` it, including the async property `await view.is_draft_mode`. Pure builders stay sync (`client.set_project_id`, `Condition`, the spec models). Snippets here use top-level `await`; in a script, wrap them in `async def main()` and call `asyncio.run(main())`. Use `async with MammothClient(...) as client:` or `await client.close()`.
 
 ## Architecture Overview
 
@@ -88,7 +90,7 @@ Rich domain object for a dataview. Created via `client.views.get(id)` or `client
 **Metadata**: `view.columns`, `view.display_names`, `view.column_types`, `view.name`, `view.id`
 **Data access**: `view.data(limit=100)`
 **Pipeline management**: `view.list_tasks()`, `view.delete_task(id)`, `view.preview_task(spec)`
-**Draft mode**: `view.draft()` (context manager), `view.enter_draft_mode()`, `view.submit_draft()`, `view.discard_draft()`, `view.set_auto_run(bool)`
+**Draft mode**: `view.draft()` (async context manager), `view.enter_draft_mode()`, `view.submit_draft()`, `view.discard_draft()`, `view.set_auto_run(bool)`
 **Exports**: `view.export.to_csv()`, `view.export.to_postgres()`, etc.
 
 ### Condition Builder
@@ -114,8 +116,8 @@ cond = (
 )
 
 # Use with transformations
-view.filter_rows(cond)
-view.set_values(
+await view.filter_rows(cond)
+await view.set_values(
     new_column="Label",
     column_type=ColumnType.TEXT,
     values=[
@@ -131,8 +133,8 @@ The `math()` method accepts human-readable string expressions:
 
 ```python
 # String expression — column names resolved automatically
-view.math("Price * Quantity", new_column="Total")
-view.math("(Price + Tax) * 1.1", new_column="Grand Total")
+await view.math("Price * Quantity", new_column="Total")
+await view.math("(Price + Tax) * 1.1", new_column="Grand Total")
 ```
 
 ### Join with View Objects
@@ -142,8 +144,8 @@ The `join()` method accepts View objects for automatic display name resolution:
 ```python
 from mammoth import JoinType, JoinKeySpec
 
-other = client.views.get(2050)
-view.join(
+other = await client.views.get(2050)
+await view.join(
     foreign_view=other,          # View object — display names auto-resolved
     join_type=JoinType.LEFT,
     on=[JoinKeySpec(left="Customer ID", right="Customer ID")],
@@ -249,7 +251,7 @@ client = MammothClient(
 5. **Export results**: `view.export.to_csv()`, `view.export.to_postgres()`, etc.
 
 For large datasets with many transformations, use draft mode to batch tasks:
-1. Enter draft mode: `with view.draft():` (or `view.enter_draft_mode()`)
+1. Enter draft mode: `async with view.draft():` (or `view.enter_draft_mode()`)
 2. Add all transformations — they queue without running the pipeline
 3. On exit the pipeline runs once, metadata refreshes, and draft mode exits
 
@@ -257,7 +259,7 @@ For large datasets with many transformations, use draft mode to batch tasks:
 
 - **Column resolution**: All transformation methods accept display names (e.g. "Sales"), not internal names (e.g. "column_1"). The SDK resolves them automatically.
 - **Async pipeline**: Each transformation is an async pipeline task. The SDK waits for job completion and refreshes metadata after each task (unless in draft mode).
-- **Draft mode**: Use `with view.draft():` to batch multiple transformations — the pipeline runs once on exit instead of after each task. See [references/examples.md](references/examples.md) for usage.
+- **Draft mode**: Use `async with view.draft():` to batch multiple transformations — the pipeline runs once on exit instead of after each task. See [references/examples.md](references/examples.md) for usage.
 - **Chaining**: Transformations can be chained — the SDK handles sequencing automatically.
 - **Immutable views**: Use `client.views.create(dataset_id)` to create a working copy before applying transformations.
 - **Date columns**: CSV-uploaded date columns are TEXT type. Convert with `view.convert_type([ConversionSpec(column="date_col", to=ColumnType.DATE)])` before date operations.

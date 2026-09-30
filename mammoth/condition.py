@@ -21,9 +21,9 @@ Combining conditions::
 
 Using with View methods::
 
-    view.filter_rows(high_sales & west)
-    view.filter_rows(~Condition("Status", Operator.EQ, "Closed"))
-    view.set_values(
+    await view.filter_rows(high_sales & west)
+    await view.filter_rows(~Condition("Status", Operator.EQ, "Closed"))
+    await view.set_values(
         new_column="Label", column_type=ColumnType.TEXT,
         values=[
             SetValue("Priority", condition=high_sales),

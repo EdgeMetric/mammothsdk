@@ -18,7 +18,13 @@ _GRAPH = {"55": {"dependencies": [], "dependents": [{"id": "77", "type": "view"}
 
 def _dry_run(monkeypatch: pytest.MonkeyPatch, real_service: ServiceFactory, deps: Any) -> Any:
     service, api = real_service(project_id=180)
-    monkeypatch.setattr(factory, "build_service", lambda *a, **k: service)
+    # A fresh service per build, as in production: each command closes its own.
+    unused = iter([service])
+    monkeypatch.setattr(
+        factory,
+        "build_service",
+        lambda *a, **k: next(unused, None) or real_service(api=api, project_id=180)[0],
+    )
     api.on("GET", r"/datasets/55$", body={"dataset": {"id": 55, "name": "orders"}})
     api.on("GET", r"/resource-dependencies", **deps)
     result = make_runner().invoke(

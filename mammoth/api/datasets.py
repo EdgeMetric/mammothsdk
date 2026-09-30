@@ -4,6 +4,8 @@ Datasets API client for managing datasets in Mammoth.
 
 from __future__ import annotations
 
+import asyncio
+
 import time
 from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any
@@ -47,7 +49,7 @@ class DatasetsAPI:
             return proj
         raise ValueError("project_id must be set on the client using client.set_project_id()")
 
-    def list(
+    async def list(
         self,
         workspace_id: int | None = None,
         project_id: int | None = None,
@@ -76,11 +78,11 @@ class DatasetsAPI:
         ws = workspace_id or self._ws()
         proj = self._proj(project_id)
         params = {"fields": fields, "limit": limit, "offset": offset, "sort": sort}
-        return self._client._request_json(
+        return await self._client._request_json(
             "GET", f"/workspaces/{ws}/projects/{proj}/datasets", params=params
         )
 
-    def list_all(
+    async def list_all(
         self,
         workspace_id: int | None = None,
         project_id: int | None = None,
@@ -96,7 +98,7 @@ class DatasetsAPI:
         unbounded continuation raise :class:`MammothPaginationError` instead
         of silently claiming complete inventory coverage.
         """
-        return collect_offset_pages(
+        return await collect_offset_pages(
             lambda offset: self.list(
                 workspace_id=workspace_id,
                 project_id=project_id,
@@ -110,7 +112,7 @@ class DatasetsAPI:
             max_pages=max_pages,
         )
 
-    def get(
+    async def get(
         self,
         dataset_id: int,
         workspace_id: int | None = None,
@@ -133,16 +135,16 @@ class DatasetsAPI:
         proj = self._proj(project_id)
         path = f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}"
         if fields:
-            return self._client._request_json("GET", path, params={"fields": fields})
-        return self._client._request_json("GET", path)
+            return await self._client._request_json("GET", path, params={"fields": fields})
+        return await self._client._request_json("GET", path)
 
-    def get_data(
+    async def get_data(
         self,
         dataset_id: int,
         workspace_id: int | None = None,
         project_id: int | None = None,
         timeout: int = 300,
-        poll_interval: int = 2,
+        poll_interval: float | None = None,
     ) -> dict[str, Any]:
         """Get the actual data from a dataset. Polls the job until completion.
 
@@ -151,7 +153,8 @@ class DatasetsAPI:
             workspace_id: ID of the workspace (uses client default if not provided).
             project_id: ID of the project (uses client default if not provided).
             timeout: Maximum wait time in seconds (default 300).
-            poll_interval: Polling interval in seconds (default 2).
+            poll_interval: Seconds between job polls (default:
+                client.job_poll_seconds).
 
         Returns:
             Dict with dataset data.
@@ -159,12 +162,14 @@ class DatasetsAPI:
         ws = workspace_id or self._ws()
         proj = self._proj(project_id)
 
-        response = self._client._request_json(
+        response = await self._client._request_json(
             "GET", f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/data"
         )
-        return self._client._wait_if_job(response, timeout=timeout, poll_interval=poll_interval)
+        return await self._client._wait_if_job(
+            response, timeout=timeout, poll_interval=poll_interval
+        )
 
-    def create(
+    async def create(
         self,
         dataset_spec: dict[str, Any],
         ds_creation_type: str,
@@ -194,11 +199,11 @@ class DatasetsAPI:
         if folder_resource_id is not None:
             payload["folder_resource_id"] = folder_resource_id
 
-        return self._client._request_json(
+        return await self._client._request_json(
             "POST", f"/workspaces/{ws}/projects/{proj}/datasets", json=payload
         )
 
-    def update(
+    async def update(
         self,
         patch_data: _list[dict[str, Any]],
         workspace_id: int | None = None,
@@ -223,13 +228,13 @@ class DatasetsAPI:
         """
         ws = workspace_id or self._ws()
         proj = self._proj(project_id)
-        return self._client._request_json(
+        return await self._client._request_json(
             "PATCH",
             f"/workspaces/{ws}/projects/{proj}/datasets",
             json={"patch": patch_data},
         )
 
-    def rename(
+    async def rename(
         self,
         dataset_id: int,
         name: str,
@@ -253,13 +258,13 @@ class DatasetsAPI:
         """
         ws = workspace_id or self._ws()
         proj = self._proj(project_id)
-        return self._client._request_json(
+        return await self._client._request_json(
             "PATCH",
             f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}",
             json={"patch": {"op": "replace", "path": "name", "value": name}},
         )
 
-    def delete(
+    async def delete(
         self,
         dataset_id: int,
         workspace_id: int | None = None,
@@ -274,11 +279,11 @@ class DatasetsAPI:
         """
         ws = workspace_id or self._ws()
         proj = self._proj(project_id)
-        return self._client._request_json(
+        return await self._client._request_json(
             "DELETE", f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}"
         )
 
-    def delete_and_verify(
+    async def delete_and_verify(
         self,
         dataset_id: int,
         workspace_id: int | None = None,
@@ -300,14 +305,16 @@ class DatasetsAPI:
                 "Dataset deletion is blocked by known dependent resources.",
                 {"dataset_id": dataset_id, "dependencies": list(dependencies)},
             )
-        ack = self.delete(dataset_id, workspace_id=workspace_id, project_id=project_id)
-        settled = self._client._wait_if_job(ack)
+        ack = await self.delete(dataset_id, workspace_id=workspace_id, project_id=project_id)
+        settled = await self._client._wait_if_job(ack)
         deadline = time.monotonic() + (
             timeout if timeout is not None else int(getattr(self._client, "job_timeout", 60))
         )
         while True:
             try:
-                current = self.get(dataset_id, workspace_id=workspace_id, project_id=project_id)
+                current = await self.get(
+                    dataset_id, workspace_id=workspace_id, project_id=project_id
+                )
             except MammothAPIError as exc:
                 if exc.status_code == 404:
                     return {
@@ -337,9 +344,9 @@ class DatasetsAPI:
                         "readback": current,
                     },
                 )
-            time.sleep(poll_interval)
+            await asyncio.sleep(poll_interval)
 
-    def bulk_update(
+    async def bulk_update(
         self,
         patch_data: dict[str, Any],
         workspace_id: int | None = None,
@@ -361,11 +368,11 @@ class DatasetsAPI:
         """
         ws = workspace_id or self._ws()
         proj = self._proj(project_id)
-        return self._client._request_json(
+        return await self._client._request_json(
             "PATCH", f"/workspaces/{ws}/projects/{proj}/datasets", json={"patch": patch_data}
         )
 
-    def bulk_delete(
+    async def bulk_delete(
         self,
         dataset_ids: _list[int] | None = None,
         workspace_id: int | None = None,
@@ -385,11 +392,121 @@ class DatasetsAPI:
         ids = ",".join(str(int(item)) for item in dataset_ids)
         ws = workspace_id or self._ws()
         proj = self._proj(project_id)
-        self._client._request_json(
+        await self._client._request_json(
             "DELETE", f"/workspaces/{ws}/projects/{proj}/datasets", params={"ids": ids}
         )
 
-    def list_batches(
+    async def preview_interpretation(
+        self,
+        dataset_id: int,
+        instruction: str,
+        workspace_id: int | None = None,
+        project_id: int | None = None,
+    ) -> dict[str, Any]:
+        """Show how a file would be read differently, without changing it.
+
+        A file that has more than one plausible reading — a title above the
+        header, say, or two rows of headers — is read one way and left waiting.
+        This asks for another reading in words and shows what it would give.
+
+        Args:
+            dataset_id: ID of the dataset.
+            instruction: How to read the file, in plain words.
+            workspace_id: ID of the workspace (uses client default if not provided).
+            project_id: ID of the project (uses client default if not provided).
+
+        Returns:
+            Dict describing the reading: the columns it would give and a sample.
+        """
+        ws = workspace_id or self._ws()
+        proj = self._proj(project_id)
+        return await self._client._request_json(
+            "POST",
+            f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/interpretation/preview",
+            json={"user_instruction": instruction},
+        )
+
+    async def confirm_interpretation(
+        self,
+        dataset_id: int,
+        instruction: str,
+        workspace_id: int | None = None,
+        project_id: int | None = None,
+    ) -> dict[str, Any]:
+        """Apply the reading last previewed for this instruction.
+
+        The plan itself is never sent: it carries SQL, which would then run
+        unchecked. An empty ``structure_map`` is what tells the route to re-read
+        the plan its own preview saved, rather than working the instruction out
+        again and possibly answering differently.
+
+        Args:
+            dataset_id: ID of the dataset.
+            instruction: The same instruction the preview was asked for.
+            workspace_id: ID of the workspace (uses client default if not provided).
+            project_id: ID of the project (uses client default if not provided).
+        """
+        ws = workspace_id or self._ws()
+        proj = self._proj(project_id)
+        return await self._client._request_json(
+            "PATCH",
+            f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/interpretation",
+            json={"user_instruction": instruction, "structure_map": {}},
+        )
+
+    async def get_unstructured_rows(
+        self,
+        dataset_id: int,
+        workspace_id: int | None = None,
+        project_id: int | None = None,
+    ) -> dict[str, Any]:
+        """Get the lines of a file that did not fit the dataset built from it.
+
+        A file whose rows are ragged is read as far as it can be, and the lines
+        that did not fit are set aside. The dataset then holds data and still
+        waits, because nobody has said what to do about them.
+
+        Args:
+            dataset_id: ID of the dataset.
+            workspace_id: ID of the workspace (uses client default if not provided).
+            project_id: ID of the project (uses client default if not provided).
+
+        Returns:
+            Dict with ``unstructured_rows`` (each with its line, line number and
+            the reason it did not fit) and ``row_count``.
+        """
+        ws = workspace_id or self._ws()
+        proj = self._proj(project_id)
+        return await self._client._request_json(
+            "GET", f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/unstructured_data"
+        )
+
+    async def discard_unstructured_rows(
+        self,
+        dataset_id: int,
+        workspace_id: int | None = None,
+        project_id: int | None = None,
+    ) -> dict[str, Any]:
+        """Discard the set-aside lines and finish the dataset without them.
+
+        The discarded lines do not come back. A line worth keeping has to be
+        corrected in the source file and the dataset built again.
+
+        Args:
+            dataset_id: ID of the dataset.
+            workspace_id: ID of the workspace (uses client default if not provided).
+            project_id: ID of the project (uses client default if not provided).
+
+        Returns:
+            Dict with ``rows_deleted``.
+        """
+        ws = workspace_id or self._ws()
+        proj = self._proj(project_id)
+        return await self._client._request_json(
+            "DELETE", f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/unstructured_data"
+        )
+
+    async def list_batches(
         self,
         dataset_id: int,
         workspace_id: int | None = None,
@@ -407,12 +524,12 @@ class DatasetsAPI:
         """
         ws = workspace_id or self._ws()
         proj = self._proj(project_id)
-        response = self._client._request_json(
+        response = await self._client._request_json(
             "GET", f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/batches"
         )
         return response.get("batches", response if isinstance(response, _list) else [])
 
-    def get_batch(
+    async def get_batch(
         self,
         dataset_id: int,
         batch_id: int,
@@ -432,11 +549,11 @@ class DatasetsAPI:
         """
         ws = workspace_id or self._ws()
         proj = self._proj(project_id)
-        return self._client._request_json(
+        return await self._client._request_json(
             "GET", f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/batches/{batch_id}"
         )
 
-    def get_batch_data(
+    async def get_batch_data(
         self,
         dataset_id: int,
         batch_id: int,
@@ -446,7 +563,7 @@ class DatasetsAPI:
         workspace_id: int | None = None,
         project_id: int | None = None,
         timeout: int | None = None,
-        poll_interval: int = 2,
+        poll_interval: float | None = None,
     ) -> dict[str, Any]:
         """Get data for a batch; the API returns an asynchronous job."""
         if limit < 0 or limit > 100:
@@ -458,14 +575,16 @@ class DatasetsAPI:
         params: dict[str, Any] = {"limit": limit, "offset": offset}
         if columns is not None:
             params["columns"] = columns
-        response = self._client._request_json(
+        response = await self._client._request_json(
             "GET",
             f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/batches/{batch_id}/data",
             params=params,
         )
-        return self._client._wait_if_job(response, timeout=timeout, poll_interval=poll_interval)
+        return await self._client._wait_if_job(
+            response, timeout=timeout, poll_interval=poll_interval
+        )
 
-    def get_file_settings(
+    async def get_file_settings(
         self,
         dataset_id: int,
         workspace_id: int | None = None,
@@ -483,34 +602,11 @@ class DatasetsAPI:
         """
         ws = workspace_id or self._ws()
         proj = self._proj(project_id)
-        return self._client._request_json(
+        return await self._client._request_json(
             "GET", f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/file_settings"
         )
 
-    def get_unstructured_rows(
-        self,
-        dataset_id: int,
-        workspace_id: int | None = None,
-        project_id: int | None = None,
-    ) -> dict[str, Any]:
-        """Get the lines of an uploaded file that could not be parsed.
-
-        Args:
-            dataset_id: ID of the dataset.
-            workspace_id: ID of the workspace (uses client default if not provided).
-            project_id: ID of the project (uses client default if not provided).
-
-        Returns:
-            Dict with ``unstructured_rows`` (the first 100: ``line_num``, ``line``,
-            ``batch_id``, ``is_compatible``, ``reason``) and ``row_count``, the total.
-        """
-        ws = workspace_id or self._ws()
-        proj = self._proj(project_id)
-        return self._client._request_json(
-            "GET", f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/unstructured_rows"
-        )
-
-    def create_from_pdf(
+    async def create_from_pdf(
         self,
         file_object_id: int,
         file_name: str,
@@ -565,13 +661,13 @@ class DatasetsAPI:
         if user_instruction is not None:
             payload["user_instruction"] = user_instruction
 
-        return self._client._request_json(
+        return await self._client._request_json(
             "POST",
             f"/workspaces/{ws}/projects/{proj}/datasets-from-pdf",
             json=payload,
         )
 
-    def file_settings_update(
+    async def file_settings_update(
         self,
         dataset_id: int,
         delimiter: str,
@@ -631,13 +727,13 @@ class DatasetsAPI:
         if date_formats is not None:
             payload["date_formats"] = date_formats
 
-        return self._client._request_json(
+        return await self._client._request_json(
             "POST",
             f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/file_settings",
             json=payload,
         )
 
-    def file_settings_undo(
+    async def file_settings_undo(
         self,
         dataset_id: int,
         workspace_id: int | None = None,
@@ -660,11 +756,11 @@ class DatasetsAPI:
             raise MammothValidationError(ERR_DATASET_ID_POSITIVE.format(dataset_id))
         ws = workspace_id or self._ws()
         proj = self._proj(project_id)
-        return self._client._request_json(
+        return await self._client._request_json(
             "DELETE", f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/file_settings"
         )
 
-    def interpretation_preview(
+    async def interpretation_preview(
         self,
         dataset_id: int,
         user_instruction: str | None = None,
@@ -698,13 +794,13 @@ class DatasetsAPI:
             raise MammothValidationError(ERR_DATASET_ID_POSITIVE.format(dataset_id))
         ws = workspace_id or self._ws()
         proj = self._proj(project_id)
-        return self._client._request_json(
+        return await self._client._request_json(
             "POST",
             f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/interpretation/preview",
             json=self._interpretation_body(user_instruction, structure_map, destination_dataset_id),
         )
 
-    def interpretation_confirm(
+    async def interpretation_confirm(
         self,
         dataset_id: int,
         user_instruction: str | None = None,
@@ -737,7 +833,7 @@ class DatasetsAPI:
             raise MammothValidationError(ERR_DATASET_ID_POSITIVE.format(dataset_id))
         ws = workspace_id or self._ws()
         proj = self._proj(project_id)
-        return self._client._request_json(
+        return await self._client._request_json(
             "PATCH",
             f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/interpretation",
             json=self._interpretation_body(user_instruction, structure_map, destination_dataset_id),
@@ -756,7 +852,7 @@ class DatasetsAPI:
         }
         return {name: value for name, value in fields.items() if value is not None}
 
-    def restore(
+    async def restore(
         self,
         dataset_id: int,
         workspace_id: int | None = None,
@@ -779,11 +875,11 @@ class DatasetsAPI:
             raise MammothValidationError(ERR_DATASET_ID_POSITIVE.format(dataset_id))
         ws = workspace_id or self._ws()
         proj = self._proj(project_id)
-        return self._client._request_json(
+        return await self._client._request_json(
             "POST", f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/restore"
         )
 
-    def trash(
+    async def trash(
         self,
         dataset_id: int,
         workspace_id: int | None = None,
@@ -806,6 +902,6 @@ class DatasetsAPI:
             raise MammothValidationError(ERR_DATASET_ID_POSITIVE.format(dataset_id))
         ws = workspace_id or self._ws()
         proj = self._proj(project_id)
-        return self._client._request_json(
+        return await self._client._request_json(
             "POST", f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/trash"
         )

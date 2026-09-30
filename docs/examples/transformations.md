@@ -23,7 +23,7 @@ client = MammothClient(
 )
 client.set_project_id(10)
 
-view = client.views.get(1039)
+view = await client.views.get(1039)
 ```
 
 ---
@@ -33,19 +33,19 @@ view = client.views.get(1039)
 ### Filter to high-value rows
 
 ```python
-view.filter_rows(Condition("Sales", Operator.GTE, 1000))
+await view.filter_rows(Condition("Sales", Operator.GTE, 1000))
 ```
 
 ### Filter with multiple conditions
 
 ```python
 # Keep rows where Sales >= 1000 AND Region is "West"
-view.filter_rows(
+await view.filter_rows(
     Condition("Sales", Operator.GTE, 1000) & Condition("Region", Operator.EQ, "West")
 )
 
 # Remove rows where Status is empty
-view.filter_rows(
+await view.filter_rows(
     Condition("Status", Operator.IS_EMPTY),
     filter_type=FilterType.REMOVE,
 )
@@ -54,7 +54,7 @@ view.filter_rows(
 ### Create a label column
 
 ```python
-view.set_values(
+await view.set_values(
     new_column="Tier",
     column_type=ColumnType.TEXT,
     values=[
@@ -68,7 +68,7 @@ view.set_values(
 ### Flag rows with a boolean column
 
 ```python
-view.set_values(
+await view.set_values(
     new_column="Is High Value",
     column_type=ColumnType.TEXT,
     values=[
@@ -85,20 +85,20 @@ view.set_values(
 ### Compute a new column
 
 ```python
-view.math("Price * Quantity", new_column="Total")
-view.math("(Price + Tax) * 1.1", new_column="Grand Total")
+await view.math("Price * Quantity", new_column="Total")
+await view.math("(Price + Tax) * 1.1", new_column="Grand Total")
 ```
 
 ### Update an existing column
 
 ```python
-view.math("Sales * 1.1", existing_column="Sales")
+await view.math("Sales * 1.1", existing_column="Sales")
 ```
 
 ### Conditional math
 
 ```python
-view.math(
+await view.math(
     "Price * 0.9",
     existing_column="Price",
     condition=Condition("Region", Operator.EQ, "West"),
@@ -114,9 +114,9 @@ view.math(
 When you pass a View object, you can use display names for both sides:
 
 ```python
-customers = client.views.get(2050)
+customers = await client.views.get(2050)
 
-view.join(
+await view.join(
     foreign_view=customers,
     join_type=JoinType.LEFT,
     on=[JoinKeySpec(left="Customer ID", right="Customer ID")],
@@ -127,9 +127,9 @@ view.join(
 ### Join with column prefix
 
 ```python
-products = client.views.get(2051)
+products = await client.views.get(2051)
 
-view.join(
+await view.join(
     foreign_view=products,
     join_type=JoinType.INNER,
     on=[JoinKeySpec(left="Product Code", right="Product Code")],
@@ -145,7 +145,7 @@ view.join(
 ### Group by with multiple aggregations
 
 ```python
-view.pivot(
+await view.pivot(
     group_by=["Region", "Category"],
     aggregations=[
         AggregationSpec(column="Sales", function=AggregateFunction.SUM, as_name="Total Sales"),
@@ -158,7 +158,7 @@ view.pivot(
 ### Crosstab / pivot table
 
 ```python
-view.crosstab(
+await view.crosstab(
     rows=["Region"],
     pivot_column="Quarter",
     select=CrosstabSpec(column="Sales", function=AggregateFunction.SUM),
@@ -172,7 +172,7 @@ view.crosstab(
 ### Row number / ranking
 
 ```python
-view.window(
+await view.window(
     function=WindowFunction.ROW_NUMBER,
     new_column="Rank",
     partition_by=["Region"],
@@ -183,7 +183,7 @@ view.window(
 ### Running total
 
 ```python
-view.window(
+await view.window(
     function=WindowFunction.SUM,
     column="Sales",
     new_column="Running Total",
@@ -195,7 +195,7 @@ view.window(
 ### Lag / lead
 
 ```python
-view.window(
+await view.window(
     function=WindowFunction.LAG,
     column="Sales",
     new_column="Previous Sales",
@@ -213,14 +213,14 @@ view.window(
 The SDK does not have a direct `rename_column` task. To rename, copy the column with a new name, then delete the original:
 
 ```python
-view.copy_columns([CopySpec(source="old_name", as_name="new_name")])
-view.delete_columns(["old_name"])
+await view.copy_columns([CopySpec(source="old_name", as_name="new_name")])
+await view.delete_columns(["old_name"])
 ```
 
 ### Combine columns
 
 ```python
-view.combine_columns(
+await view.combine_columns(
     sources=["First Name", "Last Name"],
     new_column="Full Name",
     separator=" ",
@@ -230,7 +230,7 @@ view.combine_columns(
 ### Split a column
 
 ```python
-view.split_column(
+await view.split_column(
     column="Full Name",
     delimiter=" ",
     new_columns=[
@@ -243,7 +243,7 @@ view.split_column(
 ### Convert column types
 
 ```python
-view.convert_type([
+await view.convert_type([
     ConversionSpec(column="Sales", to=ColumnType.NUMERIC),
     ConversionSpec(column="Order Date", to=ColumnType.DATE),
 ])
@@ -256,26 +256,26 @@ view.convert_type([
 ### Change text case
 
 ```python
-view.text_transform(columns=["Name"], case=TextCase.UPPER)
-view.text_transform(columns=["Description"], case=TextCase.TITLE)
+await view.text_transform(columns=["Name"], case=TextCase.UPPER)
+await view.text_transform(columns=["Description"], case=TextCase.TITLE)
 ```
 
 ### Trim whitespace
 
 ```python
-view.text_transform(columns=["Name", "Email"], trim=True)
+await view.text_transform(columns=["Name", "Email"], trim=True)
 ```
 
 ### Find and replace
 
 ```python
-view.replace_values(columns=["Status"], find="N/A", replace="Unknown")
+await view.replace_values(columns=["Status"], find="N/A", replace="Unknown")
 ```
 
 ### Bulk replace
 
 ```python
-view.bulk_replace(
+await view.bulk_replace(
     columns=["Item"],
     mapping=[
         BulkReplaceMapping(search=["6 inch CAKE", "8 inch CAKE", "10 inch CAKE"], replace="CAKE"),
@@ -288,10 +288,10 @@ view.bulk_replace(
 
 ```python
 # First 3 characters
-view.substring("Product Code", direction=SubstringDirection.START, num_char=3, new_column="Prefix")
+await view.substring("Product Code", direction=SubstringDirection.START, num_char=3, new_column="Prefix")
 
 # Regex extraction
-view.substring("Email", regex_pattern=r"@(.+)$", new_column="Domain")
+await view.substring("Email", regex_pattern=r"@(.+)$", new_column="Domain")
 ```
 
 ---
@@ -301,15 +301,15 @@ view.substring("Email", regex_pattern=r"@(.+)$", new_column="Domain")
 ### Extract date parts
 
 ```python
-view.extract_date("Order Date", DateComponent.YEAR, new_column="Year")
-view.extract_date("Order Date", DateComponent.MONTH_TEXT, new_column="Month Name")
-view.extract_date("Order Date", DateComponent.QUARTER, new_column="Quarter")
+await view.extract_date("Order Date", DateComponent.YEAR, new_column="Year")
+await view.extract_date("Order Date", DateComponent.MONTH_TEXT, new_column="Month Name")
+await view.extract_date("Order Date", DateComponent.QUARTER, new_column="Quarter")
 ```
 
 ### Date difference
 
 ```python
-view.date_diff(
+await view.date_diff(
     DateDiffUnit.DAY,
     start="Ship Date",
     end="Delivery Date",
@@ -320,7 +320,7 @@ view.date_diff(
 ### Increment a date
 
 ```python
-view.increment_date("Due Date", delta=DateDelta(days=30), new_column="Extended Due")
+await view.increment_date("Due Date", delta=DateDelta(days=30), new_column="Extended Due")
 ```
 
 ---
@@ -330,20 +330,20 @@ view.increment_date("Due Date", delta=DateDelta(days=30), new_column="Extended D
 ### Remove duplicates
 
 ```python
-view.discard_duplicates()
+await view.discard_duplicates()
 
 # Ignore specific columns when checking for duplicates
-view.discard_duplicates(ignore_columns=["Timestamp", "Notes"])
+await view.discard_duplicates(ignore_columns=["Timestamp", "Notes"])
 ```
 
 ### Limit rows
 
 ```python
 # Top 100 by sales
-view.limit_rows(100, order_by=[["Sales", SortDirection.DESC]])
+await view.limit_rows(100, order_by=[["Sales", SortDirection.DESC]])
 
 # Bottom 10
-view.limit_rows(10, bottom=True, order_by=[["Sales", SortDirection.ASC]])
+await view.limit_rows(10, bottom=True, order_by=[["Sales", SortDirection.ASC]])
 ```
 
 ### Fill missing values
@@ -351,7 +351,7 @@ view.limit_rows(10, bottom=True, order_by=[["Sales", SortDirection.ASC]])
 ```python
 # FIRST_VALUE carries the previous row's value down (forward fill);
 # LAST_VALUE takes the next row's value (back-fill).
-view.fill_missing(
+await view.fill_missing(
     "Price",
     direction=FillDirection.FIRST_VALUE,
     order_by=[["Date", SortDirection.ASC]],
@@ -361,7 +361,7 @@ view.fill_missing(
 ### Unnest (unpivot)
 
 ```python
-view.unnest(
+await view.unnest(
     columns=["Q1", "Q2", "Q3", "Q4"],
     label_column="Quarter",
     value_column="Revenue",
@@ -375,7 +375,7 @@ view.unnest(
 ### Lookup from another view
 
 ```python
-view.lookup(
+await view.lookup(
     source="Product Code",
     lookup_view_id=2050,
     key="code",
@@ -388,10 +388,10 @@ view.lookup(
 
 ```python
 # Object keys to columns
-view.json_extract("data", keys=["name", "email", "age"])
+await view.json_extract("data", keys=["name", "email", "age"])
 
 # With type control
-view.json_extract(
+await view.json_extract(
     "data",
     extractions=[
         JsonExtractionSpec(key="name", as_name="Name", type=ColumnType.TEXT),
@@ -400,13 +400,13 @@ view.json_extract(
 )
 
 # JSON list to rows
-view.json_extract("items", json_type=JsonType.LIST)
+await view.json_extract("items", json_type=JsonType.LIST)
 ```
 
 ### AI-powered transformation
 
 ```python
-view.gen_ai(
+await view.gen_ai(
     prompt="Classify the sentiment as positive, negative, or neutral",
     context_columns=["Review Text"],
     new_column="Sentiment",
@@ -418,12 +418,12 @@ view.gen_ai(
 ```python
 # Generate SQL from natural language
 # Returns the query only; the view does not change until add_sql
-sql = view.generate_sql("count employees by department and sort by count descending")
+sql = await view.generate_sql("count employees by department and sort by count descending")
 print(sql)
-view.add_sql(sql)
+await view.add_sql(sql)
 
 # Add raw SQL
-view.add_sql('SELECT region, SUM(sales) AS total FROM "view:123" GROUP BY region')
+await view.add_sql('SELECT region, SUM(sales) AS total FROM "view:123" GROUP BY region')
 ```
 
 ---
@@ -435,47 +435,47 @@ By default each transformation runs the pipeline immediately. Use draft mode to 
 ### Context manager (recommended)
 
 ```python
-with view.draft():
-    view.text_transform(columns=["Name", "Email"], trim=True)
-    view.convert_type([
+async with view.draft():
+    await view.text_transform(columns=["Name", "Email"], trim=True)
+    await view.convert_type([
         ConversionSpec(column="Sales", to=ColumnType.NUMERIC),
         ConversionSpec(column="Order Date", to=ColumnType.DATE),
     ])
-    view.filter_rows(Condition("Sales", Operator.IS_NOT_EMPTY))
-    view.math("Price * Quantity", new_column="Revenue")
+    await view.filter_rows(Condition("Sales", Operator.IS_NOT_EMPTY))
+    await view.math("Price * Quantity", new_column="Revenue")
 # Pipeline runs once for all 4 tasks
 ```
 
 ### Explicit enter/submit
 
 ```python
-view.enter_draft_mode()
-view.add_column("Notes")
-view.set_values(
+await view.enter_draft_mode()
+await view.add_column("Notes")
+await view.set_values(
     new_column="Flag",
     column_type=ColumnType.TEXT,
     values=[SetValue("Yes", condition=Condition("Sales", Operator.GTE, 10000)), SetValue("No")],
 )
-view.submit_draft()  # runs pipeline, refreshes metadata
+await view.submit_draft()  # runs pipeline, refreshes metadata
 ```
 
 ### Discard on error
 
-If an exception occurs inside `with view.draft():`, queued tasks are automatically discarded. You can also discard explicitly:
+If an exception occurs inside `async with view.draft():`, queued tasks are automatically discarded. You can also discard explicitly:
 
 ```python
-view.enter_draft_mode()
-view.add_column("Temp")
-view.discard_draft()  # reverts, "Temp" is not added
+await view.enter_draft_mode()
+await view.add_column("Temp")
+await view.discard_draft()  # reverts, "Temp" is not added
 ```
 
 ### Toggle auto-run
 
 ```python
-view.set_auto_run(False)   # enters draft mode, tasks queue without running
-view.filter_rows(Condition("Sales", Operator.GTE, 1000))
-view.math("Sales * 1.1", new_column="Adjusted")
-view.set_auto_run(True)    # re-enables auto-run
+await view.set_auto_run(False)   # enters draft mode, tasks queue without running
+await view.filter_rows(Condition("Sales", Operator.GTE, 1000))
+await view.math("Sales * 1.1", new_column="Adjusted")
+await view.set_auto_run(True)    # re-enables auto-run
 ```
 
 ---
@@ -495,22 +495,22 @@ client = MammothClient(api_token="mm_...", workspace_id=11)
 client.set_project_id(10)
 
 # 1. Get the view
-view = client.views.get(1039)
+view = await client.views.get(1039)
 print(f"Starting with {len(view.display_names)} columns")
 
 # 2. Clean: trim whitespace, convert types
-view.text_transform(columns=["Customer Name", "Region"], trim=True)
-view.convert_type([
+await view.text_transform(columns=["Customer Name", "Region"], trim=True)
+await view.convert_type([
     ConversionSpec(column="Sales", to=ColumnType.NUMERIC),
     ConversionSpec(column="Order Date", to=ColumnType.DATE),
 ])
 
 # 3. Filter: remove empty sales
-view.filter_rows(Condition("Sales", Operator.IS_NOT_EMPTY))
+await view.filter_rows(Condition("Sales", Operator.IS_NOT_EMPTY))
 
 # 4. Transform: add calculated columns
-view.math("Price * Quantity", new_column="Revenue")
-view.set_values(
+await view.math("Price * Quantity", new_column="Revenue")
+await view.set_values(
     new_column="Segment",
     column_type=ColumnType.TEXT,
     values=[
@@ -521,7 +521,7 @@ view.set_values(
 )
 
 # 5. Aggregate
-view.pivot(
+await view.pivot(
     group_by=["Region", "Segment"],
     aggregations=[
         AggregationSpec(column="Revenue", function=AggregateFunction.SUM, as_name="Total Revenue"),
@@ -530,8 +530,8 @@ view.pivot(
 )
 
 # 6. Export
-view.export.to_csv("revenue_summary.csv")
-view.export.to_postgres(
+await view.export.to_csv("revenue_summary.csv")
+await view.export.to_postgres(
     host="db.example.com", port=5432,
     database="analytics", table="revenue_summary",
     username="user", password="pass",

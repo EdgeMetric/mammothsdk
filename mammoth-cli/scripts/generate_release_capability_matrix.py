@@ -123,9 +123,7 @@ def main() -> None:
                     return str(item)
 
                 rendered = "; ".join(
-                    f"{key}={item_text(item)}"
-                    for key, item in value.items()
-                    if item is not None
+                    f"{key}={item_text(item)}" for key, item in value.items() if item is not None
                 )
             else:
                 rendered = str(value)

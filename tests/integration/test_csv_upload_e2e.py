@@ -12,7 +12,7 @@ of each transform — not merely that the backend accepted the call.
 
 Reading the transformed data
 ----------------------------
-``View.data()`` reads ``sequence=0`` (the original uploaded rows), so it never
+``await View.data()`` reads ``sequence=0`` (the original uploaded rows), so it never
 reflects applied tasks. Pipeline output lives at the task's sequence number, so
 these tests read via ``query_data(..., sequence=<latest task sequence>)``.
 
@@ -27,11 +27,12 @@ from __future__ import annotations
 
 import contextlib
 import os
-from collections.abc import Iterator
+from collections.abc import AsyncIterator
 from pathlib import Path
 from typing import Any
 
 import pytest
+import pytest_asyncio
 
 from mammoth import MammothClient
 from mammoth.condition import Condition
@@ -46,7 +47,10 @@ _REQUIRED_ENV = (
     "MAMMOTH_PROJECT_ID",
 )
 _missing = [v for v in _REQUIRED_ENV if not os.environ.get(v)]
-pytestmark = pytest.mark.skipif(bool(_missing), reason=f"Missing env vars: {', '.join(_missing)}")
+pytestmark = [
+    pytest.mark.skipif(bool(_missing), reason=f"Missing env vars: {', '.join(_missing)}"),
+    pytest.mark.asyncio(loop_scope="session"),
+]
 
 # salary values are plain integers -> the backend types this column as NUMERIC on upload.
 _CSV = """name,department,salary
@@ -69,80 +73,82 @@ def client() -> MammothClient:
     return c
 
 
-@pytest.fixture
-def uploaded_view(client: MammothClient, tmp_path: Path) -> Iterator[View]:
+@pytest_asyncio.fixture(loop_scope="session")
+async def uploaded_view(client: MammothClient, tmp_path: Path) -> AsyncIterator[View]:
     """Upload a small CSV, yield its (single) view, and delete the dataset after."""
     csv_path = tmp_path / "e2e_people.csv"
     csv_path.write_text(_CSV)
 
-    ds_id = client.files.upload(str(csv_path))
+    ds_id = await client.files.upload(str(csv_path))
     assert isinstance(ds_id, int), f"upload did not return a single dataset id: {ds_id!r}"
     try:
-        views = [v for v in client.views.list(dataset_id=ds_id) if v.display_names]
+        views = [v for v in await client.views.list(dataset_id=ds_id) if v.display_names]
         assert views, f"no view with columns on uploaded dataset {ds_id}"
         yield views[0]
     finally:
         with contextlib.suppress(Exception):
-            client.datasets.delete(ds_id)
+            await client.datasets.delete(ds_id)
 
 
-def _latest_sequence(view: View) -> int:
+async def _latest_sequence(view: View) -> int:
     """The highest pipeline task sequence (0 when no tasks have been applied)."""
-    seqs = [int(t.get("sequence", 0)) for t in view.list_tasks()]
+    seqs = [int(t.get("sequence", 0)) for t in await view.list_tasks()]
     return max(seqs) if seqs else 0
 
 
-def _rows(view: View, sequence: int | None = None) -> list[dict[str, Any]]:
+async def _rows(view: View, sequence: int | None = None) -> list[dict[str, Any]]:
     """Fetch data rows at *sequence* (defaults to the latest applied task)."""
-    seq = _latest_sequence(view) if sequence is None else sequence
-    resp = view._client.dataviews.query_data(
+    seq = await _latest_sequence(view) if sequence is None else sequence
+    resp = await view._client.dataviews.query_data(
         dataset_id=view.dataset_id, dataview_id=view.id, sequence=seq, limit=100
     )
     return resp.get("data", [])
 
 
-def _values(view: View, display_name: str) -> list[Any]:
+async def _values(view: View, display_name: str) -> list[Any]:
     """Values of one column across all rows at the latest sequence."""
     internal = view.columns[display_name]
-    return [str(r.get(internal)).strip() for r in _rows(view)]
+    return [str(r.get(internal)).strip() for r in await _rows(view)]
 
 
 class TestCsvUploadPipeline:
-    def test_upload_creates_expected_schema(self, uploaded_view: View) -> None:
+    async def test_upload_creates_expected_schema(self, uploaded_view: View) -> None:
         """The uploaded CSV materializes a view with the 3 source columns and 4 base rows."""
         v = uploaded_view
         assert set(v.display_names) >= {"name", "department", "salary"}
         assert v.column_types["salary"].upper() == "NUMERIC"
-        assert len(_rows(v, sequence=0)) == 4
+        assert len(await _rows(v, sequence=0)) == 4
 
-    def test_text_transform_uppercases_values(self, uploaded_view: View) -> None:
+    async def test_text_transform_uppercases_values(self, uploaded_view: View) -> None:
         """text_transform UPPER rewrites the data, visible at the task's sequence."""
         v = uploaded_view
-        assert v.text_transform(columns=["name"], case=TextCase.UPPER) is not None
-        assert sorted(_values(v, "name")) == ["ALICE", "ALICE", "BOB", "CAROL"]
+        assert await v.text_transform(columns=["name"], case=TextCase.UPPER) is not None
+        assert sorted(await _values(v, "name")) == ["ALICE", "ALICE", "BOB", "CAROL"]
 
-    def test_filter_rows_keeps_only_matching(self, uploaded_view: View) -> None:
+    async def test_filter_rows_keeps_only_matching(self, uploaded_view: View) -> None:
         """filter_rows SHOW keeps only rows matching the condition."""
         v = uploaded_view
-        result = v.filter_rows(
+        result = await v.filter_rows(
             Condition("department", Operator.EQ, "Engineering"), filter_type=FilterType.SHOW
         )
         assert result is not None
-        assert set(_values(v, "department")) == {"Engineering"}
+        assert set(await _values(v, "department")) == {"Engineering"}
 
-    def test_discard_duplicates_removes_dupe_row(self, uploaded_view: View) -> None:
+    async def test_discard_duplicates_removes_dupe_row(self, uploaded_view: View) -> None:
         """discard_duplicates collapses the repeated alice/Engineering/100 row (4 -> 3)."""
         v = uploaded_view
-        assert v.discard_duplicates() is not None
-        assert len(_rows(v)) == 3
+        assert await v.discard_duplicates() is not None
+        assert len(await _rows(v)) == 3
 
-    def test_convert_and_add_column_accepted(self, uploaded_view: View) -> None:
+    async def test_convert_and_add_column_accepted(self, uploaded_view: View) -> None:
         """convert_type (NUMERIC->TEXT) and add_column both execute without backend error.
 
         ``_add_task`` waits for the pipeline, so a returned (non-None) result with no
         raised ``MammothTransformError`` means the backend applied the task cleanly.
         """
         v = uploaded_view
-        assert v.convert_type([ConversionSpec(column="salary", to=ColumnType.TEXT)]) is not None
-        assert v.add_column("status", column_type=ColumnType.TEXT) is not None
-        assert len(v.list_tasks()) == 2
+        assert (
+            await v.convert_type([ConversionSpec(column="salary", to=ColumnType.TEXT)]) is not None
+        )
+        assert await v.add_column("status", column_type=ColumnType.TEXT) is not None
+        assert len(await v.list_tasks()) == 2

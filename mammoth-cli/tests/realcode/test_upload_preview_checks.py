@@ -69,7 +69,13 @@ def test_project_check_lists_checked_and_skipped_datasets(
     monkeypatch: pytest.MonkeyPatch, real_service: ServiceFactory
 ) -> None:
     service, api = real_service(project_id=180)
-    monkeypatch.setattr(factory, "build_service", lambda *a, **k: service)
+    # A fresh service per build, as in production: each command closes its own.
+    unused = iter([service])
+    monkeypatch.setattr(
+        factory,
+        "build_service",
+        lambda *a, **k: next(unused, None) or real_service(api=api, project_id=180)[0],
+    )
     view = _view([{"column_1": 1}, {"column_1": 2}], api)
     _views(api, [view])
     api.on("GET", r"/datasets/91/dataviews$", body={"dataviews": []})

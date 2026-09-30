@@ -17,7 +17,7 @@ else:
 class FilterOpsMixin(ViewHost):
     """Mixin for filter and set_values operations on a View."""
 
-    def filter_rows(
+    async def filter_rows(
         self,
         condition: Condition | CompoundCondition | NotCondition,
         filter_type: FilterType = FilterType.SHOW,
@@ -35,14 +35,14 @@ class FilterOpsMixin(ViewHost):
 
         Example::
 
-            view.filter_rows(Condition("Sales", Operator.GTE, 1000))
-            view.filter_rows(cond1 & cond2, filter_type=FilterType.REMOVE)
+            await view.filter_rows(Condition("Sales", Operator.GTE, 1000))
+            await view.filter_rows(cond1 & cond2, filter_type=FilterType.REMOVE)
         """
-        return self._add_task(
+        return await self._add_task(
             build_filter_params(condition, self.columns, self.column_types, filter_type, prompt)
         )
 
-    def set_values(
+    async def set_values(
         self,
         values: list[SetValue],
         new_column: str | None = None,
@@ -66,7 +66,7 @@ class FilterOpsMixin(ViewHost):
 
         Example::
 
-            view.set_values(
+            await view.set_values(
                 new_column="Risk Level",
                 column_type=ColumnType.TEXT,
                 values=[
@@ -75,7 +75,7 @@ class FilterOpsMixin(ViewHost):
                 ],
             )
         """
-        return self._add_task(
+        return await self._add_task(
             build_set_params(
                 values,
                 self.columns,

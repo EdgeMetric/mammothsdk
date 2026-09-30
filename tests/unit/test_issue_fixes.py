@@ -3,7 +3,7 @@
 Tests:
 - Fix 1: connectors.active_connectors handles list and dict responses
 - Fix 2: enter_draft_mode re-entry guard
-- Fix 3: views.list() with dataset_id parameter
+- Fix 3: await views.list() with dataset_id parameter
 - Fix 4: dict coercion for copy_columns, convert_type, bulk_replace, split_column, pivot
 - Fix 6a: datasets.browse removed
 - Fix 6b: datasets.update uses plural endpoint; datasets.rename convenience
@@ -13,7 +13,7 @@ Tests:
 from __future__ import annotations
 
 from typing import Any
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
@@ -46,17 +46,17 @@ SAMPLE_VIEW_DATA = {
 
 @pytest.fixture
 def mock_client() -> MammothClient:
-    with patch("mammoth.client.requests.Session"):
+    with patch("mammoth.client.httpx.AsyncClient"):
         client = MammothClient(api_key="k", api_secret="s", workspace_id=1)
     client.project_id = 10
-    client._request = MagicMock(return_value={})
-    client._request_json = MagicMock(return_value={})
-    client.pipeline = MagicMock()
-    client.pipeline.add_task = MagicMock(return_value={"id": 1})
-    client.pipeline.wait_for_pipeline = MagicMock(return_value={})
-    client.dataviews = MagicMock()
-    client.dataviews.get = MagicMock(return_value=SAMPLE_VIEW_DATA)
-    client.dataviews.list = MagicMock(return_value={"dataviews": [SAMPLE_VIEW_DATA]})
+    client._request = AsyncMock(return_value={})
+    client._request_json = AsyncMock(return_value={})
+    client.pipeline = AsyncMock()
+    client.pipeline.add_task = AsyncMock(return_value={"id": 1})
+    client.pipeline.wait_for_pipeline = AsyncMock(return_value={})
+    client.dataviews = AsyncMock()
+    client.dataviews.get = AsyncMock(return_value=SAMPLE_VIEW_DATA)
+    client.dataviews.list = AsyncMock(return_value={"dataviews": [SAMPLE_VIEW_DATA]})
     return client
 
 
@@ -65,7 +65,7 @@ def mock_view(mock_client: MammothClient) -> View:
     view = View(mock_client, SAMPLE_VIEW_DATA, 500)
     captured: list[dict[str, Any]] = []
 
-    def fake_add_task(params: dict[str, Any]) -> dict[str, Any]:
+    async def fake_add_task(params: dict[str, Any]) -> dict[str, Any]:
         captured.append(params)
         return {"id": len(captured)}
 
@@ -78,24 +78,24 @@ def mock_view(mock_client: MammothClient) -> View:
 
 
 class TestConnectorsListResponse:
-    def test_active_connectors_handles_list(self, mock_client: MammothClient):
-        mock_client._request = MagicMock(return_value=[{"key": "postgres"}])
-        result = mock_client.connectors.active_connectors()
+    async def test_active_connectors_handles_list(self, mock_client: MammothClient):
+        mock_client._request = AsyncMock(return_value=[{"key": "postgres"}])
+        result = await mock_client.connectors.active_connectors()
         assert result == [{"key": "postgres"}]
 
-    def test_active_connectors_handles_dict(self, mock_client: MammothClient):
-        mock_client._request = MagicMock(return_value={"connectors": [{"key": "mysql"}]})
-        result = mock_client.connectors.active_connectors()
+    async def test_active_connectors_handles_dict(self, mock_client: MammothClient):
+        mock_client._request = AsyncMock(return_value={"connectors": [{"key": "mysql"}]})
+        result = await mock_client.connectors.active_connectors()
         assert result == [{"key": "mysql"}]
 
-    def test_list_handles_list(self, mock_client: MammothClient):
-        mock_client._request = MagicMock(return_value=[{"key": "s3"}])
-        result = mock_client.connectors.list()
+    async def test_list_handles_list(self, mock_client: MammothClient):
+        mock_client._request = AsyncMock(return_value=[{"key": "s3"}])
+        result = await mock_client.connectors.list()
         assert result == [{"key": "s3"}]
 
-    def test_list_handles_dict(self, mock_client: MammothClient):
-        mock_client._request = MagicMock(return_value={"connectors": [{"key": "s3"}]})
-        result = mock_client.connectors.list()
+    async def test_list_handles_dict(self, mock_client: MammothClient):
+        mock_client._request = AsyncMock(return_value={"connectors": [{"key": "s3"}]})
+        result = await mock_client.connectors.list()
         assert result == [{"key": "s3"}]
 
 
@@ -103,35 +103,35 @@ class TestConnectorsListResponse:
 
 
 class TestDraftModeGuard:
-    def test_guard_prevents_double_entry(self, mock_view: View):
+    async def test_guard_prevents_double_entry(self, mock_view: View):
         mock_view._draft_mode = True
-        result = mock_view.enter_draft_mode()
+        result = await mock_view.enter_draft_mode()
         assert result == {"status": "already_in_draft_mode"}
         # No API call should have been made
         mock_view._client.pipeline.draft_mode.assert_not_called()
 
-    def test_first_entry_calls_api(self, mock_view: View):
+    async def test_first_entry_calls_api(self, mock_view: View):
         mock_view._draft_mode = False
-        mock_view._client.pipeline.draft_mode = MagicMock(return_value={"state": "draft"})
-        result = mock_view.enter_draft_mode()
+        mock_view._client.pipeline.draft_mode = AsyncMock(return_value={"state": "draft"})
+        result = await mock_view.enter_draft_mode()
         assert result == {"state": "draft"}
         assert mock_view._draft_mode is True
         mock_view._client.pipeline.draft_mode.assert_called_once()
 
 
-# ── Fix 3: views.list() with dataset_id ─────────────────
+# ── Fix 3: await views.list() with dataset_id ─────────────────
 
 
 class TestViewsListDatasetId:
-    def test_list_with_dataset_id(self, mock_client: MammothClient):
-        views = mock_client.views.list(dataset_id=500)
+    async def test_list_with_dataset_id(self, mock_client: MammothClient):
+        views = await mock_client.views.list(dataset_id=500)
         assert len(views) == 1
         assert views[0].id == 100
         mock_client.dataviews.list.assert_called_once_with(dataset_id=500)
 
-    def test_list_requires_dataset_id(self, mock_client: MammothClient):
+    async def test_list_requires_dataset_id(self, mock_client: MammothClient):
         with pytest.raises(TypeError):
-            mock_client.views.list()  # type: ignore[call-arg]
+            await mock_client.views.list()  # type: ignore[call-arg]
 
 
 # ── Fix 4: dict coercion ────────────────────────────────
@@ -140,20 +140,20 @@ class TestViewsListDatasetId:
 class TestSpecInputs:
     """Transform methods take strictly-typed spec objects (no dict/str coercion)."""
 
-    def test_copy_columns_accepts_specs(self, mock_view: View):
-        mock_view.copy_columns([CopySpec(source="Sales", as_name="Sales Copy")])
+    async def test_copy_columns_accepts_specs(self, mock_view: View):
+        await mock_view.copy_columns([CopySpec(source="Sales", as_name="Sales Copy")])
         p = mock_view._captured_payloads[-1]  # type: ignore[attr-defined]
         assert "COPY" in p
         assert p["COPY"][0]["SOURCE"] == "column_aaa"
 
-    def test_convert_type_accepts_specs(self, mock_view: View):
-        mock_view.convert_type([ConversionSpec(column="Sales", to=ColumnType.NUMERIC)])
+    async def test_convert_type_accepts_specs(self, mock_view: View):
+        await mock_view.convert_type([ConversionSpec(column="Sales", to=ColumnType.NUMERIC)])
         p = mock_view._captured_payloads[-1]  # type: ignore[attr-defined]
         assert "CONVERT" in p
         assert p["CONVERT"][0]["SOURCE"] == "column_aaa"
 
-    def test_bulk_replace_accepts_specs(self, mock_view: View):
-        mock_view.bulk_replace(
+    async def test_bulk_replace_accepts_specs(self, mock_view: View):
+        await mock_view.bulk_replace(
             columns=["Region"],
             mapping=[BulkReplaceMapping(search=["West", "W"], replace="Western")],
         )
@@ -161,8 +161,8 @@ class TestSpecInputs:
         assert "REPLACE" in p
         assert p["REPLACE"]["MAPPING"][0]["SEARCH_VALUE"] == ["West", "W"]
 
-    def test_split_column_accepts_specs(self, mock_view: View):
-        mock_view.split_column(
+    async def test_split_column_accepts_specs(self, mock_view: View):
+        await mock_view.split_column(
             "Region",
             "-",
             [SplitColumnSpec("Part1"), SplitColumnSpec("Part2")],
@@ -171,8 +171,8 @@ class TestSpecInputs:
         assert "SPLIT" in p
         assert len(p["SPLIT"]["AS"]) == 2
 
-    def test_pivot_accepts_specs(self, mock_view: View):
-        mock_view.pivot(
+    async def test_pivot_accepts_specs(self, mock_view: View):
+        await mock_view.pivot(
             group_by=["Region"],
             aggregations=[
                 AggregationSpec(
@@ -191,7 +191,7 @@ class TestSpecInputs:
 
 
 class TestDatasetsBrowseRemoved:
-    def test_no_browse_method(self, mock_client: MammothClient):
+    async def test_no_browse_method(self, mock_client: MammothClient):
         assert not hasattr(mock_client.datasets, "browse")
 
 
@@ -199,8 +199,8 @@ class TestDatasetsBrowseRemoved:
 
 
 class TestDatasetsUpdate:
-    def test_update_uses_plural_endpoint(self, mock_client: MammothClient):
-        mock_client.datasets.update(
+    async def test_update_uses_plural_endpoint(self, mock_client: MammothClient):
+        await mock_client.datasets.update(
             patch_data=[{"op": "rename_dataset", "path": "/123", "value": {"name": "X"}}]
         )
         mock_client._request_json.assert_called_once()
@@ -208,10 +208,12 @@ class TestDatasetsUpdate:
         assert args[0][0] == "PATCH"
         assert args[0][1].endswith("/datasets")
 
-    def test_rename_uses_singular_endpoint_with_replace_name(self, mock_client: MammothClient):
+    async def test_rename_uses_singular_endpoint_with_replace_name(
+        self, mock_client: MammothClient
+    ):
         # OpenAPI: PATCH /datasets/{id} with DatasetPatchOperation; the old
         # plural "rename_dataset" payload was rejected with HTTP 400.
-        mock_client.datasets.rename(dataset_id=123, name="New Name")
+        await mock_client.datasets.rename(dataset_id=123, name="New Name")
         mock_client._request_json.assert_called_once()
         args = mock_client._request_json.call_args
         assert args[0][0] == "PATCH"
@@ -223,8 +225,8 @@ class TestDatasetsUpdate:
 
 
 class TestAddonsList:
-    def test_list_calls_get(self, mock_client: MammothClient):
-        mock_client.addons.list()
+    async def test_list_calls_get(self, mock_client: MammothClient):
+        await mock_client.addons.list()
         mock_client._request_json.assert_called_once()
         args = mock_client._request_json.call_args
         assert args[0][0] == "GET"

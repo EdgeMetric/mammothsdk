@@ -6,6 +6,9 @@ release or backend endpoint is contacted.
 
 from __future__ import annotations
 
+import asyncio
+import inspect
+
 import json
 from contextlib import contextmanager
 from pathlib import Path
@@ -18,6 +21,13 @@ from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.runtime.invocation import Invocation
 
 PROJECT, DATASET, BATCH, DASHBOARD, TEMPLATE = 3, 731, 12, 91, 44
+
+
+def _drive(work: Any) -> Any:
+    """Run one SDK coroutine to completion; hand anything else straight back."""
+    if not inspect.isawaitable(work):
+        return work
+    return asyncio.run(work)
 
 
 def _inv(command: str, args: list[str], input_file: str | None = None, **kwargs: Any) -> Invocation:
@@ -38,7 +48,7 @@ def _bind(monkeypatch: pytest.MonkeyPatch, module: Any, service: Any):
     def opened(_invocation: Invocation):
         yield service, type("Auth", (), {"workspace_id": 4})()
 
-    monkeypatch.setattr(module, "open_service", opened)
+    _drive(monkeypatch.setattr(module, "open_service", opened))
     yield
 
 
@@ -84,7 +94,7 @@ def test_delete_batch03_emits_exact_method_path_query_and_no_body(
     real_service: Any, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
     service, api = real_service(project_id=PROJECT)
-    api.default(200, {"ok": True})
+    _drive(api.default(200, {"ok": True}))
 
     def run(
         module: Any,
@@ -111,7 +121,7 @@ def test_delete_batch03_emits_exact_method_path_query_and_no_body(
     )
     # REL-009: generated Dashboard V3 SDK operation, kept separate from the
     # legacy workspace-template CLI command.
-    service._client.dashboards.template_delete(str(TEMPLATE))
+    _drive(service._client.dashboards.template_delete(str(TEMPLATE)))
     assert (_path(api), api.last().method, api.last().query, api.last().json_body) == (
         f"/dashboards/v3/templates/{TEMPLATE}",
         "DELETE",

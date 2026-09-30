@@ -5,10 +5,10 @@ from __future__ import annotations
 import errno
 from pathlib import Path
 from types import SimpleNamespace
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
-import requests
+import httpx
 
 from mammoth.api.exports import ExportsAPI
 from mammoth.api.jobs import JobsAPI
@@ -16,17 +16,37 @@ from mammoth.client import MammothClient
 from mammoth.exceptions import MammothAPIError, MammothJobTimeoutError, safe_response_body
 
 
+def _scripted_clock(*readings: float):
+    """A monotonic clock that reads the script, then holds its last value.
+
+    The event loop reads `time.monotonic` too, so a clock that runs out
+    raises inside asyncio rather than in the code under test.
+    """
+    remaining = list(readings)
+    last = readings[-1]
+
+    def read() -> float:
+        nonlocal last
+        if remaining:
+            last = remaining.pop(0)
+        return last
+
+    return read
+
+
+async def _no_sleep(_seconds: float) -> None:
+    """The poll waits on the loop now; a test must not really wait."""
+
+
 class _Response:
     def __init__(
         self,
         status_code: int = 200,
         body: dict[str, object] | None = None,
-        chunks: list[bytes] | None = None,
         headers: dict[str, str] | None = None,
     ) -> None:
         self.status_code = status_code
         self._body = body or {}
-        self._chunks = chunks or []
         self.headers = headers or {}
         self.content = b"{}"
         self.closed = False
@@ -38,20 +58,17 @@ class _Response:
         if self.status_code >= 400:
             raise requests.HTTPError(response=self)
 
-    def iter_content(self, chunk_size: int = 8192):  # noqa: ARG002
-        yield from self._chunks
-
     def close(self) -> None:
         self.closed = True
 
 
 def _client() -> MammothClient:
-    with patch("mammoth.client.requests.Session"):
+    with patch("mammoth.client.httpx.AsyncClient"):
         client = MammothClient("key", "secret", workspace_id=7)
     return client
 
 
-def test_safe_body_preserves_business_fields_and_redacts_credentials() -> None:
+async def test_safe_body_preserves_business_fields_and_redacts_credentials() -> None:
     body = {
         "token_count": 12,
         "secret_sauce": "recipe",
@@ -70,17 +87,17 @@ def test_safe_body_preserves_business_fields_and_redacts_credentials() -> None:
 
 
 @pytest.mark.parametrize("status_code", [403, 409, 429, 503])
-def test_http_errors_preserve_safe_recovery_metadata(status_code: int) -> None:
+async def test_http_errors_preserve_safe_recovery_metadata(status_code: int) -> None:
     client = _client()
     response = _Response(
         status_code,
         {"detail": "blocked", "api_secret": "must-not-leak", "job_id": 91},
         headers={"X-Request-ID": "req-91", "Retry-After": "8"},
     )
-    client.session.request = MagicMock(return_value=response)
+    client.session.request = AsyncMock(return_value=response)
 
     with pytest.raises(MammothAPIError) as raised:
-        client._request("POST", "/datasets", json={"name": "new"})
+        await client._request("POST", "/datasets", json={"name": "new"})
 
     error = raised.value
     assert error.status_code == status_code
@@ -93,12 +110,12 @@ def test_http_errors_preserve_safe_recovery_metadata(status_code: int) -> None:
     assert client.session.request.call_count == 1
 
 
-def test_read_timeout_is_safe_and_does_not_replay() -> None:
+async def test_read_timeout_is_safe_and_does_not_replay() -> None:
     client = _client()
-    client.session.request = MagicMock(side_effect=requests.exceptions.ReadTimeout("secret-value"))
+    client.session.request = AsyncMock(side_effect=httpx.ReadTimeout("secret-value"))
 
     with pytest.raises(MammothAPIError) as raised:
-        client._request("GET", "/datasets/1")
+        await client._request("GET", "/datasets/1")
 
     error = raised.value
     assert error.method == "GET"
@@ -108,29 +125,29 @@ def test_read_timeout_is_safe_and_does_not_replay() -> None:
     assert client.session.request.call_count == 1
 
 
-def test_lost_write_response_is_outcome_unknown_without_duplicate() -> None:
+async def test_lost_write_response_is_outcome_unknown_without_duplicate() -> None:
     client = _client()
-    client.session.request = MagicMock(side_effect=requests.exceptions.ReadTimeout())
+    client.session.request = AsyncMock(side_effect=httpx.ReadTimeout("timed out"))
 
     with pytest.raises(MammothAPIError) as raised:
-        client._request("POST", "/datasets", json={"name": "once"})
+        await client._request("POST", "/datasets", json={"name": "once"})
 
     assert raised.value.operation_state == "outcome_unknown"
     assert client.session.request.call_count == 1
 
 
-def test_job_timeout_retains_last_observed_handle_and_phase(
+async def test_job_timeout_retains_last_observed_handle_and_phase(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     client = SimpleNamespace(job_timeout=1)
     jobs = JobsAPI(client)  # type: ignore[arg-type]
-    jobs.get_job = MagicMock(return_value={"job": {"id": 44, "status": "processing"}})
-    clock = iter([0.0, 0.0, 0.0, 2.0])
-    monkeypatch.setattr("mammoth.api.jobs.time.monotonic", lambda: next(clock))
-    monkeypatch.setattr("mammoth.api.jobs.time.sleep", lambda _seconds: None)
+    jobs.get_job = AsyncMock(return_value={"job": {"id": 44, "status": "processing"}})
+    clock = _scripted_clock(0.0, 0.0, 0.0, 2.0)
+    monkeypatch.setattr("mammoth.api.jobs.time.monotonic", clock)
+    monkeypatch.setattr("mammoth.api.jobs.asyncio.sleep", _no_sleep)
 
     with pytest.raises(MammothJobTimeoutError) as raised:
-        jobs.wait_for_job(44, timeout=1)
+        await jobs.wait_for_job(44, timeout=1)
 
     error = raised.value
     assert error.job_handle == 44
@@ -139,38 +156,42 @@ def test_job_timeout_retains_last_observed_handle_and_phase(
     assert error.details["observed_job"]["status"] == "processing"
 
 
-def test_job_wait_uses_monotonic_budget_for_request_and_sleep(
+async def test_job_wait_uses_monotonic_budget_for_request_and_sleep(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     client = SimpleNamespace(job_timeout=1)
     jobs = JobsAPI(client)  # type: ignore[arg-type]
-    jobs.get_job = MagicMock(return_value={"job": {"id": 44, "status": "processing"}})
-    clock = iter([100.0, 100.0, 100.25, 101.0])
+    jobs.get_job = AsyncMock(return_value={"job": {"id": 44, "status": "processing"}})
+    clock = _scripted_clock(100.0, 100.0, 100.25, 101.0)
     sleeps: list[float] = []
-    monkeypatch.setattr("mammoth.api.jobs.time.monotonic", lambda: next(clock))
-    monkeypatch.setattr("mammoth.api.jobs.time.sleep", sleeps.append)
+    monkeypatch.setattr("mammoth.api.jobs.time.monotonic", clock)
+
+    async def record(seconds: float) -> None:
+        sleeps.append(seconds)
+
+    monkeypatch.setattr("mammoth.api.jobs.asyncio.sleep", record)
 
     with pytest.raises(MammothJobTimeoutError):
-        jobs.wait_for_job(44, timeout=1, poll_interval=30)
+        await jobs.wait_for_job(44, timeout=1, poll_interval=30)
 
     assert jobs.get_job.call_args.kwargs["timeout"] == 1
     assert sleeps == [0.2]
 
 
-def test_job_observation_timeout_reaches_transport() -> None:
+async def test_job_observation_timeout_reaches_transport() -> None:
     client = _client()
     response = _Response(body={"job": {"id": 44, "status": "processing"}})
-    client.session.request = MagicMock(return_value=response)
+    client.session.request = AsyncMock(return_value=response)
 
-    client.jobs.get_job(44, timeout=0.5)
+    await client.jobs.get_job(44, timeout=0.5)
 
     assert client.session.request.call_args.kwargs["timeout"] == 0.5
 
 
-def test_job_observation_rejects_nonpositive_timeout() -> None:
+async def test_job_observation_rejects_nonpositive_timeout() -> None:
     jobs = JobsAPI(SimpleNamespace(workspace_id=7))  # type: ignore[arg-type]
     with pytest.raises(ValueError, match="must be positive"):
-        jobs.get_job(44, timeout=0)
+        await jobs.get_job(44, timeout=0)
 
 
 @pytest.mark.parametrize(
@@ -180,29 +201,29 @@ def test_job_observation_rejects_nonpositive_timeout() -> None:
         ({"jobs": [{"id": 101, "status": "success"}]}, 102),
     ],
 )
-def test_wait_for_jobs_does_not_treat_empty_or_partial_results_as_completion(
+async def test_wait_for_jobs_does_not_treat_empty_or_partial_results_as_completion(
     monkeypatch: pytest.MonkeyPatch, response: dict[str, object], expected_pending_id: int
 ) -> None:
     client = SimpleNamespace(job_timeout=1)
     jobs = JobsAPI(client)  # type: ignore[arg-type]
-    jobs.get_jobs = MagicMock(return_value=response)
-    clock = iter([0.0, 0.0, 0.0, 2.0])
-    monkeypatch.setattr("mammoth.api.jobs.time.monotonic", lambda: next(clock))
-    monkeypatch.setattr("mammoth.api.jobs.time.sleep", lambda _seconds: None)
+    jobs.get_jobs = AsyncMock(return_value=response)
+    clock = _scripted_clock(0.0, 0.0, 0.0, 2.0)
+    monkeypatch.setattr("mammoth.api.jobs.time.monotonic", clock)
+    monkeypatch.setattr("mammoth.api.jobs.asyncio.sleep", _no_sleep)
 
     with pytest.raises(MammothJobTimeoutError) as raised:
-        jobs.wait_for_jobs([101, 102], timeout=1)
+        await jobs.wait_for_jobs([101, 102], timeout=1)
 
     assert raised.value.job_handle == expected_pending_id
     assert jobs.get_jobs.call_count == 1
 
 
-def test_wait_for_jobs_returns_every_requested_success_in_request_order(
+async def test_wait_for_jobs_returns_every_requested_success_in_request_order(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     client = SimpleNamespace(job_timeout=1)
     jobs = JobsAPI(client)  # type: ignore[arg-type]
-    jobs.get_jobs = MagicMock(
+    jobs.get_jobs = AsyncMock(
         return_value={
             "jobs": [
                 {"id": 102, "status": "success"},
@@ -212,7 +233,7 @@ def test_wait_for_jobs_returns_every_requested_success_in_request_order(
     )
     monkeypatch.setattr("mammoth.api.jobs.time.monotonic", lambda: 0.0)
 
-    result = jobs.wait_for_jobs([101, 102], timeout=1)
+    result = await jobs.wait_for_jobs([101, 102], timeout=1)
 
     assert [job["id"] for job in result["jobs"]] == [101, 102]
 
@@ -227,96 +248,127 @@ def test_wait_for_jobs_returns_every_requested_success_in_request_order(
         ({"jobs": [{"id": 999, "status": "success"}]}, "unexpected_job_id"),
     ],
 )
-def test_wait_for_jobs_rejects_duplicate_or_unrequested_server_records(
+async def test_wait_for_jobs_rejects_duplicate_or_unrequested_server_records(
     response: dict[str, object], protocol_error: str
 ) -> None:
     client = SimpleNamespace(job_timeout=1)
     jobs = JobsAPI(client)  # type: ignore[arg-type]
-    jobs.get_jobs = MagicMock(return_value=response)
+    jobs.get_jobs = AsyncMock(return_value=response)
 
     with pytest.raises(MammothAPIError) as raised:
-        jobs.wait_for_jobs([101, 102], timeout=1)
+        await jobs.wait_for_jobs([101, 102], timeout=1)
 
     assert raised.value.details["protocol_error"] == protocol_error
 
 
-def _export_api(session: MagicMock) -> ExportsAPI:
-    client = SimpleNamespace(session=session, timeout=5)
-    return ExportsAPI(client)  # type: ignore[arg-type]
+class _Chunks(httpx.AsyncByteStream):
+    """A download body that yields its chunks, then optionally fails mid-stream."""
+
+    def __init__(self, chunks: list[bytes], error: BaseException | None = None) -> None:
+        self.chunks = chunks
+        self.error = error
+        self.closed = False
+
+    async def __aiter__(self):
+        for chunk in self.chunks:
+            yield chunk
+        if self.error is not None:
+            raise self.error
+
+    async def aclose(self) -> None:
+        self.closed = True
 
 
-def test_download_publishes_atomically_and_replaces_complete_file(tmp_path: Path) -> None:
+def _download_api(body: _Chunks) -> tuple[ExportsAPI, list[httpx.Request]]:
+    """An ExportsAPI whose download session is a real AsyncClient serving *body*."""
+    served: list[httpx.Request] = []
+
+    def serve(request: httpx.Request) -> httpx.Response:
+        served.append(request)
+        return httpx.Response(200, stream=body)
+
+    session = httpx.AsyncClient(transport=httpx.MockTransport(serve))
+    client = SimpleNamespace(session=session, download_session=session, timeout=5)
+    return ExportsAPI(client), served  # type: ignore[arg-type]
+
+
+async def test_download_streams_through_a_real_async_client(tmp_path: Path) -> None:
+    """The download session is an ``httpx.AsyncClient``: drive a real one."""
+    destination = tmp_path / "result.csv"
+    seen: list[httpx.Request] = []
+
+    def serve(request: httpx.Request) -> httpx.Response:
+        seen.append(request)
+        return httpx.Response(200, content=b"a,b\n1,2\n")
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(serve)) as session:
+        client = SimpleNamespace(session=session, download_session=session, timeout=5)
+        result = await ExportsAPI(client)._download_file(  # type: ignore[arg-type]
+            "https://download.invalid/file", destination
+        )
+
+    assert result == destination
+    assert destination.read_bytes() == b"a,b\n1,2\n"
+    assert [r.method for r in seen] == ["GET"]
+    assert list(tmp_path.glob("*.part")) == []
+
+
+async def test_download_publishes_atomically_and_replaces_complete_file(tmp_path: Path) -> None:
     destination = tmp_path / "result.csv"
     destination.write_bytes(b"old")
-    response = _Response(chunks=[b"new", b" content"])
-    session = MagicMock()
-    session.get.return_value = response
+    body = _Chunks([b"new", b" content"])
+    api, _ = _download_api(body)
 
-    result = _export_api(session)._download_file("https://download.invalid/file", destination)
+    result = await api._download_file("https://download.invalid/file", destination)
 
     assert result == destination
     assert destination.read_bytes() == b"new content"
     assert list(tmp_path.glob("*.part")) == []
-    assert response.closed
+    assert body.closed
 
 
-def test_partial_download_preserves_destination_and_cleans_temp(tmp_path: Path) -> None:
+async def test_partial_download_preserves_destination_and_cleans_temp(tmp_path: Path) -> None:
     destination = tmp_path / "result.csv"
     destination.write_bytes(b"old")
 
-    class BrokenResponse(_Response):
-        def iter_content(self, chunk_size: int = 8192):  # noqa: ARG002
-            yield b"partial"
-            raise requests.exceptions.ConnectionError("broken stream")
-
-    response = BrokenResponse()
-    session = MagicMock()
-    session.get.return_value = response
+    api, _ = _download_api(_Chunks([b"partial"], error=httpx.ConnectError("broken stream")))
 
     with pytest.raises(MammothAPIError) as raised:
-        _export_api(session)._download_file("https://download.invalid/file", destination)
+        await api._download_file("https://download.invalid/file", destination)
 
     assert raised.value.method == "GET"
     assert destination.read_bytes() == b"old"
     assert list(tmp_path.glob("*.part")) == []
 
 
-def test_enospc_preserves_destination_and_cleans_temp(
+async def test_enospc_preserves_destination_and_cleans_temp(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     destination = tmp_path / "result.csv"
     destination.write_bytes(b"old")
-    response = _Response(chunks=[b"new"])
-    session = MagicMock()
-    session.get.return_value = response
+    api, _ = _download_api(_Chunks([b"new"]))
 
     def full_disk(_fd: int) -> None:
         raise OSError(errno.ENOSPC, "No space left on device")
 
     monkeypatch.setattr("mammoth.api.exports.os.fsync", full_disk)
     with pytest.raises(MammothAPIError) as raised:
-        _export_api(session)._download_file("https://download.invalid/file", destination)
+        await api._download_file("https://download.invalid/file", destination)
 
     assert raised.value.details["errno"] == errno.ENOSPC
     assert destination.read_bytes() == b"old"
     assert list(tmp_path.glob("*.part")) == []
 
 
-def test_interrupted_download_preserves_destination_and_remote_job_handle(tmp_path: Path) -> None:
+async def test_interrupted_download_preserves_destination_and_remote_job_handle(
+    tmp_path: Path,
+) -> None:
     destination = tmp_path / "result.csv"
     destination.write_bytes(b"old")
 
-    class InterruptedResponse(_Response):
-        def iter_content(self, chunk_size: int = 8192):  # noqa: ARG002
-            yield b"partial"
-            raise KeyboardInterrupt
-
-    session = MagicMock()
-    session.get.return_value = InterruptedResponse()
+    api, _ = _download_api(_Chunks([b"partial"], error=KeyboardInterrupt()))
     with pytest.raises(MammothAPIError) as raised:
-        _export_api(session)._download_file(
-            "https://download.invalid/file", destination, job_handle=919
-        )
+        await api._download_file("https://download.invalid/file", destination, job_handle=919)
 
     assert raised.value.details["interrupted"] is True
     assert raised.value.job_handle == 919
@@ -329,28 +381,27 @@ def test_interrupted_download_preserves_destination_and_remote_job_handle(tmp_pa
     assert list(tmp_path.glob("*.part")) == []
 
 
-def test_symlink_destination_is_refused_without_touching_target(tmp_path: Path) -> None:
+async def test_symlink_destination_is_refused_without_touching_target(tmp_path: Path) -> None:
     target = tmp_path / "target.csv"
     target.write_bytes(b"old")
     destination = tmp_path / "result.csv"
     destination.symlink_to(target)
-    session = MagicMock()
+    api, served = _download_api(_Chunks([b"new"]))
 
     with pytest.raises(MammothAPIError) as raised:
-        _export_api(session)._download_file("https://download.invalid/file", destination)
+        await api._download_file("https://download.invalid/file", destination)
 
     assert raised.value.details["errno"] == errno.ELOOP
     assert target.read_bytes() == b"old"
     assert destination.is_symlink()
-    assert session.get.call_count == 0
+    assert served == []
 
 
-def test_local_save_failure_marks_remote_export_succeeded_when_handle_known(
+async def test_local_save_failure_marks_remote_export_succeeded_when_handle_known(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     destination = tmp_path / "result.csv"
-    session = MagicMock()
-    session.get.return_value = _Response(chunks=[b"new"])
+    api, _ = _download_api(_Chunks([b"new"]))
 
     def full_disk(_fd: int) -> None:
         raise OSError(errno.ENOSPC, "full")
@@ -358,9 +409,7 @@ def test_local_save_failure_marks_remote_export_succeeded_when_handle_known(
     monkeypatch.setattr("mammoth.api.exports.os.fsync", full_disk)
 
     with pytest.raises(MammothAPIError) as raised:
-        _export_api(session)._download_file(
-            "https://download.invalid/file", destination, job_handle=919
-        )
+        await api._download_file("https://download.invalid/file", destination, job_handle=919)
 
     assert raised.value.operation_state == "succeeded"
     assert raised.value.details["remote_export_state"] == "succeeded"

@@ -5,7 +5,7 @@ from __future__ import annotations
 import importlib.util
 import inspect
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 from mammoth import MammothClient, parse_path
 from mammoth.api.files import FilesAPI
@@ -23,7 +23,7 @@ def _inventory_module():
     return module
 
 
-def test_sdk_docs_inventory_is_deterministic_and_reports_gaps() -> None:
+async def test_sdk_docs_inventory_is_deterministic_and_reports_gaps() -> None:
     module = _inventory_module()
     first = module.inventory()
     second = module.inventory()
@@ -44,7 +44,7 @@ def test_sdk_docs_inventory_is_deterministic_and_reports_gaps() -> None:
     )
 
 
-def test_basic_usage_snippets_match_current_signatures_without_network() -> None:
+async def test_basic_usage_snippets_match_current_signatures_without_network() -> None:
     """Execute the safe setup/URL examples and bind the documented API calls."""
     assert parse_path("https://app.mammoth.io/#/workspaces/11/projects/10/views/1039") == {
         "workspace_id": 11,
@@ -52,12 +52,13 @@ def test_basic_usage_snippets_match_current_signatures_without_network() -> None
         "dataview_id": 1039,
     }
 
-    with patch("mammoth.client.requests.Session") as session_factory:
+    with patch("mammoth.client.httpx.AsyncClient") as session_factory:
         session_factory.return_value.headers = MagicMock()
-        with MammothClient("key", "secret", workspace_id=11) as client:
+        session_factory.return_value.aclose = AsyncMock()
+        async with MammothClient("key", "secret", workspace_id=11) as client:
             client.set_project_id(10)
             assert client.project_id == 10
-        session_factory.return_value.close.assert_called_once()
+        session_factory.return_value.aclose.assert_called_once()
 
     inspect.signature(ViewsResource.list).bind(None, dataset_id=42)
     inspect.signature(FilesAPI.upload).bind(None, "sales.csv")

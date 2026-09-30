@@ -25,11 +25,11 @@ class AnnotationsAPI:
 
     Access via ``client.annotations``::
 
-        annotation = client.annotations.create(
+        annotation = await client.annotations.create(
             target_type="dataview", target_id=42, body="Looks off, please check."
         )
-        client.annotations.comment_add(annotation["id"], body="Fixed in latest run.")
-        client.annotations.update(annotation["id"], status="resolved")
+        await client.annotations.comment_add(annotation["id"], body="Fixed in latest run.")
+        await client.annotations.update(annotation["id"], status="resolved")
     """
 
     def __init__(self, client: MammothClient) -> None:
@@ -46,7 +46,7 @@ class AnnotationsAPI:
             return proj
         raise ValueError("project_id must be set on the client using client.set_project_id()")
 
-    def list(
+    async def list(
         self,
         project_id: int | None = None,
         target_type: str | None = None,
@@ -77,13 +77,13 @@ class AnnotationsAPI:
             params["target_type"] = target_type
         if target_id is not None:
             params["target_id"] = target_id
-        return self._client._request_list(
+        return await self._client._request_list(
             "GET",
             f"/workspaces/{ws}/projects/{proj}/annotations",
             params=params or None,
         )
 
-    def create(
+    async def create(
         self,
         target_type: str,
         target_id: int,
@@ -116,13 +116,13 @@ class AnnotationsAPI:
             raise MammothValidationError(ERR_BODY_REQUIRED)
         ws = self._ws()
         proj = self._proj(project_id)
-        return self._client._request_json(
+        return await self._client._request_json(
             "POST",
             f"/workspaces/{ws}/projects/{proj}/annotations",
             json={"target_type": target_type, "target_id": target_id, "body": body},
         )
 
-    def delete(self, annotation_id: int, project_id: int | None = None) -> dict[str, Any]:
+    async def delete(self, annotation_id: int, project_id: int | None = None) -> dict[str, Any]:
         """Delete an annotation.
 
         Args:
@@ -139,11 +139,11 @@ class AnnotationsAPI:
             raise MammothValidationError(ERR_ANNOTATION_ID_POSITIVE.format(annotation_id))
         ws = self._ws()
         proj = self._proj(project_id)
-        return self._client._request_json(
+        return await self._client._request_json(
             "DELETE", f"/workspaces/{ws}/projects/{proj}/annotations/{annotation_id}"
         )
 
-    def update(
+    async def update(
         self,
         annotation_id: int,
         status: str,
@@ -171,13 +171,13 @@ class AnnotationsAPI:
             )
         ws = self._ws()
         proj = self._proj(project_id)
-        return self._client._request_json(
+        return await self._client._request_json(
             "PATCH",
             f"/workspaces/{ws}/projects/{proj}/annotations/{annotation_id}",
             json={"status": status},
         )
 
-    def comment_add(
+    async def comment_add(
         self,
         annotation_id: int,
         body: str,
@@ -203,7 +203,7 @@ class AnnotationsAPI:
             raise MammothValidationError(ERR_BODY_REQUIRED)
         ws = self._ws()
         proj = self._proj(project_id)
-        return self._client._request_json(
+        return await self._client._request_json(
             "POST",
             f"/workspaces/{ws}/projects/{proj}/annotations/{annotation_id}/comments",
             json={"body": body},

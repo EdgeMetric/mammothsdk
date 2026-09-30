@@ -22,6 +22,7 @@ from mammoth.models.automations import (
     SchedulePatchPath,
     SchedulePatchValue,
     ScheduleStatus,
+    TaskDetailsSpec,
 )
 
 if TYPE_CHECKING:
@@ -38,6 +39,15 @@ ERR_TASK_DS_DETAILS_REQUIRED = (
 )
 ERR_TASK_DEST_DATASETS_REQUIRED = (
     "task_type='append_data' requires `details.destination_dataset_ids`."
+)
+ERR_TASK_RETENTION_FIELDS = (
+    "task_type='apply_retention_policy' requires `details.datasource_id` and "
+    "`details.rule_type`, plus the fields that rule type needs: `threshold_value` "
+    "and `threshold_unit` for time_based, `keep_count` for count_based, "
+    "`condition_sql` for condition_based."
+)
+ERR_TASK_RETENTION_SUSPEND = (
+    "A condition_based retention rule must delete the rows it matches, not suspend them."
 )
 ERR_TASK_APPEND_SOURCE_REQUIRED = (
     "task_type='append_data' requires either `details.source_folder_resource_id` "
@@ -58,9 +68,11 @@ ERR_CONDITION_AT_SPECIFIC_TIME = (
 ERR_CONDITION_BY_MONTH_DAY = "All `details.by_month_day` values must be between 1 and 31; got {0}."
 ERR_AUTOMATION_ID_POSITIVE = "`automation_id` must be a positive integer, got {0}."
 ERR_AUTOMATION_PATCH_EMPTY = "`patch` must be a non-empty list of patch operations."
-ERR_PATCH_COMMAND_PATH = "op='command' requires path='run'."
+ERR_PATCH_COMMAND_PATH = (
+    "op='command' requires path='run', 'approve_retention' or 'reject_retention'."
+)
 ERR_PATCH_STATUS_VALUE = (
-    "op='replace', path='status' value must be 'suspend' or 'resume', got {0!r}."
+    "op='replace', path='status' value must be 'suspend', 'resume' or" " 'restore', got {0!r}."
 )
 ERR_PATCH_DETAILS_EMPTY = (
     "op='replace', path='details' value must include at least one of: "
@@ -74,7 +86,11 @@ ERR_PATCH_DETAILS_EMPTY = (
 # "pause"/"resume" vocabulary for a consistent CLI surface -- and translates
 # it to "restore" when building the request body. Sending "resume" verbatim
 # is rejected by the backend with invalid_status_to_update (400).
-_AUTOMATION_STATUS_WIRE_VALUE = {"suspend": "suspend", "resume": "restore"}
+_AUTOMATION_STATUS_WIRE_VALUE = {
+    "suspend": "suspend",
+    "resume": "restore",
+    "restore": "restore",
+}
 
 ERR_SCHEDULE_ID_POSITIVE = "`schedule_id` must be a positive integer, got {0}."
 ERR_SCHEDULE_PATCH_EMPTY = "`patch` must be a non-empty list of schedule patch operations."
@@ -121,7 +137,9 @@ def _validate_task(task: AutomationTaskSpec) -> None:
         if not d or not d.ds_details:
             raise MammothValidationError(ERR_TASK_DS_DETAILS_REQUIRED)
     elif tt is AutomationTaskType.APPEND_DATA:
-        if not d or not d.destination_dataset_ids:
+        # The route asks only that the field be there: an empty list is a
+        # destination it will work out for itself.
+        if not d or d.destination_dataset_ids is None:
             raise MammothValidationError(ERR_TASK_DEST_DATASETS_REQUIRED)
         if not d.source_folder_resource_id and not d.source_dataset_id:
             raise MammothValidationError(ERR_TASK_APPEND_SOURCE_REQUIRED)
@@ -138,6 +156,23 @@ def _validate_task(task: AutomationTaskSpec) -> None:
         not d or not d.alert_type or not d.recipients or not d.subject
     ):
         raise MammothValidationError(ERR_TASK_ALERT_FIELDS)
+    elif tt is AutomationTaskType.APPLY_RETENTION_POLICY:
+        _validate_retention_policy(d)
+
+
+def _validate_retention_policy(d: TaskDetailsSpec | None) -> None:
+    """Hold a retention task to what the route asks of its rule type."""
+    if d is None or d.datasource_id is None or d.rule_type is None:
+        raise MammothValidationError(ERR_TASK_RETENTION_FIELDS)
+    missing = {
+        "time_based": d.threshold_value is None or d.threshold_unit is None,
+        "count_based": d.keep_count is None,
+        "condition_based": not d.condition_sql,
+    }
+    if missing[d.rule_type]:
+        raise MammothValidationError(ERR_TASK_RETENTION_FIELDS)
+    if d.rule_type == "condition_based" and d.action == "suspend":
+        raise MammothValidationError(ERR_TASK_RETENTION_SUSPEND)
 
 
 def _validate_condition(cond: AutomationConditionSpec) -> None:
@@ -223,13 +258,21 @@ def _patch_value_to_dict(value: SchedulePatchValue) -> dict[str, Any]:
     }
 
 
+# The three things a command patch can ask for; every other path is a replace.
+_COMMAND_PATHS = {
+    AutomationPatchPath.RUN,
+    AutomationPatchPath.APPROVE_RETENTION,
+    AutomationPatchPath.REJECT_RETENTION,
+}
+
+
 def _validate_automation_patch_item(item: AutomationPatchItem) -> None:
-    if item.op is AutomationPatchOp.COMMAND and item.path is not AutomationPatchPath.RUN:
+    if item.op is AutomationPatchOp.COMMAND and item.path not in _COMMAND_PATHS:
         raise MammothValidationError(ERR_PATCH_COMMAND_PATH)
     if (
         item.op is AutomationPatchOp.REPLACE
         and item.path is AutomationPatchPath.STATUS
-        and item.value not in {AutomationStatus.SUSPEND.value, AutomationStatus.RESUME.value}
+        and item.value not in set(_AUTOMATION_STATUS_WIRE_VALUE)
     ):
         raise MammothValidationError(ERR_PATCH_STATUS_VALUE.format(item.value))
     if item.op is AutomationPatchOp.REPLACE and item.path is AutomationPatchPath.DETAILS:
@@ -284,8 +327,8 @@ class AutomationsAPI:
 
     Access via ``client.automations``::
 
-        automations = client.automations.list()
-        automation = client.automations.create(
+        automations = await client.automations.list()
+        automation = await client.automations.create(
             name="Nightly refresh",
             description="Pulls cloud data every night",
             tasks=[AutomationTaskSpec(
@@ -293,7 +336,7 @@ class AutomationsAPI:
                 details=TaskDetailsSpec(ds_details=[DataRefreshConfig(ds_id=42)]),
             )],
         )
-        schedules = client.automations.list_schedules()
+        schedules = await client.automations.list_schedules()
     """
 
     def __init__(self, client: MammothClient) -> None:
@@ -310,18 +353,18 @@ class AutomationsAPI:
 
     # ── Automations ──────────────────────────────────────────────
 
-    def list(self) -> _list[dict[str, Any]]:
+    async def list(self) -> _list[dict[str, Any]]:
         """List all automations.
 
         Returns:
             List of automation dicts.
         """
-        response = self._client._request_json(
+        response = await self._client._request_json(
             "GET", f"/workspaces/{self._ws()}/projects/{self._proj()}/automations"
         )
         return response.get("automations", response if isinstance(response, _list) else [])
 
-    def create(
+    async def create(
         self,
         name: str,
         description: str,
@@ -365,11 +408,11 @@ class AutomationsAPI:
             "conditions": [_condition_to_dict(c) for c in conditions or []],
             "condition_mode": condition_mode.value,
         }
-        return self._client._request_json(
+        return await self._client._request_json(
             "POST", f"/workspaces/{self._ws()}/projects/{self._proj()}/automations", json=body
         )
 
-    def get(self, automation_id: int) -> dict[str, Any]:
+    async def get(self, automation_id: int) -> dict[str, Any]:
         """Get automation details.
 
         Args:
@@ -378,11 +421,11 @@ class AutomationsAPI:
         Returns:
             Dict with automation details.
         """
-        return self._client._request_json(
+        return await self._client._request_json(
             "GET", f"/workspaces/{self._ws()}/projects/{self._proj()}/automations/{automation_id}"
         )
 
-    def update(
+    async def update(
         self,
         automation_id: int,
         patch: _list[AutomationPatchItem],
@@ -430,13 +473,13 @@ class AutomationsAPI:
             ops.append(op_dict)
 
         body: dict[str, Any] = {"patch": ops}
-        return self._client._request_json(
+        return await self._client._request_json(
             "PATCH",
             f"/workspaces/{self._ws()}/projects/{self._proj()}/automations/{automation_id}",
             json=body,
         )
 
-    def delete(self, automation_id: int) -> dict[str, Any]:
+    async def delete(self, automation_id: int) -> dict[str, Any]:
         """Delete an automation.
 
         Args:
@@ -445,12 +488,12 @@ class AutomationsAPI:
         Returns:
             Dict with deletion result.
         """
-        return self._client._request_json(
+        return await self._client._request_json(
             "DELETE",
             f"/workspaces/{self._ws()}/projects/{self._proj()}/automations/{automation_id}",
         )
 
-    def restore(self, automation_id: int) -> dict[str, Any]:
+    async def restore(self, automation_id: int) -> dict[str, Any]:
         """Restore a trashed automation.
 
         Args:
@@ -459,12 +502,12 @@ class AutomationsAPI:
         Returns:
             Dict with the restored automation info.
         """
-        return self._client._request_json(
+        return await self._client._request_json(
             "POST",
             f"/workspaces/{self._ws()}/projects/{self._proj()}/automations/{automation_id}/restore",
         )
 
-    def trash(self, automation_id: int) -> dict[str, Any]:
+    async def trash(self, automation_id: int) -> dict[str, Any]:
         """Move an automation to trash.
 
         Args:
@@ -473,25 +516,25 @@ class AutomationsAPI:
         Returns:
             Dict with the trashed automation info.
         """
-        return self._client._request_json(
+        return await self._client._request_json(
             "POST",
             f"/workspaces/{self._ws()}/projects/{self._proj()}/automations/{automation_id}/trash",
         )
 
     # ── Schedules ────────────────────────────────────────────────
 
-    def list_schedules(self) -> _list[dict[str, Any]]:
+    async def list_schedules(self) -> _list[dict[str, Any]]:
         """List all schedules.
 
         Returns:
             List of schedule dicts.
         """
-        response = self._client._request_json(
+        response = await self._client._request_json(
             "GET", f"/workspaces/{self._ws()}/projects/{self._proj()}/schedules"
         )
         return response.get("schedules", response if isinstance(response, _list) else [])
 
-    def create_schedule(self, spec: ScheduleCreateSpec) -> dict[str, Any]:
+    async def create_schedule(self, spec: ScheduleCreateSpec) -> dict[str, Any]:
         """Create a new schedule.
 
         Args:
@@ -506,11 +549,11 @@ class AutomationsAPI:
         """
         _validate_schedule_create(spec)
         body = _rrule_spec_to_dict(spec)
-        return self._client._request_json(
+        return await self._client._request_json(
             "POST", f"/workspaces/{self._ws()}/projects/{self._proj()}/schedules", json=body
         )
 
-    def update_schedule(
+    async def update_schedule(
         self,
         schedule_id: int,
         patch: _list[SchedulePatchItem],
@@ -543,13 +586,13 @@ class AutomationsAPI:
 
         ops = build_schedule_patch_ops(patch)
         body: dict[str, Any] = {"patch": ops}
-        return self._client._request_json(
+        return await self._client._request_json(
             "PATCH",
             f"/workspaces/{self._ws()}/projects/{self._proj()}/schedules/{schedule_id}",
             json=body,
         )
 
-    def delete_schedule(self, schedule_id: int) -> dict[str, Any]:
+    async def delete_schedule(self, schedule_id: int) -> dict[str, Any]:
         """Delete a schedule.
 
         Args:
@@ -558,6 +601,6 @@ class AutomationsAPI:
         Returns:
             Dict with deletion result.
         """
-        return self._client._request_json(
+        return await self._client._request_json(
             "DELETE", f"/workspaces/{self._ws()}/projects/{self._proj()}/schedules/{schedule_id}"
         )

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from types import SimpleNamespace
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
@@ -20,39 +20,50 @@ from mammoth.models.pipeline import DraftCommand
 from mammoth.view import View
 
 
+def _pages(source):
+    """Hand pages back as coroutines, which is what the collector awaits."""
+
+    async def fetch(_offset: int) -> dict:
+        return next(source)
+
+    return fetch
+
+
 def _view_with_pipeline(pipeline: object) -> View:
     client = SimpleNamespace(
         pipeline=pipeline,
         workspace_id=1,
         project_id=2,
-        dataviews=SimpleNamespace(get=MagicMock(return_value={"id": 9})),
+        dataviews=SimpleNamespace(get=AsyncMock(return_value={"id": 9})),
     )
     view = View(client, {"id": 9, "properties": {"columns": []}}, 3)
-    view.refresh = lambda: view  # type: ignore[assignment]
+    view.refresh = AsyncMock(return_value=view)  # type: ignore[assignment]
     return view
 
 
-def test_fresh_view_reads_server_draft_state_before_submitting() -> None:
+async def test_fresh_view_reads_server_draft_state_before_submitting() -> None:
     """A new process must not replay SUBMIT after a committed draft."""
-    pipeline = MagicMock()
-    pipeline.reconcile_draft_submission.return_value = {
-        "is_draft": True,
-        "mode": "clean",
-        "pipeline_state": "ready",
-        "pipeline": {"state": "ready", "draft_mode": "clean"},
-        "outcome": "succeeded",
-    }
+    pipeline = AsyncMock()
+    pipeline.reconcile_draft_submission = AsyncMock(
+        return_value={
+            "is_draft": True,
+            "mode": "clean",
+            "pipeline_state": "ready",
+            "pipeline": {"state": "ready", "draft_mode": "clean"},
+            "outcome": "succeeded",
+        }
+    )
     view = _view_with_pipeline(pipeline)
 
-    result = view.submit_draft()
+    result = await view.submit_draft()
 
     pipeline.draft_mode.assert_called_once_with(9, DraftCommand.EXIT, 3)
     pipeline.wait_for_pipeline.assert_not_called()
     assert result["state"] == "ready"
 
 
-def test_timeout_reconciles_terminal_pipeline_without_replaying_submit() -> None:
-    pipeline = MagicMock()
+async def test_timeout_reconciles_terminal_pipeline_without_replaying_submit() -> None:
+    pipeline = AsyncMock()
     pipeline.reconcile_draft_submission.side_effect = [
         {
             "is_draft": True,
@@ -74,7 +85,7 @@ def test_timeout_reconciles_terminal_pipeline_without_replaying_submit() -> None
     pipeline.wait_for_pipeline.side_effect = MammothJobTimeoutError(77, 1)
     view = _view_with_pipeline(pipeline)
 
-    result = view.submit_draft()
+    result = await view.submit_draft()
 
     assert result["state"] == "ready"
     assert [call.args[1] for call in pipeline.draft_mode.call_args_list] == [
@@ -83,9 +94,9 @@ def test_timeout_reconciles_terminal_pipeline_without_replaying_submit() -> None
     ]
 
 
-def test_post_submit_readback_timeout_is_outcome_unknown() -> None:
+async def test_post_submit_readback_timeout_is_outcome_unknown() -> None:
     """A successful task POST must not invite replay after readback timeout."""
-    pipeline = MagicMock()
+    pipeline = AsyncMock()
     pipeline.add_task.return_value = {"task_id": 130}
     pipeline.wait_for_pipeline.side_effect = MammothAPIError(
         "pipeline read timed out", method="GET", operation_state="not_started"
@@ -93,7 +104,7 @@ def test_post_submit_readback_timeout_is_outcome_unknown() -> None:
     view = _view_with_pipeline(pipeline)
 
     with pytest.raises(MammothAPIError) as excinfo:
-        view._add_task({"LIMIT": {"N": 3}})
+        await view._add_task({"LIMIT": {"N": 3}})
 
     error = excinfo.value
     assert error.operation_state == "outcome_unknown"
@@ -105,8 +116,8 @@ def test_post_submit_readback_timeout_is_outcome_unknown() -> None:
     pipeline.add_task.assert_called_once()
 
 
-def test_post_submit_future_handle_is_not_faked_as_task_id() -> None:
-    pipeline = MagicMock()
+async def test_post_submit_future_handle_is_not_faked_as_task_id() -> None:
+    pipeline = AsyncMock()
     pipeline.add_task.return_value = {"future_id": 77}
     pipeline.wait_for_pipeline.side_effect = MammothAPIError(
         "pipeline read timed out", method="GET", operation_state="not_started"
@@ -114,28 +125,28 @@ def test_post_submit_future_handle_is_not_faked_as_task_id() -> None:
     view = _view_with_pipeline(pipeline)
 
     with pytest.raises(MammothAPIError) as excinfo:
-        view._add_task({"LIMIT": {"N": 3}})
+        await view._add_task({"LIMIT": {"N": 3}})
 
     error = excinfo.value
     assert error.details["task_handle"] is None
     assert error.job_handle == 77
 
 
-def test_nested_terminal_readback_continues_lost_submit_without_duplicate() -> None:
+async def test_nested_terminal_readback_continues_lost_submit_without_duplicate() -> None:
     """A lost SUBMIT response may only be completed by EXIT after readback."""
     api = PipelineAPI(None)  # type: ignore[arg-type]
-    api.get_pipeline = MagicMock(
+    api.get_pipeline = AsyncMock(
         side_effect=[
             {"state": "ready", "draft": "dirty"},
             {"pipeline": {"state": "ready", "draft": "clean"}},
         ]
     )  # type: ignore[method-assign]
     mutations: list[DraftCommand] = []
-    api.draft_mode = MagicMock(side_effect=lambda _id, command, _parent: mutations.append(command))  # type: ignore[method-assign]
-    api.wait_for_pipeline = MagicMock(side_effect=MammothJobTimeoutError(9, 1))  # type: ignore[method-assign]
+    api.draft_mode = AsyncMock(side_effect=lambda _id, command, _parent: mutations.append(command))  # type: ignore[method-assign]
+    api.wait_for_pipeline = AsyncMock(side_effect=MammothJobTimeoutError(9, 1))  # type: ignore[method-assign]
     view = _view_with_pipeline(api)
 
-    result = view.submit_draft()
+    result = await view.submit_draft()
 
     assert result["pipeline"]["state"] == "ready"
     assert mutations == [DraftCommand.SUBMIT, DraftCommand.EXIT]
@@ -149,16 +160,16 @@ def test_nested_terminal_readback_continues_lost_submit_without_duplicate() -> N
         {"pipeline": {"state": {"value": "ready"}, "draft": "dirty"}},
     ],
 )
-def test_unknown_draft_readback_blocks_submit_without_mutation(
+async def test_unknown_draft_readback_blocks_submit_without_mutation(
     payload: dict[str, object],
 ) -> None:
     api = PipelineAPI(None)  # type: ignore[arg-type]
-    api.get_pipeline = MagicMock(return_value=payload)  # type: ignore[method-assign]
+    api.get_pipeline = AsyncMock(return_value=payload)  # type: ignore[method-assign]
     mutations: list[DraftCommand] = []
-    api.draft_mode = MagicMock(side_effect=lambda _id, command, _parent: mutations.append(command))  # type: ignore[method-assign]
+    api.draft_mode = AsyncMock(side_effect=lambda _id, command, _parent: mutations.append(command))  # type: ignore[method-assign]
     view = _view_with_pipeline(api)
 
-    result = view.submit_draft()
+    result = await view.submit_draft()
 
     assert result["outcome"] == "unknown"
     assert result["operation_state"] == "outcome_unknown"
@@ -167,7 +178,7 @@ def test_unknown_draft_readback_blocks_submit_without_mutation(
     assert api.get_pipeline.call_count == 1
 
 
-def test_pagination_rejects_empty_continuation_and_repeated_pages() -> None:
+async def test_pagination_rejects_empty_continuation_and_repeated_pages() -> None:
     pages = iter(
         [
             {"datasets": [{"id": 1}], "next": "/datasets?offset=1"},
@@ -175,7 +186,7 @@ def test_pagination_rejects_empty_continuation_and_repeated_pages() -> None:
         ]
     )
     with pytest.raises(MammothPaginationError, match="empty page"):
-        collect_offset_pages(lambda _offset: next(pages), item_key="datasets", limit=1)
+        await collect_offset_pages(_pages(pages), item_key="datasets", limit=1)
 
     repeated = iter(
         [
@@ -184,47 +195,47 @@ def test_pagination_rejects_empty_continuation_and_repeated_pages() -> None:
         ]
     )
     with pytest.raises(MammothPaginationError, match="repeated"):
-        collect_offset_pages(lambda _offset: next(repeated), item_key="datasets", limit=1)
+        await collect_offset_pages(_pages(repeated), item_key="datasets", limit=1)
 
 
-def test_dataset_delete_verifies_absence_and_blocks_known_dependents() -> None:
+async def test_dataset_delete_verifies_absence_and_blocks_known_dependents() -> None:
     client = SimpleNamespace(workspace_id=1, project_id=2, job_timeout=1)
     api = DatasetsAPI(client)
-    api.delete = MagicMock(return_value={"status": "accepted"})  # type: ignore[method-assign]
-    api.get = MagicMock(
+    api.delete = AsyncMock(return_value={"status": "accepted"})  # type: ignore[method-assign]
+    api.get = AsyncMock(
         side_effect=MammothAPIError("gone", status_code=404, response_body={})
     )  # type: ignore[method-assign]
-    client._wait_if_job = MagicMock(side_effect=lambda response: response)
+    client._wait_if_job = AsyncMock(side_effect=lambda response: response)
 
-    result = api.delete_and_verify(8)
+    result = await api.delete_and_verify(8)
 
     assert result["verified"] is True
     api.delete.assert_called_once_with(8, workspace_id=None, project_id=None)
     with pytest.raises(MammothDeletionVerificationError):
-        api.delete_and_verify(8, dependencies=["view:9"])
+        await api.delete_and_verify(8, dependencies=["view:9"])
 
 
-def test_add_task_reports_done_after_the_pipeline_finishes() -> None:
+async def test_add_task_reports_done_after_the_pipeline_finishes() -> None:
     """The submit record says "processing"; after the wait it is finished."""
-    pipeline = MagicMock()
+    pipeline = AsyncMock()
     pipeline.add_task.return_value = {"future_id": 77, "status": "processing"}
     pipeline.wait_for_pipeline.return_value = {"state": "ready"}
-    pipeline.get_draft_status.return_value = {"is_draft": False}
+    pipeline.get_draft_status = AsyncMock(return_value={"is_draft": False})
     view = _view_with_pipeline(pipeline)
 
-    result = view._add_task({"LIMIT": {"N": 3}})
+    result = await view._add_task({"LIMIT": {"N": 3}})
 
     assert result == {"future_id": 77, "status": "done", "pipeline_state": "ready"}
 
 
-def test_add_task_in_draft_mode_returns_an_honest_staged_status() -> None:
+async def test_add_task_in_draft_mode_returns_an_honest_staged_status() -> None:
     """The step is only staged, not run, until the caller submits the draft."""
-    pipeline = MagicMock()
+    pipeline = AsyncMock()
     pipeline.add_task.return_value = {"future_id": 77, "status": "processing"}
-    pipeline.get_draft_status.return_value = {"is_draft": True}
+    pipeline.get_draft_status = AsyncMock(return_value={"is_draft": True})
     view = _view_with_pipeline(pipeline)
 
-    result = view._add_task({"LIMIT": {"N": 3}})
+    result = await view._add_task({"LIMIT": {"N": 3}})
 
     pipeline.wait_for_pipeline.assert_not_called()
     assert result["future_id"] == 77

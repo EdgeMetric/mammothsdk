@@ -23,8 +23,8 @@ class DataAppsAPI:
 
     Access via ``client.data_apps``::
 
-        data_app = client.data_apps.create(body={"name": "My App"})
-        client.data_apps.delete(data_app["id"])
+        data_app = await client.data_apps.create(body={"name": "My App"})
+        await client.data_apps.delete(data_app["id"])
     """
 
     def __init__(self, client: MammothClient) -> None:
@@ -40,7 +40,7 @@ class DataAppsAPI:
         if job_id <= 0:
             raise MammothValidationError(ERR_JOB_ID_POSITIVE.format(job_id))
 
-    def list(self, workspace_id: int | None = None) -> dict[str, Any]:
+    async def list(self, workspace_id: int | None = None) -> dict[str, Any]:
         """List data apps.
 
         Args:
@@ -52,9 +52,9 @@ class DataAppsAPI:
         params: dict[str, Any] = {}
         if workspace_id is not None:
             params["workspace_id"] = workspace_id
-        return self._client._request_json("GET", "/data-apps", params=params or None)
+        return await self._client._request_json("GET", "/data-apps", params=params or None)
 
-    def get(self, data_app_id: int) -> dict[str, Any]:
+    async def get(self, data_app_id: int) -> dict[str, Any]:
         """Get details of a data app.
 
         Args:
@@ -67,9 +67,9 @@ class DataAppsAPI:
             MammothValidationError: If *data_app_id* is not a positive integer.
         """
         self._check_data_app_id(data_app_id)
-        return self._client._request_json("GET", f"/data-apps/{data_app_id}")
+        return await self._client._request_json("GET", f"/data-apps/{data_app_id}")
 
-    def create(self, body: dict[str, Any]) -> dict[str, Any]:
+    async def create(self, body: dict[str, Any]) -> dict[str, Any]:
         """Create a new data app.
 
         Args:
@@ -78,9 +78,9 @@ class DataAppsAPI:
         Returns:
             Dict with the created data app.
         """
-        return self._client._request_json("POST", "/data-apps", json=body)
+        return await self._client._request_json("POST", "/data-apps", json=body)
 
-    def update(self, data_app_id: int, body: dict[str, Any]) -> dict[str, Any]:
+    async def update(self, data_app_id: int, body: dict[str, Any]) -> dict[str, Any]:
         """Update data app settings.
 
         Args:
@@ -94,9 +94,11 @@ class DataAppsAPI:
             MammothValidationError: If *data_app_id* is not a positive integer.
         """
         self._check_data_app_id(data_app_id)
-        return self._client._request_json("POST", f"/data-apps/{data_app_id}/settings", json=body)
+        return await self._client._request_json(
+            "POST", f"/data-apps/{data_app_id}/settings", json=body
+        )
 
-    def delete(self, data_app_id: int) -> dict[str, Any]:
+    async def delete(self, data_app_id: int) -> dict[str, Any]:
         """Delete a data app.
 
         Args:
@@ -109,9 +111,9 @@ class DataAppsAPI:
             MammothValidationError: If *data_app_id* is not a positive integer.
         """
         self._check_data_app_id(data_app_id)
-        return self._client._request_json("DELETE", f"/data-apps/{data_app_id}")
+        return await self._client._request_json("DELETE", f"/data-apps/{data_app_id}")
 
-    def active_job(self, data_app_id: int) -> dict[str, Any]:
+    async def active_job(self, data_app_id: int) -> dict[str, Any]:
         """Get the currently active job for a data app, if any.
 
         Args:
@@ -124,9 +126,9 @@ class DataAppsAPI:
             MammothValidationError: If *data_app_id* is not a positive integer.
         """
         self._check_data_app_id(data_app_id)
-        return self._client._request_json("GET", f"/data-apps/{data_app_id}/active-job")
+        return await self._client._request_json("GET", f"/data-apps/{data_app_id}/active-job")
 
-    def job(self, data_app_id: int, job_id: int) -> dict[str, Any]:
+    async def job(self, data_app_id: int, job_id: int) -> dict[str, Any]:
         """Get a specific job for a data app.
 
         Args:
@@ -142,9 +144,9 @@ class DataAppsAPI:
         """
         self._check_data_app_id(data_app_id)
         self._check_job_id(job_id)
-        return self._client._request_json("GET", f"/data-apps/{data_app_id}/jobs/{job_id}")
+        return await self._client._request_json("GET", f"/data-apps/{data_app_id}/jobs/{job_id}")
 
-    def pipeline_changes(self, data_app_id: int) -> dict[str, Any]:
+    async def pipeline_changes(self, data_app_id: int) -> dict[str, Any]:
         """Get pending pipeline changes for a data app's source dataview.
 
         Args:
@@ -157,9 +159,9 @@ class DataAppsAPI:
             MammothValidationError: If *data_app_id* is not a positive integer.
         """
         self._check_data_app_id(data_app_id)
-        return self._client._request_json("GET", f"/data-apps/{data_app_id}/pipeline-changes")
+        return await self._client._request_json("GET", f"/data-apps/{data_app_id}/pipeline-changes")
 
-    def share(self, data_app_id: int, body: dict[str, Any]) -> dict[str, Any]:
+    async def share(self, data_app_id: int, body: dict[str, Any]) -> dict[str, Any]:
         """Share a data app with a user.
 
         Args:
@@ -173,9 +175,11 @@ class DataAppsAPI:
             MammothValidationError: If *data_app_id* is not a positive integer.
         """
         self._check_data_app_id(data_app_id)
-        return self._client._request_json("POST", f"/data-apps/{data_app_id}/share", json=body)
+        return await self._client._request_json(
+            "POST", f"/data-apps/{data_app_id}/share", json=body
+        )
 
-    def upload(
+    async def upload(
         self,
         data_app_id: int,
         file: str | Path | BinaryIO,
@@ -216,7 +220,7 @@ class DataAppsAPI:
                     filename = os.path.basename(filename)
                 file_data = [("files", (filename, file, "application/octet-stream"))]
 
-            return self._client._request_json(
+            return await self._client._request_json(
                 "POST",
                 f"/data-apps/{data_app_id}/files",
                 params=params or None,
@@ -226,7 +230,7 @@ class DataAppsAPI:
             if opened_file is not None:
                 opened_file.close()
 
-    def user_list(self, data_app_id: int) -> dict[str, Any]:
+    async def user_list(self, data_app_id: int) -> dict[str, Any]:
         """List users a data app is shared with.
 
         Args:
@@ -239,9 +243,9 @@ class DataAppsAPI:
             MammothValidationError: If *data_app_id* is not a positive integer.
         """
         self._check_data_app_id(data_app_id)
-        return self._client._request_json("GET", f"/data-apps/{data_app_id}/users")
+        return await self._client._request_json("GET", f"/data-apps/{data_app_id}/users")
 
-    def user_remove(self, data_app_id: int, email: str) -> dict[str, Any]:
+    async def user_remove(self, data_app_id: int, email: str) -> dict[str, Any]:
         """Remove a shared user from a data app.
 
         Args:
@@ -255,6 +259,6 @@ class DataAppsAPI:
             MammothValidationError: If *data_app_id* is not a positive integer.
         """
         self._check_data_app_id(data_app_id)
-        return self._client._request_json(
+        return await self._client._request_json(
             "DELETE", f"/data-apps/{data_app_id}/users", params={"email": email}
         )

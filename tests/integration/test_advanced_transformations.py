@@ -40,6 +40,9 @@ from mammoth import (
     WindowFunction,
 )
 
+# The session fixtures open the client's connection pool; tests must share their loop.
+pytestmark = pytest.mark.asyncio(loop_scope="session")
+
 # Fixtures adv_second_dataset_id, adv_second_view are defined in conftest.py
 
 # ── Read-back helpers (verify the EFFECT of dataset-producing exports) ──
@@ -56,12 +59,12 @@ _PAGE = 10_000
 _HASH_KEY = "hash"
 
 
-def _open_new_dataset(client: MammothClient, dataset_id: int) -> View:
+async def _open_new_dataset(client: MammothClient, dataset_id: int) -> View:
     """Open the default view of a freshly-materialised dataset."""
-    return client.views.list(dataset_id)[0]
+    return (await client.views.list(dataset_id))[0]
 
 
-def _data_rows(view: View, columns: list[str] | None = None, condition=None):
+async def _data_rows(view: View, columns: list[str] | None = None, condition=None):
     """Yield every (optionally filtered) row of a view, paginating fully.
 
     A single large ``limit`` is unreliable, so page by ``offset`` until a short
@@ -69,8 +72,11 @@ def _data_rows(view: View, columns: list[str] | None = None, condition=None):
     """
     offset = 1
     while True:
-        page = view.data(columns=columns, condition=condition, limit=_PAGE, offset=offset)["data"]
-        yield from page
+        page = (await view.data(columns=columns, condition=condition, limit=_PAGE, offset=offset))[
+            "data"
+        ]
+        for row in page:
+            yield row
         if len(page) < _PAGE:
             return
         offset += _PAGE
@@ -81,14 +87,14 @@ def _cells(row: dict[str, object]) -> list[object]:
     return [v for k, v in row.items() if k != _HASH_KEY]
 
 
-def _count_rows(view: View, condition=None) -> int:
+async def _count_rows(view: View, condition=None) -> int:
     """Exact row count via full pagination (``paging.total`` is unreliable)."""
-    return sum(1 for _ in _data_rows(view, condition=condition))
+    return len([_ async for _ in _data_rows(view, condition=condition)])
 
 
-def _distinct_count(view: View, column: str) -> int:
+async def _distinct_count(view: View, column: str) -> int:
     """Number of distinct values in one column of a view."""
-    return len({_cells(r)[0] for r in _data_rows(view, [column])})
+    return len({_cells(r)[0] async for r in _data_rows(view, [column])})
 
 
 def _to_number(value: object) -> float | None:
@@ -99,16 +105,23 @@ def _to_number(value: object) -> float | None:
         return None
 
 
-def _sum_numeric_cells(view: View) -> float:
+async def _sum_numeric_cells(view: View) -> float:
     """Sum every numeric cell across a view (text labels and hash are skipped)."""
     return sum(
-        n for row in _data_rows(view) for v in _cells(row) if (n := _to_number(v)) is not None
+        [
+            n
+            async for row in _data_rows(view)
+            for v in _cells(row)
+            if (n := _to_number(v)) is not None
+        ]
     )
 
 
-def _sum_column(view: View, column: str) -> float:
+async def _sum_column(view: View, column: str) -> float:
     """Sum one numeric column over all rows of a view."""
-    return sum(n for r in _data_rows(view, [column]) if (n := _to_number(_cells(r)[0])) is not None)
+    return sum(
+        [n async for r in _data_rows(view, [column]) if (n := _to_number(_cells(r)[0])) is not None]
+    )
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -119,9 +132,9 @@ def _sum_column(view: View, column: str) -> float:
 class TestAdvancedColumnOps:
     """Copy with conditions, combine with condition, convert with FORMAT."""
 
-    def test_copy_with_per_item_condition(self, adv_view):
+    async def test_copy_with_per_item_condition(self, adv_view):
         """Copy a column with a per-item condition (B3 feature)."""
-        result = adv_view.copy_columns(
+        result = await adv_view.copy_columns(
             [
                 CopySpec(
                     source="Department",
@@ -133,18 +146,18 @@ class TestAdvancedColumnOps:
         )
         assert result is not None
 
-    def test_combine_columns(self, adv_view):
+    async def test_combine_columns(self, adv_view):
         """Combine two columns with separator."""
-        result = adv_view.combine_columns(
+        result = await adv_view.combine_columns(
             sources=["Cashier", "Register"],
             separator=" @ ",
             new_column="cashier_register",
         )
         assert result is not None
 
-    def test_combine_with_condition(self, adv_view):
+    async def test_combine_with_condition(self, adv_view):
         """Combine columns with a condition applied."""
-        result = adv_view.combine_columns(
+        result = await adv_view.combine_columns(
             sources=["Cashier", "Department"],
             separator=" - ",
             new_column="cashier_dept",
@@ -152,14 +165,14 @@ class TestAdvancedColumnOps:
         )
         assert result is not None
 
-    def test_convert_type_to_text(self, adv_view):
+    async def test_convert_type_to_text(self, adv_view):
         """Convert a numeric column to text (a real type change).
 
         ``Quantity`` holds integer data, so the backend auto-types it NUMERIC on
         upload; converting NUMERIC->NUMERIC is a rejected no-op.  Converting it
         to TEXT is a genuine type change the backend accepts.
         """
-        result = adv_view.convert_type(
+        result = await adv_view.convert_type(
             [
                 ConversionSpec(column="Quantity", to=ColumnType.TEXT),
             ]
@@ -175,22 +188,22 @@ class TestAdvancedColumnOps:
 class TestAdvancedFilter:
     """Compound conditions, NOT, value_is_column, multi-tier set_values."""
 
-    def test_compound_and_or(self, adv_view):
+    async def test_compound_and_or(self, adv_view):
         """Compound: (dept=ORDER AND type=sale) OR category=general."""
         cond = (
             Condition("Department", Operator.EQ, "ORDER")
             & Condition("Transaction Type", Operator.EQ, "sale")
         ) | Condition("Category", Operator.EQ, "general")
-        result = adv_view.filter_rows(cond)
+        result = await adv_view.filter_rows(cond)
         assert result is not None
 
-    def test_not_condition(self, adv_view):
+    async def test_not_condition(self, adv_view):
         """NOT condition."""
         cond = ~Condition("Transaction Type", Operator.EQ, "return")
-        result = adv_view.filter_rows(cond)
+        result = await adv_view.filter_rows(cond)
         assert result is not None
 
-    def test_deeply_nested_condition(self, adv_view):
+    async def test_deeply_nested_condition(self, adv_view):
         """Deeply nested: NOT((A AND B) OR C)."""
         cond = ~(
             (
@@ -199,18 +212,18 @@ class TestAdvancedFilter:
             )
             | Condition("Category", Operator.EQ, "service")
         )
-        result = adv_view.filter_rows(cond)
+        result = await adv_view.filter_rows(cond)
         assert result is not None
 
-    def test_value_is_column(self, adv_view):
+    async def test_value_is_column(self, adv_view):
         """Column-to-column comparison (B1 feature)."""
         cond = Condition("Subtotal", Operator.GT, "Price", value_is_column=True)
-        result = adv_view.filter_rows(cond)
+        result = await adv_view.filter_rows(cond)
         assert result is not None
 
-    def test_set_values_multi_tier(self, adv_view):
+    async def test_set_values_multi_tier(self, adv_view):
         """Set values with multiple conditional tiers."""
-        result = adv_view.set_values(
+        result = await adv_view.set_values(
             new_column="price_tier",
             column_type=ColumnType.TEXT,
             values=[
@@ -221,9 +234,9 @@ class TestAdvancedFilter:
         )
         assert result is not None
 
-    def test_set_values_compound_condition(self, adv_view):
+    async def test_set_values_compound_condition(self, adv_view):
         """Set values with compound AND/OR in condition."""
-        result = adv_view.set_values(
+        result = await adv_view.set_values(
             new_column="flag",
             column_type=ColumnType.TEXT,
             values=[
@@ -248,9 +261,9 @@ class TestAdvancedFilter:
 class TestAdvancedText:
     """Bulk replace, substring, split, replace."""
 
-    def test_bulk_replace(self, adv_view):
+    async def test_bulk_replace(self, adv_view):
         """Bulk replace with multiple search values."""
-        result = adv_view.bulk_replace(
+        result = await adv_view.bulk_replace(
             columns=["Department"],
             mapping=[
                 BulkReplaceMapping(search=["ORDER", "service"], replace="Online"),
@@ -258,13 +271,13 @@ class TestAdvancedText:
         )
         assert result is not None
 
-    def test_substring_left(self, adv_view):
+    async def test_substring_left(self, adv_view):
         """Substring from left direction.
 
         SUBSTRING needs a TEXT source; ``Transaction ID`` is integer data and
         auto-types NUMERIC, so we use the TEXT ``Item Description`` column.
         """
-        result = adv_view.substring(
+        result = await adv_view.substring(
             column="Item Description",
             direction=SubstringDirection.LEFT,
             char_position=6,
@@ -272,9 +285,9 @@ class TestAdvancedText:
         )
         assert result is not None
 
-    def test_substring_start(self, adv_view):
+    async def test_substring_start(self, adv_view):
         """Substring first N chars."""
-        result = adv_view.substring(
+        result = await adv_view.substring(
             column="Cashier",
             direction=SubstringDirection.START,
             num_char=3,
@@ -282,9 +295,9 @@ class TestAdvancedText:
         )
         assert result is not None
 
-    def test_split_column(self, adv_view):
+    async def test_split_column(self, adv_view):
         """Split column by delimiter."""
-        result = adv_view.split_column(
+        result = await adv_view.split_column(
             column="Cashier",
             delimiter=" ",
             new_columns=[
@@ -294,18 +307,18 @@ class TestAdvancedText:
         )
         assert result is not None
 
-    def test_replace_values(self, adv_view):
+    async def test_replace_values(self, adv_view):
         """Replace values in a column."""
-        result = adv_view.replace_values(
+        result = await adv_view.replace_values(
             columns=["Transaction Type"],
             find="sale",
             replace="SALE",
         )
         assert result is not None
 
-    def test_text_transform_upper(self, adv_view):
+    async def test_text_transform_upper(self, adv_view):
         """Text transform to upper case."""
-        result = adv_view.text_transform(columns=["Department"], case=TextCase.UPPER)
+        result = await adv_view.text_transform(columns=["Department"], case=TextCase.UPPER)
         assert result is not None
 
 
@@ -317,33 +330,33 @@ class TestAdvancedText:
 class TestAdvancedMath:
     """Parenthesized expressions, function calls, conditions."""
 
-    def test_parenthesized_expression(self, adv_view):
+    async def test_parenthesized_expression(self, adv_view):
         """Math with parenthesized expression: (Price + Tax) * Quantity."""
-        result = adv_view.math(
+        result = await adv_view.math(
             expression="(Price + Tax) * Quantity",
             new_column="total_calc",
         )
         assert result is not None
 
-    def test_function_call_abs(self, adv_view):
+    async def test_function_call_abs(self, adv_view):
         """Math with ABS function (B6 feature)."""
-        result = adv_view.math(
+        result = await adv_view.math(
             expression="ABS(Subtotal - Total)",
             new_column="diff_abs",
         )
         assert result is not None
 
-    def test_math_with_literal(self, adv_view):
+    async def test_math_with_literal(self, adv_view):
         """Math with numeric literal."""
-        result = adv_view.math(
+        result = await adv_view.math(
             expression="Price * 1.1",
             new_column="price_plus_10pct",
         )
         assert result is not None
 
-    def test_math_with_condition(self, adv_view):
+    async def test_math_with_condition(self, adv_view):
         """Math with a condition."""
-        result = adv_view.math(
+        result = await adv_view.math(
             expression="Subtotal * 0.05",
             new_column="extra_discount",
             condition=Condition("Transaction Type", Operator.EQ, "sale"),
@@ -364,42 +377,42 @@ class TestAdvancedDate:
     directly.
     """
 
-    def test_extract_year_and_month(self, adv_view):
+    async def test_extract_year_and_month(self, adv_view):
         """Extract year then month from date column."""
-        r1 = adv_view.extract_date(
+        r1 = await adv_view.extract_date(
             column="Time",
             component=DateComponent.YEAR,
             new_column="txn_year",
         )
         assert r1 is not None
-        r2 = adv_view.extract_date(
+        r2 = await adv_view.extract_date(
             column="Time",
             component=DateComponent.MONTH,
             new_column="txn_month",
         )
         assert r2 is not None
 
-    def test_extract_weekday(self, adv_view):
+    async def test_extract_weekday(self, adv_view):
         """Extract weekday_text from date column."""
-        result = adv_view.extract_date(
+        result = await adv_view.extract_date(
             column="Time",
             component=DateComponent.WEEKDAY_TEXT,
             new_column="txn_weekday",
         )
         assert result is not None
 
-    def test_increment_date(self, adv_view):
+    async def test_increment_date(self, adv_view):
         """Increment date by multi-component delta."""
-        result = adv_view.increment_date(
+        result = await adv_view.increment_date(
             column="Time",
             delta=DateDelta(months=1, days=15),
             new_column="time_shifted",
         )
         assert result is not None
 
-    def test_date_diff(self, adv_view):
+    async def test_date_diff(self, adv_view):
         """Date diff on same column (zero diff, tests API acceptance)."""
-        result = adv_view.date_diff(
+        result = await adv_view.date_diff(
             component=DateDiffUnit.DAY,
             start="Time",
             end="Time",
@@ -416,9 +429,9 @@ class TestAdvancedDate:
 class TestAdvancedAggregation:
     """Pivot, window, crosstab with advanced options."""
 
-    def test_pivot_multi_group_multi_agg(self, adv_view):
+    async def test_pivot_multi_group_multi_agg(self, adv_view):
         """Pivot with 2 group_by columns and 2 aggregations."""
-        result = adv_view.pivot(
+        result = await adv_view.pivot(
             group_by=["Department", "Transaction Type"],
             aggregations=[
                 AggregationSpec(
@@ -431,9 +444,9 @@ class TestAdvancedAggregation:
         )
         assert result is not None
 
-    def test_pivot_with_condition(self, adv_view):
+    async def test_pivot_with_condition(self, adv_view):
         """Pivot with a filter condition."""
-        result = adv_view.pivot(
+        result = await adv_view.pivot(
             group_by=["Department"],
             aggregations=[
                 AggregationSpec(
@@ -444,9 +457,9 @@ class TestAdvancedAggregation:
         )
         assert result is not None
 
-    def test_pivot_concat_with_delimiter(self, adv_view):
+    async def test_pivot_concat_with_delimiter(self, adv_view):
         """Pivot with CONCAT aggregation and delimiter (B7 feature)."""
-        result = adv_view.pivot(
+        result = await adv_view.pivot(
             group_by=["Department"],
             aggregations=[
                 AggregationSpec(
@@ -459,9 +472,9 @@ class TestAdvancedAggregation:
         )
         assert result is not None
 
-    def test_window_row_number(self, adv_view):
+    async def test_window_row_number(self, adv_view):
         """Window ROW_NUMBER partitioned and ordered."""
-        result = adv_view.window(
+        result = await adv_view.window(
             function=WindowFunction.ROW_NUMBER,
             new_column="row_num",
             partition_by=["Department"],
@@ -469,9 +482,9 @@ class TestAdvancedAggregation:
         )
         assert result is not None
 
-    def test_window_sum_running(self, adv_view):
+    async def test_window_sum_running(self, adv_view):
         """Window SUM with partition and order."""
-        result = adv_view.window(
+        result = await adv_view.window(
             function=WindowFunction.SUM,
             column="Total",
             new_column="running_total",
@@ -480,17 +493,17 @@ class TestAdvancedAggregation:
         )
         assert result is not None
 
-    def test_crosstab_count(self, adv_view, adv_client):
+    async def test_crosstab_count(self, adv_view, adv_client):
         """Crosstab COUNT → a dataset grouped by Department, pivoted on type.
 
         Verifies the EFFECT, not just job success: the row-grouping column
         survives, the pivot adds value columns, and aggregation collapses the
         output to exactly one row per distinct Department.
         """
-        n_depts = _distinct_count(adv_view, "Department")
-        n_types = _distinct_count(adv_view, "Transaction Type")
-        source_rows = _count_rows(adv_view)
-        new_ds_id = adv_view.crosstab(
+        n_depts = await _distinct_count(adv_view, "Department")
+        n_types = await _distinct_count(adv_view, "Transaction Type")
+        source_rows = await _count_rows(adv_view)
+        new_ds_id = await adv_view.crosstab(
             rows=["Department"],
             pivot_column="Transaction Type",
             select=CrosstabSpec(function=AggregateFunction.COUNT),
@@ -498,29 +511,29 @@ class TestAdvancedAggregation:
         )
         assert isinstance(new_ds_id, int)
         try:
-            xtab = _open_new_dataset(adv_client, new_ds_id)
+            xtab = await _open_new_dataset(adv_client, new_ds_id)
             names = xtab.display_names
             assert "Department" in names, "row-grouping column must survive"
             # One label column (Department) + one value column per pivot value.
             assert len(names) >= 1 + n_types
             # Aggregation collapses to one row per distinct row-group value.
-            assert _count_rows(xtab) == n_depts
+            assert await _count_rows(xtab) == n_depts
             # The grand total of all COUNT cells equals the source row count.
-            assert _sum_numeric_cells(xtab) == source_rows
+            assert await _sum_numeric_cells(xtab) == source_rows
         finally:
             with contextlib.suppress(Exception):
-                adv_client.datasets.delete(new_ds_id)
+                await adv_client.datasets.delete(new_ds_id)
 
-    def test_crosstab_sum(self, adv_view, adv_client):
+    async def test_crosstab_sum(self, adv_view, adv_client):
         """Crosstab SUM of Total, grouped by Department, pivoted on type.
 
         Verifies the SUM math end-to-end: SUM is partition-invariant, so the
         grand total of every value cell in the crosstab must equal the SUM of
         ``Total`` over the whole source dataset.
         """
-        n_depts = _distinct_count(adv_view, "Department")
-        source_total_sum = _sum_column(adv_view, "Total")
-        new_ds_id = adv_view.crosstab(
+        n_depts = await _distinct_count(adv_view, "Department")
+        source_total_sum = await _sum_column(adv_view, "Total")
+        new_ds_id = await adv_view.crosstab(
             rows=["Department"],
             pivot_column="Transaction Type",
             select=CrosstabSpec(function=AggregateFunction.SUM, column="Total"),
@@ -528,38 +541,38 @@ class TestAdvancedAggregation:
         )
         assert isinstance(new_ds_id, int)
         try:
-            xtab = _open_new_dataset(adv_client, new_ds_id)
+            xtab = await _open_new_dataset(adv_client, new_ds_id)
             assert "Department" in xtab.display_names
-            assert _count_rows(xtab) == n_depts
+            assert await _count_rows(xtab) == n_depts
             # Grand total of the pivoted SUM cells == source SUM(Total).
-            assert _sum_numeric_cells(xtab) == pytest.approx(source_total_sum, rel=1e-6)
+            assert await _sum_numeric_cells(xtab) == pytest.approx(source_total_sum, rel=1e-6)
         finally:
             with contextlib.suppress(Exception):
-                adv_client.datasets.delete(new_ds_id)
+                await adv_client.datasets.delete(new_ds_id)
 
 
 class TestBranchOut:
     """Branch out — save the view as a new internal dataset (internal export)."""
 
-    def test_branch_out_new_dataset(self, adv_view, adv_client):
+    async def test_branch_out_new_dataset(self, adv_view, adv_client):
         """Branch out the full view into a brand-new dataset.
 
         Verifies the EFFECT: the new dataset is a faithful copy — same row
         count and the exact same set of columns as the source.
         """
-        full_total = _count_rows(adv_view)
+        full_total = await _count_rows(adv_view)
         source_columns = set(adv_view.display_names)
-        new_ds_id = adv_view.branch_out(dataset_name="branchout_e2e_full")
+        new_ds_id = await adv_view.branch_out(dataset_name="branchout_e2e_full")
         assert isinstance(new_ds_id, int)
         try:
-            copy = _open_new_dataset(adv_client, new_ds_id)
-            assert _count_rows(copy) == full_total, "full copy must preserve every row"
+            copy = await _open_new_dataset(adv_client, new_ds_id)
+            assert await _count_rows(copy) == full_total, "full copy must preserve every row"
             assert set(copy.display_names) == source_columns, "all columns must carry over"
         finally:
             with contextlib.suppress(Exception):
-                adv_client.datasets.delete(new_ds_id)
+                await adv_client.datasets.delete(new_ds_id)
 
-    def test_branch_out_with_condition(self, adv_view, adv_client):
+    async def test_branch_out_with_condition(self, adv_view, adv_client):
         """Branch out only rows matching a condition into a new dataset.
 
         Verifies the filter was truly applied: the new dataset has exactly the
@@ -567,21 +580,25 @@ class TestBranchOut:
         the full source, and ZERO rows that violate the condition.
         """
         sale = Condition("Transaction Type", Operator.EQ, "sale")
-        full_total = _count_rows(adv_view)
-        sales_total = _count_rows(adv_view, condition=sale)
+        full_total = await _count_rows(adv_view)
+        sales_total = await _count_rows(adv_view, condition=sale)
         assert 0 < sales_total < full_total, "fixture must have both sale and non-sale rows"
 
-        new_ds_id = adv_view.branch_out(dataset_name="branchout_e2e_sales_only", condition=sale)
+        new_ds_id = await adv_view.branch_out(
+            dataset_name="branchout_e2e_sales_only", condition=sale
+        )
         assert isinstance(new_ds_id, int)
         try:
-            filtered = _open_new_dataset(adv_client, new_ds_id)
+            filtered = await _open_new_dataset(adv_client, new_ds_id)
             # Kept exactly the matching rows — no more, no fewer.
-            assert _count_rows(filtered) == sales_total
+            assert await _count_rows(filtered) == sales_total
             # And not one row that breaks the condition leaked through.
-            assert _count_rows(filtered, condition=~sale) == 0, "filter must exclude non-matches"
+            assert (
+                await _count_rows(filtered, condition=~sale) == 0
+            ), "filter must exclude non-matches"
         finally:
             with contextlib.suppress(Exception):
-                adv_client.datasets.delete(new_ds_id)
+                await adv_client.datasets.delete(new_ds_id)
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -592,37 +609,37 @@ class TestBranchOut:
 class TestAdvancedRowOps:
     """Fill, limit, discard, unnest."""
 
-    def test_fill_missing(self, adv_view):
+    async def test_fill_missing(self, adv_view):
         """Fill missing with last value."""
-        result = adv_view.fill_missing(
+        result = await adv_view.fill_missing(
             column="Discount",
             direction=FillDirection.LAST_VALUE,
         )
         assert result is not None
 
-    def test_limit_rows_top(self, adv_view):
+    async def test_limit_rows_top(self, adv_view):
         """Limit to top N rows with ordering."""
-        result = adv_view.limit_rows(
+        result = await adv_view.limit_rows(
             n=10,
             order_by=[["Total", SortDirection.DESC]],
         )
         assert result is not None
 
-    def test_limit_rows_bottom(self, adv_view):
+    async def test_limit_rows_bottom(self, adv_view):
         """Limit bottom N rows."""
-        result = adv_view.limit_rows(n=5, bottom=True)
+        result = await adv_view.limit_rows(n=5, bottom=True)
         assert result is not None
 
-    def test_discard_duplicates(self, adv_view):
+    async def test_discard_duplicates(self, adv_view):
         """Discard duplicates ignoring some columns."""
-        result = adv_view.discard_duplicates(
+        result = await adv_view.discard_duplicates(
             ignore_columns=["Transaction ID"],
         )
         assert result is not None
 
-    def test_unnest_basic(self, adv_view):
+    async def test_unnest_basic(self, adv_view):
         """Unnest text columns into label/value format."""
-        result = adv_view.unnest(
+        result = await adv_view.unnest(
             columns=["Cashier", "Department"],
             label_column="Metric",
             value_column="Amount",
@@ -638,9 +655,9 @@ class TestAdvancedRowOps:
 class TestJoin:
     """Join two datasets in the same workspace."""
 
-    def test_join_inner_with_view_object(self, adv_view, adv_second_view):
+    async def test_join_inner_with_view_object(self, adv_view, adv_second_view):
         """INNER join using View object (display name resolution)."""
-        result = adv_view.join(
+        result = await adv_view.join(
             foreign_view=adv_second_view,
             join_type=JoinType.INNER,
             on=[JoinKeySpec(left="Cashier", right="full_name")],
@@ -648,9 +665,9 @@ class TestJoin:
         )
         assert result is not None
 
-    def test_join_left_with_view_object(self, adv_view, adv_second_view):
+    async def test_join_left_with_view_object(self, adv_view, adv_second_view):
         """LEFT join — all rows from source preserved."""
-        result = adv_view.join(
+        result = await adv_view.join(
             foreign_view=adv_second_view,
             join_type=JoinType.LEFT,
             on=[JoinKeySpec(left="Cashier", right="full_name")],
@@ -658,9 +675,9 @@ class TestJoin:
         )
         assert result is not None
 
-    def test_join_with_column_prefix(self, adv_view, adv_second_view):
+    async def test_join_with_column_prefix(self, adv_view, adv_second_view):
         """JOIN with column prefix to avoid name collisions."""
-        result = adv_view.join(
+        result = await adv_view.join(
             foreign_view=adv_second_view,
             join_type=JoinType.LEFT,
             on=[JoinKeySpec(left="Cashier", right="full_name")],
@@ -678,23 +695,25 @@ class TestJoin:
 class TestMultiStepPipeline:
     """Chain multiple transformations and verify pipeline state."""
 
-    def test_five_step_chain(self, adv_view):
+    async def test_five_step_chain(self, adv_view):
         """Chain: convert_type -> filter -> math -> set_values -> limit."""
         # Transaction ID auto-types NUMERIC; -> TEXT is a real change (Quantity is
         # already NUMERIC, so converting it would be a no-op ref_error).
-        r1 = adv_view.convert_type([ConversionSpec(column="Transaction ID", to=ColumnType.TEXT)])
+        r1 = await adv_view.convert_type(
+            [ConversionSpec(column="Transaction ID", to=ColumnType.TEXT)]
+        )
         assert r1 is not None
 
-        r2 = adv_view.filter_rows(Condition("Transaction Type", Operator.EQ, "sale"))
+        r2 = await adv_view.filter_rows(Condition("Transaction Type", Operator.EQ, "sale"))
         assert r2 is not None
 
-        r3 = adv_view.math(
+        r3 = await adv_view.math(
             expression="Price * Quantity",
             new_column="line_total",
         )
         assert r3 is not None
 
-        r4 = adv_view.set_values(
+        r4 = await adv_view.set_values(
             new_column="size",
             column_type=ColumnType.TEXT,
             values=[
@@ -704,33 +723,33 @@ class TestMultiStepPipeline:
         )
         assert r4 is not None
 
-        r5 = adv_view.limit_rows(n=50)
+        r5 = await adv_view.limit_rows(n=50)
         assert r5 is not None
 
-        tasks = adv_view.list_tasks()
+        tasks = await adv_view.list_tasks()
         assert len(tasks) >= 5
 
-    def test_text_pipeline(self, adv_view):
+    async def test_text_pipeline(self, adv_view):
         """Chain: combine -> replace -> split (all using original columns).
 
         Note: Pipeline tasks are added but not executed until data is fetched,
         so we cannot reference columns created by previous pipeline steps.
         """
-        r1 = adv_view.combine_columns(
+        r1 = await adv_view.combine_columns(
             sources=["Cashier", "Department"],
             separator="|",
             new_column="combined",
         )
         assert r1 is not None
 
-        r2 = adv_view.replace_values(
+        r2 = await adv_view.replace_values(
             columns=["Transaction Type"],
             find="sale",
             replace="SALE",
         )
         assert r2 is not None
 
-        r3 = adv_view.split_column(
+        r3 = await adv_view.split_column(
             column="Cashier",
             delimiter=" ",
             new_columns=[
@@ -740,33 +759,33 @@ class TestMultiStepPipeline:
         )
         assert r3 is not None
 
-        tasks = adv_view.list_tasks()
+        tasks = await adv_view.list_tasks()
         assert len(tasks) >= 3
 
-    def test_date_pipeline(self, adv_view):
+    async def test_date_pipeline(self, adv_view):
         """Chain: extract year -> extract month -> increment (Time is already DATE)."""
-        r1 = adv_view.extract_date(
+        r1 = await adv_view.extract_date(
             column="Time",
             component=DateComponent.YEAR,
             new_column="year",
         )
         assert r1 is not None
 
-        r2 = adv_view.extract_date(
+        r2 = await adv_view.extract_date(
             column="Time",
             component=DateComponent.MONTH_TEXT,
             new_column="month_name",
         )
         assert r2 is not None
 
-        r3 = adv_view.increment_date(
+        r3 = await adv_view.increment_date(
             column="Time",
             delta=DateDelta(days=7),
             new_column="next_week",
         )
         assert r3 is not None
 
-        tasks = adv_view.list_tasks()
+        tasks = await adv_view.list_tasks()
         assert len(tasks) >= 3
 
 
@@ -778,11 +797,11 @@ class TestMultiStepPipeline:
 class TestAdvancedExport:
     """Export after transformations."""
 
-    def test_export_after_transform(self, adv_view, tmp_path):
+    async def test_export_after_transform(self, adv_view, tmp_path):
         """Apply a transformation then export to CSV."""
-        adv_view.filter_rows(Condition("Transaction Type", Operator.EQ, "sale"))
+        await adv_view.filter_rows(Condition("Transaction Type", Operator.EQ, "sale"))
         out = tmp_path / "adv_export.csv"
-        path = adv_view.export.to_csv(output_path=str(out))
+        path = await adv_view.export.to_csv(output_path=str(out))
         assert path.exists()
         content = path.read_text()
         assert len(content.splitlines()) > 1

@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import asyncio
+import inspect
+
 import json
 from contextlib import contextmanager
 from pathlib import Path
@@ -18,6 +21,13 @@ from mammoth_cli.runtime.invocation import Invocation
 
 PROJECT = 3
 DATASET = 731
+
+
+def _drive(work: Any) -> Any:
+    """Run one SDK coroutine to completion; hand anything else straight back."""
+    if not inspect.isawaitable(work):
+        return work
+    return asyncio.run(work)
 
 
 def _inv(input_file: str, **kwargs: Any) -> Invocation:
@@ -50,13 +60,13 @@ def _bind(monkeypatch: pytest.MonkeyPatch, service: Any):
     def open_service(_invocation: Invocation):
         yield service, type("Auth", (), {"workspace_id": 4})()
 
-    monkeypatch.setattr(batch_cmd, "open_service", open_service)
+    _drive(monkeypatch.setattr(batch_cmd, "open_service", open_service))
     yield
 
 
 def _input(tmp_path: Path, name: str, payload: dict[str, Any]) -> str:
     path = tmp_path / name
-    path.write_text(json.dumps(payload), encoding="utf-8")
+    _drive(path.write_text(json.dumps(payload), encoding="utf-8"))
     return str(path)
 
 
@@ -64,7 +74,7 @@ def test_file_id_only_and_release_mapping_array_emit_exact_wire(
     real_service: Any, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
     service, api = real_service(project_id=PROJECT)
-    api.default(200, {"batch_id": 42, "status": "created"})
+    _drive(api.default(200, {"batch_id": 42, "status": "created"}))
     file_input = _input(tmp_path, "file-spec.json", {"file_id": 94})
     with _bind(monkeypatch, service):
         result, _ = batch_cmd.batch_create_spec(_inv(file_input))
@@ -88,7 +98,7 @@ def test_file_id_only_and_release_mapping_array_emit_exact_wire(
     }
     mapping_input = _input(tmp_path, "mapping-spec.json", mapping)
     with _bind(monkeypatch, service):
-        batch_cmd.batch_create_spec(_inv(mapping_input))
+        _drive(batch_cmd.batch_create_spec(_inv(mapping_input)))
     assert api.last().json_body == mapping
 
 
@@ -114,14 +124,14 @@ def test_invalid_or_mixed_release_specs_and_destructive_confirmation_are_local(
     ):
         source = _input(tmp_path, "invalid.json", payload)
         with _bind(monkeypatch, service), pytest.raises(CliError):
-            batch_cmd.batch_create_spec(_inv(source))
+            _drive(batch_cmd.batch_create_spec(_inv(source)))
     destructive = _input(
         tmp_path,
         "destructive.json",
         {"source_id": 91, "mapping": [], "delete_source_ds": True},
     )
     with _bind(monkeypatch, service), pytest.raises(CliError) as error:
-        batch_cmd.batch_create_spec(_inv(destructive))
+        _drive(batch_cmd.batch_create_spec(_inv(destructive)))
     assert error.value.code == "confirmation_required"
     assert api.requests == []
 
@@ -133,7 +143,7 @@ def test_batch_create_spec_rejects_nonpositive_dataset_without_request(
     source = _input(tmp_path, "valid-file.json", {"file_id": 94})
     invocation = _invocation_for_dataset(source, "0")
     with _bind(monkeypatch, service), pytest.raises(CliError):
-        batch_cmd.batch_create_spec(invocation)
+        _drive(batch_cmd.batch_create_spec(invocation))
     assert api.requests == []
 
 
@@ -167,7 +177,7 @@ def test_destructive_release_spec_requires_matching_source_confirmation(
         },
     )
     with _bind(monkeypatch, service), pytest.raises(CliError) as error:
-        batch_cmd.batch_create_spec(_inv(source, yes=True, confirm="92"))
+        _drive(batch_cmd.batch_create_spec(_inv(source, yes=True, confirm="92")))
     assert error.value.code == "confirmation_target_mismatch"
     assert api.requests == []
 
@@ -176,7 +186,7 @@ def test_destructive_release_spec_matching_confirmation_emits_exact_wire(
     real_service: Any, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
     service, api = real_service(project_id=PROJECT)
-    api.default(200, {"batch_id": 42, "status": "created"})
+    _drive(api.default(200, {"batch_id": 42, "status": "created"}))
     source = _input(
         tmp_path,
         "destructive-valid.json",
@@ -193,7 +203,7 @@ def test_destructive_release_spec_matching_confirmation_emits_exact_wire(
         },
     )
     with _bind(monkeypatch, service):
-        batch_cmd.batch_create_spec(_inv(source, yes=True, confirm="91"))
+        _drive(batch_cmd.batch_create_spec(_inv(source, yes=True, confirm="91")))
     assert api.last().json_body["delete_source_ds"] is True
     assert api.last().json_body["source_id"] == 91
 
@@ -206,7 +216,7 @@ def test_sdk_rejects_bool_ids_and_mixed_mapping_variants_without_request() -> No
         def __init__(self) -> None:
             self.calls: list[tuple[Any, Any]] = []
 
-        def _request_json(self, *args: Any, **kwargs: Any) -> dict[str, Any]:
+        async def _request_json(self, *args: Any, **kwargs: Any) -> dict[str, Any]:
             self.calls.append((args, kwargs))
             return {}
 
@@ -231,5 +241,5 @@ def test_sdk_rejects_bool_ids_and_mixed_mapping_variants_without_request() -> No
         ),
     ):
         with pytest.raises(MammothValidationError):
-            api.create_spec(dataset_id, spec)
+            _drive(api.create_spec(dataset_id, spec))
     assert client.calls == []

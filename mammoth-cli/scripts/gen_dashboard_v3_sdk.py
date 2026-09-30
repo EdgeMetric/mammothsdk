@@ -47,9 +47,7 @@ _CONSTRAINT_ARGUMENTS: list[tuple[str, str]] = [
 # Canonical anchored regex for a JSON-Schema ``format: uuid`` string. Applied as
 # a pydantic ``pattern`` so the field stays a plain ``str`` -- it validates the
 # shape while still serialising as a string in JSON (no ``UUID`` object).
-_UUID_PATTERN = (
-    r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
-)
+_UUID_PATTERN = r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
 
 # JSON-Schema ``format`` -> anchored regex emitted as a pydantic ``pattern``.
 # Only formats that keep the field a plain ``str`` (guaranteed string JSON
@@ -474,7 +472,7 @@ def build() -> str:
         summary = operation.get("summary") or operation["operationId"]
         lines.extend(
             [
-                f"def {name}({', '.join(args)}) -> {result_annotation}:",
+                f"async def {name}({', '.join(args)}) -> {result_annotation}:",
                 f'    """{summary.strip().rstrip(".")}."""',
                 f"    path = {path!r}",
             ]
@@ -497,12 +495,12 @@ def build() -> str:
             # PNG/PDF/MP4/HTML artifacts: describe the body instead of parsing
             # it as JSON, which used to raise JSONDecodeError on a 200.
             lines.append(
-                "    response = self._client._request_binary("
+                "    response = await self._client._request_binary("
                 f"{method.upper()!r}, path, params=params{body_arg})"
             )
         else:
             lines.append(
-                "    response = self._client._request_json("
+                "    response = await self._client._request_json("
                 f"{method.upper()!r}, path, params=params{body_arg})"
             )
         opaque = {"dict[str, Any]", "Any"}

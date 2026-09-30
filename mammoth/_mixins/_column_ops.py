@@ -24,7 +24,9 @@ else:
 class ColumnOpsMixin(ViewHost):
     """Mixin for column-level operations on a View."""
 
-    def add_column(self, name: str, column_type: ColumnType = ColumnType.TEXT) -> dict[str, Any]:
+    async def add_column(
+        self, name: str, column_type: ColumnType = ColumnType.TEXT
+    ) -> dict[str, Any]:
         """Add an empty column (ADD_COLUMN task).
 
         Args:
@@ -36,13 +38,15 @@ class ColumnOpsMixin(ViewHost):
 
         Examples::
 
-            view.add_column("Notes")
-            view.add_column("Score", column_type=ColumnType.NUMERIC)
-            view.add_column("Created", column_type=ColumnType.DATE)
+            await view.add_column("Notes")
+            await view.add_column("Score", column_type=ColumnType.NUMERIC)
+            await view.add_column("Created", column_type=ColumnType.DATE)
         """
-        return self._add_task(build_add_column_params(name, column_type, self._next_internal_name))
+        return await self._add_task(
+            build_add_column_params(name, column_type, self._next_internal_name)
+        )
 
-    def delete_columns(self, columns: list[str]) -> dict[str, Any]:
+    async def delete_columns(self, columns: list[str]) -> dict[str, Any]:
         """Remove one or more columns (DELETE task).
 
         Args:
@@ -53,12 +57,14 @@ class ColumnOpsMixin(ViewHost):
 
         Examples::
 
-            view.delete_columns(["Temp"])
-            view.delete_columns(["Notes", "Internal ID", "Debug"])
+            await view.delete_columns(["Temp"])
+            await view.delete_columns(["Notes", "Internal ID", "Debug"])
         """
-        return self._add_task(build_delete_params(columns, self.columns, self._internal_names))
+        return await self._add_task(
+            build_delete_params(columns, self.columns, self._internal_names)
+        )
 
-    def copy_columns(self, copies: list[CopySpec]) -> dict[str, Any]:
+    async def copy_columns(self, copies: list[CopySpec]) -> dict[str, Any]:
         """Duplicate columns (COPY task).
 
         Args:
@@ -69,7 +75,7 @@ class ColumnOpsMixin(ViewHost):
         Returns:
             API response dict.
         """
-        return self._add_task(
+        return await self._add_task(
             build_copy_params(
                 copies,
                 self.columns,
@@ -79,7 +85,7 @@ class ColumnOpsMixin(ViewHost):
             )
         )
 
-    def combine_columns(
+    async def combine_columns(
         self,
         sources: list[str],
         new_column: str | None = None,
@@ -107,18 +113,18 @@ class ColumnOpsMixin(ViewHost):
         Examples::
 
             # Combine first + last name into a new column
-            view.combine_columns(
+            await view.combine_columns(
                 ["First Name", "Last Name"],
                 new_column="Full Name", separator=" ",
             )
 
             # Combine with custom separator, overwrite existing column
-            view.combine_columns(
+            await view.combine_columns(
                 ["City", "State", "Zip"],
                 existing_column="Address", separator=", ",
             )
         """
-        return self._add_task(
+        return await self._add_task(
             build_combine_params(
                 sources,
                 self.columns,
@@ -133,7 +139,7 @@ class ColumnOpsMixin(ViewHost):
             )
         )
 
-    def convert_type(self, conversions: list[ConversionSpec]) -> dict[str, Any]:
+    async def convert_type(self, conversions: list[ConversionSpec]) -> dict[str, Any]:
         """Convert column data types (CONVERT task).
 
         Args:
@@ -149,17 +155,19 @@ class ColumnOpsMixin(ViewHost):
             from mammoth import ConversionSpec, ColumnType
 
             # Text to numeric
-            view.convert_type([ConversionSpec(column="Sales", to=ColumnType.NUMERIC)])
+            await view.convert_type([ConversionSpec(column="Sales", to=ColumnType.NUMERIC)])
 
             # Text to date (specify the source format)
-            view.convert_type([
+            await view.convert_type([
                 ConversionSpec(column="Order Date", to=ColumnType.DATE,
                                format="MM/DD/YYYY"),
             ])
         """
-        return self._add_task(build_convert_params(conversions, self.columns, self._internal_names))
+        return await self._add_task(
+            build_convert_params(conversions, self.columns, self._internal_names)
+        )
 
-    def rename_columns(self, renames: dict[str, str]) -> dict[str, Any]:
+    async def rename_columns(self, renames: dict[str, str]) -> dict[str, Any]:
         """Rename columns (the web grid's rename; not a pipeline task).
 
         The new name is a view display property (``COLUMN_NAMES``), the same
@@ -182,7 +190,7 @@ class ColumnOpsMixin(ViewHost):
 
         Example::
 
-            view.rename_columns({"cust_id": "Customer ID", "amt": "Amount"})
+            await view.rename_columns({"cust_id": "Customer ID", "amt": "Amount"})
         """
         if not renames:
             raise ValueError("renames must name at least one column")
@@ -197,12 +205,12 @@ class ColumnOpsMixin(ViewHost):
         final = [cleaned.get(name, name).lower() for name in self.columns]
         if len(final) != len(set(final)):
             raise ValueError("two columns would have the same name after the rename")
-        self._client.dataviews.update(
+        await self._client.dataviews.update(
             self.dataset_id,
             self.id,
             [{"op": "replace", "path": "display_properties/COLUMN_NAMES", "value": value}],
         )
-        self.refresh()
+        await self.refresh()
         # The refreshed columns are the proof: a PATCH the server accepted
         # but did not apply must not read as a rename that happened.
         not_applied = {old: new for old, new in cleaned.items() if new not in self.columns}

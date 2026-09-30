@@ -123,9 +123,9 @@ def test_at_least_the_three_expected_workflows_publish() -> None:
     publishers = _publishing_workflows()
     assert publishers, "no workflow publishes to PyPI; expected three"
     dists = {_published_distribution(doc) for doc in publishers.values()}
-    assert dists == _ALL_DISTRIBUTIONS, (
-        f"publishing workflows ship {sorted(dists)}, expected {sorted(_ALL_DISTRIBUTIONS)}"
-    )
+    assert (
+        dists == _ALL_DISTRIBUTIONS
+    ), f"publishing workflows ship {sorted(dists)}, expected {sorted(_ALL_DISTRIBUTIONS)}"
 
 
 def test_each_distribution_has_exactly_one_publisher() -> None:
@@ -152,9 +152,7 @@ def test_no_publisher_is_triggered_by_a_release_event() -> None:
     ``release: published`` would fire on it, giving some distribution a second,
     unintended publication path. Publishers must trigger only on tag pushes.
     """
-    offenders = {
-        name for name, doc in _publishing_workflows().items() if _triggers_on_release(doc)
-    }
+    offenders = {name for name, doc in _publishing_workflows().items() if _triggers_on_release(doc)}
     assert not offenders, (
         f"publishing workflows must not trigger on a 'release:' event: {sorted(offenders)}. "
         f"Trigger on a tag push (e.g. `on: push: tags: [...]`) instead, so a GitHub "
@@ -173,17 +171,15 @@ def test_publishers_trigger_only_on_tag_pushes() -> None:
     for name, doc in _publishing_workflows().items():
         section = _trigger_section(doc)
         assert isinstance(section, dict), f"{name}: unexpected `on:` shape {section!r}"
-        assert "push" in section or "workflow_dispatch" in section, (
-            f"{name}: publisher must trigger on a tag push or a manual dispatch"
-        )
+        assert (
+            "push" in section or "workflow_dispatch" in section
+        ), f"{name}: publisher must trigger on a tag push or a manual dispatch"
         if "push" in section:
             push = section["push"]
-            assert isinstance(push, dict) and "tags" in push, (
-                f"{name}: publisher must trigger on tag pushes (`push: tags: [...]`), got {push!r}"
-            )
-            assert "branches" not in push, (
-                f"{name}: publisher must not trigger on branch pushes, got {push!r}"
-            )
-        assert "pull_request" not in section, (
-            f"{name}: publisher must not trigger on pull_request"
-        )
+            assert (
+                isinstance(push, dict) and "tags" in push
+            ), f"{name}: publisher must trigger on tag pushes (`push: tags: [...]`), got {push!r}"
+            assert (
+                "branches" not in push
+            ), f"{name}: publisher must not trigger on branch pushes, got {push!r}"
+        assert "pull_request" not in section, f"{name}: publisher must not trigger on pull_request"

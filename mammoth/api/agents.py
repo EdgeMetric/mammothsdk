@@ -20,19 +20,19 @@ class AgentsAPI:
 
     Access via ``client.agents``::
 
-        reply = client.agents.chat(
+        reply = await client.agents.chat(
             message="What changed in this dataset?",
             scope={"type": "workspace", "workspace_id": 2},
         )
-        sessions = client.agents.session_list()
-        client.agents.session_set_visibility(session_id, "shared")
-        client.agents.session_delete(session_id)
+        sessions = await client.agents.session_list()
+        await client.agents.session_set_visibility(session_id, "shared")
+        await client.agents.session_delete(session_id)
     """
 
     def __init__(self, client: MammothClient) -> None:
         self._client = client
 
-    def chat(
+    async def chat(
         self,
         message: str,
         scope: dict[str, Any],
@@ -66,9 +66,9 @@ class AgentsAPI:
             body["client_context"] = client_context
         if selection is not None:
             body["selection"] = selection
-        return self._client._request_json("POST", "/agents/chat", json=body)
+        return await self._client._request_json("POST", "/agents/chat", json=body)
 
-    def session_delete(self, session_id: str) -> dict[str, Any]:
+    async def session_delete(self, session_id: str) -> dict[str, Any]:
         """Delete an agent chat session.
 
         Args:
@@ -82,9 +82,9 @@ class AgentsAPI:
         """
         if not session_id:
             raise MammothValidationError(ERR_SESSION_ID_REQUIRED.format(session_id))
-        return self._client._request_json("DELETE", f"/agents/sessions/{session_id}")
+        return await self._client._request_json("DELETE", f"/agents/sessions/{session_id}")
 
-    def session_list(
+    async def session_list(
         self,
         agent_key: str | None = None,
         limit: int | None = None,
@@ -115,9 +115,9 @@ class AgentsAPI:
             params["include_shared"] = include_shared
         if workspace_id is not None:
             params["workspace_id"] = workspace_id
-        return self._client._request_json("GET", "/agents/sessions", params=params or None)
+        return await self._client._request_json("GET", "/agents/sessions", params=params or None)
 
-    def session_messages(self, session_id: str) -> dict[str, Any]:
+    async def session_messages(self, session_id: str) -> dict[str, Any]:
         """Get the messages for an agent chat session.
 
         Args:
@@ -131,9 +131,9 @@ class AgentsAPI:
         """
         if not session_id:
             raise MammothValidationError(ERR_SESSION_ID_REQUIRED.format(session_id))
-        return self._client._request_json("GET", f"/agents/sessions/{session_id}/messages")
+        return await self._client._request_json("GET", f"/agents/sessions/{session_id}/messages")
 
-    def session_set_visibility(self, session_id: str, visibility: str) -> dict[str, Any]:
+    async def session_set_visibility(self, session_id: str, visibility: str) -> dict[str, Any]:
         """Set the visibility of an agent chat session.
 
         Args:
@@ -151,7 +151,7 @@ class AgentsAPI:
             raise MammothValidationError(ERR_SESSION_ID_REQUIRED.format(session_id))
         if visibility not in VALID_VISIBILITIES:
             raise MammothValidationError(ERR_VISIBILITY_INVALID.format(visibility))
-        return self._client._request_json(
+        return await self._client._request_json(
             "PATCH",
             f"/agents/sessions/{session_id}",
             json={"visibility": visibility},

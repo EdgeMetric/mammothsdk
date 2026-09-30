@@ -10,6 +10,8 @@ Run:
 
 from __future__ import annotations
 
+import pytest
+
 from mammoth import (
     AggregateFunction,
     AggregationSpec,
@@ -30,6 +32,9 @@ from mammoth import (
     WindowFunction,
 )
 
+# The session fixtures open the client's connection pool; tests must share their loop.
+pytestmark = pytest.mark.asyncio(loop_scope="session")
+
 # ═══════════════════════════════════════════════════════════════
 #  Phase 1: Upload & Dataset
 # ═══════════════════════════════════════════════════════════════
@@ -38,20 +43,20 @@ from mammoth import (
 class TestUploadAndDataset:
     """Verify file upload creates a usable dataset."""
 
-    def test_upload_creates_dataset(self, uploaded_dataset_id):
+    async def test_upload_creates_dataset(self, uploaded_dataset_id):
         assert isinstance(uploaded_dataset_id, int)
 
-    def test_dataset_appears_in_list(self, client, uploaded_dataset_id):
-        datasets = client.datasets.list()
+    async def test_dataset_appears_in_list(self, client, uploaded_dataset_id):
+        datasets = await client.datasets.list()
         ds_ids = [d["id"] for d in datasets.get("datasets", [])]
         assert uploaded_dataset_id in ds_ids
 
-    def test_dataset_has_views(self, client, uploaded_dataset_id):
-        views = client.views.list(uploaded_dataset_id)
+    async def test_dataset_has_views(self, client, uploaded_dataset_id):
+        views = await client.views.list(uploaded_dataset_id)
         assert len(views) >= 1
 
-    def test_default_view_has_columns(self, client, uploaded_dataset_id, base_view_id):
-        view = client.views.get(base_view_id, uploaded_dataset_id)
+    async def test_default_view_has_columns(self, client, uploaded_dataset_id, base_view_id):
+        view = await client.views.get(base_view_id, uploaded_dataset_id)
         assert len(view.display_names) == 14
         assert "emp_id" in view.columns
         assert "base_salary" in view.columns
@@ -66,32 +71,32 @@ class TestUploadAndDataset:
 class TestViewOperations:
     """Test view CRUD and metadata."""
 
-    def test_create_view(self, client, uploaded_dataset_id):
-        v = client.views.create(dataset_id=uploaded_dataset_id, name="test_create")
+    async def test_create_view(self, client, uploaded_dataset_id):
+        v = await client.views.create(dataset_id=uploaded_dataset_id, name="test_create")
         assert v.id is not None
         assert len(v.display_names) == 14
-        client.views.delete(v.id, uploaded_dataset_id)
+        await client.views.delete(v.id, uploaded_dataset_id)
 
-    def test_get_view(self, client, uploaded_dataset_id, base_view_id):
-        v = client.views.get(base_view_id, uploaded_dataset_id)
+    async def test_get_view(self, client, uploaded_dataset_id, base_view_id):
+        v = await client.views.get(base_view_id, uploaded_dataset_id)
         assert v.id == base_view_id
         assert v.name is not None
 
-    def test_get_column_mapping(self, view):
+    async def test_get_column_mapping(self, view):
         mapping = view.get_column_mapping()
         assert "emp_id" in mapping
         assert mapping["emp_id"].startswith("column_")
 
-    def test_data_access(self, view):
-        data = view.data(limit=5)
+    async def test_data_access(self, view):
+        data = await view.data(limit=5)
         assert data is not None
 
-    def test_list_tasks_empty(self, view):
-        tasks = view.list_tasks()
+    async def test_list_tasks_empty(self, view):
+        tasks = await view.list_tasks()
         assert isinstance(tasks, list)
 
-    def test_refresh(self, view):
-        view.refresh()
+    async def test_refresh(self, view):
+        await view.refresh()
         assert len(view.display_names) == 14
 
 
@@ -105,16 +110,16 @@ class TestTransformations:
 
     # ── Column operations ─────────────────────────────────────
 
-    def test_add_column(self, view):
-        result = view.add_column(name="new_col", column_type=ColumnType.TEXT)
+    async def test_add_column(self, view):
+        result = await view.add_column(name="new_col", column_type=ColumnType.TEXT)
         assert result is not None
 
-    def test_delete_columns(self, view):
-        result = view.delete_columns(["gender"])
+    async def test_delete_columns(self, view):
+        result = await view.delete_columns(["gender"])
         assert result is not None
 
-    def test_copy_columns(self, view):
-        result = view.copy_columns(
+    async def test_copy_columns(self, view):
+        result = await view.copy_columns(
             [
                 CopySpec(source="emp_id", as_name="emp_id_copy", type=ColumnType.TEXT),
             ]
@@ -123,29 +128,29 @@ class TestTransformations:
 
     # ── Filter & Select ───────────────────────────────────────
 
-    def test_filter_rows_eq(self, view):
+    async def test_filter_rows_eq(self, view):
         cond = Condition("department", Operator.EQ, "Engineering")
-        result = view.filter_rows(cond)
+        result = await view.filter_rows(cond)
         assert result is not None
 
-    def test_filter_rows_compound(self, view):
+    async def test_filter_rows_compound(self, view):
         cond = Condition("department", Operator.EQ, "Engineering") & Condition(
             "base_salary", Operator.GTE, 80000
         )
-        result = view.filter_rows(cond)
+        result = await view.filter_rows(cond)
         assert result is not None
 
-    def test_filter_rows_or(self, view):
+    async def test_filter_rows_or(self, view):
         cond = Condition("department", Operator.EQ, "Engineering") | Condition(
             "department", Operator.EQ, "Sales"
         )
-        result = view.filter_rows(cond)
+        result = await view.filter_rows(cond)
         assert result is not None
 
     # ── SET (label/insert) ────────────────────────────────────
 
-    def test_set_values_new_column(self, view):
-        result = view.set_values(
+    async def test_set_values_new_column(self, view):
+        result = await view.set_values(
             new_column="salary_tier",
             column_type=ColumnType.TEXT,
             values=[
@@ -156,8 +161,8 @@ class TestTransformations:
         )
         assert result is not None
 
-    def test_set_values_existing_column(self, view):
-        result = view.set_values(
+    async def test_set_values_existing_column(self, view):
+        result = await view.set_values(
             existing_column="employment_type",
             values=[SetValue("Active")],
         )
@@ -165,32 +170,32 @@ class TestTransformations:
 
     # ── Text operations ───────────────────────────────────────
 
-    def test_combine_columns(self, view):
-        result = view.combine_columns(
+    async def test_combine_columns(self, view):
+        result = await view.combine_columns(
             sources=["full_name", "department"],
             separator=" - ",
             new_column="name_dept",
         )
         assert result is not None
 
-    def test_replace_values(self, view):
-        result = view.replace_values(
+    async def test_replace_values(self, view):
+        result = await view.replace_values(
             columns=["department"],
             find="Engineering",
             replace="Eng",
         )
         assert result is not None
 
-    def test_text_transform_upper(self, view):
-        result = view.text_transform(columns=["department"], case=TextCase.UPPER)
+    async def test_text_transform_upper(self, view):
+        result = await view.text_transform(columns=["department"], case=TextCase.UPPER)
         assert result is not None
 
-    def test_text_transform_trim(self, view):
-        result = view.text_transform(columns=["full_name"], trim=True)
+    async def test_text_transform_trim(self, view):
+        result = await view.text_transform(columns=["full_name"], trim=True)
         assert result is not None
 
-    def test_split_column(self, view):
-        result = view.split_column(
+    async def test_split_column(self, view):
+        result = await view.split_column(
             column="full_name",
             delimiter=" ",
             new_columns=[
@@ -200,8 +205,8 @@ class TestTransformations:
         )
         assert result is not None
 
-    def test_substring_start(self, view):
-        result = view.substring(
+    async def test_substring_start(self, view):
+        result = await view.substring(
             column="full_name",
             direction=SubstringDirection.START,
             num_char=5,
@@ -211,21 +216,21 @@ class TestTransformations:
 
     # ── Type conversion ───────────────────────────────────────
 
-    def test_convert_type(self, view):
-        result = view.convert_type([ConversionSpec(column="emp_id", to=ColumnType.TEXT)])
+    async def test_convert_type(self, view):
+        result = await view.convert_type([ConversionSpec(column="emp_id", to=ColumnType.TEXT)])
         assert result is not None
 
     # ── Math ──────────────────────────────────────────────────
 
-    def test_math(self, view):
-        result = view.math(
+    async def test_math(self, view):
+        result = await view.math(
             expression="base_salary * bonus_pct",
             new_column="bonus_amount",
         )
         assert result is not None
 
-    def test_math_string_expression(self, view):
-        result = view.math(
+    async def test_math_string_expression(self, view):
+        result = await view.math(
             expression="base_salary * bonus_pct",
             new_column="bonus_calc",
         )
@@ -233,36 +238,36 @@ class TestTransformations:
 
     # ── Date operations ───────────────────────────────────────
 
-    def test_extract_date_year(self, view):
-        view.convert_type([ConversionSpec(column="joining_date", to=ColumnType.DATE)])
-        result = view.extract_date(
+    async def test_extract_date_year(self, view):
+        await view.convert_type([ConversionSpec(column="joining_date", to=ColumnType.DATE)])
+        result = await view.extract_date(
             column="joining_date",
             component=DateComponent.YEAR,
             new_column="join_year",
         )
         assert result is not None
 
-    def test_extract_date_month(self, view):
-        view.convert_type([ConversionSpec(column="joining_date", to=ColumnType.DATE)])
-        result = view.extract_date(
+    async def test_extract_date_month(self, view):
+        await view.convert_type([ConversionSpec(column="joining_date", to=ColumnType.DATE)])
+        result = await view.extract_date(
             column="joining_date",
             component=DateComponent.MONTH,
             new_column="join_month",
         )
         assert result is not None
 
-    def test_increment_date(self, view):
-        view.convert_type([ConversionSpec(column="joining_date", to=ColumnType.DATE)])
-        result = view.increment_date(
+    async def test_increment_date(self, view):
+        await view.convert_type([ConversionSpec(column="joining_date", to=ColumnType.DATE)])
+        result = await view.increment_date(
             column="joining_date",
             delta=DateDelta(days=30),
             new_column="joining_plus_30",
         )
         assert result is not None
 
-    def test_date_diff(self, view):
-        view.convert_type([ConversionSpec(column="joining_date", to=ColumnType.DATE)])
-        result = view.date_diff(
+    async def test_date_diff(self, view):
+        await view.convert_type([ConversionSpec(column="joining_date", to=ColumnType.DATE)])
+        result = await view.date_diff(
             component=DateDiffUnit.DAY,
             start="joining_date",
             end="joining_date",
@@ -272,36 +277,36 @@ class TestTransformations:
 
     # ── Row operations ────────────────────────────────────────
 
-    def test_fill_missing(self, view):
-        result = view.fill_missing(
+    async def test_fill_missing(self, view):
+        result = await view.fill_missing(
             column="exit_date",
             direction=FillDirection.LAST_VALUE,
         )
         assert result is not None
 
-    def test_limit_rows(self, view):
-        result = view.limit_rows(n=5)
+    async def test_limit_rows(self, view):
+        result = await view.limit_rows(n=5)
         assert result is not None
 
-    def test_limit_rows_with_order(self, view):
-        result = view.limit_rows(
+    async def test_limit_rows_with_order(self, view):
+        result = await view.limit_rows(
             n=5,
             order_by=[["base_salary", SortDirection.DESC]],
         )
         assert result is not None
 
-    def test_discard_duplicates(self, view):
-        result = view.discard_duplicates()
+    async def test_discard_duplicates(self, view):
+        result = await view.discard_duplicates()
         assert result is not None
 
-    def test_discard_duplicates_ignore(self, view):
-        result = view.discard_duplicates(ignore_columns=["emp_id"])
+    async def test_discard_duplicates_ignore(self, view):
+        result = await view.discard_duplicates(ignore_columns=["emp_id"])
         assert result is not None
 
     # ── Aggregation ───────────────────────────────────────────
 
-    def test_pivot(self, view):
-        result = view.pivot(
+    async def test_pivot(self, view):
+        result = await view.pivot(
             group_by=["department"],
             aggregations=[
                 AggregationSpec(
@@ -313,8 +318,8 @@ class TestTransformations:
         )
         assert result is not None
 
-    def test_pivot_multi_agg(self, view):
-        result = view.pivot(
+    async def test_pivot_multi_agg(self, view):
+        result = await view.pivot(
             group_by=["department"],
             aggregations=[
                 AggregationSpec(
@@ -333,8 +338,8 @@ class TestTransformations:
 
     # ── Window functions ──────────────────────────────────────
 
-    def test_window_row_number(self, view):
-        result = view.window(
+    async def test_window_row_number(self, view):
+        result = await view.window(
             function=WindowFunction.ROW_NUMBER,
             new_column="row_num",
             partition_by=["department"],
@@ -342,8 +347,8 @@ class TestTransformations:
         )
         assert result is not None
 
-    def test_window_sum(self, view):
-        result = view.window(
+    async def test_window_sum(self, view):
+        result = await view.window(
             function=WindowFunction.SUM,
             column="base_salary",
             new_column="running_salary",
@@ -354,8 +359,8 @@ class TestTransformations:
 
     # ── SQL ───────────────────────────────────────────────────
 
-    def test_sql(self, view):
-        result = view.generate_sql(intent="count employees by department")
+    async def test_sql(self, view):
+        result = await view.generate_sql(intent="count employees by department")
         assert result is not None
 
 
@@ -367,19 +372,19 @@ class TestTransformations:
 class TestMultiStepPipeline:
     """Apply multiple transforms on one view to verify chaining."""
 
-    def test_chain_filter_then_math(self, view):
-        r1 = view.filter_rows(Condition("department", Operator.EQ, "Engineering"))
+    async def test_chain_filter_then_math(self, view):
+        r1 = await view.filter_rows(Condition("department", Operator.EQ, "Engineering"))
         assert r1 is not None
-        r2 = view.math(
+        r2 = await view.math(
             expression="base_salary * 1.1",
             new_column="salary_with_raise",
         )
         assert r2 is not None
-        tasks = view.list_tasks()
+        tasks = await view.list_tasks()
         assert len(tasks) >= 2
 
-    def test_chain_add_set_delete(self, view):
-        r1 = view.set_values(
+    async def test_chain_add_set_delete(self, view):
+        r1 = await view.set_values(
             new_column="status_label",
             column_type=ColumnType.TEXT,
             values=[
@@ -388,9 +393,9 @@ class TestMultiStepPipeline:
             ],
         )
         assert r1 is not None
-        r2 = view.delete_columns(["gender"])
+        r2 = await view.delete_columns(["gender"])
         assert r2 is not None
-        tasks = view.list_tasks()
+        tasks = await view.list_tasks()
         assert len(tasks) >= 2
 
 
@@ -402,9 +407,9 @@ class TestMultiStepPipeline:
 class TestExport:
     """Test export to CSV (download)."""
 
-    def test_export_to_csv(self, view, tmp_path):
+    async def test_export_to_csv(self, view, tmp_path):
         out = tmp_path / "export.csv"
-        path = view.export.to_csv(output_path=str(out))
+        path = await view.export.to_csv(output_path=str(out))
         assert path.exists()
         content = path.read_text()
         assert "emp_id" in content

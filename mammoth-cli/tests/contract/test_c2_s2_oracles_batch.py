@@ -14,6 +14,9 @@ ledger remains explicit about the other 64 S2 routes.
 
 from __future__ import annotations
 
+import asyncio
+import inspect
+
 import json
 import re
 from pathlib import Path
@@ -35,6 +38,11 @@ FIXTURE = Path(__file__).with_name("fixtures") / "C2-S2-BATCH-01.json"
 # /workspaces/{id}/addons route.  The SDK wire stays pinned below; the CLI must
 # refuse before any request leaves the process.
 CLI_UNSUPPORTED_ROUTES = frozenset({"addon.list"})
+
+
+def _on_the_wire(value: object) -> str:
+    """How httpx writes one query value: a bool goes down lowercase."""
+    return str(value).lower() if isinstance(value, bool) else str(value)
 
 
 @pytest.fixture(autouse=True)
@@ -59,17 +67,17 @@ class _RecordingClient:
         self.responses = responses
         self.calls: list[tuple[str, str, dict[str, Any]]] = []
 
-    def _request_json(self, method: str, path: str, **kwargs: Any) -> Any:
+    async def _request_json(self, method: str, path: str, **kwargs: Any) -> Any:
         self.calls.append((method, path, kwargs))
         return self.responses.get(path, {})
 
-    def _request_binary(self, method: str, path: str, **kwargs: Any) -> dict[str, Any]:
+    async def _request_binary(self, method: str, path: str, **kwargs: Any) -> dict[str, Any]:
         # Artifact routes (PNG/PDF/MP4/HTML) go through the binary seam; the
         # wire oracle only cares about method, path, and query.
         self.calls.append((method, path, kwargs))
         return {"content_type": "application/octet-stream", "size_bytes": 0, "sha256": ""}
 
-    def _request_list(self, method: str, path: str, **kwargs: Any) -> list[dict[str, Any]]:
+    async def _request_list(self, method: str, path: str, **kwargs: Any) -> list[dict[str, Any]]:
         self.calls.append((method, path, kwargs))
         response = self.responses.get(path, [])
         return response if isinstance(response, list) else []
@@ -110,6 +118,13 @@ def _actual_sdk_wire(call: tuple[str, str, dict[str, Any]]) -> tuple[str, str, d
     )
 
 
+def _drive(work: Any) -> Any:
+    """Run one SDK coroutine to completion; hand anything else straight back."""
+    if not inspect.isawaitable(work):
+        return work
+    return asyncio.run(work)
+
+
 def _sdk_api(client: _RecordingClient, name: str) -> Any:
     return {
         "addons": AddonsAPI,
@@ -125,7 +140,7 @@ def _sdk_api(client: _RecordingClient, name: str) -> Any:
 def _invoke_sdk(case: dict[str, Any], client: _RecordingClient) -> None:
     api = _sdk_api(client, case["sdk_api"])
     try:
-        getattr(api, case["sdk_method"])(**case["sdk_kwargs"])
+        _drive(getattr(api, case["sdk_method"])(**case["sdk_kwargs"]))
     except ValidationError:
         # The request has already crossed the transport seam.  Generated SDK
         # response models are intentionally not the subject of this oracle.
@@ -166,7 +181,7 @@ def test_cli_binding_reaches_real_sdk_transport(
     assert request.json_body == case["expected"]["json"]
     actual_query = {key: values[-1] for key, values in request.query.items()}
     expected_query = expected[2]["params"] or {}
-    assert actual_query == {key: str(value) for key, value in expected_query.items()}
+    assert actual_query == {key: _on_the_wire(value) for key, value in expected_query.items()}
 
 
 @pytest.mark.parametrize("case", _fixture()["cases"], ids=lambda case: case["route"])

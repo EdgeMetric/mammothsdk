@@ -34,8 +34,8 @@ from mammoth import MammothClient, MammothAPIError, MammothAuthError
 try:
     client = MammothClient(api_token="mm_...", workspace_id=11)
     client.set_project_id(10)
-    view = client.get_view(1039)
-    view.filter_rows(Condition("Sales", Operator.GTE, 1000))
+    view = await client.get_view(1039)
+    await view.filter_rows(Condition("Sales", Operator.GTE, 1000))
 except MammothAuthError:
     print("Invalid credentials")
 except MammothAPIError as e:

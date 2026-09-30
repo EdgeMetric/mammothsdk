@@ -21,7 +21,7 @@ else:
 class RowOpsMixin(ViewHost):
     """Mixin for row-level operations on a View."""
 
-    def fill_missing(
+    async def fill_missing(
         self,
         column: str,
         direction: FillDirection,
@@ -50,16 +50,16 @@ class RowOpsMixin(ViewHost):
             from mammoth import FillDirection, SortDirection
 
             # Forward-fill missing values (carry the previous value down)
-            view.fill_missing("Price", FillDirection.FIRST_VALUE)
+            await view.fill_missing("Price", FillDirection.FIRST_VALUE)
 
             # Forward-fill within partitions, ordered by date
-            view.fill_missing(
+            await view.fill_missing(
                 "Metric", FillDirection.FIRST_VALUE,
                 partition_by="Region",
                 order_by=[["Date", SortDirection.ASC]],
             )
         """
-        return self._add_task(
+        return await self._add_task(
             build_fill_params(
                 column,
                 direction,
@@ -70,7 +70,7 @@ class RowOpsMixin(ViewHost):
             )
         )
 
-    def limit_rows(
+    async def limit_rows(
         self,
         n: int,
         bottom: bool = False,
@@ -93,13 +93,15 @@ class RowOpsMixin(ViewHost):
 
             from mammoth import SortDirection
 
-            view.limit_rows(100)
-            view.limit_rows(10, order_by=[["Sales", SortDirection.DESC]])
-            view.limit_rows(5, bottom=True)
+            await view.limit_rows(100)
+            await view.limit_rows(10, order_by=[["Sales", SortDirection.DESC]])
+            await view.limit_rows(5, bottom=True)
         """
-        return self._add_task(build_limit_params(n, self.columns, bottom=bottom, order_by=order_by))
+        return await self._add_task(
+            build_limit_params(n, self.columns, bottom=bottom, order_by=order_by)
+        )
 
-    def discard_duplicates(
+    async def discard_duplicates(
         self,
         ignore_columns: list[str] | None = None,
     ) -> dict[str, Any]:
@@ -114,14 +116,14 @@ class RowOpsMixin(ViewHost):
 
         Example::
 
-            view.discard_duplicates()
-            view.discard_duplicates(ignore_columns=["Notes", "Timestamp"])
+            await view.discard_duplicates()
+            await view.discard_duplicates(ignore_columns=["Notes", "Timestamp"])
         """
-        return self._add_task(
+        return await self._add_task(
             build_discard_duplicates_params(self.columns, self._internal_names, ignore_columns)
         )
 
-    def unnest(
+    async def unnest(
         self,
         columns: list[str],
         label_column: str = "Label",
@@ -151,10 +153,10 @@ class RowOpsMixin(ViewHost):
         Example::
 
             # Columns "Q1", "Q2", "Q3", "Q4" → rows with Label/Value
-            view.unnest(["Q1", "Q2", "Q3", "Q4"],
+            await view.unnest(["Q1", "Q2", "Q3", "Q4"],
                         label_column="Quarter", value_column="Revenue")
         """
-        return self._add_task(
+        return await self._add_task(
             build_unnest_params(
                 columns,
                 self.columns,
@@ -181,7 +183,7 @@ class RowOpsMixin(ViewHost):
                 return only
         return "TEXT"
 
-    def sort_rows(self, order_by: list[list[str | SortDirection]]) -> dict[str, Any]:
+    async def sort_rows(self, order_by: list[list[str | SortDirection]]) -> dict[str, Any]:
         """Set the view's row order (the web grid's sort; not a pipeline task).
 
         The order is a view display property (``SORT``), the same change as
@@ -204,7 +206,7 @@ class RowOpsMixin(ViewHost):
 
         Example::
 
-            view.sort_rows([["Revenue", "DESC"], ["Region", "ASC"]])
+            await view.sort_rows([["Revenue", "DESC"], ["Region", "ASC"]])
         """
         if len(order_by) > 3:
             raise ValueError("sort takes at most three columns")
@@ -225,7 +227,7 @@ class RowOpsMixin(ViewHost):
             seen.add(internal)
             value.append([internal, direction])
             shown.append([name, direction])
-        self._client.dataviews.update(
+        await self._client.dataviews.update(
             self.dataset_id,
             self.id,
             [{"op": "replace", "path": "display_properties/SORT", "value": value}],

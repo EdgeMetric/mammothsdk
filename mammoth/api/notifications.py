@@ -50,17 +50,17 @@ class NotificationsAPI:
 
     Access via ``client.notifications``::
 
-        notifications = client.notifications.list()
-        client.notifications.update(
+        notifications = await client.notifications.list()
+        await client.notifications.update(
             notification_id, patch=[{"op": "replace", "path": "isRead", "value": True}]
         )
-        client.notifications.delete(notification_id)
+        await client.notifications.delete(notification_id)
     """
 
     def __init__(self, client: MammothClient) -> None:
         self._client = client
 
-    def list(
+    async def list(
         self,
         fields: str | None = None,
         workspace_id: int | None = None,
@@ -112,9 +112,9 @@ class NotificationsAPI:
             params["offset"] = offset
         if sort is not None:
             params["sort"] = sort
-        return self._client._request_json("GET", "/notifications", params=params or None)
+        return await self._client._request_json("GET", "/notifications", params=params or None)
 
-    def delete(self, notification_id: int) -> dict[str, Any]:
+    async def delete(self, notification_id: int) -> dict[str, Any]:
         """Delete a single notification.
 
         Args:
@@ -128,9 +128,9 @@ class NotificationsAPI:
         """
         if notification_id <= 0:
             raise MammothValidationError(ERR_NOTIFICATION_ID_POSITIVE.format(notification_id))
-        return self._client._request_json("DELETE", f"/notifications/{notification_id}")
+        return await self._client._request_json("DELETE", f"/notifications/{notification_id}")
 
-    def delete_batch(
+    async def delete_batch(
         self,
         workspace_id: int | None = None,
         ids: _list[int] | None = None,
@@ -158,9 +158,9 @@ class NotificationsAPI:
             params["last_updated_at__lt"] = last_updated_at__lt
         if is_read is not None:
             params["is_read"] = is_read
-        return self._client._request_json("DELETE", "/notifications", params=params or None)
+        return await self._client._request_json("DELETE", "/notifications", params=params or None)
 
-    def update(self, notification_id: int, patch: _list[dict[str, Any]]) -> dict[str, Any]:
+    async def update(self, notification_id: int, patch: _list[dict[str, Any]]) -> dict[str, Any]:
         """Update a single notification via JSON-patch operations.
 
         Args:
@@ -180,11 +180,11 @@ class NotificationsAPI:
         if notification_id <= 0:
             raise MammothValidationError(ERR_NOTIFICATION_ID_POSITIVE.format(notification_id))
         _validate_patch(patch)
-        return self._client._request_json(
+        return await self._client._request_json(
             "PATCH", f"/notifications/{notification_id}", json={"patch": patch}
         )
 
-    def update_batch(
+    async def update_batch(
         self,
         patch: _list[dict[str, Any]],
         workspace_id: int | None = None,
@@ -208,6 +208,6 @@ class NotificationsAPI:
         params: dict[str, Any] = {}
         if workspace_id is not None:
             params["workspace_id"] = workspace_id
-        return self._client._request_json(
+        return await self._client._request_json(
             "PATCH", "/notifications", params=params or None, json={"patch": patch}
         )

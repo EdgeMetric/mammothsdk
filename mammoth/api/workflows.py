@@ -21,10 +21,10 @@ class WorkflowsAPI:
 
     Access via ``client.workflows``::
 
-        workflows = client.workflows.list()
-        workflow = client.workflows.create(name="Sales pipeline")
-        client.workflows.block_add(workflow["id"], block_type="source")
-        client.workflows.delete(workflow["id"])
+        workflows = await client.workflows.list()
+        workflow = await client.workflows.create(name="Sales pipeline")
+        await client.workflows.block_add(workflow["id"], block_type="source")
+        await client.workflows.delete(workflow["id"])
     """
 
     def __init__(self, client: MammothClient) -> None:
@@ -56,7 +56,7 @@ class WorkflowsAPI:
         if block_id <= 0:
             raise MammothValidationError(ERR_BLOCK_ID_POSITIVE.format(block_id))
 
-    def list(self, project_id: int | None = None) -> _list[dict[str, Any]]:
+    async def list(self, project_id: int | None = None) -> _list[dict[str, Any]]:
         """List workflows in a project.
 
         Args:
@@ -72,9 +72,11 @@ class WorkflowsAPI:
         self._check_project_id(project_id)
         ws = self._ws()
         proj = self._proj(project_id)
-        return self._client._request_list("GET", f"/workspaces/{ws}/projects/{proj}/workflows")
+        return await self._client._request_list(
+            "GET", f"/workspaces/{ws}/projects/{proj}/workflows"
+        )
 
-    def create(
+    async def create(
         self,
         name: str,
         shape: str = "blank",
@@ -108,11 +110,11 @@ class WorkflowsAPI:
             body["purpose"] = purpose
         if seed_datasource_id is not None:
             body["seed_datasource_id"] = seed_datasource_id
-        return self._client._request_json(
+        return await self._client._request_json(
             "POST", f"/workspaces/{ws}/projects/{proj}/workflows", json=body
         )
 
-    def get(self, workflow_id: int, project_id: int | None = None) -> dict[str, Any]:
+    async def get(self, workflow_id: int, project_id: int | None = None) -> dict[str, Any]:
         """Get workflow details.
 
         Args:
@@ -130,11 +132,11 @@ class WorkflowsAPI:
         self._check_project_id(project_id)
         ws = self._ws()
         proj = self._proj(project_id)
-        return self._client._request_json(
+        return await self._client._request_json(
             "GET", f"/workspaces/{ws}/projects/{proj}/workflows/{workflow_id}"
         )
 
-    def update(
+    async def update(
         self,
         workflow_id: int,
         name: str | None = None,
@@ -173,11 +175,11 @@ class WorkflowsAPI:
             body["pipeline_summary"] = pipeline_summary
         if notes is not None:
             body["notes"] = notes
-        return self._client._request_json(
+        return await self._client._request_json(
             "PATCH", f"/workspaces/{ws}/projects/{proj}/workflows/{workflow_id}", json=body
         )
 
-    def delete(self, workflow_id: int, project_id: int | None = None) -> dict[str, Any]:
+    async def delete(self, workflow_id: int, project_id: int | None = None) -> dict[str, Any]:
         """Delete a workflow.
 
         Args:
@@ -195,11 +197,11 @@ class WorkflowsAPI:
         self._check_project_id(project_id)
         ws = self._ws()
         proj = self._proj(project_id)
-        return self._client._request_json(
+        return await self._client._request_json(
             "DELETE", f"/workspaces/{ws}/projects/{proj}/workflows/{workflow_id}"
         )
 
-    def graph(self, project_id: int | None = None) -> dict[str, Any]:
+    async def graph(self, project_id: int | None = None) -> dict[str, Any]:
         """Get the project's workflow graph.
 
         Args:
@@ -215,11 +217,11 @@ class WorkflowsAPI:
         self._check_project_id(project_id)
         ws = self._ws()
         proj = self._proj(project_id)
-        return self._client._request_json(
+        return await self._client._request_json(
             "GET", f"/workspaces/{ws}/projects/{proj}/workflows/graph"
         )
 
-    def cleanup(self, project_id: int | None = None) -> dict[str, Any]:
+    async def cleanup(self, project_id: int | None = None) -> dict[str, Any]:
         """Clean up ghost (orphaned skeleton) workflows in a project.
 
         Args:
@@ -235,11 +237,11 @@ class WorkflowsAPI:
         self._check_project_id(project_id)
         ws = self._ws()
         proj = self._proj(project_id)
-        return self._client._request_json(
+        return await self._client._request_json(
             "POST", f"/workspaces/{ws}/projects/{proj}/workflows/cleanup"
         )
 
-    def from_template(
+    async def from_template(
         self,
         template_id: int,
         workflow_name: str,
@@ -263,11 +265,11 @@ class WorkflowsAPI:
         ws = self._ws()
         proj = self._proj(project_id)
         body = {"template_id": template_id, "workflow_name": workflow_name}
-        return self._client._request_json(
+        return await self._client._request_json(
             "POST", f"/workspaces/{ws}/projects/{proj}/workflows/from-template", json=body
         )
 
-    def workspace_datasets(self, project_id: int | None = None) -> _list[dict[str, Any]]:
+    async def workspace_datasets(self, project_id: int | None = None) -> _list[dict[str, Any]]:
         """List workspace datasets available to workflows in a project.
 
         Args:
@@ -283,11 +285,11 @@ class WorkflowsAPI:
         self._check_project_id(project_id)
         ws = self._ws()
         proj = self._proj(project_id)
-        return self._client._request_list(
+        return await self._client._request_list(
             "GET", f"/workspaces/{ws}/projects/{proj}/workflows/workspace-datasets"
         )
 
-    def workspace_exports(self, project_id: int | None = None) -> _list[dict[str, Any]]:
+    async def workspace_exports(self, project_id: int | None = None) -> _list[dict[str, Any]]:
         """List workspace exports available to workflows in a project.
 
         Args:
@@ -303,11 +305,11 @@ class WorkflowsAPI:
         self._check_project_id(project_id)
         ws = self._ws()
         proj = self._proj(project_id)
-        return self._client._request_list(
+        return await self._client._request_list(
             "GET", f"/workspaces/{ws}/projects/{proj}/workflows/workspace-exports"
         )
 
-    def workspace_sources(self, project_id: int | None = None) -> _list[dict[str, Any]]:
+    async def workspace_sources(self, project_id: int | None = None) -> _list[dict[str, Any]]:
         """List workspace sources available to workflows in a project.
 
         Args:
@@ -323,11 +325,11 @@ class WorkflowsAPI:
         self._check_project_id(project_id)
         ws = self._ws()
         proj = self._proj(project_id)
-        return self._client._request_list(
+        return await self._client._request_list(
             "GET", f"/workspaces/{ws}/projects/{proj}/workflows/workspace-sources"
         )
 
-    def block_add(
+    async def block_add(
         self,
         workflow_id: int,
         block_type: str,
@@ -364,13 +366,13 @@ class WorkflowsAPI:
             body["connection_type"] = connection_type
         if position_hint is not None:
             body["position_hint"] = position_hint
-        return self._client._request_json(
+        return await self._client._request_json(
             "POST",
             f"/workspaces/{ws}/projects/{proj}/workflows/{workflow_id}/blocks",
             json=body,
         )
 
-    def block_auth(
+    async def block_auth(
         self,
         workflow_id: int,
         block_id: int,
@@ -399,13 +401,13 @@ class WorkflowsAPI:
         ws = self._ws()
         proj = self._proj(project_id)
         body = {"auth_data": auth_data}
-        return self._client._request_json(
+        return await self._client._request_json(
             "PATCH",
             f"/workspaces/{ws}/projects/{proj}/workflows/{workflow_id}/blocks/{block_id}/auth",
             json=body,
         )
 
-    def block_type(
+    async def block_type(
         self,
         workflow_id: int,
         block_id: int,
@@ -434,13 +436,13 @@ class WorkflowsAPI:
         ws = self._ws()
         proj = self._proj(project_id)
         body = {"connection_type": connection_type}
-        return self._client._request_json(
+        return await self._client._request_json(
             "PATCH",
             f"/workspaces/{ws}/projects/{proj}/workflows/{workflow_id}/blocks/{block_id}/type",
             json=body,
         )
 
-    def block_config(
+    async def block_config(
         self,
         workflow_id: int,
         block_id: int,
@@ -466,12 +468,12 @@ class WorkflowsAPI:
         self._check_project_id(project_id)
         ws = self._ws()
         proj = self._proj(project_id)
-        return self._client._request_json(
+        return await self._client._request_json(
             "PATCH",
             f"/workspaces/{ws}/projects/{proj}/workflows/{workflow_id}/blocks/{block_id}/config",
         )
 
-    def canvas(
+    async def canvas(
         self,
         workflow_id: int,
         canvas_state: dict[str, Any],
@@ -496,7 +498,7 @@ class WorkflowsAPI:
         ws = self._ws()
         proj = self._proj(project_id)
         body = {"canvas_state": canvas_state}
-        return self._client._request_json(
+        return await self._client._request_json(
             "PATCH",
             f"/workspaces/{ws}/projects/{proj}/workflows/{workflow_id}/canvas",
             json=body,

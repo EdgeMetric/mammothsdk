@@ -105,9 +105,7 @@ def test_pkg_sdist_contents(built_dist: BuiltDist) -> None:
     assert any(n.endswith("/README.md") for n in names), joined
     assert any(n.endswith("/LICENSE") for n in names), joined
     assert any(n.endswith("/pyproject.toml") for n in names), joined
-    assert any(
-        n.endswith("/mammoth_cli/bundled_skill/mammoth-cli/SKILL.md") for n in names
-    ), joined
+    assert any(n.endswith("/mammoth_cli/bundled_skill/mammoth-cli/SKILL.md") for n in names), joined
 
 
 def test_pkg_entrypoints(built_dist: BuiltDist) -> None:

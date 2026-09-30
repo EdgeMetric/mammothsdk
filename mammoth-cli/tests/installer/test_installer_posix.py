@@ -130,7 +130,7 @@ def test_powershell_clean_bootstrap_locates_uv_without_path_mutation() -> None:
     # LOCALAPPDATA (mirroring the sh XDG data dir) — never the user's own uv
     # location. It is then located under that dir, not via PATH.
     assert 'Join-Path $env:LOCALAPPDATA "mammoth-cli\\uv-$UvPinnedVersion"' in bootstrap
-    assert '$env:UV_UNMANAGED_INSTALL = $installDir' in bootstrap
+    assert "$env:UV_UNMANAGED_INSTALL = $installDir" in bootstrap
     assert "Test-Path -LiteralPath $candidate" in bootstrap
     # A fresh install cannot be rediscovered with Get-Command because PATH was
     # intentionally left untouched.

@@ -78,18 +78,18 @@ class ConnectorsAPI:
             return proj
         raise ValueError("project_id must be set on the client using client.set_project_id()")
 
-    def list(self) -> _list[dict[str, Any]]:
+    async def list(self) -> _list[dict[str, Any]]:
         """List all available connectors.
 
         Returns:
             List of connector dicts.
         """
-        response = self._client._request("GET", f"/workspaces/{self._ws()}/connectors")
+        response = await self._client._request("GET", f"/workspaces/{self._ws()}/connectors")
         if isinstance(response, _list):
             return response
         return response.get("connectors", [])
 
-    def get(self, connector_key: str) -> dict[str, Any]:
+    async def get(self, connector_key: str) -> dict[str, Any]:
         """Get details of a specific connector.
 
         Args:
@@ -98,11 +98,11 @@ class ConnectorsAPI:
         Returns:
             Dict with connector details.
         """
-        return self._client._request_json(
+        return await self._client._request_json(
             "GET", f"/workspaces/{self._ws()}/connectors/{_encode_connector_key(connector_key)}"
         )
 
-    def list_connections(
+    async def list_connections(
         self, connector_key: str, project_id: int | None = None
     ) -> _list[dict[str, Any]]:
         """List connections for a connector type.
@@ -116,7 +116,7 @@ class ConnectorsAPI:
         """
         ws = self._ws()
         proj = self._proj(project_id)
-        response = self._client._request(
+        response = await self._client._request(
             "GET",
             f"/workspaces/{ws}/projects/{proj}/connectors/{_encode_connector_key(connector_key)}/connections",
         )
@@ -124,7 +124,7 @@ class ConnectorsAPI:
             return response
         return response.get("connections", [])
 
-    def create_connection(
+    async def create_connection(
         self, connector_key: str, config: dict[str, Any], project_id: int | None = None
     ) -> dict[str, Any]:
         """Create a new connection for a connector.
@@ -160,13 +160,13 @@ class ConnectorsAPI:
             raise MammothValidationError(ERR_CONNECTION_CONFIG_EMPTY)
         ws = self._ws()
         proj = self._proj(project_id)
-        return self._client._request_json(
+        return await self._client._request_json(
             "POST",
             f"/workspaces/{ws}/projects/{proj}/connectors/{_encode_connector_key(connector_key)}/connections",
             json=config,
         )
 
-    def get_connection(
+    async def get_connection(
         self, connector_key: str, connection_key: str, project_id: int | None = None
     ) -> dict[str, Any]:
         """Get details of a specific connection.
@@ -181,12 +181,12 @@ class ConnectorsAPI:
         """
         ws = self._ws()
         proj = self._proj(project_id)
-        return self._client._request_json(
+        return await self._client._request_json(
             "GET",
             f"/workspaces/{ws}/projects/{proj}/connectors/{_encode_connector_key(connector_key)}/connections/{connection_key}",
         )
 
-    def update_connection(
+    async def update_connection(
         self,
         connector_key: str,
         connection_key: str,
@@ -217,13 +217,13 @@ class ConnectorsAPI:
         ws = self._ws()
         proj = self._proj(project_id)
         body = {"patch": [{"op": "replace", "path": "connection", "value": credentials}]}
-        return self._client._request_json(
+        return await self._client._request_json(
             "PATCH",
             f"/workspaces/{ws}/projects/{proj}/connectors/{_encode_connector_key(connector_key)}/connections/{connection_key}",
             json=body,
         )
 
-    def delete_connection(
+    async def delete_connection(
         self, connector_key: str, connection_key: str, project_id: int | None = None
     ) -> dict[str, Any]:
         """Delete a connection.
@@ -238,12 +238,12 @@ class ConnectorsAPI:
         """
         ws = self._ws()
         proj = self._proj(project_id)
-        return self._client._request_json(
+        return await self._client._request_json(
             "DELETE",
             f"/workspaces/{ws}/projects/{proj}/connectors/{_encode_connector_key(connector_key)}/connections/{connection_key}",
         )
 
-    def list_ds_configs(
+    async def list_ds_configs(
         self, connector_key: str, connection_key: str, project_id: int | None = None
     ) -> _list[dict[str, Any]]:
         """List data source configurations for a connection.
@@ -258,7 +258,7 @@ class ConnectorsAPI:
         """
         ws = self._ws()
         proj = self._proj(project_id)
-        response = self._client._request(
+        response = await self._client._request(
             "GET",
             f"/workspaces/{ws}/projects/{proj}/connectors/{_encode_connector_key(connector_key)}/connections/{connection_key}/ds_configs",
         )
@@ -266,7 +266,7 @@ class ConnectorsAPI:
             return response
         return response.get("ds_configs", [])
 
-    def create_ds_config(
+    async def create_ds_config(
         self,
         connector_key: str,
         connection_key: str,
@@ -322,13 +322,13 @@ class ConnectorsAPI:
             body["table"] = table
         if profile is not None:
             body["profile"] = profile
-        return self._client._request_json(
+        return await self._client._request_json(
             "POST",
             f"/workspaces/{ws}/projects/{proj}/connectors/{_encode_connector_key(connector_key)}/connections/{connection_key}/ds_configs",
             json=body,
         )
 
-    def get_ds_config(
+    async def get_ds_config(
         self,
         connector_key: str,
         connection_key: str,
@@ -348,12 +348,12 @@ class ConnectorsAPI:
         """
         ws = self._ws()
         proj = self._proj(project_id)
-        return self._client._request_json(
+        return await self._client._request_json(
             "GET",
             f"/workspaces/{ws}/projects/{proj}/connectors/{_encode_connector_key(connector_key)}/connections/{connection_key}/ds_configs/{ds_config_key}",
         )
 
-    def update_ds_config(
+    async def update_ds_config(
         self,
         connector_key: str,
         connection_key: str,
@@ -398,13 +398,13 @@ class ConnectorsAPI:
         ws = self._ws()
         proj = self._proj(project_id)
         body = {"patch": [{"op": p.op, "path": p.path.value, "value": p.value} for p in patch]}
-        return self._client._request_json(
+        return await self._client._request_json(
             "PATCH",
             f"/workspaces/{ws}/projects/{proj}/connectors/{_encode_connector_key(connector_key)}/connections/{connection_key}/ds_configs/{ds_config_key}",
             json=body,
         )
 
-    def delete_ds_config(
+    async def delete_ds_config(
         self,
         connector_key: str,
         connection_key: str,
@@ -424,12 +424,12 @@ class ConnectorsAPI:
         """
         ws = self._ws()
         proj = self._proj(project_id)
-        return self._client._request_json(
+        return await self._client._request_json(
             "DELETE",
             f"/workspaces/{ws}/projects/{proj}/connectors/{_encode_connector_key(connector_key)}/connections/{connection_key}/ds_configs/{ds_config_key}",
         )
 
-    def ds_config_delete_all(
+    async def ds_config_delete_all(
         self,
         connector_key: str,
         connection_key: str,
@@ -451,20 +451,20 @@ class ConnectorsAPI:
         ws = self._ws()
         proj = self._proj(project_id)
         ids_str = ",".join(config_ids) if isinstance(config_ids, _list) else config_ids
-        return self._client._request_json(
+        return await self._client._request_json(
             "DELETE",
             f"/workspaces/{ws}/projects/{proj}/connectors/{_encode_connector_key(connector_key)}"
             f"/connections/{connection_key}/ds_configs",
             params={"config_ids": ids_str},
         )
 
-    def active_connectors(self) -> _list[dict[str, Any]]:
+    async def active_connectors(self) -> _list[dict[str, Any]]:
         """List active connectors with established connections.
 
         Returns:
             List of active connector dicts.
         """
-        response = self._client._request("GET", f"/workspaces/{self._ws()}/active_connectors")
+        response = await self._client._request("GET", f"/workspaces/{self._ws()}/active_connectors")
         if isinstance(response, _list):
             return response
         return response.get("connectors", [])

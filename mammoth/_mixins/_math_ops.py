@@ -17,7 +17,7 @@ else:
 class MathOpsMixin(ViewHost):
     """Mixin for arithmetic operations on a View."""
 
-    def math(
+    async def math(
         self,
         expression: str,
         new_column: str | None = None,
@@ -40,8 +40,8 @@ class MathOpsMixin(ViewHost):
 
         Examples::
 
-            view.math("Price * Quantity", new_column="Total")
-            view.math("(Price + Tax) * 1.1", new_column="Grand Total")
+            await view.math("Price * Quantity", new_column="Total")
+            await view.math("(Price + Tax) * 1.1", new_column="Grand Total")
         """
         # The parser consumes a scoped display-name map. Add exact internal
         # identities as aliases so callers can use either form without any
@@ -53,13 +53,9 @@ class MathOpsMixin(ViewHost):
         # that valid display reference with the internal ``B`` alias.
         expression_columns = dict(self.columns)
         expression_columns.update(
-            {
-                name: name
-                for name in self._internal_names
-                if name not in expression_columns
-            }
+            {name: name for name in self._internal_names if name not in expression_columns}
         )
-        return self._add_task(
+        return await self._add_task(
             build_math_params(
                 expression,
                 expression_columns,
@@ -73,7 +69,7 @@ class MathOpsMixin(ViewHost):
             )
         )
 
-    def small_large(
+    async def small_large(
         self,
         function: SmallLargeFunction,
         columns: list[str],
@@ -113,7 +109,7 @@ class MathOpsMixin(ViewHost):
             from mammoth import SmallLargeFunction
 
             # 2nd largest value among three numeric columns
-            view.small_large(
+            await view.small_large(
                 SmallLargeFunction.LARGE,
                 columns=["Q1 Sales", "Q2 Sales", "Q3 Sales"],
                 index=2,
@@ -121,7 +117,7 @@ class MathOpsMixin(ViewHost):
             )
 
             # Smallest of a column and the constant 0 (floor at zero)
-            view.small_large(
+            await view.small_large(
                 SmallLargeFunction.SMALL,
                 columns=["Profit"],
                 constants=[0.0],
@@ -129,7 +125,7 @@ class MathOpsMixin(ViewHost):
             )
         """
         values: list[str | int | float] = list(columns) + list(constants or [])
-        return self._add_task(
+        return await self._add_task(
             build_small_large_params(
                 function,
                 values,

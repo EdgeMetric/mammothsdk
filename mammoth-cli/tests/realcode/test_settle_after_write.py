@@ -87,7 +87,13 @@ def _convert_type(
     from mammoth_cli.testing import make_runner
 
     service, api = real_service(project_id=180)
-    monkeypatch.setattr(factory, "build_service", lambda *a, **k: service)
+    # A fresh service per build, as in production: each command closes its own.
+    unused = iter([service])
+    monkeypatch.setattr(
+        factory,
+        "build_service",
+        lambda *a, **k: next(unused, None) or real_service(api=api, project_id=180)[0],
+    )
     view = {
         "id": VIEW,
         "name": "Fundraising",

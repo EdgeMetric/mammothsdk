@@ -24,7 +24,7 @@ from mammoth import MammothClient, MammothAuthError
 try:
     client = MammothClient(api_token="mm_bad", workspace_id=1)
     client.set_project_id(1)
-    client.projects.list()
+    await client.projects.list()
 except MammothAuthError:
     print("Authentication failed -- check your API token")
 ```
@@ -35,7 +35,7 @@ except MammothAuthError:
 from mammoth import MammothAPIError
 
 try:
-    datasets = client.datasets.list()
+    datasets = await client.datasets.list()
 except MammothAPIError as e:
     print(f"API error: {e.message}")
     print(f"HTTP status: {e.status_code}")
@@ -53,7 +53,7 @@ except MammothAPIError as e:
 from mammoth import MammothColumnError, Condition, Operator
 
 try:
-    view.filter_rows(Condition("Nonexistent Column", Operator.GTE, 100))
+    await view.filter_rows(Condition("Nonexistent Column", Operator.GTE, 100))
 except MammothColumnError as e:
     print(e.message)
     # "Column 'Nonexistent Column' not found. Available columns: ['Sales', 'Region', ...]"
@@ -66,7 +66,7 @@ except MammothColumnError as e:
 from mammoth import MammothJobTimeoutError
 
 try:
-    view.pivot(
+    await view.pivot(
         group_by=["Region"],
         aggregations=[{"column": "Sales", "function": "SUM", "as": "Total"}],
     )
@@ -81,7 +81,7 @@ except MammothJobTimeoutError as e:
 from mammoth import MammothJobFailedError
 
 try:
-    view.convert_type([{"column": "Sales", "to": "NUMERIC"}])
+    await view.convert_type([{"column": "Sales", "to": "NUMERIC"}])
 except MammothJobFailedError as e:
     print(f"Job {e.details['job_id']} failed")
     print(f"Reason: {e.details.get('failure_reason', 'Unknown')}")
@@ -93,7 +93,7 @@ except MammothJobFailedError as e:
 from mammoth import MammothTransformError
 
 try:
-    view.math("InvalidExpr @@@ 2", new_column="Result")
+    await view.math("InvalidExpr @@@ 2", new_column="Result")
 except MammothTransformError as e:
     print(f"Transformation failed: {e.message}")
     print(f"Task key: {e.task_key}")
@@ -115,9 +115,9 @@ from mammoth import (
 )
 
 try:
-    view = client.views.get(1039)
-    view.filter_rows(Condition("Sales", Operator.GTE, 1000))
-    view.export.to_csv("output.csv")
+    view = await client.views.get(1039)
+    await view.filter_rows(Condition("Sales", Operator.GTE, 1000))
+    await view.export.to_csv("output.csv")
 
 except MammothAuthError:
     print("Bad credentials")
@@ -150,7 +150,7 @@ from mammoth import MammothAPIError, MammothJobFailedError
 logger = logging.getLogger("mammoth_app")
 
 try:
-    view.filter_rows(Condition("Sales", Operator.GTE, 1000))
+    await view.filter_rows(Condition("Sales", Operator.GTE, 1000))
 except MammothJobFailedError as e:
     logger.error(
         "Pipeline job failed",
@@ -180,7 +180,7 @@ client = MammothClient(
 Or increase the timeout for CSV exports:
 
 ```python
-view.export.to_csv("output.csv", timeout=600)  # 10 minutes
+await view.export.to_csv("output.csv", timeout=600)  # 10 minutes
 ```
 
 ## See also

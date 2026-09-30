@@ -37,7 +37,13 @@ def _dry_run(
     input_doc: dict[str, Any] | None = None,
 ) -> tuple[Any, Any]:
     service, api = real_service(project_id=180)
-    monkeypatch.setattr(factory, "build_service", lambda *a, **k: service)
+    # A fresh service per build, as in production: each command closes its own.
+    unused = iter([service])
+    monkeypatch.setattr(
+        factory,
+        "build_service",
+        lambda *a, **k: next(unused, None) or real_service(api=api, project_id=180)[0],
+    )
     api.on("GET", r"/datasets/55/dataviews/3062$", body=_VIEW)
     api.on(
         "POST",
@@ -105,7 +111,13 @@ def test_discard_duplicates_dry_run_says_so_when_the_count_could_not_run(
     monkeypatch: pytest.MonkeyPatch, real_service: ServiceFactory
 ) -> None:
     service, api = real_service(project_id=180)
-    monkeypatch.setattr(factory, "build_service", lambda *a, **k: service)
+    # A fresh service per build, as in production: each command closes its own.
+    unused = iter([service])
+    monkeypatch.setattr(
+        factory,
+        "build_service",
+        lambda *a, **k: next(unused, None) or real_service(api=api, project_id=180)[0],
+    )
     api.on("GET", r"/datasets/55/dataviews/3062$", body=_VIEW)
     api.on("POST", r"/data/query$", status=500, body={"detail": "boom"})
     result = make_runner().invoke(
@@ -138,7 +150,13 @@ def _run(
 ) -> tuple[Any, Any]:
     """Dry-run ``view transform <command>``; every count read answers ``matching``."""
     service, api = real_service(project_id=180)
-    monkeypatch.setattr(factory, "build_service", lambda *a, **k: service)
+    # A fresh service per build, as in production: each command closes its own.
+    unused = iter([service])
+    monkeypatch.setattr(
+        factory,
+        "build_service",
+        lambda *a, **k: next(unused, None) or real_service(api=api, project_id=180)[0],
+    )
     api.on("GET", r"/datasets/55/dataviews/3062$", body=_VIEW)
     api.on("POST", r"/data/query$", body={"data": [{"agg_0": matching}]})
     result = make_runner().invoke(
@@ -250,7 +268,13 @@ def test_real_discard_duplicates_with_none_adds_no_task(
     monkeypatch: pytest.MonkeyPatch, real_service: ServiceFactory
 ) -> None:
     service, api = real_service(project_id=180)
-    monkeypatch.setattr(factory, "build_service", lambda *a, **k: service)
+    # A fresh service per build, as in production: each command closes its own.
+    unused = iter([service])
+    monkeypatch.setattr(
+        factory,
+        "build_service",
+        lambda *a, **k: next(unused, None) or real_service(api=api, project_id=180)[0],
+    )
     api.on("GET", r"/datasets/55/dataviews/3062$", body=_VIEW)
     api.on("POST", r"/data/query$", body={"data": [{"agg_0": 1}, {"agg_0": 1}]})
     result = make_runner().invoke(

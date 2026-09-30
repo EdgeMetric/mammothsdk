@@ -6,10 +6,10 @@ The `DatasetsAPI` manages datasets within a project. A dataset is a data table s
 
 ```python
 # List datasets in the current project
-datasets = client.datasets.list()
+datasets = await client.datasets.list()
 
 # Get a specific dataset
-ds = client.datasets.get(dataset_id=42)
+ds = await client.datasets.get(dataset_id=42)
 ```
 
 ---

@@ -1,15 +1,17 @@
 """Independent exact-wire checks for the release exemplar extract route."""
 
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
 
 from mammoth.api.dashboards import DashboardsAPI
 from mammoth.models.dashboards import ExemplarExtractSpec
 
 
-def test_exemplar_extract_posts_literal_release_route_and_body() -> None:
+async def test_exemplar_extract_posts_literal_release_route_and_body() -> None:
     client = MagicMock()
-    client._request_json.return_value = {"palette": ["blue"], "source": {"kind": "upload"}}
-    result = DashboardsAPI(client).extract_exemplar(
+    client._request_json = AsyncMock(
+        return_value={"palette": ["blue"], "source": {"kind": "upload"}}
+    )
+    result = await DashboardsAPI(client).extract_exemplar(
         ExemplarExtractSpec.model_validate(
             {
                 "params": {

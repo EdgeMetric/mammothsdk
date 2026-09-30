@@ -28,6 +28,27 @@ client.set_project_id(10)
 
 The `workspace_id` is required at client creation. The `project_id` must be set before performing most operations.
 
+!!! note "The SDK is async"
+    Every call that reaches the API is a coroutine and must be awaited. The rest of this guide
+    uses top-level `await`, as in a Jupyter cell or `python -m asyncio`. In a script, run the
+    calls inside an `async def` with `asyncio.run`:
+
+    ```python
+    import asyncio
+
+    from mammoth import MammothClient
+
+
+    async def main() -> None:
+        async with MammothClient(api_token="mm_your-token", workspace_id=11) as client:
+            client.set_project_id(10)
+            view = await client.views.get(1039)
+            print(view.display_names)
+
+
+    asyncio.run(main())
+    ```
+
 !!! tip "Extract IDs from a Mammoth URL"
     Use `parse_path()` to extract IDs from a browser URL:
 
@@ -43,7 +64,7 @@ The `workspace_id` is required at client creation. The `project_id` must be set 
 A **View** is the central object in the SDK. It wraps a Mammoth dataview and provides transformation methods, data access, and export helpers.
 
 ```python
-view = client.views.get(1039)
+view = await client.views.get(1039)
 
 print(view.name)           # "My View"
 print(view.display_names)  # ["Sales", "Region", "Date", ...]
@@ -58,10 +79,10 @@ Transformations are applied in-place. Each method sends a task to the Mammoth pi
 from mammoth import Condition, Operator, ColumnType, SetValue
 
 # Filter rows
-view.filter_rows(Condition("Sales", Operator.GTE, 1000))
+await view.filter_rows(Condition("Sales", Operator.GTE, 1000))
 
 # Add a computed column
-view.set_values(
+await view.set_values(
     new_column="Category",
     column_type=ColumnType.TEXT,
     values=[
@@ -71,20 +92,20 @@ view.set_values(
 )
 
 # Math expression
-view.math("Price * Quantity", new_column="Total")
+await view.math("Price * Quantity", new_column="Total")
 ```
 
 ## 6. Export data
 
 ```python
 # Download as CSV
-view.export.to_csv("output.csv")
+await view.export.to_csv("output.csv")
 
 # Export to S3
-view.export.to_s3(file_name="report.csv")
+await view.export.to_s3(file_name="report.csv")
 
 # Export to PostgreSQL
-view.export.to_postgres(
+await view.export.to_postgres(
     host="db.example.com",
     port=5432,
     database="analytics",
@@ -100,15 +121,15 @@ The client provides sub-clients for every Mammoth API resource:
 
 ```python
 # List projects — returns {"projects": [...], "offset": 0, ...}
-resp = client.projects.list()
+resp = await client.projects.list()
 for p in resp["projects"]:      # plain dicts: p["id"], p["name"]
     print(p["id"], p["name"])
 
 # List datasets in a project
-datasets = client.datasets.list()
+datasets = await client.datasets.list()
 
 # Upload a file
-client.files.upload("data.csv")
+await client.files.upload("data.csv")
 ```
 
 ## Complete example
@@ -128,14 +149,14 @@ client.set_project_id(10)
 
 try:
     # Get a view
-    view = client.views.get(1039)
+    view = await client.views.get(1039)
     print(f"Working with: {view.name} ({len(view.display_names)} columns)")
 
     # Filter to high-value rows
-    view.filter_rows(Condition("Sales", Operator.GTE, 1000))
+    await view.filter_rows(Condition("Sales", Operator.GTE, 1000))
 
     # Add a label column
-    view.set_values(
+    await view.set_values(
         new_column="Tier",
         column_type=ColumnType.TEXT,
         values=[
@@ -145,7 +166,7 @@ try:
     )
 
     # Export
-    path = view.export.to_csv("output.csv")
+    path = await view.export.to_csv("output.csv")
     print(f"Exported to {path}")
 
 except MammothAPIError as e:

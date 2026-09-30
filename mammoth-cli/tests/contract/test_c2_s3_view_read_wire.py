@@ -249,7 +249,8 @@ def test_s3_view_data_reads_have_literal_query_and_body_wires(
         )
     view_path = f"/workspaces/{WORKSPACE}/projects/{PROJECT}/datasets/{DATASET}/dataviews/{VIEW}"
     assert [r.path.removeprefix("/api/v2") for r in api.requests] == [
-        f"{view_path}/pipeline/items",  # resolves the view's dataset
+        # No leading sequence probe: the SDK leaves the pipeline step to the
+        # API rather than resolving it, so the read starts at the view itself.
         view_path,  # names the view in meta
         f"/workspaces/{WORKSPACE}/projects/{PROJECT}/datasets/{DATASET}",  # names the dataset
         f"{view_path}/pipeline/items",  # the sequence prerequisite

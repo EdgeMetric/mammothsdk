@@ -6,6 +6,7 @@ network access. CI must never fetch the live document.
 
 from __future__ import annotations
 
+import asyncio
 import hashlib
 import inspect
 import json
@@ -19,6 +20,22 @@ SNAPSHOT = CLI_ROOT / "spec" / "openapi" / "openapi.json"
 METADATA = CLI_ROOT / "spec" / "openapi" / "metadata.json"
 
 HTTP_METHODS = {"get", "put", "post", "delete", "options", "head", "patch", "trace"}
+
+
+def _answering(payload: object):
+    """A transport seam that answers this payload, as a coroutine would."""
+
+    async def _request_json(*_args: object, **_kwargs: object) -> object:
+        return payload
+
+    return _request_json
+
+
+def _drive(work: object) -> object:
+    """Run one generated SDK coroutine to completion and hand back its result."""
+    if not inspect.isawaitable(work):
+        return work
+    return asyncio.run(work)
 
 
 def _load_snapshot() -> dict:
@@ -129,12 +146,12 @@ def test_generated_dashboard_wrapper_routes_path_query_and_body() -> None:
     calls: list[tuple] = []
 
     class Client:
-        def _request_json(self, *args, **kwargs):
+        async def _request_json(self, *args, **kwargs):
             calls.append((args, kwargs))
             return {"column": "region", "total": 1, "values": ["west"]}
 
     owner = type("Owner", (), {"_client": Client()})()
-    response = generated.rls_value_list(owner, 17, "region", "west")
+    response = _drive(generated.rls_value_list(owner, 17, "region", "west"))
     assert response.model_dump() == {"column": "region", "total": 1, "values": ["west"]}
     assert calls == [
         (("GET", "/dashboards/17/rls/values"), {"params": {"column": "region", "search": "west"}})
@@ -174,15 +191,15 @@ def test_generated_nullable_parameter_types_and_routing() -> None:
     calls: list[tuple] = []
 
     class Client:
-        def _request_json(self, *args, **kwargs):
+        async def _request_json(self, *args, **kwargs):
             calls.append((args, kwargs))
             if args[1].endswith("/chat"):
                 return {"sequence": 3}
             return {"dataview_id": 42}
 
     owner = type("Owner", (), {"_client": Client()})()
-    generated.chat_history(owner, 17, sequence=3)
-    generated.template_fit(owner, 42, table_item_id=9)
+    _drive(generated.chat_history(owner, 17, sequence=3))
+    _drive(generated.template_fit(owner, 42, table_item_id=9))
     assert calls[0][1]["params"] == {"sequence": 3}
     assert calls[1][1]["params"] == {"dataview_id": 42, "table_item_id": 9}
 
@@ -197,10 +214,10 @@ def test_generated_dashboard_named_bodies_and_results_are_typed() -> None:
     owner = type(
         "Owner",
         (),
-        {"_client": type("Client", (), {"_request_json": lambda *_a, **_kw: {"job_id": 9}})()},
+        {"_client": type("Client", (), {"_request_json": _answering({"job_id": 9})})()},
     )()
-    result = generated.v3_generate(
-        owner, {"params": {"dataview_id": 1, "intent": "Revenue by quarter"}}
+    result = _drive(
+        generated.v3_generate(owner, {"params": {"dataview_id": 1, "intent": "Revenue by quarter"}})
     )
     assert type(result).__name__ == "ObjectJobSchema"
     assert result.job_id == 9
@@ -215,12 +232,14 @@ def test_generated_dashboard_named_bodies_and_results_are_typed() -> None:
             "_client": type(
                 "Client",
                 (),
-                {"_request_json": lambda *_a, **_kw: {"job_id": 9, "server_added_field": "x"}},
+                {"_request_json": _answering({"job_id": 9, "server_added_field": "x"})},
             )()
         },
     )()
-    additive = generated.v3_generate(
-        additive_owner, {"params": {"dataview_id": 1, "intent": "Revenue by quarter"}}
+    additive = _drive(
+        generated.v3_generate(
+            additive_owner, {"params": {"dataview_id": 1, "intent": "Revenue by quarter"}}
+        )
     )
     assert type(additive).__name__ == "ObjectJobSchema"
     assert additive.job_id == 9
@@ -244,12 +263,12 @@ def test_mixed_typed_untyped_response_accepts_arbitrary_object() -> None:
         return type(
             "Owner",
             (),
-            {"_client": type("Client", (), {"_request_json": lambda *_a, **_kw: payload})()},
+            {"_client": type("Client", (), {"_request_json": _answering(payload)})()},
         )()
 
     # Typed branch: a payload matching DeriveStyleResponse is coerced to it.
-    typed = generated.style_derive(
-        _owner({"style_tokens": {"primary": "#fff"}}), {"image_url": "x"}
+    typed = _drive(
+        generated.style_derive(_owner({"style_tokens": {"primary": "#fff"}}), {"image_url": "x"})
     )
     assert type(typed).__name__ == "DeriveStyleResponse"
     assert typed.style_tokens == {"primary": "#fff"}
@@ -257,7 +276,7 @@ def test_mixed_typed_untyped_response_accepts_arbitrary_object() -> None:
     # Untyped branch: an arbitrary object that no model positively matches is
     # returned verbatim instead of raising.
     arbitrary = {"unexpected": {"nested": [1, 2, 3]}, "kind": "custom"}
-    result = generated.style_derive(_owner(arbitrary), {"image_url": "x"})
+    result = _drive(generated.style_derive(_owner(arbitrary), {"image_url": "x"}))
     assert result == arbitrary
 
 

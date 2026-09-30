@@ -5,7 +5,7 @@ from __future__ import annotations
 from enum import Enum
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, StrictInt
+from pydantic import BaseModel, ConfigDict, Field, StrictInt, model_validator
 
 # ── Read/response models (existing, kept as-is) ──────────────────────────────
 
@@ -214,6 +214,40 @@ class CreateBlankParams(BaseModel):
     title: str = ""
 
 
+class GenerateV3Params(BaseModel):
+    """What the generate route builds a v3 dashboard from.
+
+    The generated wrapper's own params model is pinned to an OpenAPI snapshot
+    older than the route, and carries none of this: it has no title, no "qa"
+    format, and an intent it will not let go empty.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    dataview_id: int = Field(ge=1)
+    # Empty only for "qa", where the reader asks the questions and the author
+    # writes no brief at all.
+    intent: str = ""
+    format: Literal["dashboard", "presentation", "document", "qa"] | None = None
+    contexts: list[str] | None = None
+    client_turn_id: str | None = None
+    title: str = Field(default="", max_length=200)
+
+    @model_validator(mode="after")
+    def _a_brief_unless_it_is_a_notebook(self) -> GenerateV3Params:
+        if self.format != "qa" and not self.intent.strip():
+            raise ValueError("intent must not be empty unless format is 'qa'")
+        return self
+
+
+class GenerateV3Spec(BaseModel):
+    """Request envelope for generating a v3 dashboard."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    params: GenerateV3Params
+
+
 class CreateBlankSpec(BaseModel):
     """Request envelope for creating a blank v3 dashboard."""
 
@@ -242,7 +276,8 @@ class DashboardTagsParams(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    tags: list[str]
+    # The route takes an absent list as "carry no tags", so this does too.
+    tags: list[str] = Field(default_factory=list)
 
 
 class TagMergeParams(BaseModel):
@@ -359,6 +394,8 @@ class DashboardActionType(str, Enum):
     AUTO_SYNC = "auto-sync"
     AUTO_PUBLISH = "auto-publish"
     DELETE_SOURCE = "delete-source"
+    RESTORE = "restore"
+    SET_RLS_CONFIG = "set-rls-config"
 
 
 # ── embed: config / key / usage / preview-token / workspace secret ──────────
