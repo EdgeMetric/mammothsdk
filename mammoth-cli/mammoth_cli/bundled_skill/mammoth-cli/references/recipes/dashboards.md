@@ -186,3 +186,13 @@ returns the plaintext signing secret once, never on a read) and `dashboard
 embed lifetime set WORKSPACE_ID --input '{"token_ttl": 900}'` (60-3600
 seconds, how long a minted embed viewer session lives).
 
+
+## Pin a dashboard, file it "under" a name
+
+Pinning is a per-user preference: `user preference get`, read
+`GLOBAL.DASHBOARDS.pinned_ids`, then write the whole list back with the id
+appended as a string: `user preference update --input
+'{"patch":[{"op":"replace","path":"global.dashboards","value":{"pinned_ids":["123"]}}]}'`
+(unpin = write it without the id). Dashboards live in no folder, so
+`folder move` cannot file one; the library groups by tags: `dashboard tags set
+DASHBOARD_ID --input '{"tags":["Finance"]}' --yes --confirm DASHBOARD_ID`.
