@@ -378,6 +378,10 @@ def dashboard_tags_merge(invocation: Invocation) -> HandlerResult:
 def dashboard_get(invocation: Invocation) -> HandlerResult:
     """Get one dashboard by id, with each KPI card's and tile's number and period.
 
+    The route is workspace-level: a board reads by id whichever project is
+    active, and the result names the board's own ``project_id`` (``None`` when
+    the backend withholds it, as it does for a viewer outside the project).
+
     A question about an existing board is answered from what it shows, so the
     read carries the numbers, not only the definitions (UQA-RT10-02).
     """
@@ -386,7 +390,14 @@ def dashboard_get(invocation: Invocation) -> HandlerResult:
         data = service.call(_symbol(invocation), dashboard_id=dashboard_id)
         if not invocation.readback:
             data = _with_board_values(service, auth, {"dashboard_id": dashboard_id}, data)
+            data = _with_board_project(data)
     return data, _meta(invocation, auth.workspace_id)
+
+
+def _with_board_project(data: Any) -> Any:
+    """Name the project the board lives in; ``None`` when the backend does not say."""
+    data = _dump_model(data)
+    return {**data, "project_id": data.get("project_id")} if isinstance(data, dict) else data
 
 
 def dashboard_get_by_url(invocation: Invocation) -> HandlerResult:

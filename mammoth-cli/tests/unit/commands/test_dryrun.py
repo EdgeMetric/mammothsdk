@@ -11,6 +11,7 @@ from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.runtime.confirm import POLICY_YES_ALWAYS, enforce_confirmation
 from mammoth_cli.runtime.dryrun import NOTE_OWN, NOTE_UNDECLARED, DryRunStop, jsonable, make_gate
 from mammoth_cli.runtime.invocation import Invocation
+from mammoth_cli.services.conditions import compile_condition
 from mammoth_cli.services.testing import FakeMammothService
 from mammoth_cli.testing import login_default_profile, make_runner
 
@@ -105,3 +106,25 @@ def test_local_validation_still_fails_under_dry_run(fake_service: FakeMammothSer
     )
     assert result.exit_code == 2
     assert fake_service.call_log == []
+
+
+def test_dry_run_of_a_filter_step_shows_the_condition_as_readable_text() -> None:
+    """The confirm card showed ``CompoundCondition('AND', [Condition(...)])``:
+    the gate receives the compiled SDK condition, not the input dict."""
+    condition = compile_condition(
+        {
+            "and": [
+                {"column": "Country", "operator": "EQ", "value": "US"},
+                {"not": {"column": "Sales", "operator": "LTE", "value": 5}},
+            ]
+        }
+    )
+    gate = make_gate("view.transform.filter")
+    with pytest.raises(DryRunStop) as stop:
+        gate(
+            "mammoth._mixins._filter_ops.FilterOpsMixin.filter_rows",
+            {"dataset_id": 9, "condition": condition},
+            view_id=7,
+        )
+    arguments = stop.value.record["would_call"]["arguments"]
+    assert arguments["condition"] == "Country = US and not (Sales <= 5)"

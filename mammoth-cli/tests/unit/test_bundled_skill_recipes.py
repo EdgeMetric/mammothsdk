@@ -45,8 +45,16 @@ def test_dashboards_recipe_routes_per_dimension_asks_to_a_filter_control() -> No
     assert "Do not build a copy of the board for each value" in text
 
 
-def test_dashboards_recipe_hides_built_in_tiles_through_canvas_save() -> None:
+def test_dashboards_recipe_teaches_intent_only_never_hand_crafting() -> None:
+    """The in-product agent passes only the user's intent to the builder."""
     text = (ROOT / "dashboards.md").read_text(encoding="utf-8")
-    assert "pages[0].hidden" in text and '"summary"' in text
-    assert "dashboard canvas save DASHBOARD_ID" in text
-    assert "only when asked to" not in text
+    assert "intent_only_dashboards" in text
+    assert "dashboard v3 generate" in text and "chat edit" in text
+    for hand_crafted in (
+        "canvas save DASHBOARD_ID",
+        "create-blank --yes",
+        "pages[0]",
+        "focus.kpis",
+    ):
+        assert hand_crafted not in text
+    assert "Author or edit the canvas yourself" not in text

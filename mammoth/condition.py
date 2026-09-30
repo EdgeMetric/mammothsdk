@@ -75,6 +75,16 @@ _NULL_OPERATORS = frozenset(
     }
 )
 
+_SYMBOLS = {"EQ": "=", "NE": "!=", "GT": ">", "GTE": ">=", "LT": "<", "LTE": "<="}
+
+
+def _text_of(value: Any) -> str:
+    """One operand as plain text: enum members by value, lists as ``[a, b]``."""
+    if isinstance(value, (list, tuple)):
+        return "[" + ", ".join(_text_of(item) for item in value) + "]"
+    return str(getattr(value, "value", value))
+
+
 ERR_IN_RANGE_NOT_LIST = "IN_RANGE requires a list of exactly 2 bounds, got {value!r}."
 ERR_IN_RANGE_NOT_TWO = "IN_RANGE requires exactly 2 bounds, got {n}."
 
@@ -286,6 +296,13 @@ class Condition:
     def __repr__(self) -> str:
         return f"Condition({self.column!r}, {self.operator!r}, {self.value!r})"
 
+    def __str__(self) -> str:
+        """Readable text, e.g. ``Sales > 5`` or ``Name is empty``."""
+        operator = _SYMBOLS.get(self.operator) or self.operator.lower().replace("_", " ")
+        if self.operator in _NULL_OPERATORS:
+            return f"{self.column} {operator}"
+        return f"{self.column} {operator} {_text_of(self.value)}"
+
 
 class NotCondition:
     """Negation of a condition. Created via ``~condition``.
@@ -359,6 +376,10 @@ class NotCondition:
 
     def __repr__(self) -> str:
         return f"NotCondition({self.condition!r})"
+
+    def __str__(self) -> str:
+        """Readable text, e.g. ``not (Sales > 5)``."""
+        return f"not ({self.condition})"
 
 
 class CompoundCondition:
@@ -454,3 +475,8 @@ class CompoundCondition:
 
     def __repr__(self) -> str:
         return f"CompoundCondition({self.logic!r}, {self.conditions!r})"
+
+    def __str__(self) -> str:
+        """Readable text, e.g. ``Country = US and Sales > 5``; nested groups in parentheses."""
+        parts = [f"({c})" if isinstance(c, CompoundCondition) else str(c) for c in self.conditions]
+        return f" {self.logic.lower()} ".join(parts)

@@ -242,3 +242,46 @@ def test_a_missing_project_does_not_point_an_embedded_call_at_project_use() -> N
 
     assert not any("context project use" in c for c in error.recovery_commands)
     assert "--project" in (error.hint or "")
+
+
+@pytest.mark.parametrize(
+    "args",
+    [
+        ["dashboard", "create-blank", "--yes", "--input", '{"params": {"dataview_id": 1}}'],
+        ["dashboard", "canvas", "save", "42", "--input", '{"body": {"params": {"canvas": {}}}}'],
+        ["dashboard", "canvas", "restore", "42"],
+        ["dashboard", "pages", "add", "42", "--yes", "--confirm", "42"],
+        ["dashboard", "template", "apply", "--input", '{"body": {"params": {}}}'],
+        ["dashboard", "template", "fit", "42"],
+        ["dashboard", "templates", "use", "some-slug", "--yes"],
+        ["dashboard", "template", "create", "--input", '{"body": {"params": {}}}'],
+        [
+            "dashboard",
+            "import-workbook",
+            "sample.twbx",
+            "--project",
+            "7",
+            "--yes",
+            "--confirm",
+            "7",
+        ],
+    ],
+)
+def test_hand_crafted_dashboard_writes_are_refused_when_embedded(args: list[str]) -> None:
+    """The in-product agent passes only the user's intent to the dashboard builder;
+    every hand-crafting write fails fast and names the two intent commands."""
+    envelope = invoke(args, login=_login(4))
+
+    assert envelope["error"]["code"] == "intent_only_dashboards"
+    assert "dashboard v3 generate" in envelope["error"]["hint"]
+    assert "dashboard chat edit" in envelope["error"]["hint"]
+
+
+def test_canvas_get_is_still_allowed_when_embedded(monkeypatch: pytest.MonkeyPatch) -> None:
+    fake = FakeMammothService()
+    fake.responses["mammoth.api.dashboards.DashboardsAPI.canvas_get"] = {"canvas": {}}
+    monkeypatch.setattr(service_factory, "build_service", lambda auth, **_kw: fake)
+
+    envelope = invoke(["dashboard", "canvas", "get", "42"], login=_login(4))
+
+    assert "error" not in envelope
