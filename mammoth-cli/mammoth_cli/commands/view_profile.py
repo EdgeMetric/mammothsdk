@@ -361,30 +361,45 @@ def _paged_columns(details: dict[str, dict[str, Any]], limit: int) -> dict[str, 
 def _variant_report(
     scope: _Scope, names: list[str], tables: dict[str, dict[Any, int] | None]
 ) -> list[dict[str, Any]]:
-    """Per TEXT column, spellings of one value (Ltd/Limited, case, punctuation) and the fix."""
+    """Per TEXT column, spellings of one value (Ltd/Limited, case, punctuation) and the fix.
+
+    ``likely_groups`` are names that differ only by a legal form or a connector
+    (``TECNOLAB`` / ``TECNOLAB S.A.``): proposed, never merged without a yes.
+    """
     report: list[dict[str, Any]] = []
     for name in names:
         table = tables.get(name)
         if table is None or scope.types.get(name) != "TEXT":
             continue
-        groups = dp.variant_groups({k: v for k, v in table.items() if isinstance(k, str)})
-        if not groups:
+        texts = {k: v for k, v in table.items() if isinstance(k, str)}
+        groups, likely = dp.variant_groups(texts), dp.likely_groups(texts)
+        if not groups and not likely:
             continue
-        shown = groups[:_MAX_VARIANT_GROUPS]
-        body = {**dp.bulk_replace_input(name, shown), "dataset_id": scope.dataset_id}
-        report.append(
-            {
-                "column": name,
-                "groups_total": len(groups),
-                "groups": shown,
-                "bulk_replace": body,
-                "command": (
-                    f"mammoth view transform bulk-replace {scope.view_id} "
-                    f"--input {shlex.quote(json.dumps(body))}"
-                ),
-            }
-        )
+        entry: dict[str, Any] = {"column": name, **_merge_fix(scope, name, groups)}
+        if likely:
+            entry["likely_groups"] = {"note": _LIKELY_NOTE, **_merge_fix(scope, name, likely)}
+        report.append(entry)
     return report
+
+
+_LIKELY_NOTE = (
+    "Same name apart from a legal form or a connector word; confirm with the user "
+    "before merging (SRL and SA can be two companies)."
+)
+
+
+def _merge_fix(scope: _Scope, column: str, groups: list[dict[str, Any]]) -> dict[str, Any]:
+    """The groups shown and the bulk-replace that merges them."""
+    shown = groups[:_MAX_VARIANT_GROUPS]
+    fix: dict[str, Any] = {"groups_total": len(groups), "groups": shown}
+    if not shown:
+        return fix
+    body = {**dp.bulk_replace_input(column, shown), "dataset_id": scope.dataset_id}
+    command = (
+        f"mammoth view transform bulk-replace {scope.view_id} "
+        f"--input {shlex.quote(json.dumps(body))}"
+    )
+    return {**fix, "bulk_replace": body, "command": command}
 
 
 # -- target vs column ----------------------------------------------------------------------
