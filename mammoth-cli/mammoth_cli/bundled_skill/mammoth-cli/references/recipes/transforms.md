@@ -202,6 +202,11 @@ values you are summing.
   `view list` returns `data.dataviews[]`, `view data get` returns rows keyed by
   display name. Read the envelope you got, not the one you expected.
 
+Read-only way to answer a by-weekday or by-month question: `view data aggregate`
+with a `part` group, for example `--input '{"group_by": [{"column": "Order Date",
+"part": "weekday"}], "aggregations": [{"column": "Sales", "function": "SUM",
+"as_name": "Total"}], "order_by": ["Total desc"]}'`. Do not build a temporary view.
+
 Prefer `pivot` over `add-sql` for a grouped summary when `capabilities.md`
 lists it as run on release; `add-sql` replaces every column of the view, so
 never run it on a deliverable view.

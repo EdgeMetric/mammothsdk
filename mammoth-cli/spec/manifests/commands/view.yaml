@@ -1237,7 +1237,10 @@ commands:
     CLI: the stored format is detected from the data and stated in text_dates, an ambiguous day/month
     order (settle it with text_date_format) or an unreadable value fails loud, and a range condition
     (GT, GTE, LT, LTE, IN_RANGE with a YYYY-MM-DD value) on such a column works the same way. A truncate on
-    a NUMERIC column, or a resolution on a non-NUMERIC one, is refused. An empty result carries
+    a NUMERIC column, or a resolution on a non-NUMERIC one, is refused. To group by the part of a date,
+    give {"column": C, "part": weekday|month|quarter|year} on a DATE or TEXT-date column: the groups are
+    named (Monday, January, Q1) and in calendar order. This is the read-only way to answer by-weekday and
+    by-month questions. An empty result carries
     observed_range: the min and max of the filtered or date column.'
   reviewed_by: primary
 - command_id: view.data.compare

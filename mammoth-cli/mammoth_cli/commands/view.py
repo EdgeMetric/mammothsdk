@@ -1378,25 +1378,34 @@ def _require_numeric_metric(
     )
 
 
-def _plain_text_date_groups(document: dict[str, Any], levels: dict[int, str]) -> dict[str, Any]:
-    """The document with each TEXT-date group_by entry reduced to its plain column.
+def _plain_text_date_groups(
+    document: dict[str, Any], levels: dict[int, str], column_types: dict[str, str]
+) -> dict[str, Any]:
+    """The document with each CLI-bucketed group_by entry reduced to what the backend groups by.
 
-    The backend groups by the raw stored string; the CLI buckets it afterwards.
+    A TEXT date is grouped by its raw stored string; a DATE column with a ``part``
+    by day. The CLI buckets the result afterwards.
     """
     if not levels:
         return document
     group_by = [
-        item["column"] if index in levels and isinstance(item, dict) else item
+        _backend_group(item, column_types) if index in levels else item
         for index, item in enumerate(document["group_by"])
     ]
     return {**document, "group_by": group_by}
+
+
+def _backend_group(item: dict[str, Any], column_types: dict[str, str]) -> Any:
+    if column_types.get(str(item["column"])) == "TEXT":
+        return item["column"]
+    return {"column": item["column"], "truncate": "DAY"}
 
 
 def _aggregate_range_columns(document: dict[str, Any], column_types: dict[str, str]) -> list[str]:
     """Columns an empty aggregate should report the observed range of."""
     columns = read_queries.condition_columns(document.get(CONDITION_KWARG))
     for item in document.get("group_by") or []:
-        if isinstance(item, dict) and item.get("truncate") is not None:
+        if isinstance(item, dict) and (item.get("truncate") or item.get("part")) is not None:
             columns.append(str(item["column"]))
     return list(dict.fromkeys(columns))
 
@@ -1465,6 +1474,10 @@ def view_data_aggregate(invocation: Invocation) -> HandlerResult:
     ``"Total desc"``) with ``top`` ranks the groups on the backend; a ``limit``
     without ``order_by`` is flagged unordered. A ``truncate`` on a TEXT column of
     dates is bucketed here from the detected format, stated in ``text_dates``.
+    A group_by ``{"column": ..., "part": weekday|month|quarter|year}`` on a DATE (or
+    TEXT-date) column groups by the named part of the date -- ``Monday``..``Sunday``,
+    ``January``..``December``, ``Q1``..``Q4``, the year -- in calendar order: the
+    read-only way to answer by-weekday and by-month questions.
     Never use ``view transform pivot`` just to read a number -- it mutates the
     view's pipeline.
     """
@@ -1503,7 +1516,7 @@ def view_data_aggregate(invocation: Invocation) -> HandlerResult:
         if has_pivot:
             levels = read_queries.text_date_group_levels(document.get("group_by"), column_types)
             fields, as_map = _build_pivot_fields(
-                _plain_text_date_groups(document, levels), display_to_internal
+                _plain_text_date_groups(document, levels, column_types), display_to_internal
             )
         else:
             _reject_order_on_metric(document)

@@ -214,12 +214,26 @@ def condition_columns(spec: Any) -> list[str]:
 # ---------------------------------------------------------------------------
 
 
+def _part_level(item: dict[str, Any], kind: str) -> str:
+    """The bucket level of a ``{"column", "part"}`` entry, or a loud refusal."""
+    column = item.get("column")
+    if item.get("truncate") is not None:
+        raise _fail(f"Give 'part' or 'truncate' for '{column}', not both.")
+    if kind not in ("DATE", "TEXT"):
+        raise _fail(
+            "'part' groups a DATE column, or a TEXT column of dates; "
+            f"'{column}' is {kind or 'unknown'}."
+        )
+    return text_dates.require_part(item["part"])
+
+
 def text_date_group_levels(group_by: Any, column_types: dict[str, str]) -> dict[int, str]:
-    """Fail loud on a ``truncate`` the column type cannot take; return the TEXT ones.
+    """Fail loud on a ``truncate``/``part`` the column cannot take; return the CLI-bucketed ones.
 
     Maps a group_by position to its bucket level for every ``{"column", "truncate"}``
-    entry on a TEXT column. A truncate on a NUMERIC column (or ``resolution`` on a
-    non-NUMERIC one) is refused with the reason -- never silently ignored.
+    entry on a TEXT column and every ``{"column", "part"}`` entry on a DATE or TEXT
+    column. A truncate on a NUMERIC column (or ``resolution`` on a non-NUMERIC one)
+    is refused with the reason -- never silently ignored.
     """
     levels: dict[int, str] = {}
     for index, item in enumerate(group_by if isinstance(group_by, list) else []):
@@ -227,6 +241,9 @@ def text_date_group_levels(group_by: Any, column_types: dict[str, str]) -> dict[
             continue
         column = str(item.get("column"))
         kind = column_types.get(column, "")
+        if item.get("part") is not None:
+            levels[index] = _part_level(item, kind)
+            continue
         if item.get("truncate") is not None:
             if kind == "TEXT":
                 levels[index] = text_dates.require_level(item["truncate"])
@@ -289,6 +306,35 @@ def _finish_averages(rows: list[dict[str, Any]], averages: dict[str, str]) -> No
             row[total_key] = total / count if count and total is not None else None
 
 
+def _group_days(
+    ctx: ReadContext, display: str, rows: list[dict[str, Any]], key: str
+) -> dict[str, date | None]:
+    """The date behind each group value: parsed from the stored text, or (a DATE
+    column grouped by day) read straight from the backend's ISO value."""
+    if ctx.is_text(display):
+        return ctx.column_days(display)[1]
+    days: dict[str, date | None] = {}
+    for row in rows:
+        raw = row.get(key)
+        days[text_dates.raw_key(raw)] = None if raw is None else _iso_day(raw)
+    return days
+
+
+def _iso_day(value: Any) -> date:
+    try:
+        return date.fromisoformat(str(value)[:10])
+    except ValueError as exc:
+        raise _fail(
+            f"The backend returned '{value}', which is not a date.", "Retry the read."
+        ) from exc
+
+
+def _bucket_note(level: str) -> str:
+    if level.startswith(text_dates.PART_PREFIX):
+        return f"{level.removeprefix(text_dates.PART_PREFIX)} (named, calendar order)"
+    return f"{level} (period start date, ISO)"
+
+
 def pivot_with_text_dates(
     ctx: ReadContext,
     *,
@@ -307,11 +353,9 @@ def pivot_with_text_dates(
     if len(levels) != 1:
         raise _fail("Bucket at most one TEXT date column per query.")
     ((position, level),) = levels.items()
-    display = next(
-        (d for d, i in ctx.display_to_internal.items() if i == group_by[position]),
-        group_by[position],
-    )
-    fmt, days = ctx.column_days(display)
+    entry = group_by[position]
+    internal = entry["column"] if isinstance(entry, dict) else entry
+    display = next((d for d, i in ctx.display_to_internal.items() if i == internal), internal)
     plan = _plan_aggregations(aggregations)
     fields: dict[str, Any] = {"aggregations": plan.aggregations, "group_by": group_by}
     if condition is not None:
@@ -320,6 +364,7 @@ def pivot_with_text_dates(
     rows = _rows(response)
     if len(rows) >= 40000:
         raise _fail("The grouped result hit the 40000-row backend cap; narrow it with a condition.")
+    days = _group_days(ctx, display, rows, f"group_{position}")
     others = [f"group_{i}" for i in range(len(group_by)) if i != position]
     regrouped = text_dates.rebucket(
         rows,
@@ -330,7 +375,8 @@ def pivot_with_text_dates(
         level=level,
     )
     _finish_averages(regrouped, plan.averages)
-    ctx.assumptions[display]["bucket"] = f"{level} (period start date, ISO)"
+    if display in ctx.assumptions:
+        ctx.assumptions[display]["bucket"] = _bucket_note(level)
     return {**response, "data": regrouped, "row_count": len(regrouped)}
 
 
