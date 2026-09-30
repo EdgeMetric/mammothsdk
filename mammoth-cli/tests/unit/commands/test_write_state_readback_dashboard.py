@@ -6,7 +6,7 @@ fake ``command_by_id``/``HANDLERS``), these exercise the *real* manifest
 declarations landed in ``spec/manifests/commands/{dashboard,data-app,snippet,
 annotation,template}.yaml`` against the *real* registered command handlers,
 through ``with_state`` directly -- one test per readback kind actually used
-by these families (object, delivery), one showing the empty-``ids`` parent-
+by these families (object), one showing the empty-``ids`` parent-
 listing pattern used by several deletes, and one confirming ``no_readback``
 adds nothing.
 """
@@ -23,7 +23,6 @@ from mammoth_cli.services.testing import FakeMammothService
 from mammoth_cli.testing import login_default_profile
 
 _DASHBOARD_GET = "mammoth.api.dashboards.DashboardsAPI.get"
-_JOB_GET = "mammoth.api.jobs.JobsAPI.get_job"
 _ANNOTATION_LIST = "mammoth.api.annotations.AnnotationsAPI.list"
 _DATA_APP_GET = "mammoth.api.data_apps.DataAppsAPI.get"
 _SNIPPET_GET = "mammoth.api.snippets.SnippetsAPI.get"
@@ -56,20 +55,18 @@ def test_dashboard_archive_readback_is_kind_object(fake_service: FakeMammothServ
 
 
 # ---------------------------------------------------------------------------
-# kind: delivery -- a write whose result carries only a job_id (no other
-# resource handle) reads back the job's status via the cross-family
-# ``job.get``.
+# kind: object -- a generate is waited on by the CLI, so its result carries the
+# new board's ``id`` (the job's own response, never a ``job_id``); it reads back that board.
 # ---------------------------------------------------------------------------
 
 
-def test_dashboard_v3_generate_readback_is_kind_delivery(fake_service: FakeMammothService) -> None:
-    fake_service.responses[_JOB_GET] = {"status": "done", "message": "dashboard 456 created"}
-    result = with_state(_inv("dashboard.v3.generate", []), {"job_id": 7660, "status_code": None})
+def test_dashboard_v3_generate_readback_is_kind_object(fake_service: FakeMammothService) -> None:
+    fake_service.responses[_DASHBOARD_GET] = {"id": 456, "title": "Revenue"}
+    result = with_state(_inv("dashboard.v3.generate", []), {"id": 456})
     assert result["state"] == {
-        "kind": "delivery",
-        "read_by": "job.get 7660",
-        "status": "done",
-        "detail": "dashboard 456 created",
+        "kind": "object",
+        "read_by": "dashboard.get 456",
+        "object": {"id": 456, "title": "Revenue"},
     }
 
 

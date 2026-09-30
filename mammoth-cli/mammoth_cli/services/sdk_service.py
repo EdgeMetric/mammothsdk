@@ -17,6 +17,7 @@ from __future__ import annotations
 import asyncio
 import inspect
 import re
+import threading
 from collections.abc import Callable
 from types import TracebackType
 from typing import Any
@@ -134,6 +135,8 @@ class SdkMammothService:
         # One loop for the process, not one per call: the client's connection
         # pool lives on the loop that opened it.
         self._loop = asyncio.new_event_loop()
+        # One loop serves every call; threads (view data profile fans out) take turns.
+        self._loop_lock = threading.RLock()
         if auth.headers:
             # After construction: the client sets its credential headers in
             # ``__init__``, and a forwarded session must replace them.
@@ -150,7 +153,8 @@ class SdkMammothService:
         """
         if not inspect.isawaitable(work):
             return work
-        return self._loop.run_until_complete(work)
+        with self._loop_lock:
+            return self._loop.run_until_complete(work)
 
     def call(self, sdk_symbol: str, /, **kwargs: Any) -> Any:
         """Resolve and invoke the public SDK method named by ``sdk_symbol``.

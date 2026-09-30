@@ -117,9 +117,13 @@ def _build(world: World, tmp: Path, stamp: int) -> None:
         world.ids[key], world.names[key] = int(record["id"]), name
     _build_view_parts(world, a)
     made = world.ok(
-        "dashboard",
-        "create-blank",
-        *("--input", json.dumps({"params": {"dataview_id": world.ids["view"]}})),
+        *("dashboard", "v3", "generate"),
+        *(
+            "--input",
+            json.dumps(
+                {"body": {"params": {"intent": "Row count", "dataview_id": world.ids["view"]}}}
+            ),
+        ),
         *_YES,
     )
     world.ids["dashboard"] = int(made["id"])

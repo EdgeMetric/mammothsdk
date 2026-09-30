@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import importlib.util
 import json
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -26,13 +28,20 @@ from mammoth_cli.services.command_contract import (
 from mammoth_cli.services.testing import FakeMammothService
 from mammoth_cli.testing import login_default_profile
 
-from .m2_oracles import (
-    FOREIGN_LOOKUP_ORACLE,
-    MATH_CONDITION_ORACLE,
-    UPLOAD_INPUT_ORACLE,
-    UPLOAD_POSITIONAL_ORACLE,
-    ZERO_INPUT_ORACLE,
+# ``--import-mode=importlib`` gives this file no package, so the sibling module is
+# loaded by path (as tests/unit/test_check_ste.py does) instead of a relative import.
+_spec = importlib.util.spec_from_file_location(
+    "mammoth_cli_m2_oracles", Path(__file__).with_name("m2_oracles.py")
 )
+assert _spec is not None and _spec.loader is not None
+_oracles = importlib.util.module_from_spec(_spec)
+sys.modules[_spec.name] = _oracles
+_spec.loader.exec_module(_oracles)
+FOREIGN_LOOKUP_ORACLE = _oracles.FOREIGN_LOOKUP_ORACLE
+MATH_CONDITION_ORACLE = _oracles.MATH_CONDITION_ORACLE
+UPLOAD_INPUT_ORACLE = _oracles.UPLOAD_INPUT_ORACLE
+UPLOAD_POSITIONAL_ORACLE = _oracles.UPLOAD_POSITIONAL_ORACLE
+ZERO_INPUT_ORACLE = _oracles.ZERO_INPUT_ORACLE
 
 
 @pytest.fixture(autouse=True)
