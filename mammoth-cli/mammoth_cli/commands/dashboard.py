@@ -17,7 +17,7 @@ from typing import Any, Literal, cast
 from mammoth.models.dashboards import AddPagesSpec
 from pydantic import ValidationError
 
-from mammoth_cli.commands.view import view_profiles
+from mammoth_cli.commands.view import _FIND_DATASET_SYMBOL, view_profiles
 from mammoth_cli.context import profiles
 from mammoth_cli.errors.envelope import (
     CODE_INVALID_ARGUMENT,
@@ -392,7 +392,46 @@ def dashboard_get(invocation: Invocation) -> HandlerResult:
         if not invocation.readback:
             data = _with_board_values(service, auth, {"dashboard_id": dashboard_id}, data)
             data = _with_board_project(data)
+            data = _with_source_datasets(service, invocation, auth.workspace_id, data)
     return data, _meta(invocation, auth.workspace_id)
+
+
+def _source_dataset(service: Any, invocation: Invocation, workspace_id: Any, view_id: int) -> Any:
+    """The dataset that owns ``view_id``: remembered, else looked up; never raises."""
+    profile_name = invocation.profile or profiles.get_selected()
+    remembered = parents.lookup(profile_name, workspace_id, view_id)
+    if remembered is not None:
+        return {"view_id": view_id, "dataset_id": remembered}
+    try:
+        dataset_id = int(service.call(_FIND_DATASET_SYMBOL, dataview_id=view_id))
+    except Exception as exc:  # noqa: BLE001 -- one unreadable source must not hide the others
+        return {"view_id": view_id, "dataset_id": None, "error": f"{type(exc).__name__}: {exc}"}
+    parents.remember(profile_name, workspace_id, {view_id: dataset_id})
+    return {"view_id": view_id, "dataset_id": dataset_id}
+
+
+def _with_source_datasets(
+    service: Any, invocation: Invocation, workspace_id: Any, data: Any
+) -> Any:
+    """Label each source: a board's ``sources`` are VIEW ids, never dataset ids.
+
+    An agent read 3882 from ``sources`` as a dataset id and got a 403
+    (RT21-01). ``source_views`` gives each source's ``view_id`` and the
+    ``dataset_id`` that owns it.
+    """
+    sources = data.get("sources") if isinstance(data, dict) else None
+    if not isinstance(sources, list) or not sources:
+        return data
+    views = [
+        _source_dataset(service, invocation, workspace_id, view_id)
+        for view_id in sources
+        if isinstance(view_id, int)
+    ]
+    return {
+        **data,
+        "source_views": views,
+        "sources_note": "sources are view ids; use a source's dataset_id for dataset commands.",
+    }
 
 
 def _with_board_project(data: Any) -> Any:
