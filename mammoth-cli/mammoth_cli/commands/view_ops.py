@@ -763,7 +763,12 @@ def _view_payload(value: Any) -> Any:
     if not isinstance(raw, dict):
         return value
     record = dict(raw)
-    dataset_id = getattr(value, "dataset_id", None)
+    # The record's own ``ds_id`` is the parent; the resolver's probed dataset is
+    # only a fallback, since the backend serves a view under a dataset that does
+    # not own it.
+    own_parent = record.get("ds_id")
+    probed = getattr(value, "dataset_id", None)
+    dataset_id = own_parent if isinstance(own_parent, int) else probed
     if isinstance(dataset_id, int) and "dataset_id" not in record:
         record["dataset_id"] = dataset_id
     return record

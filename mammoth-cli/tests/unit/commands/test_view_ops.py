@@ -1258,6 +1258,18 @@ def test_get_via_discovery_trims_to_the_brief_shape(fake_service: FakeMammothSer
     assert data["row_count"] == 3 and data["dataset_id"] == 63 and data["ds_id"] == 63
 
 
+def test_get_via_discovery_reports_the_records_own_parent_not_the_probed_one(
+    fake_service: FakeMammothService,
+) -> None:
+    """The backend answers a view under a wrong dataset; the record's ``ds_id`` is the truth."""
+    rich = _RichView()
+    rich.dataset_id = 2759  # what the probe settled on
+    rich.raw = {"id": 3062, "ds_id": 2473, "name": "V", "row_count": 50}
+    fake_service.responses[_GET] = rich
+    data, _ = view_ops_cmd.view_get(_inv("view.get", extra_args=["3062"]))
+    assert data["dataset_id"] == 2473 and data["ds_id"] == 2473
+
+
 _RENAMED = {
     "id": 7,
     "metadata": [

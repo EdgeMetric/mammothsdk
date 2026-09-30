@@ -158,13 +158,18 @@ class PipelineAPI:
                 # ``sequence=0`` to skip the latest-task-sequence resolution the
                 # default would trigger — one saved round trip per dataset
                 # scanned, which matters when a project holds many datasets.
-                self._client.dataviews.get(
+                record = self._client.dataviews.get(
                     dataset_id=dataset_id,
                     dataview_id=dataview_id,
                     workspace_id=workspace_id,
                     project_id=project_id,
                     sequence=0,
                 )
+                # The backend answers a view under a dataset that does not own
+                # it; the record's own ``ds_id`` names the real parent.
+                own_parent = record.get("ds_id") if isinstance(record, dict) else None
+                if isinstance(own_parent, int):
+                    dataset_id = own_parent
                 self._dataview_dataset_cache[cache_key] = dataset_id
                 return dataset_id
             except MammothAPIError as exc:
