@@ -43,8 +43,9 @@ from mammoth_cli.output.policy import (
 )
 from mammoth_cli.runtime import executor, validate
 from mammoth_cli.runtime.dataset_health import with_dataset_health
-from mammoth_cli.runtime.new_data import with_new_data_path
+from mammoth_cli.runtime.intent_only import refuse_hand_crafted_write
 from mammoth_cli.runtime.invocation import Invocation
+from mammoth_cli.runtime.new_data import with_new_data_path
 from mammoth_cli.runtime.state import with_state
 from mammoth_cli.runtime.strict import validate_extra_args
 from mammoth_cli.runtime.verify import with_verify
@@ -822,6 +823,7 @@ def _execute(invocation: Invocation) -> None:
         invocation = replace(invocation, profile=profiles.get_selected())
 
     def producer() -> tuple[Any, dict[str, Any]]:
+        refuse_hand_crafted_write(invocation.command_id)
         validate.validate_invocation(invocation)
         validate_extra_args(invocation.command_id, invocation.extra_args)
         validate.validate_positional_ids(invocation.command_id, invocation.extra_args)

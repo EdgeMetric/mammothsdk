@@ -2,12 +2,17 @@
 
 `dashboard create` (the legacy AI-generation engine) does not exist as a
 command: it has no handler in current apiv2 (always 404s; historically HTTP
-409 `4DASH012 DASHBOARD_LEGACY_CREATION_RETIRED`). Build a board from one
-sentence with `v3 generate`, and change it with `chat edit`. Author or edit the
-canvas yourself (`create-blank`, `canvas get` then `canvas save`, `pages add`)
-for what a sentence cannot say exactly: units, hiding a built-in tile or
-insight, an exact layout. `dashboard filter add` puts a filter control on a
-board (below).
+409 `4DASH012 DASHBOARD_LEGACY_CREATION_RETIRED`).
+
+**Intent only.** Every dashboard is built and changed from what the user asked
+for, in their own words: `dashboard v3 generate` builds a board, `dashboard chat
+edit` changes one. Pass the user's request as the `intent` / `prompt`; do not
+write canvas JSON, KPI cards, charts, filters or layout yourself, and do not
+work around a request the builder handled badly by hand-crafting the result.
+`dashboard create-blank`, `canvas save`, `canvas restore`, `pages add`,
+`template apply|fit|use|create` and `import-workbook` are for a person at the
+standalone CLI; an in-product run refuses them with `intent_only_dashboards`.
+Reads (`dashboard get`, `canvas get`, `descriptor-data`) are always fine.
 `dashboard source list` is an observed blocker on release (see
 capabilities); verify the view binding with `dashboard get DASHBOARD_ID`
 (`data.sources`) instead.
@@ -26,64 +31,20 @@ Before you say anything about a board that already exists (what a chart shows,
 its numbers, the period it covers), run `dashboard get DASHBOARD_ID`: its
 `values` carry every KPI card's and tile's number and the `period` it counts.
 Answer from those, never from an earlier turn.
+`dashboard get ID` and `dashboard canvas get ID` read by id whichever project is
+active, so a board open in another project needs no `--project`; the result's
+`project_id` names the project it lives in (null when the backend does not say).
 
-Discover page/widget/publish routes and verify the binding, draft/published
-data and terminal jobs. Use only returned IDs and schema confirmation policy;
-do not invent dashboard JSON or opaque task specs.
+Verify the board with `dashboard get DASHBOARD_ID` (binding, `values`) after
+every change. A creation response alone is not proof of a usable published
+view. If the dashboard is requested as a deliverable, keep the dashboard ID
+named in the returned `data` and do not clean it up. Otherwise, classify it
+explicitly as temporary/intermediate before authorizing deletion.
 
-Expected create-blank input is currently typed as
-`{"params":{"dataview_id":VIEW_ID,"title":"TITLE"}}`; confirm with
-`schema get dashboard.create-blank` first. If the dashboard is requested as a
-deliverable, preserve the dashboard ID actually named in the returned `data`
-object and do not clean it up. Otherwise, classify it explicitly as
-temporary/intermediate before authorizing deletion. Then run:
-
-```bash
-mammoth dashboard get DASHBOARD_ID
-mammoth schema find "dashboard page"
-mammoth schema find "dashboard"
-```
-
-Page/widget schemas vary by release. Read each schema, use returned IDs, and
-verify the binding plus draft/published data after every mutation. A
-creation response alone is not proof of a usable published view.
-
-## Authoring a board from a blank canvas
-
-`create-blank` gives one empty page. Author it by reading the canvas,
-editing the **active page** (`pages[0]`; a root-level `focus` is stored but
-never baked when pages exist) and writing the whole object back:
-
-```bash
-mammoth dashboard create-blank --yes --input '{"params": {"dataview_id": VIEW_ID, "title": "Overview"}}'
-mammoth dashboard canvas get DASHBOARD_ID > canvas.json      # data.canvas is the object to edit
-# pages[0].focus  = {"measure": "Sales Actual", "dim": "Location",
-#                    "kpis": [{"field": "Sales Actual", "agg": "sum", "label": "Sales", "unit": {"prefix": "£"}, "decimals": 0},
-#                             {"field": "Employee Ref", "agg": "countDistinct", "label": "Distinct staff"}]}
-# pages[0].added  = [{"kind": "bar", "title": "Actual vs Budget by Month", "measure": "Sales Actual", "measure2": "Sales Budget",
-#                     "agg": "sum", "date_bucket": {"field": "Month", "unit": "month"}},
-#                    {"kind": "hbar", "title": "Sales by Location", "dim": "Location", "measure": "Sales Actual", "agg": "sum", "sort": "desc"},
-#                    {"kind": "line", "title": "Occupancy rate", "measure": "occupancy_rate", "date_bucket": {"field": "Month", "unit": "month"}},
-#                    {"kind": "table", "title": "Detail", "columns": ["Location", "Month", "Places"], "sort_by": "Month", "limit": 100}]
-# derived         = [{"id": "occupancy_rate", "label": "Occupancy rate", "numerator": "Occupied", "denominator": "Places"}]
-# filters         = [{"field": "Month", "control": "range", "label": "Month"}, {"field": "Location", "control": "multi"}]
-mammoth dashboard canvas save DASHBOARD_ID --input '{"body": {"params": {"canvas": <edited data.canvas>}}}'
-mammoth job wait BAKE_JOB_ID                                  # data.bake_job_id from the save
-```
-
-Rules the backend enforces (each returns the pydantic path on failure):
-`added[].measure` is a column name — a ratio lives in `canvas.derived[]` and
-is referenced by id; `focus.kpis[].agg` accepts `countDistinct` (the only
-correct aggregation for a "distinct people" card under a date filter);
-`unit.prefix` goes on money cards only. `dashboard pages add --yes --confirm
-ID --input '{"body": {"params": {"pages": [{"title": ..., "focus": {...},
-"charts": [...]}]}}}'` adds a page, but that route runs through the LLM
-guard and may drop a unit it cannot evidence (it says so in `data.message`);
-`canvas save` keeps what you wrote. When the route refuses a chart (for
-example a `pie` that the data does not support), `data.chart_check.refused`
-names it. A new page that got no charts is removed, and
-`data.chart_check.removed_pages` lists it. Add a chart of a different kind
-(`hbar`, `line`, `table`) for that page.
+If the board is not what the user asked for (a wrong chart, a missing unit, a
+tile they do not want), say so in the next `chat edit` prompt in the user's
+words ("show revenue in pounds", "remove the Key insights tile"); the builder
+decides how.
 
 ## "Per region", "per month", "for each X": one board and a filter control
 
@@ -115,32 +76,6 @@ chart that groups by month (`date_bucket`).
 Build only the board you were asked for. If the user wants the board for one
 region only, that is the control's `default`, not a second board.
 
-## Hide a built-in tile or insight
-
-A board's built-in parts (Key insights, the KPI strip, the breakdown, trend and
-table tiles) re-derive from the data, so they cannot be deleted; the product's
-"Remove" hides them: it adds the tile's key to `hidden` on the page. Do the
-same with `canvas save`: read the canvas, add the key to the page's `hidden`,
-write it back.
-
-```bash
-mammoth dashboard canvas get DASHBOARD_ID > canvas.json     # data.canvas is the object to edit
-# pages[0].hidden = ["summary"]            Key insights tile
-#                   ["kpis"]               the whole KPI strip
-#                   ["breakdown", "mix", "secondary", "trend", "table"]   the other built-in tiles
-# canvas.hidden (no pages) is the same list on a canvas without pages
-mammoth dashboard canvas save DASHBOARD_ID --input '{"body": {"params": {"canvas": <edited data.canvas>}}}'
-mammoth job wait BAKE_JOB_ID                                # data.bake_job_id from the save
-```
-
-`hidden` sits on the page you mean (`pages[i]`, the page the tile is on), not
-on the canvas root, when the canvas has `pages`. Keep the keys already in the
-list. A single KPI card is removed by taking its entry out of
-`pages[i].focus.kpis`. To hide one insight rather than the whole tile, put its
-tag in `insights.hide` (tags: `leader`, `momentum`, `gap`, `laggard`,
-`concentration`, `secondary`, `peak`, `quality`, `spread`). Read the board back
-with `dashboard canvas get` and check the key is in `hidden`.
-
 ## Put the money on the board
 
 If the data has money (a price, an amount, revenue or cost), the dashboard
@@ -158,20 +93,20 @@ mammoth view transform math VIEW_ID --project PROJECT_ID \
   --input '{"dataset_id":DATASET_ID,"expression":"qty * price","new_column":"revenue"}'
 ```
 
-- Add every column the board needs before `create-blank`. A dashboard sees
-  only the columns the view had when the dashboard was made: `pages add`
-  refuses a later column ("isn't a measure in this data"). If you added it
-  after, make a new dashboard and delete the old one if you made it for this
-  task. The upload result's `before_dashboard` names the column to add.
-- Put revenue in a KPI (`focus.kpis`, `agg` `sum`, `unit.prefix` for the
-  currency) and in one or more charts (revenue by product, by segment, by
-  month). Rows with an empty price give an empty revenue. Say how many there
-  are in your report.
-- `create-blank`, `canvas save` and `pages add` return `deliverable_check`:
-  `money_not_shown` (with the `math` command in `fix`), `unit_price_summed`,
-  `columns_not_on_dashboard` (view columns added after the dashboard was
-  made, with the `create-blank` command in `fix`), and one `blank_values` entry for each column on the board that has blanks.
-  Fix each warning, or say in your report why you kept it.
+- Add every column the board needs before `v3 generate`. A dashboard sees
+  only the columns the view had when the dashboard was made; a later column
+  is not on it. If you added it after, generate a new dashboard and delete the
+  old one if you made it for this task. The upload result's `before_dashboard`
+  names the column to add.
+- Ask for the money in the intent ("revenue by product, by segment and by
+  month, with a revenue card"). Rows with an empty price give an empty
+  revenue. Say how many there are in your report.
+- A generate or edit result may carry `deliverable_check`: `money_not_shown`
+  (with the `math` command in `fix`), `unit_price_summed`,
+  `columns_not_on_dashboard` (view columns added after the dashboard was made)
+  and one `blank_values` entry for each column on the board that has blanks.
+  Fix each warning (add the column, then ask again in words), or say in your
+  report why you kept it.
 
 **Read the bindings back, then the numbers.** `dashboard canvas get` returns
 `data.meta.figures` — `"p1:kpi:2": {"descriptors": {"value": "<id>"}}` per
@@ -190,15 +125,9 @@ that equals a row count, is a wrong binding, not a data fact.
 
 ## Canvas, widget data and PDF
 
-Never save an invented canvas. Read it, change it, write it back:
-
-```bash
-mammoth dashboard canvas get DASHBOARD_ID   # data.canvas incl. style_tokens
-mammoth dashboard canvas save DASHBOARD_ID --input '{"body":{"params":{"canvas":CANVAS_FROM_GET}}}'
-```
-
-`canvas save` with `{"canvas": {}}` fails (`dataset` and other fields are
-required); the object returned by `canvas get` is the only known-good shape.
+`dashboard canvas get DASHBOARD_ID` reads the canvas (`data.canvas` incl.
+`style_tokens`). It is for reading; change a board with `chat edit`, never by
+writing a canvas back.
 Widget ids for `dashboard data draft` / `dashboard data published` come from
 that canvas: `--input '{"widget_id": "WIDGET_UUID"}'` (optional
 `global_filters` / `drilldown_filters` objects). `dashboard query` needs a

@@ -61,7 +61,7 @@ workspace            account and billing; an API token belongs to one workspace
 | Check data quality in the pipeline | Data Check, Checkpoint Alert | `view data-check create`, `view checkpoint create` |
 | Reuse a value or a SQL block | Parameters, Snippets | `parameter ...`, `snippet ...` |
 | Inspect or restore pipeline history | Version history | `view version list`, `view version apply` |
-| Build a dashboard | Publish | `dashboard create-blank`, `dashboard v3 generate`, `dashboard canvas ...` |
+| Build a dashboard | Publish | `dashboard v3 generate`, `dashboard chat edit` |
 | Deliver data | Export, Send to dataset | `view export csv`, `view export postgres` (and other destinations), `view export dataset` |
 | Automate | Automations | `automation ...`, `workflow ...` |
 | Undo a delete | Trash | `trash list`, `trash restore` |

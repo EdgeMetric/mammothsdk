@@ -100,6 +100,7 @@ ERROR_SUMMARIES: dict[str, str] = {
     "input_unreadable": _S_BAD_INPUT,
     "insecure_credential_file": _S_SETUP,
     "insecure_input_file": _S_BAD_INPUT,
+    "intent_only_dashboards": "The assistant builds dashboards from your request only.",
     "internal_column_name": "That column is internal to Mammoth and can't be used.",
     "internal_error": _S_INTERNAL,
     "interrupted": "This step was interrupted before it finished.",
