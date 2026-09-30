@@ -184,6 +184,13 @@ def _entry_values(entry: Any) -> dict[str, Any]:
 def _drawable(entry: dict[str, Any], axis: tuple[str, frozenset[str]] | None) -> dict[str, Any]:
     """*entry*, or an error when a grouped tile's rows carry only its measures: the
     grouping was lost and the chart has no axis to draw (UQA-RT2-05)."""
+    if axis is not None and "value" in entry:
+        # A tile bucketed by a date or a dim that bakes ONE total has no series to draw:
+        # a bar needs a dim, a trend is a line (UQA-RT10-03).
+        return {
+            "error": f"the tile evaluates to one total, not a series by {axis[0]},"
+            " so it draws nothing"
+        }
     rows = entry.get("rows")
     if axis is None or not rows:
         return entry

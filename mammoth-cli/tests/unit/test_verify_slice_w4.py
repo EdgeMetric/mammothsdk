@@ -291,6 +291,31 @@ def test_a_card_or_tile_the_board_period_scopes_says_which_period_it_counts() ->
     assert "period" not in trend
 
 
+def test_a_bucketed_tile_that_bakes_one_total_is_reported_as_drawing_nothing() -> None:
+    """UQA-RT10-03: board 171's "Revenue over time" was a bar bucketed by month with no
+    dim, which bakes one total; the tile drew no bars while the agent said it showed them."""
+    doc = {
+        "canvas": {
+            "added": [
+                {
+                    "id": "over-time",
+                    "kind": "bar",
+                    "measure": "Revenue",
+                    "date_bucket": {"field": "First invoice", "unit": "month"},
+                }
+            ]
+        },
+        "meta": {"figures": {"p1:add:over-time": {"descriptors": {"value": "d-total"}}}},
+    }
+
+    (tile,) = attach_values(
+        figure_bindings(doc), {"d-total": {"status": "success", "value": 553300.0}}
+    )
+
+    assert "First invoice" in tile["series"]["value"]["error"]
+    assert "value" not in tile["series"]["value"]
+
+
 def test_descriptor_data_results_are_found_at_top_level_or_under_response() -> None:
     assert results_of({"results": {"a": 1}}) == {"a": 1}
     assert results_of({"response": {"results": {"a": 1}}}) == {"a": 1}
