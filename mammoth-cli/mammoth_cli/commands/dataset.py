@@ -521,14 +521,21 @@ def dataset_interpretation(invocation: Invocation) -> HandlerResult:
 
     ``--input`` carries ``user_instruction`` (plain English, e.g. one of the
     suggestions ``dataset get`` shows), a ``structure_map`` from an earlier
-    preview, or a ``destination_dataset_id``; at least one is required.
+    preview, or a ``destination_dataset_id``; at least one is required. ``confirm``
+    alone also takes ``mode``: ``"original"`` keeps the file in its uploaded layout
+    (no other field then), ``"interpreted"`` is the default.
     """
     project_id = require_project(invocation)
     dataset_id = _require_int_positional(invocation, "dataset id")
     document = invocation.load_input() or {}
     kwargs: dict[str, Any] = {"dataset_id": dataset_id, "project_id": project_id}
-    _forward_optional(document, kwargs, _INTERPRETATION_FIELDS)
-    if not any(field in kwargs for field in _INTERPRETATION_FIELDS):
+    confirming = invocation.command_id == "dataset.interpretation.confirm"
+    _forward_optional(
+        document,
+        kwargs,
+        (*_INTERPRETATION_FIELDS, "mode") if confirming else _INTERPRETATION_FIELDS,
+    )
+    if not any(field in kwargs for field in (*_INTERPRETATION_FIELDS, "mode")):
         raise CliError(
             code=CODE_MISSING_ARGUMENT,
             message="Say how to read the file: pass one of " + ", ".join(_INTERPRETATION_FIELDS),

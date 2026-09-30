@@ -24,6 +24,7 @@ _list = list  # Alias to avoid shadowing by method name
 
 ERR_DATASET_ID_POSITIVE = "`dataset_id` must be a positive integer, got {0}."
 ERR_FILE_OBJECT_ID_POSITIVE = "`file_object_id` must be a positive integer, got {0}."
+_INTERPRETATION_MODES = ("interpreted", "original")
 
 
 class DatasetsAPI:
@@ -808,12 +809,15 @@ class DatasetsAPI:
         destination_dataset_id: int | None = None,
         workspace_id: int | None = None,
         project_id: int | None = None,
+        mode: str | None = None,
     ) -> dict[str, Any]:
         """Apply an interpretation to the whole file and finalise the dataset.
 
         Moves the dataset out of the state where its file has more than one plausible
         reading. Pass the ``structure_map`` a preview returned, or the same
-        ``user_instruction``.
+        ``user_instruction``; or ``mode="original"`` to keep the file in the layout
+        it was uploaded in (later files for the dataset are then ingested the same
+        way, without review).
 
         Args:
             dataset_id: ID of the dataset (must be > 0).
@@ -822,21 +826,36 @@ class DatasetsAPI:
             destination_dataset_id: Replay the saved recipe of this destination dataset.
             workspace_id: ID of the workspace (uses client default if not provided).
             project_id: ID of the project (uses client default if not provided).
+            mode: ``"interpreted"`` (the default: apply the reviewed reshape) or
+                ``"original"`` (keep the uploaded layout; takes no reshape inputs).
 
         Returns:
             Dict, empty when the backend answers with no body.
 
         Raises:
-            MammothValidationError: If *dataset_id* ≤ 0.
+            MammothValidationError: If *dataset_id* ≤ 0, *mode* is not one of the
+                two, or ``mode="original"`` comes with a reshape input.
         """
         if dataset_id <= 0:
             raise MammothValidationError(ERR_DATASET_ID_POSITIVE.format(dataset_id))
+        body = self._interpretation_body(user_instruction, structure_map, destination_dataset_id)
+        if mode is not None:
+            if mode not in _INTERPRETATION_MODES:
+                raise MammothValidationError(
+                    f"`mode` must be one of {', '.join(_INTERPRETATION_MODES)}, got {mode!r}."
+                )
+            if mode == "original" and body:
+                raise MammothValidationError(
+                    "`mode` 'original' keeps the uploaded layout and takes no "
+                    f"{', '.join(body)}; drop it or use mode 'interpreted'."
+                )
+            body["mode"] = mode
         ws = workspace_id or self._ws()
         proj = self._proj(project_id)
         return await self._client._request_json(
             "PATCH",
             f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/interpretation",
-            json=self._interpretation_body(user_instruction, structure_map, destination_dataset_id),
+            json=body,
         )
 
     @staticmethod
