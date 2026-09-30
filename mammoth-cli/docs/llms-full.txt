@@ -338,6 +338,12 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth dashboard exemplar extract --input '{"body": {"params": {"name": "Revenue report"}}}'
 - `mammoth dashboard figure-intent` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.figure_intent
   example: mammoth dashboard figure-intent 123 --input '{"body": {"params": {"intent": "Summarize revenue by region"}}}'
+- `mammoth dashboard filter add` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.canvas_save
+  example: mammoth dashboard filter add 123 --input '{"field": "sample"}'
+- `mammoth dashboard filter list` [read/none] -> mammoth.api.dashboards.DashboardsAPI.canvas_get
+  example: mammoth dashboard filter list 123
+- `mammoth dashboard filter remove` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.canvas_save
+  example: mammoth dashboard filter remove 123 --input '{"field": "sample"}'
 - `mammoth dashboard get` [read/none] -> mammoth.api.dashboards.DashboardsAPI.get
   example: mammoth dashboard get 123
 - `mammoth dashboard get-by-url` [read/none] -> mammoth.api.dashboards.DashboardsAPI.get_by_url

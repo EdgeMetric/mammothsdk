@@ -10,6 +10,7 @@ SDK method named by the command's reviewed manifest ``sdk_symbol``.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any, Literal, cast
 
@@ -41,6 +42,12 @@ from mammoth_cli.runtime.session import open_service, require_project, resolved_
 from mammoth_cli.services.argspec import arg_spec
 from mammoth_cli.services.board_values import board_values, dashboard_link
 from mammoth_cli.services.command_contract import bind_command_inputs
+from mammoth_cli.services.dashboard_filters import (
+    check_filter,
+    declared,
+    with_filter,
+    without_filter,
+)
 from mammoth_cli.services.dashboard_pages import check_added_pages
 from mammoth_cli.services.dashboard_review import (
     CANVAS_GET,
@@ -775,6 +782,62 @@ def _with_deliverable_check(
             },
         }
     return data
+
+
+_CANVAS_SAVE = "mammoth.api.dashboards.DashboardsAPI.canvas_save"
+_FILTER_KEYS = ("field", "control", "label", "default")
+
+
+def _edit_filters(
+    invocation: Invocation, edit: Callable[[dict[str, Any]], dict[str, Any]]
+) -> HandlerResult:
+    """Read the draft canvas, apply ``edit`` to the read, save it, and return the filters."""
+    dashboard_id = _require_int_positional(invocation, "dashboard id")
+    with open_service(invocation) as (service, auth):
+        current = _dump_model(service.call(CANVAS_GET, dashboard_id=dashboard_id))
+        canvas = edit(current)
+        saved = _dump_model(
+            service.call(
+                _CANVAS_SAVE,
+                dashboard_id=dashboard_id,
+                body={"params": {"canvas": canvas, "base_sequence": current["meta"]["sequence"]}},
+            )
+        )
+    result = {
+        "dashboard_id": dashboard_id,
+        "filters": declared(canvas),
+        "sequence": saved.get("sequence"),
+        "bake_job_id": saved.get("bake_job_id"),
+    }
+    return result, _meta(invocation, auth.workspace_id)
+
+
+def dashboard_filter_add(invocation: Invocation) -> HandlerResult:
+    """Add (or replace) the filter control on one column of a board."""
+    document = _bound_document(invocation)
+    _require_field(document, "field")
+    entry = {key: document[key] for key in _FILTER_KEYS if document.get(key) is not None}
+
+    def edit(current: dict[str, Any]) -> dict[str, Any]:
+        check_filter(current, entry)
+        return with_filter(current["canvas"], entry)
+
+    return _edit_filters(invocation, edit)
+
+
+def dashboard_filter_remove(invocation: Invocation) -> HandlerResult:
+    """Remove the filter control on one column of a board."""
+    field = str(_require_field(_bound_document(invocation), "field"))
+    return _edit_filters(invocation, lambda current: without_filter(current["canvas"], field))
+
+
+def dashboard_filter_list(invocation: Invocation) -> HandlerResult:
+    """List the filter controls a board declares."""
+    dashboard_id = _require_int_positional(invocation, "dashboard id")
+    with open_service(invocation) as (service, auth):
+        current = _dump_model(service.call(CANVAS_GET, dashboard_id=dashboard_id))
+    result = {"dashboard_id": dashboard_id, "filters": declared(current["canvas"])}
+    return result, _meta(invocation, auth.workspace_id)
 
 
 def dashboard_assess_twb(invocation: Invocation) -> HandlerResult:

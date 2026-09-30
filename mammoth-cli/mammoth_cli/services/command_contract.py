@@ -351,6 +351,22 @@ _VIEW_DATA_PROFILE_FIELDS = (
     FieldSpec("limit", required=False, annotation=int, default=50),
 )
 
+# dashboard.filter.add/remove are CLI composites over canvas get + canvas save
+# (DashboardsAPI.canvas_save is named in the manifest as the SDK anchor); the
+# canvas body is built by the handler, so the document carries only the filter.
+_DASHBOARD_FILTER_ADD_FIELDS = (
+    FieldSpec("field", required=True, annotation=str),
+    FieldSpec(
+        "control",
+        required=False,
+        annotation=Literal["multi", "dropdown", "chips", "search", "range", "motion"] | None,
+        default=None,
+    ),
+    FieldSpec("label", required=False, annotation=str | None, default=None),
+    FieldSpec("default", required=False, annotation=list[str] | None, default=None),
+)
+_DASHBOARD_FILTER_REMOVE_FIELDS = (FieldSpec("field", required=True, annotation=str),)
+
 # The remaining S1 commands are intentionally closed zero-input commands.  A
 # command may still receive ordinary positional/context values; those are
 # represented by ``positionals`` and never become structured-input keys.
@@ -725,6 +741,12 @@ def resolve_command_contract(command_id: str) -> ResolvedCommandContract | None:
         special_fields = _VIEW_DATA_COMPARE_FIELDS
     elif command_id == "view.data.profile":
         special_fields = _VIEW_DATA_PROFILE_FIELDS
+    elif command_id == "dashboard.filter.add":
+        special_fields = _DASHBOARD_FILTER_ADD_FIELDS
+    elif command_id == "dashboard.filter.remove":
+        special_fields = _DASHBOARD_FILTER_REMOVE_FIELDS
+    elif command_id == "dashboard.filter.list":
+        special_fields = ()
     local_fields = _LOCAL_CONTRACT_FIELDS.get(command_id, ()) if is_local else None
     fields = tuple(
         field

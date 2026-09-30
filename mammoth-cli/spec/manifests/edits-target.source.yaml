@@ -48,6 +48,8 @@ edits_target_commands:
 - dashboard.embed.lifetime.set
 - dashboard.embed.origin.revoke
 - dashboard.embed.secret.rotate
+- dashboard.filter.add
+- dashboard.filter.remove
 - dashboard.pages.add
 - dashboard.qa.comment.delete
 - dashboard.qa.session.delete
