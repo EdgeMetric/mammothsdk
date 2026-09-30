@@ -11,6 +11,10 @@ input comes from the strict ``--input`` document.
 
 from __future__ import annotations
 
+import time
+from collections.abc import Callable
+from concurrent.futures import ThreadPoolExecutor
+from dataclasses import replace
 from typing import Any
 
 from mammoth_cli.context import profiles
@@ -421,8 +425,7 @@ def _bulk_update_project_ids(patch_data: Any) -> list[int]:
         raise CliError(
             code=CODE_INVALID_ARGUMENT,
             message=(
-                "patch_data must be a ProjectsPatch body whose every value item names a "
-                "project_id."
+                "patch_data must be a ProjectsPatch body whose every value item names a project_id."
             ),
             exit_status=EXIT_USAGE,
             hint=(
@@ -588,90 +591,207 @@ def _datasets_to_check(service: Any, project_id: int, scoped: int | None) -> lis
     return listing.get("datasets", []) if isinstance(listing, dict) else []
 
 
+_CHECK_WORKERS = 6
+
+
+def _in_worker[T](invocation: Invocation, work: Callable[[Any, Any], T]) -> T:
+    """Run ``work(service, auth)`` on a service of its own, without a spinner.
+
+    One service drives one event loop, which a second thread cannot enter
+    while the first is inside it, so each worker thread opens its own.
+    """
+    with open_service(replace(invocation, no_progress=True)) as (service, auth):
+        return work(service, auth)
+
+
+def _map_checks[T](
+    invocation: Invocation,
+    service: Any,
+    auth: Any,
+    items: list[Any],
+    work: Callable[[Any, Any, Any], T],
+) -> list[T]:
+    """``work(service, auth, item)`` for each item, several at once, in item order.
+
+    ``project check`` made three to five sequential calls per resource, so a
+    project of a few dozen took minutes (RT18-05: 6+ min). One item, or none,
+    uses the service already open.
+    """
+    if len(items) <= 1:
+        return [work(service, auth, item) for item in items]
+    with ThreadPoolExecutor(max_workers=min(_CHECK_WORKERS, len(items))) as pool:
+        return list(
+            pool.map(
+                lambda item: _in_worker(invocation, lambda svc, ath: work(svc, ath, item)),
+                items,
+            )
+        )
+
+
+def _preview_dataset(service: Any, _auth: Any, args: tuple[Any, int | None]) -> dict[str, Any]:
+    from mammoth_cli.commands.view import upload_preview
+
+    dataset, project_id = args
+    dataset_id = dataset.get("id") if isinstance(dataset, dict) else None
+    if not isinstance(dataset_id, int):
+        return {"preview_error": "dataset entry has no integer id"}
+    return upload_preview(service, dataset_id, project_id)
+
+
+def _check_dashboard(invocation: Invocation) -> Callable[[Any, Any, Any], dict[str, Any]]:
+    from mammoth_cli.commands.dashboard import _with_deliverable_check
+
+    def _check(service: Any, auth: Any, board: Any) -> dict[str, Any]:
+        dashboard_id = board.get("id") if isinstance(board, dict) else None
+        if not isinstance(dashboard_id, int):
+            return {}
+        done = _with_deliverable_check(
+            invocation, service, auth, {"dashboard_id": dashboard_id}, {"id": dashboard_id}
+        )
+        check = done.get("deliverable_check") if isinstance(done, dict) else None
+        return {"id": dashboard_id, "title": board.get("title"), "check": check or {}}
+
+    return _check
+
+
+def _dataset_entry(dataset: dict[str, Any], preview: dict[str, Any]) -> dict[str, Any]:
+    entry = {
+        "dataset_id": dataset.get("id"),
+        "dataset_name": dataset.get("name"),
+        "view_id": preview["view_id"],
+        "row_count": preview.get("row_count"),
+        "column_warnings": preview.get("column_warnings", []),
+        "column_checks": preview["column_checks"],
+    }
+    for key in ("before_dashboard", "other_views"):
+        if key in preview:
+            entry[key] = preview[key]
+    return entry
+
+
+def _other_views_line(dataset: dict[str, Any], preview: dict[str, Any]) -> str:
+    # Only the first (most recent) view is previewed and checked. Say so
+    # explicitly instead of letting silence read as "this is the only view" --
+    # which view to change is the user's call unless they already named one.
+    other_views = preview["other_views"]
+    other_desc = ", ".join(f"{v['id']} ({v.get('name')})" for v in other_views)
+    return (
+        f"dataset {dataset.get('name')} (id {dataset.get('id')}) has "
+        f"{len(other_views) + 1} views; only view {preview['view_id']} was "
+        f"checked (others: {other_desc}). Which view to change is the "
+        "user's pick unless they named one."
+    )
+
+
+def _dataset_status(dataset: dict[str, Any], preview: dict[str, Any]) -> dict[str, Any]:
+    """One status row: freshness (is the data current?) apart from data quality."""
+    row: dict[str, Any] = {"kind": "dataset", "dataset_id": dataset.get("id")}
+    row["name"] = dataset.get("name")
+    if "preview_error" in preview:
+        return {**row, "error": preview["preview_error"]}
+    return {
+        **row,
+        "view_id": preview["view_id"],
+        "freshness": preview.get("freshness", {"state": "unknown"}),
+        "data_quality": {
+            "warnings": len(preview.get("column_warnings", [])),
+            "rows_checked": preview["column_checks"]["rows_checked"],
+        },
+    }
+
+
+def _dashboard_status(result: dict[str, Any]) -> dict[str, Any]:
+    check = result["check"]
+    row: dict[str, Any] = {"kind": "dashboard", "id": result["id"], "title": result["title"]}
+    if check.get("checked") is False:
+        return {**row, "error": check.get("error", "the dashboard could not be checked")}
+    return {**row, "data_quality": {"warnings": len(check.get("warnings", []))}}
+
+
+def _stale_lines(statuses: list[dict[str, Any]]) -> list[str]:
+    return [
+        f"view {row['view_id']} ({row['name']}): data is {row['freshness']['state']}"
+        " (freshness, not data quality); its numbers may not be current."
+        for row in statuses
+        if row.get("freshness", {}).get("state") in ("running", "out_of_sync")
+    ]
+
+
 def project_check(invocation: Invocation) -> HandlerResult:
     """List what a report on this project must still account for.
 
     Read-only local composite, run before reporting: for each dataset, the
     first view's ``column_warnings`` and ``before_dashboard``; for each
     dashboard, its ``deliverable_check``. ``to_report`` flattens them into
-    one line per finding. Given a DATASET_ID it reads only that dataset's first
-    view (no dataset list, no dashboards). Cold-agent evals (2.0.41) left one column's blanks
-    undecided in every run, because the warning sat in an earlier result.
+    one line per finding; ``resources`` has one status row per dataset and
+    dashboard (freshness apart from data quality, or the error that stopped
+    its check). Resources are checked several at once. Given a DATASET_ID it
+    reads only that dataset's first view (no dataset list, no dashboards).
+    Cold-agent evals (2.0.41) left one column's blanks undecided in every
+    run, because the warning sat in an earlier result.
     """
-    from mammoth_cli.commands.dashboard import _with_deliverable_check
-    from mammoth_cli.commands.view import upload_preview
-
+    started = time.monotonic()
     project_id = _project_id(invocation)
     views: list[dict[str, Any]] = []
     dashboards: list[dict[str, Any]] = []
     to_report: list[str] = []
     checked: list[dict[str, Any]] = []
     skipped: list[dict[str, Any]] = []
+    statuses: list[dict[str, Any]] = []
     scoped_dataset = _scoped_dataset_id(invocation)
     with open_service(invocation) as (service, auth):
         datasets = _datasets_to_check(service, project_id, scoped_dataset)
-        for dataset in datasets:
-            dataset_id = dataset.get("id") if isinstance(dataset, dict) else None
-            if not isinstance(dataset_id, int):
-                skipped.append({"dataset_id": None, "reason": "dataset entry has no integer id"})
-                continue
-            preview = upload_preview(service, dataset_id, project_id)
+        previews = _map_checks(
+            invocation,
+            service,
+            auth,
+            [(dataset, project_id) for dataset in datasets],
+            _preview_dataset,
+        )
+        for dataset, preview in zip(datasets, previews, strict=True):
+            statuses.append(_dataset_status(dataset if isinstance(dataset, dict) else {}, preview))
             if "preview_error" in preview:
-                skipped.append({"dataset_id": dataset_id, "reason": preview["preview_error"]})
-                continue
-            entry = {
-                "dataset_id": dataset_id,
-                "dataset_name": dataset.get("name"),
-                "view_id": preview["view_id"],
-                "row_count": preview.get("row_count"),
-                "column_warnings": preview.get("column_warnings", []),
-                "column_checks": preview["column_checks"],
-            }
-            if "before_dashboard" in preview:
-                entry["before_dashboard"] = preview["before_dashboard"]
-            other_views = preview.get("other_views")
-            if other_views:
-                # Only the first (most recent) view is previewed and checked.
-                # Say so explicitly instead of letting silence read as "this
-                # is the only view" -- which view to change is the user's
-                # call unless they already named one.
-                entry["other_views"] = other_views
-                other_desc = ", ".join(f"{v['id']} ({v.get('name')})" for v in other_views)
-                to_report.append(
-                    f"dataset {dataset.get('name')} (id {dataset_id}) has "
-                    f"{len(other_views) + 1} views; only view {preview['view_id']} was "
-                    f"checked (others: {other_desc}). Which view to change is the "
-                    "user's pick unless they named one."
+                dataset_id = dataset.get("id") if isinstance(dataset, dict) else None
+                skipped.append(
+                    {
+                        "dataset_id": dataset_id if isinstance(dataset_id, int) else None,
+                        "reason": preview["preview_error"],
+                    }
                 )
+                continue
+            entry = _dataset_entry(dataset, preview)
+            if "other_views" in preview:
+                to_report.append(_other_views_line(dataset, preview))
             views.append(entry)
             checked.append(
                 {
-                    "dataset_id": dataset_id,
+                    "dataset_id": dataset["id"],
                     "view_id": preview["view_id"],
                     "rows_checked": preview["column_checks"]["rows_checked"],
                 }
             )
             where = f"view {preview['view_id']} ({dataset.get('name')})"
             to_report += [_report_line(where, w) for w in entry["column_warnings"]]
+        to_report += _stale_lines(statuses)
         boards = (
             [] if scoped_dataset else service.call(_DASHBOARDS_LIST_SYMBOL, project_id=project_id)
         )
-        for board in boards if isinstance(boards, list) else []:
-            dashboard_id = board.get("id") if isinstance(board, dict) else None
-            if not isinstance(dashboard_id, int):
-                continue
-            checked = _with_deliverable_check(
-                invocation, service, auth, {"dashboard_id": dashboard_id}, {"id": dashboard_id}
-            )
-            check = checked.get("deliverable_check") if isinstance(checked, dict) else None
-            warnings = check.get("warnings", []) if isinstance(check, dict) else []
-            dashboards.append(
-                {"id": dashboard_id, "title": board.get("title"), "warnings": warnings}
-            )
-            to_report += [_report_line(f"dashboard {dashboard_id}", w) for w in warnings]
+        results = _map_checks(
+            invocation,
+            service,
+            auth,
+            [b for b in boards if isinstance(b, dict)] if isinstance(boards, list) else [],
+            _check_dashboard(invocation),
+        )
+        for result in filter(None, results):
+            warnings = result["check"].get("warnings", [])
+            dashboards.append({"id": result["id"], "title": result["title"], "warnings": warnings})
+            statuses.append(_dashboard_status(result))
+            to_report += [_report_line(f"dashboard {result['id']}", w) for w in warnings]
         meta = _meta(invocation, auth.workspace_id, project_id)
     return {
         "project_id": project_id,
+        "resources": statuses,
         "views": views,
         "dashboards": dashboards,
         "checked": checked,
@@ -683,4 +803,5 @@ def project_check(invocation: Invocation) -> HandlerResult:
         ),
         "to_report": to_report,
         **({} if to_report else {"note": "Nothing open in the views or dashboards."}),
+        "elapsed_seconds": round(time.monotonic() - started, 1),
     }, meta

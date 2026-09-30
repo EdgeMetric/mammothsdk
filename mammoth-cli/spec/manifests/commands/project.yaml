@@ -124,7 +124,7 @@ commands:
   - CT-PROJECT-CHECK-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: Reads the first view of each dataset (the one uploads and the playbooks use) and one data page per view. Given DATASET_ID it reads only that dataset's first view and skips the dashboards.
+  known_restrictions: Reads the first view of each dataset (the one uploads and the playbooks use) and one data page per view, six resources at a time. `resources` has one status row per dataset and dashboard with its freshness (in_sync, out_of_sync or running, with data_updated_at) kept apart from its data quality (warning count), or the error that stopped its check. Given DATASET_ID it reads only that dataset's first view and skips the dashboards.
   reviewed_by: primary
 - command_id: project.checkpoint.list
   command_path: project checkpoint list
