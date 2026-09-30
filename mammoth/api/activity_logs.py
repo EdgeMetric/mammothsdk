@@ -13,8 +13,8 @@ class ActivityLogsAPI:
 
     Access via client.activity_logs::
 
-        logs = client.activity_logs.list()
-        export = client.activity_logs.export(format="csv")
+        logs = await client.activity_logs.list()
+        export = await client.activity_logs.export(format="csv")
     """
 
     def __init__(self, client: MammothClient) -> None:

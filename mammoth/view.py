@@ -11,14 +11,14 @@ Get a View via ``client.views.get(view_id)``::
     client = MammothClient(api_token="mm_...", workspace_id=11)
     client.set_project_id(10)
 
-    view = client.views.get(1039)
+    view = await client.views.get(1039)
     print(view.display_names)     # ["Sales", "Region", ...]
     print(view.columns)           # {"Sales": "column_1", ...}
 
 Transformations are applied in-place and refresh the view metadata::
 
-    view.filter_rows(Condition("Sales", Operator.GTE, 1000))
-    view.set_values(
+    await view.filter_rows(Condition("Sales", Operator.GTE, 1000))
+    await view.set_values(
         new_column="Risk",
         column_type=ColumnType.TEXT,
         values=[
@@ -26,13 +26,13 @@ Transformations are applied in-place and refresh the view metadata::
             SetValue("Low"),
         ],
     )
-    view.math("Price * Quantity", new_column="Total")
+    await view.math("Price * Quantity", new_column="Total")
 
 Exports are accessed via ``view.export``::
 
-    view.export.to_csv("output.csv")
-    view.export.to_postgres(host="db.example.com", port=5432, ...)
-    view.branch_out(dataset_name="Sales snapshot")
+    await view.export.to_csv("output.csv")
+    await view.export.to_postgres(host="db.example.com", port=5432, ...)
+    await view.branch_out(dataset_name="Sales snapshot")
 """
 
 from __future__ import annotations
@@ -609,9 +609,9 @@ class View(
 
         Examples::
 
-            rows = view.data(limit=10)
-            rows = view.data(columns=["Name", "Sales"], limit=50)
-            rows = view.data(
+            rows = await view.data(limit=10)
+            rows = await view.data(columns=["Name", "Sales"], limit=50)
+            rows = await view.data(
                 condition=Condition("Sales", Operator.GTE, 1000),
                 limit=100,
             )
@@ -640,16 +640,16 @@ class View(
 
             Pipeline-derived columns (from add_column, math, etc.) are
             included only when the server response contains ``taskwise_info``.
-            If a column is missing after refresh, call ``view.data(limit=1)``
+            If a column is missing after refresh, call ``await view.data(limit=1)``
             to verify the column exists in the output, or re-get the view
-            with ``client.views.get(view.id)``.
+            with ``await client.views.get(view.id)``.
 
         Returns:
             self (for chaining).
 
         Example::
 
-            view.refresh()
+            await view.refresh()
             print(view.display_names)  # updated column list
         """
         proj = getattr(self._client, "project_id", None)
@@ -700,7 +700,7 @@ class View(
 
         Example::
 
-            tasks = view.list_tasks()
+            tasks = await view.list_tasks()
             for t in tasks:
                 print(f"#{t['sequence']} {t['task_key']}")
         """
@@ -721,8 +721,8 @@ class View(
 
         Example::
 
-            tasks = view.list_tasks()
-            view.delete_task(tasks[-1]["id"])  # remove last task
+            tasks = await view.list_tasks()
+            await view.delete_task(tasks[-1]["id"])  # remove last task
         """
         result = await self._client.pipeline.delete_task(self.id, task_id, self.dataset_id)
         await self._client.pipeline.wait_for_pipeline(self.id, self.dataset_id)
@@ -741,7 +741,7 @@ class View(
 
         Example::
 
-            preview = view.preview_task({"DELETE": ["column_abc123"]})
+            preview = await view.preview_task({"DELETE": ["column_abc123"]})
         """
         return await self._client.pipeline.preview_task(self.id, task_spec, self.dataset_id)
 
@@ -913,12 +913,12 @@ class View(
     def draft(self) -> _DraftContext:
         """Context manager for draft mode.
 
-        Enters draft mode on ``__enter__``, submits on clean exit,
+        Enters draft mode on ``__aenter__``, submits on clean exit,
         discards on exception::
 
-            with view.draft():
-                view.filter_rows(Condition("Sales", Operator.GTE, 1000))
-                view.math("Price * 2", new_column="Double")
+            async with view.draft():
+                await view.filter_rows(Condition("Sales", Operator.GTE, 1000))
+                await view.math("Price * 2", new_column="Double")
             # Pipeline runs once for both tasks
         """
         return _DraftContext(self)
@@ -973,7 +973,7 @@ class View(
 
         Example::
 
-            new_id = view.branch_out(dataset_name="Q1 snapshot")
+            new_id = await view.branch_out(dataset_name="Q1 snapshot")
         """
         return await self.export.to_dataset(
             dataset_name,
@@ -995,9 +995,9 @@ class ViewExport:
 
     Examples::
 
-        view.export.to_csv("output.csv")
-        view.export.to_postgres(host="...", database="...", table="...")
-        view.export.list()
+        await view.export.to_csv("output.csv")
+        await view.export.to_postgres(host="...", database="...", table="...")
+        await view.export.list()
     """
 
     def __init__(self, view: View) -> None:
@@ -1055,7 +1055,7 @@ class ViewExport:
 
         Example::
 
-            view.export.to_postgres(
+            await view.export.to_postgres(
                 host="db.example.com", port=5432,
                 database="analytics", table="sales_export",
                 username="user", password="pass",
@@ -1136,8 +1136,8 @@ class ViewExport:
 
         Example::
 
-            result = view.export.to_s3(file_name="report.csv")
-            view.export.to_s3(file_type=ExportFileType.PARQUET)
+            result = await view.export.to_s3(file_name="report.csv")
+            await view.export.to_s3(file_type=ExportFileType.PARQUET)
         """
         if file_name is None:
             ts = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -1169,8 +1169,8 @@ class ViewExport:
     ) -> int:
         """Save this view's data as an internal Mammoth dataset (branch out).
 
-        Runs through the ``internal_dataset`` export handler and blocks until
-        the dataset is materialised.
+        Runs through the ``internal_dataset`` export handler; the awaited call
+        returns only once the dataset is materialised.
 
         Args:
             dataset_name: Name for the new dataset (display name when writing
@@ -1200,8 +1200,8 @@ class ViewExport:
 
         Example::
 
-            new_id = view.export.to_dataset("Sales snapshot")
-            sent = view.export.to_dataset("Sales feed", target_project_id=57)
+            new_id = await view.export.to_dataset("Sales snapshot")
+            sent = await view.export.to_dataset("Sales feed", target_project_id=57)
         """
         cross_project: dict[str, Any] = {}
         if target_project_id is not None:
@@ -1245,7 +1245,7 @@ class ViewExport:
 
         Example::
 
-            path = view.export.to_csv("output.csv")
+            path = await view.export.to_csv("output.csv")
             print(f"Downloaded to {path}")
         """
         return await self._client.exports.to_csv(
@@ -1284,7 +1284,7 @@ class ViewExport:
 
         Example::
 
-            view.export.to_ftp(
+            await view.export.to_ftp(
                 domain="ftp.example.com", directory="/exports",
                 file="sales.csv", username="user", password="pass",
             )
@@ -1389,7 +1389,7 @@ class ViewExport:
 
         Example::
 
-            view.export.to_email(emails=["analyst@example.com"], subject="Q1")
+            await view.export.to_email(emails=["analyst@example.com"], subject="Q1")
 
         Raises:
             MammothValidationError: If *emails* is empty.
@@ -1888,7 +1888,7 @@ class ViewExport:
 
         Example::
 
-            view.export.publish_to_db(table="sales_dashboard")
+            await view.export.publish_to_db(table="sales_dashboard")
         """
         ws = self._client.workspace_id
         proj = getattr(self._client, "project_id", None)
@@ -1911,7 +1911,7 @@ class ViewExport:
 
         Example::
 
-            exports = view.export.list()
+            exports = await view.export.list()
             for exp in exports:
                 print(f"{exp['id']}: {exp['handler_type']}")
         """
@@ -1933,8 +1933,8 @@ class ViewExport:
 
         Example::
 
-            exports = view.export.list()
-            view.export.delete(exports[0]["id"])
+            exports = await view.export.list()
+            await view.export.delete(exports[0]["id"])
         """
         ws = self._client.workspace_id
         proj = getattr(self._client, "project_id", None)

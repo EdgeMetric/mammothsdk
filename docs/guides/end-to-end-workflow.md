@@ -37,11 +37,11 @@ client.set_project_id(42)
 
 ```python
 # Upload a CSV file -- returns the new dataset ID
-dataset_id = client.files.upload("sales_data.csv")
+dataset_id = await client.files.upload("sales_data.csv")
 print(f"Created dataset: {dataset_id}")
 
 # Get the default View for the uploaded dataset
-views = client.views.list(dataset_id=dataset_id)
+views = await client.views.list(dataset_id=dataset_id)
 view = views[0]
 ```
 
@@ -49,13 +49,13 @@ Other upload options:
 
 ```python
 # Multiple files at once
-dataset_ids = client.files.upload(["sales.csv", "customers.xlsx"])
+dataset_ids = await client.files.upload(["sales.csv", "customers.xlsx"])
 
 # Upload an entire folder
-dataset_ids = client.files.upload_folder("./data/")
+dataset_ids = await client.files.upload_folder("./data/")
 
 # Append to an existing dataset
-client.files.upload("new_rows.csv", append_to_ds_id=dataset_id)
+await client.files.upload("new_rows.csv", append_to_ds_id=dataset_id)
 ```
 
 See the [Files API reference](../api/files.md) for the full `upload()` signature.
@@ -71,7 +71,7 @@ print(f"Types: {view.column_types}")
 # e.g., {"Customer": "TEXT", "Region": "TEXT", "Sales": "NUMERIC", "Order Date": "TEXT"}
 
 # Preview the data — returns {"data": [rows...], "paging": {...}}
-result = view.data(limit=5)
+result = await view.data(limit=5)
 rows = result["data"]
 ```
 
@@ -82,7 +82,7 @@ rows = result["data"]
     from mammoth import ConversionSpec
 
     from mammoth import ColumnType
-    view.convert_type([ConversionSpec(column="Order Date", to=ColumnType.DATE, format="MM/DD/YYYY")])
+    await view.convert_type([ConversionSpec(column="Order Date", to=ColumnType.DATE, format="MM/DD/YYYY")])
     ```
 
 ## 5. Apply transformations
@@ -93,16 +93,16 @@ rows = result["data"]
 from mammoth import Condition, Operator, FilterType
 
 # Keep rows where Sales >= 1000
-view.filter_rows(Condition("Sales", Operator.GTE, 1000))
+await view.filter_rows(Condition("Sales", Operator.GTE, 1000))
 
 # Remove rows where Region is empty
-view.filter_rows(
+await view.filter_rows(
     Condition("Region", Operator.IS_EMPTY),
     filter_type=FilterType.REMOVE,
 )
 
 # Negate a condition with ~
-view.filter_rows(~Condition("Status", Operator.EQ, "Cancelled"))
+await view.filter_rows(~Condition("Status", Operator.EQ, "Cancelled"))
 ```
 
 ### Add computed columns
@@ -111,7 +111,7 @@ view.filter_rows(~Condition("Status", Operator.EQ, "Cancelled"))
 from mammoth import ColumnType, SetValue
 
 # Conditional labeling
-view.set_values(
+await view.set_values(
     new_column="Tier",
     column_type=ColumnType.TEXT,
     values=[
@@ -122,7 +122,7 @@ view.set_values(
 )
 
 # Math expression
-view.math("Price * Quantity", new_column="Revenue")
+await view.math("Price * Quantity", new_column="Revenue")
 ```
 
 ### Aggregate with pivot
@@ -130,7 +130,7 @@ view.math("Price * Quantity", new_column="Revenue")
 ```python
 from mammoth import AggregateFunction, AggregationSpec
 
-view.pivot(
+await view.pivot(
     group_by=["Region"],
     aggregations=[
         AggregationSpec(column="Sales", function=AggregateFunction.SUM, as_name="Total Sales"),
@@ -146,13 +146,13 @@ view.pivot(
 from mammoth import TextCase, DateComponent, WindowFunction, SortDirection
 
 # Text: change case
-view.text_transform(["Customer"], case=TextCase.UPPER)
+await view.text_transform(["Customer"], case=TextCase.UPPER)
 
 # Date: extract year
-view.extract_date("Order Date", DateComponent.YEAR, new_column="Year")
+await view.extract_date("Order Date", DateComponent.YEAR, new_column="Year")
 
 # Window: rank within groups
-view.window(
+await view.window(
     function=WindowFunction.ROW_NUMBER,
     new_column="Rank",
     partition_by=["Region"],
@@ -167,21 +167,21 @@ See the [Views reference](../api/views.md) for all 25+ transformation methods.
 ### Download as CSV
 
 ```python
-path = view.export.to_csv("output.csv")
+path = await view.export.to_csv("output.csv")
 print(f"Saved to {path}")
 ```
 
 ### Export to S3
 
 ```python
-result = view.export.to_s3(file_name="monthly_report.csv")
+result = await view.export.to_s3(file_name="monthly_report.csv")
 ```
 
 ### Export to a database
 
 ```python
 # PostgreSQL
-view.export.to_postgres(
+await view.export.to_postgres(
     host="db.example.com",
     port=5432,
     database="analytics",
@@ -191,7 +191,7 @@ view.export.to_postgres(
 )
 
 # MySQL
-view.export.to_mysql(
+await view.export.to_mysql(
     host="db.example.com",
     port=3306,
     database="analytics",
@@ -204,10 +204,10 @@ view.export.to_mysql(
 ### Other export targets
 
 ```python
-view.export.to_bigquery(...)
-view.export.to_redshift(...)
-view.export.to_sftp(host="sftp.example.com", path="/exports/data.csv", username="user", password="pass")
-view.export.to_email(recipients=["team@example.com"])
+await view.export.to_bigquery(...)
+await view.export.to_redshift(...)
+await view.export.to_sftp(host="sftp.example.com", path="/exports/data.csv", username="user", password="pass")
+await view.export.to_email(recipients=["team@example.com"])
 ```
 
 See the [Exports reference](../api/exports.md) for all destinations.
@@ -239,20 +239,20 @@ client.set_project_id(42)
 
 try:
     # 2. Upload data
-    dataset_id = client.files.upload("sales_data.csv")
-    views = client.views.list(dataset_id=dataset_id)
+    dataset_id = await client.files.upload("sales_data.csv")
+    views = await client.views.list(dataset_id=dataset_id)
     view = views[0]
     print(f"Uploaded: {view.name} ({len(view.display_names)} columns)")
 
     # 3. Clean data
-    view.filter_rows(
+    await view.filter_rows(
         Condition("Region", Operator.IS_EMPTY),
         filter_type=FilterType.REMOVE,
     )
-    view.filter_rows(Condition("Sales", Operator.GTE, 0))
+    await view.filter_rows(Condition("Sales", Operator.GTE, 0))
 
     # 4. Transform
-    view.set_values(
+    await view.set_values(
         new_column="Tier",
         column_type=ColumnType.TEXT,
         values=[
@@ -261,10 +261,10 @@ try:
             SetValue("Basic"),
         ],
     )
-    view.math("Price * Quantity", new_column="Revenue")
+    await view.math("Price * Quantity", new_column="Revenue")
 
     # 5. Export
-    path = view.export.to_csv("output.csv")
+    path = await view.export.to_csv("output.csv")
     print(f"Exported to {path}")
 
 except MammothAPIError as e:

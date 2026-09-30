@@ -25,11 +25,11 @@ class AnnotationsAPI:
 
     Access via ``client.annotations``::
 
-        annotation = client.annotations.create(
+        annotation = await client.annotations.create(
             target_type="dataview", target_id=42, body="Looks off, please check."
         )
-        client.annotations.comment_add(annotation["id"], body="Fixed in latest run.")
-        client.annotations.update(annotation["id"], status="resolved")
+        await client.annotations.comment_add(annotation["id"], body="Fixed in latest run.")
+        await client.annotations.update(annotation["id"], status="resolved")
     """
 
     def __init__(self, client: MammothClient) -> None:

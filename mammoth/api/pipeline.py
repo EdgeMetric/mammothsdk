@@ -544,7 +544,7 @@ class PipelineAPI:
         the pipeline transitions through transient states before data is ready:
         ``modifying → modified → running → ready``.
 
-        This method blocks until the pipeline reaches a terminal state
+        The awaited call returns only once the pipeline reaches a terminal state
         (``ready``, ``runtime_error``, ``ref_error``).
 
         Args:

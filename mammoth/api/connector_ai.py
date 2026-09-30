@@ -18,8 +18,8 @@ class ConnectorAIAPI:
 
     Access via ``client.connector_ai``::
 
-        client.connector_ai.chat(body={"message": "Connect to Postgres"})
-        sessions = client.connector_ai.session_list()
+        await client.connector_ai.chat(body={"message": "Connect to Postgres"})
+        sessions = await client.connector_ai.session_list()
     """
 
     def __init__(self, client: MammothClient) -> None:

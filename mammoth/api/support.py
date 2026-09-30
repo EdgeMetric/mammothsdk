@@ -43,9 +43,9 @@ class SupportAPI:
 
     Access via ``client.support``::
 
-        plans = client.support.plan_list()
-        plan = client.support.plan_create(name="Pro", monthly_price=49.0, is_self_serve=True)
-        client.support.workspace_suspend_access(1234, reason="Non-payment")
+        plans = await client.support.plan_list()
+        plan = await client.support.plan_create(name="Pro", monthly_price=49.0, is_self_serve=True)
+        await client.support.workspace_suspend_access(1234, reason="Non-payment")
 
     Note:
         These are administrative endpoints. IDs such as ``workspace_id`` and

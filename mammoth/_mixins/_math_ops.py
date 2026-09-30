@@ -40,8 +40,8 @@ class MathOpsMixin(ViewHost):
 
         Examples::
 
-            view.math("Price * Quantity", new_column="Total")
-            view.math("(Price + Tax) * 1.1", new_column="Grand Total")
+            await view.math("Price * Quantity", new_column="Total")
+            await view.math("(Price + Tax) * 1.1", new_column="Grand Total")
         """
         # The parser consumes a scoped display-name map. Add exact internal
         # identities as aliases so callers can use either form without any
@@ -109,7 +109,7 @@ class MathOpsMixin(ViewHost):
             from mammoth import SmallLargeFunction
 
             # 2nd largest value among three numeric columns
-            view.small_large(
+            await view.small_large(
                 SmallLargeFunction.LARGE,
                 columns=["Q1 Sales", "Q2 Sales", "Q3 Sales"],
                 index=2,
@@ -117,7 +117,7 @@ class MathOpsMixin(ViewHost):
             )
 
             # Smallest of a column and the constant 0 (floor at zero)
-            view.small_large(
+            await view.small_large(
                 SmallLargeFunction.SMALL,
                 columns=["Profit"],
                 constants=[0.0],

@@ -23,8 +23,10 @@ class PipelineVersionsAPI:
 
     Access via ``client.pipeline_versions``::
 
-        versions = client.pipeline_versions.list(dataset_id=1, dataview_id=2)
-        client.pipeline_versions.apply(dataset_id=1, dataview_id=2, version_id=versions[0]["id"])
+        versions = await client.pipeline_versions.list(dataset_id=1, dataview_id=2)
+        await client.pipeline_versions.apply(
+            dataset_id=1, dataview_id=2, version_id=versions[0]["id"]
+        )
     """
 
     def __init__(self, client: MammothClient) -> None:

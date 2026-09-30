@@ -13,7 +13,7 @@ class ReportsAPI:
 
     Access via client.reports::
 
-        reports = client.reports.list()
+        reports = await client.reports.list()
     """
 
     def __init__(self, client: MammothClient) -> None:

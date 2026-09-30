@@ -7,7 +7,7 @@ This guide demonstrates how to integrate the Mammoth SDK with external systems.
 Use the View export to push data directly to a PostgreSQL database:
 
 ```python
-view.export.to_postgres(
+await view.export.to_postgres(
     host="db.example.com",
     port=5432,
     database="analytics",
@@ -20,7 +20,7 @@ view.export.to_postgres(
 ## Export to MySQL
 
 ```python
-view.export.to_mysql(
+await view.export.to_mysql(
     host="mysql.example.com",
     port=3306,
     database="warehouse",
@@ -33,13 +33,13 @@ view.export.to_mysql(
 ## Export to S3
 
 ```python
-result = view.export.to_s3(file_name="report.csv")
+result = await view.export.to_s3(file_name="report.csv")
 ```
 
 ## Export to BigQuery
 
 ```python
-view.export.to_bigquery(
+await view.export.to_bigquery(
     project="my-gcp-project",
     dataset="analytics",
     table="results",
@@ -63,7 +63,7 @@ df = pd.read_sql("SELECT * FROM customers WHERE status = 'active'", connection)
 df.to_csv("customers.csv", index=False)
 
 # 2. Upload to Mammoth
-client.files.upload("customers.csv")
+await client.files.upload("customers.csv")
 ```
 
 ## Branch out to another dataset
@@ -71,10 +71,10 @@ client.files.upload("customers.csv")
 Send processed data from one view to another Mammoth dataset:
 
 ```python
-view.branch_out(dest_dataset_id=42)
+await view.branch_out(dest_dataset_id=42)
 
 # With column mapping
-view.branch_out(
+await view.branch_out(
     dest_dataset_id=42,
     column_mapping={"Sales": "revenue", "Region": "area"},
 )
@@ -85,7 +85,7 @@ view.branch_out(
 Set up webhooks to receive notifications on pipeline events:
 
 ```python
-webhooks = client.webhooks.list()
+webhooks = await client.webhooks.list()
 ```
 
 ## Scheduled automation
@@ -93,8 +93,8 @@ webhooks = client.webhooks.list()
 Use automations and schedules for recurring workflows:
 
 ```python
-schedules = client.schedules.list()
-automations = client.automations.list()
+schedules = await client.schedules.list()
+automations = await client.automations.list()
 ```
 
 ## See also

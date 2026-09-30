@@ -21,12 +21,12 @@ class ParametersAPI:
 
     Access via ``client.parameters``::
 
-        parameters = client.parameters.list()
-        parameter = client.parameters.create(
+        parameters = await client.parameters.list()
+        parameter = await client.parameters.create(
             name="start_date", param_type="DATE", value="2026-01-01", project_id=1,
         )
-        client.parameters.rerun(parameter["id"])
-        client.parameters.delete(parameter["id"])
+        await client.parameters.rerun(parameter["id"])
+        await client.parameters.delete(parameter["id"])
     """
 
     def __init__(self, client: MammothClient) -> None:

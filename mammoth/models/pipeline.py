@@ -384,12 +384,12 @@ class DraftCommand(str, Enum):
 
     Use via ``view.draft()`` context manager or explicit methods::
 
-        with view.draft():  # preferred
-            view.filter_rows(...)
+        async with view.draft():  # preferred
+            await view.filter_rows(...)
 
-        view.enter_draft_mode()   # uses DraftCommand.ENTER
-        view.submit_draft()       # uses SUBMIT then EXIT
-        view.discard_draft()      # uses DISCARD then EXIT
+        await view.enter_draft_mode()   # uses DraftCommand.ENTER
+        await view.submit_draft()       # uses SUBMIT then EXIT
+        await view.discard_draft()      # uses DISCARD then EXIT
     """
 
     ENTER = "enter"
@@ -414,7 +414,7 @@ class SetValue:
             SetValue("High", condition=Condition("Sales", Operator.GTE, 10000)),
             SetValue("Low"),
         ]
-        view.set_values(new_column="Risk", values=values)
+        await view.set_values(new_column="Risk", values=values)
     """
 
     value: Any
@@ -432,7 +432,7 @@ class SplitColumnSpec:
 
     Example::
 
-        view.split_column("Name", " ", [SplitColumnSpec("First"), SplitColumnSpec("Last")])
+        await view.split_column("Name", " ", [SplitColumnSpec("First"), SplitColumnSpec("Last")])
     """
 
     name: str
@@ -445,7 +445,7 @@ class BulkReplaceMapping:
 
     Example::
 
-        view.bulk_replace(
+        await view.bulk_replace(
             columns=["Item"],
             mapping=[BulkReplaceMapping(search=["6 inch CAKE", "8 inch CAKE"], replace="CAKE")],
         )
@@ -461,8 +461,8 @@ class DateDelta:
 
     Example::
 
-        view.increment_date("Order Date", DateDelta(days=30), new_column="Due Date")
-        view.increment_date("Start", DateDelta(years=1, months=-3), new_column="Adjusted")
+        await view.increment_date("Order Date", DateDelta(days=30), new_column="Due Date")
+        await view.increment_date("Start", DateDelta(years=1, months=-3), new_column="Adjusted")
     """
 
     years: int = 0
@@ -506,10 +506,12 @@ class CopySpec:
     Examples::
 
         # Copy into a brand-new column
-        view.copy_columns([CopySpec(source="Sales", as_name="Sales Copy", type=ColumnType.NUMERIC)])
+        await view.copy_columns(
+            [CopySpec(source="Sales", as_name="Sales Copy", type=ColumnType.NUMERIC)]
+        )
 
         # Overwrite an existing column's values
-        view.copy_columns([CopySpec(source="Sales", destination="Sales Backup")])
+        await view.copy_columns([CopySpec(source="Sales", destination="Sales Backup")])
     """
 
     source: str
@@ -525,8 +527,8 @@ class ConversionSpec:
 
     Example::
 
-        view.convert_type([ConversionSpec(column="Sales", to=ColumnType.NUMERIC)])
-        view.convert_type([
+        await view.convert_type([ConversionSpec(column="Sales", to=ColumnType.NUMERIC)])
+        await view.convert_type([
             ConversionSpec(column="Date Col", to=ColumnType.DATE, format="MM/DD/YYYY")
         ])
     """
@@ -542,7 +544,7 @@ class AggregationSpec:
 
     Example::
 
-        view.pivot(
+        await view.pivot(
             group_by=["Region"],
             aggregations=[AggregationSpec(
                 column="Sales", function=AggregateFunction.SUM, as_name="Total",
@@ -562,7 +564,7 @@ class JoinKeySpec:
 
     Example::
 
-        view.join(..., on=[JoinKeySpec(left="Customer ID", right="Customer ID")])
+        await view.join(..., on=[JoinKeySpec(left="Customer ID", right="Customer ID")])
     """
 
     left: str
@@ -575,7 +577,7 @@ class JoinSelectSpec:
 
     Example::
 
-        view.join(..., select=[JoinSelectSpec(column="Category", alias="Cat")])
+        await view.join(..., select=[JoinSelectSpec(column="Category", alias="Cat")])
     """
 
     column: str
@@ -588,7 +590,7 @@ class JsonExtractionSpec:
 
     Example::
 
-        view.json_extract("data", extractions=[
+        await view.json_extract("data", extractions=[
             JsonExtractionSpec(key="name", as_name="Name", type="TEXT"),
             JsonExtractionSpec(key="age", as_name="Age", type="NUMERIC"),
         ])
@@ -605,7 +607,7 @@ class CrosstabSpec:
 
     Example::
 
-        view.crosstab(rows=["Region"], pivot_column="Gender",
+        await view.crosstab(rows=["Region"], pivot_column="Gender",
                       select=CrosstabSpec(function=AggregateFunction.SUM, column="Sales"))
     """
 

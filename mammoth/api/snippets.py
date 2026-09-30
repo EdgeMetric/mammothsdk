@@ -18,12 +18,12 @@ class SnippetsAPI:
 
     Access via ``client.snippets``::
 
-        snippets = client.snippets.list()
-        snippet = client.snippets.create(
+        snippets = await client.snippets.list()
+        snippet = await client.snippets.create(
             name="my_snippet", code="SELECT * FROM table", language="sql", project_id=1,
         )
-        client.snippets.rerun(snippet["id"])
-        client.snippets.delete(snippet["id"])
+        await client.snippets.rerun(snippet["id"])
+        await client.snippets.delete(snippet["id"])
     """
 
     def __init__(self, client: MammothClient) -> None:

@@ -45,10 +45,10 @@ class WorkspacesAPI:
 
     Example (assuming an ``api`` instance bound to a client)::
 
-        api.accept_invite("invite_token")
-        api.create({"name": "New workspace"})
-        usage = api.app_usage()
-        api.user_add(["a@example.com"])
+        await api.accept_invite("invite_token")
+        await api.create({"name": "New workspace"})
+        usage = await api.app_usage()
+        await api.user_add(["a@example.com"])
     """
 
     def __init__(self, client: MammothClient) -> None:

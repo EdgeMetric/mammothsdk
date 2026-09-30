@@ -21,10 +21,10 @@ class WorkflowsAPI:
 
     Access via ``client.workflows``::
 
-        workflows = client.workflows.list()
-        workflow = client.workflows.create(name="Sales pipeline")
-        client.workflows.block_add(workflow["id"], block_type="source")
-        client.workflows.delete(workflow["id"])
+        workflows = await client.workflows.list()
+        workflow = await client.workflows.create(name="Sales pipeline")
+        await client.workflows.block_add(workflow["id"], block_type="source")
+        await client.workflows.delete(workflow["id"])
     """
 
     def __init__(self, client: MammothClient) -> None:

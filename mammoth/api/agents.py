@@ -20,13 +20,13 @@ class AgentsAPI:
 
     Access via ``client.agents``::
 
-        reply = client.agents.chat(
+        reply = await client.agents.chat(
             message="What changed in this dataset?",
             scope={"type": "workspace", "workspace_id": 2},
         )
-        sessions = client.agents.session_list()
-        client.agents.session_set_visibility(session_id, "shared")
-        client.agents.session_delete(session_id)
+        sessions = await client.agents.session_list()
+        await client.agents.session_set_visibility(session_id, "shared")
+        await client.agents.session_delete(session_id)
     """
 
     def __init__(self, client: MammothClient) -> None:

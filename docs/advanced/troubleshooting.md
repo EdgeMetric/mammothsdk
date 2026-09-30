@@ -17,7 +17,7 @@ Common issues and their solutions.
 # Verify your credentials
 try:
     client = MammothClient(api_token="mm_...", workspace_id=11)
-    if client.test_connection():
+    if await client.test_connection():
         print("Credentials are valid")
 except MammothAuthError:
     print("Credentials are invalid")
@@ -54,7 +54,7 @@ print(view.display_names)
 client = MammothClient(..., job_timeout=300)
 
 # Increase CSV export timeout
-view.export.to_csv("output.csv", timeout=600)
+await view.export.to_csv("output.csv", timeout=600)
 ```
 
 ## Job failed
@@ -71,7 +71,7 @@ view.export.to_csv("output.csv", timeout=600)
 try:
     from mammoth import ColumnType, ConversionSpec
 
-    view.convert_type([ConversionSpec(column="Sales", to=ColumnType.NUMERIC)])
+    await view.convert_type([ConversionSpec(column="Sales", to=ColumnType.NUMERIC)])
 except MammothJobFailedError as e:
     print(f"Reason: {e.details['failure_reason']}")
 ```
@@ -96,9 +96,9 @@ client.set_project_id(10)  # Required before most operations
 **Solution**: Convert to DATE type first:
 
 ```python
-view.convert_type([{"column": "Order Date", "to": "DATE"}])
+await view.convert_type([{"column": "Order Date", "to": "DATE"}])
 # Now date operations work
-view.extract_date("Order Date", DateComponent.YEAR, new_column="Year")
+await view.extract_date("Order Date", DateComponent.YEAR, new_column="Year")
 ```
 
 ## Network / connection errors

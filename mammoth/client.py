@@ -16,11 +16,11 @@ Example::
     client.set_project_id(10)
 
     # List projects
-    projects = client.projects.list()
+    projects = await client.projects.list()
 
     # Get a rich View object and apply transformations
-    view = client.get_view(1039)
-    view.filter_rows(Condition("Sales", Operator.GTE, 1000))
+    view = await client.get_view(1039)
+    await view.filter_rows(Condition("Sales", Operator.GTE, 1000))
 """
 
 from __future__ import annotations
@@ -153,9 +153,9 @@ class ViewsResource:
 
     Access via client.views::
 
-        view = client.views.get(view_id)           # returns View object
-        views = client.views.list()                 # returns list of View objects
-        view = client.views.create(dataset_id)      # returns View object
+        view = await client.views.get(view_id)           # returns View object
+        views = await client.views.list()                 # returns list of View objects
+        view = await client.views.create(dataset_id)      # returns View object
     """
 
     def __init__(self, client: MammothClient) -> None:
@@ -310,13 +310,13 @@ class MammothClient:
         client.set_project_id(10)
 
         # Resource-based CRUD
-        projects = client.projects.list()
-        datasets = client.datasets.list()
+        projects = await client.projects.list()
+        datasets = await client.datasets.list()
 
         # Rich View objects with transformations
-        view = client.views.get(1039)
-        view.filter_rows(Condition("Sales", Operator.GTE, 1000))
-        view.export.to_csv("output.csv")
+        view = await client.views.get(1039)
+        await view.filter_rows(Condition("Sales", Operator.GTE, 1000))
+        await view.export.to_csv("output.csv")
     """
 
     def __init__(
@@ -510,7 +510,7 @@ class MammothClient:
 
         Example::
 
-            dataset_id = client.find_dataset_for_dataview(1039)
+            dataset_id = await client.find_dataset_for_dataview(1039)
         """
         if dataset_id is None:
             return await self.pipeline.find_dataset_for_dataview(dataview_id)
@@ -535,7 +535,7 @@ class MammothClient:
             params: Query parameters.
             json: JSON body for the request.
             files: Files for multipart upload.
-            **kwargs: Additional arguments passed to requests.
+            **kwargs: Additional arguments passed to httpx.
 
         Returns:
             Parsed JSON response.
@@ -999,7 +999,7 @@ class MammothClient:
 
         Example::
 
-            view = client.get_view(1039)
+            view = await client.get_view(1039)
             print(view.display_names)
         """
         return await self.views.get(view_id)

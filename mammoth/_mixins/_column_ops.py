@@ -38,9 +38,9 @@ class ColumnOpsMixin(ViewHost):
 
         Examples::
 
-            view.add_column("Notes")
-            view.add_column("Score", column_type=ColumnType.NUMERIC)
-            view.add_column("Created", column_type=ColumnType.DATE)
+            await view.add_column("Notes")
+            await view.add_column("Score", column_type=ColumnType.NUMERIC)
+            await view.add_column("Created", column_type=ColumnType.DATE)
         """
         return await self._add_task(
             build_add_column_params(name, column_type, self._next_internal_name)
@@ -57,8 +57,8 @@ class ColumnOpsMixin(ViewHost):
 
         Examples::
 
-            view.delete_columns(["Temp"])
-            view.delete_columns(["Notes", "Internal ID", "Debug"])
+            await view.delete_columns(["Temp"])
+            await view.delete_columns(["Notes", "Internal ID", "Debug"])
         """
         return await self._add_task(
             build_delete_params(columns, self.columns, self._internal_names)
@@ -113,13 +113,13 @@ class ColumnOpsMixin(ViewHost):
         Examples::
 
             # Combine first + last name into a new column
-            view.combine_columns(
+            await view.combine_columns(
                 ["First Name", "Last Name"],
                 new_column="Full Name", separator=" ",
             )
 
             # Combine with custom separator, overwrite existing column
-            view.combine_columns(
+            await view.combine_columns(
                 ["City", "State", "Zip"],
                 existing_column="Address", separator=", ",
             )
@@ -155,10 +155,10 @@ class ColumnOpsMixin(ViewHost):
             from mammoth import ConversionSpec, ColumnType
 
             # Text to numeric
-            view.convert_type([ConversionSpec(column="Sales", to=ColumnType.NUMERIC)])
+            await view.convert_type([ConversionSpec(column="Sales", to=ColumnType.NUMERIC)])
 
             # Text to date (specify the source format)
-            view.convert_type([
+            await view.convert_type([
                 ConversionSpec(column="Order Date", to=ColumnType.DATE,
                                format="MM/DD/YYYY"),
             ])
@@ -190,7 +190,7 @@ class ColumnOpsMixin(ViewHost):
 
         Example::
 
-            view.rename_columns({"cust_id": "Customer ID", "amt": "Amount"})
+            await view.rename_columns({"cust_id": "Customer ID", "amt": "Amount"})
         """
         if not renames:
             raise ValueError("renames must name at least one column")

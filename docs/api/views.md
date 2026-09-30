@@ -12,20 +12,20 @@ from mammoth import MammothClient
 client = MammothClient(api_token="mm_...", workspace_id=11)
 client.set_project_id(10)
 
-view = client.views.get(1039)
+view = await client.views.get(1039)
 ```
 
 You can also list, create, and delete views:
 
 ```python
 # List all views in a dataset
-views = client.views.list(dataset_id=42)
+views = await client.views.list(dataset_id=42)
 
 # Create a new view
-view = client.views.create(dataset_id=42, name="My Analysis")
+view = await client.views.create(dataset_id=42, name="My Analysis")
 
 # Create by cloning
-view = client.views.create(dataset_id=42, name="Copy", clone_from=1039)
+view = await client.views.create(dataset_id=42, name="Copy", clone_from=1039)
 ```
 
 ## Properties
@@ -44,7 +44,7 @@ view = client.views.create(dataset_id=42, name="Copy", clone_from=1039)
 After every transformation, `display_names`, `columns`, and `column_types` are automatically refreshed — including columns added by pipeline tasks (`math`, `set_values`, `add_column`, etc.).
 
 ```python
-view = client.views.get(1039)
+view = await client.views.get(1039)
 
 print(view.id)             # 1039
 print(view.name)           # "Sales Data"
@@ -53,7 +53,7 @@ print(view.columns)        # {"Sales": "column_1", "Region": "column_2", ...}
 print(view.column_types)   # {"Sales": "NUMERIC", "Region": "TEXT", "Date": "DATE"}
 
 # After a transform, new columns appear immediately:
-view.math("Sales * 1.1", new_column="Revenue")
+await view.math("Sales * 1.1", new_column="Revenue")
 print("Revenue" in view.display_names)   # True
 ```
 
@@ -66,10 +66,10 @@ By default, each transformation triggers an immediate pipeline run (auto-run mod
 The recommended approach. Enters draft mode on entry, submits and runs on clean exit, discards on exception:
 
 ```python
-with view.draft():
-    view.filter_rows(Condition("Sales", Operator.GTE, 1000))
-    view.math("Price * 2", new_column="Double")
-    view.add_column("Notes")
+async with view.draft():
+    await view.filter_rows(Condition("Sales", Operator.GTE, 1000))
+    await view.math("Price * 2", new_column="Double")
+    await view.add_column("Notes")
 # Pipeline runs once for all 3 tasks, metadata refreshed
 ```
 
@@ -77,8 +77,8 @@ If an exception occurs inside the block, all queued tasks are discarded:
 
 ```python
 try:
-    with view.draft():
-        view.add_column("Temp")
+    async with view.draft():
+        await view.add_column("Temp")
         raise ValueError("something went wrong")
 except ValueError:
     pass  # "Temp" column was NOT added — draft was discarded
@@ -87,10 +87,10 @@ except ValueError:
 ### Explicit draft workflow
 
 ```python
-view.enter_draft_mode()
-view.filter_rows(Condition("Sales", Operator.GTE, 1000))
-view.math("Price * 2", new_column="Double")
-view.submit_draft()  # pipeline runs once, metadata refreshed
+await view.enter_draft_mode()
+await view.filter_rows(Condition("Sales", Operator.GTE, 1000))
+await view.math("Price * 2", new_column="Double")
+await view.submit_draft()  # pipeline runs once, metadata refreshed
 ```
 
 ---
@@ -102,8 +102,8 @@ column-header rename or a grid sort in the web app. They add no pipeline
 task, and later operations, data reads and exports use the result.
 
 ```python
-view.rename_columns({"cust_id": "Customer ID"})
-view.sort_rows([["Revenue", "DESC"], ["Region", "ASC"]])  # at most three; [] clears
+await view.rename_columns({"cust_id": "Customer ID"})
+await view.sort_rows([["Revenue", "DESC"], ["Region", "ASC"]])  # at most three; [] clears
 ```
 
 ## Full API Reference
@@ -164,10 +164,10 @@ view.sort_rows([["Revenue", "DESC"], ["Region", "ASC"]])  # at most three; [] cl
 Export operations are accessed via `view.export`. See the [Exports reference](exports.md) for full documentation.
 
 ```python
-view.export.to_csv("output.csv")
-view.export.to_s3(file_name="report.csv")
-view.export.to_postgres(host="...", port=5432, database="...", table="...", username="...", password="...")
-view.branch_out(dest_dataset_id=42)
+await view.export.to_csv("output.csv")
+await view.export.to_s3(file_name="report.csv")
+await view.export.to_postgres(host="...", port=5432, database="...", table="...", username="...", password="...")
+await view.branch_out(dest_dataset_id=42)
 ```
 
 ## See also

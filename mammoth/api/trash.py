@@ -42,9 +42,9 @@ class TrashAPI:
 
     Access via ``client.trash``::
 
-        trashed = client.trash.list()
-        client.trash.add(items=[{"id": 42, "type": "dataview"}])
-        client.trash.restore(items=[{"id": 42, "type": "dataview"}])
+        trashed = await client.trash.list()
+        await client.trash.add(items=[{"id": 42, "type": "dataview"}])
+        await client.trash.restore(items=[{"id": 42, "type": "dataview"}])
     """
 
     def __init__(self, client: MammothClient) -> None:

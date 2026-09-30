@@ -23,10 +23,10 @@ class DataChecksAPI:
 
     Access via ``client.data_checks``::
 
-        check = client.data_checks.create(
+        check = await client.data_checks.create(
             dataset_id=1, dataview_id=2, body={"name": "No nulls in Amount"}
         )
-        client.data_checks.delete(dataset_id=1, dataview_id=2, data_check_id=check["id"])
+        await client.data_checks.delete(dataset_id=1, dataview_id=2, data_check_id=check["id"])
     """
 
     def __init__(self, client: MammothClient) -> None:

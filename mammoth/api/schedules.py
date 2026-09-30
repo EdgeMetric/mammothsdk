@@ -28,13 +28,13 @@ class SchedulesAPI:
 
     Access via ``client.schedules``::
 
-        schedules = client.schedules.list()
-        schedule = client.schedules.create(
+        schedules = await client.schedules.list()
+        schedule = await client.schedules.create(
             spec=ScheduleCreateSpec(
                 rrule=RruleSpec(frequency=RruleFrequency.DAILY, start=datetime(2025, 1, 1)),
             )
         )
-        client.schedules.delete(schedule_id)
+        await client.schedules.delete(schedule_id)
     """
 
     def __init__(self, client: MammothClient) -> None:

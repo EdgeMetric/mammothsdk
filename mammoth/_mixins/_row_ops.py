@@ -50,10 +50,10 @@ class RowOpsMixin(ViewHost):
             from mammoth import FillDirection, SortDirection
 
             # Forward-fill missing values (carry the previous value down)
-            view.fill_missing("Price", FillDirection.FIRST_VALUE)
+            await view.fill_missing("Price", FillDirection.FIRST_VALUE)
 
             # Forward-fill within partitions, ordered by date
-            view.fill_missing(
+            await view.fill_missing(
                 "Metric", FillDirection.FIRST_VALUE,
                 partition_by="Region",
                 order_by=[["Date", SortDirection.ASC]],
@@ -93,9 +93,9 @@ class RowOpsMixin(ViewHost):
 
             from mammoth import SortDirection
 
-            view.limit_rows(100)
-            view.limit_rows(10, order_by=[["Sales", SortDirection.DESC]])
-            view.limit_rows(5, bottom=True)
+            await view.limit_rows(100)
+            await view.limit_rows(10, order_by=[["Sales", SortDirection.DESC]])
+            await view.limit_rows(5, bottom=True)
         """
         return await self._add_task(
             build_limit_params(n, self.columns, bottom=bottom, order_by=order_by)
@@ -116,8 +116,8 @@ class RowOpsMixin(ViewHost):
 
         Example::
 
-            view.discard_duplicates()
-            view.discard_duplicates(ignore_columns=["Notes", "Timestamp"])
+            await view.discard_duplicates()
+            await view.discard_duplicates(ignore_columns=["Notes", "Timestamp"])
         """
         return await self._add_task(
             build_discard_duplicates_params(self.columns, self._internal_names, ignore_columns)
@@ -153,7 +153,7 @@ class RowOpsMixin(ViewHost):
         Example::
 
             # Columns "Q1", "Q2", "Q3", "Q4" → rows with Label/Value
-            view.unnest(["Q1", "Q2", "Q3", "Q4"],
+            await view.unnest(["Q1", "Q2", "Q3", "Q4"],
                         label_column="Quarter", value_column="Revenue")
         """
         return await self._add_task(
@@ -206,7 +206,7 @@ class RowOpsMixin(ViewHost):
 
         Example::
 
-            view.sort_rows([["Revenue", "DESC"], ["Region", "ASC"]])
+            await view.sort_rows([["Revenue", "DESC"], ["Region", "ASC"]])
         """
         if len(order_by) > 3:
             raise ValueError("sort takes at most three columns")

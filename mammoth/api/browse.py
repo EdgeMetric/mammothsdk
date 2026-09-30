@@ -29,9 +29,9 @@ class BrowseAPI:
 
     Access via client.browse::
 
-        resources = client.browse.workspaces()
-        resources = client.browse.projects()
-        resources = client.browse.datasets(project_id=10)
+        resources = await client.browse.workspaces()
+        resources = await client.browse.projects()
+        resources = await client.browse.datasets(project_id=10)
     """
 
     def __init__(self, client: MammothClient) -> None:

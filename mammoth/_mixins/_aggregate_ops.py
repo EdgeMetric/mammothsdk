@@ -53,7 +53,7 @@ class AggregateOpsMixin(ViewHost):
 
         Example::
 
-            view.pivot(
+            await view.pivot(
                 group_by=["Region"],
                 aggregations=[AggregationSpec(
                     column="Sales",
@@ -104,7 +104,7 @@ class AggregateOpsMixin(ViewHost):
 
         Example::
 
-            view.window(
+            await view.window(
                 function=WindowFunction.ROW_NUMBER,
                 new_column="Row #",
                 partition_by=["Region"],
@@ -146,7 +146,7 @@ class AggregateOpsMixin(ViewHost):
 
         Unlike standard transforms, a crosstab produces a NEW dataset, so it is
         submitted through the internal-dataset export handler and run as an
-        async job. This method blocks until the dataset is materialised.
+        async job. The awaited call returns only once the dataset is materialised.
 
         Args:
             rows: Display names of the row-grouping columns.
@@ -171,7 +171,7 @@ class AggregateOpsMixin(ViewHost):
 
             from mammoth import CrosstabSpec, AggregateFunction
 
-            view.crosstab(
+            await view.crosstab(
                 rows=["Region"],
                 pivot_column="Product",
                 select=CrosstabSpec(function=AggregateFunction.SUM, column="Sales"),

@@ -23,10 +23,10 @@ class DerivativesAPI:
 
     Access via ``client.derivatives``::
 
-        derivative = client.derivatives.create(
+        derivative = await client.derivatives.create(
             dataset_id=1, dataview_id=2, body={"type": "summary"}
         )
-        data = client.derivatives.data(
+        data = await client.derivatives.data(
             dataset_id=1, dataview_id=2, derivative_id=derivative["id"], body={}
         )
     """

@@ -27,8 +27,8 @@ class BatchesAPI:
 
     Access via client.batches::
 
-        batches = client.batches.list(dataset_id=123)
-        batch = client.batches.get(dataset_id=123, batch_id=1)
+        batches = await client.batches.list(dataset_id=123)
+        batch = await client.batches.get(dataset_id=123, batch_id=1)
     """
 
     def __init__(self, client: MammothClient) -> None:

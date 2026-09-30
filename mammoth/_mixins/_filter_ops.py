@@ -35,8 +35,8 @@ class FilterOpsMixin(ViewHost):
 
         Example::
 
-            view.filter_rows(Condition("Sales", Operator.GTE, 1000))
-            view.filter_rows(cond1 & cond2, filter_type=FilterType.REMOVE)
+            await view.filter_rows(Condition("Sales", Operator.GTE, 1000))
+            await view.filter_rows(cond1 & cond2, filter_type=FilterType.REMOVE)
         """
         return await self._add_task(
             build_filter_params(condition, self.columns, self.column_types, filter_type, prompt)
@@ -66,7 +66,7 @@ class FilterOpsMixin(ViewHost):
 
         Example::
 
-            view.set_values(
+            await view.set_values(
                 new_column="Risk Level",
                 column_type=ColumnType.TEXT,
                 values=[

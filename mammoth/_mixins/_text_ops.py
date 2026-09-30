@@ -49,10 +49,10 @@ class TextOpsMixin(ViewHost):
 
         Examples::
 
-            view.text_transform(["Name"], case=TextCase.UPPER)
-            view.text_transform(["City", "State"], case=TextCase.TITLE)
-            view.text_transform(["Notes"], trim=True)
-            view.text_transform(
+            await view.text_transform(["Name"], case=TextCase.UPPER)
+            await view.text_transform(["City", "State"], case=TextCase.TITLE)
+            await view.text_transform(["Notes"], trim=True)
+            await view.text_transform(
                 ["Name"], case=TextCase.LOWER,
                 condition=Condition("Region", Operator.EQ, "West"),
             )
@@ -93,8 +93,8 @@ class TextOpsMixin(ViewHost):
 
         Examples::
 
-            view.replace_values(["City"], find="NYC", replace="New York")
-            view.replace_values(
+            await view.replace_values(["City"], find="NYC", replace="New York")
+            await view.replace_values(
                 ["Name"], find="Jr", replace="Junior",
                 match_case=True, match_words=True,
             )
@@ -140,7 +140,7 @@ class TextOpsMixin(ViewHost):
 
         Example::
 
-            view.bulk_replace(
+            await view.bulk_replace(
                 columns=["Item"],
                 mapping=[
                     BulkReplaceMapping(search=["6 inch CAKE", "8 inch CAKE"], replace="CAKE"),
@@ -185,7 +185,7 @@ class TextOpsMixin(ViewHost):
 
             from mammoth import SplitColumnSpec
 
-            view.split_column(
+            await view.split_column(
                 "Full Name", " ",
                 [SplitColumnSpec("First Name"), SplitColumnSpec("Last Name")],
             )
@@ -249,19 +249,19 @@ class TextOpsMixin(ViewHost):
             from mammoth import SubstringDirection
 
             # First 3 characters
-            view.substring("Code", direction=SubstringDirection.START,
+            await view.substring("Code", direction=SubstringDirection.START,
                            num_char=3, new_column="Prefix")
 
             # Last 4 characters
-            view.substring("Phone", direction=SubstringDirection.END,
+            await view.substring("Phone", direction=SubstringDirection.END,
                            num_char=4, new_column="Last4")
 
             # Characters before position 5
-            view.substring("SKU", direction=SubstringDirection.LEFT,
+            await view.substring("SKU", direction=SubstringDirection.LEFT,
                            char_position=5, new_column="Category")
 
             # Regex extraction
-            view.substring("Email", regex_pattern=r"@(.+)",
+            await view.substring("Email", regex_pattern=r"@(.+)",
                            new_column="Domain")
         """
         return await self._add_task(

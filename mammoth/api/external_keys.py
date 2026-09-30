@@ -23,9 +23,9 @@ class ExternalKeysAPI:
 
     Access via client.external_keys::
 
-        keys = client.external_keys.list()
-        key = client.external_keys.create(name="My Key")
-        client.external_keys.delete(key_id)
+        keys = await client.external_keys.list()
+        key = await client.external_keys.create(name="My Key")
+        await client.external_keys.delete(key_id)
     """
 
     def __init__(self, client: MammothClient) -> None:
@@ -85,7 +85,7 @@ class ExternalKeysAPI:
 
         Example::
 
-            client.external_keys.create(
+            await client.external_keys.create(
                 key_type=ExternalKeyType.ANTHROPIC,
                 key_name="My Claude key",
                 secure_key="sk-ant-...",

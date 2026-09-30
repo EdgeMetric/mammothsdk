@@ -117,7 +117,7 @@ class MammothAPIError(MammothError):
     Example::
 
         try:
-            client.datasets.get(dataset_id=99999)
+            await client.datasets.get(dataset_id=99999)
         except MammothAPIError as e:
             print(e.status_code)     # 404
             print(e.response_body)   # {"detail": "Not found"}
@@ -329,7 +329,7 @@ class MammothExportError(MammothError):
     Example::
 
         try:
-            new_id = view.branch_out("Sales snapshot")
+            new_id = await view.branch_out("Sales snapshot")
         except MammothExportError as exc:
             # The export was submitted but its dataset id didn't resolve in time.
             print(exc.details["dataset_name"], exc.details["timeout"])
@@ -352,7 +352,7 @@ class MammothValidationError(MammothError):
     Example::
 
         try:
-            view.crosstab(
+            await view.crosstab(
                 rows=["Region"], pivot_column="Product",
                 select=CrosstabSpec(function=AggregateFunction.SUM),  # missing column
                 dataset_name="x",
@@ -373,7 +373,7 @@ class MammothColumnError(MammothError):
     Example::
 
         try:
-            view.filter_rows(Condition("NonExistent", Operator.EQ, 1))
+            await view.filter_rows(Condition("NonExistent", Operator.EQ, 1))
         except MammothColumnError as e:
             print(e.details["column_name"])        # "NonExistent"
             print(e.details["available_columns"])   # ["Sales", "Region", ...]

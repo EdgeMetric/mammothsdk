@@ -49,8 +49,8 @@ all_three = high_sales & west & active  # AND of all three
 ### filter_rows
 
 ```python
-view.filter_rows(Condition("Sales", Operator.GTE, 1000))
-view.filter_rows(
+await view.filter_rows(Condition("Sales", Operator.GTE, 1000))
+await view.filter_rows(
     Condition("Sales", Operator.GTE, 1000) & Condition("Region", Operator.EQ, "West")
 )
 ```
@@ -62,7 +62,7 @@ Conditions can be attached to individual `SetValue` items to create conditional 
 ```python
 from mammoth import SetValue, ColumnType
 
-view.set_values(
+await view.set_values(
     new_column="Tier",
     column_type=ColumnType.TEXT,
     values=[
@@ -78,7 +78,7 @@ view.set_values(
 Many transformation methods accept an optional `condition` parameter:
 
 ```python
-view.math(
+await view.math(
     "Price * 0.9",
     existing_column="Price",
     condition=Condition("Region", Operator.EQ, "West"),

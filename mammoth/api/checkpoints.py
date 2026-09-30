@@ -23,10 +23,10 @@ class CheckpointsAPI:
 
     Access via ``client.checkpoints``::
 
-        checkpoint = client.checkpoints.create(
+        checkpoint = await client.checkpoints.create(
             dataset_id=1, dataview_id=2, body={"name": "Before cleanup"}
         )
-        client.checkpoints.delete(dataset_id=1, dataview_id=2, checkpoint_id=checkpoint["id"])
+        await client.checkpoints.delete(dataset_id=1, dataview_id=2, checkpoint_id=checkpoint["id"])
     """
 
     def __init__(self, client: MammothClient) -> None:

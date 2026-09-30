@@ -19,8 +19,8 @@ class TemplatesAPI:
 
     Access via ``client.templates``::
 
-        template = client.templates.create(body={"name": "Sales starter"})
-        client.templates.delete(template["id"])
+        template = await client.templates.create(body={"name": "Sales starter"})
+        await client.templates.delete(template["id"])
     """
 
     def __init__(self, client: MammothClient) -> None:

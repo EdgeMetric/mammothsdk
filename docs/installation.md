@@ -23,7 +23,7 @@ The SDK has two runtime dependencies, installed automatically:
 
 | Package | Version | Purpose |
 |---------|---------|---------|
-| `requests` | >=2.32,<3 | HTTP client for API requests |
+| `httpx` | >=0.28,<0.29 | Async HTTP client for API requests |
 | `pydantic` | >=2.10,<3 | Data validation and response models |
 
 ## Development installation

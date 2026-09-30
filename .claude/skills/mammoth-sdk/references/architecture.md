@@ -110,9 +110,9 @@ view.method()
 Views support draft mode where tasks are queued without executing the pipeline:
 
 ```python
-with view.draft():
-    view.filter_rows(...)   # queued, no pipeline run
-    view.math(...)          # queued, no pipeline run
+async with view.draft():
+    await view.filter_rows(...)   # queued, no pipeline run
+    await view.math(...)          # queued, no pipeline run
 # Pipeline runs once here for all queued tasks
 ```
 

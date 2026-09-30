@@ -67,8 +67,8 @@ class AdvancedOpsMixin(ViewHost):
         Examples::
 
             # Join with View object (display names everywhere)
-            other = client.views.get(2050)
-            view.join(
+            other = await client.views.get(2050)
+            await view.join(
                 foreign_view=other,
                 join_type=JoinType.LEFT,
                 on=[JoinKeySpec(left="Customer ID", right="Customer ID")],
@@ -76,7 +76,7 @@ class AdvancedOpsMixin(ViewHost):
             )
 
             # Join with view ID (internal names for foreign view)
-            view.join(
+            await view.join(
                 foreign_view=2050,
                 join_type=JoinType.LEFT,
                 on=[JoinKeySpec(left="Customer ID", right="column_1")],
@@ -152,7 +152,7 @@ class AdvancedOpsMixin(ViewHost):
 
         Example::
 
-            view.lookup(
+            await view.lookup(
                 source="Product ID",
                 lookup_view_id=2055,
                 key="column_abc123",
@@ -229,10 +229,10 @@ class AdvancedOpsMixin(ViewHost):
         Example::
 
             # Simple key extraction
-            view.json_extract("data", keys=["name", "email", "age"])
+            await view.json_extract("data", keys=["name", "email", "age"])
 
             # Advanced with custom types
-            view.json_extract(
+            await view.json_extract(
                 "data",
                 extractions=[
                     JsonExtractionSpec(key="name", as_name="Name"),
@@ -276,7 +276,7 @@ class AdvancedOpsMixin(ViewHost):
 
         Example::
 
-            view.gen_ai(
+            await view.gen_ai(
                 prompt="Classify the sentiment of the review",
                 context_columns=["Review Text"],
                 new_column="Sentiment",
@@ -320,9 +320,9 @@ class AdvancedOpsMixin(ViewHost):
 
         Example::
 
-            sql = view.generate_sql("show total sales by region")
+            sql = await view.generate_sql("show total sales by region")
             print(sql)  # "SELECT region, SUM(sales) FROM ... GROUP BY region"
-            view.add_sql(sql)  # apply it (replaces the view's columns)
+            await view.add_sql(sql)  # apply it (replaces the view's columns)
         """
         ws = self._client.workspace_id
         proj = getattr(self._client, "project_id", None)
@@ -374,7 +374,7 @@ class AdvancedOpsMixin(ViewHost):
 
         Example::
 
-            view.add_sql(
+            await view.add_sql(
                 'SELECT region, SUM(revenue) AS revenue FROM "view:123" GROUP BY region'
             )
         """

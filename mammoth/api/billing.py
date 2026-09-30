@@ -33,10 +33,10 @@ class BillingAPI:
 
     Access via ``client.billing``::
 
-        plan = client.billing.chargebee_plan()
-        subscription = client.billing.stripe_get()
-        invoices = client.billing.invoice_list()
-        client.billing.stripe_payment_method_set_default("pm_123")
+        plan = await client.billing.chargebee_plan()
+        subscription = await client.billing.stripe_get()
+        invoices = await client.billing.invoice_list()
+        await client.billing.stripe_payment_method_set_default("pm_123")
     """
 
     def __init__(self, client: MammothClient) -> None:

@@ -86,15 +86,15 @@ class DashboardsAPI:
 
     Access via ``client.dashboards``::
 
-        dashboards = client.dashboards.list()
-        dashboard = client.dashboards.create_blank(
+        dashboards = await client.dashboards.list()
+        dashboard = await client.dashboards.create_blank(
             CreateBlankParams(dataview_id=101, title="Revenue by region"),
         )
-        client.dashboards.share(
+        await client.dashboards.share(
             dashboard_id=5,
             type_of_auth=DashboardAuthType.PUBLIC,
         )
-        client.dashboards.delete(dashboard_id=5)
+        await client.dashboards.delete(dashboard_id=5)
     """
 
     def __init__(self, client: MammothClient) -> None:

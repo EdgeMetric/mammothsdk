@@ -23,8 +23,8 @@ class DataAppsAPI:
 
     Access via ``client.data_apps``::
 
-        data_app = client.data_apps.create(body={"name": "My App"})
-        client.data_apps.delete(data_app["id"])
+        data_app = await client.data_apps.create(body={"name": "My App"})
+        await client.data_apps.delete(data_app["id"])
     """
 
     def __init__(self, client: MammothClient) -> None:

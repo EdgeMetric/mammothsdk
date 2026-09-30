@@ -15,9 +15,9 @@ class UsersAPI:
 
     Access via ``client.users``::
 
-        client.users.avatar_upload("avatar.png")
-        client.users.avatar_delete()
-        client.users.delete_account(validate_only=True)
+        await client.users.avatar_upload("avatar.png")
+        await client.users.avatar_delete()
+        await client.users.delete_account(validate_only=True)
     """
 
     def __init__(self, client: MammothClient) -> None:

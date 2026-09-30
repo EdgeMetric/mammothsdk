@@ -44,10 +44,10 @@ class AddonsAPI:
 
     Access via client.addons::
 
-        client.addons.add_connector(connector_id=42)
-        client.addons.add_connector(connector_ids=[42, 43])
-        client.addons.add_storage(additional_storage_gb=50)
-        client.addons.add_users(user_count=5)
+        await client.addons.add_connector(connector_id=42)
+        await client.addons.add_connector(connector_ids=[42, 43])
+        await client.addons.add_storage(additional_storage_gb=50)
+        await client.addons.add_users(user_count=5)
     """
 
     def __init__(self, client: MammothClient) -> None:

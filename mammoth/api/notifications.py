@@ -50,11 +50,11 @@ class NotificationsAPI:
 
     Access via ``client.notifications``::
 
-        notifications = client.notifications.list()
-        client.notifications.update(
+        notifications = await client.notifications.list()
+        await client.notifications.update(
             notification_id, patch=[{"op": "replace", "path": "isRead", "value": True}]
         )
-        client.notifications.delete(notification_id)
+        await client.notifications.delete(notification_id)
     """
 
     def __init__(self, client: MammothClient) -> None:

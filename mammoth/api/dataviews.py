@@ -381,7 +381,7 @@ class DataviewsAPI:
 
         Example::
 
-            client.dataviews.update(
+            await client.dataviews.update(
                 dataset_id=123, dataview_id=456,
                 patch_data=[{"op": "replace", "path": "/name", "value": "Renamed"}],
             )
@@ -610,7 +610,7 @@ class DataviewsAPI:
 
         Example::
 
-            client.dataviews.aggregate(
+            await client.dataviews.aggregate(
                 dataset_id=500, dataview_id=42,
                 group_by=["Channel"],
                 aggregations=[{"column": "Spend", "function": "SUM", "as_name": "Total Spend"}],
@@ -710,7 +710,7 @@ class DataviewsAPI:
 
         Example::
 
-            client.dataviews.explore(
+            await client.dataviews.explore(
                 dataset_id=500, dataview_id=42,
                 column="column_3", column_type="DATE", level="MONTH",
             )

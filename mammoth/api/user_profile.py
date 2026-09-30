@@ -15,8 +15,8 @@ class UserProfileAPI:
 
     Access via client.user_profile::
 
-        profile = client.user_profile.get()
-        client.user_profile.update(first_name="New Name")
+        profile = await client.user_profile.get()
+        await client.user_profile.update(first_name="New Name")
     """
 
     def __init__(self, client: MammothClient) -> None:

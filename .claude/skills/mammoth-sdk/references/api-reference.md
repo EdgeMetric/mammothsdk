@@ -9,11 +9,11 @@ All sub-clients are accessible as attributes of `MammothClient`. Most methods ac
 Returns rich **View** objects (not raw dicts).
 
 ```python
-view = client.views.get(view_id)                           # View object
-views = client.views.list(dataset_id=123)                  # list of View objects
-view = client.views.create(dataset_id, name="My View")      # new View
-client.views.delete(view_id)                                # delete
-client.views.bulk_delete([view_id1, view_id2])              # bulk delete
+view = await client.views.get(view_id)                           # View object
+views = await client.views.list(dataset_id=123)                  # list of View objects
+view = await client.views.create(dataset_id, name="My View")      # new View
+await client.views.delete(view_id)                                # delete
+await client.views.bulk_delete([view_id1, view_id2])              # bulk delete
 ```
 
 `views.list()` requires the parent `dataset_id`. `views.get()`, `views.delete()`, and
@@ -25,7 +25,7 @@ the parent through the pipeline API. `views.create()` always requires `dataset_i
 After any transformation, `view.display_names`, `view.columns`, and `view.column_types` are automatically refreshed and include pipeline-added columns:
 
 ```python
-view.math(expression="Price * 1.1", new_column="adj_price")
+await view.math(expression="Price * 1.1", new_column="adj_price")
 print("adj_price" in view.display_names)    # True
 print(view.columns["adj_price"])            # "column_xyzabc1234" (internal name)
 print(view.column_types["adj_price"])       # "NUMERIC"
@@ -59,7 +59,7 @@ meta = view.get_metadata()
 # [{"display_name": "Revenue", "internal_name": "column_x1y2z3", "type": "NUMERIC"}, ...]
 
 # Force re-fetch from API:
-view.refresh()
+await view.refresh()
 ```
 
 **Implementation note:** After a transformation the API populates `taskwise_info[last_seq]["metadata"]` with the complete post-pipeline column list. The SDK reads from there so new columns are always visible. For fresh views with no tasks yet, `taskwise_info` is null and the SDK falls back to the top-level `metadata` field.
@@ -71,16 +71,16 @@ view.refresh()
 Returns **raw dicts**, not rich objects. `list()` returns a response envelope — unwrap with `["projects"]`.
 
 ```python
-resp = client.projects.list()                               # {"projects": [...], "offset": 0, ...}
+resp = await client.projects.list()                               # {"projects": [...], "offset": 0, ...}
 projects = resp["projects"]                                 # plain list of dicts (one page, max 100)
-everything = client.projects.list_all()                     # all pages; limit>100 is a backend error
+everything = await client.projects.list_all()                     # all pages; limit>100 is a backend error
 for p in projects:
     print(p["id"], p["name"])                               # dict access, NOT p.id / p.name
 
-project = client.projects.get(10)                           # {"id": 10, "name": "..."}
-project = client.projects.create(name="My Project")         # raw dict response
-client.projects.update(project_id=10, name="New Name")
-client.projects.delete(project_id=10)
+project = await client.projects.get(10)                           # {"id": 10, "name": "..."}
+project = await client.projects.create(name="My Project")         # raw dict response
+await client.projects.update(project_id=10, name="New Name")
+await client.projects.delete(project_id=10)
 ```
 
 ---
@@ -88,10 +88,10 @@ client.projects.delete(project_id=10)
 ## DatasetsAPI (`client.datasets`)
 
 ```python
-datasets = client.datasets.list()                            # list all
-dataset = client.datasets.get(dataset_id=123)                # get one
-client.datasets.delete(dataset_id=123)                       # delete
-batches = client.datasets.list_batches(dataset_id=123)       # list data batches
+datasets = await client.datasets.list()                            # list all
+dataset = await client.datasets.get(dataset_id=123)                # get one
+await client.datasets.delete(dataset_id=123)                       # delete
+batches = await client.datasets.list_batches(dataset_id=123)       # list data batches
 ```
 
 ---
@@ -100,16 +100,16 @@ batches = client.datasets.list_batches(dataset_id=123)       # list data batches
 
 ```python
 # Upload a file (returns dataset_id)
-ds_id = client.files.upload("path/to/data.csv")
+ds_id = await client.files.upload("path/to/data.csv")
 
 # Upload with folder
-ds_id = client.files.upload("data.csv", folder_resource_id="folder-abc-123")
+ds_id = await client.files.upload("data.csv", folder_resource_id="folder-abc-123")
 
 # List files
-files = client.files.list()
+files = await client.files.list()
 
 # Delete
-client.files.delete(file_id=42)
+await client.files.delete(file_id=42)
 ```
 
 ---
@@ -120,26 +120,26 @@ Low-level dataview operations (prefer `client.views` for rich View objects).
 
 ```python
 # List dataviews in a dataset
-dataviews = client.dataviews.list(dataset_id=123)
+dataviews = await client.dataviews.list(dataset_id=123)
 
 # Get dataview with full metadata
-dv = client.dataviews.get(dataset_id=123, dataview_id=456)
+dv = await client.dataviews.get(dataset_id=123, dataview_id=456)
 
 # Query data with filters
-data = client.dataviews.query_data(
+data = await client.dataviews.query_data(
     dataset_id=123, dataview_id=456,
     limit=100, offset=1,
     columns=["column_1", "column_2"],  # internal names
 )
 
 # Create a new dataview
-dv = client.dataviews.create(dataset_id=123, name="New View")
+dv = await client.dataviews.create(dataset_id=123, name="New View")
 
 # Delete
-client.dataviews.delete(dataset_id=123, dataview_id=456)
+await client.dataviews.delete(dataset_id=123, dataview_id=456)
 
 # Draft mode (low-level — prefer view.draft() context manager)
-client.dataviews.draft_mode(dataset_id=123, dataview_id=456, command="enter")
+await client.dataviews.draft_mode(dataset_id=123, dataview_id=456, command="enter")
 ```
 
 ---
@@ -150,24 +150,24 @@ Low-level pipeline task management (prefer View transformation methods for high-
 
 ```python
 # List pipeline tasks
-tasks = client.pipeline.list_tasks(dataview_id=456, dataset_id=123)
+tasks = await client.pipeline.list_tasks(dataview_id=456, dataset_id=123)
 
 # Add a task (raw spec)
-result = client.pipeline.add_task(
+result = await client.pipeline.add_task(
     dataview_id=456,
     task_spec={"DELETE": ["column_1"]},
     dataset_id=123,
 )
 
 # Get/update/delete specific task
-task = client.pipeline.get_task(dataview_id=456, task_id=789, dataset_id=123)
-client.pipeline.delete_task(dataview_id=456, task_id=789, dataset_id=123)
+task = await client.pipeline.get_task(dataview_id=456, task_id=789, dataset_id=123)
+await client.pipeline.delete_task(dataview_id=456, task_id=789, dataset_id=123)
 
 # Preview a task without applying
-preview = client.pipeline.preview_task(dataview_id=456, task_spec={...}, dataset_id=123)
+preview = await client.pipeline.preview_task(dataview_id=456, task_spec={...}, dataset_id=123)
 
 # Draft mode (low-level — prefer view.draft() context manager)
-client.pipeline.draft_mode(dataview_id=456, command=DraftCommand.ENTER, dataset_id=123)
+await client.pipeline.draft_mode(dataview_id=456, command=DraftCommand.ENTER, dataset_id=123)
 ```
 
 ---
@@ -178,14 +178,14 @@ Track async job status.
 
 ```python
 # Get job status
-job = client.jobs.get_job(job_id=12345)
+job = await client.jobs.get_job(job_id=12345)
 
-# Wait for job completion (blocks)
-result = client.jobs.wait_for_job(job_id=12345)
-result = client.jobs.wait_for_job(job_id=12345, timeout=120)
+# Wait for job completion (returns when the job finishes)
+result = await client.jobs.wait_for_job(job_id=12345)
+result = await client.jobs.wait_for_job(job_id=12345, timeout=120)
 
 # Track multiple jobs
-results = client.jobs.wait_for_jobs([12345, 12346])
+results = await client.jobs.wait_for_jobs([12345, 12346])
 ```
 
 Job statuses: `processing`, `success`, `failure`, `error`
@@ -196,17 +196,17 @@ Job statuses: `processing`, `success`, `failure`, `error`
 
 ```python
 # List exports for a dataview
-exports = client.exports.list(dataview_id=456)
+exports = await client.exports.list(dataview_id=456)
 
 # Create export
-result = client.exports.create(
+result = await client.exports.create(
     dataview_id=456,
     export_spec=spec,  # AddExportSpec model
     dataset_id=123,
 )
 
 # Download as CSV
-path = client.exports.to_csv(dataview_id=456, output_path="data.csv", dataset_id=123)
+path = await client.exports.to_csv(dataview_id=456, output_path="data.csv", dataset_id=123)
 ```
 
 Prefer using `view.export.to_csv()`, `view.export.to_postgres()`, etc. on View objects.
@@ -216,9 +216,9 @@ Prefer using `view.export.to_csv()`, `view.export.to_postgres()`, etc. on View o
 ## FoldersAPI (`client.folders`)
 
 ```python
-folders = client.folders.list()
-folder = client.folders.create(name="Reports")
-client.folders.delete(folder_ids=[5])
+folders = await client.folders.list()
+folder = await client.folders.create(name="Reports")
+await client.folders.delete(folder_ids=[5])
 ```
 
 ---
@@ -228,10 +228,10 @@ client.folders.delete(folder_ids=[5])
 Third-party data connectors (databases, APIs, cloud services).
 
 ```python
-connectors = client.connectors.list()
-connector = client.connectors.get("postgres")
-connections = client.connectors.list_connections("postgres")
-conn = client.connectors.create_connection("postgres", config={...})
+connectors = await client.connectors.list()
+connector = await client.connectors.get("postgres")
+connections = await client.connectors.list_connections("postgres")
+conn = await client.connectors.create_connection("postgres", config={...})
 ```
 
 ---
@@ -241,9 +241,9 @@ conn = client.connectors.create_connection("postgres", config={...})
 AI-powered dashboards.
 
 ```python
-dashboards = client.dashboards.list()
-dashboard = client.dashboards.create(config={...})
-data = client.dashboards.get_publish_data(dashboard_id=1, sql="SELECT ...")
+dashboards = await client.dashboards.list()
+dashboard = await client.dashboards.create(config={...})
+data = await client.dashboards.get_publish_data(dashboard_id=1, sql="SELECT ...")
 ```
 
 ---
@@ -251,9 +251,9 @@ data = client.dashboards.get_publish_data(dashboard_id=1, sql="SELECT ...")
 ## WebhooksAPI (`client.webhooks`)
 
 ```python
-webhooks = client.webhooks.list()
-webhook = client.webhooks.create(name="My Webhook", mode="replace")
-client.webhooks.delete(webhook_id=1)
+webhooks = await client.webhooks.list()
+webhook = await client.webhooks.create(name="My Webhook", mode="replace")
+await client.webhooks.delete(webhook_id=1)
 ```
 
 ---
@@ -263,9 +263,9 @@ client.webhooks.delete(webhook_id=1)
 Scheduled tasks and orchestration.
 
 ```python
-automations = client.automations.list()
-automation = client.automations.create(config={...})
-schedules = client.automations.list_schedules()
+automations = await client.automations.list()
+automation = await client.automations.create(config={...})
+schedules = await client.automations.list_schedules()
 ```
 
 ---
@@ -276,13 +276,13 @@ AI features.
 
 ```python
 # Generate data profile
-profile = client.ai.generate_profile(dataview_id=456)
+profile = await client.ai.generate_profile(dataview_id=456)
 
 # Generate synthetic data
-data = client.ai.generate_data(dataview_id=456, config={"columns": ["Name", "Age"], "num_rows": 100})
+data = await client.ai.generate_data(dataview_id=456, config={"columns": ["Name", "Age"], "num_rows": 100})
 
 # Get AI suggestions for the current project
-suggestions = client.ai.get_suggestions()
+suggestions = await client.ai.get_suggestions()
 ```
 
 ---
@@ -290,9 +290,9 @@ suggestions = client.ai.get_suggestions()
 ## WorkspaceAPI (`client.workspaces`)
 
 ```python
-workspaces = client.workspaces.list()
-workspace = client.workspaces.get(workspace_id=11)
-users = client.workspaces.list_users()
+workspaces = await client.workspaces.list()
+workspace = await client.workspaces.get(workspace_id=11)
+users = await client.workspaces.list_users()
 ```
 
 ---
@@ -300,8 +300,8 @@ users = client.workspaces.list_users()
 ## ClientAppsAPI (`client.client_apps`)
 
 ```python
-apps = client.client_apps.list()
-app = client.client_apps.create(app_name="My Integration")
+apps = await client.client_apps.list()
+app = await client.client_apps.create(app_name="My Integration")
 ```
 
 ---
@@ -310,10 +310,10 @@ app = client.client_apps.create(app_name="My Integration")
 
 ```python
 # Quick access to View object
-view = client.get_view(view_id=1039)
+view = await client.get_view(view_id=1039)
 
 # Branch out (export view to another dataset)
-client.branch_out(view_id=1039, dest_dataset_id=42)
+await client.branch_out(view_id=1039, dest_dataset_id=42)
 ```
 
 Note: `get_view()` and `branch_out()` no longer accept `dataset_id` — it's auto-detected from the view.

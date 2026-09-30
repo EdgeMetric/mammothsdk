@@ -327,8 +327,8 @@ class AutomationsAPI:
 
     Access via ``client.automations``::
 
-        automations = client.automations.list()
-        automation = client.automations.create(
+        automations = await client.automations.list()
+        automation = await client.automations.create(
             name="Nightly refresh",
             description="Pulls cloud data every night",
             tasks=[AutomationTaskSpec(
@@ -336,7 +336,7 @@ class AutomationsAPI:
                 details=TaskDetailsSpec(ds_details=[DataRefreshConfig(ds_id=42)]),
             )],
         )
-        schedules = client.automations.list_schedules()
+        schedules = await client.automations.list_schedules()
     """
 
     def __init__(self, client: MammothClient) -> None:
