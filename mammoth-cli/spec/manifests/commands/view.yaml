@@ -4240,7 +4240,7 @@ commands:
   - CT-VIEW-TRANSFORM-ADD-COLUMN-ERROR
   draft_test: LT-VIEW-TRANSFORM-ADD-COLUMN-DRAFT
   undo_test: LT-VIEW-TRANSFORM-ADD-COLUMN-UNDO
-  known_restrictions: null
+  known_restrictions: 'Observe first: `view get VIEW_ID` to confirm the new column name is unused and the types of any column it is built from.'
   reviewed_by: primary
 - command_id: view.transform.add-sql
   command_path: view transform add-sql
@@ -4489,7 +4489,7 @@ commands:
   - CT-VIEW-TRANSFORM-CONVERT-TYPE-ERROR
   draft_test: LT-VIEW-TRANSFORM-CONVERT-TYPE-DRAFT
   undo_test: LT-VIEW-TRANSFORM-CONVERT-TYPE-UNDO
-  known_restrictions: null
+  known_restrictions: 'Observe first: `view data profile VIEW_ID` on the column to count values that will not convert (they become empty).'
   reviewed_by: primary
 - command_id: view.transform.copy-columns
   command_path: view transform copy-columns
@@ -4537,7 +4537,7 @@ commands:
   - CT-VIEW-TRANSFORM-COPY-COLUMNS-ERROR
   draft_test: LT-VIEW-TRANSFORM-COPY-COLUMNS-DRAFT
   undo_test: LT-VIEW-TRANSFORM-COPY-COLUMNS-UNDO
-  known_restrictions: null
+  known_restrictions: 'Observe first: `view get VIEW_ID` to confirm the source columns exist and the new names are unused.'
   reviewed_by: primary
 - command_id: view.transform.crosstab
   command_path: view transform crosstab
@@ -4737,7 +4737,7 @@ commands:
   - CT-VIEW-TRANSFORM-DISCARD-DUPLICATES-ERROR
   draft_test: LT-VIEW-TRANSFORM-DISCARD-DUPLICATES-DRAFT
   undo_test: LT-VIEW-TRANSFORM-DISCARD-DUPLICATES-UNDO
-  known_restrictions: null
+  known_restrictions: 'Observe first: `view data profile VIEW_ID` (or `view data aggregate` counting rows grouped by the key columns) to count the duplicate rows this will drop.'
   reviewed_by: primary
 - command_id: view.transform.extract-date
   command_path: view transform extract-date
@@ -4784,7 +4784,7 @@ commands:
   - CT-VIEW-TRANSFORM-EXTRACT-DATE-ERROR
   draft_test: LT-VIEW-TRANSFORM-EXTRACT-DATE-DRAFT
   undo_test: LT-VIEW-TRANSFORM-EXTRACT-DATE-UNDO
-  known_restrictions: null
+  known_restrictions: 'Observe first: `view get VIEW_ID` to confirm the column type is DATE (run convert-type first if TEXT) and `view data get` to check a few values.'
   reviewed_by: primary
 - command_id: view.transform.fill-missing
   command_path: view transform fill-missing
@@ -4831,7 +4831,7 @@ commands:
   - CT-VIEW-TRANSFORM-FILL-MISSING-ERROR
   draft_test: LT-VIEW-TRANSFORM-FILL-MISSING-DRAFT
   undo_test: LT-VIEW-TRANSFORM-FILL-MISSING-UNDO
-  known_restrictions: null
+  known_restrictions: 'Observe first: `view data profile VIEW_ID` for the blank count of the column, so the result can be compared to it.'
   reviewed_by: primary
 - command_id: view.transform.filter
   command_path: view transform filter
@@ -4878,7 +4878,7 @@ commands:
   - CT-VIEW-TRANSFORM-FILTER-ERROR
   draft_test: LT-VIEW-TRANSFORM-FILTER-DRAFT
   undo_test: LT-VIEW-TRANSFORM-FILTER-UNDO
-  known_restrictions: null
+  known_restrictions: 'Observe first: count the rows that match with `view data aggregate` using the same condition, and the total with no condition.'
   reviewed_by: primary
 - command_id: view.transform.generate-sql
   command_path: view transform generate-sql
@@ -4975,7 +4975,7 @@ commands:
   - CT-VIEW-TRANSFORM-INCREMENT-DATE-ERROR
   draft_test: LT-VIEW-TRANSFORM-INCREMENT-DATE-DRAFT
   undo_test: LT-VIEW-TRANSFORM-INCREMENT-DATE-UNDO
-  known_restrictions: null
+  known_restrictions: 'Observe first: `view get VIEW_ID` to confirm the column type is DATE, and `view data get` to check a few values.'
   reviewed_by: primary
 - command_id: view.transform.join
   command_path: view transform join
@@ -5023,7 +5023,7 @@ commands:
   - CT-VIEW-TRANSFORM-JOIN-ERROR
   draft_test: LT-VIEW-TRANSFORM-JOIN-DRAFT
   undo_test: LT-VIEW-TRANSFORM-JOIN-UNDO
-  known_restrictions: null
+  known_restrictions: 'Observe first: read both key columns (`view data get`, `view data profile`) and run this with `--dry-run` for `join_preview.match_rate`.'
   reviewed_by: primary
 - command_id: view.transform.json-extract
   command_path: view transform json-extract
@@ -5120,7 +5120,7 @@ commands:
   - CT-VIEW-TRANSFORM-LIMIT-ROWS-ERROR
   draft_test: LT-VIEW-TRANSFORM-LIMIT-ROWS-DRAFT
   undo_test: LT-VIEW-TRANSFORM-LIMIT-ROWS-UNDO
-  known_restrictions: null
+  known_restrictions: 'Observe first: `view get VIEW_ID` for the current row count, so the row count after can be checked against N.'
   reviewed_by: primary
 - command_id: view.transform.lookup
   command_path: view transform lookup
@@ -5167,7 +5167,7 @@ commands:
   - CT-VIEW-TRANSFORM-LOOKUP-ERROR
   draft_test: LT-VIEW-TRANSFORM-LOOKUP-DRAFT
   undo_test: LT-VIEW-TRANSFORM-LOOKUP-UNDO
-  known_restrictions: null
+  known_restrictions: 'Observe first: read both key columns (`view data get`, `view data profile`); the lookup view must have one row per key.'
   reviewed_by: primary
 - command_id: view.transform.math
   command_path: view transform math
@@ -5214,7 +5214,7 @@ commands:
   - CT-VIEW-TRANSFORM-MATH-ERROR
   draft_test: LT-VIEW-TRANSFORM-MATH-DRAFT
   undo_test: LT-VIEW-TRANSFORM-MATH-UNDO
-  known_restrictions: null
+  known_restrictions: 'Observe first: `view get VIEW_ID` for the types of the columns in the expression, and run it with `--dry-run` to validate the expression.'
   reviewed_by: primary
 - command_id: view.transform.pivot
   command_path: view transform pivot
@@ -5408,7 +5408,7 @@ commands:
   - CT-VIEW-TRANSFORM-SET-VALUES-ERROR
   draft_test: LT-VIEW-TRANSFORM-SET-VALUES-DRAFT
   undo_test: LT-VIEW-TRANSFORM-SET-VALUES-UNDO
-  known_restrictions: null
+  known_restrictions: 'Observe first: count the rows the condition matches with `view data aggregate` using the same condition.'
   reviewed_by: primary
 - command_id: view.transform.small-large
   command_path: view transform small-large
@@ -5455,7 +5455,7 @@ commands:
   - CT-VIEW-TRANSFORM-SMALL-LARGE-ERROR
   draft_test: LT-VIEW-TRANSFORM-SMALL-LARGE-DRAFT
   undo_test: LT-VIEW-TRANSFORM-SMALL-LARGE-UNDO
-  known_restrictions: null
+  known_restrictions: 'Observe first: `view data profile VIEW_ID` on the column to see its type and range.'
   reviewed_by: primary
 - command_id: view.transform.sort
   command_path: view transform sort
@@ -5550,7 +5550,7 @@ commands:
   - CT-VIEW-TRANSFORM-SPLIT-ERROR
   draft_test: LT-VIEW-TRANSFORM-SPLIT-DRAFT
   undo_test: LT-VIEW-TRANSFORM-SPLIT-UNDO
-  known_restrictions: null
+  known_restrictions: 'Observe first: `view data get VIEW_ID` on the column to see how the separator appears in real values.'
   reviewed_by: primary
 - command_id: view.transform.substring
   command_path: view transform substring
@@ -5596,7 +5596,7 @@ commands:
   - CT-VIEW-TRANSFORM-SUBSTRING-ERROR
   draft_test: LT-VIEW-TRANSFORM-SUBSTRING-DRAFT
   undo_test: LT-VIEW-TRANSFORM-SUBSTRING-UNDO
-  known_restrictions: null
+  known_restrictions: 'Observe first: `view data get VIEW_ID` on the column to see the real value lengths and formats.'
   reviewed_by: primary
 - command_id: view.transform.text
   command_path: view transform text
@@ -5642,7 +5642,7 @@ commands:
   - CT-VIEW-TRANSFORM-TEXT-ERROR
   draft_test: LT-VIEW-TRANSFORM-TEXT-DRAFT
   undo_test: LT-VIEW-TRANSFORM-TEXT-UNDO
-  known_restrictions: null
+  known_restrictions: 'Observe first: `view data profile VIEW_ID` on the column to see the current values (case, padding, spelling variants).'
   reviewed_by: primary
 - command_id: view.transform.unnest
   command_path: view transform unnest
@@ -5688,7 +5688,7 @@ commands:
   - CT-VIEW-TRANSFORM-UNNEST-ERROR
   draft_test: LT-VIEW-TRANSFORM-UNNEST-DRAFT
   undo_test: LT-VIEW-TRANSFORM-UNNEST-UNDO
-  known_restrictions: null
+  known_restrictions: 'Observe first: `view data get VIEW_ID` on the column to see how the nested values are stored.'
   reviewed_by: primary
 - command_id: view.transform.window
   command_path: view transform window
@@ -5736,7 +5736,7 @@ commands:
   - CT-VIEW-TRANSFORM-WINDOW-ERROR
   draft_test: LT-VIEW-TRANSFORM-WINDOW-DRAFT
   undo_test: LT-VIEW-TRANSFORM-WINDOW-UNDO
-  known_restrictions: null
+  known_restrictions: 'Observe first: `view get VIEW_ID` for the column types, and `view data profile` for blanks in the partition and order columns.'
   reviewed_by: primary
 - command_id: view.trash
   command_path: view trash
