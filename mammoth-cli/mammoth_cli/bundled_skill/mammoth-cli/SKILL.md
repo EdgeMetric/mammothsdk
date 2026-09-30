@@ -75,7 +75,7 @@ mammoth schema find "join two datasets; remove duplicates; build a dashboard"   
 | Combine two datasets on a key (merge, VLOOKUP) | `view transform join`; one value per key: `view transform lookup` |
 | Add rows to an existing dataset, or combine sources | Local file: `file upload FILE --input '{"append_to_ds_id": DATASET_ID}'`. Already in Mammoth: `view export dataset VIEW_ID --input '{"dataset_name": "NAME"}'`, then per further source `view export dataset VIEW_ID --input '{"dataset_name": "NAME", "target_ds_id": DATASET_ID, "save_as_mode": "APPEND_TO_DS"}'` — combine first, clean once; then `discard-duplicates` and diff `row_count` before/after ([about Mammoth](references/about-mammoth.md#view-settings-and-what-has-no-command)) |
 | Keep or remove rows | `view transform filter` |
-| Remove duplicate rows | Check first: `view data get` states `duplicates` (`exact_duplicate_rows`, and `rows_checked` against `row_count`). Zero: report "no duplicates, nothing to change" and stop. Otherwise `view transform discard-duplicates` (its `--dry-run` reports `predicted_impact`, or fails `no_op` when there is nothing to remove) |
+| Remove duplicate rows | read `duplicates`; 0: stop. Else `view transform discard-duplicates` |
 | Totals, counts, averages per group — just to read the number | `view data aggregate` (read-only: `--input '{"group_by": [...], "aggregations": [{"column": ..., "function": "SUM"}]}'` or `{"metric": {...}}`); never add a `pivot` task just to answer a question |
 | Totals, counts, averages per group — as a lasting change to the pipeline | `view transform pivot` |
 | A calculated column | `view transform math` |
