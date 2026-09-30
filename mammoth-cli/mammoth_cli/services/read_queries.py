@@ -26,6 +26,7 @@ from mammoth_cli.errors.envelope import (
     EXIT_USAGE,
     CliError,
 )
+from mammoth_cli.services import data_profile as dp
 from mammoth_cli.services import text_dates
 from mammoth_cli.services.conditions import CONDITION_KWARG, _resolve_operator
 
@@ -487,6 +488,41 @@ def _column_range(ctx: ReadContext, column: str) -> dict[str, Any] | None:
         "min": rows[0].get("agg_0"),
         "max": rows[0].get("agg_1"),
     }
+
+
+def with_variant_hint(ctx: ReadContext, data: Any, column: str) -> Any:
+    """On a read of a TEXT column, say how many spelling-variant groups its values hold.
+
+    One value-table query (what ``view data profile`` reads), grouped by
+    :mod:`mammoth_cli.services.data_profile`, so a column that looks clean in its
+    top values but holds ``Acme Ltd`` and ``ACME Limited`` shows it in the read
+    that is naturally done first.
+    """
+    if not isinstance(data, dict) or not ctx.is_text(column):
+        return data
+    limit = dp.MAX_LISTED_DISTINCT
+    rows = _rows(
+        ctx.query(
+            aggregations=[{"function": "COUNT", "as_name": "n"}],
+            group_by=[ctx.internal(column)],
+            limit=limit + 2,
+        )
+    )
+    if len(rows) > limit + 1:
+        found: dict[str, Any] = {"checked": False, "reason": f"more than {limit} distinct values"}
+        return {**data, "spelling_variants": found}
+    counts = {
+        r["group_0"]: int(r.get("agg_0") or 0) for r in rows if isinstance(r.get("group_0"), str)
+    }
+    groups, likely = dp.variant_groups(counts), dp.likely_groups(counts)
+    found = {"checked": True, "groups": len(groups), "likely_groups": len(likely)}
+    if groups or likely:
+        found["examples"] = [[v["value"] for v in g["variants"]] for g in (groups + likely)[:3]]
+        found["next"] = (
+            f"mammoth view data profile {ctx.view_id} lists every group and the bulk-replace "
+            "that merges the sure ones; confirm likely_groups with the user first."
+        )
+    return {**data, "spelling_variants": found}
 
 
 _ADDITIVE = ("SUM", "COUNT")

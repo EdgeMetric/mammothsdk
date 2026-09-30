@@ -13,11 +13,14 @@ exact either way, because a bound of zero means nothing can change.
 
 from __future__ import annotations
 
+import re
+from collections import defaultdict
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field
 from typing import Any
 
 from mammoth_cli.errors.envelope import CODE_NO_OP, EXIT_USAGE, CliError
+from mammoth_cli.services import data_profile as dp
 from mammoth_cli.services import read_queries
 from mammoth_cli.services.conditions import compile_condition
 
@@ -53,6 +56,7 @@ class ImpactRead:
     project_id: int | None
     info: Mapping[str, Any]
     document: Mapping[str, Any] = field(default_factory=dict)
+    dry_run: bool = False
 
     @property
     def row_count(self) -> int:
@@ -223,9 +227,71 @@ def _any_contains(columns: Sequence[str], values: Sequence[str], match_case: boo
     )
 
 
+def _variants_left(
+    read: ImpactRead, columns: Sequence[str], rewrite: Callable[[str], str]
+) -> dict[str, Any]:
+    """Per TEXT column, the spelling-variant groups still there once ``rewrite`` is applied.
+
+    Reads the column's value table (what the profile reads), applies the step to
+    it in memory and groups what is left, so a merge that fixed 343 of 347
+    groups says so before it is approved. Never blocks the dry run.
+    """
+    left: dict[str, Any] = {}
+    internal, types = read.display_to_internal(), read.column_types()
+    for column in columns:
+        if types.get(column) != "TEXT" or column not in internal:
+            continue
+        try:
+            rows = read.aggregate(
+                aggregations=_COUNT,
+                group_by=[internal[column]],
+                limit=dp.MAX_LISTED_DISTINCT + 2,
+            )
+        except Exception as exc:  # noqa: BLE001 -- the dry run must still report its count
+            left[column] = {"checked": False, "reason": str(exc)[:120]}
+            continue
+        if len(rows) > dp.MAX_LISTED_DISTINCT + 1:
+            left[column] = {"checked": False, "reason": "too many distinct values to compare"}
+            continue
+        counts: dict[str, int] = defaultdict(int)
+        for row in rows:
+            if isinstance(row.get("group_0"), str):
+                counts[rewrite(row["group_0"])] += int(row.get(_COUNT_KEY) or 0)
+        groups, likely = dp.variant_groups(counts), dp.likely_groups(counts)
+        if groups or likely:
+            left[column] = {
+                "groups_left": len(groups),
+                "likely_groups_left": len(likely),
+                "examples": [[v["value"] for v in g["variants"]] for g in (groups + likely)[:3]],
+            }
+    return left
+
+
+def _rewriter(
+    pairs: Sequence[tuple[str, str]], match_case: bool, whole: bool
+) -> Callable[[str], str]:
+    """The text change a replace makes to one value (substring, or whole cell)."""
+    flags = 0 if match_case else re.IGNORECASE
+
+    def rewrite(value: str) -> str:
+        for search, replace in pairs:
+            pattern = re.escape(search)
+            value = re.sub(
+                f"^{pattern}$" if whole else pattern, lambda _m, r=replace: r, value, flags=flags
+            )
+        return value
+
+    return rewrite
+
+
 def _measure_replace(
-    read: ImpactRead, kwargs: Mapping[str, Any], values: Sequence[str], match_case: bool
+    read: ImpactRead,
+    kwargs: Mapping[str, Any],
+    pairs: Sequence[tuple[str, str]],
+    options: tuple[bool, bool] = (False, False),
 ) -> Measured:
+    match_case, whole = options
+    values = [search for search, _replace in pairs]
     columns = [str(c) for c in kwargs["columns"]]
     condition = _any_contains(columns, values, match_case)
     scope = kwargs.get("condition")
@@ -233,9 +299,17 @@ def _measure_replace(
         scope = compile_condition(scope)
     matching = read.count(condition & scope if scope is not None else condition)
     shown = ", ".join(repr(v) for v in values[:5])
+    report: dict[str, Any] = {
+        "rows_matching": matching,
+        "row_count": read.row_count,
+        "exact": False,
+    }
+    if read.dry_run and matching and scope is None:
+        left = _variants_left(read, columns, _rewriter(pairs, match_case, whole))
+        report["variants_left"] = left or "none: no spelling-variant group remains in these columns"
     return Measured(
         matching,
-        {"rows_matching": matching, "row_count": read.row_count, "exact": False},
+        report,
         f"No row of view {read.view_id} holds {shown} in {', '.join(columns)} "
         f"(0 of {read.row_count} rows); nothing to replace, nothing to change.",
     )
@@ -243,17 +317,21 @@ def _measure_replace(
 
 def measure_replace(read: ImpactRead, kwargs: Mapping[str, Any]) -> Measured:
     """Rows that contain the text to find (the most a replace can change)."""
-    return _measure_replace(
-        read, kwargs, [str(kwargs["find"])], bool(kwargs.get("match_case", False))
-    )
+    pairs = [(str(kwargs["find"]), str(kwargs.get("replace", "")))]
+    return _measure_replace(read, kwargs, pairs, (bool(kwargs.get("match_case", False)), False))
 
 
 def measure_bulk_replace(read: ImpactRead, kwargs: Mapping[str, Any]) -> Measured:
     """Rows that contain any search value of the mapping (the most a bulk replace can change)."""
     # The SDK objects are built later, in the service; here entries are still mappings.
     entries = [e if isinstance(e, Mapping) else vars(e) for e in kwargs["mapping"]]
-    values = [str(v) for entry in entries for v in entry.get("search") or []]
-    return _measure_replace(read, kwargs, values, bool(kwargs.get("match_case", True)))
+    pairs = [
+        (str(v), str(entry.get("replace", "")))
+        for entry in entries
+        for v in entry.get("search") or []
+    ]
+    options = (bool(kwargs.get("match_case", True)), bool(kwargs.get("match_words", False)))
+    return _measure_replace(read, kwargs, pairs, options)
 
 
 Measure = Callable[[ImpactRead, Mapping[str, Any]], Measured]

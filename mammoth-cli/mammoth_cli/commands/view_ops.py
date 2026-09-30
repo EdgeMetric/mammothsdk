@@ -1072,6 +1072,7 @@ def _impact_check(
             project_id,
             apply_column_renames(info),
             invocation.load_input() or {},
+            invocation.dry_run,
         )
         try:
             measured = measure(read, kwargs)

@@ -1771,6 +1771,8 @@ def view_data_explore(invocation: Invocation) -> HandlerResult:
     from the data -- the format is detected and stated in ``text_dates``, and an
     ambiguous or unreadable column fails loud.
     Every bucket carries ``count`` and ``percentage`` of the column's total.
+    A TEXT column also carries ``spelling_variants``: how many groups of one value
+    spelled several ways its values hold (``view data profile`` lists them).
     An optional ``metric`` ``{"column": ..., "function": ...}`` (SUM, COUNT,
     AVG, MIN, MAX, STDDEV or DISTINCT_COUNT) adds a second aggregate per bucket over another column,
     and an optional ``condition`` filters rows first -- same as ``view data
@@ -1822,6 +1824,8 @@ def view_data_explore(invocation: Invocation) -> HandlerResult:
             range_columns.append(column_arg)
         data = read_queries.with_observed_range(reads, data, list(dict.fromkeys(range_columns)))
         data = read_queries.with_assumptions(reads, data)
+        if not bucket_dates:
+            data = read_queries.with_variant_hint(reads, data, column_arg)
     return data, meta
 
 

@@ -1145,6 +1145,11 @@ def test_data_explore_numeric_column_defaults_level_to_auto(
     )
 
 
+def _explore_args(call_log: list[tuple[str, dict[str, object]]]) -> dict[str, object]:
+    """Arguments of the explore call itself (a TEXT column also makes a variant-hint read)."""
+    return [c for c in call_log if c[0] == _DATA_EXPLORE][-1][1]
+
+
 def test_data_explore_text_column_forwards_no_limit_by_default(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
@@ -1157,7 +1162,7 @@ def test_data_explore_text_column_forwards_no_limit_by_default(
     view_cmd.view_data_explore(
         _inv("view.data.explore", project=180, extra_args=["7", "Channel", "9"], input_file=doc)
     )
-    assert "limit" not in _without_meta(fake_service.call_log)[-1][1]
+    assert "limit" not in _explore_args(fake_service.call_log)
 
 
 def test_data_explore_text_column_forwards_explicit_limit(
@@ -1170,7 +1175,7 @@ def test_data_explore_text_column_forwards_explicit_limit(
     view_cmd.view_data_explore(
         _inv("view.data.explore", project=180, extra_args=["7", "Channel", "9"], input_file=doc)
     )
-    assert _without_meta(fake_service.call_log)[-1][1]["limit"] == 1
+    assert _explore_args(fake_service.call_log)["limit"] == 1
 
 
 def test_data_explore_metric_adds_second_aggregate(
@@ -1191,7 +1196,7 @@ def test_data_explore_metric_adds_second_aggregate(
     data = view_cmd.view_data_explore(
         _inv("view.data.explore", project=180, extra_args=["7", "Channel", "9"], input_file=doc)
     )[0]
-    assert _without_meta(fake_service.call_log)[-1][1]["metric"] == {
+    assert _explore_args(fake_service.call_log)["metric"] == {
         "function": "SUM",
         "as_name": "Total Spend",
         "column": "column_2",
