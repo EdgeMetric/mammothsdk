@@ -395,19 +395,17 @@ class SdkMammothService:
         gate = self.gate
         if gate is not None:
             scope = {"view_id": view_id, "dataset_id": getattr(view, "dataset_id", None)}
-            if method == "math":
-                # The SDK validates the expression while building the task,
-                # before its one network call. Run that real code path and stop
-                # at the call (``_add_task``), so a dry run rejects exactly what
-                # a real run would.
-                def stop_at_request(_spec: dict[str, Any]) -> dict[str, Any]:
-                    gate(method, kwargs, **scope)
-                    raise AssertionError("the dry-run gate must stop the request")
-
-                view._add_task = stop_at_request  # type: ignore[method-assign, assignment]
-            else:
+            if method != "math":
                 gate(method, kwargs, **scope)
         try:
+            if gate is not None and method == "math":
+                # The SDK validates the expression while building the task,
+                # before its one network call. Build without sending (the
+                # public ``View.build_only``), so a dry run rejects exactly
+                # what a real run would, then stop at the gate.
+                with view.build_only():
+                    attribute(**kwargs)
+                gate(method, kwargs, **scope)
             with spinner(self._progress):
                 return attribute(**kwargs)
         except DryRunStop:

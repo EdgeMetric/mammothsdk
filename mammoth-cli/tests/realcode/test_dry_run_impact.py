@@ -244,3 +244,32 @@ def test_replace_scoped_by_a_condition_counts_only_rows_in_scope(
     assert json.loads(result.output)["error"]["code"] == "no_op"
     sent = json.dumps([r for r in api.requests if r.path.endswith("/data/query")][0].json_body)
     assert "ICONTAINS" in sent and "col_b" in sent
+
+
+def test_real_discard_duplicates_with_none_adds_no_task(
+    monkeypatch: pytest.MonkeyPatch, real_service: ServiceFactory
+) -> None:
+    service, api = real_service(project_id=180)
+    monkeypatch.setattr(factory, "build_service", lambda *a, **k: service)
+    api.on("GET", r"/datasets/55/dataviews/3062$", body=_VIEW)
+    api.on("POST", r"/data/query$", body={"data": [{"agg_0": 1}, {"agg_0": 1}]})
+    result = make_runner().invoke(
+        [
+            "view",
+            "transform",
+            "discard-duplicates",
+            "3062",
+            "--project",
+            "180",
+            "--input",
+            '{"dataset_id": 55}',
+            "--yes",
+            "--output",
+            "json",
+            "--no-input",
+        ]
+    )
+    assert result.exit_code == 0, result.output
+    data = json.loads(result.output)["data"]
+    assert data["status"] == "no_change" and "No task was added" in data["note"]
+    assert not [r for r in api.requests if r.method == "POST" and r.path.endswith("/tasks")]
