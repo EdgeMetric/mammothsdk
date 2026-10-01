@@ -1038,6 +1038,10 @@ def key_overlap(left_counts: dict[Any, int], right_counts: dict[Any, int]) -> di
         "unmatched_keys": _unmatched(left_counts, right_keys),
         "right_rows_checked": right_total,
         "right_match_rate": round(right_matched / right_total, 3) if right_total else None,
+        "right_unmatched_rows": right_total - right_matched,
+        "right_unmatched_key_count": sum(
+            1 for key in right_counts if key in (None, "") or key not in left_keys
+        ),
         "right_unmatched_keys": _unmatched(right_counts, left_keys),
     }
 
@@ -1097,13 +1101,31 @@ def join_dry_run_preview(
     }
 
 
-def with_join_check(data: Any, before: Any, after: dict[str, Any], document: dict[str, Any]) -> Any:
+_RIGHT_CHECK_FIELDS = (
+    "right_rows_checked",
+    "right_match_rate",
+    "right_unmatched_rows",
+    "right_unmatched_key_count",
+    "right_unmatched_keys",
+)
+
+
+def with_join_check(
+    data: Any,
+    before: Any,
+    after: dict[str, Any],
+    document: dict[str, Any],
+    right: dict[str, Any] | None = None,
+) -> Any:
     """Add ``join_check`` (row counts, columns added, match rate) to a join result.
 
     ``unmatched_rows`` counts rows where every added column is blank: for a
     LEFT join these are rows whose key found no match in the other view. It is
     counted over the whole view when ``after`` carries ``unmatched_total``
     (see :func:`join_after_snapshot`), else over the sampled first page.
+    ``right`` is a :func:`join_dry_run_preview` of the same join: its right-side
+    fields (keys only the other view has) are copied in, so a LEFT join does not
+    hide them.
     """
     if not isinstance(data, dict) or not isinstance(before, dict):
         return data
@@ -1155,6 +1177,14 @@ def with_join_check(data: Any, before: Any, after: dict[str, Any], document: dic
             notes.append(
                 f"{before_n - after_n} rows had no match and were dropped "
                 "(an INNER join keeps matched rows only)."
+            )
+    if right and right.get("checked"):
+        check.update({k: right[k] for k in _RIGHT_CHECK_FIELDS})
+        if right["right_unmatched_key_count"]:
+            notes.append(
+                f"{right['right_unmatched_key_count']} key(s) in the other view found no "
+                "partner here (right_unmatched_keys lists the first ones); report them "
+                "as well as the unmatched rows on this side."
             )
     if notes:
         check["notes"] = notes
@@ -2713,6 +2743,7 @@ def view_task_add(invocation: Invocation) -> HandlerResult:
         reject_pipeline_reference_errors,
         reject_task_runtime_error,
         require_expected_task_count,
+        with_in_place_note,
     )
 
     with open_service(invocation) as (service, auth):
@@ -2723,7 +2754,7 @@ def view_task_add(invocation: Invocation) -> HandlerResult:
         reject_task_runtime_error(
             service, dataview_id, kwargs.get("dataset_id"), data, submitted_at
         )
-    return data, _meta(invocation, auth.workspace_id, None)
+    return with_in_place_note(data, dataview_id), _meta(invocation, auth.workspace_id, None)
 
 
 def view_task_delete(invocation: Invocation) -> HandlerResult:

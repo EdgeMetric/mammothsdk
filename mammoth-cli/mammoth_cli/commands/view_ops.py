@@ -375,6 +375,25 @@ def _dispatch_view(
     return data, _meta(invocation, auth.workspace_id)
 
 
+def with_in_place_note(data: Any, view_id: int) -> Any:
+    """Tell the caller this write changed view ``view_id`` itself, and how to avoid that.
+
+    An agent asked for a NEW dataset edited the source's own view; the way to
+    leave the source untouched is a working view, then ``view export dataset``.
+    """
+    if not isinstance(data, dict):
+        return data
+    return {
+        **data,
+        "in_place_note": (
+            f"This edited existing view {view_id} in place. If the user asked for a NEW "
+            "dataset or the source must stay untouched, do not edit it: run 'mammoth view "
+            "create DATASET_ID' for a working view, make the steps on that view, then "
+            "'mammoth view export dataset' it into the new dataset."
+        ),
+    }
+
+
 def _flag_unsettled_pipeline(service: Any, dataset_id: int, view_id: int, data: Any) -> None:
     """Wait for the pipeline after a write with no row check, and record what it finds.
 
@@ -1193,6 +1212,7 @@ def view_transform_join(invocation: Invocation) -> HandlerResult:
             state,
             join_after_snapshot(service, dataset_id, view_id, project_id, state),
             document,
+            _join_preview(service, dataset_id, view_id, document, project_id),
         )
 
     try:
