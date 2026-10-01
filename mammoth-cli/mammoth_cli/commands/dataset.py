@@ -681,10 +681,21 @@ def dataset_delete(invocation: Invocation) -> HandlerResult:
         if hint is not None:
             action = f"{action}. {hint}"
         enforce_confirmation(invocation, policy=POLICY_PROMPT_OR_YES, action=action)
-        data = service.call(_symbol(invocation), dataset_id=dataset_id, project_id=project_id)
+        ack = service.call(_symbol(invocation), dataset_id=dataset_id, project_id=project_id)
+        # The server acknowledges a delete with a job handle. Settle it here so
+        # the handle's id is kept as ``job.id`` (the shape ``view delete`` has).
+        data = _with_job(ack, service.wait_if_job(ack))
     if hint is not None and isinstance(data, dict):
         data = {**data, "hint": hint}
     return data, _meta(invocation, auth.workspace_id, project_id)
+
+
+def _with_job(handle: Any, settled: Any) -> Any:
+    """Return the settled result with the acknowledged job's id as ``job.id``."""
+    job_id = handle.get("job_id") if isinstance(handle, dict) else None
+    if job_id is None or not isinstance(settled, dict):
+        return settled
+    return {**settled, "job": {"id": job_id}}
 
 
 def dataset_bulk_delete(invocation: Invocation) -> HandlerResult:
