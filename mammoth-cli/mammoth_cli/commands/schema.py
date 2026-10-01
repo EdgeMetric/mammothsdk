@@ -469,6 +469,28 @@ _SCOPE_REQUIREMENTS: dict[str, dict[str, Any]] = {
 }
 
 _MAX_FIND_RESULTS = 20
+# View transform/task commands add a step to the GIVEN view. An agent asked for
+# a NEW dataset must know that before calling, so the statement is carried by
+# every such command's contract (schema get ``preconditions``, find, --help).
+_IN_PLACE_PREFIXES = ("view.transform.", "view.task.")
+IN_PLACE_RECIPE = (
+    "EDITS THE GIVEN VIEW IN PLACE: this adds a step to the view and changes that view "
+    "and its dataset's output. To make a NEW dataset and leave the source untouched: "
+    "`mammoth view create SOURCE_DATASET_ID` (working view), do the steps on that working "
+    'view, then `mammoth view export dataset WORKING_VIEW_ID --input \'{"dataset_name": "..."}\'`.'
+)
+_IN_PLACE_KEYWORDS = (
+    "new dataset create make in place edits given view working view source untouched"
+)
+
+
+def edits_view_in_place(record: dict[str, Any]) -> bool:
+    """True for a view transform/task command that changes an existing view."""
+    return bool(record.get("edits_target")) and str(record.get("command_id", "")).startswith(
+        _IN_PLACE_PREFIXES
+    )
+
+
 # Outranks any word-overlap score: a command named by its full path comes first.
 _NAMED_COMMAND_BOOST = 10_000
 # Bag-of-words scoring cannot tell "create a NEW VIEW from an existing
@@ -944,7 +966,9 @@ def _compact_contract(record: dict[str, Any]) -> dict[str, Any]:
             "the intended postcondition."
         )
     restrictions = record.get("known_restrictions")
-    if restrictions is None:
+    if edits_view_in_place(record):
+        restrictions = f"{IN_PLACE_RECIPE} {restrictions or ''}".strip()
+    elif restrictions is None:
         required_positionals = [
             str(item.get("metavar") or item.get("name"))
             for item in record.get("positionals", [])
@@ -1664,6 +1688,7 @@ def find_schemas(
             (30, f"{record.get('human_example', '')} {record.get('agent_example', '')}"),
             (20, positional_help),
             (15, _operation_hints_by_command().get(command_id, "")),
+            (15, _IN_PLACE_KEYWORDS if edits_view_in_place(record) else ""),
             (60, _COMMAND_DISCOVERY_PURPOSES.get(command_id, "")),
             (3, _GROUP_DISCOVERY_PURPOSES.get(command_path.split()[0], "")),
         )

@@ -30,6 +30,7 @@ from typer.core import TyperGroup
 from mammoth_cli import __version__
 from mammoth_cli.commands import BESPOKE
 from mammoth_cli.commands.registry import HANDLERS, Handler
+from mammoth_cli.commands.schema import IN_PLACE_RECIPE, edits_view_in_place
 from mammoth_cli.context import profiles
 from mammoth_cli.errors.envelope import EXIT_USAGE, CliError, not_implemented_error
 from mammoth_cli.manifest.loader import command_by_id, load_commands
@@ -929,6 +930,8 @@ def _command_help(command_id: str, record: dict[str, Any] | None) -> str | None:
         summary = doc.strip().splitlines()[0].strip().replace("``", "'")
         if summary:
             parts.append(summary)
+    if record is not None and edits_view_in_place(record):
+        parts.append(IN_PLACE_RECIPE)
     example = (record or {}).get("agent_example")
     if example:
         parts.append(f"Example: {example}")
