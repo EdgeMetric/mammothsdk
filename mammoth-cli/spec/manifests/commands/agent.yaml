@@ -1,5 +1,86 @@
 manifest_schema_version: 1
 commands:
+- command_id: agent.action.delete
+  command_path: agent action delete
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - name: action_id
+    type: str
+    required: true
+    metavar: ACTION_ID
+    falls_back_to_field: null
+    help: ID of the recorded action (from agent action list).
+  options: []
+  sdk_symbol: mammoth.api.agents.AgentsAPI.action_delete
+  sdk_conversion: Call mammoth.api.agents.AgentsAPI.action_delete with the session id from --session and
+    the positional id.
+  request_model: AgentActionDeleteRequest
+  result_model: AgentActionDeleteResult
+  mutation_class: destructive
+  edits_target: true
+  confirmation: prompt_or_yes
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: null
+  live_exemption_reason: Live coverage runs on the test server with a chat session that made a change.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth agent action delete ACTION_ID --help
+  agent_example: mammoth agent action delete resource-123
+  unit_tests:
+  - UT-AGENTACTIONDELETE
+  contract_tests:
+  - CT-AGENTACTIONDELETE
+  draft_test: null
+  undo_test: null
+  known_restrictions: Writes. Deletes the object one recorded action made. The server deletes only an
+    object the chat created (created=true in agent action list), refuses an object the chat only edited
+    or that another object now uses, and re-checks your permission on it. The object goes to the trash,
+    so it can be restored. Prompt or --yes. Needs --session SESSION_ID; an embedded chat supplies it.
+  reviewed_by: primary
+  readback:
+    command: agent.action.list
+    ids: {}
+    kind: object
+- command_id: agent.action.list
+  command_path: agent action list
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.agents.AgentsAPI.action_list
+  sdk_conversion: Call mammoth.api.agents.AgentsAPI.action_list with the session id from --session and
+    the positional id.
+  request_model: AgentActionListRequest
+  result_model: AgentActionListResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: null
+  live_exemption_reason: Live coverage runs on the test server with a chat session that made a change.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth agent action list --help
+  agent_example: mammoth agent action list
+  unit_tests:
+  - UT-AGENTACTIONLIST
+  contract_tests:
+  - CT-AGENTACTIONLIST
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Read-only. Lists every change the chat session made through the CLI (one row per
+    write: action id, run and step, command, target object, whether the chat created the object, and its
+    state after the write). Read it before agent action delete. Needs --session SESSION_ID; an embedded
+    chat supplies it.'
+  reviewed_by: primary
 - command_id: agent.chat
   command_path: agent chat
   disposition: command
@@ -38,6 +119,253 @@ commands:
   reviewed_by: primary
   readback:
     command: agent.session.list
+    ids: {}
+    kind: object
+- command_id: agent.run.extend
+  command_path: agent run extend
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - name: run_id
+    type: str
+    required: true
+    metavar: RUN_ID
+    falls_back_to_field: null
+    help: ID of the run (from agent run status or agent run list).
+  options: []
+  sdk_symbol: mammoth.api.agents.AgentsAPI.run_extend
+  sdk_conversion: Call mammoth.api.agents.AgentsAPI.run_extend with the session id from --session and
+    the positional id.
+  request_model: AgentRunExtendRequest
+  result_model: AgentRunExtendResult
+  mutation_class: benign_mutation
+  edits_target: true
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: null
+  live_exemption_reason: Live coverage runs on the test server with a chat session that made a change.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth agent run extend RUN_ID --help
+  agent_example: mammoth agent run extend resource-123
+  unit_tests:
+  - UT-AGENTRUNEXTEND
+  contract_tests:
+  - CT-AGENTRUNEXTEND
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Writes. Gives a capped run a fresh time budget (the 8 hour active-time cap). The
+    server refuses extend when this command runs from inside the run itself: a run cannot extend itself,
+    ask the user to extend it. Returns the run after the request. Needs --session SESSION_ID; an embedded
+    chat supplies it.'
+  reviewed_by: primary
+  readback:
+    command: agent.run.status
+    ids: {}
+    kind: object
+- command_id: agent.run.list
+  command_path: agent run list
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.agents.AgentsAPI.run_list
+  sdk_conversion: Call mammoth.api.agents.AgentsAPI.run_list with the session id from --session and the
+    positional id.
+  request_model: AgentRunListRequest
+  result_model: AgentRunListResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: null
+  live_exemption_reason: Live coverage runs on the test server with a chat session that made a change.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth agent run list --help
+  agent_example: mammoth agent run list
+  unit_tests:
+  - UT-AGENTRUNLIST
+  contract_tests:
+  - CT-AGENTRUNLIST
+  draft_test: null
+  undo_test: null
+  known_restrictions: Read-only. Lists the runs of the chat session, newest first, with the same fields
+    as agent run status. Needs --session SESSION_ID; an embedded chat supplies it.
+  reviewed_by: primary
+- command_id: agent.run.pause
+  command_path: agent run pause
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - name: run_id
+    type: str
+    required: true
+    metavar: RUN_ID
+    falls_back_to_field: null
+    help: ID of the run (from agent run status or agent run list).
+  options: []
+  sdk_symbol: mammoth.api.agents.AgentsAPI.run_pause
+  sdk_conversion: Call mammoth.api.agents.AgentsAPI.run_pause with the session id from --session and the
+    positional id.
+  request_model: AgentRunPauseRequest
+  result_model: AgentRunPauseResult
+  mutation_class: benign_mutation
+  edits_target: true
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: null
+  live_exemption_reason: Live coverage runs on the test server with a chat session that made a change.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth agent run pause RUN_ID --help
+  agent_example: mammoth agent run pause resource-123
+  unit_tests:
+  - UT-AGENTRUNPAUSE
+  contract_tests:
+  - CT-AGENTRUNPAUSE
+  draft_test: null
+  undo_test: null
+  known_restrictions: Writes. Pauses the run after its current call finishes; a waiting run pauses at
+    once. Returns the run after the request. Needs --session SESSION_ID; an embedded chat supplies it.
+  reviewed_by: primary
+  readback:
+    command: agent.run.status
+    ids: {}
+    kind: object
+- command_id: agent.run.resume
+  command_path: agent run resume
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - name: run_id
+    type: str
+    required: true
+    metavar: RUN_ID
+    falls_back_to_field: null
+    help: ID of the run (from agent run status or agent run list).
+  options: []
+  sdk_symbol: mammoth.api.agents.AgentsAPI.run_resume
+  sdk_conversion: Call mammoth.api.agents.AgentsAPI.run_resume with the session id from --session and
+    the positional id.
+  request_model: AgentRunResumeRequest
+  result_model: AgentRunResumeResult
+  mutation_class: benign_mutation
+  edits_target: true
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: null
+  live_exemption_reason: Live coverage runs on the test server with a chat session that made a change.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth agent run resume RUN_ID --help
+  agent_example: mammoth agent run resume resource-123
+  unit_tests:
+  - UT-AGENTRUNRESUME
+  contract_tests:
+  - CT-AGENTRUNRESUME
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Writes. Resumes a paused run from where it stopped. The server refuses resume when
+    this command runs from inside the run itself: a run cannot resume itself, ask the user to resume it.
+    Returns the run after the request. Needs --session SESSION_ID; an embedded chat supplies it.'
+  reviewed_by: primary
+  readback:
+    command: agent.run.status
+    ids: {}
+    kind: object
+- command_id: agent.run.status
+  command_path: agent run status
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.agents.AgentsAPI.run_status
+  sdk_conversion: Call mammoth.api.agents.AgentsAPI.run_status with the session id from --session and
+    the positional id.
+  request_model: AgentRunStatusRequest
+  result_model: AgentRunStatusResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: null
+  live_exemption_reason: Live coverage runs on the test server with a chat session that made a change.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth agent run status --help
+  agent_example: mammoth agent run status
+  unit_tests:
+  - UT-AGENTRUNSTATUS
+  contract_tests:
+  - CT-AGENTRUNSTATUS
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Read-only. Shows the chat session''s current durable run: run id, state (running,
+    waiting, paused, capped, done, failed or stopped), the step it is on, what it waits for, and the active
+    time used and left of its 8 hour budget (time spent waiting on you does not count). Needs --session
+    SESSION_ID; an embedded chat supplies it.'
+  reviewed_by: primary
+- command_id: agent.run.stop
+  command_path: agent run stop
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - name: run_id
+    type: str
+    required: true
+    metavar: RUN_ID
+    falls_back_to_field: null
+    help: ID of the run (from agent run status or agent run list).
+  options: []
+  sdk_symbol: mammoth.api.agents.AgentsAPI.run_stop
+  sdk_conversion: Call mammoth.api.agents.AgentsAPI.run_stop with the session id from --session and the
+    positional id.
+  request_model: AgentRunStopRequest
+  result_model: AgentRunStopResult
+  mutation_class: benign_mutation
+  edits_target: true
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: null
+  live_exemption_reason: Live coverage runs on the test server with a chat session that made a change.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth agent run stop RUN_ID --help
+  agent_example: mammoth agent run stop resource-123
+  unit_tests:
+  - UT-AGENTRUNSTOP
+  contract_tests:
+  - CT-AGENTRUNSTOP
+  draft_test: null
+  undo_test: null
+  known_restrictions: Writes. Stops the run and cancels its live step. A stopped run cannot be resumed.
+    Returns the run after the request. Needs --session SESSION_ID; an embedded chat supplies it.
+  reviewed_by: primary
+  readback:
+    command: agent.run.status
     ids: {}
     kind: object
 - command_id: agent.session.delete

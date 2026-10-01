@@ -50,6 +50,7 @@ class Invocation:
     output: str = "table"
     profile: str | None = None
     project: int | None = None
+    session: str | None = None
     timeout: float | None = None
     job_timeout: float | None = None
     pipeline_timeout: float | None = None

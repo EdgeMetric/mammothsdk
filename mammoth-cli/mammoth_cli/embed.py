@@ -39,6 +39,7 @@ def invoke(
     *,
     login: ExplicitLogin,
     project_id: int | None = None,
+    session_id: str | None = None,
     timeout: float | None = None,
     pipeline_timeout: float | None = None,
     job_timeout: float | None = None,
@@ -52,6 +53,9 @@ def invoke(
         login: The credentials, endpoint and extra headers for this call.
         project_id: The active project, sent as ``--project`` unless ``args``
             already names one.
+        session_id: The embedding chat's session, sent as ``--session`` unless
+            ``args`` already names one; ``agent action`` and ``agent run``
+            commands act on it, so the model never has to know its id.
         timeout: Per-request timeout in seconds, sent as ``--timeout`` unless
             ``args`` already sets one.
         pipeline_timeout: Pipeline wait timeout in seconds, sent as
@@ -68,6 +72,7 @@ def invoke(
     argv = _argv(
         args,
         project_id=project_id,
+        session_id=session_id,
         timeout=timeout,
         pipeline_timeout=pipeline_timeout,
         job_timeout=job_timeout,
@@ -92,11 +97,14 @@ def _argv(
     pipeline_timeout: float | None,
     job_timeout: float | None,
     return_running: bool,
+    session_id: str | None = None,
 ) -> list[str]:
     """``args`` plus the options an embedded call always runs with."""
     argv = list(args)
     if project_id is not None and not _has_option(argv, "--project"):
         argv += ["--project", str(project_id)]
+    if session_id is not None and not _has_option(argv, "--session"):
+        argv += ["--session", session_id]
     if timeout is not None and not _has_option(argv, "--timeout"):
         argv += ["--timeout", str(timeout)]
     if pipeline_timeout is not None and not _has_option(argv, "--pipeline-timeout"):

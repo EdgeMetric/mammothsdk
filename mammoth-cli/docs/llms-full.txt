@@ -29,8 +29,24 @@ Sensitive structured input must come from a private file or pipe; never put secr
 
 ## agent
 
+- `mammoth agent action delete` [destructive/prompt_or_yes] -> mammoth.api.agents.AgentsAPI.action_delete
+  example: mammoth agent action delete resource-123
+- `mammoth agent action list` [read/none] -> mammoth.api.agents.AgentsAPI.action_list
+  example: mammoth agent action list
 - `mammoth agent chat` [benign_mutation/none] -> mammoth.api.agents.AgentsAPI.chat
   example: mammoth agent chat --input '{"message": "Summarize revenue by region", "scope": {"sample_key": "Status"}}'
+- `mammoth agent run extend` [benign_mutation/none] -> mammoth.api.agents.AgentsAPI.run_extend
+  example: mammoth agent run extend resource-123
+- `mammoth agent run list` [read/none] -> mammoth.api.agents.AgentsAPI.run_list
+  example: mammoth agent run list
+- `mammoth agent run pause` [benign_mutation/none] -> mammoth.api.agents.AgentsAPI.run_pause
+  example: mammoth agent run pause resource-123
+- `mammoth agent run resume` [benign_mutation/none] -> mammoth.api.agents.AgentsAPI.run_resume
+  example: mammoth agent run resume resource-123
+- `mammoth agent run status` [read/none] -> mammoth.api.agents.AgentsAPI.run_status
+  example: mammoth agent run status
+- `mammoth agent run stop` [benign_mutation/none] -> mammoth.api.agents.AgentsAPI.run_stop
+  example: mammoth agent run stop resource-123
 - `mammoth agent session delete` [destructive/prompt_or_yes] -> mammoth.api.agents.AgentsAPI.session_delete
   example: mammoth agent session delete resource-123
 - `mammoth agent session list` [read/none] -> mammoth.api.agents.AgentsAPI.session_list

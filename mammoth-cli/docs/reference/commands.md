@@ -1,10 +1,10 @@
 # Command reference
 
-Generated from the reviewed command manifests for mammoth-cli 2.1.7.
+Generated from the reviewed command manifests for mammoth-cli 2.2.0.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
-Total commands: 580.
+Total commands: 588.
 
 ## activity
 
@@ -75,12 +75,88 @@ Total commands: 580.
 
 ## agent
 
+### `mammoth agent action delete`
+
+**Arguments**
+
+- `ACTION_ID` (str, required) — ID of the recorded action (from agent action list).
+
+- Mutation class: `destructive`
+- Confirmation: `prompt_or_yes`
+- Backing SDK: `mammoth.api.agents.AgentsAPI.action_delete`
+- Agent example: `mammoth agent action delete resource-123`
+
+### `mammoth agent action list`
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.agents.AgentsAPI.action_list`
+- Agent example: `mammoth agent action list`
+
 ### `mammoth agent chat`
 
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.agents.AgentsAPI.chat`
 - Agent example: `mammoth agent chat --input '{"message": "Summarize revenue by region", "scope": {"sample_key": "Status"}}'`
+
+### `mammoth agent run extend`
+
+**Arguments**
+
+- `RUN_ID` (str, required) — ID of the run (from agent run status or agent run list).
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.agents.AgentsAPI.run_extend`
+- Agent example: `mammoth agent run extend resource-123`
+
+### `mammoth agent run list`
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.agents.AgentsAPI.run_list`
+- Agent example: `mammoth agent run list`
+
+### `mammoth agent run pause`
+
+**Arguments**
+
+- `RUN_ID` (str, required) — ID of the run (from agent run status or agent run list).
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.agents.AgentsAPI.run_pause`
+- Agent example: `mammoth agent run pause resource-123`
+
+### `mammoth agent run resume`
+
+**Arguments**
+
+- `RUN_ID` (str, required) — ID of the run (from agent run status or agent run list).
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.agents.AgentsAPI.run_resume`
+- Agent example: `mammoth agent run resume resource-123`
+
+### `mammoth agent run status`
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.agents.AgentsAPI.run_status`
+- Agent example: `mammoth agent run status`
+
+### `mammoth agent run stop`
+
+**Arguments**
+
+- `RUN_ID` (str, required) — ID of the run (from agent run status or agent run list).
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.agents.AgentsAPI.run_stop`
+- Agent example: `mammoth agent run stop resource-123`
 
 ### `mammoth agent session delete`
 

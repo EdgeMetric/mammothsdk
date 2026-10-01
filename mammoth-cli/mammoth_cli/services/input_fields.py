@@ -7,6 +7,20 @@ from typing import Any
 from mammoth_cli.services.positionals import resolve_positionals
 
 _HANDLER_OWNED_FIELDS: dict[str, frozenset[str]] = {
+    # The chat session comes from the global ``--session`` option.
+    **{
+        f"agent.{command}": frozenset({"session_id"})
+        for command in (
+            "action.list",
+            "action.delete",
+            "run.status",
+            "run.list",
+            "run.pause",
+            "run.resume",
+            "run.stop",
+            "run.extend",
+        )
+    },
     # Skill handlers deliberately derive filesystem roots from the running
     # process and generate their own backup timestamp.  User input must not
     # claim to control values that the handlers replace or omit.

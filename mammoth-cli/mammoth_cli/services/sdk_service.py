@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import asyncio
 import inspect
+import os
 import re
 import threading
 from collections.abc import Callable
@@ -71,6 +72,10 @@ def _unrecognized_expression_token(message: str, expression: Any) -> str:
     tail = expression[int(match.group(1)) :]
     token = re.split(r"[-+*/%(),]", tail, maxsplit=1)[0].strip()
     return token or expression
+
+
+AGENT_RUN_ENV = "MAMMOTH_AGENT_RUN"
+AGENT_RUN_HEADER = "X-Mammoth-Agent-Run"
 
 
 class SdkMammothService:
@@ -141,6 +146,11 @@ class SdkMammothService:
             # After construction: the client sets its credential headers in
             # ``__init__``, and a forwarded session must replace them.
             self._client.session.headers.update(auth.headers)
+        run_id = os.environ.get(AGENT_RUN_ENV, "").strip()
+        if run_id:
+            # A leg of a durable agent run names its run, so the server can
+            # refuse the run's own resume and extend.
+            self._client.session.headers[AGENT_RUN_HEADER] = run_id
         if project_id is not None:
             self._client.set_project_id(project_id)
 

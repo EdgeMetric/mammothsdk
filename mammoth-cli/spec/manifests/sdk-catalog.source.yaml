@@ -320,12 +320,68 @@ sdk_methods:
   wait_policy: not_async
   pagination_policy: none
   openapi_operation_ids: []
+- sdk_symbol: mammoth.api.agents.AgentsAPI.action_delete
+  canonical_command: agent.action.delete
+  alias_of: null
+  mutation_class: destructive
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.agents.AgentsAPI.action_list
+  canonical_command: agent.action.list
+  alias_of: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids: []
 - sdk_symbol: mammoth.api.agents.AgentsAPI.chat
   canonical_command: agent.chat
   alias_of: null
   mutation_class: null
   wait_policy: null
   pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.agents.AgentsAPI.run_extend
+  canonical_command: agent.run.extend
+  alias_of: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.agents.AgentsAPI.run_list
+  canonical_command: agent.run.list
+  alias_of: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.agents.AgentsAPI.run_pause
+  canonical_command: agent.run.pause
+  alias_of: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.agents.AgentsAPI.run_resume
+  canonical_command: agent.run.resume
+  alias_of: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.agents.AgentsAPI.run_status
+  canonical_command: agent.run.status
+  alias_of: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.agents.AgentsAPI.run_stop
+  canonical_command: agent.run.stop
+  alias_of: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
   openapi_operation_ids: []
 - sdk_symbol: mammoth.api.agents.AgentsAPI.session_delete
   canonical_command: agent.session.delete

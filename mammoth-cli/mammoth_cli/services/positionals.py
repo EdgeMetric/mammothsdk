@@ -127,6 +127,30 @@ def _optional_project_id() -> tuple[PositionalSpec, ...]:
 # Commands whose positionals the signature cannot express correctly. Each entry
 # replaces the derivation wholesale; the drift test proves the union is right.
 POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
+    # The chat session is the global ``--session`` option, never a positional or
+    # an --input field; only the action or run being addressed is positional.
+    "agent.action.list": (),
+    "agent.run.status": (),
+    "agent.run.list": (),
+    "agent.action.delete": (
+        PositionalSpec(
+            name="action_id",
+            type=str,
+            required=True,
+            help="ID of the recorded action (from agent action list).",
+        ),
+    ),
+    **{
+        f"agent.run.{verb}": (
+            PositionalSpec(
+                name="run_id",
+                type=str,
+                required=True,
+                help="ID of the run (from agent run status or agent run list).",
+            ),
+        )
+        for verb in ("pause", "resume", "stop", "extend")
+    },
     "dashboard.assess-twb": (
         PositionalSpec(
             name="file",

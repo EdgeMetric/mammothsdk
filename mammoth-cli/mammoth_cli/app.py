@@ -61,7 +61,7 @@ OUTPUT_MODES = VALID_OUTPUTS
 _GROUP_DESCRIPTIONS = {
     "activity": "Inspect workspace activity and audit history.",
     "addon": "Manage workspace add-ons.",
-    "agent": "Work with Mammoth agent sessions and messages.",
+    "agent": "Work with Mammoth agent sessions, the changes a chat made, and its runs.",
     "ai": "Generate AI-assisted expressions and conditions.",
     "annotation": "Manage annotations on Mammoth resources.",
     "auth": "Sign in, sign out, and inspect credentials.",
@@ -553,6 +553,18 @@ def _shared_option_params() -> list[inspect.Parameter]:
                 typer.Option(
                     "--project",
                     help="Active project id override.",
+                    rich_help_panel="Context and timeouts",
+                ),
+            ],
+        ),
+        opt(
+            "session",
+            None,
+            Annotated[
+                str | None,
+                typer.Option(
+                    "--session",
+                    help="Agent chat session id for 'agent action' and 'agent run' commands.",
                     rich_help_panel="Context and timeouts",
                 ),
             ],

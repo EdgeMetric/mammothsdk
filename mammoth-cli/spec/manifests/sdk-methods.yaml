@@ -523,6 +523,30 @@ methods:
   pagination_policy: none
   secret_fields: []
   reviewed_by: primary
+- sdk_symbol: mammoth.api.agents.AgentsAPI.action_delete
+  implementation_origin: mammoth.api.agents.AgentsAPI.action_delete
+  signature: 'action_delete(self, session_id: ''str'', action_id: ''str'') -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: agent.action.delete
+  alias_of: null
+  no_command_reason: null
+  mutation_class: destructive
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.agents.AgentsAPI.action_list
+  implementation_origin: mammoth.api.agents.AgentsAPI.action_list
+  signature: 'action_list(self, session_id: ''str'') -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: agent.action.list
+  alias_of: null
+  no_command_reason: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
 - sdk_symbol: mammoth.api.agents.AgentsAPI.chat
   implementation_origin: mammoth.api.agents.AgentsAPI.chat
   signature: 'chat(self, message: ''str'', scope: ''dict[str, Any]'', agent_key: ''str | None'' = None, session_id: ''str | None'' = None, client_context: ''dict[str, Any] | None'' = None, selection: ''dict[str, Any] | None'' = None) -> ''dict[str, Any]'''
@@ -533,6 +557,78 @@ methods:
   mutation_class: null
   wait_policy: null
   pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.agents.AgentsAPI.run_extend
+  implementation_origin: mammoth.api.agents.AgentsAPI.run_extend
+  signature: 'run_extend(self, session_id: ''str'', run_id: ''str'') -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: agent.run.extend
+  alias_of: null
+  no_command_reason: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.agents.AgentsAPI.run_list
+  implementation_origin: mammoth.api.agents.AgentsAPI.run_list
+  signature: 'run_list(self, session_id: ''str'') -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: agent.run.list
+  alias_of: null
+  no_command_reason: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.agents.AgentsAPI.run_pause
+  implementation_origin: mammoth.api.agents.AgentsAPI.run_pause
+  signature: 'run_pause(self, session_id: ''str'', run_id: ''str'') -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: agent.run.pause
+  alias_of: null
+  no_command_reason: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.agents.AgentsAPI.run_resume
+  implementation_origin: mammoth.api.agents.AgentsAPI.run_resume
+  signature: 'run_resume(self, session_id: ''str'', run_id: ''str'') -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: agent.run.resume
+  alias_of: null
+  no_command_reason: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.agents.AgentsAPI.run_status
+  implementation_origin: mammoth.api.agents.AgentsAPI.run_status
+  signature: 'run_status(self, session_id: ''str'') -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: agent.run.status
+  alias_of: null
+  no_command_reason: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.agents.AgentsAPI.run_stop
+  implementation_origin: mammoth.api.agents.AgentsAPI.run_stop
+  signature: 'run_stop(self, session_id: ''str'', run_id: ''str'') -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: agent.run.stop
+  alias_of: null
+  no_command_reason: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
   secret_fields: []
   reviewed_by: primary
 - sdk_symbol: mammoth.api.agents.AgentsAPI.session_delete

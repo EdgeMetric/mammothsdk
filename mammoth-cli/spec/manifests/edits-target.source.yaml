@@ -9,6 +9,11 @@ edits_target_commands:
 - addon.storage.remove
 - addon.user.add
 - addon.user.remove
+- agent.action.delete
+- agent.run.extend
+- agent.run.pause
+- agent.run.resume
+- agent.run.stop
 - agent.session.delete
 - agent.session.set-visibility
 - annotation.comment.add
