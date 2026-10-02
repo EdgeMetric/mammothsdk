@@ -4,6 +4,22 @@ All notable changes to `mammoth-io` are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.8]
+
+### Added
+
+- `BillingAPI.stripe_resume` keeps the paid plan by clearing a scheduled
+  downgrade; `BillingAPI.stripe_recheck_limits` recomputes the over-limit lock;
+  `BillingAPI.stripe_storage_update` sets the purchased storage (total GB).
+- `BrowseAPI.resource_ancestors` reads a folder's path (root first);
+  `BrowseAPI.resources_search` searches resources across the workspace.
+- `DashboardsAPI.template_thumbnail_get`, `template_thumbnail_set` and
+  `template_thumbnail_clear` read, replace and remove a template's picture;
+  `DashboardsAPI.gallery_list` and `gallery_get` read the public template gallery.
+- CLI: `billing stripe resume`, `billing stripe recheck-limits`,
+  `billing stripe storage set`, `browse ancestors`, `browse search`,
+  `dashboard template thumbnail get|set|clear`, `dashboard gallery list|get`.
+
 ## [0.8.7]
 
 ### Added
