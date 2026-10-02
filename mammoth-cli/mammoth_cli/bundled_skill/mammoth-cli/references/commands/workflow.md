@@ -46,7 +46,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth workflow canvas`. Exact input fields: `mammoth schema get workflow.canvas`.
 
-Example: `mammoth workflow canvas 123 --input '{"canvas_state": {"sample_key": "Status"}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth workflow canvas 12 --input '{"canvas_state": {"proposed_changes": [{"op": "add_view", "dataset_id": 415, "name": "Urgent tickets"}, {"op": "send_to_new_dataset", "dataset_id": 415, "view_id": 502, "name": "Urgent tickets by team"}]}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `WorkflowCanvasResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 

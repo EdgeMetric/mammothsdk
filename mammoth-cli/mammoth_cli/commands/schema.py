@@ -47,6 +47,22 @@ _PROTECTED_INPUT_PATH = "/private/path/request.json"
 _FIXED_EXAMPLES: dict[str, tuple[tuple[str, ...], dict[str, Any]]] = {
     "project.check": (("123", "456"), {}),
     "view.data.profile": (("123",), {"target": "Churn"}),
+    "workflow.canvas": (
+        ("12",),
+        {
+            "canvas_state": {
+                "proposed_changes": [
+                    {"op": "add_view", "dataset_id": 415, "name": "Urgent tickets"},
+                    {
+                        "op": "send_to_new_dataset",
+                        "dataset_id": 415,
+                        "view_id": 502,
+                        "name": "Urgent tickets by team",
+                    },
+                ]
+            }
+        },
+    ),
     "view.data.compare": (
         ("111", "222"),
         {
@@ -564,6 +580,16 @@ _COMMAND_DISCOVERY_PURPOSES = {
     ),
     "project.memory.list": "remembered saved preferences what do you remember memory",
     "project.memory.remove": "forget remove delete saved preference memory",
+    # A workflow's shape can be proposed for the user to review and Save on the
+    # canvas; neither this nor naming a workflow was findable from the way users
+    # ask (Workflow Zoo QA 10-02: "rename workflow" found column renames).
+    "workflow.canvas": (
+        "propose suggest sketch draft plan review approve save structural changes "
+        "to a workflow pipeline shape on the canvas new views datasets send to join "
+        "export for the user to review"
+    ),
+    "workflow.update": "rename name describe a workflow pipeline purpose notes summary",
+    "workflow.create": "name an unnamed workflow pipeline from the root dataset new workflow",
 }
 
 # A compact string scope is retained for existing discovery consumers.  These

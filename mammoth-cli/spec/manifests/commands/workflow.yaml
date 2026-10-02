@@ -232,7 +232,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth workflow canvas WORKFLOW_ID --help
-  agent_example: 'mammoth workflow canvas 123 --input ''{"canvas_state": {"sample_key": "Status"}}'''
+  agent_example: "mammoth workflow canvas 12 --input '{\"canvas_state\": {\"proposed_changes\": [{\"op\": \"add_view\", \"dataset_id\": 415, \"name\": \"Urgent tickets\"}, {\"op\": \"send_to_new_dataset\", \"dataset_id\": 415, \"view_id\": 502, \"name\": \"Urgent tickets by team\"}]}}'"
   unit_tests:
   - UT-WORKFLOW-CANVAS
   contract_tests:
@@ -241,7 +241,7 @@ commands:
   - CT-WORKFLOW-CANVAS-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: "Proposes structural changes to a workflow for the user to review and Save on the Workflows canvas; nothing is built until they Save. Use it when the user asks to suggest, sketch or draft a workflow's shape, or wants to review first. It cannot add filters, calculations or other tasks: when any part of the request needs tasks or data, build the whole request with view commands instead. WORKFLOW_ID is the workflow's record id (URL id w12 is record 12); an unnamed workflow has none, so name it first with workflow create --seed_datasource_id. Input: {\"canvas_state\": {\"proposed_changes\": [...]}}, each change one of (integer ids from workflow graph): {op: add_view, dataset_id, name}; {op: rename_view, dataset_id, view_id, name}; {op: trash_view, dataset_id, view_id}; {op: rename_dataset, dataset_id, name}; {op: trash_dataset, dataset_id}; {op: send_to_new_dataset, dataset_id, view_id, name}; {op: send_to_dataset, dataset_id, view_id, target_dataset_id}; {op: join, dataset_id, view_id, with_dataset_id, with_view_id}; {op: export, dataset_id, view_id, connector}. Join and export arrive needing setup. Tell the user the changes wait on the canvas for their review."
   reviewed_by: primary
   readback:
     command: workflow.get
@@ -326,7 +326,7 @@ commands:
   - CT-WORKFLOW-CREATE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: "With seed_datasource_id set to a workflow's root dataset id (workflow graph lists each workflow's datasets), names that existing unnamed workflow and returns its record id; without it, starts a new empty workflow."
   reviewed_by: primary
   readback:
     command: workflow.get
@@ -571,7 +571,7 @@ commands:
   - CT-WORKFLOW-UPDATE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: "WORKFLOW_ID is the workflow's record id: URL id w12 is record 12. An unnamed workflow (base64 URL id) has no record; name it with workflow create --seed_datasource_id <its root dataset id> instead."
   reviewed_by: primary
   readback:
     command: workflow.get

@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 
 from mammoth_cli.commands.registry import _schema_find
-from mammoth_cli.commands.schema import _COMMAND_DISCOVERY_PURPOSES, find_schemas
+from mammoth_cli.commands.schema import _COMMAND_DISCOVERY_PURPOSES, find_schemas, schema_entries
 from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.manifest.loader import load_commands
 from mammoth_cli.runtime.invocation import Invocation
@@ -102,6 +102,13 @@ def test_schema_find_prioritizes_path_matches_and_caps_broad_results() -> None:
         ("create dashboard from a view", "dashboard.v3.generate"),
         ("build combined dashboard", "dashboard.v3.generate"),
         ("add a chart to the dashboard", "dashboard.chat.edit"),
+        # Workflow Zoo QA 10-02: the agent could not find how to name a workflow or
+        # propose its shape for review.
+        ("rename workflow", "workflow.update"),
+        ("name workflow", "workflow.create"),
+        ("propose changes workflow", "workflow.canvas"),
+        ("suggest changes to a workflow", "workflow.canvas"),
+        ("sketch a workflow", "workflow.canvas"),
     ],
 )
 def test_schema_find_resolves_goal_phrasing_to_the_transform(query: str, command_id: str) -> None:
@@ -347,3 +354,21 @@ def test_leaf_help_separates_global_options_by_purpose() -> None:
     assert result.exit_code == 0, result.output
     for panel in ("Output and automation", "Context and timeouts", "Request input", "Safety"):
         assert panel in result.output
+
+
+# Proposing a workflow's shape must never pull in plain view work: "add a view"
+# is a build, not a proposal.
+@pytest.mark.parametrize("query", ["add a view", "rename view", "create view"])
+def test_view_work_does_not_resolve_to_a_workflow_proposal(query: str) -> None:
+    matches = find_schemas(query)["matches"]
+
+    assert "workflow.canvas" not in [match["command_id"] for match in matches[:3]], query
+
+
+def test_workflow_canvas_says_it_proposes_structure_for_review_and_shows_the_ops() -> None:
+    entry = next(e for e in schema_entries() if e["command_id"] == "workflow.canvas")
+    preconditions = entry["preconditions"]
+
+    assert "review and Save" in preconditions
+    assert "cannot add filters" in preconditions
+    assert "proposed_changes" in entry["agent_example"]

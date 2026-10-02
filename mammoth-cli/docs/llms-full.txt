@@ -1353,7 +1353,7 @@ Sensitive structured input must come from a private file or pipe; never put secr
 - `mammoth workflow block type` [benign_mutation/none] -> mammoth.api.workflows.WorkflowsAPI.block_type
   example: mammoth workflow block type 123 123 --input '{"connection_type": "sample"}'
 - `mammoth workflow canvas` [benign_mutation/none] -> mammoth.api.workflows.WorkflowsAPI.canvas
-  example: mammoth workflow canvas 123 --input '{"canvas_state": {"sample_key": "Status"}}'
+  example: mammoth workflow canvas 12 --input '{"canvas_state": {"proposed_changes": [{"op": "add_view", "dataset_id": 415, "name": "Urgent tickets"}, {"op": "send_to_new_dataset", "dataset_id": 415, "view_id": 502, "name": "Urgent tickets by team"}]}}'
 - `mammoth workflow cleanup` [destructive/prompt_or_yes] -> mammoth.api.workflows.WorkflowsAPI.cleanup
   example: mammoth workflow cleanup
 - `mammoth workflow create` [benign_mutation/none] -> mammoth.api.workflows.WorkflowsAPI.create
