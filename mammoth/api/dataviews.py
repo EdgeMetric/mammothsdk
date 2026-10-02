@@ -14,6 +14,9 @@ if TYPE_CHECKING:
 _list = list  # Alias to avoid shadowing by method name
 
 ERR_DATAVIEW_ID_POSITIVE = "`dataview_id` must be a positive integer, got {0}."
+ERR_IMPACT_SCOPE = '`scope` must be "task" or "view", got {0!r}.'
+ERR_IMPACT_TASK_ID = '`task_id` is required when `scope` is "task".'
+_IMPACT_SCOPES = frozenset({"task", "view"})
 
 #: Aggregate functions supported by :meth:`DataviewsAPI.aggregate`. Deliberately
 #: a small, exact-match subset of the backend's ``PivotAggregationFunction``
@@ -417,6 +420,49 @@ class DataviewsAPI:
         return await self._client._request_json(
             "DELETE",
             f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/dataviews/{dataview_id}",
+        )
+
+    async def delete_impact(
+        self,
+        dataset_id: int,
+        dataview_id: int,
+        scope: str,
+        task_id: int | None = None,
+        workspace_id: int | None = None,
+        project_id: int | None = None,
+    ) -> dict[str, Any]:
+        """List what deleting a pipeline task or a whole view would affect (read only).
+
+        Args:
+            dataset_id: ID of the dataset.
+            dataview_id: ID of the dataview.
+            scope: ``"task"`` for one pipeline task (then *task_id* is required) or
+                ``"view"`` for the whole view.
+            task_id: ID of the task, for ``scope="task"``.
+            workspace_id: ID of the workspace (uses client default if not provided).
+            project_id: ID of the project (uses client default if not provided).
+
+        Returns:
+            Dict with the affected ``dashboards``, ``exports``, ``views`` (dependent
+            dataviews) and ``automations``, plus ``dependencies`` when the scope is a task.
+
+        Raises:
+            MammothValidationError: If *scope* is not ``task`` or ``view``, or a task
+                scope has no *task_id*.
+        """
+        if scope not in _IMPACT_SCOPES:
+            raise MammothValidationError(ERR_IMPACT_SCOPE.format(scope))
+        if scope == "task" and task_id is None:
+            raise MammothValidationError(ERR_IMPACT_TASK_ID)
+        ws = workspace_id or self._ws()
+        proj = project_id or self._proj()
+        params: dict[str, Any] = {"scope": scope}
+        if task_id is not None:
+            params["task_id"] = task_id
+        return await self._client._request_json(
+            "GET",
+            f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/dataviews/{dataview_id}/impact",
+            params=params,
         )
 
     async def bulk_delete(

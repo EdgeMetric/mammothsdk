@@ -316,6 +316,30 @@ class AgentsAPI:
             json={"step": step, "kind": kind, "units": units},
         )
 
+    async def turn_cancel(self, session_id: str, turn_id: str) -> dict[str, Any]:
+        """Stop one agent turn. Only the session's owner may.
+
+        The turn starts no further model or tool call, the call running is cut, and the
+        turn ends with a ``stopped`` event listing the writes already made. Repeating the
+        call, or calling after the turn ended, is safe.
+
+        Args:
+            session_id: ID of the session.
+            turn_id: ID of the turn.
+
+        Returns:
+            Dict with ``session_id``, ``turn_id`` and ``status``: ``stopping``,
+            ``stopped`` or ``ended``.
+
+        Raises:
+            MammothValidationError: If *session_id* or *turn_id* is empty.
+        """
+        _require_id("session_id", session_id)
+        _require_id("turn_id", turn_id)
+        return await self._client._request_json(
+            "POST", f"/agents/sessions/{session_id}/turns/{turn_id}/cancel"
+        )
+
     async def _run_action(self, session_id: str, run_id: str, action: str) -> dict[str, Any]:
         _require_id("session_id", session_id)
         _require_id("run_id", run_id)
