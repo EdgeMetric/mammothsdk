@@ -6496,7 +6496,7 @@ methods:
   canonical_command: workflow.cleanup
   alias_of: null
   no_command_reason: null
-  mutation_class: null
+  mutation_class: destructive
   wait_policy: null
   pagination_policy: null
   secret_fields: []
@@ -6916,7 +6916,7 @@ methods:
   canonical_command: workspace.user.update-batch
   alias_of: null
   no_command_reason: null
-  mutation_class: null
+  mutation_class: high_impact
   wait_policy: null
   pagination_policy: null
   secret_fields: []

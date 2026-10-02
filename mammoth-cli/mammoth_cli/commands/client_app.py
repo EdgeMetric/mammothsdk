@@ -27,6 +27,7 @@ from mammoth_cli.errors.envelope import (
     CliError,
 )
 from mammoth_cli.manifest.loader import command_by_id
+from mammoth_cli.output.normalize import Revealed, normalize
 from mammoth_cli.runtime.confirm import (
     POLICY_CONFIRM_TARGET,
     POLICY_PROMPT_OR_YES,
@@ -210,6 +211,8 @@ def client_app_create(invocation: Invocation) -> HandlerResult:
     _forward_optional(document, kwargs, ("description",))
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), **kwargs)
+    # The API shows the new app's token once; masking it would lose it for good.
+    data = Revealed(normalize(data, redact_secrets=False))
     return data, _meta(invocation, auth.workspace_id, resolved_project(invocation))
 
 

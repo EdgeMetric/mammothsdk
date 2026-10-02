@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import json
 import re
+import shlex
 from collections import Counter
 from collections.abc import Iterable, Mapping
 from datetime import datetime
@@ -67,7 +68,7 @@ def _is_date(text: str) -> bool:
 def _convert_hint(view_id: int | None, column: str, to: str) -> str:
     target = str(view_id) if view_id is not None else "VIEW_ID"
     spec = json.dumps({"conversions": [{"column": column, "to": to}]})
-    return f"mammoth view transform convert-type {target} --input '{spec}'"
+    return f"mammoth view transform convert-type {target} --input {shlex.quote(spec)}"
 
 
 def _bulk_replace_hint(view_id: int | None, column: str, mapping: list[dict[str, Any]]) -> str:
@@ -75,7 +76,7 @@ def _bulk_replace_hint(view_id: int | None, column: str, mapping: list[dict[str,
     spec = json.dumps(
         {"columns": [column], "mapping": mapping, "match_case": True, "match_words": True}
     )
-    return f"mammoth view transform bulk-replace {target} --input '{spec}'"
+    return f"mammoth view transform bulk-replace {target} --input {shlex.quote(spec)}"
 
 
 def _spelling_key(text: str) -> str:
@@ -260,7 +261,8 @@ def duplicate_rows_fact(
     if view_id is not None and dataset_id is not None:
         spec = json.dumps({"dataset_id": dataset_id})
         fact["table_wide_check"] = (
-            f"mammoth view transform discard-duplicates {view_id} --input '{spec}' --dry-run"
+            f"mammoth view transform discard-duplicates {view_id} "
+            f"--input {shlex.quote(spec)} --dry-run"
         )
     return fact
 
@@ -289,7 +291,9 @@ def _duplicate_rows_warning(
     }
     if view_id is not None and dataset_id is not None:
         spec = json.dumps({"dataset_id": dataset_id})
-        warning["fix"] = f"mammoth view transform discard-duplicates {view_id} --input '{spec}'"
+        warning["fix"] = (
+            f"mammoth view transform discard-duplicates {view_id} --input {shlex.quote(spec)}"
+        )
     return warning
 
 
@@ -342,7 +346,7 @@ def _remove_blank_rows_hint(view_id: int, dataset_id: int, column: str) -> str:
     spec = json.dumps(
         {"condition": {"column": column, "operator": "IS_NOT_EMPTY"}, "dataset_id": dataset_id}
     )
-    return f"mammoth view transform filter {view_id} --input '{spec}'"
+    return f"mammoth view transform filter {view_id} --input {shlex.quote(spec)}"
 
 
 def column_warnings(

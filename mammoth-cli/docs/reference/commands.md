@@ -3290,7 +3290,7 @@ Total commands: 633.
 ### `mammoth project bulk-delete`
 
 - Mutation class: `destructive`
-- Confirmation: `prompt_or_yes`
+- Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.projects.ProjectsAPI.bulk_delete`
 - Agent example: `mammoth project bulk-delete --input '{"project_ids": [1]}'`
 
@@ -6156,7 +6156,7 @@ Total commands: 633.
 - `BLOCK_ID` (int, required) — ID of the block.
 
 - Mutation class: `benign_mutation`
-- Confirmation: `none`
+- Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.workflows.WorkflowsAPI.block_auth`
 - Agent example: `mammoth workflow block auth 123 123 --input '{"auth_data": {"sample_key": "Status"}}'`
 
@@ -6197,8 +6197,8 @@ Total commands: 633.
 
 ### `mammoth workflow cleanup`
 
-- Mutation class: `benign_mutation`
-- Confirmation: `none`
+- Mutation class: `destructive`
+- Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.workflows.WorkflowsAPI.cleanup`
 - Agent example: `mammoth workflow cleanup`
 
@@ -6499,7 +6499,7 @@ Total commands: 633.
 
 ### `mammoth workspace user update-batch`
 
-- Mutation class: `benign_mutation`
-- Confirmation: `none`
+- Mutation class: `high_impact`
+- Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.workspaces.WorkspacesAPI.user_update_batch`
 - Agent example: `mammoth workspace user update-batch --input '{"patches": [{"sample_key": "Status"}]}'`

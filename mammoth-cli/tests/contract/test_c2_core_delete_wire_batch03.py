@@ -127,7 +127,7 @@ def test_delete_batch03_emits_exact_method_path_query_and_no_body(
         {},
         None,
     )
-    run(project, "project.bulk-delete", [], {"project_ids": [17, 18]})
+    run(project, "project.bulk-delete", [], {"project_ids": [17, 18]}, confirm="17,18")
     assert (_path(api), api.last().method, api.last().query, api.last().json_body) == (
         "/workspaces/4/projects",
         "DELETE",

@@ -41,6 +41,7 @@ from mammoth_cli.errors.envelope import (
     CliError,
 )
 from mammoth_cli.manifest.loader import command_by_id
+from mammoth_cli.output.normalize import DataRows
 from mammoth_cli.runtime import embedded, parents
 from mammoth_cli.runtime.confirm import (
     POLICY_CONFIRM_TARGET,
@@ -784,14 +785,14 @@ def _relabel_columns(
                 for row in rows
             ]
     if has_rows and isinstance(rows, list):
-        payload[rows_key] = [
+        payload[rows_key] = DataRows(
             (
                 {mapping.get(k, k): v for k, v in row.items() if k not in _SYSTEM_COLUMNS}
                 if isinstance(row, dict)
                 else row
             )
             for row in rows
-        ]
+        )
     return payload
 
 
@@ -1356,7 +1357,7 @@ def _trim_rows(data: Any, limit: Any, page_size: int | None = None) -> Any:
         return result
     return {
         **data,
-        _ROWS_KEY: rows[:cap],
+        _ROWS_KEY: DataRows(rows[:cap]),
         "rows_returned": cap,
         "rows_total_in_page": total,
         "truncated": True,
@@ -2607,11 +2608,33 @@ def view_draft_command(invocation: Invocation) -> HandlerResult:
     return data, _meta(invocation, auth.workspace_id, None)
 
 
+#: Pipeline patch paths that throw work away: a discarded rule or draft, a reset view.
+_DISCARDING_PATCH_PATHS = frozenset({"discard", "reset", "discard-changes"})
+
+
+def _discards_pipeline_work(patches: Any) -> bool:
+    """Whether any patch in ``patches`` is a ``discard``, ``reset`` or ``discard-changes``."""
+    if not isinstance(patches, list):
+        return False
+    for patch in patches:
+        path = str(patch.get("path", "")) if isinstance(patch, dict) else ""
+        if path.strip("/").lower().replace("_", "-") in _DISCARDING_PATCH_PATHS:
+            return True
+    return False
+
+
 def view_pipeline_edit(invocation: Invocation) -> HandlerResult:
     """Apply JSON Patch operations to a dataview's pipeline. ``patches`` required."""
     dataview_id = _require_int_positional_at(invocation, 0, "dataview id")
     document = invocation.load_input()
     patches = _require_field(document, "patches")
+    if _discards_pipeline_work(patches):
+        enforce_confirmation(
+            invocation,
+            policy=POLICY_CONFIRM_TARGET,
+            target=str(dataview_id),
+            action=f"discard or reset pipeline work of view {dataview_id}",
+        )
     kwargs: dict[str, Any] = {"dataview_id": dataview_id, "patches": patches}
     assert document is not None
     _forward_optional(document, kwargs, ("dataset_id",))

@@ -258,8 +258,8 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth workspace user update-batch`. Exact input fields: `mammoth schema get workspace.user.update-batch`.
 
-Example: `mammoth workspace user update-batch --input '{"patches": [{"sample_key": "Status"}]}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth workspace user update-batch --input '{"patches": [{"sample_key": "Status"}]}'`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
-Result: `WorkspaceUserUpdateBatchResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+Result: `WorkspaceUserUpdateBatchResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
 
 Status on release: untried; no live run recorded.

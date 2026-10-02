@@ -14,7 +14,7 @@ commands:
   result_model: ProjectBulkDeleteResult
   mutation_class: destructive
   edits_target: true
-  confirmation: prompt_or_yes
+  confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: live_disposable_project

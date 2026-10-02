@@ -44,6 +44,8 @@ from mammoth_cli.output.normalize import normalize
 
 LOG_DIR_ENV = "MAMMOTH_LOG_DIR"
 RETENTION_DAYS = 7
+#: The most records one ``log tail`` returns (a larger or zero limit is clamped).
+MAX_TAIL_RECORDS = 1000
 MAX_FILE_BYTES = 20 * 1024 * 1024
 _LOGGER_NAMES = ("mammoth", "mammoth_cli")
 #: Invocations overlap in an embedded host (one thread each). Logger levels are
@@ -328,6 +330,8 @@ def read_records(
     ``command_id`` / ``run_id`` narrow to one command or one invocation
     (the ``run_id`` an error envelope's ``log_ref`` names).
     """
+    days = min(days, RETENTION_DAYS)
+    limit = max(1, min(limit, MAX_TAIL_RECORDS))
     today = _dt.date.today()
     files = [log_file_for(today - _dt.timedelta(days=offset)) for offset in range(days)]
     records: list[dict[str, Any]] = []
@@ -349,7 +353,7 @@ def read_records(
                 if errors_only and not _is_error(record):
                     continue
                 records.append(record)
-    return records[-limit:] if limit > 0 else records
+    return records[-limit:]
 
 
 def _is_error(record: dict[str, Any]) -> bool:

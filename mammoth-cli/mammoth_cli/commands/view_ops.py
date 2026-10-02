@@ -20,6 +20,7 @@ enum-typed fields are forwarded as the plain string given on ``--input``.
 from __future__ import annotations
 
 import json
+import shlex
 from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
 from typing import Any
@@ -1180,7 +1181,7 @@ def view_transform_generate_sql(invocation: Invocation) -> HandlerResult:
             "sql": data,
             "applied": False,
             "note": "The view is unchanged. Run 'apply' to add the query as a SQL task.",
-            "apply": f"mammoth view transform add-sql {view_id} --input '{spec}'",
+            "apply": f"mammoth view transform add-sql {view_id} --input {shlex.quote(spec)}",
         }
 
     return _dispatch_view(invocation, view_id, "generate_sql", after=describe, **kwargs)

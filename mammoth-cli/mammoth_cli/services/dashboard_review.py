@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import json
 import re
+import shlex
 from collections.abc import Iterable, Mapping
 from typing import Any
 
@@ -104,7 +105,7 @@ def _math_fix(view_id: Any, dataset_id: Any, quantity: str, price: str) -> str:
             "new_column": "revenue",
         }
     )
-    return f"mammoth view transform math {view_id} --input '{spec}'"
+    return f"mammoth view transform math {view_id} --input {shlex.quote(spec)}"
 
 
 def profiles_from_view(
@@ -326,7 +327,7 @@ def columns_not_on_dashboard(
                 f"and cannot chart {'it' if len(missing) == 1 else 'them'}. Make a new "
                 "dashboard on the view and build there."
             ),
-            "fix": f"mammoth dashboard create-blank --input '{spec}' --yes",
+            "fix": f"mammoth dashboard create-blank --input {shlex.quote(spec)} --yes",
         }
     ]
 
@@ -358,6 +359,6 @@ def reporting_month(canvas_doc: Any, dashboard_id: int) -> list[dict[str, Any]]:
                 "that month, while trend charts still plot every date. If the user did not "
                 "ask for that month, widen it with the fix."
             ),
-            "fix": f"mammoth dashboard chat edit {dashboard_id} --input '{prompt}'",
+            "fix": f"mammoth dashboard chat edit {dashboard_id} --input {shlex.quote(prompt)}",
         }
     ]

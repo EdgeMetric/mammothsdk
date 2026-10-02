@@ -21,6 +21,8 @@ from __future__ import annotations
 
 import json
 import os
+import tempfile
+import threading
 from pathlib import Path
 from typing import Any
 
@@ -29,6 +31,9 @@ import platformdirs
 CACHE_ENV = "MAMMOTH_PARENT_CACHE"
 #: Oldest entries are dropped past this many; a workspace rarely has more.
 MAX_ENTRIES = 5000
+#: Embedded calls run in several threads of one process: the read-modify-write
+#: of the cache file is one critical section.
+_LOCK = threading.Lock()
 
 
 def cache_path() -> Path:
@@ -54,9 +59,15 @@ def _write(document: dict[str, Any]) -> None:
     path = cache_path()
     try:
         path.parent.mkdir(parents=True, exist_ok=True)
-        tmp = path.with_suffix(".tmp")
-        tmp.write_text(json.dumps(document, separators=(",", ":")) + "\n", encoding="utf-8")
-        os.replace(tmp, path)
+        # A unique temp name, so two writers never share (and truncate) one file.
+        fd, tmp_name = tempfile.mkstemp(dir=path.parent, prefix=f".{path.stem}-", suffix=".tmp")
+        try:
+            with os.fdopen(fd, "w", encoding="utf-8") as handle:
+                handle.write(json.dumps(document, separators=(",", ":")) + "\n")
+            os.replace(tmp_name, path)
+        except BaseException:
+            Path(tmp_name).unlink(missing_ok=True)
+            raise
     except OSError:
         return
 
@@ -78,6 +89,16 @@ def remember(
     project_id: int | None = None,
 ) -> None:
     """Record ``view_id -> dataset_id`` pairs; a no-op when nothing is new."""
+    with _LOCK:
+        _remember_locked(profile, workspace_id, pairs, project_id)
+
+
+def _remember_locked(
+    profile: str | None,
+    workspace_id: int | None,
+    pairs: dict[int, int] | list[tuple[int, int]],
+    project_id: int | None,
+) -> None:
     items = pairs.items() if isinstance(pairs, dict) else pairs
     document = _read()
     changed = False

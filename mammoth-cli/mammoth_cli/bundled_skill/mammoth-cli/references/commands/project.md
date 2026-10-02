@@ -6,9 +6,9 @@ Every command returns the standard JSON envelope. On nonzero exit, read the erro
 
 Run: `mammoth project bulk-delete`. Exact input fields: `mammoth schema get project.bulk-delete`.
 
-Example: `mammoth project bulk-delete --input '{"project_ids": [1]}'`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth project bulk-delete --input '{"project_ids": [1]}'`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
-Result: `ProjectBulkDeleteResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
+Result: `ProjectBulkDeleteResult`; mutation `destructive`, confirmation `confirm_target`, wait policy `not_async`.
 
 Status on release: ran once on CLI 2.0.14 — write sweep 2026-09-18: exit 0 on release with CLI 2.0.14. Created throwaway project 22 (cli-write-sweep-throwaway-20260918), then bulk-deleted it. Without --yes: confirmation_required. With --yes: data:{}. Verified via project list: only project 3 (protected…
 

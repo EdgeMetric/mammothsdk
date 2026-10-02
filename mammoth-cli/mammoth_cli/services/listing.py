@@ -17,6 +17,7 @@ from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any
 
+from mammoth_cli.runtime import embedded
 from mammoth_cli.services.stored_stats import stored_facts
 
 #: Characters of ``data`` a list may use; the agent tool caps a whole result at 4,000.
@@ -362,7 +363,7 @@ def compact_view_list(
         ]
     chosen, dropped_dataset, omitted = _choose_views(groups)
     with ThreadPoolExecutor(max_workers=_STATS_WORKERS) as pool:
-        stats = list(pool.map(lambda pair: _view_stats(pair[0], read_stats), chosen))
+        stats = embedded.pool_map(pool, lambda pair: _view_stats(pair[0], read_stats), chosen)
     items = [
         {**summary, "sample_values": found, **({"date_range": dates} if dates else {})}
         for (_v, summary), (found, dates) in zip(chosen, stats, strict=True)

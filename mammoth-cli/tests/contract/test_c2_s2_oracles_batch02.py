@@ -855,6 +855,7 @@ CASES = [
         "argv": ["project", "bulk-delete"],
         "input": {"project_ids": [42, 43]},
         "yes": True,
+        "confirm": "42,43",
         "api": ProjectsAPI,
         "method": "bulk_delete",
         "kwargs": {"project_ids": [42, 43]},

@@ -12,6 +12,7 @@ public SDK method named by the command's reviewed manifest ``sdk_symbol``.
 from __future__ import annotations
 
 import json
+import shlex
 from datetime import UTC, datetime
 from typing import Any
 
@@ -136,7 +137,9 @@ def _refuse_bare_resource_id(document: dict[str, Any]) -> None:
             f" keys each resource by its type — {forms}."
         ),
         exit_status=EXIT_USAGE,
-        recovery_commands=[f"mammoth activity list --input '{retry}'" for retry in retries],
+        recovery_commands=[
+            f"mammoth activity list --input {shlex.quote(retry)}" for retry in retries
+        ],
     )
 
 
