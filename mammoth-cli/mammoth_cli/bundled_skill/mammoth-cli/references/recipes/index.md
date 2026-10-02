@@ -12,6 +12,7 @@ hashes; stop on ambiguous schemas, authorization errors, or unknown effects.
 - [worked example: three CSVs to a per-region summary](end-to-end.md)
 - [auth and scope](auth-scope.md)
 - [files, datasets, views and settings](resources.md)
+- [import a table from a database (SQL Server, MySQL, Postgres)](database-import.md)
 - [datasets in `need_action` or `needs_view` after upload](need-action.md)
 - [typed transformations and drafts](transforms.md)
 - [typed ETL discovery](typed-etl-discovery.md)

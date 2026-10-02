@@ -337,7 +337,44 @@ _COMMAND_DISCOVERY_PURPOSES = {
     "dashboard.suggestion.list": "ideas suggest suggestions what to show put on a board chart",
     "dashboard.analytics": "who viewed seen opened views visitors usage of a board",
     "dashboard.share": "share make live publish board for the team link access",
-    "connector.connection.list": "which outside external sources connected connections list",
+    # "Import a table from SQL Server / MySQL / Postgres into a dataset" is a
+    # connector flow -- list connectors, create a connection, then a ds-config
+    # (a table or query pulled in as a new dataset) -- but none of these
+    # commands said "database", "table", "SQL Server" or "import", so every
+    # phrasing missed them and only the unrelated view.export.* commands
+    # (which push data OUT to a database) matched.
+    "connector.list": (
+        "connectors available sources database SQL Server MSSQL MySQL Postgres Oracle "
+        "connect import pull load table into dataset"
+    ),
+    "connector.get": (
+        "connector database SQL Server MSSQL MySQL Postgres connection fields host port "
+        "username password required to connect import table dataset"
+    ),
+    "connector.connection.list": (
+        "which outside external sources connected connections list database SQL Server "
+        "MSSQL MySQL Postgres connector already connected import table dataset"
+    ),
+    "connector.connection.get": (
+        "connection database SQL Server MSSQL MySQL Postgres connector connected "
+        "import table dataset"
+    ),
+    "connector.connection.create": (
+        "connect a database such as SQL Server MSSQL MySQL Postgres Oracle host username "
+        "password new connection connector to import a table into a dataset"
+    ),
+    "connector.ds-config.create": (
+        "import pull load read retrieve a table or SQL query from a connected database such "
+        "as SQL Server MSSQL MySQL Postgres connector connection as a new dataset rows data"
+    ),
+    "connector.ds-config.list": (
+        "datasets imported from a connected database SQL Server MSSQL MySQL Postgres "
+        "connector table query import configurations"
+    ),
+    "connector.query.generate": (
+        "write SQL from plain words for a connected database SQL Server MSSQL MySQL "
+        "Postgres connector import rows query"
+    ),
     "project.pending-changes": (
         "source changes new rows not taken in yet pending updates waiting to apply"
     ),

@@ -1,7 +1,7 @@
 # What is proven on release
 
 Generated from `docs/release-capability-matrix.json`; do not edit by hand.
-The CLI publishes 573 commands. 453 of them bind one of the 528 API operations in the matrix; the remainder are local commands (`schema`, `auth`, `doctor`, `log`, ...) or typed variants that share an operation (`view transform *` commands submit through `view.task.add`, except `rename-columns` and `sort`, which set view display properties through `view.update`). 262 bound commands ran once successfully on release, 2 are not supported there, and the rest are untried. Untried is not broken: discover the contract with `mammoth schema get COMMAND_ID`, run it, and treat the structured error envelope as the answer.
+The CLI publishes 595 commands. 455 of them bind one of the 528 API operations in the matrix; the remainder are local commands (`schema`, `auth`, `doctor`, `log`, ...) or typed variants that share an operation (`view transform *` commands submit through `view.task.add`, except `rename-columns` and `sort`, which set view display properties through `view.update`). 262 bound commands ran once successfully on release, 2 are not supported there, and the rest are untried. Untried is not broken: discover the contract with `mammoth schema get COMMAND_ID`, run it, and treat the structured error envelope as the answer. Use an untried command normally: confirm a write with the user first, check its result with a read afterwards, and never refuse a command only because it is untried.
 
 Status meanings:
 
@@ -23,9 +23,9 @@ The typed `view transform *` commands all submit through `view.task.add` (`renam
 | `connector` | 22 | 3 | 0 | 19 |
 | `billing` | 21 | 4 | 0 | 17 |
 | `workspace` | 19 | 7 | 0 | 12 |
+| `dataset` | 17 | 12 | 0 | 5 |
 | `project` | 17 | 15 | 0 | 2 |
 | `workflow` | 16 | 9 | 0 | 7 |
-| `dataset` | 15 | 12 | 0 | 3 |
 | `parameter` | 14 | 7 | 0 | 7 |
 | `data-app` | 12 | 1 | 0 | 11 |
 | `folder` | 8 | 8 | 0 | 0 |
