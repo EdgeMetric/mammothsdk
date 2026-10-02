@@ -250,7 +250,7 @@ def test_project_positional_alias_has_an_explicit_sdk_destination() -> None:
                 "limit": 97,
                 "offset": 918,
                 "sort": "S2-DATASET-SORT",
-                "fields": "id,name,created_at,updated_at,status,stats,sources,data_schema,additional_info",
+                "fields": "id,name,created_at,updated_at,status,sources,additional_info",
             },
             [],
         ),
