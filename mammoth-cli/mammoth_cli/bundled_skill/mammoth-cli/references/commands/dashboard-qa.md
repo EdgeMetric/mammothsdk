@@ -42,6 +42,16 @@ Result: `DashboardQaFeedbackResult`; mutation `benign_mutation`, confirmation `n
 
 Status on release: ran once on CLI 2.0.12 — Dashboard sweep 2026-09-18: exit 0 on release with CLI 2.0.12; result keys: session. recorded thumbs-up feedback on message id=2 Single invocation only; no error-path or variant coverage.
 
+### `dashboard.qa.insights`
+
+Run: `mammoth dashboard qa insights`. Exact input fields: `mammoth schema get dashboard.qa.insights`.
+
+Example: `mammoth dashboard qa insights 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `DashboardQaInsightsResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
 ### `dashboard.qa.session.create`
 
 Run: `mammoth dashboard qa session create`. Exact input fields: `mammoth schema get dashboard.qa.session.create`.

@@ -7640,9 +7640,9 @@ methods:
   implementation_origin: mammoth.api.browse.BrowseAPI.resources_bulk
   signature: 'resources_bulk(self, items: ''list[tuple[str, int]]'', project_id: ''int | None'' = None) -> ''list[dict[str, Any]]'''
   openapi_operation_ids: []
-  canonical_command: null
+  canonical_command: browse.resources.bulk
   alias_of: null
-  no_command_reason: SDK-only helper; no reviewed CLI command.
+  no_command_reason: null
   mutation_class: null
   wait_policy: null
   pagination_policy: null
@@ -7965,6 +7965,138 @@ methods:
   signature: 'template_export_dashboard(self, dashboard_id: ''int'', slug: ''str'', output_path: ''str | Path | None'' = None, with_data: ''bool'' = True) -> ''Path'''
   openapi_operation_ids: []
   canonical_command: support.template.export-dashboard
+  alias_of: null
+  no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.agents.AgentsAPI.turn_cancel
+  implementation_origin: mammoth.api.agents.AgentsAPI.turn_cancel
+  signature: 'turn_cancel(self, session_id: ''str'', turn_id: ''str'') -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: agent.turn.cancel
+  alias_of: null
+  no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.swap_fit
+  implementation_origin: mammoth.api.dashboards.DashboardsAPI.swap_fit
+  signature: 'swap_fit(self, source_dashboard_id: ''int'', target_dataview_ids: ''_list[int]'', include_over_budget: ''bool'' = False, seconds_budget: ''float | None'' = None) -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: dashboard.swap-fit
+  alias_of: null
+  no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.audience
+  implementation_origin: mammoth.api.dashboards.DashboardsAPI.audience
+  signature: 'audience(self, dashboard_id: ''int'', days: ''int'' = 7) -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: dashboard.audience.get
+  alias_of: null
+  no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.audience_summary
+  implementation_origin: mammoth.api.dashboards.DashboardsAPI.audience_summary
+  signature: 'audience_summary(self, dashboard_ids: ''_list[int]'') -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: dashboard.audience.summary
+  alias_of: null
+  no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.audience_digest_get
+  implementation_origin: mammoth.api.dashboards.DashboardsAPI.audience_digest_get
+  signature: 'audience_digest_get(self, dashboard_id: ''int'') -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: dashboard.audience.digest.get
+  alias_of: null
+  no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.audience_digest_set
+  implementation_origin: mammoth.api.dashboards.DashboardsAPI.audience_digest_set
+  signature: 'audience_digest_set(self, dashboard_id: ''int'', enabled: ''bool | None'') -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: dashboard.audience.digest.set
+  alias_of: null
+  no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.column_roster
+  implementation_origin: mammoth.api.dashboards.DashboardsAPI.column_roster
+  signature: 'column_roster(self, dashboard_id: ''int'') -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: dashboard.columns
+  alias_of: null
+  no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.context_review
+  implementation_origin: mammoth.api.dashboards.DashboardsAPI.context_review
+  signature: 'context_review(self, dashboard_id: ''int'', scope: ''str | None'' = None, note: ''str | None'' = None, fresh: ''bool'' = False) -> ''ObjectJobSchema'''
+  openapi_operation_ids: []
+  canonical_command: dashboard.context.review
+  alias_of: null
+  no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.context_apply
+  implementation_origin: mammoth.api.dashboards.DashboardsAPI.context_apply
+  signature: 'context_apply(self, dashboard_id: ''int'', review_id: ''str'', keep: ''_list[str] | None'' = None, base_sequence: ''int | None'' = None) -> ''ObjectJobSchema'''
+  openapi_operation_ids: []
+  canonical_command: dashboard.context.apply
+  alias_of: null
+  no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.qa_insights
+  implementation_origin: mammoth.api.dashboards.DashboardsAPI.qa_insights
+  signature: 'qa_insights(self, dashboard_id: ''int'', days: ''int'' = 7) -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: dashboard.qa.insights
+  alias_of: null
+  no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.dataviews.DataviewsAPI.delete_impact
+  implementation_origin: mammoth.api.dataviews.DataviewsAPI.delete_impact
+  signature: 'delete_impact(self, dataset_id: ''int'', dataview_id: ''int'', scope: ''str'', task_id: ''int | None'' = None, workspace_id: ''int | None'' = None, project_id: ''int | None'' = None) -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: view.impact
   alias_of: null
   no_command_reason: null
   mutation_class: null

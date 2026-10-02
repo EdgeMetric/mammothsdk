@@ -20,6 +20,7 @@ _HANDLER_OWNED_FIELDS: dict[str, frozenset[str]] = {
             "run.stop",
             "run.extend",
             "run.units.set",
+            "turn.cancel",
         )
     },
     # Skill handlers deliberately derive filesystem roots from the running
@@ -87,6 +88,10 @@ _EXAMPLE_INPUT_HINTS: dict[str, dict[str, Any]] = {
     },
     # The server accepts only the formats it knows: dashboard, presentation, document, qa.
     "dashboard.format-preview": {"style": "presentation"},
+    # ``task`` needs a task_id too; the whole-view scope is the one that stands alone.
+    "view.impact": {"scope": "view"},
+    # One [type, id] pair per resource, as ``browse resources`` lists them.
+    "browse.resources.bulk": {"items": [["dataview", 42]]},
     "view.export.azure-blob": {
         "storage_account_name": "storage-account",
         "tenant_id": "tenant-id",

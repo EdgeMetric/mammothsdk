@@ -694,6 +694,16 @@ Result: `ViewGetResult`; mutation `read`, confirmation `none`, wait policy `not_
 
 Status on release: ran once on CLI 2.0.21 — ergonomics sweep 2026-09-19: exit 0 on release with CLI 2.0.21. Read back without a dataset id (parent from cache). row_count 6 after the append. Single invocation only.
 
+### `view.impact`
+
+Run: `mammoth view impact`. Exact input fields: `mammoth schema get view.impact`.
+
+Example: `mammoth view impact 123 123 --input '{"scope": "view"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `ViewImpactResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
 ### `view.list`
 
 Run: `mammoth view list`. Exact input fields: `mammoth schema get view.list`.

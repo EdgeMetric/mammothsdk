@@ -52,6 +52,16 @@ Result: `BrowseResourcesResult`; mutation `read`, confirmation `none`, wait poli
 
 Status on release: untried; no live run recorded.
 
+### `browse.resources.bulk`
+
+Run: `mammoth browse resources bulk`. Exact input fields: `mammoth schema get browse.resources.bulk`.
+
+Example: `mammoth browse resources bulk --input '{"items": [["dataview", 42]]}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `BrowseResourcesBulkResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
 ### `browse.root`
 
 Run: `mammoth browse root`. Exact input fields: `mammoth schema get browse.root`.

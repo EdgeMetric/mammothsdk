@@ -271,3 +271,8 @@ def agent_run_units_set(invocation: Invocation) -> HandlerResult:
     document = _bound_document(invocation)
     kwargs = {field: _require_field(document, field) for field in ("step", "kind", "units")}
     return _session_call(invocation, run_id=run_id, **kwargs)
+
+
+def agent_turn_cancel(invocation: Invocation) -> HandlerResult:
+    """Stop one turn of an agent chat session (the session's owner only)."""
+    return _session_call(invocation, turn_id=_require_string_positional(invocation, "turn id"))

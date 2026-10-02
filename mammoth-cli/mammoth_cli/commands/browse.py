@@ -16,6 +16,7 @@ from typing import Any
 from mammoth_cli.errors.envelope import (
     CODE_INVALID_ARGUMENT,
     CODE_MISSING_ARGUMENT,
+    CODE_MISSING_FIELD,
     CODE_SDK_SYMBOL_UNRESOLVED,
     EXIT_USAGE,
     CliError,
@@ -216,3 +217,19 @@ def browse_search(invocation: Invocation) -> HandlerResult:
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), **kwargs)
     return data, _meta(invocation, auth.workspace_id, None)
+
+
+def browse_resources_bulk(invocation: Invocation) -> HandlerResult:
+    """Get many resources of the active project by type and id in one go (resources v2)."""
+    project_id = require_project(invocation)
+    document = invocation.load_input() or {}
+    if "items" not in document:
+        raise CliError(
+            code=CODE_MISSING_FIELD,
+            message="This command requires the 'items' input field.",
+            exit_status=EXIT_USAGE,
+            hint='Pass pairs via --input, for example: --input \'{"items": [["dataview", 42]]}\'.',
+        )
+    with open_service(invocation) as (service, auth):
+        data = service.call(_symbol(invocation), items=document["items"], project_id=project_id)
+    return {"resources": data}, _meta(invocation, auth.workspace_id, project_id)

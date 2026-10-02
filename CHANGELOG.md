@@ -4,6 +4,27 @@ All notable changes to `mammoth-io` are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.12]
+
+### Added
+
+- API gaps closed (PR "build gaps 5"), each with a CLI command in `mammoth-cli` 2.2.11:
+  - `DashboardsAPI.swap_fit`, `audience`, `audience_digest_get`, `audience_digest_set`,
+    `audience_summary`, `column_roster`, `context_review`, `context_apply` and
+    `qa_insights` (CLI: `dashboard swap-fit`, `dashboard audience get|summary`,
+    `dashboard audience digest get|set`, `dashboard columns`, `dashboard context
+    review|apply`, `dashboard qa insights`).
+  - `AgentsAPI.turn_cancel` (CLI: `agent turn cancel`).
+  - `DataviewsAPI.delete_impact` (CLI: `view impact`).
+  - `BrowseAPI.resources_bulk` now has a command: `browse resources bulk`.
+
+### Changed
+
+- `addon list` and `user change-password` are retired in the CLI: the server no
+  longer serves them, so they exit with a `not_available` error that names the web
+  path. `AddonsAPI.list` and `UserProfileAPI.change_password` stay and are marked
+  retired in their docstrings.
+
 ## [0.8.11]
 
 ### Changed

@@ -120,9 +120,7 @@ commands:
   - CT-USER-CHANGE-PASSWORD-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: 'BLOCKED[B18 PASSWORD_ENDPOINT_UNSPECIFIED]: absent from public OpenAPI; remains
-    reserved and contract-only. Secrets use hidden prompt/permission-checked input/stdin, never normal
-    flags.'
+  known_restrictions: 'Retired: the server no longer has a route that changes a signed-in user''s password, so the command answers not_available and names the web app (account menu > Profile settings > Reset Password). Nothing replaces it.'
   reviewed_by: primary
   readback:
     command: user.get

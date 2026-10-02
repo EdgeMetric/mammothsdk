@@ -20,9 +20,9 @@ from typing import Any
 from mammoth_cli.errors.envelope import (
     CODE_MISSING_FIELD,
     CODE_SDK_SYMBOL_UNRESOLVED,
-    CODE_UNSUPPORTED_CONTRACT,
     EXIT_USAGE,
     CliError,
+    not_available_error,
 )
 from mammoth_cli.manifest.loader import command_by_id
 from mammoth_cli.runtime.confirm import POLICY_CONFIRM_TARGET, enforce_confirmation
@@ -115,21 +115,17 @@ def addon_connector_remove(invocation: Invocation) -> HandlerResult:
 
 
 def addon_list(invocation: Invocation) -> HandlerResult:
-    """List active addons for the workspace.
+    """Retired: the server has no route that lists a workspace's addons.
 
-    RCA T1-W-17: ``GET /workspaces/{id}/addons`` has no backing route on the
-    backend at all (a 404 from Litestar's own routing trie, not a typed
-    error) -- fail loud with that fact up front rather than surface the raw
-    404 as if the call had merely found nothing.
+    ``GET /workspaces/{id}/addons`` is gone (the server serves only the add and
+    remove routes under ``/addons/*``), and nothing replaces it: the Stripe
+    subscription's ``addons`` field is never filled in. The command stays so a
+    caller gets a clear answer instead of a bare 404.
     """
-    raise CliError(
-        code=CODE_UNSUPPORTED_CONTRACT,
-        message=(
-            "addon list has no backend route (GET /workspaces/{workspace_id}/addons does not "
-            "exist) and always 404s; it is currently non-functional."
-        ),
-        exit_status=EXIT_USAGE,
-        hint="Use `billing chargebee-plan` or `billing subscription get` for plan/storage info.",
+    raise not_available_error(
+        "addon list",
+        web_path="Settings > Plan (Billing & Invoices), where the add-ons are listed",
+        instead="`billing stripe status` shows the storage allowance and plan.",
     )
 
 

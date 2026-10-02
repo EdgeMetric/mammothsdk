@@ -141,3 +141,13 @@ Example: `mammoth agent session set-visibility resource-123 --input '{"visibilit
 Result: `AgentSessionSetVisibilityResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
 Status on release: untried; no live run recorded.
+
+### `agent.turn.cancel`
+
+Run: `mammoth agent turn cancel`. Exact input fields: `mammoth schema get agent.turn.cancel`.
+
+Example: `mammoth agent turn cancel resource-123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `AgentTurnCancelResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.

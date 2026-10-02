@@ -478,7 +478,7 @@ def test_transform_dropped_field_is_rejected_before_dispatch(
 
 
 def test_s3_every_route_has_closed_shared_admission() -> None:
-    """The 69-route S3 surface cannot silently accept a dropped field."""
+    """The 70-route S3 surface cannot silently accept a dropped field."""
     route_ids = {
         str(record["command_id"])
         for record in load_commands()
@@ -488,7 +488,7 @@ def test_s3_every_route_has_closed_shared_admission() -> None:
             ("view.checkpoint.", "view.draft.", "view.pipeline.", "view.task.", "view.version.")
         )
     }
-    assert len(route_ids) == 69
+    assert len(route_ids) == 70
     for command_id in route_ids:
         contract = resolve_command_contract(command_id)
         assert contract is not None

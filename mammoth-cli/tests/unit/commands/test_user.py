@@ -15,7 +15,6 @@ from mammoth_cli.testing import login_default_profile
 
 _AVATAR_DELETE = "mammoth.api.users.UsersAPI.avatar_delete"
 _AVATAR_UPLOAD = "mammoth.api.users.UsersAPI.avatar_upload"
-_CHANGE_PASSWORD = "mammoth.api.user_profile.UserProfileAPI.change_password"
 _DELETE_ACCOUNT = "mammoth.api.users.UsersAPI.delete_account"
 _GET = "mammoth.api.user_profile.UserProfileAPI.get"
 _PREFERENCE_GET = "mammoth.api.user_profile.UserProfileAPI.get_preferences"
@@ -77,57 +76,18 @@ def test_avatar_upload_uses_input_field(fake_service: FakeMammothService, tmp_pa
 # --- change-password -----------------------------------------------------------
 
 
-def test_change_password_requires_current_password(fake_service: FakeMammothService) -> None:
-    with pytest.raises(CliError) as excinfo:
-        user_cmd.user_change_password(_inv("user.change-password", yes=True, confirm="4"))
-    assert excinfo.value.code == "missing_field"
-    assert fake_service.call_log == []
-
-
-def test_change_password_requires_new_password(
+def test_change_password_is_retired_and_names_the_web_app(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
-    doc = _write(tmp_path, {"current_password": "old"})
+    """POST /user/change_password is gone from the server; no request is sent."""
+    doc = _write(tmp_path, {"current_password": "old", "new_password": "new"})
     with pytest.raises(CliError) as excinfo:
         user_cmd.user_change_password(
             _inv("user.change-password", input_file=doc, yes=True, confirm="4")
         )
-    assert excinfo.value.code == "missing_field"
+    assert excinfo.value.code == "not_available"
+    assert "Reset Password" in (excinfo.value.hint or "")
     assert fake_service.call_log == []
-
-
-def test_change_password_blocked_without_confirmation(
-    fake_service: FakeMammothService, tmp_path: Path
-) -> None:
-    doc = _write(tmp_path, {"current_password": "old", "new_password": "new"})
-    with pytest.raises(CliError) as excinfo:
-        user_cmd.user_change_password(_inv("user.change-password", input_file=doc, output="json"))
-    assert excinfo.value.code == "confirmation_required"
-    assert fake_service.call_log == []
-
-
-def test_change_password_requires_confirm_target(
-    fake_service: FakeMammothService, tmp_path: Path
-) -> None:
-    doc = _write(tmp_path, {"current_password": "old", "new_password": "new"})
-    with pytest.raises(CliError) as excinfo:
-        user_cmd.user_change_password(
-            _inv("user.change-password", input_file=doc, yes=True, confirm="999")
-        )
-    assert excinfo.value.code == "confirmation_target_mismatch"
-    assert fake_service.call_log == []
-
-
-def test_change_password_proceeds_with_matching_target(
-    fake_service: FakeMammothService, tmp_path: Path
-) -> None:
-    doc = _write(tmp_path, {"current_password": "old", "new_password": "new"})
-    user_cmd.user_change_password(
-        _inv("user.change-password", input_file=doc, yes=True, confirm="4")
-    )
-    assert fake_service.call_log == [
-        (_CHANGE_PASSWORD, {"current_password": "old", "new_password": "new"})
-    ]
 
 
 # --- delete-account -----------------------------------------------------------

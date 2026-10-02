@@ -16,6 +16,7 @@ edits_target_commands:
 - agent.run.stop
 - agent.session.delete
 - agent.session.set-visibility
+- agent.turn.cancel
 - annotation.comment.add
 - annotation.delete
 - annotation.update
@@ -47,6 +48,7 @@ edits_target_commands:
 - dashboard.canvas.restore
 - dashboard.canvas.save
 - dashboard.chat.edit
+- dashboard.context.apply
 - dashboard.context.delete
 - dashboard.context.update
 - dashboard.delete
