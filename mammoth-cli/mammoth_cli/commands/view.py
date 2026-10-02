@@ -899,19 +899,43 @@ def view_impact(invocation: Invocation) -> HandlerResult:
 
 
 def view_update(invocation: Invocation) -> HandlerResult:
-    """Reject free-form dataview patches until the API supplies typed variants."""
-    raise CliError(
+    """Rename a view from the name input field; any other patch is refused.
+
+    The dataview patch route leaves op, path and value unconstrained, so the only
+    typed change offered is the rename (``replace`` on ``name``).
+    """
+    project_id = require_project(invocation)
+    dataview_id = _require_int_positional_at(invocation, 0, "view id")
+    document = invocation.load_input() or {}
+    name = document.get("name")
+    if set(document) - {"name", _DATASET_ID_FIELD} or not isinstance(name, str) or not name.strip():
+        raise _untyped_patch_error(invocation)
+    with open_service(invocation) as (service, auth):
+        dataset_id = _resolve_dataset_id(service, invocation, dataview_id, document)
+        data = service.call(
+            _symbol(invocation),
+            dataset_id=dataset_id,
+            dataview_id=dataview_id,
+            patch_data=[{"op": "replace", "path": "name", "value": name.strip()}],
+            project_id=project_id,
+        )
+    return data, _meta(invocation, auth.workspace_id, project_id)
+
+
+def _untyped_patch_error(invocation: Invocation) -> CliError:
+    """The refusal for a view patch that is not the typed rename."""
+    return CliError(
         code=CODE_UNSUPPORTED_CONTRACT,
         message="Raw dataview patch operations are not available through the CLI.",
         exit_status=EXIT_USAGE,
         hint=(
-            "The OpenAPI operation leaves op, path, and value unconstrained. "
-            "Use a separately typed view command when its schema covers the intended change."
+            "The OpenAPI operation leaves op, path, and value unconstrained. The typed "
+            'change is the rename: view update VIEW_ID --input \'{"name": "New name"}\'.'
         ),
         details={
             "command_id": invocation.command_id,
             "blocker": "B09 DATAVIEW_INPUT_UNTYPED",
-            "typed_alternatives": [],
+            "typed_alternatives": ['view update VIEW_ID --input \'{"name": "New name"}\''],
         },
         recovery_commands=[
             "mammoth schema find view",
@@ -1288,17 +1312,19 @@ def _relabel_and_check(
 ) -> Any:
     """Relabel a data page to display names and add ``column_warnings`` and ``duplicates``.
 
+    Only read-only data reads call this, so a dates-as-text finding carries no convert fix.
+
     The metadata read happens only when the page has rows and the caller has
     not read it already (one read serves both the names and the types).
     """
     rows = data.get(_ROWS_KEY) if isinstance(data, dict) else None
     if not isinstance(rows, list) or not rows:
         data = _relabel_columns(service, dataset_id, view_id, project_id, data, mapping)
-        return _with_column_warnings(data, types or {}, view_id, dataset_id)
+        return _with_column_warnings(data, types or {}, view_id, dataset_id, read_only=True)
     if mapping is None or types is None:
         mapping, types = _column_profile(service, dataset_id, view_id, project_id)
     data = _relabel_columns(service, dataset_id, view_id, project_id, data, mapping)
-    data = _with_column_warnings(data, types, view_id, dataset_id)
+    data = _with_column_warnings(data, types, view_id, dataset_id, read_only=True)
     return _with_duplicates_fact(data, view_id, dataset_id, whole_view)
 
 
@@ -1322,7 +1348,11 @@ COLUMN_CHECK_ISSUES = (
 
 
 def _with_column_warnings(
-    data: Any, types: dict[str, str], view_id: int, dataset_id: int | None = None
+    data: Any,
+    types: dict[str, str],
+    view_id: int,
+    dataset_id: int | None = None,
+    read_only: bool = False,
 ) -> Any:
     """Add ``column_checks`` (always) and ``column_warnings`` (when found).
 
@@ -1332,13 +1362,19 @@ def _with_column_warnings(
     """
     if not isinstance(data, dict) or not isinstance(data.get(_ROWS_KEY, []), list):
         return data
-    checks, warnings = _check_columns(data.get(_ROWS_KEY) or [], types, view_id, dataset_id)
+    checks, warnings = _check_columns(
+        data.get(_ROWS_KEY) or [], types, view_id, dataset_id, read_only
+    )
     out = {**data, "column_checks": checks}
     return {**out, "column_warnings": warnings} if warnings else out
 
 
 def _check_columns(
-    rows: list[Any], types: dict[str, str], view_id: int, dataset_id: int | None
+    rows: list[Any],
+    types: dict[str, str],
+    view_id: int,
+    dataset_id: int | None,
+    read_only: bool = False,
 ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     """Run ``column_warnings`` and describe what was checked (never raises)."""
     checks: dict[str, Any] = {
@@ -1350,7 +1386,7 @@ def _check_columns(
     warnings: list[dict[str, Any]] = []
     if rows and types:
         try:
-            warnings = column_warnings(rows, types, view_id, dataset_id)
+            warnings = column_warnings(rows, types, view_id, dataset_id, read_only)
         except Exception as exc:  # noqa: BLE001 -- a presentation aid must not fail the read
             checks["checked"] = []
             checks["error"] = f"{type(exc).__name__}: {exc}"

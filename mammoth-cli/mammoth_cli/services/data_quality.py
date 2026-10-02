@@ -354,6 +354,7 @@ def column_warnings(
     column_types: Mapping[str, str],
     view_id: int | None = None,
     dataset_id: int | None = None,
+    read_only: bool = False,
 ) -> list[dict[str, Any]]:
     """Return warnings for text columns that hold numbers or dates, and for blanks.
 
@@ -363,6 +364,8 @@ def column_warnings(
         view_id: The view the rows came from, used in the suggested command.
         dataset_id: The view's dataset, used for the duplicate-rows fix
             command (a mutation, so it needs the exact parent, not discovery).
+        read_only: The rows came from a read-only data read; a ``dates_stored_as_text``
+            finding then carries no ``fix``, since a read answers from the text as it is.
 
     Returns:
         One record per finding: ``column``, ``issue``
@@ -414,15 +417,10 @@ def column_warnings(
                         # there would be untrue.
                         detail += " (the conversion makes them empty)"
                     detail += "."
-                warnings.append(
-                    {
-                        "column": column,
-                        "issue": issue,
-                        "detail": detail,
-                        "fix": _convert_hint(view_id, column, to),
-                        "rows_checked": checked,
-                    }
-                )
+                finding: dict[str, Any] = {"column": column, "issue": issue, "detail": detail}
+                if not (read_only and kind == "dates"):
+                    finding["fix"] = _convert_hint(view_id, column, to)
+                warnings.append({**finding, "rows_checked": checked})
                 break
             variant_warning = _variant_spellings_warning(column, texts, view_id, checked)
             if variant_warning is not None:

@@ -697,6 +697,9 @@ _S7_ADDITIONAL_INPUT_FIELDS: dict[str, tuple[FieldSpec, ...]] = {
         FieldSpec("activities", required=False, annotation=list[Any] | None, default=None),
         FieldSpec("user_ids", required=False, annotation=list[Any] | None, default=None),
     ),
+    # The typed rename: the handler builds the one ``replace`` on ``name``; the
+    # SDK's free-form ``patch_data`` is handler-owned and never offered.
+    "view.update": (FieldSpec("name", required=True, annotation=str),),
     "user.preference.update": (
         # PreferencesPatchRequest: replace ops on dotted paths rooted at
         # GLOBAL or WORKSPACE_PREFERENCES.

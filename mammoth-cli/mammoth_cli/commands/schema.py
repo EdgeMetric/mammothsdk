@@ -74,6 +74,7 @@ _GROUP_DISCOVERY_PURPOSES = {
 }
 
 _COMMAND_DISCOVERY_PURPOSES = {
+    "view.update": "rename change name to a new name title relabel",
     "file.upload": (
         "upload import CSV spreadsheet XLSX source data append add rows union stack "
         "a file into an existing dataset excel workbook tabs sheets drop in"
@@ -305,7 +306,7 @@ _COMMAND_DISCOVERY_PURPOSES = {
     "view.data.explore": (
         "explore trend trends trending over time per day week month quarter year by date "
         "distribution spread histogram top most common frequent values breakdown share "
-        "percentage profile"
+        "percentage profile period year quarter month date range coverage figure"
     ),
     # "Give the West team their own copy they can change" / "duplicate this
     # dataset as an independent copy" / "clone it without changing the
@@ -323,7 +324,10 @@ _COMMAND_DISCOVERY_PURPOSES = {
     # value -- and neither can be dropped as a data word anyway, since
     # view.data.explore's own purpose text already uses both for its trend
     # feature.
-    "view.data.aggregate": "group and sum totals by month week without changing the pipeline",
+    "view.data.aggregate": (
+        "group and sum totals by month week without changing the pipeline "
+        "sum total figure answer a question, read only"
+    ),
     # Goals stated as "what is in this data" / "why do customers churn": one
     # whole-view profile answers both, so the phrasing must reach it.
     "view.data.profile": (
@@ -1740,6 +1744,21 @@ def _inline_call_detail(entries: list[dict[str, Any]]) -> None:
             entry["agent_example"] = record["agent_example"]
 
 
+def _inline_picks(page: list[dict[str, Any]], offset: int) -> list[dict[str, Any]]:
+    """The entries to inline: the top ones, plus read commands ranked below a write.
+
+    A read that answers the question is worth its fields even when a write such as
+    ``view.transform.pivot`` outranks it; otherwise the caller needs a ``schema get``.
+    """
+    head = page[: max(0, _INLINE_DETAIL_COUNT - offset)]
+    reads = [
+        entry
+        for entry in page[len(head) :]
+        if (command_by_id(entry["command_id"]) or {}).get("mutation_class") == "read"
+    ]
+    return head + reads[:_INLINE_DETAIL_COUNT]
+
+
 #: How to drill down from a find: a family's full command list, or every family.
 _BROWSE_NEXT = (
     "mammoth schema list FAMILY lists every command in a family; mammoth schema list "
@@ -1902,7 +1921,7 @@ def find_schemas(
     )
     total_matches = len(ranked_matches)
     page = [match for _, match in ranked_matches[offset : offset + bounded_limit]]
-    _inline_call_detail(page[: max(0, _INLINE_DETAIL_COUNT - offset)])
+    _inline_call_detail(_inline_picks(page, offset))
     has_more = offset + len(page) < total_matches
     continuation = (
         {

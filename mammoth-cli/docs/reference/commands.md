@@ -6123,12 +6123,7 @@ Total commands: 645.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dataviews.DataviewsAPI.update`
-- Agent example: `mammoth view update 123 123 --input '{"patch_data": [{"sample_key": "Status"}]}'`
-
-  **Agent note:** raw patch input is intentionally blocked because its
-  backend grammar is not a typed CLI contract. Do not infer an `op`,
-  `path`, or `value` from examples; use a separately typed command or
-  stop with the structured unsupported-contract result.
+- Agent example: `mammoth view update 123 123 --input '{"name": "Revenue report"}'`
 
 ### `mammoth view version apply`
 

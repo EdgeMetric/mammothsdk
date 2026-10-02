@@ -352,14 +352,18 @@ def compact_view_list(
     Sizes and columns come from the records already fetched. Each kept view then
     gets ``sample_values`` from the backend's stored column stats via ``read_stats``
     (one stored-stats read per kept view, run concurrently; no query runs).
+    A list of one dataset's views names every column; several datasets cap it at a few.
     Returns ``{"dataviews", "shown"}`` plus
     ``first_dropped_dataset`` / ``views_omitted`` when something was cut, for the
     caller to turn into a way to the next page.
     """
     groups: dict[Any, list[tuple[dict[str, Any], dict[str, Any]]]] = {}
-    for ds_id, group in _group_by_dataset(views).items():
+    by_dataset = _group_by_dataset(views)
+    # One dataset's views are listed to be read from: the whole column list saves a `view get`.
+    every_column = all_columns or len(by_dataset) == 1
+    for ds_id, group in by_dataset.items():
         groups[ds_id] = [
-            (v, view_summary(v, datasets.get(ds_id), ds_id, all_columns)) for v in group
+            (v, view_summary(v, datasets.get(ds_id), ds_id, every_column)) for v in group
         ]
     chosen, dropped_dataset, omitted = _choose_views(groups)
     with ThreadPoolExecutor(max_workers=_STATS_WORKERS) as pool:

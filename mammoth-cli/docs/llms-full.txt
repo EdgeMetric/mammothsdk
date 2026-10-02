@@ -1313,8 +1313,7 @@ Sensitive structured input must come from a private file or pipe; never put secr
 - `mammoth view trash` [benign_mutation/none] -> mammoth.api.dataviews.DataviewsAPI.trash
   example: mammoth view trash 123 123
 - `mammoth view update` [benign_mutation/none] -> mammoth.api.dataviews.DataviewsAPI.update
-  example: mammoth view update 123 123 --input '{"patch_data": [{"sample_key": "Status"}]}'
-  agent note: raw patch input is intentionally blocked; use a separately typed command or return unsupported_contract.
+  example: mammoth view update 123 123 --input '{"name": "Revenue report"}'
 - `mammoth view version apply` [benign_mutation/none] -> mammoth.api.pipeline_versions.PipelineVersionsAPI.apply
   example: mammoth view version apply 123 123 123
 - `mammoth view version delete` [destructive/prompt_or_yes] -> mammoth.api.pipeline_versions.PipelineVersionsAPI.delete

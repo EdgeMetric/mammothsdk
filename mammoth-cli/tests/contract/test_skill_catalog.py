@@ -23,7 +23,7 @@ def test_packaged_skill_catalog_is_manifest_complete_and_current() -> None:
 
 
 def test_fail_closed_patch_commands_are_discoverable_but_not_presented_as_runnable() -> None:
-    for family, command_id in (("dataset", "dataset.update"), ("view", "view.update")):
+    for family, command_id in (("dataset", "dataset.update"),):
         section = _section(family, command_id)
         assert "mammoth schema get" in section
         assert "Discovery only" in section

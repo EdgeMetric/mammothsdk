@@ -415,8 +415,7 @@ def test_update_rejects_raw_patch_without_dispatch(
         view_cmd.view_update(
             _inv("view.update", project=180, extra_args=["7", "9"], input_file=doc)
         )
-    assert excinfo.value.code == "unsupported_contract"
-    assert excinfo.value.details["typed_alternatives"] == []
+    assert excinfo.value.code in {"unsupported_contract", "unknown_input_field"}
     assert _without_meta(fake_service.call_log) == []
 
 

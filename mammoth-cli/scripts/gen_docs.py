@@ -118,7 +118,7 @@ def _command_block(record: dict[str, object]) -> list[str]:
                 "",
             ]
         )
-    if record["command_id"] in {"dataset.update", "view.update"}:
+    if record["command_id"] in {"dataset.update"}:
         lines.extend(
             [
                 "  **Agent note:** raw patch input is intentionally blocked because its",
@@ -206,7 +206,7 @@ def render_llms_full_txt(families: dict[str, list[dict[str, object]]]) -> str:
                     "task; prefer typed view transform commands because task_spec fields are "
                     "not fully discoverable."
                 )
-            if record["command_id"] in {"dataset.update", "view.update"}:
+            if record["command_id"] in {"dataset.update"}:
                 lines.append(
                     "  agent note: raw patch input is intentionally blocked; use a separately "
                     "typed command or return unsupported_contract."

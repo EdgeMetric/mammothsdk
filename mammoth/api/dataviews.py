@@ -386,7 +386,7 @@ class DataviewsAPI:
 
             await client.dataviews.update(
                 dataset_id=123, dataview_id=456,
-                patch_data=[{"op": "replace", "path": "/name", "value": "Renamed"}],
+                patch_data=[{"op": "replace", "path": "name", "value": "Renamed"}],
             )
         """
         ws = workspace_id or self._ws()

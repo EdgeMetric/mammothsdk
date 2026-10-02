@@ -4,6 +4,13 @@ All notable changes to `mammoth-io` are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.13]
+
+### Fixed
+
+- `AiAPI.get_data_gen_info` now sends `validate_only=true`, which the route requires.
+- `DataviewsAPI.update` docstring example uses the server's patch path `name` (no leading slash).
+
 ## [0.8.12]
 
 ### Added

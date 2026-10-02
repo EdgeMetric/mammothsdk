@@ -5834,7 +5834,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view update VIEW_ID --help
-  agent_example: 'mammoth view update 123 123 --input ''{"patch_data": [{"sample_key": "Status"}]}'''
+  agent_example: 'mammoth view update 123 123 --input ''{"name": "Revenue report"}'''
   unit_tests:
   - UT-VIEW-UPDATE
   contract_tests:
@@ -5843,8 +5843,8 @@ commands:
   - CT-VIEW-UPDATE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: 'BLOCKED[B09 DATAVIEW_INPUT_UNTYPED]: patch_data is an arbitrary dictionary; reserved,
-    not registered.'
+  known_restrictions: 'Only the typed rename is offered (--input {"name": ...}); any other patch is refused
+    with B09 DATAVIEW_INPUT_UNTYPED because patch_data is an arbitrary dictionary.'
   reviewed_by: primary
 - command_id: view.version.apply
   command_path: view version apply
