@@ -64,7 +64,9 @@ class MammothService(Protocol):
         """
         ...
 
-    def list_projects(self, limit: int = 100, offset: int = 0) -> dict[str, Any]:
+    def list_projects(
+        self, limit: int = 100, offset: int = 0, include_non_members: bool = False
+    ) -> dict[str, Any]:
         """List projects in the current workspace.
 
         Args:
@@ -76,7 +78,7 @@ class MammothService(Protocol):
         """
         ...
 
-    def list_all_projects(self) -> list[dict[str, Any]]:
+    def list_all_projects(self, include_non_members: bool = False) -> list[dict[str, Any]]:
         """Every project in the workspace, across the route's pages.
 
         Returns:

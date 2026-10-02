@@ -146,7 +146,11 @@ CASES = [
         "api": ProjectsAPI,
         "method": "list",
         "kwargs": {"limit": 23},
-        "wire": ["GET", "/workspaces/4/projects", {"params": {"fields": "id,name", "limit": 23}}],
+        "wire": [
+            "GET",
+            "/workspaces/4/projects",
+            {"params": {"fields": "id,name", "limit": 23, "subscribed": "true"}},
+        ],
         "response": {"projects": []},
     },
     {
@@ -313,14 +317,18 @@ CASES = [
             "limit": 21,
             "offset": 0,
             "sort": "(name:asc)",
-            "fields": "id,name,created_at,updated_at,status,stats,sources,data_schema,additional_info",
+            "fields": (
+                "id,name,created_at,updated_at,status,stats,sources,data_schema,additional_info"
+            ),
         },
         "wire": [
             "GET",
             "/workspaces/4/projects/41/datasets",
             {
                 "params": {
-                    "fields": "id,name,created_at,updated_at,status,stats,sources,data_schema,additional_info",
+                    "fields": (
+                        "id,name,created_at,updated_at,status,stats,sources,data_schema,additional_info"
+                    ),
                     "limit": 21,
                     "offset": 0,
                     "sort": "(name:asc)",

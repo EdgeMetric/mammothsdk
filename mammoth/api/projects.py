@@ -54,8 +54,13 @@ class ProjectsAPI:
         limit: int = 100,
         offset: int = 0,
         fields: str = "id,name",
+        include_non_members: bool = False,
     ) -> dict[str, Any]:
         """List one page of projects in a workspace.
+
+        By default only projects the caller is a member of are returned, which
+        is what the Mammoth UI shows. A workspace owner or admin can read
+        every project, but cannot open the ones they are not a member of.
 
         The backend caps ``limit`` at :data:`MAX_PAGE_SIZE` (100) and rejects
         larger values with a validation error; use :meth:`list_all` to walk
@@ -66,36 +71,43 @@ class ProjectsAPI:
             limit: Maximum number of results (default and maximum 100).
             offset: Number of leading projects to skip (server-side).
             fields: Comma-separated project fields to return (default ``id,name``).
+            include_non_members: Also return projects the caller is not a member
+                of; every row then carries ``member`` (true/false).
 
         Returns:
             Dict containing projects list with the requested fields, plus ``limit``,
             ``offset`` and ``next`` (empty when this is the last page).
         """
         ws = workspace_id or self._ws()
+        page = await self._list_page(ws, limit, offset, fields, subscribed=not include_non_members)
+        if include_non_members:
+            await self._tag_members(ws, page.get("projects", []))
+        return page
+
+    async def _list_page(
+        self, ws: int, limit: int, offset: int, fields: str, subscribed: bool
+    ) -> dict[str, Any]:
+        """Fetch one page; ``subscribed`` selects member projects only, else all."""
         params: dict[str, Any] = {"fields": fields, "limit": limit}
+        if subscribed:
+            params["subscribed"] = "true"
         if offset:
             params["offset"] = offset
         return await self._client._request_json("GET", f"/workspaces/{ws}/projects", params=params)
 
-    async def list_all(
-        self, workspace_id: int | None = None, fields: str = "id,name"
-    ) -> _list[dict[str, Any]]:
-        """Return every project in the workspace, following the 100-row pages.
+    async def _tag_members(self, ws: int, rows: _list[dict[str, Any]]) -> None:
+        """Set ``member`` on each row from the caller's member-project ids."""
+        member_ids = {p.get("id") for p in await self._fetch_all(ws, "id", subscribed=True)}
+        for row in rows:
+            row["member"] = row.get("id") in member_ids
 
-        Args:
-            workspace_id: ID of the workspace (uses client default if not provided).
-            fields: Comma-separated project fields to return (default ``id,name``).
-
-        Returns:
-            List of project dicts with the requested fields across all pages.
-        """
+    async def _fetch_all(self, ws: int, fields: str, subscribed: bool) -> _list[dict[str, Any]]:
+        """Walk the 100-row pages of the projects route (untagged rows)."""
         projects: _list[dict[str, Any]] = []
         seen: set[Any] = set()
         offset = 0
         while True:
-            page = await self.list(
-                workspace_id=workspace_id, limit=MAX_PAGE_SIZE, offset=offset, fields=fields
-            )
+            page = await self._list_page(ws, MAX_PAGE_SIZE, offset, fields, subscribed)
             batch = page.get("projects", []) if isinstance(page, dict) else []
             fresh = [p for p in batch if p.get("id") not in seen]
             seen.update(p.get("id") for p in fresh)
@@ -105,6 +117,29 @@ class ProjectsAPI:
             if len(batch) < MAX_PAGE_SIZE or not fresh:
                 return projects
             offset += len(batch)
+
+    async def list_all(
+        self,
+        workspace_id: int | None = None,
+        fields: str = "id,name",
+        include_non_members: bool = False,
+    ) -> _list[dict[str, Any]]:
+        """Return every project the caller is a member of, following the 100-row pages.
+
+        Args:
+            workspace_id: ID of the workspace (uses client default if not provided).
+            fields: Comma-separated project fields to return (default ``id,name``).
+            include_non_members: Also return projects the caller is not a member
+                of; every row then carries ``member`` (true/false).
+
+        Returns:
+            List of project dicts with the requested fields across all pages.
+        """
+        ws = workspace_id or self._ws()
+        projects = await self._fetch_all(ws, fields, subscribed=not include_non_members)
+        if include_non_members:
+            await self._tag_members(ws, projects)
+        return projects
 
     async def get(
         self,
@@ -128,7 +163,11 @@ class ProjectsAPI:
         Raises:
             ValueError: If project not found or multiple projects without specification.
         """
-        projects = await self.list_all(workspace_id=workspace_id)
+        # An explicit id or name may name a project the caller can read but is
+        # not a member of; only the auto-selection is limited to member projects.
+        projects = await self._fetch_all(
+            workspace_id or self._ws(), "id,name", subscribed=project is None
+        )
 
         if not projects:
             raise ValueError("No projects found in workspace")

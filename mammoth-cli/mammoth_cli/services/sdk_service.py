@@ -792,8 +792,10 @@ class SdkMammothService:
         except Exception as exc:
             raise map_sdk_exception(exc) from exc
 
-    def list_projects(self, limit: int = 100, offset: int = 0) -> dict[str, Any]:
-        """List projects in the current workspace.
+    def list_projects(
+        self, limit: int = 100, offset: int = 0, include_non_members: bool = False
+    ) -> dict[str, Any]:
+        """List projects in the current workspace (member projects unless widened).
 
         The projects route caps ``limit`` at 100 and pages with a server-side
         ``offset``; a larger ``limit`` is served by walking the pages.
@@ -801,6 +803,8 @@ class SdkMammothService:
         Args:
             limit: Maximum number of results.
             offset: Number of leading results to skip.
+            include_non_members: Also list projects the caller is not a member
+                of; each row then carries ``member``.
 
         Returns:
             The raw project-list response, with ``projects`` holding at most
@@ -811,9 +815,15 @@ class SdkMammothService:
         """
         try:
             if limit <= _PROJECT_PAGE_SIZE:
-                response = self._run(self._client.projects.list(limit=limit, offset=offset))
+                response = self._run(
+                    self._client.projects.list(
+                        limit=limit, offset=offset, include_non_members=include_non_members
+                    )
+                )
                 return {**response, "projects": list(response.get("projects", []))}
-            everything = self._run(self._client.projects.list_all())
+            everything = self._run(
+                self._client.projects.list_all(include_non_members=include_non_members)
+            )
         except Exception as exc:
             raise map_sdk_exception(exc) from exc
         return {
@@ -823,14 +833,20 @@ class SdkMammothService:
             "next": "",
         }
 
-    def list_all_projects(self) -> list[dict[str, Any]]:
-        """Every project in the workspace, across the route's 100-row pages.
+    def list_all_projects(self, include_non_members: bool = False) -> list[dict[str, Any]]:
+        """Every member project in the workspace, across the route's 100-row pages.
+
+        Args:
+            include_non_members: Also list projects the caller is not a member
+                of; each row then carries ``member``.
 
         Raises:
             CliError: Mapped from any SDK exception.
         """
         try:
-            return list(self._run(self._client.projects.list_all()))
+            return list(
+                self._run(self._client.projects.list_all(include_non_members=include_non_members))
+            )
         except Exception as exc:
             raise map_sdk_exception(exc) from exc
 

@@ -5288,7 +5288,7 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.projects.ProjectsAPI.list
   implementation_origin: mammoth.api.projects.ProjectsAPI.list
-  signature: 'list(self, workspace_id: ''int | None'' = None, limit: ''int'' = 100, offset: ''int'' = 0, fields: ''str'' = ''id,name'') -> ''dict[str, Any]'''
+  signature: 'list(self, workspace_id: ''int | None'' = None, limit: ''int'' = 100, offset: ''int'' = 0, fields: ''str'' = ''id,name'', include_non_members: ''bool'' = False) -> ''dict[str, Any]'''
   openapi_operation_ids: []
   canonical_command: project.list
   alias_of: null
@@ -5300,7 +5300,7 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.projects.ProjectsAPI.list_all
   implementation_origin: mammoth.api.projects.ProjectsAPI.list_all
-  signature: 'list_all(self, workspace_id: ''int | None'' = None, fields: ''str'' = ''id,name'') -> ''_list[dict[str, Any]]'''
+  signature: 'list_all(self, workspace_id: ''int | None'' = None, fields: ''str'' = ''id,name'', include_non_members: ''bool'' = False) -> ''_list[dict[str, Any]]'''
   openapi_operation_ids: []
   canonical_command: null
   alias_of: null

@@ -129,6 +129,12 @@ Response shapes are not uniform; never reuse one `jq` path across commands.
 command returns its object directly under `data`. Inspect the first response
 before extracting a field.
 
+`project list` shows only the projects the user is a member of, the same as the
+Mammoth UI. A workspace owner or admin can read other projects but not open
+them, so never report them as access denied. Pass `include_non_members: true`
+only when the user asks about projects they are not in; each row then carries
+`member`.
+
 ## Exports
 
 First inspect `view.export.list/get` for existing configuration and the exact

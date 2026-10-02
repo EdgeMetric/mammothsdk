@@ -13,7 +13,7 @@
     "data-app.list", "data-app.create", "data-app.update", "report.list", "template.update"
   ],
   "cases": [
-    {"id":"project-list","route":"project.list","expected":{"method":"GET","path":"/workspaces/17/projects","kwargs":{"params":{"fields":"id,name","limit":13}}}},
+    {"id":"project-list","route":"project.list","expected":{"method":"GET","path":"/workspaces/17/projects","kwargs":{"params":{"fields":"id,name","limit":13,"subscribed":"true"}}}},
     {"id":"project-create","route":"project.create","expected":{"method":"POST","path":"/workspaces/17/projects","kwargs":{"json":{"name":"C2_PROJECT","properties":{"color":"#C20001","project_access":"only_me"}}}}},
     {"id":"project-update","route":"project.update","expected":{"method":"PATCH","path":"/workspaces/17/projects/41","kwargs":{"json":{"patches":[{"op":"replace","path":"name","value":"C2_RENAMED"},{"op":"replace","path":"properties","value":{"color":"#C20002"}}]}}}},
     {"id":"project-user-add","route":"project.user.add","expected":{"method":"POST","path":"/workspaces/17/projects/41/users","kwargs":{"json":{"users":[{"user_id":4102,"role":"project_analyst"}]}}}},
