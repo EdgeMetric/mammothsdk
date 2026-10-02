@@ -27,8 +27,19 @@ def _page(fields: str | None, limit: int | None, offset: int | None) -> dict[str
     return params or None
 
 
+def _resource_type_filter(value: Any) -> Any:
+    """The route spells ``dataset`` as ``datasource`` (it answers 4RESO010 to ``dataset``)."""
+    if not isinstance(value, str):
+        return value
+    return ",".join(
+        "datasource" if part.strip() == "dataset" else part.strip() for part in value.split(",")
+    )
+
+
 def _resource_query(**fields: Any) -> dict[str, Any] | None:
     """The resources-v2 query: only the filters the caller set."""
+    if "type" in fields:
+        fields["type"] = _resource_type_filter(fields["type"])
     return {key: value for key, value in fields.items() if value is not None} or None
 
 

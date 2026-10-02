@@ -4,6 +4,23 @@ All notable changes to `mammoth-io` are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.14]
+
+### Added
+
+- `DataviewsAPI.explore(cumulative=True)` adds a `cumulative` running total per bucket (of the
+  metric, else the count), in bucket order, before any sort or limit.
+
+### Fixed
+
+- `DatasetsAPI.list_all` no longer stops after the first page: the datasets list route sends no
+  `next`, so a full page now continues until a short one (datasets past the 100th were invisible).
+- `BrowseAPI.resources_search` / `resources_list` map the resource type `dataset` to the route's
+  `datasource` (the backend rejected `dataset`).
+- A `view.export.to_dataset` whose export trigger is slow to show `EXECUTED` resolves the new
+  dataset by name and source view before giving up; the error it raises when it still cannot
+  carries `export_pending: True`.
+
 ## [0.8.13]
 
 ### Fixed

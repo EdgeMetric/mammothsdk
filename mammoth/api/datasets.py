@@ -110,6 +110,7 @@ class DatasetsAPI:
             item_key="datasets",
             limit=limit,
             max_pages=max_pages,
+            full_page_continues=True,
         )
 
     async def get(

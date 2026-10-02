@@ -583,10 +583,36 @@ class View(
             target_id = (export.target_properties or {}).get("TARGET_DS_ID")
             if target_id is not None:
                 return int(target_id)
+        landed = await self._find_exported_dataset(dataset_name)
+        if landed is not None:
+            return landed
         raise MammothExportError(
             ERR_EXPORT_DATASET_UNRESOLVED.format(name=dataset_name),
-            {"dataset_name": dataset_name, "timeout": timeout},
+            {
+                "dataset_name": dataset_name,
+                "timeout": timeout,
+                "source_view_id": self.id,
+                "export_pending": True,
+            },
         )
+
+    async def _find_exported_dataset(self, dataset_name: str) -> int | None:
+        """The dataset an export of this view created, found by name and source view.
+
+        An export's dataset records the view it came from (``additional_info
+        .DATAVIEW_ID``), so a dataset that landed while the export trigger was
+        still not listed as ``EXECUTED`` is found here. The newest match wins.
+        """
+        listing = await self._client.datasets.list_all(fields="id,name,additional_info")
+        found = [
+            int(ds["id"])
+            for ds in listing.get("datasets", [])
+            if isinstance(ds, dict)
+            and ds.get("name") == dataset_name
+            and isinstance(ds.get("additional_info"), dict)
+            and str(ds["additional_info"].get("DATAVIEW_ID")) == str(self.id)
+        ]
+        return max(found, default=None)
 
     async def _wait_for_dataset_export_write(
         self, target_ds_id: int, timeout: int | None = None, floor: int | None = None
@@ -623,7 +649,12 @@ class View(
         if export is None:
             raise MammothExportError(
                 ERR_EXPORT_DATASET_WRITE_UNRESOLVED.format(dataset_id=target_ds_id),
-                {"dataset_id": target_ds_id, "timeout": timeout},
+                {
+                    "dataset_id": target_ds_id,
+                    "timeout": timeout,
+                    "source_view_id": self.id,
+                    "export_pending": True,
+                },
             )
 
     # ── Data Access ─────────────────────────────────────────────
