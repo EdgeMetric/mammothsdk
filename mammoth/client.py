@@ -653,7 +653,8 @@ class MammothClient:
         names its own workspace, which is fetched once on first use and kept.
         """
         if self._workspace_id is None:
-            assert self.api_token is not None
+            if self.api_token is None:
+                raise ValueError("workspace_id is required with api_key + api_secret")
             self._workspace_id = resolve_token_workspace_id(
                 self.base_url, self.api_token, self.timeout
             )
