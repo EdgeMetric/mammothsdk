@@ -210,7 +210,7 @@
         "contract_tests": {"type": "array", "items": {"$ref": "#/$defs/no_placeholder"}, "minItems": 1},
         "draft_test": {"type": ["string", "null"]},
         "undo_test": {"type": ["string", "null"]},
-        "known_restrictions": {"type": ["string", "null"]},
+        "known_restrictions": {"type": ["string", "null"]}, "proposal_input": {"type": "string", "minLength": 1},
         "reviewed_by": {"$ref": "#/$defs/no_placeholder"}
       },
       "allOf": [

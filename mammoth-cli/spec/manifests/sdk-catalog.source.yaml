@@ -3875,6 +3875,7 @@ sdk_methods:
   openapi_operation_ids: []
 - sdk_symbol: mammoth.api.workflows.WorkflowsAPI.canvas
   canonical_command: workflow.canvas
+  proposal_input: canvas_state.proposed_changes
   alias_of: null
   mutation_class: null
   wait_policy: null

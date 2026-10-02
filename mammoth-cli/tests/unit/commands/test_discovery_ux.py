@@ -372,3 +372,13 @@ def test_workflow_canvas_says_it_proposes_structure_for_review_and_shows_the_ops
     assert "review and Save" in preconditions
     assert "cannot add filters" in preconditions
     assert "proposed_changes" in entry["agent_example"]
+
+
+# `workflow canvas` edits its workflow's canvas state, but a call that only proposes changes
+# (sets canvas_state.proposed_changes) builds nothing until the user Saves on the canvas. The
+# manifest says so as data, for callers that gate in-place edits behind an approval.
+def test_workflow_canvas_declares_which_input_only_proposes() -> None:
+    record = next(r for r in load_commands() if r["command_id"] == "workflow.canvas")
+
+    assert record["edits_target"] is True
+    assert record["proposal_input"] == "canvas_state.proposed_changes"

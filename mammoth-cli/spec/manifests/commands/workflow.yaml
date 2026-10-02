@@ -222,6 +222,7 @@ commands:
   result_model: WorkflowCanvasResult
   mutation_class: benign_mutation
   edits_target: true
+  proposal_input: canvas_state.proposed_changes
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
