@@ -546,6 +546,49 @@ commands:
     ids:
       project_id: positional.0
     kind: object
+- command_id: project.needs-attention
+  command_path: project needs-attention
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - name: project_id
+    type: int
+    required: false
+    metavar: PROJECT_ID
+    falls_back_to_field: null
+    help: ID of the project to act on; defaults to the active project.
+  options: []
+  sdk_symbol: mammoth.api.projects.ProjectsAPI.needs_attention
+  sdk_conversion: Call mammoth.api.projects.ProjectsAPI.needs_attention with validated request fields.
+  request_model: ProjectNeedsAttentionRequest
+  result_model: ProjectNeedsAttentionResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-PROJECT-NEEDS-ATTENTION
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth project needs-attention --help
+  agent_example: mammoth project needs-attention 123
+  unit_tests:
+  - UT-PROJECT-NEEDS-ATTENTION
+  contract_tests:
+  - CT-PROJECT-NEEDS-ATTENTION-HUMAN
+  - CT-PROJECT-NEEDS-ATTENTION-JSON
+  - CT-PROJECT-NEEDS-ATTENTION-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'The rows of the Monitor Needs Attention tab for one project (the app has no workspace-wide list): pipeline_error, pending_pipeline, pending_data, checkpoint (needs approval), data_check (failed), each with view_id and the owning dataset_id; datasets lists each affected dataset once with its view_ids. Dataset-level action-needed items and pending retentions are not returned by the API and are not included. To delete the datasets behind the views, take dataset_id from datasets and run dataset delete or dataset bulk-delete (confirm first).'
+  reviewed_by: primary
+  readback:
+    command: project.needs-attention
+    ids: {}
+    kind: object
 - command_id: project.pending-changes
   command_path: project pending-changes
   disposition: command

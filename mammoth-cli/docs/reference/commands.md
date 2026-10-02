@@ -4,7 +4,7 @@ Generated from the reviewed command manifests for mammoth-cli 2.2.2.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
-Total commands: 594.
+Total commands: 595.
 
 ## activity
 
@@ -3266,6 +3266,17 @@ Total commands: 594.
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.projects.ProjectsAPI.remove_agent_memory`
 - Agent example: `mammoth project memory remove 123 --input '{"index": 1}'`
+
+### `mammoth project needs-attention`
+
+**Arguments**
+
+- `PROJECT_ID` (int, optional) — ID of the project to act on; defaults to the active project.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.projects.ProjectsAPI.needs_attention`
+- Agent example: `mammoth project needs-attention 123`
 
 ### `mammoth project pending-changes`
 

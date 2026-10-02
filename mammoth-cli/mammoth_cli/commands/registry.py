@@ -253,6 +253,7 @@ HANDLERS: dict[str, Handler] = {
     "project.list": project_cmd.project_list,
     "project.get": project_cmd.project_get,
     "project.check": project_cmd.project_check,
+    "project.needs-attention": project_cmd.project_needs_attention,
     "project.pending-changes": project_cmd.project_pending_changes,
     "project.memory.list": project_cmd.project_memory_list,
     "project.memory.add": project_cmd.project_memory_add,

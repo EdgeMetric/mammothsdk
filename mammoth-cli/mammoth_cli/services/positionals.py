@@ -303,6 +303,7 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
             help="Check only this dataset's first view; no other dataset or dashboard is read.",
         ),
     ),
+    "project.needs-attention": _optional_project_id(),
     "project.pending-changes": _optional_project_id(),
     "project.memory.list": _optional_project_id(),
     "project.memory.add": _optional_project_id(),

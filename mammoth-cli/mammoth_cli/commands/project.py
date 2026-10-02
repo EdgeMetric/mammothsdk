@@ -150,6 +150,14 @@ def project_pending_changes(invocation: Invocation) -> HandlerResult:
     return data, _meta(invocation, auth.workspace_id, project_id)
 
 
+def project_needs_attention(invocation: Invocation) -> HandlerResult:
+    """List the Monitor "Needs Attention" rows with the dataset behind each view."""
+    project_id = _project_id(invocation)
+    with open_service(invocation) as (service, auth):
+        data = service.call(_symbol(invocation), project_id=project_id)
+    return data, _meta(invocation, auth.workspace_id, project_id)
+
+
 def project_memory_list(invocation: Invocation) -> HandlerResult:
     """List the caller's saved agent preferences for a project."""
     project_id = _project_id(invocation)

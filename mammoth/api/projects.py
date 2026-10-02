@@ -10,6 +10,7 @@ from pydantic import ValidationError
 
 from ..exceptions import MammothValidationError
 from ..models.projects import DataSyncPatchItem
+from ._pagination import collect_offset_pages
 
 if TYPE_CHECKING:
     from ..client import MammothClient
@@ -18,6 +19,9 @@ _list = list  # Alias to avoid shadowing by method name
 
 #: Largest ``limit`` the projects route accepts (``4GENR007`` above it).
 MAX_PAGE_SIZE = 100
+
+#: Views fetched per page when mapping views to their datasets.
+MAX_VIEW_PAGE_SIZE = 1000
 
 ERR_PROJECT_ID_POSITIVE = "`project_id` must be a positive integer, got {0}."
 ERR_USER_OR_INVITE_ID_REQUIRED = (
@@ -29,6 +33,116 @@ ERR_USER_OR_INVITE_ID_REQUIRED = (
 def _agent_memory_items(project: dict[str, Any]) -> _list[str]:
     """Return the caller's ``properties.agent_memory`` list (empty when absent)."""
     return _list((project.get("properties") or {}).get("agent_memory") or [])
+
+
+def _attention_row(kind: str, view_id: int | None, **detail: Any) -> dict[str, Any]:
+    return {"kind": kind, "view_id": view_id, "view_name": None, **detail}
+
+
+def _attention_pipeline_rows(pending: dict[str, Any]) -> _list[dict[str, Any]]:
+    """Error and draft rows from ``pending_changes`` (the web app keeps numeric keys only)."""
+    rows: _list[dict[str, Any]] = []
+    for key, change in (pending.get("pending_changes") or {}).items():
+        if not str(key).isdigit():
+            continue
+        kind = "pipeline_error" if change.get("is_pipeline_in_error") else "pending_pipeline"
+        rows.append(
+            _attention_row(
+                kind,
+                change.get("dataview_id"),
+                view_name=change.get("dataview_name"),
+                dataset_name=change.get("datasource_name"),
+                pending_steps_count=change.get("pending_steps_count"),
+                tasks_in_error=_list((change.get("tasks_in_error") or {}).values()),
+                actions_in_error=_list((change.get("actions_in_error") or {}).values()),
+            )
+        )
+    return rows
+
+
+def _attention_items(
+    pending: dict[str, Any],
+    checkpoints: _list[dict[str, Any]],
+    data_checks: _list[dict[str, Any]],
+) -> _list[dict[str, Any]]:
+    rows = _attention_pipeline_rows(pending)
+    for dep in pending.get("pending_data_update_items") or []:
+        if dep.get("data_update_pending"):
+            rows.append(
+                _attention_row(
+                    "pending_data",
+                    dep.get("source_dataview_id"),
+                    operation_id=dep.get("op_id"),
+                    operation_type=dep.get("op_type"),
+                    operation_name=dep.get("op_name"),
+                )
+            )
+    rows.extend(
+        _attention_row(
+            "checkpoint", c.get("dataview_id"), checkpoint_id=c.get("id"), name=c.get("name")
+        )
+        for c in checkpoints
+        if c.get("status") == "needs_approval" and c.get("checkpoint_type") == "approval"
+    )
+    rows.extend(
+        _attention_row("data_check", d.get("dataview_id"), data_check_id=d.get("id"))
+        for d in data_checks
+        if d.get("status") == "failed"
+    )
+    return rows
+
+
+async def _collect_views(
+    client: MammothClient, ws: int, project_id: int, dataset_id: int
+) -> _list[dict[str, Any]]:
+    page = await collect_offset_pages(
+        lambda offset: client.dataviews.list(
+            dataset_id=dataset_id,
+            workspace_id=ws,
+            project_id=project_id,
+            limit=MAX_VIEW_PAGE_SIZE,
+            offset=offset,
+        ),
+        item_key="dataviews",
+        limit=MAX_VIEW_PAGE_SIZE,
+    )
+    return _list(page.get("dataviews", []))
+
+
+def _attention_result(
+    project_id: int,
+    items: _list[dict[str, Any]],
+    view_map: dict[int, dict[str, Any]],
+) -> dict[str, Any]:
+    datasets: dict[int, dict[str, Any]] = {}
+    unresolved: _list[int] = []
+    counts: dict[str, int] = {}
+    for item in items:
+        counts[item["kind"]] = counts.get(item["kind"], 0) + 1
+        found = view_map.get(item["view_id"]) if item["view_id"] is not None else None
+        item["dataset_id"] = found["dataset_id"] if found else None
+        if found:
+            item["view_name"] = item["view_name"] or found["view_name"]
+            item["dataset_name"] = item.get("dataset_name") or found["dataset_name"]
+            entry = datasets.setdefault(
+                found["dataset_id"],
+                {
+                    "dataset_id": found["dataset_id"],
+                    "dataset_name": found["dataset_name"],
+                    "view_ids": [],
+                },
+            )
+            if item["view_id"] not in entry["view_ids"]:
+                entry["view_ids"].append(item["view_id"])
+        elif item["view_id"] is not None and item["view_id"] not in unresolved:
+            unresolved.append(item["view_id"])
+    return {
+        "project_id": project_id,
+        "items": items,
+        "datasets": _list(datasets.values()),
+        "counts": counts,
+        "unresolved_view_ids": unresolved,
+    }
 
 
 class ProjectsAPI:
@@ -564,6 +678,80 @@ class ProjectsAPI:
         return await self._client._request_json(
             "GET", f"/workspaces/{ws}/projects/{project_id}/pending-changes"
         )
+
+    async def needs_attention(
+        self,
+        project_id: int,
+        workspace_id: int | None = None,
+    ) -> dict[str, Any]:
+        """Return the rows of the Monitor modal's "Needs Attention" tab, with dataset ids.
+
+        Same sources and filters as the web app (mm-frontend
+        ``resources.storePinia.js`` ``fetchPipelineChanges`` and
+        ``monitor-needs-attention.vue``), for the view-bearing rows:
+
+        - ``pipeline_error``: ``pending_changes`` entries with ``is_pipeline_in_error``.
+        - ``pending_pipeline``: the remaining ``pending_changes`` entries (draft steps).
+        - ``pending_data``: ``pending_data_update_items`` with ``data_update_pending``
+          (one row per dependency; the web app groups JOIN/LOOKUP sources by destination).
+        - ``checkpoint``: project checkpoints with status ``needs_approval`` and type ``approval``.
+        - ``data_check``: project data checks with status ``failed``.
+
+        The web app also lists dataset-level ``ds_action_needed_items`` and pending
+        retentions; the v2 ``pending-changes`` route does not return them, so they are
+        not included. Each row carries ``view_id`` and the owning ``dataset_id`` (null when
+        the view is not found in the project), so a caller can act on the datasets.
+
+        Args:
+            project_id: ID of the project (must be a positive integer).
+            workspace_id: ID of the workspace (uses client default if not provided).
+
+        Returns:
+            Dict with ``items``, ``datasets`` (unique, each with its ``view_ids``),
+            ``counts`` per kind and ``unresolved_view_ids``.
+
+        Raises:
+            MammothValidationError: If project_id is not a positive integer.
+        """
+        if project_id <= 0:
+            raise MammothValidationError(ERR_PROJECT_ID_POSITIVE.format(project_id))
+        ws = workspace_id or self._ws()
+        pending = await self.pending_changes(project_id, ws)
+        checkpoints = await self.checkpoint_list(project_id, ws)
+        data_checks = await self.data_check_list(project_id, ws)
+        items = _attention_items(
+            pending.get("pending_items") or {},
+            checkpoints.get("checkpoints") or [],
+            data_checks.get("data_checks") or [],
+        )
+        view_ids = {item["view_id"] for item in items if item["view_id"] is not None}
+        view_map = await self._dataset_of_views(project_id, ws, view_ids)
+        return _attention_result(project_id, items, view_map)
+
+    async def _dataset_of_views(
+        self, project_id: int, ws: int, view_ids: set[int]
+    ) -> dict[int, dict[str, Any]]:
+        """Map each of ``view_ids`` to ``{dataset_id, dataset_name, view_name}``.
+
+        Lists the project's datasets once and each dataset's views until every id is
+        found, so cost is bounded by the datasets, not by views times datasets.
+        """
+        found: dict[int, dict[str, Any]] = {}
+        if not view_ids:
+            return found
+        listing = await self._client.datasets.list_all(workspace_id=ws, project_id=project_id)
+        for dataset in listing.get("datasets", []):
+            if len(found) == len(view_ids):
+                break
+            views = await _collect_views(self._client, ws, project_id, dataset["id"])
+            for view in views:
+                if view["id"] in view_ids:
+                    found[view["id"]] = {
+                        "dataset_id": dataset["id"],
+                        "dataset_name": dataset.get("name"),
+                        "view_name": view.get("name"),
+                    }
+        return found
 
     async def list_agent_memory(
         self,
