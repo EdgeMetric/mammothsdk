@@ -65,7 +65,8 @@ class UserProfileAPI:
     async def change_password(self, current_password: str, new_password: str) -> dict[str, Any]:
         """Change user password.
 
-        Note: This endpoint is not documented in the public OpenAPI spec.
+        Retired: the server no longer serves ``POST /user/change_password``, so this
+        call answers 404. The web app changes it under Profile settings > Reset Password.
 
         Args:
             current_password: Current password.

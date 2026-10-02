@@ -1068,7 +1068,7 @@ def test_cli_to_recording_transport_uses_independent_wire(
     if case["route"] in CLI_UNSUPPORTED_ROUTES:
         result = make_runner().invoke(_argv(case))
         assert result.exit_code == 2, result.output
-        assert json.loads(result.output)["error"]["code"] == "unsupported_contract"
+        assert json.loads(result.output)["error"]["code"] == "not_available"
         assert api.requests == []
         return
     method, path, kwargs = case["wire"]

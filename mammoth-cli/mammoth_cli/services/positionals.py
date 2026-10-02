@@ -255,6 +255,14 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
         )
         for verb in ("pause", "resume", "stop", "extend")
     },
+    "agent.turn.cancel": (
+        PositionalSpec(
+            name="turn_id",
+            type=str,
+            required=True,
+            help="ID of the turn to stop (from the chat's events or agent session messages).",
+        ),
+    ),
     "dashboard.assess-twb": (
         PositionalSpec(
             name="file",
@@ -751,6 +759,7 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
             "view.parameter-context",
             "view.restore",
             "view.trash",
+            "view.impact",
             "view.update",
             "view.conditional-format.create",
             "view.conditional-format.delete-all",

@@ -411,6 +411,18 @@ _COMMAND_DISCOVERY_PURPOSES = {
         "page through project resources cursor next page has more folder children v2 listing"
     ),
     "browse.resource": "open one resource by type and id properties of a dataset view folder",
+    "browse.resources.bulk": "fetch many resources by type and id in one request batch lookup",
+    "agent.turn.cancel": "stop the agent now cancel this turn halt what the assistant is doing",
+    "dashboard.swap-fit": "which dataset fits this dashboard before swapping data score candidates",
+    "dashboard.audience.get": "who opened my dashboard readers visitors audience over time",
+    "dashboard.audience.summary": "how many people opened each dashboard in the library",
+    "dashboard.audience.digest.get": "weekly audience email setting for a dashboard get",
+    "dashboard.audience.digest.set": "turn the weekly audience email on or off for a dashboard",
+    "dashboard.columns": "columns of the dashboard source data profile samples ranges data panel",
+    "dashboard.context.review": "preview what the context change would do to the dashboard dry run",
+    "dashboard.context.apply": "apply the reviewed context change to the dashboard",
+    "dashboard.qa.insights": "what questions viewers asked on the dashboard grouped unanswered",
+    "view.impact": "what breaks if I delete this dataview or a task dependents impact",
     "browse.ancestors": "folder path breadcrumb where does this folder live parent folders chain",
     "browse.search": (
         "find search a dataset view folder by name across all projects whole workspace global"
@@ -1394,6 +1406,7 @@ def runnable_example(
         "dashboard.embed.secret.rotate",
         "dashboard.embed.config.set",
         "dashboard.embed.origin.revoke",
+        "dashboard.context.apply",
     }:
         # These commands have a confirm_target policy.  Keep their generated
         # example executable in non-interactive mode instead of advertising a

@@ -156,7 +156,7 @@ def test_cli_binding_reaches_real_sdk_transport(
     if case["route"] in CLI_UNSUPPORTED_ROUTES:
         result = make_runner().invoke(_cli_argv(case))
         assert result.exit_code == 2, result.output
-        assert json.loads(result.output)["error"]["code"] == "unsupported_contract"
+        assert json.loads(result.output)["error"]["code"] == "not_available"
         assert api.requests == []
         return
     expected = _expected_wire(case)

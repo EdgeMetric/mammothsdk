@@ -57,6 +57,8 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth agent session messages resource-123
 - `mammoth agent session set-visibility` [benign_mutation/none] -> mammoth.api.agents.AgentsAPI.session_set_visibility
   example: mammoth agent session set-visibility resource-123 --input '{"visibility": "sample"}'
+- `mammoth agent turn cancel` [benign_mutation/none] -> mammoth.api.agents.AgentsAPI.turn_cancel
+  example: mammoth agent turn cancel resource-123
 
 ## ai
 
@@ -194,6 +196,8 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth browse resource dataset 123
 - `mammoth browse resources` [read/none] -> mammoth.api.browse.BrowseAPI.resources_list
   example: mammoth browse resources
+- `mammoth browse resources bulk` [read/none] -> mammoth.api.browse.BrowseAPI.resources_bulk
+  example: mammoth browse resources bulk --input '{"items": [["dataview", 42]]}'
 - `mammoth browse root` [read/none] -> mammoth.api.browse.BrowseAPI.root
   example: mammoth browse root
 - `mammoth browse search` [read/none] -> mammoth.api.browse.BrowseAPI.resources_search
@@ -314,6 +318,14 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth dashboard assess-pbix sample.pbix
 - `mammoth dashboard assess-twb` [read/none] -> mammoth.api.dashboards.DashboardsAPI.assess_twb
   example: mammoth dashboard assess-twb sample.twb
+- `mammoth dashboard audience digest get` [read/none] -> mammoth.api.dashboards.DashboardsAPI.audience_digest_get
+  example: mammoth dashboard audience digest get 123
+- `mammoth dashboard audience digest set` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.audience_digest_set
+  example: mammoth dashboard audience digest set 123 --input '{"enabled": true}'
+- `mammoth dashboard audience get` [read/none] -> mammoth.api.dashboards.DashboardsAPI.audience
+  example: mammoth dashboard audience get 123
+- `mammoth dashboard audience summary` [read/none] -> mammoth.api.dashboards.DashboardsAPI.audience_summary
+  example: mammoth dashboard audience summary --input '{"dashboard_ids": [1]}'
 - `mammoth dashboard bi-export` [read/none] -> mammoth.api.dashboards.DashboardsAPI.export_powerbi
   example: mammoth dashboard bi-export 123 --input '{"target": "powerbi"}'
 - `mammoth dashboard bi-preflight` [read/none] -> mammoth.api.dashboards.DashboardsAPI.powerbi_preflight
@@ -330,6 +342,10 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth dashboard chat edit 123 --input '{"body": {"params": {"prompt": "Summarize revenue by region"}}}'
 - `mammoth dashboard chat history` [read/none] -> mammoth.api.dashboards.DashboardsAPI.chat_history
   example: mammoth dashboard chat history 123
+- `mammoth dashboard columns` [read/none] -> mammoth.api.dashboards.DashboardsAPI.column_roster
+  example: mammoth dashboard columns 123
+- `mammoth dashboard context apply` [benign_mutation/confirm_target] -> mammoth.api.dashboards.DashboardsAPI.context_apply
+  example: mammoth dashboard context apply 123 resource-123 --yes --confirm 123
 - `mammoth dashboard context create` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.context_create
   example: mammoth dashboard context create --input '{"body": {"params": {"name": "Revenue report"}}}'
 - `mammoth dashboard context delete` [destructive/prompt_or_yes] -> mammoth.api.dashboards.DashboardsAPI.context_delete
@@ -338,6 +354,8 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth dashboard context extract --input '{"body": {"params": {"name": "Revenue report"}}}'
 - `mammoth dashboard context list` [read/none] -> mammoth.api.dashboards.DashboardsAPI.context_list
   example: mammoth dashboard context list
+- `mammoth dashboard context review` [read/none] -> mammoth.api.dashboards.DashboardsAPI.context_review
+  example: mammoth dashboard context review 123
 - `mammoth dashboard context update` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.context_update
   example: mammoth dashboard context update resource-123 --input '{"body": {"params": {"name": "Revenue report"}}}'
 - `mammoth dashboard create-blank` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.create_blank
@@ -432,6 +450,8 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth dashboard qa comment delete 123 123 123
 - `mammoth dashboard qa feedback` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.qa_feedback
   example: mammoth dashboard qa feedback 123 123 123 --input '{"body": {"params": {"rating": "up"}}}'
+- `mammoth dashboard qa insights` [read/none] -> mammoth.api.dashboards.DashboardsAPI.qa_insights
+  example: mammoth dashboard qa insights 123
 - `mammoth dashboard qa session create` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.qa_session_create
   example: mammoth dashboard qa session create 123 --input '{"body": {"params": {"title": "Revenue report"}}}'
 - `mammoth dashboard qa session delete` [destructive/prompt_or_yes] -> mammoth.api.dashboards.DashboardsAPI.qa_session_delete
@@ -498,6 +518,8 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth dashboard suggestion list 123
 - `mammoth dashboard swap-data` [benign_mutation/confirm_target] -> mammoth.api.dashboards.DashboardsAPI.swap_data
   example: mammoth dashboard swap-data 123 --input '{"body": {"params": {"dataview_id": 1}}}'
+- `mammoth dashboard swap-fit` [read/none] -> mammoth.api.dashboards.DashboardsAPI.swap_fit
+  example: mammoth dashboard swap-fit 123 --input '{"target_dataview_ids": [1]}'
 - `mammoth dashboard tags delete` [destructive/confirm_target] -> mammoth.api.dashboards.DashboardsAPI.delete_tag
   example: mammoth dashboard tags delete 123 --yes --confirm 123
 - `mammoth dashboard tags list` [read/none] -> mammoth.api.dashboards.DashboardsAPI.list_tags
@@ -1187,6 +1209,8 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth view exportable-config get 123
 - `mammoth view get` [read/none] -> mammoth.client.ViewsResource.get
   example: mammoth view get 123 123
+- `mammoth view impact` [read/none] -> mammoth.api.dataviews.DataviewsAPI.delete_impact
+  example: mammoth view impact 123 123 --input '{"scope": "view"}'
 - `mammoth view list` [read/none] -> mammoth.api.dataviews.DataviewsAPI.list
   example: mammoth view list 123
 - `mammoth view parameter-context` [read/none] -> mammoth.api.dataviews.DataviewsAPI.parameter_context

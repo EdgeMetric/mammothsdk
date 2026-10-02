@@ -59,6 +59,9 @@ class AddonsAPI:
     async def list(self) -> dict[str, Any]:
         """List active addons for the workspace.
 
+        Retired: the server no longer serves ``GET /workspaces/{id}/addons``, so this
+        call answers 404. The web app lists add-ons under Settings > Plan.
+
         Returns:
             Dict with addon information.
         """

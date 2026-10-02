@@ -1,10 +1,10 @@
 # Command reference
 
-Generated from the reviewed command manifests for mammoth-cli 2.2.9.
+Generated from the reviewed command manifests for mammoth-cli 2.2.11.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
-Total commands: 633.
+Total commands: 645.
 
 ## activity
 
@@ -208,6 +208,17 @@ Total commands: 633.
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.agents.AgentsAPI.session_set_visibility`
 - Agent example: `mammoth agent session set-visibility resource-123 --input '{"visibility": "sample"}'`
+
+### `mammoth agent turn cancel`
+
+**Arguments**
+
+- `TURN_ID` (str, required) — ID of the turn to stop (from the chat's events or agent session messages).
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.agents.AgentsAPI.turn_cancel`
+- Agent example: `mammoth agent turn cancel resource-123`
 
 ## ai
 
@@ -741,6 +752,13 @@ Total commands: 633.
 - Backing SDK: `mammoth.api.browse.BrowseAPI.resources_list`
 - Agent example: `mammoth browse resources`
 
+### `mammoth browse resources bulk`
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.browse.BrowseAPI.resources_bulk`
+- Agent example: `mammoth browse resources bulk --input '{"items": [["dataview", 42]]}'`
+
 ### `mammoth browse root`
 
 - Mutation class: `read`
@@ -1240,6 +1258,46 @@ Total commands: 633.
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.assess_twb`
 - Agent example: `mammoth dashboard assess-twb sample.twb`
 
+### `mammoth dashboard audience digest get`
+
+**Arguments**
+
+- `DASHBOARD_ID` (int, required) — ID of the dashboard.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.dashboards.DashboardsAPI.audience_digest_get`
+- Agent example: `mammoth dashboard audience digest get 123`
+
+### `mammoth dashboard audience digest set`
+
+**Arguments**
+
+- `DASHBOARD_ID` (int, required) — ID of the dashboard.
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.dashboards.DashboardsAPI.audience_digest_set`
+- Agent example: `mammoth dashboard audience digest set 123 --input '{"enabled": true}'`
+
+### `mammoth dashboard audience get`
+
+**Arguments**
+
+- `DASHBOARD_ID` (int, required) — ID of the dashboard.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.dashboards.DashboardsAPI.audience`
+- Agent example: `mammoth dashboard audience get 123`
+
+### `mammoth dashboard audience summary`
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.dashboards.DashboardsAPI.audience_summary`
+- Agent example: `mammoth dashboard audience summary --input '{"dashboard_ids": [1]}'`
+
 ### `mammoth dashboard bi-export`
 
 **Arguments**
@@ -1328,6 +1386,29 @@ Total commands: 633.
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.chat_history`
 - Agent example: `mammoth dashboard chat history 123`
 
+### `mammoth dashboard columns`
+
+**Arguments**
+
+- `DASHBOARD_ID` (int, required) — ID of the dashboard.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.dashboards.DashboardsAPI.column_roster`
+- Agent example: `mammoth dashboard columns 123`
+
+### `mammoth dashboard context apply`
+
+**Arguments**
+
+- `DASHBOARD_ID` (int, required) — ID of the dashboard.
+- `REVIEW_ID` (str, required) — ID of the review.
+
+- Mutation class: `benign_mutation`
+- Confirmation: `confirm_target`
+- Backing SDK: `mammoth.api.dashboards.DashboardsAPI.context_apply`
+- Agent example: `mammoth dashboard context apply 123 resource-123 --yes --confirm 123`
+
 ### `mammoth dashboard context create`
 
 - Mutation class: `benign_mutation`
@@ -1359,6 +1440,17 @@ Total commands: 633.
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.context_list`
 - Agent example: `mammoth dashboard context list`
+
+### `mammoth dashboard context review`
+
+**Arguments**
+
+- `DASHBOARD_ID` (int, required) — ID of the dashboard.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.dashboards.DashboardsAPI.context_review`
+- Agent example: `mammoth dashboard context review 123`
 
 ### `mammoth dashboard context update`
 
@@ -1866,6 +1958,17 @@ Total commands: 633.
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.qa_feedback`
 - Agent example: `mammoth dashboard qa feedback 123 123 123 --input '{"body": {"params": {"rating": "up"}}}'`
 
+### `mammoth dashboard qa insights`
+
+**Arguments**
+
+- `DASHBOARD_ID` (int, required) — ID of the dashboard.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.dashboards.DashboardsAPI.qa_insights`
+- Agent example: `mammoth dashboard qa insights 123`
+
 ### `mammoth dashboard qa session create`
 
 **Arguments**
@@ -2193,6 +2296,17 @@ Total commands: 633.
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.swap_data`
 - Agent example: `mammoth dashboard swap-data 123 --input '{"body": {"params": {"dataview_id": 1}}}'`
+
+### `mammoth dashboard swap-fit`
+
+**Arguments**
+
+- `SOURCE_DASHBOARD_ID` (int, required) — ID of the source dashboard.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.dashboards.DashboardsAPI.swap_fit`
+- Agent example: `mammoth dashboard swap-fit 123 --input '{"target_dataview_ids": [1]}'`
 
 ### `mammoth dashboard tags delete`
 
@@ -5412,6 +5526,18 @@ Total commands: 633.
 - Confirmation: `none`
 - Backing SDK: `mammoth.client.ViewsResource.get`
 - Agent example: `mammoth view get 123 123`
+
+### `mammoth view impact`
+
+**Arguments**
+
+- `VIEW_ID` (int, required) — ID of the view to act on.
+- `DATASET_ID` (int, optional) — ID of the dataset the view belongs to; resolved from the view when omitted.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.dataviews.DataviewsAPI.delete_impact`
+- Agent example: `mammoth view impact 123 123 --input '{"scope": "view"}'`
 
 ### `mammoth view list`
 

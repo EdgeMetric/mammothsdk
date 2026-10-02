@@ -309,3 +309,40 @@ commands:
     command: browse.search
     ids: {}
     kind: object
+- command_id: browse.resources.bulk
+  command_path: browse resources bulk
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.browse.BrowseAPI.resources_bulk
+  sdk_conversion: Call mammoth.api.browse.BrowseAPI.resources_bulk with validated request fields.
+  request_model: BrowseResourcesBulkRequest
+  result_model: BrowseResourcesBulkResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-BROWSE-RESOURCES-BULK
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth browse resources bulk --help
+  agent_example: 'mammoth browse resources bulk --input ''{"items": [["dataview", 42]]}'''
+  unit_tests:
+  - UT-BROWSE-RESOURCES-BULK
+  contract_tests:
+  - CT-BROWSE-RESOURCES-BULK-HUMAN
+  - CT-BROWSE-RESOURCES-BULK-JSON
+  - CT-BROWSE-RESOURCES-BULK-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Gets many resources of the active project by type and id in one request (resources v2; 100 pairs per request, more are chunked). Pass items in --input as [type, id] pairs, for example [["dataview", 42]]. A pair that does not exist in the project, or that you cannot read, is left out of the answer.'
+  reviewed_by: primary
+  readback:
+    command: browse.resources.bulk
+    ids: {}
+    kind: object

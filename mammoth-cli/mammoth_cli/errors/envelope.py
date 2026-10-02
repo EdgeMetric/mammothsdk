@@ -44,6 +44,7 @@ CODE_RESOURCE_NOT_FOUND = "resource_not_found"
 CODE_PROFILE_NOT_FOUND = "profile_not_found"
 CODE_NO_SAVED_PROJECT = "no_saved_project"
 CODE_NOT_AVAILABLE_EMBEDDED = "not_available_embedded"
+CODE_NOT_AVAILABLE = "not_available"
 CODE_CONFIRMATION_REQUIRED = "confirmation_required"
 CODE_CONFIRMATION_DECLINED = "confirmation_declined"
 CODE_AUTHENTICATION_FAILED = "authentication_failed"
@@ -144,6 +145,7 @@ ERROR_SUMMARIES: dict[str, str] = {
     "profile_not_found": _S_SETUP,
     "no_saved_project": "This step can't save a project here; each step names its own.",
     "not_available_embedded": "This step isn't available inside the Mammoth app.",
+    "not_available": _S_UNAVAILABLE,
     "profile_write_failed": _S_SETUP,
     "project_required": "No project has been chosen for this step.",
     "pypi_response_invalid": "An update check didn't return a usable answer.",
@@ -268,6 +270,19 @@ def not_available_embedded_error(command: str) -> CliError:
         message=f"'{command}' is not available inside the Mammoth app.",
         exit_status=EXIT_USAGE,
         hint="The app supplies the login, project and tools; use the other commands.",
+    )
+
+
+def not_available_error(command: str, *, web_path: str, instead: str | None = None) -> CliError:
+    """A command whose server route no longer exists: say where the web app does it."""
+    hint = f"Do it in the web app: {web_path}."
+    if instead:
+        hint += f" {instead}"
+    return CliError(
+        code=CODE_NOT_AVAILABLE,
+        message=f"'{command}' is not available: the server no longer offers it.",
+        exit_status=EXIT_USAGE,
+        hint=hint,
     )
 
 

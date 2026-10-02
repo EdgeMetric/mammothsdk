@@ -27,12 +27,10 @@
   },
   "mapping_counts": {
     "alias": 2,
-    "cli_and_sdk_mapped": 504,
+    "cli_and_sdk_mapped": 516,
     "internal_only": 15,
     "protocol_only": 11,
-    "removed_on_server": 1,
-    "sdk_only": 1,
-    "unmapped": 11
+    "removed_on_server": 1
   },
   "unrouted_sdk_calls": [
     {
@@ -12102,12 +12100,14 @@
       "operation_id": "BulkGetResources",
       "method": "POST",
       "path": "/workspaces/{workspace_id}/projects/{project_id}/resources/bulk",
-      "canonical_command": null,
-      "schema_id": null,
+      "canonical_command": "browse.resources.bulk",
+      "schema_id": "browse.resources.bulk",
       "sdk_symbol": "mammoth.api.browse.BrowseAPI.resources_bulk",
-      "bound_commands": [],
-      "mapping_state": "sdk_only",
-      "mapping_gap_reason": "An SDK method calls this route; no command wraps it.",
+      "bound_commands": [
+        "browse.resources.bulk"
+      ],
+      "mapping_state": "cli_and_sdk_mapped",
+      "mapping_gap_reason": null,
       "evidence": null,
       "evidence_version": null
     },
@@ -13371,12 +13371,14 @@
       "operation_id": "CancelAgentTurn",
       "method": "POST",
       "path": "/agents/sessions/{session_id}/turns/{turn_id}/cancel",
-      "canonical_command": null,
-      "schema_id": null,
-      "sdk_symbol": null,
-      "bound_commands": [],
-      "mapping_state": "unmapped",
-      "mapping_gap_reason": "No reviewed CLI command or SDK symbol recorded.",
+      "canonical_command": "agent.turn.cancel",
+      "schema_id": "agent.turn.cancel",
+      "sdk_symbol": "mammoth.api.agents.AgentsAPI.turn_cancel",
+      "bound_commands": [
+        "agent.turn.cancel"
+      ],
+      "mapping_state": "cli_and_sdk_mapped",
+      "mapping_gap_reason": null,
       "evidence": null,
       "evidence_version": null
     },
@@ -13407,12 +13409,14 @@
       "operation_id": "SwapFit",
       "method": "POST",
       "path": "/dashboards/v3/swap/fit",
-      "canonical_command": null,
-      "schema_id": null,
-      "sdk_symbol": null,
-      "bound_commands": [],
-      "mapping_state": "unmapped",
-      "mapping_gap_reason": "No reviewed CLI command or SDK symbol recorded.",
+      "canonical_command": "dashboard.swap-fit",
+      "schema_id": "dashboard.swap-fit",
+      "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.swap_fit",
+      "bound_commands": [
+        "dashboard.swap-fit"
+      ],
+      "mapping_state": "cli_and_sdk_mapped",
+      "mapping_gap_reason": null,
       "evidence": null,
       "evidence_version": null
     },
@@ -13425,12 +13429,14 @@
       "operation_id": "GetDashboardAudience",
       "method": "GET",
       "path": "/dashboards/{dashboard_id}/audience",
-      "canonical_command": null,
-      "schema_id": null,
-      "sdk_symbol": null,
-      "bound_commands": [],
-      "mapping_state": "unmapped",
-      "mapping_gap_reason": "No reviewed CLI command or SDK symbol recorded.",
+      "canonical_command": "dashboard.audience.get",
+      "schema_id": "dashboard.audience.get",
+      "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.audience",
+      "bound_commands": [
+        "dashboard.audience.get"
+      ],
+      "mapping_state": "cli_and_sdk_mapped",
+      "mapping_gap_reason": null,
       "evidence": null,
       "evidence_version": null
     },
@@ -13443,12 +13449,14 @@
       "operation_id": "GetAudienceDigest",
       "method": "GET",
       "path": "/dashboards/{dashboard_id}/audience/digest",
-      "canonical_command": null,
-      "schema_id": null,
-      "sdk_symbol": null,
-      "bound_commands": [],
-      "mapping_state": "unmapped",
-      "mapping_gap_reason": "No reviewed CLI command or SDK symbol recorded.",
+      "canonical_command": "dashboard.audience.digest.get",
+      "schema_id": "dashboard.audience.digest.get",
+      "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.audience_digest_get",
+      "bound_commands": [
+        "dashboard.audience.digest.get"
+      ],
+      "mapping_state": "cli_and_sdk_mapped",
+      "mapping_gap_reason": null,
       "evidence": null,
       "evidence_version": null
     },
@@ -13461,12 +13469,14 @@
       "operation_id": "SetAudienceDigest",
       "method": "PUT",
       "path": "/dashboards/{dashboard_id}/audience/digest",
-      "canonical_command": null,
-      "schema_id": null,
-      "sdk_symbol": null,
-      "bound_commands": [],
-      "mapping_state": "unmapped",
-      "mapping_gap_reason": "No reviewed CLI command or SDK symbol recorded.",
+      "canonical_command": "dashboard.audience.digest.set",
+      "schema_id": "dashboard.audience.digest.set",
+      "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.audience_digest_set",
+      "bound_commands": [
+        "dashboard.audience.digest.set"
+      ],
+      "mapping_state": "cli_and_sdk_mapped",
+      "mapping_gap_reason": null,
       "evidence": null,
       "evidence_version": null
     },
@@ -13479,12 +13489,14 @@
       "operation_id": "GetColumnRoster",
       "method": "GET",
       "path": "/dashboards/{dashboard_id}/columns",
-      "canonical_command": null,
-      "schema_id": null,
-      "sdk_symbol": null,
-      "bound_commands": [],
-      "mapping_state": "unmapped",
-      "mapping_gap_reason": "No reviewed CLI command or SDK symbol recorded.",
+      "canonical_command": "dashboard.columns",
+      "schema_id": "dashboard.columns",
+      "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.column_roster",
+      "bound_commands": [
+        "dashboard.columns"
+      ],
+      "mapping_state": "cli_and_sdk_mapped",
+      "mapping_gap_reason": null,
       "evidence": null,
       "evidence_version": null
     },
@@ -13497,12 +13509,14 @@
       "operation_id": "ReviewContext",
       "method": "POST",
       "path": "/dashboards/{dashboard_id}/context-review",
-      "canonical_command": null,
-      "schema_id": null,
-      "sdk_symbol": null,
-      "bound_commands": [],
-      "mapping_state": "unmapped",
-      "mapping_gap_reason": "No reviewed CLI command or SDK symbol recorded.",
+      "canonical_command": "dashboard.context.review",
+      "schema_id": "dashboard.context.review",
+      "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.context_review",
+      "bound_commands": [
+        "dashboard.context.review"
+      ],
+      "mapping_state": "cli_and_sdk_mapped",
+      "mapping_gap_reason": null,
       "evidence": null,
       "evidence_version": null
     },
@@ -13515,12 +13529,14 @@
       "operation_id": "ApplyContextReview",
       "method": "POST",
       "path": "/dashboards/{dashboard_id}/context-review/{review_id}/apply",
-      "canonical_command": null,
-      "schema_id": null,
-      "sdk_symbol": null,
-      "bound_commands": [],
-      "mapping_state": "unmapped",
-      "mapping_gap_reason": "No reviewed CLI command or SDK symbol recorded.",
+      "canonical_command": "dashboard.context.apply",
+      "schema_id": "dashboard.context.apply",
+      "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.context_apply",
+      "bound_commands": [
+        "dashboard.context.apply"
+      ],
+      "mapping_state": "cli_and_sdk_mapped",
+      "mapping_gap_reason": null,
       "evidence": null,
       "evidence_version": null
     },
@@ -13569,12 +13585,14 @@
       "operation_id": "DashboardV3QaInsights",
       "method": "GET",
       "path": "/dashboards/{dashboard_id}/qa/insights",
-      "canonical_command": null,
-      "schema_id": null,
-      "sdk_symbol": null,
-      "bound_commands": [],
-      "mapping_state": "unmapped",
-      "mapping_gap_reason": "No reviewed CLI command or SDK symbol recorded.",
+      "canonical_command": "dashboard.qa.insights",
+      "schema_id": "dashboard.qa.insights",
+      "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.qa_insights",
+      "bound_commands": [
+        "dashboard.qa.insights"
+      ],
+      "mapping_state": "cli_and_sdk_mapped",
+      "mapping_gap_reason": null,
       "evidence": null,
       "evidence_version": null
     },
@@ -13605,12 +13623,14 @@
       "operation_id": "AudienceSummary",
       "method": "GET",
       "path": "/workspaces/{workspace_id}/dashboards/audience-summary",
-      "canonical_command": null,
-      "schema_id": null,
-      "sdk_symbol": null,
-      "bound_commands": [],
-      "mapping_state": "unmapped",
-      "mapping_gap_reason": "No reviewed CLI command or SDK symbol recorded.",
+      "canonical_command": "dashboard.audience.summary",
+      "schema_id": "dashboard.audience.summary",
+      "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.audience_summary",
+      "bound_commands": [
+        "dashboard.audience.summary"
+      ],
+      "mapping_state": "cli_and_sdk_mapped",
+      "mapping_gap_reason": null,
       "evidence": null,
       "evidence_version": null
     },
@@ -13643,12 +13663,14 @@
       "operation_id": "GetDataviewDeleteImpact",
       "method": "GET",
       "path": "/workspaces/{workspace_id}/projects/{project_id}/datasets/{dataset_id}/dataviews/{dataview_id}/impact",
-      "canonical_command": null,
-      "schema_id": null,
-      "sdk_symbol": null,
-      "bound_commands": [],
-      "mapping_state": "unmapped",
-      "mapping_gap_reason": "No reviewed CLI command or SDK symbol recorded.",
+      "canonical_command": "view.impact",
+      "schema_id": "view.impact",
+      "sdk_symbol": "mammoth.api.dataviews.DataviewsAPI.delete_impact",
+      "bound_commands": [
+        "view.impact"
+      ],
+      "mapping_state": "cli_and_sdk_mapped",
+      "mapping_gap_reason": null,
       "evidence": null,
       "evidence_version": null
     },

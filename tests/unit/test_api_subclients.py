@@ -3660,3 +3660,82 @@ class TestBrowseResourcesV2:
             "sort": "name",
             "fields": "minimal",
         }
+
+
+class TestBuildGaps5:
+    async def test_swap_fit_is_a_read_post(self, client: MammothClient):
+        await client.dashboards.swap_fit(5, [1, 2], seconds_budget=0)
+        client._request_json.assert_called_once_with(
+            "POST",
+            "/dashboards/v3/swap/fit",
+            json={
+                "params": {
+                    "source_dashboard_id": 5,
+                    "target_dataview_ids": [1, 2],
+                    "include_over_budget": False,
+                    "seconds_budget": 0,
+                }
+            },
+            operation_effect="read",
+        )
+
+    async def test_swap_fit_rejects_bad_targets(self, client: MammothClient):
+        with pytest.raises(MammothValidationError):
+            await client.dashboards.swap_fit(5, [])
+        with pytest.raises(MammothValidationError):
+            await client.dashboards.swap_fit(5, [1], seconds_budget=31)
+        client._request_json.assert_not_called()
+
+    async def test_audience_routes(self, client: MammothClient):
+        await client.dashboards.audience(7, days=30)
+        client._request_json.assert_called_with(
+            "GET", "/dashboards/7/audience", params={"days": 30}
+        )
+        await client.dashboards.audience_digest_set(7, None)
+        client._request_json.assert_called_with(
+            "PUT", "/dashboards/7/audience/digest", json={"enabled": None}
+        )
+        await client.dashboards.audience_summary([7, 8])
+        client._request_json.assert_called_with(
+            "GET", "/workspaces/1/dashboards/audience-summary", params={"ids": "7,8"}
+        )
+        with pytest.raises(MammothValidationError):
+            await client.dashboards.audience(7, days=14)
+
+    async def test_context_review_and_apply(self, client: MammothClient):
+        client._request_json = AsyncMock(return_value={"job_id": 3, "status": "pending"})
+        await client.dashboards.context_review(7, scope="all")
+        assert client._request_json.call_args.args == ("POST", "/dashboards/7/context-review")
+        assert client._request_json.call_args.kwargs["operation_effect"] == "read"
+        await client.dashboards.context_apply(7, "r/1", base_sequence=4)
+        assert client._request_json.call_args.args == (
+            "POST",
+            "/dashboards/7/context-review/r%2F1/apply",
+        )
+        assert client._request_json.call_args.kwargs["json"] == {
+            "params": {"keep": [], "base_sequence": 4}
+        }
+        with pytest.raises(MammothValidationError):
+            await client.dashboards.context_apply(7, "")
+
+    async def test_columns_and_qa_insights(self, client: MammothClient):
+        await client.dashboards.column_roster(7)
+        client._request_json.assert_called_with("GET", "/dashboards/7/columns")
+        await client.dashboards.qa_insights(7)
+        client._request_json.assert_called_with(
+            "GET", "/dashboards/7/qa/insights", params={"days": 7}
+        )
+
+    async def test_turn_cancel_and_delete_impact(self, client: MammothClient):
+        await client.agents.turn_cancel("s1", "t1")
+        assert client._request_json.call_args.args == (
+            "POST",
+            "/agents/sessions/s1/turns/t1/cancel",
+        )
+        await client.dataviews.delete_impact(10, 20, scope="view")
+        assert client._request_json.call_args.args == (
+            "GET",
+            "/workspaces/1/projects/100/datasets/10/dataviews/20/impact",
+        )
+        with pytest.raises(MammothValidationError):
+            await client.dataviews.delete_impact(10, 20, scope="task")

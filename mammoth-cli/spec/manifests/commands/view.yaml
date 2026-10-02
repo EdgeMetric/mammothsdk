@@ -6126,3 +6126,52 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+- command_id: view.impact
+  command_path: view impact
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - name: view_id
+    type: int
+    required: true
+    metavar: VIEW_ID
+    falls_back_to_field: null
+    help: ID of the view to act on.
+  - name: dataset_id
+    type: int
+    required: false
+    metavar: DATASET_ID
+    falls_back_to_field: dataset_id
+    help: ID of the dataset the view belongs to; resolved from the view when omitted.
+  options: []
+  sdk_symbol: mammoth.api.dataviews.DataviewsAPI.delete_impact
+  sdk_conversion: Call mammoth.api.dataviews.DataviewsAPI.delete_impact with validated request fields.
+  request_model: ViewImpactRequest
+  result_model: ViewImpactResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-VIEW-IMPACT
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view impact VIEW_ID --help
+  agent_example: 'mammoth view impact 123 123 --input ''{"scope": "view"}'''
+  unit_tests:
+  - UT-VIEW-IMPACT
+  contract_tests:
+  - CT-VIEW-IMPACT-HUMAN
+  - CT-VIEW-IMPACT-JSON
+  - CT-VIEW-IMPACT-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Read-only. What deleting a pipeline task (scope task, with task_id) or the whole view (scope view) would affect: dashboards, exports, dependent views and automations. Pass scope in --input. Run it before view task delete or view trash, and say what it lists before asking to go ahead.'
+  reviewed_by: primary
+  readback:
+    command: view.impact
+    ids: {}
+    kind: object

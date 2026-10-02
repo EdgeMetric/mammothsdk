@@ -877,6 +877,27 @@ def view_trash(invocation: Invocation) -> HandlerResult:
     return data, _meta(invocation, auth.workspace_id, project_id)
 
 
+def view_impact(invocation: Invocation) -> HandlerResult:
+    """List what deleting a pipeline task or this whole view would affect (read-only).
+
+    ``scope`` is ``task`` (then ``task_id`` is required) or ``view``. The dataset is
+    resolved from the view unless given as a trailing positional or ``dataset_id``.
+    """
+    project_id = require_project(invocation)
+    dataview_id = _require_int_positional_at(invocation, 0, "view id")
+    document = invocation.load_input() or {}
+    kwargs: dict[str, Any] = {
+        "dataview_id": dataview_id,
+        "project_id": project_id,
+        "scope": _require_field(document, "scope"),
+    }
+    _forward_optional(document, kwargs, ("task_id",))
+    with open_service(invocation) as (service, auth):
+        kwargs["dataset_id"] = _resolve_dataset_id(service, invocation, dataview_id, document)
+        data = service.call(_symbol(invocation), **kwargs)
+    return data, _meta(invocation, auth.workspace_id, project_id)
+
+
 def view_update(invocation: Invocation) -> HandlerResult:
     """Reject free-form dataview patches until the API supplies typed variants."""
     raise CliError(
