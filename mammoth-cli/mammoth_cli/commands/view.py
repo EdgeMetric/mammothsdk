@@ -908,7 +908,9 @@ def view_update(invocation: Invocation) -> HandlerResult:
     dataview_id = _require_int_positional_at(invocation, 0, "view id")
     document = invocation.load_input() or {}
     name = document.get("name")
-    if set(document) - {"name", _DATASET_ID_FIELD} or not isinstance(name, str) or not name.strip():
+    # ``dataview_id`` is the VIEW_ID positional, bound into the document by the contract.
+    allowed = {"name", _DATASET_ID_FIELD, "dataview_id"}
+    if set(document) - allowed or not isinstance(name, str) or not name.strip():
         raise _untyped_patch_error(invocation)
     with open_service(invocation) as (service, auth):
         dataset_id = _resolve_dataset_id(service, invocation, dataview_id, document)
