@@ -4,6 +4,19 @@ All notable changes to `mammoth-io` are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.7]
+
+### Added
+
+- `DashboardsAPI.embed_usage_summary` counts the active embed origins of several
+  boards at once; `DashboardsAPI.format_preview` dry-runs a format switch.
+- `WorkspacesAPI.home_summary` reads the Home summary (usage, health issues,
+  suggestions).
+- `BrowseAPI.resources_list` and `BrowseAPI.resource_get` read project
+  resources through the v2 cursor routes.
+- CLI: `dashboard embed usage summary`, `dashboard format-preview`,
+  `workspace home`, `browse resources`, `browse resource`.
+
 ## [0.8.6]
 
 ### Changed

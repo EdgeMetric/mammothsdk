@@ -359,7 +359,7 @@ Sensitive structured input must come from a private file or pipe; never put secr
 - `mammoth dashboard embed usage get` [read/none] -> mammoth.api.dashboards.DashboardsAPI.embed_usage_get
   example: mammoth dashboard embed usage get 123
 - `mammoth dashboard embed usage summary` [read/none] -> mammoth.api.dashboards.DashboardsAPI.embed_usage_summary
-  example: mammoth dashboard embed usage summary --input '{"dashboard_ids": [123, 124]}'
+  example: mammoth dashboard embed usage summary --input '{"dashboard_ids": [1]}'
 - `mammoth dashboard exemplar extract` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.extract_exemplar
   example: mammoth dashboard exemplar extract --input '{"body": {"params": {"name": "Revenue report"}}}'
 - `mammoth dashboard figure-intent` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.figure_intent
@@ -371,7 +371,7 @@ Sensitive structured input must come from a private file or pipe; never put secr
 - `mammoth dashboard filter remove` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.canvas_save
   example: mammoth dashboard filter remove 123 --input '{"field": "sample"}'
 - `mammoth dashboard format-preview` [read/none] -> mammoth.api.dashboards.DashboardsAPI.format_preview
-  example: mammoth dashboard format-preview 123 --input '{"style": "report"}'
+  example: mammoth dashboard format-preview 123 --input '{"style": "sample"}'
 - `mammoth dashboard get` [read/none] -> mammoth.api.dashboards.DashboardsAPI.get
   example: mammoth dashboard get 123
 - `mammoth dashboard get-by-url` [read/none] -> mammoth.api.dashboards.DashboardsAPI.get_by_url

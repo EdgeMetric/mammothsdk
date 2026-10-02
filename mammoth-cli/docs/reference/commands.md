@@ -1,10 +1,10 @@
 # Command reference
 
-Generated from the reviewed command manifests for mammoth-cli 2.2.5.
+Generated from the reviewed command manifests for mammoth-cli 2.2.6.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
-Total commands: 597.
+Total commands: 602.
 
 ## activity
 
@@ -689,6 +689,25 @@ Total commands: 597.
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.projects.ProjectsAPI.browse`
 - Agent example: `mammoth browse project`
+
+### `mammoth browse resource`
+
+**Arguments**
+
+- `RESOURCE_TYPE` (str, required) — Resource type, for example dataset or dataview.
+- `OBJECT_ID` (int, required) — ID of the resource within its type.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.browse.BrowseAPI.resource_get`
+- Agent example: `mammoth browse resource dataset 123`
+
+### `mammoth browse resources`
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.browse.BrowseAPI.resources_list`
+- Agent example: `mammoth browse resources`
 
 ### `mammoth browse root`
 
@@ -1463,6 +1482,13 @@ Total commands: 597.
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.embed_usage_get`
 - Agent example: `mammoth dashboard embed usage get 123`
 
+### `mammoth dashboard embed usage summary`
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.dashboards.DashboardsAPI.embed_usage_summary`
+- Agent example: `mammoth dashboard embed usage summary --input '{"dashboard_ids": [1]}'`
+
 ### `mammoth dashboard exemplar extract`
 
 - Mutation class: `benign_mutation`
@@ -1513,6 +1539,17 @@ Total commands: 597.
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.canvas_save`
 - Agent example: `mammoth dashboard filter remove 123 --input '{"field": "sample"}'`
+
+### `mammoth dashboard format-preview`
+
+**Arguments**
+
+- `DASHBOARD_ID` (int, required) — ID of the dashboard.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.dashboards.DashboardsAPI.format_preview`
+- Agent example: `mammoth dashboard format-preview 123 --input '{"style": "sample"}'`
 
 ### `mammoth dashboard get`
 
@@ -5993,6 +6030,13 @@ Total commands: 597.
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.workspace.WorkspaceAPI.get`
 - Agent example: `mammoth workspace get 123`
+
+### `mammoth workspace home`
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.workspaces.WorkspacesAPI.home_summary`
+- Agent example: `mammoth workspace home`
 
 ### `mammoth workspace invite delete`
 

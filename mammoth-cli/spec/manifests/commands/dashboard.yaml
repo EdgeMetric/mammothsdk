@@ -5137,7 +5137,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard embed usage summary --help
-  agent_example: 'mammoth dashboard embed usage summary'
+  agent_example: 'mammoth dashboard embed usage summary --input ''{"dashboard_ids": [1]}'''
   unit_tests:
   - UT-DASHBOARD-EMBED-USAGE-SUMMARY
   contract_tests:
@@ -5180,7 +5180,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard format-preview DASHBOARD_ID --help
-  agent_example: 'mammoth dashboard format-preview 123 --input ''{"style": "report"}'''
+  agent_example: 'mammoth dashboard format-preview 123 --input ''{"style": "sample"}'''
   unit_tests:
   - UT-DASHBOARD-FORMAT-PREVIEW
   contract_tests:

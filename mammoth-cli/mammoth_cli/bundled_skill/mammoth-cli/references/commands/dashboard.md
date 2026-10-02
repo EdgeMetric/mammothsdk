@@ -326,7 +326,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth dashboard embed usage summary`. Exact input fields: `mammoth schema get dashboard.embed.usage.summary`.
 
-Example: `mammoth dashboard embed usage summary --input '{"dashboard_ids": [123, 124]}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth dashboard embed usage summary --input '{"dashboard_ids": [1]}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `DashboardEmbedUsageSummaryResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
@@ -386,7 +386,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth dashboard format-preview`. Exact input fields: `mammoth schema get dashboard.format-preview`.
 
-Example: `mammoth dashboard format-preview 123 --input '{"style": "report"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth dashboard format-preview 123 --input '{"style": "sample"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `DashboardFormatPreviewResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
