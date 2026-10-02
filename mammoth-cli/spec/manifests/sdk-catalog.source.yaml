@@ -4606,3 +4606,38 @@ notes_on_dispositions:
 - 'B01 FIRST_PAGE_ONLY: workspace/project/dataset/dataview list methods (and ProjectsAPI.get, ViewsResource.list,
   private dataview discovery) "have no offset/cursor. ... Add a public proven continuation contract before
   --all or completeness claims."'
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.embed_usage_summary
+  canonical_command: dashboard.embed.usage.summary
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.format_preview
+  canonical_command: dashboard.format-preview
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.workspaces.WorkspacesAPI.home_summary
+  canonical_command: workspace.home
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.browse.BrowseAPI.resources_list
+  canonical_command: browse.resources
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.browse.BrowseAPI.resource_get
+  canonical_command: browse.resource
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []

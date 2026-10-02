@@ -149,3 +149,49 @@ def browse_workspace(invocation: Invocation) -> HandlerResult:
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), **kwargs)
     return data, _meta(invocation, auth.workspace_id, resolved_project(invocation))
+
+
+def browse_resources(invocation: Invocation) -> HandlerResult:
+    """List one project's resources a cursor page at a time (resources v2)."""
+    project_id = require_project(invocation)
+    document = invocation.load_input() or {}
+    kwargs: dict[str, Any] = {"project_id": project_id}
+    _forward_optional(
+        document,
+        kwargs,
+        (
+            "parent_type",
+            "parent_id",
+            "resource_type",
+            "search",
+            "cursor",
+            "limit",
+            "sort",
+            "fields",
+        ),
+    )
+    with open_service(invocation) as (service, auth):
+        data = service.call(_symbol(invocation), **kwargs)
+    return data, _meta(invocation, auth.workspace_id, project_id)
+
+
+def browse_resource(invocation: Invocation) -> HandlerResult:
+    """Get one resource of the active project: type, then id, as positionals."""
+    project_id = require_project(invocation)
+    resource_type = invocation.positional("resource_type")
+    object_id = invocation.positional("object_id")
+    if not resource_type or object_id is None:
+        raise CliError(
+            code=CODE_MISSING_ARGUMENT,
+            message="This command requires a resource type and a resource id.",
+            exit_status=EXIT_USAGE,
+            hint="Pass the type, then the id: mammoth browse resource dataset 123.",
+        )
+    with open_service(invocation) as (service, auth):
+        data = service.call(
+            _symbol(invocation),
+            resource_type=str(resource_type),
+            object_id=int(object_id),
+            project_id=project_id,
+        )
+    return data, _meta(invocation, auth.workspace_id, project_id)

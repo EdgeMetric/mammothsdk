@@ -24,6 +24,11 @@ def _page(fields: str | None, limit: int | None, offset: int | None) -> dict[str
     return params or None
 
 
+def _resource_query(**fields: Any) -> dict[str, Any] | None:
+    """The resources-v2 query: only the filters the caller set."""
+    return {key: value for key, value in fields.items() if value is not None} or None
+
+
 class BrowseAPI:
     """Client for browsing and discovering resources.
 
@@ -265,4 +270,67 @@ class BrowseAPI:
             "GET",
             f"/workspaces/{ws}/projects/{proj}/folders/{folder_id}/browse",
             params=params,
+        )
+
+    async def resources_list(
+        self,
+        project_id: int | None = None,
+        parent_type: str | None = None,
+        parent_id: int | None = None,
+        resource_type: str | None = None,
+        search: str | None = None,
+        cursor: str | None = None,
+        limit: int | None = None,
+        sort: str | None = None,
+        fields: str | None = None,
+    ) -> dict[str, Any]:
+        """List one project's resources, a cursor page at a time (resources v2).
+
+        Args:
+            project_id: Project ID (uses the client default if not provided).
+            parent_type: Type of the folder-like parent to list inside.
+            parent_id: ID of that parent; omit for the project root.
+            resource_type: Keep only this resource type.
+            search: Keep only resources whose name matches.
+            cursor: ``next_cursor`` of the previous page.
+            limit: Page size; the route defaults to 50.
+            sort: Sort specification.
+            fields: Field set to return; the route defaults to ``standard``.
+
+        Returns:
+            Dict with ``resources``, ``next_cursor`` and ``has_more``.
+        """
+        params = _resource_query(
+            parent_type=parent_type,
+            parent_id=parent_id,
+            type=resource_type,
+            search=search,
+            cursor=cursor,
+            limit=limit,
+            sort=sort,
+            fields=fields,
+        )
+        return await self._client._request_json(
+            "GET",
+            f"/workspaces/{self._ws()}/projects/{self._proj(project_id)}/resources",
+            params=params,
+        )
+
+    async def resource_get(
+        self, resource_type: str, object_id: int, project_id: int | None = None
+    ) -> dict[str, Any]:
+        """Get one resource with its full properties (resources v2).
+
+        Args:
+            resource_type: Resource type, e.g. ``dataset`` or ``dataview``.
+            object_id: ID of the resource within that type.
+            project_id: Project ID (uses the client default if not provided).
+
+        Returns:
+            Dict ``{"resource": {...}}``.
+        """
+        return await self._client._request_json(
+            "GET",
+            f"/workspaces/{self._ws()}/projects/{self._proj(project_id)}"
+            f"/resources/{resource_type}/{object_id}",
         )

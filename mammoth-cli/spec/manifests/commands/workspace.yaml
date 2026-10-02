@@ -985,3 +985,40 @@ commands:
     command: workspace.user.list
     ids: {}
     kind: object
+- command_id: workspace.home
+  command_path: workspace home
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.workspaces.WorkspacesAPI.home_summary
+  sdk_conversion: Call mammoth.api.workspaces.WorkspacesAPI.home_summary with validated request fields.
+  request_model: WorkspaceHomeRequest
+  result_model: WorkspaceHomeResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-WORKSPACE-HOME
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth workspace home --help
+  agent_example: 'mammoth workspace home'
+  unit_tests:
+  - UT-WORKSPACE-HOME
+  contract_tests:
+  - CT-WORKSPACE-HOME-HUMAN
+  - CT-WORKSPACE-HOME-JSON
+  - CT-WORKSPACE-HOME-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'The Home read: usage_summary (storage, plan), health_issues (type, severity, occurrence_count, available_actions) and suggestions. Read-only; not a chat turn.'
+  reviewed_by: primary
+  readback:
+    command: workspace.home
+    ids: {}
+    kind: object
