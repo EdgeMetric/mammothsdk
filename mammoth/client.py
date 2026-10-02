@@ -401,8 +401,6 @@ class MammothClient:
         await view.export.to_csv("output.csv")
     """
 
-    workspace_id: int
-
     def __init__(
         self,
         api_key: str | None = None,
@@ -489,8 +487,7 @@ class MammothClient:
         self.api_token = api_token.strip() if api_token is not None else None
         self.api_key = api_key
         self.api_secret = api_secret
-        if workspace_id is not None:
-            self.workspace_id = workspace_id
+        self._workspace_id = workspace_id
         if isinstance(timeout, bool) or not isinstance(timeout, (int, float)):
             raise ValueError("timeout must be a positive finite number")
         if not math.isfinite(timeout) or timeout <= 0:
@@ -648,18 +645,19 @@ class MammothClient:
             await asyncio.sleep(_retry_delay(attempt, response.headers.get("Retry-After")))
         raise AssertionError("unreachable")
 
-    def __getattr__(self, name: str) -> Any:
-        """Learn ``workspace_id`` from the server on first use, for an ``api_token``.
+    @property
+    def workspace_id(self) -> int:
+        """The workspace this client acts in.
 
         Given at construction with ``api_key`` + ``api_secret``; an ``api_token``
-        names its own workspace, so the attribute is absent until read and is
-        then fetched once and kept.
+        names its own workspace, which is fetched once on first use and kept.
         """
-        token = self.__dict__.get("api_token")
-        if name == "workspace_id" and token is not None:
-            self.workspace_id = resolve_token_workspace_id(self.base_url, token, self.timeout)
-            return self.workspace_id
-        raise AttributeError(f"{type(self).__name__!r} object has no attribute {name!r}")
+        if self._workspace_id is None:
+            assert self.api_token is not None
+            self._workspace_id = resolve_token_workspace_id(
+                self.base_url, self.api_token, self.timeout
+            )
+        return self._workspace_id
 
     async def _request(
         self,

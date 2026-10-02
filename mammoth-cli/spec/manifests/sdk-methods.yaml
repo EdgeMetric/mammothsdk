@@ -1,5 +1,5 @@
 manifest_schema_version: 1
-method_count: 575
+method_count: 576
 generator_version: '1'
 methods:
 - sdk_symbol: mammoth._mixins._advanced_ops.AdvancedOpsMixin.add_sql
@@ -7003,6 +7003,18 @@ methods:
   alias_of: null
   no_command_reason: SDK-only generated-operation wait seam; CLI commands apply it from their reviewed
     wait policy rather than exposing a separate command.
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.client.MammothClient.workspace_id
+  implementation_origin: mammoth.client.MammothClient.workspace_id
+  signature: 'workspace_id(self) -> ''int'''
+  openapi_operation_ids: []
+  canonical_command: null
+  alias_of: null
+  no_command_reason: SDK-only property, the workspace of the credential, given for a key pair or learned from the server for a token; the CLI reads it from its profile.
   mutation_class: null
   wait_policy: null
   pagination_policy: null
