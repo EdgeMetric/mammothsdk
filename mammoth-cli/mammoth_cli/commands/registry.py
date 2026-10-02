@@ -718,7 +718,7 @@ HANDLERS: dict[str, Handler] = {
     "view.update": view_cmd.view_update,
     "view.data.get": view_cmd.view_data_get,
     "view.data.query": view_cmd.view_data_query,
-    "view.data.aggregate": view_cmd.view_data_aggregate,
+    "view.data.aggregate": view_cmd.view_data_aggregate_rounded,
     "view.data.compare": view_cmd.view_data_compare,
     "view.data.explore": view_cmd.view_data_explore,
     "view.data.profile": view_profile_cmd.view_data_profile,

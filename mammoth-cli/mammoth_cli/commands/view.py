@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import dataclasses
 import inspect
+import shlex
 from datetime import UTC, datetime
 from decimal import Decimal, InvalidOperation
 from typing import Any
@@ -1690,6 +1691,7 @@ def view_data_aggregate(invocation: Invocation) -> HandlerResult:
     TEXT-date) column groups by the named part of the date -- ``Monday``..``Sunday``,
     ``January``..``December``, ``Q1``..``Q4``, the year -- in calendar order: the
     read-only way to answer by-weekday and by-month questions.
+    Figures are rounded for display (2 decimals; 4 below 1).
     Never use ``view transform pivot`` just to read a number -- it mutates the
     view's pipeline.
     """
@@ -1743,6 +1745,15 @@ def view_data_aggregate(invocation: Invocation) -> HandlerResult:
         )
         data = read_queries.with_assumptions(reads, data)
     return data, meta
+
+
+def view_data_aggregate_rounded(invocation: Invocation) -> HandlerResult:
+    """``view data aggregate`` as the user reads it: floats rounded (2 decimals; 4 below 1).
+
+    ``view data compare`` calls :func:`view_data_aggregate` itself, at full precision.
+    """
+    data, meta = view_data_aggregate(invocation)
+    return read_queries.round_result_rows(data), meta
 
 
 def _compare_key_and_value_columns(document: dict[str, Any]) -> tuple[list[str], list[str]]:
@@ -1930,7 +1941,9 @@ def _explore_text_dates(
         condition=condition,
     )
     page = (document.get("offset"), document.get("limit"))
-    rows = read_queries.apply_explore_order(response["data"], document.get("sort"), page)
+    rows = read_queries.apply_explore_order(
+        response["data"], document.get("sort"), page, bool(document.get("cumulative"))
+    )
     return {**response, "data": rows}
 
 
@@ -1953,7 +1966,13 @@ def view_data_explore(invocation: Invocation) -> HandlerResult:
     An optional ``metric`` ``{"column": ..., "function": ...}`` (SUM, COUNT,
     AVG, MIN, MAX, STDDEV or DISTINCT_COUNT) adds a second aggregate per bucket over another column,
     and an optional ``condition`` filters rows first -- same as ``view data
-    aggregate``, which this command wraps for the raw PIVOT shape. Never use
+    aggregate``, which this command wraps for the raw PIVOT shape. A date range
+    is one ``and`` condition (``>=`` a start, ``<=`` an end); one year is
+    ``{"column": ..., "operator": "=", "value": 2017, "component": "year"}``.
+    ``cumulative: true`` adds a running total of the metric (of ``count`` without
+    one) over the buckets in date order, whatever ``sort`` or ``limit`` shows:
+    the answer to "cumulative / running total through X". Figures are rounded for
+    display (2 decimals; 4 below 1). Never use
     ``view transform pivot`` just to explore a column; it mutates the
     pipeline.
     """
@@ -1989,6 +2008,8 @@ def view_data_explore(invocation: Invocation) -> HandlerResult:
         if isinstance(metric, dict):
             resolved_metric = _resolved_aggregate_item(metric, display_to_internal)
             as_map["agg_1"] = resolved_metric["as_name"]
+        if document.get("cumulative"):
+            as_map["cumulative"] = f"{as_map.get('agg_1', 'count')} (running total)"
         if bucket_dates:
             data = _explore_text_dates(reads, document, internal_column, resolved_metric)
         else:
@@ -2003,7 +2024,7 @@ def view_data_explore(invocation: Invocation) -> HandlerResult:
         data = read_queries.with_assumptions(reads, data)
         if not bucket_dates:
             data = read_queries.with_variant_hint(reads, data, column_arg)
-    return data, meta
+    return read_queries.round_result_rows(data), meta
 
 
 def _explore_on_backend(
@@ -2028,7 +2049,9 @@ def _explore_on_backend(
         kwargs[CONDITION_KWARG] = compile_condition(spec).build(
             reads.display_to_internal or None, reads.column_types or None
         )
-    _forward_optional(document, kwargs, ("level", "sequence", "limit", "offset", "sort"))
+    _forward_optional(
+        document, kwargs, ("level", "sequence", "limit", "offset", "sort", "cumulative")
+    )
     return reads.service.call(_symbol(invocation), **kwargs)
 
 
@@ -3474,7 +3497,14 @@ def view_export_specialized(invocation: Invocation) -> HandlerResult:
                     int(target_ds_id),
                     kwargs.get("column_mapping"),
                 )
-        data = service.call_view(dataview_id, method, dataset_id=dataset_id, **kwargs)
+        try:
+            data = service.call_view(dataview_id, method, dataset_id=dataset_id, **kwargs)
+        except CliError as error:
+            if not (is_dataset_route and error.details.get("export_pending")):
+                raise
+            return _pending_dataset_export(error, dataview_id, result_project_id), _meta(
+                invocation, auth.workspace_id, project_id
+            )
         if is_dataset_route and isinstance(data, int):
             # The SDK returns the bare id of the dataset written to; name it, and
             # say which project it landed in, so the agent's next read is obvious.
@@ -3533,6 +3563,33 @@ def view_export_specialized(invocation: Invocation) -> HandlerResult:
             if pipeline_error is not None:
                 data["pipeline_error"] = pipeline_error
     return data, _meta(invocation, auth.workspace_id, project_id)
+
+
+def _pending_dataset_export(error: CliError, view_id: int, project_id: int) -> dict[str, Any]:
+    """A dataset export that was accepted but whose dataset id is not known yet.
+
+    The export was submitted and the server is writing it (or has written it); only
+    the lookup of its id ran out of time. That is not a failure, so say what is known
+    and how to read the dataset when it lands, never an error.
+    """
+    name = error.details.get("dataset_name")
+    pending: dict[str, Any] = {
+        "status": "pending",
+        "source_view_id": view_id,
+        "project_id": project_id,
+        "refreshes_on_pipeline_run": True,
+        "note": (
+            "The export was submitted and is still being written, so its dataset id is not "
+            "known yet. Do not export again: that would create a second dataset. Look it up "
+            f"in a moment with the next command (its source reads 'export of view {view_id}')."
+        ),
+    }
+    if name is not None:
+        pending["dataset_name"] = name
+        pending["next"] = f"mammoth dataset find {shlex.quote(str(name))} --project {project_id}"
+    if error.details.get("dataset_id") is not None:
+        pending["dataset_id"] = error.details["dataset_id"]
+    return pending
 
 
 _EXPORTS_LIST_SYMBOL = "mammoth.api.exports.ExportsAPI.list"

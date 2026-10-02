@@ -33,6 +33,7 @@ from mammoth_cli.runtime.session import open_service, require_project
 from mammoth_cli.services.listing import (
     DATASET_ROW_FIELDS,
     ambiguity_note,
+    compact_columns,
     dataset_summary,
     fit_budget,
     name_hit,
@@ -202,7 +203,11 @@ _SEARCH_PAGE_SIZE = 100
 
 
 def search_hits(
-    service: Any, resource_type: str, needle: str, project_id: int | None = None
+    service: Any,
+    resource_type: str,
+    needle: str,
+    project_id: int | None = None,
+    fields: str = "minimal",
 ) -> tuple[list[dict[str, Any]], bool]:
     """Resources of ``resource_type`` whose name contains ``needle``, from the search route.
 
@@ -222,11 +227,11 @@ def search_hits(
     for _ in range(_SEARCH_PAGES):
         page = service.call(
             symbol,
-            search=needle,
+            search=needle or None,
             resource_type=resource_type,
             limit=_SEARCH_PAGE_SIZE,
             cursor=cursor,
-            fields="minimal",
+            fields=fields,
             **scope,
         )
         rows += [r for r in page.get("resources", []) if isinstance(r, dict)]
@@ -272,6 +277,61 @@ def named_project(service: Any, project_id: int, visible: list[dict[str, Any]]) 
     record = record.model_dump(mode="json") if hasattr(record, "model_dump") else record
     record = record.get("project", record) if isinstance(record, dict) else {}
     return {"id": project_id, "name": record.get("name")}
+
+
+def _requested_columns(document: dict[str, Any]) -> list[str]:
+    """The ``columns`` input as a list of names (a comma-separated string is split)."""
+    raw = document.get("columns")
+    if raw is None:
+        return []
+    names = raw.split(",") if isinstance(raw, str) else raw
+    if not isinstance(names, list) or not all(isinstance(n, str) for n in names):
+        raise CliError(
+            code=CODE_INVALID_ARGUMENT,
+            message="'columns' must be a list of column names (or one comma-separated string).",
+            exit_status=EXIT_USAGE,
+        )
+    return [n.strip() for n in names if n.strip()]
+
+
+def _column_names(hit: dict[str, Any]) -> list[str]:
+    """Display names of the columns a full-field search hit carries."""
+    properties = hit.get("object_properties")
+    metadata = properties.get("metadata") if isinstance(properties, dict) else None
+    return [
+        str(c["display_name"])
+        for c in metadata or []
+        if isinstance(c, dict) and c.get("display_name")
+    ]
+
+
+def _find_by_columns(
+    service: Any,
+    needle: str,
+    columns: list[str],
+    visible: list[dict[str, Any]],
+) -> tuple[list[dict[str, Any]], bool]:
+    """Datasets (named like ``needle``, when given) that have every one of ``columns``."""
+    hits, cut = search_hits(service, "datasource", needle, fields="full")
+    names = {p.get("id"): p.get("name") for p in visible}
+    wanted = [c.lower() for c in columns]
+    matches: list[dict[str, Any]] = []
+    for hit in hits:
+        have = _column_names(hit)
+        if not set(wanted) <= {c.lower() for c in have}:
+            continue
+        matches.append(
+            {
+                "project_id": hit.get("project_id"),
+                "project_name": names.get(hit.get("project_id")),
+                "id": hit.get("object_id"),
+                "name": hit.get("name"),
+                "rows": hit.get("row_count"),
+                "cols": len(have),
+                "columns": compact_columns([(c, None) for c in have], limit=None),
+            }
+        )
+    return matches, cut
 
 
 def dataset_find(invocation: Invocation) -> HandlerResult:
@@ -326,9 +386,11 @@ def dataset_find(invocation: Invocation) -> HandlerResult:
 def dataset_list(invocation: Invocation) -> HandlerResult:
     """List datasets in the active project, newest first, each with what tells them apart.
 
-    Every item carries its size, created/updated time, how its data arrived, and
-    its column names and types (from the list route's stored ``stats``,
-    ``sources`` and ``data_schema``), cut to fit the agent tool output cap.
+    Every item carries its created/updated time and how its data arrived (from the
+    list route's ``sources``), cut to fit the agent tool output cap. The list asks
+    only the cheap fields, so it holds no row counts or column names: ``view list
+    DATASET_ID`` shows a dataset's columns, and ``dataset find --input '{"columns":
+    [...]}'`` finds the dataset that has given columns.
     ``full: true`` returns the raw ``{id, name}`` list instead. ``name`` keeps only datasets
     whose name contains it (case-insensitive) across every page, as short rows without
     column lists; ``limit``/``offset`` then page over the matches.
@@ -347,7 +409,9 @@ def dataset_list(invocation: Invocation) -> HandlerResult:
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), **kwargs)
     if compact:
-        data = _compact_dataset_list(data, kwargs.get("offset", 0), kwargs.get("sort"))
+        data = _compact_dataset_list(
+            data, kwargs.get("offset", 0), kwargs.get("sort"), kwargs.get("limit", 100)
+        )
     return data, _meta(invocation, auth.workspace_id, project_id)
 
 
@@ -388,7 +452,7 @@ def _dataset_name_search(
     return page, _meta(invocation, auth.workspace_id, project_id)
 
 
-def _compact_dataset_list(data: Any, offset: int, sort: str | None) -> Any:
+def _compact_dataset_list(data: Any, offset: int, sort: str | None, limit: int) -> Any:
     """Summarise a dataset-list page and fit it to the tool output cap."""
     datasets = data.get("datasets") if isinstance(data, dict) else None
     if not isinstance(datasets, list):
@@ -404,7 +468,8 @@ def _compact_dataset_list(data: Any, offset: int, sort: str | None) -> Any:
             "stored sample_values per view (all_columns: true lists every column)."
         ),
     }
-    if omitted or data.get("next"):
+    # The list route sends no ``next``: a page of ``limit`` rows may have a successor.
+    if omitted or data.get("next") or len(datasets) >= limit:
         result["more"] = True
         result["next_offset"] = int(offset) + len(kept)
     return result

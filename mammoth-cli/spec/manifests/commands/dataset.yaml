@@ -524,10 +524,11 @@ commands:
   positionals:
   - name: name_substring
     type: str
-    required: true
+    required: false
     metavar: NAME_SUBSTRING
     falls_back_to_field: null
-    help: Case-insensitive substring to match against dataset names.
+    help: Case-insensitive substring to match against dataset names; optional when --input
+      gives 'columns'.
   options: []
   sdk_symbol: mammoth_cli.commands.dataset.find
   sdk_conversion: Call mammoth_cli.commands.dataset.find with validated request fields.
@@ -543,7 +544,7 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth dataset find NAME_SUBSTRING --help
+  human_example: mammoth dataset find --help
   agent_example: mammoth dataset find sales
   unit_tests:
   - UT-DATASET-FIND

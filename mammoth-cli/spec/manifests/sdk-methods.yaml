@@ -3997,7 +3997,7 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.dataviews.DataviewsAPI.explore
   implementation_origin: mammoth.api.dataviews.DataviewsAPI.explore
-  signature: 'explore(self, dataset_id: ''int'', dataview_id: ''int'', column: ''str'', column_type: ''str | None'' = None, level: ''str | None'' = None, metric: ''dict[str, Any] | None'' = None, condition: ''dict[str, Any] | None'' = None, sequence: ''int | None'' = None, limit: ''int | None'' = None, offset: ''int | None'' = None, sort: ''str | None'' = None, workspace_id: ''int | None'' = None, project_id: ''int | None'' = None, timeout: ''int | None'' = None, poll_interval: ''int'' = 2) -> ''dict[str, Any]'''
+  signature: 'explore(self, dataset_id: ''int'', dataview_id: ''int'', column: ''str'', column_type: ''str | None'' = None, level: ''str | None'' = None, metric: ''dict[str, Any] | None'' = None, condition: ''dict[str, Any] | None'' = None, sequence: ''int | None'' = None, limit: ''int | None'' = None, offset: ''int | None'' = None, sort: ''str | None'' = None, cumulative: ''bool'' = False, workspace_id: ''int | None'' = None, project_id: ''int | None'' = None, timeout: ''int | None'' = None, poll_interval: ''int'' = 2) -> ''dict[str, Any]'''
   openapi_operation_ids: []
   canonical_command: view.data.explore
   alias_of: null

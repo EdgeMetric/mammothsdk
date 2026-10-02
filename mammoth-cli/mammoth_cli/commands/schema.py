@@ -306,7 +306,8 @@ _COMMAND_DISCOVERY_PURPOSES = {
     "view.data.explore": (
         "explore trend trends trending over time per day week month quarter year by date "
         "distribution spread histogram top most common frequent values breakdown share "
-        "percentage profile period year quarter month date range coverage figure"
+        "percentage profile period year quarter month date range coverage figure "
+        "cumulative"
     ),
     # "Give the West team their own copy they can change" / "duplicate this
     # dataset as an independent copy" / "clone it without changing the
