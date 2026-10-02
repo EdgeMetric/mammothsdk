@@ -55,7 +55,9 @@ or secrets in an argument, prompt, transcript, or checkpoint.
    complete inventory. `mammoth capability list` is an API-binding inventory
    and can omit typed/local routes. Check [capabilities](capabilities.md)
    for whether a route is proven, not supported, or untried on release
-   before building a plan on it. Then resolve workspace/project/dataset/view
+   before building a plan on it. An untried route is still used normally:
+   confirm a write with the user, check its result afterwards, never refuse it
+   for being untried. Then resolve workspace/project/dataset/view
    parents with reads. Use display names returned by the exact view schema.
 5. Translate the business intent into a plan the agent chooses;
    [about Mammoth](about-mammoth.md) maps goals to features. Submit only

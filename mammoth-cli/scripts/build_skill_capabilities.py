@@ -111,7 +111,9 @@ def build_all() -> dict[Path, str]:
         f"{unsupported} are not supported there, and the rest are untried. Untried is "
         "not broken: discover the contract with "
         "`mammoth schema get COMMAND_ID`, run it, and "
-        "treat the structured error envelope as the answer.",
+        "treat the structured error envelope as the answer. Use an untried command "
+        "normally: confirm a write with the user first, check its result with a read "
+        "afterwards, and never refuse a command only because it is untried.",
         "",
         "Status meanings:",
         "",
