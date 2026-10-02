@@ -479,7 +479,7 @@ class DatasetsAPI:
         ws = workspace_id or self._ws()
         proj = self._proj(project_id)
         return await self._client._request_json(
-            "GET", f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/unstructured_data"
+            "GET", f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/unstructured_rows"
         )
 
     async def discard_unstructured_rows(
