@@ -23,7 +23,6 @@ from mammoth import MammothClient
 
 client = MammothClient(
     api_token="mm_your-token",
-    workspace_id=11,
 )
 client.set_project_id(10)
 ```
@@ -42,7 +41,6 @@ from mammoth import MammothClient
 
 client = MammothClient(
     api_token=os.getenv("MAMMOTH_API_TOKEN"),
-    workspace_id=11,
 )
 ```
 
@@ -56,7 +54,6 @@ import os
 
 MAMMOTH_CONFIG = {
     "api_token": os.getenv("MAMMOTH_API_TOKEN"),
-    "workspace_id": int(os.getenv("MAMMOTH_WORKSPACE_ID", "11")),
     "base_url": os.getenv("MAMMOTH_BASE_URL", "https://app.mammoth.io/api/v2"),
 }
 ```
@@ -75,7 +72,6 @@ The client adds these headers to every request automatically:
 | Header | Value |
 |--------|-------|
 | `Authorization` | `Bearer mm_...` (your API token) |
-| `X-WORKSPACE-ID` | Your workspace ID |
 | `User-Agent` | `mammoth-io/<version>` |
 
 ## Error handling
@@ -86,10 +82,7 @@ Authentication errors raise `MammothAuthError` (HTTP 401):
 from mammoth import MammothClient, MammothAuthError
 
 try:
-    client = MammothClient(
-        api_token="mm_invalid",
-        workspace_id=1,
-    )
+    client = MammothClient(api_token="mm_invalid")
     projects = await client.projects.list()
 except MammothAuthError:
     print("Authentication failed -- check your API credentials")

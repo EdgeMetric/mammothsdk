@@ -29,8 +29,7 @@ Onboard me first:
    `recommendation`, print exactly this and wait until I say done: "In the
    Mammoth web app open Workspace settings → API Tokens → Create token (no
    project, so I can create projects), copy the token (it starts with mm_ and
-   is shown once), and note the workspace id (the number after /workspaces/
-   in the address bar), then run in your own terminal: mammoth auth login" —
+   is shown once), then run in your own terminal: mammoth auth login" —
    never ask for, read, or pass the token yourself, and never run auth login.
 3. Require `mammoth doctor` to pass, then run `mammoth skill show` and
    follow the guide it prints.
@@ -60,7 +59,7 @@ from mammoth import MammothClient
 
 
 async def main() -> None:
-    async with MammothClient(api_token="mm_your-token", workspace_id=11) as client:
+    async with MammothClient(api_token="mm_your-token") as client:
         client.set_project_id(10)
         view = await client.views.get(1039)
         print(view.display_names)
@@ -76,7 +75,6 @@ from mammoth import MammothClient
 
 client = MammothClient(
     api_token="mm_your-token",
-    workspace_id=11,
 )
 client.set_project_id(42)
 
@@ -107,7 +105,6 @@ ids = parse_path("https://app.mammoth.io/#/workspaces/11/projects/42/views/1039"
 
 client = MammothClient(
     api_token="mm_your-token",
-    workspace_id=ids["workspace_id"],
 )
 client.set_project_id(ids["project_id"])
 view = await client.views.get(ids["dataview_id"])
@@ -648,7 +645,7 @@ from mammoth import (
     MammothAPIError,
 )
 
-client = MammothClient(api_token="mm_...", workspace_id=11)
+client = MammothClient(api_token="mm_...")
 client.set_project_id(42)
 view = await client.views.get(1039)
 

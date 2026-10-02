@@ -42,11 +42,10 @@ ONBOARDING (run in bash, in this order; stop at the first failure and report it)
      "Mammoth needs a one-time login that only you can do. In the Mammoth web
       app open Workspace settings → API Tokens → Create token (leave the
       project empty so I can create projects), copy the token (it starts
-      with mm_ and is shown only once), and note your workspace id
-      (the number after /workspaces/ in the address bar). Then run in your own
+      with mm_ and is shown only once). Then run in your own
       terminal:
         mammoth auth login
-      It prompts for the token (hidden) and the workspace id and saves them
+      It prompts for the token (hidden) and saves it
       in your OS keyring. On a Mac, if a Keychain dialog asks
       about mammoth-cli, choose Always Allow. Tell me when it says logged in."
    Add `--server-prefix LABEL` to that command only when the task names a

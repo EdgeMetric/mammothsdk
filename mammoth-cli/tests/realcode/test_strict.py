@@ -71,7 +71,6 @@ def test_auth_login_contract_rejects_dropped_fields() -> None:
         "auth.login",
         {
             "api_token": "mm_token",
-            "workspace_id": 4,
             "server_prefix": "app",
         },
     )

@@ -264,7 +264,6 @@ _LOCAL_CONTRACT_FIELDS: dict[str, tuple[FieldSpec, ...]] = {
     ),
     "auth.login": (
         FieldSpec("api_token", required=True, annotation=str),
-        FieldSpec("workspace_id", required=True, annotation=int),
         FieldSpec("server_prefix", required=False, annotation=str | None, default=None),
     ),
     "completion.install": (

@@ -2552,7 +2552,6 @@ def _enter_embedded_call() -> object:
     login = ExplicitLogin(
         api_key=None,
         api_secret=None,
-        workspace_id=1,
         api_token="jwt-user",
         server_prefix="app",
         headers={},

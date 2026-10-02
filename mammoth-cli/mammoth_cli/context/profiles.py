@@ -79,7 +79,7 @@ class ProfileRecord:
 
     Attributes:
         name: The profile name.
-        workspace_id: The Mammoth workspace id.
+        workspace_id: The token's workspace, as the server reported it at login.
         server_prefix: A one-label server prefix, or None (default ``app``).
         project_id: The active project id, or None.
     """

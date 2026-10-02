@@ -6,6 +6,7 @@ from typing import Any
 
 import pytest
 
+from mammoth_cli.context import resolver
 from mammoth_cli.services import factory as service_factory
 from mammoth_cli.services.testing import FakeMammothService
 
@@ -28,4 +29,6 @@ def fake_service(monkeypatch: pytest.MonkeyPatch) -> FakeMammothService:
         return service
 
     monkeypatch.setattr(service_factory, "build_service", _build)
+    # A token names its workspace and the CLI learns it from the server; no network here.
+    monkeypatch.setattr(resolver, "resolve_token_workspace", lambda *_a, **_k: 4)
     return service

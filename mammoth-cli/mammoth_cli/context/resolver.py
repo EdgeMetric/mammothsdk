@@ -15,6 +15,9 @@ from __future__ import annotations
 from collections.abc import Mapping
 from dataclasses import dataclass
 
+from mammoth import DEFAULT_TIMEOUT
+from mammoth.client import resolve_token_workspace_id
+
 from mammoth_cli.context import credentials, profiles
 from mammoth_cli.context.endpoint import resolve_base_url
 from mammoth_cli.context.profiles import ProfileRecord
@@ -27,6 +30,7 @@ from mammoth_cli.errors.envelope import (
 )
 from mammoth_cli.runtime import embedded
 from mammoth_cli.runtime.invocation import Invocation
+from mammoth_cli.services.mapping import map_sdk_exception
 
 
 @dataclass(frozen=True)
@@ -39,7 +43,8 @@ class ExplicitLogin:
     Attributes:
         api_key: The deprecated Mammoth API key (with ``api_secret``).
         api_secret: The deprecated Mammoth API secret.
-        workspace_id: The Mammoth workspace id.
+        workspace_id: The workspace id, only with the deprecated key + secret;
+            an ``api_token`` names its own workspace and rejects this field.
         server_prefix: A one-label server prefix, or None.
         api_token: The ``mm_...`` Bearer token, instead of a key + secret.
         headers: Extra request headers sent on every API call, after the
@@ -49,7 +54,7 @@ class ExplicitLogin:
 
     api_key: str | None
     api_secret: str | None
-    workspace_id: int
+    workspace_id: int | None = None
     server_prefix: str | None = None
     api_token: str | None = None
     headers: Mapping[str, str] | None = None
@@ -114,6 +119,37 @@ def _require_positive_workspace(workspace_id: int, *, source: str) -> int:
     return workspace_id
 
 
+def resolve_token_workspace(base_url: str, api_token: str, timeout: float | None) -> int:
+    """Learn which workspace a token belongs to from the server.
+
+    Args:
+        base_url: The resolved API base url.
+        api_token: The ``mm_...`` token.
+        timeout: Request timeout in seconds, or None for the SDK default.
+
+    Raises:
+        CliError: The mapped SDK failure (``authentication_failed`` for a
+            rejected token).
+    """
+    try:
+        return resolve_token_workspace_id(base_url, api_token, timeout or DEFAULT_TIMEOUT)
+    except Exception as exc:
+        raise map_sdk_exception(exc) from exc
+
+
+def _explicit_workspace(login: ExplicitLogin, base_url: str, timeout: float | None) -> int:
+    """The workspace of an explicit login: the token's own, or the key pair's given id."""
+    if login.api_token is None:
+        return _require_positive_workspace(login.workspace_id or 0, source="login")
+    if login.workspace_id is not None:
+        raise CliError(
+            code=CODE_INVALID_WORKSPACE_ID,
+            message="A token login takes no workspace id; the token names its own.",
+            exit_status=EXIT_USAGE,
+        )
+    return resolve_token_workspace(base_url, login.api_token, timeout)
+
+
 def _endpoint(server_prefix: str | None) -> str:
     """Resolve one endpoint from a server prefix (default ``app``)."""
     return resolve_base_url(server_prefix)
@@ -150,7 +186,7 @@ def resolve_auth(
         return ResolvedAuth(
             api_key=explicit_login.api_key,
             api_secret=explicit_login.api_secret,
-            workspace_id=_require_positive_workspace(explicit_login.workspace_id, source="login"),
+            workspace_id=_explicit_workspace(explicit_login, base_url, invocation.timeout),
             base_url=base_url,
             api_token=explicit_login.api_token,
             headers=explicit_login.headers,

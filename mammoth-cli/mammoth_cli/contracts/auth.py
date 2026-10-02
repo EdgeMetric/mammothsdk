@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class LoginRequest(BaseModel):
@@ -10,7 +10,6 @@ class LoginRequest(BaseModel):
 
     Attributes:
         api_token: The ``mm_...`` API token (sent as ``Authorization: Bearer``).
-        workspace_id: A positive workspace id.
         server_prefix: An optional one-label server prefix; defaults to
             ``"app"`` when omitted.
     """
@@ -18,13 +17,4 @@ class LoginRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     api_token: str = Field(min_length=1)
-    workspace_id: int
     server_prefix: str | None = None
-
-    @field_validator("workspace_id")
-    @classmethod
-    def _workspace_id_positive(cls, value: int) -> int:
-        """Reject a nonpositive workspace id."""
-        if value <= 0:
-            raise ValueError("workspace_id must be a positive integer")
-        return value

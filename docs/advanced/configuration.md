@@ -9,7 +9,6 @@ from mammoth import MammothClient
 
 client = MammothClient(
     api_token="mm_your-token",
-    workspace_id=11,
     base_url="https://app.mammoth.io/api/v2",
     timeout=30,
     job_timeout=60,
@@ -29,7 +28,6 @@ If your organization uses a custom Mammoth deployment:
 ```python
 client = MammothClient(
     api_token="mm_...",
-    workspace_id=11,
     base_url="https://your-instance.mammoth.io/api/v2",
 )
 ```
@@ -90,7 +88,6 @@ import os
 
 config = {
     "api_token": os.environ["MAMMOTH_API_TOKEN"],
-    "workspace_id": int(os.environ["MAMMOTH_WORKSPACE_ID"]),
     "base_url": os.getenv("MAMMOTH_BASE_URL", "https://app.mammoth.io/api/v2"),
     "timeout": int(os.getenv("MAMMOTH_TIMEOUT", "30")),
     "job_timeout": int(os.getenv("MAMMOTH_JOB_TIMEOUT", "60")),

@@ -59,7 +59,7 @@ Important operation states include:
 | 7 | `retryable_error` on a read | Honor `Retry-After`, then retry the read within the deadline. |
 | 130 | `interrupted` | Use the observed handle/recovery command and checkpoint the state. |
 
-## Login stops after the workspace id
+## Login stops after the token
 
 The CLI is saving the credential to the OS keychain. On macOS, look for a
 Keychain dialog about `mammoth-cli` and choose **Always Allow**. Over SSH the
