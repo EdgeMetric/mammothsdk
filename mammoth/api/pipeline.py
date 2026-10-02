@@ -59,6 +59,11 @@ DRAFT_MODE_DIRTY = "dirty"
 DRAFT_MODE_ACTIVE_VALUES = frozenset({DRAFT_MODE_CLEAN, DRAFT_MODE_DIRTY})
 
 
+#: Pipeline waits back off from ``poll_interval`` by this factor up to the maximum.
+PIPELINE_POLL_GROWTH = 1.5
+PIPELINE_POLL_MAX_SECONDS = 15.0
+
+
 class PipelineAPI:
     """Low-level HTTP client for pipeline task endpoints.
 
@@ -511,7 +516,8 @@ class PipelineAPI:
             dataview_id: ID of the dataview.
             dataset_id: Dataset ID (auto-detected if not provided).
             timeout: Max wait time in seconds (default: client.pipeline_timeout).
-            poll_interval: Seconds between polls (default: 3).
+            poll_interval: Seconds before the second poll (default: 3); each wait
+                is then 1.5 times the last, up to 15 seconds.
 
         Returns:
             Final pipeline state dict.
@@ -528,6 +534,7 @@ class PipelineAPI:
         ws, proj, ds, dv = await self._resolve_ids(dataview_id, dataset_id)
         url = self._base_url(ws, proj, ds, dv)
         deadline = time.monotonic() + effective_timeout
+        delay = poll_interval
 
         while True:
             pipeline = await self._client._request_json("GET", url)
@@ -549,7 +556,8 @@ class PipelineAPI:
                 )
 
             logger.debug("Pipeline state for dataview %d: %s — waiting...", dataview_id, state)
-            await asyncio.sleep(poll_interval)
+            await asyncio.sleep(delay)
+            delay = min(PIPELINE_POLL_MAX_SECONDS, delay * PIPELINE_POLL_GROWTH)
 
     async def command(
         self, dataview_id: int, command: str, dataset_id: int | None = None

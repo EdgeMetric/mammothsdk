@@ -2800,11 +2800,20 @@ def view_pipeline_rerun(invocation: Invocation) -> HandlerResult:
     return data, _meta(invocation, auth.workspace_id, None)
 
 
+#: Seconds ``view pipeline wait`` waits when the caller names no ``timeout`` (the SDK's own
+#: default is an hour, one request every few seconds for as long as it runs).
+_PIPELINE_WAIT_TIMEOUT = 300.0
+
+
 def view_pipeline_wait(invocation: Invocation) -> HandlerResult:
-    """Wait for a dataview's pipeline to finish running."""
+    """Wait for a dataview's pipeline to finish running.
+
+    Waits up to ``_PIPELINE_WAIT_TIMEOUT`` seconds unless ``timeout`` says more,
+    polling less often the longer it waits.
+    """
     dataview_id = _require_int_positional_at(invocation, 0, "dataview id")
     document = invocation.load_input() or {}
-    kwargs: dict[str, Any] = {"dataview_id": dataview_id}
+    kwargs: dict[str, Any] = {"dataview_id": dataview_id, "timeout": _PIPELINE_WAIT_TIMEOUT}
     _forward_optional(document, kwargs, ("dataset_id", "timeout", "poll_interval"))
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), **kwargs)

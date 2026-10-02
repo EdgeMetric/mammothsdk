@@ -38,7 +38,7 @@ from mammoth_cli.errors.envelope import (
     missing_project_error,
 )
 from mammoth_cli.output.progress import spinner
-from mammoth_cli.runtime import parents
+from mammoth_cli.runtime import embedded, parents
 from mammoth_cli.runtime.dryrun import DryRunStop
 from mammoth_cli.services.coerce import coerce_arguments
 from mammoth_cli.services.conditions import CONDITION_KWARG, compile_condition
@@ -141,6 +141,10 @@ class SdkMammothService:
             kwargs["job_timeout"] = job_timeout
         if pipeline_timeout is not None:
             kwargs["pipeline_timeout"] = pipeline_timeout
+        if embedded.active():
+            # The server answering is this process's own worker: a retry of a 5xx read
+            # adds load to the worker that is already overloaded.
+            kwargs["retry_gateway_errors"] = False
         credential: dict[str, Any] = (
             {"api_token": auth.api_token}
             if auth.api_token is not None

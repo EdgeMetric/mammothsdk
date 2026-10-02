@@ -428,6 +428,7 @@ class MammothClient:
         *,
         api_token: str | None = None,
         api_root: str | None = "/api/v2",
+        retry_gateway_errors: bool = True,
     ) -> None:
         """Initialize the Mammoth client.
 
@@ -456,6 +457,10 @@ class MammothClient:
                 ``base_url`` exactly as given, which is what a caller inside
                 the network needs: the server mounts these routes at their own
                 paths, and whatever sits in front of it adds the prefix.
+            retry_gateway_errors: Retry a read that got a 502/503/504, twice.
+                Turn it off when the server answering is the process making
+                the call: a retry then adds load to the very worker that is
+                overloaded. Connection errors are still retried.
         """
         if api_token is not None and (api_key is not None or api_secret is not None):
             raise ValueError("pass api_token or api_key + api_secret, not both")
@@ -518,6 +523,7 @@ class MammothClient:
         self.job_timeout = job_timeout
         self.job_poll_seconds = job_poll_seconds
         self.pipeline_timeout = pipeline_timeout
+        self.retry_gateway_errors = retry_gateway_errors
 
         self.project_id: int | None = None
 
@@ -618,7 +624,8 @@ class MammothClient:
     async def _send_with_read_retry(
         self, method: str, endpoint: str, url: str, request_kwargs: dict[str, Any]
     ) -> httpx.Response:
-        """Send once; retry only GET/HEAD on 502/503/504 or connect errors, at most twice.
+        """Send once; retry only GET/HEAD on 502/503/504 (unless ``retry_gateway_errors`` is off) or
+        connect errors, at most twice.
 
         A draining worker answers a read with one transient gateway error.
         Writes are never replayed. When retries run out the last response (or
@@ -645,7 +652,7 @@ class MammothClient:
                 )
                 await asyncio.sleep(_retry_delay(attempt, None))
                 continue
-            if last or response.status_code not in _RETRY_STATUSES:
+            if last or response.status_code not in _RETRY_STATUSES or not self.retry_gateway_errors:
                 return response
             _log_http(
                 method,
