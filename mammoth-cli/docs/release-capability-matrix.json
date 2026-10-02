@@ -31,7 +31,8 @@
     "internal_only": 15,
     "protocol_only": 11,
     "removed_on_server": 1,
-    "unmapped": 12
+    "sdk_only": 1,
+    "unmapped": 11
   },
   "unrouted_sdk_calls": [
     {
@@ -12103,10 +12104,10 @@
       "path": "/workspaces/{workspace_id}/projects/{project_id}/resources/bulk",
       "canonical_command": null,
       "schema_id": null,
-      "sdk_symbol": null,
+      "sdk_symbol": "mammoth.api.browse.BrowseAPI.resources_bulk",
       "bound_commands": [],
-      "mapping_state": "unmapped",
-      "mapping_gap_reason": "No reviewed CLI command or SDK symbol recorded.",
+      "mapping_state": "sdk_only",
+      "mapping_gap_reason": "An SDK method calls this route; no command wraps it.",
       "evidence": null,
       "evidence_version": null
     },

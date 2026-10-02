@@ -6,7 +6,7 @@ does not establish broad CLI/SDK or release readiness.
 
 As of **2026-09-15**, this is the M0 inventory for audited product revision `303aebdd7c1be7a80967b2d975a79975119f6f30`. It records routed capabilities and unproven behavior; it does **not** claim production readiness or SOTA.
 
-The release matrix and the count paragraphs below were refreshed on **2026-10-02** against server `origin/master` at `600d78ef6b` (CLI 2.2.8, SDK 0.8.9). The M0 tier tables keep their original dates.
+The release matrix and the count paragraphs below were refreshed on **2026-10-02** against server `origin/master` at `600d78ef6b` (CLI 2.2.9, SDK 0.8.10). The M0 tier tables keep their original dates.
 
 The historical pinned M0 snapshot contains **445 operations across 287 paths**.
 The current matrix is derived from the server spec pinned from `origin/master`
@@ -51,9 +51,9 @@ boundary is intentionally unverified; this page makes no Full support claim.
 | `live-disposable-bounded` | 155 | Bounded disposable-project evidence class; not arbitrary-task qualification. |
 | `live-read-only-bounded` | 172 | Bounded read-only evidence class; mutation/recovery semantics remain open. |
 
-The M0 CLI map contained **524 command records across 42 families**. Each had a local manifest entry and a handler path/symbol that resolves (524/524). This is structural routing evidence only. The command manifests now hold **633 command records across 45 files** (CLI 2.2.8).
+The M0 CLI map contained **524 command records across 42 families**. Each had a local manifest entry and a handler path/symbol that resolves (524/524). This is structural routing evidence only. The command manifests now hold **633 command records across 45 files** (CLI 2.2.9).
 
-The pinned API snapshot has **445 operations**: 433 user operations map to commands, 11 are protocol-only, and 1 is an alias. The current matrix is **544 server operations / 371 paths** (545 rows); the readiness workbook holds its row-level evidence and statuses. Of the 545 rows, 504 map to a command and an SDK method. Two are aliases, 11 are protocol-only, 15 are internal-only, 12 are unmapped, and 1 is removed on the server. The public SDK manifest now has **656 methods** (SDK 0.8.9). Of these, 593 have canonical command associations. The remaining 63 have explicit alias or reviewed SDK-only reasons. The M0 figures of 549 methods and 496 associations are historical.
+The pinned API snapshot has **445 operations**: 433 user operations map to commands, 11 are protocol-only, and 1 is an alias. The current matrix is **544 server operations / 371 paths** (545 rows); the readiness workbook holds its row-level evidence and statuses. Of the 545 rows, 504 map to a command and an SDK method. Two are aliases, 11 are protocol-only, 15 are internal-only, 1 is SDK-only, 11 are unmapped, and 1 is removed on the server. The public SDK manifest now has **657 methods** (SDK 0.8.10). Of these, 593 have canonical command associations. The remaining 64 have explicit alias or reviewed SDK-only reasons. The M0 figures of 549 methods and 496 associations are historical.
 
 ## Matrix workflow grouping
 
