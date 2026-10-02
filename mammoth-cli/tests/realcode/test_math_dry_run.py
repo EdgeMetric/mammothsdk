@@ -35,8 +35,8 @@ def _service(real_service: ServiceFactory, *, dry_run: bool) -> Any:
     service, api = real_service(project_id=PROJECT_ID)
     api.on(
         "GET",
-        r"/datasets$",
-        body={"datasets": [{"id": DATASET_ID, "name": "ds"}], "limit": 100, "offset": 0},
+        rf"/resources/dataview/{VIEW_ID}$",
+        body={"resource": {"object_id": VIEW_ID, "dataset": {"id": DATASET_ID, "name": "ds"}}},
     )
     api.on("GET", rf"/datasets/{DATASET_ID}/dataviews/{VIEW_ID}$", body=_VIEW_METADATA)
     api.on("POST", r"/pipeline/tasks", body={})

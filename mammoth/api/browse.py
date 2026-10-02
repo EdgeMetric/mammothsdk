@@ -8,6 +8,9 @@ if TYPE_CHECKING:
     from ..client import MammothClient
 
 
+_BULK_IDS_LIMIT = 100  # server cap on ids per /resources/bulk request
+
+
 def _page(fields: str | None, limit: int | None, offset: int | None) -> dict[str, Any] | None:
     """The query a browse route takes to narrow and page what it returns.
 
@@ -391,3 +394,34 @@ class BrowseAPI:
         return await self._client._request_json(
             "GET", f"/workspaces/{self._ws()}/resources", params=params
         )
+
+    async def resources_bulk(
+        self,
+        items: list[tuple[str, int]],
+        project_id: int | None = None,
+    ) -> list[dict[str, Any]]:
+        """Get many resources of one project by ``(type, object id)`` pair (resources v2).
+
+        One request per 100 pairs, the route's cap. A dataview row carries its
+        parent in ``dataset`` (``{id, name}``). Pairs that do not exist in the
+        project, or that the caller cannot read, are left out of the result.
+
+        Args:
+            items: ``(resource_type, object_id)`` pairs, e.g. ``("dataview", 42)``.
+            project_id: Project ID (uses the client default if not provided).
+
+        Returns:
+            The resources found, each as ``resource_get`` returns them.
+        """
+        found: list[dict[str, Any]] = []
+        proj = self._proj(project_id)
+        for first in range(0, len(items), _BULK_IDS_LIMIT):
+            chunk = items[first : first + _BULK_IDS_LIMIT]
+            response = await self._client._request_json(
+                "POST",
+                f"/workspaces/{self._ws()}/projects/{proj}/resources/bulk",
+                json={"ids": [{"type": kind, "id": object_id} for kind, object_id in chunk]},
+                operation_effect="read",
+            )
+            found += response.get("resources", [])
+        return found

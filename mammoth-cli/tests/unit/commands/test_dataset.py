@@ -17,6 +17,7 @@ from mammoth_cli.testing import login_default_profile
 _LIST = "mammoth.api.datasets.DatasetsAPI.list"
 _LIST_ALL = "mammoth.api.datasets.DatasetsAPI.list_all"
 _GET = "mammoth.api.datasets.DatasetsAPI.get"
+_SEARCH = "mammoth.api.browse.BrowseAPI.resources_search"
 _VIEW_LIST = "mammoth.api.dataviews.DataviewsAPI.list"
 _DATA = "mammoth.api.datasets.DatasetsAPI.get_data"
 _BATCH_DATA = "mammoth.api.datasets.DatasetsAPI.get_batch_data"
@@ -70,6 +71,10 @@ def test_find_without_project_searches_every_visible_project(
     fake_service.responses[_LIST_ALL] = {
         "datasets": [{"id": 10, "name": "Sales Q1"}, {"id": 11, "name": "Other"}]
     }
+    fake_service.responses[_SEARCH] = {
+        "resources": [{"project_id": 1}, {"project_id": 2}],
+        "has_more": False,
+    }
     result, meta = dataset_cmd.dataset_find(_inv("dataset.find", extra_args=["sales"]))
     assert result["projects_searched"] == 2
     assert result["matches"] == [
@@ -77,7 +82,8 @@ def test_find_without_project_searches_every_visible_project(
         {"project_id": 2, "project_name": "P2", "id": 10, "name": "Sales Q1", "source": "unknown"},
     ]
     assert "list_all_projects" in fake_service.calls
-    assert fake_service.call_log == [
+    assert [symbol for symbol, _ in fake_service.call_log] == [_SEARCH, _LIST_ALL, _LIST_ALL]
+    assert fake_service.call_log[1:] == [
         (_LIST_ALL, {"project_id": 1, "fields": DATASET_ROW_FIELDS}),
         (_LIST_ALL, {"project_id": 2, "fields": DATASET_ROW_FIELDS}),
     ]
@@ -87,6 +93,7 @@ def test_find_without_project_searches_every_visible_project(
 def test_find_matches_are_case_insensitive(fake_service: FakeMammothService) -> None:
     fake_service.projects = [{"id": 1, "name": "P1"}]
     fake_service.responses[_LIST_ALL] = {"datasets": [{"id": 10, "name": "SALES Q1"}]}
+    fake_service.responses[_SEARCH] = {"resources": [{"project_id": 1}], "has_more": False}
     result, _meta = dataset_cmd.dataset_find(_inv("dataset.find", extra_args=["sales"]))
     assert [m["id"] for m in result["matches"]] == [10]
 

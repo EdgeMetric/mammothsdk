@@ -196,6 +196,63 @@ def _find_in_projects(
     return matches
 
 
+#: Pages of resource search read for one name (100 hits each); past it the result says so.
+_SEARCH_PAGES = 5
+_SEARCH_PAGE_SIZE = 100
+
+
+def search_hits(
+    service: Any, resource_type: str, needle: str, project_id: int | None = None
+) -> tuple[list[dict[str, Any]], bool]:
+    """Resources of ``resource_type`` whose name contains ``needle``, from the search route.
+
+    One request (one more per 100 hits) replaces a listing per project: the
+    workspace search, or the project's own resource list when ``project_id`` is
+    given. Returns the minimal rows and whether the read stopped at
+    ``_SEARCH_PAGES`` pages with more hits unread.
+    """
+    symbol = (
+        "mammoth.api.browse.BrowseAPI.resources_search"
+        if project_id is None
+        else "mammoth.api.browse.BrowseAPI.resources_list"
+    )
+    scope: dict[str, Any] = {} if project_id is None else {"project_id": project_id}
+    rows: list[dict[str, Any]] = []
+    cursor: str | None = None
+    for _ in range(_SEARCH_PAGES):
+        page = service.call(
+            symbol,
+            search=needle,
+            resource_type=resource_type,
+            limit=_SEARCH_PAGE_SIZE,
+            cursor=cursor,
+            fields="minimal",
+            **scope,
+        )
+        rows += [r for r in page.get("resources", []) if isinstance(r, dict)]
+        cursor = page.get("next_cursor")
+        if not (page.get("has_more") and cursor):
+            return rows, False
+    return rows, True
+
+
+def search_cut_note(kind: str) -> str:
+    """Said when a name search stopped early, with how to narrow it."""
+    return (
+        f"The name matched more than {_SEARCH_PAGES * _SEARCH_PAGE_SIZE} {kind}, so only the "
+        "first of them were read. Use a longer name, or --project, to narrow it."
+    )
+
+
+def _projects_holding(
+    service: Any, needle: str, visible: list[dict[str, Any]]
+) -> tuple[list[dict[str, Any]], bool]:
+    """The visible projects that hold a dataset whose name contains ``needle``."""
+    rows, cut = search_hits(service, "datasource", needle)
+    holding = {r.get("project_id") for r in rows}
+    return [p for p in visible if p.get("id") in holding], cut
+
+
 def _other_projects(visible: list[dict[str, Any]], project_id: int) -> list[dict[str, Any]]:
     """Every visible project except ``project_id``."""
     return [p for p in visible if p.get("id") != project_id]
@@ -232,16 +289,20 @@ def dataset_find(invocation: Invocation) -> HandlerResult:
     skipped: list[dict[str, Any]] = []
     with open_service(invocation) as (service, auth):
         visible = _visible_projects(service)
+        cut = False
         if invocation.project is not None:
             projects: list[dict[str, Any]] = [named_project(service, invocation.project, visible)]
             matches = _find_in_projects(service, needle, projects, skipped)
             if not matches:
-                others = _other_projects(visible, invocation.project)
-                matches = _find_in_projects(service, needle, others, skipped)
-                projects += others
+                holding, cut = _projects_holding(service, needle, visible)
+                matches = _find_in_projects(
+                    service, needle, _other_projects(holding, invocation.project), skipped
+                )
+                projects += _other_projects(visible, invocation.project)
         else:
             projects = visible
-            matches = _find_in_projects(service, needle, projects, skipped)
+            holding, cut = _projects_holding(service, needle, visible)
+            matches = _find_in_projects(service, needle, holding, skipped)
         meta = {
             "profile": invocation.profile,
             "workspace_id": auth.workspace_id,
@@ -253,7 +314,11 @@ def dataset_find(invocation: Invocation) -> HandlerResult:
     }
     if skipped:
         result["projects_skipped"] = skipped
-    if note := ambiguity_note(len(matches), name_substring):
+    notes = [ambiguity_note(len(matches), name_substring)]
+    if cut:
+        result["truncated"] = True
+        notes.append(search_cut_note("datasets"))
+    if note := " ".join(n for n in notes if n):
         result["note"] = note
     return result, meta
 
@@ -304,14 +369,20 @@ def _dataset_name_search(
         records = data.get("datasets", []) if isinstance(data, dict) else []
         page = search_page(records, name, int(document.get("offset", 0)), document.get("limit"))
         if page["matched"] == 0:
+            holding, cut = _projects_holding(service, name.lower(), _visible_projects(service))
             elsewhere = _find_in_projects(
-                service, name.lower(), _other_projects(_visible_projects(service), project_id)
+                service, name.lower(), _other_projects(holding, project_id)
             )
             if elsewhere:
                 page["in_other_projects"] = elsewhere
                 page["note"] = (
                     f"No dataset in project {project_id} matches; the ones listed in "
                     "in_other_projects do. Run the next call with --project <its project_id>."
+                )
+            if cut:
+                page["truncated"] = True
+                page["note"] = " ".join(
+                    filter(None, (page.get("note"), search_cut_note("datasets")))
                 )
     page["name"] = name
     return page, _meta(invocation, auth.workspace_id, project_id)

@@ -27,8 +27,8 @@ def _wire_resolution(api: Any) -> None:
     """Register the dataset-listing + dataview probes the view resolution performs."""
     api.on(
         "GET",
-        r"/datasets$",
-        body={"datasets": [{"id": DATASET_ID, "name": "ds"}], "limit": 100, "offset": 0},
+        rf"/resources/dataview/{VIEW_ID}$",
+        body={"resource": {"object_id": VIEW_ID, "dataset": {"id": DATASET_ID, "name": "ds"}}},
     )
     api.on("GET", rf"/datasets/{DATASET_ID}/dataviews/{VIEW_ID}$", body={"id": VIEW_ID})
 

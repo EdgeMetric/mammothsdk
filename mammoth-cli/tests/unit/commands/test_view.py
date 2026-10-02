@@ -186,6 +186,22 @@ def test_view_list_without_dataset_id_pages_past_the_view_floor(
     assert [c[1]["dataset_id"] for c in resumed_calls] == [9, 10]
 
 
+def test_view_list_without_dataset_id_caps_the_datasets_read_per_call(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    """Datasets holding no views still cost a request each: the walk stops at a
+    fixed number and says where to resume."""
+    cap = view_cmd._VIEW_LIST_ALL_DATASETS_MAX_VISITS
+    fake_service.responses[_DATASETS_LIST_ALL] = {"datasets": [{"id": i} for i in range(cap + 10)]}
+    fake_service.responses[_VIEW_LIST] = {"dataviews": []}
+    doc = _doc(tmp_path, {"full": True})
+    data, _ = view_cmd.view_list(_inv("view.list", project=180, input_file=doc))
+    view_calls = [c for c in _without_meta(fake_service.call_log) if c[0] == _VIEW_LIST]
+    assert len(view_calls) == cap
+    assert data["datasets_visited"] == cap
+    assert data["next_dataset_offset"] == cap
+
+
 def test_view_list_passes_dataset_and_project(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
