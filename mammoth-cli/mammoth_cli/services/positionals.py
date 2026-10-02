@@ -644,8 +644,9 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
         PositionalSpec(
             name="name_substring",
             type=str,
-            required=True,
-            help="Case-insensitive substring to match against dataset names.",
+            required=False,
+            help="Case-insensitive substring to match against dataset names; optional "
+            "when --input gives 'columns'.",
             example_value="sales",
         ),
     ),

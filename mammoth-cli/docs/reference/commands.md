@@ -2819,7 +2819,7 @@ Total commands: 645.
 
 **Arguments**
 
-- `NAME_SUBSTRING` (str, required) — Case-insensitive substring to match against dataset names.
+- `NAME_SUBSTRING` (str, optional) — Case-insensitive substring to match against dataset names; optional when --input gives 'columns'.
 
 - Mutation class: `read`
 - Confirmation: `none`
