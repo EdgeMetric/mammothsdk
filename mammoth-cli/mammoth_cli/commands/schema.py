@@ -378,8 +378,24 @@ _COMMAND_DISCOVERY_PURPOSES = {
     "project.pending-changes": (
         "source changes new rows not taken in yet pending updates waiting to apply"
     ),
+    # "I pasted a link to a file / dataset / view -- what is wrong with it?" (zulip
+    # Mammoth Agents, ws 247): the agent had no way to turn the app address into
+    # ids, and the unstructured-rows read said "broken" where users say "unstructured".
+    "link": (
+        "link url pasted address app page open file dataset view folder project "
+        "workspace ids selected resource parse"
+    ),
+    "dataset.broken-rows.list": (
+        "unstructured skipped ragged rows lines unparsed mismatched columns monitor "
+        "needs review file upload bad rows"
+    ),
+    "dataset.broken-rows.resolve": (
+        "fix unstructured skipped ragged lines discard correct resolve mismatched "
+        "columns review monitor needs review upload"
+    ),
     "project.needs-attention": (
-        "monitor needs attention error failing pipeline views delete datasets behind list"
+        "monitor needs attention error failing pipeline views delete datasets behind list "
+        "unstructured pending review"
     ),
     "project.resource-status": "stuck stale failing broken error status anything wrong health",
     "connector.ai.chat": (

@@ -37,6 +37,7 @@ from mammoth_cli.services.listing import (
     fit_budget,
     name_hit,
     search_page,
+    source_of,
 )
 
 HandlerResult = tuple[Any, dict[str, Any]]
@@ -142,16 +143,9 @@ def _require_string_positional(invocation: Invocation, name: str) -> str:
     return str(invocation.extra_args[0])
 
 
-# The projects endpoint accepts at most limit=100 and exposes no offset, so a
-# cross-project search can see at most 100 projects; the result says when the
-# list was cut there.
-_MAX_PROJECTS_SEARCHED = 100
-
-
 def _visible_projects(service: Any) -> list[dict[str, Any]]:
-    """The projects the credential can see (at most ``_MAX_PROJECTS_SEARCHED``)."""
-    listing = service.list_projects(limit=_MAX_PROJECTS_SEARCHED)
-    return list(listing.get("projects", [])) if isinstance(listing, dict) else []
+    """Every project the credential is a member of, across all pages."""
+    return list(service.list_all_projects())
 
 
 def _find_in_projects(
@@ -163,7 +157,11 @@ def _find_in_projects(
         project_id = project.get("id")
         if project_id is None:
             continue
-        response = service.call("mammoth.api.datasets.DatasetsAPI.list_all", project_id=project_id)
+        response = service.call(
+            "mammoth.api.datasets.DatasetsAPI.list_all",
+            project_id=project_id,
+            fields=DATASET_ROW_FIELDS,
+        )
         datasets = response.get("datasets", []) if isinstance(response, dict) else []
         for dataset in datasets:
             name = dataset.get("name") if isinstance(dataset, dict) else None
@@ -173,6 +171,7 @@ def _find_in_projects(
                         "project_id": project_id,
                         "project_name": project.get("name"),
                         **name_hit(dataset),
+                        "source": source_of(dataset),
                     }
                 )
     return matches
@@ -231,7 +230,6 @@ def dataset_find(invocation: Invocation) -> HandlerResult:
     result: dict[str, Any] = {
         "matches": matches,
         "projects_searched": len(projects),
-        "projects_truncated": len(projects) >= _MAX_PROJECTS_SEARCHED,
     }
     if note := ambiguity_note(len(matches), name_substring):
         result["note"] = note
@@ -452,6 +450,33 @@ def dataset_file_settings(invocation: Invocation) -> HandlerResult:
 def dataset_broken_rows(invocation: Invocation) -> HandlerResult:
     """List the lines of a dataset's uploaded file that could not be parsed."""
     return _read_dataset(invocation)
+
+
+def dataset_broken_rows_resolve(invocation: Invocation) -> HandlerResult:
+    """Add corrected set-aside lines to a dataset, or discard them. Prompt or ``--yes``.
+
+    ``--input`` carries ``op`` (``add`` or ``remove``), ``batch_id`` and ``rows``
+    (``{"line_num", "line"}`` each, from ``dataset broken-rows list``). Returns a
+    job to wait on.
+    """
+    project_id = require_project(invocation)
+    dataset_id = _require_int_positional(invocation, "dataset id")
+    document = invocation.load_input()
+    kwargs: dict[str, Any] = {
+        "dataset_id": dataset_id,
+        "op": _require_field(document, "op"),
+        "batch_id": _require_field(document, "batch_id"),
+        "rows": _require_field(document, "rows"),
+        "project_id": project_id,
+    }
+    enforce_confirmation(
+        invocation,
+        policy=POLICY_PROMPT_OR_YES,
+        action=f"{kwargs['op']} set-aside lines of dataset {dataset_id}",
+    )
+    with open_service(invocation) as (service, auth):
+        data = service.call(_symbol(invocation), **kwargs)
+    return data, _meta(invocation, auth.workspace_id, project_id)
 
 
 def _read_dataset(invocation: Invocation) -> HandlerResult:

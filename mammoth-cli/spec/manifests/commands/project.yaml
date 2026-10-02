@@ -583,7 +583,7 @@ commands:
   - CT-PROJECT-NEEDS-ATTENTION-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: 'The rows of the Monitor Needs Attention tab for one project (the app has no workspace-wide list): pipeline_error, pending_pipeline, pending_data, checkpoint (needs approval), data_check (failed), each with view_id and the owning dataset_id; datasets lists each affected dataset once with its view_ids. Dataset-level action-needed items and pending retentions are not returned by the API and are not included. To delete the datasets behind the views, take dataset_id from datasets and run dataset delete or dataset bulk-delete (confirm first).'
+  known_restrictions: 'The rows of the Monitor Needs Attention tab for one project (the app has no workspace-wide list): pipeline_error, pending_pipeline, pending_data, checkpoint (needs approval), data_check (failed), each with view_id and the owning dataset_id, and needs_input (a file or dataset waiting for a person; action is unstructured_rows, ambiguous_date_format, password_required, sheet_selection_required or schema_mismatch); datasets lists each affected dataset once with its view_ids. Pending retentions are not returned by the API and are not included. To delete the datasets behind the views, take dataset_id from datasets and run dataset delete or dataset bulk-delete (confirm first).'
   reviewed_by: primary
   readback:
     command: project.needs-attention

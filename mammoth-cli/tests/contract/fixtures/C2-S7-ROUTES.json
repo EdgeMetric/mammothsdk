@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
   "task": "C2/S7 remaining-families",
-  "route_count": 112,
+  "route_count": 113,
   "families": {
     "activity": 2,
-    "agent": 13,
+    "agent": 14,
     "ai": 4,
     "automation": 8,
     "billing": 22,
@@ -514,6 +514,59 @@
         "method": "POST",
         "path": "/agents/sessions/{session_id}/runs/{run_id}/stop",
         "body": "none",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "agent.run.units.set",
+      "operation_id": "RegisterAgentRunUnits",
+      "sdk_symbol": "mammoth.api.agents.AgentsAPI.run_units_set",
+      "field_destinations": {
+        "run_id": {
+          "source": "positional",
+          "destination": "run_id"
+        },
+        "step": {
+          "source": "input",
+          "destination": "step",
+          "wire": "sdk_argument"
+        },
+        "kind": {
+          "source": "input",
+          "destination": "kind",
+          "wire": "sdk_argument"
+        },
+        "units": {
+          "source": "input",
+          "destination": "units",
+          "wire": "sdk_argument"
+        }
+      },
+      "context_destinations": {
+        "session_id": {
+          "source": "session_option",
+          "destination": "session_id"
+        }
+      },
+      "wire": {
+        "method": "POST",
+        "path": "/agents/sessions/{session_id}/runs/{run_id}/units",
+        "body": "json:AgentRunUnitsSetRequest",
         "checks": [
           "method",
           "path",

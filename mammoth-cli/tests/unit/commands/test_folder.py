@@ -53,7 +53,7 @@ def test_find_without_project_searches_every_visible_project(
         {"project_id": 1, "project_name": "P1", "id": 20, "name": "Reports 2024"},
         {"project_id": 2, "project_name": "P2", "id": 20, "name": "Reports 2024"},
     ]
-    assert "list_projects" in fake_service.calls
+    assert "list_all_projects" in fake_service.calls
     assert fake_service.call_log == [
         (_LIST, {"project_id": 1, "limit": 100}),
         (_LIST, {"project_id": 2, "limit": 100}),

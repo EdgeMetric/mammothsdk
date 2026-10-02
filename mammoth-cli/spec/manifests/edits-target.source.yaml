@@ -83,6 +83,7 @@ edits_target_commands:
 - data-app.update
 - data-app.upload
 - data-app.user.remove
+- dataset.broken-rows.resolve
 - dataset.bulk-delete
 - dataset.bulk-update
 - dataset.delete

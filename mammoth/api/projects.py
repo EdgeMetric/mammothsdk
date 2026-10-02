@@ -60,12 +60,36 @@ def _attention_pipeline_rows(pending: dict[str, Any]) -> _list[dict[str, Any]]:
     return rows
 
 
+def _attention_action_rows(pending: dict[str, Any]) -> _list[dict[str, Any]]:
+    """Files and datasets waiting for a person (``ds_action_needed_items``).
+
+    ``action`` is the web app's row title: ``unstructured_rows``, ``ambiguous_date_format``,
+    ``password_required``, ``sheet_selection_required`` or ``schema_mismatch``. Only a
+    dataset row carries its own ``dataset_id``; an upload still being read does not.
+    """
+    rows: _list[dict[str, Any]] = []
+    for item in pending.get("ds_action_needed_items") or []:
+        is_dataset = item.get("resource_type") == "datasource"
+        row = _attention_row(
+            "needs_input",
+            None,
+            action=(item.get("action_needed") or {}).get("type"),
+            name=item.get("name"),
+            resource_type=item.get("resource_type"),
+            append_to_dataset_id=item.get("append_to_ds_id"),
+            needs_review=item.get("needs_review", True),
+        )
+        row["dataset_id"] = item.get("id") if is_dataset else None
+        rows.append(row)
+    return rows
+
+
 def _attention_items(
     pending: dict[str, Any],
     checkpoints: _list[dict[str, Any]],
     data_checks: _list[dict[str, Any]],
 ) -> _list[dict[str, Any]]:
-    rows = _attention_pipeline_rows(pending)
+    rows = _attention_pipeline_rows(pending) + _attention_action_rows(pending)
     for dep in pending.get("pending_data_update_items") or []:
         if dep.get("data_update_pending"):
             rows.append(
@@ -120,7 +144,7 @@ def _attention_result(
     for item in items:
         counts[item["kind"]] = counts.get(item["kind"], 0) + 1
         found = view_map.get(item["view_id"]) if item["view_id"] is not None else None
-        item["dataset_id"] = found["dataset_id"] if found else None
+        item["dataset_id"] = found["dataset_id"] if found else item.get("dataset_id")
         if found:
             item["view_name"] = item["view_name"] or found["view_name"]
             item["dataset_name"] = item.get("dataset_name") or found["dataset_name"]
@@ -136,6 +160,11 @@ def _attention_result(
                 entry["view_ids"].append(item["view_id"])
         elif item["view_id"] is not None and item["view_id"] not in unresolved:
             unresolved.append(item["view_id"])
+        elif item["kind"] == "needs_input" and item["dataset_id"] is not None:
+            datasets.setdefault(
+                item["dataset_id"],
+                {"dataset_id": item["dataset_id"], "dataset_name": item["name"], "view_ids": []},
+            )
     return {
         "project_id": project_id,
         "items": items,
@@ -696,11 +725,14 @@ class ProjectsAPI:
           (one row per dependency; the web app groups JOIN/LOOKUP sources by destination).
         - ``checkpoint``: project checkpoints with status ``needs_approval`` and type ``approval``.
         - ``data_check``: project data checks with status ``failed``.
+        - ``needs_input``: ``ds_action_needed_items`` -- files and datasets waiting for a
+          person; ``action`` says which (``unstructured_rows``, ``ambiguous_date_format``,
+          ``password_required``, ``sheet_selection_required``, ``schema_mismatch``).
 
-        The web app also lists dataset-level ``ds_action_needed_items`` and pending
-        retentions; the v2 ``pending-changes`` route does not return them, so they are
-        not included. Each row carries ``view_id`` and the owning ``dataset_id`` (null when
-        the view is not found in the project), so a caller can act on the datasets.
+        The web app also lists pending retentions, which the v2 route does not return, so
+        they are not included. Each row carries ``view_id`` and the owning ``dataset_id``
+        (null when the view is not found in the project), so a caller can act on the
+        datasets.
 
         Args:
             project_id: ID of the project (must be a positive integer).

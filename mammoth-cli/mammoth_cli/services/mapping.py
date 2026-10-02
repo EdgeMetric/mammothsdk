@@ -238,6 +238,7 @@ def map_sdk_exception(
     profile: str | None = None,
     project_id: int | None = None,
     workspace_id: int | None = None,
+    non_member_project_id: int | None = None,
 ) -> CliError:
     """Map one SDK or transport failure to a typed, stable CLI outcome.
 
@@ -436,6 +437,20 @@ def map_sdk_exception(
                 hint="Check the resource id and scope.",
                 details=details,
                 request_id=request_id,
+            )
+        if status == 403 and non_member_project_id is not None:
+            return CliError(
+                code=CODE_AUTHORIZATION_REQUIRED,
+                message=f"You are not a member of project {non_member_project_id}.",
+                exit_status=EXIT_AUTH,
+                hint=(
+                    "Project lists show only the projects you belong to. Ask a project "
+                    "admin to add you; a workspace owner can see the project but cannot "
+                    "open it without being a member."
+                ),
+                details=details,
+                request_id=request_id,
+                authorization_required=True,
             )
         if status == 403:
             return CliError(

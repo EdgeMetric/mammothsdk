@@ -1,10 +1,10 @@
 # Command reference
 
-Generated from the reviewed command manifests for mammoth-cli 2.2.4.
+Generated from the reviewed command manifests for mammoth-cli 2.2.5.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
-Total commands: 595.
+Total commands: 597.
 
 ## activity
 
@@ -2475,6 +2475,17 @@ Total commands: 595.
 - Backing SDK: `mammoth.api.datasets.DatasetsAPI.get_unstructured_rows`
 - Agent example: `mammoth dataset broken-rows list 123`
 
+### `mammoth dataset broken-rows resolve`
+
+**Arguments**
+
+- `DATASET_ID` (int, required) — ID of the dataset.
+
+- Mutation class: `destructive`
+- Confirmation: `prompt_or_yes`
+- Backing SDK: `mammoth.api.datasets.DatasetsAPI.resolve_unstructured_rows`
+- Agent example: `mammoth dataset broken-rows resolve 123 --input '{"op": "add", "batch_id": 1, "rows": [{"sample_key": "Status"}]}'`
+
 ### `mammoth dataset bulk-delete`
 
 - Mutation class: `destructive`
@@ -2931,6 +2942,19 @@ Total commands: 595.
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.jobs.JobsAPI.wait_for_jobs`
 - Agent example: `mammoth job wait-many --input '{"job_ids": [1]}'`
+
+## link
+
+### `mammoth link`
+
+**Arguments**
+
+- `URL` (str, required) — A Mammoth web app address pasted by the user.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth_cli.commands.link.link`
+- Agent example: `mammoth link https://app.mammoth.io/workspaces/1/projects/2/data/datasets`
 
 ## log
 

@@ -506,6 +506,15 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
             example_value="2063664 - 1917815",
         ),
     ),
+    "link": (
+        PositionalSpec(
+            name="url",
+            type=str,
+            required=True,
+            help="A Mammoth web app address pasted by the user.",
+            example_value="https://app.mammoth.io/workspaces/1/projects/2/data/datasets",
+        ),
+    ),
     "capability.find": (
         PositionalSpec(
             name="query",

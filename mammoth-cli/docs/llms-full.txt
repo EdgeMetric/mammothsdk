@@ -556,6 +556,8 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth dataset batch-data 123 123
 - `mammoth dataset broken-rows list` [read/none] -> mammoth.api.datasets.DatasetsAPI.get_unstructured_rows
   example: mammoth dataset broken-rows list 123
+- `mammoth dataset broken-rows resolve` [destructive/prompt_or_yes] -> mammoth.api.datasets.DatasetsAPI.resolve_unstructured_rows
+  example: mammoth dataset broken-rows resolve 123 --input '{"op": "add", "batch_id": 1, "rows": [{"sample_key": "Status"}]}'
 - `mammoth dataset bulk-delete` [destructive/prompt_or_yes] -> mammoth.api.datasets.DatasetsAPI.bulk_delete
   example: mammoth dataset bulk-delete --input '{"dataset_ids": [456, 457]}'
 - `mammoth dataset bulk-update` [high_impact/confirm_target] -> mammoth.api.datasets.DatasetsAPI.bulk_update
@@ -664,6 +666,11 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth job wait 123
 - `mammoth job wait-many` [read/none] -> mammoth.api.jobs.JobsAPI.wait_for_jobs
   example: mammoth job wait-many --input '{"job_ids": [1]}'
+
+## link
+
+- `mammoth link` [read/none] -> mammoth_cli.commands.link.link
+  example: mammoth link https://app.mammoth.io/workspaces/1/projects/2/data/datasets
 
 ## log
 

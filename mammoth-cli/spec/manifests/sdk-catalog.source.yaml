@@ -2244,6 +2244,13 @@ sdk_methods:
   wait_policy: not_async
   pagination_policy: none
   openapi_operation_ids: []
+- sdk_symbol: mammoth.api.datasets.DatasetsAPI.resolve_unstructured_rows
+  canonical_command: dataset.broken-rows.resolve
+  alias_of: null
+  mutation_class: destructive
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids: []
 - sdk_symbol: mammoth.api.datasets.DatasetsAPI.interpretation_confirm
   canonical_command: dataset.interpretation.confirm
   alias_of: null
