@@ -6,13 +6,19 @@ does not establish broad CLI/SDK or release readiness.
 
 As of **2026-09-15**, this is the M0 inventory for audited product revision `303aebdd7c1be7a80967b2d975a79975119f6f30`. It records routed capabilities and unproven behavior; it does **not** claim production readiness or SOTA.
 
+The release matrix and the count paragraphs below were refreshed on **2026-10-02** against server `origin/master` at `600d78ef6b` (CLI 2.2.9, SDK 0.8.10). The M0 tier tables keep their original dates.
+
 The historical pinned M0 snapshot contains **445 operations across 287 paths**.
-The current release OpenAPI matrix is a separate superset with **528 operations
-across 355 paths**, split into **230 Core** and **298 Miscellaneous** operations.
+The current matrix is derived from the server spec pinned from `origin/master`
+at `600d78ef6b` (2026-10-02): **544 operations across 371 paths**, 545 rows
+(one row is a route the server removed). It splits into **230 Core**,
+**298 Miscellaneous** and **17 Unclassified** (new since the 2026-09-16 release
+spec) rows.
 The current matrix does not claim Full support or broad release readiness. Read
 the canonical [machine-readable release matrix](release-capability-matrix.json)
 for current counts; the pinned 445-operation inventory below is not the current
-release denominator.
+denominator. `python scripts/generate_release_capability_matrix.py --check` fails
+when the matrix no longer matches the server spec, the command manifests and the SDK.
 
 Machine-readable sources: [agent-capability-coverage.json](agent-capability-coverage.json), [release-capability-matrix.json](release-capability-matrix.json), and [agent-compatibility.json](agent-compatibility.json). The committed [machine-readable release matrix](release-capability-matrix.json) is the canonical repository inventory. Historical workbooks retain their evidence context; they are not a runtime dependency. `scripts/report_release_capability_drift.py` compares a candidate OpenAPI JSON by method/path and produces review-only additions, removals, and operation-ID-change queues. It does not implement routes or promote support.
 
@@ -45,9 +51,9 @@ boundary is intentionally unverified; this page makes no Full support claim.
 | `live-disposable-bounded` | 155 | Bounded disposable-project evidence class; not arbitrary-task qualification. |
 | `live-read-only-bounded` | 172 | Bounded read-only evidence class; mutation/recovery semantics remain open. |
 
-The CLI map contains **524 command records across 42 families**. Every record has a local manifest entry and a handler path/symbol that resolves (524/524); this is structural routing evidence only.
+The M0 CLI map contained **524 command records across 42 families**. Each had a local manifest entry and a handler path/symbol that resolves (524/524). This is structural routing evidence only. The command manifests now hold **633 command records across 45 files** (CLI 2.2.9).
 
-The pinned API snapshot has **445 operations**: 433 user operations map to commands, 11 are protocol-only, and 1 is an alias. The current release matrix is **528 operations / 355 paths**; the readiness workbook holds its row-level evidence and statuses. The public SDK manifest has **549 methods**; 496 have canonical command associations. The remaining 53 have explicit alias or reviewed SDK-only reasons.
+The pinned API snapshot has **445 operations**: 433 user operations map to commands, 11 are protocol-only, and 1 is an alias. The current matrix is **544 server operations / 371 paths** (545 rows); the readiness workbook holds its row-level evidence and statuses. Of the 545 rows, 504 map to a command and an SDK method. Two are aliases, 11 are protocol-only, 15 are internal-only, 1 is SDK-only, 11 are unmapped, and 1 is removed on the server. The public SDK manifest now has **657 methods** (SDK 0.8.10). Of these, 593 have canonical command associations. The remaining 64 have explicit alias or reviewed SDK-only reasons. The M0 figures of 549 methods and 496 associations are historical.
 
 ## Matrix workflow grouping
 

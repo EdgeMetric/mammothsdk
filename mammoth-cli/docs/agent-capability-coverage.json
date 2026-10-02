@@ -81,16 +81,21 @@
   "artifact": "mammoth-cli-agent-capability-coverage",
   "as_of": "2026-09-15",
   "current_release_matrix": {
-    "operations": 528,
-    "paths": 355,
+    "operations": 544,
+    "paths": 371,
+    "rows": 545,
     "core_operations": 230,
     "miscellaneous_operations": 298,
+    "unclassified_operations": 17,
+    "server_spec": "spec/openapi/master-20261002.json",
+    "server_sha": "600d78ef6b6c379029b3a1e4205658bc8e8e19c4",
     "support_status": {
-      "partial": 7,
-      "unassessed": 521,
-      "full": 0
+      "full": 1,
+      "partial": 261,
+      "not_supported": 2,
+      "unassessed": 281
     },
-    "note": "Current release matrix is distinct from this historical pinned M0 command inventory; counts are planning/evidence status, not broad support."
+    "note": "Derived by scripts/generate_release_capability_matrix.py from the pinned server spec, the command manifests and the SDK; counts are planning/evidence status, not broad support."
   },
   "audited_product_revision": "303aebdd7c1be7a80967b2d975a79975119f6f30",
   "authority_order": [
