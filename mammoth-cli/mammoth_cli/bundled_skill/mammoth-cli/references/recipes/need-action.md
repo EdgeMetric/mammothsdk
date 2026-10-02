@@ -58,3 +58,28 @@ mammoth view list DATASET_ID --project PROJECT_ID    # the new view, row_count s
 The new view is ready at once and takes transforms like any other (verified
 on release, 2026-09-24). Run `view create` only when `view list DATASET_ID`
 is empty, so that a retry does not add a second view.
+
+## A pasted link to a file with "Unstructured rows"
+
+The Monitor panel lists this as **Unstructured rows** ("header and data rows
+need mapping"): some lines of an uploaded file did not fit the dataset's
+columns and were set aside, so the dataset waits for a person. Turn the pasted
+address into ids first; it makes no request:
+
+```bash
+mammoth link 'https://app.mammoth.io/workspaces/1/projects/2/data/folders/3?selectedResourceId=4'
+```
+
+The folder and `selected_resource_id` in a link are resource ids, not dataset
+ids: find the dataset with `mammoth dataset find NAME`. Then read the set-aside
+lines and why each one does not fit (the first 100, with `row_count` the total):
+
+```bash
+mammoth dataset broken-rows list DATASET_ID --project PROJECT_ID
+```
+
+Fixing them is a step in the app, not a CLI command: open the dataset, choose
+**See all details**, edit each line to fit the columns and pick **Validate &
+Apply**, or discard the lines (or the file) there. Report the count and the
+reasons, and send the user to that step; do not tell them to open the Monitor
+item's link.

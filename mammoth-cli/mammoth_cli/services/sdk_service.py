@@ -24,7 +24,7 @@ from types import TracebackType
 from typing import Any
 
 from mammoth.client import MammothClient
-from mammoth.exceptions import MammothColumnError
+from mammoth.exceptions import MammothAPIError, MammothColumnError
 
 from mammoth_cli.context.resolver import ResolvedAuth
 from mammoth_cli.errors.envelope import (
@@ -225,7 +225,26 @@ class SdkMammothService:
                 profile=self._profile,
                 project_id=self._project_id,
                 workspace_id=self._workspace_id,
+                non_member_project_id=self._non_member_project(exc, kwargs),
             ) from exc
+
+    def _non_member_project(self, exc: Exception, kwargs: dict[str, Any]) -> int | None:
+        """The project a 403 was aimed at when the caller is not a member of it.
+
+        The API's 403 does not say why; the member-only project list does. One
+        extra read, made only on this error path, so the agent can tell a user
+        they are not in the project instead of "access denied".
+        """
+        if not (isinstance(exc, MammothAPIError) and exc.status_code == 403):
+            return None
+        project_id = kwargs.get("project_id") or self._project_id
+        if not isinstance(project_id, int):
+            return None
+        try:
+            members = self._run(self._client.projects.list_all())
+        except MammothAPIError:
+            return None
+        return None if any(p.get("id") == project_id for p in members) else project_id
 
     def _project_miss_error(self, exc: ValueError, project: Any) -> CliError | None:
         """Map ``ProjectsAPI.get``'s "Project ... not found" ValueError to not_found.

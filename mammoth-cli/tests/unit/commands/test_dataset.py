@@ -72,15 +72,14 @@ def test_find_without_project_searches_every_visible_project(
     }
     result, meta = dataset_cmd.dataset_find(_inv("dataset.find", extra_args=["sales"]))
     assert result["projects_searched"] == 2
-    assert result["projects_truncated"] is False
     assert result["matches"] == [
-        {"project_id": 1, "project_name": "P1", "id": 10, "name": "Sales Q1"},
-        {"project_id": 2, "project_name": "P2", "id": 10, "name": "Sales Q1"},
+        {"project_id": 1, "project_name": "P1", "id": 10, "name": "Sales Q1", "source": "unknown"},
+        {"project_id": 2, "project_name": "P2", "id": 10, "name": "Sales Q1", "source": "unknown"},
     ]
-    assert "list_projects" in fake_service.calls
+    assert "list_all_projects" in fake_service.calls
     assert fake_service.call_log == [
-        (_LIST_ALL, {"project_id": 1}),
-        (_LIST_ALL, {"project_id": 2}),
+        (_LIST_ALL, {"project_id": 1, "fields": DATASET_ROW_FIELDS}),
+        (_LIST_ALL, {"project_id": 2, "fields": DATASET_ROW_FIELDS}),
     ]
     assert meta["project_id"] is None
 
@@ -98,9 +97,15 @@ def test_find_with_project_restricts_to_one_project(fake_service: FakeMammothSer
     result, meta = dataset_cmd.dataset_find(_inv("dataset.find", project=42, extra_args=["sales"]))
     assert result["projects_searched"] == 1
     assert result["matches"] == [
-        {"project_id": 42, "project_name": "P42", "id": 10, "name": "Sales Q1"}
+        {
+            "project_id": 42,
+            "project_name": "P42",
+            "id": 10,
+            "name": "Sales Q1",
+            "source": "unknown",
+        }
     ]
-    assert fake_service.call_log == [(_LIST_ALL, {"project_id": 42})]
+    assert fake_service.call_log == [(_LIST_ALL, {"project_id": 42, "fields": DATASET_ROW_FIELDS})]
     assert meta["project_id"] == 42
 
 

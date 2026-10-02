@@ -1,0 +1,40 @@
+manifest_schema_version: 1
+commands:
+- command_id: link
+  command_path: link
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - name: url
+    type: str
+    required: true
+    metavar: URL
+    falls_back_to_field: null
+    help: A Mammoth web app address pasted by the user.
+  options: []
+  sdk_symbol: mammoth_cli.commands.link.link
+  sdk_conversion: Call mammoth_cli.commands.link.link with validated request fields.
+  request_model: LinkRequest
+  result_model: LinkResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: null
+  live_exemption_reason: Local, deterministic URL parsing; no network call.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth link URL --help
+  agent_example: mammoth link 'https://app.mammoth.io/workspaces/1/projects/2/data/folders/3?selectedResourceId=4'
+  unit_tests:
+  - UT-LINK
+  contract_tests:
+  - CT-LINK-S1-LOCAL
+  draft_test: null
+  undo_test: null
+  known_restrictions: Folder and selected ids in a link are web app resource ids, not
+    dataset or view ids; only /datasets/ID and /views/ID links carry those directly.
+  reviewed_by: primary

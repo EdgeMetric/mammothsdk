@@ -37,6 +37,7 @@ from mammoth_cli.services.listing import (
     fit_budget,
     name_hit,
     search_page,
+    source_of,
 )
 
 HandlerResult = tuple[Any, dict[str, Any]]
@@ -142,16 +143,9 @@ def _require_string_positional(invocation: Invocation, name: str) -> str:
     return str(invocation.extra_args[0])
 
 
-# The projects endpoint accepts at most limit=100 and exposes no offset, so a
-# cross-project search can see at most 100 projects; the result says when the
-# list was cut there.
-_MAX_PROJECTS_SEARCHED = 100
-
-
 def _visible_projects(service: Any) -> list[dict[str, Any]]:
-    """The projects the credential can see (at most ``_MAX_PROJECTS_SEARCHED``)."""
-    listing = service.list_projects(limit=_MAX_PROJECTS_SEARCHED)
-    return list(listing.get("projects", [])) if isinstance(listing, dict) else []
+    """Every project the credential is a member of, across all pages."""
+    return list(service.list_all_projects())
 
 
 def _find_in_projects(
@@ -163,7 +157,11 @@ def _find_in_projects(
         project_id = project.get("id")
         if project_id is None:
             continue
-        response = service.call("mammoth.api.datasets.DatasetsAPI.list_all", project_id=project_id)
+        response = service.call(
+            "mammoth.api.datasets.DatasetsAPI.list_all",
+            project_id=project_id,
+            fields=DATASET_ROW_FIELDS,
+        )
         datasets = response.get("datasets", []) if isinstance(response, dict) else []
         for dataset in datasets:
             name = dataset.get("name") if isinstance(dataset, dict) else None
@@ -173,6 +171,7 @@ def _find_in_projects(
                         "project_id": project_id,
                         "project_name": project.get("name"),
                         **name_hit(dataset),
+                        "source": source_of(dataset),
                     }
                 )
     return matches
@@ -231,7 +230,6 @@ def dataset_find(invocation: Invocation) -> HandlerResult:
     result: dict[str, Any] = {
         "matches": matches,
         "projects_searched": len(projects),
-        "projects_truncated": len(projects) >= _MAX_PROJECTS_SEARCHED,
     }
     if note := ambiguity_note(len(matches), name_substring):
         result["note"] = note

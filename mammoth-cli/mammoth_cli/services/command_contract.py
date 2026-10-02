@@ -393,6 +393,7 @@ _LOCAL_COMMANDS = frozenset(
         "project.check",
         "project.ensure",
         "folder.find",
+        "link",
         "log.path",
         "log.tail",
         "schema.find",

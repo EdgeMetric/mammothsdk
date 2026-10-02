@@ -39,6 +39,7 @@ from mammoth_cli.commands import external_key as external_key_cmd
 from mammoth_cli.commands import file as file_cmd
 from mammoth_cli.commands import folder as folder_cmd
 from mammoth_cli.commands import job as job_cmd
+from mammoth_cli.commands import link as link_cmd
 from mammoth_cli.commands import notification as notification_cmd
 from mammoth_cli.commands import parameter as parameter_cmd
 from mammoth_cli.commands import project as project_cmd
@@ -234,6 +235,7 @@ HANDLERS: dict[str, Handler] = {
     "log.tail": _log_tail,
     "doctor": doctor_cmd.doctor,
     "calc": calc_cmd.calc,
+    "link": link_cmd.link,
     "completion.show": completion_cmd.completion_show,
     "completion.install": completion_cmd.completion_install,
     "skill.agents-md.install": skill_cmd.skill_agents_md_install,

@@ -665,6 +665,11 @@ Sensitive structured input must come from a private file or pipe; never put secr
 - `mammoth job wait-many` [read/none] -> mammoth.api.jobs.JobsAPI.wait_for_jobs
   example: mammoth job wait-many --input '{"job_ids": [1]}'
 
+## link
+
+- `mammoth link` [read/none] -> mammoth_cli.commands.link.link
+  example: mammoth link 'https://app.mammoth.io/workspaces/1/projects/2/data/folders/3?selectedResourceId=4'
+
 ## log
 
 - `mammoth log path` [read/none] -> mammoth_cli.runtime.runlog.log_path
