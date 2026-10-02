@@ -338,17 +338,25 @@ class ProjectsAPI:
 
         Args:
             project_id: ID of the project.
-            user_ids: List of user IDs to remove.
+            user_ids: List of user IDs to remove (one DELETE per user).
             workspace_id: ID of the workspace (uses client default if not provided).
 
         Returns:
-            Dict with result.
+            Dict with the last removal's result.
+
+        Raises:
+            MammothValidationError: If ``user_ids`` is empty.
         """
+        if not user_ids:
+            raise MammothValidationError("user_ids must contain at least one user id.")
         ws = workspace_id or self._ws()
-        ids_str = ",".join(str(uid) for uid in user_ids)
-        return await self._client._request_json(
-            "DELETE", f"/workspaces/{ws}/projects/{project_id}/users", params={"ids": ids_str}
-        )
+        result: dict[str, Any] = {}
+        for uid in user_ids:
+            # The route takes ONE ``user_id`` query parameter per call.
+            result = await self._client._request_json(
+                "DELETE", f"/workspaces/{ws}/projects/{project_id}/users", params={"user_id": uid}
+            )
+        return result
 
     async def browse(
         self,

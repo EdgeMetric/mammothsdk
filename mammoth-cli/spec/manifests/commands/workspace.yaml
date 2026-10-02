@@ -270,6 +270,196 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+- command_id: workspace.invite.delete
+  command_path: workspace invite delete
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.workspaces.WorkspacesAPI.invite_delete
+  sdk_conversion: Call mammoth.api.workspaces.WorkspacesAPI.invite_delete with validated request fields.
+  request_model: WorkspaceInviteDeleteRequest
+  result_model: WorkspaceInviteDeleteResult
+  mutation_class: destructive
+  edits_target: true
+  confirmation: prompt_or_yes
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: Account or workspace mutation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth workspace invite delete --help
+  agent_example: 'mammoth workspace invite delete --input ''{"invite_ids": [1]}'''
+  unit_tests:
+  - UT-WORKSPACE-INVITE-DELETE
+  contract_tests:
+  - CT-WORKSPACE-INVITE-DELETE-HUMAN
+  - CT-WORKSPACE-INVITE-DELETE-JSON
+  - CT-WORKSPACE-INVITE-DELETE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Deletes pending invites for good and frees their seats. Take invite_ids from workspace invite list (a pending invite is not a workspace user; workspace user list never shows it).'
+  reviewed_by: primary
+  readback:
+    command: workspace.invite.list
+    ids: {}
+    kind: object
+- command_id: workspace.invite.list
+  command_path: workspace invite list
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.workspaces.WorkspacesAPI.invite_list
+  sdk_conversion: Call mammoth.api.workspaces.WorkspacesAPI.invite_list with validated request fields.
+  request_model: WorkspaceInviteListRequest
+  result_model: WorkspaceInviteListResult
+  mutation_class: read
+  edits_target: false
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-WORKSPACE-INVITE-LIST
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth workspace invite list --help
+  agent_example: 'mammoth workspace invite list'
+  unit_tests:
+  - UT-WORKSPACE-INVITE-LIST
+  contract_tests:
+  - CT-WORKSPACE-INVITE-LIST-HUMAN
+  - CT-WORKSPACE-INVITE-LIST-JSON
+  - CT-WORKSPACE-INVITE-LIST-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Lists pending invites with id, email, status, role and invited_at. Optional project_id keeps invites that grant a role on that project.'
+  reviewed_by: primary
+  readback:
+    command: workspace.invite.list
+    ids: {}
+    kind: object
+- command_id: workspace.invite.resend
+  command_path: workspace invite resend
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.workspaces.WorkspacesAPI.invite_resend
+  sdk_conversion: Call mammoth.api.workspaces.WorkspacesAPI.invite_resend with validated request fields.
+  request_model: WorkspaceInviteResendRequest
+  result_model: WorkspaceInviteResendResult
+  mutation_class: benign_mutation
+  edits_target: false
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: Account or workspace mutation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth workspace invite resend --help
+  agent_example: 'mammoth workspace invite resend --input ''{"invite_ids": [1]}'''
+  unit_tests:
+  - UT-WORKSPACE-INVITE-RESEND
+  contract_tests:
+  - CT-WORKSPACE-INVITE-RESEND-HUMAN
+  - CT-WORKSPACE-INVITE-RESEND-JSON
+  - CT-WORKSPACE-INVITE-RESEND-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Sends the invitation email again. Take invite_ids from workspace invite list.'
+  reviewed_by: primary
+  readback:
+    command: workspace.invite.list
+    ids: {}
+    kind: object
+- command_id: workspace.invite.revoke
+  command_path: workspace invite revoke
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.workspaces.WorkspacesAPI.invite_revoke
+  sdk_conversion: Call mammoth.api.workspaces.WorkspacesAPI.invite_revoke with validated request fields.
+  request_model: WorkspaceInviteRevokeRequest
+  result_model: WorkspaceInviteRevokeResult
+  mutation_class: destructive
+  edits_target: true
+  confirmation: prompt_or_yes
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: Account or workspace mutation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth workspace invite revoke --help
+  agent_example: 'mammoth workspace invite revoke --input ''{"invite_ids": [1]}'''
+  unit_tests:
+  - UT-WORKSPACE-INVITE-REVOKE
+  contract_tests:
+  - CT-WORKSPACE-INVITE-REVOKE-HUMAN
+  - CT-WORKSPACE-INVITE-REVOKE-JSON
+  - CT-WORKSPACE-INVITE-REVOKE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Marks pending invites revoked; the row stays. To remove an invite for good use workspace invite delete.'
+  reviewed_by: primary
+  readback:
+    command: workspace.invite.list
+    ids: {}
+    kind: object
+- command_id: workspace.invite.update-role
+  command_path: workspace invite update-role
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.workspaces.WorkspacesAPI.invite_role_update
+  sdk_conversion: Call mammoth.api.workspaces.WorkspacesAPI.invite_role_update with validated request fields.
+  request_model: WorkspaceInviteUpdateRoleRequest
+  result_model: WorkspaceInviteUpdateRoleResult
+  mutation_class: high_impact
+  edits_target: true
+  confirmation: yes_always
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: Account or workspace mutation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth workspace invite update-role --help
+  agent_example: 'mammoth workspace invite update-role --input ''{"invite_id": 1, "role": "sample"}'''
+  unit_tests:
+  - UT-WORKSPACE-INVITE-UPDATE-ROLE
+  contract_tests:
+  - CT-WORKSPACE-INVITE-UPDATE-ROLE-HUMAN
+  - CT-WORKSPACE-INVITE-UPDATE-ROLE-JSON
+  - CT-WORKSPACE-INVITE-UPDATE-ROLE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Changes the workspace role a pending invite will grant (workspace_member, workspace_admin, workspace_owner, workspace_guest).'
+  reviewed_by: primary
+  readback:
+    command: workspace.invite.list
+    ids: {}
+    kind: object
 - command_id: workspace.llm-task
   command_path: workspace llm-task
   disposition: command
@@ -623,7 +813,7 @@ commands:
   - CT-WORKSPACE-USER-LIST-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: 'Lists members only; a pending invite is not a member. For pending invites and their ids run workspace invite list. Optional project_id keeps one project''s members.'
   reviewed_by: primary
 - command_id: workspace.user.remove
   command_path: workspace user remove
@@ -703,7 +893,7 @@ commands:
   - CT-WORKSPACE-USER-REMOVE-BATCH-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: 'Removes members (ids) and/or pending invites (invite_ids). Take invite ids from workspace invite list; workspace invite delete is the dedicated command for invites.'
   reviewed_by: primary
   readback:
     command: workspace.user.list

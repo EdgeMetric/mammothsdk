@@ -1,10 +1,10 @@
 # Command reference
 
-Generated from the reviewed command manifests for mammoth-cli 2.2.1.
+Generated from the reviewed command manifests for mammoth-cli 2.2.2.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
-Total commands: 589.
+Total commands: 594.
 
 ## activity
 
@@ -5958,6 +5958,41 @@ Total commands: 589.
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.workspace.WorkspaceAPI.get`
 - Agent example: `mammoth workspace get 123`
+
+### `mammoth workspace invite delete`
+
+- Mutation class: `destructive`
+- Confirmation: `prompt_or_yes`
+- Backing SDK: `mammoth.api.workspaces.WorkspacesAPI.invite_delete`
+- Agent example: `mammoth workspace invite delete --input '{"invite_ids": [1]}'`
+
+### `mammoth workspace invite list`
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.workspaces.WorkspacesAPI.invite_list`
+- Agent example: `mammoth workspace invite list`
+
+### `mammoth workspace invite resend`
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.workspaces.WorkspacesAPI.invite_resend`
+- Agent example: `mammoth workspace invite resend --input '{"invite_ids": [1]}'`
+
+### `mammoth workspace invite revoke`
+
+- Mutation class: `destructive`
+- Confirmation: `prompt_or_yes`
+- Backing SDK: `mammoth.api.workspaces.WorkspacesAPI.invite_revoke`
+- Agent example: `mammoth workspace invite revoke --input '{"invite_ids": [1]}'`
+
+### `mammoth workspace invite update-role`
+
+- Mutation class: `high_impact`
+- Confirmation: `yes_always`
+- Backing SDK: `mammoth.api.workspaces.WorkspacesAPI.invite_role_update`
+- Agent example: `mammoth workspace invite update-role --input '{"invite_id": 1, "role": "sample"}'`
 
 ### `mammoth workspace list`
 
