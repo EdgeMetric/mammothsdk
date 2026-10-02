@@ -123,11 +123,32 @@ S7_ROUTE_INVENTORY = frozenset(
         "support.plan.get",
         "support.plan.list",
         "support.plan.self-serve-list",
+        "support.plan.storage-option.archive",
+        "support.plan.storage-option.create",
+        "support.plan.storage-option.list",
+        "support.plan.storage-option.update",
+        "support.plan.unarchive",
         "support.plan.update",
         "support.plan.update-storage-tiers",
         "support.subscription.create",
         "support.subscription.get",
         "support.subscription.update",
+        "support.template.audit",
+        "support.template.canvas",
+        "support.template.data-preview",
+        "support.template.discard",
+        "support.template.edit",
+        "support.template.export",
+        "support.template.export-dashboard",
+        "support.template.import",
+        "support.template.inspect",
+        "support.template.list",
+        "support.template.publish",
+        "support.template.retire",
+        "support.template.snapshots",
+        "support.template.thumbnail.clear",
+        "support.template.thumbnail.set",
+        "support.template.unpublish",
         "support.user.list-all",
         "support.user.register",
         "support.user.update",
@@ -196,7 +217,7 @@ def fake_family_service(monkeypatch: pytest.MonkeyPatch) -> FakeMammothService:
 def test_s7_inventory_and_ledger_are_exact() -> None:
     ledger = json.loads(LEDGER.read_text(encoding="utf-8"))
     assert S7_COMMANDS == S7_ROUTE_INVENTORY
-    assert ledger["route_count"] == 116
+    assert ledger["route_count"] == 137
     assert ledger["families"] == {
         "activity": 2,
         "agent": 14,
@@ -205,7 +226,7 @@ def test_s7_inventory_and_ledger_are_exact() -> None:
         "billing": 25,
         "client-app": 5,
         "schedule": 5,
-        "support": 45,
+        "support": 66,
         "user": 8,
     }
     assert {route["command_id"] for route in ledger["routes"]} == S7_ROUTE_INVENTORY

@@ -4,6 +4,25 @@ All notable changes to `mammoth-io` are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.9]
+
+### Added
+
+- Platform-admin `SupportAPI` methods (each route refuses callers without a
+  Mammoth staff role): `plan_unarchive`; `plan_storage_option_list`,
+  `plan_storage_option_create`, `plan_storage_option_update` and
+  `plan_storage_option_archive` for a plan's purchasable storage sizes; and the
+  curated template catalog: `template_list`, `template_edit`,
+  `template_data_preview`, `template_canvas`, `template_publish`,
+  `template_unpublish`, `template_retire`, `template_inspect`,
+  `template_import`, `template_thumbnail_set`, `template_thumbnail_clear`,
+  `template_discard`, `template_snapshots`, `template_audit`,
+  `template_export` and `template_export_dashboard`.
+- CLI: `support plan unarchive`, `support plan storage-option list|create|update|archive`,
+  `support template list|edit|data-preview|canvas|publish|unpublish|retire|inspect|import|discard|snapshots|audit|export|export-dashboard`
+  and `support template thumbnail set|clear`. Each help line starts with
+  "Platform admin only".
+
 ## [0.8.8]
 
 ### Added

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import base64
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -751,3 +752,213 @@ class TestWorkspaceUsers:
         api, _ = _make_api()
         with pytest.raises(MammothValidationError, match="workspace_id"):
             await api.workspace_user_transfer(0, 29, "workspace_admin")
+
+
+# ---------------------------------------------------------------------------
+# Plan unarchive and storage options
+# ---------------------------------------------------------------------------
+
+
+class TestPlanStorageOptions:
+    async def test_plan_unarchive(self):
+        api, mock_client = _make_api()
+        mock_client._request_json = AsyncMock(return_value={})
+        await api.plan_unarchive(5)
+        mock_client._request_json.assert_called_once_with("POST", "/subscription/plans/5/unarchive")
+
+    async def test_storage_option_list(self):
+        api, mock_client = _make_api()
+        mock_client._request_json = AsyncMock(return_value={"storage_options": []})
+        await api.plan_storage_option_list(5)
+        mock_client._request_json.assert_called_once_with(
+            "GET", "/subscription/plans/5/storage-options"
+        )
+
+    async def test_storage_option_create(self):
+        api, mock_client = _make_api()
+        mock_client._request_json = AsyncMock(return_value={})
+        await api.plan_storage_option_create(
+            5, storage_gb=100, monthly_price=20.0, annual_price=200
+        )
+        mock_client._request_json.assert_called_once_with(
+            "POST",
+            "/subscription/plans/5/storage-options",
+            json={"storage_gb": 100, "monthly_price": 20.0, "annual_price": 200},
+        )
+
+    async def test_storage_option_update_sends_only_given_fields(self):
+        api, mock_client = _make_api()
+        mock_client._request_json = AsyncMock(return_value={})
+        await api.plan_storage_option_update(5, 9, monthly_price=25.0)
+        mock_client._request_json.assert_called_once_with(
+            "PUT", "/subscription/plans/5/storage-options/9", json={"monthly_price": 25.0}
+        )
+
+    async def test_storage_option_update_without_fields_raises(self):
+        api, mock_client = _make_api()
+        mock_client._request_json = AsyncMock()
+        with pytest.raises(MammothValidationError, match="at least one"):
+            await api.plan_storage_option_update(5, 9)
+        mock_client._request_json.assert_not_called()
+
+    async def test_storage_option_archive(self):
+        api, mock_client = _make_api()
+        mock_client._request_json = AsyncMock(return_value={})
+        await api.plan_storage_option_archive(5, 9)
+        mock_client._request_json.assert_called_once_with(
+            "DELETE", "/subscription/plans/5/storage-options/9"
+        )
+
+    @pytest.mark.parametrize(
+        "call",
+        [
+            lambda api: api.plan_unarchive(0),
+            lambda api: api.plan_storage_option_list(-1),
+            lambda api: api.plan_storage_option_archive(5, 0),
+        ],
+    )
+    async def test_rejects_non_positive_ids(self, call):
+        api, mock_client = _make_api()
+        mock_client._request_json = AsyncMock()
+        with pytest.raises(MammothValidationError, match="positive integer"):
+            await call(api)
+        mock_client._request_json.assert_not_called()
+
+
+# ---------------------------------------------------------------------------
+# Curated template catalog (platform admin)
+# ---------------------------------------------------------------------------
+
+_ADMIN = "/dashboards/v3/templates/admin"
+
+
+class TestTemplateAdmin:
+    @pytest.mark.parametrize(
+        ("call", "method", "path"),
+        [
+            (lambda api: api.template_list(), "GET", _ADMIN),
+            (lambda api: api.template_data_preview("sales"), "GET", f"{_ADMIN}/sales/data-preview"),
+            (lambda api: api.template_canvas("sales"), "GET", f"{_ADMIN}/sales/canvas"),
+            (lambda api: api.template_publish("sales"), "POST", f"{_ADMIN}/sales/publish"),
+            (lambda api: api.template_unpublish("sales"), "POST", f"{_ADMIN}/sales/unpublish"),
+            (lambda api: api.template_retire("sales"), "POST", f"{_ADMIN}/sales/retire"),
+            (
+                lambda api: api.template_thumbnail_clear("sales"),
+                "DELETE",
+                f"{_ADMIN}/sales/thumbnail",
+            ),
+            (lambda api: api.template_discard("sales"), "DELETE", f"{_ADMIN}/sales"),
+            (lambda api: api.template_snapshots(), "GET", f"{_ADMIN}/snapshots"),
+            (lambda api: api.template_audit(), "GET", f"{_ADMIN}/audit"),
+        ],
+    )
+    async def test_route(self, call, method, path):
+        api, mock_client = _make_api()
+        mock_client._request_json = AsyncMock(return_value={})
+        await call(api)
+        mock_client._request_json.assert_called_once_with(method, path)
+
+    async def test_slug_is_path_encoded(self):
+        api, mock_client = _make_api()
+        mock_client._request_json = AsyncMock(return_value={})
+        await api.template_publish("a/b")
+        mock_client._request_json.assert_called_once_with("POST", f"{_ADMIN}/a%2Fb/publish")
+
+    async def test_empty_slug_raises(self):
+        api, mock_client = _make_api()
+        mock_client._request_json = AsyncMock()
+        with pytest.raises(MammothValidationError, match="slug"):
+            await api.template_retire("")
+        mock_client._request_json.assert_not_called()
+
+    async def test_edit_wraps_changes_in_params_and_keeps_nulls(self):
+        api, mock_client = _make_api()
+        mock_client._request_json = AsyncMock(return_value={})
+        await api.template_edit("sales", {"title": "Sales", "function": None})
+        mock_client._request_json.assert_called_once_with(
+            "PATCH", f"{_ADMIN}/sales", json={"params": {"title": "Sales", "function": None}}
+        )
+
+    async def test_edit_without_changes_raises(self):
+        api, mock_client = _make_api()
+        mock_client._request_json = AsyncMock()
+        with pytest.raises(MammothValidationError, match="changes"):
+            await api.template_edit("sales", {})
+        mock_client._request_json.assert_not_called()
+
+    async def test_inspect_uploads_the_bundle_as_data_part(self, tmp_path):
+        bundle = tmp_path / "sales.zip"
+        bundle.write_bytes(b"PK\x03\x04")
+        api, mock_client = _make_api()
+        mock_client._request_json = AsyncMock(return_value={"slug": "sales"})
+        await api.template_inspect(bundle)
+        args, kwargs = mock_client._request_json.call_args
+        assert args == ("POST", f"{_ADMIN}/inspect")
+        [(part, (name, _stream, media_type))] = kwargs["files"]
+        assert (part, name, media_type) == ("data", "sales.zip", "application/zip")
+
+    async def test_import_binds_dataset(self, tmp_path):
+        bundle = tmp_path / "sales.zip"
+        bundle.write_bytes(b"PK\x03\x04")
+        api, mock_client = _make_api()
+        mock_client._request_json = AsyncMock(return_value={})
+        await api.template_import(bundle, dataset="Orders")
+        args, kwargs = mock_client._request_json.call_args
+        assert args == ("POST", f"{_ADMIN}/import")
+        assert kwargs["params"] == {"dataset": "Orders"}
+
+    async def test_import_without_dataset_sends_no_query(self, tmp_path):
+        bundle = tmp_path / "sales.zip"
+        bundle.write_bytes(b"PK\x03\x04")
+        api, mock_client = _make_api()
+        mock_client._request_json = AsyncMock(return_value={})
+        await api.template_import(bundle)
+        assert mock_client._request_json.call_args.kwargs["params"] is None
+
+    async def test_import_missing_file_raises(self, tmp_path):
+        api, mock_client = _make_api()
+        mock_client._request_json = AsyncMock()
+        with pytest.raises(MammothValidationError, match="File not found"):
+            await api.template_import(tmp_path / "absent.zip")
+        mock_client._request_json.assert_not_called()
+
+    async def test_thumbnail_set_uploads_the_image(self, tmp_path):
+        image = tmp_path / "card.png"
+        image.write_bytes(b"\x89PNG\r\n\x1a\n")
+        api, mock_client = _make_api()
+        mock_client._request_json = AsyncMock(return_value={})
+        await api.template_thumbnail_set("sales", image)
+        args, kwargs = mock_client._request_json.call_args
+        assert args == ("PUT", f"{_ADMIN}/sales/thumbnail")
+        assert kwargs["files"][0][0] == "data"
+
+    async def test_export_writes_the_zip(self, tmp_path):
+        api, mock_client = _make_api()
+        mock_client._request_binary = AsyncMock(
+            return_value={"content_base64": base64.b64encode(b"PK-zip").decode()}
+        )
+        out = await api.template_export("sales", output_path=tmp_path / "s.zip", with_data=True)
+        mock_client._request_binary.assert_called_once_with(
+            "GET", f"{_ADMIN}/sales/export", params={"data": "1"}
+        )
+        assert out.read_bytes() == b"PK-zip"
+
+    async def test_export_dashboard_passes_slug_and_data_flag(self, tmp_path):
+        api, mock_client = _make_api()
+        mock_client._request_binary = AsyncMock(
+            return_value={"content_base64": base64.b64encode(b"PK").decode()}
+        )
+        out = await api.template_export_dashboard(
+            42, "my-board", output_path=tmp_path / "b.zip", with_data=False
+        )
+        mock_client._request_binary.assert_called_once_with(
+            "GET", f"{_ADMIN}/dashboards/42/export", params={"slug": "my-board", "data": "0"}
+        )
+        assert out == tmp_path / "b.zip"
+
+    async def test_export_dashboard_requires_slug(self):
+        api, mock_client = _make_api()
+        mock_client._request_binary = AsyncMock()
+        with pytest.raises(MammothValidationError, match="slug"):
+            await api.template_export_dashboard(42, "")
+        mock_client._request_binary.assert_not_called()

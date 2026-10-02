@@ -1976,3 +1976,912 @@ commands:
     ids:
       workspace_id: positional.0
     kind: object
+- command_id: support.plan.unarchive
+  command_path: support plan unarchive
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - &id001
+    name: plan_id
+    type: int
+    required: true
+    metavar: PLAN_ID
+    falls_back_to_field: null
+    help: ID of the plan.
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.plan_unarchive
+  sdk_conversion: Call mammoth.api.support.SupportAPI.plan_unarchive with validated request fields.
+  request_model: SupportPlanUnarchiveRequest
+  result_model: SupportPlanUnarchiveResult
+  mutation_class: high_impact
+  edits_target: true
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: Platform-admin operation on shared catalog or billing configuration; no disposable
+    fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support plan unarchive PLAN_ID --help
+  agent_example: mammoth support plan unarchive 123
+  unit_tests:
+  - UT-SUPPORT-PLAN-UNARCHIVE
+  contract_tests:
+  - CT-SUPPORT-PLAN-UNARCHIVE-HUMAN
+  - CT-SUPPORT-PLAN-UNARCHIVE-JSON
+  - CT-SUPPORT-PLAN-UNARCHIVE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Platform admin only (Mammoth staff role); refused for every other user. Unarchives
+    a plan archived with support plan archive.
+  reviewed_by: primary
+  readback:
+    command: support.plan.get
+    ids:
+      plan_id: positional.0
+    kind: object
+- command_id: support.plan.storage-option.list
+  command_path: support plan storage-option list
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - *id001
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.plan_storage_option_list
+  sdk_conversion: Call mammoth.api.support.SupportAPI.plan_storage_option_list with validated request
+    fields.
+  request_model: SupportPlanStorageOptionListRequest
+  result_model: SupportPlanStorageOptionListResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: single_page
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Platform-admin operation on shared catalog or billing configuration; no disposable
+    fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support plan storage-option list PLAN_ID --help
+  agent_example: mammoth support plan storage-option list 123
+  unit_tests:
+  - UT-SUPPORT-PLAN-STORAGE-OPTION-LIST
+  contract_tests:
+  - CT-SUPPORT-PLAN-STORAGE-OPTION-LIST-HUMAN
+  - CT-SUPPORT-PLAN-STORAGE-OPTION-LIST-JSON
+  - CT-SUPPORT-PLAN-STORAGE-OPTION-LIST-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Platform admin only (Mammoth staff role); refused for every other user. Every purchasable
+    storage size of the plan, archived ones included.
+  reviewed_by: primary
+  readback:
+    command: support.plan.storage-option.list
+    ids: {}
+    kind: object
+- command_id: support.plan.storage-option.create
+  command_path: support plan storage-option create
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - *id001
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.plan_storage_option_create
+  sdk_conversion: Call mammoth.api.support.SupportAPI.plan_storage_option_create with validated request
+    fields.
+  request_model: SupportPlanStorageOptionCreateRequest
+  result_model: SupportPlanStorageOptionCreateResult
+  mutation_class: high_impact
+  edits_target: true
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: Platform-admin operation on shared catalog or billing configuration; no disposable
+    fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support plan storage-option create PLAN_ID --help
+  agent_example: 'mammoth support plan storage-option create 123 --input ''{"storage_gb": 1, "monthly_price": 1.0, "annual_price": 1.0}'''
+  unit_tests:
+  - UT-SUPPORT-PLAN-STORAGE-OPTION-CREATE
+  contract_tests:
+  - CT-SUPPORT-PLAN-STORAGE-OPTION-CREATE-HUMAN
+  - CT-SUPPORT-PLAN-STORAGE-OPTION-CREATE-JSON
+  - CT-SUPPORT-PLAN-STORAGE-OPTION-CREATE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Platform admin only (Mammoth staff role); refused for every other user. Adds a purchasable
+    storage size to an inline-pricing plan. storage_gb is the TOTAL allocation, not an increment; prices
+    are the monthly and annual add on top of the plan price.
+  reviewed_by: primary
+  readback:
+    command: support.plan.storage-option.list
+    ids:
+      plan_id: positional.0
+    kind: object
+- command_id: support.plan.storage-option.update
+  command_path: support plan storage-option update
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - *id001
+  - &id002
+    name: option_id
+    type: int
+    required: true
+    metavar: OPTION_ID
+    falls_back_to_field: null
+    help: ID of the option.
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.plan_storage_option_update
+  sdk_conversion: Call mammoth.api.support.SupportAPI.plan_storage_option_update with validated request
+    fields.
+  request_model: SupportPlanStorageOptionUpdateRequest
+  result_model: SupportPlanStorageOptionUpdateResult
+  mutation_class: high_impact
+  edits_target: true
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: Platform-admin operation on shared catalog or billing configuration; no disposable
+    fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support plan storage-option update PLAN_ID OPTION_ID --help
+  agent_example: mammoth support plan storage-option update 123 123
+  unit_tests:
+  - UT-SUPPORT-PLAN-STORAGE-OPTION-UPDATE
+  contract_tests:
+  - CT-SUPPORT-PLAN-STORAGE-OPTION-UPDATE-HUMAN
+  - CT-SUPPORT-PLAN-STORAGE-OPTION-UPDATE-JSON
+  - CT-SUPPORT-PLAN-STORAGE-OPTION-UPDATE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Platform admin only (Mammoth staff role); refused for every other user. Re-prices
+    or resizes one storage option; send at least one of storage_gb, monthly_price, annual_price. Confirm
+    with the option id.
+  reviewed_by: primary
+  readback:
+    command: support.plan.storage-option.list
+    ids:
+      plan_id: positional.0
+    kind: object
+- command_id: support.plan.storage-option.archive
+  command_path: support plan storage-option archive
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - *id001
+  - *id002
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.plan_storage_option_archive
+  sdk_conversion: Call mammoth.api.support.SupportAPI.plan_storage_option_archive with validated request
+    fields.
+  request_model: SupportPlanStorageOptionArchiveRequest
+  result_model: SupportPlanStorageOptionArchiveResult
+  mutation_class: high_impact
+  edits_target: true
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: Platform-admin operation on shared catalog or billing configuration; no disposable
+    fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support plan storage-option archive PLAN_ID OPTION_ID --help
+  agent_example: mammoth support plan storage-option archive 123 123
+  unit_tests:
+  - UT-SUPPORT-PLAN-STORAGE-OPTION-ARCHIVE
+  contract_tests:
+  - CT-SUPPORT-PLAN-STORAGE-OPTION-ARCHIVE-HUMAN
+  - CT-SUPPORT-PLAN-STORAGE-OPTION-ARCHIVE-JSON
+  - CT-SUPPORT-PLAN-STORAGE-OPTION-ARCHIVE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Platform admin only (Mammoth staff role); refused for every other user. Retires
+    the option so it can no longer be chosen; never deleted, subscriptions billed at that size keep it.
+    Confirm with the option id.
+  reviewed_by: primary
+  readback:
+    command: support.plan.storage-option.list
+    ids:
+      plan_id: positional.0
+    kind: object
+- command_id: support.template.list
+  command_path: support template list
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.template_list
+  sdk_conversion: Call mammoth.api.support.SupportAPI.template_list with validated request fields.
+  request_model: SupportTemplateListRequest
+  result_model: SupportTemplateListResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: single_page
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Platform-admin operation on shared catalog or billing configuration; no disposable
+    fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support template list --help
+  agent_example: mammoth support template list
+  unit_tests:
+  - UT-SUPPORT-TEMPLATE-LIST
+  contract_tests:
+  - CT-SUPPORT-TEMPLATE-LIST-HUMAN
+  - CT-SUPPORT-TEMPLATE-LIST-JSON
+  - CT-SUPPORT-TEMPLATE-LIST-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Platform admin only (Mammoth staff role); refused for every other user. Every curated
+    template, drafts and broken rows included, worst first, each with what is wrong and the action that
+    fixes it.
+  reviewed_by: primary
+  readback:
+    command: support.template.list
+    ids: {}
+    kind: object
+- command_id: support.template.edit
+  command_path: support template edit
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - &id003
+    name: slug
+    type: str
+    required: true
+    metavar: SLUG
+    falls_back_to_field: null
+    help: Curated template slug.
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.template_edit
+  sdk_conversion: Call mammoth.api.support.SupportAPI.template_edit with validated request fields.
+  request_model: SupportTemplateEditRequest
+  result_model: SupportTemplateEditResult
+  mutation_class: high_impact
+  edits_target: true
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: Platform-admin operation on shared catalog or billing configuration; no disposable
+    fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support template edit SLUG --help
+  agent_example: 'mammoth support template edit sample --input ''{"changes": {"sample_key": "Status"}}'''
+  unit_tests:
+  - UT-SUPPORT-TEMPLATE-EDIT
+  contract_tests:
+  - CT-SUPPORT-TEMPLATE-EDIT-HUMAN
+  - CT-SUPPORT-TEMPLATE-EDIT-JSON
+  - CT-SUPPORT-TEMPLATE-EDIT-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Platform admin only (Mammoth staff role); refused for every other user. Edits a
+    curated template''s filing: changes holds title, description, use_case, function, industry (list)
+    or sort_order; null clears a field. Optional base_version makes it conditional (409 when the row moved).
+    notes says what changes for customers.'
+  reviewed_by: primary
+  readback:
+    command: support.template.list
+    ids: {}
+    kind: object
+- command_id: support.template.data-preview
+  command_path: support template data-preview
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - *id003
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.template_data_preview
+  sdk_conversion: Call mammoth.api.support.SupportAPI.template_data_preview with validated request fields.
+  request_model: SupportTemplateDataPreviewRequest
+  result_model: SupportTemplateDataPreviewResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Platform-admin operation on shared catalog or billing configuration; no disposable
+    fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support template data-preview SLUG --help
+  agent_example: mammoth support template data-preview sample
+  unit_tests:
+  - UT-SUPPORT-TEMPLATE-DATA-PREVIEW
+  contract_tests:
+  - CT-SUPPORT-TEMPLATE-DATA-PREVIEW-HUMAN
+  - CT-SUPPORT-TEMPLATE-DATA-PREVIEW-JSON
+  - CT-SUPPORT-TEMPLATE-DATA-PREVIEW-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Platform admin only (Mammoth staff role); refused for every other user. Up to 50
+    rows of the data the template opens on; capped says whether there are more.
+  reviewed_by: primary
+  readback:
+    command: support.template.data-preview
+    ids: {}
+    kind: object
+- command_id: support.template.canvas
+  command_path: support template canvas
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - *id003
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.template_canvas
+  sdk_conversion: Call mammoth.api.support.SupportAPI.template_canvas with validated request fields.
+  request_model: SupportTemplateCanvasRequest
+  result_model: SupportTemplateCanvasResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Platform-admin operation on shared catalog or billing configuration; no disposable
+    fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support template canvas SLUG --help
+  agent_example: mammoth support template canvas sample
+  unit_tests:
+  - UT-SUPPORT-TEMPLATE-CANVAS
+  contract_tests:
+  - CT-SUPPORT-TEMPLATE-CANVAS-HUMAN
+  - CT-SUPPORT-TEMPLATE-CANVAS-JSON
+  - CT-SUPPORT-TEMPLATE-CANVAS-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Platform admin only (Mammoth staff role); refused for every other user. The template's
+    canvas with its baked plan and specs, drafts included.
+  reviewed_by: primary
+  readback:
+    command: support.template.canvas
+    ids: {}
+    kind: object
+- command_id: support.template.publish
+  command_path: support template publish
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - *id003
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.template_publish
+  sdk_conversion: Call mammoth.api.support.SupportAPI.template_publish with validated request fields.
+  request_model: SupportTemplatePublishRequest
+  result_model: SupportTemplatePublishResult
+  mutation_class: high_impact
+  edits_target: true
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: Platform-admin operation on shared catalog or billing configuration; no disposable
+    fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support template publish SLUG --help
+  agent_example: mammoth support template publish sample
+  unit_tests:
+  - UT-SUPPORT-TEMPLATE-PUBLISH
+  contract_tests:
+  - CT-SUPPORT-TEMPLATE-PUBLISH-HUMAN
+  - CT-SUPPORT-TEMPLATE-PUBLISH-JSON
+  - CT-SUPPORT-TEMPLATE-PUBLISH-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Platform admin only (Mammoth staff role); refused for every other user. Takes a
+    curated draft live in every customer's gallery. Refused, with nothing published, when the template
+    fails on its own data.
+  reviewed_by: primary
+  readback:
+    command: support.template.list
+    ids: {}
+    kind: object
+- command_id: support.template.unpublish
+  command_path: support template unpublish
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - *id003
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.template_unpublish
+  sdk_conversion: Call mammoth.api.support.SupportAPI.template_unpublish with validated request fields.
+  request_model: SupportTemplateUnpublishRequest
+  result_model: SupportTemplateUnpublishResult
+  mutation_class: high_impact
+  edits_target: true
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: Platform-admin operation on shared catalog or billing configuration; no disposable
+    fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support template unpublish SLUG --help
+  agent_example: mammoth support template unpublish sample
+  unit_tests:
+  - UT-SUPPORT-TEMPLATE-UNPUBLISH
+  contract_tests:
+  - CT-SUPPORT-TEMPLATE-UNPUBLISH-HUMAN
+  - CT-SUPPORT-TEMPLATE-UNPUBLISH-JSON
+  - CT-SUPPORT-TEMPLATE-UNPUBLISH-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Platform admin only (Mammoth staff role); refused for every other user. Returns
+    a live or retired curated template to draft; the board, canvas and row survive.
+  reviewed_by: primary
+  readback:
+    command: support.template.list
+    ids: {}
+    kind: object
+- command_id: support.template.retire
+  command_path: support template retire
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - *id003
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.template_retire
+  sdk_conversion: Call mammoth.api.support.SupportAPI.template_retire with validated request fields.
+  request_model: SupportTemplateRetireRequest
+  result_model: SupportTemplateRetireResult
+  mutation_class: high_impact
+  edits_target: true
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: Platform-admin operation on shared catalog or billing configuration; no disposable
+    fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support template retire SLUG --help
+  agent_example: mammoth support template retire sample
+  unit_tests:
+  - UT-SUPPORT-TEMPLATE-RETIRE
+  contract_tests:
+  - CT-SUPPORT-TEMPLATE-RETIRE-HUMAN
+  - CT-SUPPORT-TEMPLATE-RETIRE-JSON
+  - CT-SUPPORT-TEMPLATE-RETIRE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Platform admin only (Mammoth staff role); refused for every other user. Keeps the
+    row but stops the catalog offering or auditing it; reversible with support template unpublish.
+  reviewed_by: primary
+  readback:
+    command: support.template.list
+    ids: {}
+    kind: object
+- command_id: support.template.inspect
+  command_path: support template inspect
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - &id004
+    name: file
+    type: str
+    required: true
+    metavar: FILE
+    falls_back_to_field: null
+    help: Path to a local template file (.zip).
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.template_inspect
+  sdk_conversion: Call mammoth.api.support.SupportAPI.template_inspect with validated request fields.
+  request_model: SupportTemplateInspectRequest
+  result_model: SupportTemplateInspectResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Platform-admin operation on shared catalog or billing configuration; no disposable
+    fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support template inspect FILE --help
+  agent_example: mammoth support template inspect template.zip
+  unit_tests:
+  - UT-SUPPORT-TEMPLATE-INSPECT
+  contract_tests:
+  - CT-SUPPORT-TEMPLATE-INSPECT-HUMAN
+  - CT-SUPPORT-TEMPLATE-INSPECT-JSON
+  - CT-SUPPORT-TEMPLATE-INSPECT-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Platform admin only (Mammoth staff role); refused for every other user. Reads a
+    template file without importing it: what it needs, whether it carries data and a picture, and whether
+    the catalog already has it. Writes nothing. The file comes from the local disk.'
+  reviewed_by: primary
+  readback:
+    command: support.template.inspect
+    ids: {}
+    kind: object
+- command_id: support.template.import
+  command_path: support template import
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - *id004
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.template_import
+  sdk_conversion: Call mammoth.api.support.SupportAPI.template_import with validated request fields.
+  request_model: SupportTemplateImportRequest
+  result_model: SupportTemplateImportResult
+  mutation_class: high_impact
+  edits_target: false
+  confirmation: yes_always
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: Platform-admin operation on shared catalog or billing configuration; no disposable
+    fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support template import FILE --help
+  agent_example: mammoth support template import template.zip
+  unit_tests:
+  - UT-SUPPORT-TEMPLATE-IMPORT
+  contract_tests:
+  - CT-SUPPORT-TEMPLATE-IMPORT-HUMAN
+  - CT-SUPPORT-TEMPLATE-IMPORT-JSON
+  - CT-SUPPORT-TEMPLATE-IMPORT-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Platform admin only (Mammoth staff role); refused for every other user. Imports
+    a template file as a curated DRAFT (not published); an existing slug is updated in place. dataset
+    names the data to bind a file that carries none. Inspect it first.
+  reviewed_by: primary
+  readback:
+    command: support.template.list
+    ids: {}
+    kind: object
+- command_id: support.template.thumbnail.set
+  command_path: support template thumbnail set
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - *id003
+  - name: file
+    type: str
+    required: true
+    metavar: FILE
+    falls_back_to_field: null
+    help: Path to a local PNG, JPEG or WebP image (1 MB at most).
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.template_thumbnail_set
+  sdk_conversion: Call mammoth.api.support.SupportAPI.template_thumbnail_set with validated request fields.
+  request_model: SupportTemplateThumbnailSetRequest
+  result_model: SupportTemplateThumbnailSetResult
+  mutation_class: high_impact
+  edits_target: true
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: Platform-admin operation on shared catalog or billing configuration; no disposable
+    fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support template thumbnail set SLUG FILE --help
+  agent_example: mammoth support template thumbnail set sample card.png
+  unit_tests:
+  - UT-SUPPORT-TEMPLATE-THUMBNAIL-SET
+  contract_tests:
+  - CT-SUPPORT-TEMPLATE-THUMBNAIL-SET-HUMAN
+  - CT-SUPPORT-TEMPLATE-THUMBNAIL-SET-JSON
+  - CT-SUPPORT-TEMPLATE-THUMBNAIL-SET-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Platform admin only (Mammoth staff role); refused for every other user. Uploads
+    or replaces a curated template''s picture: PNG, JPEG or WebP read from its content, 1 MB at most.'
+  reviewed_by: primary
+  readback:
+    command: support.template.list
+    ids: {}
+    kind: object
+- command_id: support.template.thumbnail.clear
+  command_path: support template thumbnail clear
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - *id003
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.template_thumbnail_clear
+  sdk_conversion: Call mammoth.api.support.SupportAPI.template_thumbnail_clear with validated request
+    fields.
+  request_model: SupportTemplateThumbnailClearRequest
+  result_model: SupportTemplateThumbnailClearResult
+  mutation_class: high_impact
+  edits_target: true
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: Platform-admin operation on shared catalog or billing configuration; no disposable
+    fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support template thumbnail clear SLUG --help
+  agent_example: mammoth support template thumbnail clear sample
+  unit_tests:
+  - UT-SUPPORT-TEMPLATE-THUMBNAIL-CLEAR
+  contract_tests:
+  - CT-SUPPORT-TEMPLATE-THUMBNAIL-CLEAR-HUMAN
+  - CT-SUPPORT-TEMPLATE-THUMBNAIL-CLEAR-JSON
+  - CT-SUPPORT-TEMPLATE-THUMBNAIL-CLEAR-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Platform admin only (Mammoth staff role); refused for every other user. Removes
+    a curated template's picture; its card falls back to the og-card.
+  reviewed_by: primary
+  readback:
+    command: support.template.list
+    ids: {}
+    kind: object
+- command_id: support.template.discard
+  command_path: support template discard
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - *id003
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.template_discard
+  sdk_conversion: Call mammoth.api.support.SupportAPI.template_discard with validated request fields.
+  request_model: SupportTemplateDiscardRequest
+  result_model: SupportTemplateDiscardResult
+  mutation_class: destructive
+  edits_target: true
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: Platform-admin operation on shared catalog or billing configuration; no disposable
+    fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support template discard SLUG --help
+  agent_example: mammoth support template discard sample
+  unit_tests:
+  - UT-SUPPORT-TEMPLATE-DISCARD
+  contract_tests:
+  - CT-SUPPORT-TEMPLATE-DISCARD-HUMAN
+  - CT-SUPPORT-TEMPLATE-DISCARD-JSON
+  - CT-SUPPORT-TEMPLATE-DISCARD-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Platform admin only (Mammoth staff role); refused for every other user. Permanently
+    removes a curated DRAFT, its preview board and its data (if no other template shares it). Refused
+    for a live template: unpublish or retire it instead.'
+  reviewed_by: primary
+  readback:
+    command: support.template.list
+    ids: {}
+    kind: object
+- command_id: support.template.snapshots
+  command_path: support template snapshots
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.template_snapshots
+  sdk_conversion: Call mammoth.api.support.SupportAPI.template_snapshots with validated request fields.
+  request_model: SupportTemplateSnapshotsRequest
+  result_model: SupportTemplateSnapshotsResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: single_page
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Platform-admin operation on shared catalog or billing configuration; no disposable
+    fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support template snapshots --help
+  agent_example: mammoth support template snapshots
+  unit_tests:
+  - UT-SUPPORT-TEMPLATE-SNAPSHOTS
+  contract_tests:
+  - CT-SUPPORT-TEMPLATE-SNAPSHOTS-HUMAN
+  - CT-SUPPORT-TEMPLATE-SNAPSHOTS-JSON
+  - CT-SUPPORT-TEMPLATE-SNAPSHOTS-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Platform admin only (Mammoth staff role); refused for every other user. Every stored
+    dataset the template catalog holds (curated and saved templates), and the templates holding none.
+  reviewed_by: primary
+  readback:
+    command: support.template.snapshots
+    ids: {}
+    kind: object
+- command_id: support.template.audit
+  command_path: support template audit
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.template_audit
+  sdk_conversion: Call mammoth.api.support.SupportAPI.template_audit with validated request fields.
+  request_model: SupportTemplateAuditRequest
+  result_model: SupportTemplateAuditResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Platform-admin operation on shared catalog or billing configuration; no disposable
+    fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support template audit --help
+  agent_example: mammoth support template audit
+  unit_tests:
+  - UT-SUPPORT-TEMPLATE-AUDIT
+  contract_tests:
+  - CT-SUPPORT-TEMPLATE-AUDIT-HUMAN
+  - CT-SUPPORT-TEMPLATE-AUDIT-JSON
+  - CT-SUPPORT-TEMPLATE-AUDIT-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Platform admin only (Mammoth staff role); refused for every other user. Re-runs
+    every curated-catalog gate: faults with remedies, checked, and curated entries never seeded (missing).
+    Read-only.'
+  reviewed_by: primary
+  readback:
+    command: support.template.audit
+    ids: {}
+    kind: object
+- command_id: support.template.export
+  command_path: support template export
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - *id003
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.template_export
+  sdk_conversion: Call mammoth.api.support.SupportAPI.template_export with validated request fields.
+  request_model: SupportTemplateExportRequest
+  result_model: SupportTemplateExportResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Platform-admin operation on shared catalog or billing configuration; no disposable
+    fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support template export SLUG --help
+  agent_example: mammoth support template export sample
+  unit_tests:
+  - UT-SUPPORT-TEMPLATE-EXPORT
+  contract_tests:
+  - CT-SUPPORT-TEMPLATE-EXPORT-HUMAN
+  - CT-SUPPORT-TEMPLATE-EXPORT-JSON
+  - CT-SUPPORT-TEMPLATE-EXPORT-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Platform admin only (Mammoth staff role); refused for every other user. Downloads
+    a curated template as a .zip template file (default <slug>.zip); with_data also packages a capped
+    copy of its rows.
+  reviewed_by: primary
+  readback:
+    command: support.template.export
+    ids: {}
+    kind: object
+- command_id: support.template.export-dashboard
+  command_path: support template export-dashboard
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - name: dashboard_id
+    type: int
+    required: true
+    metavar: DASHBOARD_ID
+    falls_back_to_field: null
+    help: ID of the dashboard.
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.template_export_dashboard
+  sdk_conversion: Call mammoth.api.support.SupportAPI.template_export_dashboard with validated request
+    fields.
+  request_model: SupportTemplateExportDashboardRequest
+  result_model: SupportTemplateExportDashboardResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Platform-admin operation on shared catalog or billing configuration; no disposable
+    fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support template export-dashboard DASHBOARD_ID --help
+  agent_example: 'mammoth support template export-dashboard 123 --input ''{"slug": "sample"}'''
+  unit_tests:
+  - UT-SUPPORT-TEMPLATE-EXPORT-DASHBOARD
+  contract_tests:
+  - CT-SUPPORT-TEMPLATE-EXPORT-DASHBOARD-HUMAN
+  - CT-SUPPORT-TEMPLATE-EXPORT-DASHBOARD-JSON
+  - CT-SUPPORT-TEMPLATE-EXPORT-DASHBOARD-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Platform admin only (Mammoth staff role); refused for every other user. Downloads
+    a dashboard you can edit as a .zip template file; slug (required) is the id an import matches on;
+    with_data (default true) packages a capped copy of its rows.
+  reviewed_by: primary
+  readback:
+    command: support.template.export-dashboard
+    ids: {}
+    kind: object

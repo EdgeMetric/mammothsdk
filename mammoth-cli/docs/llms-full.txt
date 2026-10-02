@@ -919,6 +919,16 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth support plan list
 - `mammoth support plan self-serve-list` [read/none] -> mammoth.api.support.SupportAPI.plan_self_serve_list
   example: mammoth support plan self-serve-list
+- `mammoth support plan storage-option archive` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.plan_storage_option_archive
+  example: mammoth support plan storage-option archive 123 123
+- `mammoth support plan storage-option create` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.plan_storage_option_create
+  example: mammoth support plan storage-option create 123 --input '{"storage_gb": 1, "monthly_price": 1.0, "annual_price": 1.0}'
+- `mammoth support plan storage-option list` [read/none] -> mammoth.api.support.SupportAPI.plan_storage_option_list
+  example: mammoth support plan storage-option list 123
+- `mammoth support plan storage-option update` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.plan_storage_option_update
+  example: mammoth support plan storage-option update 123 123
+- `mammoth support plan unarchive` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.plan_unarchive
+  example: mammoth support plan unarchive 123
 - `mammoth support plan update` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.plan_update
   example: mammoth support plan update 123
 - `mammoth support plan update-storage-tiers` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.plan_update_storage_tiers
@@ -929,6 +939,38 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth support subscription get 123
 - `mammoth support subscription update` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.subscription_update
   example: mammoth support subscription update 123 resource-123
+- `mammoth support template audit` [read/none] -> mammoth.api.support.SupportAPI.template_audit
+  example: mammoth support template audit
+- `mammoth support template canvas` [read/none] -> mammoth.api.support.SupportAPI.template_canvas
+  example: mammoth support template canvas sample
+- `mammoth support template data-preview` [read/none] -> mammoth.api.support.SupportAPI.template_data_preview
+  example: mammoth support template data-preview sample
+- `mammoth support template discard` [destructive/confirm_target] -> mammoth.api.support.SupportAPI.template_discard
+  example: mammoth support template discard sample
+- `mammoth support template edit` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.template_edit
+  example: mammoth support template edit sample --input '{"changes": {"sample_key": "Status"}}'
+- `mammoth support template export` [read/none] -> mammoth.api.support.SupportAPI.template_export
+  example: mammoth support template export sample
+- `mammoth support template export-dashboard` [read/none] -> mammoth.api.support.SupportAPI.template_export_dashboard
+  example: mammoth support template export-dashboard 123 --input '{"slug": "sample"}'
+- `mammoth support template import` [high_impact/yes_always] -> mammoth.api.support.SupportAPI.template_import
+  example: mammoth support template import template.zip
+- `mammoth support template inspect` [read/none] -> mammoth.api.support.SupportAPI.template_inspect
+  example: mammoth support template inspect template.zip
+- `mammoth support template list` [read/none] -> mammoth.api.support.SupportAPI.template_list
+  example: mammoth support template list
+- `mammoth support template publish` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.template_publish
+  example: mammoth support template publish sample
+- `mammoth support template retire` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.template_retire
+  example: mammoth support template retire sample
+- `mammoth support template snapshots` [read/none] -> mammoth.api.support.SupportAPI.template_snapshots
+  example: mammoth support template snapshots
+- `mammoth support template thumbnail clear` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.template_thumbnail_clear
+  example: mammoth support template thumbnail clear sample
+- `mammoth support template thumbnail set` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.template_thumbnail_set
+  example: mammoth support template thumbnail set sample card.png
+- `mammoth support template unpublish` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.template_unpublish
+  example: mammoth support template unpublish sample
 - `mammoth support user list-all` [read/none] -> mammoth.api.support.SupportAPI.user_list_all
   example: mammoth support user list-all
 - `mammoth support user register` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.user_register

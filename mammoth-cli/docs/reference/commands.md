@@ -1,10 +1,10 @@
 # Command reference
 
-Generated from the reviewed command manifests for mammoth-cli 2.2.7.
+Generated from the reviewed command manifests for mammoth-cli 2.2.8.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
-Total commands: 612.
+Total commands: 633.
 
 ## activity
 
@@ -4033,6 +4033,63 @@ Total commands: 612.
 - Backing SDK: `mammoth.api.support.SupportAPI.plan_self_serve_list`
 - Agent example: `mammoth support plan self-serve-list`
 
+### `mammoth support plan storage-option archive`
+
+**Arguments**
+
+- `PLAN_ID` (int, required) — ID of the plan.
+- `OPTION_ID` (int, required) — ID of the option.
+
+- Mutation class: `high_impact`
+- Confirmation: `confirm_target`
+- Backing SDK: `mammoth.api.support.SupportAPI.plan_storage_option_archive`
+- Agent example: `mammoth support plan storage-option archive 123 123`
+
+### `mammoth support plan storage-option create`
+
+**Arguments**
+
+- `PLAN_ID` (int, required) — ID of the plan.
+
+- Mutation class: `high_impact`
+- Confirmation: `confirm_target`
+- Backing SDK: `mammoth.api.support.SupportAPI.plan_storage_option_create`
+- Agent example: `mammoth support plan storage-option create 123 --input '{"storage_gb": 1, "monthly_price": 1.0, "annual_price": 1.0}'`
+
+### `mammoth support plan storage-option list`
+
+**Arguments**
+
+- `PLAN_ID` (int, required) — ID of the plan.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.support.SupportAPI.plan_storage_option_list`
+- Agent example: `mammoth support plan storage-option list 123`
+
+### `mammoth support plan storage-option update`
+
+**Arguments**
+
+- `PLAN_ID` (int, required) — ID of the plan.
+- `OPTION_ID` (int, required) — ID of the option.
+
+- Mutation class: `high_impact`
+- Confirmation: `confirm_target`
+- Backing SDK: `mammoth.api.support.SupportAPI.plan_storage_option_update`
+- Agent example: `mammoth support plan storage-option update 123 123`
+
+### `mammoth support plan unarchive`
+
+**Arguments**
+
+- `PLAN_ID` (int, required) — ID of the plan.
+
+- Mutation class: `high_impact`
+- Confirmation: `confirm_target`
+- Backing SDK: `mammoth.api.support.SupportAPI.plan_unarchive`
+- Agent example: `mammoth support plan unarchive 123`
+
 ### `mammoth support plan update`
 
 **Arguments**
@@ -4089,6 +4146,171 @@ Total commands: 612.
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.support.SupportAPI.subscription_update`
 - Agent example: `mammoth support subscription update 123 resource-123`
+
+### `mammoth support template audit`
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.support.SupportAPI.template_audit`
+- Agent example: `mammoth support template audit`
+
+### `mammoth support template canvas`
+
+**Arguments**
+
+- `SLUG` (str, required) — Curated template slug.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.support.SupportAPI.template_canvas`
+- Agent example: `mammoth support template canvas sample`
+
+### `mammoth support template data-preview`
+
+**Arguments**
+
+- `SLUG` (str, required) — Curated template slug.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.support.SupportAPI.template_data_preview`
+- Agent example: `mammoth support template data-preview sample`
+
+### `mammoth support template discard`
+
+**Arguments**
+
+- `SLUG` (str, required) — Curated template slug.
+
+- Mutation class: `destructive`
+- Confirmation: `confirm_target`
+- Backing SDK: `mammoth.api.support.SupportAPI.template_discard`
+- Agent example: `mammoth support template discard sample`
+
+### `mammoth support template edit`
+
+**Arguments**
+
+- `SLUG` (str, required) — Curated template slug.
+
+- Mutation class: `high_impact`
+- Confirmation: `confirm_target`
+- Backing SDK: `mammoth.api.support.SupportAPI.template_edit`
+- Agent example: `mammoth support template edit sample --input '{"changes": {"sample_key": "Status"}}'`
+
+### `mammoth support template export`
+
+**Arguments**
+
+- `SLUG` (str, required) — Curated template slug.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.support.SupportAPI.template_export`
+- Agent example: `mammoth support template export sample`
+
+### `mammoth support template export-dashboard`
+
+**Arguments**
+
+- `DASHBOARD_ID` (int, required) — ID of the dashboard.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.support.SupportAPI.template_export_dashboard`
+- Agent example: `mammoth support template export-dashboard 123 --input '{"slug": "sample"}'`
+
+### `mammoth support template import`
+
+**Arguments**
+
+- `FILE` (str, required) — Path to a local template file (.zip).
+
+- Mutation class: `high_impact`
+- Confirmation: `yes_always`
+- Backing SDK: `mammoth.api.support.SupportAPI.template_import`
+- Agent example: `mammoth support template import template.zip`
+
+### `mammoth support template inspect`
+
+**Arguments**
+
+- `FILE` (str, required) — Path to a local template file (.zip).
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.support.SupportAPI.template_inspect`
+- Agent example: `mammoth support template inspect template.zip`
+
+### `mammoth support template list`
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.support.SupportAPI.template_list`
+- Agent example: `mammoth support template list`
+
+### `mammoth support template publish`
+
+**Arguments**
+
+- `SLUG` (str, required) — Curated template slug.
+
+- Mutation class: `high_impact`
+- Confirmation: `confirm_target`
+- Backing SDK: `mammoth.api.support.SupportAPI.template_publish`
+- Agent example: `mammoth support template publish sample`
+
+### `mammoth support template retire`
+
+**Arguments**
+
+- `SLUG` (str, required) — Curated template slug.
+
+- Mutation class: `high_impact`
+- Confirmation: `confirm_target`
+- Backing SDK: `mammoth.api.support.SupportAPI.template_retire`
+- Agent example: `mammoth support template retire sample`
+
+### `mammoth support template snapshots`
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.support.SupportAPI.template_snapshots`
+- Agent example: `mammoth support template snapshots`
+
+### `mammoth support template thumbnail clear`
+
+**Arguments**
+
+- `SLUG` (str, required) — Curated template slug.
+
+- Mutation class: `high_impact`
+- Confirmation: `confirm_target`
+- Backing SDK: `mammoth.api.support.SupportAPI.template_thumbnail_clear`
+- Agent example: `mammoth support template thumbnail clear sample`
+
+### `mammoth support template thumbnail set`
+
+**Arguments**
+
+- `SLUG` (str, required) — Curated template slug.
+- `FILE` (str, required) — Path to a local PNG, JPEG or WebP image (1 MB at most).
+
+- Mutation class: `high_impact`
+- Confirmation: `confirm_target`
+- Backing SDK: `mammoth.api.support.SupportAPI.template_thumbnail_set`
+- Agent example: `mammoth support template thumbnail set sample card.png`
+
+### `mammoth support template unpublish`
+
+**Arguments**
+
+- `SLUG` (str, required) — Curated template slug.
+
+- Mutation class: `high_impact`
+- Confirmation: `confirm_target`
+- Backing SDK: `mammoth.api.support.SupportAPI.template_unpublish`
+- Agent example: `mammoth support template unpublish sample`
 
 ### `mammoth support user list-all`
 
