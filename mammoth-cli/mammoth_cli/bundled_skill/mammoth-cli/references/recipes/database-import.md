@@ -11,9 +11,13 @@ mammoth connector get mssql                               # its spec = the field
 mammoth connector connection list mssql                   # reuse an existing connection if one fits
 ```
 
+Every connector command runs in a project: pass `--project PROJECT_ID` (the
+project the dataset should land in) unless one is already set.
+
 No connection yet: ask the user once for every required field from the spec
-(host, port, database, username, password, ...). Write the body to a file with
-mode 0600, never inline, then create it (a write: get the user's confirmation):
+(host, port, database, username, password, ...). Write them under `config` in a
+file with mode 0600, never inline -- `{"config": {"host": "...", "port": 1433,
+...}}` -- then create it (a write: get the user's confirmation):
 
 ```bash
 mammoth connector connection create mssql --input /private/path/request.json --yes
