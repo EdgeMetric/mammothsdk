@@ -800,13 +800,13 @@ class MammothClient:
             for name in names:
                 try:
                     value = response_headers.get(name)
-                except AttributeError, TypeError:
+                except (AttributeError, TypeError):
                     value = None
                 if value is not None:
                     return str(value)
             try:
                 lowered = {str(key).lower(): value for key, value in response_headers.items()}
-            except AttributeError, TypeError:
+            except (AttributeError, TypeError):
                 lowered = {}
             for name in names:
                 value = lowered.get(name.lower())
@@ -831,7 +831,7 @@ class MammothClient:
                 parsed_body = response.json()
                 if isinstance(parsed_body, dict):
                     body = safe_response_body(parsed_body)
-            except ValueError, TypeError:
+            except (ValueError, TypeError):
                 body = {}
 
         def observed_handles(data: dict[str, Any]) -> tuple[object | None, object | None]:
