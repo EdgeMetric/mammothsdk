@@ -158,7 +158,7 @@ def ambiguity_note(matched: int, needle: str) -> str | None:
         return None
     return (
         f"{matched} datasets match '{needle}' (a v2 or a copy can sit beside the one meant): "
-        "pick by id from rows/cols/created, and name the dataset you read in your answer."
+        "if nothing in the request tells them apart, ask the user which one before reading any."
     )
 
 
