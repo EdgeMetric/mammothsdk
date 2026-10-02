@@ -452,6 +452,33 @@ def dataset_broken_rows(invocation: Invocation) -> HandlerResult:
     return _read_dataset(invocation)
 
 
+def dataset_broken_rows_resolve(invocation: Invocation) -> HandlerResult:
+    """Add corrected set-aside lines to a dataset, or discard them. Prompt or ``--yes``.
+
+    ``--input`` carries ``op`` (``add`` or ``remove``), ``batch_id`` and ``rows``
+    (``{"line_num", "line"}`` each, from ``dataset broken-rows list``). Returns a
+    job to wait on.
+    """
+    project_id = require_project(invocation)
+    dataset_id = _require_int_positional(invocation, "dataset id")
+    document = invocation.load_input()
+    kwargs: dict[str, Any] = {
+        "dataset_id": dataset_id,
+        "op": _require_field(document, "op"),
+        "batch_id": _require_field(document, "batch_id"),
+        "rows": _require_field(document, "rows"),
+        "project_id": project_id,
+    }
+    enforce_confirmation(
+        invocation,
+        policy=POLICY_PROMPT_OR_YES,
+        action=f"{kwargs['op']} set-aside lines of dataset {dataset_id}",
+    )
+    with open_service(invocation) as (service, auth):
+        data = service.call(_symbol(invocation), **kwargs)
+    return data, _meta(invocation, auth.workspace_id, project_id)
+
+
 def _read_dataset(invocation: Invocation) -> HandlerResult:
     """Call this command's SDK read with the DATASET_ID positional."""
     project_id = require_project(invocation)

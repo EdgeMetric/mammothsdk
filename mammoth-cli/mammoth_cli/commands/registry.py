@@ -324,6 +324,7 @@ HANDLERS: dict[str, Handler] = {
     "dataset.file-settings.update": dataset_cmd.dataset_file_settings_update,
     "dataset.file-settings.undo": dataset_cmd.dataset_file_settings_undo,
     "dataset.broken-rows.list": dataset_cmd.dataset_broken_rows,
+    "dataset.broken-rows.resolve": dataset_cmd.dataset_broken_rows_resolve,
     "dataset.interpretation.preview": dataset_cmd.dataset_interpretation,
     "dataset.interpretation.confirm": dataset_cmd.dataset_interpretation,
     "dataset.create": dataset_cmd.dataset_create,

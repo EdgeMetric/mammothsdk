@@ -84,6 +84,51 @@ commands:
   undo_test: null
   known_restrictions: Returns the first 100 lines the upload could not parse, each with its line number, upload (batch_id) and why it does not fit the columns; row_count is the total. A dataset not made from a file upload has none.
   reviewed_by: primary
+- command_id: dataset.broken-rows.resolve
+  command_path: dataset broken-rows resolve
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - name: dataset_id
+    type: int
+    required: true
+    metavar: DATASET_ID
+    falls_back_to_field: null
+    help: ID of the dataset.
+  options: []
+  sdk_symbol: mammoth.api.datasets.DatasetsAPI.resolve_unstructured_rows
+  sdk_conversion: Call mammoth.api.datasets.DatasetsAPI.resolve_unstructured_rows with validated request fields.
+  request_model: DatasetBrokenRowsResolveRequest
+  result_model: DatasetBrokenRowsResolveResult
+  mutation_class: destructive
+  edits_target: true
+  confirmation: prompt_or_yes
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  readback:
+    command: dataset.broken-rows.list
+    ids:
+      dataset_id: positional.0
+    kind: object
+  live_test: null
+  live_exemption_reason: Needs a file upload with ragged rows on a test server; not yet run live.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dataset broken-rows resolve DATASET_ID --help
+  agent_example: 'mammoth dataset broken-rows resolve 123 --input ''{"op": "add", "batch_id": 1, "rows": [{"sample_key": "Status"}]}'''
+  unit_tests:
+  - UT-DATASET-BROKEN-ROWS-RESOLVE
+  contract_tests:
+  - CT-DATASET-BROKEN-ROWS-RESOLVE-HUMAN
+  - CT-DATASET-BROKEN-ROWS-RESOLVE-JSON
+  - CT-DATASET-BROKEN-ROWS-RESOLVE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'op "add" takes each corrected line (line_num, batch_id and the original line from dataset broken-rows list, edited so its column count matches) into the dataset; op "remove" discards the lines for good. Returns a job: run job wait on it, then read broken-rows list (row_count 0 and dataset status ready mean it is finished). Confirm with the user first, and say that discarded lines do not come back.'
+  reviewed_by: primary
 - command_id: dataset.bulk-delete
   command_path: dataset bulk-delete
   disposition: command

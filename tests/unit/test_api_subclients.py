@@ -485,12 +485,6 @@ class TestDatasetsAPI:
             client._request_json, "GET", "/datasets/500/unstructured_rows"
         )
 
-    async def test_discard_unstructured_rows(self, client: MammothClient):
-        await client.datasets.discard_unstructured_rows(dataset_id=500)
-        assert_called_with_method_and_endpoint(
-            client._request_json, "DELETE", "/datasets/500/unstructured_data"
-        )
-
     async def test_list_batches(self, client: MammothClient):
         await client.datasets.list_batches(dataset_id=500)
         assert_called_with_method_and_endpoint(client._request_json, "GET", "/datasets/500/batches")
