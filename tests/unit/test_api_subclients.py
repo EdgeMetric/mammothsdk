@@ -3626,7 +3626,7 @@ class TestBrowseResourcesV2:
         client._request_json.assert_called_once_with(
             "GET",
             "/workspaces/1/resources",
-            params={"search": "revenue", "type": "dataset,dataview"},
+            params={"search": "revenue", "type": "datasource,dataview"},
         )
 
     async def test_resources_search_without_filters_keeps_route_defaults(

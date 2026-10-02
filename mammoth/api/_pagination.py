@@ -44,8 +44,13 @@ async def collect_offset_pages(
     item_key: str,
     limit: int,
     max_pages: int = 1000,
+    full_page_continues: bool = False,
 ) -> dict[str, Any]:
     """Collect pages while requiring bounded, observable progress.
+
+    ``full_page_continues`` is for a route that never emits ``next`` (the datasets
+    list sends none): a page of ``limit`` records is then taken to have a successor,
+    and only a short or empty page ends the walk.
 
     ``fetch`` receives the offset to request.  If a page has records but no
     explicit offset in its ``next`` URL, the next offset is derived from the
@@ -101,7 +106,7 @@ async def collect_offset_pages(
 
         hint_offset = next_offset_from_hint(page.get("next"), offset)
         if hint_offset is None:
-            if not page.get("next"):
+            if not page.get("next") and not (full_page_continues and len(page_records) >= limit):
                 break
             hint_offset = offset + len(page_records)
             if hint_offset <= offset:

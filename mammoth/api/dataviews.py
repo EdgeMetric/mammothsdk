@@ -4,6 +4,7 @@ Dataviews API client for managing dataviews in Mammoth.
 
 from __future__ import annotations
 
+from decimal import Decimal
 from typing import TYPE_CHECKING, Any
 
 from mammoth.exceptions import MammothValidationError
@@ -191,6 +192,25 @@ def _add_explore_percentages(rows: list[dict[str, Any]]) -> None:
     total = sum(row.get("agg_0") or 0 for row in rows)
     for row in rows:
         row["percentage"] = round((row.get("agg_0") or 0) / total * 100, 2) if total else 0.0
+
+
+def _add_explore_cumulative(rows: list[dict[str, Any]]) -> None:
+    """Add a ``cumulative`` running total to each row, in bucket order.
+
+    The running total is of the per-bucket metric (``agg_1``) when the explore
+    carries one, else of the bucket count (``agg_0``). It always runs over every
+    bucket the query returned, in ascending bucket order, whatever display order
+    or page the caller then asks for. A blank bucket has no place in the order, so
+    it gets ``None``.
+    """
+    field = "agg_1" if any("agg_1" in row for row in rows) else "agg_0"
+    running = Decimal(0)
+    for row in sorted(rows, key=lambda r: (r.get("group_0") is None, r.get("group_0") or 0)):
+        if row.get("group_0") is None:
+            row["cumulative"] = None
+            continue
+        running += Decimal(str(row.get(field) or 0))
+        row["cumulative"] = float(running)
 
 
 #: ``sort`` values :meth:`DataviewsAPI.explore` accepts: by count or by bucket value.
@@ -701,6 +721,7 @@ class DataviewsAPI:
         limit: int | None = None,
         offset: int | None = None,
         sort: str | None = None,
+        cumulative: bool = False,
         workspace_id: int | None = None,
         project_id: int | None = None,
         timeout: int | None = None,
@@ -741,6 +762,9 @@ class DataviewsAPI:
             offset: Buckets to skip first ("load more"; default 0).
             sort: count_desc, count_asc, value_asc or value_desc (default:
                 count_desc for TEXT, value_asc for DATE/NUMERIC).
+            cumulative: Add a ``cumulative`` running total per bucket (of the
+                *metric* when given, else of the count), over every bucket in
+                ascending bucket order, before any *sort*/*limit* is applied.
             workspace_id: ID of the workspace (uses client default if not provided).
             project_id: ID of the project (uses client default if not provided).
             timeout: Max job wait time in seconds (default: client.job_timeout).
@@ -786,6 +810,8 @@ class DataviewsAPI:
         if isinstance(rows, list):
             typed_rows = [row for row in rows if isinstance(row, dict)]
             _add_explore_percentages(typed_rows)
+            if cumulative:
+                _add_explore_cumulative(typed_rows)
             typed_rows = _explore_sort_and_limit(typed_rows, normalized_type, sort, (offset, limit))
             response = {**response, "data": typed_rows}
         return response
