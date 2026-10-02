@@ -115,7 +115,11 @@ def _forward_optional(
 
 
 def project_list(invocation: Invocation) -> HandlerResult:
-    """List projects in the active workspace, one page at a time.
+    """List the caller's member projects in the active workspace, one page at a time.
+
+    These are the projects the Mammoth UI shows. ``include_non_members: true``
+    adds the other workspace projects (workspace owners and admins can read
+    them but not open them); every row then carries ``member``.
 
     ``offset`` forwards for pagination past the server's 100-row page, the
     same as ``dataset list``; a short page's ``next`` in the response is
@@ -124,7 +128,7 @@ def project_list(invocation: Invocation) -> HandlerResult:
     """
     document = invocation.load_input() or {}
     kwargs: dict[str, Any] = {"limit": int(document.get("limit", 100))}
-    _forward_optional(document, kwargs, ("offset",))
+    _forward_optional(document, kwargs, ("offset", "include_non_members"))
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), **kwargs)
     return data, _meta(invocation, auth.workspace_id, resolved_project(invocation))

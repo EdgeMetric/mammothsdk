@@ -3557,12 +3557,14 @@ class TestProjectsPagination:
         assert client._request_json.call_args.kwargs["params"] == {
             "fields": "id,name",
             "limit": 50,
+            "subscribed": "true",
         }
         client._request_json.reset_mock()
         await client.projects.list(limit=50, offset=50)
         assert client._request_json.call_args.kwargs["params"] == {
             "fields": "id,name",
             "limit": 50,
+            "subscribed": "true",
             "offset": 50,
         }
 
