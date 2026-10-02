@@ -132,6 +132,16 @@ Result: `ProjectMemoryRemoveResult`; mutation `benign_mutation`, confirmation `n
 
 Status on release: untried; no live run recorded.
 
+### `project.needs-attention`
+
+Run: `mammoth project needs-attention`. Exact input fields: `mammoth schema get project.needs-attention`.
+
+Example: `mammoth project needs-attention 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `ProjectNeedsAttentionResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
 ### `project.pending-changes`
 
 Run: `mammoth project pending-changes`. Exact input fields: `mammoth schema get project.pending-changes`.

@@ -482,6 +482,7 @@ S2_COMMANDS = frozenset(
         "project.memory.add",
         "project.memory.list",
         "project.memory.remove",
+        "project.needs-attention",
         "project.pending-changes",
         "project.publish-credentials",
         "project.resource-dependencies",

@@ -341,6 +341,9 @@ _COMMAND_DISCOVERY_PURPOSES = {
     "project.pending-changes": (
         "source changes new rows not taken in yet pending updates waiting to apply"
     ),
+    "project.needs-attention": (
+        "monitor needs attention error failing pipeline views delete datasets behind list"
+    ),
     "project.resource-status": "stuck stale failing broken error status anything wrong health",
     "connector.ai.chat": (
         "connect our own internal custom api build a connector for an unsupported source"

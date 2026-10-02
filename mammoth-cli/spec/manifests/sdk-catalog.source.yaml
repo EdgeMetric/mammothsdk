@@ -3167,6 +3167,13 @@ sdk_methods:
   openapi_operation_ids: []
   notes: 'Single page; the route caps limit at 100 (4GENR007). SDK 0.7.11 adds offset and list_all
     for the following pages.'
+- sdk_symbol: mammoth.api.projects.ProjectsAPI.needs_attention
+  canonical_command: project.needs-attention
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
 - sdk_symbol: mammoth.api.projects.ProjectsAPI.pending_changes
   canonical_command: project.pending-changes
   alias_of: null
