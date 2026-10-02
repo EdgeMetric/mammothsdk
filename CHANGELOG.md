@@ -4,6 +4,23 @@ All notable changes to `mammoth-io` are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.10]
+
+### Fixed
+
+- `json={}` request bodies are sent instead of dropped; `rename_columns` and
+  `sort_rows` honour build-only mode; the export poll reads every page;
+  `/resources/bulk` lookups are chunked at the server cap of 100; `list_users`
+  and `get_user` page through all users; a pipeline dataset lookup that cannot
+  resolve a dataset now raises `MammothAPIError` instead of skipping silently.
+- `resolve_token_workspace_id` raises `MammothAPIError` on a non-JSON reply and
+  bounds its cache. Dashboard and support downloads write files off the event
+  loop. Embed secret fields are excluded from `repr`.
+- Embedded-mode security and safety fixes (PR #87), and correctness fixes
+  across `mammoth-cli` 2.2.9 (PR #86): complete folder, project and pipeline
+  reads, exact-parent rule on pipeline and export writes, honest truncation and
+  freshness flags, and refreshed lock files.
+
 ## [0.8.9]
 
 ### Added
