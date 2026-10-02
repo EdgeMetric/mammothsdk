@@ -143,3 +143,89 @@ commands:
   undo_test: null
   known_restrictions: Validate level against the OpenAPI enum and report truncation.
   reviewed_by: primary
+- command_id: browse.resources
+  command_path: browse resources
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.browse.BrowseAPI.resources_list
+  sdk_conversion: Call mammoth.api.browse.BrowseAPI.resources_list with validated request fields.
+  request_model: BrowseResourcesRequest
+  result_model: BrowseResourcesResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: cursor
+  acceptance_evidence: live_read_only
+  live_test: LT-BROWSE-RESOURCES
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth browse resources --help
+  agent_example: 'mammoth browse resources'
+  unit_tests:
+  - UT-BROWSE-RESOURCES
+  contract_tests:
+  - CT-BROWSE-RESOURCES-HUMAN
+  - CT-BROWSE-RESOURCES-JSON
+  - CT-BROWSE-RESOURCES-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'One project''s resources a cursor page at a time (resources v2): pass next_cursor back as cursor while has_more is true. Optional parent_type and parent_id list inside a folder; resource_type, search, sort and fields narrow the page.'
+  reviewed_by: primary
+  readback:
+    command: browse.resources
+    ids: {}
+    kind: object
+- command_id: browse.resource
+  command_path: browse resource
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - name: resource_type
+    type: str
+    required: true
+    metavar: RESOURCE_TYPE
+    falls_back_to_field: null
+    help: Resource type, for example dataset or dataview.
+  - name: object_id
+    type: int
+    required: true
+    metavar: OBJECT_ID
+    falls_back_to_field: null
+    help: ID of the resource within its type.
+  options: []
+  sdk_symbol: mammoth.api.browse.BrowseAPI.resource_get
+  sdk_conversion: Call mammoth.api.browse.BrowseAPI.resource_get with validated request fields.
+  request_model: BrowseResourceRequest
+  result_model: BrowseResourceResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-BROWSE-RESOURCE
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth browse resource RESOURCE_TYPE OBJECT_ID --help
+  agent_example: 'mammoth browse resource dataset 123'
+  unit_tests:
+  - UT-BROWSE-RESOURCE
+  contract_tests:
+  - CT-BROWSE-RESOURCE-HUMAN
+  - CT-BROWSE-RESOURCE-JSON
+  - CT-BROWSE-RESOURCE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'One resource of the project with its full properties (resources v2); name the type, then the id.'
+  reviewed_by: primary
+  readback:
+    command: browse.resource
+    ids: {}
+    kind: object

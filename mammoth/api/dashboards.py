@@ -57,6 +57,8 @@ _list = list  # Alias to avoid shadowing by method name
 # ── Validation error constants ────────────────────────────────────────────────
 
 ERR_DASHBOARD_ID_POSITIVE = "`dashboard_id` must be a positive integer, got {0}."
+ERR_DASHBOARD_IDS_EMPTY = "`dashboard_ids` must be a non-empty list of dashboard ids."
+ERR_STYLE_EMPTY = "`style` must be a non-empty string."
 ERR_PATCH_EMPTY = "`patch` must be a non-empty list of patch operations."
 ERR_INTENT_VALUE_TOO_SHORT = "Patch value for `intent` must be at least 10 characters, got {0!r}."
 ERR_INTENT_VALUE_NOT_STR = "Patch value for `intent` must be a string."
@@ -1041,6 +1043,61 @@ class DashboardsAPI:
             "GET", f"/dashboards/{dashboard_id}/embed/usage"
         )
         return EmbedUsageResponse.model_validate(response)
+
+    async def embed_usage_summary(self, dashboard_ids: _list[int]) -> dict[str, Any]:
+        """Count the active embed origins of several boards in one call.
+
+        The dashboard library's "embedded on N sites" figure. Boards outside
+        the workspace are ignored by the route.
+
+        Args:
+            dashboard_ids: Non-empty list of dashboard ids (each > 0).
+
+        Returns:
+            Dict with ``counts`` (origins that loaded each board in the last
+            90 days) and ``refused`` (origins refused per board).
+
+        Raises:
+            MammothValidationError: If *dashboard_ids* is empty or holds an id ≤ 0.
+        """
+        if not dashboard_ids:
+            raise MammothValidationError(ERR_DASHBOARD_IDS_EMPTY)
+        for dashboard_id in dashboard_ids:
+            if (
+                isinstance(dashboard_id, bool)
+                or not isinstance(dashboard_id, int)
+                or dashboard_id <= 0
+            ):
+                raise MammothValidationError(ERR_DASHBOARD_ID_POSITIVE.format(dashboard_id))
+        return await self._client._request_json(
+            "GET",
+            f"/workspaces/{self._client.workspace_id}/dashboards/embed-usage",
+            params={"ids": ",".join(str(i) for i in dashboard_ids)},
+        )
+
+    async def format_preview(self, dashboard_id: int, style: str) -> dict[str, Any]:
+        """Dry-run a format switch: what carries over, what is added, what is lost.
+
+        Computed by the server on a copy of the canvas; nothing is persisted.
+
+        Args:
+            dashboard_id: ID of the v3 dashboard (must be > 0).
+            style: Target format/style name (non-empty), as ``dashboard style
+                preset list`` names them.
+
+        Returns:
+            Dict with the carried and added counts and the ``not_shown`` ledger.
+
+        Raises:
+            MammothValidationError: If *dashboard_id* ≤ 0 or *style* is empty.
+        """
+        if isinstance(dashboard_id, bool) or not isinstance(dashboard_id, int) or dashboard_id <= 0:
+            raise MammothValidationError(ERR_DASHBOARD_ID_POSITIVE.format(dashboard_id))
+        if not style:
+            raise MammothValidationError(ERR_STYLE_EMPTY)
+        return await self._client._request_json(
+            "GET", f"/dashboards/{dashboard_id}/format-preview", params={"style": style}
+        )
 
     async def embed_origin_revoke(self, dashboard_id: int, origin: str) -> EmbedConfigResponse:
         """Remove one origin from a board's embed allowlist.

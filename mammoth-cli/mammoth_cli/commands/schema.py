@@ -398,6 +398,19 @@ _COMMAND_DISCOVERY_PURPOSES = {
         "unstructured pending review"
     ),
     "project.resource-status": "stuck stale failing broken error status anything wrong health",
+    "dashboard.embed.usage.summary": (
+        "embedded sites how many websites pages embed my boards library all dashboards origins"
+    ),
+    "dashboard.format-preview": (
+        "switch format style what would change lose carry over preview dry run report slides"
+    ),
+    "workspace.home": (
+        "home screen health issues needs attention overview usage snapshot suggestions"
+    ),
+    "browse.resources": (
+        "page through project resources cursor next page has more folder children v2 listing"
+    ),
+    "browse.resource": "open one resource by type and id properties of a dataset view folder",
     "connector.ai.chat": (
         "connect our own internal custom api build a connector for an unsupported source"
     ),

@@ -7528,3 +7528,63 @@ methods:
   secret_fields:
   - token_secret
   reviewed_by: primary
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.embed_usage_summary
+  implementation_origin: mammoth.api.dashboards.DashboardsAPI.embed_usage_summary
+  signature: 'embed_usage_summary(self, dashboard_ids: ''_list[int]'') -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: dashboard.embed.usage.summary
+  alias_of: null
+  no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.format_preview
+  implementation_origin: mammoth.api.dashboards.DashboardsAPI.format_preview
+  signature: 'format_preview(self, dashboard_id: ''int'', style: ''str'') -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: dashboard.format-preview
+  alias_of: null
+  no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.workspaces.WorkspacesAPI.home_summary
+  implementation_origin: mammoth.api.workspaces.WorkspacesAPI.home_summary
+  signature: 'home_summary(self) -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: workspace.home
+  alias_of: null
+  no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.browse.BrowseAPI.resources_list
+  implementation_origin: mammoth.api.browse.BrowseAPI.resources_list
+  signature: 'resources_list(self, project_id: ''int | None'' = None, parent_type: ''str | None'' = None, parent_id: ''int | None'' = None, resource_type: ''str | None'' = None, search: ''str | None'' = None, cursor: ''str | None'' = None, limit: ''int | None'' = None, sort: ''str | None'' = None, fields: ''str | None'' = None) -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: browse.resources
+  alias_of: null
+  no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.browse.BrowseAPI.resource_get
+  implementation_origin: mammoth.api.browse.BrowseAPI.resource_get
+  signature: 'resource_get(self, resource_type: ''str'', object_id: ''int'', project_id: ''int | None'' = None) -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: browse.resource
+  alias_of: null
+  no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary

@@ -5115,3 +5115,83 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+- command_id: dashboard.embed.usage.summary
+  command_path: dashboard embed usage summary
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.embed_usage_summary
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.embed_usage_summary with validated request fields.
+  request_model: DashboardEmbedUsageSummaryRequest
+  result_model: DashboardEmbedUsageSummaryResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-DASHBOARD-EMBED-USAGE-SUMMARY
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard embed usage summary --help
+  agent_example: 'mammoth dashboard embed usage summary --input ''{"dashboard_ids": [1]}'''
+  unit_tests:
+  - UT-DASHBOARD-EMBED-USAGE-SUMMARY
+  contract_tests:
+  - CT-DASHBOARD-EMBED-USAGE-SUMMARY-HUMAN
+  - CT-DASHBOARD-EMBED-USAGE-SUMMARY-JSON
+  - CT-DASHBOARD-EMBED-USAGE-SUMMARY-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Active embed origins per board over the last 90 days, for several boards in one call (the library view). Boards outside the workspace are ignored. For one board''s origins and render counts use dashboard embed usage get.'
+  reviewed_by: primary
+  readback:
+    command: dashboard.embed.usage.summary
+    ids: {}
+    kind: object
+- command_id: dashboard.format-preview
+  command_path: dashboard format-preview
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - name: dashboard_id
+    type: int
+    required: true
+    metavar: DASHBOARD_ID
+    falls_back_to_field: null
+    help: ID of the dashboard.
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.format_preview
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.format_preview with validated request fields.
+  request_model: DashboardFormatPreviewRequest
+  result_model: DashboardFormatPreviewResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-DASHBOARD-FORMAT-PREVIEW
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard format-preview DASHBOARD_ID --help
+  agent_example: 'mammoth dashboard format-preview 123 --input ''{"style": "sample"}'''
+  unit_tests:
+  - UT-DASHBOARD-FORMAT-PREVIEW
+  contract_tests:
+  - CT-DASHBOARD-FORMAT-PREVIEW-HUMAN
+  - CT-DASHBOARD-FORMAT-PREVIEW-JSON
+  - CT-DASHBOARD-FORMAT-PREVIEW-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Dry run of a format switch on a copy of the canvas: what carries over, what the new style adds, and what the target cannot show (not_shown). Nothing is saved. Take style names from dashboard style preset list.'
+  reviewed_by: primary
+  readback:
+    command: dashboard.format-preview
+    ids: {}
+    kind: object

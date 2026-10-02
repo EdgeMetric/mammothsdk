@@ -143,6 +143,13 @@ def workspace_app_usage(invocation: Invocation) -> HandlerResult:
     return data, _meta(invocation, auth.workspace_id)
 
 
+def workspace_home(invocation: Invocation) -> HandlerResult:
+    """Read the Home summary: usage snapshot, health issues and suggestions."""
+    with open_service(invocation) as (service, auth):
+        data = service.call(_symbol(invocation))
+    return data, _meta(invocation, auth.workspace_id)
+
+
 def workspace_check_expression(invocation: Invocation) -> HandlerResult:
     """Ask the AI assistant to check an expression. Payload comes from ``--input``."""
     document = invocation.load_input()

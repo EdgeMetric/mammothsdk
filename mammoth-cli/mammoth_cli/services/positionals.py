@@ -130,6 +130,20 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
     # The chat session is the global ``--session`` option, never a positional or
     # an --input field; only the action or run being addressed is positional.
     "agent.action.list": (),
+    # The parent is named in ``--input`` (``parent_id``), never positionally.
+    "browse.resources": (),
+    "browse.resource": (
+        PositionalSpec(
+            name="resource_type",
+            type=str,
+            required=True,
+            help="Resource type, for example dataset or dataview.",
+            example_value="dataset",
+        ),
+        PositionalSpec(
+            name="object_id", type=int, required=True, help="ID of the resource within its type."
+        ),
+    ),
     # The invite is named in ``--input`` (``invite_id``), never positionally.
     "workspace.invite.update-role": (),
     "agent.run.status": (),

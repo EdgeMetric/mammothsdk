@@ -64,6 +64,16 @@ Result: `WorkspaceGetResult`; mutation `read`, confirmation `none`, wait policy 
 
 Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Returned workspace 4 (API Tests) profile. Single invocation only.
 
+### `workspace.home`
+
+Run: `mammoth workspace home`. Exact input fields: `mammoth schema get workspace.home`.
+
+Example: `mammoth workspace home`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `WorkspaceHomeResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
 ### `workspace.invite.delete`
 
 Run: `mammoth workspace invite delete`. Exact input fields: `mammoth schema get workspace.invite.delete`.

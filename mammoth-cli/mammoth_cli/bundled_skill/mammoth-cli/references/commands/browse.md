@@ -22,6 +22,26 @@ Result: `BrowseProjectResult`; mutation `read`, confirmation `none`, wait policy
 
 Status on release: observed blocker — backend_error: GET /workspaces/4/projects/47/browse HTTP 500 empty body. Re-check before relying on it.
 
+### `browse.resource`
+
+Run: `mammoth browse resource`. Exact input fields: `mammoth schema get browse.resource`.
+
+Example: `mammoth browse resource dataset 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `BrowseResourceResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `browse.resources`
+
+Run: `mammoth browse resources`. Exact input fields: `mammoth schema get browse.resources`.
+
+Example: `mammoth browse resources`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `BrowseResourcesResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
 ### `browse.root`
 
 Run: `mammoth browse root`. Exact input fields: `mammoth schema get browse.root`.

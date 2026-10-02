@@ -182,6 +182,10 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth browse folder 123
 - `mammoth browse project` [read/none] -> mammoth.api.projects.ProjectsAPI.browse
   example: mammoth browse project
+- `mammoth browse resource` [read/none] -> mammoth.api.browse.BrowseAPI.resource_get
+  example: mammoth browse resource dataset 123
+- `mammoth browse resources` [read/none] -> mammoth.api.browse.BrowseAPI.resources_list
+  example: mammoth browse resources
 - `mammoth browse root` [read/none] -> mammoth.api.browse.BrowseAPI.root
   example: mammoth browse root
 - `mammoth browse workspace` [read/none] -> mammoth.api.browse.BrowseAPI.workspace_resources
@@ -354,6 +358,8 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth dashboard embed secret rotate 123 --yes --confirm 123
 - `mammoth dashboard embed usage get` [read/none] -> mammoth.api.dashboards.DashboardsAPI.embed_usage_get
   example: mammoth dashboard embed usage get 123
+- `mammoth dashboard embed usage summary` [read/none] -> mammoth.api.dashboards.DashboardsAPI.embed_usage_summary
+  example: mammoth dashboard embed usage summary --input '{"dashboard_ids": [1]}'
 - `mammoth dashboard exemplar extract` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.extract_exemplar
   example: mammoth dashboard exemplar extract --input '{"body": {"params": {"name": "Revenue report"}}}'
 - `mammoth dashboard figure-intent` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.figure_intent
@@ -364,6 +370,8 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth dashboard filter list 123
 - `mammoth dashboard filter remove` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.canvas_save
   example: mammoth dashboard filter remove 123 --input '{"field": "sample"}'
+- `mammoth dashboard format-preview` [read/none] -> mammoth.api.dashboards.DashboardsAPI.format_preview
+  example: mammoth dashboard format-preview 123 --input '{"style": "sample"}'
 - `mammoth dashboard get` [read/none] -> mammoth.api.dashboards.DashboardsAPI.get
   example: mammoth dashboard get 123
 - `mammoth dashboard get-by-url` [read/none] -> mammoth.api.dashboards.DashboardsAPI.get_by_url
@@ -1298,6 +1306,8 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth workspace delete 123
 - `mammoth workspace get` [read/none] -> mammoth.api.workspace.WorkspaceAPI.get
   example: mammoth workspace get 123
+- `mammoth workspace home` [read/none] -> mammoth.api.workspaces.WorkspacesAPI.home_summary
+  example: mammoth workspace home
 - `mammoth workspace invite delete` [destructive/prompt_or_yes] -> mammoth.api.workspaces.WorkspacesAPI.invite_delete
   example: mammoth workspace invite delete --input '{"invite_ids": [1]}'
 - `mammoth workspace invite list` [read/none] -> mammoth.api.workspaces.WorkspacesAPI.invite_list

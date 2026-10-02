@@ -141,6 +141,19 @@ class WorkspacesAPI:
             "GET", f"/workspaces/{self._ws()}/app-usage", params=params or None
         )
 
+    async def home_summary(self) -> dict[str, Any]:
+        """Get the workspace Home read: usage snapshot, health issues, suggestions.
+
+        The same deterministic read the Home screen shows; it is not a chat
+        turn and changes nothing.
+
+        Returns:
+            Dict with ``usage_summary``, ``health_issues`` (each with
+            ``issue_type``, ``severity``, ``occurrence_count`` and
+            ``available_actions``) and ``suggestions``.
+        """
+        return await self._client._request_json("GET", f"/workspaces/{self._ws()}/home")
+
     async def storage_breakdown(
         self, limit: int | None = None, offset: int | None = None
     ) -> dict[str, Any]:
