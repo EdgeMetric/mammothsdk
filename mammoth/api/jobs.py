@@ -5,7 +5,6 @@ Jobs API client for tracking job status in Mammoth.
 from __future__ import annotations
 
 import asyncio
-
 import logging
 import time
 from collections.abc import Awaitable, Callable

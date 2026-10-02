@@ -166,11 +166,11 @@ def _sources_block(scope: _Scope, sources: dict[str, Any], live_rows: int) -> di
             "columns": len(stored),
             "used": bool(stored),
             "live_rows": live_rows,
-            **{
-                k: v
-                for k, v in sources.items()
-                if k in ("stored_rows", "current", "reason", "note")
-            },
+            **{k: v for k, v in sources.items() if k in ("stored_rows", "reason", "note")},
+            # A matching row count is not proof the stats are fresh: the backend
+            # records no as-of time, so "current" is never claimed.
+            "row_count_matches": bool(sources.get("current")),
+            "verified_current": False,
             "as_of": "not recorded by the backend",
         },
         "queried": {

@@ -205,8 +205,10 @@ def _user_emails(service: Any) -> dict[Any, str]:
 
 def _change(entry: dict[str, Any], emails: dict[Any, str]) -> dict[str, Any]:
     """One log entry as a line of a change list: when, who, what, on which object."""
-    details = entry.get("details") if isinstance(entry.get("details"), dict) else {}
-    primary = entry.get("primary_object") if isinstance(entry.get("primary_object"), dict) else {}
+    raw_details = entry.get("details")
+    details: dict[str, Any] = raw_details if isinstance(raw_details, dict) else {}
+    raw_primary = entry.get("primary_object")
+    primary: dict[str, Any] = raw_primary if isinstance(raw_primary, dict) else {}
     user_id = entry.get("user_id")
     change = {
         "when": _local_time(entry.get("created_at")),

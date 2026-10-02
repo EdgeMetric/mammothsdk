@@ -133,7 +133,8 @@ def name_matches(records: list[dict[str, Any]], needle: str) -> list[dict[str, A
 
 def _name_hit(record: dict[str, Any]) -> dict[str, Any]:
     """One name-search row: identity and size only (no column list, so many rows fit)."""
-    stats = record.get("stats") if isinstance(record.get("stats"), dict) else {}
+    raw_stats = record.get("stats")
+    stats: dict[str, Any] = raw_stats if isinstance(raw_stats, dict) else {}
     hit: dict[str, Any] = {
         "id": record.get("id"),
         "name": record.get("name"),

@@ -457,6 +457,12 @@ class _EnvelopeGroup(TyperGroup):
                     # classify an argv flag that is not a known global option;
                     # a known option's malformed value remains usage_error.
                     known, _valued = _global_option_flags()
+                    command = getattr(getattr(error, "ctx", None), "command", None)
+                    known = known | {
+                        flag
+                        for param in getattr(command, "params", [])
+                        for flag in (*param.opts, *param.secondary_opts)
+                    }
                     option = next(
                         (
                             token.split("=", 1)[0]

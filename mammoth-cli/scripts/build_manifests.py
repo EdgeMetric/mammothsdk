@@ -20,6 +20,7 @@ from __future__ import annotations
 import shlex
 import sys
 from collections import defaultdict
+from functools import cache
 from pathlib import Path
 from typing import Any
 
@@ -64,6 +65,24 @@ def _with_edits_target(record: dict[str, Any], edits: set[str]) -> dict[str, Any
         if key == "mutation_class":
             out["edits_target"] = record["command_id"] in edits
     return out
+
+
+@cache
+def _existing_group(group: str) -> dict[str, dict[str, Any]]:
+    """The command records already on disk for ``group``, by command id."""
+    import yaml
+
+    path = COMMANDS_DIR / f"{group}.yaml"
+    if not path.exists():
+        return {}
+    loaded = yaml.safe_load(path.read_text(encoding="utf-8"))
+    return {record["command_id"]: record for record in loaded.get("commands", [])}
+
+
+def _existing_readback(command_id: str) -> dict[str, Any]:
+    """The ``readback``/``no_readback`` already recorded for ``command_id`` on disk."""
+    record = _existing_group(command_id.split(".", 1)[0]).get(command_id, {})
+    return {key: record[key] for key in ("readback", "no_readback") if key in record}
 
 
 def _yaml_dump(data: Any) -> str:
@@ -610,6 +629,14 @@ def build() -> dict[str, int]:
     grouped: dict[str, list[dict[str, Any]]] = defaultdict(list)
     for command_id, record in commands.items():
         grouped[command_id.split(".", 1)[0]].append(record)
+    # Readback declarations are authored by hand (see _add_readback.py); carry
+    # them over from the files about to be replaced instead of wiping them.
+    for group_records in grouped.values():
+        for record in group_records:
+            for key in ("readback", "no_readback"):
+                kept = _existing_readback(record["command_id"]).get(key)
+                if kept is not None and key not in record:
+                    record[key] = kept
     # clear stale files
     if COMMANDS_DIR.exists():
         for stale in COMMANDS_DIR.glob("*.yaml"):

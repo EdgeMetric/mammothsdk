@@ -5,7 +5,6 @@ Datasets API client for managing datasets in Mammoth.
 from __future__ import annotations
 
 import asyncio
-
 import time
 from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any, Literal
@@ -487,7 +486,7 @@ class DatasetsAPI:
         dataset_id: int,
         op: Literal["add", "remove"],
         batch_id: int,
-        rows: list[dict[str, Any]],
+        rows: list[dict[str, Any]],  # type: ignore[valid-type]
         workspace_id: int | None = None,
         project_id: int | None = None,
     ) -> dict[str, Any]:

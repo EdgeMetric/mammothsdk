@@ -152,6 +152,18 @@ def _forward_optional(
             kwargs[field] = document[field]
 
 
+def _int_field(value: Any, name: str) -> int:
+    """``value`` as an integer, or an ``invalid_argument`` error naming the field."""
+    try:
+        return int(value)
+    except (TypeError, ValueError) as exc:
+        raise CliError(
+            code=CODE_INVALID_ARGUMENT,
+            message=f"The '{name}' input field must be an integer, got {value!r}.",
+            exit_status=EXIT_USAGE,
+        ) from exc
+
+
 def _resolve_dataset_id(
     service: Any,
     invocation: Invocation,
@@ -176,7 +188,7 @@ def _resolve_dataset_id(
         return explicit
     field = document.get(_DATASET_ID_FIELD)
     if field is not None:
-        return int(field)
+        return _int_field(field, _DATASET_ID_FIELD)
     profile_name = _profile_name(invocation)
     workspace_id = getattr(service, "_workspace_id", None)
     remembered = parents.lookup(profile_name, workspace_id, view_id)
@@ -249,6 +261,26 @@ def _require_discovery_allowed(invocation: Invocation, view_id: int) -> None:
         details={"view_id": view_id, "mutation_class": record.get("mutation_class")},
         recovery_commands=[lookup],
     )
+
+
+def _require_exact_parent(
+    service: Any, invocation: Invocation, view_id: int, kwargs: dict[str, Any]
+) -> None:
+    """Pin the exact parent dataset of a write in ``kwargs``, or refuse the write.
+
+    An explicit ``dataset_id`` or a remembered parent is used as it is; with
+    neither, a write must not let the SDK pick the parent by project-wide
+    discovery (see :func:`_require_discovery_allowed`). Reads pass untouched.
+    """
+    if kwargs.get(_DATASET_ID_FIELD) is not None:
+        return
+    remembered = parents.lookup(
+        _profile_name(invocation), getattr(service, "_workspace_id", None), view_id
+    )
+    if remembered is not None:
+        kwargs[_DATASET_ID_FIELD] = remembered
+        return
+    _require_discovery_allowed(invocation, view_id)
 
 
 def _meta(invocation: Invocation, workspace_id: int, project_id: int | None) -> dict[str, Any]:
@@ -873,8 +905,9 @@ def view_data_get(invocation: Invocation) -> HandlerResult:
             "project_id": project_id,
         }
         if document.get("offset") is not None:
-            kwargs["offset"] = int(document["offset"])
-            kwargs["limit"] = int(limit) if int(limit) > 0 else 400
+            kwargs["offset"] = _int_field(document["offset"], "offset")
+            page_limit = _int_field(limit, "limit")
+            kwargs["limit"] = page_limit if page_limit > 0 else 400
             _forward_optional(document, kwargs, ("sequence",))
             data = service.call(_QUERY_DATA_SYMBOL, **kwargs)
         else:
@@ -884,7 +917,8 @@ def view_data_get(invocation: Invocation) -> HandlerResult:
         data = _relabel_and_check(
             service, dataset_id, view_id, project_id, data, whole_view=whole_view
         )
-    return _trim_rows(data, limit), meta
+    page_size = _DATA_PAGE_ROWS if whole_view else kwargs["limit"]
+    return _trim_rows(data, limit, page_size), meta
 
 
 _QUERY_DATA_SYMBOL = "mammoth.api.dataviews.DataviewsAPI.query_data"
@@ -1291,13 +1325,17 @@ def _check_columns(
 #: Rows a plain ``view data get`` returns unless ``limit`` says otherwise.
 _DATA_GET_DEFAULT_LIMIT = 50
 
+#: Rows the server returns per data read when no ``offset`` is given (its page size).
+_DATA_PAGE_ROWS = 400
 
-def _trim_rows(data: Any, limit: Any) -> Any:
+
+def _trim_rows(data: Any, limit: Any, page_size: int | None = None) -> Any:
     """Keep the first ``limit`` rows of a data page and say what was cut.
 
-    The route returns every row of the view; an agent reading back a
-    transform needs a sample and the total. ``limit`` 0 or a negative value
-    means "all rows".
+    The route returns one page of the view (``page_size`` rows at most); an
+    agent reading back a transform needs a sample and the total. ``limit`` 0
+    or a negative value means "all rows of the page". A page that came back
+    full may have more rows behind it, so it is reported as truncated too.
     """
     if not isinstance(data, dict) or not isinstance(data.get(_ROWS_KEY), list):
         return data
@@ -1310,7 +1348,12 @@ def _trim_rows(data: Any, limit: Any) -> Any:
     rows = data[_ROWS_KEY]
     total = len(rows)
     if cap <= 0 or total <= cap:
-        return {**data, "rows_returned": total, "rows_total_in_page": total, "truncated": False}
+        page_full = page_size is not None and total >= page_size
+        result = {**data, "rows_returned": total, "rows_total_in_page": total}
+        result["truncated"] = page_full
+        if page_full:
+            result["more_rows_may_exist"] = "The page is full; read the next page with offset."
+        return result
     return {
         **data,
         _ROWS_KEY: rows[:cap],
@@ -2706,6 +2749,7 @@ def view_pipeline_rerun(invocation: Invocation) -> HandlerResult:
     kwargs: dict[str, Any] = {"dataview_id": dataview_id}
     _forward_optional(document, kwargs, ("from_sequence", "dataset_id"))
     with open_service(invocation) as (service, auth):
+        _require_exact_parent(service, invocation, dataview_id, kwargs)
         dataset_id = kwargs.get("dataset_id")
         if dataset_id is None:
             dataset_id = _resolve_dataset_id_for_settle(
@@ -2747,6 +2791,7 @@ def view_task_add(invocation: Invocation) -> HandlerResult:
     )
 
     with open_service(invocation) as (service, auth):
+        _require_exact_parent(service, invocation, dataview_id, kwargs)
         require_expected_task_count(service, dataview_id, kwargs.get("dataset_id"), document)
         submitted_at = datetime.now(UTC)
         data = service.call(_symbol(invocation), **kwargs)
@@ -2770,6 +2815,7 @@ def view_task_delete(invocation: Invocation) -> HandlerResult:
     kwargs: dict[str, Any] = {"dataview_id": dataview_id, "task_id": task_id}
     _forward_optional(document, kwargs, ("dataset_id",))
     with open_service(invocation) as (service, auth):
+        _require_exact_parent(service, invocation, dataview_id, kwargs)
         dataset_id = kwargs.get("dataset_id")
         if dataset_id is None:
             dataset_id = _resolve_dataset_id_for_settle(
@@ -2833,6 +2879,7 @@ def view_task_update(invocation: Invocation) -> HandlerResult:
     assert document is not None
     _forward_optional(document, kwargs, ("dataset_id",))
     with open_service(invocation) as (service, auth):
+        _require_exact_parent(service, invocation, dataview_id, kwargs)
         dataset_id = kwargs.get("dataset_id")
         if dataset_id is None:
             dataset_id = _resolve_dataset_id_for_settle(
@@ -2868,6 +2915,7 @@ def view_export_create(invocation: Invocation) -> HandlerResult:
     assert document is not None
     _forward_optional(document, kwargs, ("dataset_id",))
     with open_service(invocation) as (service, auth):
+        _require_exact_parent(service, invocation, dataview_id, kwargs)
         data = service.call(_symbol(invocation), **kwargs)
     return data, _meta(invocation, auth.workspace_id, project_id)
 
@@ -2890,6 +2938,7 @@ def view_export_csv(invocation: Invocation) -> HandlerResult:
     kwargs: dict[str, Any] = {"dataview_id": dataview_id}
     _forward_optional(document, kwargs, ("output_path", "timeout", "dataset_id"))
     with open_service(invocation) as (service, auth):
+        _require_exact_parent(service, invocation, dataview_id, kwargs)
         data = service.call(_symbol(invocation), **kwargs)
     # The SDK returns a Path; render it as a string so the written location is
     # visible in every output mode and serializes cleanly to JSON.
@@ -2932,6 +2981,7 @@ def view_export_delete(invocation: Invocation) -> HandlerResult:
     }
     _forward_optional(document, kwargs, ("skip_validation", "dataset_id"))
     with open_service(invocation) as (service, auth):
+        _require_exact_parent(service, invocation, dataview_id, kwargs)
         data = service.call(_symbol(invocation), **kwargs)
     return data, _meta(invocation, auth.workspace_id, project_id)
 
@@ -3007,6 +3057,7 @@ def view_export_publish_db(invocation: Invocation) -> HandlerResult:
     assert document is not None
     _forward_optional(document, kwargs, ("dataset_id",))
     with open_service(invocation) as (service, auth):
+        _require_exact_parent(service, invocation, dataview_id, kwargs)
         data = service.call(_symbol(invocation), **kwargs)
     return data, _meta(invocation, auth.workspace_id, project_id)
 
@@ -3028,6 +3079,7 @@ def view_export_publish_db_update(invocation: Invocation) -> HandlerResult:
     assert document is not None
     _forward_optional(document, kwargs, ("dataset_id",))
     with open_service(invocation) as (service, auth):
+        _require_exact_parent(service, invocation, dataview_id, kwargs)
         data = service.call(_symbol(invocation), **kwargs)
     return data, _meta(invocation, auth.workspace_id, project_id)
 
@@ -3053,6 +3105,7 @@ def view_export_update(invocation: Invocation) -> HandlerResult:
     assert document is not None
     _forward_optional(document, kwargs, ("skip_validation", "dataset_id"))
     with open_service(invocation) as (service, auth):
+        _require_exact_parent(service, invocation, dataview_id, kwargs)
         data = service.call(_symbol(invocation), **kwargs)
     return data, _meta(invocation, auth.workspace_id, project_id)
 
@@ -3758,7 +3811,10 @@ def _settle_async_view_write(
     data = {**data, "row_check": row_check}
     if pipeline_error is not None:
         data["pipeline_error"] = pipeline_error
-        data["status"] = "failed"
+        # A pipeline still running (or unreadable) is not a failed one: keep the
+        # write's own status, and let verify report the pipeline_error.
+        if pipeline_error.get("execution_state") not in (UNFINISHED_STATE, "unknown"):
+            data["status"] = "failed"
     elif data.get("status") == "processing":
         data["status"] = "done"
     return data

@@ -126,12 +126,7 @@ def folder_find(invocation: Invocation) -> HandlerResult:
             if project_id is None:
                 continue
             project_name = project.get("name")
-            # FoldersAPI.list caps at 100 per page and has no list_all; request
-            # the maximum so a project's folders are not silently truncated.
-            response = service.call(
-                "mammoth.api.folders.FoldersAPI.list", project_id=project_id, limit=100
-            )
-            for folder in _folders_of(response):
+            for folder in _project_folders(service, project_id):
                 name = folder.get("name") if isinstance(folder, dict) else None
                 if isinstance(name, str) and needle in name.lower():
                     matches.append(

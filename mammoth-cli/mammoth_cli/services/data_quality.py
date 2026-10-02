@@ -72,7 +72,9 @@ def _convert_hint(view_id: int | None, column: str, to: str) -> str:
 
 def _bulk_replace_hint(view_id: int | None, column: str, mapping: list[dict[str, Any]]) -> str:
     target = str(view_id) if view_id is not None else "VIEW_ID"
-    spec = json.dumps({"columns": [column], "mapping": mapping})
+    spec = json.dumps(
+        {"columns": [column], "mapping": mapping, "match_case": True, "match_words": True}
+    )
     return f"mammoth view transform bulk-replace {target} --input '{spec}'"
 
 

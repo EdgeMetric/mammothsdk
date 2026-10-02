@@ -14,6 +14,8 @@ _list = list  # Alias to avoid shadowing by method name
 
 # ── Validation error constants ────────────────────────────────────────────────
 
+_USERS_PAGE_LIMIT = 100  # server cap on /users page size
+
 ERR_WORKSPACE_PATCHES_EMPTY = "`patches` must be a non-empty list of patch operations."
 ERR_WORKSPACE_USER_ID_EMPTY = "`user_id` must be a non-empty string."
 ERR_WORKSPACE_USER_PATCHES_EMPTY = "`patches` must be a non-empty list of patch operations."
@@ -136,18 +138,28 @@ class WorkspaceAPI:
             ``WorkspacesAPI.invite_list``.
         """
         ws = workspace_id or self._ws()
-        request_kwargs: dict[str, Any] = {}
-        params = {
+        base_params: dict[str, Any] = {
             key: value
             for key, value in (("fields", fields), ("project_id", project_id))
             if value is not None
         }
-        if params:
-            request_kwargs["params"] = params
-        response = await self._client._request_json(
-            "GET", f"/workspaces/{ws}/users", **request_kwargs
-        )
-        return response.get("users", response if isinstance(response, _list) else [])
+        # The endpoint pages (server default 10, cap 100): read every page so
+        # "all users" and get_user() do not stop at the first one.
+        users: _list[dict[str, Any]] = []
+        offset = 0
+        while True:
+            response = await self._client._request_json(
+                "GET",
+                f"/workspaces/{ws}/users",
+                params={**base_params, "limit": _USERS_PAGE_LIMIT, "offset": offset},
+            )
+            if isinstance(response, _list):
+                return response
+            page = response.get("users", [])
+            users.extend(page)
+            if len(page) < _USERS_PAGE_LIMIT:
+                return users
+            offset += _USERS_PAGE_LIMIT
 
     async def get_user(self, user_id: str, workspace_id: int | None = None) -> dict[str, Any]:
         """Get one workspace user, with roles and status.

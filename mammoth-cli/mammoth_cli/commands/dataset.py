@@ -149,19 +149,38 @@ def _visible_projects(service: Any) -> list[dict[str, Any]]:
 
 
 def _find_in_projects(
-    service: Any, needle: str, projects: list[dict[str, Any]]
+    service: Any,
+    needle: str,
+    projects: list[dict[str, Any]],
+    skipped: list[dict[str, Any]] | None = None,
 ) -> list[dict[str, Any]]:
-    """Datasets whose name contains ``needle`` (case-insensitive), in each of ``projects``."""
+    """Datasets whose name contains ``needle`` (case-insensitive), in each of ``projects``.
+
+    A project that cannot be read does not end the search: with ``skipped`` it is
+    recorded there (id, name, why) and the rest are still searched.
+    """
     matches: list[dict[str, Any]] = []
     for project in projects:
         project_id = project.get("id")
         if project_id is None:
             continue
-        response = service.call(
-            "mammoth.api.datasets.DatasetsAPI.list_all",
-            project_id=project_id,
-            fields=DATASET_ROW_FIELDS,
-        )
+        try:
+            response = service.call(
+                "mammoth.api.datasets.DatasetsAPI.list_all",
+                project_id=project_id,
+                fields=DATASET_ROW_FIELDS,
+            )
+        except CliError as error:
+            if skipped is None:
+                raise
+            skipped.append(
+                {
+                    "project_id": project_id,
+                    "project_name": project.get("name"),
+                    "error": error.message,
+                }
+            )
+            continue
         datasets = response.get("datasets", []) if isinstance(response, dict) else []
         for dataset in datasets:
             name = dataset.get("name") if isinstance(dataset, dict) else None
@@ -210,18 +229,19 @@ def dataset_find(invocation: Invocation) -> HandlerResult:
     """
     name_substring = _require_string_positional(invocation, "name substring")
     needle = name_substring.lower()
+    skipped: list[dict[str, Any]] = []
     with open_service(invocation) as (service, auth):
         visible = _visible_projects(service)
         if invocation.project is not None:
             projects: list[dict[str, Any]] = [named_project(service, invocation.project, visible)]
-            matches = _find_in_projects(service, needle, projects)
+            matches = _find_in_projects(service, needle, projects, skipped)
             if not matches:
                 others = _other_projects(visible, invocation.project)
-                matches = _find_in_projects(service, needle, others)
+                matches = _find_in_projects(service, needle, others, skipped)
                 projects += others
         else:
             projects = visible
-            matches = _find_in_projects(service, needle, projects)
+            matches = _find_in_projects(service, needle, projects, skipped)
         meta = {
             "profile": invocation.profile,
             "workspace_id": auth.workspace_id,
@@ -229,8 +249,10 @@ def dataset_find(invocation: Invocation) -> HandlerResult:
         }
     result: dict[str, Any] = {
         "matches": matches,
-        "projects_searched": len(projects),
+        "projects_searched": len(projects) - len(skipped),
     }
+    if skipped:
+        result["projects_skipped"] = skipped
     if note := ambiguity_note(len(matches), name_substring):
         result["note"] = note
     return result, meta

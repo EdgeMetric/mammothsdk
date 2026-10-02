@@ -22,8 +22,8 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import parse_qs, urlparse
 
-import pytest
 import httpx
+import pytest
 
 from mammoth_cli.context.resolver import ResolvedAuth
 from mammoth_cli.services.sdk_service import SdkMammothService

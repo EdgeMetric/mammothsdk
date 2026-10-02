@@ -1645,8 +1645,9 @@ def schema_index(family: str | None = None) -> dict[str, Any]:
     ``schema get`` for the command it picked.
     """
     entries = schema_entries()
-    if family:
-        wanted = family.strip().split(".")[0].split()[0]
+    words = (family or "").strip().split(".")[0].split()
+    if words:
+        wanted = words[0]
         commands = [
             {
                 "command_id": entry["command_id"],

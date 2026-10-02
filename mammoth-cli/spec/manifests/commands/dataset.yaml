@@ -118,7 +118,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dataset broken-rows resolve DATASET_ID --help
-  agent_example: 'mammoth dataset broken-rows resolve 123 --input ''{"op": "add", "batch_id": 1, "rows": [{"sample_key": "Status"}]}'''
+  agent_example: 'mammoth dataset broken-rows resolve 123 --input ''{"op": "add", "batch_id": 1, "rows": [{"line_num": 2, "line": "corrected,line,here"}]}'''
   unit_tests:
   - UT-DATASET-BROKEN-ROWS-RESOLVE
   contract_tests:

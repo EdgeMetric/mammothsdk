@@ -26,7 +26,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth dataset broken-rows resolve`. Exact input fields: `mammoth schema get dataset.broken-rows.resolve`.
 
-Example: `mammoth dataset broken-rows resolve 123 --input '{"op": "add", "batch_id": 1, "rows": [{"sample_key": "Status"}]}'`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth dataset broken-rows resolve 123 --input '{"op": "add", "batch_id": 1, "rows": [{"line_num": 2, "line": "corrected,line,here"}]}'`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `DatasetBrokenRowsResolveResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
 
