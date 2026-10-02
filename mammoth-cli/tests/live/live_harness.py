@@ -7,20 +7,37 @@ import time
 from dataclasses import dataclass
 from typing import Any
 
-from mammoth_cli import embed
-from mammoth_cli.context.resolver import ExplicitLogin
+from mammoth_cli.testing import make_runner
+
+
+def parse_envelope(output: str) -> dict[str, Any]:
+    """The JSON envelope a command printed; a command that printed none is an error."""
+    text = output.strip()
+    start = text.find("{")
+    try:
+        parsed = json.loads(text[start:]) if start >= 0 else None
+    except json.JSONDecodeError:
+        parsed = None
+    if isinstance(parsed, dict):
+        return parsed
+    return {"error": {"code": "no_envelope", "message": text[-500:]}}
 
 
 @dataclass
 class LiveCli:
-    """Runs the real CLI in-process as one login and returns envelopes."""
+    """Runs the real CLI in-process, as a person does, and returns envelopes.
 
-    login: ExplicitLogin
+    The login is the isolated default profile the ``live_profile`` fixture
+    saved, so file uploads and ``--input PATH`` are available (an embedded host
+    call refuses both).
+    """
 
     def run(self, *args: str, project: int | str | None = None) -> dict[str, Any]:
         """Run ``mammoth <args>`` (in ``project``) and return the envelope."""
-        project_id = int(project) if project is not None else None
-        return embed.invoke(list(args), login=self.login, project_id=project_id)
+        argv = [*args, "--output", "json", "--no-input"]
+        if project is not None:
+            argv += ["--project", str(int(project))]
+        return parse_envelope(make_runner().invoke(argv).output)
 
     def ok(self, *args: str, project: int | str | None = None) -> tuple[Any, dict[str, Any]]:
         """Run a command that must succeed; return its ``data`` and ``meta``."""

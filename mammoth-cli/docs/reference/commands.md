@@ -1,6 +1,6 @@
 # Command reference
 
-Generated from the reviewed command manifests for mammoth-cli 2.2.12.
+Generated from the reviewed command manifests for mammoth-cli 2.2.13.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
@@ -6123,12 +6123,7 @@ Total commands: 645.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dataviews.DataviewsAPI.update`
-- Agent example: `mammoth view update 123 123 --input '{"patch_data": [{"sample_key": "Status"}]}'`
-
-  **Agent note:** raw patch input is intentionally blocked because its
-  backend grammar is not a typed CLI contract. Do not infer an `op`,
-  `path`, or `value` from examples; use a separately typed command or
-  stop with the structured unsupported-contract result.
+- Agent example: `mammoth view update 123 123 --input '{"name": "Revenue report"}'`
 
 ### `mammoth view version apply`
 

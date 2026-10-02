@@ -419,15 +419,6 @@ def test_unknown_s7_field_is_rejected_before_service_dispatch(
             {},
         ),
         (
-            schedule_cmd.schedule_list,
-            "schedule.list",
-            {"limit": 23, "offset": 7},
-            "mammoth.api.schedules.SchedulesAPI.list",
-            {"project_id": 42, "limit": 23, "offset": 7},
-            [],
-            {"project": 42},
-        ),
-        (
             support_cmd.support_connector_update,
             "support.connector.update",
             {

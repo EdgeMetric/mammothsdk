@@ -878,11 +878,11 @@ Status on release: ran once on CLI 2.0.14 — write sweep 2026-09-18: exit 0 on 
 
 Run: `mammoth view update`. Exact input fields: `mammoth schema get view.update`.
 
-Example: `mammoth view update 123 123 --input '{"patch_data": [{"sample_key": "Status"}]}'`. Discovery only: this command is fail-closed and must not dispatch a request.
+Example: `mammoth view update 123 123 --input '{"name": "Revenue report"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
-Execution is unavailable for the current contract and returns `unsupported_contract`. Do not infer request fields or retry it; use only a separately typed alternative.
+Result: `ViewUpdateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
-Known restriction: BLOCKED[B09 DATAVIEW_INPUT_UNTYPED]: patch_data is an arbitrary dictionary; reserved, not registered.
+Status on release: untried; no live run recorded.
 
 ### `view.version.apply`
 

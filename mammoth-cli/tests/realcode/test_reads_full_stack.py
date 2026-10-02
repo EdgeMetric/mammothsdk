@@ -56,7 +56,8 @@ def test_view_list_all_columns_lists_every_column_with_its_type(
     api.on("GET", r"/projects/180/datasets/9$", body={"dataset": {"id": 9, "name": "Sales"}})
 
     default = _invoke(["view", "list", "9"], {}, tmp_path)
-    assert "(+5 more)" in default["dataviews"][0]["columns"]
+    # One dataset's views list every column: it saves a `view get` before a read.
+    assert "more)" not in default["dataviews"][0]["columns"]
     full = _invoke(["view", "list", "9"], {"all_columns": True}, tmp_path)
     columns = full["dataviews"][0]["columns"]
     assert "more)" not in columns

@@ -7,12 +7,12 @@ each destructive command is then dry-run and its ``targets`` are compared with t
 the resources were created with. The resources are
 deleted at the end, and a dry run is checked to have deleted nothing.
 
-Credentials come from the shared ``login`` fixture in ``conftest.py``:
-``MAMMOTH_LIVE_LOGIN_FACTORY`` (``module:callable`` returning an
-:class:`~mammoth_cli.context.resolver.ExplicitLogin`) when set, else the
-key/secret variables; the suite skips without either. Run it on the box that has the test identity::
+Credentials come from ``conftest.py``: the ``mm_`` token in the file named by
+``MAMMOTH_EVAL_TOKEN_FILE`` (server from ``MAMMOTH_SERVER_PREFIX``), or a
+``MAMMOTH_LIVE_LOGIN_FACTORY``; the suite skips without either. Run it on the box
+that has the test identity::
 
-    MAMMOTH_LIVE_LOGIN_FACTORY=api.agents.evals.world:build_login \\
+    MAMMOTH_EVAL_TOKEN_FILE=$HOME/evalrun/.apitests_token MAMMOTH_SERVER_PREFIX=koyal \\
         pytest tests/live/test_dryrun_targets.py -m live -v
 """
 
@@ -26,9 +26,8 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from live_harness import LiveCli
 
-from mammoth_cli import embed
-from mammoth_cli.context.resolver import ExplicitLogin
 from mammoth_cli.manifest.loader import load_commands
 from mammoth_cli.runtime.dryrun_targets import (
     CODE_TARGETS_UNRESOLVABLE,
@@ -47,7 +46,7 @@ _YES = ["--yes", "--no-input"]
 class World:
     """The scratch resources and the names they were created with."""
 
-    login: ExplicitLogin
+    cli: LiveCli
     project: int = 0
     spare_projects: list[int] = field(default_factory=list)
     names: dict[str, str] = field(default_factory=dict)
@@ -55,8 +54,7 @@ class World:
 
     def run(self, *args: str, scoped: bool = True) -> dict[str, Any]:
         """Run ``mammoth <args>`` (in the scratch project) and return the envelope."""
-        project_id = self.project if scoped else None
-        return embed.invoke(list(args), login=self.login, project_id=project_id)
+        return self.cli.run(*args, project=self.project if scoped else None)
 
     def ok(self, *args: str, scoped: bool = True) -> dict[str, Any]:
         envelope = self.run(*args, scoped=scoped)
@@ -180,9 +178,9 @@ def _sweep(world: World) -> None:
 
 
 @pytest.fixture(scope="module")
-def world(login: ExplicitLogin, tmp_path_factory: pytest.TempPathFactory) -> Iterator[World]:
+def world(live_cli: LiveCli, tmp_path_factory: pytest.TempPathFactory) -> Iterator[World]:
     stamp = int(time.time())
-    scratch = World(login=login)
+    scratch = World(cli=live_cli)
     scratch.project = _create_project(scratch, f"{PREFIX}-main-{stamp}")
     scratch.names["main"] = f"{PREFIX}-main-{stamp}"
     try:

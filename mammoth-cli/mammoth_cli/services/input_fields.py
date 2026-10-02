@@ -46,6 +46,8 @@ _HANDLER_OWNED_FIELDS: dict[str, frozenset[str]] = {
     # ``sort`` is the backend's internal result-column pairs; the CLI takes
     # ``order_by`` (result labels) and maps it, so a raw ``sort`` would be dropped.
     "view.data.aggregate": frozenset({"sort"}),
+    # ``view update`` offers only the typed rename; the handler builds the patch.
+    "view.update": frozenset({"patch_data"}),
 }
 
 # CLI-only commands whose complete request is carried by positionals/context.
@@ -76,6 +78,7 @@ _EXAMPLE_INPUT_HINTS: dict[str, dict[str, Any]] = {
     },
     # View display settings: real column names read better than sample keys.
     "view.transform.rename-columns": {"renames": {"cust_id": "Customer ID"}},
+    "view.update": {"name": "Revenue report"},
     "view.transform.sort": {"order_by": [["Revenue", "DESC"]]},
     # The backend requires integer resource ids ("resource_ids must be
     # comma-separated integers"); the SDK annotation is a plain list[str].

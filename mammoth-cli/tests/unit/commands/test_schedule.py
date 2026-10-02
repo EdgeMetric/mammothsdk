@@ -39,21 +39,13 @@ def _write(tmp_path: Path, payload: dict[str, object]) -> str:
 # -- list ---------------------------------------------------------------
 
 
-def test_list_requires_project(fake_service: FakeMammothService) -> None:
+def test_list_is_retired_and_names_the_web_app(fake_service: FakeMammothService) -> None:
+    """The server answers NOT_IMPLEMENTED by design, so the command says so up front."""
     with pytest.raises(CliError) as excinfo:
-        schedule_cmd.schedule_list(_inv("schedule.list"))
-    assert excinfo.value.code == "project_required"
-
-
-def test_list_passes_project_only(fake_service: FakeMammothService) -> None:
-    schedule_cmd.schedule_list(_inv("schedule.list", project=180))
-    assert fake_service.call_log == [(_LIST, {"project_id": 180})]
-
-
-def test_list_forwards_limit_and_offset(fake_service: FakeMammothService, tmp_path: Path) -> None:
-    input_file = _write(tmp_path, {"limit": 10, "offset": 5})
-    schedule_cmd.schedule_list(_inv("schedule.list", project=180, input_file=input_file))
-    assert fake_service.call_log == [(_LIST, {"project_id": 180, "limit": 10, "offset": 5})]
+        schedule_cmd.schedule_list(_inv("schedule.list", project=180))
+    assert excinfo.value.code == "not_available"
+    assert "schedule get" in (excinfo.value.hint or "")
+    assert fake_service.call_log == []
 
 
 # -- get ------------------------------------------------------------------
