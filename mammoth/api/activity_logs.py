@@ -39,6 +39,7 @@ class ActivityLogsAPI:
         user_ids: list[Any] | None = None,
         parent_id: int | None = None,
         search_text: str | None = None,
+        fields: str | None = None,
     ) -> dict[str, Any]:
         """List activity logs.
 
@@ -57,14 +58,21 @@ class ActivityLogsAPI:
             user_ids: Filter by the ids of the users who performed the activity.
             parent_id: Filter by the parent resource id.
             search_text: Free-text search across activity log entries.
+            fields: Entry fields to return (comma list or a mode such as "__min");
+                the route's default carries each entry's full details.
 
         Returns:
             Dict with activity logs and pagination info.
         """
         ws = self._ws()
-        body: dict[str, Any] = {"limit": limit, "offset": offset}
+        # limit, offset, sort and fields are the route's QUERY parameters; the body is
+        # the filter set only, so paging sent there was ignored (page 2 was page 1).
+        params: dict[str, Any] = {"limit": limit, "offset": offset}
         if sort:
-            body["sort"] = sort
+            params["sort"] = sort
+        if fields:
+            params["fields"] = fields
+        body: dict[str, Any] = {}
         for name, value in (
             ("project_id", project_id),
             ("categories", categories),
@@ -80,7 +88,9 @@ class ActivityLogsAPI:
         ):
             if value is not None:
                 body[name] = value
-        return await self._client._request_json("POST", f"/workspaces/{ws}/activity_log", json=body)
+        return await self._client._request_json(
+            "POST", f"/workspaces/{ws}/activity_log", params=params, json=body
+        )
 
     async def export(self, format: str = "csv", **filters: Any) -> dict[str, Any]:
         """Export activity logs.

@@ -4,6 +4,15 @@ All notable changes to `mammoth-io` are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.15]
+
+### Fixed
+
+- `ActivityLogsAPI.list` sent `limit`, `offset` and `sort` in the request body, but the route reads
+  them from the query string: every page was the first page and `sort` was ignored. They now go
+  as query parameters. New `fields` argument chooses the entry fields (the route's default carries
+  every entry's full details).
+
 ## [0.8.14]
 
 ### Added

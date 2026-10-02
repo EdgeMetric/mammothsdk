@@ -14,6 +14,7 @@ from mammoth_cli.testing import login_default_profile
 
 _LIST = "mammoth.api.activity_logs.ActivityLogsAPI.list"
 _EXPORT = "mammoth.api.activity_logs.ActivityLogsAPI.export"
+_FIELDS = activity_cmd._LIST_FIELDS
 
 
 @pytest.fixture(autouse=True)
@@ -37,7 +38,7 @@ def _write_doc(tmp_path: Path, payload: dict[str, object]) -> str:
 
 def test_list_with_no_input_passes_no_kwargs(fake_service: FakeMammothService) -> None:
     activity_cmd.activity_list(_inv("activity.list"))
-    assert fake_service.call_log == [(_LIST, {})]
+    assert fake_service.call_log == [(_LIST, {"fields": _FIELDS})]
 
 
 def test_list_forwards_optional_filters(fake_service: FakeMammothService, tmp_path: Path) -> None:
@@ -65,6 +66,7 @@ def test_list_forwards_optional_filters(fake_service: FakeMammothService, tmp_pa
         (
             _LIST,
             {
+                "fields": _FIELDS,
                 "limit": 10,
                 "offset": 5,
                 "sort": "-created_at",
@@ -89,7 +91,7 @@ def test_list_never_forwards_unknown_fields(
 ) -> None:
     doc = _write_doc(tmp_path, {"workspace_id": 999, "limit": 5})
     activity_cmd.activity_list(_inv("activity.list", input_file=doc))
-    assert fake_service.call_log == [(_LIST, {"limit": 5})]
+    assert fake_service.call_log == [(_LIST, {"fields": _FIELDS, "limit": 5})]
 
 
 def test_list_returns_response_and_meta(

@@ -57,6 +57,7 @@ from mammoth_cli.services.conditions import CONDITION_KWARG, compile_condition
 from mammoth_cli.services.dashboard_review import UPLOAD_NOTE, upload_hints
 from mammoth_cli.services.data_quality import column_warnings, duplicate_rows_fact
 from mammoth_cli.services.listing import DATASET_LIST_FIELDS, compact_view_list
+from mammoth_cli.services.local_time import local_time
 from mammoth_cli.services.read_queries import ReadContext
 
 HandlerResult = tuple[Any, dict[str, Any]]
@@ -2604,8 +2605,28 @@ def view_version_list(invocation: Invocation) -> HandlerResult:
     _forward_optional(document, kwargs, ("fields", "sort", "limit", "offset", "name"))
     with open_service(invocation) as (service, auth):
         kwargs["dataset_id"] = _resolve_dataset_id(service, invocation, dataview_id, document)
-        data = service.call(_symbol(invocation), **kwargs)
+        data = _with_version_times(service.call(_symbol(invocation), **kwargs))
     return data, _meta(invocation, auth.workspace_id, project_id)
+
+
+def _with_version_times(data: Any) -> Any:
+    """Give each version a ``when`` with an explicit offset.
+
+    ``created_at`` is naive UTC and the server-made ``name`` ("30-Sep-2026 11:17 AM")
+    is that same UTC wall time, so neither can be shown to a user as local time.
+    """
+    versions = data.get("versions") if isinstance(data, dict) else None
+    if not isinstance(versions, list):
+        return data
+    stamped = [
+        {**v, "when": local_time(v.get("created_at"))} if isinstance(v, dict) else v
+        for v in versions
+    ]
+    return {
+        **data,
+        "versions": stamped,
+        "time_note": "created_at and the version name are UTC; `when` carries its offset.",
+    }
 
 
 def view_version_update(invocation: Invocation) -> HandlerResult:

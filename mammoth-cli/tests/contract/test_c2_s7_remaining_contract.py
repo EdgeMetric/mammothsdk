@@ -291,6 +291,7 @@ def test_unknown_s7_field_is_rejected_before_service_dispatch(
             },
             "mammoth.api.activity_logs.ActivityLogsAPI.list",
             {
+                "fields": activity_cmd._LIST_FIELDS,
                 "limit": 913,
                 "offset": 17,
                 "sort": "S7-ACTIVITY-SORT",
