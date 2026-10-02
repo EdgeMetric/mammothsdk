@@ -22,7 +22,11 @@ from mammoth_cli.errors.envelope import (
     CliError,
 )
 from mammoth_cli.manifest.loader import command_by_id
-from mammoth_cli.runtime.confirm import POLICY_PROMPT_OR_YES, enforce_confirmation
+from mammoth_cli.runtime.confirm import (
+    POLICY_CONFIRM_TARGET,
+    POLICY_PROMPT_OR_YES,
+    enforce_confirmation,
+)
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.session import open_service, require_project
 
@@ -198,6 +202,11 @@ def workflow_graph(invocation: Invocation) -> HandlerResult:
 def workflow_cleanup(invocation: Invocation) -> HandlerResult:
     """Clean up ghost (orphaned skeleton) workflows in the active project."""
     project_id = require_project(invocation)
+    enforce_confirmation(
+        invocation,
+        policy=POLICY_PROMPT_OR_YES,
+        action=f"delete the ghost workflows of project {project_id}",
+    )
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), project_id=project_id)
     return data, _meta(invocation, auth.workspace_id, project_id)
@@ -355,6 +364,12 @@ def workflow_block_auth(invocation: Invocation) -> HandlerResult:
     block_id = _require_int_positional_at(invocation, 1, "block id")
     document = invocation.load_input()
     auth_data = _require_field(document, "auth_data")
+    enforce_confirmation(
+        invocation,
+        policy=POLICY_CONFIRM_TARGET,
+        action=f"replace the credentials of block {block_id} in workflow {workflow_id}",
+        target=str(block_id),
+    )
     with open_service(invocation) as (service, auth):
         data = service.call(
             _symbol(invocation),

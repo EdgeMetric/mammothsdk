@@ -90,6 +90,7 @@ ERROR_SUMMARIES: dict[str, str] = {
         "The assistant couldn't tell exactly which items this would change, so nothing was changed."
     ),
     "download_failed": "A download didn't complete.",
+    "dry_run_unsupported": "That command can't be previewed, so it was not run.",
     "duplicate_input_key": _S_BAD_INPUT,
     "empty_search_query": "The search was empty.",
     "export_already_exists": "An export with that name already exists.",

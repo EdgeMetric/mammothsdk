@@ -2596,7 +2596,7 @@ def test_export_csv_embedded_returns_download_url_and_writes_no_file(
 def test_export_csv_embedded_rejects_output_path(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
-    doc = _doc(tmp_path, {"output_path": str(tmp_path / "out.csv")})
+    doc = json.dumps({"output_path": str(tmp_path / "out.csv")})
     token = _enter_embedded_call()
     try:
         with pytest.raises(CliError) as excinfo:

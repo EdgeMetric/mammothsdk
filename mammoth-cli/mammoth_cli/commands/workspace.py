@@ -373,10 +373,16 @@ def workspace_user_update(invocation: Invocation) -> HandlerResult:
 
 
 def workspace_user_update_batch(invocation: Invocation) -> HandlerResult:
-    """Update workspace users via JSON-patch operations. ``patches`` from ``--input``."""
+    """Update workspace users via JSON-patch operations. High-impact: ``--yes --confirm WS``."""
     document = invocation.load_input()
     patches = _require_field(document, "patches")
     with open_service(invocation) as (service, auth):
+        enforce_confirmation(
+            invocation,
+            policy=POLICY_CONFIRM_TARGET,
+            action=f"update users of workspace {auth.workspace_id}",
+            target=str(auth.workspace_id),
+        )
         data = service.call(_symbol(invocation), patches=patches)
     return data, _meta(invocation, auth.workspace_id)
 

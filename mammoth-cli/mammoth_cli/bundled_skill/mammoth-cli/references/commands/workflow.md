@@ -16,9 +16,9 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth workflow block auth`. Exact input fields: `mammoth schema get workflow.block.auth`.
 
-Example: `mammoth workflow block auth 123 123 --input '{"auth_data": {"sample_key": "Status"}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth workflow block auth 123 123 --input '{"auth_data": {"sample_key": "Status"}}'`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
-Result: `WorkflowBlockAuthResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+Result: `WorkflowBlockAuthResult`; mutation `benign_mutation`, confirmation `confirm_target`, wait policy `not_async`.
 
 Status on release: untried; no live run recorded.
 
@@ -56,9 +56,9 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth workflow cleanup`. Exact input fields: `mammoth schema get workflow.cleanup`.
 
-Example: `mammoth workflow cleanup`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth workflow cleanup`. Illustrative only: append `--yes` after observing an owned target.
 
-Result: `WorkflowCleanupResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+Result: `WorkflowCleanupResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
 
 Status on release: untried; no live run recorded.
 

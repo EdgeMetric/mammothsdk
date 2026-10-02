@@ -753,7 +753,7 @@ Sensitive structured input must come from a private file or pipe; never put secr
 
 ## project
 
-- `mammoth project bulk-delete` [destructive/prompt_or_yes] -> mammoth.api.projects.ProjectsAPI.bulk_delete
+- `mammoth project bulk-delete` [destructive/confirm_target] -> mammoth.api.projects.ProjectsAPI.bulk_delete
   example: mammoth project bulk-delete --input '{"project_ids": [1]}'
 - `mammoth project bulk-update` [high_impact/confirm_target] -> mammoth.api.projects.ProjectsAPI.bulk_update
   example: mammoth project bulk-update --input '{"patch_data": {"patches": [{"op": "add", "path": "role", "value": [{"project_id": 456, "user_roles": [{"user_id": 123, "role": "project_analyst"}]}]}]}}'
@@ -1323,7 +1323,7 @@ Sensitive structured input must come from a private file or pipe; never put secr
 
 - `mammoth workflow block add` [benign_mutation/none] -> mammoth.api.workflows.WorkflowsAPI.block_add
   example: mammoth workflow block add 123 --input '{"block_type": "sample"}'
-- `mammoth workflow block auth` [benign_mutation/none] -> mammoth.api.workflows.WorkflowsAPI.block_auth
+- `mammoth workflow block auth` [benign_mutation/confirm_target] -> mammoth.api.workflows.WorkflowsAPI.block_auth
   example: mammoth workflow block auth 123 123 --input '{"auth_data": {"sample_key": "Status"}}'
 - `mammoth workflow block config` [benign_mutation/none] -> mammoth.api.workflows.WorkflowsAPI.block_config
   example: mammoth workflow block config 123 123
@@ -1331,7 +1331,7 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth workflow block type 123 123 --input '{"connection_type": "sample"}'
 - `mammoth workflow canvas` [benign_mutation/none] -> mammoth.api.workflows.WorkflowsAPI.canvas
   example: mammoth workflow canvas 123 --input '{"canvas_state": {"sample_key": "Status"}}'
-- `mammoth workflow cleanup` [benign_mutation/none] -> mammoth.api.workflows.WorkflowsAPI.cleanup
+- `mammoth workflow cleanup` [destructive/prompt_or_yes] -> mammoth.api.workflows.WorkflowsAPI.cleanup
   example: mammoth workflow cleanup
 - `mammoth workflow create` [benign_mutation/none] -> mammoth.api.workflows.WorkflowsAPI.create
   example: mammoth workflow create 'Revenue report'
@@ -1406,5 +1406,5 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth workspace user remove-batch
 - `mammoth workspace user update` [high_impact/confirm_target] -> mammoth.api.workspace.WorkspaceAPI.update_user
   example: mammoth workspace user update resource-123 --input '{"patches": [{"op": "replace", "path": "role", "value": "workspace_member"}]}'
-- `mammoth workspace user update-batch` [benign_mutation/none] -> mammoth.api.workspaces.WorkspacesAPI.user_update_batch
+- `mammoth workspace user update-batch` [high_impact/confirm_target] -> mammoth.api.workspaces.WorkspacesAPI.user_update_batch
   example: mammoth workspace user update-batch --input '{"patches": [{"sample_key": "Status"}]}'

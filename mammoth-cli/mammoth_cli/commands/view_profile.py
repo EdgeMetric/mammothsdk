@@ -27,6 +27,7 @@ from mammoth_cli.commands.view import (
     _resolve_dataset_id,
 )
 from mammoth_cli.errors.envelope import CODE_INVALID_ARGUMENTS, EXIT_USAGE, CliError
+from mammoth_cli.runtime import embedded
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.session import open_service, require_project
 from mammoth_cli.services import data_profile as dp
@@ -209,7 +210,7 @@ def _map_all[T](workers: int, fn: Callable[..., T], items: list[Any]) -> list[T]
     if workers <= 1 or len(items) <= 1:
         return [fn(item) for item in items]
     with ThreadPoolExecutor(max_workers=workers) as pool:
-        return list(pool.map(fn, items))
+        return embedded.pool_map(pool, fn, items)
 
 
 # -- pass 1: distinct count and min/max of every column, a few pivots in all ----------

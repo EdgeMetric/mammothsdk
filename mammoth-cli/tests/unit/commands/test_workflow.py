@@ -139,7 +139,7 @@ def test_graph_navigation_uses_free_namespace_without_overwriting_backend_keys(
 
 
 def test_cleanup_passes_project(fake_service: FakeMammothService) -> None:
-    workflow_cmd.workflow_cleanup(_inv("workflow.cleanup", project=180))
+    workflow_cmd.workflow_cleanup(_inv("workflow.cleanup", project=180, yes=True))
     assert fake_service.call_log == [(_CLEANUP, {"project_id": 180})]
 
 
@@ -342,7 +342,14 @@ def test_block_add_forwards_optional_fields(
 def test_block_auth_uses_two_positionals(fake_service: FakeMammothService, tmp_path: Path) -> None:
     input_file = _write(tmp_path, {"auth_data": {"token": "t"}})
     workflow_cmd.workflow_block_auth(
-        _inv("workflow.block.auth", project=180, extra_args=["7", "3"], input_file=input_file)
+        _inv(
+            "workflow.block.auth",
+            project=180,
+            extra_args=["7", "3"],
+            input_file=input_file,
+            yes=True,
+            confirm="3",
+        )
     )
     assert fake_service.call_log == [
         (

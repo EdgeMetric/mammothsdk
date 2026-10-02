@@ -31,7 +31,6 @@ from mammoth_cli.manifest.loader import command_by_id
 from mammoth_cli.runtime import embedded
 from mammoth_cli.runtime.confirm import (
     POLICY_CONFIRM_TARGET,
-    POLICY_PROMPT_OR_YES,
     POLICY_YES_ALWAYS,
     enforce_confirmation,
 )
@@ -401,8 +400,9 @@ def project_bulk_delete(invocation: Invocation) -> HandlerResult:
     project_ids = _require_input_field(document, "project_ids")
     enforce_confirmation(
         invocation,
-        policy=POLICY_PROMPT_OR_YES,
+        policy=POLICY_CONFIRM_TARGET,
         action=f"delete {len(project_ids)} projects",
+        target=",".join(str(project_id) for project_id in sorted(set(project_ids))),
     )
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), project_ids=project_ids)
@@ -632,11 +632,10 @@ def _map_checks[T](
     if len(items) <= 1:
         return [work(service, auth, item) for item in items]
     with ThreadPoolExecutor(max_workers=min(_CHECK_WORKERS, len(items))) as pool:
-        return list(
-            pool.map(
-                lambda item: _in_worker(invocation, lambda svc, ath: work(svc, ath, item)),
-                items,
-            )
+        return embedded.pool_map(
+            pool,
+            lambda item: _in_worker(invocation, lambda svc, ath: work(svc, ath, item)),
+            items,
         )
 
 

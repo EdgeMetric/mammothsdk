@@ -25,7 +25,9 @@ from mammoth_cli.errors.envelope import (
     CODE_INVALID_INPUT_FORMAT,
     EXIT_USAGE,
     CliError,
+    not_available_embedded_error,
 )
+from mammoth_cli.runtime import embedded
 
 STDIN_SENTINEL = "-"
 _JSON_FORMAT = "json"
@@ -343,6 +345,19 @@ def _parse(text: str, fmt: str) -> Any:
         ) from exc
 
 
+def _require_inline_when_embedded(input_file: str) -> None:
+    """An embedded call runs on a shared server: it may not read that server's files or stdin.
+
+    Only inline JSON (a value starting with ``{``) is accepted; a path, an
+    ``@path`` and ``-`` would all read the host's filesystem or stdin.
+    """
+    if embedded.active() and not input_file.lstrip().startswith("{"):
+        error = not_available_embedded_error("--input PATH")
+        error.message = "Reading --input from a file or standard input is not available here."
+        error.hint = "Pass the request as inline JSON in one token after --input."
+        raise error
+
+
 def load_input_document(input_file: str | None, input_format: str | None) -> dict[str, Any] | None:
     """Load and validate a structured request document.
 
@@ -362,6 +377,7 @@ def load_input_document(input_file: str | None, input_format: str | None) -> dic
     """
     if input_file is None:
         return None
+    _require_inline_when_embedded(input_file)
     input_file = _strip_at_prefix(input_file)
     fmt = _resolve_format(input_file, input_format)
     document = _parse(_read_text(input_file), fmt)

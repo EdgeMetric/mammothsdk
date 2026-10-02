@@ -20,23 +20,6 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
-_SECRET_KEY_HINTS = (
-    "api_secret",
-    "apisecret",
-    "secret",
-    "password",
-    "passwd",
-    "api_key",
-    "apikey",
-    "secure_key",
-    "securekey",
-    "private_key",
-    "token",
-    "access_key",
-    "secret_key",
-    "client_secret",
-    "passphrase",
-)
 #: Exact key names that are secrets in their own right but carry no hint
 #: substring above -- a schema's whole ``secret_fields`` entry (``rest``
 #: export's ``auth``, a dict merging in whichever typed credential the
@@ -60,38 +43,71 @@ class _NormalizedJsonSchema(dict[str, Any]):
 
 
 _CAMEL_BOUNDARY = re.compile(r"(?<=[a-z0-9])(?=[A-Z])")
+_NON_ALNUM = re.compile(r"[^a-z0-9]+")
 # Plural ``*_tokens`` keys that still name credentials rather than design data.
 _CREDENTIAL_TOKEN_PREFIXES = ("access", "refresh", "auth", "api", "bearer", "session", "oauth")
+#: A key is credential-shaped when it ENDS in one of these, ignoring case and
+#: separators (``api_key``, ``apiKey``, ``X-Api-Key``, ``access_token``,
+#: ``client_secret``). It is judged on how the name ends, not on a substring:
+#: ``Token Count`` and ``Secret Santa`` are ordinary column names.
+_CREDENTIAL_SUFFIXES = (
+    "apisecret",
+    "apikey",
+    "apitoken",
+    "secret",
+    "secrets",
+    "password",
+    "passwords",
+    "passwd",
+    "passphrase",
+    "securekey",
+    "privatekey",
+    "accesskey",
+    "secretkey",
+    "token",
+)
+
+
+class DataRows(list[Any]):
+    """Result rows keyed by the user's own column names.
+
+    A column called ``Password`` or ``Token`` is data, not a credential, so key
+    redaction never looks inside these rows. :func:`normalize` returns the same
+    type, so the marker survives the renderer's second pass.
+    """
+
+
+class Revealed(dict[str, Any]):
+    """A result that is a credential by design, such as ``client-app create``'s token.
+
+    The API shows it once; masking it would make it unrecoverable. The command
+    that returns it is the only reader of it, so key redaction skips it.
+    """
 
 
 def _is_secret_key(key: str) -> bool:
     # ``styleTokens`` and ``style_tokens`` must be judged the same way.
     lowered = _CAMEL_BOUNDARY.sub("_", key).lower()
-    # ``token_count`` is ordinary result metadata (for example an LLM usage
-    # counter), not a credential.  Do not let the broad token guard erase it.
     # ``secret_fields`` is schema metadata naming which fields are protected;
     # it never carries a value.
     if lowered in {
+        "secret_fields",
+        "design_tokens",
         "token_count",
         "next_token",
         "continuation_token",
         "page_token",
-        "design_tokens",
-        "secret_fields",
     }:
         return False
     if lowered in _EXACT_SECRET_KEYS:
         return True
-    if "token" in lowered and not any(
-        hint in lowered for hint in _SECRET_KEY_HINTS if hint != "token"
-    ):
-        # Credential tokens are singular (``token``, ``access_token``).  Plural
-        # ``tokens`` / ``style_tokens`` are dashboard design-system data, and
-        # erasing them breaks the canvas get -> save round-trip.
-        if lowered == "tokens" or lowered.endswith("_tokens"):
-            return lowered.startswith(_CREDENTIAL_TOKEN_PREFIXES)
-        return True
-    return any(hint in lowered for hint in _SECRET_KEY_HINTS)
+    words = [word for word in _NON_ALNUM.split(lowered) if word]
+    # Credential tokens are singular (``token``, ``access_token``). Plural
+    # ``tokens`` / ``style_tokens`` are dashboard design-system data, and
+    # erasing them breaks the canvas get -> save round-trip.
+    if words and words[-1] == "tokens":
+        return len(words) > 1 and words[-2] in _CREDENTIAL_TOKEN_PREFIXES
+    return "".join(words).endswith(_CREDENTIAL_SUFFIXES)
 
 
 def _is_secret_value(value: Any) -> bool:
@@ -198,6 +214,10 @@ def normalize(value: Any, *, redact_secrets: bool = True) -> Any:
 
     if isinstance(value, _NormalizedJsonSchema):
         return _normalize_json_schema(value)
+    if isinstance(value, DataRows):
+        return DataRows(normalize(item, redact_secrets=False) for item in value)
+    if isinstance(value, Revealed):
+        return Revealed(normalize(dict(value), redact_secrets=False))
 
     if isinstance(value, Mapping):
         result: dict[str, Any] = {}

@@ -3110,6 +3110,7 @@ sdk_methods:
   mutation_class: destructive
   wait_policy: not_async
   pagination_policy: none
+  confirmation: confirm_target
   openapi_operation_ids: []
   notes: Sorted comma-separated ID-set confirmation.
 - sdk_symbol: mammoth.api.projects.ProjectsAPI.bulk_update
@@ -3856,6 +3857,7 @@ sdk_methods:
   mutation_class: null
   wait_policy: null
   pagination_policy: null
+  confirmation: confirm_target
   openapi_operation_ids: []
 - sdk_symbol: mammoth.api.workflows.WorkflowsAPI.block_config
   canonical_command: workflow.block.config
@@ -3881,7 +3883,7 @@ sdk_methods:
 - sdk_symbol: mammoth.api.workflows.WorkflowsAPI.cleanup
   canonical_command: workflow.cleanup
   alias_of: null
-  mutation_class: null
+  mutation_class: destructive
   wait_policy: null
   pagination_policy: null
   openapi_operation_ids: []
@@ -4131,7 +4133,7 @@ sdk_methods:
 - sdk_symbol: mammoth.api.workspaces.WorkspacesAPI.user_update_batch
   canonical_command: workspace.user.update-batch
   alias_of: null
-  mutation_class: null
+  mutation_class: high_impact
   wait_policy: null
   pagination_policy: null
   openapi_operation_ids: []

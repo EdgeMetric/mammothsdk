@@ -977,7 +977,7 @@ def test_bi_export_embedded_points_user_to_export_dialog(
     cwd = tmp_path / "server-cwd"
     cwd.mkdir()
     monkeypatch.chdir(cwd)
-    doc = _bi_doc(tmp_path, payload)
+    doc = json.dumps(payload)
     token = _enter_embedded_call()
     try:
         with pytest.raises(CliError) as excinfo:

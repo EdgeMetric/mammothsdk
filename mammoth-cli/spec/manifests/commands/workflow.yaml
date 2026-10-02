@@ -72,7 +72,7 @@ commands:
   result_model: WorkflowBlockAuthResult
   mutation_class: benign_mutation
   edits_target: true
-  confirmation: none
+  confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: live_disposable_project
@@ -260,9 +260,9 @@ commands:
   sdk_conversion: Call mammoth.api.workflows.WorkflowsAPI.cleanup with validated request fields.
   request_model: WorkflowCleanupRequest
   result_model: WorkflowCleanupResult
-  mutation_class: benign_mutation
+  mutation_class: destructive
   edits_target: false
-  confirmation: none
+  confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: live_disposable_project
