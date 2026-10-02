@@ -1588,7 +1588,7 @@ Total commands: 633.
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.format_preview`
-- Agent example: `mammoth dashboard format-preview 123 --input '{"style": "sample"}'`
+- Agent example: `mammoth dashboard format-preview 123 --input '{"style": "presentation"}'`
 
 ### `mammoth dashboard gallery get`
 
@@ -2612,7 +2612,7 @@ Total commands: 633.
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.datasets.DatasetsAPI.resolve_unstructured_rows`
-- Agent example: `mammoth dataset broken-rows resolve 123 --input '{"op": "add", "batch_id": 1, "rows": [{"sample_key": "Status"}]}'`
+- Agent example: `mammoth dataset broken-rows resolve 123 --input '{"op": "add", "batch_id": 1, "rows": [{"line_num": 2, "line": "corrected,line,here"}]}'`
 
 ### `mammoth dataset bulk-delete`
 

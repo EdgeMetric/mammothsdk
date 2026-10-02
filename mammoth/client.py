@@ -341,12 +341,14 @@ def _read_error_detail(body: dict[str, Any]) -> str | None:
 
 
 _TOKEN_WORKSPACES: dict[tuple[str, str], int] = {}
+_TOKEN_WORKSPACES_MAX = 64
 
 
 def resolve_token_workspace_id(base_url: str, api_token: str, timeout: float) -> int:
     """Ask the server which workspace an ``mm_`` token belongs to.
 
-    The answer is cached per (server, token) for the life of the process.
+    The answer is cached per (server, token) for the life of the process, up
+    to the 64 most recent tokens.
 
     Args:
         base_url: The API base url, ending in ``/api/v2``.
@@ -372,11 +374,22 @@ def resolve_token_workspace_id(base_url: str, api_token: str, timeout: float) ->
             ) from exc
         if response.status_code == 401:
             raise MammothAuthError("Invalid API credentials")
-        workspace_id = response.json().get("id") if response.status_code == 200 else None
+        workspace_id: object = None
+        if response.status_code == 200:
+            try:
+                body = response.json()
+            except ValueError as exc:
+                raise MammothAPIError(
+                    "Mammoth returned an unreadable answer for the token's workspace",
+                    status_code=response.status_code,
+                ) from exc
+            workspace_id = body.get("id") if isinstance(body, dict) else None
         if not isinstance(workspace_id, int) or workspace_id <= 0:
             raise MammothAPIError(
                 "Mammoth did not return the token's workspace", status_code=response.status_code
             )
+        if len(_TOKEN_WORKSPACES) >= _TOKEN_WORKSPACES_MAX:
+            _TOKEN_WORKSPACES.pop(next(iter(_TOKEN_WORKSPACES)))
         _TOKEN_WORKSPACES[key] = workspace_id
     return _TOKEN_WORKSPACES[key]
 
@@ -721,7 +734,7 @@ class MammothClient:
         if files:
             request_kwargs["files"] = files
             request_kwargs["headers"] = headers
-        elif json:
+        elif json is not None:
             headers["Content-Type"] = "application/json"
             request_kwargs["headers"] = headers
             request_kwargs["json"] = json

@@ -38,7 +38,6 @@ Exports are accessed via ``view.export``::
 from __future__ import annotations
 
 import asyncio
-
 import datetime
 import random
 import string
@@ -118,6 +117,7 @@ ERR_REST_TIMEOUT = "to_rest_api `timeout_seconds` must be between 5 and 300 (got
 # Inclusive bounds the REST-API handler accepts.
 _REST_BATCH_SIZE_MIN = 1
 _REST_BATCH_SIZE_MAX = 10000
+_EXPORT_PAGE_LIMIT = 100  # server cap on /exports page size
 _REST_TIMEOUT_MIN = 5
 _REST_TIMEOUT_MAX = 300
 
@@ -519,10 +519,30 @@ class View(
         export apart from an earlier one already at EXECUTED against the
         same target dataset (see :meth:`_wait_for_dataset_export_write`).
         """
-        page = await self._client.exports.list(
-            self.id, handler_type=HandlerType.INTERNAL_DATASET, dataset_id=self.dataset_id
-        )
-        return max((export.id or 0 for export in page.exports), default=0)
+        exports = await self._list_internal_dataset_exports()
+        return max((export.id or 0 for export in exports), default=0)
+
+    async def _list_internal_dataset_exports(self) -> list[Any]:
+        """Every ``internal_dataset`` export trigger of this dataview.
+
+        The export list is paged (server default 50, cap 100), so a dataview
+        with more triggers than one page would otherwise hide the newest
+        ones from the write-confirmation poll.
+        """
+        exports: list[Any] = []
+        offset = 0
+        while True:
+            page = await self._client.exports.list(
+                self.id,
+                handler_type=HandlerType.INTERNAL_DATASET,
+                dataset_id=self.dataset_id,
+                limit=_EXPORT_PAGE_LIMIT,
+                offset=offset,
+            )
+            exports.extend(page.exports)
+            if len(page.exports) < _EXPORT_PAGE_LIMIT:
+                return exports
+            offset += _EXPORT_PAGE_LIMIT
 
     async def _poll_internal_dataset_exports(
         self, match: Callable[[Any], bool], timeout: int | None
@@ -536,10 +556,8 @@ class View(
         deadline = time.monotonic() + (timeout or getattr(self._client, "job_timeout", 60) or 60)
         poll_interval = 2.0
         while time.monotonic() < deadline:
-            page = await self._client.exports.list(
-                self.id, handler_type=HandlerType.INTERNAL_DATASET, dataset_id=self.dataset_id
-            )
-            matches = [e for e in page.exports if match(e)]
+            exports = await self._list_internal_dataset_exports()
+            matches = [e for e in exports if match(e)]
             if matches:
                 export = max(matches, key=lambda e: e.id or 0)
                 if export.status == ExportStatus.EXECUTED:

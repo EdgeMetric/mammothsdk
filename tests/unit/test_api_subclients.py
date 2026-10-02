@@ -3270,7 +3270,11 @@ class TestWorkspaceAPI:
         (apiv2/apiv2/workspaces/user_schema.py:29); the SDK must pass it through."""
         await client.workspaces.list_users(fields="__full")
         assert_called_with_method_and_endpoint(client._request_json, "GET", "/workspaces/1/users")
-        assert client._request_json.call_args.kwargs["params"] == {"fields": "__full"}
+        assert client._request_json.call_args.kwargs["params"] == {
+            "fields": "__full",
+            "limit": 100,
+            "offset": 0,
+        }
 
     async def test_get_user(self, client: MammothClient):
         client._request_json.return_value = {
@@ -3279,7 +3283,11 @@ class TestWorkspaceAPI:
         user = await client.workspaces.get_user(user_id="6")
         assert user == {"id": 6, "email": "b@x.io"}
         assert_called_with_method_and_endpoint(client._request_json, "GET", "/workspaces/1/users")
-        assert client._request_json.call_args.kwargs["params"] == {"fields": "__full"}
+        assert client._request_json.call_args.kwargs["params"] == {
+            "fields": "__full",
+            "limit": 100,
+            "offset": 0,
+        }
 
     async def test_update_user_sends_patch_envelope(self, client: MammothClient):
         op = UserRolePatchOp(op="replace", path="role", value=WorkspaceRoleType.WORKSPACE_ADMIN)

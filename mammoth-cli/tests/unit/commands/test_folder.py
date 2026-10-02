@@ -55,8 +55,8 @@ def test_find_without_project_searches_every_visible_project(
     ]
     assert "list_all_projects" in fake_service.calls
     assert fake_service.call_log == [
-        (_LIST, {"project_id": 1, "limit": 100}),
-        (_LIST, {"project_id": 2, "limit": 100}),
+        (_LIST, {"project_id": 1, "limit": 100, "offset": 0}),
+        (_LIST, {"project_id": 2, "limit": 100, "offset": 0}),
     ]
     assert meta["project_id"] is None
 
@@ -69,7 +69,7 @@ def test_find_with_project_restricts_to_one_project(fake_service: FakeMammothSer
     assert result["matches"] == [
         {"project_id": 42, "project_name": "P42", "id": 20, "name": "Reports 2024"}
     ]
-    assert fake_service.call_log == [(_LIST, {"project_id": 42, "limit": 100})]
+    assert fake_service.call_log == [(_LIST, {"project_id": 42, "limit": 100, "offset": 0})]
     assert meta["project_id"] == 42
 
 

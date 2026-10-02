@@ -8,7 +8,6 @@ Not intended for direct use — use client.views.get(id) to get a View object in
 from __future__ import annotations
 
 import asyncio
-
 import logging
 import time
 from collections.abc import Mapping
@@ -205,10 +204,14 @@ class PipelineAPI:
                         if dataview_id not in listed_ids:
                             continue
                 raise
-            except KeyError:
-                # A missing dict key while reading the response is a local
-                # miss for this dataset; keep scanning the remaining datasets.
-                continue
+            except KeyError as exc:
+                # An unreadable response is not "not found": skipping it would
+                # misreport the view as missing from the project.
+                raise MammothAPIError(
+                    f"Dataset {dataset_id} returned an unreadable response while"
+                    f" looking for dataview {dataview_id} (missing key {exc}).",
+                    details={"dataset_id": dataset_id, "dataview_id": dataview_id},
+                ) from exc
 
         raise ValueError(f"Dataview {dataview_id} not found in any dataset in project {project_id}")
 

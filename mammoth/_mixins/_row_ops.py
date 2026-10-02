@@ -227,6 +227,8 @@ class RowOpsMixin(ViewHost):
             seen.add(internal)
             value.append([internal, direction])
             shown.append([name, direction])
+        if self._build_only:
+            return {"status": "validated", "sort": shown}
         await self._client.dataviews.update(
             self.dataset_id,
             self.id,

@@ -9,6 +9,7 @@ are not scoped to the SDK client's own ``client.workspace_id``.
 
 from __future__ import annotations
 
+import asyncio
 import base64
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -1624,7 +1625,7 @@ class SupportAPI:
         artifact = await self._client._request_binary(
             "GET", _template_path(slug, "/export"), params={"data": "1" if with_data else "0"}
         )
-        return _save_zip(artifact, output_path or f"{slug}.zip")
+        return await asyncio.to_thread(_save_zip, artifact, output_path or f"{slug}.zip")
 
     async def template_export_dashboard(
         self,
@@ -1656,7 +1657,7 @@ class SupportAPI:
             f"{_TEMPLATE_ADMIN}/dashboards/{dashboard_id}/export",
             params={"slug": slug, "data": "1" if with_data else "0"},
         )
-        return _save_zip(artifact, output_path or f"{slug}.zip")
+        return await asyncio.to_thread(_save_zip, artifact, output_path or f"{slug}.zip")
 
 
 def _save_zip(artifact: dict[str, Any], output_path: str | Path) -> Path:

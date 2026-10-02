@@ -121,7 +121,9 @@ class AddExportSpec(BaseModel):
     handler_type: HandlerType = Field(..., description="Export handler (destination type)")
     trigger_type: TriggerType = Field(..., description="Trigger that controls when export executes")
     target_properties: S3TargetProperties | dict[str, Any] = Field(
-        description="Destination configuration properties. A destination that needs none sends none.",
+        description=(
+            "Destination configuration properties. A destination that needs none sends none."
+        ),
         default_factory=dict,
     )
     additional_properties: dict[str, Any] = Field(

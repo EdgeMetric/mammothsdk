@@ -1323,7 +1323,7 @@ def _programme_reference_error(fake_service: FakeMammothService, view_id: int) -
         "type_of_modification": "add_rule",
     }
     fake_service.responses[view_ops_cmd._PIPELINE_SYMBOL] = {"state": "ref_error"}
-    fake_service.responses[view_ops_cmd._PIPELINE_ITEMS_SYMBOL] = {
+    fake_service.responses[view_ops_cmd._PIPELINE_ITEMS_ALL_SYMBOL] = {
         "items": [
             {"id": 91, "item_type": "task", "sequence": 1, "status": "executed"},
             {
@@ -1387,7 +1387,7 @@ def test_transform_with_reference_errors_fails_with_the_repair_command(
     assert "amount" in error.message and "TEXT" in (error.hint or "")
     # The follow-up reads carry the exact parent so they never fall into discovery.
     assert (
-        view_ops_cmd._PIPELINE_ITEMS_SYMBOL,
+        view_ops_cmd._PIPELINE_ITEMS_ALL_SYMBOL,
         {"dataview_id": 132, "dataset_id": 122, "fields": "__full"},
     ) in fake_service.call_log
 
@@ -1416,14 +1416,14 @@ def test_transform_without_has_error_is_untouched(
     # the reference-error-specific signal; it must not fire when has_error is
     # false. A plain PipelineAPI.get_pipeline call still happens as part of
     # the settle step's execution_state check, which is unrelated.
-    assert view_ops_cmd._PIPELINE_ITEMS_SYMBOL not in fake_service.calls
+    assert view_ops_cmd._PIPELINE_ITEMS_ALL_SYMBOL not in fake_service.calls
 
 
 def test_reference_error_survives_a_failed_follow_up_read(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
     _programme_reference_error(fake_service, 132)
-    fake_service.responses[view_ops_cmd._PIPELINE_ITEMS_SYMBOL] = CliError(
+    fake_service.responses[view_ops_cmd._PIPELINE_ITEMS_ALL_SYMBOL] = CliError(
         code="api_error", message="boom", exit_status=1
     )
     with pytest.raises(CliError) as excinfo:

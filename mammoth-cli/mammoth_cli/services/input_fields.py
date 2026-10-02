@@ -79,6 +79,14 @@ _EXAMPLE_INPUT_HINTS: dict[str, dict[str, Any]] = {
     # The backend requires integer resource ids ("resource_ids must be
     # comma-separated integers"); the SDK annotation is a plain list[str].
     "project.resource-dependencies": {"resource_ids": [456]},
+    # ``rows`` are the set-aside lines as ``dataset broken-rows list`` returns them.
+    "dataset.broken-rows.resolve": {
+        "op": "add",
+        "batch_id": 1,
+        "rows": [{"line_num": 2, "line": "corrected,line,here"}],
+    },
+    # The server accepts only the formats it knows: dashboard, presentation, document, qa.
+    "dashboard.format-preview": {"style": "presentation"},
     "view.export.azure-blob": {
         "storage_account_name": "storage-account",
         "tenant_id": "tenant-id",

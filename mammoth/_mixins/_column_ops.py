@@ -205,6 +205,8 @@ class ColumnOpsMixin(ViewHost):
         final = [cleaned.get(name, name).lower() for name in self.columns]
         if len(final) != len(set(final)):
             raise ValueError("two columns would have the same name after the rename")
+        if self._build_only:
+            return {"status": "validated", "renamed": cleaned}
         await self._client.dataviews.update(
             self.dataset_id,
             self.id,

@@ -18,7 +18,13 @@ from __future__ import annotations
 import ast
 import re
 from collections.abc import Callable
-from decimal import ROUND_HALF_UP, Decimal, DivisionByZero, InvalidOperation
+from decimal import (
+    ROUND_HALF_UP,
+    Decimal,
+    DivisionByZero,
+    InvalidOperation,
+    localcontext,
+)
 from typing import Any
 
 from mammoth_cli.errors.envelope import CODE_INVALID_ARGUMENT, EXIT_USAGE, CliError
@@ -29,6 +35,9 @@ HandlerResult = tuple[Any, dict[str, Any]]
 #: A trailing "N%" is rewritten to "(N/100)" before parsing -- ``%`` is not
 #: valid Python expression syntax on its own.
 _PERCENT_RE = re.compile(r"(\d+(?:\.\d+)?)\s*%")
+
+#: Significant digits kept in a result (Python's default is 28).
+_PRECISION = 60
 
 _BINOPS: dict[type, Callable[[Decimal, Decimal], Decimal]] = {
     ast.Add: lambda a, b: a + b,
@@ -48,18 +57,26 @@ def _unsupported(expression: str) -> CliError:
     )
 
 
-def _evaluate(node: ast.AST, expression: str) -> Decimal:
+def _literal(node: ast.Constant, source: str) -> Decimal:
+    """The number as written: going through a float would round away digits past 17."""
+    try:
+        return Decimal(ast.get_source_segment(source, node) or "")
+    except InvalidOperation:
+        return Decimal(str(node.value))
+
+
+def _evaluate(node: ast.AST, expression: str, source: str) -> Decimal:
     if isinstance(node, ast.Expression):
-        return _evaluate(node.body, expression)
+        return _evaluate(node.body, expression, source)
     if (
         isinstance(node, ast.Constant)
         and isinstance(node.value, (int, float))
         and not isinstance(node.value, bool)
     ):
-        return Decimal(str(node.value))
+        return _literal(node, source)
     if isinstance(node, ast.BinOp) and type(node.op) in _BINOPS:
-        left = _evaluate(node.left, expression)
-        right = _evaluate(node.right, expression)
+        left = _evaluate(node.left, expression, source)
+        right = _evaluate(node.right, expression, source)
         try:
             return _BINOPS[type(node.op)](left, right)
         except (InvalidOperation, DivisionByZero, ZeroDivisionError) as exc:
@@ -69,7 +86,7 @@ def _evaluate(node: ast.AST, expression: str) -> Decimal:
                 exit_status=EXIT_USAGE,
             ) from exc
     if isinstance(node, ast.UnaryOp) and isinstance(node.op, (ast.UAdd, ast.USub)):
-        value = _evaluate(node.operand, expression)
+        value = _evaluate(node.operand, expression, source)
         return value if isinstance(node.op, ast.UAdd) else -value
     if (
         isinstance(node, ast.Call)
@@ -78,7 +95,7 @@ def _evaluate(node: ast.AST, expression: str) -> Decimal:
         and not node.keywords
         and 1 <= len(node.args) <= 2
     ):
-        value = _evaluate(node.args[0], expression)
+        value = _evaluate(node.args[0], expression, source)
         ndigits = 0
         if len(node.args) == 2:
             digits_node = node.args[1]
@@ -90,7 +107,14 @@ def _evaluate(node: ast.AST, expression: str) -> Decimal:
                 raise _unsupported(expression)
             ndigits = digits_node.value
         quantum = Decimal(1).scaleb(-ndigits)
-        return value.quantize(quantum, rounding=ROUND_HALF_UP)
+        try:
+            return value.quantize(quantum, rounding=ROUND_HALF_UP)
+        except InvalidOperation as exc:
+            raise CliError(
+                code=CODE_INVALID_ARGUMENT,
+                message=f"round() digits out of range in {expression!r}.",
+                exit_status=EXIT_USAGE,
+            ) from exc
     raise _unsupported(expression)
 
 
@@ -120,5 +144,8 @@ def calc(invocation: Invocation) -> HandlerResult:
             hint="calc supports + - * / and parentheses, unary +/-, a trailing "
             "'%' (divides by 100), and round(x[, ndigits]).",
         ) from exc
-    result = _evaluate(tree, expression)
+    source = normalized
+    with localcontext() as context:
+        context.prec = _PRECISION
+        result = _evaluate(tree, expression, source)
     return {"expression": expression, "result": str(result)}, {}

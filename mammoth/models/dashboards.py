@@ -435,12 +435,12 @@ class EmbedConfigResponse(BaseModel):
     allow_any_origin: bool = True
     allowed_origins: list[str] = Field(default_factory=list)
     appearance: dict[str, Any] = Field(default_factory=dict)
-    snippet: dict[str, Any] = Field(default_factory=dict)
+    snippet: dict[str, Any] = Field(default_factory=dict, repr=False)
     embed_url: str
     sdk_url: str
     published: bool
     public: bool
-    access_key: str | None = None
+    access_key: str | None = Field(default=None, repr=False)
     key_rotated_at: str | None = None
     has_signing_secret: bool = False
     signing_secret_rotated_at: str | None = None
@@ -454,7 +454,7 @@ class EmbedKeyResponse(BaseModel):
 
     model_config = ConfigDict(extra="allow")
 
-    key: str
+    key: str = Field(repr=False)
     rotated_at: str | None = None
 
 
@@ -491,7 +491,7 @@ class EmbedPreviewTokenResponse(BaseModel):
 
     model_config = ConfigDict(extra="allow")
 
-    token: str
+    token: str = Field(repr=False)
     expires_at: int
     embed_url: str
 
@@ -501,7 +501,7 @@ class EmbedSecretResponse(BaseModel):
 
     model_config = ConfigDict(extra="allow")
 
-    secret: str
+    secret: str = Field(repr=False)
     token_ttl: int
     rotated_at: str | None = None
 

@@ -400,7 +400,7 @@ def map_sdk_exception(
             not _is_known_read(method)
             and (
                 status is None
-                or status in {408, 425, 429}
+                or status in {408, 425}  # 429 refused the request before any effect
                 or (status is not None and status >= 500)
             )
         )
@@ -499,7 +499,7 @@ def map_sdk_exception(
                 code=CODE_RETRYABLE,
                 message="Mammoth is temporarily unavailable or the request timed out.",
                 exit_status=EXIT_RETRYABLE,
-                hint="Retry the read after the indicated delay, honoring Retry-After when present.",
+                hint="Retry after the indicated delay, honoring Retry-After when present.",
                 details=details,
                 request_id=request_id,
                 retryable=True,

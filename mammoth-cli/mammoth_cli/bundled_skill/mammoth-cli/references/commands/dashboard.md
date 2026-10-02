@@ -386,7 +386,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth dashboard format-preview`. Exact input fields: `mammoth schema get dashboard.format-preview`.
 
-Example: `mammoth dashboard format-preview 123 --input '{"style": "sample"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth dashboard format-preview 123 --input '{"style": "presentation"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `DashboardFormatPreviewResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 

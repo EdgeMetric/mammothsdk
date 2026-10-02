@@ -247,7 +247,7 @@ def test_a_label_that_stops_where_a_longer_one_starts_reads_as_a_rename() -> Non
     assert warning["fix"] == (
         "mammoth view transform bulk-replace 62 --input "
         '\'{"columns": ["store"], "mapping": [{"search": ["Riverside"], '
-        '"replace": "Riverside Mall"}]}\''
+        '"replace": "Riverside Mall"}], "match_case": true, "match_words": true}\''
     )
 
 

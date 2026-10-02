@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import base64
 import builtins
 import os
@@ -509,7 +510,7 @@ class DashboardsAPI:
             if output_path
             else Path(f"dashboard_{dashboard_id}_{target}.{_BI_EXPORT_EXTENSIONS[target]}")
         )
-        return _write_bytes_atomic(content, path)
+        return await asyncio.to_thread(_write_bytes_atomic, content, path)
 
     async def update(
         self,

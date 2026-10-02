@@ -331,7 +331,8 @@ def rebucket(
 
     ``functions`` maps each aggregate result key to SUM/COUNT/MIN/MAX. Each output
     row carries the bucket as its period start (ISO date, or ``None`` for blank), or,
-    for a date part, the part's value in calendar order (``Monday``..``Sunday``).
+    for a date part, the part's value; rows come back in chronological or calendar order
+    (``Monday``..``Sunday``), blanks last.
     """
     merged: dict[tuple[Any, ...], dict[str, Any]] = {}
     order: dict[tuple[Any, ...], Any] = {}
@@ -342,9 +343,8 @@ def rebucket(
         order[key] = sort_key
         for result_key, function in functions.items():
             target[result_key] = _merge(function, target.get(result_key), row.get(result_key))
-    if level.startswith(PART_PREFIX):
-        return [merged[key] for key in sorted(merged, key=order.__getitem__)]
-    return list(merged.values())
+    # Chronological (or calendar) order, not the order the stored strings came in.
+    return [merged[key] for key in sorted(merged, key=order.__getitem__)]
 
 
 def in_range_values(days: dict[str, date | None], test: Callable[[date], bool]) -> list[str]:

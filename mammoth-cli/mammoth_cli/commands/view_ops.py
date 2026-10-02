@@ -79,6 +79,7 @@ CODE_PIPELINE_REFERENCE_ERROR = "pipeline_reference_error"
 CODE_TASK_RUNTIME_ERROR = "task_runtime_error"
 _PIPELINE_SYMBOL = "mammoth.api.pipeline.PipelineAPI.get_pipeline"
 _PIPELINE_ITEMS_SYMBOL = "mammoth.api.pipeline.PipelineAPI.items"
+_PIPELINE_ITEMS_ALL_SYMBOL = "mammoth.api.pipeline.PipelineAPI.items_all"
 _PIPELINE_ITEMS_FULL = "__full"
 _ERROR_TRANSFORM_STATUSES = {"ERROR", "REFERROR"}
 #: Tolerance for clock skew between this process and the server when deciding
@@ -499,7 +500,14 @@ def reject_pipeline_reference_errors(
         read = service.call(_PIPELINE_SYMBOL, **kwargs)
         if isinstance(read, dict):
             pipeline = read
-        items = service.call(_PIPELINE_ITEMS_SYMBOL, fields=_PIPELINE_ITEMS_FULL, **kwargs)
+        # Every page: a broken task past the first 50 items must still be found.
+        items = (
+            service.call(_PIPELINE_ITEMS_ALL_SYMBOL, fields=_PIPELINE_ITEMS_FULL, **kwargs)
+            if "dataset_id" in kwargs
+            else service.call(
+                _PIPELINE_ITEMS_SYMBOL, fields=_PIPELINE_ITEMS_FULL, limit=100, **kwargs
+            )
+        )
         if isinstance(items, dict):
             broken = [
                 item
@@ -738,7 +746,11 @@ def _with_dashboards(service: Any, view_id: int, record: Any) -> Any:
     says "this board" is understood (eval T1-D-22); unchanged when none."""
     if not isinstance(record, dict):
         return record
-    boards = service.call(_DASHBOARDS_LIST_SYMBOL)
+    try:
+        boards = service.call(_DASHBOARDS_LIST_SYMBOL)
+    except CliError:
+        # A decoration must not fail the read it decorates.
+        return record
     built_on = [
         {"id": board.get("id"), "title": board.get("title")}
         for board in (boards if isinstance(boards, list) else [])

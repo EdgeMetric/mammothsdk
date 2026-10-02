@@ -150,7 +150,8 @@ def bulk_replace_input(column: str, groups: Sequence[Mapping[str, Any]]) -> dict
             for group in groups
         ],
         "match_case": True,
-        "match_words": False,
+        # Whole-value match: a substring match would rewrite "NY" inside "NYC".
+        "match_words": True,
     }
 
 

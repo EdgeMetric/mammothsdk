@@ -605,8 +605,8 @@ class DataviewsAPI:
         Raises:
             MammothValidationError: If neither or both of *aggregations*/
                 *group_by* and *metric* are given, if a *function* is not one
-                of SUM, COUNT, AVG, MIN, MAX, STDDEV, DISTINCT_COUNT, or if *column* is missing for a
-                non-COUNT aggregation.
+                of SUM, COUNT, AVG, MIN, MAX, STDDEV, DISTINCT_COUNT, or if *column* is missing
+                for a non-COUNT aggregation.
 
         Example::
 
@@ -686,8 +686,8 @@ class DataviewsAPI:
             level: Truncation level (DATE) or resolution level (NUMERIC);
                 ignored for other column types. Defaults to "AUTO".
             metric: An optional ``{"column": ..., "function": ..., "as_name":
-                ...}`` dict (SUM, COUNT, AVG, MIN, MAX, STDDEV or DISTINCT_COUNT) computed per bucket
-                in addition to the COUNT.
+                ...}`` dict (SUM, COUNT, AVG, MIN, MAX, STDDEV or DISTINCT_COUNT) computed per
+                bucket in addition to the COUNT.
             condition: Filter condition dict applied before exploring (optional).
             sequence: Pipeline step to read data at (default: latest).
             limit: Maximum number of buckets to return (default: 20 for TEXT,

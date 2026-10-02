@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import asyncio
 import inspect
-
 import json
 from pathlib import Path
 from typing import Any
@@ -831,7 +830,11 @@ CASES = [
         "api": WorkspaceAPI,
         "method": "list_users",
         "kwargs": {"fields": "__full"},
-        "wire": ["GET", "/workspaces/4/users", {"params": {"fields": "__full"}}],
+        "wire": [
+            "GET",
+            "/workspaces/4/users",
+            {"params": {"fields": "__full", "limit": 100, "offset": 0}},
+        ],
         "response": {"users": []},
     },
     {

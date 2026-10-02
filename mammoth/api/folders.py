@@ -15,6 +15,8 @@ from ..models.jobs import JobResponse, ObjectJobSchema
 
 _list = list  # Alias to avoid shadowing by method name
 
+_BULK_IDS_LIMIT = 100  # server cap on ids per /resources/bulk request
+
 ERR_FOLDER_ID_POSITIVE = "`folder_id` must be a positive integer, got {0}."
 
 
@@ -217,18 +219,20 @@ class FoldersAPI:
         requested = [("datasource", i) for i in dataset_ids] + [("dataview", i) for i in view_ids]
         if not requested:
             return []
-        response = await self._client._request_json(
-            "POST",
-            f"/workspaces/{ws}/projects/{proj}/resources/bulk",
-            json={"ids": [{"type": type_, "id": oid} for type_, oid in requested]},
-            operation_effect="read",
-        )
         found: dict[tuple[str, int], int] = {}
-        for item in response.get("resources", []):
-            resource_id = item.get("resource_id")
-            object_id = item.get("object_id")
-            if resource_id is not None and object_id is not None:
-                found[(item.get("resource_type"), object_id)] = int(resource_id)
+        for first in range(0, len(requested), _BULK_IDS_LIMIT):
+            chunk = requested[first : first + _BULK_IDS_LIMIT]
+            response = await self._client._request_json(
+                "POST",
+                f"/workspaces/{ws}/projects/{proj}/resources/bulk",
+                json={"ids": [{"type": type_, "id": oid} for type_, oid in chunk]},
+                operation_effect="read",
+            )
+            for item in response.get("resources", []):
+                resource_id = item.get("resource_id")
+                object_id = item.get("object_id")
+                if resource_id is not None and object_id is not None:
+                    found[(item.get("resource_type"), object_id)] = int(resource_id)
         resolved: list[int] = []
         missing: list[str] = []
         for type_, oid in requested:

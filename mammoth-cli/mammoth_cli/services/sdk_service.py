@@ -78,6 +78,21 @@ AGENT_RUN_ENV = "MAMMOTH_AGENT_RUN"
 AGENT_RUN_HEADER = "X-Mammoth-Agent-Run"
 
 
+def _signature_misfit(method: Any, kwargs: dict[str, Any]) -> str | None:
+    """Why ``kwargs`` do not bind to ``method``'s signature, or ``None`` when they do.
+
+    Tells a call made with the wrong fields apart from a ``TypeError`` raised
+    by a fault inside the SDK, which must not be reported as bad input.
+    """
+    try:
+        inspect.signature(method).bind(**kwargs)
+    except TypeError as exc:
+        return str(exc)
+    except ValueError:
+        return None
+    return None
+
+
 class SdkMammothService:
     """Production :class:`~mammoth_cli.services.protocol.MammothService`."""
 
@@ -145,17 +160,21 @@ class SdkMammothService:
         self._loop = asyncio.new_event_loop()
         # One loop serves every call; threads (view data profile fans out) take turns.
         self._loop_lock = threading.RLock()
-        if auth.headers:
-            # After construction: the client sets its credential headers in
-            # ``__init__``, and a forwarded session must replace them.
-            self._client.session.headers.update(auth.headers)
-        run_id = os.environ.get(AGENT_RUN_ENV, "").strip()
-        if run_id:
-            # A leg of a durable agent run names its run, so the server can
-            # refuse the run's own resume and extend.
-            self._client.session.headers[AGENT_RUN_HEADER] = run_id
-        if project_id is not None:
-            self._client.set_project_id(project_id)
+        try:
+            if auth.headers:
+                # After construction: the client sets its credential headers in
+                # ``__init__``, and a forwarded session must replace them.
+                self._client.session.headers.update(auth.headers)
+            run_id = os.environ.get(AGENT_RUN_ENV, "").strip()
+            if run_id:
+                # A leg of a durable agent run names its run, so the server can
+                # refuse the run's own resume and extend.
+                self._client.session.headers[AGENT_RUN_HEADER] = run_id
+            if project_id is not None:
+                self._client.set_project_id(project_id)
+        except BaseException:
+            self._loop.close()
+            raise
 
     def _run(self, work: Any) -> Any:
         """Run one SDK coroutine to completion and hand back its result.
@@ -192,12 +211,21 @@ class SdkMammothService:
             with spinner(self._progress):
                 return self._run(method(**kwargs))
         except TypeError as exc:
+            reason = _signature_misfit(method, kwargs)
+            if reason is None:
+                # The arguments fit; this TypeError is a fault inside the call.
+                raise map_sdk_exception(
+                    exc,
+                    profile=self._profile,
+                    project_id=self._project_id,
+                    workspace_id=self._workspace_id,
+                ) from exc
             raise CliError(
                 code=CODE_INVALID_ARGUMENTS,
                 message=f"The supplied fields do not fit '{sdk_symbol}'.",
                 exit_status=EXIT_USAGE,
                 hint="Check the command schema with 'mammoth schema get'.",
-                details={"reason": str(exc)},
+                details={"reason": reason},
             ) from exc
         except ValueError as exc:
             # Every project-scoped SDK sub-client raises this exact message
@@ -495,12 +523,15 @@ class SdkMammothService:
                 details={"reason": str(exc)},
             ) from exc
         except TypeError as exc:
+            reason = _signature_misfit(attribute, kwargs)
+            if reason is None:
+                raise map_sdk_exception(exc) from exc
             raise CliError(
                 code=CODE_INVALID_ARGUMENTS,
                 message=f"The supplied fields do not fit View.{method}.",
                 exit_status=EXIT_USAGE,
                 hint="Check the command schema with 'mammoth schema get'.",
-                details={"reason": str(exc)},
+                details={"reason": reason},
             ) from exc
         except Exception as exc:
             raise map_sdk_exception(exc) from exc
@@ -810,7 +841,8 @@ class SdkMammothService:
             CliError: Mapped from any SDK exception (auth, network, timeout).
         """
         try:
-            return self._run(self._client.projects.list(limit=1))
+            result: dict[str, Any] = self._run(self._client.projects.list(limit=1))
+            return result
         except Exception as exc:
             raise map_sdk_exception(exc) from exc
 
@@ -885,7 +917,8 @@ class SdkMammothService:
             CliError: Mapped from any SDK exception, including not-found.
         """
         try:
-            return self._run(self._client.projects.get(project=project_id))
+            result: dict[str, Any] = self._run(self._client.projects.get(project=project_id))
+            return result
         except Exception as exc:
             raise map_sdk_exception(exc) from exc
 
@@ -905,7 +938,8 @@ class SdkMammothService:
         if self.gate is not None:
             self.gate("mammoth.api.projects.ProjectsAPI.create", {"name": name, **kwargs})
         try:
-            return self._run(self._client.projects.create(name, **kwargs))
+            result: dict[str, Any] = self._run(self._client.projects.create(name, **kwargs))
+            return result
         except Exception as exc:
             raise map_sdk_exception(exc) from exc
 
@@ -924,7 +958,8 @@ class SdkMammothService:
         if self.gate is not None:
             self.gate("mammoth.api.projects.ProjectsAPI.delete", {"project_id": project_id})
         try:
-            return self._run(self._client.projects.delete(project_id))
+            result: dict[str, Any] = self._run(self._client.projects.delete(project_id))
+            return result
         except Exception as exc:
             raise map_sdk_exception(exc) from exc
 
@@ -932,8 +967,10 @@ class SdkMammothService:
         """Close the owned HTTP session and its loop. Safe to call twice."""
         if self._loop.is_closed():
             return
-        self._run(self._client.close())
-        self._loop.close()
+        try:
+            self._run(self._client.close())
+        finally:
+            self._loop.close()
 
     def __enter__(self) -> SdkMammothService:
         """Enter the service as a context manager."""
