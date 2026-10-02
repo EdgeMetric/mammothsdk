@@ -192,6 +192,17 @@ SUBS: dict[str, tuple[Sub, ...]] = {
     "view.draft.discard": (
         Sub("draft", "view_id", "view", "view_id", name_fmt="{parent} › unsaved draft changes"),
     ),
+    "agent.action.delete": (
+        Sub(
+            "agent action",
+            "action_id",
+            source="agent.action.list",
+            container="actions",
+            forward=("session_id",),
+            label_paths=("name", "kind"),
+            name_fmt="what agent action {action_id} made: {label}",
+        ),
+    ),
     "agent.session.delete": (
         Sub(
             "agent session",
@@ -249,6 +260,34 @@ SUBS: dict[str, tuple[Sub, ...]] = {
             "template_id",
             source="dashboard.template.get",
             label_paths=("title", "name", "label"),
+        ),
+    ),
+    "dashboard.template.thumbnail.clear": (
+        Sub(
+            "dashboard template picture",
+            "template_id",
+            source="dashboard.template.get",
+            label_paths=("title", "name", "label"),
+            name_fmt="picture of dashboard template {label}",
+        ),
+    ),
+    "support.template.discard": (
+        Sub(
+            "curated template",
+            "slug",
+            source="support.template.list",
+            container="templates",
+            id_field="slug",
+            label_paths=("title", "slug"),
+        ),
+    ),
+    "workflow.cleanup": (
+        Sub(
+            "ghost workflows",
+            "project_id",
+            "project",
+            "project_id",
+            name_fmt="ghost (orphaned skeleton) workflows in {parent}",
         ),
     ),
     "template.delete": (
@@ -328,6 +367,7 @@ COMMAND_TARGETS: dict[str, tuple[str, str]] = {
     "dataset.delete": ("dataset", "dataset_id"),
     "dataset.bulk-delete": ("dataset", "dataset_ids"),
     "dataset.file-settings.undo": ("dataset", "dataset_id"),
+    "dataset.broken-rows.resolve": ("dataset", "dataset_id"),
     "view.delete": ("view", "view_id"),
     "view.bulk-delete": ("view", "dataview_ids"),
     "batch.delete": ("batch", "batch_id"),
@@ -350,6 +390,10 @@ COMMAND_TARGETS: dict[str, tuple[str, str]] = {
     "workspace.user.remove": ("user", "user_id"),
     "workspace.user.remove-batch": ("user", "ids"),
 }
+
+
+#: Commands that make a new resource and change no existing one: nothing to name.
+CREATES_ONLY: frozenset[str] = frozenset({"dataset.create", "dataset.create-from-pdf"})
 
 
 def unresolvable_error(command_id: str, reason: str) -> CliError:
@@ -496,6 +540,16 @@ def _unresolved_name(kind: str, target_id: object, symbol: str, key: str) -> Cli
     )
 
 
+def _container_items(listed: Any, container: str) -> list[Any]:
+    """The items of a list read: a bare list, a mapping, or a typed SDK model."""
+    if isinstance(listed, list):
+        return listed
+    held = (
+        listed.get(container) if isinstance(listed, Mapping) else getattr(listed, container, None)
+    )
+    return held if isinstance(held, list) else []
+
+
 def _sub_record(
     service: MammothService,
     sub: Sub,
@@ -516,7 +570,7 @@ def _sub_record(
     if symbol not in lists:
         lists[symbol] = service.call(symbol, **kwargs)
     listed = lists[symbol]
-    items = listed if isinstance(listed, list) else (listed or {}).get(sub.container, [])
+    items = _container_items(listed, sub.container)
     found = next((i for i in items if str(_path(i, sub.id_field)) == str(target)), None)
     if found is None:
         raise _unresolved_name(sub.kind, target, symbol, sub.id_field)
@@ -568,6 +622,8 @@ def _target_spec(command_id: str, would_call: Mapping[str, Any]) -> tuple[str, s
     """
     if command_id in COMMAND_TARGETS:
         return COMMAND_TARGETS[command_id]
+    if command_id in CREATES_ONLY:
+        return None
     record = command_by_id(command_id) or {}
     if record.get("mutation_class") == "destructive":
         raise unresolvable_error(command_id, "no read command names this command's targets")
@@ -587,6 +643,31 @@ def _remove_batch_invites(
     if not invite_ids:
         return []
     return _sub_targets(service, command_id, _INVITE_SUB, {"invite_ids": invite_ids})
+
+
+def _patched_dataset_ids(patch_data: Any) -> list[int]:
+    """The dataset ids a bulk patch renames: the keys of each operation's ``value``."""
+    operations = patch_data if isinstance(patch_data, list) else [patch_data]
+    found: list[int] = []
+    for operation in operations:
+        value = operation.get("value") if isinstance(operation, Mapping) else None
+        if isinstance(value, Mapping):
+            found.extend(int(key) for key in value if str(key).isdigit())
+    return list(dict.fromkeys(found))
+
+
+def _bulk_update_targets(
+    service: MammothService, command_id: str, arguments: Mapping[str, Any]
+) -> list[dict[str, Any]]:
+    """Name the datasets a ``dataset bulk-update`` patch changes, from its own ``patch_data``."""
+    ids = _patched_dataset_ids(arguments.get("patch_data"))
+    if not ids:
+        raise unresolvable_error(
+            command_id,
+            "'patch_data' names no dataset; pass "
+            '{"op": "replace", "path": "name", "value": {"<dataset_id>": "<new name>"}}',
+        )
+    return _read_names(service, "dataset", ids, arguments)
 
 
 def resolve_targets(
@@ -611,6 +692,8 @@ def resolve_targets(
     arguments = would_call.get("arguments") or {}
     if command_id == "user.avatar.delete":
         return _avatar_target(service)
+    if command_id == "dataset.bulk-update":
+        return _bulk_update_targets(service, command_id, arguments)
     if command_id in SUBS:
         scope = {k: v for k, v in would_call.items() if k in ("view_id", "dataset_id")}
         merged = {**scope, **arguments}

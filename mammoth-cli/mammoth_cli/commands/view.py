@@ -1728,7 +1728,7 @@ def _run_aggregate_for_compare(
 ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     """Run ``view data aggregate``'s own handler against one view, for compare."""
     sub_invocation = dataclasses.replace(
-        invocation, command_id="view.data.aggregate", extra_args=[str(view_id)]
+        invocation, command_id="view.data.aggregate", extra_args=[str(view_id)], positionals={}
     )
     data, meta = view_data_aggregate(sub_invocation)
     rows = data.get(_ROWS_KEY, [])
