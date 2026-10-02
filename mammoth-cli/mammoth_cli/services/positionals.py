@@ -140,6 +140,14 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
             help="ID of the recorded action (from agent action list).",
         ),
     ),
+    "agent.run.units.set": (
+        PositionalSpec(
+            name="run_id",
+            type=str,
+            required=True,
+            help="ID of the run (from agent run status or agent run list).",
+        ),
+    ),
     **{
         f"agent.run.{verb}": (
             PositionalSpec(

@@ -4,7 +4,7 @@ Generated from the reviewed command manifests for mammoth-cli 2.2.1.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
-Total commands: 588.
+Total commands: 589.
 
 ## activity
 
@@ -157,6 +157,17 @@ Total commands: 588.
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.agents.AgentsAPI.run_stop`
 - Agent example: `mammoth agent run stop resource-123`
+
+### `mammoth agent run units set`
+
+**Arguments**
+
+- `RUN_ID` (str, required) — ID of the run (from agent run status or agent run list).
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.agents.AgentsAPI.run_units_set`
+- Agent example: `mammoth agent run units set resource-123 --input '{"step": 1, "kind": "sample", "units": [{"sample_key": "Status"}]}'`
 
 ### `mammoth agent session delete`
 

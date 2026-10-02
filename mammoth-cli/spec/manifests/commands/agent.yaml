@@ -368,6 +368,52 @@ commands:
     command: agent.run.status
     ids: {}
     kind: object
+- command_id: agent.run.units.set
+  command_path: agent run units set
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - name: run_id
+    type: str
+    required: true
+    metavar: RUN_ID
+    falls_back_to_field: null
+    help: ID of the run (from agent run status or agent run list).
+  options: []
+  sdk_symbol: mammoth.api.agents.AgentsAPI.run_units_set
+  sdk_conversion: Call mammoth.api.agents.AgentsAPI.run_units_set with the session id from --session, the
+    positional run id and validated request fields.
+  request_model: AgentRunUnitsSetRequest
+  result_model: AgentRunUnitsSetResult
+  mutation_class: benign_mutation
+  edits_target: false
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: null
+  live_exemption_reason: Live coverage runs on the test server with a chat session that has a run.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth agent run units set RUN_ID --help
+  agent_example: 'mammoth agent run units set resource-123 --input ''{"step": 1, "kind": "sample", "units": [{"sample_key": "Status"}]}'''
+  unit_tests:
+  - UT-AGENTRUNUNITSSET
+  contract_tests:
+  - CT-AGENTRUNUNITSSET
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Writes. Reports once the objects a plan step will work on (kind is dataset, view and so on;
+    1 to 1000 units, each id with an optional name and project_id) so the run panel can list them and
+    measure progress and the time left. A unit already listed is left as it is. Needs --session SESSION_ID;
+    an embedded chat supplies it. The server, not the model, counts the units done and the time left.'
+  reviewed_by: primary
+  readback:
+    command: agent.run.status
+    ids: {}
+    kind: object
 - command_id: agent.session.delete
   command_path: agent session delete
   disposition: command

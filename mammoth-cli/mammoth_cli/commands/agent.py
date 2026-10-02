@@ -263,3 +263,11 @@ def _run_control(invocation: Invocation) -> HandlerResult:
 
 
 agent_run_pause = agent_run_resume = agent_run_stop = agent_run_extend = _run_control
+
+
+def agent_run_units_set(invocation: Invocation) -> HandlerResult:
+    """Report the objects one plan step of a run will work on, as queued units."""
+    run_id = _require_string_positional(invocation, "run id")
+    document = _bound_document(invocation)
+    kwargs = {field: _require_field(document, field) for field in ("step", "kind", "units")}
+    return _session_call(invocation, run_id=run_id, **kwargs)

@@ -544,6 +544,7 @@ HANDLERS: dict[str, Handler] = {
     "agent.run.resume": agent_cmd.agent_run_resume,
     "agent.run.status": agent_cmd.agent_run_status,
     "agent.run.stop": agent_cmd.agent_run_stop,
+    "agent.run.units.set": agent_cmd.agent_run_units_set,
     "agent.session.delete": agent_cmd.agent_session_delete,
     "agent.session.list": agent_cmd.agent_session_list,
     "agent.session.messages": agent_cmd.agent_session_messages,

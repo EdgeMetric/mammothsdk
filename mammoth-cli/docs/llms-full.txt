@@ -47,6 +47,8 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth agent run status
 - `mammoth agent run stop` [benign_mutation/none] -> mammoth.api.agents.AgentsAPI.run_stop
   example: mammoth agent run stop resource-123
+- `mammoth agent run units set` [benign_mutation/none] -> mammoth.api.agents.AgentsAPI.run_units_set
+  example: mammoth agent run units set resource-123 --input '{"step": 1, "kind": "sample", "units": [{"sample_key": "Status"}]}'
 - `mammoth agent session delete` [destructive/prompt_or_yes] -> mammoth.api.agents.AgentsAPI.session_delete
   example: mammoth agent session delete resource-123
 - `mammoth agent session list` [read/none] -> mammoth.api.agents.AgentsAPI.session_list

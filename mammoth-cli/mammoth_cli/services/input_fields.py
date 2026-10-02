@@ -19,6 +19,7 @@ _HANDLER_OWNED_FIELDS: dict[str, frozenset[str]] = {
             "run.resume",
             "run.stop",
             "run.extend",
+            "run.units.set",
         )
     },
     # Skill handlers deliberately derive filesystem roots from the running
