@@ -39,7 +39,10 @@ HandlerResult = tuple[Any, dict[str, Any]]
 _AGGREGATE = "mammoth.api.dataviews.DataviewsAPI.aggregate"
 _STORED_STATS = "mammoth.api.ai.AIAPI.generate_profile"
 _TOTALS_BATCH = 40
-_WORKERS = 6
+#: Concurrent aggregate jobs; each is one request plus its polls on the host's own server.
+_WORKERS = 2
+#: Columns profiled when the caller names none (the rest are reported as not profiled).
+_DEFAULT_PROFILE_COLUMNS = 20
 _DEFAULT_TOP = 5
 _DEFAULT_DETAIL_LIMIT = 50
 _ASSOCIATION_LIMIT = 20
@@ -94,7 +97,8 @@ def view_data_profile(invocation: Invocation) -> HandlerResult:
 
 def build_profile(scope: _Scope, document: dict[str, Any], workers: int) -> dict[str, Any]:
     """Read the stored stats, query the rest, and assemble the result."""
-    names = _selected_columns(scope, document)
+    every_name = _selected_columns(scope, document)
+    names = every_name if "columns" in document else every_name[:_DEFAULT_PROFILE_COLUMNS]
     target = document.get("target")
     if target is not None and target not in scope.types:
         raise _usage(f"target column {target!r} is not in the view", sorted(scope.types))
@@ -119,6 +123,12 @@ def build_profile(scope: _Scope, document: dict[str, Any], workers: int) -> dict
         "spelling_variants_checked": variants_checked,
         "spelling_variants_skipped": variants_skipped,
     }
+    if len(names) < len(every_name):
+        result["columns_not_profiled"] = every_name[len(names) :]
+        result["columns_not_profiled_note"] = (
+            f"Only the first {len(names)} of {len(every_name)} columns were profiled; "
+            "pass input 'columns' (names) to profile others."
+        )
     if target:
         result["target"] = _target_report(
             scope, str(target), names, facts, tables, live_rows, workers

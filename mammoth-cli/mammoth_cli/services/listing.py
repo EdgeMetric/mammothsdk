@@ -39,7 +39,7 @@ _MAX_CELL_CHARS = 12
 #: Room reserved per view for its sample values, added after the size check.
 SAMPLE_ALLOWANCE = 150
 #: Concurrent stored-stats reads for one list.
-_STATS_WORKERS = 8
+_STATS_WORKERS = 4
 _SOURCE_KINDS = {
     "file": "file",
     "cloud": "connector",
