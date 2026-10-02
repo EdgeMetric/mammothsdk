@@ -19,14 +19,13 @@ from mammoth import MammothClient
 
 client = MammothClient(
     api_token="mm_your-token",
-    workspace_id=11,  # your workspace ID
 )
 
 # Set the project you want to work with
 client.set_project_id(10)
 ```
 
-The `workspace_id` is required at client creation. The `project_id` must be set before performing most operations.
+The token names its own workspace, so the client needs nothing else. The `project_id` must be set before performing most operations.
 
 !!! note "The SDK is async"
     Every call that reaches the API is a coroutine and must be awaited. The rest of this guide
@@ -40,7 +39,7 @@ The `workspace_id` is required at client creation. The `project_id` must be set 
 
 
     async def main() -> None:
-        async with MammothClient(api_token="mm_your-token", workspace_id=11) as client:
+        async with MammothClient(api_token="mm_your-token") as client:
             client.set_project_id(10)
             view = await client.views.get(1039)
             print(view.display_names)
@@ -143,7 +142,6 @@ from mammoth import (
 
 client = MammothClient(
     api_token=os.getenv("MAMMOTH_API_TOKEN"),
-    workspace_id=11,
 )
 client.set_project_id(10)
 

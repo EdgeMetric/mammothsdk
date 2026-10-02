@@ -14,7 +14,7 @@ import pytest
 
 from mammoth_cli.commands import config as config_cmd
 from mammoth_cli.commands import context as context_cmd
-from mammoth_cli.context import profiles
+from mammoth_cli.context import profiles, resolver
 from mammoth_cli.context.resolver import ExplicitLogin, not_authenticated_error
 from mammoth_cli.embed import invoke
 from mammoth_cli.errors.envelope import ERROR_SUMMARIES, CliError
@@ -26,11 +26,16 @@ ServiceFactory = Callable[..., Any]
 _LOGIN = ExplicitLogin(
     api_key=None,
     api_secret=None,
-    workspace_id=4,
     api_token="jwt-user",
     server_prefix="box",
     headers={"Authorization": "Bearer jwt-user"},
 )
+
+
+@pytest.fixture(autouse=True)
+def _server_names_the_workspace(monkeypatch: pytest.MonkeyPatch) -> None:
+    """A token names its workspace and the CLI learns it from the server; no network here."""
+    monkeypatch.setattr(resolver, "resolve_token_workspace", lambda *_args: 4)
 
 
 def _bind(monkeypatch: pytest.MonkeyPatch, real_service: ServiceFactory) -> Any:

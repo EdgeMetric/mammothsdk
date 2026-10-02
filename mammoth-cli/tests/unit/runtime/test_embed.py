@@ -8,6 +8,7 @@ from typing import Any
 
 import pytest
 
+from mammoth_cli.context import resolver
 from mammoth_cli.context.resolver import ExplicitLogin, ResolvedAuth, resolve_auth
 from mammoth_cli.embed import invoke
 from mammoth_cli.runtime import embedded
@@ -19,11 +20,24 @@ from mammoth_cli.services.testing import FakeMammothService
 BASE_URL = "https://box.mammoth.io/api/v2"
 
 
+_WORKSPACE_OF_TOKEN: dict[str, int] = {}
+
+
+@pytest.fixture(autouse=True)
+def _server_names_the_workspace(monkeypatch: pytest.MonkeyPatch) -> None:
+    """A token names its workspace and the CLI learns it from the server; no network here."""
+    monkeypatch.setattr(
+        resolver,
+        "resolve_token_workspace",
+        lambda _base_url, token, _timeout: _WORKSPACE_OF_TOKEN[token],
+    )
+
+
 def _login(workspace_id: int, token: str = "jwt-user") -> ExplicitLogin:
+    _WORKSPACE_OF_TOKEN[token] = workspace_id
     return ExplicitLogin(
         api_key=None,
         api_secret=None,
-        workspace_id=workspace_id,
         api_token=token,
         server_prefix="box",
         headers={"Authorization": f"Bearer {token}", "Cookie": f"session={token}"},
@@ -152,7 +166,8 @@ def test_server_prefix_and_headers_reach_the_sdk_session() -> None:
     assert service._client.base_url == BASE_URL
     assert service._client.session.headers["Authorization"] == "Bearer jwt-9"
     assert service._client.session.headers["Cookie"] == "session=jwt-9"
-    assert service._client.session.headers["X-WORKSPACE-ID"] == "9"
+    assert auth.workspace_id == 9
+    assert "X-WORKSPACE-ID" not in service._client.session.headers
 
 
 def test_update_check_and_run_log_are_off_when_embedded() -> None:

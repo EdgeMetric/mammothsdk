@@ -18,7 +18,6 @@ from mammoth import MammothClient
 
 client = MammothClient(
     api_token=os.getenv("MAMMOTH_API_TOKEN"),
-    workspace_id=11,  # your workspace ID
 )
 
 # Set the project to work in

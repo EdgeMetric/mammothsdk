@@ -313,7 +313,7 @@ async def test_binary_wrapper_describes_png_and_returns_html_as_text() -> None:
 
 
 async def test_signed_download_session_has_no_bearer_token() -> None:
-    client = MammothClient(api_token="mm_dummy", workspace_id=4)
+    client = MammothClient(api_token="mm_dummy")
 
     assert "Authorization" not in client.download_session.headers
     assert client.session.headers["Authorization"] == "Bearer mm_dummy"

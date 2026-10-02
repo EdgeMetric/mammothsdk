@@ -30,7 +30,7 @@ pytest tests/unit/ --cov=mammoth --cov-report=term-missing
 
 ```bash
 # Format
-black mammoth/ tests/
+black -t py312 mammoth/ tests/
 
 # Lint
 ruff check mammoth/

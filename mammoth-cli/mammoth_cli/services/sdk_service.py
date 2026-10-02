@@ -129,11 +129,14 @@ class SdkMammothService:
         credential: dict[str, Any] = (
             {"api_token": auth.api_token}
             if auth.api_token is not None
-            else {"api_key": auth.api_key, "api_secret": auth.api_secret}
+            else {
+                "api_key": auth.api_key,
+                "api_secret": auth.api_secret,
+                "workspace_id": auth.workspace_id,
+            }
         )
         self._client = MammothClient(
             **credential,
-            workspace_id=auth.workspace_id,
             base_url=auth.base_url,
             **kwargs,
         )

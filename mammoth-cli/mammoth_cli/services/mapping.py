@@ -157,7 +157,7 @@ def _workspace_mismatch_error(exc: MammothAuthError, workspace_id: int | None) -
             f"(this sign-in is for workspace {workspace_id})."
         ),
         exit_status=EXIT_AUTH,
-        hint="Pass --workspace or use a profile signed in for that workspace.",
+        hint="Use a profile whose token belongs to that workspace.",
         details=_metadata(exc),
         request_id=exc.request_id,
         authorization_required=True,
@@ -266,7 +266,7 @@ def map_sdk_exception(
             code=CODE_AUTHENTICATION_FAILED,
             message="Mammoth rejected the provided credentials.",
             exit_status=EXIT_AUTH,
-            hint=(EMBEDDED_AUTH_HINT if in_app else "Check the API key, secret, and workspace id."),
+            hint=(EMBEDDED_AUTH_HINT if in_app else "Check the API token."),
             details=_metadata(exc),
             request_id=exc.request_id,
             recovery_commands=[] if in_app else ["mammoth auth login"],

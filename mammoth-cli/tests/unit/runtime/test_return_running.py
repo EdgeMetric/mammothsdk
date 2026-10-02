@@ -5,6 +5,7 @@ from __future__ import annotations
 import pytest
 from mammoth.exceptions import MammothJobTimeoutError, MammothPipelineTimeoutError
 
+from mammoth_cli.context import resolver
 from mammoth_cli.context.resolver import ExplicitLogin
 from mammoth_cli.embed import invoke
 from mammoth_cli.errors.envelope import CliError
@@ -20,7 +21,6 @@ def _login() -> ExplicitLogin:
     return ExplicitLogin(
         api_key=None,
         api_secret=None,
-        workspace_id=5,
         api_token="jwt",
         server_prefix="box",
         headers={"Authorization": "Bearer jwt"},
@@ -38,6 +38,8 @@ def _run(
     fake = FakeMammothService()
     fake.responses[symbol] = outcome
     monkeypatch.setattr(service_factory, "build_service", lambda auth, **_kw: fake)
+    # A token names its workspace and the CLI learns it from the server; no network here.
+    monkeypatch.setattr(resolver, "resolve_token_workspace", lambda *_args: 5)
     return invoke(args, login=_login(), return_running=return_running)
 
 

@@ -18,12 +18,12 @@ pytest tests/integration/ -v      # live API tests (requires credentials)
 pytest tests/unit/test_transformations.py::TestMath -v  # single test class
 
 # Lint & format
-black mammoth/ tests/             # format
+black -t py312 mammoth/ tests/             # format
 ruff check mammoth/               # lint (add --fix to auto-fix)
 mypy mammoth/                     # type check (strict mode)
 
 # All checks before commit
-black mammoth/ tests/ && ruff check mammoth/ && mypy mammoth/ && pytest tests/unit/ -q
+black -t py312 mammoth/ tests/ && ruff check mammoth/ && mypy mammoth/ && pytest tests/unit/ -q
 ```
 
 ## Architecture

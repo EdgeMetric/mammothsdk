@@ -4197,6 +4197,14 @@ sdk_methods:
   openapi_operation_ids: []
   notes: SDK-only generated-operation wait seam; CLI commands apply it from their reviewed wait policy
     rather than exposing a separate command.
+- sdk_symbol: mammoth.client.MammothClient.workspace_id
+  canonical_command: null
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+  notes: SDK-only property, the workspace of the credential, given for a key pair or learned from the server for a token; the CLI reads it from its profile.
 - sdk_symbol: mammoth.client.ViewsResource.bulk_delete
   canonical_command: null
   alias_of: view.delete
