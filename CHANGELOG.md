@@ -4,6 +4,31 @@ All notable changes to `mammoth-io` are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.11]
+
+### Changed
+
+- Burst fixes (PR #90) so one CLI or SDK call no longer floods the API:
+  - Lookups use the `/resources` routes instead of walking projects: a view's
+    parent is one read (was 1 + D/100 + D requests), `dataset find`, `dataset
+    list name` and `folder find` are one workspace search (was 2 + P or 1 + P),
+    and name lookups use `BrowseAPI.resources_bulk`. A cross-project `view list`
+    stops at 20 views or 25 datasets and says where to resume.
+  - `view data profile`, `project check` and stored-stats reads use fewer
+    workers (6 or 8 before, 2 or 4 now) and cap what they read: the 20 most
+    recent datasets, 10 dashboards and the first 20 columns. The output says how
+    many items were not checked.
+  - Job waits back off: the poll gap ceiling rises from 2s to 5s after 10s of
+    waiting (a 300s wait: about 154 polls before, about 70 now). Pipeline waits
+    grow from 3s to 15s, and `view pipeline wait` defaults to 300s instead of an
+    hour. Internal-dataset export polls grow from a flat 2s to 2..10s.
+  - File upload polls the nested jobs once as a batch instead of one poll loop
+    per file. The CLI previews the first 5 datasets and marks the rest
+    `preview_skipped`.
+  - `MammothClient(retry_gateway_errors=False)` turns off 502/503/504 read
+    retries. The CLI sets it when embedded. `mammoth-cli` 2.2.10 carries these
+    changes.
+
 ## [0.8.10]
 
 ### Fixed
