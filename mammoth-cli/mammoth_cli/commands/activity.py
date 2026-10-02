@@ -26,6 +26,7 @@ from mammoth_cli.manifest.loader import command_by_id
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.session import open_service, resolved_project
 from mammoth_cli.services.command_contract import bind_command_inputs
+from mammoth_cli.services.local_time import local_time
 
 HandlerResult = tuple[Any, dict[str, Any]]
 
@@ -164,6 +165,9 @@ def _meta(invocation: Invocation, workspace_id: int, project_id: int | None) -> 
 _WORKSPACE_USERS_SYMBOL = "mammoth.api.workspace.WorkspaceAPI.list_users"
 _TIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 _EPOCH = "1970-01-01 00:00:00"
+# The route's default fields carry every entry's full details (tens of KB per page);
+# a change list needs only these. ``path`` names the dataset and view by name and id.
+_LIST_FIELDS = "id,category,name_key,primary_object,result,created_at,user_id,path"
 
 
 def _close_time_window(kwargs: dict[str, Any]) -> str | None:
@@ -184,19 +188,6 @@ def _close_time_window(kwargs: dict[str, Any]) -> str | None:
     return f"start_time was not given; the window starts at {_EPOCH} UTC."
 
 
-def _local_time(stamp: Any) -> str | None:
-    """A ``created_at`` (UTC if it has no offset) as ISO in this machine's timezone."""
-    if not isinstance(stamp, str):
-        return None
-    try:
-        moment = datetime.fromisoformat(stamp)
-    except ValueError:
-        return stamp
-    if moment.tzinfo is None:
-        moment = moment.replace(tzinfo=UTC)
-    return moment.astimezone().isoformat(timespec="seconds")
-
-
 def _user_emails(service: Any) -> dict[Any, str]:
     """Workspace users by id; empty when the caller may not list them."""
     try:
@@ -204,6 +195,11 @@ def _user_emails(service: Any) -> dict[Any, str]:
     except Exception:  # noqa: BLE001 -- a name is a convenience; the id is always shown
         return {}
     return {u["id"]: u["email"] for u in users if isinstance(u, dict) and u.get("email")}
+
+
+def _readable_path(path: Any) -> str | None:
+    """The entry's ``workspace:name:id/project:name:id/dataset:name:id/...`` chain."""
+    return path.strip('{}"') if isinstance(path, str) else None
 
 
 def _change(entry: dict[str, Any], emails: dict[Any, str]) -> dict[str, Any]:
@@ -214,13 +210,14 @@ def _change(entry: dict[str, Any], emails: dict[Any, str]) -> dict[str, Any]:
     primary: dict[str, Any] = raw_primary if isinstance(raw_primary, dict) else {}
     user_id = entry.get("user_id")
     change = {
-        "when": _local_time(entry.get("created_at")),
+        "when": local_time(entry.get("created_at")),
         "user_id": user_id,
         "user": emails.get(user_id),
         "action": entry.get("name_key"),
         "category": entry.get("category"),
         "object": {"name": primary.get("name"), "resource_id": primary.get("resource_id")},
         "result": entry.get("result"),
+        "path": _readable_path(entry.get("path")),
     }
     if details.get("task_name"):
         change["task"] = details["task_name"]
@@ -248,7 +245,7 @@ def activity_list(invocation: Invocation) -> HandlerResult:
     """
     document = _bound_document(invocation)
     _refuse_bare_resource_id(document)
-    kwargs: dict[str, Any] = {}
+    kwargs: dict[str, Any] = {"fields": _LIST_FIELDS}
     _forward_optional(document, kwargs, _LIST_OPTIONAL)
     note = _close_time_window(kwargs)
     with open_service(invocation) as (service, auth):
