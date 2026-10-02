@@ -4,6 +4,27 @@ All notable changes to `mammoth-io` are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.6]
+
+### Changed
+
+- Login sends the token alone: no workspace id goes with it. The workspace
+  comes from the token (`resolve_token_workspace_id`).
+- `except` clauses are parenthesised, so the package imports on Python 3.12
+  and 3.13.
+
+### Added
+
+- `mammoth link`.
+- `mammoth dataset broken-rows resolve` settles the unstructured rows of a
+  file whose dataset stopped for a decision.
+- `mammoth project needs-attention` also lists `needs_input` rows.
+- `mammoth folder find` searches every project, not only the first page.
+
+### Fixed
+
+- A 403 for a user who is not a member of the workspace now says so.
+
 ## [0.8.0]
 
 ### Added
@@ -53,7 +74,7 @@ Code that must stay sync should pin `mammoth-io<0.8`.
   takes `params_sequence` (restore a version) and `params_filter_column`
   (row-level security).
 - `DatasetsAPI.preview_interpretation`, `confirm_interpretation` and
-  `discard_unstructured_rows`, for a file whose dataset stopped for a decision.
+  `resolve_unstructured_rows`, for a file whose dataset stopped for a decision.
 
 ### Fixed
 
@@ -66,9 +87,8 @@ Code that must stay sync should pin `mammoth-io<0.8`.
   now streams through `httpx`, with the same atomic write and error handling.
 - `MammothClient.branch_out` returned an un-awaited coroutine instead of the
   dataset id.
-- `DatasetsAPI.get_unstructured_rows` reads `.../unstructured_data`, the same
-  route `discard_unstructured_rows` deletes from (it read
-  `.../unstructured_rows` in 0.7.40).
+- `DatasetsAPI.get_unstructured_rows` and `resolve_unstructured_rows` use the
+  same `.../unstructured_rows` route (read and PATCH).
 - Automations accept the task types, statuses and commands the routes accept
   today; `"restore"` is accepted as well as `"resume"`.
 - Export specs default the properties the route defaults.
