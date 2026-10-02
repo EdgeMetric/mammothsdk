@@ -308,7 +308,7 @@ def workspace_user_list(invocation: Invocation) -> HandlerResult:
     """
     document = invocation.load_input() or {}
     kwargs: dict[str, Any] = {"fields": _USER_LIST_FIELDS}
-    _forward_optional(document, kwargs, ("fields",))
+    _forward_optional(document, kwargs, ("fields", "project_id"))
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), **kwargs)
     return data, _meta(invocation, auth.workspace_id)
@@ -371,4 +371,56 @@ def workspace_user_update_batch(invocation: Invocation) -> HandlerResult:
     patches = _require_field(document, "patches")
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), patches=patches)
+    return data, _meta(invocation, auth.workspace_id)
+
+
+def workspace_invite_list(invocation: Invocation) -> HandlerResult:
+    """List pending invites with their invite ids; ``project_id`` narrows to one project."""
+    document = invocation.load_input() or {}
+    kwargs: dict[str, Any] = {}
+    _forward_optional(document, kwargs, ("project_id",))
+    with open_service(invocation) as (service, auth):
+        data = service.call(_symbol(invocation), **kwargs)
+    return data, _meta(invocation, auth.workspace_id)
+
+
+def _invite_ids_call(invocation: Invocation) -> HandlerResult:
+    document = invocation.load_input()
+    invite_ids = _require_field(document, "invite_ids")
+    with open_service(invocation) as (service, auth):
+        data = service.call(_symbol(invocation), invite_ids=invite_ids)
+    return data, _meta(invocation, auth.workspace_id)
+
+
+def workspace_invite_resend(invocation: Invocation) -> HandlerResult:
+    """Send the invitation email again. ``invite_ids`` from ``--input``."""
+    return _invite_ids_call(invocation)
+
+
+def workspace_invite_revoke(invocation: Invocation) -> HandlerResult:
+    """Revoke pending invites. Prompt or ``--yes`` required."""
+    enforce_confirmation(
+        invocation, policy=POLICY_PROMPT_OR_YES, action="revoke pending workspace invites"
+    )
+    return _invite_ids_call(invocation)
+
+
+def workspace_invite_delete(invocation: Invocation) -> HandlerResult:
+    """Delete pending invites and free their seats. Prompt or ``--yes`` required."""
+    enforce_confirmation(
+        invocation, policy=POLICY_PROMPT_OR_YES, action="delete pending workspace invites"
+    )
+    return _invite_ids_call(invocation)
+
+
+def workspace_invite_update_role(invocation: Invocation) -> HandlerResult:
+    """Change the role a pending invite grants. ``--yes`` required."""
+    document = invocation.load_input()
+    invite_id = _require_field(document, "invite_id")
+    role = _require_field(document, "role")
+    enforce_confirmation(
+        invocation, policy=POLICY_YES_ALWAYS, action=f"change the role of invite {invite_id}"
+    )
+    with open_service(invocation) as (service, auth):
+        data = service.call(_symbol(invocation), invite_id=invite_id, role=role)
     return data, _meta(invocation, auth.workspace_id)

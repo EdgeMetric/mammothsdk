@@ -1289,6 +1289,16 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth workspace delete 123
 - `mammoth workspace get` [read/none] -> mammoth.api.workspace.WorkspaceAPI.get
   example: mammoth workspace get 123
+- `mammoth workspace invite delete` [destructive/prompt_or_yes] -> mammoth.api.workspaces.WorkspacesAPI.invite_delete
+  example: mammoth workspace invite delete --input '{"invite_ids": [1]}'
+- `mammoth workspace invite list` [read/none] -> mammoth.api.workspaces.WorkspacesAPI.invite_list
+  example: mammoth workspace invite list
+- `mammoth workspace invite resend` [benign_mutation/none] -> mammoth.api.workspaces.WorkspacesAPI.invite_resend
+  example: mammoth workspace invite resend --input '{"invite_ids": [1]}'
+- `mammoth workspace invite revoke` [destructive/prompt_or_yes] -> mammoth.api.workspaces.WorkspacesAPI.invite_revoke
+  example: mammoth workspace invite revoke --input '{"invite_ids": [1]}'
+- `mammoth workspace invite update-role` [high_impact/yes_always] -> mammoth.api.workspaces.WorkspacesAPI.invite_role_update
+  example: mammoth workspace invite update-role --input '{"invite_id": 1, "role": "sample"}'
 - `mammoth workspace list` [read/none] -> mammoth.api.workspace.WorkspaceAPI.list
   example: mammoth workspace list
 - `mammoth workspace llm-task` [benign_mutation/none] -> mammoth.api.workspaces.WorkspacesAPI.llm_task

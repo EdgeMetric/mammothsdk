@@ -132,6 +132,16 @@ class Sub:
 
 _VIEW_FWD = ("dataset_id", "dataview_id", "project_id")
 
+#: A pending workspace invite, named by its email from ``workspace invite list``.
+_INVITE_SUB = Sub(
+    "invite",
+    "invite_ids",
+    source="workspace.invite.list",
+    container="invites",
+    label_paths=("email",),
+    name_fmt="invite for {label}",
+)
+
 #: Command -> the sub-resources it changes. Shapes verified live on koyal:
 #: task ``params.SEQUENCE_NUMBER``/``params.TASK_KEY``; version ``name``;
 #: agent session ``title``; parameter group ``name``; tag ``name``; context
@@ -303,6 +313,8 @@ SUBS: dict[str, tuple[Sub, ...]] = {
             name_fmt="{label} › access to {parent}",
         ),
     ),
+    "workspace.invite.delete": (_INVITE_SUB,),
+    "workspace.invite.revoke": (_INVITE_SUB,),
     "notification.delete": (Sub("notification", "notification_id"),),
     "notification.delete-batch": (Sub("notification", "ids"),),
 }
@@ -526,6 +538,16 @@ def _target_spec(command_id: str, would_call: Mapping[str, Any]) -> tuple[str, s
     return None
 
 
+def _remove_batch_invites(
+    service: MammothService, command_id: str, arguments: Mapping[str, Any]
+) -> list[dict[str, Any]]:
+    """The pending invites a ``user remove-batch`` call deletes, named by email."""
+    invite_ids = _ids(arguments.get("invite_ids"))
+    if not invite_ids:
+        return []
+    return _sub_targets(service, command_id, _INVITE_SUB, {"invite_ids": invite_ids})
+
+
 def resolve_targets(
     service: MammothService, command_id: str, would_call: Mapping[str, Any]
 ) -> list[dict[str, Any]]:
@@ -559,8 +581,9 @@ def resolve_targets(
         return []
     kind, id_arg = spec
     ids = _ids(arguments.get(id_arg, would_call.get(id_arg)))
-    if arguments.get("invite_ids"):
-        raise unresolvable_error(command_id, "pending invites have no read that names them")
+    invites = _remove_batch_invites(service, command_id, arguments)
+    if not ids and invites:
+        return invites
     if not ids:
         raise unresolvable_error(
             command_id, f"the call carries no explicit '{id_arg}' ids (it may target every {kind})"
@@ -572,7 +595,7 @@ def resolve_targets(
     parent = {**arguments}
     if "dataset_id" not in parent and would_call.get("dataset_id") is not None:
         parent["dataset_id"] = would_call["dataset_id"]
-    return [_read_name(service, kind, item, parent) for item in ids]
+    return [_read_name(service, kind, item, parent) for item in ids] + invites
 
 
 #: Deletes whose dry run also lists what depends on the resource: command ->

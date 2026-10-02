@@ -120,12 +120,14 @@ class FakeMammothService:
             )
         return {"projects": self.projects[:1]}
 
-    def list_projects(self, limit: int = 100, offset: int = 0) -> dict[str, Any]:
+    def list_projects(
+        self, limit: int = 100, offset: int = 0, include_non_members: bool = False
+    ) -> dict[str, Any]:
         """Return the in-memory project list, sliced by offset/limit."""
         self.calls.append("list_projects")
         return {"projects": self.projects[offset : offset + limit]}
 
-    def list_all_projects(self) -> list[dict[str, Any]]:
+    def list_all_projects(self, include_non_members: bool = False) -> list[dict[str, Any]]:
         """Return the whole in-memory project list."""
         self.calls.append("list_all_projects")
         return list(self.projects)

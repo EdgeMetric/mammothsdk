@@ -146,7 +146,11 @@ CASES = [
         "api": ProjectsAPI,
         "method": "list",
         "kwargs": {"limit": 23},
-        "wire": ["GET", "/workspaces/4/projects", {"params": {"fields": "id,name", "limit": 23}}],
+        "wire": [
+            "GET",
+            "/workspaces/4/projects",
+            {"params": {"fields": "id,name", "limit": 23, "subscribed": "true"}},
+        ],
         "response": {"projects": []},
     },
     {

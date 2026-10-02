@@ -66,7 +66,7 @@
 - `view` (122 commands)
 - `webhook` (7 commands)
 - `workflow` (16 commands)
-- `workspace` (20 commands)
+- `workspace` (25 commands)
 
 ## Source
 

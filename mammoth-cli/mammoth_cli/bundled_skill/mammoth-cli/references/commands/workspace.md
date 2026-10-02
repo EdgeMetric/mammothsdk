@@ -64,6 +64,56 @@ Result: `WorkspaceGetResult`; mutation `read`, confirmation `none`, wait policy 
 
 Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Returned workspace 4 (API Tests) profile. Single invocation only.
 
+### `workspace.invite.delete`
+
+Run: `mammoth workspace invite delete`. Exact input fields: `mammoth schema get workspace.invite.delete`.
+
+Example: `mammoth workspace invite delete --input '{"invite_ids": [1]}'`. Illustrative only: append `--yes` after observing an owned target.
+
+Result: `WorkspaceInviteDeleteResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `workspace.invite.list`
+
+Run: `mammoth workspace invite list`. Exact input fields: `mammoth schema get workspace.invite.list`.
+
+Example: `mammoth workspace invite list`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `WorkspaceInviteListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `workspace.invite.resend`
+
+Run: `mammoth workspace invite resend`. Exact input fields: `mammoth schema get workspace.invite.resend`.
+
+Example: `mammoth workspace invite resend --input '{"invite_ids": [1]}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `WorkspaceInviteResendResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `workspace.invite.revoke`
+
+Run: `mammoth workspace invite revoke`. Exact input fields: `mammoth schema get workspace.invite.revoke`.
+
+Example: `mammoth workspace invite revoke --input '{"invite_ids": [1]}'`. Illustrative only: append `--yes` after observing an owned target.
+
+Result: `WorkspaceInviteRevokeResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `workspace.invite.update-role`
+
+Run: `mammoth workspace invite update-role`. Exact input fields: `mammoth schema get workspace.invite.update-role`.
+
+Example: `mammoth workspace invite update-role --input '{"invite_id": 1, "role": "sample"}'`. Illustrative only: append `--yes` after observing an owned target.
+
+Result: `WorkspaceInviteUpdateRoleResult`; mutation `high_impact`, confirmation `yes_always`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
 ### `workspace.list`
 
 Run: `mammoth workspace list`. Exact input fields: `mammoth schema get workspace.list`.
