@@ -631,6 +631,18 @@ methods:
   pagination_policy: none
   secret_fields: []
   reviewed_by: primary
+- sdk_symbol: mammoth.api.agents.AgentsAPI.run_units_set
+  implementation_origin: mammoth.api.agents.AgentsAPI.run_units_set
+  signature: 'run_units_set(self, session_id: ''str'', run_id: ''str'', step: ''int'', kind: ''str'', units: ''list[dict[str, Any]]'') -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: agent.run.units.set
+  alias_of: null
+  no_command_reason: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
 - sdk_symbol: mammoth.api.agents.AgentsAPI.session_delete
   implementation_origin: mammoth.api.agents.AgentsAPI.session_delete
   signature: 'session_delete(self, session_id: ''str'') -> ''dict[str, Any]'''

@@ -285,6 +285,37 @@ class AgentsAPI:
         """
         return await self._run_action(session_id, run_id, "extend")
 
+    async def run_units_set(
+        self, session_id: str, run_id: str, step: int, kind: str, units: list[dict[str, Any]]
+    ) -> dict[str, Any]:
+        """Report the objects a plan step of a run will work on, once, as queued units.
+
+        The server shows them in the run panel and measures progress and the time left
+        from their completions; the agent never states either. A unit already listed
+        is left as it is.
+
+        Args:
+            session_id: ID of the session.
+            run_id: ID of the run.
+            step: Number of the plan step that will work on the units.
+            kind: Kind of the objects, e.g. ``"dataset"`` or ``"view"``.
+            units: Objects, each ``{"id": 12, "name": "Sales", "project_id": 3}``
+                (``name`` and ``project_id`` optional); 1 to 1000.
+
+        Returns:
+            Dict with ``registered`` (units sent) and ``units_total`` (the run's total).
+
+        Raises:
+            MammothValidationError: If *session_id* or *run_id* is empty.
+        """
+        _require_id("session_id", session_id)
+        _require_id("run_id", run_id)
+        return await self._client._request_json(
+            "POST",
+            f"/agents/sessions/{session_id}/runs/{run_id}/units",
+            json={"step": step, "kind": kind, "units": units},
+        )
+
     async def _run_action(self, session_id: str, run_id: str, action: str) -> dict[str, Any]:
         _require_id("session_id", session_id)
         _require_id("run_id", run_id)

@@ -25,7 +25,7 @@
 
 - `activity` (2 commands)
 - `addon` (7 commands)
-- `agent` (13 commands)
+- `agent` (14 commands)
 - `ai` (5 commands)
 - `annotation` (5 commands)
 - `auth` (3 commands)

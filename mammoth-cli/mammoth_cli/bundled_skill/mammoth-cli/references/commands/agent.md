@@ -92,6 +92,16 @@ Result: `AgentRunStopResult`; mutation `benign_mutation`, confirmation `none`, w
 
 Status on release: untried; no live run recorded.
 
+### `agent.run.units.set`
+
+Run: `mammoth agent run units set`. Exact input fields: `mammoth schema get agent.run.units.set`.
+
+Example: `mammoth agent run units set resource-123 --input '{"step": 1, "kind": "sample", "units": [{"sample_key": "Status"}]}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `AgentRunUnitsSetResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
 ### `agent.session.delete`
 
 Run: `mammoth agent session delete`. Exact input fields: `mammoth schema get agent.session.delete`.
