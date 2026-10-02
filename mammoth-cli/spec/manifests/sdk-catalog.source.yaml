@@ -4027,6 +4027,41 @@ sdk_methods:
   wait_policy: null
   pagination_policy: null
   openapi_operation_ids: []
+- sdk_symbol: mammoth.api.workspaces.WorkspacesAPI.invite_delete
+  canonical_command: workspace.invite.delete
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.workspaces.WorkspacesAPI.invite_list
+  canonical_command: workspace.invite.list
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.workspaces.WorkspacesAPI.invite_resend
+  canonical_command: workspace.invite.resend
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.workspaces.WorkspacesAPI.invite_revoke
+  canonical_command: workspace.invite.revoke
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.workspaces.WorkspacesAPI.invite_role_update
+  canonical_command: workspace.invite.update-role
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
 - sdk_symbol: mammoth.api.workspaces.WorkspacesAPI.llm_task
   canonical_command: workspace.llm-task
   alias_of: null

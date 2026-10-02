@@ -118,22 +118,32 @@ class WorkspaceAPI:
         return await self._client._request_json("POST", f"/workspaces/{ws}/reactivate")
 
     async def list_users(
-        self, workspace_id: int | None = None, fields: str | None = None
+        self,
+        workspace_id: int | None = None,
+        fields: str | None = None,
+        project_id: int | None = None,
     ) -> _list[dict[str, Any]]:
-        """List all users in a workspace.
+        """List all users in a workspace (or the members of one project).
 
         Args:
             workspace_id: ID of the workspace (uses client default if not provided).
             fields: Field set to return (e.g. ``"__full"`` adds ``user_roles`` and
                 ``status``); server default if omitted.
+            project_id: Keep only members of this project.
 
         Returns:
-            List of user dicts.
+            List of user dicts. Pending invites are not included; see
+            ``WorkspacesAPI.invite_list``.
         """
         ws = workspace_id or self._ws()
         request_kwargs: dict[str, Any] = {}
-        if fields is not None:
-            request_kwargs["params"] = {"fields": fields}
+        params = {
+            key: value
+            for key, value in (("fields", fields), ("project_id", project_id))
+            if value is not None
+        }
+        if params:
+            request_kwargs["params"] = params
         response = await self._client._request_json(
             "GET", f"/workspaces/{ws}/users", **request_kwargs
         )

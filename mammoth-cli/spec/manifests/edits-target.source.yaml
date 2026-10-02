@@ -231,6 +231,9 @@ edits_target_commands:
 - workflow.delete
 - workflow.update
 - workspace.delete
+- workspace.invite.delete
+- workspace.invite.revoke
+- workspace.invite.update-role
 - workspace.reactivate
 - workspace.segment.update
 - workspace.update
