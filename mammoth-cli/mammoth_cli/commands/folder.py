@@ -104,12 +104,6 @@ def _require_string_positional(invocation: Invocation, name: str) -> str:
     return str(invocation.extra_args[0])
 
 
-# The projects endpoint accepts at most limit=100 and exposes no offset, so a
-# cross-project search can see at most 100 projects; the result says when the
-# list was cut there.
-_MAX_PROJECTS_SEARCHED = 100
-
-
 def folder_find(invocation: Invocation) -> HandlerResult:
     """Search folder names for a substring across every visible project.
 
@@ -122,8 +116,7 @@ def folder_find(invocation: Invocation) -> HandlerResult:
     needle = name_substring.lower()
     matches: list[dict[str, Any]] = []
     with open_service(invocation) as (service, auth):
-        listing = service.list_projects(limit=_MAX_PROJECTS_SEARCHED)
-        visible = list(listing.get("projects", [])) if isinstance(listing, dict) else []
+        visible = list(service.list_all_projects())
         if invocation.project is not None:
             projects: list[dict[str, Any]] = [named_project(service, invocation.project, visible)]
         else:
@@ -157,9 +150,6 @@ def folder_find(invocation: Invocation) -> HandlerResult:
     return {
         "matches": matches,
         "projects_searched": len(projects),
-        "projects_truncated": (
-            invocation.project is None and len(projects) >= _MAX_PROJECTS_SEARCHED
-        ),
     }, meta
 
 
