@@ -11256,7 +11256,7 @@
       "capability_id": "REL-446",
       "capability": "Create or duplicate dataview",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; golden-data check 2026-09-19 (CLI 2.0.18): plain create on an owned dataset returned the new view's record (id, dataset_id; earlier releases printed '<unserializable View>'), and discard-duplicates then ran on it. clone_from is not usable on release: the clone job succeeds but the copy answers every read with 4DTVW019 and its copied tasks never execute (backend, see backend-repro-20260918/HANDOVER.md).",
+      "remarks": "Partial bounded evidence only; golden-data check 2026-09-19 (CLI 2.0.18): plain create on an owned dataset returned the new view's record (id, dataset_id; earlier releases printed '<unserializable View>'), and discard-duplicates then ran on it. clone_from works on a backend with mvc e56f2338b6 (2026-09-26): the copy's tasks run and it reads normally (koyal 2026-10-02, view 4429); on an older backend the copy answered every read with 4DTVW019 and its tasks never ran (backend-repro-20260918/HANDOVER.md); same dataset only.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "AddDataview",
       "method": "POST",

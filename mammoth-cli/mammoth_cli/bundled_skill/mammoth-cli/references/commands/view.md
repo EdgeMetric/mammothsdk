@@ -160,7 +160,7 @@ Example: `mammoth view create 123`. Placeholders are illustrative; resolve IDs a
 
 Result: `ViewCreateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `always_wait`.
 
-Status on release: ran once on CLI 2.0.18 — golden-data check 2026-09-19 (CLI 2.0.18): plain create on an owned dataset returned the new view's record (id, dataset_id; earlier releases printed '<unserializable View>'), and discard-duplicates then ran on it. clone_from is not usable on release: the clon…
+Status on release: ran once on CLI 2.0.18 — golden-data check 2026-09-19 (CLI 2.0.18): plain create on an owned dataset returned the new view's record (id, dataset_id; earlier releases printed '<unserializable View>'), and discard-duplicates then ran on it. clone_from works on a backend with mvc e56f23…
 
 ### `view.data-check.create`
 
