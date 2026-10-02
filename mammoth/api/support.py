@@ -9,8 +9,12 @@ are not scoped to the SDK client's own ``client.workspace_id``.
 
 from __future__ import annotations
 
+import base64
+from pathlib import Path
 from typing import TYPE_CHECKING, Any
+from urllib.parse import quote
 
+from mammoth.api.dashboards import _write_bytes_atomic
 from mammoth.exceptions import MammothValidationError
 
 if TYPE_CHECKING:
@@ -22,6 +26,27 @@ ERR_CUSTOMER_DETAILS_REQUIRED = (
     "`first_name`, `last_name`, `email`, `company_name` (new customer)."
 )
 ERR_STORAGE_TIERS_EMPTY = "`storage_tiers` must be a non-empty list."
+ERR_STORAGE_OPTION_NO_CHANGE = "Provide at least one of storage_gb, monthly_price, annual_price."
+ERR_SLUG_EMPTY = "`slug` must be a non-empty template slug."
+ERR_TEMPLATE_CHANGES_EMPTY = "`changes` must be a non-empty mapping of filing fields."
+
+#: Root of the curated-template admin routes (dashboards v3).
+_TEMPLATE_ADMIN = "/dashboards/v3/templates/admin"
+
+
+def _template_path(slug: str, suffix: str = "") -> str:
+    """One curated template's admin route, its slug path-encoded."""
+    if not slug:
+        raise MammothValidationError(ERR_SLUG_EMPTY)
+    return f"{_TEMPLATE_ADMIN}/{quote(slug, safe='')}{suffix}"
+
+
+def _local_file(file: str | Path) -> Path:
+    """The local file a multipart upload sends, or a validation error."""
+    path = Path(file)
+    if not path.is_file():
+        raise MammothValidationError(f"File not found: {path}")
+    return path
 
 
 def _check_id(name: str, value: int) -> None:
@@ -312,6 +337,126 @@ class SupportAPI:
         """
         _check_id("plan_id", plan_id)
         return await self._client._request_json("POST", f"/subscription/plans/{plan_id}/archive")
+
+    async def plan_unarchive(self, plan_id: int) -> dict[str, Any]:
+        """Unarchive a subscription plan (undo :meth:`plan_archive`).
+
+        Args:
+            plan_id: ID of the plan (must be a positive integer).
+
+        Returns:
+            Dict with ``plan`` and ``message``.
+
+        Raises:
+            MammothValidationError: If *plan_id* is not a positive integer.
+        """
+        _check_id("plan_id", plan_id)
+        return await self._client._request_json("POST", f"/subscription/plans/{plan_id}/unarchive")
+
+    # -- Plan storage options -------------------------------------------------
+
+    async def plan_storage_option_list(self, plan_id: int) -> dict[str, Any]:
+        """List every purchasable storage size of a plan, archived ones included.
+
+        Args:
+            plan_id: ID of the plan (must be a positive integer).
+
+        Returns:
+            Dict with ``storage_options``.
+
+        Raises:
+            MammothValidationError: If *plan_id* is not a positive integer.
+        """
+        _check_id("plan_id", plan_id)
+        return await self._client._request_json(
+            "GET", f"/subscription/plans/{plan_id}/storage-options"
+        )
+
+    async def plan_storage_option_create(
+        self, plan_id: int, storage_gb: int, monthly_price: float, annual_price: float
+    ) -> dict[str, Any]:
+        """Add a purchasable storage size to an inline-pricing plan.
+
+        Args:
+            plan_id: ID of the plan (must be a positive integer).
+            storage_gb: TOTAL storage the option grants, in GB (not an increment).
+            monthly_price: Monthly add in USD on top of the plan price.
+            annual_price: Annual add in USD on top of the plan price.
+
+        Returns:
+            Dict with ``storage_option`` and ``message``.
+
+        Raises:
+            MammothValidationError: If *plan_id* is not a positive integer.
+        """
+        _check_id("plan_id", plan_id)
+        body = {
+            "storage_gb": storage_gb,
+            "monthly_price": monthly_price,
+            "annual_price": annual_price,
+        }
+        return await self._client._request_json(
+            "POST", f"/subscription/plans/{plan_id}/storage-options", json=body
+        )
+
+    async def plan_storage_option_update(
+        self,
+        plan_id: int,
+        option_id: int,
+        storage_gb: int | None = None,
+        monthly_price: float | None = None,
+        annual_price: float | None = None,
+    ) -> dict[str, Any]:
+        """Re-price a storage option, or move it to a different size.
+
+        Args:
+            plan_id: ID of the plan (must be a positive integer).
+            option_id: ID of the storage option (must be a positive integer).
+            storage_gb: New TOTAL storage in GB.
+            monthly_price: New monthly add in USD.
+            annual_price: New annual add in USD.
+
+        Returns:
+            Dict with ``storage_option`` and ``message``.
+
+        Raises:
+            MammothValidationError: If an id is not a positive integer, or no
+                field is given.
+        """
+        _check_id("plan_id", plan_id)
+        _check_id("option_id", option_id)
+        fields = {
+            "storage_gb": storage_gb,
+            "monthly_price": monthly_price,
+            "annual_price": annual_price,
+        }
+        body = {key: value for key, value in fields.items() if value is not None}
+        if not body:
+            raise MammothValidationError(ERR_STORAGE_OPTION_NO_CHANGE)
+        return await self._client._request_json(
+            "PUT", f"/subscription/plans/{plan_id}/storage-options/{option_id}", json=body
+        )
+
+    async def plan_storage_option_archive(self, plan_id: int, option_id: int) -> dict[str, Any]:
+        """Archive a storage option so it can no longer be chosen.
+
+        Never a hard delete: subscriptions already billed at that size keep it.
+
+        Args:
+            plan_id: ID of the plan (must be a positive integer).
+            option_id: ID of the storage option (must be a positive integer).
+
+        Returns:
+            Dict with ``storage_option`` and ``message``.
+
+        Raises:
+            MammothValidationError: If an id is not a positive integer.
+        """
+        _check_id("plan_id", plan_id)
+        _check_id("option_id", option_id)
+        return await self._client._request_json(
+            "DELETE", f"/subscription/plans/{plan_id}/storage-options/{option_id}"
+        )
 
     # -- Features ---------------------------------------------------------------
 
@@ -1253,3 +1398,271 @@ class SupportAPI:
         return await self._client._request_json(
             "PATCH", f"/support/workspaces/{workspace_id}/users", json=body
         )
+
+    # -- Curated template catalog (dashboards v3 admin) ---------------------------
+    #
+    # Every route below refuses a caller without a Mammoth staff (platform-admin)
+    # role, whatever workspace the session is in. They act on CURATED templates
+    # only; a workspace's saved templates are never reachable here.
+
+    async def template_list(self) -> dict[str, Any]:
+        """List every curated template, drafts and broken rows included, worst first.
+
+        Returns:
+            Dict with ``templates`` (each with its state, what is wrong and the
+            action that fixes it), ``counts`` and the filing vocabularies.
+        """
+        return await self._client._request_json("GET", _TEMPLATE_ADMIN)
+
+    async def template_edit(self, slug: str, changes: dict[str, Any]) -> dict[str, Any]:
+        """Edit a curated template's filing: title, description, tags or order.
+
+        Args:
+            slug: Template slug.
+            changes: Fields to change, from ``title``, ``description``,
+                ``use_case``, ``function``, ``industry`` (list) and
+                ``sort_order``; an explicit ``None`` clears a field. An optional
+                ``base_version`` (the row's ``filing_version``) makes the write
+                conditional (409 when the row moved).
+
+        Returns:
+            Dict with ``template`` and ``notes`` (what the edit changes for
+            customers).
+
+        Raises:
+            MammothValidationError: If *slug* or *changes* is empty.
+        """
+        path = _template_path(slug)
+        if not changes:
+            raise MammothValidationError(ERR_TEMPLATE_CHANGES_EMPTY)
+        return await self._client._request_json("PATCH", path, json={"params": dict(changes)})
+
+    async def template_data_preview(self, slug: str) -> dict[str, Any]:
+        """Read up to 50 rows of the data a curated template opens on.
+
+        Args:
+            slug: Template slug.
+
+        Returns:
+            Dict with the columns, rows and ``capped``.
+        """
+        return await self._client._request_json("GET", _template_path(slug, "/data-preview"))
+
+    async def template_canvas(self, slug: str) -> dict[str, Any]:
+        """Read a curated template's canvas, drafts included (as the editor reads it).
+
+        Args:
+            slug: Template slug.
+
+        Returns:
+            Dict with the canvas and its baked plan and specs.
+        """
+        return await self._client._request_json("GET", _template_path(slug, "/canvas"))
+
+    async def template_publish(self, slug: str) -> dict[str, Any]:
+        """Take a curated draft live in the gallery for every customer.
+
+        Re-checks the fit, publishes the source dashboard and renders the
+        preview image first; refused with nothing published when the template
+        fails on its own data.
+
+        Args:
+            slug: Template slug.
+
+        Returns:
+            Dict with ``template``.
+        """
+        return await self._client._request_json("POST", _template_path(slug, "/publish"))
+
+    async def template_unpublish(self, slug: str) -> dict[str, Any]:
+        """Take a live (or retired) curated template back to draft.
+
+        Args:
+            slug: Template slug.
+
+        Returns:
+            Dict with ``template``.
+        """
+        return await self._client._request_json("POST", _template_path(slug, "/unpublish"))
+
+    async def template_retire(self, slug: str) -> dict[str, Any]:
+        """Retire a curated template: kept, no longer offered or audited.
+
+        Reversible with :meth:`template_unpublish`.
+
+        Args:
+            slug: Template slug.
+
+        Returns:
+            Dict with ``template``.
+        """
+        return await self._client._request_json("POST", _template_path(slug, "/retire"))
+
+    async def template_inspect(self, file: str | Path) -> dict[str, Any]:
+        """Read a template file (.zip bundle) without importing it. Writes nothing.
+
+        Args:
+            file: Path to a local template bundle.
+
+        Returns:
+            Dict with the slug, the fields it needs, whether it carries data
+            and a picture, and whether the catalog already has it.
+
+        Raises:
+            MammothValidationError: If *file* is not a local file.
+        """
+        path = _local_file(file)
+        with path.open("rb") as opened:
+            return await self._client._request_json(
+                "POST",
+                f"{_TEMPLATE_ADMIN}/inspect",
+                files=[("data", (path.name, opened, "application/zip"))],
+            )
+
+    async def template_import(self, file: str | Path, dataset: str | None = None) -> dict[str, Any]:
+        """Import a template file as a curated DRAFT (not published).
+
+        Re-importing an existing slug updates it in place and keeps its filing.
+
+        Args:
+            file: Path to a local template bundle.
+            dataset: Dataset name to bind a bundle that carries no data.
+
+        Returns:
+            Dict with the row, ``created`` and how every column was read.
+
+        Raises:
+            MammothValidationError: If *file* is not a local file.
+        """
+        path = _local_file(file)
+        with path.open("rb") as opened:
+            return await self._client._request_json(
+                "POST",
+                f"{_TEMPLATE_ADMIN}/import",
+                params={"dataset": dataset} if dataset else None,
+                files=[("data", (path.name, opened, "application/zip"))],
+            )
+
+    async def template_thumbnail_set(self, slug: str, file: str | Path) -> dict[str, Any]:
+        """Upload or replace a curated template's picture (PNG, JPEG or WebP, 1 MB).
+
+        Args:
+            slug: Template slug.
+            file: Path to a local image.
+
+        Returns:
+            Dict with ``template``.
+
+        Raises:
+            MammothValidationError: If *slug* is empty or *file* is not a local file.
+        """
+        endpoint = _template_path(slug, "/thumbnail")
+        path = _local_file(file)
+        with path.open("rb") as opened:
+            return await self._client._request_json(
+                "PUT",
+                endpoint,
+                files=[("data", (path.name, opened, "application/octet-stream"))],
+            )
+
+    async def template_thumbnail_clear(self, slug: str) -> dict[str, Any]:
+        """Remove a curated template's picture; its card falls back to the og-card.
+
+        Args:
+            slug: Template slug.
+
+        Returns:
+            Dict with ``template``.
+        """
+        return await self._client._request_json("DELETE", _template_path(slug, "/thumbnail"))
+
+    async def template_discard(self, slug: str) -> dict[str, Any]:
+        """Permanently remove a curated DRAFT, its preview board and its data.
+
+        Refused for a live template (unpublish it first). Boards people built
+        from it are their own copies and keep working.
+
+        Args:
+            slug: Template slug.
+
+        Returns:
+            Dict with ``deleted`` and ``notes``.
+        """
+        return await self._client._request_json("DELETE", _template_path(slug))
+
+    async def template_snapshots(self) -> dict[str, Any]:
+        """List every stored dataset the template catalog holds.
+
+        Returns:
+            Dict with ``snapshots`` (size, content address, templates sharing
+            it) and ``unstored`` (templates with no data).
+        """
+        return await self._client._request_json("GET", f"{_TEMPLATE_ADMIN}/snapshots")
+
+    async def template_audit(self) -> dict[str, Any]:
+        """Re-run every curated-catalog gate. Read-only; safe on a schedule.
+
+        Returns:
+            Dict with ``faults`` (each with its remedy), ``checked`` and
+            ``missing``.
+        """
+        return await self._client._request_json("GET", f"{_TEMPLATE_ADMIN}/audit")
+
+    async def template_export(
+        self, slug: str, output_path: str | Path | None = None, with_data: bool = False
+    ) -> Path:
+        """Download a curated template as a template file (.zip) to a local path.
+
+        Args:
+            slug: Template slug.
+            output_path: Where to write it (default ``<slug>.zip``).
+            with_data: Also package a capped copy of the rows it opens on.
+
+        Returns:
+            Path of the written file.
+        """
+        artifact = await self._client._request_binary(
+            "GET", _template_path(slug, "/export"), params={"data": "1" if with_data else "0"}
+        )
+        return _save_zip(artifact, output_path or f"{slug}.zip")
+
+    async def template_export_dashboard(
+        self,
+        dashboard_id: int,
+        slug: str,
+        output_path: str | Path | None = None,
+        with_data: bool = True,
+    ) -> Path:
+        """Download any dashboard you can edit as a template file (.zip).
+
+        Args:
+            dashboard_id: ID of the dashboard (must be a positive integer).
+            slug: Template id the file carries; an import matches on it.
+            output_path: Where to write it (default ``<slug>.zip``).
+            with_data: Package a capped copy of the board's rows (default on).
+
+        Returns:
+            Path of the written file.
+
+        Raises:
+            MammothValidationError: If *dashboard_id* is not a positive integer
+                or *slug* is empty.
+        """
+        _check_id("dashboard_id", dashboard_id)
+        if not slug:
+            raise MammothValidationError(ERR_SLUG_EMPTY)
+        artifact = await self._client._request_binary(
+            "GET",
+            f"{_TEMPLATE_ADMIN}/dashboards/{dashboard_id}/export",
+            params={"slug": slug, "data": "1" if with_data else "0"},
+        )
+        return _save_zip(artifact, output_path or f"{slug}.zip")
+
+
+def _save_zip(artifact: dict[str, Any], output_path: str | Path) -> Path:
+    """Write a downloaded template file to disk, atomically."""
+    try:
+        content = base64.b64decode(artifact["content_base64"])
+    except (KeyError, ValueError) as exc:
+        raise MammothValidationError("Invalid template export response.") from exc
+    return _write_bytes_atomic(content, Path(output_path))

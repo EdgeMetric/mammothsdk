@@ -168,6 +168,62 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
     "dashboard.gallery.get": (
         PositionalSpec(name="slug", type=str, required=True, help="Template slug."),
     ),
+    # Curated-catalog admin commands address a template by slug, never an id.
+    "support.template.edit": (
+        PositionalSpec(name="slug", type=str, required=True, help="Curated template slug."),
+    ),
+    "support.template.data-preview": (
+        PositionalSpec(name="slug", type=str, required=True, help="Curated template slug."),
+    ),
+    "support.template.canvas": (
+        PositionalSpec(name="slug", type=str, required=True, help="Curated template slug."),
+    ),
+    "support.template.publish": (
+        PositionalSpec(name="slug", type=str, required=True, help="Curated template slug."),
+    ),
+    "support.template.unpublish": (
+        PositionalSpec(name="slug", type=str, required=True, help="Curated template slug."),
+    ),
+    "support.template.retire": (
+        PositionalSpec(name="slug", type=str, required=True, help="Curated template slug."),
+    ),
+    "support.template.thumbnail.clear": (
+        PositionalSpec(name="slug", type=str, required=True, help="Curated template slug."),
+    ),
+    "support.template.discard": (
+        PositionalSpec(name="slug", type=str, required=True, help="Curated template slug."),
+    ),
+    "support.template.export": (
+        PositionalSpec(name="slug", type=str, required=True, help="Curated template slug."),
+    ),
+    "support.template.inspect": (
+        PositionalSpec(
+            name="file",
+            type=str,
+            required=True,
+            help="Path to a local template file (.zip).",
+            example_value="template.zip",
+        ),
+    ),
+    "support.template.import": (
+        PositionalSpec(
+            name="file",
+            type=str,
+            required=True,
+            help="Path to a local template file (.zip).",
+            example_value="template.zip",
+        ),
+    ),
+    "support.template.thumbnail.set": (
+        PositionalSpec(name="slug", type=str, required=True, help="Curated template slug."),
+        PositionalSpec(
+            name="file",
+            type=str,
+            required=True,
+            help="Path to a local PNG, JPEG or WebP image (1 MB at most).",
+            example_value="card.png",
+        ),
+    ),
     # The invite is named in ``--input`` (``invite_id``), never positionally.
     "workspace.invite.update-role": (),
     "agent.run.status": (),

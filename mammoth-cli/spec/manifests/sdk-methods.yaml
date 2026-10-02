@@ -7708,3 +7708,255 @@ methods:
   pagination_policy: null
   secret_fields: []
   reviewed_by: primary
+- sdk_symbol: mammoth.api.support.SupportAPI.plan_unarchive
+  implementation_origin: mammoth.api.support.SupportAPI.plan_unarchive
+  signature: 'plan_unarchive(self, plan_id: ''int'') -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: support.plan.unarchive
+  alias_of: null
+  no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.support.SupportAPI.plan_storage_option_list
+  implementation_origin: mammoth.api.support.SupportAPI.plan_storage_option_list
+  signature: 'plan_storage_option_list(self, plan_id: ''int'') -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: support.plan.storage-option.list
+  alias_of: null
+  no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.support.SupportAPI.plan_storage_option_create
+  implementation_origin: mammoth.api.support.SupportAPI.plan_storage_option_create
+  signature: 'plan_storage_option_create(self, plan_id: ''int'', storage_gb: ''int'', monthly_price: ''float'', annual_price: ''float'') -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: support.plan.storage-option.create
+  alias_of: null
+  no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.support.SupportAPI.plan_storage_option_update
+  implementation_origin: mammoth.api.support.SupportAPI.plan_storage_option_update
+  signature: 'plan_storage_option_update(self, plan_id: ''int'', option_id: ''int'', storage_gb: ''int | None'' = None, monthly_price: ''float | None'' = None, annual_price: ''float | None'' = None) -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: support.plan.storage-option.update
+  alias_of: null
+  no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.support.SupportAPI.plan_storage_option_archive
+  implementation_origin: mammoth.api.support.SupportAPI.plan_storage_option_archive
+  signature: 'plan_storage_option_archive(self, plan_id: ''int'', option_id: ''int'') -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: support.plan.storage-option.archive
+  alias_of: null
+  no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.support.SupportAPI.template_list
+  implementation_origin: mammoth.api.support.SupportAPI.template_list
+  signature: template_list(self) -> 'dict[str, Any]'
+  openapi_operation_ids: []
+  canonical_command: support.template.list
+  alias_of: null
+  no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.support.SupportAPI.template_edit
+  implementation_origin: mammoth.api.support.SupportAPI.template_edit
+  signature: 'template_edit(self, slug: ''str'', changes: ''dict[str, Any]'') -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: support.template.edit
+  alias_of: null
+  no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.support.SupportAPI.template_data_preview
+  implementation_origin: mammoth.api.support.SupportAPI.template_data_preview
+  signature: 'template_data_preview(self, slug: ''str'') -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: support.template.data-preview
+  alias_of: null
+  no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.support.SupportAPI.template_canvas
+  implementation_origin: mammoth.api.support.SupportAPI.template_canvas
+  signature: 'template_canvas(self, slug: ''str'') -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: support.template.canvas
+  alias_of: null
+  no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.support.SupportAPI.template_publish
+  implementation_origin: mammoth.api.support.SupportAPI.template_publish
+  signature: 'template_publish(self, slug: ''str'') -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: support.template.publish
+  alias_of: null
+  no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.support.SupportAPI.template_unpublish
+  implementation_origin: mammoth.api.support.SupportAPI.template_unpublish
+  signature: 'template_unpublish(self, slug: ''str'') -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: support.template.unpublish
+  alias_of: null
+  no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.support.SupportAPI.template_retire
+  implementation_origin: mammoth.api.support.SupportAPI.template_retire
+  signature: 'template_retire(self, slug: ''str'') -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: support.template.retire
+  alias_of: null
+  no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.support.SupportAPI.template_inspect
+  implementation_origin: mammoth.api.support.SupportAPI.template_inspect
+  signature: 'template_inspect(self, file: ''str | Path'') -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: support.template.inspect
+  alias_of: null
+  no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.support.SupportAPI.template_import
+  implementation_origin: mammoth.api.support.SupportAPI.template_import
+  signature: 'template_import(self, file: ''str | Path'', dataset: ''str | None'' = None) -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: support.template.import
+  alias_of: null
+  no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.support.SupportAPI.template_thumbnail_set
+  implementation_origin: mammoth.api.support.SupportAPI.template_thumbnail_set
+  signature: 'template_thumbnail_set(self, slug: ''str'', file: ''str | Path'') -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: support.template.thumbnail.set
+  alias_of: null
+  no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.support.SupportAPI.template_thumbnail_clear
+  implementation_origin: mammoth.api.support.SupportAPI.template_thumbnail_clear
+  signature: 'template_thumbnail_clear(self, slug: ''str'') -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: support.template.thumbnail.clear
+  alias_of: null
+  no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.support.SupportAPI.template_discard
+  implementation_origin: mammoth.api.support.SupportAPI.template_discard
+  signature: 'template_discard(self, slug: ''str'') -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: support.template.discard
+  alias_of: null
+  no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.support.SupportAPI.template_snapshots
+  implementation_origin: mammoth.api.support.SupportAPI.template_snapshots
+  signature: template_snapshots(self) -> 'dict[str, Any]'
+  openapi_operation_ids: []
+  canonical_command: support.template.snapshots
+  alias_of: null
+  no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.support.SupportAPI.template_audit
+  implementation_origin: mammoth.api.support.SupportAPI.template_audit
+  signature: template_audit(self) -> 'dict[str, Any]'
+  openapi_operation_ids: []
+  canonical_command: support.template.audit
+  alias_of: null
+  no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.support.SupportAPI.template_export
+  implementation_origin: mammoth.api.support.SupportAPI.template_export
+  signature: 'template_export(self, slug: ''str'', output_path: ''str | Path | None'' = None, with_data: ''bool'' = False) -> ''Path'''
+  openapi_operation_ids: []
+  canonical_command: support.template.export
+  alias_of: null
+  no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.support.SupportAPI.template_export_dashboard
+  implementation_origin: mammoth.api.support.SupportAPI.template_export_dashboard
+  signature: 'template_export_dashboard(self, dashboard_id: ''int'', slug: ''str'', output_path: ''str | Path | None'' = None, with_data: ''bool'' = True) -> ''Path'''
+  openapi_operation_ids: []
+  canonical_command: support.template.export-dashboard
+  alias_of: null
+  no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
