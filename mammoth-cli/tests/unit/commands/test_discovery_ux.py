@@ -372,6 +372,8 @@ def test_workflow_canvas_says_it_proposes_structure_for_review_and_shows_the_ops
     assert "review and Save" in preconditions
     assert "cannot add filters" in preconditions
     assert "proposed_changes" in entry["agent_example"]
+    # A whole shape in one call: a later change points at an earlier one's ref.
+    assert "view_ref" in preconditions and '"view_ref": "urgent"' in entry["agent_example"]
 
 
 # `workflow canvas` edits its workflow's canvas state, but a call that only proposes changes

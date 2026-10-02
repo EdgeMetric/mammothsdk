@@ -52,11 +52,16 @@ _FIXED_EXAMPLES: dict[str, tuple[tuple[str, ...], dict[str, Any]]] = {
         {
             "canvas_state": {
                 "proposed_changes": [
-                    {"op": "add_view", "dataset_id": 415, "name": "Urgent tickets"},
+                    {
+                        "op": "add_view",
+                        "dataset_id": 415,
+                        "name": "Urgent tickets",
+                        "ref": "urgent",
+                    },
                     {
                         "op": "send_to_new_dataset",
                         "dataset_id": 415,
-                        "view_id": 502,
+                        "view_ref": "urgent",
                         "name": "Urgent tickets by team",
                     },
                 ]
