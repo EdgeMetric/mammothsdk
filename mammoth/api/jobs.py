@@ -28,6 +28,9 @@ _JOB_LOG = logging.getLogger("mammoth.jobs")
 #: the first check is immediate and the gap grows from here up to ``poll_interval``.
 _POLL_FIRST_DELAY = 0.2
 _POLL_GROWTH = 1.5
+#: A job still running after this long is a long one: stop checking as often.
+_POLL_SLOW_AFTER = 10.0
+_POLL_SLOW_CAP = 5.0
 
 
 def _failure_message(job: dict[str, Any]) -> str:
@@ -47,8 +50,14 @@ def _failure_message(job: dict[str, Any]) -> str:
     return str(message) if message else "Job failed"
 
 
-def _poll_delay(attempt: int, cap: float) -> float:
-    """Gap before poll ``attempt + 1``: short first, growing, never above ``cap``."""
+def _poll_delay(attempt: int, cap: float, elapsed: float = 0.0) -> float:
+    """Gap before poll ``attempt + 1``: short first, growing, never above ``cap``.
+
+    Past ``_POLL_SLOW_AFTER`` seconds of waiting the ceiling rises to
+    ``_POLL_SLOW_CAP`` (when higher), so a long job costs about half the polls.
+    """
+    if elapsed >= _POLL_SLOW_AFTER:
+        cap = max(cap, _POLL_SLOW_CAP)
     return min(cap, _POLL_FIRST_DELAY * _POLL_GROWTH**attempt)
 
 
@@ -138,7 +147,8 @@ class JobsAPI:
         Args:
             job_id: ID of the job to wait for
             timeout: Maximum time to wait in seconds (default: client.job_timeout)
-            poll_interval: Upper bound on the time between polls in seconds
+            poll_interval: Upper bound on the time between polls in seconds (raised to 5 after
+                10 seconds of waiting)
                 (default: ``client.job_poll_seconds``). The first check is
                 immediate and the gap then grows from ``_POLL_FIRST_DELAY`` up
                 to this bound, so a sub-second job is not held for a full
@@ -218,8 +228,9 @@ class JobsAPI:
                 )
             else:
                 # Still running (or an unknown status): poll again shortly.
-                gap = _poll_delay(attempt, poll_interval)
-                await asyncio.sleep(min(gap, max(0.0, deadline - time.monotonic())))
+                left = max(0.0, deadline - time.monotonic())
+                gap = _poll_delay(attempt, poll_interval, timeout - left)
+                await asyncio.sleep(min(gap, left))
                 attempt += 1
 
         # Timeout reached
@@ -241,7 +252,8 @@ class JobsAPI:
         Args:
             job_ids: List of job IDs or comma-separated string
             timeout: Maximum time to wait in seconds (default: client.job_timeout)
-            poll_interval: Upper bound on the time between polls in seconds
+            poll_interval: Upper bound on the time between polls in seconds (raised to 5 after
+                10 seconds of waiting)
                 (default: 2); gaps start short and grow to this bound.
 
         Returns:
@@ -333,8 +345,9 @@ class JobsAPI:
             if requested_ids <= set(completed_jobs):
                 return {"jobs": [completed_jobs[job_id] for job_id in job_ids_list]}
 
-            gap = _poll_delay(attempt, poll_interval)
-            await asyncio.sleep(min(gap, max(0.0, deadline - time.monotonic())))
+            left = max(0.0, deadline - time.monotonic())
+            gap = _poll_delay(attempt, poll_interval, timeout - left)
+            await asyncio.sleep(min(gap, left))
             attempt += 1
 
         # Timeout reached — use first pending job ID for error

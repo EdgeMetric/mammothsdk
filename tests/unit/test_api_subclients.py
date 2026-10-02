@@ -3635,6 +3635,23 @@ class TestBrowseResourcesV2:
         await client.browse.resources_search()
         client._request_json.assert_called_once_with("GET", "/workspaces/1/resources", params=None)
 
+    async def test_resources_bulk_chunks_at_the_route_cap(self, client: MammothClient):
+        client._request_json = AsyncMock(
+            side_effect=[{"resources": [{"object_id": 1}]}, {"resources": [{"object_id": 101}]}]
+        )
+        items = [("dataview", i) for i in range(1, 102)]
+        found = await client.browse.resources_bulk(items)
+        assert found == [{"object_id": 1}, {"object_id": 101}]
+        first, second = client._request_json.call_args_list
+        assert first.args == ("POST", "/workspaces/1/projects/100/resources/bulk")
+        assert len(first.kwargs["json"]["ids"]) == 100
+        assert second.kwargs["json"]["ids"] == [{"type": "dataview", "id": 101}]
+        assert first.kwargs["operation_effect"] == "read"
+
+    async def test_resources_bulk_with_nothing_asked_sends_nothing(self, client: MammothClient):
+        assert await client.browse.resources_bulk([]) == []
+        client._request_json.assert_not_called()
+
     async def test_resources_search_pages_by_cursor(self, client: MammothClient):
         await client.browse.resources_search(cursor="abc", limit=10, sort="name", fields="minimal")
         assert client._request_json.call_args.kwargs["params"] == {

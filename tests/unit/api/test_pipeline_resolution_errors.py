@@ -7,17 +7,18 @@ only the HTTP boundary is faked by giving the session a custom httpx transport
 adapter on the genuine ``client.session``.
 
 Regression under test: a transient/authorization failure (401/403/429/5xx)
-raised while scanning datasets for a dataview must propagate with its correct
+raised while resolving a dataview's parent must propagate with its correct
 classification, instead of being swallowed and misreported as the generic
 ``ValueError("... not found in any dataset ...")``. A genuine 404 must still
-be treated as a real miss.
+be treated as a real miss. Resolution is one ``resources/dataview/{id}`` read,
+never a walk over the project's datasets.
 """
 
 from __future__ import annotations
 
 import json
 from typing import Any
-from urllib.parse import parse_qs, urlparse
+from urllib.parse import urlparse
 
 import pytest
 import httpx
@@ -55,10 +56,9 @@ def _make_response(
 class _FakeTransport(httpx.AsyncBaseTransport):
     """An httpx transport that fakes only the HTTP layer.
 
-    The project dataset listing always succeeds and reports a single
-    dataset, so resolution proceeds to the dataview lookup. The dataview
-    lookup then returns a configurable status code + body, which is exactly
-    the response whose classification is under test.
+    The resources route answers with a configurable status code + body, which
+    is exactly the response whose classification is under test. Any other
+    request fails the test: resolution must not list or probe datasets.
     """
 
     def __init__(self, dataview_status: int, dataview_body: dict[str, Any]) -> None:
@@ -68,24 +68,15 @@ class _FakeTransport(httpx.AsyncBaseTransport):
 
     async def handle_async_request(self, request: httpx.Request) -> httpx.Response:
         path = urlparse(str(request.url)).path
-
-        # Project dataset listing — the first call resolution makes. Return
-        # one dataset so the dataview scan has a target.
-        if path.endswith("/datasets"):
-            body: dict[str, Any] = {
-                "datasets": [{"id": DATASET_ID, "name": "ds"}],
-                "limit": 100,
-                "offset": 0,
-                "next": None,
-            }
-            return _make_response(200, body, request)
-
-        # Dataview lookup — the response under test.
-        if "/dataviews/" in path:
+        if path.endswith(f"/resources/dataview/{DATAVIEW_ID}"):
             self.dataview_calls += 1
             return _make_response(self._dataview_status, self._dataview_body, request)
+        raise AssertionError(f"Unexpected request: {path}")
 
-        return _make_response(200, {}, request)
+
+def _resource(dataset_id: int = DATASET_ID) -> dict[str, Any]:
+    """The resources-v2 body for a dataview row with its parent reference."""
+    return {"resource": {"object_id": DATAVIEW_ID, "dataset": {"id": dataset_id, "name": "ds"}}}
 
 
 def _client_with_transport(transport: _FakeTransport) -> MammothClient:
@@ -146,7 +137,7 @@ async def test_successful_resolution_is_cached_across_calls() -> None:
     A dataview belongs to one dataset for its lifetime, so a second resolution
     of the same dataview must not scan again.
     """
-    transport = _FakeTransport(200, {"id": DATAVIEW_ID})
+    transport = _FakeTransport(200, _resource())
     client = _client_with_transport(transport)
     try:
         first = await client.pipeline.find_dataset_for_dataview(DATAVIEW_ID)
@@ -169,110 +160,30 @@ async def test_genuine_404_still_yields_not_found() -> None:
         with pytest.raises(ValueError) as excinfo:
             await client.pipeline.find_dataset_for_dataview(DATAVIEW_ID)
         assert "not found in any dataset" in str(excinfo.value)
-        # The dataset was actually scanned before concluding "not found".
+        # One read decided it; no dataset was probed.
         assert transport.dataview_calls == 1
     finally:
         await client.close()
 
 
-async def test_wrong_parent_403_is_disambiguated_by_collection_membership() -> None:
-    """A tenant's wrong-parent 403 must not hide a view in the next dataset."""
-
-    class TwoDatasetTransport(httpx.AsyncBaseTransport):
-        async def handle_async_request(self, request: httpx.Request) -> httpx.Response:
-            path = urlparse(str(request.url)).path
-            if path.endswith("/datasets"):
-                body = {
-                    "datasets": [{"id": 500, "name": "a"}, {"id": 501, "name": "b"}],
-                    "limit": 100,
-                    "offset": 0,
-                    "next": None,
-                }
-                return _make_response(200, body, request)
-            if path.endswith("/datasets/500/dataviews/1039"):
-                return _make_response(403, {"detail": "forbidden"}, request)
-            if path.endswith("/datasets/500/dataviews"):
-                return _make_response(
-                    200,
-                    {
-                        "dataviews": [{"id": 22}],
-                        "limit": 1000,
-                        "next": "https://example.test/dataviews?offset=1000",
-                    },
-                    request,
-                )
-            if path.endswith("/datasets/501/dataviews/1039"):
-                return _make_response(200, {"id": DATAVIEW_ID}, request)
-            raise AssertionError(f"Unexpected request: {path}")
-
-    client = _client_with_transport(TwoDatasetTransport())
+async def test_a_row_without_a_parent_reference_fails_loud() -> None:
+    """A dataview row with no ``dataset`` ref is an API fault, not "not found"."""
+    transport = _FakeTransport(200, {"resource": {"object_id": DATAVIEW_ID, "dataset": None}})
+    client = _client_with_transport(transport)
     try:
-        assert await client.pipeline.find_dataset_for_dataview(DATAVIEW_ID) == 501
+        with pytest.raises(MammothAPIError):
+            await client.pipeline.find_dataset_for_dataview(DATAVIEW_ID)
     finally:
         await client.close()
 
 
-async def test_a_dataset_beyond_the_first_page_is_still_discovered() -> None:
-    """A project with more than one page of datasets must not be truncated.
-
-    Regression (PR25 item A): resolution used to enumerate candidate
-    datasets via a single, unpaginated workspace/folder browse call (a
-    default page size of 100, with the server's ``next`` continuation never
-    followed). A project holding more than 100 datasets silently lost every
-    dataset past the first page -- and a freshly created dataset, which
-    sorts onto the *last* page, was exactly the one most likely to be
-    dropped. That made ``view get VIEW_ID`` (no dataset id) on a fresh, idle
-    view deterministically resource_not_found, even though the view plainly
-    existed and a scoped ``view get VIEW_ID DATASET_ID`` worked. Enumeration
-    must fully paginate ``dataset.list`` instead.
-    """
-    first_page_ids = list(range(1, 101))
-
-    class PagedDatasetsTransport(httpx.AsyncBaseTransport):
-        async def handle_async_request(self, request: httpx.Request) -> httpx.Response:
-            path = urlparse(str(request.url)).path
-            if path.endswith("/datasets"):
-                query = urlparse(str(request.url)).query
-                offset = int(parse_qs(query).get("offset", ["0"])[0])
-                if offset == 0:
-                    body = {
-                        "datasets": [{"id": i, "name": f"ds{i}"} for i in first_page_ids],
-                        "limit": 100,
-                        "offset": 0,
-                        "next": "https://example.test/datasets?offset=100",
-                    }
-                else:
-                    body = {
-                        "datasets": [{"id": DATASET_ID, "name": "target"}],
-                        "limit": 100,
-                        "offset": 100,
-                        "next": None,
-                    }
-                return _make_response(200, body, request)
-            if "/dataviews/" in path:
-                dataset_id = int(path.split("/datasets/")[1].split("/")[0])
-                if dataset_id == DATASET_ID:
-                    return _make_response(200, {"id": DATAVIEW_ID}, request)
-                return _make_response(404, {"detail": "not found"}, request)
-            raise AssertionError(f"Unexpected request: {path}")
-
-    client = _client_with_transport(PagedDatasetsTransport())
-    try:
-        assert await client.pipeline.find_dataset_for_dataview(DATAVIEW_ID) == DATASET_ID
-    finally:
-        await client.close()
-
-
-async def test_resolution_trusts_the_record_own_parent_over_the_probed_dataset() -> None:
-    """The backend serves a view under a dataset that does not own it.
-
-    The probe hit dataset 500, but the returned record says ``ds_id`` 777: the
-    record names the real parent, so that is what resolution returns and caches.
-    """
-    transport = _FakeTransport(200, {"id": DATAVIEW_ID, "ds_id": 777})
+async def test_resolution_returns_the_parent_dataset_the_route_names() -> None:
+    """The ``dataset`` reference on the row is the parent, whatever its id."""
+    transport = _FakeTransport(200, _resource(777))
     client = _client_with_transport(transport)
     try:
         assert await client.pipeline.find_dataset_for_dataview(DATAVIEW_ID) == 777
         assert await client.pipeline.find_dataset_for_dataview(DATAVIEW_ID) == 777
+        assert transport.dataview_calls == 1
     finally:
         await client.close()

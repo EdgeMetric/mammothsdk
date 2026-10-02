@@ -10,7 +10,6 @@ from pydantic import ValidationError
 
 from ..exceptions import MammothValidationError
 from ..models.projects import DataSyncPatchItem
-from ._pagination import collect_offset_pages
 
 if TYPE_CHECKING:
     from ..client import MammothClient
@@ -114,23 +113,6 @@ def _attention_items(
         if d.get("status") == "failed"
     )
     return rows
-
-
-async def _collect_views(
-    client: MammothClient, ws: int, project_id: int, dataset_id: int
-) -> _list[dict[str, Any]]:
-    page = await collect_offset_pages(
-        lambda offset: client.dataviews.list(
-            dataset_id=dataset_id,
-            workspace_id=ws,
-            project_id=project_id,
-            limit=MAX_VIEW_PAGE_SIZE,
-            offset=offset,
-        ),
-        item_key="dataviews",
-        limit=MAX_VIEW_PAGE_SIZE,
-    )
-    return _list(page.get("dataviews", []))
 
 
 def _attention_result(
@@ -765,24 +747,22 @@ class ProjectsAPI:
     ) -> dict[int, dict[str, Any]]:
         """Map each of ``view_ids`` to ``{dataset_id, dataset_name, view_name}``.
 
-        Lists the project's datasets once and each dataset's views until every id is
-        found, so cost is bounded by the datasets, not by views times datasets.
+        One resources-bulk request per 100 views: each dataview row names its
+        parent dataset, so the cost does not depend on how many datasets the
+        project holds. A view the project does not hold stays unmapped.
         """
         found: dict[int, dict[str, Any]] = {}
-        if not view_ids:
-            return found
-        listing = await self._client.datasets.list_all(workspace_id=ws, project_id=project_id)
-        for dataset in listing.get("datasets", []):
-            if len(found) == len(view_ids):
-                break
-            views = await _collect_views(self._client, ws, project_id, dataset["id"])
-            for view in views:
-                if view["id"] in view_ids:
-                    found[view["id"]] = {
-                        "dataset_id": dataset["id"],
-                        "dataset_name": dataset.get("name"),
-                        "view_name": view.get("name"),
-                    }
+        rows = await self._client.browse.resources_bulk(
+            [("dataview", view_id) for view_id in sorted(view_ids)], project_id=project_id
+        )
+        for row in rows:
+            dataset = row.get("dataset")
+            if isinstance(dataset, dict) and dataset.get("id") is not None:
+                found[row["object_id"]] = {
+                    "dataset_id": dataset["id"],
+                    "dataset_name": dataset.get("name"),
+                    "view_name": row.get("name"),
+                }
         return found
 
     async def list_agent_memory(

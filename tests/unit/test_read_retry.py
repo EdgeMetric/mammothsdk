@@ -72,6 +72,15 @@ async def test_get_retries_one_502_then_succeeds(server: _FlakyServer) -> None:
     assert server.hits == ["GET", "GET"]
 
 
+async def test_get_502_is_not_retried_when_gateway_retries_are_off(server: _FlakyServer) -> None:
+    client = _client(server.server_port)
+    client.retry_gateway_errors = False
+    with pytest.raises(MammothAPIError) as excinfo:
+        await client._request("GET", "/things")
+    assert excinfo.value.status_code == 502
+    assert server.hits == ["GET"]
+
+
 async def test_get_honours_retry_after(server: _FlakyServer) -> None:
     server.fail_status = 503
     server.retry_after = "0"

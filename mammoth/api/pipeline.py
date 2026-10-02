@@ -59,6 +59,11 @@ DRAFT_MODE_DIRTY = "dirty"
 DRAFT_MODE_ACTIVE_VALUES = frozenset({DRAFT_MODE_CLEAN, DRAFT_MODE_DIRTY})
 
 
+#: Pipeline waits back off from ``poll_interval`` by this factor up to the maximum.
+PIPELINE_POLL_GROWTH = 1.5
+PIPELINE_POLL_MAX_SECONDS = 15.0
+
+
 class PipelineAPI:
     """Low-level HTTP client for pipeline task endpoints.
 
@@ -67,10 +72,9 @@ class PipelineAPI:
 
     def __init__(self, client: MammothClient) -> None:
         self._client = client
-        # Cache dataview -> dataset resolutions. ``_find_dataset_for_dataview``
-        # scans every dataset in the project, so it is expensive; a dataview
-        # belongs to exactly one dataset for its lifetime, so the mapping is
-        # stable and safe to memoize per client.
+        # Cache dataview -> dataset resolutions. A dataview belongs to exactly
+        # one dataset for its lifetime, so the mapping is stable and safe to
+        # memoize per client (it saves the resolving request on every reuse).
         # Keyed by (workspace_id, project_id, dataview_id) so a client that
         # switches project or workspace never returns a stale dataset.
         self._dataview_dataset_cache: dict[tuple[int, int, int], int] = {}
@@ -122,13 +126,9 @@ class PipelineAPI:
     async def _find_dataset_for_dataview(self, dataview_id: int) -> int:
         """Find which dataset contains the specified dataview.
 
-        Enumerates every dataset in the project, then checks each for the
-        dataview. A dataset's ``project_id`` is the only membership rule the
-        server applies (``Datasource.get_filtered_datasets`` filters on it
-        alone); which folder, if any, a dataset is organized under has no
-        bearing on this, so ``dataset.list`` — fully paginated, unlike a
-        single-page resource browse — is sufficient and does not need a
-        separate folder walk.
+        One ``GET .../resources/dataview/{id}`` answers it: the row carries a
+        ``dataset`` reference ``{id, name}`` for its parent, so the cost is a
+        single request however many datasets the project holds.
 
         Args:
             dataview_id: ID of the dataview to search for.
@@ -137,7 +137,9 @@ class PipelineAPI:
             The dataset_id that contains this dataview.
 
         Raises:
-            ValueError: If dataview is not found in any dataset.
+            ValueError: If the dataview does not exist in the project.
+            MammothAPIError: On any other failure, or when the route answers
+                without a parent dataset reference.
         """
         workspace_id = self._client.workspace_id
         project_id = getattr(self._client, "project_id", None)
@@ -149,71 +151,26 @@ class PipelineAPI:
         if cached is not None:
             return cached
 
-        page = await self._client.datasets.list_all(
-            workspace_id=workspace_id, project_id=project_id
-        )
-        dataset_ids = [
-            dataset["id"] for dataset in page.get("datasets", []) if isinstance(dataset, dict)
-        ]
-
-        # Check each dataset for the dataview
-        for dataset_id in dataset_ids:
-            try:
-                # This is an existence probe only (found vs 404), so pin
-                # ``sequence=0`` to skip the latest-task-sequence resolution the
-                # default would trigger — one saved round trip per dataset
-                # scanned, which matters when a project holds many datasets.
-                record = await self._client.dataviews.get(
-                    dataset_id=dataset_id,
-                    dataview_id=dataview_id,
-                    workspace_id=workspace_id,
-                    project_id=project_id,
-                    sequence=0,
-                )
-                # The backend answers a view under a dataset that does not own
-                # it; the record's own ``ds_id`` names the real parent.
-                own_parent = record.get("ds_id") if isinstance(record, dict) else None
-                if isinstance(own_parent, int):
-                    dataset_id = own_parent
-                self._dataview_dataset_cache[cache_key] = dataset_id
-                return dataset_id
-            except MammothAPIError as exc:
-                # Some tenants return 403, not 404, when a view belongs to a
-                # different dataset. Confirm non-membership with the parent
-                # collection before moving on; never discard a genuine denial.
-                if exc.status_code == 404:
-                    continue
-                if exc.status_code == 403:
-                    listing = await self._client.dataviews.list(
-                        dataset_id=dataset_id,
-                        workspace_id=workspace_id,
-                        project_id=project_id,
-                        limit=1000,
-                    )
-                    views = listing.get("dataviews")
-                    # The backend emits a speculative `next` URL even for a
-                    # short final page. A short page relative to the server's
-                    # reported limit proves this dataset has no further views.
-                    page_limit = listing.get("limit", 1000)
-                    if (
-                        isinstance(views, list)
-                        and isinstance(page_limit, int)
-                        and len(views) < page_limit
-                    ):
-                        listed_ids = {view.get("id") for view in views if isinstance(view, dict)}
-                        if dataview_id not in listed_ids:
-                            continue
-                raise
-            except KeyError as exc:
-                # An unreadable response is not "not found": skipping it would
-                # misreport the view as missing from the project.
-                raise MammothAPIError(
-                    f"Dataset {dataset_id} returned an unreadable response while"
-                    f" looking for dataview {dataview_id} (missing key {exc}).",
-                    details={"dataset_id": dataset_id, "dataview_id": dataview_id},
+        try:
+            body = await self._client.browse.resource_get(
+                "dataview", dataview_id, project_id=project_id
+            )
+        except MammothAPIError as exc:
+            if exc.status_code == 404:
+                raise ValueError(
+                    f"Dataview {dataview_id} not found in any dataset in project {project_id}"
                 ) from exc
-
-        raise ValueError(f"Dataview {dataview_id} not found in any dataset in project {project_id}")
+            raise
+        resource = body.get("resource") if isinstance(body, dict) else None
+        dataset = resource.get("dataset") if isinstance(resource, dict) else None
+        dataset_id = dataset.get("id") if isinstance(dataset, dict) else None
+        if not isinstance(dataset_id, int):
+            raise MammothAPIError(
+                f"Dataview {dataview_id} came back without a parent dataset reference.",
+                details={"dataview_id": dataview_id, "project_id": project_id},
+            )
+        self._dataview_dataset_cache[cache_key] = dataset_id
+        return dataset_id
 
     def _base_url(self, ws_id: int, proj_id: int, ds_id: int, dv_id: int) -> str:
         return f"/workspaces/{ws_id}/projects/{proj_id}/datasets/{ds_id}/dataviews/{dv_id}/pipeline"
@@ -559,7 +516,8 @@ class PipelineAPI:
             dataview_id: ID of the dataview.
             dataset_id: Dataset ID (auto-detected if not provided).
             timeout: Max wait time in seconds (default: client.pipeline_timeout).
-            poll_interval: Seconds between polls (default: 3).
+            poll_interval: Seconds before the second poll (default: 3); each wait
+                is then 1.5 times the last, up to 15 seconds.
 
         Returns:
             Final pipeline state dict.
@@ -576,6 +534,7 @@ class PipelineAPI:
         ws, proj, ds, dv = await self._resolve_ids(dataview_id, dataset_id)
         url = self._base_url(ws, proj, ds, dv)
         deadline = time.monotonic() + effective_timeout
+        delay = poll_interval
 
         while True:
             pipeline = await self._client._request_json("GET", url)
@@ -597,7 +556,8 @@ class PipelineAPI:
                 )
 
             logger.debug("Pipeline state for dataview %d: %s — waiting...", dataview_id, state)
-            await asyncio.sleep(poll_interval)
+            await asyncio.sleep(delay)
+            delay = min(PIPELINE_POLL_MAX_SECONDS, delay * PIPELINE_POLL_GROWTH)
 
     async def command(
         self, dataview_id: int, command: str, dataset_id: int | None = None

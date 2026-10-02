@@ -417,6 +417,34 @@ def _read_name(
     return {"type": kind, "id": target_id, "name": name}
 
 
+#: Resource kinds one bulk request can name, and the resource type the route calls each.
+BULK_TYPES: dict[str, str] = {"dataset": "datasource", "view": "dataview", "folder": "label"}
+_BULK_SYMBOL = "mammoth.api.browse.BrowseAPI.resources_bulk"
+
+
+def _read_names(
+    service: MammothService, kind: str, ids: list[int], arguments: Mapping[str, Any]
+) -> list[dict[str, Any]]:
+    """Name every id of ``kind``: one bulk request per 100 ids where the route knows the kind.
+
+    An id the bulk read does not return (missing, or not readable by the
+    caller) is read on its own, so the error it raises is the resource's own.
+    """
+    if kind not in BULK_TYPES or len(ids) < 2:
+        return [_read_name(service, kind, item, arguments) for item in ids]
+    scope = {"project_id": arguments["project_id"]} if arguments.get("project_id") else {}
+    rows = service.call(_BULK_SYMBOL, items=[(BULK_TYPES[kind], item) for item in ids], **scope)
+    names = {row.get("object_id"): row.get("name") for row in rows if isinstance(row, Mapping)}
+    return [
+        (
+            {"type": kind, "id": item, "name": names[item]}
+            if isinstance(names.get(item), str) and names[item]
+            else _read_name(service, kind, item, arguments)
+        )
+        for item in ids
+    ]
+
+
 def _path(record: Any, dotted: str) -> object:
     """Follow ``a.b`` through nested mappings (or attributes)."""
     for part in dotted.split("."):
@@ -468,15 +496,26 @@ def _unresolved_name(kind: str, target_id: object, symbol: str, key: str) -> Cli
     )
 
 
-def _sub_record(service: MammothService, sub: Sub, target: object, args: Mapping[str, Any]) -> Any:
-    """Read the sub-resource (or find it in its list); None when nothing is declared."""
+def _sub_record(
+    service: MammothService,
+    sub: Sub,
+    target: object,
+    args: Mapping[str, Any],
+    lists: dict[str, Any],
+) -> Any:
+    """Read the sub-resource (or find it in its list); None when nothing is declared.
+
+    A list read serves every target of the call, so it is made once (``lists``).
+    """
     if sub.source is None:
         return None
     symbol = _symbol_of(sub.source)
     kwargs = {key: args[key] for key in sub.forward if args.get(key) is not None}
     if sub.container is None:
         return service.call(symbol, **{sub.ids_arg: target}, **kwargs)
-    listed = service.call(symbol, **kwargs)
+    if symbol not in lists:
+        lists[symbol] = service.call(symbol, **kwargs)
+    listed = lists[symbol]
     items = listed if isinstance(listed, list) else (listed or {}).get(sub.container, [])
     found = next((i for i in items if str(_path(i, sub.id_field)) == str(target)), None)
     if found is None:
@@ -499,8 +538,10 @@ def _sub_targets(
             raise unresolvable_error(command_id, f"the {sub.parent} id is unknown")
         parent = f"\u201c{_parent_name(service, sub.parent, parent_ids[0], args)}\u201d"
     targets = []
+    lists: dict[str, Any] = {}
     for target in ids:
-        label = _label(_sub_record(service, sub, target, args), sub) if target != "all" else None
+        record = _sub_record(service, sub, target, args, lists) if target != "all" else None
+        label = _label(record, sub) if target != "all" else None
         shown = f"\u201c{label}\u201d" if label else str(target)
         layout = sub.name_fmt or ("{parent} \u203a {kind} {label}" if parent else "{kind} {label}")
         name = layout.format(**{**args, "parent": parent, "kind": sub.kind, "label": shown})
@@ -595,7 +636,7 @@ def resolve_targets(
     parent = {**arguments}
     if "dataset_id" not in parent and would_call.get("dataset_id") is not None:
         parent["dataset_id"] = would_call["dataset_id"]
-    return [_read_name(service, kind, item, parent) for item in ids] + invites
+    return _read_names(service, kind, ids, parent) + invites
 
 
 #: Deletes whose dry run also lists what depends on the resource: command ->

@@ -599,11 +599,19 @@ def _datasets_to_check(service: Any, project_id: int, scoped: int | None) -> lis
     """Every dataset of the project, or only the named one -- never a walk when scoped."""
     if scoped is not None:
         return [{"id": scoped, "name": f"dataset {scoped}"}]
-    listing = service.call(_DATASETS_LIST_SYMBOL, project_id=project_id)
+    listing = service.call(_DATASETS_LIST_SYMBOL, project_id=project_id, sort="(created_at:desc)")
     return listing.get("datasets", []) if isinstance(listing, dict) else []
 
 
-_CHECK_WORKERS = 6
+_CHECK_WORKERS = 2
+#: Most recent datasets and dashboards one ``project check`` reads (several requests each).
+_CHECK_MAX_DATASETS = 20
+_CHECK_MAX_DASHBOARDS = 10
+
+
+def _not_checked_line(kind: str, omitted: int, how: str) -> str:
+    """The report line for resources left unchecked by the cap, and how to reach them."""
+    return f"{omitted} more {kind} were not checked (only the most recent were); {how}"
 
 
 def _in_worker[T](invocation: Invocation, work: Callable[[Any, Any], T]) -> T:
@@ -751,7 +759,16 @@ def project_check(invocation: Invocation) -> HandlerResult:
     statuses: list[dict[str, Any]] = []
     scoped_dataset = _scoped_dataset_id(invocation)
     with open_service(invocation) as (service, auth):
-        datasets = _datasets_to_check(service, project_id, scoped_dataset)
+        every_dataset = _datasets_to_check(service, project_id, scoped_dataset)
+        datasets = every_dataset[:_CHECK_MAX_DATASETS]
+        if len(every_dataset) > len(datasets):
+            to_report.append(
+                _not_checked_line(
+                    "datasets",
+                    len(every_dataset) - len(datasets),
+                    "run 'project check DATASET_ID' for a specific one.",
+                )
+            )
         previews = _map_checks(
             invocation,
             service,
@@ -787,11 +804,20 @@ def project_check(invocation: Invocation) -> HandlerResult:
         boards = (
             [] if scoped_dataset else service.call(_DASHBOARDS_LIST_SYMBOL, project_id=project_id)
         )
+        every_board = [b for b in boards if isinstance(b, dict)] if isinstance(boards, list) else []
+        if len(every_board) > _CHECK_MAX_DASHBOARDS:
+            to_report.append(
+                _not_checked_line(
+                    "dashboards",
+                    len(every_board) - _CHECK_MAX_DASHBOARDS,
+                    "check one with 'dashboard get DASHBOARD_ID'.",
+                )
+            )
         results = _map_checks(
             invocation,
             service,
             auth,
-            [b for b in boards if isinstance(b, dict)] if isinstance(boards, list) else [],
+            every_board[:_CHECK_MAX_DASHBOARDS],
             _check_dashboard(invocation),
         )
         for result in filter(None, results):

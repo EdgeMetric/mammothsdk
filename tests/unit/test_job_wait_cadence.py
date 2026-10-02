@@ -62,6 +62,12 @@ def test_poll_delay_grows_and_is_capped() -> None:
     assert gaps[-1] == 2
 
 
+def test_poll_delay_rises_to_five_seconds_for_a_long_wait() -> None:
+    assert _poll_delay(30, 2, elapsed=9.0) == 2
+    assert _poll_delay(30, 2, elapsed=10.0) == 5
+    assert _poll_delay(30, 8, elapsed=60.0) == 8
+
+
 async def test_fast_job_is_not_held_for_a_fixed_two_second_poll(client: MammothClient) -> None:
     started = time.monotonic()
     job = await client.jobs.wait_for_job(7, timeout=10)

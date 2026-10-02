@@ -396,6 +396,10 @@ def dashboard_get(invocation: Invocation) -> HandlerResult:
     return data, _meta(invocation, auth.workspace_id)
 
 
+#: Sources whose owning dataset one ``dashboard get`` looks up (one request each).
+_MAX_SOURCE_LOOKUPS = 20
+
+
 def _source_dataset(service: Any, invocation: Invocation, workspace_id: Any, view_id: int) -> Any:
     """The dataset that owns ``view_id``: remembered, else looked up; never raises."""
     profile_name = invocation.profile or profiles.get_selected()
@@ -422,16 +426,18 @@ def _with_source_datasets(
     sources = data.get("sources") if isinstance(data, dict) else None
     if not isinstance(sources, list) or not sources:
         return data
+    view_ids = [view_id for view_id in sources if isinstance(view_id, int)]
     views = [
         _source_dataset(service, invocation, workspace_id, view_id)
-        for view_id in sources
-        if isinstance(view_id, int)
+        for view_id in view_ids[:_MAX_SOURCE_LOOKUPS]
     ]
-    return {
-        **data,
-        "source_views": views,
-        "sources_note": "sources are view ids; use a source's dataset_id for dataset commands.",
-    }
+    note = "sources are view ids; use a source's dataset_id for dataset commands."
+    if len(view_ids) > _MAX_SOURCE_LOOKUPS:
+        note += (
+            f" Only the first {_MAX_SOURCE_LOOKUPS} of {len(view_ids)} sources were labelled;"
+            " read the others with 'view get VIEW_ID'."
+        )
+    return {**data, "source_views": views, "sources_note": note}
 
 
 def _with_board_project(data: Any) -> Any:

@@ -118,6 +118,7 @@ ERR_REST_TIMEOUT = "to_rest_api `timeout_seconds` must be between 5 and 300 (got
 _REST_BATCH_SIZE_MIN = 1
 _REST_BATCH_SIZE_MAX = 10000
 _EXPORT_PAGE_LIMIT = 100  # server cap on /exports page size
+_EXPORT_POLL_MAX_SECONDS = 10.0  # export-trigger polls back off from 2s to this
 _REST_TIMEOUT_MIN = 5
 _REST_TIMEOUT_MAX = 300
 
@@ -563,6 +564,7 @@ class View(
                 if export.status == ExportStatus.EXECUTED:
                     return export
             await asyncio.sleep(poll_interval)
+            poll_interval = min(_EXPORT_POLL_MAX_SECONDS, poll_interval * 1.5)
         return None
 
     async def _resolve_exported_dataset_id(

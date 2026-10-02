@@ -416,9 +416,14 @@ def brief_view_record(record: Any) -> Any:
 _DATASETS_LIST_ALL_SYMBOL = "mammoth.api.datasets.DatasetsAPI.list_all"
 #: Soft floor for the no-DATASET_ID ``view list`` walk: whole per-dataset
 #: pages are pulled and appended until at least this many views have been
-#: collected (or every dataset in the project has been visited), so one call
-#: never silently returns a single dataset's worth from a large project.
-_VIEW_LIST_ALL_DATASETS_MIN_VIEWS = 100
+#: collected (or the visit cap below is reached), so one call never returns a
+#: single dataset's worth from a large project. Sized to what the agent output
+#: cap shows (about 15 summaries): reading more only to cut them is waste.
+_VIEW_LIST_ALL_DATASETS_MIN_VIEWS = 20
+#: Most datasets one no-DATASET_ID ``view list`` call reads views of, whether or
+#: not they hold any, so a project of many empty datasets costs a fixed number of
+#: requests. The result carries ``next_dataset_offset`` to resume from.
+_VIEW_LIST_ALL_DATASETS_MAX_VISITS = 25
 
 
 def view_list(invocation: Invocation) -> HandlerResult:
@@ -521,6 +526,11 @@ def _compact_view_list(
         stop = [d.get("id") for d in datasets].index(dropped)
         result["next_dataset_offset"] = stop
         result["datasets_visited"] = stop - start
+    if "next_dataset_offset" in result and not summary.get("views_omitted"):
+        result["more"] = (
+            f"Datasets from position {result['next_dataset_offset']} on were not read; "
+            "pass dataset_offset to continue, or list one dataset with 'view list DATASET_ID'."
+        )
     if summary.get("views_omitted"):
         result["more"] = (
             "Some views were cut to fit the output cap; list one dataset with "
@@ -540,9 +550,10 @@ def _view_list_across_project(
 
     Starts at ``dataset_offset`` (default 0) into the project's dataset
     list, pulling whole per-dataset view pages until either every dataset
-    has been visited or at least ``_VIEW_LIST_ALL_DATASETS_MIN_VIEWS`` views
-    have been collected. ``next_dataset_offset`` names where to resume when
-    the project holds more datasets than were visited. Returns the result and
+    has been visited, at least ``_VIEW_LIST_ALL_DATASETS_MIN_VIEWS`` views
+    have been collected, or ``_VIEW_LIST_ALL_DATASETS_MAX_VISITS`` datasets were
+    read. ``next_dataset_offset`` names where to resume when the project holds
+    more datasets than were visited. Returns the result and
     the project's dataset records (with the summary fields when ``compact``).
     """
     dataset_offset = int(document.get("dataset_offset", 0))
@@ -568,7 +579,10 @@ def _view_list_across_project(
             if isinstance(item, dict):
                 item = {**item, "dataset_id": dataset_id}
             dataviews.append(item)
-        if len(dataviews) >= _VIEW_LIST_ALL_DATASETS_MIN_VIEWS:
+        if (
+            len(dataviews) >= _VIEW_LIST_ALL_DATASETS_MIN_VIEWS
+            or visited - dataset_offset >= _VIEW_LIST_ALL_DATASETS_MAX_VISITS
+        ):
             break
     result: dict[str, Any] = {"dataviews": dataviews, "datasets_visited": visited - dataset_offset}
     if visited < len(datasets):
@@ -2786,11 +2800,20 @@ def view_pipeline_rerun(invocation: Invocation) -> HandlerResult:
     return data, _meta(invocation, auth.workspace_id, None)
 
 
+#: Seconds ``view pipeline wait`` waits when the caller names no ``timeout`` (the SDK's own
+#: default is an hour, one request every few seconds for as long as it runs).
+_PIPELINE_WAIT_TIMEOUT = 300.0
+
+
 def view_pipeline_wait(invocation: Invocation) -> HandlerResult:
-    """Wait for a dataview's pipeline to finish running."""
+    """Wait for a dataview's pipeline to finish running.
+
+    Waits up to ``_PIPELINE_WAIT_TIMEOUT`` seconds unless ``timeout`` says more,
+    polling less often the longer it waits.
+    """
     dataview_id = _require_int_positional_at(invocation, 0, "dataview id")
     document = invocation.load_input() or {}
-    kwargs: dict[str, Any] = {"dataview_id": dataview_id}
+    kwargs: dict[str, Any] = {"dataview_id": dataview_id, "timeout": _PIPELINE_WAIT_TIMEOUT}
     _forward_optional(document, kwargs, ("dataset_id", "timeout", "poll_interval"))
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), **kwargs)

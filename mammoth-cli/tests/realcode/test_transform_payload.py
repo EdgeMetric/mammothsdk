@@ -38,8 +38,8 @@ def test_bulk_replace_json_becomes_real_task_payload(real_service: ServiceFactor
     # Resolve the view: the dataset listing locates the dataset, then the dataview.
     api.on(
         "GET",
-        r"/datasets$",
-        body={"datasets": [{"id": DATASET_ID, "name": "ds"}], "limit": 100, "offset": 0},
+        rf"/resources/dataview/{VIEW_ID}$",
+        body={"resource": {"object_id": VIEW_ID, "dataset": {"id": DATASET_ID, "name": "ds"}}},
     )
     api.on("GET", rf"/datasets/{DATASET_ID}/dataviews/{VIEW_ID}$", body=_VIEW_METADATA)
     # The transform posts the task, then the SDK polls the pipeline to ready.
