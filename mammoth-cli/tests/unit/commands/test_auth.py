@@ -45,7 +45,6 @@ def test_login_from_input_no_input_succeeds(
     doc = _write_login_doc(
         tmp_path,
         api_token=_TOKEN,
-        workspace_id=4,
         server_prefix="release",
     )
     runner = make_runner()
@@ -79,7 +78,7 @@ def test_login_connection_failure_leaves_state_unchanged(
     isolated_cli_config: Path, fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
     fake_service.connection_ok = False
-    doc = _write_login_doc(tmp_path, api_token=_TOKEN, workspace_id=4)
+    doc = _write_login_doc(tmp_path, api_token=_TOKEN)
     runner = make_runner()
     result = runner.invoke(
         ["auth", "login", "--input", str(doc), "--storage", "file", "--output", "json"],
@@ -97,7 +96,7 @@ def test_login_input_document_permission_checked(
 ) -> None:
     doc = tmp_path / "login.json"
     doc.write_text(
-        json.dumps({"api_token": _TOKEN, "workspace_id": 4}),
+        json.dumps({"api_token": _TOKEN}),
         encoding="utf-8",
     )
     os.chmod(doc, 0o644)  # world-readable: insecure
@@ -118,7 +117,7 @@ def test_insecure_login_document_is_rejected_before_read(
 ) -> None:
     doc = tmp_path / "login.json"
     doc.write_text(
-        json.dumps({"api_token": "mm_SECRET_SENTINEL", "workspace_id": 4}),
+        json.dumps({"api_token": "mm_SECRET_SENTINEL"}),
         encoding="utf-8",
     )
     os.chmod(doc, 0o644)
@@ -141,7 +140,7 @@ def test_login_input_document_succeeds(
 ) -> None:
     doc = tmp_path / "login.json"
     doc.write_text(
-        json.dumps({"api_token": _TOKEN, "workspace_id": 7}),
+        json.dumps({"api_token": _TOKEN}),
         encoding="utf-8",
     )
     os.chmod(doc, stat.S_IRUSR | stat.S_IWUSR)
@@ -151,7 +150,7 @@ def test_login_input_document_succeeds(
     )
     assert result.exit_code == 0, result.stderr
     envelope = json.loads(result.stdout)
-    assert envelope["data"]["workspace_id"] == 7
+    assert envelope["data"]["workspace_id"] == 4
     assert _TOKEN not in result.stdout
 
 
@@ -160,7 +159,7 @@ def test_login_document_rejects_unknown_field(
 ) -> None:
     doc = tmp_path / "login.json"
     doc.write_text(
-        json.dumps({"api_token": _TOKEN, "workspace_id": 4, "extra_field": "nope"}),
+        json.dumps({"api_token": _TOKEN, "extra_field": "nope"}),
         encoding="utf-8",
     )
     os.chmod(doc, stat.S_IRUSR | stat.S_IWUSR)
@@ -178,12 +177,12 @@ def test_login_document_rejects_unknown_field(
     [
         (
             "duplicate.json",
-            b'{"api_token":"mm_first","api_token":"mm_second","workspace_id":4}',
+            b'{"api_token":"mm_first","api_token":"mm_second"}',
             "duplicate_input_key",
         ),
         (
             "overflow.json",
-            b'{"api_token":"mm_k","workspace_id":1e999}',
+            b'{"api_token":"mm_k","server_prefix":1e999}',
             "nonfinite_input_number",
         ),
     ],
@@ -217,7 +216,7 @@ def test_login_stdin_uses_strict_shared_admission(
     monkeypatch.setattr(
         auth_cmd.sys,
         "stdin",
-        io.BytesIO(b'{"api_token":"mm_k","api_token":"mm_again","workspace_id":4}'),
+        io.BytesIO(b'{"api_token":"mm_k","api_token":"mm_again"}'),
     )
     invocation = Invocation(
         command_id="auth.login",
@@ -244,7 +243,7 @@ def test_login_prompt_path_when_interactive(
     monkeypatch.setattr(auth_cmd.sys.stdin, "isatty", lambda: True)
 
     def fake_prompt(text: str, hide_input: bool = False, type: object = None) -> object:
-        return 4 if "Workspace" in text else _TOKEN
+        return _TOKEN
 
     monkeypatch.setattr(auth_cmd.typer, "prompt", fake_prompt)
     invocation = Invocation(command_id="auth.login", output="table", no_input=False)
@@ -254,27 +253,25 @@ def test_login_prompt_path_when_interactive(
     assert stored is not None and stored.api_token == _TOKEN
 
 
-def test_login_bare_prompts_for_workspace(
+def test_login_bare_prompts_for_the_token_only(
     isolated_cli_config: Path,
     fake_service: FakeMammothService,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    # There is no --workspace flag: interactive login must PROMPT for the
-    # workspace id (last, after the credentials), not fail with
-    # invalid_workspace_id after the hidden prompts.
+    # The token names its workspace: interactive login asks for the token and
+    # learns the workspace from the server.
     monkeypatch.setattr(auth_cmd.sys.stdin, "isatty", lambda: True)
     asked: list[str] = []
 
     def fake_prompt(text: str, hide_input: bool = False, type: object = None) -> object:
         asked.append(text)
-        return 7 if "Workspace" in text else _TOKEN
+        return _TOKEN
 
     monkeypatch.setattr(auth_cmd.typer, "prompt", fake_prompt)
     invocation = Invocation(command_id="auth.login", output="table", no_input=False)
     data, _meta = auth_cmd._run_login(invocation, server_prefix=None, storage="file")
-    # the token is asked before the workspace id, and nothing else is asked
-    assert asked == ["API token", "Workspace id"], asked
-    assert data["workspace_id"] == 7
+    assert asked == ["API token"], asked
+    assert data["workspace_id"] == 4
     assert data["credential"] == "token"
 
 
@@ -466,12 +463,12 @@ def test_login_prompt_rejects_empty_secret_before_any_request(
     assert fake_service.call_log == []
 
 
-def test_login_auth_failure_names_endpoint_workspace_and_masked_key(
+def test_login_auth_failure_names_endpoint_and_masked_key(
     isolated_cli_config: Path, fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
     fake_service.connection_ok = False
     token = "mm_" + "B" * 39 + "1234"
-    doc = _write_login_doc(tmp_path, api_token=token, workspace_id=4)
+    doc = _write_login_doc(tmp_path, api_token=token)
     runner = make_runner()
     result = runner.invoke(
         ["auth", "login", "--input", str(doc), "--storage", "file", "--output", "json"],
@@ -481,7 +478,6 @@ def test_login_auth_failure_names_endpoint_workspace_and_masked_key(
     error = json.loads(result.stderr)["error"]
     assert error["code"] == "authentication_failed"
     assert error["details"]["endpoint_base_url"] == "https://app.mammoth.io/api/v2"
-    assert error["details"]["workspace_id"] == 4
     assert error["details"]["credential_receipt"] == {
         "type": "api token",
         "shape": "46 characters, ending in …1234",
@@ -511,7 +507,7 @@ def test_login_with_api_token_from_input(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     seen = _capture_auth(monkeypatch, fake_service)
-    doc = _write_login_doc(tmp_path, api_token=_TOKEN, workspace_id=4)
+    doc = _write_login_doc(tmp_path, api_token=_TOKEN)
     result = make_runner().invoke(
         ["auth", "login", "--input", str(doc), "--storage", "file", "--output", "json"], env={}
     )
@@ -553,7 +549,7 @@ def test_login_rejects_the_token_id_pasted_as_the_token(
     fake_service: FakeMammothService,
     tmp_path: Path,
 ) -> None:
-    doc = _write_login_doc(tmp_path, api_token="mm_0123456789abcdef", workspace_id=4)
+    doc = _write_login_doc(tmp_path, api_token="mm_0123456789abcdef")
     result = make_runner().invoke(
         ["auth", "login", "--input", str(doc), "--storage", "file", "--output", "json"], env={}
     )

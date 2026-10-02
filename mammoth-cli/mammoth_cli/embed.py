@@ -14,7 +14,7 @@ Example::
     from mammoth_cli.embed import invoke
 
     login = ExplicitLogin(
-        api_key=None, api_secret=None, workspace_id=7, api_token="...",
+        api_key=None, api_secret=None, api_token="...",
         server_prefix="app", headers={"Cookie": "..."},
     )
     envelope = invoke(["project", "list"], login=login)

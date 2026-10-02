@@ -1,8 +1,9 @@
 """Bespoke `auth` command family: login, status, logout.
 
-Authentication needs an API token (``mm_...``, sent as ``Authorization:
-Bearer``) and a workspace id, plus an optional server prefix (default
-``app``). There is no environment credential path. These commands never accept a secret as an
+Authentication needs only an API token (``mm_...``, sent as ``Authorization:
+Bearer``), plus an optional server prefix (default ``app``). The token names its
+own workspace, which login learns from the server. There is no environment
+credential path. These commands never accept a secret as an
 ordinary command-line value: it comes from a hidden TTY prompt or a
 permission-checked JSON/YAML login document read through ``--input``.
 """
@@ -18,18 +19,14 @@ from typing import Any, cast
 import typer
 from pydantic import ValidationError
 
-from mammoth_cli.context import credentials, profiles
+from mammoth_cli.context import credentials, profiles, resolver
 from mammoth_cli.context.endpoint import resolve_base_url
-from mammoth_cli.context.resolver import (
-    ResolvedAuth,
-    resolve_auth,
-)
+from mammoth_cli.context.resolver import ResolvedAuth, resolve_auth
 from mammoth_cli.contracts.auth import LoginRequest
 from mammoth_cli.errors.envelope import (
     CODE_AUTHENTICATION_FAILED,
     CODE_CONFIRMATION_DECLINED,
     CODE_CONFIRMATION_REQUIRED,
-    CODE_INVALID_WORKSPACE_ID,
     EXIT_USAGE,
     CliError,
 )
@@ -128,7 +125,7 @@ def _validate_login_document(document: dict[str, Any]) -> LoginRequest:
             message="The login request document failed validation.",
             exit_status=EXIT_USAGE,
             hint=(
-                'Expected {"api_token": "mm_...", "workspace_id": N} with an optional '
+                'Expected {"api_token": "mm_..."} with an optional '
                 '"server_prefix". API key + secret pairs are no longer accepted; create '
                 "a token in Workspace settings -> API Tokens."
             ),
@@ -217,6 +214,59 @@ def _prompt_blockers(invocation: Invocation) -> list[str]:
     return reasons
 
 
+def _verify_login(invocation: Invocation, *, base_url: str, api_token: str) -> int:
+    """Learn the token's workspace from the server and run the connection check.
+
+    Nothing is saved here; a failure leaves existing profile state unchanged.
+
+    Returns:
+        The workspace id the server reports for the token.
+
+    Raises:
+        CliError: ``authentication_failed`` (with the endpoint and a masked
+            receipt of the token) when the server rejects it; any other mapped
+            transport error as is.
+    """
+    try:
+        workspace_id = resolver.resolve_token_workspace(base_url, api_token, invocation.timeout)
+        service = service_factory.build_service(
+            ResolvedAuth(
+                api_key=None,
+                api_secret=None,
+                workspace_id=workspace_id,
+                base_url=base_url,
+                api_token=api_token,
+            ),
+            timeout=invocation.timeout,
+        )
+        try:
+            service.check_connection()
+        finally:
+            service.close()
+    except CliError as exc:
+        if exc.code == CODE_AUTHENTICATION_FAILED:
+            # Say exactly what was tried, without the secret: the endpoint and
+            # a masked receipt of the token. Credentials are per environment,
+            # and a release token typed at a production login is the common
+            # cause of an otherwise opaque 401.
+            exc.details = {
+                **exc.details,
+                "endpoint_base_url": base_url,
+                # A receipt only (length and last four characters). The output
+                # layer redacts any key that looks like a credential, so this
+                # is named for what it is: a description, not the value.
+                "credential_receipt": {"type": "api token", "shape": _masked_receipt(api_token)},
+            }
+            exc.hint = (
+                f"{base_url} rejected this token. Credentials are per environment: "
+                "a token issued on one Mammoth server does not authenticate on "
+                "another. Check the token and that --server-prefix matches where "
+                "it was issued."
+            )
+        raise
+    return workspace_id
+
+
 def _run_login(
     invocation: Invocation,
     *,
@@ -234,7 +284,6 @@ def _run_login(
 
     blockers = _prompt_blockers(invocation)
 
-    effective_workspace: int | None
     if invocation.input_file is not None:
         # The permission check is deliberately separate from parsing so a
         # secret-bearing file is rejected before any bytes are read.  The
@@ -246,15 +295,12 @@ def _run_login(
         request = _validate_login_document(document)
         api_token = request.api_token.strip()
         _check_token_shape(api_token)
-        effective_workspace = request.workspace_id
         effective_prefix = server_prefix if server_prefix is not None else request.server_prefix
     elif not blockers:
-        # Two flows, nothing else: a terminal prompts for everything (token,
-        # then workspace id), and non-interactive uses --input. The workspace
-        # is asked last, after the credential.
+        # Two flows, nothing else: a terminal prompts for the token, and
+        # non-interactive uses --input.
         api_token = _prompt_secret("API token")
         _check_token_shape(api_token)
-        effective_workspace = typer.prompt("Workspace id", type=int)
         effective_prefix = server_prefix
     else:
         raise CliError(
@@ -269,49 +315,8 @@ def _run_login(
             ),
         )
 
-    if effective_workspace is None or effective_workspace <= 0:
-        raise CliError(
-            code=CODE_INVALID_WORKSPACE_ID,
-            message="A positive --workspace id is required.",
-            exit_status=EXIT_USAGE,
-        )
     resolved_base_url = resolve_base_url(effective_prefix)
-
-    resolved_auth = ResolvedAuth(
-        api_key=None,
-        api_secret=None,
-        workspace_id=effective_workspace,
-        base_url=resolved_base_url,
-        api_token=api_token,
-    )
-    service = service_factory.build_service(resolved_auth, timeout=invocation.timeout)
-    try:
-        service.check_connection()
-    except CliError as exc:
-        if exc.code == CODE_AUTHENTICATION_FAILED:
-            # Say exactly what was tried, without the secret: the endpoint,
-            # the workspace, and a masked receipt of the key. Credentials are
-            # per environment, and a release key typed at a production login
-            # is the common cause of an otherwise opaque 401.
-            exc.details = {
-                **exc.details,
-                "endpoint_base_url": resolved_base_url,
-                "workspace_id": effective_workspace,
-                # A receipt only (length and last four characters). The output
-                # layer redacts any key that looks like a credential, so this
-                # is named for what it is: a description, not the value.
-                "credential_receipt": {"type": "api token", "shape": _masked_receipt(api_token)},
-            }
-            exc.hint = (
-                f"{resolved_base_url} rejected this token for workspace "
-                f"{effective_workspace}. Credentials are per environment and per workspace: "
-                "a token issued on one Mammoth server or workspace does not authenticate on "
-                "another. Check the token, the workspace id, and that --server-prefix "
-                "matches where it was issued."
-            )
-        raise
-    finally:
-        service.close()
+    effective_workspace = _verify_login(invocation, base_url=resolved_base_url, api_token=api_token)
 
     profile_name = invocation.profile or profiles.DEFAULT_PROFILE_NAME
     profiles.validate_profile_name(profile_name)
@@ -366,8 +371,8 @@ def auth_login(
     """Log in and store one profile's credentials.
 
     Prompts for the API token (mm_..., from Workspace settings -> API Tokens)
-    and the workspace id in a terminal. For non-interactive use (agents, CI), pass
-    ``--input FILE`` with {"api_token": ..., "workspace_id": ...} instead.
+    in a terminal; the token names its workspace. For non-interactive use
+    (agents, CI), pass ``--input FILE`` with {"api_token": ...} instead.
     Performs a lightweight connection check before saving anything; a failed
     check leaves existing profile state unchanged.
     """

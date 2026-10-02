@@ -15,12 +15,11 @@ follow the [quick start](quickstart.md).
 
 ## Get an API token
 
-You need two things: an API token and a workspace id.
+You need one thing: an API token. It names its own workspace.
 
 In the Mammoth web app, open **Workspace settings → API Tokens** and choose
 **Create token**. The token starts with `mm_`. The web app shows it only once,
-so copy it right away. If you lose it, create a new token. Your workspace id
-is the number after `/workspaces/` in the web app's address bar. A token works
+so copy it right away. If you lose it, create a new token. A token works
 only in the workspace and on the server where you created it.
 
 A token can be limited to one project when you create it. That token works
@@ -61,8 +60,7 @@ Run the login command:
 mammoth auth login
 ```
 
-The CLI prompts for two things in order: your API token, and then your
-workspace id. The token prompt stays hidden as you type. On success the CLI
+The CLI prompts for your API token only. The prompt stays hidden as you type. On success the CLI
 saves the login and confirms.
 
 Two flags fine-tune the login:
@@ -97,12 +95,12 @@ The file holds one JSON document:
 ```json
 {
   "api_token": "mm_your-token",
-  "workspace_id": 4,
   "server_prefix": "app"
 }
 ```
 
-The `server_prefix` field is optional. The other two fields are required.
+The `server_prefix` field is optional. `api_token` is required; a
+`workspace_id` field is refused, because the token names its workspace.
 
 The private file must be owner-only (`0600`) from creation. The CLI rejects a
 group- or world-readable POSIX input file with error code

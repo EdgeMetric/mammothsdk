@@ -1,6 +1,6 @@
 # Authentication and profiles
 
-Required: an API token (`mm_...`) and a workspace id. Optional: a one-label
+Required: an API token (`mm_...`); it names its own workspace. Optional: a one-label
 server prefix (default `app`, resolving to `https://app.mammoth.io/api/v2`).
 Login accepts nothing else. If `auth status` reports `credential: key_secret`
 (a profile saved by an older CLI), it still works, but ask the operator to run
@@ -29,8 +29,7 @@ human operator:
 1. Tell the operator where the credentials come from: in the Mammoth web app,
    **Workspace settings → API Tokens → Create token** gives a token that
    starts with `mm_`; the web app shows it only once (if it is lost, create a
-   new one). The workspace id is the number after `/workspaces/`
-   in the web app's address bar. Then give the exact command to run in
+   new one). Then give the exact command to run in
    **their own** terminal. For production it is:
 
    ```bash
@@ -40,7 +39,7 @@ human operator:
    Add `--server-prefix release` only when the task names the release
    environment, and `--profile NAME` only when the operator wants a profile
    other than `default`. The command prompts for the token with hidden
-   input, then the workspace id, so no secret enters chat, argv, or history.
+   input, so no secret enters chat, argv, or history.
    Tokens are per environment and per workspace: a release token never
    authenticates on `app`.
    On macOS the Keychain may show a dialog about `mammoth-cli`; tell the
@@ -54,7 +53,7 @@ human operator:
    `auth login` yourself, with or without `--input`, unless the operator has
    explicitly given you a protected `0600` credential file path to use.
 
-The only supported configuration is the API token, the workspace id, and an optional one-label server prefix (default `app`). There is no base-url
+The only supported configuration is the API token and an optional one-label server prefix (default `app`). There is no base-url
 override.
 
 ## Cold-start sequence
@@ -123,7 +122,7 @@ file backend as a secret store; use the OS keyring or stop and obtain a
 supported secure store. Remove any input file after the
 profile is stored.
 
-`creds.json` is a `0600` JSON file: `{"api_token": "mm_...", "workspace_id": 4,
+`creds.json` is a `0600` JSON file: `{"api_token": "mm_...",
 "server_prefix": "app"}` (`server_prefix` optional). You can
 also pipe it with `--input - --input-format json`.
 
