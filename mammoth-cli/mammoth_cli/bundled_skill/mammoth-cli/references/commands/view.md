@@ -220,7 +220,7 @@ Example: `mammoth view data aggregate 123 --input '{"group_by": ["Channel"], "ag
 
 Result: `ViewDataAggregateResult`; mutation `read`, confirmation `none`, wait policy `always_wait`.
 
-Status on release: untried; no live run recorded.
+Status on release: ran once on CLI 2.0.18 — golden-data check 2026-09-19 (CLI 2.0.18): condition on the pivoted view compiled to the backend clause shape and answered (exit 0); EQ with a column select and an AND of CONTAINS/NE also verified read-only on a pre-existing view. Before 2.0.18 the spec was f…
 
 ### `view.data.compare`
 
@@ -270,7 +270,7 @@ Example: `mammoth view data query 123 123`. Placeholders are illustrative; resol
 
 Result: `ViewDataQueryResult`; mutation `read`, confirmation `none`, wait policy `always_wait`.
 
-Status on release: ran once on CLI 2.0.18 — golden-data check 2026-09-19 (CLI 2.0.18): condition on the pivoted view compiled to the backend clause shape and answered (exit 0); EQ with a column select and an AND of CONTAINS/NE also verified read-only on a pre-existing view. Before 2.0.18 the spec was f…
+Status on release: ran once on CLI 2.0.28 — ILG simulation 2026-09-19: exit 0 on release with CLI 2.0.28. Paged reads (limit up to 500) used for every value check; envelope data.data rows keyed by display name. Single invocation only.
 
 ### `view.delete`
 

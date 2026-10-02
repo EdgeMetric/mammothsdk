@@ -1,7 +1,7 @@
 # What is proven on release
 
 Generated from `docs/release-capability-matrix.json`; do not edit by hand.
-The CLI publishes 633 commands. 455 of them bind one of the 528 API operations in the matrix; the remainder are local commands (`schema`, `auth`, `doctor`, `log`, ...) or typed variants that share an operation (`view transform *` commands submit through `view.task.add`, except `rename-columns` and `sort`, which set view display properties through `view.update`). 262 bound commands ran once successfully on release, 2 are not supported there, and the rest are untried. Untried is not broken: discover the contract with `mammoth schema get COMMAND_ID`, run it, and treat the structured error envelope as the answer. Use an untried command normally: confirm a write with the user first, check its result with a read afterwards, and never refuse a command only because it is untried.
+The CLI publishes 633 commands. 504 of them bind one of the 545 API operations in the matrix; the remainder are local commands (`schema`, `auth`, `doctor`, `log`, ...) or typed variants that share an operation (`view transform *` commands submit through `view.task.add`, except `rename-columns` and `sort`, which set view display properties through `view.update`). 262 bound commands ran once successfully on release, 1 are not supported there, and the rest are untried. Untried is not broken: discover the contract with `mammoth schema get COMMAND_ID`, run it, and treat the structured error envelope as the answer. Use an untried command normally: confirm a write with the user first, check its result with a read afterwards, and never refuse a command only because it is untried.
 
 Status meanings:
 
@@ -17,20 +17,21 @@ The typed `view transform *` commands all submit through `view.task.add` (`renam
 
 | Family | Commands | Ran once | Not supported | Untried |
 |---|---|---|---|---|
-| `dashboard` | 104 | 81 | 2 | 21 |
+| `dashboard` | 122 | 81 | 1 | 40 |
+| `support` | 66 | 9 | 0 | 57 |
 | `view` | 62 | 58 | 0 | 4 |
-| `support` | 45 | 9 | 0 | 36 |
+| `billing` | 24 | 4 | 0 | 20 |
 | `connector` | 22 | 3 | 0 | 19 |
-| `billing` | 21 | 4 | 0 | 17 |
-| `workspace` | 19 | 7 | 0 | 12 |
-| `dataset` | 17 | 12 | 0 | 5 |
+| `workspace` | 20 | 7 | 0 | 13 |
+| `dataset` | 18 | 12 | 0 | 6 |
 | `project` | 17 | 15 | 0 | 2 |
 | `workflow` | 16 | 9 | 0 | 7 |
 | `parameter` | 14 | 7 | 0 | 7 |
 | `data-app` | 12 | 1 | 0 | 11 |
+| `automation` | 8 | 3 | 0 | 5 |
+| `browse` | 8 | 1 | 0 | 7 |
 | `folder` | 8 | 8 | 0 | 0 |
 | `snippet` | 8 | 6 | 0 | 2 |
-| `automation` | 7 | 3 | 0 | 4 |
 | `user` | 7 | 3 | 0 | 4 |
 | `webhook` | 7 | 5 | 0 | 2 |
 | `addon` | 6 | 0 | 0 | 6 |
@@ -43,7 +44,6 @@ The typed `view transform *` commands all submit through `view.task.add` (`renam
 | `notification` | 5 | 1 | 0 | 4 |
 | `schedule` | 5 | 0 | 0 | 5 |
 | `template` | 5 | 5 | 0 | 0 |
-| `browse` | 4 | 1 | 0 | 3 |
 | `external-key` | 4 | 1 | 0 | 3 |
 | `trash` | 3 | 3 | 0 | 0 |
 | `activity` | 2 | 1 | 0 | 1 |
@@ -58,7 +58,6 @@ Ran once: `dashboard.action`, `dashboard.analytics`, `dashboard.archive`, `dashb
 
 | Command | State | Note |
 |---|---|---|
-| `dashboard.create` | not supported | Not supported on release: backend returns HTTP 409 4DASH012 DASHBOARD_LEGACY_CREATION_RETIRED (legacy dashboard creation retired). Use dashboard.create-blank or dashboard.v3.generate. Dashboard sweep 2026-09-18, CLI 2.0.12. |
 | `dashboard.pdf.export` | not supported | Not supported from the CLI on release: backend HTTP 400 4GENR001 requires params.data to be the browser-hydrated DashboardData map and states it cannot rebuild it from stored descriptors (dashboard sweep and Haiku e2e, 2026-09-18). The route works only with a client render pass. |
 | `dashboard.data.draft` | observed blocker | blocked_missing_fixture: Dashboard 56 (create-blank/v3 engine) has no widgets in its canvas and getDraftData rejects with backend_code 4DASH004 DASHBOARD_WRONG_ENGINE: "This dashbo |
 | `dashboard.data.published` | observed blocker | blocked_missing_fixture: Same as dashboard.data.draft: backend_code 4DASH004 DASHBOARD_WRONG_ENGINE on /dashboards/56/getPublishData |
@@ -110,7 +109,7 @@ Ran once: `project.bulk-delete`, `project.bulk-update`, `project.checkpoint.list
 
 ## `view`
 
-Ran once: `view.active-user.list`, `view.active-user.mark`, `view.ai.generate-data`, `view.ai.profile`, `view.bulk-delete`, `view.checkpoint.create`, `view.checkpoint.delete`, `view.checkpoint.get`, `view.checkpoint.list`, `view.checkpoint.update`, `view.conditional-format.create`, `view.conditional-format.delete-all`, `view.conditional-format.list`, `view.conditional-format.update`, `view.create`, `view.data-check.create`, `view.data-check.delete`, `view.data-check.get`, `view.data-check.list`, `view.data.get`, `view.data.query`, `view.delete`, `view.derivative.create`, `view.derivative.data`, `view.derivative.delete`, `view.derivative.list`, `view.derivative.update`, `view.draft.command`, `view.export.create`, `view.export.delete`, `view.export.get`, `view.export.list`, `view.export.publish-db`, `view.export.update`, `view.exportable-config.apply`, `view.exportable-config.get`, `view.get`, `view.list`, `view.parameter-context`, `view.pipeline.edit`, `view.pipeline.get`, `view.pipeline.items`, `view.pipeline.rerun`, `view.preview`, `view.restore`, `view.task.add`, `view.task.delete`, `view.task.get`, `view.task.list`, `view.task.preview`, `view.task.update`, `view.trash`, `view.version.apply`, `view.version.delete`, `view.version.get`, `view.version.list`, `view.version.update`
+Ran once: `view.active-user.list`, `view.active-user.mark`, `view.ai.generate-data`, `view.ai.profile`, `view.bulk-delete`, `view.checkpoint.create`, `view.checkpoint.delete`, `view.checkpoint.get`, `view.checkpoint.list`, `view.checkpoint.update`, `view.conditional-format.create`, `view.conditional-format.delete-all`, `view.conditional-format.list`, `view.conditional-format.update`, `view.create`, `view.data-check.create`, `view.data-check.delete`, `view.data-check.get`, `view.data-check.list`, `view.data.aggregate`, `view.data.get`, `view.data.query`, `view.delete`, `view.derivative.create`, `view.derivative.data`, `view.derivative.delete`, `view.derivative.list`, `view.derivative.update`, `view.draft.command`, `view.export.create`, `view.export.delete`, `view.export.get`, `view.export.list`, `view.export.publish-db`, `view.export.update`, `view.exportable-config.apply`, `view.exportable-config.get`, `view.get`, `view.list`, `view.parameter-context`, `view.pipeline.edit`, `view.pipeline.get`, `view.pipeline.items`, `view.pipeline.rerun`, `view.preview`, `view.restore`, `view.task.add`, `view.task.delete`, `view.task.get`, `view.task.list`, `view.task.preview`, `view.task.update`, `view.trash`, `view.version.apply`, `view.version.delete`, `view.version.get`, `view.version.list`, `view.version.update`
 
 | Command | State | Note |
 |---|---|---|
