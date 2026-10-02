@@ -334,3 +334,60 @@ class BrowseAPI:
             f"/workspaces/{self._ws()}/projects/{self._proj(project_id)}"
             f"/resources/{resource_type}/{object_id}",
         )
+
+    async def resource_ancestors(
+        self, resource_id: int, project_id: int | None = None
+    ) -> dict[str, Any]:
+        """Get the folder path of a folder: the chain from the project root down to it.
+
+        The breadcrumb for a deep link that knows only the folder's id.
+
+        Args:
+            resource_id: The folder's ``resource_id`` as resources v2 returns it
+                (not its object id). A value of 0 or less means the project root.
+            project_id: Project ID (uses the client default if not provided).
+
+        Returns:
+            Dict ``{"resources": [...]}``, root first and ending with the folder
+            itself; empty for the project root. The route answers 404 when the
+            id is not a live folder in the project.
+        """
+        return await self._client._request_json(
+            "GET",
+            f"/workspaces/{self._ws()}/projects/{self._proj(project_id)}/resources/ancestors",
+            params={"resource_id": resource_id},
+        )
+
+    async def resources_search(
+        self,
+        search: str | None = None,
+        resource_type: str | None = None,
+        cursor: str | None = None,
+        limit: int | None = None,
+        sort: str | None = None,
+        fields: str | None = None,
+    ) -> dict[str, Any]:
+        """Search resources across every project the user can open in the workspace.
+
+        Args:
+            search: Keep only resources whose name matches.
+            resource_type: Keep only these types (comma-separated).
+            cursor: ``next_cursor`` of the previous page.
+            limit: Page size; the route defaults to 50.
+            sort: Sort specification.
+            fields: Field set to return; the route defaults to ``standard``.
+
+        Returns:
+            Dict with ``resources``, ``next_cursor`` and ``has_more``.
+        """
+        params = _resource_query(
+            search=search,
+            type=resource_type,
+            cursor=cursor,
+            limit=limit,
+            sort=sort,
+            fields=fields,
+        )
+        return await self._client._request_json(
+            "GET", f"/workspaces/{self._ws()}/resources", params=params
+        )

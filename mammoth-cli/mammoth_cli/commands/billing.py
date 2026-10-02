@@ -390,3 +390,38 @@ def billing_subscription_update(invocation: Invocation) -> HandlerResult:
         )
         data = service.call(_symbol(invocation), patch=patch)
     return data, _meta(invocation, auth.workspace_id, None)
+
+
+def billing_stripe_resume(invocation: Invocation) -> HandlerResult:
+    """Cancel a scheduled downgrade and keep the paid plan. ``--yes --confirm WS`` required."""
+    with open_service(invocation) as (service, auth):
+        enforce_confirmation(
+            invocation,
+            policy=POLICY_CONFIRM_TARGET,
+            action=f"keep the paid plan of workspace {auth.workspace_id} (cancel its downgrade)",
+            target=str(auth.workspace_id),
+        )
+        data = service.call(_symbol(invocation))
+    return data, _meta(invocation, auth.workspace_id, None)
+
+
+def billing_stripe_recheck_limits(invocation: Invocation) -> HandlerResult:
+    """Recompute the workspace's plan-limit lock and return the report."""
+    with open_service(invocation) as (service, auth):
+        data = service.call(_symbol(invocation))
+    return data, _meta(invocation, auth.workspace_id, None)
+
+
+def billing_stripe_storage_set(invocation: Invocation) -> HandlerResult:
+    """Set the TOTAL purchased storage. ``storage_gb`` from ``--input``; ``--yes --confirm WS``."""
+    document = _bound_document(invocation)
+    storage_gb = _require_field(document, "storage_gb")
+    with open_service(invocation) as (service, auth):
+        enforce_confirmation(
+            invocation,
+            policy=POLICY_CONFIRM_TARGET,
+            action=f"set the storage of workspace {auth.workspace_id} to {storage_gb} GB",
+            target=str(auth.workspace_id),
+        )
+        data = service.call(_symbol(invocation), storage_gb=storage_gb)
+    return data, _meta(invocation, auth.workspace_id, None)

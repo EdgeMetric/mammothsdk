@@ -4,7 +4,7 @@ Generated from the reviewed command manifests for mammoth-cli 2.2.6.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
-Total commands: 602.
+Total commands: 612.
 
 ## activity
 
@@ -621,6 +621,20 @@ Total commands: 602.
 - Backing SDK: `mammoth.api.billing.BillingAPI.stripe_preview_invoice`
 - Agent example: `mammoth billing stripe preview-invoice`
 
+### `mammoth billing stripe recheck-limits`
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.billing.BillingAPI.stripe_recheck_limits`
+- Agent example: `mammoth billing stripe recheck-limits`
+
+### `mammoth billing stripe resume`
+
+- Mutation class: `high_impact`
+- Confirmation: `confirm_target`
+- Backing SDK: `mammoth.api.billing.BillingAPI.stripe_resume`
+- Agent example: `mammoth billing stripe resume`
+
 ### `mammoth billing stripe retry-payment`
 
 - Mutation class: `high_impact`
@@ -634,6 +648,13 @@ Total commands: 602.
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.billing.BillingAPI.stripe_status`
 - Agent example: `mammoth billing stripe status`
+
+### `mammoth billing stripe storage set`
+
+- Mutation class: `high_impact`
+- Confirmation: `confirm_target`
+- Backing SDK: `mammoth.api.billing.BillingAPI.stripe_storage_update`
+- Agent example: `mammoth billing stripe storage set --input '{"storage_gb": 1}'`
 
 ### `mammoth billing stripe sync`
 
@@ -671,6 +692,17 @@ Total commands: 602.
 - Agent example: `mammoth billing subscription update --input '{"patch": [{"sample_key": "Status"}]}'`
 
 ## browse
+
+### `mammoth browse ancestors`
+
+**Arguments**
+
+- `RESOURCE_ID` (int, required) — The folder's resource_id as browse resources returns it (not its object id).
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.browse.BrowseAPI.resource_ancestors`
+- Agent example: `mammoth browse ancestors 123`
 
 ### `mammoth browse folder`
 
@@ -715,6 +747,13 @@ Total commands: 602.
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.browse.BrowseAPI.root`
 - Agent example: `mammoth browse root`
+
+### `mammoth browse search`
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.browse.BrowseAPI.resources_search`
+- Agent example: `mammoth browse search`
 
 ### `mammoth browse workspace`
 
@@ -1551,6 +1590,24 @@ Total commands: 602.
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.format_preview`
 - Agent example: `mammoth dashboard format-preview 123 --input '{"style": "sample"}'`
 
+### `mammoth dashboard gallery get`
+
+**Arguments**
+
+- `SLUG` (str, required) — Template slug.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.dashboards.DashboardsAPI.gallery_get`
+- Agent example: `mammoth dashboard gallery get sample`
+
+### `mammoth dashboard gallery list`
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.dashboards.DashboardsAPI.gallery_list`
+- Agent example: `mammoth dashboard gallery list`
+
 ### `mammoth dashboard get`
 
 **Arguments**
@@ -2266,6 +2323,40 @@ Total commands: 602.
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.template_resolve_mapping`
 - Agent example: `mammoth dashboard template resolve-mapping --input '{"body": {"params": {"source_dashboard_id": 1, "target_dataview_id": 1}}}'`
+
+### `mammoth dashboard template thumbnail clear`
+
+**Arguments**
+
+- `TEMPLATE_ID` (str, required) — ID of the template.
+
+- Mutation class: `destructive`
+- Confirmation: `prompt_or_yes`
+- Backing SDK: `mammoth.api.dashboards.DashboardsAPI.template_thumbnail_clear`
+- Agent example: `mammoth dashboard template thumbnail clear resource-123`
+
+### `mammoth dashboard template thumbnail get`
+
+**Arguments**
+
+- `TEMPLATE_ID` (str, required) — ID of the template.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.dashboards.DashboardsAPI.template_thumbnail_get`
+- Agent example: `mammoth dashboard template thumbnail get resource-123`
+
+### `mammoth dashboard template thumbnail set`
+
+**Arguments**
+
+- `TEMPLATE_ID` (str, required) — ID of the template.
+- `FILE` (str, required) — Path to a local PNG, JPEG or WebP image (1 MB at most).
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.dashboards.DashboardsAPI.template_thumbnail_set`
+- Agent example: `mammoth dashboard template thumbnail set resource-123 card.png`
 
 ### `mammoth dashboard templates pending`
 

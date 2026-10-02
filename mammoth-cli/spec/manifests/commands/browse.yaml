@@ -229,3 +229,83 @@ commands:
     command: browse.resource
     ids: {}
     kind: object
+- command_id: browse.ancestors
+  command_path: browse ancestors
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - name: resource_id
+    type: int
+    required: true
+    metavar: RESOURCE_ID
+    falls_back_to_field: null
+    help: The folder's resource_id as browse resources returns it (not its object id).
+  options: []
+  sdk_symbol: mammoth.api.browse.BrowseAPI.resource_ancestors
+  sdk_conversion: Call mammoth.api.browse.BrowseAPI.resource_ancestors with validated request fields.
+  request_model: BrowseAncestorsRequest
+  result_model: BrowseAncestorsResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-BROWSE-ANCESTORS
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth browse ancestors RESOURCE_ID --help
+  agent_example: 'mammoth browse ancestors 123'
+  unit_tests:
+  - UT-BROWSE-ANCESTORS
+  contract_tests:
+  - CT-BROWSE-ANCESTORS-HUMAN
+  - CT-BROWSE-ANCESTORS-JSON
+  - CT-BROWSE-ANCESTORS-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'The folder path (breadcrumb) of a FOLDER of the active project: the chain from the project root down to the folder itself, root first (resources v2). Pass the folder''s resource_id from browse resources, not its object id. Any other id answers 404; 0 means the project root and returns an empty path. For a dataset or view, take its parent_resource_id first.'
+  reviewed_by: primary
+  readback:
+    command: browse.ancestors
+    ids: {}
+    kind: object
+- command_id: browse.search
+  command_path: browse search
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.browse.BrowseAPI.resources_search
+  sdk_conversion: Call mammoth.api.browse.BrowseAPI.resources_search with validated request fields.
+  request_model: BrowseSearchRequest
+  result_model: BrowseSearchResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: cursor
+  acceptance_evidence: live_read_only
+  live_test: LT-BROWSE-SEARCH
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth browse search --help
+  agent_example: 'mammoth browse search'
+  unit_tests:
+  - UT-BROWSE-SEARCH
+  contract_tests:
+  - CT-BROWSE-SEARCH-HUMAN
+  - CT-BROWSE-SEARCH-JSON
+  - CT-BROWSE-SEARCH-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Searches resources across every project you can open in the workspace (resources v2), a cursor page at a time: pass next_cursor back as cursor while has_more is true. search matches names; resource_type (comma-separated), sort and fields narrow the page. Needs no active project.'
+  reviewed_by: primary
+  readback:
+    command: browse.search
+    ids: {}
+    kind: object

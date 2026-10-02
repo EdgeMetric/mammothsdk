@@ -5195,3 +5195,223 @@ commands:
     command: dashboard.format-preview
     ids: {}
     kind: object
+- command_id: dashboard.template.thumbnail.get
+  command_path: dashboard template thumbnail get
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - name: template_id
+    type: str
+    required: true
+    metavar: TEMPLATE_ID
+    falls_back_to_field: null
+    help: ID of the template.
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.template_thumbnail_get
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.template_thumbnail_get with validated request fields.
+  request_model: DashboardTemplateThumbnailGetRequest
+  result_model: DashboardTemplateThumbnailGetResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-DASHBOARD-TEMPLATE-THUMBNAIL-GET
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard template thumbnail get TEMPLATE_ID --help
+  agent_example: 'mammoth dashboard template thumbnail get resource-123'
+  unit_tests:
+  - UT-DASHBOARD-TEMPLATE-THUMBNAIL-GET
+  contract_tests:
+  - CT-DASHBOARD-TEMPLATE-THUMBNAIL-GET-HUMAN
+  - CT-DASHBOARD-TEMPLATE-THUMBNAIL-GET-JSON
+  - CT-DASHBOARD-TEMPLATE-THUMBNAIL-GET-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'The picture a template''s card shows, as content_type and content_base64. A template with no picture answers 404; that is an ordinary state and its card falls back to the og-card.'
+  reviewed_by: primary
+  readback:
+    command: dashboard.template.thumbnail.get
+    ids: {}
+    kind: object
+- command_id: dashboard.template.thumbnail.set
+  command_path: dashboard template thumbnail set
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - name: template_id
+    type: str
+    required: true
+    metavar: TEMPLATE_ID
+    falls_back_to_field: null
+    help: ID of the template.
+  - name: file
+    type: str
+    required: true
+    metavar: FILE
+    falls_back_to_field: null
+    help: Path to a local PNG, JPEG or WebP image (1 MB at most).
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.template_thumbnail_set
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.template_thumbnail_set with validated request fields.
+  request_model: DashboardTemplateThumbnailSetRequest
+  result_model: DashboardTemplateThumbnailSetResult
+  mutation_class: benign_mutation
+  edits_target: true
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_no_disposable_fixture
+  readback:
+    command: dashboard.template.thumbnail.get
+    ids:
+      template_id: positional.0
+    kind: object
+  live_test: null
+  live_exemption_reason: Release-only multipart binding; no disposable saved-template fixture in tests/live.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard template thumbnail set TEMPLATE_ID FILE --help
+  agent_example: 'mammoth dashboard template thumbnail set resource-123 card.png'
+  unit_tests:
+  - UT-DASHBOARD-TEMPLATE-THUMBNAIL-SET
+  contract_tests:
+  - CT-DASHBOARD-TEMPLATE-THUMBNAIL-SET-HUMAN
+  - CT-DASHBOARD-TEMPLATE-THUMBNAIL-SET-JSON
+  - CT-DASHBOARD-TEMPLATE-THUMBNAIL-SET-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Replaces the picture of a SAVED workspace template (owner or workspace admin; curated templates are not writable). PNG, JPEG or WebP read from the file''s content, 1 MB at most. The file comes from the local disk.'
+  reviewed_by: primary
+- command_id: dashboard.template.thumbnail.clear
+  command_path: dashboard template thumbnail clear
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - name: template_id
+    type: str
+    required: true
+    metavar: TEMPLATE_ID
+    falls_back_to_field: null
+    help: ID of the template.
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.template_thumbnail_clear
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.template_thumbnail_clear with validated request fields.
+  request_model: DashboardTemplateThumbnailClearRequest
+  result_model: DashboardTemplateThumbnailClearResult
+  mutation_class: destructive
+  edits_target: true
+  confirmation: prompt_or_yes
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_no_disposable_fixture
+  readback:
+    command: dashboard.template.get
+    ids:
+      template_id: positional.0
+    kind: object
+  live_test: null
+  live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable saved-template
+    fixture in tests/live.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard template thumbnail clear TEMPLATE_ID --help
+  agent_example: 'mammoth dashboard template thumbnail clear resource-123'
+  unit_tests:
+  - UT-DASHBOARD-TEMPLATE-THUMBNAIL-CLEAR
+  contract_tests:
+  - CT-DASHBOARD-TEMPLATE-THUMBNAIL-CLEAR-HUMAN
+  - CT-DASHBOARD-TEMPLATE-THUMBNAIL-CLEAR-JSON
+  - CT-DASHBOARD-TEMPLATE-THUMBNAIL-CLEAR-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Removes a saved template''s picture (owner or workspace admin); its card falls back to the og-card. ok is false when there was no picture.'
+  reviewed_by: primary
+- command_id: dashboard.gallery.list
+  command_path: dashboard gallery list
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.gallery_list
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.gallery_list with validated request fields.
+  request_model: DashboardGalleryListRequest
+  result_model: DashboardGalleryListResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: single_page
+  acceptance_evidence: live_read_only
+  live_test: LT-DASHBOARD-GALLERY-LIST
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard gallery list --help
+  agent_example: 'mammoth dashboard gallery list'
+  unit_tests:
+  - UT-DASHBOARD-GALLERY-LIST
+  contract_tests:
+  - CT-DASHBOARD-GALLERY-LIST-HUMAN
+  - CT-DASHBOARD-GALLERY-LIST-JSON
+  - CT-DASHBOARD-GALLERY-LIST-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'The public template gallery as data: curated, live templates only, with copy, taxonomy labels, thumbnail_ref and viewer_url, and the function/industry facets with counts. No internal ids. Optional function or industry narrow it; an unknown facet answers 404. To use one in this workspace, use dashboard template list and dashboard templates use.'
+  reviewed_by: primary
+  readback:
+    command: dashboard.gallery.list
+    ids: {}
+    kind: object
+- command_id: dashboard.gallery.get
+  command_path: dashboard gallery get
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - name: slug
+    type: str
+    required: true
+    metavar: SLUG
+    falls_back_to_field: null
+    help: Template slug.
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.gallery_get
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.gallery_get with validated request fields.
+  request_model: DashboardGalleryGetRequest
+  result_model: DashboardGalleryGetResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-DASHBOARD-GALLERY-GET
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard gallery get SLUG --help
+  agent_example: 'mammoth dashboard gallery get sample'
+  unit_tests:
+  - UT-DASHBOARD-GALLERY-GET
+  contract_tests:
+  - CT-DASHBOARD-GALLERY-GET-HUMAN
+  - CT-DASHBOARD-GALLERY-GET-JSON
+  - CT-DASHBOARD-GALLERY-GET-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'One card of the public template gallery. A user-saved template, or a curated one that is not live, answers 404 exactly as an unknown slug does.'
+  reviewed_by: primary
+  readback:
+    command: dashboard.gallery.get
+    ids: {}
+    kind: object

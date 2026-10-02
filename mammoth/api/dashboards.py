@@ -59,6 +59,8 @@ _list = list  # Alias to avoid shadowing by method name
 ERR_DASHBOARD_ID_POSITIVE = "`dashboard_id` must be a positive integer, got {0}."
 ERR_DASHBOARD_IDS_EMPTY = "`dashboard_ids` must be a non-empty list of dashboard ids."
 ERR_STYLE_EMPTY = "`style` must be a non-empty string."
+ERR_TEMPLATE_ID_EMPTY = "`template_id` must be a non-empty template slug."
+ERR_SLUG_EMPTY = "`slug` must be a non-empty template slug."
 ERR_PATCH_EMPTY = "`patch` must be a non-empty list of patch operations."
 ERR_INTENT_VALUE_TOO_SHORT = "Patch value for `intent` must be at least 10 characters, got {0!r}."
 ERR_INTENT_VALUE_NOT_STR = "Patch value for `intent` must be a string."
@@ -1099,6 +1101,110 @@ class DashboardsAPI:
             "GET", f"/dashboards/{dashboard_id}/format-preview", params={"style": style}
         )
 
+    async def template_thumbnail_get(self, template_id: str) -> dict[str, Any]:
+        """Download the picture a template's card shows.
+
+        Args:
+            template_id: Template slug (non-empty).
+
+        Returns:
+            Dict with ``content_type``, ``size_bytes``, ``sha256`` and
+            ``content_base64``. The route answers 404 when the template has no
+            picture; the card then falls back to its og-card.
+
+        Raises:
+            MammothValidationError: If *template_id* is empty.
+        """
+        return await self._client._request_binary("GET", _thumbnail_path(template_id))
+
+    async def template_thumbnail_set(self, template_id: str, file: str | Path) -> dict[str, Any]:
+        """Replace the picture of a saved workspace template.
+
+        Owner or workspace admin only; curated templates are not writable.
+        The server accepts PNG, JPEG or WebP (by content) up to 1 MB.
+
+        Args:
+            template_id: Template slug (non-empty).
+            file: Path to a local image file.
+
+        Returns:
+            Dict ``{"ok": True}``.
+
+        Raises:
+            MammothValidationError: If *template_id* is empty or *file* is not
+                a readable local file.
+        """
+        endpoint = _thumbnail_path(template_id)
+        path = Path(file)
+        if not path.is_file():
+            raise MammothValidationError(f"File not found: {path}")
+        with path.open("rb") as opened:
+            return await self._client._request_json(
+                "PUT",
+                endpoint,
+                files=[("data", (path.name, opened, "application/octet-stream"))],
+            )
+
+    async def template_thumbnail_clear(self, template_id: str) -> dict[str, Any]:
+        """Remove a saved template's picture; its card falls back to the og-card.
+
+        Owner or workspace admin only.
+
+        Args:
+            template_id: Template slug (non-empty).
+
+        Returns:
+            Dict ``{"ok": bool}``: ``False`` when the template had no picture.
+
+        Raises:
+            MammothValidationError: If *template_id* is empty.
+        """
+        return await self._client._request_json("DELETE", _thumbnail_path(template_id))
+
+    async def gallery_list(
+        self, function: str | None = None, industry: str | None = None
+    ) -> dict[str, Any]:
+        """List the public template gallery: curated, live templates only.
+
+        The anonymous catalog (no internal ids). Each card carries its copy,
+        taxonomy labels, ``thumbnail_ref`` and ``viewer_url``.
+
+        Args:
+            function: Keep only templates for this business function.
+            industry: Keep only templates for this industry.
+
+        Returns:
+            Dict with the template cards and the facet lists with counts. The
+            route answers 404 for an unknown facet or one with nothing under it.
+        """
+        params = {
+            key: value
+            for key, value in (("function", function), ("industry", industry))
+            if value is not None
+        }
+        return await self._client._request_json(
+            "GET", "/dashboards/public/templates", params=params or None
+        )
+
+    async def gallery_get(self, slug: str) -> dict[str, Any]:
+        """Get one template card from the public gallery.
+
+        Args:
+            slug: Template slug (non-empty).
+
+        Returns:
+            Dict ``{"template": {...}}``. The route answers 404 for an unknown
+            slug, a user-saved template, or a curated one that is not live.
+
+        Raises:
+            MammothValidationError: If *slug* is empty.
+        """
+        if not slug:
+            raise MammothValidationError(ERR_SLUG_EMPTY)
+        return await self._client._request_json(
+            "GET", f"/dashboards/public/templates/{quote(slug, safe='')}"
+        )
+
     async def embed_origin_revoke(self, dashboard_id: int, origin: str) -> EmbedConfigResponse:
         """Remove one origin from a board's embed allowlist.
 
@@ -1197,6 +1303,13 @@ class DashboardsAPI:
 
 
 # ── Private helpers ───────────────────────────────────────────────────────────
+
+
+def _thumbnail_path(template_id: str) -> str:
+    """The in-product thumbnail route of one template, its slug path-encoded."""
+    if not template_id:
+        raise MammothValidationError(ERR_TEMPLATE_ID_EMPTY)
+    return f"/dashboards/v3/templates/{quote(template_id, safe='')}/thumbnail"
 
 
 def _write_bytes_atomic(content: bytes, output_path: Path) -> Path:

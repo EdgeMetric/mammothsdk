@@ -539,3 +539,54 @@ def test_subscription_update_proceeds_with_confirm(
     assert fake_service.call_log == [
         (_SUBSCRIPTION_UPDATE, {"patch": [{"op": "replace", "path": "/seats", "value": 5}]})
     ]
+
+
+# --- stripe.resume / recheck-limits / storage.set ----------------------------------------
+
+_STRIPE_RESUME = "mammoth.api.billing.BillingAPI.stripe_resume"
+_STRIPE_RECHECK_LIMITS = "mammoth.api.billing.BillingAPI.stripe_recheck_limits"
+_STRIPE_STORAGE_UPDATE = "mammoth.api.billing.BillingAPI.stripe_storage_update"
+
+
+def test_stripe_resume_blocked_without_yes(fake_service: FakeMammothService) -> None:
+    with pytest.raises(CliError) as excinfo:
+        billing_cmd.billing_stripe_resume(_inv("billing.stripe.resume", output="json"))
+    assert excinfo.value.code == "confirmation_required"
+    assert fake_service.call_log == []
+
+
+def test_stripe_resume_proceeds_with_confirm(fake_service: FakeMammothService) -> None:
+    billing_cmd.billing_stripe_resume(_inv("billing.stripe.resume", yes=True, confirm="4"))
+    assert fake_service.call_log == [(_STRIPE_RESUME, {})]
+
+
+def test_stripe_recheck_limits_needs_no_confirmation(fake_service: FakeMammothService) -> None:
+    billing_cmd.billing_stripe_recheck_limits(_inv("billing.stripe.recheck-limits", output="json"))
+    assert fake_service.call_log == [(_STRIPE_RECHECK_LIMITS, {})]
+
+
+def test_storage_set_requires_storage_gb(fake_service: FakeMammothService) -> None:
+    with pytest.raises(CliError) as excinfo:
+        billing_cmd.billing_stripe_storage_set(
+            _inv("billing.stripe.storage.set", yes=True, confirm="4")
+        )
+    assert excinfo.value.code == "missing_field"
+    assert fake_service.call_log == []
+
+
+def test_storage_set_blocked_without_yes(fake_service: FakeMammothService, tmp_path: Path) -> None:
+    doc = _write(tmp_path, {"storage_gb": 50})
+    with pytest.raises(CliError) as excinfo:
+        billing_cmd.billing_stripe_storage_set(
+            _inv("billing.stripe.storage.set", input_file=doc, output="json")
+        )
+    assert excinfo.value.code == "confirmation_required"
+    assert fake_service.call_log == []
+
+
+def test_storage_set_forwards_storage_gb(fake_service: FakeMammothService, tmp_path: Path) -> None:
+    doc = _write(tmp_path, {"storage_gb": 50})
+    billing_cmd.billing_stripe_storage_set(
+        _inv("billing.stripe.storage.set", input_file=doc, yes=True, confirm="4")
+    )
+    assert fake_service.call_log == [(_STRIPE_STORAGE_UPDATE, {"storage_gb": 50})]

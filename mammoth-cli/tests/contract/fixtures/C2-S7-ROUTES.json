@@ -1,13 +1,13 @@
 {
   "schema_version": 1,
   "task": "C2/S7 remaining-families",
-  "route_count": 113,
+  "route_count": 116,
   "families": {
     "activity": 2,
     "agent": 14,
     "ai": 4,
     "automation": 8,
-    "billing": 22,
+    "billing": 25,
     "client-app": 5,
     "schedule": 5,
     "support": 45,
@@ -1682,6 +1682,62 @@
       }
     },
     {
+      "command_id": "billing.stripe.recheck-limits",
+      "operation_id": "RecheckWorkspaceLimits",
+      "sdk_symbol": "mammoth.api.billing.BillingAPI.stripe_recheck_limits",
+      "field_destinations": {},
+      "context_destinations": {},
+      "wire": {
+        "method": "POST",
+        "path": "/workspaces/{workspace_id}/subscription/recheck-limits",
+        "body": "none",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "billing.stripe.resume",
+      "operation_id": "ResumeWorkspaceSubscription",
+      "sdk_symbol": "mammoth.api.billing.BillingAPI.stripe_resume",
+      "field_destinations": {},
+      "context_destinations": {},
+      "wire": {
+        "method": "POST",
+        "path": "/workspaces/{workspace_id}/subscription/resume",
+        "body": "none",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
       "command_id": "billing.stripe.retry-payment",
       "operation_id": "RetryPayment",
       "sdk_symbol": "mammoth.api.billing.BillingAPI.stripe_retry_payment",
@@ -1719,6 +1775,40 @@
         "method": "GET",
         "path": "/workspaces/{workspace_id}/subscription/status",
         "body": "none",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "billing.stripe.storage.set",
+      "operation_id": "UpdateSubscriptionStorage",
+      "sdk_symbol": "mammoth.api.billing.BillingAPI.stripe_storage_update",
+      "field_destinations": {
+        "storage_gb": {
+          "source": "input",
+          "destination": "storage_gb",
+          "wire": "sdk_argument"
+        }
+      },
+      "context_destinations": {},
+      "wire": {
+        "method": "PUT",
+        "path": "/workspaces/{workspace_id}/subscription/storage",
+        "body": "json:UpdateSubscriptionStorageRequestSchema",
         "checks": [
           "method",
           "path",

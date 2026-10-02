@@ -3596,3 +3596,42 @@ class TestProjectsPagination:
             "id": 100,
             "name": "From Claude",
         }
+
+
+class TestBrowseResourcesV2:
+    async def test_resource_ancestors(self, client: MammothClient):
+        await client.browse.resource_ancestors(resource_id=812)
+        client._request_json.assert_called_once_with(
+            "GET",
+            "/workspaces/1/projects/100/resources/ancestors",
+            params={"resource_id": 812},
+        )
+
+    async def test_resource_ancestors_explicit_project(self, client: MammothClient):
+        await client.browse.resource_ancestors(resource_id=812, project_id=7)
+        assert_called_with_method_and_endpoint(
+            client._request_json, "GET", "/workspaces/1/projects/7/resources/ancestors"
+        )
+
+    async def test_resources_search_sends_only_set_filters(self, client: MammothClient):
+        await client.browse.resources_search(search="revenue", resource_type="dataset,dataview")
+        client._request_json.assert_called_once_with(
+            "GET",
+            "/workspaces/1/resources",
+            params={"search": "revenue", "type": "dataset,dataview"},
+        )
+
+    async def test_resources_search_without_filters_keeps_route_defaults(
+        self, client: MammothClient
+    ):
+        await client.browse.resources_search()
+        client._request_json.assert_called_once_with("GET", "/workspaces/1/resources", params=None)
+
+    async def test_resources_search_pages_by_cursor(self, client: MammothClient):
+        await client.browse.resources_search(cursor="abc", limit=10, sort="name", fields="minimal")
+        assert client._request_json.call_args.kwargs["params"] == {
+            "cursor": "abc",
+            "limit": 10,
+            "sort": "name",
+            "fields": "minimal",
+        }

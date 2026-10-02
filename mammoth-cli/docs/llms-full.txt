@@ -161,10 +161,16 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth billing stripe portal-url
 - `mammoth billing stripe preview-invoice` [read/none] -> mammoth.api.billing.BillingAPI.stripe_preview_invoice
   example: mammoth billing stripe preview-invoice
+- `mammoth billing stripe recheck-limits` [benign_mutation/none] -> mammoth.api.billing.BillingAPI.stripe_recheck_limits
+  example: mammoth billing stripe recheck-limits
+- `mammoth billing stripe resume` [high_impact/confirm_target] -> mammoth.api.billing.BillingAPI.stripe_resume
+  example: mammoth billing stripe resume
 - `mammoth billing stripe retry-payment` [high_impact/confirm_target] -> mammoth.api.billing.BillingAPI.stripe_retry_payment
   example: mammoth billing stripe retry-payment
 - `mammoth billing stripe status` [read/none] -> mammoth.api.billing.BillingAPI.stripe_status
   example: mammoth billing stripe status
+- `mammoth billing stripe storage set` [high_impact/confirm_target] -> mammoth.api.billing.BillingAPI.stripe_storage_update
+  example: mammoth billing stripe storage set --input '{"storage_gb": 1}'
 - `mammoth billing stripe sync` [high_impact/confirm_target] -> mammoth.api.billing.BillingAPI.stripe_sync
   example: mammoth billing stripe sync
 - `mammoth billing stripe upcoming-invoice` [read/none] -> mammoth.api.billing.BillingAPI.stripe_upcoming_invoice
@@ -178,6 +184,8 @@ Sensitive structured input must come from a private file or pipe; never put secr
 
 ## browse
 
+- `mammoth browse ancestors` [read/none] -> mammoth.api.browse.BrowseAPI.resource_ancestors
+  example: mammoth browse ancestors 123
 - `mammoth browse folder` [read/none] -> mammoth.api.browse.BrowseAPI.folder_resources
   example: mammoth browse folder 123
 - `mammoth browse project` [read/none] -> mammoth.api.projects.ProjectsAPI.browse
@@ -188,6 +196,8 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth browse resources
 - `mammoth browse root` [read/none] -> mammoth.api.browse.BrowseAPI.root
   example: mammoth browse root
+- `mammoth browse search` [read/none] -> mammoth.api.browse.BrowseAPI.resources_search
+  example: mammoth browse search
 - `mammoth browse workspace` [read/none] -> mammoth.api.browse.BrowseAPI.workspace_resources
   example: mammoth browse workspace
 
@@ -372,6 +382,10 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth dashboard filter remove 123 --input '{"field": "sample"}'
 - `mammoth dashboard format-preview` [read/none] -> mammoth.api.dashboards.DashboardsAPI.format_preview
   example: mammoth dashboard format-preview 123 --input '{"style": "sample"}'
+- `mammoth dashboard gallery get` [read/none] -> mammoth.api.dashboards.DashboardsAPI.gallery_get
+  example: mammoth dashboard gallery get sample
+- `mammoth dashboard gallery list` [read/none] -> mammoth.api.dashboards.DashboardsAPI.gallery_list
+  example: mammoth dashboard gallery list
 - `mammoth dashboard get` [read/none] -> mammoth.api.dashboards.DashboardsAPI.get
   example: mammoth dashboard get 123
 - `mammoth dashboard get-by-url` [read/none] -> mammoth.api.dashboards.DashboardsAPI.get_by_url
@@ -512,6 +526,12 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth dashboard template rename resource-123 --input '{"body": {"params": {"title": "Revenue report"}}}'
 - `mammoth dashboard template resolve-mapping` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.template_resolve_mapping
   example: mammoth dashboard template resolve-mapping --input '{"body": {"params": {"source_dashboard_id": 1, "target_dataview_id": 1}}}'
+- `mammoth dashboard template thumbnail clear` [destructive/prompt_or_yes] -> mammoth.api.dashboards.DashboardsAPI.template_thumbnail_clear
+  example: mammoth dashboard template thumbnail clear resource-123
+- `mammoth dashboard template thumbnail get` [read/none] -> mammoth.api.dashboards.DashboardsAPI.template_thumbnail_get
+  example: mammoth dashboard template thumbnail get resource-123
+- `mammoth dashboard template thumbnail set` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.template_thumbnail_set
+  example: mammoth dashboard template thumbnail set resource-123 card.png
 - `mammoth dashboard templates pending` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.take_pending_template
   example: mammoth dashboard templates pending
 - `mammoth dashboard templates use` [high_impact/confirm_target] -> mammoth.api.dashboards.DashboardsAPI.use_template
