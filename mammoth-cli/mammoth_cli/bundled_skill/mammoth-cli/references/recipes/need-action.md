@@ -61,6 +61,8 @@ is empty, so that a retry does not add a second view.
 
 ## A pasted link to a file with "Unstructured rows"
 
+`mammoth project needs-attention --project PROJECT_ID` lists it as a
+`needs_input` row with `action: "unstructured_rows"` and the `dataset_id`.
 The Monitor panel lists this as **Unstructured rows** ("header and data rows
 need mapping"): some lines of an uploaded file did not fit the dataset's
 columns and were set aside, so the dataset waits for a person. Turn the pasted
@@ -78,8 +80,17 @@ lines and why each one does not fit (the first 100, with `row_count` the total):
 mammoth dataset broken-rows list DATASET_ID --project PROJECT_ID
 ```
 
-Fixing them is a step in the app, not a CLI command: open the dataset, choose
-**See all details**, edit each line to fit the columns and pick **Validate &
-Apply**, or discard the lines (or the file) there. Report the count and the
-reasons, and send the user to that step; do not tell them to open the Monitor
-item's link.
+Then fix them, with the user's confirmation. Take a line in after correcting
+it so its column count matches, or discard it (discarded lines do not come
+back; say so first). `batch_id` and `line_num` come from the list:
+
+```bash
+mammoth dataset broken-rows resolve DATASET_ID --project PROJECT_ID \
+  --input '{"op": "remove", "batch_id": 7, "rows": [{"line_num": 4, "line": ""}]}'
+mammoth job wait JOB_ID
+mammoth dataset broken-rows list DATASET_ID --project PROJECT_ID   # row_count 0 = done
+```
+
+`op: "add"` takes the corrected `line` of each row in instead. The same step is
+**Review & Fix** in the app. Do not tell the user to open the Monitor item's
+link.

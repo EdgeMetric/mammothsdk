@@ -6,7 +6,7 @@ Every command returns the standard JSON envelope. On nonzero exit, read the erro
 
 Run: `mammoth link`. Exact input fields: `mammoth schema get link`.
 
-Example: `mammoth link 'https://app.mammoth.io/workspaces/1/projects/2/data/folders/3?selectedResourceId=4'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth link https://app.mammoth.io/workspaces/1/projects/2/data/datasets`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `LinkResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 

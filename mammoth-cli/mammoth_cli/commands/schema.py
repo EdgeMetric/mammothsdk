@@ -389,8 +389,13 @@ _COMMAND_DISCOVERY_PURPOSES = {
         "unstructured skipped ragged rows lines unparsed mismatched columns monitor "
         "needs review file upload bad rows"
     ),
+    "dataset.broken-rows.resolve": (
+        "fix unstructured skipped ragged lines discard correct resolve mismatched "
+        "columns review monitor needs review upload"
+    ),
     "project.needs-attention": (
-        "monitor needs attention error failing pipeline views delete datasets behind list"
+        "monitor needs attention error failing pipeline views delete datasets behind list "
+        "unstructured pending review"
     ),
     "project.resource-status": "stuck stale failing broken error status anything wrong health",
     "connector.ai.chat": (
