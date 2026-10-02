@@ -313,14 +313,14 @@ CASES = [
             "limit": 21,
             "offset": 0,
             "sort": "(name:asc)",
-            "fields": "id,name,created_at,updated_at,status,stats,sources,data_schema,additional_info",
+            "fields": "id,name,created_at,updated_at,status,sources,additional_info",
         },
         "wire": [
             "GET",
             "/workspaces/4/projects/41/datasets",
             {
                 "params": {
-                    "fields": "id,name,created_at,updated_at,status,stats,sources,data_schema,additional_info",
+                    "fields": "id,name,created_at,updated_at,status,sources,additional_info",
                     "limit": 21,
                     "offset": 0,
                     "sort": "(name:asc)",
@@ -1305,7 +1305,7 @@ def test_dataset_list_nonzero_offset_cli_wire_in_venv314(
     assert seen and seen[0].get("offset") == 6, seen
     request = api.last()
     assert {key: values[-1] for key, values in request.query.items()} == {
-        "fields": "id,name,created_at,updated_at,status,stats,sources,data_schema,additional_info",
+        "fields": "id,name,created_at,updated_at,status,sources,additional_info",
         "limit": "1",
         "offset": "6",
         "sort": "(name:asc)",
@@ -1346,7 +1346,7 @@ def test_dataset_list_nonzero_offset_cli_wire_in_mandatory_no_input_mode(
     assert seen and seen[0].get("offset") == 6, seen
     request = api.last()
     assert {key: values[-1] for key, values in request.query.items()} == {
-        "fields": "id,name,created_at,updated_at,status,stats,sources,data_schema,additional_info",
+        "fields": "id,name,created_at,updated_at,status,sources,additional_info",
         "limit": "1",
         "offset": "6",
         "sort": "(name:asc)",

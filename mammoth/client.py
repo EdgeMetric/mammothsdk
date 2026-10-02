@@ -129,23 +129,48 @@ def _log_http(
     status: int | None,
     request_id: str | None = None,
     outcome: str,
+    attempt: int | None = None,
+    error: str | None = None,
 ) -> None:
     if not _HTTP_LOG.isEnabledFor(logging.INFO):
         return
+    elapsed_ms = round((time.perf_counter() - started) * 1000)
+    tried = f" attempt={attempt}/{_MAX_READ_RETRIES + 1}" if attempt else ""
+    failed = f" error={error}" if error else ""
     _HTTP_LOG.info(
-        "http",
+        "http %s %s%s outcome=%s status=%s%s elapsed_ms=%s",
+        method,
+        endpoint.split("?", 1)[0],
+        tried,
+        outcome,
+        status,
+        failed,
+        elapsed_ms,
         extra={
             "mammoth": {
                 "event": "http",
                 "method": method,
                 "path": endpoint,
                 "status": status,
-                "duration_ms": round((time.perf_counter() - started) * 1000),
+                "duration_ms": elapsed_ms,
                 "request_id": request_id,
                 "outcome": outcome,
             }
         },
     )
+
+
+def _log_attempt_start(method: str, endpoint: str, attempt: int, timeout: Any) -> None:
+    """One line when a request attempt starts, so a hang shows which attempt never ended."""
+    if _HTTP_LOG.isEnabledFor(logging.INFO):
+        _HTTP_LOG.info(
+            "http %s %s attempt=%s/%s start timeout=%s",
+            method,
+            endpoint.split("?", 1)[0],
+            attempt,
+            _MAX_READ_RETRIES + 1,
+            timeout,
+        )
 
 
 _RETRY_STATUSES = frozenset({502, 503, 504})
@@ -546,18 +571,32 @@ class MammothClient:
         for attempt in range(_MAX_READ_RETRIES + 1):
             started = time.perf_counter()
             last = attempt == _MAX_READ_RETRIES or not retryable
+            _log_attempt_start(method, endpoint, attempt + 1, request_kwargs.get("timeout"))
             try:
                 response = await self.session.request(method, url, **request_kwargs)
-            except httpx.ConnectError:
+            except httpx.ConnectError as e:
                 if last:
                     raise
-                _log_http(method, endpoint, started=started, status=None, outcome="retry")
+                _log_http(
+                    method,
+                    endpoint,
+                    started=started,
+                    status=None,
+                    outcome="retry",
+                    attempt=attempt + 1,
+                    error=type(e).__name__,
+                )
                 await asyncio.sleep(_retry_delay(attempt, None))
                 continue
             if last or response.status_code not in _RETRY_STATUSES:
                 return response
             _log_http(
-                method, endpoint, started=started, status=response.status_code, outcome="retry"
+                method,
+                endpoint,
+                started=started,
+                status=response.status_code,
+                outcome="retry",
+                attempt=attempt + 1,
             )
             await asyncio.sleep(_retry_delay(attempt, response.headers.get("Retry-After")))
         raise AssertionError("unreachable")
@@ -644,7 +683,14 @@ class MammothClient:
                 request_method, endpoint, url, request_kwargs
             )
         except httpx.TimeoutException as e:
-            _log_http(request_method, endpoint, started=started, status=None, outcome="timeout")
+            _log_http(
+                request_method,
+                endpoint,
+                started=started,
+                status=None,
+                outcome="timeout",
+                error=type(e).__name__,
+            )
             raise MammothAPIError(
                 "Request timed out",
                 details={"exception_type": type(e).__name__},
@@ -655,7 +701,12 @@ class MammothClient:
             ) from e
         except httpx.ConnectError as e:
             _log_http(
-                request_method, endpoint, started=started, status=None, outcome="connection_error"
+                request_method,
+                endpoint,
+                started=started,
+                status=None,
+                outcome="connection_error",
+                error=type(e).__name__,
             )
             raise MammothAPIError(
                 "Connection error",
@@ -667,7 +718,12 @@ class MammothClient:
             ) from e
         except httpx.HTTPError as e:
             _log_http(
-                request_method, endpoint, started=started, status=None, outcome="request_failed"
+                request_method,
+                endpoint,
+                started=started,
+                status=None,
+                outcome="request_failed",
+                error=type(e).__name__,
             )
             raise MammothAPIError(
                 "Request failed",
@@ -684,13 +740,13 @@ class MammothClient:
             for name in names:
                 try:
                     value = response_headers.get(name)
-                except (AttributeError, TypeError):
+                except AttributeError, TypeError:
                     value = None
                 if value is not None:
                     return str(value)
             try:
                 lowered = {str(key).lower(): value for key, value in response_headers.items()}
-            except (AttributeError, TypeError):
+            except AttributeError, TypeError:
                 lowered = {}
             for name in names:
                 value = lowered.get(name.lower())
@@ -715,7 +771,7 @@ class MammothClient:
                 parsed_body = response.json()
                 if isinstance(parsed_body, dict):
                     body = safe_response_body(parsed_body)
-            except (ValueError, TypeError):
+            except ValueError, TypeError:
                 body = {}
 
         def observed_handles(data: dict[str, Any]) -> tuple[object | None, object | None]:

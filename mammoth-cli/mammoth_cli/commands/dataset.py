@@ -31,7 +31,7 @@ from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.new_data import with_file_upload_path
 from mammoth_cli.runtime.session import open_service, require_project
 from mammoth_cli.services.listing import (
-    DATASET_LIST_FIELDS,
+    DATASET_ROW_FIELDS,
     ambiguity_note,
     dataset_summary,
     fit_budget,
@@ -258,7 +258,7 @@ def dataset_list(invocation: Invocation) -> HandlerResult:
         return _dataset_name_search(invocation, project_id, name.strip(), document)
     compact = not document.get("full")
     if compact:
-        kwargs["fields"] = DATASET_LIST_FIELDS
+        kwargs["fields"] = DATASET_ROW_FIELDS
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), **kwargs)
     if compact:
@@ -279,7 +279,7 @@ def _dataset_name_search(
             "mammoth.api.datasets.DatasetsAPI.list_all",
             project_id=project_id,
             sort=document.get("sort", "(created_at:desc)"),
-            fields=DATASET_LIST_FIELDS,
+            fields=DATASET_ROW_FIELDS,
         )
         records = data.get("datasets", []) if isinstance(data, dict) else []
         page = search_page(records, name, int(document.get("offset", 0)), document.get("limit"))

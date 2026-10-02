@@ -26,6 +26,10 @@ DATASET_LIST_FIELDS = (
     "id,name,created_at,updated_at,status,stats,sources,data_schema,additional_info"
 )
 
+#: ``fields`` for ``dataset list`` rows: only what the server computes cheaply. ``stats``
+#: (row count: DuckDB) and ``data_schema`` stay on ``dataset get``.
+DATASET_ROW_FIELDS = "id,name,created_at,updated_at,status,sources,additional_info"
+
 _MAX_COLUMNS = 4
 #: Columns whose stored sample values a view summary shows, and values per column.
 _SAMPLE_COLUMNS = 6

@@ -30,6 +30,7 @@ import json
 import logging
 import os
 import sys
+import threading
 import time
 import uuid
 from dataclasses import dataclass, field
@@ -45,6 +46,12 @@ LOG_DIR_ENV = "MAMMOTH_LOG_DIR"
 RETENTION_DAYS = 7
 MAX_FILE_BYTES = 20 * 1024 * 1024
 _LOGGER_NAMES = ("mammoth", "mammoth_cli")
+#: Invocations overlap in an embedded host (one thread each). Logger levels are
+#: process-wide, so they are saved by the first attach and restored by the last
+#: detach; a per-invocation restore silenced the others' ``mammoth.http`` lines.
+_LEVEL_LOCK = threading.Lock()
+_ATTACHED = 0
+_SAVED_LEVELS: dict[str, int] = {}
 _INPUT_OPTION = "--input"
 _REDACTED_INPUT = "<redacted --input>"
 
@@ -234,12 +241,19 @@ class RunLog:
     def attach(self, *, debug: bool) -> None:
         if self._disabled:
             return
+        global _ATTACHED
         level = logging.DEBUG if debug else logging.INFO
+        with _LEVEL_LOCK:
+            if _ATTACHED == 0:
+                _SAVED_LEVELS.update({n: logging.getLogger(n).level for n in _LOGGER_NAMES})
+            _ATTACHED += 1
+            self._previous_levels.update(_SAVED_LEVELS)
+            for name in _LOGGER_NAMES:
+                logger = logging.getLogger(name)
+                if logger.level == logging.NOTSET or logger.level > level:
+                    logger.setLevel(level)
         for name in _LOGGER_NAMES:
             logger = logging.getLogger(name)
-            self._previous_levels[name] = logger.level
-            if logger.level == logging.NOTSET or logger.level > level:
-                logger.setLevel(level)
             handlers: list[logging.Handler] = [_JsonlHandler(self)]
             if debug:
                 handlers.append(_StderrHandler(level=level))
@@ -250,8 +264,14 @@ class RunLog:
     def detach(self) -> None:
         for logger, handler in self._handlers:
             logger.removeHandler(handler)
-        for name, level in self._previous_levels.items():
-            logging.getLogger(name).setLevel(level)
+        global _ATTACHED
+        if self._previous_levels:
+            with _LEVEL_LOCK:
+                _ATTACHED -= 1
+                if _ATTACHED == 0:
+                    for name, level in _SAVED_LEVELS.items():
+                        logging.getLogger(name).setLevel(level)
+            self._previous_levels.clear()
         self._handlers.clear()
 
 
