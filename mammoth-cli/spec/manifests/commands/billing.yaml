@@ -826,3 +826,114 @@ commands:
     command: billing.subscription.get
     ids: {}
     kind: object
+- command_id: billing.stripe.resume
+  command_path: billing stripe resume
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.billing.BillingAPI.stripe_resume
+  sdk_conversion: Call mammoth.api.billing.BillingAPI.stripe_resume with validated request fields.
+  request_model: BillingStripeResumeRequest
+  result_model: BillingStripeResumeResult
+  mutation_class: high_impact
+  edits_target: true
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth billing stripe resume --help
+  agent_example: mammoth billing stripe resume
+  unit_tests:
+  - UT-BILLING-STRIPE-RESUME
+  contract_tests:
+  - CT-BILLING-STRIPE-RESUME-HUMAN
+  - CT-BILLING-STRIPE-RESUME-JSON
+  - CT-BILLING-STRIPE-RESUME-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Keep the paid plan: clears a scheduled cancel-at-period-end downgrade, so the workspace does not move to Free at period end. With nothing scheduled the message says so and nothing changes.'
+  reviewed_by: primary
+  readback:
+    command: billing.stripe.status
+    ids: {}
+    kind: object
+- command_id: billing.stripe.recheck-limits
+  command_path: billing stripe recheck-limits
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.billing.BillingAPI.stripe_recheck_limits
+  sdk_conversion: Call mammoth.api.billing.BillingAPI.stripe_recheck_limits with validated request fields.
+  request_model: BillingStripeRecheckLimitsRequest
+  result_model: BillingStripeRecheckLimitsResult
+  mutation_class: benign_mutation
+  edits_target: false
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Writes the live workspace's plan-limit lock; no disposable workspace fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth billing stripe recheck-limits --help
+  agent_example: mammoth billing stripe recheck-limits
+  unit_tests:
+  - UT-BILLING-STRIPE-RECHECK-LIMITS
+  contract_tests:
+  - CT-BILLING-STRIPE-RECHECK-LIMITS-HUMAN
+  - CT-BILLING-STRIPE-RECHECK-LIMITS-JSON
+  - CT-BILLING-STRIPE-RECHECK-LIMITS-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Recomputes which plan limits the workspace exceeds and stores the over-limit lock (over_limit_info: over_limit, items, advisory). Run it after deleting items; the lock clears once everything is under the limits. Safe to repeat.'
+  reviewed_by: primary
+  no_readback: "returns the recomputed over-limit report itself"
+- command_id: billing.stripe.storage.set
+  command_path: billing stripe storage set
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.billing.BillingAPI.stripe_storage_update
+  sdk_conversion: Call mammoth.api.billing.BillingAPI.stripe_storage_update with validated request fields.
+  request_model: BillingStripeStorageSetRequest
+  result_model: BillingStripeStorageSetResult
+  mutation_class: high_impact
+  edits_target: true
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth billing stripe storage set --help
+  agent_example: 'mammoth billing stripe storage set --input ''{"storage_gb": 1}'''
+  unit_tests:
+  - UT-BILLING-STRIPE-STORAGE-SET
+  contract_tests:
+  - CT-BILLING-STRIPE-STORAGE-SET-HUMAN
+  - CT-BILLING-STRIPE-STORAGE-SET-JSON
+  - CT-BILLING-STRIPE-STORAGE-SET-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Sets the TOTAL purchased storage in GB (the plan''s included storage or one of its storage options), not an increment. Inline-pricing plans only; the subscription is re-priced and the difference invoiced at once. Preview the cost first with billing stripe preview-invoice.'
+  reviewed_by: primary
+  readback:
+    command: billing.stripe.usage
+    ids: {}
+    kind: object

@@ -411,6 +411,22 @@ _COMMAND_DISCOVERY_PURPOSES = {
         "page through project resources cursor next page has more folder children v2 listing"
     ),
     "browse.resource": "open one resource by type and id properties of a dataset view folder",
+    "browse.ancestors": "folder path breadcrumb where does this folder live parent folders chain",
+    "browse.search": (
+        "find search a dataset view folder by name across all projects whole workspace global"
+    ),
+    "billing.stripe.resume": (
+        "keep my plan cancel scheduled downgrade undo cancellation stay on paid plan resume"
+    ),
+    "billing.stripe.recheck-limits": (
+        "over limit locked blocked after deleting items recheck plan limits clear the lock"
+    ),
+    "billing.stripe.storage.set": "buy more storage change purchased storage gb allocation",
+    "dashboard.template.thumbnail.get": "template picture card image thumbnail download",
+    "dashboard.template.thumbnail.set": "upload replace template picture card image thumbnail",
+    "dashboard.template.thumbnail.clear": "remove delete template picture card image thumbnail",
+    "dashboard.gallery.list": "public template gallery curated templates catalog examples browse",
+    "dashboard.gallery.get": "one public gallery template card by slug",
     "connector.ai.chat": (
         "connect our own internal custom api build a connector for an unsupported source"
     ),

@@ -392,6 +392,26 @@ Result: `DashboardFormatPreviewResult`; mutation `read`, confirmation `none`, wa
 
 Status on release: untried; no live run recorded.
 
+### `dashboard.gallery.get`
+
+Run: `mammoth dashboard gallery get`. Exact input fields: `mammoth schema get dashboard.gallery.get`.
+
+Example: `mammoth dashboard gallery get sample`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `DashboardGalleryGetResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `dashboard.gallery.list`
+
+Run: `mammoth dashboard gallery list`. Exact input fields: `mammoth schema get dashboard.gallery.list`.
+
+Example: `mammoth dashboard gallery list`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `DashboardGalleryListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
 ### `dashboard.get`
 
 Run: `mammoth dashboard get`. Exact input fields: `mammoth schema get dashboard.get`.
@@ -700,6 +720,106 @@ Result: `DashboardSourceListResult`; mutation `read`, confirmation `none`, wait 
 
 Status on release: observed blocker — blocker; still broken, not one of the 11 CLI-fixed commands. Re-check before relying on it.
 
+### `dashboard.style.custom.create`
+
+Run: `mammoth dashboard style custom create`. Exact input fields: `mammoth schema get dashboard.style.custom.create`.
+
+Example: `mammoth dashboard style custom create --input '{"body": {"params": {"signals": {}}}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `DashboardStyleCustomCreateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+
+Status on release: ran once on CLI 2.0.12 — Dashboard sweep 2026-09-18: exit 0 on release with CLI 2.0.12; result keys: style. created custom style id=1 with full unredacted colors/font/viz (no tokens field passed) Single invocation only; no error-path or variant coverage.
+
+### `dashboard.style.custom.delete`
+
+Run: `mammoth dashboard style custom delete`. Exact input fields: `mammoth schema get dashboard.style.custom.delete`.
+
+Example: `mammoth dashboard style custom delete resource-123`. Illustrative only: append `--yes` after observing an owned target.
+
+Result: `DashboardStyleCustomDeleteResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
+
+Status on release: ran once on CLI 2.0.12 — Dashboard sweep 2026-09-18: exit 0 on release with CLI 2.0.12; result keys: ok. deleted custom style 1 Single invocation only; no error-path or variant coverage.
+
+### `dashboard.style.custom.list`
+
+Run: `mammoth dashboard style custom list`. Exact input fields: `mammoth schema get dashboard.style.custom.list`.
+
+Example: `mammoth dashboard style custom list`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `DashboardStyleCustomListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: ran once on CLI 2.0.12 — Bounded release read succeeded with pinned CLI 1.1.9 in workspace 4; empty custom-style list observed. No Full claim: no non-empty fixture. Also: Dashboard sweep 2026-09-18: exit 0 on release with CLI 2.0.12; result keys: styles. empty custom styles list Sing…
+
+### `dashboard.style.custom.update`
+
+Run: `mammoth dashboard style custom update`. Exact input fields: `mammoth schema get dashboard.style.custom.update`.
+
+Example: `mammoth dashboard style custom update resource-123 --input '{"body": {"params": {"signals": {}}}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `DashboardStyleCustomUpdateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+
+Status on release: ran once on CLI 2.0.12 — Dashboard sweep 2026-09-18: exit 0 on release with CLI 2.0.12; result keys: style. renamed custom style 1 Single invocation only; no error-path or variant coverage.
+
+### `dashboard.style.default.get`
+
+Run: `mammoth dashboard style default get`. Exact input fields: `mammoth schema get dashboard.style.default.get`.
+
+Example: `mammoth dashboard style default get`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `DashboardStyleDefaultGetResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: ran once on CLI 2.0.14 — dashboard re-verification 2026-09-18: exit 0 on release with CLI 2.0.14. CLI defect fixed, confirmed: returned a real matched body {"styleId":"stone"} instead of raising ValidationError on an unmatched 2xx. Single invocation only.
+
+### `dashboard.style.default.set`
+
+Run: `mammoth dashboard style default set`. Exact input fields: `mammoth schema get dashboard.style.default.set`.
+
+Example: `mammoth dashboard style default set --input '{"body": {"params": {"styleId": "sample"}}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `DashboardStyleDefaultSetResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+
+Status on release: ran once on CLI 2.0.14 — dashboard re-verification 2026-09-18: exit 0 on release with CLI 2.0.14. Set styleId to the exact value read from style default get ("stone"), i.e. a verified no-op restore. Result {"styleId":"stone"}; re-ran style default get afterward and confirmed it still…
+
+### `dashboard.style.derive`
+
+Run: `mammoth dashboard style derive`. Exact input fields: `mammoth schema get dashboard.style.derive`.
+
+Example: `mammoth dashboard style derive --input '{"body": {"params": {"signals": {}}}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `DashboardStyleDeriveResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+
+Status on release: ran once on CLI 2.0.14 — dashboard re-verification 2026-09-18: exit 0 on release with CLI 2.0.14. CLI defect fixed, confirmed: returned a full real styleTokens object (colors, font, viz palette, radius, shadow, etc.) with no '***REDACTED***' placeholders anywhere in the body. Single…
+
+### `dashboard.style.extract-brand`
+
+Run: `mammoth dashboard style extract-brand`. Exact input fields: `mammoth schema get dashboard.style.extract-brand`.
+
+Example: `mammoth dashboard style extract-brand --input '{"body": {"params": {"url": "https://example.com/data.csv"}}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `DashboardStyleExtractBrandResult`; mutation `benign_mutation`, confirmation `none`, wait policy `always_wait`.
+
+Status on release: ran once on CLI 2.0.12 — Dashboard sweep 2026-09-18: exit 0 on release with CLI 2.0.12; result keys: screenshot, signals. captured screenshot + extracted brand signals (accents/font/ground/primary), no redaction here Single invocation only; no error-path or variant coverage.
+
+### `dashboard.style.preset.list`
+
+Run: `mammoth dashboard style preset list`. Exact input fields: `mammoth schema get dashboard.style.preset.list`.
+
+Example: `mammoth dashboard style preset list`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `DashboardStylePresetListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: ran once on CLI 2.0.12 — Bounded release read succeeded with pinned CLI 1.1.9 in workspace 4; 10 stock presets returned. No Full claim: custom preset fixture not observed. Also: Dashboard sweep 2026-09-18: exit 0 on release with CLI 2.0.12; result keys: presets. returns built-in styl…
+
+### `dashboard.style.token.list`
+
+Run: `mammoth dashboard style token list`. Exact input fields: `mammoth schema get dashboard.style.token.list`.
+
+Example: `mammoth dashboard style token list resource-123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `DashboardStyleTokenListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: ran once on CLI 1.1.11 — Published PyPI CLI 1.1.11 / SDK 0.7.1 read of observed preset stone returned a redacted token payload. Bounded to one preset and redacted semantics; not Full. Dashboard sweep 2026-09-18 on release observed cli_error: HTTP 200 but result is tokens='***REDACTED…
+
 ### `dashboard.suggestion.list`
 
 Run: `mammoth dashboard suggestion list`. Exact input fields: `mammoth schema get dashboard.suggestion.list`.
@@ -769,96 +889,6 @@ Example: `mammoth dashboard tags set 123 --input '{"tags": ["Revenue"]}' --yes -
 Result: `DashboardTagsSetResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
 
 Status on release: ran once on CLI 2.0.12 — Dashboard sweep 2026-09-18: exit 0 on release with CLI 2.0.12; result keys: tags. set tag sweep-tag-alpha on D=52 Single invocation only; no error-path or variant coverage. Current checkout binding is committed structural mapping; release behavior remains unv…
-
-### `dashboard.template.apply`
-
-Run: `mammoth dashboard template apply`. Exact input fields: `mammoth schema get dashboard.template.apply`.
-
-Example: `mammoth dashboard template apply --input '{"body": {"params": {"source_dashboard_id": 1, "target_dataview_id": 1}}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
-
-Result: `DashboardTemplateApplyResult`; mutation `benign_mutation`, confirmation `none`, wait policy `always_wait`.
-
-Status on release: ran once on CLI 2.0.14 — dashboard re-verification 2026-09-18: exit 0 on release with CLI 2.0.14. Succeeded and created a NEW dashboard (id 57, derived_from 56, url U6WuS1Z2haJj8h96JkcFxw) mapped onto view 45 with fidelity {"blocked":false,"dropped":0,"unmatched_required":[]}. This i…
-
-### `dashboard.template.create`
-
-Run: `mammoth dashboard template create`. Exact input fields: `mammoth schema get dashboard.template.create`.
-
-Example: `mammoth dashboard template create --input '{"body": {"params": {"dashboard_id": 1, "title": "Revenue report"}}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
-
-Result: `DashboardTemplateCreateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
-
-Status on release: observed blocker — backend_error: POST /dashboards/v3/templates HTTP 500 empty body / outcome_unknown, as on 2026-09-18. Re-check before relying on it.
-
-### `dashboard.template.delete`
-
-Run: `mammoth dashboard template delete`. Exact input fields: `mammoth schema get dashboard.template.delete`.
-
-Example: `mammoth dashboard template delete resource-123`. Illustrative only: append `--yes` after observing an owned target.
-
-Result: `DashboardTemplateDeleteResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
-
-Status on release: observed blocker — blocked_missing_fixture: dashboard.template.create never produced an owned template (HTTP 500 both attempts, reconciled as not-committed via template list). Re-check before relying on it.
-
-### `dashboard.template.fit`
-
-Run: `mammoth dashboard template fit`. Exact input fields: `mammoth schema get dashboard.template.fit`.
-
-Example: `mammoth dashboard template fit 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
-
-Result: `DashboardTemplateFitResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
-
-Status on release: ran once on CLI 2.0.12 — Read-only sweep 2026-09-18: exit 0 on release with CLI 2.0.11; result keys: dataview_id, fits. Single read only; no fixture variants, error envelopes, or write paths assessed. Also: Dashboard sweep 2026-09-18: exit 0 on release with CLI 2.0.12; result keys: d…
-
-### `dashboard.template.get`
-
-Run: `mammoth dashboard template get`. Exact input fields: `mammoth schema get dashboard.template.get`.
-
-Example: `mammoth dashboard template get resource-123`. Placeholders are illustrative; resolve IDs and input from observed reads.
-
-Result: `DashboardTemplateGetResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
-
-Status on release: ran once on CLI 2.0.14 — dashboard re-verification 2026-09-18: exit 0 on release with CLI 2.0.14. CLI defect fixed, confirmed: returned a full matched structured body ({"explore":{...},"self_fit":{"grade":"great",...},"source_dashboard_id":1,"template":{...}}) instead of raising Vali…
-
-### `dashboard.template.list`
-
-Run: `mammoth dashboard template list`. Exact input fields: `mammoth schema get dashboard.template.list`.
-
-Example: `mammoth dashboard template list`. Placeholders are illustrative; resolve IDs and input from observed reads.
-
-Result: `DashboardTemplateListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
-
-Status on release: ran once on CLI 2.0.21 — ergonomics sweep 2026-09-19: exit 0 on release with CLI 2.0.21. Returned the template catalogue (formats, functions, ...). Single invocation only.
-
-### `dashboard.template.preview`
-
-Run: `mammoth dashboard template preview`. Exact input fields: `mammoth schema get dashboard.template.preview`.
-
-Example: `mammoth dashboard template preview --input '{"body": {"params": {"source_dashboard_id": 1, "target_dataview_id": 1}}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
-
-Result: `DashboardTemplatePreviewResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
-
-Status on release: ran once on CLI 2.0.12 — Dashboard sweep 2026-09-18: exit 0 on release with CLI 2.0.12; result keys: canvas, fidelity, mapping, meta, plan, specs, target_fields. previewed D=52's canvas retargeted to dataview 47 (life expectancy dataset) Single invocation only; no error-path or varia…
-
-### `dashboard.template.rename`
-
-Run: `mammoth dashboard template rename`. Exact input fields: `mammoth schema get dashboard.template.rename`.
-
-Example: `mammoth dashboard template rename resource-123 --input '{"body": {"params": {"title": "Revenue report"}}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
-
-Result: `DashboardTemplateRenameResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
-
-Status on release: untried; no live run recorded.
-
-### `dashboard.template.resolve-mapping`
-
-Run: `mammoth dashboard template resolve-mapping`. Exact input fields: `mammoth schema get dashboard.template.resolve-mapping`.
-
-Example: `mammoth dashboard template resolve-mapping --input '{"body": {"params": {"source_dashboard_id": 1, "target_dataview_id": 1}}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
-
-Result: `DashboardTemplateResolveMappingResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
-
-Status on release: ran once on CLI 2.0.12 — Dashboard sweep 2026-09-18: exit 0 on release with CLI 2.0.12; result keys: fidelity, mapping, target_fields. resolved mapping from D=52's current dataview (46, GDP after swap-data) to target dataview 47 (life expectancy) Single invocation only; no error-path…
 
 ### `dashboard.templates.pending`
 

@@ -144,6 +144,30 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
             name="object_id", type=int, required=True, help="ID of the resource within its type."
         ),
     ),
+    # A folder's mm-auth resource id, which the derived "ID of the resource."
+    # would let an agent confuse with the folder's object id.
+    "browse.ancestors": (
+        PositionalSpec(
+            name="resource_id",
+            type=int,
+            required=True,
+            help="The folder's resource_id as browse resources returns it (not its object id).",
+        ),
+    ),
+    # The image is a local file, positional after the template like assess-pbix.
+    "dashboard.template.thumbnail.set": (
+        PositionalSpec(name="template_id", type=str, required=True, help="ID of the template."),
+        PositionalSpec(
+            name="file",
+            type=str,
+            required=True,
+            help="Path to a local PNG, JPEG or WebP image (1 MB at most).",
+            example_value="card.png",
+        ),
+    ),
+    "dashboard.gallery.get": (
+        PositionalSpec(name="slug", type=str, required=True, help="Template slug."),
+    ),
     # The invite is named in ``--input`` (``invite_id``), never positionally.
     "workspace.invite.update-role": (),
     "agent.run.status": (),

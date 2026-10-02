@@ -7588,3 +7588,123 @@ methods:
   pagination_policy: null
   secret_fields: []
   reviewed_by: primary
+- sdk_symbol: mammoth.api.billing.BillingAPI.stripe_resume
+  implementation_origin: mammoth.api.billing.BillingAPI.stripe_resume
+  signature: 'stripe_resume(self) -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: billing.stripe.resume
+  alias_of: null
+  no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.billing.BillingAPI.stripe_recheck_limits
+  implementation_origin: mammoth.api.billing.BillingAPI.stripe_recheck_limits
+  signature: 'stripe_recheck_limits(self) -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: billing.stripe.recheck-limits
+  alias_of: null
+  no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.billing.BillingAPI.stripe_storage_update
+  implementation_origin: mammoth.api.billing.BillingAPI.stripe_storage_update
+  signature: 'stripe_storage_update(self, storage_gb: ''int'') -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: billing.stripe.storage.set
+  alias_of: null
+  no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.browse.BrowseAPI.resource_ancestors
+  implementation_origin: mammoth.api.browse.BrowseAPI.resource_ancestors
+  signature: 'resource_ancestors(self, resource_id: ''int'', project_id: ''int | None'' = None) -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: browse.ancestors
+  alias_of: null
+  no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.browse.BrowseAPI.resources_search
+  implementation_origin: mammoth.api.browse.BrowseAPI.resources_search
+  signature: 'resources_search(self, search: ''str | None'' = None, resource_type: ''str | None'' = None, cursor: ''str | None'' = None, limit: ''int | None'' = None, sort: ''str | None'' = None, fields: ''str | None'' = None) -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: browse.search
+  alias_of: null
+  no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.template_thumbnail_get
+  implementation_origin: mammoth.api.dashboards.DashboardsAPI.template_thumbnail_get
+  signature: 'template_thumbnail_get(self, template_id: ''str'') -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: dashboard.template.thumbnail.get
+  alias_of: null
+  no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.template_thumbnail_set
+  implementation_origin: mammoth.api.dashboards.DashboardsAPI.template_thumbnail_set
+  signature: 'template_thumbnail_set(self, template_id: ''str'', file: ''str | Path'') -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: dashboard.template.thumbnail.set
+  alias_of: null
+  no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.template_thumbnail_clear
+  implementation_origin: mammoth.api.dashboards.DashboardsAPI.template_thumbnail_clear
+  signature: 'template_thumbnail_clear(self, template_id: ''str'') -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: dashboard.template.thumbnail.clear
+  alias_of: null
+  no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.gallery_list
+  implementation_origin: mammoth.api.dashboards.DashboardsAPI.gallery_list
+  signature: 'gallery_list(self, function: ''str | None'' = None, industry: ''str | None'' = None) -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: dashboard.gallery.list
+  alias_of: null
+  no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.gallery_get
+  implementation_origin: mammoth.api.dashboards.DashboardsAPI.gallery_get
+  signature: 'gallery_get(self, slug: ''str'') -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: dashboard.gallery.get
+  alias_of: null
+  no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary

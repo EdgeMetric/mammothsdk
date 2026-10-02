@@ -71,11 +71,13 @@ S2_ROUTE_INVENTORY = frozenset(
         "annotation.delete",
         "annotation.list",
         "annotation.update",
+        "browse.ancestors",
         "browse.folder",
         "browse.project",
         "browse.resource",
         "browse.resources",
         "browse.root",
+        "browse.search",
         "browse.workspace",
         "dataset.bulk-delete",
         "dataset.bulk-update",
@@ -205,7 +207,7 @@ def _write(tmp_path: Path, value: object) -> str:
 
 def test_inventory_is_exactly_the_closed_s2_surface() -> None:
     assert S2_COMMANDS == S2_ROUTE_INVENTORY
-    assert len(S2_ROUTE_INVENTORY) == 101
+    assert len(S2_ROUTE_INVENTORY) == 103
     for command_id in sorted(S2_ROUTE_INVENTORY):
         record = command_by_id(command_id)
         assert record is not None

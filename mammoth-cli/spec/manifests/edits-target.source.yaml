@@ -32,6 +32,8 @@ edits_target_commands:
 - billing.stripe.end-trial
 - billing.stripe.payment-method.delete
 - billing.stripe.payment-method.set-default
+- billing.stripe.resume
+- billing.stripe.storage.set
 - billing.subscription.update
 - client-app.delete
 - client-app.update
@@ -76,6 +78,8 @@ edits_target_commands:
 - dashboard.tags.set
 - dashboard.template.delete
 - dashboard.template.rename
+- dashboard.template.thumbnail.clear
+- dashboard.template.thumbnail.set
 - dashboard.trash
 - dashboard.update
 - data-app.delete

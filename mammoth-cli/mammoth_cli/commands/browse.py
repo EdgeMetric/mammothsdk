@@ -195,3 +195,24 @@ def browse_resource(invocation: Invocation) -> HandlerResult:
             project_id=project_id,
         )
     return data, _meta(invocation, auth.workspace_id, project_id)
+
+
+def browse_ancestors(invocation: Invocation) -> HandlerResult:
+    """Get the folder path (root first) down to a folder of the active project."""
+    project_id = require_project(invocation)
+    resource_id = _require_int_positional(invocation, "resource id")
+    with open_service(invocation) as (service, auth):
+        data = service.call(_symbol(invocation), resource_id=resource_id, project_id=project_id)
+    return data, _meta(invocation, auth.workspace_id, project_id)
+
+
+def browse_search(invocation: Invocation) -> HandlerResult:
+    """Search resources across every project of the workspace (resources v2)."""
+    document = invocation.load_input() or {}
+    kwargs: dict[str, Any] = {}
+    _forward_optional(
+        document, kwargs, ("search", "resource_type", "cursor", "limit", "sort", "fields")
+    )
+    with open_service(invocation) as (service, auth):
+        data = service.call(_symbol(invocation), **kwargs)
+    return data, _meta(invocation, auth.workspace_id, None)
