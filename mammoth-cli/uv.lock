@@ -537,7 +537,7 @@ wheels = [
 
 [[package]]
 name = "mammoth-cli"
-version = "2.2.8"
+version = "2.2.9"
 source = { editable = "." }
 dependencies = [
     { name = "jsonschema" },
@@ -565,7 +565,7 @@ dev = [
 requires-dist = [
     { name = "jsonschema", specifier = ">=4.20" },
     { name = "keyring", specifier = ">=25.7,<26" },
-    { name = "mammoth-io", specifier = ">=0.8.9,<0.9" },
+    { name = "mammoth-io", specifier = ">=0.8.10,<0.9" },
     { name = "platformdirs", specifier = ">=4.10,<5" },
     { name = "pydantic", specifier = ">=2.12.5,<3" },
     { name = "pyyaml", specifier = ">=6,<7" },
@@ -586,15 +586,15 @@ dev = [
 
 [[package]]
 name = "mammoth-io"
-version = "0.8.9"
+version = "0.8.10"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "httpx" },
     { name = "pydantic" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/ad/3d/47e32914895558039165a896b8dd03395c9ae70ae1923e33d13ea07d3461/mammoth_io-0.8.9.tar.gz", hash = "sha256:4038177aa15577727020483b41512480f9dec0a1a430aac68e3b5a1a32c0a3e8", size = 553709, upload-time = "2026-10-02T15:20:24.2Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/fa/d7/4e02a2af86972a103a86e64f5c58247b2335377bca14b3bb64fd7a31c18a/mammoth_io-0.8.10.tar.gz", hash = "sha256:a2e5dd680a506b89ca695461a31deb38efae0abdd4f7215b217ffd4ad7add07b", size = 554762, upload-time = "2026-10-02T16:12:34.953Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/9c/8d/e52a2aaa5776600354ec490af81db7846720cd6d584f39253108ba1180ea/mammoth_io-0.8.9-py3-none-any.whl", hash = "sha256:73dd8e1ddd669230a136f7010cfa61bde31ccc220ed02ba286adc2ff9714273a", size = 285120, upload-time = "2026-10-02T15:20:21.704Z" },
+    { url = "https://files.pythonhosted.org/packages/54/8f/6bb0fe31f8067fdb902ac2faee853980c5d6d43cffa3300fe144f5f1e86b/mammoth_io-0.8.10-py3-none-any.whl", hash = "sha256:5fd8b2495b7f966a319149ca7ce8a29a58714d6a6146eff802def16013ad6425", size = 285917, upload-time = "2026-10-02T16:12:31.878Z" },
 ]
 
 [[package]]
