@@ -10,6 +10,7 @@ seam to the public SDK method named by the command's reviewed manifest
 
 from __future__ import annotations
 
+import re
 from typing import Any
 
 from mammoth_cli.errors.envelope import (
@@ -149,13 +150,18 @@ def _visible_projects(service: Any) -> list[dict[str, Any]]:
     return list(service.list_all_projects())
 
 
+def _squash(text: str) -> str:
+    """Lowercase ``text`` with each run of space, ``_``, ``-`` or ``.`` as one space."""
+    return " ".join(part for part in re.split(r"[_.\s-]+", text.lower()) if part)
+
+
 def _find_in_projects(
     service: Any,
     needle: str,
     projects: list[dict[str, Any]],
     skipped: list[dict[str, Any]] | None = None,
 ) -> list[dict[str, Any]]:
-    """Datasets whose name contains ``needle`` (case-insensitive), in each of ``projects``.
+    """Datasets whose name contains ``needle`` (case-insensitive, separators alike), in each of ``projects``.
 
     A project that cannot be read does not end the search: with ``skipped`` it is
     recorded there (id, name, why) and the rest are still searched.
@@ -185,7 +191,7 @@ def _find_in_projects(
         datasets = response.get("datasets", []) if isinstance(response, dict) else []
         for dataset in datasets:
             name = dataset.get("name") if isinstance(dataset, dict) else None
-            if isinstance(name, str) and needle in name.lower():
+            if isinstance(name, str) and _squash(needle) in _squash(name):
                 matches.append(
                     {
                         "project_id": project_id,
