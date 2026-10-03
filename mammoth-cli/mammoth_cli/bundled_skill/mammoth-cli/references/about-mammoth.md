@@ -143,7 +143,12 @@ No command:
   existing dataset with `view export dataset` (`target_ds_id` and
   `save_as_mode` `APPEND_TO_DS`). An append is a standing link: it is stored
   as a pipeline step of the source view, so every later re-run of that view
-  appends again into the target dataset, not just the first run. To stack
+  appends again into the target dataset, not just the first run. A column
+  with the same name but a different type in the source view and the target
+  dataset (say `date` as text against `date` as date) would land in a
+  separate column, so the export is refused with `append_type_mismatch`
+  before anything is written; `view transform convert-type` on the source
+  view aligns the type. To stack
   rows into a brand-new dataset instead of an existing one, omit
   `target_ds_id`. A row present in both sources lands twice: note the
   appended view's `row_count` (`view get`) and its `duplicates` fact

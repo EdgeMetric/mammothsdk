@@ -78,6 +78,7 @@ ERROR_SUMMARIES: dict[str, str] = {
     ),
     "api_error": "Mammoth couldn't complete this step.",
     "append_schema_mismatch": "The new data doesn't line up with the existing columns.",
+    "append_type_mismatch": "A column has a different type than in the existing data.",
     "append_schema_unreadable": "The columns of the existing data couldn't be read.",
     "authentication_failed": "Mammoth didn't accept the sign-in for this step.",
     "authorization_required": "You don't have permission to do this.",
