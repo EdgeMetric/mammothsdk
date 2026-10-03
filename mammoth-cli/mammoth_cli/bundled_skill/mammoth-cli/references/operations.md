@@ -176,6 +176,15 @@ them, so never report them as access denied. Pass `include_non_members: true`
 only when the user asks about projects they are not in; each row then carries
 `member`.
 
+## Conditional formatting
+
+Colour cells in many columns by one threshold in a single command:
+`view conditional-format create --input '{"columns": ["Q1", "Q2"], "operator": "<", "value": 55, "color": "red"}'`
+(display names). Each cell is judged by its own value, so this makes one rule
+per column in that one call and returns every created rule id. `applies_to: "row"`
+makes one rule that colours whole rows when any (`match: "any"`, default) or all
+(`"all"`) of the columns match. A raw `rule` body still works.
+
 ## Exports
 
 First inspect `view.export.list/get` for existing configuration and the exact

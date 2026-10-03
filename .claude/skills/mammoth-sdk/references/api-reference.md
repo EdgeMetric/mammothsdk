@@ -92,6 +92,7 @@ datasets = await client.datasets.list()                            # list all
 dataset = await client.datasets.get(dataset_id=123)                # get one
 await client.datasets.delete(dataset_id=123)                       # delete
 batches = await client.datasets.list_batches(dataset_id=123)       # list data batches
+hits = await client.datasets.search("New Year Sale")              # name, column or sampled value
 ```
 
 ---

@@ -350,6 +350,24 @@ _VIEW_DATA_PROFILE_FIELDS = (
     FieldSpec("limit", required=False, annotation=int, default=50),
 )
 
+# view.conditional-format.create: ``rule`` (raw body) stays accepted; the typed fields build one
+# rule per column (per-cell threshold) or one row rule (see
+# mammoth_cli.services.conditional_format). ``rule`` is therefore optional here -- the handler
+# requires one form or the other.
+_VIEW_CF_CREATE_FIELDS = (
+    FieldSpec("dataset_id", required=True, annotation=int),
+    FieldSpec("rule", required=False, annotation=dict[str, Any] | None, default=None),
+    FieldSpec("columns", required=False, annotation=list[str] | None, default=None),
+    FieldSpec("operator", required=False, annotation=str | None, default=None),
+    FieldSpec("value", required=False, annotation=Any, default=None),
+    FieldSpec("color", required=False, annotation=str | None, default=None),
+    FieldSpec("name", required=False, annotation=str | None, default=None),
+    FieldSpec(
+        "applies_to", required=False, annotation=Literal["row", "columns"] | None, default=None
+    ),
+    FieldSpec("match", required=False, annotation=Literal["any", "all"] | None, default=None),
+)
+
 # dashboard.filter.add/remove are CLI composites over canvas get + canvas save
 # (DashboardsAPI.canvas_save is named in the manifest as the SDK anchor); the
 # canvas body is built by the handler, so the document carries only the filter.
@@ -760,6 +778,8 @@ def resolve_command_contract(command_id: str) -> ResolvedCommandContract | None:
         special_fields = _DASHBOARD_FILTER_ADD_FIELDS
     elif command_id == "dashboard.filter.remove":
         special_fields = _DASHBOARD_FILTER_REMOVE_FIELDS
+    elif command_id == "view.conditional-format.create":
+        special_fields = _VIEW_CF_CREATE_FIELDS
     elif command_id == "dashboard.filter.list":
         special_fields = ()
     local_fields = _LOCAL_CONTRACT_FIELDS.get(command_id, ()) if is_local else None

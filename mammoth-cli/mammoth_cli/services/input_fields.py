@@ -226,22 +226,13 @@ _EXAMPLE_INPUT_HINTS: dict[str, dict[str, Any]] = {
     },
     "view.ai.profile": {"dataset_id": 456, "action": "insights"},
     "connector.query.generate": {"query": "Total sales for January"},
-    # HighlightEntry: cf_type + payload{FORMAT, CONDITION keyed by internal
-    # column name}; the create response and ``conditional-format list`` carry
-    # the generated rule_id that delete-all needs.
+    # One rule over many columns; the create response and ``conditional-format
+    # list`` carry the generated rule_id that delete-all needs.
     "view.conditional-format.create": {
-        "rule": {
-            "cf_type": "RULE",
-            "payload": {
-                "FORMAT": {
-                    "name": "Flag open orders",
-                    "color": "red",
-                    "applies_to": "row",
-                    "column_ids": "[]",
-                },
-                "CONDITION": {"OR": [{"column_1": {"CONTAINS": {"VALUE": ["Open"]}}}]},
-            },
-        }
+        "columns": ["Q1", "Q2", "Q3"],
+        "operator": "<",
+        "value": 55,
+        "color": "red",
     },
     "view.conditional-format.delete-all": {"rule_id": "bca0ff33bd6f8ed1"},
     "dataset.bulk-delete": {"dataset_ids": [456, 457]},

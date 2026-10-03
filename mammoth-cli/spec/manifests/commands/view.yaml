@@ -593,9 +593,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view conditional-format create VIEW_ID --help
-  agent_example: 'mammoth view conditional-format create 123 123 --input ''{"rule": {"cf_type": "RULE",
-    "payload": {"FORMAT": {"name": "Flag open orders", "color": "red", "applies_to": "row", "column_ids":
-    "[]"}, "CONDITION": {"OR": [{"column_1": {"CONTAINS": {"VALUE": ["Open"]}}}]}}}}'''
+  agent_example: 'mammoth view conditional-format create 123 123 --input ''{"columns": ["Q1", "Q2",
+    "Q3"], "operator": "<", "value": 55, "color": "red"}'''
   unit_tests:
   - UT-VIEW-CONDITIONAL-FORMAT-CREATE
   contract_tests:
@@ -604,9 +603,10 @@ commands:
   - CT-VIEW-CONDITIONAL-FORMAT-CREATE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: 'rule is forwarded verbatim and dispatches. The release backend requires {"cf_type":
-    "RULE"|"COLOR_SCALE", "payload": {...}} with a CONDITION (RULE) or scale (COLOR_SCALE) inside payload;
-    other shapes return HTTP 400 4GENR007. Untyped; no working payload observed yet.'
+  known_restrictions: 'columns + operator + value + color colour each cell by its own value: one RULE
+    per column, created in this one call (applies_to columns, the default). applies_to row makes
+    one rule over any/all (match) of the columns. A raw rule body ({"cf_type": "RULE"|"COLOR_SCALE",
+    "payload": {...}}) still works instead; applies_to must be row or columns.'
   reviewed_by: primary
 - command_id: view.conditional-format.delete-all
   command_path: view conditional-format delete-all
