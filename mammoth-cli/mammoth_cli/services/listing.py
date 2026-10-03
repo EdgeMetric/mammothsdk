@@ -37,11 +37,8 @@ _SAMPLE_COLUMNS = 6
 _SAMPLE_VALUES = 2
 #: A longer value is cut to this many characters and ends in "…", so a cut is visible.
 _MAX_CELL_CHARS = 40
-#: Room reserved per view for its sample values, added after the size check. Worst case in
-#: JSON characters: a cut value is 40 + "\u2026" (escaped, 6) + 2 quotes = 48; a column's
-#: two values are 2 x 48 + comma + brackets = 99; plus a 20-char name key (23) and a comma
-#: = 123; 6 columns = 738; plus the `,"sample_values":{}` wrapper (19) = 757, rounded up.
-SAMPLE_ALLOWANCE = 760
+#: Room reserved per view for its sample values, added after the size check.
+SAMPLE_ALLOWANCE = 150
 #: Concurrent stored-stats reads for one list.
 _STATS_WORKERS = 4
 _SOURCE_KINDS = {
