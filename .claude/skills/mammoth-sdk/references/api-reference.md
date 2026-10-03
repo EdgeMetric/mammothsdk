@@ -242,8 +242,9 @@ AI-powered dashboards.
 
 ```python
 dashboards = await client.dashboards.list()
-dashboard = await client.dashboards.create(config={...})
-data = await client.dashboards.get_publish_data(dashboard_id=1, sql="SELECT ...")
+job = await client.dashboards.generate_v3({...})   # GenerateV3Params or dict; returns the build job id
+blank = await client.dashboards.create_blank(params)  # CreateBlankParams; empty v3 dashboard bound to a dataview
+data = await client.dashboards.get_publish_data(dashboard_id=1, widget_id="w1")  # optional global_filters, drilldown_filters
 ```
 
 ---
@@ -264,7 +265,10 @@ Scheduled tasks and orchestration.
 
 ```python
 automations = await client.automations.list()
-automation = await client.automations.create(config={...})
+automation = await client.automations.create(
+    name="Nightly refresh", description="", tasks=[AutomationTaskSpec(...)],
+    conditions=[AutomationConditionSpec(...)],  # optional; condition_mode=AutomationConditionMode.AND by default
+)
 schedules = await client.automations.list_schedules()
 ```
 
@@ -279,7 +283,7 @@ AI features.
 profile = await client.ai.generate_profile(dataview_id=456)
 
 # Generate synthetic data
-data = await client.ai.generate_data(dataview_id=456, config={"columns": ["Name", "Age"], "num_rows": 100})
+data = await client.ai.generate_data(dataview_id=456, prompt="customers", no_of_rows=100, columns=["Name", "Age"])
 
 # Get AI suggestions for the current project
 suggestions = await client.ai.get_suggestions()
@@ -313,7 +317,55 @@ app = await client.client_apps.create(app_name="My Integration")
 view = await client.get_view(view_id=1039)
 
 # Branch out (export view to another dataset)
-await client.branch_out(view_id=1039, dest_dataset_id=42)
+new_id = await client.branch_out(view_id=1039, dataset_name="Q1 snapshot")   # target_ds_id=42 writes into an existing dataset
 ```
 
-Note: `get_view()` and `branch_out()` no longer accept `dataset_id` — it's auto-detected from the view.
+`branch_out` returns the id of the dataset written to. `get_view()` and `branch_out()` do not accept `dataset_id` — it's auto-detected from the view.
+
+---
+
+## Other sub-clients
+
+Every public method of the sub-clients not described above, by name. All are coroutines (`await client.<attr>.<method>(...)`); read the signature with `help(client.<attr>.<method>)` or the source in `mammoth/api/`. Most take optional `workspace_id`/`project_id` defaults from the client.
+
+- `client.agents` (AgentsAPI): `chat`, `session_delete`, `session_list`, `session_messages`, `session_set_visibility`, `action_list`, `action_delete`, `run_status`, `run_list`, `run_pause`, `run_resume`, `run_stop`, `run_extend`, `run_units_set`, `turn_cancel`
+- `client.annotations` (AnnotationsAPI): `list`, `create`, `delete`, `update`, `comment_add`
+- `client.billing` (BillingAPI): `chargebee_plan`, `hosted_page`, `stripe_checkout_url`, `stripe_portal_url`, `stripe_get`, `stripe_create`, `stripe_cancel`, `stripe_end_trial`, `stripe_retry_payment`, `stripe_sync`, `stripe_status`, `stripe_history`, `stripe_usage`, `stripe_preview_invoice`, `stripe_upcoming_invoice`, `stripe_resume`, `stripe_recheck_limits`, `stripe_storage_update`, `stripe_payment_method_list`, `stripe_payment_method_set_default`, `stripe_payment_method_delete`, `invoice_list`, `invoice_charge`, `subscription_get`, `subscription_update`
+- `client.checkpoints` (CheckpointsAPI): `list`, `get`, `create`, `update`, `delete`
+- `client.connector_ai` (ConnectorAIAPI): `chat`, `history`, `session_list`, `session_messages`, `submit_column_selection`, `submit_credentials`
+- `client.data_apps` (DataAppsAPI): `list`, `get`, `create`, `update`, `delete`, `active_job`, `job`, `pipeline_changes`, `share`, `upload`, `user_list`, `user_remove`
+- `client.data_checks` (DataChecksAPI): `list`, `get`, `create`, `update`, `delete`
+- `client.derivatives` (DerivativesAPI): `list`, `create`, `data`, `update`, `delete`
+- `client.notifications` (NotificationsAPI): `list`, `delete`, `delete_batch`, `update`, `update_batch`
+- `client.parameters` (ParametersAPI): `list`, `create`, `get`, `update`, `delete`, `dependencies`, `duplicate`, `rerun`, `rerun_all_stale`, `group_list`, `group_create`, `group_update`, `group_delete`, `group_reorder`
+- `client.pipeline_versions` (PipelineVersionsAPI): `list`, `get`, `apply`, `update`, `delete`
+- `client.snippets` (SnippetsAPI): `list`, `create`, `get`, `update`, `delete`, `dependencies`, `duplicate`, `rerun`
+- `client.support` (SupportAPI): `plan_list`, `plan_self_serve_list`, `plan_chargebee_list`, `plan_get`, `plan_create`, `plan_update`, `plan_update_storage_tiers`, `plan_delete`, `plan_archive`, `plan_unarchive`, `plan_storage_option_list`, `plan_storage_option_create`, `plan_storage_option_update`, `plan_storage_option_archive`, `feature_list`, `feature_create`, `feature_update`, `feature_delete`, `feature_profile_list`, `feature_profile_create`, `feature_profile_update`, `feature_profile_delete`, `feature_profile_add_feature`, `connector_list`, `connector_create`, `connector_update`, `connector_delete`, `connector_profile_list`, `connector_profile_create`, `connector_profile_update`, `connector_profile_delete`, `connector_profile_add_connector`, `subscription_get`, `subscription_create`, `subscription_update`, `user_register`, `user_update`, `user_list_all`, `ownership_transfer`, `workspace_list`, `workspace_get`, `workspace_create`, `workspace_update`, `workspace_delete`, `workspace_suspend_access`, `workspace_restore_access`, `workspace_user_list`, `workspace_user_add`, `workspace_user_remove`, `workspace_user_transfer`, `template_list`, `template_edit`, `template_data_preview`, `template_canvas`, `template_publish`, `template_unpublish`, `template_retire`, `template_inspect`, `template_import`, `template_thumbnail_set`, `template_thumbnail_clear`, `template_discard`, `template_snapshots`, `template_audit`, `template_export`, `template_export_dashboard`
+- `client.templates` (TemplatesAPI): `list`, `get`, `create`, `update`, `delete`
+- `client.trash` (TrashAPI): `list`, `add`, `restore`
+- `client.users` (UsersAPI): `avatar_delete`, `avatar_upload`, `delete_account`
+- `client.workflows` (WorkflowsAPI): `list`, `create`, `get`, `update`, `delete`, `graph`, `cleanup`, `from_template`, `workspace_datasets`, `workspace_exports`, `workspace_sources`, `block_add`, `block_auth`, `block_type`, `block_config`, `canvas`
+- `client.workspace` (WorkspacesAPI): `accept_invite`, `create`, `check_expression`, `llm_task`, `app_usage`, `home_summary`, `storage_breakdown`, `segment_list`, `segment_update`, `user_add`, `user_remove`, `user_remove_batch`, `user_update_batch`, `invite_list`, `invite_resend`, `invite_revoke`, `invite_role_update`, `invite_delete`
+
+### Further methods on the documented sub-clients
+
+Methods added since the sections above were written (same convention):
+
+- `client.files`: `upload_folder`, `set_password`, `extract_sheets`
+- `client.jobs`: `get_jobs`
+- `client.exports`: `publish_db`, `publish_db_update`, `to_s3`, `to_dataset`, `to_csv_url`
+- `client.workspaces`: `reactivate`, `get_user`, `update_user`
+- `client.projects`: `bulk_update`, `add_users`, `remove_users`, `browse`, `checkpoint_list`, `data_check_list`, `pending_changes`, `needs_attention`, `list_agent_memory`, `add_agent_memory`, `remove_agent_memory`, `publish_credentials`, `resource_dependencies`, `resource_dependencies_update`, `resource_status`, `sample_flow`, `user_update`
+- `client.folders`: `get_project_root`, `move`, `trash`
+- `client.datasets`: `get_data`, `rename`, `delete_and_verify`, `bulk_update`, `preview_interpretation`, `confirm_interpretation`, `get_unstructured_rows`, `resolve_unstructured_rows`, `get_batch`, `get_batch_data`, `get_file_settings`, `create_from_pdf`, `file_settings_update`, `file_settings_undo`, `interpretation_preview`, `interpretation_confirm`, `restore`, `trash`
+- `client.dataviews`: `delete_impact`, `get_data`, `aggregate`, `explore`, `get_exportable_config`, `apply_exportable_config`, `active_users`, `mark_active`, `conditional_format_list`, `conditional_format_create`, `conditional_format_update`, `conditional_format_delete`, `parameter_context`, `restore`, `trash`
+- `client.pipeline`: `find_dataset_for_dataview`, `get_pipeline`, `update_task`, `get_draft_status`, `reconcile_draft_submission`, `edit_pipeline`, `wait_for_pipeline`, `items`, `items_all`, `latest_task_sequence`, `rerun`
+- `client.connectors`: `get_connection`, `update_connection`, `delete_connection`, `list_ds_configs`, `create_ds_config`, `get_ds_config`, `update_ds_config`, `delete_ds_config`, `ds_config_delete_all`, `active_connectors`
+- `client.dashboards`: `list_tags`, `rename_tag`, `set_tags`, `delete_tag`, `merge_tag`, `create_blank`, `generate_v3`, `add_pages`, `extract_context`, `extract_exemplar`, `swap_data`, `take_pending_template`, `use_template`, `assess_twb`, `assess_pbix`, `import_workbook`, `powerbi_preflight`, `tableau_preflight`, `powerbi_export_artifact`, `tableau_export_artifact`, `export_powerbi`, `export_tableau`, `archive`, `get_sources`, `get_analytics`, `share`, `action`, `get_by_url`, `get_draft_data`, `cancel_generation`, `job_by_url`, `wait_for_job_by_url`, `published_data_by_url`, `restore`, `trash`, `widget_data`, `widget_data_by_url`, `embed_config_get`, `embed_config_set`, `embed_key_rotate`, `embed_usage_get`, `embed_usage_summary`, `format_preview`, `swap_fit`, `audience`, `audience_digest_get`, `audience_digest_set`, `audience_summary`, `column_roster`, `context_review`, `context_apply`, `qa_insights`, `template_thumbnail_get`, `template_thumbnail_set`, `template_thumbnail_clear`, `gallery_list`, `gallery_get`, `embed_origin_revoke`, `embed_preview_token_create`, `embed_secret_rotate`, `embed_lifetime_set`, `analytics`, `source_list`, `data_draft`, `data_published`, `rls_column_list`, `rls_value_list`, `rls_assignment_list`, `rls_assignment_set`, `query`, `template_apply`, `chat_history`, `chat_edit`, `suggestion_list`, `descriptor_data`, `published_data`, `duplicate`, `pdf_export`, `published_pdf_export`, `video_export`, `published_video_export`, `figure_intent`, `v3_generate`, `canvas_get`, `canvas_save`, `published_canvas`, `pdf_artifact`, `published_pdf_artifact`, `video_state`, `og_card`, `published_og_card`, `page_plan`, `template_preview`, `template_resolve_mapping`, `canvas_restore`, `published_share_page`, `published_video_artifact`, `qa_comment_create`, `qa_ask`, `qa_session_list`, `qa_session_create`, `qa_comment_delete`, `qa_session_get`, `qa_session_delete`, `qa_session_fork`, `qa_settings_get`, `qa_settings_set`, `qa_session_rename`, `qa_feedback`, `qa_session_set_visibility`, `context_list`, `context_create`, `style_custom_list`, `style_custom_create`, `signature_list`, `signature_create`, `context_update`, `context_delete`, `style_custom_update`, `style_custom_delete`, `signature_update`, `signature_delete`, `template_get`, `template_delete`, `template_rename`, `style_derive`, `style_extract_brand`, `template_fit`, `style_default_get`, `style_default_set`, `style_token_list`, `style_preset_list`, `template_list`, `template_create`
+- `client.webhooks`: `send_data`, `send_data_get`
+- `client.automations`: `capabilities`, `restore`, `trash`, `create_schedule`, `update_schedule`, `delete_schedule`
+- `client.ai`: `get_data_gen_info`, `generate_sql`, `query_gen`, `condition_generate`, `expression_generate`, `retention_condition`
+- `client.batches`: `create_spec`
+- `client.browse`: `root`, `workspace_resources`, `folder_resources`, `resources_list`, `resource_get`, `resource_ancestors`, `resources_search`, `resources_bulk`
+- `client.user_profile`: `change_password`, `get_preferences`, `update_preferences`
+- `client.addons`: `add_connector`, `remove_connector`, `add_storage`, `remove_storage`, `add_users`, `remove_users`

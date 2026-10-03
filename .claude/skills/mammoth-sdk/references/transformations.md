@@ -139,6 +139,16 @@ await view.math("(Revenue - Cost) / Revenue * 100", new_column="Margin %")
 
 String expression parser: column names are auto-resolved, supports `+`, `-`, `*`, `/`, `%`, and parentheses. A multi-word name works bare (`Unit Price * Quantity`) or quoted (`"Unit Price"` or `` `Unit Price` ``, 0.7.15+).
 
+### small_large(function, columns, index=1, constants=None, new_column=None, existing_column=None)
+
+Per row, write the `index`-th smallest or largest value among `columns` (and optional numeric `constants`) to a new or existing column; give exactly one of `new_column` / `existing_column`.
+
+```python
+from mammoth import SmallLargeFunction
+
+await view.small_large(SmallLargeFunction.LARGE, columns=["Q1", "Q2", "Q3"], index=2, new_column="2nd Best")
+```
+
 ---
 
 ## Text Operations
@@ -397,9 +407,9 @@ Aggregate functions: `SUM`, `AVG`, `MIN`, `MAX`, `COUNT`, `COUNT_DISTINCT`, `STD
 
 **Payload**: GROUP_BY uses `COLUMN`/`ORDER` keys. SELECT uses `FUNCTION`/`COLUMN`/`AS`/`ORDER` keys.
 
-### crosstab(rows, pivot_column, select)
+### crosstab(rows, pivot_column, select, *, dataset_name, save_as_mode=SaveAsDatasetMode.REPLACE, target_ds_id=None, condition=None, timeout=None)
 
-Pivot table: row values become columns.
+Pivot table: row values become columns. Unlike other transforms it does not edit the view: it writes a NEW dataset (or `target_ds_id`, replacing or appending per `save_as_mode`) through an export job, waits for it, and returns the dataset id. `dataset_name` is required.
 
 ```python
 from mammoth import CrosstabSpec, AggregateFunction
@@ -408,6 +418,7 @@ await view.crosstab(
     rows=["Region"],
     pivot_column="Quarter",
     select=CrosstabSpec(function=AggregateFunction.SUM, column="Sales"),
+    dataset_name="Sales by Region x Quarter",
 )
 ```
 
@@ -456,9 +467,9 @@ Window functions: `ROW_NUMBER`, `RANK`, `DENSE_RANK`, `LAG`, `LEAD`, `SUM`, `AVG
 
 ## Join
 
-### join(foreign_view, join_type, on, select, column_prefix=None)
+### join(foreign_view, join_type, on, select, column_prefix=None, foreign_dataset_id=None)
 
-Join with another dataview.
+Join with another dataview. Pass `foreign_dataset_id` with an ID-only `foreign_view` so metadata is read from that dataset instead of probing parents.
 
 ```python
 from mammoth import JoinType, JoinKeySpec, JoinSelectSpec
@@ -496,9 +507,9 @@ Join types: `JoinType.INNER`, `JoinType.LEFT`, `JoinType.RIGHT`, `JoinType.OUTER
 
 ## Lookup
 
-### lookup(source, lookup_view_id, key, value, new_column=None, existing_column=None)
+### lookup(source, lookup_view_id, key, value, new_column=None, new_column_type="TEXT", existing_column=None, lookup_dataset_id=None)
 
-Lookup values from another dataview (like VLOOKUP).
+Lookup values from another dataview (like VLOOKUP). The new column is TEXT unless you pass `new_column_type` (use the real type of `value` for numbers or dates, or they will not sum or sort). `lookup_dataset_id` names the parent dataset of an ID-only lookup view.
 
 ```python
 await view.lookup(
@@ -541,9 +552,9 @@ await view.add_sql('SELECT department, AVG(base_salary) FROM "view:123" GROUP BY
 
 ## Unnest (Unpivot)
 
-### unnest(columns, label_column="Label", value_column="Value")
+### unnest(columns, label_column="Label", value_column="Value", value_type=None)
 
-Unpivot columns to rows.
+Unpivot columns to rows. `value_type` is derived when left unset (one shared type is kept; mixed types fall back to TEXT).
 
 ```python
 await view.unnest(

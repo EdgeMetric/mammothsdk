@@ -43,7 +43,7 @@ See [references/architecture.md](references/architecture.md) for the full SDK ar
 
 ### MammothClient
 
-Single entry point. Authenticates with an API token (`api_token="mm_..."`, sent as Bearer). All sub-clients are attributes:
+Single entry point. Authenticates with an API token (`api_token="mm_..."`, sent as Bearer) or an `api_key`/`api_secret` pair (which needs `workspace_id`). All 42 sub-clients are attributes; the first 24 are below, the rest are listed after the table:
 
 | Attribute | Class | Purpose |
 |-----------|-------|---------|
@@ -72,26 +72,30 @@ Single entry point. Authenticates with an API token (`api_token="mm_..."`, sent 
 | `client.addons` | AddonsAPI | Workspace addons |
 | `client.reports` | ReportsAPI | Report listing |
 
+Also on the client (method names in [references/api-reference.md](references/api-reference.md#other-sub-clients)): `agents`, `annotations`, `billing`, `checkpoints`, `connector_ai`, `data_apps`, `data_checks`, `derivatives`, `notifications`, `parameters`, `pipeline_versions`, `snippets`, `support`, `templates`, `trash`, `users`, `workflows`, and `workspace` (cross-workspace calls; note `workspaces` is `WorkspaceAPI`).
+
 ### View Object
 
 Rich domain object for a dataview. Created via `client.views.get(id)` or `client.views.create(dataset_id)`.
 
-**Architecture**: The View class uses a mixin pattern — transformation methods are organized into 8 mixin classes in `mammoth/_mixins/`:
+**Architecture**: The View class uses a mixin pattern — transformation methods are organized into 8 mixin classes in `mammoth/_mixins/` (plus `_host.py`, the typing host):
 
 - `ColumnOpsMixin`: add_column, delete_columns, copy_columns, combine_columns, convert_type, rename_columns
 - `FilterOpsMixin`: filter_rows, set_values
-- `MathOpsMixin`: math (string expression parser)
+- `MathOpsMixin`: math (string expression parser), small_large (Nth smallest/largest across columns)
 - `TextOpsMixin`: text_transform, replace_values, bulk_replace, split_column, substring
 - `DateOpsMixin`: extract_date, date_diff, increment_date
-- `AggregateOpsMixin`: pivot, window, crosstab
+- `AggregateOpsMixin`: pivot, window, crosstab (materialises a NEW dataset; `dataset_name` is required and the call returns its id)
 - `RowOpsMixin`: fill_missing, limit_rows, discard_duplicates, unnest, sort_rows
 - `AdvancedOpsMixin`: join, lookup, json_extract, gen_ai, generate_sql, add_sql
 
-**Metadata**: `view.columns`, `view.display_names`, `view.column_types`, `view.name`, `view.id`
+**Metadata**: `view.columns`, `view.display_names`, `view.column_types`, `view.name`, `view.id`; `await view.refresh()`, `view.get_metadata()`, `view.get_column_mapping()`
 **Data access**: `view.data(limit=100)`
 **Pipeline management**: `view.list_tasks()`, `view.delete_task(id)`, `view.preview_task(spec)`
 **Draft mode**: `view.draft()` (async context manager), `view.enter_draft_mode()`, `view.submit_draft()`, `view.discard_draft()`, `view.set_auto_run(bool)`
 **Exports**: `view.export.to_csv()`, `view.export.to_postgres()`, etc.
+**Save as dataset**: `await view.branch_out(dataset_name, target_ds_id=None, save_as_mode=SaveAsDatasetMode.REPLACE, column_mapping=None, condition=None)` returns the dataset id (new when `target_ds_id` is None); shortcut for `view.export.to_dataset`.
+**Dry run**: `with view.build_only():` validates and builds each transform, returns `{"status": "validated", "task_spec": ...}` and sends nothing.
 
 ### Condition Builder
 
@@ -159,6 +163,7 @@ await view.join(
 - String: `STARTS_WITH`, `ENDS_WITH`, `NOT_STARTS_WITH`, `NOT_ENDS_WITH`
 - Null: `IS_EMPTY`, `IS_NOT_EMPTY`
 - Aggregate: `IS_MAXVAL`, `IS_NOT_MAXVAL`, `IS_MINVAL`, `IS_NOT_MINVAL`
+- Other: `IN_RANGE`, `ICONTAINS`
 
 ## Transformations Reference
 
@@ -178,13 +183,13 @@ All enums extend `str, Enum` — they work as both enum values AND plain strings
 
 | Enum | Values | Used By |
 |------|--------|---------|
-| `Operator` | GT, LT, GTE, LTE, EQ, NE, IN_LIST, NOT_IN_LIST, CONTAINS, NOT_CONTAINS, STARTS_WITH, ENDS_WITH, IS_EMPTY, IS_NOT_EMPTY, IS_MAXVAL, IS_MINVAL | Condition builder |
+| `Operator` | GT, LT, GTE, LTE, EQ, NE, IN_LIST, NOT_IN_LIST, CONTAINS, NOT_CONTAINS, ICONTAINS, STARTS_WITH, ENDS_WITH, NOT_STARTS_WITH, NOT_ENDS_WITH, IS_EMPTY, IS_NOT_EMPTY, IS_MAXVAL, IS_NOT_MAXVAL, IS_MINVAL, IS_NOT_MINVAL, IN_RANGE | Condition builder |
 | `ColumnType` | TEXT, NUMERIC, DATE | add_column, set_values, copy_columns, combine, math, window |
 | `JoinType` | INNER, LEFT, RIGHT, OUTER | join() |
 | `TextCase` | UPPER, LOWER, TITLE | text_transform() |
-| `DateComponent` | year, month, day, hour, minute, second, week, quarter, day_of_week, day_of_year, weekday_text, month_text, year_month, year_week, year_quarter | extract_date() |
+| `DateComponent` | year, month, day, hour, minute, second, millisecond, week, quarter, weekday, day_of_year, weekday_text, month_text, month_year, year_month, year_month_number, year_month_day, year_month_day_as_date, month_day_year, month_day_year_hour_minute_second, hour_minute_second, hour_minute_second_millisecond | extract_date() |
 | `DateDiffUnit` | YEAR, MONTH, DAY, HOUR, MINUTE, SECOND, WEEK, QUARTER | date_diff() |
-| `WindowFunction` | ROW_NUMBER, RANK, DENSE_RANK, LAG, LEAD, SUM, AVG, MIN, MAX, COUNT, FIRST_VALUE, LAST_VALUE, STDDEV, VARIANCE | window() |
+| `WindowFunction` | ROW_NUMBER, RANK, DENSE_RANK, LAG, LEAD, SUM, AVG, MIN, MAX, COUNT, FIRST_VALUE, LAST_VALUE, STDDEV, VARIANCE, PERCENT_RANK, NTILE | window() |
 | `WindowRange` | UNBOUNDED, RUNNING | window() |
 | `AggregateFunction` | SUM, AVG, MIN, MAX, COUNT, COUNT_DISTINCT, STDDEV, VARIANCE, MEDIAN, FIRST, LAST, CONCAT | pivot(), crosstab() |
 | `FillDirection` | FIRST_VALUE, LAST_VALUE | fill_missing() |
@@ -197,13 +202,15 @@ All enums extend `str, Enum` — they work as both enum values AND plain strings
 | `ExportFileType` | CSV, JSON, PARQUET | to_s3() |
 | `TaskType` | SET, SELECT, MATH, JOIN, ... (27 values) | Pipeline task identification |
 | `ProviderType` | FIXED, EXPRESSION | set_values() |
+| `SaveAsDatasetMode` | REPLACE (`REPLACE_IN_DS`), APPEND (`APPEND_TO_DS`) | branch_out(), crosstab(), export.to_dataset() |
+| `SmallLargeFunction` | SMALL, LARGE | small_large() |
 
 ## Dataclasses
 
 | Class | Fields | Used By |
 |-------|--------|---------|
 | `SetValue` | `value: Any`, `condition: Condition \| CompoundCondition \| None` | set_values() |
-| `CopySpec` | `source: str`, `as_name: str \| None`, `type: ColumnType = TEXT`, `condition: Condition \| None` | copy_columns() |
+| `CopySpec` | `source: str`, `as_name: str \| None`, `type: ColumnType = TEXT`, `condition: Condition \| None`, `destination: str \| None` | copy_columns() |
 | `ConversionSpec` | `column: str`, `to: ColumnType`, `format: str \| None` | convert_type() |
 | `AggregationSpec` | `column: str`, `function: AggregateFunction`, `as_name: str \| None`, `delimiter: str \| None` | pivot() |
 | `CrosstabSpec` | `function: AggregateFunction`, `column: str \| None` | crosstab() |
@@ -220,25 +227,33 @@ All enums extend `str, Enum` — they work as both enum values AND plain strings
 |-----------|------|
 | `MammothError` | Base exception |
 | `MammothAPIError` | Any API call fails (non-2xx, timeout, connection error) |
-| `MammothAuthError` | Authentication fails (401/403) |
+| `MammothAuthError` | Authentication fails (401); subclass of `MammothAPIError` |
 | `MammothColumnError` | Column display name not found in view |
 | `MammothTransformError` | Transformation validation fails |
 | `MammothJobTimeoutError` | Job polling exceeds timeout |
+| `MammothPipelineTimeoutError` | Waiting for a view's pipeline exceeds `pipeline_timeout`; subclass of `MammothJobTimeoutError` |
 | `MammothJobFailedError` | Job completes with failure status |
+| `MammothValidationError` | Input rejected locally before any request (e.g. `small_large` with no columns) |
+| `MammothExportError` | An export completes but its result (e.g. the new dataset) cannot be resolved; `export_pending` may be set |
+| `MammothPaginationError` | A paginated read cannot prove forward progress |
+| `MammothDeletionVerificationError` | A delete acknowledgement cannot be reconciled to the resource's absence |
 
 ## Configuration Constants
 
 ```python
-from mammoth import DEFAULT_TIMEOUT, DEFAULT_JOB_TIMEOUT
+from mammoth import DEFAULT_TIMEOUT, DEFAULT_JOB_TIMEOUT, DEFAULT_PIPELINE_TIMEOUT, DEFAULT_JOB_POLL_SECONDS
 
 # DEFAULT_TIMEOUT = 30   seconds — max time for any single API call
 # DEFAULT_JOB_TIMEOUT = 60   seconds — max time to poll a job to completion
+# DEFAULT_PIPELINE_TIMEOUT = 3600   seconds — max time to wait for a pipeline run
+# DEFAULT_JOB_POLL_SECONDS = 2   seconds between job polls
 
 # Override per-client:
 client = MammothClient(
     api_token="mm_...", workspace_id=1,
     timeout=60,       # custom API timeout
     job_timeout=120,  # custom job timeout
+    pipeline_timeout=7200,  # custom pipeline wait
 )
 ```
 
@@ -279,7 +294,7 @@ For large datasets with many transformations, use draft mode to batch tasks:
 | `mammoth/exceptions.py` | Exception hierarchy |
 | `mammoth/helpers.py` | parse_path() URL parser |
 | `mammoth/__init__.py` | Public API exports |
-| `mammoth/api/*.py` | 23 API sub-client classes |
+| `mammoth/api/*.py` | 42 API sub-client classes (one module each, a few share) |
 | `mammoth/models/*.py` | Pydantic models for API schemas |
-| `tests/unit/` | 143 unit tests (no API calls) |
-| `tests/test_live_api.py` | 43 integration tests (release.mammoth.io) |
+| `tests/unit/` | ~2,400 unit tests (no API calls) |
+| `tests/integration/`, `tests/test_live_api.py` | live API tests (need credentials) |
