@@ -161,7 +161,7 @@ def _find_in_projects(
     projects: list[dict[str, Any]],
     skipped: list[dict[str, Any]] | None = None,
 ) -> list[dict[str, Any]]:
-    """Datasets whose name contains ``needle`` (case-insensitive, separators alike), in each of ``projects``.
+    """Datasets whose name contains ``needle`` (separators alike), in each of ``projects``.
 
     A project that cannot be read does not end the search: with ``skipped`` it is
     recorded there (id, name, why) and the rest are still searched.
