@@ -395,14 +395,22 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
     # active project). The SDK signature marks it required or omits it, so the
     # dual-sourced optional locator is authored here.
     "project.get": _optional_project_id(),
-    # ``project check PROJECT_ID DATASET_ID`` narrows the check to one dataset.
+    # ``project check PROJECT_ID DATASET_ID [VIEW_ID]`` narrows the check to one dataset,
+    # and to one of its views (its first, most recent one when VIEW_ID is omitted).
     "project.check": (
         *_optional_project_id(),
         PositionalSpec(
             name="dataset_id",
             type=int,
             required=False,
-            help="Check only this dataset's first view; no other dataset or dashboard is read.",
+            help="Check only this dataset (its first view unless VIEW_ID is given); "
+            "no other dataset or dashboard is read.",
+        ),
+        PositionalSpec(
+            name="view_id",
+            type=int,
+            required=False,
+            help="Check this view of DATASET_ID instead of its first (most recent) one.",
         ),
     ),
     "project.needs-attention": _optional_project_id(),

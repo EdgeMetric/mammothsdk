@@ -83,7 +83,9 @@ def test_project_check_lists_checked_and_skipped_datasets(
     ok = make_runner().invoke(["project", "check", "180", "55", "--output", "json"])
     assert ok.exit_code == 0, ok.output
     data = json.loads(ok.output)["data"]
-    assert data["checked"] == [{"dataset_id": 55, "view_id": VIEW_ID, "rows_checked": 2}]
+    assert data["checked"] == [
+        {"dataset_id": 55, "view_id": VIEW_ID, "view_name": "V", "rows_checked": 2}
+    ]
     assert data["skipped"] == []
 
     empty = make_runner().invoke(["project", "check", "180", "91", "--output", "json"])

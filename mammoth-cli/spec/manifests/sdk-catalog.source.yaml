@@ -421,14 +421,14 @@ sdk_methods:
 - sdk_symbol: mammoth.api.ai.AIAPI.condition_generate
   canonical_command: ai.condition.generate
   alias_of: null
-  mutation_class: null
+  mutation_class: read
   wait_policy: null
   pagination_policy: null
   openapi_operation_ids: []
 - sdk_symbol: mammoth.api.ai.AIAPI.expression_generate
   canonical_command: ai.expression.generate
   alias_of: null
-  mutation_class: null
+  mutation_class: read
   wait_policy: null
   pagination_policy: null
   openapi_operation_ids: []

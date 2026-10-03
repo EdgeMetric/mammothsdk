@@ -580,9 +580,9 @@ def _report_line(where: str, warning: dict[str, Any]) -> str:
     return f"{subject}: {warning.get('issue')}. {warning.get('detail', '')}".strip()
 
 
-def _scoped_dataset_id(invocation: Invocation) -> int | None:
-    """The DATASET_ID that narrows ``project check`` to one dataset, or None."""
-    raw = invocation.positional("dataset_id")
+def _scoped_id(invocation: Invocation, name: str) -> int | None:
+    """The integer positional ``name`` (``dataset_id``, ``view_id``), or None if omitted."""
+    raw = invocation.positional(name)
     if raw is None:
         return None
     try:
@@ -590,9 +590,26 @@ def _scoped_dataset_id(invocation: Invocation) -> int | None:
     except ValueError as exc:
         raise CliError(
             code=CODE_INVALID_ARGUMENT,
-            message=f"The dataset id argument '{raw}' is not an integer.",
+            message=f"The {name.replace('_', ' ')} argument '{raw}' is not an integer.",
             exit_status=EXIT_USAGE,
         ) from exc
+
+
+def _scoped_dataset_id(invocation: Invocation) -> int | None:
+    """The DATASET_ID that narrows ``project check`` to one dataset, or None."""
+    return _scoped_id(invocation, "dataset_id")
+
+
+def _scoped_view_id(invocation: Invocation, dataset_id: int | None) -> int | None:
+    """The VIEW_ID that picks which view of DATASET_ID ``project check`` reads, or None."""
+    view_id = _scoped_id(invocation, "view_id")
+    if view_id is not None and dataset_id is None:
+        raise CliError(
+            code=CODE_INVALID_ARGUMENT,
+            message="A view id needs its dataset: project check PROJECT_ID DATASET_ID VIEW_ID.",
+            exit_status=EXIT_USAGE,
+        )
+    return view_id
 
 
 def _datasets_to_check(service: Any, project_id: int, scoped: int | None) -> list[Any]:
@@ -647,14 +664,16 @@ def _map_checks[T](
         )
 
 
-def _preview_dataset(service: Any, _auth: Any, args: tuple[Any, int | None]) -> dict[str, Any]:
+def _preview_dataset(
+    service: Any, _auth: Any, args: tuple[Any, int | None, int | None]
+) -> dict[str, Any]:
     from mammoth_cli.commands.view import upload_preview
 
-    dataset, project_id = args
+    dataset, project_id, view_id = args
     dataset_id = dataset.get("id") if isinstance(dataset, dict) else None
     if not isinstance(dataset_id, int):
         return {"preview_error": "dataset entry has no integer id"}
-    return upload_preview(service, dataset_id, project_id)
+    return upload_preview(service, dataset_id, project_id, view_id)
 
 
 def _check_dashboard(invocation: Invocation) -> Callable[[Any, Any, Any], dict[str, Any]]:
@@ -678,6 +697,7 @@ def _dataset_entry(dataset: dict[str, Any], preview: dict[str, Any]) -> dict[str
         "dataset_id": dataset.get("id"),
         "dataset_name": dataset.get("name"),
         "view_id": preview["view_id"],
+        "view_name": preview.get("view_name"),
         "row_count": preview.get("row_count"),
         "column_warnings": preview.get("column_warnings", []),
         "column_checks": preview["column_checks"],
@@ -711,6 +731,7 @@ def _dataset_status(dataset: dict[str, Any], preview: dict[str, Any]) -> dict[st
     return {
         **row,
         "view_id": preview["view_id"],
+        "view_name": preview.get("view_name"),
         "freshness": preview.get("freshness", {"state": "unknown"}),
         "data_quality": {
             "warnings": len(preview.get("column_warnings", [])),
@@ -745,7 +766,9 @@ def project_check(invocation: Invocation) -> HandlerResult:
     one line per finding; ``resources`` has one status row per dataset and
     dashboard (freshness apart from data quality, or the error that stopped
     its check). Resources are checked several at once. Given a DATASET_ID it
-    reads only that dataset's first view (no dataset list, no dashboards).
+    reads only that dataset's first view (no dataset list, no dashboards);
+    given VIEW_ID as well it reads that view instead. Every status row names
+    the ``view_id`` and ``view_name`` it checked.
     Cold-agent evals (2.0.41) left one column's blanks undecided in every
     run, because the warning sat in an earlier result.
     """
@@ -758,6 +781,7 @@ def project_check(invocation: Invocation) -> HandlerResult:
     skipped: list[dict[str, Any]] = []
     statuses: list[dict[str, Any]] = []
     scoped_dataset = _scoped_dataset_id(invocation)
+    scoped_view = _scoped_view_id(invocation, scoped_dataset)
     with open_service(invocation) as (service, auth):
         every_dataset = _datasets_to_check(service, project_id, scoped_dataset)
         datasets = every_dataset[:_CHECK_MAX_DATASETS]
@@ -773,7 +797,7 @@ def project_check(invocation: Invocation) -> HandlerResult:
             invocation,
             service,
             auth,
-            [(dataset, project_id) for dataset in datasets],
+            [(dataset, project_id, scoped_view) for dataset in datasets],
             _preview_dataset,
         )
         for dataset, preview in zip(datasets, previews, strict=True):
@@ -788,13 +812,14 @@ def project_check(invocation: Invocation) -> HandlerResult:
                 )
                 continue
             entry = _dataset_entry(dataset, preview)
-            if "other_views" in preview:
+            if "other_views" in preview and scoped_view is None:
                 to_report.append(_other_views_line(dataset, preview))
             views.append(entry)
             checked.append(
                 {
                     "dataset_id": dataset["id"],
                     "view_id": preview["view_id"],
+                    "view_name": preview.get("view_name"),
                     "rows_checked": preview["column_checks"]["rows_checked"],
                 }
             )
@@ -834,7 +859,13 @@ def project_check(invocation: Invocation) -> HandlerResult:
         "checked": checked,
         "skipped": skipped,
         **(
-            {"scope": {"dataset_id": scoped_dataset, "dashboards": "not checked"}}
+            {
+                "scope": {
+                    "dataset_id": scoped_dataset,
+                    **({"view_id": scoped_view} if scoped_view else {}),
+                    "dashboards": "not checked",
+                }
+            }
             if scoped_dataset
             else {}
         ),

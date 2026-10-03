@@ -4096,8 +4096,17 @@ _DATAVIEW_LIST_SYMBOL = "mammoth.api.dataviews.DataviewsAPI.list"
 _UPLOAD_SAMPLE_ROWS = 3
 
 
-def upload_preview(service: Any, dataset_id: int, project_id: int | None) -> dict[str, Any]:
-    """The first view of a new dataset: columns, types, sample rows, warnings.
+def _select_view(views: list[Any], view_id: int | None) -> dict[str, Any] | None:
+    """The view with ``view_id``, or the first (most recent) one when none is named."""
+    if view_id is None:
+        return views[0]
+    return next((v for v in views if isinstance(v, dict) and v.get("id") == view_id), None)
+
+
+def upload_preview(
+    service: Any, dataset_id: int, project_id: int | None, view_id: int | None = None
+) -> dict[str, Any]:
+    """A view of a dataset (the first unless ``view_id``): columns, types, sample rows, warnings.
 
     ``before_dashboard`` names the columns to add before any dashboard is
     made (revenue from a unit price and a quantity), since a dashboard does
@@ -4116,16 +4125,19 @@ def upload_preview(service: Any, dataset_id: int, project_id: int | None) -> dic
         views = listing.get("dataviews") if isinstance(listing, dict) else None
         if not isinstance(views, list) or not views or not isinstance(views[0], dict):
             return {"preview_error": f"dataset {dataset_id} has no view to preview"}
+        chosen = _select_view(views, view_id)
+        if chosen is None:
+            return {"preview_error": f"dataset {dataset_id} has no view {view_id}"}
         # A dataset with more than one live view has one previewed here; the
         # rest are named (id + name) so a caller (``project.check``) can say
         # a view besides the one checked exists, rather than silently acting
         # on the single view this function happens to preview.
         other_views = [
             {"id": other.get("id"), "name": other.get("name")}
-            for other in views[1:]
-            if isinstance(other, dict) and isinstance(other.get("id"), int)
+            for other in views
+            if other is not chosen and isinstance(other, dict) and isinstance(other.get("id"), int)
         ]
-        record = apply_column_renames(views[0])
+        record = apply_column_renames(chosen)
         view_id = record.get("id")
         if not isinstance(view_id, int):
             return {"preview_error": f"dataset {dataset_id}'s first view has no id"}
@@ -4150,6 +4162,7 @@ def upload_preview(service: Any, dataset_id: int, project_id: int | None) -> dic
     checks, warnings = _check_columns(rows, types, view_id, dataset_id)
     preview: dict[str, Any] = {
         "view_id": view_id,
+        "view_name": record.get("name"),
         "row_count": record.get("row_count"),
         "columns": types,
         "sample_rows": rows[:_UPLOAD_SAMPLE_ROWS],

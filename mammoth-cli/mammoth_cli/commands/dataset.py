@@ -10,7 +10,7 @@ seam to the public SDK method named by the command's reviewed manifest
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Protocol
 
 from mammoth_cli.errors.envelope import (
     CODE_INVALID_ARGUMENT,
@@ -42,6 +42,13 @@ from mammoth_cli.services.listing import (
 )
 
 HandlerResult = tuple[Any, dict[str, Any]]
+
+
+_DATASET_GET_SYMBOL = "mammoth.api.datasets.DatasetsAPI.get"
+
+
+class _SdkCaller(Protocol):
+    def call(self, sdk_symbol: str, /, **kwargs: object) -> object: ...
 
 
 def _symbol(invocation: Invocation) -> str:
@@ -808,7 +815,9 @@ def dataset_create(invocation: Invocation) -> HandlerResult:
         # it here (honoring ``--job-timeout``) so the command reports a finished
         # dataset id instead of a job id the caller must poll separately.
         settled = service.wait_if_job(data)
-    return _created_dataset(data, settled), _meta(invocation, auth.workspace_id, project_id)
+        result = _created_dataset(data, settled)
+        _add_final_name(service, result, dataset_spec, project_id)
+    return result, _meta(invocation, auth.workspace_id, project_id)
 
 
 def _created_dataset(handle: Any, settled: Any) -> dict[str, Any]:
@@ -834,6 +843,40 @@ def _created_dataset(handle: Any, settled: Any) -> dict[str, Any]:
     if job_id is not None:
         result["job_id"] = job_id
     return result
+
+
+def _add_final_name(
+    service: _SdkCaller, result: dict[str, Any], dataset_spec: object, project_id: int
+) -> None:
+    """Add the name the server actually gave the new dataset to a create result.
+
+    The server appends a suffix when the requested name is taken, so the
+    requested name is not the dataset's name. The dataset already exists, so a failed
+    lookup must not fail (and invite a duplicate) create; it is reported in ``note``.
+    """
+    dataset_id = result.get("dataset_id")
+    if dataset_id is None:
+        return
+    try:
+        record = service.call(
+            _DATASET_GET_SYMBOL, dataset_id=dataset_id, project_id=project_id, fields="id,name"
+        )
+    except CliError as exc:  # the service maps every SDK API/HTTP error to CliError
+        result["note"] = (
+            f"Created dataset {dataset_id}; its final name could not be read back "
+            f"({exc.code}). Run dataset get {dataset_id}."
+        )
+        return
+    if not isinstance(record, dict):
+        return
+    name = record.get("dataset", record).get("name")
+    if not isinstance(name, str):
+        return
+    result["name"] = name
+    requested = dataset_spec.get("name") if isinstance(dataset_spec, dict) else None
+    if isinstance(requested, str) and requested != name:
+        result["requested_name"] = requested
+        result["note"] = f"The name '{requested}' was taken, so the dataset is named '{name}'."
 
 
 def dataset_create_from_pdf(invocation: Invocation) -> HandlerResult:
