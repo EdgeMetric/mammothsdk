@@ -149,13 +149,25 @@ def _visible_projects(service: Any) -> list[dict[str, Any]]:
     return list(service.list_all_projects())
 
 
+def _tokens_in_order(needle: str, name: str) -> bool:
+    """Every whitespace-separated token of ``needle`` is in ``name``, in order, any case."""
+    position = 0
+    lowered = name.lower()
+    for token in needle.lower().split():
+        found = lowered.find(token, position)
+        if found < 0:
+            return False
+        position = found + len(token)
+    return True
+
+
 def _find_in_projects(
     service: Any,
     needle: str,
     projects: list[dict[str, Any]],
     skipped: list[dict[str, Any]] | None = None,
 ) -> list[dict[str, Any]]:
-    """Datasets whose name contains ``needle`` (case-insensitive), in each of ``projects``.
+    """Datasets whose name has every token of ``needle`` in order, in each of ``projects``.
 
     A project that cannot be read does not end the search: with ``skipped`` it is
     recorded there (id, name, why) and the rest are still searched.
@@ -185,7 +197,7 @@ def _find_in_projects(
         datasets = response.get("datasets", []) if isinstance(response, dict) else []
         for dataset in datasets:
             name = dataset.get("name") if isinstance(dataset, dict) else None
-            if isinstance(name, str) and needle in name.lower():
+            if isinstance(name, str) and _tokens_in_order(needle, name):
                 matches.append(
                     {
                         "project_id": project_id,
