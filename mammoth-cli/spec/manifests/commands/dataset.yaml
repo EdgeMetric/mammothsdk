@@ -252,6 +252,8 @@ commands:
     dataset/view IDs and delete only IDs created by this task. A weburl dataset is a one-time copy that
     keeps no source details to refresh from, so automation's run_data_retrieval task cannot refresh it
     (only a cloud-connected dataset can be refreshed); say so rather than scheduling a refresh for it.
+    The result's name is the dataset's real name; when the requested name was taken the server adds a suffix,
+    and requested_name and note say so. Use name, not the name you asked for.
   reviewed_by: primary
 - command_id: dataset.create-from-pdf
   command_path: dataset create-from-pdf

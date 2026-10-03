@@ -710,7 +710,7 @@ methods:
   canonical_command: ai.expression.generate
   alias_of: null
   no_command_reason: null
-  mutation_class: null
+  mutation_class: read
   wait_policy: null
   pagination_policy: null
   secret_fields: []

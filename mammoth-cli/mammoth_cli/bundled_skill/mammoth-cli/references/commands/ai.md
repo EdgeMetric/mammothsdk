@@ -18,7 +18,7 @@ Run: `mammoth ai expression generate`. Exact input fields: `mammoth schema get a
 
 Example: `mammoth ai expression generate 123 --input '{"intent": "Summarize revenue by region", "mode": "sample"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
-Result: `AiExpressionGenerateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+Result: `AiExpressionGenerateResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
 Status on release: ran once on CLI 2.0.15 — re-verification 2026-09-18: exit 2 on release with CLI 2.0.15. Fix held: invalid mode surfaced as invalid_arguments with the SDK message before any request was sent: {"error":{"code":"invalid_arguments","message":"`mode` must be 'math' or 'metric', got 'sampl…
 

@@ -294,7 +294,9 @@ def test_project_check_flags_other_views_instead_of_checking_only_one(
     entry = data["views"][0]
     assert entry["view_id"] == 1632
     assert entry["other_views"] == [{"id": 1633, "name": "View 2"}]
-    assert data["checked"] == [{"dataset_id": 90, "view_id": 1632, "rows_checked": 0}]
+    assert data["checked"] == [
+        {"dataset_id": 90, "view_id": 1632, "view_name": "View 1", "rows_checked": 0}
+    ]
     assert data["skipped"] == []
     assert any(
         "orders" in line and "has 2 views" in line and "checked (others: 1633 (View 2))" in line

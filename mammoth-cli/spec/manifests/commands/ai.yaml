@@ -60,12 +60,11 @@ commands:
   sdk_conversion: Call mammoth.api.ai.AIAPI.expression_generate with validated request fields.
   request_model: AiExpressionGenerateRequest
   result_model: AiExpressionGenerateResult
-  mutation_class: benign_mutation
-  edits_target: false
+  mutation_class: read
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
-  acceptance_evidence: live_disposable_project
+  acceptance_evidence: live_read_only
   live_test: LT-AI-EXPRESSION-GENERATE
   live_exemption_reason: null
   contract_fixture: null
@@ -84,7 +83,6 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
-  no_readback: "generates an expression preview; nothing is persisted to read back"
 - command_id: ai.retention.condition
   command_path: ai retention condition
   disposition: command
