@@ -10,7 +10,6 @@ seam to the public SDK method named by the command's reviewed manifest
 
 from __future__ import annotations
 
-import re
 from typing import Any
 
 from mammoth_cli.errors.envelope import (
@@ -150,9 +149,16 @@ def _visible_projects(service: Any) -> list[dict[str, Any]]:
     return list(service.list_all_projects())
 
 
-def _squash(text: str) -> str:
-    """Lowercase ``text`` with each run of space, ``_``, ``-`` or ``.`` as one space."""
-    return " ".join(part for part in re.split(r"[_.\s-]+", text.lower()) if part)
+def _tokens_in_order(needle: str, name: str) -> bool:
+    """Every whitespace-separated token of ``needle`` is in ``name``, in order, any case."""
+    position = 0
+    lowered = name.lower()
+    for token in needle.lower().split():
+        found = lowered.find(token, position)
+        if found < 0:
+            return False
+        position = found + len(token)
+    return True
 
 
 def _find_in_projects(
@@ -161,7 +167,7 @@ def _find_in_projects(
     projects: list[dict[str, Any]],
     skipped: list[dict[str, Any]] | None = None,
 ) -> list[dict[str, Any]]:
-    """Datasets whose name contains ``needle`` (separators alike), in each of ``projects``.
+    """Datasets whose name has every token of ``needle`` in order (as the BE search), in each of ``projects``.
 
     A project that cannot be read does not end the search: with ``skipped`` it is
     recorded there (id, name, why) and the rest are still searched.
@@ -191,7 +197,7 @@ def _find_in_projects(
         datasets = response.get("datasets", []) if isinstance(response, dict) else []
         for dataset in datasets:
             name = dataset.get("name") if isinstance(dataset, dict) else None
-            if isinstance(name, str) and _squash(needle) in _squash(name):
+            if isinstance(name, str) and _tokens_in_order(needle, name):
                 matches.append(
                     {
                         "project_id": project_id,
