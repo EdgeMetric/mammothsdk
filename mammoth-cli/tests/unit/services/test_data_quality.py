@@ -137,6 +137,9 @@ def test_exact_duplicate_rows_are_flagged_with_a_scoped_count_and_fix() -> None:
     )
     assert "fix" not in warning
     assert warning["rows_checked"] == 4
+    assert warning["duplicate_samples"] == [
+        {"row": {"order_id": "1", "amount": "10"}, "occurrences": 3}
+    ]
 
 
 def test_duplicate_rows_fix_is_a_runnable_command_when_dataset_id_is_known() -> None:

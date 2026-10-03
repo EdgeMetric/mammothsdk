@@ -217,13 +217,26 @@ def _renamed_label_warning(
     }
 
 
-def _duplicate_count(rows: list[Mapping[str, Any]]) -> int:
-    """How many of ``rows`` are exact copies of an earlier row."""
+_DUPLICATE_SAMPLE_LIMIT = 5
+
+
+def _duplicate_summary(rows: list[Mapping[str, Any]]) -> tuple[int, list[dict[str, Any]]]:
+    """Return (rows that copy an earlier row, up to 5 sample duplicated rows).
+
+    A sample is the row's values as read plus how many times it occurs.
+    """
     counts: dict[str, int] = {}
+    first_seen: dict[str, Mapping[str, Any]] = {}
     for row in rows:
         fingerprint = json.dumps(row, sort_keys=True, default=str)
         counts[fingerprint] = counts.get(fingerprint, 0) + 1
-    return sum(count - 1 for count in counts.values() if count > 1)
+        first_seen.setdefault(fingerprint, row)
+    repeated = [fp for fp, count in counts.items() if count > 1]
+    samples = [
+        {"row": dict(first_seen[fp]), "occurrences": counts[fp]}
+        for fp in repeated[:_DUPLICATE_SAMPLE_LIMIT]
+    ]
+    return sum(counts[fp] - 1 for fp in repeated), samples
 
 
 def duplicate_rows_fact(
@@ -245,19 +258,24 @@ def duplicate_rows_fact(
     if not materialised:
         return None
     checked = len(materialised)
-    duplicates = _duplicate_count(materialised)
+    duplicates, samples = _duplicate_summary(materialised)
     if whole_view:
-        return {
+        whole: dict[str, Any] = {
             "exact_duplicate_rows": duplicates,
             "rows_checked": checked,
             "row_count": checked,
             "scope": "every row of the view",
         }
+        if samples:
+            whole["duplicate_samples"] = samples
+        return whole
     fact: dict[str, Any] = {
         "exact_duplicate_rows_in_page": duplicates,
         "rows_checked": checked,
         "scope": "this page only",
     }
+    if samples:
+        fact["duplicate_samples"] = samples
     if view_id is not None and dataset_id is not None:
         spec = json.dumps({"dataset_id": dataset_id})
         fact["table_wide_check"] = (
@@ -278,7 +296,7 @@ def _duplicate_rows_warning(
     table-wide duplication without separately checking the full table (e.g.
     ``view data aggregate`` COUNT vs a distinct count).
     """
-    duplicate_count = _duplicate_count(rows)
+    duplicate_count, samples = _duplicate_summary(rows)
     if not duplicate_count:
         return None
     warning: dict[str, Any] = {
@@ -288,6 +306,7 @@ def _duplicate_rows_warning(
             "of another row in this page (not checked table-wide)."
         ),
         "rows_checked": len(rows),
+        "duplicate_samples": samples,
     }
     if view_id is not None and dataset_id is not None:
         spec = json.dumps({"dataset_id": dataset_id})
