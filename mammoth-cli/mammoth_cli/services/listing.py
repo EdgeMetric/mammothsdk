@@ -35,7 +35,8 @@ _MAX_COLUMNS = 4
 #: Columns whose stored sample values a view summary shows, and values per column.
 _SAMPLE_COLUMNS = 6
 _SAMPLE_VALUES = 2
-_MAX_CELL_CHARS = 12
+#: A longer value is cut to this many characters and ends in "…", so a cut is visible.
+_MAX_CELL_CHARS = 40
 #: Room reserved per view for its sample values, added after the size check.
 SAMPLE_ALLOWANCE = 150
 #: Concurrent stored-stats reads for one list.
@@ -240,7 +241,8 @@ def fit_budget(
 def _cell_text(stored: Any) -> str:
     """A stored sample as text: the inner ``value`` of a ``{"value": ...}`` record."""
     inner = stored.get("value", stored) if isinstance(stored, dict) else stored
-    return str(inner)[:_MAX_CELL_CHARS]
+    text = str(inner)
+    return text if len(text) <= _MAX_CELL_CHARS else text[:_MAX_CELL_CHARS] + "…"
 
 
 def sample_values(payload: Any, metadata: list[Any]) -> dict[str, list[str]]:
