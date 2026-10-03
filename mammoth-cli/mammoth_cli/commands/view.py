@@ -50,6 +50,7 @@ from mammoth_cli.runtime.confirm import (
     POLICY_YES_ALWAYS,
     enforce_confirmation,
 )
+from mammoth_cli.runtime.dryrun import DryRunStop
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.session import open_service, require_project
 from mammoth_cli.services import conditional_format as cf_rules
@@ -2133,12 +2134,11 @@ def view_exportable_config_apply(invocation: Invocation) -> HandlerResult:
 
 
 def view_conditional_format_create(invocation: Invocation) -> HandlerResult:
-    """Create ONE rule over many columns: columns + operator + value + color, never one per column.
+    """Colour cells in many columns by one threshold in a single command (columns + operator + value + color): each cell is judged by its own value. applies_to=row colours whole rows when any/all of the columns match.
 
-    ``columns`` (display names), ``operator`` (<, >, =, ...), ``value`` and ``color`` build a
-    single rule over all of them; ``applies_to`` is ``columns`` (default) or ``row``. A raw
-    ``rule`` body still works instead.
-    """
+    Per-cell means one rule per column, all made in this one call. A raw ``rule`` body still
+    works instead.
+    """  # noqa: E501
     project_id = require_project(invocation)
     dataview_id = _require_int_positional_at(invocation, 0, "view id")
     document = invocation.load_input() or {}
@@ -2156,18 +2156,51 @@ def view_conditional_format_create(invocation: Invocation) -> HandlerResult:
         if has_typed:
             metadata = _dataview_metadata(service, dataset_id, dataview_id, project_id)
             column_map, column_types = _column_maps(metadata)
-            rule = cf_rules.build_rule(document, column_map, column_types)
+            rules = cf_rules.build_rules(document, column_map, column_types)
         else:
-            rule = document["rule"]
-            cf_rules.validate_rule(rule)
-        data = service.call(
-            _symbol(invocation),
-            dataset_id=dataset_id,
-            dataview_id=dataview_id,
-            rule=rule,
-            project_id=project_id,
-        )
+            cf_rules.validate_rule(document["rule"])
+            rules = [document["rule"]]
+        data = _create_cf_rules(service, invocation, rules, (dataset_id, dataview_id, project_id))
     return data, _meta(invocation, auth.workspace_id, project_id)
+
+
+def _cf_sequence(rule: Any) -> int:
+    return rule.get("SEQUENCE", -1) if isinstance(rule, dict) else -1
+
+
+def _create_cf_rules(
+    service: Any, invocation: Invocation, rules: list[dict[str, Any]], scope: tuple[Any, ...]
+) -> Any:
+    """POST each rule in turn; a mid-way failure names the rule ids already created.
+
+    Every response is the dataview's whole rule map; the new rule has the highest SEQUENCE.
+    """
+    dataset_id, dataview_id, project_id = scope
+    ids: list[str] = []
+    data: Any = None
+    for rule in rules:
+        try:
+            data = service.call(
+                _symbol(invocation),
+                dataset_id=dataset_id,
+                dataview_id=dataview_id,
+                rule=rule,
+                project_id=project_id,
+            )
+        except DryRunStop as stop:
+            stop.record["rules"] = rules  # every body that would be sent, not just the first
+            raise
+        except CliError as error:
+            if ids:
+                error.details = {**error.details, "created_rule_ids": ids}
+                error.message += f" Rules already created before the failure: {ids}."
+            raise
+        if isinstance(data, dict) and data:
+            ids.append(max(data, key=lambda k: _cf_sequence(data[k])))
+    if len(rules) == 1:
+        return data
+    note = f"{len(rules)} rules, one per column, so each cell is coloured by its own value."
+    return {"created_rule_ids": ids, "rules_created": len(rules), "note": note}
 
 
 def _column_maps(metadata: list[dict[str, Any]]) -> tuple[dict[str, str], dict[str, str]]:

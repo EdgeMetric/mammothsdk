@@ -1,10 +1,10 @@
 """Build and check the conditional-format rule body ``view conditional-format create`` sends.
 
 The release route takes ``{"cf_type": "RULE", "payload": {"FORMAT", "CONDITION"}}``. One
-rule can cover many columns: ``FORMAT.applies_to`` is ``"columns"`` with ``column_ids`` (a
-JSON-encoded list of internal names) or ``"row"``, and ``CONDITION`` is an OR/AND group over
-any columns. The typed input fields build exactly that, so a threshold on nine columns is one
-rule, not nine.
+rule is ``FORMAT.applies_to`` ``"columns"`` with ``column_ids`` (a JSON-encoded list of
+internal names) or ``"row"``, plus a ``CONDITION`` group. The evaluator checks CONDITION per row
+and colours every ``column_ids`` cell, so the typed fields build one rule per column for a
+per-cell threshold, or one row rule.
 """
 
 from __future__ import annotations
@@ -18,7 +18,8 @@ from mammoth_cli.services.conditions import compile_condition
 CODE_INVALID_RULE = "invalid_rule"
 APPLIES_TO = ("row", "columns")
 _EMPTY_COLUMN_IDS = "[]"
-TYPED_FIELDS = ("columns", "operator", "value", "color", "name", "applies_to")
+MATCH = ("any", "all")
+TYPED_FIELDS = ("columns", "operator", "value", "color", "name", "applies_to", "match")
 _NO_VALUE_OPERATORS = frozenset({"IS_EMPTY", "IS_NOT_EMPTY"})
 
 
@@ -79,34 +80,52 @@ def _require_typed(document: dict[str, Any]) -> None:
         if document.get(field) is None:
             raise _invalid(
                 f"The typed form needs '{field}'.",
-                'One rule over many columns: --input \'{"columns": ["A", "B"], '
+                'Many columns, one command: --input \'{"columns": ["A", "B"], '
                 '"operator": "<", "value": 55, "color": "red"}\'.',
             )
 
 
-def build_rule(
-    document: dict[str, Any], column_map: dict[str, str], column_types: dict[str, str]
-) -> dict[str, Any]:
-    """One RULE entry from the typed fields: an OR over ``columns``, applied to them or the row."""
-    _require_typed(document)
-    names = _resolve_columns(document["columns"], column_map)
-    conditions = [
-        compile_condition(_leaf(name, document)).build(column_map, column_types) for name in names
-    ]
-    applies_to = document.get("applies_to") or "columns"
-    column_ids = json.dumps([column_map[n] for n in names]) if applies_to == "columns" else "[]"
+def _label(document: dict[str, Any]) -> str:
     operator = str(document["operator"])
-    label = (
-        operator
-        if operator.upper() in _NO_VALUE_OPERATORS
-        else f"{operator} {document.get('value')}"
-    )
-    fmt = {
-        "name": document.get("name") or f"{', '.join(names)} {label}"[:80],
-        "color": document["color"],
-        "applies_to": applies_to,
-        "column_ids": column_ids,
-    }
-    rule = {"cf_type": "RULE", "payload": {"FORMAT": fmt, "CONDITION": {"OR": conditions}}}
+    if operator.upper() in _NO_VALUE_OPERATORS:
+        return operator
+    return f"{operator} {document.get('value')}"
+
+
+def _rule(fmt: dict[str, Any], condition: dict[str, Any]) -> dict[str, Any]:
+    rule = {"cf_type": "RULE", "payload": {"FORMAT": fmt, "CONDITION": condition}}
     validate_rule(rule)
     return rule
+
+
+def build_rules(
+    document: dict[str, Any], column_map: dict[str, str], column_types: dict[str, str]
+) -> list[dict[str, Any]]:
+    """RULE entries for the typed fields.
+
+    The evaluator judges CONDITION once per ROW and then colours every ``column_ids`` cell, so a
+    threshold per cell needs one rule per column (each condition on its own column). Only
+    ``applies_to: row`` is one rule: ``match`` any (OR, default) or all (AND) of the columns.
+    """
+    _require_typed(document)
+    names = _resolve_columns(document["columns"], column_map)
+    color, label = document["color"], _label(document)
+
+    def condition(name: str) -> dict[str, Any]:
+        return compile_condition(_leaf(name, document)).build(column_map, column_types)
+
+    if document.get("applies_to") == "row":
+        match = document.get("match") or "any"
+        if match not in MATCH:
+            raise _invalid(f"match must be one of {', '.join(MATCH)}; got {match!r}.")
+        fmt = {"name": document.get("name") or f"{', '.join(names)} {label}"[:80]}
+        fmt |= {"color": color, "applies_to": "row", "column_ids": "[]"}
+        group = {"OR" if match == "any" else "AND": [condition(n) for n in names]}
+        return [_rule(fmt, group)]
+    rules = []
+    for name in names:
+        title = f"{document['name']}: {name}" if document.get("name") else f"{name} {label}"
+        fmt = {"name": title, "color": color, "applies_to": "columns"}
+        fmt["column_ids"] = json.dumps([column_map[name]])
+        rules.append(_rule(fmt, {"OR": [condition(name)]}))
+    return rules

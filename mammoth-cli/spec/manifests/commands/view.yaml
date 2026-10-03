@@ -603,10 +603,10 @@ commands:
   - CT-VIEW-CONDITIONAL-FORMAT-CREATE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: 'One rule can cover many columns: columns + operator + value + color build a
-    single RULE (applies_to columns by default, or row) with an OR condition over those columns,
-    so never create one rule per column. A raw rule body ({"cf_type": "RULE"|"COLOR_SCALE", "payload":
-    {...}}) still works instead; applies_to must be row or columns.'
+  known_restrictions: 'columns + operator + value + color colour each cell by its own value: one RULE
+    per column, created in this one call (applies_to columns, the default). applies_to row makes
+    one rule over any/all (match) of the columns. A raw rule body ({"cf_type": "RULE"|"COLOR_SCALE",
+    "payload": {...}}) still works instead; applies_to must be row or columns.'
   reviewed_by: primary
 - command_id: view.conditional-format.delete-all
   command_path: view conditional-format delete-all

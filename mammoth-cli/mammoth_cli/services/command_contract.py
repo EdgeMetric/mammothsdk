@@ -350,9 +350,10 @@ _VIEW_DATA_PROFILE_FIELDS = (
     FieldSpec("limit", required=False, annotation=int, default=50),
 )
 
-# view.conditional-format.create: ``rule`` (raw body) stays accepted; the typed fields build ONE
-# rule over many columns (see mammoth_cli.services.conditional_format). ``rule`` is therefore
-# optional here -- the handler requires one form or the other.
+# view.conditional-format.create: ``rule`` (raw body) stays accepted; the typed fields build one
+# rule per column (per-cell threshold) or one row rule (see
+# mammoth_cli.services.conditional_format). ``rule`` is therefore optional here -- the handler
+# requires one form or the other.
 _VIEW_CF_CREATE_FIELDS = (
     FieldSpec("dataset_id", required=True, annotation=int),
     FieldSpec("rule", required=False, annotation=dict[str, Any] | None, default=None),
@@ -364,6 +365,7 @@ _VIEW_CF_CREATE_FIELDS = (
     FieldSpec(
         "applies_to", required=False, annotation=Literal["row", "columns"] | None, default=None
     ),
+    FieldSpec("match", required=False, annotation=Literal["any", "all"] | None, default=None),
 )
 
 # dashboard.filter.add/remove are CLI composites over canvas get + canvas save
