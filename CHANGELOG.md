@@ -6,6 +6,8 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.8.16]
+
 ### Added
 
 - `DatasetsAPI.search(term)` finds the project's datasets whose name, column names or sampled
