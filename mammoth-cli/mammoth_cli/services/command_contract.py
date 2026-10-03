@@ -388,6 +388,7 @@ _LOCAL_COMMANDS = frozenset(
         "context.project.status",
         "context.project.use",
         "dataset.find",
+        "dataset.search",
         "doctor",
         "project.check",
         "project.ensure",

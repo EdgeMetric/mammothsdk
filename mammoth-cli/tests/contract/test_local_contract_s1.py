@@ -41,6 +41,7 @@ S1_ROUTES = (
     "context.project.status",
     "context.project.use",
     "dataset.find",
+    "dataset.search",
     "doctor",
     "folder.find",
     "link",

@@ -1,10 +1,10 @@
 # Command reference
 
-Generated from the reviewed command manifests for mammoth-cli 2.2.18.
+Generated from the reviewed command manifests for mammoth-cli 2.2.19.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
-Total commands: 645.
+Total commands: 646.
 
 ## activity
 
@@ -2887,6 +2887,17 @@ Total commands: 645.
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.datasets.DatasetsAPI.restore`
 - Agent example: `mammoth dataset restore 123`
+
+### `mammoth dataset search`
+
+**Arguments**
+
+- `TERM` (str, required) — Text to find in dataset names, column names or sampled column values (case-insensitive, at least 2 characters).
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth_cli.commands.dataset.search`
+- Agent example: `mammoth dataset search 'New Year Sale'`
 
 ### `mammoth dataset trash`
 

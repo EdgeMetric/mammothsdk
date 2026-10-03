@@ -640,6 +640,8 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth dataset rename 123 --input '{"name": "Revenue report"}'
 - `mammoth dataset restore` [benign_mutation/none] -> mammoth.api.datasets.DatasetsAPI.restore
   example: mammoth dataset restore 123
+- `mammoth dataset search` [read/none] -> mammoth_cli.commands.dataset.search
+  example: mammoth dataset search 'New Year Sale'
 - `mammoth dataset trash` [benign_mutation/none] -> mammoth.api.datasets.DatasetsAPI.trash
   example: mammoth dataset trash 123
 - `mammoth dataset update` [high_impact/confirm_target] -> mammoth.api.datasets.DatasetsAPI.update

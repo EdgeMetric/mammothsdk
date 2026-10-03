@@ -113,6 +113,33 @@ class DatasetsAPI:
             full_page_continues=True,
         )
 
+    async def search(
+        self,
+        term: str,
+        workspace_id: int | None = None,
+        project_id: int | None = None,
+    ) -> dict[str, Any]:
+        """Find the project's datasets whose name, column names or sampled values hold ``term``.
+
+        Sampled values are the per-column samples the profiler keeps, so a dataset that was
+        never profiled matches on its name and column names only.
+
+        Args:
+            term: Text to look for (case-insensitive substring, at least 2 characters).
+            workspace_id: ID of the workspace (uses client default if not provided).
+            project_id: ID of the project (uses client default if not provided).
+
+        Returns:
+            Dict with ``datasets``: ``{id, name, matches}``, each match naming where it was
+            found (``found_in`` is ``name``, ``column`` or ``value``) with its ``column`` and
+            ``value``.
+        """
+        ws = workspace_id or self._ws()
+        proj = self._proj(project_id)
+        return await self._client._request_json(
+            "GET", f"/workspaces/{ws}/projects/{proj}/datasets/search", params={"q": term}
+        )
+
     async def get(
         self,
         dataset_id: int,

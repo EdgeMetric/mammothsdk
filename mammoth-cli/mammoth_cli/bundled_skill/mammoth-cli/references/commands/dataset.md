@@ -192,6 +192,16 @@ Result: `DatasetRestoreResult`; mutation `benign_mutation`, confirmation `none`,
 
 Status on release: ran once on CLI 2.0.14 — write sweep 2026-09-18: exit 0 on release with CLI 2.0.14. job 312 restore_datasource -> status success. dataset list --project 21 confirms dataset 49 (name 'stores.csv 2') is back and visible alongside 48. Single invocation only.
 
+### `dataset.search`
+
+Run: `mammoth dataset search`. Exact input fields: `mammoth schema get dataset.search`.
+
+Example: `mammoth dataset search 'New Year Sale'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `DatasetSearchResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
 ### `dataset.trash`
 
 Run: `mammoth dataset trash`. Exact input fields: `mammoth schema get dataset.trash`.

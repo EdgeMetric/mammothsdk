@@ -395,6 +395,48 @@ def dataset_find(invocation: Invocation) -> HandlerResult:
     return result, meta
 
 
+#: Matches kept per dataset in a ``dataset search`` row; the rest are counted, not listed.
+_SEARCH_MATCHES_PER_DATASET = 5
+
+
+def _search_row(hit: dict[str, Any]) -> dict[str, Any]:
+    """One ``dataset search`` row: the dataset and the first places its content matched."""
+    matches = hit.get("matches") or []
+    row: dict[str, Any] = {
+        "id": hit.get("id"),
+        "name": hit.get("name"),
+        "matches": matches[:_SEARCH_MATCHES_PER_DATASET],
+    }
+    if len(matches) > _SEARCH_MATCHES_PER_DATASET:
+        row["more_matches"] = len(matches) - _SEARCH_MATCHES_PER_DATASET
+    return row
+
+
+def dataset_search(invocation: Invocation) -> HandlerResult:
+    """Find the project's datasets whose name, column names or sampled values hold TERM.
+
+    Read-only: one server call. Each match names where the term was found (``name``,
+    ``column`` or ``value``) with the column and the sampled value, so the dataset that
+    holds "New Year Sale" in a ``campaign`` column is found without knowing its name.
+    Sampled values come from the profile, which keeps up to 30 per text column, so a
+    dataset never profiled matches on name and columns only.
+    """
+    term = _require_string_positional(invocation, "term")
+    project_id = require_project(invocation)
+    with open_service(invocation) as (service, auth):
+        data = service.call(
+            "mammoth.api.datasets.DatasetsAPI.search", term=term, project_id=project_id
+        )
+    hits = data.get("datasets", []) if isinstance(data, dict) else []
+    kept, omitted = fit_budget([_search_row(h) for h in hits if isinstance(h, dict)])
+    result: dict[str, Any] = {"term": term, "datasets": kept, "matched": len(hits)}
+    if omitted:
+        result["omitted"] = omitted
+    if note := ambiguity_note(len(hits), term):
+        result["note"] = note
+    return result, _meta(invocation, auth.workspace_id, project_id)
+
+
 def dataset_list(invocation: Invocation) -> HandlerResult:
     """List datasets in the active project, newest first, each with what tells them apart.
 

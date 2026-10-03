@@ -128,6 +128,16 @@
       ]
     },
     {
+      "method": "GET",
+      "path": "/workspaces/{}/projects/{}/datasets/search",
+      "state": "removed_on_server",
+      "pending_in": null,
+      "sdk_symbols": [
+        "mammoth.api.datasets.DatasetsAPI.search"
+      ],
+      "commands": []
+    },
+    {
       "method": "PATCH",
       "path": "/workspaces/{}/projects/{}/datasets/{}/unstructured_rows",
       "state": "pending_server_release",
@@ -148,6 +158,7 @@
     "billing.invoice.list",
     "calc",
     "dataset.find",
+    "dataset.search",
     "folder.find",
     "link",
     "log.path",

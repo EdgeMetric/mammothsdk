@@ -650,6 +650,16 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
             example_value="sales",
         ),
     ),
+    "dataset.search": (
+        PositionalSpec(
+            name="term",
+            type=str,
+            required=True,
+            help="Text to find in dataset names, column names or sampled column values "
+            "(case-insensitive, at least 2 characters).",
+            example_value="New Year Sale",
+        ),
+    ),
     "folder.find": (
         PositionalSpec(
             name="name_substring",

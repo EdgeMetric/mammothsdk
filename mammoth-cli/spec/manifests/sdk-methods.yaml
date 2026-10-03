@@ -3833,6 +3833,18 @@ methods:
   pagination_policy: null
   secret_fields: []
   reviewed_by: primary
+- sdk_symbol: mammoth.api.datasets.DatasetsAPI.search
+  implementation_origin: mammoth.api.datasets.DatasetsAPI.search
+  signature: 'search(self, term: ''str'', workspace_id: ''int | None'' = None, project_id: ''int | None'' = None) -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: null
+  alias_of: null
+  no_command_reason: SDK-only helper; no reviewed CLI command.
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
 - sdk_symbol: mammoth.api.datasets.DatasetsAPI.trash
   implementation_origin: mammoth.api.datasets.DatasetsAPI.trash
   signature: 'trash(self, dataset_id: ''int'', workspace_id: ''int | None'' = None, project_id: ''int | None'' = None) -> ''dict[str, Any]'''
