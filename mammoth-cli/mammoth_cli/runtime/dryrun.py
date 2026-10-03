@@ -20,6 +20,7 @@ the handler makes:
 
 from __future__ import annotations
 
+import dataclasses
 from collections.abc import Callable, Mapping
 from enum import Enum
 from functools import lru_cache
@@ -112,6 +113,10 @@ def jsonable(value: Any) -> Any:
         return value
     if isinstance(value, (Condition, CompoundCondition, NotCondition)):
         return str(value)  # no dict form; the readable text is what a confirm card shows
+    if dataclasses.is_dataclass(value) and not isinstance(value, type):
+        # an SDK spec (``ConversionSpec``): its fields, not its repr
+        fields = ((f.name, getattr(value, f.name)) for f in dataclasses.fields(value))
+        return {name: jsonable(item) for name, item in fields if item is not None}
     model_dump = getattr(value, "model_dump", None)
     if callable(model_dump):  # an SDK request model (pydantic)
         return jsonable(model_dump(mode="json", exclude_none=True))
