@@ -52,6 +52,7 @@ from mammoth_cli.runtime.confirm import (
 )
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.session import open_service, require_project
+from mammoth_cli.services import conditional_format as cf_rules
 from mammoth_cli.services import read_queries, text_dates
 from mammoth_cli.services.conditions import CONDITION_KWARG, compile_condition
 from mammoth_cli.services.dashboard_review import UPLOAD_NOTE, upload_hints
@@ -2132,14 +2133,33 @@ def view_exportable_config_apply(invocation: Invocation) -> HandlerResult:
 
 
 def view_conditional_format_create(invocation: Invocation) -> HandlerResult:
-    """Create a conditional-format rule on a dataview. ``rule`` is required."""
+    """Create ONE rule over many columns: columns + operator + value + color, never one per column.
+
+    ``columns`` (display names), ``operator`` (<, >, =, ...), ``value`` and ``color`` build a
+    single rule over all of them; ``applies_to`` is ``columns`` (default) or ``row``. A raw
+    ``rule`` body still works instead.
+    """
     project_id = require_project(invocation)
     dataview_id = _require_int_positional_at(invocation, 0, "view id")
-    document = invocation.load_input()
-    rule = _require_field(document, "rule")
-    assert document is not None
+    document = invocation.load_input() or {}
+    has_typed = any(field in document for field in cf_rules.TYPED_FIELDS)
+    if "rule" in document and has_typed:
+        raise CliError(
+            code=cf_rules.CODE_INVALID_RULE,
+            message="Pass either 'rule' or the typed fields (columns, operator, value, color).",
+            exit_status=EXIT_USAGE,
+        )
+    if "rule" not in document and not has_typed:
+        _require_field(document, "rule")
     with open_service(invocation) as (service, auth):
         dataset_id = _resolve_dataset_id(service, invocation, dataview_id, document)
+        if has_typed:
+            metadata = _dataview_metadata(service, dataset_id, dataview_id, project_id)
+            column_map, column_types = _column_maps(metadata)
+            rule = cf_rules.build_rule(document, column_map, column_types)
+        else:
+            rule = document["rule"]
+            cf_rules.validate_rule(rule)
         data = service.call(
             _symbol(invocation),
             dataset_id=dataset_id,
@@ -2148,6 +2168,20 @@ def view_conditional_format_create(invocation: Invocation) -> HandlerResult:
             project_id=project_id,
         )
     return data, _meta(invocation, auth.workspace_id, project_id)
+
+
+def _column_maps(metadata: list[dict[str, Any]]) -> tuple[dict[str, str], dict[str, str]]:
+    """Display -> internal name and display -> type maps from a view's column metadata."""
+    names: dict[str, str] = {}
+    types: dict[str, str] = {}
+    for column in metadata:
+        internal = column.get(_INTERNAL_NAME_KEY)
+        display = column.get(_DISPLAY_NAME_KEY)
+        if isinstance(internal, str) and isinstance(display, str):
+            names[display] = internal
+            if isinstance(column.get("type"), str):
+                types[display] = column["type"]
+    return names, types
 
 
 def view_conditional_format_delete_all(invocation: Invocation) -> HandlerResult:

@@ -176,6 +176,13 @@ them, so never report them as access denied. Pass `include_non_members: true`
 only when the user asks about projects they are not in; each row then carries
 `member`.
 
+## Conditional formatting
+
+One `view conditional-format create` rule covers many columns: pass
+`--input '{"columns": ["Q1", "Q2"], "operator": "<", "value": 55, "color": "red"}'`
+(display names; `applies_to` is `columns` by default, or `row` to colour the
+whole row). Never create one rule per column. A raw `rule` body still works.
+
 ## Exports
 
 First inspect `view.export.list/get` for existing configuration and the exact

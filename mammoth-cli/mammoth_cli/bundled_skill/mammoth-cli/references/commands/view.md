@@ -116,7 +116,7 @@ Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19
 
 Run: `mammoth view conditional-format create`. Exact input fields: `mammoth schema get view.conditional-format.create`.
 
-Example: `mammoth view conditional-format create 123 123 --input '{"rule": {"cf_type": "RULE", "payload": {"FORMAT": {"name": "Flag open orders", "color": "red", "applies_to": "row", "column_ids": "[]"}, "CONDITION": {"OR": [{"column_1": {"CONTAINS": {"VALUE": ["Open"]}}}]}}}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth view conditional-format create 123 123 --input '{"columns": ["Q1", "Q2", "Q3"], "operator": "<", "value": 55, "color": "red"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ViewConditionalFormatCreateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 

@@ -111,6 +111,7 @@ ERROR_SUMMARIES: dict[str, str] = {
     "invalid_argument": _S_BAD_REQUEST,
     "invalid_argument_combination": _S_BAD_REQUEST,
     "invalid_arguments": _S_BAD_REQUEST,
+    "invalid_rule": "A conditional-format rule wasn't valid.",
     "invalid_condition": "A filter condition wasn't valid.",
     "invalid_condition_value": "A filter condition used a value that isn't valid.",
     "invalid_config_value": _S_SETUP,
