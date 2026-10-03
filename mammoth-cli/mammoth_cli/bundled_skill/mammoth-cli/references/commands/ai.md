@@ -8,7 +8,7 @@ Run: `mammoth ai condition generate`. Exact input fields: `mammoth schema get ai
 
 Example: `mammoth ai condition generate 123 --input '{"intent": "Summarize revenue by region"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
-Result: `AiConditionGenerateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+Result: `AiConditionGenerateResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
 Status on release: ran once on CLI 2.0.14 — write sweep 2026-09-18: exit 0 on release with CLI 2.0.14. Generated: lower("region") = 'east' (CD01). First attempt without dataview_id failed with job_failed/CD02 Dataview 4 not found (defaulted to wrong dataview) -- dataview_id must be passed explicitly. S…
 

@@ -851,8 +851,8 @@ def _add_final_name(
     """Add the name the server actually gave the new dataset to a create result.
 
     The server appends a suffix when the requested name is taken, so the
-    requested name is not the dataset's name. Best effort: the dataset already
-    exists, so a failed lookup must not fail (and invite a duplicate) create.
+    requested name is not the dataset's name. The dataset already exists, so a failed
+    lookup must not fail (and invite a duplicate) create; it is reported in ``note``.
     """
     dataset_id = result.get("dataset_id")
     if dataset_id is None:
@@ -861,7 +861,11 @@ def _add_final_name(
         record = service.call(
             _DATASET_GET_SYMBOL, dataset_id=dataset_id, project_id=project_id, fields="id,name"
         )
-    except Exception:  # noqa: BLE001 -- best effort; the create itself succeeded
+    except CliError as exc:  # the service maps every SDK API/HTTP error to CliError
+        result["note"] = (
+            f"Created dataset {dataset_id}; its final name could not be read back "
+            f"({exc.code}). Run dataset get {dataset_id}."
+        )
         return
     if not isinstance(record, dict):
         return
