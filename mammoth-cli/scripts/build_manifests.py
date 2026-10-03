@@ -309,6 +309,11 @@ def build_command_record(
         "known_restrictions": (catalog or {}).get("notes"),
         "reviewed_by": REVIEWER,
     }
+    # A command that edits its target can also just propose: an input that sets this field (a
+    # dotted path into --input) builds nothing until the user accepts it elsewhere, so callers that
+    # gate in-place edits behind an approval need not ask for it.
+    if (catalog or {}).get("proposal_input"):
+        record["proposal_input"] = catalog["proposal_input"]
     # This is the same recursive, shell-safe example used by schema discovery;
     # keeping it here prevents manifests and generated docs from carrying a
     # syntactically valid but semantically incomplete invocation.
