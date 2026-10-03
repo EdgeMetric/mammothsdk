@@ -61,6 +61,7 @@ from mammoth_cli.runtime.session import open_service, resolved_project
 from mammoth_cli.services.command_contract import bind_command_inputs
 from mammoth_cli.services.conditions import CONDITION_KWARG
 from mammoth_cli.services.input_fields import TASK_COUNT_FIELD
+from mammoth_cli.services.sql_check import check_sql_binds
 from mammoth_cli.services.write_impact import (
     ImpactRead,
     Measure,
@@ -923,7 +924,30 @@ def view_transform_add_sql(invocation: Invocation) -> HandlerResult:
     _require_field(document, "query")
     assert document is not None
     kwargs = _bind_transform_inputs(invocation, document)
-    return _dispatch_view(invocation, view_id, "add_sql", **kwargs)
+    return _dispatch_view(
+        invocation, view_id, "add_sql", prepare=_sql_binding_check(invocation, view_id), **kwargs
+    )
+
+
+def _sql_binding_check(
+    invocation: Invocation, view_id: int
+) -> Callable[[Any, int, dict[str, Any]], Any]:
+    """A ``prepare`` hook: a dry run fails with ``would_fail`` when the SQL names a column
+    the step cannot bind (see :mod:`mammoth_cli.services.sql_check`). A real run is unchanged."""
+
+    def check(service: Any, dataset_id: int, kwargs: dict[str, Any]) -> Any:
+        if invocation.dry_run:
+            view = service.call(
+                _DATAVIEW_GET_SYMBOL,
+                dataset_id=dataset_id,
+                dataview_id=view_id,
+                project_id=resolved_project(invocation),
+            )
+            if isinstance(view, dict):
+                check_sql_binds(str(kwargs.get("query", "")), view)
+        return None
+
+    return check
 
 
 def view_transform_ai(invocation: Invocation) -> HandlerResult:

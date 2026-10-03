@@ -810,6 +810,8 @@ def dataset_create(invocation: Invocation) -> HandlerResult:
     assert document is not None
     _forward_optional(document, kwargs, ("folder_resource_id",))
     with open_service(invocation) as (service, auth):
+        if invocation.dry_run:
+            _predict_final_name(invocation, service, dataset_spec, project_id)
         data = service.call(_symbol(invocation), **kwargs)
         # ``datasets.create`` returns a bare job handle and never waits. Block on
         # it here (honoring ``--job-timeout``) so the command reports a finished
@@ -845,6 +847,71 @@ def _created_dataset(handle: Any, settled: Any) -> dict[str, Any]:
     return result
 
 
+#: Pages (of 100) read to predict a final name; past it the answer is "a suffix may be added".
+_NAME_PROBE_PAGES = 20
+
+
+def _requested_name(dataset_spec: object) -> str | None:
+    """The name the caller asked for: ``ds_name`` (clone, cloud) or ``name`` (sketch)."""
+    if not isinstance(dataset_spec, dict):
+        return None
+    for key in ("ds_name", "name"):
+        if isinstance(dataset_spec.get(key), str) and dataset_spec[key]:
+            return str(dataset_spec[key])
+    return None
+
+
+def _project_dataset_names(service: _SdkCaller, project_id: int) -> tuple[set[str], bool]:
+    """Every dataset name in the project and whether all of them were read."""
+    names: set[str] = set()
+    for page in range(_NAME_PROBE_PAGES):
+        data = service.call(
+            "mammoth.api.datasets.DatasetsAPI.list",
+            project_id=project_id,
+            limit=100,
+            offset=page * 100,
+        )
+        rows = data.get("datasets", []) if isinstance(data, dict) else []
+        names.update(r["name"] for r in rows if isinstance(r, dict) and "name" in r)
+        if len(rows) < 100:
+            return names, True
+    return names, False
+
+
+def _name_impact(requested: str, names: set[str], complete: bool) -> dict[str, Any]:
+    """The dry-run prediction for ``requested`` against the project's dataset ``names``."""
+    if requested not in names:
+        free: dict[str, Any] = {"requested_name": requested, "name_taken": False}
+        if complete:
+            return {**free, "final_name": requested}
+        return {**free, "note": "Not all datasets were read; a numeric suffix is added if taken."}
+    impact: dict[str, Any] = {"requested_name": requested, "name_taken": True}
+    if not complete:
+        impact["note"] = f"'{requested}' is taken; a numeric suffix will be added to the name."
+        return impact
+    suffix = next(i for i in range(2, len(names) + 3) if f"{requested} {i}" not in names)
+    impact["final_name"] = f"{requested} {suffix}"
+    impact["note"] = (
+        f"'{requested}' is taken; the dataset will be named '{impact['final_name']}'. "
+        "Ask the user whether to use a different name."
+    )
+    return impact
+
+
+def _predict_final_name(
+    invocation: Invocation, service: _SdkCaller, dataset_spec: object, project_id: int
+) -> None:
+    """Dry run: say whether the requested name is taken and what the server will name it.
+
+    The server (``Datasource.get_unique_name``) tries ``name``, ``name 2``, ``name 3``...
+    against the project's live dataset names, so the answer is computed the same way.
+    """
+    requested = _requested_name(dataset_spec)
+    if requested is not None:
+        names, complete = _project_dataset_names(service, project_id)
+        object.__setattr__(invocation, "predicted_impact", _name_impact(requested, names, complete))
+
+
 def _add_final_name(
     service: _SdkCaller, result: dict[str, Any], dataset_spec: object, project_id: int
 ) -> None:
@@ -873,8 +940,8 @@ def _add_final_name(
     if not isinstance(name, str):
         return
     result["name"] = name
-    requested = dataset_spec.get("name") if isinstance(dataset_spec, dict) else None
-    if isinstance(requested, str) and requested != name:
+    requested = _requested_name(dataset_spec)
+    if requested is not None and requested != name:
         result["requested_name"] = requested
         result["note"] = f"The name '{requested}' was taken, so the dataset is named '{name}'."
 

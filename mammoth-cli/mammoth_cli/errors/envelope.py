@@ -56,6 +56,7 @@ CODE_JOB_FAILED = "job_failed"
 CODE_INTERRUPTED = "interrupted"
 CODE_UNSUPPORTED_CONTRACT = "unsupported_contract"
 CODE_NO_OP = "no_op"
+CODE_WOULD_FAIL = "would_fail"
 
 # User-safe, one-line summaries shown to the customer instead of the model-facing
 # ``message``/``hint``. Plain language only: no command names, ids, field names
@@ -173,6 +174,7 @@ ERROR_SUMMARIES: dict[str, str] = {
     "upgrade_failed": "The update didn't complete.",
     "usage_error": _S_BAD_REQUEST,
     "view_in_draft": "This view is still a draft and can't be used yet.",
+    "would_fail": "This step would fail when it runs, so it was not added.",
 }
 
 #: Shown for a code with no entry (a runtime backstop only; the exhaustiveness
