@@ -1,0 +1,12 @@
+{
+  "api_version": "0.1.0",
+  "artifact": "mammoth-cli-server-openapi-snapshot",
+  "generation_method": "GET of the public live OpenAPI document on 2026-10-03, no auth; credential-shaped examples scrubbed",
+  "openapi_version": "3.1.0",
+  "operation_count": 544,
+  "path_count": 371,
+  "schema_count": 1038,
+  "sha256": "934940e181271c392ce900eb3a636f9d1cad162614aea1a290072e2175c4afa3",
+  "source_ref": "https://app.mammoth.io/api/v2/docs/openapi.json",
+  "source_sha": "live-c73f011bfe960569427bb0501ab779982030120d"
+}
