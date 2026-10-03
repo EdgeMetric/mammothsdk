@@ -3719,8 +3719,8 @@ def _existing_internal_dataset_export(
 _DATASET_GET_SYMBOL = "mammoth.api.datasets.DatasetsAPI.get"
 
 
-def _target_dataset_schema_names(service: Any, target_ds_id: int) -> set[str]:
-    """The target dataset's own schema column display names.
+def _target_dataset_schema(service: Any, target_ds_id: int) -> dict[str, str]:
+    """The target dataset's own schema: column display name -> type ('' if absent).
 
     ``dataset.get``'s ``data_schema`` is the dataset's base schema, not any
     view's live/rendered columns -- a view's own rename task can show a
@@ -3744,7 +3744,7 @@ def _target_dataset_schema_names(service: Any, target_ds_id: int) -> set[str]:
             hint="Read the target dataset before appending to it.",
             details={"side": "target", "dataset_id": target_ds_id},
         )
-    names: set[str] = set()
+    names: dict[str, str] = {}
     for column in data_schema:
         display_name = column.get("c_name") if isinstance(column, dict) else None
         if not isinstance(display_name, str):
@@ -3754,8 +3754,49 @@ def _target_dataset_schema_names(service: Any, target_ds_id: int) -> set[str]:
                 hint="Read the target dataset before appending to it.",
                 details={"side": "target", "dataset_id": target_ds_id},
             )
-        names.add(display_name)
+        names[display_name] = str(column.get("c_type") or "")
     return names
+
+
+def _reject_append_type_mismatch(
+    source_types: Any,
+    target_schema: dict[str, str],
+    mapping: dict[str, str],
+    ids: tuple[int, int],
+) -> None:
+    """Refuse an append where a column both sides name has a different type.
+
+    The backend does not coerce: a same-named column of another type lands in
+    a separate new column, splitting the data. Columns only on one side, or
+    renamed through ``column_mapping``, are not compared; an unknown type
+    (empty) on either side is not a mismatch.
+    """
+    if not isinstance(source_types, dict):
+        return
+    mismatched = {
+        name: (str(source_types[name]).lower(), target_schema[name].lower())
+        for name in sorted(source_types.keys() & target_schema.keys() - set(mapping))
+        if source_types[name]
+        and target_schema[name]
+        and str(source_types[name]).lower() != target_schema[name].lower()
+    }
+    if not mismatched:
+        return
+    view_id, target_ds_id = ids
+    listed = "; ".join(f"{n}: source {src}, target {tgt}" for n, (src, tgt) in mismatched.items())
+    raise CliError(
+        code="append_type_mismatch",
+        message=(
+            f"View {view_id} has column(s) whose type differs from target dataset "
+            f"{target_ds_id}: {listed}. An append would create separate columns."
+        ),
+        exit_status=EXIT_USAGE,
+        hint=(
+            f"Run mammoth view transform convert-type on view {view_id} so each column "
+            "matches the target type, then retry the export."
+        ),
+        details={"mismatched": {n: {"source": s, "target": t} for n, (s, t) in mismatched.items()}},
+    )
 
 
 def _reject_append_schema_mismatch(
@@ -3785,7 +3826,8 @@ def _reject_append_schema_mismatch(
             hint="Read the source view before appending from it.",
             details={"side": "source", "dataview_id": dataview_id},
         )
-    target_names = _target_dataset_schema_names(service, target_ds_id)
+    target_schema = _target_dataset_schema(service, target_ds_id)
+    target_names = set(target_schema)
     mapping = column_mapping if isinstance(column_mapping, dict) else {}
     # View.columns (mammoth/view.py) maps display name -> internal name; these
     # dict keys are display names, matching what the backend's own schema
@@ -3793,6 +3835,12 @@ def _reject_append_schema_mismatch(
     source_names = set(source_columns)
     source_only = sorted(source_names - target_names - set(mapping))
     target_only = sorted(target_names - source_names - set(mapping.values()))
+    _reject_append_type_mismatch(
+        service.call_view(dataview_id, "column_types", dataset_id=dataset_id),
+        target_schema,
+        mapping,
+        (dataview_id, target_ds_id),
+    )
     if source_only:
         raise CliError(
             code="append_schema_mismatch",

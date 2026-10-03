@@ -273,7 +273,10 @@ def test_dataset_route_matches_the_target_datasets_own_schema_not_its_views(
     assert (_DATASET_GET, {"dataset_id": 9}) in fake_service.call_log
     # Only the source view's own columns are consulted -- never a target
     # VIEW's, which is exactly the mismatch this regression covers.
-    assert fake_service.view_call_log == [(7, "columns", {"dataset_id": 3})]
+    assert fake_service.view_call_log == [
+        (7, "columns", {"dataset_id": 3}),
+        (7, "column_types", {"dataset_id": 3}),
+    ]
 
 
 def test_dataset_route_source_columns_are_display_names_not_internal(
@@ -378,6 +381,37 @@ def test_dataset_route_allows_append_when_column_mapping_covers_the_difference(
     )
     assert data["dataset_id"] == 9
     assert "warnings" not in data.get("row_check", {})
+
+
+def test_dataset_route_rejects_append_when_a_shared_column_has_a_different_type(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    """A same-named column of another type would land in a separate column;
+    refuse before the write and name each mismatched column.
+    """
+    schema = _dataset_schema("Region", "date")
+    schema["dataset"]["data_schema"][1]["c_type"] = "date"  # type: ignore[index]
+    fake_service.responses[_DATASET_GET] = schema
+    fake_service.view_responses[(7, "columns")] = {"Region": "column_1", "date": "column_2"}
+    fake_service.view_responses[(7, "column_types")] = {"Region": "TEXT", "date": "TEXT"}
+    with pytest.raises(CliError) as excinfo:
+        view_cmd.view_export_specialized(
+            _inv(
+                "view.export.dataset",
+                project=180,
+                extra_args=["7", "3"],
+                input_file=_doc(
+                    tmp_path,
+                    {"dataset_name": "orders", "target_ds_id": 9, "save_as_mode": "APPEND_TO_DS"},
+                ),
+                yes=True,
+            )
+        )
+    assert excinfo.value.code == "append_type_mismatch"
+    assert "date: source text, target date" in excinfo.value.message
+    assert "Region" not in excinfo.value.message
+    assert "convert-type" in (excinfo.value.hint or "")
+    assert "to_dataset" not in [call[1] for call in fake_service.view_call_log]
 
 
 def test_dataset_route_warns_when_target_has_columns_the_source_lacks(
