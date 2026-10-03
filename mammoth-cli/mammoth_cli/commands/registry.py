@@ -318,6 +318,7 @@ HANDLERS: dict[str, Handler] = {
     # dataset family
     "dataset.find": dataset_cmd.dataset_find,
     "dataset.list": dataset_cmd.dataset_list,
+    "dataset.search": dataset_cmd.dataset_search,
     "dataset.get": dataset_cmd.dataset_get,
     "dataset.batch-data": dataset_cmd.dataset_batch_data,
     "dataset.data": dataset_cmd.dataset_data,

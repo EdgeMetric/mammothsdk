@@ -38,7 +38,11 @@ case-insensitive substring match over every page, returned as short rows
 (id, name, rows, cols) with `matched`. Do not page `dataset list` by hand;
 `limit` is at most 100. To find the dataset that holds given columns, pass
 `dataset find --input '{"columns": ["Order ID", "Region"]}'` (the name is then
-optional). A `browse` search hit carries `dataset_id` or `view_id`: use those,
+optional). To find the dataset that holds a value you were given (a campaign,
+a region, a product) when its name does not say, run `dataset search TERM`: it
+returns the project's datasets whose name, column names or sampled column
+values contain TERM, each with the matched column and value. `dataset find`
+and `browse` search match names only. A `browse` search hit carries `dataset_id` or `view_id`: use those,
 never the tree `id`.
 
 ```bash
