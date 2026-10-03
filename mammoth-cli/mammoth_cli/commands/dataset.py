@@ -167,7 +167,7 @@ def _find_in_projects(
     projects: list[dict[str, Any]],
     skipped: list[dict[str, Any]] | None = None,
 ) -> list[dict[str, Any]]:
-    """Datasets whose name has every token of ``needle`` in order (as the BE search), in each of ``projects``.
+    """Datasets whose name has every token of ``needle`` in order, in each of ``projects``.
 
     A project that cannot be read does not end the search: with ``skipped`` it is
     recorded there (id, name, why) and the rest are still searched.
