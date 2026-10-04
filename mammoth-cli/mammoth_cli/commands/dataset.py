@@ -526,7 +526,8 @@ def _compact_dataset_list(data: Any, offset: int, sort: str | None, limit: int) 
         "order": sort or "newest first (created_at desc)",
         "note": (
             "A dataset record holds no sample values; 'view list DATASET_ID' shows "
-            "a sample of the stored profile per view as sample_values (all_columns: true lists every column)."
+            "a sample of the stored profile per view as sample_values "
+            "(all_columns: true lists every column)."
         ),
     }
     # The list route sends no ``next``: a page of ``limit`` rows may have a successor.
@@ -802,6 +803,7 @@ def dataset_create(invocation: Invocation) -> HandlerResult:
     document = invocation.load_input()
     dataset_spec = _require_field(document, "dataset_spec")
     ds_creation_type = _require_field(document, "ds_creation_type")
+    _require_clone_views(ds_creation_type, dataset_spec)
     kwargs: dict[str, Any] = {
         "dataset_spec": dataset_spec,
         "ds_creation_type": ds_creation_type,
@@ -820,6 +822,20 @@ def dataset_create(invocation: Invocation) -> HandlerResult:
         result = _created_dataset(data, settled)
         _add_final_name(service, result, dataset_spec, project_id)
     return result, _meta(invocation, auth.workspace_id, project_id)
+
+
+def _require_clone_views(ds_creation_type: object, dataset_spec: object) -> None:
+    """Refuse a clone with no ``clone_dataview_ids``: the server would make a blank view."""
+    if ds_creation_type != "clone" or not isinstance(dataset_spec, dict):
+        return
+    if dataset_spec.get("clone_dataview_ids") == []:
+        raise CliError(
+            code=CODE_MISSING_ARGUMENT,
+            message="A clone needs at least one view in dataset_spec.clone_dataview_ids",
+            exit_status=EXIT_USAGE,
+            hint="Pass the source dataset's default_view id from 'mammoth view list "
+            "DATASET_ID' (other views only when asked); an empty list makes a blank view.",
+        )
 
 
 def _created_dataset(handle: Any, settled: Any) -> dict[str, Any]:

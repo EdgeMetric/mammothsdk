@@ -389,7 +389,7 @@ commands:
   - CT-DASHBOARD-CANVAS-GET-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: 'A board''s data is the view in the canvas dataset.dataview_id: read it with view data get VIEW_ID. After a board''s bake job, read the canvas and quote one number from it, such as a KPI total.'
   reviewed_by: primary
 - command_id: dashboard.canvas.restore
   command_path: dashboard canvas restore

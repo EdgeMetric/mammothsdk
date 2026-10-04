@@ -303,7 +303,7 @@ commands:
   - CT-BROWSE-SEARCH-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: 'Searches resources across every project you can open in the workspace (resources v2), a cursor page at a time: pass next_cursor back as cursor while has_more is true. search matches names; resource_type (comma-separated), sort and fields narrow the page. Needs no active project.'
+  known_restrictions: 'Searches resources across every project you can open in the workspace (resources v2), a cursor page at a time: pass next_cursor back as cursor while has_more is true. search matches names; resource_type (comma-separated), sort and fields narrow the page. Needs no active project. Each dataset hit carries dataset_id (its object_id) and each view hit view_id: pass those, never the tree id.'
   reviewed_by: primary
   readback:
     command: browse.search
