@@ -31308,14 +31308,14 @@
       "sdk": {
         "canonical_bindings": [
           {
-            "implementation_origin": "mammoth.api.projects.ProjectsAPI.bulk_delete",
+            "implementation_origin": "mammoth.api.projects.ProjectsAPI.bulk_delete_and_verify",
             "no_command_reason": null,
-            "sdk_symbol": "mammoth.api.projects.ProjectsAPI.bulk_delete",
-            "signature": "bulk_delete(self, project_ids: '_list[int]', workspace_id: 'int | None' = None) -> 'dict[str, Any]'"
+            "sdk_symbol": "mammoth.api.projects.ProjectsAPI.bulk_delete_and_verify",
+            "signature": "bulk_delete_and_verify(self, project_ids: '_list[int]', workspace_id: 'int | None' = None, *, timeout: 'int | None' = None, poll_interval: 'float' = 2.0) -> 'dict[str, Any]'"
           }
         ],
-        "conversion": "Call mammoth.api.projects.ProjectsAPI.bulk_delete with validated request fields.",
-        "primary_symbol": "mammoth.api.projects.ProjectsAPI.bulk_delete",
+        "conversion": "Call mammoth.api.projects.ProjectsAPI.bulk_delete_and_verify with validated request fields.",
+        "primary_symbol": "mammoth.api.projects.ProjectsAPI.bulk_delete_and_verify",
         "request_model": "ProjectBulkDeleteRequest",
         "result_model": "ProjectBulkDeleteResult"
       },
@@ -31902,14 +31902,14 @@
       "sdk": {
         "canonical_bindings": [
           {
-            "implementation_origin": "mammoth.api.projects.ProjectsAPI.delete",
+            "implementation_origin": "mammoth.api.projects.ProjectsAPI.delete_and_verify",
             "no_command_reason": null,
-            "sdk_symbol": "mammoth.api.projects.ProjectsAPI.delete",
-            "signature": "delete(self, project_id: 'int', workspace_id: 'int | None' = None) -> 'dict[str, Any]'"
+            "sdk_symbol": "mammoth.api.projects.ProjectsAPI.delete_and_verify",
+            "signature": "delete_and_verify(self, project_id: 'int', workspace_id: 'int | None' = None, *, timeout: 'int | None' = None, poll_interval: 'float' = 2.0) -> 'dict[str, Any]'"
           }
         ],
-        "conversion": "Call mammoth.api.projects.ProjectsAPI.delete with validated request fields.",
-        "primary_symbol": "mammoth.api.projects.ProjectsAPI.delete",
+        "conversion": "Call mammoth.api.projects.ProjectsAPI.delete_and_verify with validated request fields.",
+        "primary_symbol": "mammoth.api.projects.ProjectsAPI.delete_and_verify",
         "request_model": "ProjectDeleteRequest",
         "result_model": "ProjectDeleteResult"
       },

@@ -1,6 +1,6 @@
 # Command reference
 
-Generated from the reviewed command manifests for mammoth-cli 2.2.23.
+Generated from the reviewed command manifests for mammoth-cli 2.2.27.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
@@ -228,7 +228,7 @@ Total commands: 646.
 
 - `DATASET_ID` (int, required) — ID of the dataset to generate a condition for.
 
-- Mutation class: `benign_mutation`
+- Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.ai.AIAPI.condition_generate`
 - Agent example: `mammoth ai condition generate 123 --input '{"intent": "Summarize revenue by region"}'`
@@ -239,7 +239,7 @@ Total commands: 646.
 
 - `DATASET_ID` (int, required) — ID of the dataset to generate an expression for.
 
-- Mutation class: `benign_mutation`
+- Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.ai.AIAPI.expression_generate`
 - Agent example: `mammoth ai expression generate 123 --input '{"intent": "Summarize revenue by region", "mode": "sample"}'`
@@ -3416,7 +3416,7 @@ Total commands: 646.
 
 - Mutation class: `destructive`
 - Confirmation: `confirm_target`
-- Backing SDK: `mammoth.api.projects.ProjectsAPI.bulk_delete`
+- Backing SDK: `mammoth.api.projects.ProjectsAPI.bulk_delete_and_verify`
 - Agent example: `mammoth project bulk-delete --input '{"project_ids": [1]}'`
 
 ### `mammoth project bulk-update`
@@ -3431,7 +3431,8 @@ Total commands: 646.
 **Arguments**
 
 - `PROJECT_ID` (int, optional) — ID of the project to act on; defaults to the active project.
-- `DATASET_ID` (int, optional) — Check only this dataset's first view; no other dataset or dashboard is read.
+- `DATASET_ID` (int, optional) — Check only this dataset (its first view unless VIEW_ID is given); no other dataset or dashboard is read.
+- `VIEW_ID` (int, optional) — Check this view of DATASET_ID instead of its first (most recent) one.
 
 - Mutation class: `read`
 - Confirmation: `none`
@@ -3479,7 +3480,7 @@ Total commands: 646.
 
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
-- Backing SDK: `mammoth.api.projects.ProjectsAPI.delete`
+- Backing SDK: `mammoth.api.projects.ProjectsAPI.delete_and_verify`
 - Agent example: `mammoth project delete 123`
 
 ### `mammoth project ensure`
