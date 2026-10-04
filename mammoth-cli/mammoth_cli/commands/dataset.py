@@ -526,7 +526,8 @@ def _compact_dataset_list(data: Any, offset: int, sort: str | None, limit: int) 
         "order": sort or "newest first (created_at desc)",
         "note": (
             "A dataset record holds no sample values; 'view list DATASET_ID' shows "
-            "a sample of the stored profile per view as sample_values (all_columns: true lists every column)."
+            "a sample of the stored profile per view as sample_values "
+            "(all_columns: true lists every column)."
         ),
     }
     # The list route sends no ``next``: a page of ``limit`` rows may have a successor.
