@@ -15,8 +15,8 @@ from mammoth_cli.testing import login_default_profile
 
 _CREATE = "mammoth.api.projects.ProjectsAPI.create"
 _UPDATE = "mammoth.api.projects.ProjectsAPI.update"
-_DELETE = "mammoth.api.projects.ProjectsAPI.delete"
-_BULK_DELETE = "mammoth.api.projects.ProjectsAPI.bulk_delete"
+_DELETE = "mammoth.api.projects.ProjectsAPI.delete_and_verify"
+_BULK_DELETE = "mammoth.api.projects.ProjectsAPI.bulk_delete_and_verify"
 _BULK_UPDATE = "mammoth.api.projects.ProjectsAPI.bulk_update"
 
 

@@ -128,7 +128,9 @@ def test_delete_batch03_emits_exact_method_path_query_and_no_body(
         None,
     )
     run(project, "project.bulk-delete", [], {"project_ids": [17, 18]}, confirm="17,18")
-    assert (_path(api), api.last().method, api.last().query, api.last().json_body) == (
+    # The verifying delete lists projects afterwards; the DELETE is the one before.
+    sent = api.requests[-2]
+    assert (sent.path.removeprefix("/api/v2"), sent.method, sent.query, sent.json_body) == (
         "/workspaces/4/projects",
         "DELETE",
         {"ids": ["17,18"]},
@@ -136,7 +138,9 @@ def test_delete_batch03_emits_exact_method_path_query_and_no_body(
     )
     # A project delete cascades, so it is confirm_target: --confirm must name it.
     run(project, "project.delete", [str(PROJECT)], confirm=str(PROJECT))
-    assert (_path(api), api.last().method, api.last().query, api.last().json_body) == (
+    # The verifying delete lists projects afterwards; the DELETE is the one before.
+    sent = api.requests[-2]
+    assert (sent.path.removeprefix("/api/v2"), sent.method, sent.query, sent.json_body) == (
         f"/workspaces/4/projects/{PROJECT}",
         "DELETE",
         {},

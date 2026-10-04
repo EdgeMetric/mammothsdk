@@ -8,8 +8,8 @@ commands:
   - DeleteProjects
   positionals: []
   options: []
-  sdk_symbol: mammoth.api.projects.ProjectsAPI.bulk_delete
-  sdk_conversion: Call mammoth.api.projects.ProjectsAPI.bulk_delete with validated request fields.
+  sdk_symbol: mammoth.api.projects.ProjectsAPI.bulk_delete_and_verify
+  sdk_conversion: Call mammoth.api.projects.ProjectsAPI.bulk_delete_and_verify with validated request fields.
   request_model: ProjectBulkDeleteRequest
   result_model: ProjectBulkDeleteResult
   mutation_class: destructive
@@ -319,8 +319,8 @@ commands:
     falls_back_to_field: null
     help: ID of the project to act on; defaults to the active project.
   options: []
-  sdk_symbol: mammoth.api.projects.ProjectsAPI.delete
-  sdk_conversion: Call mammoth.api.projects.ProjectsAPI.delete with validated request fields.
+  sdk_symbol: mammoth.api.projects.ProjectsAPI.delete_and_verify
+  sdk_conversion: Call mammoth.api.projects.ProjectsAPI.delete_and_verify with validated request fields.
   request_model: ProjectDeleteRequest
   result_model: ProjectDeleteResult
   mutation_class: high_impact

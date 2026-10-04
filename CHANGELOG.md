@@ -6,6 +6,16 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.8.17]
+
+### Added
+
+- `ProjectsAPI.delete_and_verify(project_id)` and `ProjectsAPI.bulk_delete_and_verify(project_ids)`
+  delete, then poll the project list until every id is gone. The delete routes answer 202 with an
+  empty body and no job id, so `delete` alone never says whether the project went. The result is
+  `{"project_id": N, "status": "deleted", "verified": True, "ack": ...}`; on timeout (the client's
+  job timeout) they raise `MammothDeletionVerificationError` naming the ids still listed.
+
 ## [0.8.16]
 
 ### Added

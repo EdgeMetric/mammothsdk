@@ -971,7 +971,7 @@
       "path": "/workspaces/{workspace_id}/projects",
       "canonical_command": "project.bulk-delete",
       "schema_id": "project.bulk-delete",
-      "sdk_symbol": "mammoth.api.projects.ProjectsAPI.bulk_delete",
+      "sdk_symbol": "mammoth.api.projects.ProjectsAPI.bulk_delete_and_verify",
       "bound_commands": [
         "project.bulk-delete"
       ],
@@ -998,7 +998,7 @@
       "path": "/workspaces/{workspace_id}/projects/{project_id}",
       "canonical_command": "project.delete",
       "schema_id": "project.delete",
-      "sdk_symbol": "mammoth.api.projects.ProjectsAPI.delete",
+      "sdk_symbol": "mammoth.api.projects.ProjectsAPI.delete_and_verify",
       "bound_commands": [
         "project.delete"
       ],

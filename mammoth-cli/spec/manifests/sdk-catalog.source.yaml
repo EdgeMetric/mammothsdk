@@ -3104,7 +3104,7 @@ sdk_methods:
   openapi_operation_ids: []
   notes: 'B04 SERVER_VARIANCE: documented as returning HTTP 500 on some servers; a 5xx response is not
     server_unavailable.'
-- sdk_symbol: mammoth.api.projects.ProjectsAPI.bulk_delete
+- sdk_symbol: mammoth.api.projects.ProjectsAPI.bulk_delete_and_verify
   canonical_command: project.bulk-delete
   alias_of: null
   mutation_class: destructive
@@ -3143,7 +3143,7 @@ sdk_methods:
   wait_policy: null
   pagination_policy: null
   openapi_operation_ids: []
-- sdk_symbol: mammoth.api.projects.ProjectsAPI.delete
+- sdk_symbol: mammoth.api.projects.ProjectsAPI.delete_and_verify
   canonical_command: project.delete
   alias_of: null
   mutation_class: destructive

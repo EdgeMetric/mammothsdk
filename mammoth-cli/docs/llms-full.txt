@@ -62,9 +62,9 @@ Sensitive structured input must come from a private file or pipe; never put secr
 
 ## ai
 
-- `mammoth ai condition generate` [benign_mutation/none] -> mammoth.api.ai.AIAPI.condition_generate
+- `mammoth ai condition generate` [read/none] -> mammoth.api.ai.AIAPI.condition_generate
   example: mammoth ai condition generate 123 --input '{"intent": "Summarize revenue by region"}'
-- `mammoth ai expression generate` [benign_mutation/none] -> mammoth.api.ai.AIAPI.expression_generate
+- `mammoth ai expression generate` [read/none] -> mammoth.api.ai.AIAPI.expression_generate
   example: mammoth ai expression generate 123 --input '{"intent": "Summarize revenue by region", "mode": "sample"}'
 - `mammoth ai retention condition` [benign_mutation/none] -> mammoth.api.ai.AIAPI.retention_condition
   example: mammoth ai retention condition 123 --input '{"mode": "generate", "intent": "completed payments older than 90 days"}' --project 456
@@ -777,7 +777,7 @@ Sensitive structured input must come from a private file or pipe; never put secr
 
 ## project
 
-- `mammoth project bulk-delete` [destructive/confirm_target] -> mammoth.api.projects.ProjectsAPI.bulk_delete
+- `mammoth project bulk-delete` [destructive/confirm_target] -> mammoth.api.projects.ProjectsAPI.bulk_delete_and_verify
   example: mammoth project bulk-delete --input '{"project_ids": [1]}'
 - `mammoth project bulk-update` [high_impact/confirm_target] -> mammoth.api.projects.ProjectsAPI.bulk_update
   example: mammoth project bulk-update --input '{"patch_data": {"patches": [{"op": "add", "path": "role", "value": [{"project_id": 456, "user_roles": [{"user_id": 123, "role": "project_analyst"}]}]}]}}'
@@ -789,7 +789,7 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth project create 'Revenue report'
 - `mammoth project data-check list` [read/none] -> mammoth.api.projects.ProjectsAPI.data_check_list
   example: mammoth project data-check list 123
-- `mammoth project delete` [high_impact/confirm_target] -> mammoth.api.projects.ProjectsAPI.delete
+- `mammoth project delete` [high_impact/confirm_target] -> mammoth.api.projects.ProjectsAPI.delete_and_verify
   example: mammoth project delete 123
 - `mammoth project ensure` [benign_mutation/none] -> mammoth_cli.commands.project.project_ensure
   example: mammoth project ensure 'Revenue report'

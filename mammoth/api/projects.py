@@ -4,11 +4,13 @@ Projects API client for managing projects in Mammoth.
 
 from __future__ import annotations
 
+import asyncio
+import time
 from typing import TYPE_CHECKING, Any, Literal
 
 from pydantic import ValidationError
 
-from ..exceptions import MammothValidationError
+from ..exceptions import MammothDeletionVerificationError, MammothValidationError
 from ..models.projects import DataSyncPatchItem
 
 if TYPE_CHECKING:
@@ -410,6 +412,85 @@ class ProjectsAPI:
         """
         ws = workspace_id or self._ws()
         return await self._client._request_json("DELETE", f"/workspaces/{ws}/projects/{project_id}")
+
+    async def _wait_until_absent(
+        self,
+        project_ids: _list[int],
+        ack: dict[str, Any],
+        workspace_id: int | None,
+        timeout: int | None,
+        poll_interval: float,
+    ) -> None:
+        """Poll the project list until none of ``project_ids`` is in it.
+
+        The delete routes answer 202 with no job id, so absence from the list
+        is the only readback. Raises on timeout with the ids still present.
+        """
+        ws = workspace_id or self._ws()
+        deadline = time.monotonic() + (
+            timeout if timeout is not None else int(getattr(self._client, "job_timeout", 60))
+        )
+        while True:
+            rows = await self._fetch_all(ws, "id", subscribed=False)
+            present = sorted(set(project_ids) & {p.get("id") for p in rows})
+            if not present:
+                return
+            if time.monotonic() >= deadline:
+                raise MammothDeletionVerificationError(
+                    "Project delete was acknowledged but absence was not verified.",
+                    {
+                        "project_ids": list(project_ids),
+                        "still_present": present,
+                        "status": "pending",
+                        "verified": False,
+                        "ack": ack,
+                    },
+                )
+            await asyncio.sleep(poll_interval)
+
+    async def delete_and_verify(
+        self,
+        project_id: int,
+        workspace_id: int | None = None,
+        *,
+        timeout: int | None = None,
+        poll_interval: float = 2.0,
+    ) -> dict[str, Any]:
+        """Delete one project and verify it is gone from the project list.
+
+        The route acknowledges with 202 and an empty body, so this polls the
+        list until the project is absent (bounded by the client job timeout).
+
+        Raises:
+            MammothDeletionVerificationError: still listed when the timeout ends.
+        """
+        ack = await self.delete(project_id, workspace_id=workspace_id)
+        settled = await self._client._wait_if_job(ack)
+        await self._wait_until_absent([project_id], settled, workspace_id, timeout, poll_interval)
+        return {"project_id": project_id, "status": "deleted", "verified": True, "ack": settled}
+
+    async def bulk_delete_and_verify(
+        self,
+        project_ids: _list[int],
+        workspace_id: int | None = None,
+        *,
+        timeout: int | None = None,
+        poll_interval: float = 2.0,
+    ) -> dict[str, Any]:
+        """Bulk delete projects and verify every id is gone from the project list.
+
+        Raises:
+            MammothDeletionVerificationError: some ids still listed at timeout.
+        """
+        ack = await self.bulk_delete(project_ids, workspace_id=workspace_id)
+        settled = await self._client._wait_if_job(ack)
+        await self._wait_until_absent(project_ids, settled, workspace_id, timeout, poll_interval)
+        return {
+            "project_ids": list(project_ids),
+            "status": "deleted",
+            "verified": True,
+            "ack": settled,
+        }
 
     async def bulk_update(
         self,
