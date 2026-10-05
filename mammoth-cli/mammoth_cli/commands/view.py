@@ -2963,11 +2963,51 @@ def view_pipeline_rerun(invocation: Invocation) -> HandlerResult:
                 service, invocation, dataview_id, document, 1
             )
         before = _rows_before(service, dataset_id, dataview_id, invocation.project)
+        fired = _end_of_pipeline_exports(service, dataview_id, dataset_id)
         data = service.call(_symbol(invocation), **kwargs)
         data = _settle_async_view_write(
             service, dataset_id, dataview_id, invocation.project, data, before
         )
+    if fired and isinstance(data, dict):
+        data = {**data, "exports_fired": fired}
     return data, _meta(invocation, auth.workspace_id, None)
+
+
+#: Non-secret ``target_properties`` keys that say where an export writes.
+_EXPORT_TARGET_HINT_KEYS = ("table", "host", "database", "TARGET_DS_ID", "DS_NAME", "emails")
+
+
+def _end_of_pipeline_exports(
+    service: Any, dataview_id: int, dataset_id: int | None
+) -> list[dict[str, Any]]:
+    """The live end-of-pipeline exports a rerun of this view fires again.
+
+    A rerun re-sends every one of them to its destination (database, email, REST
+    endpoint, another dataset), so the caller is told which, not just that the
+    pipeline ran. Soft-deleted exports do not fire.
+    """
+    listing = service.call(
+        _EXPORTS_LIST_SYMBOL,
+        dataview_id=dataview_id,
+        dataset_id=dataset_id,
+        end_of_pipeline=True,
+    )
+    fired: list[dict[str, Any]] = []
+    for export in getattr(listing, "exports", None) or []:
+        if export.status is ExportStatus.DELETED:
+            continue
+        handler = export.handler_type
+        properties = export.target_properties or {}
+        fired.append(
+            {
+                "export_id": export.id,
+                "handler_type": getattr(handler, "value", handler),
+                "target": {
+                    key: properties[key] for key in _EXPORT_TARGET_HINT_KEYS if key in properties
+                },
+            }
+        )
+    return fired
 
 
 #: Seconds ``view pipeline wait`` waits when the caller names no ``timeout`` (the SDK's own
@@ -3625,6 +3665,11 @@ def view_export_specialized(invocation: Invocation) -> HandlerResult:
         target_view_before = None
         target_only_columns: list[str] = []
         mapped_type_warnings: list[str] = []
+        hidden_left_out = (
+            _hidden_column_names(service, dataset_id, dataview_id, project_id)
+            if is_dataset_route and target_ds_id is None
+            else []
+        )
         if target_ds_id is not None:
             # rows_before is the target's own count ahead of this write, read
             # before the call so a later re-read can never be confused with it.
@@ -3695,6 +3740,11 @@ def view_export_specialized(invocation: Invocation) -> HandlerResult:
                 # a non-increase here as unverified, not just an omitted count.
                 row_check["expected_row_increase"] = True
             warnings = list(mapped_type_warnings)
+            if hidden_left_out:
+                warnings.append(
+                    "hidden column(s) of the source view are not in the new dataset: "
+                    + ", ".join(hidden_left_out)
+                )
             if target_only_columns:
                 # Allowed -- an append never has to cover every target column
                 # -- but worth surfacing rather than leaving silent.
@@ -3774,6 +3824,32 @@ def _existing_internal_dataset_export(
         and int(target) == target_ds_id
     ]
     return max(matches, key=lambda export: export.id or 0) if matches else None
+
+
+def _hidden_column_names(
+    service: Any, dataset_id: int, dataview_id: int, project_id: int | None
+) -> list[str]:
+    """Display names of the view's hidden columns, which a new-dataset export leaves out."""
+    info = apply_column_renames(
+        service.call(
+            _DATAVIEW_GET_SYMBOL,
+            dataset_id=dataset_id,
+            dataview_id=dataview_id,
+            project_id=project_id,
+        )
+    )
+    if not isinstance(info, dict):
+        return []
+    display = info.get("display_properties")
+    hidden = display.get("HIDDEN_COLUMNS") if isinstance(display, dict) else None
+    if not isinstance(hidden, list) or not hidden:
+        return []
+    names = {
+        column.get(_INTERNAL_NAME_KEY): column.get(_DISPLAY_NAME_KEY) or column.get("name")
+        for column in info.get(_METADATA_KEY) or []
+        if isinstance(column, dict)
+    }
+    return [str(names.get(column) or column) for column in hidden]
 
 
 def reject_dataset_export_conflicts(
