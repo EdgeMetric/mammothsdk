@@ -931,3 +931,13 @@ def test_a_find_with_no_match_still_points_into_families() -> None:
 
     assert "browse" in result
     assert "mammoth schema list" in result["browse"]["next"]
+
+
+def test_set_password_tells_the_agent_to_ask_for_the_files_password() -> None:
+    """FB-15: the contract said only "do not live-test password changes", so the
+    agent asked for an unlocked copy instead of the locked file's password."""
+    schema = get_schema("file.set-password")
+    assert schema is not None
+    assert "ask the user for the file's password" in schema["preconditions"]
+    assert "never ask for an unlocked copy" in schema["preconditions"]
+    assert "live-test" not in schema["preconditions"]

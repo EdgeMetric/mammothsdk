@@ -2650,7 +2650,7 @@ sdk_methods:
   wait_policy: always_wait
   pagination_policy: none
   openapi_operation_ids: []
-  notes: password is secret and never a normal flag; do not live-test password changes.
+  notes: "Unlocks a password-protected file: ask the user for the file's password and pass it in --input; never ask for an unlocked copy. The password is secret and never a normal flag."
 - sdk_symbol: mammoth.api.files.FilesAPI.update
   canonical_command: file.update
   alias_of: null
