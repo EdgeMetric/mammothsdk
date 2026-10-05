@@ -67,7 +67,7 @@ jobs:
           sed -i "s/^__version__ = \"$cli_old\"/__version__ = \"$cli\"/" mammoth-cli/mammoth_cli/__init__.py
           sed -i "s/mammoth-cli $cli_old\./mammoth-cli $cli./" mammoth-cli/docs/reference/commands.md
           echo "sdk=$sdk" >> "$GITHUB_OUTPUT"; echo "cli=$cli" >> "$GITHUB_OUTPUT"
-      - name: Merge the sync branch to main
+      - name: Commit the sync branch and open its PR
         if: steps.drift.outputs.changed == 'true'
         run: |
           branch="chore/spec-sync-sdk-${{ steps.ver.outputs.sdk }}-cli-${{ steps.ver.outputs.cli }}"
@@ -79,14 +79,17 @@ jobs:
           gh pr create --base main --head "$branch" \
             --title "chore: spec sync mammoth-io ${{ steps.ver.outputs.sdk }} / mammoth-cli ${{ steps.ver.outputs.cli }}" \
             --body "Regenerated from the live spec; see mammoth/_spec.json for the pinned spec_sha256. Published after merge and green tests."
-          gh pr merge "$branch" --squash
-          git fetch origin main && git checkout --detach origin/main
-      - name: Test the merged main commit
+      - name: Test the sync branch (a failing suite never lands on main)
         if: steps.drift.outputs.changed == 'true'
         run: |
           poetry install --no-interaction
           poetry run pytest tests/ -q -m "not integration and not slow"
           (cd mammoth-cli && pytest tests -q)
+      - name: Merge the sync PR to main
+        if: steps.drift.outputs.changed == 'true'
+        run: |
+          gh pr merge "chore/spec-sync-sdk-${{ steps.ver.outputs.sdk }}-cli-${{ steps.ver.outputs.cli }}" --squash
+          git fetch origin main && git checkout --detach origin/main
       - name: Publish mammoth-io
         if: steps.drift.outputs.changed == 'true'
         run: |
@@ -112,8 +115,6 @@ jobs:
           git push origin "$branch"
           gh pr create --base main --head "$branch" --title "chore: relock mammoth-cli ${{ steps.ver.outputs.cli }}" \
             --body "Lock files agree with mammoth-io==${{ steps.ver.outputs.sdk }}."
-          gh pr merge "$branch" --squash
-          git fetch origin main && git checkout --detach origin/main
       - name: Publish mammoth-cli
         if: steps.drift.outputs.changed == 'true'
         working-directory: mammoth-cli
