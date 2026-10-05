@@ -2117,7 +2117,7 @@ commands:
   - CT-VIEW-EXPORT-BIGQUERY-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: Require upsert keys for UPSERT and type both partition variants.
+  known_restrictions: 'Require upsert keys for UPSERT and type both partition variants. With export_type REPLACE (the default) it drops and recreates the destination table on this export and on every later run of the view''s pipeline; refused unless the input sets replace_table to true (replace_table_not_acknowledged). The result carries refreshes_on_pipeline_run and a note saying so.'
   reviewed_by: primary
 - command_id: view.export.create
   command_path: view export create
@@ -2666,7 +2666,7 @@ commands:
   - CT-VIEW-EXPORT-MSSQL-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: 'Drops and recreates the destination table on this export and on every later run of the view''s pipeline (any existing table of that name is lost); refused unless the input sets replace_table to true (replace_table_not_acknowledged). The result carries refreshes_on_pipeline_run and a note saying so.'
   reviewed_by: primary
 - command_id: view.export.mysql
   command_path: view export mysql
@@ -2719,7 +2719,7 @@ commands:
   - CT-VIEW-EXPORT-MYSQL-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: 'Drops and recreates the destination table on this export and on every later run of the view''s pipeline (any existing table of that name is lost); refused unless the input sets replace_table to true (replace_table_not_acknowledged). The result carries refreshes_on_pipeline_run and a note saying so. Table names over 60 characters are refused (table_name_too_long): the database export would cut them and write a different table.'
   reviewed_by: primary
 - command_id: view.export.onedrive
   command_path: view export onedrive
@@ -2825,7 +2825,7 @@ commands:
   - CT-VIEW-EXPORT-POSTGRES-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: 'Drops and recreates the destination table on this export and on every later run of the view''s pipeline (any existing table of that name is lost); refused unless the input sets replace_table to true (replace_table_not_acknowledged). The result carries refreshes_on_pipeline_run and a note saying so. Table names over 60 characters are refused (table_name_too_long): the database export would cut them and write a different table.'
   reviewed_by: primary
 - command_id: view.export.powerbi
   command_path: view export powerbi
@@ -2926,6 +2926,8 @@ commands:
   undo_test: null
   known_restrictions: Becomes a persistent pipeline step, like 'view export dataset'; the published target
     refreshes automatically every time the source view's pipeline reruns, not just once at call time.
+    It drops and recreates the destination table each time (any existing table of that name is lost),
+    so it is refused unless the input sets replace_table to true (replace_table_not_acknowledged).
   reviewed_by: primary
 - command_id: view.export.publish-db-update
   command_path: view export publish-db-update
@@ -3021,7 +3023,7 @@ commands:
   - CT-VIEW-EXPORT-REDSHIFT-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: 'Drops and recreates the destination table on this export and on every later run of the view''s pipeline (any existing table of that name is lost); refused unless the input sets replace_table to true (replace_table_not_acknowledged). The result carries refreshes_on_pipeline_run and a note saying so.'
   reviewed_by: primary
 - command_id: view.export.rest
   command_path: view export rest

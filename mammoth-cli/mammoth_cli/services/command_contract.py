@@ -734,6 +734,15 @@ _S7_ADDITIONAL_INPUT_FIELDS: dict[str, tuple[FieldSpec, ...]] = {
     "dashboard.bi-export": (
         FieldSpec("target", required=True, annotation=Literal["powerbi", "tableau"]),
     ),
+    # A database export drops and recreates its destination table, now and on
+    # every pipeline run; ``replace_table`` is the CLI-side acknowledgement
+    # (never forwarded to the SDK call, so its signature cannot introspect it).
+    **{
+        f"view.export.{route}": (
+            FieldSpec("replace_table", required=False, annotation=bool, default=False),
+        )
+        for route in ("postgres", "mysql", "mssql", "redshift", "bigquery", "publish-db")
+    },
     # user.update previously pinned name/email here as a guess, from when
     # UserProfileAPI.update took **fields and so had nothing introspectable.
     # The SDK method is now typed (first_name, last_name -- the backend's

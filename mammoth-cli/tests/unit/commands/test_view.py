@@ -2712,7 +2712,12 @@ def test_export_publish_db_proceeds_with_yes(
 ) -> None:
     doc = _doc(
         tmp_path,
-        {"odbc_type": "postgres", "target_properties": {"host": "x"}, "dataset_id": 9},
+        {
+            "odbc_type": "postgres",
+            "target_properties": {"host": "x", "table": "sales"},
+            "dataset_id": 9,
+            "replace_table": True,
+        },
     )
     view_cmd.view_export_publish_db(
         _inv("view.export.publish-db", project=180, extra_args=["7"], input_file=doc, yes=True)
@@ -2723,7 +2728,7 @@ def test_export_publish_db_proceeds_with_yes(
             {
                 "dataview_id": 7,
                 "odbc_type": "postgres",
-                "target_properties": {"host": "x"},
+                "target_properties": {"host": "x", "table": "sales"},
                 "project_id": 180,
                 "dataset_id": 9,
             },

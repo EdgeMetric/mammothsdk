@@ -154,12 +154,16 @@ ERROR_SUMMARIES: dict[str, str] = {
     "project_required": "No project has been chosen for this step.",
     "pypi_response_invalid": "An update check didn't return a usable answer.",
     "pypi_unreachable": "An update check couldn't connect.",
+    "replace_table_not_acknowledged": (
+        "This export would drop and recreate a database table, and needs an explicit yes."
+    ),
     "resource_identity_required": "The assistant needs to say which item it means.",
     "resource_not_found": _S_NOT_FOUND,
     "retryable_error": "Mammoth was temporarily unavailable. Trying again may work.",
     "schema_not_found": _S_NOT_FOUND,
     "sdk_symbol_unresolved": _S_INTERNAL,
     "skill_conflict": _S_SETUP,
+    "table_name_too_long": "The database would cut this table name and write a different table.",
     "task_runtime_error": "A background task hit an error while running.",
     "timeout": "This step took too long. It may still be running.",
     "too_many_goals": _S_BAD_REQUEST,

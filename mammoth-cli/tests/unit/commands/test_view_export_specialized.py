@@ -618,6 +618,7 @@ def test_postgres_route_requires_confirmation_and_forwards_secret(
         "table": "sales",
         "username": "agent",
         "password": "secret",
+        "replace_table": True,
     }
     with pytest.raises(CliError) as error:
         view_cmd.view_export_specialized(
@@ -640,7 +641,8 @@ def test_postgres_route_requires_confirmation_and_forwards_secret(
             yes=True,
         )
     )
-    assert fake_service.view_call_log == [(7, "to_postgres", {"dataset_id": 9, **payload})]
+    forwarded = {key: value for key, value in payload.items() if key != "replace_table"}
+    assert fake_service.view_call_log == [(7, "to_postgres", {"dataset_id": 9, **forwarded})]
 
 
 def test_specialized_route_rejects_unknown_fields_before_service(
