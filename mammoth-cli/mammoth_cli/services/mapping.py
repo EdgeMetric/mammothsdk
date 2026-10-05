@@ -232,6 +232,22 @@ def running_handle(error: CliError, command_id: str) -> dict[str, Any] | None:
     }
 
 
+#: A backend error ``name`` that refuses an action for lack of permission
+#: (``DASHBOARD_CREATE_NOT_ALLOWED``) arrives as a 400, not a 403.
+_NOT_ALLOWED_SUFFIX = "_NOT_ALLOWED"
+
+
+def _not_allowed_reason(body: Any, status: int | None) -> str | None:
+    """The backend's own reason when a 4xx refuses an action as not allowed."""
+    if status is None or not 400 <= status < 500 or not isinstance(body, dict):
+        return None
+    name = body.get("name")
+    message = body.get("message")
+    if not isinstance(name, str) or not name.endswith(_NOT_ALLOWED_SUFFIX):
+        return None
+    return message if isinstance(message, str) and message else name
+
+
 def map_sdk_exception(
     exc: BaseException,
     *,
@@ -462,6 +478,20 @@ def map_sdk_exception(
                     "An API token limited to one project gets this in every other "
                     "project, including one it created: pass that project's --project ID, "
                     "or log in with a token created without a project."
+                ),
+                details=details,
+                request_id=request_id,
+                authorization_required=True,
+            )
+        not_allowed = _not_allowed_reason(exc.response_body, status)
+        if not_allowed is not None:
+            return CliError(
+                code=CODE_AUTHORIZATION_REQUIRED,
+                message=not_allowed,
+                exit_status=EXIT_AUTH,
+                hint=(
+                    "This user lacks the permission for this action here. Do not retry or "
+                    "work around it: tell the user what is blocked and who can grant it."
                 ),
                 details=details,
                 request_id=request_id,

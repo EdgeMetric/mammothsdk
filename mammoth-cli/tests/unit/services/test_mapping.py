@@ -464,3 +464,44 @@ def test_dashboard_job_timeout_resumes_through_the_url_scoped_wait() -> None:
         'mammoth job wait 44 --input \'{"dashboard_url": "sales"}\''
     )
     assert mapped.recovery_commands[0] == "mammoth dashboard job-by-url sales 44"
+
+
+def test_a_not_allowed_400_is_an_authorization_error_with_the_backends_reason() -> None:
+    # FB-10: 4DASH019 came back as a generic api_error, hint "Inspect the
+    # structured details"; the agent got through only by reading the body.
+    reason = (
+        "You can view this project's dashboards but not create them. "
+        "Ask a project admin for analyst access."
+    )
+    error = MammothAPIError(
+        "Bad request",
+        status_code=400,
+        method="POST",
+        operation_state="failed",
+        response_body={
+            "error_code": "4DASH019",
+            "name": "DASHBOARD_CREATE_NOT_ALLOWED",
+            "message": reason,
+            "status_code": 400,
+        },
+    )
+
+    mapped = map_sdk_exception(error)
+
+    assert mapped.code == "authorization_required"
+    assert mapped.exit_status == EXIT_AUTH
+    assert mapped.authorization_required is True
+    assert mapped.message == reason
+    assert "Do not retry" in (mapped.hint or "")
+
+
+def test_an_ordinary_400_stays_an_api_error() -> None:
+    error = MammothAPIError(
+        "Bad request",
+        status_code=400,
+        method="POST",
+        operation_state="failed",
+        response_body={"error_code": "4DSET053", "name": "MUST_PROVIDE_TABLE_LIST_OR_PREVIEW"},
+    )
+
+    assert map_sdk_exception(error).code == "api_error"
