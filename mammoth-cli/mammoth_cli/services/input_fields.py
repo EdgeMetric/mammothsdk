@@ -236,6 +236,7 @@ _EXAMPLE_INPUT_HINTS: dict[str, dict[str, Any]] = {
     },
     "view.conditional-format.delete-all": {"rule_id": "bca0ff33bd6f8ed1"},
     "dataset.bulk-delete": {"dataset_ids": [456, 457]},
+    "batch.bulk-delete": {"ids": [11, 12]},
     "folder.move": {"resource_ids": [8024], "target_folder_resource_id": "root"},
     "project.update": {"name": "Renamed project"},
     # ProjectsPatch: role changes across explicitly named projects.
@@ -267,17 +268,9 @@ _EXAMPLE_INPUT_HINTS: dict[str, dict[str, Any]] = {
     "view.export.publish-db-update": {
         "patch": [{"op": "replace", "path": "credentials", "value": {"odbc_type": "postgres"}}],
     },
-    # BatchesPostRequest: every ColumnNameMapping item carries the expected
-    # destination type; a bare {src: dst} map cannot satisfy the route.
-    "batch.create": {
-        "mapping": [
-            {
-                "source_c_name": "column_1",
-                "destination_c_name": "column_1",
-                "expected_destination_c_type": "TEXT",
-            }
-        ]
-    },
+    # BatchesPostRequest items carry the expected destination type; the CLI
+    # fills it from the destination's real schema, so the example omits it.
+    "batch.create": {"mapping": {"column_1": "column_1"}},
     # The SQL task reads the view as the quoted table "view:<id>" (or its
     # quoted display name); placeholder names such as ``data`` are rejected.
     "view.transform.add-sql": {

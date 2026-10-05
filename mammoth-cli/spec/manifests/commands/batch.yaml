@@ -30,7 +30,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth batch bulk-delete DATASET_ID --help
-  agent_example: mammoth batch bulk-delete 123
+  agent_example: 'mammoth batch bulk-delete 123 --input ''{"ids": [11, 12]}'''
   unit_tests:
   - UT-BATCH-BULK-DELETE
   contract_tests:
@@ -39,7 +39,7 @@ commands:
   - CT-BATCH-BULK-DELETE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: ids is required (the backend rejects a delete with no batch ids; it never deletes all batches). List ids with batch list.
   reviewed_by: primary
   readback:
     command: batch.list
@@ -82,8 +82,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth batch create DATASET_ID SOURCE_ID --help
-  agent_example: 'mammoth batch create 123 123 --input ''{"mapping": [{"source_c_name": "column_1", "destination_c_name":
-    "column_1", "expected_destination_c_type": "TEXT"}]}'''
+  agent_example: 'mammoth batch create 123 123 --input ''{"mapping": {"column_1": "column_1"}}'''
   unit_tests:
   - UT-BATCH-CREATE
   contract_tests:
@@ -92,7 +91,7 @@ commands:
   - CT-BATCH-CREATE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: SOURCE_ID is a standalone dataset in the same project (4BATC010 INVALID_SOURCE_DATASET for a file id or an append child); to append a file use file upload with append_to_ds_id. delete_source_ds=true changes the mutation class to destructive and requires confirmation.
+  known_restrictions: Every source column must be mapped to an existing destination column; the CLI reads both schemas and refuses (append_mapping_incomplete) an unmapped source column or a destination the dataset lacks, because the backend appends only mapped columns. The CLI sends each item's expected_destination_c_type as the destination's current type (never re-types it; an explicit different value is refused with append_type_mismatch) and warns in mapping_check.warnings when source and destination types differ. SOURCE_ID is a standalone dataset in the same project (4BATC010 INVALID_SOURCE_DATASET for a file id or an append child); to append a file use file upload with append_to_ds_id. delete_source_ds=true changes the mutation class to destructive and requires confirmation.
   reviewed_by: primary
   readback:
     command: batch.list

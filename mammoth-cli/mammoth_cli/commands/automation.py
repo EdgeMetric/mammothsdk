@@ -24,6 +24,7 @@ from mammoth_cli.errors.envelope import (
 )
 from mammoth_cli.manifest.loader import command_by_id
 from mammoth_cli.runtime.confirm import (
+    POLICY_CONFIRM_TARGET,
     POLICY_PROMPT_OR_YES,
     POLICY_YES_ALWAYS,
     enforce_confirmation,
@@ -215,6 +216,50 @@ def automation_delete(invocation: Invocation) -> HandlerResult:
     return data, _meta(invocation, auth.workspace_id, resolved_project(invocation))
 
 
+_RETENTION_TASK = "apply_retention_policy"
+_UNATTENDED_DELETE_TARGET = "unattended-delete"
+
+
+def _guard_retention_tasks(invocation: Invocation, tasks: Any) -> Any:
+    """Default retention tasks to ``require_approval`` and gate an unattended delete.
+
+    The route defaults ``require_approval`` to false, so a retention task with
+    the default ``delete`` action would hard-delete batches on every run with no
+    one approving. Here an omitted ``require_approval`` becomes true; an explicit
+    false with a delete action needs ``--yes --confirm unattended-delete``.
+    """
+    if not isinstance(tasks, list):
+        return tasks
+    guarded: list[Any] = []
+    unattended = False
+    for task in tasks:
+        details = task.get("details") if isinstance(task, dict) else None
+        if not (
+            isinstance(task, dict)
+            and task.get("task_type") == _RETENTION_TASK
+            and isinstance(details, dict)
+        ):
+            guarded.append(task)
+        elif "require_approval" not in details:
+            guarded.append({**task, "details": {**details, "require_approval": True}})
+        else:
+            unattended = unattended or (
+                details["require_approval"] is False and details.get("action", "delete") == "delete"
+            )
+            guarded.append(task)
+    if unattended:
+        enforce_confirmation(
+            invocation,
+            policy=POLICY_CONFIRM_TARGET,
+            action=(
+                "create a retention policy that DELETES matching batches on every run without "
+                "approval (require_approval is false)"
+            ),
+            target=_UNATTENDED_DELETE_TARGET,
+        )
+    return guarded
+
+
 def automation_create(invocation: Invocation) -> HandlerResult:
     """Create an automation. Name comes from a positional or the ``name`` field.
 
@@ -232,7 +277,7 @@ def automation_create(invocation: Invocation) -> HandlerResult:
             hint="Pass the name as a positional argument or a 'name' input field.",
         )
     description = document.get("description", "")
-    tasks = _require_field(document, "tasks")
+    tasks = _guard_retention_tasks(invocation, _require_field(document, "tasks"))
     kwargs: dict[str, Any] = {"name": name, "description": description, "tasks": tasks}
     _forward_optional(document, kwargs, ("conditions", "condition_mode"))
     enforce_confirmation(invocation, policy=POLICY_YES_ALWAYS, action="create an automation")

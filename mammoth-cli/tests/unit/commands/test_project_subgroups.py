@@ -56,7 +56,7 @@ def test_user_add_blocked_without_confirm_target(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
     doc = tmp_path / "in.json"
-    doc.write_text(json.dumps({"user_ids": [41]}), encoding="utf-8")
+    doc.write_text(json.dumps({"user_ids": [41], "role": "project_analyst"}), encoding="utf-8")
     with pytest.raises(CliError) as excinfo:
         project_cmd.project_user_add(
             _inv("project.user.add", project=180, input_file=str(doc), yes=True, confirm="179")
@@ -74,7 +74,8 @@ def test_user_add_proceeds_with_matching_target(
         _inv("project.user.add", project=180, input_file=str(doc), yes=True, confirm="180")
     )
     assert fake_service.call_log == [
-        (_ADD_USERS, {"project_id": 180, "user_ids": [41], "role": "project_admin"})
+        ("mammoth.api.workspace.WorkspaceAPI.list_users", {"project_id": 180}),
+        (_ADD_USERS, {"project_id": 180, "user_ids": [41], "role": "project_admin"}),
     ]
 
 

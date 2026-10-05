@@ -438,7 +438,7 @@ Total commands: 646.
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.batches.BatchesAPI.bulk_delete`
-- Agent example: `mammoth batch bulk-delete 123`
+- Agent example: `mammoth batch bulk-delete 123 --input '{"ids": [11, 12]}'`
 
 ### `mammoth batch create`
 
@@ -450,7 +450,7 @@ Total commands: 646.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.batches.BatchesAPI.create`
-- Agent example: `mammoth batch create 123 123 --input '{"mapping": [{"source_c_name": "column_1", "destination_c_name": "column_1", "expected_destination_c_type": "TEXT"}]}'`
+- Agent example: `mammoth batch create 123 123 --input '{"mapping": {"column_1": "column_1"}}'`
 
 ### `mammoth batch create-spec`
 
