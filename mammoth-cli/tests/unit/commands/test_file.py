@@ -21,6 +21,7 @@ _EXTRACT_SHEETS = "mammoth.api.files.FilesAPI.extract_sheets"
 _DELETE = "mammoth.api.files.FilesAPI.delete"
 _BULK_DELETE = "mammoth.api.files.FilesAPI.bulk_delete"
 _UPLOAD = "mammoth.api.files.FilesAPI.upload"
+_UPLOAD_RESULT = "mammoth.api.files.FilesAPI.upload_result"
 _DATASET_GET = "mammoth.api.datasets.DatasetsAPI.get"
 _UPLOAD_FOLDER = "mammoth.api.files.FilesAPI.upload_folder"
 
@@ -219,8 +220,9 @@ def test_bulk_delete_proceeds_with_yes(fake_service: FakeMammothService, tmp_pat
 
 
 def test_upload_uses_positional_paths(fake_service: FakeMammothService) -> None:
+    fake_service.responses[_UPLOAD_RESULT] = {"dataset_ids": [], "errors": {}}
     file_cmd.file_upload(_inv("file.upload", extra_args=["a.csv", "b.csv"]))
-    assert fake_service.call_log == [(_UPLOAD, {"files": ["a.csv", "b.csv"]})]
+    assert fake_service.call_log == [(_UPLOAD_RESULT, {"files": ["a.csv", "b.csv"]})]
 
 
 def test_upload_uses_files_input_field_when_no_positional(
@@ -257,8 +259,9 @@ def test_upload_uses_files_input_field_when_no_positional(
 
 
 def test_upload_with_no_files_omits_files_kwarg(fake_service: FakeMammothService) -> None:
+    fake_service.responses[_UPLOAD_RESULT] = {"dataset_ids": [], "errors": {}}
     file_cmd.file_upload(_inv("file.upload"))
-    assert fake_service.call_log == [(_UPLOAD, {})]
+    assert fake_service.call_log == [(_UPLOAD_RESULT, {})]
 
 
 def test_upload_with_append_to_ds_id_and_no_files_is_missing_argument(
@@ -276,7 +279,7 @@ def test_upload_with_append_to_ds_id_and_no_files_is_missing_argument(
 def test_upload_reports_ready_dataset(fake_service: FakeMammothService) -> None:
     # The SDK waits and returns the new dataset id as a bare int; the handler
     # labels it and reports the status the platform holds for that dataset.
-    fake_service.responses[_UPLOAD] = 303694
+    fake_service.responses[_UPLOAD_RESULT] = {"dataset_ids": [303694], "errors": {}}
     fake_service.responses[_DATASET_GET] = {"dataset": {"id": 303694, "status": "ready"}}
     data, _ = file_cmd.file_upload(_inv("file.upload", extra_args=["a.csv"]))
     assert data == {
@@ -300,7 +303,7 @@ def test_upload_reports_need_action_instead_of_assuming_ready(
     # A finished upload job can still leave the dataset in need_action (for
     # example an ambiguous date column); the envelope must say so and point at
     # the settings read, not claim a ready dataset.
-    fake_service.responses[_UPLOAD] = 58
+    fake_service.responses[_UPLOAD_RESULT] = {"dataset_ids": [58], "errors": {}}
     fake_service.responses[_DATASET_GET] = {
         "dataset": {
             "id": 58,
@@ -326,7 +329,7 @@ def test_upload_reports_ready_with_a_plausibility_message_as_needs_view(
     # An all-text CSV comes back "ready" with the message below: its rows are
     # ingested but no view is created, and confirming settings does not create
     # one. `view create` does, so that is the route reported.
-    fake_service.responses[_UPLOAD] = 74
+    fake_service.responses[_UPLOAD_RESULT] = {"dataset_ids": [74], "errors": {}}
     fake_service.responses[_DATASET_GET] = {
         "dataset": {
             "id": 74,
@@ -340,7 +343,7 @@ def test_upload_reports_ready_with_a_plausibility_message_as_needs_view(
 
 
 def test_upload_reports_multiple_dataset_ids(fake_service: FakeMammothService) -> None:
-    fake_service.responses[_UPLOAD] = [11, 22]
+    fake_service.responses[_UPLOAD_RESULT] = {"dataset_ids": [11, 22], "errors": {}}
     fake_service.responses[_DATASET_GET] = {"dataset": {"status": "ready"}}
     data, _ = file_cmd.file_upload(_inv("file.upload", extra_args=["a.csv", "b.csv"]))
     assert data["dataset_ids"] == [11, 22]
@@ -353,7 +356,8 @@ def test_upload_status_is_unknown_when_the_read_back_fails(
 ) -> None:
     # The upload succeeded; a failed status read must not turn it into an
     # error or into a false "ready".
-    fake_service.responses[_UPLOAD] = 7
+    fake_service.responses[_UPLOAD_RESULT] = {"dataset_ids": [7], "errors": {}}
+
     fake_service.responses[_DATASET_GET] = CliError(code="api_error", message="boom", exit_status=1)
     data, _ = file_cmd.file_upload(_inv("file.upload", extra_args=["a.csv"]))
     assert data["status"] == "unknown"
@@ -416,7 +420,7 @@ def test_upload_names_a_missing_local_file_before_any_request(
 def test_upload_result_shows_what_mammoth_made_of_each_file(
     fake_service: FakeMammothService,
 ) -> None:
-    fake_service.responses[_UPLOAD] = 84
+    fake_service.responses[_UPLOAD_RESULT] = {"dataset_ids": [84], "errors": {}}
     fake_service.responses["mammoth.api.datasets.DatasetsAPI.get"] = {
         "id": 84,
         "status": "ready",
@@ -457,7 +461,7 @@ def test_upload_result_shows_what_mammoth_made_of_each_file(
 def test_upload_result_names_revenue_to_add_before_a_dashboard(
     fake_service: FakeMammothService,
 ) -> None:
-    fake_service.responses[_UPLOAD] = 84
+    fake_service.responses[_UPLOAD_RESULT] = {"dataset_ids": [84], "errors": {}}
     fake_service.responses["mammoth.api.datasets.DatasetsAPI.get"] = {"id": 84, "status": "ready"}
     fake_service.responses["mammoth.api.dataviews.DataviewsAPI.list"] = {
         "dataviews": [
