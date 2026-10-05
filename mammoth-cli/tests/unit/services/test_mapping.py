@@ -505,3 +505,24 @@ def test_an_ordinary_400_stays_an_api_error() -> None:
     )
 
     assert map_sdk_exception(error).code == "api_error"
+
+
+def test_a_read_timeout_hint_names_no_delay_the_server_never_gave() -> None:
+    # FB-07: "Retry after the indicated delay" with no delay indicated.
+    error = MammothAPIError(
+        "timed out", status_code=None, method="GET", operation_state="not_started"
+    )
+
+    mapped = map_sdk_exception(error)
+
+    assert mapped.code == "retryable_error"
+    assert "indicated delay" not in (mapped.hint or "")
+    assert "Retry the read" in (mapped.hint or "")
+
+
+def test_a_retry_after_hint_names_the_delay() -> None:
+    error = MammothAPIError(
+        "busy", status_code=503, method="GET", operation_state="not_started", retry_after="9"
+    )
+
+    assert "9 s" in (map_sdk_exception(error).hint or "")

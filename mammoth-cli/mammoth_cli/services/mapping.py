@@ -232,6 +232,13 @@ def running_handle(error: CliError, command_id: str) -> dict[str, Any] | None:
     }
 
 
+def _retry_hint(retry_after: str | None) -> str:
+    """How to retry a read that failed for a transient reason."""
+    if retry_after:
+        return f"Retry the read after {retry_after} s, as the server's Retry-After asks."
+    return "Retry the read once; it changed nothing. If it fails again, tell the user."
+
+
 #: A backend error ``name`` that refuses an action for lack of permission
 #: (``DASHBOARD_CREATE_NOT_ALLOWED``) arrives as a 400, not a 403.
 _NOT_ALLOWED_SUFFIX = "_NOT_ALLOWED"
@@ -529,7 +536,7 @@ def map_sdk_exception(
                 code=CODE_RETRYABLE,
                 message="Mammoth is temporarily unavailable or the request timed out.",
                 exit_status=EXIT_RETRYABLE,
-                hint="Retry after the indicated delay, honoring Retry-After when present.",
+                hint=_retry_hint(exc.retry_after),
                 details=details,
                 request_id=request_id,
                 retryable=True,
