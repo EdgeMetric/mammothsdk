@@ -7,6 +7,8 @@ file's password unlocks it, or which command takes the password.
 
 from __future__ import annotations
 
+from mammoth.models.files import FilesList
+
 from mammoth_cli.runtime.locked_files import with_locked_files
 
 
@@ -47,3 +49,23 @@ def test_a_result_with_no_locked_file_is_returned_unchanged() -> None:
 
     assert with_locked_files(data) is data
     assert with_locked_files([1, 2]) == [1, 2]
+
+
+def _listing(*files: dict[str, object]) -> FilesList:
+    return FilesList.model_validate({"files": list(files), "next": "", "limit": 50})
+
+
+def test_a_locked_file_in_an_sdk_model_listing_is_found() -> None:
+    # ``file list`` returns the SDK's model, not a dict: the first fix missed it.
+    locked = {"id": 1334, "name": "targets.pdf", "additional_info": {"password_protected": True}}
+
+    result = with_locked_files(_listing(locked))
+
+    assert [entry["file_id"] for entry in result["locked_files"]] == [1334]
+    assert result["limit"] == 50
+
+
+def test_an_sdk_model_with_no_locked_file_is_returned_as_it_came() -> None:
+    listing = _listing({"id": 7, "name": "open.pdf"})
+
+    assert with_locked_files(listing) is listing

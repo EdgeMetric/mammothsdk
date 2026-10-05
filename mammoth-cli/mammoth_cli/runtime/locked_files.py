@@ -20,12 +20,14 @@ _BROWSE_FILE_TYPE = "file_object"
 
 def with_locked_files(data: Any) -> Any:
     """Return ``data`` with a ``locked_files`` list, or unchanged when no file is locked."""
-    if not isinstance(data, dict):
+    # A file listing comes back as an SDK model; it is read as the output prints it.
+    plain = data.model_dump(mode="python") if hasattr(data, "model_dump") else data
+    if not isinstance(plain, dict):
         return data
-    locked = [_entry(record) for record in _locked_records(data, 0)]
+    locked = [_entry(record) for record in _locked_records(plain, 0)]
     if not locked:
         return data
-    return {**data, "locked_files": locked}
+    return {**plain, "locked_files": locked}
 
 
 def _locked_records(value: Any, depth: int) -> Iterator[dict[str, Any]]:
