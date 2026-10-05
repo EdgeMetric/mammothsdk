@@ -3752,7 +3752,7 @@ commands:
   - CT-VIEW-PIPELINE-RERUN-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: 'A rerun fires every end-of-pipeline export of the view again (database, email, REST, dataset); the result lists them in exports_fired (export_id, handler_type, target) so the external effect is visible.'
+  known_restrictions: 'A rerun fires every end-of-pipeline export of the view again (database, email, REST, dataset); the result lists them in exports_fired (export_id, handler_type, target) so the external effect is visible. --dry-run returns the same exports_fired without running. An internal_dataset export that appends or replaces into an existing dataset also carries blank_columns: the sorted destination column names the write would leave NULL ([] when none).'
   reviewed_by: primary
 - command_id: view.pipeline.wait
   command_path: view pipeline wait
