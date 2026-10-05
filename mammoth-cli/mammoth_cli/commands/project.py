@@ -505,23 +505,54 @@ def project_data_check_list(invocation: Invocation) -> HandlerResult:
     return _list_with_filters(invocation)
 
 
+_PROJECT_MEMBERS_SYMBOL = "mammoth.api.workspace.WorkspaceAPI.list_users"
+
+
+def _reject_existing_members(service: Any, project_id: int, user_ids: Any) -> None:
+    """Refuse an add naming a user who is already a member of the project.
+
+    The backend treats adding an existing member as a role replacement (it
+    revokes the current role, then assigns the given one), so an add can
+    silently demote a project admin. Role changes belong to ``project user
+    update``.
+    """
+    members = service.call(_PROJECT_MEMBERS_SYMBOL, project_id=project_id)
+    member_ids = {str(m.get("id")) for m in members if isinstance(m, dict)}
+    existing = [uid for uid in user_ids if str(uid) in member_ids]
+    if existing:
+        raise CliError(
+            code=CODE_INVALID_ARGUMENT,
+            message=(
+                f"User(s) {', '.join(str(uid) for uid in existing)} already belong to project "
+                f"{project_id}; adding them again would replace their current role."
+            ),
+            exit_status=EXIT_USAGE,
+            hint="Use `mammoth project user update` to change a member's role.",
+            details={"existing_user_ids": existing, "project_id": project_id},
+        )
+
+
 def project_user_add(invocation: Invocation) -> HandlerResult:
-    """Add users to a project. High-impact: ``--yes --confirm PROJECT_ID``."""
+    """Add users to a project. High-impact: ``--yes --confirm PROJECT_ID``.
+
+    ``role`` is required and no listed user may already be a member (the
+    backend would replace that member's role).
+    """
     project_id = _project_id(invocation)
     document = invocation.load_input()
     user_ids = _require_input_field(document, "user_ids")
+    role = _require_input_field(document, "role")
     enforce_confirmation(
         invocation,
         policy=POLICY_CONFIRM_TARGET,
         action=f"add users to project {project_id}",
         target=str(project_id),
     )
-    kwargs: dict[str, Any] = {"project_id": project_id, "user_ids": user_ids}
-    assert document is not None
-    if "role" in document:
-        kwargs["role"] = document["role"]
     with open_service(invocation) as (service, auth):
-        data = service.call(_symbol(invocation), **kwargs)
+        _reject_existing_members(service, project_id, user_ids)
+        data = service.call(
+            _symbol(invocation), project_id=project_id, user_ids=user_ids, role=role
+        )
     return data, _meta(invocation, auth.workspace_id, project_id)
 
 
