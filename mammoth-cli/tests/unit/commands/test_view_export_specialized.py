@@ -397,16 +397,21 @@ def test_dataset_route_warns_when_target_has_columns_the_source_lacks(
             extra_args=["7", "3"],
             input_file=_doc(
                 tmp_path,
-                {"dataset_name": "orders", "target_ds_id": 9, "save_as_mode": "APPEND_TO_DS"},
+                {
+                    "dataset_name": "orders",
+                    "target_ds_id": 9,
+                    "save_as_mode": "APPEND_TO_DS",
+                    "blank_columns": ["Notes"],
+                },
             ),
             yes=True,
         )
     )
     assert data["row_check"]["warnings"] == [
-        "target dataset has column(s) the source view does not (kept as-is): Notes"
+        "appended rows leave column(s) Notes blank (NULL), as confirmed"
     ]
     verified = with_verify(data)["verify"]
-    assert "target dataset has column(s)" in verified["warnings"][0]
+    assert "blank (NULL)" in verified["warnings"][0]
 
 
 def test_dataset_route_rejects_a_second_export_into_the_same_target(

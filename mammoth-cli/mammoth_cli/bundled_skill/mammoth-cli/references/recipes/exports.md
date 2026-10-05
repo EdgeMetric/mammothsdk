@@ -55,7 +55,11 @@ there is no separate Auto-Sync endpoint or field to find.
 `target_ds_id` writes into an existing dataset instead of creating one
 (`save_as_mode` `REPLACE_IN_DS` or `APPEND_TO_DS`). Read the delivery back in
 the target project (`view list N --project P`, `view data get`) before
-reporting it. Do not build this with `view export create`: the raw
+reporting it. An append that leaves target columns unfilled (a partial
+`column_mapping`, or a source with fewer columns) is refused with
+`append_leaves_columns_blank` unless the input lists exactly those columns,
+`"blank_columns": ["id","score"]`; confirm that with the user, and never
+clone the source view or delete its columns to get around the refusal. Do not build this with `view export create`: the raw
 `internal_dataset` spec needs `USER_ID` and the `export_project` /
 `project_id` / `source_project_id` trio, and without them the backend answers
 `4GENR007 Validation error` with no detail; the typed command fills them.

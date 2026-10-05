@@ -55,6 +55,10 @@ from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.session import open_service, require_project
 from mammoth_cli.services import conditional_format as cf_rules
 from mammoth_cli.services import read_queries, text_dates
+from mammoth_cli.services.append_blank_columns import (
+    BLANK_COLUMNS_FIELD,
+    acknowledged_blank_columns,
+)
 from mammoth_cli.services.conditions import CONDITION_KWARG, compile_condition
 from mammoth_cli.services.dashboard_review import UPLOAD_NOTE, upload_hints
 from mammoth_cli.services.data_quality import column_warnings, duplicate_rows_fact
@@ -3614,6 +3618,8 @@ def view_export_specialized(invocation: Invocation) -> HandlerResult:
     allowed = explicit_fields | common_fields | {_DATASET_ID_FIELD}
     if invocation.command_id in _DB_REPLACE_ROUTES:
         allowed = allowed | {_REPLACE_TABLE_FIELD}
+    if invocation.command_id == "view.export.dataset":
+        allowed = allowed | {BLANK_COLUMNS_FIELD}
     unknown = sorted(set(document) - allowed)
     if unknown:
         raise CliError(
@@ -3647,6 +3653,7 @@ def view_export_specialized(invocation: Invocation) -> HandlerResult:
     kwargs = dict(document)
     kwargs.pop(_DATASET_ID_FIELD, None)
     kwargs.pop(_REPLACE_TABLE_FIELD, None)
+    blank_columns = kwargs.pop(BLANK_COLUMNS_FIELD, None)
     is_dataset_route = invocation.command_id == "view.export.dataset"
     target_ds_id = kwargs.get("target_ds_id") if is_dataset_route else None
     save_as_mode = kwargs.get("save_as_mode") if is_dataset_route else None
@@ -3663,6 +3670,7 @@ def view_export_specialized(invocation: Invocation) -> HandlerResult:
                 int(target_ds_id) if target_ds_id is not None else None,
             )
         target_view_before = None
+        blank_warnings: list[str] = []
         target_only_columns: list[str] = []
         mapped_type_warnings: list[str] = []
         hidden_left_out = (
@@ -3683,6 +3691,9 @@ def view_export_specialized(invocation: Invocation) -> HandlerResult:
                 dataset_id,
                 int(target_ds_id),
                 kwargs.get("column_mapping"),
+            )
+            blank_warnings = acknowledged_blank_columns(
+                int(target_ds_id), target_only_columns, blank_columns
             )
         try:
             data = service.call_view(dataview_id, method, dataset_id=dataset_id, **kwargs)
@@ -3745,14 +3756,7 @@ def view_export_specialized(invocation: Invocation) -> HandlerResult:
                     "hidden column(s) of the source view are not in the new dataset: "
                     + ", ".join(hidden_left_out)
                 )
-            if target_only_columns:
-                # Allowed -- an append never has to cover every target column
-                # -- but worth surfacing rather than leaving silent.
-                warnings.insert(
-                    0,
-                    "target dataset has column(s) the source view does not (kept "
-                    "as-is): " + ", ".join(target_only_columns),
-                )
+            warnings[:0] = blank_warnings
             if warnings:
                 row_check["warnings"] = warnings
             data["row_check"] = row_check

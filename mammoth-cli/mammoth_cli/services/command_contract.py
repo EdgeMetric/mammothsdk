@@ -743,6 +743,14 @@ _S7_ADDITIONAL_INPUT_FIELDS: dict[str, tuple[FieldSpec, ...]] = {
         )
         for route in ("postgres", "mysql", "mssql", "redshift", "bigquery", "publish-db")
     },
+    # An append that leaves destination columns unfilled needs them named in
+    # ``blank_columns`` (CLI-side acknowledgement, never forwarded to the SDK).
+    **{
+        route: (
+            FieldSpec("blank_columns", required=False, annotation=list[str] | None, default=None),
+        )
+        for route in ("view.export.dataset", "batch.create")
+    },
     # user.update previously pinned name/email here as a guess, from when
     # UserProfileAPI.update took **fields and so had nothing introspectable.
     # The SDK method is now typed (first_name, last_name -- the backend's
