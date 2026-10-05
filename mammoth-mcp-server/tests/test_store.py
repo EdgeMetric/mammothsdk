@@ -4,38 +4,16 @@ from typing import Any
 from unittest.mock import patch
 
 import pytest
-from cryptography.fernet import Fernet
 
 from mammoth_mcp_server import store
 
-from .helpers import run
-
-
-class FakeRedis:
-    """Just enough of Redis: one value per key, and how long each was given."""
-
-    def __init__(self) -> None:
-        self.values: dict[str, str] = {}
-        self.seconds: dict[str, int] = {}
-
-    async def set(self, key: str, value: str, ex: int) -> None:
-        self.values[key] = value
-        self.seconds[key] = ex
-
-    async def get(self, key: str) -> str | None:
-        return self.values.get(key)
-
-    async def delete(self, key: str) -> None:
-        self.values.pop(key, None)
+from .helpers import FakeRedis, a_fake_store, run
 
 
 @pytest.fixture
 def redis() -> Any:
-    fake = FakeRedis()
-    store.use(fake)  # type: ignore[arg-type]
-    with patch.object(store, "ENCRYPTION_KEY", Fernet.generate_key().decode()):
+    with a_fake_store() as fake:
         yield fake
-    store.use(None)
 
 
 class TestTheStore:

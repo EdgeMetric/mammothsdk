@@ -116,3 +116,54 @@ def lends(client: Any) -> Callable[..., Any]:
         yield client
 
     return lend
+
+
+class FakeRedis:
+    """Just enough of Redis: one value per key, and how long each was given."""
+
+    def __init__(self) -> None:
+        self.values: dict[str, str] = {}
+        self.seconds: dict[str, int] = {}
+
+    async def set(self, key: str, value: str, ex: int) -> None:
+        self.values[key] = value
+        self.seconds[key] = ex
+
+    async def get(self, key: str) -> str | None:
+        return self.values.get(key)
+
+    async def delete(self, key: str) -> None:
+        self.values.pop(key, None)
+
+
+@contextmanager
+def a_fake_store() -> Generator[FakeRedis]:
+    """Keep the server's records in memory for the block, sealed with a key of its own."""
+    from cryptography.fernet import Fernet
+
+    from mammoth_mcp_server import store
+
+    fake = FakeRedis()
+    store.use(fake)  # type: ignore[arg-type]
+    try:
+        with patch.object(store, "ENCRYPTION_KEY", Fernet.generate_key().decode()):
+            yield fake
+    finally:
+        store.use(None)
+
+
+GOOD_TOKEN = "mm_good"
+
+
+@contextmanager
+def a_mammoth_that_knows(token: str = GOOD_TOKEN, workspace_id: int = WORKSPACE) -> Generator[None]:
+    """Stand in for Mammoth's answer to "which workspace is this token for"."""
+    from mammoth.exceptions import MammothAuthError
+
+    async def read_token_workspace(asked: str) -> int:
+        if asked != token:
+            raise MammothAuthError("Invalid API credentials")
+        return workspace_id
+
+    with patch("mammoth_mcp_server.oauth.read_token_workspace", read_token_workspace):
+        yield

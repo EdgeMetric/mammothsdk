@@ -95,10 +95,13 @@ async def get_automation_schema(task_type: str) -> dict[str, JsonValue]:
         can run on.
     """
     task = read_task_type(task_type)
+    conditions: list[JsonValue] = [
+        *sorted(condition.value for condition in AutomationConditionType)
+    ]
     return {
         AutomationFields.TASK_TYPE: task.value,
         "example": find_example(task, DOCUMENTED_EXAMPLES),
-        "condition_types": sorted(condition.value for condition in AutomationConditionType),
+        "condition_types": conditions,
     }
 
 

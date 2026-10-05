@@ -405,6 +405,11 @@ class ApiFields:
     FULL = "__full"
 
 
+# What every Mammoth API token starts with. The API tells its own tokens from
+# any other bearer the same way.
+API_TOKEN_PREFIX = "mm_"
+
+
 class TokenClaims:
     """What a caller's access token carries, so a tool call can act as them."""
 

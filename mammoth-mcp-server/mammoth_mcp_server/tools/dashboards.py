@@ -135,7 +135,10 @@ async def generate_dashboard(
     async with build_client(workspace_id) as client:
         started = await read_sdk_errors(
             client.dashboards.generate_v3(
-                GenerateV3Params(dataview_id=view_id, intent=intent, format=style, title=title)
+                # Validated from plain values: the styles are the model's to check.
+                GenerateV3Params.model_validate(
+                    {"dataview_id": view_id, "intent": intent, "format": style, "title": title}
+                )
             )
         )
     try:

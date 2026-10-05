@@ -13,8 +13,10 @@ dependencies = [
     "redis (>=5,<8)",
     "cryptography (>=48.0.1,<50)",
     "uvicorn (>=0.34)",
+    "python-multipart (>=0.0.18)",
 ]
 urls = {homepage = "https://mammoth.io", repository = "https://github.com/EdgeMetric/mammothsdk"}
+scripts.mammoth-mcp-server = "mammoth_mcp_server.app:main"
 
 [dependency-groups]
 dev = [

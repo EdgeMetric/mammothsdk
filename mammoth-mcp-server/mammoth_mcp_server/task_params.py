@@ -726,7 +726,7 @@ async def build_task_param(
         param = await _build_sql_param(client, op, dataset_id, view_id)
     else:
         cols = await _column_context(client, view_id, dataset_id)
-        if op.op in _FOREIGN_OPERATION_BUILDERS:
+        if isinstance(op, JoinOperation | LookupOperation):
             foreign = await _column_context(client, op.foreign_view_id)
             param = _FOREIGN_OPERATION_BUILDERS[op.op](op, cols, foreign)
         else:

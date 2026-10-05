@@ -15,6 +15,9 @@ through the API, as the SDK does. The server imports no backend code.
 | `mammoth_mcp_server/jobs.py` | The wait for a job that an API route started. |
 | `mammoth_mcp_server/task_params.py` | The map from a transformation to the pipeline task the API takes. |
 | `mammoth_mcp_server/store.py` | Short-lived records in Redis: sign-ins, tokens, upload tickets. |
+| `mammoth_mcp_server/oauth.py`, `login.py` | The sign-in: an OAuth server whose login page asks for an API token. |
+| `mammoth_mcp_server/upload_routes.py` | The page a user drops a local file on. |
+| `mammoth_mcp_server/app.py` | The ASGI app and `main()`. |
 | `mammoth_mcp_server/config.py` | Every deployment setting, read from the environment. |
 
 ## Settings
@@ -30,6 +33,30 @@ through the API, as the SDK does. The server imports no backend code.
 | `MCP_ENCRYPTION_KEY` | none | A Fernet key. Stored credentials are sealed with it. Required. |
 | `MCP_STORE_PREFIX` | `mammoth_mcp` | Keeps this deployment's records apart in a shared Redis. |
 | `MCP_HOST`, `MCP_PORT` | `127.0.0.1`, `8270` | Where the server listens. |
+
+## Sign-in
+
+A user signs in with their own Mammoth API token (`mm_...`), created in Mammoth at Workspace
+settings, API Tokens.
+
+- **Claude web, ChatGPT (OAuth):** the client opens this server's login page. The user pastes the
+  token. The server checks it with Mammoth and gives the client a token of its own. The user's
+  token is kept sealed in Redis for 30 days.
+- **A client that sends headers (Claude Code):** send `Authorization: Bearer mm_...`. Nothing is
+  stored.
+
+Every tool call reaches Mammoth with the user's own token, so the user's permissions apply. A
+token belongs to one workspace; a tool call for another workspace is refused.
+
+## Run
+
+```bash
+pip install mammoth-mcp-server
+cp .env.example .env        # then set the values
+mammoth-mcp-server          # or: uvicorn mammoth_mcp_server.app:create_app --factory
+```
+
+`deploy/` holds an example systemd unit and an example nginx server block.
 
 ## Tests
 

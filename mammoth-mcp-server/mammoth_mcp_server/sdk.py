@@ -56,6 +56,16 @@ def set_api_url(url: str, api_root: str | None = None) -> None:
     _api_root = api_root
 
 
+def api_url() -> str:
+    """The Mammoth API this process calls."""
+    return _api_url
+
+
+def api_root() -> str | None:
+    """The path that API is served under, or None when its routes are at their own paths."""
+    return _api_root
+
+
 @asynccontextmanager
 async def build_client(
     workspace_id: int | None, project_id: int | None = None
