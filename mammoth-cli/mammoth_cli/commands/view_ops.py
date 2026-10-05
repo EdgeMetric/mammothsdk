@@ -20,6 +20,7 @@ enum-typed fields are forwarded as the plain string given on ``--input``.
 from __future__ import annotations
 
 import json
+import re
 import shlex
 from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
@@ -59,7 +60,7 @@ from mammoth_cli.runtime.dryrun import DryRunStop
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.session import open_service, resolved_project
 from mammoth_cli.services.command_contract import bind_command_inputs
-from mammoth_cli.services.conditions import CONDITION_KWARG
+from mammoth_cli.services.conditions import CONDITION_KWARG, compile_condition
 from mammoth_cli.services.input_fields import TASK_COUNT_FIELD
 from mammoth_cli.services.sql_check import check_sql_binds
 from mammoth_cli.services.write_impact import (
@@ -1336,7 +1337,54 @@ def view_transform_math(invocation: Invocation) -> HandlerResult:
     _require_field(document, "expression")
     assert document is not None
     kwargs = _bind_transform_inputs(invocation, document)
-    return _dispatch_view(invocation, view_id, "math", **kwargs)
+    blanks: dict[str, int] = {}
+
+    def count_blank_inputs(service: Any, dataset_id: int, _kwargs: dict[str, Any]) -> None:
+        blanks.update(
+            _blank_math_inputs(
+                service, dataset_id, view_id, resolved_project(invocation), document["expression"]
+            )
+        )
+
+    data, meta = _dispatch_view(invocation, view_id, "math", prepare=count_blank_inputs, **kwargs)
+    return _with_blank_input_note(data, blanks), meta
+
+
+def _blank_math_inputs(
+    service: Any, dataset_id: int, view_id: int, project_id: int | None, expression: Any
+) -> dict[str, int]:
+    """Blank cells of each column a math expression names, for the columns that have any.
+
+    Mammoth computes a blank input as 0, so ``qty * unit_price`` gives 0 for an
+    unpriced row and a later total counts it with no warning (FB-01).
+    """
+    info = service.call(
+        _DATAVIEW_GET_SYMBOL, dataset_id=dataset_id, dataview_id=view_id, project_id=project_id
+    )
+    read = ImpactRead(service, dataset_id, view_id, project_id, apply_column_renames(info))
+    text = str(expression)
+    named = [
+        name
+        for name in read.display_to_internal()
+        if re.search(rf"(?<![\w]){re.escape(name)}(?![\w])", text)
+    ]
+    counts = {
+        name: read.count(compile_condition({"column": name, "operator": "IS_EMPTY"}))
+        for name in named
+    }
+    return {name: count for name, count in counts.items() if count}
+
+
+def _with_blank_input_note(data: Any, blanks: dict[str, int]) -> Any:
+    """``data`` with a ``blank_inputs`` note when a math input column has blanks."""
+    if not blanks or not isinstance(data, dict):
+        return data
+    listed = ", ".join(f"{name} is blank in {count} row(s)" for name, count in blanks.items())
+    note = (
+        f"A blank input counts as 0 in this math step: {listed}, so the result there is "
+        "computed as if it were 0. Fill or filter those rows first if a blank must not count as 0."
+    )
+    return {**data, "blank_inputs": {"columns": blanks, "note": note}}
 
 
 def view_transform_pivot(invocation: Invocation) -> HandlerResult:
