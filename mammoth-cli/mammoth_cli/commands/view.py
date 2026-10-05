@@ -2967,8 +2967,16 @@ def view_pipeline_rerun(invocation: Invocation) -> HandlerResult:
                 service, invocation, dataview_id, document, 1
             )
         before = _rows_before(service, dataset_id, dataview_id, invocation.project)
-        fired = _end_of_pipeline_exports(service, dataview_id, dataset_id)
-        data = service.call(_symbol(invocation), **kwargs)
+        fired = _end_of_pipeline_exports(
+            service, dataview_id, dataset_id, with_blank_columns=invocation.dry_run
+        )
+        try:
+            data = service.call(_symbol(invocation), **kwargs)
+        except DryRunStop as stop:
+            # The dry run's report names the exports the real run would fire, and
+            # the destination columns each append would leave blank.
+            stop.record["exports_fired"] = fired
+            raise
         data = _settle_async_view_write(
             service, dataset_id, dataview_id, invocation.project, data, before
         )
@@ -2978,17 +2986,29 @@ def view_pipeline_rerun(invocation: Invocation) -> HandlerResult:
 
 
 #: Non-secret ``target_properties`` keys that say where an export writes.
-_EXPORT_TARGET_HINT_KEYS = ("table", "host", "database", "TARGET_DS_ID", "DS_NAME", "emails")
+_EXPORT_TARGET_HINT_KEYS = (
+    "table",
+    "host",
+    "database",
+    "TARGET_DS_ID",
+    "DS_NAME",
+    "SAVE_AS_DS_MODE",
+    "emails",
+)
+_INTERNAL_DATASET_HANDLER = "internal_dataset"
+_WRITE_INTO_EXISTING_MODES = ("APPEND_TO_DS", "REPLACE_IN_DS")
 
 
 def _end_of_pipeline_exports(
-    service: Any, dataview_id: int, dataset_id: int | None
+    service: Any, dataview_id: int, dataset_id: int | None, *, with_blank_columns: bool = False
 ) -> list[dict[str, Any]]:
     """The live end-of-pipeline exports a rerun of this view fires again.
 
     A rerun re-sends every one of them to its destination (database, email, REST
     endpoint, another dataset), so the caller is told which, not just that the
-    pipeline ran. Soft-deleted exports do not fire.
+    pipeline ran. Soft-deleted exports do not fire. ``with_blank_columns`` (dry run
+    only) also reads the schemas to name the destination columns each append would
+    leave blank; a real rerun makes no such reads.
     """
     listing = service.call(
         _EXPORTS_LIST_SYMBOL,
@@ -2997,21 +3017,64 @@ def _end_of_pipeline_exports(
         end_of_pipeline=True,
     )
     fired: list[dict[str, Any]] = []
+    source_columns: Any = None
     for export in getattr(listing, "exports", None) or []:
         if export.status is ExportStatus.DELETED:
             continue
-        handler = export.handler_type
+        handler = getattr(export.handler_type, "value", export.handler_type)
         properties = export.target_properties or {}
-        fired.append(
-            {
-                "export_id": export.id,
-                "handler_type": getattr(handler, "value", handler),
-                "target": {
-                    key: properties[key] for key in _EXPORT_TARGET_HINT_KEYS if key in properties
-                },
-            }
-        )
+        entry: dict[str, Any] = {
+            "export_id": export.id,
+            "handler_type": handler,
+            "target": {
+                key: properties[key] for key in _EXPORT_TARGET_HINT_KEYS if key in properties
+            },
+        }
+        if with_blank_columns and _writes_into_existing_dataset(handler, properties):
+            if source_columns is None:
+                source_columns = _source_column_names(service, dataview_id, dataset_id)
+            entry[BLANK_COLUMNS_FIELD] = _blank_destination_columns(
+                source_columns,
+                set(_target_dataset_schema(service, int(properties["TARGET_DS_ID"]))),
+                properties.get("COLUMN_MAPPING"),
+            )
+        fired.append(entry)
     return fired
+
+
+def _writes_into_existing_dataset(handler: Any, properties: dict[str, Any]) -> bool:
+    """Whether an export appends or replaces into a dataset that already exists."""
+    return (
+        handler == _INTERNAL_DATASET_HANDLER
+        and properties.get("TARGET_DS_ID") is not None
+        and properties.get("SAVE_AS_DS_MODE") in _WRITE_INTO_EXISTING_MODES
+    )
+
+
+def _source_column_names(service: Any, dataview_id: int, dataset_id: int | None) -> set[str]:
+    """The source view's column display names; unreadable is an error, never "none"."""
+    columns = service.call_view(dataview_id, "columns", dataset_id=dataset_id)
+    if not isinstance(columns, dict):
+        raise CliError(
+            code="append_schema_unreadable",
+            message=f"Could not read view {dataview_id}'s columns before the append.",
+            hint="Read the source view before appending from it.",
+            details={"side": "source", "dataview_id": dataview_id},
+        )
+    return set(columns)
+
+
+def _blank_destination_columns(
+    source_names: set[str], target_names: set[str], column_mapping: Any
+) -> list[str]:
+    """The destination columns an append leaves NULL: in the target, fed by nothing.
+
+    That is a target column that is neither a source column (matched by name) nor a
+    ``column_mapping`` destination. The one rule behind both the export-create
+    acknowledgement and the rerun report.
+    """
+    mapping = column_mapping if isinstance(column_mapping, dict) else {}
+    return sorted(target_names - source_names - set(mapping.values()))
 
 
 #: Seconds ``view pipeline wait`` waits when the caller names no ``timeout`` (the SDK's own
@@ -4077,24 +4140,16 @@ def _reject_append_schema_mismatch(
     in the source, not a ``column_mapping`` destination) and the type
     warnings for mapped pairs -- both allowed, but worth a warning.
     """
-    source_columns = service.call_view(dataview_id, "columns", dataset_id=dataset_id)
-    if not isinstance(source_columns, dict):
-        raise CliError(
-            code="append_schema_unreadable",
-            message=f"Could not read view {dataview_id}'s columns before the append.",
-            hint="Read the source view before appending from it.",
-            details={"side": "source", "dataview_id": dataview_id},
-        )
+    source_names = _source_column_names(service, dataview_id, dataset_id)
     target_schema = _target_dataset_schema(service, target_ds_id)
     target_names = set(target_schema)
     mapping = column_mapping if isinstance(column_mapping, dict) else {}
     # View.columns (mammoth/view.py) maps display name -> internal name; these
     # dict keys are display names, matching what the backend's own schema
     # match compares by -- never the internal ids in the dict's values.
-    source_names = set(source_columns)
     _reject_partial_append_mapping(source_names, target_names, mapping, (dataview_id, target_ds_id))
     source_only = sorted(source_names - target_names - set(mapping))
-    target_only = sorted(target_names - source_names - set(mapping.values()))
+    target_only = _blank_destination_columns(source_names, target_names, mapping)
     source_types = service.call_view(dataview_id, "column_types", dataset_id=dataset_id)
     _reject_append_type_mismatch(source_types, target_schema, mapping, (dataview_id, target_ds_id))
     if source_only:
