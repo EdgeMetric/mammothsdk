@@ -318,8 +318,9 @@ class BatchesAPI:
 
         Args:
             dataset_id: ID of the dataset.
-            ids: Optional list of batch IDs (or comma-separated string) to
-                delete. If omitted, all batches for the dataset are deleted.
+            ids: Batch IDs (list or comma-separated string) to delete. The
+                backend requires them; omitting ``ids`` is rejected, it does
+                not delete every batch.
             project_id: Project ID (uses client default if not provided).
 
         Returns:

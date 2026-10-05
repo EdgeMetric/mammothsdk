@@ -236,6 +236,7 @@ _EXAMPLE_INPUT_HINTS: dict[str, dict[str, Any]] = {
     },
     "view.conditional-format.delete-all": {"rule_id": "bca0ff33bd6f8ed1"},
     "dataset.bulk-delete": {"dataset_ids": [456, 457]},
+    "batch.bulk-delete": {"ids": [11, 12]},
     "folder.move": {"resource_ids": [8024], "target_folder_resource_id": "root"},
     "project.update": {"name": "Renamed project"},
     # ProjectsPatch: role changes across explicitly named projects.

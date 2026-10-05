@@ -30,7 +30,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth batch bulk-delete DATASET_ID --help
-  agent_example: mammoth batch bulk-delete 123
+  agent_example: 'mammoth batch bulk-delete 123 --input ''{"ids": [11, 12]}'''
   unit_tests:
   - UT-BATCH-BULK-DELETE
   contract_tests:
@@ -39,7 +39,7 @@ commands:
   - CT-BATCH-BULK-DELETE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: ids is required (the backend rejects a delete with no batch ids; it never deletes all batches). List ids with batch list.
   reviewed_by: primary
   readback:
     command: batch.list

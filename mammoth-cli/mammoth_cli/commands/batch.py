@@ -249,20 +249,30 @@ def batch_delete(invocation: Invocation) -> HandlerResult:
 
 
 def batch_bulk_delete(invocation: Invocation) -> HandlerResult:
-    """Bulk-delete batches for a dataset. Prompt or ``--yes`` required.
+    """Bulk-delete the named batches of a dataset. Prompt or ``--yes`` required.
 
-    When no ``ids`` are given, every batch for the dataset is deleted.
+    ``ids`` is required: the backend rejects a delete with no batch ids, it
+    never deletes "all batches".
     """
     project_id = require_project(invocation)
     dataset_id = _require_int_positional_at(invocation, 0, "dataset id")
     document = invocation.load_input() or {}
+    ids = _require_field(document, "ids")
+    if not ids:
+        raise CliError(
+            code=CODE_INVALID_ARGUMENT,
+            message="The 'ids' input field must name at least one batch id.",
+            exit_status=EXIT_USAGE,
+            hint=f"List batch ids with `mammoth batch list {dataset_id}`.",
+        )
+    count = len(ids) if isinstance(ids, list) else len(str(ids).split(","))
     enforce_confirmation(
         invocation,
         policy=POLICY_PROMPT_OR_YES,
-        action=f"delete batches of dataset {dataset_id}",
+        action=f"delete {count} batch(es) of dataset {dataset_id}",
     )
-    kwargs: dict[str, Any] = {"dataset_id": dataset_id, "project_id": project_id}
-    _forward_optional(document, kwargs, ("ids",))
     with open_service(invocation) as (service, auth):
-        data = service.call(_symbol(invocation), **kwargs)
+        data = service.call(
+            _symbol(invocation), dataset_id=dataset_id, project_id=project_id, ids=ids
+        )
     return data, _meta(invocation, auth.workspace_id, project_id)

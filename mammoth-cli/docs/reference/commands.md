@@ -438,7 +438,7 @@ Total commands: 646.
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.batches.BatchesAPI.bulk_delete`
-- Agent example: `mammoth batch bulk-delete 123`
+- Agent example: `mammoth batch bulk-delete 123 --input '{"ids": [11, 12]}'`
 
 ### `mammoth batch create`
 

@@ -264,18 +264,32 @@ def test_delete_without_batch_id_is_usage_error(fake_service: FakeMammothService
 # ── bulk-delete ───────────────────────────────────────────────────────────
 
 
-def test_bulk_delete_blocked_without_confirmation(fake_service: FakeMammothService) -> None:
+def test_bulk_delete_blocked_without_confirmation(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    doc = tmp_path / "in.json"
+    doc.write_text(json.dumps({"ids": [1]}), encoding="utf-8")
     with pytest.raises(CliError) as excinfo:
         batch_cmd.batch_bulk_delete(
-            _inv("batch.bulk-delete", project=180, extra_args=["9"], output="json")
+            _inv(
+                "batch.bulk-delete",
+                project=180,
+                extra_args=["9"],
+                input_file=str(doc),
+                output="json",
+            )
         )
     assert excinfo.value.code == "confirmation_required"
     assert fake_service.call_log == []
 
 
-def test_bulk_delete_proceeds_with_yes_and_no_ids(fake_service: FakeMammothService) -> None:
-    batch_cmd.batch_bulk_delete(_inv("batch.bulk-delete", project=180, extra_args=["9"], yes=True))
-    assert fake_service.call_log == [(_BULK_DELETE, {"dataset_id": 9, "project_id": 180})]
+def test_bulk_delete_refuses_missing_ids(fake_service: FakeMammothService) -> None:
+    with pytest.raises(CliError) as excinfo:
+        batch_cmd.batch_bulk_delete(
+            _inv("batch.bulk-delete", project=180, extra_args=["9"], yes=True)
+        )
+    assert excinfo.value.code == "missing_field"
+    assert fake_service.call_log == []
 
 
 def test_bulk_delete_forwards_ids(fake_service: FakeMammothService, tmp_path: Path) -> None:

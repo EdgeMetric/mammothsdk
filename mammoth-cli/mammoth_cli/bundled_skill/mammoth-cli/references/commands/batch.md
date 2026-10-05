@@ -6,7 +6,7 @@ Every command returns the standard JSON envelope. On nonzero exit, read the erro
 
 Run: `mammoth batch bulk-delete`. Exact input fields: `mammoth schema get batch.bulk-delete`.
 
-Example: `mammoth batch bulk-delete 123`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth batch bulk-delete 123 --input '{"ids": [11, 12]}'`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `BatchBulkDeleteResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
 
