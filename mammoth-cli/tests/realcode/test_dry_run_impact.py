@@ -344,12 +344,13 @@ _NO_SUCH_DONOR = {"condition": {"column": "Donor", "operator": "EQ", "value": "C
 def test_a_filter_no_row_matches_names_the_values_the_column_holds(
     monkeypatch: pytest.MonkeyPatch, real_service: ServiceFactory
 ) -> None:
-    # FB-03: "keep only North" on East/West data; the dry run said only that
-    # the view would be left empty, so the agent never named East and West.
+    # FB-03: "keep only North" on East/West data. A report of "removes 50 of 50" is
+    # not an error, so the approval card opened and the view was left empty.
     result, _ = _run_no_match(monkeypatch, real_service, _NO_SUCH_DONOR)
-    impact = json.loads(result.output)["data"]["predicted_impact"]
-    assert impact["rows_after"] == 0
-    assert impact["no_row_matches"] == {"column": "Donor", "values": {"Ada": 31, "Bo": 19}}
+    error = json.loads(result.output)["error"]
+    assert error["code"] == "empties_view"
+    assert "(0 of 50)" in error["message"]
+    assert "Donor holds: Ada (31), Bo (19)" in error["message"]
 
 
 def test_a_remove_filter_no_row_matches_names_the_values_in_its_no_op(

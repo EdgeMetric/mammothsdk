@@ -19,7 +19,7 @@ from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field
 from typing import Any
 
-from mammoth_cli.errors.envelope import CODE_NO_OP, EXIT_USAGE, CliError
+from mammoth_cli.errors.envelope import CODE_EMPTIES_VIEW, CODE_NO_OP, EXIT_USAGE, CliError
 from mammoth_cli.services import data_profile as dp
 from mammoth_cli.services import read_queries
 from mammoth_cli.services.conditions import compile_condition
@@ -40,11 +40,14 @@ class Measured:
         changes: Rows or cells the step would change; 0 makes the dry run a no-op.
         report: The ``predicted_impact`` block of the dry-run report.
         no_op_message: What the ``no_op`` error says when ``changes`` is 0.
+        empties_message: What the ``empties_view`` error says when a keep filter
+            matches no row; ``None`` for every other step.
     """
 
     changes: int
     report: dict[str, Any]
     no_op_message: str
+    empties_message: str | None = None
 
 
 @dataclass(frozen=True)
@@ -122,6 +125,18 @@ def no_op_error(message: str, *, view_id: int) -> CliError:
         message=message,
         exit_status=EXIT_USAGE,
         hint="Nothing was changed and nothing needs to be; tell the user there is no work.",
+        details={"view_id": view_id},
+    )
+
+
+def empties_view_error(message: str, *, view_id: int) -> CliError:
+    """The dry-run failure for a keep filter that matches no row."""
+    return CliError(
+        code=CODE_EMPTIES_VIEW,
+        message=message,
+        exit_status=EXIT_USAGE,
+        hint="Nothing was changed. Tell the user no row matches and name the values the "
+        "column holds, then ask which they meant.",
         details={"view_id": view_id},
     )
 
@@ -209,7 +224,13 @@ def measure_filter(read: ImpactRead, kwargs: Mapping[str, Any]) -> Measured:
         else f"Every row of view {read.view_id} matches the condition ({total} of {total}), "
         "so the filter keeps all of them; nothing to change."
     )
-    return Measured(removed, report, message)
+    empties = (
+        f"No row of view {read.view_id} matches the condition (0 of {total}), so keeping "
+        f"only matching rows would leave the view empty.{_holds_note(held)}"
+        if matching == 0 and total and not removes
+        else None
+    )
+    return Measured(removed, report, message, empties)
 
 
 #: Distinct values named when a one-column condition matches no row.
