@@ -1368,10 +1368,13 @@ def _blank_math_inputs(
         for name in read.display_to_internal()
         if re.search(rf"(?<![\w]){re.escape(name)}(?![\w])", text)
     ]
-    counts = {
-        name: read.count(compile_condition({"column": name, "operator": "IS_EMPTY"}))
-        for name in named
-    }
+    try:
+        counts = {
+            name: read.count(compile_condition({"column": name, "operator": "IS_EMPTY"}))
+            for name in named
+        }
+    except CliError:
+        return {}  # A count that cannot run never blocks the write; it only drops the note.
     return {name: count for name, count in counts.items() if count}
 
 

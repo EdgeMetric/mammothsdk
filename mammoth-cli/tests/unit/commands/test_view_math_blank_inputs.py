@@ -8,6 +8,7 @@ import json
 from typing import Any
 
 from mammoth_cli.commands import view_ops
+from mammoth_cli.errors.envelope import CliError
 
 _VIEW = {
     "id": 7,
@@ -61,3 +62,16 @@ def test_the_result_names_the_blank_inputs() -> None:
 
 def test_no_blank_inputs_leaves_the_result_unchanged() -> None:
     assert view_ops._with_blank_input_note({"status": "done"}, {}) == {"status": "done"}
+
+
+class _UncountableService(_FakeService):
+    """Every count read fails, as a read that cannot be measured does."""
+
+    def call(self, symbol: str, **kwargs: Any) -> Any:
+        if "condition" not in kwargs:
+            return _VIEW
+        raise CliError(code="invalid_arguments", message="Could not count the impact.")
+
+
+def test_a_count_that_cannot_run_does_not_block_the_math_step() -> None:
+    assert view_ops._blank_math_inputs(_UncountableService(), 4, 7, 1, "qty * unit_price") == {}
