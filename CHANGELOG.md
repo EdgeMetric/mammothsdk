@@ -6,6 +6,12 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+
+- `mammoth-cli` 2.2.38: a file type the server refuses in `file upload` now fails with code
+  `upload_refused` (still exit status 2) and the summary "Mammoth doesn't accept this kind of file, so
+  nothing was uploaded.", instead of `invalid_argument`'s "request wasn't valid" framing.
+
 ## [0.8.20]
 
 ### Added

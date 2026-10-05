@@ -22,6 +22,7 @@ from mammoth_cli.errors.envelope import (
     CODE_MISSING_ARGUMENT,
     CODE_MISSING_FIELD,
     CODE_SDK_SYMBOL_UNRESOLVED,
+    CODE_UPLOAD_REFUSED,
     EXIT_USAGE,
     CliError,
 )
@@ -330,7 +331,7 @@ def _upload_refused_error(errors: dict[str, Any], refused: list[str]) -> CliErro
     """The error for an upload whose files were all refused (no dataset made)."""
     workbook = any(name.lower().endswith(_WORKBOOK_SUFFIXES) for name in refused)
     return CliError(
-        code=CODE_INVALID_ARGUMENT,
+        code=CODE_UPLOAD_REFUSED,
         message=_upload_refused_message(errors, refused) + " No dataset was created.",
         exit_status=EXIT_USAGE,
         hint=_WORKBOOK_HINT if workbook else "Upload a supported file type (CSV, Excel, JSON).",

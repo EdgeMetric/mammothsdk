@@ -32,6 +32,7 @@ CODE_MISSING_ARGUMENT = "missing_argument"
 CODE_MISSING_FIELD = "missing_field"
 CODE_SDK_SYMBOL_UNRESOLVED = "sdk_symbol_unresolved"
 CODE_INVALID_ARGUMENT = "invalid_argument"
+CODE_UPLOAD_REFUSED = "upload_refused"
 CODE_INVALID_ARGUMENTS = "invalid_arguments"
 CODE_INVALID_CONFIG_VALUE = "invalid_config_value"
 CODE_INVALID_INPUT_DOCUMENT = "invalid_input_document"
@@ -180,6 +181,7 @@ ERROR_SUMMARIES: dict[str, str] = {
     "unsupported_contract": _S_UNAVAILABLE,
     "unsupported_profile_base_url": _S_SETUP,
     "unsupported_shell": _S_UNAVAILABLE,
+    "upload_refused": "Mammoth doesn't accept this kind of file, so nothing was uploaded.",
     "upgrade_failed": "The update didn't complete.",
     "usage_error": _S_BAD_REQUEST,
     "view_in_draft": "This view is still a draft and can't be used yet.",
