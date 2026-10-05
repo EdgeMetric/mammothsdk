@@ -141,7 +141,12 @@ No command:
 - **Union or append two views.** There is no union task. Upload a file into
   an existing dataset with `append_to_ds_id`, or send a view's rows into an
   existing dataset with `view export dataset` (`target_ds_id` and
-  `save_as_mode` `APPEND_TO_DS`). An append is a standing link: it is stored
+  `save_as_mode` `APPEND_TO_DS`). Omit `column_mapping` and every column is
+  matched by name; a non-empty `column_mapping` is used as-is, so it must map
+  every source column to an existing target column. A partial mapping, or a
+  destination the target lacks, is refused with `append_mapping_incomplete`
+  before anything is written (the backend would append only the mapped columns
+  and add a new column for the unknown name). An append is a standing link: it is stored
   as a pipeline step of the source view, so every later re-run of that view
   appends again into the target dataset, not just the first run. A column
   with the same name but a different type in the source view and the target

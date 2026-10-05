@@ -6,7 +6,7 @@ Every command returns the standard JSON envelope. On nonzero exit, read the erro
 
 Run: `mammoth batch bulk-delete`. Exact input fields: `mammoth schema get batch.bulk-delete`.
 
-Example: `mammoth batch bulk-delete 123`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth batch bulk-delete 123 --input '{"ids": [11, 12]}'`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `BatchBulkDeleteResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
 
@@ -16,7 +16,7 @@ Status on release: ran once on CLI 2.0.14 — write sweep 2026-09-18: exit 0 on 
 
 Run: `mammoth batch create`. Exact input fields: `mammoth schema get batch.create`.
 
-Example: `mammoth batch create 123 123 --input '{"mapping": [{"source_c_name": "column_1", "destination_c_name": "column_1", "expected_destination_c_type": "TEXT"}]}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth batch create 123 123 --input '{"mapping": {"column_1": "column_1"}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `BatchCreateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `returns_job`.
 

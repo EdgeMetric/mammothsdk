@@ -123,6 +123,144 @@ def batch_get(invocation: Invocation) -> HandlerResult:
     return data, _meta(invocation, auth.workspace_id, project_id)
 
 
+_DATASET_GET_SYMBOL = "mammoth.api.datasets.DatasetsAPI.get"
+
+
+def _dataset_columns(service: Any, dataset_id: int, side: str) -> list[dict[str, Any]]:
+    """The dataset's own schema rows (``c_name``, ``c_id``, ``c_type``), or raise.
+
+    An unreadable schema is never treated as "no columns": the mapping check
+    could not run, so the batch is not created.
+    """
+    response = service.call(_DATASET_GET_SYMBOL, dataset_id=dataset_id)
+    dataset = response.get("dataset") if isinstance(response, dict) else None
+    schema = dataset.get("data_schema") if isinstance(dataset, dict) else None
+    if not isinstance(schema, list) or not all(
+        isinstance(col, dict) and isinstance(col.get("c_name"), str) for col in schema
+    ):
+        raise CliError(
+            code="append_schema_unreadable",
+            message=f"Could not read the {side} dataset {dataset_id}'s schema before the batch.",
+            hint=f"Read dataset {dataset_id} before creating the batch.",
+            details={"side": side, "dataset_id": dataset_id},
+        )
+    return schema
+
+
+def _mapping_items(mapping: Any) -> list[Any]:
+    """Expand a ``{src: dst}`` mapping into ``ColumnNameMapping`` items, untyped."""
+    if isinstance(mapping, dict):
+        return [{"source_c_name": src, "destination_c_name": dst} for src, dst in mapping.items()]
+    return list(mapping) if isinstance(mapping, list) else []
+
+
+def _resolve_item(
+    item: dict[str, Any], source: list[dict[str, Any]], dest: list[dict[str, Any]]
+) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
+    """The (source, destination) schema rows an item names by name or id, else None."""
+    by_id = "source_c_id" in item
+    field, src_key, dest_key = (
+        ("c_id", "source_c_id", "destination_c_id")
+        if by_id
+        else ("c_name", "source_c_name", "destination_c_name")
+    )
+    src_col = next((col for col in source if col.get(field) == item.get(src_key)), None)
+    dest_col = next((col for col in dest if col.get(field) == item.get(dest_key)), None)
+    return src_col, dest_col
+
+
+def _reject_incomplete_batch_mapping(
+    ids: tuple[int, int],
+    source_names: set[str],
+    mapped_sources: set[str],
+    unknown: list[str],
+) -> None:
+    """Refuse a mapping that leaves source columns out or names a missing destination."""
+    unmapped = sorted(source_names - mapped_sources)
+    if not unmapped and not unknown:
+        return
+    dataset_id, source_id = ids
+    problems = []
+    if unknown:
+        problems.append(f"destination column(s) not in dataset {dataset_id}: {', '.join(unknown)}")
+    if unmapped:
+        problems.append(f"source column(s) left unmapped and not appended: {', '.join(unmapped)}")
+    raise CliError(
+        code="append_mapping_incomplete",
+        message=(
+            f"mapping for appending dataset {source_id} into dataset {dataset_id} would corrupt "
+            f"the append: {'; '.join(problems)}. Unmapped source columns are not appended."
+        ),
+        exit_status=EXIT_USAGE,
+        hint=(
+            f"Map every source column of dataset {source_id} to an existing column of dataset "
+            f"{dataset_id}."
+        ),
+        details={"unknown_destinations": unknown, "unmapped_source_columns": unmapped},
+    )
+
+
+def _reject_type_change(item: dict[str, Any], dest_col: dict[str, Any], dataset_id: int) -> None:
+    """Refuse an explicit expected type that differs from the destination's real one."""
+    expected, actual = item.get("expected_destination_c_type"), dest_col.get("c_type")
+    if expected is None or not actual or str(expected).upper() == str(actual).upper():
+        return
+    raise CliError(
+        code="append_type_mismatch",
+        message=(
+            f"expected_destination_c_type {expected} for destination column "
+            f"{dest_col['c_name']!r} of dataset {dataset_id} would change its type from "
+            f"{actual}; the append would convert the whole destination column."
+        ),
+        exit_status=EXIT_USAGE,
+        hint=(
+            "Omit expected_destination_c_type (the CLI sends the destination's current "
+            f"type, {actual})."
+        ),
+        details={"column": dest_col["c_name"], "expected": expected, "actual": actual},
+    )
+
+
+def _checked_batch_mapping(
+    service: Any, dataset_id: int, source_id: int, mapping: Any
+) -> tuple[list[dict[str, Any]], list[str]]:
+    """Validate a batch mapping against both schemas; return typed items and warnings.
+
+    Refuses unmapped source columns and unknown destinations (the backend appends
+    only the mapped columns) and stamps every item with the destination's actual
+    current type, so no destination column is silently re-typed. A mapped pair
+    whose source and destination types differ is returned as a warning.
+    """
+    source = _dataset_columns(service, source_id, "source")
+    dest = _dataset_columns(service, dataset_id, "target")
+    items = [dict(item) for item in _mapping_items(mapping) if isinstance(item, dict)]
+    typed: list[dict[str, Any]] = []
+    mapped_sources: set[str] = set()
+    unknown: list[str] = []
+    warnings: list[str] = []
+    for item in items:
+        src_col, dest_col = _resolve_item(item, source, dest)
+        if src_col is not None:
+            mapped_sources.add(src_col["c_name"])
+        if dest_col is None:
+            if item.get("action") != "add_column":
+                unknown.append(str(item.get("destination_c_name", item.get("destination_c_id"))))
+            typed.append(item)
+            continue
+        _reject_type_change(item, dest_col, dataset_id)
+        item.setdefault("expected_destination_c_type", dest_col.get("c_type"))
+        typed.append(item)
+        if src_col and src_col.get("c_type") and src_col["c_type"] != dest_col.get("c_type"):
+            warnings.append(
+                f"mapped column {src_col['c_name']!r} is {str(src_col['c_type']).lower()} but "
+                f"destination column {dest_col['c_name']!r} is {str(dest_col['c_type']).lower()}"
+            )
+    _reject_incomplete_batch_mapping(
+        (dataset_id, source_id), {col["c_name"] for col in source}, mapped_sources, unknown
+    )
+    return typed, warnings
+
+
 def batch_create(invocation: Invocation) -> HandlerResult:
     """Create a batch for a dataset. ``source_id`` and ``mapping`` are required."""
     project_id = require_project(invocation)
@@ -158,7 +296,12 @@ def batch_create(invocation: Invocation) -> HandlerResult:
             action=f"create a batch on dataset {dataset_id} and DELETE the source dataset",
         )
     with open_service(invocation) as (service, auth):
+        kwargs["mapping"], warnings = _checked_batch_mapping(
+            service, dataset_id, source_id, mapping
+        )
         data = service.call(_symbol(invocation), **kwargs)
+    if warnings and isinstance(data, dict):
+        data["mapping_check"] = {"warnings": warnings}
     return data, _meta(invocation, auth.workspace_id, project_id)
 
 
@@ -249,20 +392,30 @@ def batch_delete(invocation: Invocation) -> HandlerResult:
 
 
 def batch_bulk_delete(invocation: Invocation) -> HandlerResult:
-    """Bulk-delete batches for a dataset. Prompt or ``--yes`` required.
+    """Bulk-delete the named batches of a dataset. Prompt or ``--yes`` required.
 
-    When no ``ids`` are given, every batch for the dataset is deleted.
+    ``ids`` is required: the backend rejects a delete with no batch ids, it
+    never deletes "all batches".
     """
     project_id = require_project(invocation)
     dataset_id = _require_int_positional_at(invocation, 0, "dataset id")
     document = invocation.load_input() or {}
+    ids = _require_field(document, "ids")
+    if not ids:
+        raise CliError(
+            code=CODE_INVALID_ARGUMENT,
+            message="The 'ids' input field must name at least one batch id.",
+            exit_status=EXIT_USAGE,
+            hint=f"List batch ids with `mammoth batch list {dataset_id}`.",
+        )
+    count = len(ids) if isinstance(ids, list) else len(str(ids).split(","))
     enforce_confirmation(
         invocation,
         policy=POLICY_PROMPT_OR_YES,
-        action=f"delete batches of dataset {dataset_id}",
+        action=f"delete {count} batch(es) of dataset {dataset_id}",
     )
-    kwargs: dict[str, Any] = {"dataset_id": dataset_id, "project_id": project_id}
-    _forward_optional(document, kwargs, ("ids",))
     with open_service(invocation) as (service, auth):
-        data = service.call(_symbol(invocation), **kwargs)
+        data = service.call(
+            _symbol(invocation), dataset_id=dataset_id, project_id=project_id, ids=ids
+        )
     return data, _meta(invocation, auth.workspace_id, project_id)
