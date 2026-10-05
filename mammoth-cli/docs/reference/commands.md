@@ -1,6 +1,6 @@
 # Command reference
 
-Generated from the reviewed command manifests for mammoth-cli 2.2.38.
+Generated from the reviewed command manifests for mammoth-cli 2.2.39.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
@@ -3478,7 +3478,7 @@ Total commands: 652.
 **Arguments**
 
 - `PROJECT_ID` (int, required) — ID of the project to copy.
-- `NAME` (str, required) — Name of the new project.
+- `NAME` (str, required) — Name of the new project. If it is already taken, the copy is named with the next free suffix ("NAME 2", "NAME 3", ...); no need to check the name first.
 
 - Mutation class: `benign_mutation`
 - Confirmation: `none`

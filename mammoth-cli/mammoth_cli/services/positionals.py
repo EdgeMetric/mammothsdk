@@ -445,7 +445,15 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
         PositionalSpec(
             name="project_id", type=int, required=True, help="ID of the project to copy."
         ),
-        PositionalSpec(name="name", type=str, required=True, help="Name of the new project."),
+        PositionalSpec(
+            name="name",
+            type=str,
+            required=True,
+            help=(
+                "Name of the new project. If it is already taken, the copy is named with the next "
+                'free suffix ("NAME 2", "NAME 3", ...); no need to check the name first.'
+            ),
+        ),
     ),
     # project ensure: exact name to find or create, positional or ``name`` field.
     "project.ensure": (

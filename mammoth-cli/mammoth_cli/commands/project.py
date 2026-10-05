@@ -281,6 +281,9 @@ def project_copy(invocation: Invocation) -> HandlerResult:
     ``PROJECT_ID NAME`` are positional; ``dataset_ids``, ``include_dashboards`` and
     ``exclude_data`` come from ``--input``. The result is the job's:
     ``project_id``, ``dataset_map``, ``view_map``, ``skipped`` and ``dashboards``.
+
+    A taken NAME is not an error: the server names the copy with the next free suffix
+    ("NAME 2", "NAME 3", ...), so there is no need to check the name first.
     """
     source_id = _int_positional(invocation, "project id")
     name = invocation.extra_args[1] if len(invocation.extra_args) > 1 else None
