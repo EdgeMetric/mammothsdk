@@ -4567,7 +4567,10 @@ commands:
   draft_test: LT-VIEW-TRANSFORM-CROSSTAB-DRAFT
   undo_test: LT-VIEW-TRANSFORM-CROSSTAB-UNDO
   known_restrictions: 'Dynamic safety class: new target needs no confirmation, append needs --yes, replacing
-    an existing target needs --yes --confirm TARGET_DS_ID.'
+    an existing target needs --yes --confirm TARGET_DS_ID. The crosstab is a standing export on the source
+    view: it rewrites the output dataset on every pipeline run, and the result says so
+    (refreshes_on_pipeline_run, note). A target the view already exports into, the view''s own dataset,
+    and a view held in a draft are refused, as for view export dataset.'
   reviewed_by: primary
 - command_id: view.transform.date-diff
   command_path: view transform date-diff

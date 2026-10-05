@@ -36,6 +36,7 @@ from mammoth_cli.commands.view import (
     join_after_snapshot,
     join_dry_run_preview,
     join_snapshot,
+    reject_dataset_export_conflicts,
     wait_for_followon_job,
     wait_for_pipeline_to_settle,
     wait_for_view_row_count,
@@ -1063,7 +1064,27 @@ def view_transform_crosstab(invocation: Invocation) -> HandlerResult:
     _require_field(document, "dataset_name")
     assert document is not None
     kwargs = _bind_transform_inputs(invocation, document)
-    return _dispatch_view(invocation, view_id, "crosstab", **kwargs)
+
+    def guard_target(service: Any, dataset_id: int, call_kwargs: dict[str, Any]) -> None:
+        target = call_kwargs.get("target_ds_id")
+        reject_dataset_export_conflicts(
+            service, view_id, dataset_id, int(target) if target is not None else None
+        )
+
+    def name_persistence(_service: Any, _dataset_id: int, _state: Any, data: Any) -> Any:
+        return {
+            "dataset_id": data,
+            "source_view_id": view_id,
+            "refreshes_on_pipeline_run": True,
+            "note": (
+                f"This crosstab is a standing export on view {view_id}: it rewrites dataset "
+                f"{data} on every pipeline run of that view, not just now."
+            ),
+        }
+
+    return _dispatch_view(
+        invocation, view_id, "crosstab", prepare=guard_target, after=name_persistence, **kwargs
+    )
 
 
 def view_transform_date_diff(invocation: Invocation) -> HandlerResult:
