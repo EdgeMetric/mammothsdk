@@ -16,7 +16,7 @@ Status on release: ran once on CLI 2.0.14 — write sweep 2026-09-18: exit 0 on 
 
 Run: `mammoth batch create`. Exact input fields: `mammoth schema get batch.create`.
 
-Example: `mammoth batch create 123 123 --input '{"mapping": [{"source_c_name": "column_1", "destination_c_name": "column_1", "expected_destination_c_type": "TEXT"}]}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth batch create 123 456 --input '{"mapping": {"column_1": "column_1"}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `BatchCreateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `returns_job`.
 

@@ -19,6 +19,9 @@ _CREATE = "mammoth.api.batches.BatchesAPI.create"
 _UPDATE = "mammoth.api.batches.BatchesAPI.update"
 _DELETE = "mammoth.api.batches.BatchesAPI.delete"
 _BULK_DELETE = "mammoth.api.batches.BatchesAPI.bulk_delete"
+_DATASET_GET = "mammoth.api.datasets.DatasetsAPI.get"
+_SCHEMA = {"dataset": {"data_schema": [{"c_name": "a", "c_id": "c1", "c_type": "TEXT"}]}}
+_ITEM = {"source_c_name": "a", "destination_c_name": "a", "expected_destination_c_type": "TEXT"}
 
 
 @pytest.fixture(autouse=True)
@@ -110,18 +113,19 @@ def test_create_requires_mapping(fake_service: FakeMammothService, tmp_path: Pat
 
 
 def test_create_passes_required_fields(fake_service: FakeMammothService, tmp_path: Path) -> None:
+    fake_service.responses[_DATASET_GET] = _SCHEMA
     doc = tmp_path / "in.json"
-    doc.write_text(json.dumps({"mapping": {"a": "b"}}), encoding="utf-8")
+    doc.write_text(json.dumps({"mapping": {"a": "a"}}), encoding="utf-8")
     batch_cmd.batch_create(
         _inv("batch.create", project=180, extra_args=["9", "5"], input_file=str(doc))
     )
-    assert fake_service.call_log == [
+    assert fake_service.call_log[2:] == [
         (
             _CREATE,
             {
                 "dataset_id": 9,
                 "source_id": 5,
-                "mapping": {"a": "b"},
+                "mapping": [_ITEM],
                 "project_id": 180,
             },
         )
@@ -129,11 +133,12 @@ def test_create_passes_required_fields(fake_service: FakeMammothService, tmp_pat
 
 
 def test_create_forwards_optional_fields(fake_service: FakeMammothService, tmp_path: Path) -> None:
+    fake_service.responses[_DATASET_GET] = _SCHEMA
     doc = tmp_path / "in.json"
     doc.write_text(
         json.dumps(
             {
-                "mapping": {"a": "b"},
+                "mapping": {"a": "a"},
                 "new_ds_params": {"name": "n"},
                 "is_validation_required": True,
                 "change_map": {"x": "y"},
@@ -146,13 +151,13 @@ def test_create_forwards_optional_fields(fake_service: FakeMammothService, tmp_p
     batch_cmd.batch_create(
         _inv("batch.create", project=180, extra_args=["9", "5"], input_file=str(doc), yes=True)
     )
-    assert fake_service.call_log == [
+    assert fake_service.call_log[2:] == [
         (
             _CREATE,
             {
                 "dataset_id": 9,
                 "source_id": 5,
-                "mapping": {"a": "b"},
+                "mapping": [_ITEM],
                 "project_id": 180,
                 "new_ds_params": {"name": "n"},
                 "is_validation_required": True,
@@ -195,7 +200,7 @@ def test_create_delete_source_blocked_without_confirmation(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
     doc = tmp_path / "in.json"
-    doc.write_text(json.dumps({"mapping": {"a": "b"}, "delete_source_ds": True}), encoding="utf-8")
+    doc.write_text(json.dumps({"mapping": {"a": "a"}, "delete_source_ds": True}), encoding="utf-8")
     with pytest.raises(CliError) as excinfo:
         batch_cmd.batch_create(
             _inv("batch.create", project=180, extra_args=["9", "5"], input_file=str(doc))
@@ -207,12 +212,13 @@ def test_create_delete_source_blocked_without_confirmation(
 def test_create_without_delete_source_needs_no_confirmation(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
+    fake_service.responses[_DATASET_GET] = _SCHEMA
     doc = tmp_path / "in.json"
-    doc.write_text(json.dumps({"mapping": {"a": "b"}}), encoding="utf-8")
+    doc.write_text(json.dumps({"mapping": {"a": "a"}}), encoding="utf-8")
     batch_cmd.batch_create(
         _inv("batch.create", project=180, extra_args=["9", "5"], input_file=str(doc))
     )
-    assert fake_service.call_log[0][1]["dataset_id"] == 9
+    assert fake_service.call_log[-1][1]["dataset_id"] == 9
 
 
 def test_update_remove_blocked_without_confirmation(

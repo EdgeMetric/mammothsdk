@@ -119,7 +119,7 @@ Sensitive structured input must come from a private file or pipe; never put secr
 - `mammoth batch bulk-delete` [destructive/prompt_or_yes] -> mammoth.api.batches.BatchesAPI.bulk_delete
   example: mammoth batch bulk-delete 123 --input '{"ids": [11, 12]}'
 - `mammoth batch create` [benign_mutation/none] -> mammoth.api.batches.BatchesAPI.create
-  example: mammoth batch create 123 123 --input '{"mapping": [{"source_c_name": "column_1", "destination_c_name": "column_1", "expected_destination_c_type": "TEXT"}]}'
+  example: mammoth batch create 123 456 --input '{"mapping": {"column_1": "column_1"}}'
 - `mammoth batch create-spec` [benign_mutation/none] -> mammoth.api.batches.BatchesAPI.create_spec
   example: mammoth batch create-spec 123 --input '{"file_id": 94}'
 - `mammoth batch delete` [destructive/prompt_or_yes] -> mammoth.api.batches.BatchesAPI.delete
