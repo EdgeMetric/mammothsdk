@@ -3618,6 +3618,8 @@ def view_export_specialized(invocation: Invocation) -> HandlerResult:
     allowed = explicit_fields | common_fields | {_DATASET_ID_FIELD}
     if invocation.command_id in _DB_REPLACE_ROUTES:
         allowed = allowed | {_REPLACE_TABLE_FIELD}
+    if invocation.command_id == "view.export.dataset":
+        allowed = allowed | {BLANK_COLUMNS_FIELD}
     unknown = sorted(set(document) - allowed)
     if unknown:
         raise CliError(
