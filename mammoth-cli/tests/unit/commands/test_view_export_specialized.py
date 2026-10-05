@@ -482,6 +482,7 @@ def test_dataset_route_export_guard_ignores_a_soft_deleted_export(
     fake_service.responses[_EXPORTS_LIST] = _exports_page(
         _internal_dataset_export(42, 1545, status=ExportStatus.DELETED)
     )
+    fake_service.responses[_DATASET_GET] = _dataset_schema()
     fake_service.view_responses[(1758, "to_dataset")] = 1545
     view_cmd.view_export_specialized(
         _inv(
@@ -499,7 +500,7 @@ def test_dataset_route_export_guard_ignores_a_soft_deleted_export(
             yes=True,
         )
     )
-    assert fake_service.view_call_log == [
+    assert [call for call in fake_service.view_call_log if call[1] == "to_dataset"] == [
         (
             1758,
             "to_dataset",
@@ -519,6 +520,7 @@ def test_dataset_route_allows_first_export_into_an_existing_target(
     """No existing export from this view into the target -> the write
     proceeds normally (an unrelated export, or none at all, must not block
     it)."""
+    fake_service.responses[_DATASET_GET] = _dataset_schema()
     fake_service.responses[_EXPORTS_LIST] = _exports_page(_internal_dataset_export(7, 9001))
     fake_service.view_responses[(7, "to_dataset")] = 9
     view_cmd.view_export_specialized(
@@ -530,7 +532,7 @@ def test_dataset_route_allows_first_export_into_an_existing_target(
             yes=True,
         )
     )
-    assert fake_service.view_call_log == [
+    assert [call for call in fake_service.view_call_log if call[1] == "to_dataset"] == [
         (7, "to_dataset", {"dataset_id": 3, "dataset_name": "orders", "target_ds_id": 9})
     ]
 
@@ -560,6 +562,7 @@ def test_dataset_route_inlines_the_target_view_instead_of_a_relist_hint(
     # A dataset export (create or append) never changes the target dataset's
     # view id; when it can be resolved here, the response carries it instead
     # of sending the agent back through a separate 'view list' call.
+    fake_service.responses[_DATASET_GET] = _dataset_schema()
     fake_service.view_responses[(7, "to_dataset")] = 114
     fake_service.responses["mammoth.api.dataviews.DataviewsAPI.list"] = {
         "dataviews": [{"id": 220, "name": "Store sales combined"}]

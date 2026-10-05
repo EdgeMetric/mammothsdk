@@ -3578,14 +3578,16 @@ def view_export_specialized(invocation: Invocation) -> HandlerResult:
             # rows_before is the target's own count ahead of this write, read
             # before the call so a later re-read can never be confused with it.
             target_view_before = _dataset_view_info(service, int(target_ds_id), result_project_id)
-            if save_as_mode == "APPEND_TO_DS":
-                target_only_columns, mapped_type_warnings = _reject_append_schema_mismatch(
-                    service,
-                    dataview_id,
-                    dataset_id,
-                    int(target_ds_id),
-                    kwargs.get("column_mapping"),
-                )
+            # REPLACE_IN_DS into an existing target runs the same backend
+            # append code as APPEND_TO_DS (same mapping and schema handling),
+            # so both modes get the same guards.
+            target_only_columns, mapped_type_warnings = _reject_append_schema_mismatch(
+                service,
+                dataview_id,
+                dataset_id,
+                int(target_ds_id),
+                kwargs.get("column_mapping"),
+            )
         try:
             data = service.call_view(dataview_id, method, dataset_id=dataset_id, **kwargs)
         except CliError as error:
@@ -3874,7 +3876,8 @@ def _reject_append_schema_mismatch(
     target_ds_id: int,
     column_mapping: Any,
 ) -> tuple[list[str], list[str]]:
-    """Refuse an ``APPEND_TO_DS`` export whose source has a column the target
+    """Refuse an ``APPEND_TO_DS``/``REPLACE_IN_DS`` export into an existing target
+    whose source has a column the target
     dataset's schema does not, and ``column_mapping`` does not cover.
 
     A non-empty ``column_mapping`` is stricter: the backend then copies only
