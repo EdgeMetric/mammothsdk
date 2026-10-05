@@ -716,6 +716,18 @@ def _shared_option_params() -> list[inspect.Parameter]:
             ],
         ),
         opt(
+            "allow_empty",
+            False,
+            Annotated[
+                bool,
+                typer.Option(
+                    "--allow-empty",
+                    help="Add a keep filter that matches no row; without it the dry run fails.",
+                    rich_help_panel="Safety",
+                ),
+            ],
+        ),
+        opt(
             "input_file",
             None,
             Annotated[

@@ -136,7 +136,8 @@ def empties_view_error(message: str, *, view_id: int) -> CliError:
         message=message,
         exit_status=EXIT_USAGE,
         hint="Nothing was changed. Tell the user no row matches and name the values the "
-        "column holds, then ask which they meant.",
+        "column holds, then ask which they meant. Only if the user then asks for the empty "
+        "filter anyway, run the command again with --allow-empty.",
         details={"view_id": view_id},
     )
 

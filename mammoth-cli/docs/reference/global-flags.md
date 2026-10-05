@@ -24,6 +24,7 @@ schema get COMMAND.ID`.
 | `--input-format` | Input document format: `json` or `yaml`. Required for `--input -`. |
 | `--yes`, `-y` | Confirm a mutation without prompting. |
 | `--confirm TARGET` | Exact target name required for high-impact actions. |
+| `--allow-empty` | Add a keep filter that matches no row; without it the dry run fails. |
 
 ## Choosing an output format
 

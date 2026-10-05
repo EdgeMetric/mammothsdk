@@ -1174,7 +1174,7 @@ def _impact_check(
     A count of zero is a no-op: ``--dry-run`` fails with ``no_op`` and a real run
     adds no task (``status: no_change``, like a same-type convert). Otherwise a
     dry run reports the count as ``predicted_impact``. A keep filter no row matches
-    fails a dry run with ``empties_view``. A count that cannot run
+    fails a dry run with ``empties_view`` unless ``--allow-empty`` is set. A count that cannot run
     is reported as unchecked in a dry run, never as zero, and never blocks a write.
     """
 
@@ -1200,7 +1200,7 @@ def _impact_check(
                     invocation, "predicted_impact", {"checked": False, "reason": exc.message}
                 )
             return None
-        if measured.empties_message and invocation.dry_run:
+        if measured.empties_message and invocation.dry_run and not invocation.allow_empty:
             raise empties_view_error(measured.empties_message, view_id=view_id)
         if measured.changes == 0:
             if invocation.dry_run:

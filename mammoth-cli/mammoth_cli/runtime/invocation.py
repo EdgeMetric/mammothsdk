@@ -62,6 +62,7 @@ class Invocation:
     yes: bool = False
     confirm: str | None = None
     dry_run: bool = False
+    allow_empty: bool = False
     input_file: str | None = None
     input_format: str | None = None
     positionals: dict[str, Any] = field(default_factory=dict)

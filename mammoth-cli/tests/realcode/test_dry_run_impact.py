@@ -300,7 +300,10 @@ def test_real_discard_duplicates_with_none_adds_no_task(
 
 
 def _run_no_match(
-    monkeypatch: pytest.MonkeyPatch, real_service: ServiceFactory, doc: dict[str, Any]
+    monkeypatch: pytest.MonkeyPatch,
+    real_service: ServiceFactory,
+    doc: dict[str, Any],
+    *flags: str,
 ) -> tuple[Any, Any]:
     """Dry-run a filter no row matches; a grouped read answers the column's values."""
     service, api = real_service(project_id=180)
@@ -333,6 +336,7 @@ def _run_no_match(
             "--output",
             "json",
             "--no-input",
+            *flags,
         ]
     )
     return result, api
@@ -351,6 +355,17 @@ def test_a_filter_no_row_matches_names_the_values_the_column_holds(
     assert error["code"] == "empties_view"
     assert "(0 of 50)" in error["message"]
     assert "Donor holds: Ada (31), Bo (19)" in error["message"]
+    assert "--allow-empty" in error["hint"]
+
+
+def test_a_filter_no_row_matches_passes_its_dry_run_with_allow_empty(
+    monkeypatch: pytest.MonkeyPatch, real_service: ServiceFactory
+) -> None:
+    # The user was told no row matches and wants the step anyway.
+    result, _ = _run_no_match(monkeypatch, real_service, _NO_SUCH_DONOR, "--allow-empty")
+    impact = json.loads(result.output)["data"]["predicted_impact"]
+    assert impact["rows_removed"] == 50
+    assert impact["rows_after"] == 0
 
 
 def test_a_remove_filter_no_row_matches_names_the_values_in_its_no_op(
