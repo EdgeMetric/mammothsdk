@@ -998,15 +998,20 @@ def dataset_create_from_pdf(invocation: Invocation) -> HandlerResult:
 
 
 def dataset_rename(invocation: Invocation) -> HandlerResult:
-    """Rename a dataset. Dataset id is positional; new name comes from ``--input``."""
+    """Rename a dataset. Dataset id is positional; new name comes from ``--input``.
+
+    ``{"unique": true}`` makes the server pick a free name when the requested one is
+    taken; the result's ``name`` is the name applied.
+    """
     project_id = require_project(invocation)
     dataset_id = _require_int_positional(invocation, "dataset id")
     document = invocation.load_input()
     name = _require_field(document, "name")
+    kwargs: dict[str, Any] = {"dataset_id": dataset_id, "name": name, "project_id": project_id}
+    if document.get("unique") is True:
+        kwargs["unique"] = True
     with open_service(invocation) as (service, auth):
-        data = service.call(
-            _symbol(invocation), dataset_id=dataset_id, name=name, project_id=project_id
-        )
+        data = service.call(_symbol(invocation), **kwargs)
     return data, _meta(invocation, auth.workspace_id, project_id)
 
 
