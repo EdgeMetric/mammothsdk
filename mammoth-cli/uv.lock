@@ -537,7 +537,7 @@ wheels = [
 
 [[package]]
 name = "mammoth-cli"
-version = "2.2.13"
+version = "2.2.33"
 source = { editable = "." }
 dependencies = [
     { name = "jsonschema" },
@@ -565,7 +565,7 @@ dev = [
 requires-dist = [
     { name = "jsonschema", specifier = ">=4.20" },
     { name = "keyring", specifier = ">=25.7,<26" },
-    { name = "mammoth-io", specifier = ">=0.8.13,<0.9" },
+    { name = "mammoth-io", specifier = "==0.8.17" },
     { name = "platformdirs", specifier = ">=4.10,<5" },
     { name = "pydantic", specifier = ">=2.12.5,<3" },
     { name = "pyyaml", specifier = ">=6,<7" },
@@ -586,15 +586,15 @@ dev = [
 
 [[package]]
 name = "mammoth-io"
-version = "0.8.13"
+version = "0.8.17"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "httpx" },
     { name = "pydantic" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/55/fd/24bdc1a7c0de304177508ce2bf0cb1339bb016eaf1a35a272b63dead1319/mammoth_io-0.8.13.tar.gz", hash = "sha256:c4b4ac5d9b588179ea0caa81b4135983a5f312ea28a7aeedefbb32b0ecf8af50", size = 559520, upload-time = "2026-10-02T20:26:29.086Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/b1/00/e6a19474d02d9fdccb4b9c89c92c0c01dbedd8886557572f45c0ad43eda6/mammoth_io-0.8.17.tar.gz", hash = "sha256:59ad88ea3b109204232848eb3452bd64f94c17dda99134b01c9fe3afb9286672", size = 567640, upload-time = "2026-10-04T11:29:53.681Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/b2/c2/59ff7111faa6259848371d04a49a7a0a2696e472c04b0aa5649fd50214ee/mammoth_io-0.8.13-py3-none-any.whl", hash = "sha256:3d356c94dea4be25cb4e75dc0c70221a6e45f526ca412db8e3f751f924cb53fc", size = 289720, upload-time = "2026-10-02T20:26:23.721Z" },
+    { url = "https://files.pythonhosted.org/packages/c4/11/6801dfbf2e0f988430f61ff954d9d7b4a58f0ebdac4f0c93e12b7d87794a/mammoth_io-0.8.17-py3-none-any.whl", hash = "sha256:3ed6f5ea0eed90c38198059c53f2a692f9bda052534fb6171c4d20991607a99f", size = 291821, upload-time = "2026-10-04T11:29:48.969Z" },
 ]
 
 [[package]]

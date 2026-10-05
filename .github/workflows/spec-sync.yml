@@ -1,0 +1,142 @@
+name: Spec sync
+
+# Weekly: if the production API's semantic contract changed, regenerate and
+# bump, merge to main, run the tests on main, publish mammoth-io then
+# mammoth-cli (twine, per RELEASING.md), then open the backend pin-bump PR.
+# Unchanged contract: exit. Drift-check error: fail the job, publish nothing.
+#
+# Secrets: PYPI_API_TOKEN (PyPI upload), SYNC_BOT_TOKEN (fine-grained PAT,
+# contents + pull-requests write on this repo and EdgeMetric/mvc-service).
+# SYNC_BOT_TOKEN must belong to a repo admin: main requires one review and the
+# merges use --admin (enforce_admins is off).
+permissions:
+  contents: read
+
+on:
+  schedule:
+    - cron: "17 5 * * 1"
+  workflow_dispatch:
+
+concurrency:
+  group: spec-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      GH_TOKEN: ${{ secrets.SYNC_BOT_TOKEN }}
+      TWINE_USERNAME: __token__
+      TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+      SOURCE_DATE_EPOCH: "1700000000"
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          token: ${{ secrets.SYNC_BOT_TOKEN }}
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: "3.14"
+      - name: Install tooling
+        run: pip install poetry uv twine black pytest -e . -e mammoth-cli
+      - name: Exit if the live semantic contract is unchanged
+        id: drift
+        working-directory: mammoth-cli
+        run: |
+          rc=0; python scripts/sync_openapi.py --check-live || rc=$?
+          if [ "$rc" -eq 0 ]; then echo "changed=false" >> "$GITHUB_OUTPUT"
+          elif [ "$rc" -eq 2 ]; then echo "changed=true" >> "$GITHUB_OUTPUT"
+          else echo "::error::drift check failed (exit $rc); nothing published"; exit "$rc"; fi
+      - name: Regenerate from the live spec
+        if: steps.drift.outputs.changed == 'true'
+        working-directory: mammoth-cli
+        run: |
+          python scripts/sync_openapi.py
+          python scripts/gen_dashboard_v3_sdk.py
+          python scripts/build_manifests.py
+          python scripts/gen_docs.py
+      - name: Bump versions (patch) and pin the SDK exactly in the CLI
+        if: steps.drift.outputs.changed == 'true'
+        id: ver
+        run: |
+          bump() { python -c "import sys;a,b,c=sys.argv[1].split('.');print(f'{a}.{b}.{int(c)+1}')" "$1"; }
+          sdk_old=$(poetry version --short); cli_old=$(cd mammoth-cli && poetry version --short)
+          sdk=$(bump "$sdk_old"); cli=$(bump "$cli_old")
+          sed -i "0,/^version = \"$sdk_old\"/s//version = \"$sdk\"/" pyproject.toml
+          sed -i "s/^__version__ = \"$sdk_old\"/__version__ = \"$sdk\"/" mammoth/__init__.py
+          sed -i "0,/^version = \"$cli_old\"/s//version = \"$cli\"/" mammoth-cli/pyproject.toml
+          sed -i -E "s/\"mammoth-io \([^)]*\)\"/\"mammoth-io (==$sdk)\"/" mammoth-cli/pyproject.toml
+          sed -i "s/^__version__ = \"$cli_old\"/__version__ = \"$cli\"/" mammoth-cli/mammoth_cli/__init__.py
+          sed -i "s/mammoth-cli $cli_old\./mammoth-cli $cli./" mammoth-cli/docs/reference/commands.md
+          echo "sdk=$sdk" >> "$GITHUB_OUTPUT"; echo "cli=$cli" >> "$GITHUB_OUTPUT"
+      - name: Commit the sync branch and open its PR
+        if: steps.drift.outputs.changed == 'true'
+        run: |
+          branch="chore/spec-sync-sdk-${{ steps.ver.outputs.sdk }}-cli-${{ steps.ver.outputs.cli }}"
+          git config user.name "spec-sync"; git config user.email "spec-sync@users.noreply.github.com"
+          git checkout -b "$branch"
+          git add -A
+          git commit -m "chore: sync SDK/CLI to live spec (mammoth-io ${{ steps.ver.outputs.sdk }}, mammoth-cli ${{ steps.ver.outputs.cli }})"
+          git push origin "$branch"
+          gh pr create --base main --head "$branch" \
+            --title "chore: spec sync mammoth-io ${{ steps.ver.outputs.sdk }} / mammoth-cli ${{ steps.ver.outputs.cli }}" \
+            --body "Regenerated from the live spec; see mammoth/_spec.json for the pinned spec_sha256. Published after merge and green tests."
+      - name: Test the sync branch (a failing suite never lands on main)
+        if: steps.drift.outputs.changed == 'true'
+        run: |
+          poetry install --no-interaction
+          poetry run pytest tests/ -q -m "not integration and not slow"
+          (cd mammoth-cli && pytest tests -q)
+      - name: Merge the sync PR to main
+        if: steps.drift.outputs.changed == 'true'
+        run: |
+          gh pr merge "chore/spec-sync-sdk-${{ steps.ver.outputs.sdk }}-cli-${{ steps.ver.outputs.cli }}" --squash --admin
+          git fetch origin main && git checkout --detach origin/main
+      - name: Publish mammoth-io
+        if: steps.drift.outputs.changed == 'true'
+        run: |
+          rm -rf dist && poetry build --output dist
+          twine check dist/* && twine upload dist/mammoth_io-${{ steps.ver.outputs.sdk }}*
+      # The CLI lock cannot name mammoth-io==X before X is on PyPI, so it is
+      # relocked here and merged before the CLI is built.
+      - name: Wait for mammoth-io, relock the CLI on main
+        if: steps.drift.outputs.changed == 'true'
+        working-directory: mammoth-cli
+        run: |
+          ok=""
+          for i in $(seq 30); do
+            if pip download --no-deps --no-cache-dir -d /tmp/chk "mammoth-io==${{ steps.ver.outputs.sdk }}"; then ok=1; break; fi
+            sleep 20
+          done
+          [ -n "$ok" ] || { echo "::error::mammoth-io ${{ steps.ver.outputs.sdk }} not on PyPI after 10 min"; exit 1; }
+          poetry lock && uv lock && uv lock --check
+          branch="chore/relock-cli-${{ steps.ver.outputs.cli }}"
+          git checkout -b "$branch"
+          git add poetry.lock uv.lock
+          git commit -m "chore: relock mammoth-cli for mammoth-io ${{ steps.ver.outputs.sdk }}"
+          git push origin "$branch"
+          gh pr create --base main --head "$branch" --title "chore: relock mammoth-cli ${{ steps.ver.outputs.cli }}" \
+            --body "Lock files agree with mammoth-io==${{ steps.ver.outputs.sdk }}."
+          gh pr merge "$branch" --squash --admin
+          git fetch origin main && git checkout --detach origin/main
+      - name: Publish mammoth-cli
+        if: steps.drift.outputs.changed == 'true'
+        working-directory: mammoth-cli
+        run: |
+          rm -rf dist && poetry build --output dist
+          twine check dist/* && twine upload dist/mammoth_cli-${{ steps.ver.outputs.cli }}*
+      - name: Open the backend pin-bump PR
+        if: steps.drift.outputs.changed == 'true'
+        run: |
+          git clone --depth 1 --branch release "https://x-access-token:${GH_TOKEN}@github.com/EdgeMetric/mvc-service.git" /tmp/be
+          cd /tmp/be
+          branch="chore/pin-mammoth-sdk-${{ steps.ver.outputs.sdk }}-cli-${{ steps.ver.outputs.cli }}"
+          git checkout -b "$branch"
+          sed -i -E "s/^mammoth-cli==.*/mammoth-cli==${{ steps.ver.outputs.cli }}/; s/^mammoth-io==.*/mammoth-io==${{ steps.ver.outputs.sdk }}/" Requirements_base.txt
+          git config user.name "spec-sync"; git config user.email "spec-sync@users.noreply.github.com"
+          git add Requirements_base.txt
+          git commit -m "chore: pin mammoth-cli ${{ steps.ver.outputs.cli }} / mammoth-io ${{ steps.ver.outputs.sdk }}"
+          git push origin "$branch"
+          gh pr create --repo EdgeMetric/mvc-service --base release --head "$branch" \
+            --title "chore: pin mammoth-cli ${{ steps.ver.outputs.cli }} / mammoth-io ${{ steps.ver.outputs.sdk }}" \
+            --body "Published versions generated from the live spec (spec-sync workflow, EdgeMetric/mammothsdk)."

@@ -20,7 +20,7 @@ and some descriptions. This script does two things:
 
 Usage::
 
-    python scripts/sync_openapi.py            # fetch, write snapshot + projection
+    python scripts/sync_openapi.py            # fetch, write snapshot + projection + _spec.json pins
     python scripts/sync_openapi.py --check    # re-project committed snapshot only
     python scripts/sync_openapi.py --scrub    # redact the committed snapshot in place
     python scripts/sync_openapi.py --check-live  # opt-in semantic contract drift check
@@ -55,6 +55,15 @@ SPEC_DIR = Path(__file__).resolve().parent.parent / "spec" / "openapi"
 SNAPSHOT_PATH = SPEC_DIR / "openapi.json"
 METADATA_PATH = SPEC_DIR / "metadata.json"
 PROJECTION_PATH = SPEC_DIR / "projection.json"
+#: Each build records the spec it was generated from; both ship inside their wheel.
+PIN_PATHS = (
+    SPEC_DIR.parents[2] / "mammoth" / "_spec.json",
+    SPEC_DIR.parents[1] / "mammoth_cli" / "_spec.json",
+)
+
+#: ``--check-live`` exit code for real drift; any other non-zero code is an error
+#: (network failure, bad JSON, crash) and must never trigger a publish.
+DRIFT_EXIT = 2
 
 HTTP_METHODS = {"get", "put", "post", "delete", "options", "head", "patch", "trace"}
 
@@ -210,11 +219,28 @@ def semantic_contract(document: dict[str, Any]) -> dict[str, Any]:
     return projected
 
 
+def spec_sha256(document: dict[str, Any]) -> str:
+    """Hash the semantic contract, never raw bytes (the live generator is nondeterministic)."""
+    canonical = json.dumps(semantic_contract(document), sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+
+def write_pin(document: dict[str, Any], source_ref: str, source_sha: str | None) -> None:
+    """Record the spec an SDK/CLI build was generated from."""
+    pin = {
+        "spec_sha256": spec_sha256(document),
+        "source_ref": source_ref,
+        "source_sha": source_sha,
+    }
+    for path in PIN_PATHS:
+        write_json(path, pin)
+
+
 def write_json(path: Path, data: Any) -> None:
     path.write_text(json.dumps(data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 
-def fetch() -> None:
+def fetch(source_ref: str | None = None, source_sha: str | None = None) -> None:
     raw, _ = fetch_document()
     raw = scrub_examples(raw.decode("utf-8")).encode("utf-8")
     document = json.loads(raw)
@@ -236,6 +262,7 @@ def fetch() -> None:
     }
     write_json(METADATA_PATH, metadata)
     write_json(PROJECTION_PATH, project_contract(document))
+    write_pin(document, source_ref or SOURCE_URL, source_sha)
 
     print(json.dumps(metadata, indent=2))
 
@@ -323,7 +350,7 @@ def check_live() -> int:
         print(f"- {identity}", file=sys.stderr)
     if semantic_changed and not added and not removed:
         print("~ request, response, parameter, or component schema changed", file=sys.stderr)
-    return 1
+    return DRIFT_EXIT
 
 
 def main() -> int:
@@ -361,7 +388,7 @@ def main() -> int:
         return scrub()
     if args.check_live:
         return check_live()
-    fetch()
+    fetch(args.source_ref, args.source_sha)
     return 0
 
 
