@@ -10,7 +10,7 @@ seam to the public SDK method named by the command's reviewed manifest
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Protocol
 
 from mammoth_cli.errors.envelope import (
     CODE_INVALID_ARGUMENT,
@@ -31,15 +31,24 @@ from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.new_data import with_file_upload_path
 from mammoth_cli.runtime.session import open_service, require_project
 from mammoth_cli.services.listing import (
-    DATASET_LIST_FIELDS,
+    DATASET_ROW_FIELDS,
     ambiguity_note,
+    compact_columns,
     dataset_summary,
     fit_budget,
     name_hit,
     search_page,
+    source_of,
 )
 
 HandlerResult = tuple[Any, dict[str, Any]]
+
+
+_DATASET_GET_SYMBOL = "mammoth.api.datasets.DatasetsAPI.get"
+
+
+class _SdkCaller(Protocol):
+    def call(self, sdk_symbol: str, /, **kwargs: object) -> object: ...
 
 
 def _symbol(invocation: Invocation) -> str:
@@ -142,40 +151,130 @@ def _require_string_positional(invocation: Invocation, name: str) -> str:
     return str(invocation.extra_args[0])
 
 
-# The projects endpoint accepts at most limit=100 and exposes no offset, so a
-# cross-project search can see at most 100 projects; the result says when the
-# list was cut there.
-_MAX_PROJECTS_SEARCHED = 100
-
-
 def _visible_projects(service: Any) -> list[dict[str, Any]]:
-    """The projects the credential can see (at most ``_MAX_PROJECTS_SEARCHED``)."""
-    listing = service.list_projects(limit=_MAX_PROJECTS_SEARCHED)
-    return list(listing.get("projects", [])) if isinstance(listing, dict) else []
+    """Every project the credential is a member of, across all pages."""
+    return list(service.list_all_projects())
+
+
+def _tokens_in_order(needle: str, name: str) -> bool:
+    """Every whitespace-separated token of ``needle`` is in ``name``, in order, any case."""
+    position = 0
+    lowered = name.lower()
+    for token in needle.lower().split():
+        found = lowered.find(token, position)
+        if found < 0:
+            return False
+        position = found + len(token)
+    return True
 
 
 def _find_in_projects(
-    service: Any, needle: str, projects: list[dict[str, Any]]
+    service: Any,
+    needle: str,
+    projects: list[dict[str, Any]],
+    skipped: list[dict[str, Any]] | None = None,
 ) -> list[dict[str, Any]]:
-    """Datasets whose name contains ``needle`` (case-insensitive), in each of ``projects``."""
+    """Datasets whose name has every token of ``needle`` in order, in each of ``projects``.
+
+    A project that cannot be read does not end the search: with ``skipped`` it is
+    recorded there (id, name, why) and the rest are still searched.
+    """
     matches: list[dict[str, Any]] = []
     for project in projects:
         project_id = project.get("id")
         if project_id is None:
             continue
-        response = service.call("mammoth.api.datasets.DatasetsAPI.list_all", project_id=project_id)
+        try:
+            response = service.call(
+                "mammoth.api.datasets.DatasetsAPI.list_all",
+                project_id=project_id,
+                fields=DATASET_ROW_FIELDS,
+            )
+        except CliError as error:
+            if skipped is None:
+                raise
+            skipped.append(
+                {
+                    "project_id": project_id,
+                    "project_name": project.get("name"),
+                    "error": error.message,
+                }
+            )
+            continue
         datasets = response.get("datasets", []) if isinstance(response, dict) else []
         for dataset in datasets:
             name = dataset.get("name") if isinstance(dataset, dict) else None
-            if isinstance(name, str) and needle in name.lower():
+            if isinstance(name, str) and _tokens_in_order(needle, name):
                 matches.append(
                     {
                         "project_id": project_id,
                         "project_name": project.get("name"),
                         **name_hit(dataset),
+                        "source": source_of(dataset),
                     }
                 )
     return matches
+
+
+#: Pages of resource search read for one name (100 hits each); past it the result says so.
+_SEARCH_PAGES = 5
+_SEARCH_PAGE_SIZE = 100
+
+
+def search_hits(
+    service: Any,
+    resource_type: str,
+    needle: str,
+    project_id: int | None = None,
+    fields: str = "minimal",
+) -> tuple[list[dict[str, Any]], bool]:
+    """Resources of ``resource_type`` whose name contains ``needle``, from the search route.
+
+    One request (one more per 100 hits) replaces a listing per project: the
+    workspace search, or the project's own resource list when ``project_id`` is
+    given. Returns the minimal rows and whether the read stopped at
+    ``_SEARCH_PAGES`` pages with more hits unread.
+    """
+    symbol = (
+        "mammoth.api.browse.BrowseAPI.resources_search"
+        if project_id is None
+        else "mammoth.api.browse.BrowseAPI.resources_list"
+    )
+    scope: dict[str, Any] = {} if project_id is None else {"project_id": project_id}
+    rows: list[dict[str, Any]] = []
+    cursor: str | None = None
+    for _ in range(_SEARCH_PAGES):
+        page = service.call(
+            symbol,
+            search=needle or None,
+            resource_type=resource_type,
+            limit=_SEARCH_PAGE_SIZE,
+            cursor=cursor,
+            fields=fields,
+            **scope,
+        )
+        rows += [r for r in page.get("resources", []) if isinstance(r, dict)]
+        cursor = page.get("next_cursor")
+        if not (page.get("has_more") and cursor):
+            return rows, False
+    return rows, True
+
+
+def search_cut_note(kind: str) -> str:
+    """Said when a name search stopped early, with how to narrow it."""
+    return (
+        f"The name matched more than {_SEARCH_PAGES * _SEARCH_PAGE_SIZE} {kind}, so only the "
+        "first of them were read. Use a longer name, or --project, to narrow it."
+    )
+
+
+def _projects_holding(
+    service: Any, needle: str, visible: list[dict[str, Any]]
+) -> tuple[list[dict[str, Any]], bool]:
+    """The visible projects that hold a dataset whose name contains ``needle``."""
+    rows, cut = search_hits(service, "datasource", needle)
+    holding = {r.get("project_id") for r in rows}
+    return [p for p in visible if p.get("id") in holding], cut
 
 
 def _other_projects(visible: list[dict[str, Any]], project_id: int) -> list[dict[str, Any]]:
@@ -199,6 +298,61 @@ def named_project(service: Any, project_id: int, visible: list[dict[str, Any]]) 
     return {"id": project_id, "name": record.get("name")}
 
 
+def _requested_columns(document: dict[str, Any]) -> list[str]:
+    """The ``columns`` input as a list of names (a comma-separated string is split)."""
+    raw = document.get("columns")
+    if raw is None:
+        return []
+    names = raw.split(",") if isinstance(raw, str) else raw
+    if not isinstance(names, list) or not all(isinstance(n, str) for n in names):
+        raise CliError(
+            code=CODE_INVALID_ARGUMENT,
+            message="'columns' must be a list of column names (or one comma-separated string).",
+            exit_status=EXIT_USAGE,
+        )
+    return [n.strip() for n in names if n.strip()]
+
+
+def _column_names(hit: dict[str, Any]) -> list[str]:
+    """Display names of the columns a full-field search hit carries."""
+    properties = hit.get("object_properties")
+    metadata = properties.get("metadata") if isinstance(properties, dict) else None
+    return [
+        str(c["display_name"])
+        for c in metadata or []
+        if isinstance(c, dict) and c.get("display_name")
+    ]
+
+
+def _find_by_columns(
+    service: Any,
+    needle: str,
+    columns: list[str],
+    visible: list[dict[str, Any]],
+) -> tuple[list[dict[str, Any]], bool]:
+    """Datasets (named like ``needle``, when given) that have every one of ``columns``."""
+    hits, cut = search_hits(service, "datasource", needle, fields="full")
+    names = {p.get("id"): p.get("name") for p in visible}
+    wanted = [c.lower() for c in columns]
+    matches: list[dict[str, Any]] = []
+    for hit in hits:
+        have = _column_names(hit)
+        if not set(wanted) <= {c.lower() for c in have}:
+            continue
+        matches.append(
+            {
+                "project_id": hit.get("project_id"),
+                "project_name": names.get(hit.get("project_id")),
+                "id": hit.get("object_id"),
+                "name": hit.get("name"),
+                "rows": hit.get("row_count"),
+                "cols": len(have),
+                "columns": compact_columns([(c, None) for c in have], limit=None),
+            }
+        )
+    return matches, cut
+
+
 def dataset_find(invocation: Invocation) -> HandlerResult:
     """Search dataset names for a substring across every visible project.
 
@@ -211,18 +365,23 @@ def dataset_find(invocation: Invocation) -> HandlerResult:
     """
     name_substring = _require_string_positional(invocation, "name substring")
     needle = name_substring.lower()
+    skipped: list[dict[str, Any]] = []
     with open_service(invocation) as (service, auth):
         visible = _visible_projects(service)
+        cut = False
         if invocation.project is not None:
             projects: list[dict[str, Any]] = [named_project(service, invocation.project, visible)]
-            matches = _find_in_projects(service, needle, projects)
+            matches = _find_in_projects(service, needle, projects, skipped)
             if not matches:
-                others = _other_projects(visible, invocation.project)
-                matches = _find_in_projects(service, needle, others)
-                projects += others
+                holding, cut = _projects_holding(service, needle, visible)
+                matches = _find_in_projects(
+                    service, needle, _other_projects(holding, invocation.project), skipped
+                )
+                projects += _other_projects(visible, invocation.project)
         else:
             projects = visible
-            matches = _find_in_projects(service, needle, projects)
+            holding, cut = _projects_holding(service, needle, visible)
+            matches = _find_in_projects(service, needle, holding, skipped)
         meta = {
             "profile": invocation.profile,
             "workspace_id": auth.workspace_id,
@@ -230,20 +389,69 @@ def dataset_find(invocation: Invocation) -> HandlerResult:
         }
     result: dict[str, Any] = {
         "matches": matches,
-        "projects_searched": len(projects),
-        "projects_truncated": len(projects) >= _MAX_PROJECTS_SEARCHED,
+        "projects_searched": len(projects) - len(skipped),
     }
-    if note := ambiguity_note(len(matches), name_substring):
+    if skipped:
+        result["projects_skipped"] = skipped
+    notes = [ambiguity_note(len(matches), name_substring)]
+    if cut:
+        result["truncated"] = True
+        notes.append(search_cut_note("datasets"))
+    if note := " ".join(n for n in notes if n):
         result["note"] = note
     return result, meta
+
+
+#: Matches kept per dataset in a ``dataset search`` row; the rest are counted, not listed.
+_SEARCH_MATCHES_PER_DATASET = 5
+
+
+def _search_row(hit: dict[str, Any]) -> dict[str, Any]:
+    """One ``dataset search`` row: the dataset and the first places its content matched."""
+    matches = hit.get("matches") or []
+    row: dict[str, Any] = {
+        "id": hit.get("id"),
+        "name": hit.get("name"),
+        "matches": matches[:_SEARCH_MATCHES_PER_DATASET],
+    }
+    if len(matches) > _SEARCH_MATCHES_PER_DATASET:
+        row["more_matches"] = len(matches) - _SEARCH_MATCHES_PER_DATASET
+    return row
+
+
+def dataset_search(invocation: Invocation) -> HandlerResult:
+    """Find the project's datasets whose name, column names or sampled values hold TERM.
+
+    Read-only: one server call. Each match names where the term was found (``name``,
+    ``column`` or ``value``) with the column and the sampled value, so the dataset that
+    holds "New Year Sale" in a ``campaign`` column is found without knowing its name.
+    Sampled values come from the profile, which keeps up to 30 per text column, so a
+    dataset never profiled matches on name and columns only.
+    """
+    term = _require_string_positional(invocation, "term")
+    project_id = require_project(invocation)
+    with open_service(invocation) as (service, auth):
+        data = service.call(
+            "mammoth.api.datasets.DatasetsAPI.search", term=term, project_id=project_id
+        )
+    hits = data.get("datasets", []) if isinstance(data, dict) else []
+    kept, omitted = fit_budget([_search_row(h) for h in hits if isinstance(h, dict)])
+    result: dict[str, Any] = {"term": term, "datasets": kept, "matched": len(hits)}
+    if omitted:
+        result["omitted"] = omitted
+    if note := ambiguity_note(len(hits), term):
+        result["note"] = note
+    return result, _meta(invocation, auth.workspace_id, project_id)
 
 
 def dataset_list(invocation: Invocation) -> HandlerResult:
     """List datasets in the active project, newest first, each with what tells them apart.
 
-    Every item carries its size, created/updated time, how its data arrived, and
-    its column names and types (from the list route's stored ``stats``,
-    ``sources`` and ``data_schema``), cut to fit the agent tool output cap.
+    Every item carries its created/updated time and how its data arrived (from the
+    list route's ``sources``), cut to fit the agent tool output cap. The list asks
+    only the cheap fields, so it holds no row counts or column names: ``view list
+    DATASET_ID`` shows a dataset's columns, and ``dataset find --input '{"columns":
+    [...]}'`` finds the dataset that has given columns.
     ``full: true`` returns the raw ``{id, name}`` list instead. ``name`` keeps only datasets
     whose name contains it (case-insensitive) across every page, as short rows without
     column lists; ``limit``/``offset`` then page over the matches.
@@ -258,11 +466,13 @@ def dataset_list(invocation: Invocation) -> HandlerResult:
         return _dataset_name_search(invocation, project_id, name.strip(), document)
     compact = not document.get("full")
     if compact:
-        kwargs["fields"] = DATASET_LIST_FIELDS
+        kwargs["fields"] = DATASET_ROW_FIELDS
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), **kwargs)
     if compact:
-        data = _compact_dataset_list(data, kwargs.get("offset", 0), kwargs.get("sort"))
+        data = _compact_dataset_list(
+            data, kwargs.get("offset", 0), kwargs.get("sort"), kwargs.get("limit", 100)
+        )
     return data, _meta(invocation, auth.workspace_id, project_id)
 
 
@@ -279,13 +489,14 @@ def _dataset_name_search(
             "mammoth.api.datasets.DatasetsAPI.list_all",
             project_id=project_id,
             sort=document.get("sort", "(created_at:desc)"),
-            fields=DATASET_LIST_FIELDS,
+            fields=DATASET_ROW_FIELDS,
         )
         records = data.get("datasets", []) if isinstance(data, dict) else []
         page = search_page(records, name, int(document.get("offset", 0)), document.get("limit"))
         if page["matched"] == 0:
+            holding, cut = _projects_holding(service, name.lower(), _visible_projects(service))
             elsewhere = _find_in_projects(
-                service, name.lower(), _other_projects(_visible_projects(service), project_id)
+                service, name.lower(), _other_projects(holding, project_id)
             )
             if elsewhere:
                 page["in_other_projects"] = elsewhere
@@ -293,11 +504,16 @@ def _dataset_name_search(
                     f"No dataset in project {project_id} matches; the ones listed in "
                     "in_other_projects do. Run the next call with --project <its project_id>."
                 )
+            if cut:
+                page["truncated"] = True
+                page["note"] = " ".join(
+                    filter(None, (page.get("note"), search_cut_note("datasets")))
+                )
     page["name"] = name
     return page, _meta(invocation, auth.workspace_id, project_id)
 
 
-def _compact_dataset_list(data: Any, offset: int, sort: str | None) -> Any:
+def _compact_dataset_list(data: Any, offset: int, sort: str | None, limit: int) -> Any:
     """Summarise a dataset-list page and fit it to the tool output cap."""
     datasets = data.get("datasets") if isinstance(data, dict) else None
     if not isinstance(datasets, list):
@@ -310,10 +526,12 @@ def _compact_dataset_list(data: Any, offset: int, sort: str | None) -> Any:
         "order": sort or "newest first (created_at desc)",
         "note": (
             "A dataset record holds no sample values; 'view list DATASET_ID' shows "
-            "stored sample_values per view (all_columns: true lists every column)."
+            "a sample of the stored profile per view as sample_values "
+            "(all_columns: true lists every column)."
         ),
     }
-    if omitted or data.get("next"):
+    # The list route sends no ``next``: a page of ``limit`` rows may have a successor.
+    if omitted or data.get("next") or len(datasets) >= limit:
         result["more"] = True
         result["next_offset"] = int(offset) + len(kept)
     return result
@@ -454,6 +672,33 @@ def dataset_broken_rows(invocation: Invocation) -> HandlerResult:
     return _read_dataset(invocation)
 
 
+def dataset_broken_rows_resolve(invocation: Invocation) -> HandlerResult:
+    """Add corrected set-aside lines to a dataset, or discard them. Prompt or ``--yes``.
+
+    ``--input`` carries ``op`` (``add`` or ``remove``), ``batch_id`` and ``rows``
+    (``{"line_num", "line"}`` each, from ``dataset broken-rows list``). Returns a
+    job to wait on.
+    """
+    project_id = require_project(invocation)
+    dataset_id = _require_int_positional(invocation, "dataset id")
+    document = invocation.load_input()
+    kwargs: dict[str, Any] = {
+        "dataset_id": dataset_id,
+        "op": _require_field(document, "op"),
+        "batch_id": _require_field(document, "batch_id"),
+        "rows": _require_field(document, "rows"),
+        "project_id": project_id,
+    }
+    enforce_confirmation(
+        invocation,
+        policy=POLICY_PROMPT_OR_YES,
+        action=f"{kwargs['op']} set-aside lines of dataset {dataset_id}",
+    )
+    with open_service(invocation) as (service, auth):
+        data = service.call(_symbol(invocation), **kwargs)
+    return data, _meta(invocation, auth.workspace_id, project_id)
+
+
 def _read_dataset(invocation: Invocation) -> HandlerResult:
     """Call this command's SDK read with the DATASET_ID positional."""
     project_id = require_project(invocation)
@@ -558,6 +803,7 @@ def dataset_create(invocation: Invocation) -> HandlerResult:
     document = invocation.load_input()
     dataset_spec = _require_field(document, "dataset_spec")
     ds_creation_type = _require_field(document, "ds_creation_type")
+    _require_clone_views(ds_creation_type, dataset_spec)
     kwargs: dict[str, Any] = {
         "dataset_spec": dataset_spec,
         "ds_creation_type": ds_creation_type,
@@ -566,12 +812,30 @@ def dataset_create(invocation: Invocation) -> HandlerResult:
     assert document is not None
     _forward_optional(document, kwargs, ("folder_resource_id",))
     with open_service(invocation) as (service, auth):
+        if invocation.dry_run:
+            _predict_final_name(invocation, service, dataset_spec, project_id)
         data = service.call(_symbol(invocation), **kwargs)
         # ``datasets.create`` returns a bare job handle and never waits. Block on
         # it here (honoring ``--job-timeout``) so the command reports a finished
         # dataset id instead of a job id the caller must poll separately.
         settled = service.wait_if_job(data)
-    return _created_dataset(data, settled), _meta(invocation, auth.workspace_id, project_id)
+        result = _created_dataset(data, settled)
+        _add_final_name(service, result, dataset_spec, project_id)
+    return result, _meta(invocation, auth.workspace_id, project_id)
+
+
+def _require_clone_views(ds_creation_type: object, dataset_spec: object) -> None:
+    """Refuse a clone with no ``clone_dataview_ids``: the server would make a blank view."""
+    if ds_creation_type != "clone" or not isinstance(dataset_spec, dict):
+        return
+    if dataset_spec.get("clone_dataview_ids") == []:
+        raise CliError(
+            code=CODE_MISSING_ARGUMENT,
+            message="A clone needs at least one view in dataset_spec.clone_dataview_ids",
+            exit_status=EXIT_USAGE,
+            hint="Pass the source dataset's default_view id from 'mammoth view list "
+            "DATASET_ID' (other views only when asked); an empty list makes a blank view.",
+        )
 
 
 def _created_dataset(handle: Any, settled: Any) -> dict[str, Any]:
@@ -597,6 +861,105 @@ def _created_dataset(handle: Any, settled: Any) -> dict[str, Any]:
     if job_id is not None:
         result["job_id"] = job_id
     return result
+
+
+#: Pages (of 100) read to predict a final name; past it the answer is "a suffix may be added".
+_NAME_PROBE_PAGES = 20
+
+
+def _requested_name(dataset_spec: object) -> str | None:
+    """The name the caller asked for: ``ds_name`` (clone, cloud) or ``name`` (sketch)."""
+    if not isinstance(dataset_spec, dict):
+        return None
+    for key in ("ds_name", "name"):
+        if isinstance(dataset_spec.get(key), str) and dataset_spec[key]:
+            return str(dataset_spec[key])
+    return None
+
+
+def _project_dataset_names(service: _SdkCaller, project_id: int) -> tuple[set[str], bool]:
+    """Every dataset name in the project and whether all of them were read."""
+    names: set[str] = set()
+    for page in range(_NAME_PROBE_PAGES):
+        data = service.call(
+            "mammoth.api.datasets.DatasetsAPI.list",
+            project_id=project_id,
+            limit=100,
+            offset=page * 100,
+        )
+        rows = data.get("datasets", []) if isinstance(data, dict) else []
+        names.update(r["name"] for r in rows if isinstance(r, dict) and "name" in r)
+        if len(rows) < 100:
+            return names, True
+    return names, False
+
+
+def _name_impact(requested: str, names: set[str], complete: bool) -> dict[str, Any]:
+    """The dry-run prediction for ``requested`` against the project's dataset ``names``."""
+    if requested not in names:
+        free: dict[str, Any] = {"requested_name": requested, "name_taken": False}
+        if complete:
+            return {**free, "final_name": requested}
+        return {**free, "note": "Not all datasets were read; a numeric suffix is added if taken."}
+    impact: dict[str, Any] = {"requested_name": requested, "name_taken": True}
+    if not complete:
+        impact["note"] = f"'{requested}' is taken; a numeric suffix will be added to the name."
+        return impact
+    suffix = next(i for i in range(2, len(names) + 3) if f"{requested} {i}" not in names)
+    impact["final_name"] = f"{requested} {suffix}"
+    impact["note"] = (
+        f"'{requested}' is taken; the dataset will be named '{impact['final_name']}'. "
+        "Ask the user whether to use a different name."
+    )
+    return impact
+
+
+def _predict_final_name(
+    invocation: Invocation, service: _SdkCaller, dataset_spec: object, project_id: int
+) -> None:
+    """Dry run: say whether the requested name is taken and what the server will name it.
+
+    The server (``Datasource.get_unique_name``) tries ``name``, ``name 2``, ``name 3``...
+    against the project's live dataset names, so the answer is computed the same way.
+    """
+    requested = _requested_name(dataset_spec)
+    if requested is not None:
+        names, complete = _project_dataset_names(service, project_id)
+        object.__setattr__(invocation, "predicted_impact", _name_impact(requested, names, complete))
+
+
+def _add_final_name(
+    service: _SdkCaller, result: dict[str, Any], dataset_spec: object, project_id: int
+) -> None:
+    """Add the name the server actually gave the new dataset to a create result.
+
+    The server appends a suffix when the requested name is taken, so the
+    requested name is not the dataset's name. The dataset already exists, so a failed
+    lookup must not fail (and invite a duplicate) create; it is reported in ``note``.
+    """
+    dataset_id = result.get("dataset_id")
+    if dataset_id is None:
+        return
+    try:
+        record = service.call(
+            _DATASET_GET_SYMBOL, dataset_id=dataset_id, project_id=project_id, fields="id,name"
+        )
+    except CliError as exc:  # the service maps every SDK API/HTTP error to CliError
+        result["note"] = (
+            f"Created dataset {dataset_id}; its final name could not be read back "
+            f"({exc.code}). Run dataset get {dataset_id}."
+        )
+        return
+    if not isinstance(record, dict):
+        return
+    name = record.get("dataset", record).get("name")
+    if not isinstance(name, str):
+        return
+    result["name"] = name
+    requested = _requested_name(dataset_spec)
+    if requested is not None and requested != name:
+        result["requested_name"] = requested
+        result["note"] = f"The name '{requested}' was taken, so the dataset is named '{name}'."
 
 
 def dataset_create_from_pdf(invocation: Invocation) -> HandlerResult:
@@ -681,10 +1044,21 @@ def dataset_delete(invocation: Invocation) -> HandlerResult:
         if hint is not None:
             action = f"{action}. {hint}"
         enforce_confirmation(invocation, policy=POLICY_PROMPT_OR_YES, action=action)
-        data = service.call(_symbol(invocation), dataset_id=dataset_id, project_id=project_id)
+        ack = service.call(_symbol(invocation), dataset_id=dataset_id, project_id=project_id)
+        # The server acknowledges a delete with a job handle. Settle it here so
+        # the handle's id is kept as ``job.id`` (the shape ``view delete`` has).
+        data = _with_job(ack, service.wait_if_job(ack))
     if hint is not None and isinstance(data, dict):
         data = {**data, "hint": hint}
     return data, _meta(invocation, auth.workspace_id, project_id)
+
+
+def _with_job(handle: Any, settled: Any) -> Any:
+    """Return the settled result with the acknowledged job's id as ``job.id``."""
+    job_id = handle.get("job_id") if isinstance(handle, dict) else None
+    if job_id is None or not isinstance(settled, dict):
+        return settled
+    return {**settled, "job": {"id": job_id}}
 
 
 def dataset_bulk_delete(invocation: Invocation) -> HandlerResult:

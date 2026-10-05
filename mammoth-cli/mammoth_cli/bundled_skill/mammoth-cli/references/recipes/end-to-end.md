@@ -56,8 +56,8 @@ mammoth view export csv ORDERS_VIEW --project PROJECT_ID \
 #   check the file's header and row count against the last readback
 
 # 7. per-region summary as the LAST step on the same view (pivot replaces the view's columns in place;
-#    do not use view create with clone_from for this: on release the clone job succeeds but the copy
-#    answers every read with 4DTVW019 and its copied tasks never execute)
+#    to keep the uncollapsed view as well, copy it first with view create DATASET_ID --input '{"clone_from": VIEW_ID}'
+#    (same dataset only; the copy keeps the source's steps) and pivot the copy instead)
 mammoth view transform pivot ORDERS_VIEW --project PROJECT_ID \
   --input '{"dataset_id": ORDERS_DS, "group_by": ["region"], "aggregations": [{"column": "amount", "function": "SUM", "as_name": "total_amount"}, {"column": "order_id", "function": "COUNT", "as_name": "order_count"}]}'
 mammoth view data get ORDERS_VIEW ORDERS_DS --project PROJECT_ID

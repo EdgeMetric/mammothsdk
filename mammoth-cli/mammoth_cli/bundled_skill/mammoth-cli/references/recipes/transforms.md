@@ -151,11 +151,15 @@ display name) with display-name columns; unquoted or placeholder table names
 select queries allowed". The result replaces the view's columns: never run it
 (or `pivot`) on a view whose rows are still needed; export those rows first
 (`view export csv`) and run the summary as the last step, and prefer `pivot`
-(proven on release) over a SQL task. Do not build the summary on a
-`view create ... "clone_from": VIEW_ID` copy: on release the clone job succeeds
-but the copy answers every read with `4DTVW019` and its copied tasks never
-execute. A plain `view create DATASET_ID` (no `clone_from`) gives a fresh view
-of the raw upload, without the pipeline:
+(proven on release) over a SQL task. To keep the view's rows and still
+summarise, copy it first with `view create DATASET_ID --input
+'{"clone_from": VIEW_ID}'` (same dataset only) and run the summary on the
+copy: the copy keeps the source's steps and runs them (koyal, 2026-10-02: the
+cloned steps executed and the copy took a further filter). Only a backend
+older than 2026-09-26 left the copy's tasks unrun, answering reads with
+`4DTVW019`; see recovery.md. A plain `view create DATASET_ID` (no
+`clone_from`) is not a copy: it gives a fresh view of the raw upload, without
+the pipeline:
 
 A task must fit the column's type: `replace-values`, `bulk-replace` and the
 text operations take TEXT columns, `math` takes NUMERIC. Check `type` in the

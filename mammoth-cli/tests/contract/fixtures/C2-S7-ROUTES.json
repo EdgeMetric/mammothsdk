@@ -1,16 +1,16 @@
 {
   "schema_version": 1,
   "task": "C2/S7 remaining-families",
-  "route_count": 104,
+  "route_count": 138,
   "families": {
     "activity": 2,
-    "agent": 5,
+    "agent": 15,
     "ai": 4,
     "automation": 8,
-    "billing": 22,
+    "billing": 25,
     "client-app": 5,
     "schedule": 5,
-    "support": 45,
+    "support": 66,
     "user": 8
   },
   "routes": [
@@ -185,6 +185,77 @@
       }
     },
     {
+      "command_id": "agent.action.delete",
+      "operation_id": "DeleteAgentSessionAction",
+      "sdk_symbol": "mammoth.api.agents.AgentsAPI.action_delete",
+      "field_destinations": {
+        "action_id": {
+          "source": "positional",
+          "destination": "action_id"
+        }
+      },
+      "context_destinations": {
+        "session_id": {
+          "source": "session_option",
+          "destination": "session_id"
+        }
+      },
+      "wire": {
+        "method": "DELETE",
+        "path": "/agents/sessions/{session_id}/actions/{action_id}",
+        "body": "none",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "agent.action.list",
+      "operation_id": "ListAgentSessionActions",
+      "sdk_symbol": "mammoth.api.agents.AgentsAPI.action_list",
+      "field_destinations": {},
+      "context_destinations": {
+        "session_id": {
+          "source": "session_option",
+          "destination": "session_id"
+        }
+      },
+      "wire": {
+        "method": "GET",
+        "path": "/agents/sessions/{session_id}/actions",
+        "body": "none",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
       "command_id": "agent.chat",
       "operation_id": "AgentChat",
       "sdk_symbol": "mammoth.api.agents.AgentsAPI.chat",
@@ -225,6 +296,277 @@
         "method": "POST",
         "path": "/agents/chat",
         "body": "json:AgentChatRequest",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "agent.run.extend",
+      "operation_id": "ExtendAgentSessionRun",
+      "sdk_symbol": "mammoth.api.agents.AgentsAPI.run_extend",
+      "field_destinations": {
+        "run_id": {
+          "source": "positional",
+          "destination": "run_id"
+        }
+      },
+      "context_destinations": {
+        "session_id": {
+          "source": "session_option",
+          "destination": "session_id"
+        }
+      },
+      "wire": {
+        "method": "POST",
+        "path": "/agents/sessions/{session_id}/runs/{run_id}/extend",
+        "body": "none",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "agent.run.list",
+      "operation_id": "ListAgentSessionRuns",
+      "sdk_symbol": "mammoth.api.agents.AgentsAPI.run_list",
+      "field_destinations": {},
+      "context_destinations": {
+        "session_id": {
+          "source": "session_option",
+          "destination": "session_id"
+        }
+      },
+      "wire": {
+        "method": "GET",
+        "path": "/agents/sessions/{session_id}/runs",
+        "body": "none",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "agent.run.pause",
+      "operation_id": "PauseAgentSessionRun",
+      "sdk_symbol": "mammoth.api.agents.AgentsAPI.run_pause",
+      "field_destinations": {
+        "run_id": {
+          "source": "positional",
+          "destination": "run_id"
+        }
+      },
+      "context_destinations": {
+        "session_id": {
+          "source": "session_option",
+          "destination": "session_id"
+        }
+      },
+      "wire": {
+        "method": "POST",
+        "path": "/agents/sessions/{session_id}/runs/{run_id}/pause",
+        "body": "none",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "agent.run.resume",
+      "operation_id": "ResumeAgentSessionRun",
+      "sdk_symbol": "mammoth.api.agents.AgentsAPI.run_resume",
+      "field_destinations": {
+        "run_id": {
+          "source": "positional",
+          "destination": "run_id"
+        }
+      },
+      "context_destinations": {
+        "session_id": {
+          "source": "session_option",
+          "destination": "session_id"
+        }
+      },
+      "wire": {
+        "method": "POST",
+        "path": "/agents/sessions/{session_id}/runs/{run_id}/resume",
+        "body": "none",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "agent.run.status",
+      "operation_id": "GetAgentSessionRun",
+      "sdk_symbol": "mammoth.api.agents.AgentsAPI.run_status",
+      "field_destinations": {},
+      "context_destinations": {
+        "session_id": {
+          "source": "session_option",
+          "destination": "session_id"
+        }
+      },
+      "wire": {
+        "method": "GET",
+        "path": "/agents/sessions/{session_id}/run",
+        "body": "none",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "agent.run.stop",
+      "operation_id": "StopAgentSessionRun",
+      "sdk_symbol": "mammoth.api.agents.AgentsAPI.run_stop",
+      "field_destinations": {
+        "run_id": {
+          "source": "positional",
+          "destination": "run_id"
+        }
+      },
+      "context_destinations": {
+        "session_id": {
+          "source": "session_option",
+          "destination": "session_id"
+        }
+      },
+      "wire": {
+        "method": "POST",
+        "path": "/agents/sessions/{session_id}/runs/{run_id}/stop",
+        "body": "none",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "agent.run.units.set",
+      "operation_id": "RegisterAgentRunUnits",
+      "sdk_symbol": "mammoth.api.agents.AgentsAPI.run_units_set",
+      "field_destinations": {
+        "run_id": {
+          "source": "positional",
+          "destination": "run_id"
+        },
+        "step": {
+          "source": "input",
+          "destination": "step",
+          "wire": "sdk_argument"
+        },
+        "kind": {
+          "source": "input",
+          "destination": "kind",
+          "wire": "sdk_argument"
+        },
+        "units": {
+          "source": "input",
+          "destination": "units",
+          "wire": "sdk_argument"
+        }
+      },
+      "context_destinations": {
+        "session_id": {
+          "source": "session_option",
+          "destination": "session_id"
+        }
+      },
+      "wire": {
+        "method": "POST",
+        "path": "/agents/sessions/{session_id}/runs/{run_id}/units",
+        "body": "json:AgentRunUnitsSetRequest",
         "checks": [
           "method",
           "path",
@@ -378,6 +720,44 @@
         "method": "PATCH",
         "path": "/agents/sessions/{session_id}",
         "body": "json:SetSessionVisibilityRequest",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "agent.turn.cancel",
+      "operation_id": "CancelAgentTurn",
+      "sdk_symbol": "mammoth.api.agents.AgentsAPI.turn_cancel",
+      "field_destinations": {
+        "turn_id": {
+          "source": "positional",
+          "destination": "turn_id"
+        }
+      },
+      "context_destinations": {
+        "session_id": {
+          "source": "session_option",
+          "destination": "session_id"
+        }
+      },
+      "wire": {
+        "method": "POST",
+        "path": "/agents/sessions/{session_id}/turns/{turn_id}/cancel",
+        "body": "none",
         "checks": [
           "method",
           "path",
@@ -1340,6 +1720,62 @@
       }
     },
     {
+      "command_id": "billing.stripe.recheck-limits",
+      "operation_id": "RecheckWorkspaceLimits",
+      "sdk_symbol": "mammoth.api.billing.BillingAPI.stripe_recheck_limits",
+      "field_destinations": {},
+      "context_destinations": {},
+      "wire": {
+        "method": "POST",
+        "path": "/workspaces/{workspace_id}/subscription/recheck-limits",
+        "body": "none",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "billing.stripe.resume",
+      "operation_id": "ResumeWorkspaceSubscription",
+      "sdk_symbol": "mammoth.api.billing.BillingAPI.stripe_resume",
+      "field_destinations": {},
+      "context_destinations": {},
+      "wire": {
+        "method": "POST",
+        "path": "/workspaces/{workspace_id}/subscription/resume",
+        "body": "none",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
       "command_id": "billing.stripe.retry-payment",
       "operation_id": "RetryPayment",
       "sdk_symbol": "mammoth.api.billing.BillingAPI.stripe_retry_payment",
@@ -1377,6 +1813,40 @@
         "method": "GET",
         "path": "/workspaces/{workspace_id}/subscription/status",
         "body": "none",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "billing.stripe.storage.set",
+      "operation_id": "UpdateSubscriptionStorage",
+      "sdk_symbol": "mammoth.api.billing.BillingAPI.stripe_storage_update",
+      "field_destinations": {
+        "storage_gb": {
+          "source": "input",
+          "destination": "storage_gb",
+          "wire": "sdk_argument"
+        }
+      },
+      "context_destinations": {},
+      "wire": {
+        "method": "PUT",
+        "path": "/workspaces/{workspace_id}/subscription/storage",
+        "body": "json:UpdateSubscriptionStorageRequestSchema",
         "checks": [
           "method",
           "path",
@@ -3018,6 +3488,209 @@
       }
     },
     {
+      "command_id": "support.plan.storage-option.archive",
+      "operation_id": "ArchivePlanStorageOption",
+      "sdk_symbol": "mammoth.api.support.SupportAPI.plan_storage_option_archive",
+      "field_destinations": {
+        "plan_id": {
+          "source": "positional",
+          "destination": "plan_id"
+        },
+        "option_id": {
+          "source": "positional",
+          "destination": "option_id"
+        }
+      },
+      "context_destinations": {},
+      "wire": {
+        "method": "DELETE",
+        "path": "/subscription/plans/{plan_id}/storage-options/{option_id}",
+        "body": "none",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "support.plan.storage-option.create",
+      "operation_id": "CreatePlanStorageOption",
+      "sdk_symbol": "mammoth.api.support.SupportAPI.plan_storage_option_create",
+      "field_destinations": {
+        "plan_id": {
+          "source": "positional",
+          "destination": "plan_id"
+        },
+        "storage_gb": {
+          "source": "input",
+          "destination": "storage_gb",
+          "wire": "sdk_argument"
+        },
+        "monthly_price": {
+          "source": "input",
+          "destination": "monthly_price",
+          "wire": "sdk_argument"
+        },
+        "annual_price": {
+          "source": "input",
+          "destination": "annual_price",
+          "wire": "sdk_argument"
+        }
+      },
+      "context_destinations": {},
+      "wire": {
+        "method": "POST",
+        "path": "/subscription/plans/{plan_id}/storage-options",
+        "body": "json:StorageOptionRequestSchema",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "support.plan.storage-option.list",
+      "operation_id": "ListPlanStorageOptions",
+      "sdk_symbol": "mammoth.api.support.SupportAPI.plan_storage_option_list",
+      "field_destinations": {
+        "plan_id": {
+          "source": "positional",
+          "destination": "plan_id"
+        }
+      },
+      "context_destinations": {},
+      "wire": {
+        "method": "GET",
+        "path": "/subscription/plans/{plan_id}/storage-options",
+        "body": "none",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "support.plan.storage-option.update",
+      "operation_id": "UpdatePlanStorageOption",
+      "sdk_symbol": "mammoth.api.support.SupportAPI.plan_storage_option_update",
+      "field_destinations": {
+        "plan_id": {
+          "source": "positional",
+          "destination": "plan_id"
+        },
+        "option_id": {
+          "source": "positional",
+          "destination": "option_id"
+        },
+        "storage_gb": {
+          "source": "input",
+          "destination": "storage_gb",
+          "wire": "sdk_argument"
+        },
+        "monthly_price": {
+          "source": "input",
+          "destination": "monthly_price",
+          "wire": "sdk_argument"
+        },
+        "annual_price": {
+          "source": "input",
+          "destination": "annual_price",
+          "wire": "sdk_argument"
+        }
+      },
+      "context_destinations": {},
+      "wire": {
+        "method": "PUT",
+        "path": "/subscription/plans/{plan_id}/storage-options/{option_id}",
+        "body": "json:UpdateStorageOptionRequestSchema",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "support.plan.unarchive",
+      "operation_id": "UnarchivePlan",
+      "sdk_symbol": "mammoth.api.support.SupportAPI.plan_unarchive",
+      "field_destinations": {
+        "plan_id": {
+          "source": "positional",
+          "destination": "plan_id"
+        }
+      },
+      "context_destinations": {},
+      "wire": {
+        "method": "POST",
+        "path": "/subscription/plans/{plan_id}/unarchive",
+        "body": "none",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
       "command_id": "support.plan.update",
       "operation_id": "UpdatePlan",
       "sdk_symbol": "mammoth.api.support.SupportAPI.plan_update",
@@ -3292,6 +3965,558 @@
         "method": "PATCH",
         "path": "/support/workspaces/{workspace_id}/sms",
         "body": "json:support_schema_SubscriptionPatchRequest",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "support.template.audit",
+      "operation_id": "DashboardV3AdminAudit",
+      "sdk_symbol": "mammoth.api.support.SupportAPI.template_audit",
+      "field_destinations": {},
+      "context_destinations": {},
+      "wire": {
+        "method": "GET",
+        "path": "/dashboards/v3/templates/admin/audit",
+        "body": "none",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "support.template.canvas",
+      "operation_id": "DashboardV3AdminRowCanvas",
+      "sdk_symbol": "mammoth.api.support.SupportAPI.template_canvas",
+      "field_destinations": {
+        "slug": {
+          "source": "positional",
+          "destination": "slug"
+        }
+      },
+      "context_destinations": {},
+      "wire": {
+        "method": "GET",
+        "path": "/dashboards/v3/templates/admin/{slug}/canvas",
+        "body": "none",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "support.template.data-preview",
+      "operation_id": "DashboardV3AdminDataPreview",
+      "sdk_symbol": "mammoth.api.support.SupportAPI.template_data_preview",
+      "field_destinations": {
+        "slug": {
+          "source": "positional",
+          "destination": "slug"
+        }
+      },
+      "context_destinations": {},
+      "wire": {
+        "method": "GET",
+        "path": "/dashboards/v3/templates/admin/{slug}/data-preview",
+        "body": "none",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "support.template.discard",
+      "operation_id": "DashboardV3AdminDiscardImport",
+      "sdk_symbol": "mammoth.api.support.SupportAPI.template_discard",
+      "field_destinations": {
+        "slug": {
+          "source": "positional",
+          "destination": "slug"
+        }
+      },
+      "context_destinations": {},
+      "wire": {
+        "method": "DELETE",
+        "path": "/dashboards/v3/templates/admin/{slug}",
+        "body": "none",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "support.template.edit",
+      "operation_id": "DashboardV3AdminEditRow",
+      "sdk_symbol": "mammoth.api.support.SupportAPI.template_edit",
+      "field_destinations": {
+        "slug": {
+          "source": "positional",
+          "destination": "slug"
+        },
+        "changes": {
+          "source": "input",
+          "destination": "changes",
+          "wire": "sdk_argument"
+        }
+      },
+      "context_destinations": {},
+      "wire": {
+        "method": "PATCH",
+        "path": "/dashboards/v3/templates/admin/{slug}",
+        "body": "json:EditRowSpec",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "support.template.export",
+      "operation_id": "DashboardV3AdminExportBundle",
+      "sdk_symbol": "mammoth.api.support.SupportAPI.template_export",
+      "field_destinations": {
+        "slug": {
+          "source": "positional",
+          "destination": "slug"
+        },
+        "output_path": {
+          "source": "input",
+          "destination": "output_path",
+          "wire": "sdk_argument"
+        },
+        "with_data": {
+          "source": "input",
+          "destination": "with_data",
+          "wire": "sdk_argument"
+        }
+      },
+      "context_destinations": {},
+      "wire": {
+        "method": "GET",
+        "path": "/dashboards/v3/templates/admin/{slug}/export",
+        "body": "none",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "support.template.export-dashboard",
+      "operation_id": "DashboardV3AdminExportDashboard",
+      "sdk_symbol": "mammoth.api.support.SupportAPI.template_export_dashboard",
+      "field_destinations": {
+        "dashboard_id": {
+          "source": "positional",
+          "destination": "dashboard_id"
+        },
+        "slug": {
+          "source": "input",
+          "destination": "slug",
+          "wire": "sdk_argument"
+        },
+        "output_path": {
+          "source": "input",
+          "destination": "output_path",
+          "wire": "sdk_argument"
+        },
+        "with_data": {
+          "source": "input",
+          "destination": "with_data",
+          "wire": "sdk_argument"
+        }
+      },
+      "context_destinations": {},
+      "wire": {
+        "method": "GET",
+        "path": "/dashboards/v3/templates/admin/dashboards/{dashboard_id}/export",
+        "body": "none",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "support.template.import",
+      "operation_id": "DashboardV3AdminImportBundle",
+      "sdk_symbol": "mammoth.api.support.SupportAPI.template_import",
+      "field_destinations": {
+        "file": {
+          "source": "positional",
+          "destination": "file"
+        },
+        "dataset": {
+          "source": "input",
+          "destination": "dataset",
+          "wire": "sdk_argument"
+        }
+      },
+      "context_destinations": {},
+      "wire": {
+        "method": "POST",
+        "path": "/dashboards/v3/templates/admin/import",
+        "body": "multipart:data",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "support.template.inspect",
+      "operation_id": "DashboardV3AdminInspectBundle",
+      "sdk_symbol": "mammoth.api.support.SupportAPI.template_inspect",
+      "field_destinations": {
+        "file": {
+          "source": "positional",
+          "destination": "file"
+        }
+      },
+      "context_destinations": {},
+      "wire": {
+        "method": "POST",
+        "path": "/dashboards/v3/templates/admin/inspect",
+        "body": "multipart:data",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "support.template.list",
+      "operation_id": "DashboardV3AdminCatalog",
+      "sdk_symbol": "mammoth.api.support.SupportAPI.template_list",
+      "field_destinations": {},
+      "context_destinations": {},
+      "wire": {
+        "method": "GET",
+        "path": "/dashboards/v3/templates/admin",
+        "body": "none",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "support.template.publish",
+      "operation_id": "DashboardV3AdminPublish",
+      "sdk_symbol": "mammoth.api.support.SupportAPI.template_publish",
+      "field_destinations": {
+        "slug": {
+          "source": "positional",
+          "destination": "slug"
+        }
+      },
+      "context_destinations": {},
+      "wire": {
+        "method": "POST",
+        "path": "/dashboards/v3/templates/admin/{slug}/publish",
+        "body": "none",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "support.template.retire",
+      "operation_id": "DashboardV3AdminRetire",
+      "sdk_symbol": "mammoth.api.support.SupportAPI.template_retire",
+      "field_destinations": {
+        "slug": {
+          "source": "positional",
+          "destination": "slug"
+        }
+      },
+      "context_destinations": {},
+      "wire": {
+        "method": "POST",
+        "path": "/dashboards/v3/templates/admin/{slug}/retire",
+        "body": "none",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "support.template.snapshots",
+      "operation_id": "DashboardV3AdminSnapshots",
+      "sdk_symbol": "mammoth.api.support.SupportAPI.template_snapshots",
+      "field_destinations": {},
+      "context_destinations": {},
+      "wire": {
+        "method": "GET",
+        "path": "/dashboards/v3/templates/admin/snapshots",
+        "body": "none",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "support.template.thumbnail.clear",
+      "operation_id": "DashboardV3AdminDeleteThumbnail",
+      "sdk_symbol": "mammoth.api.support.SupportAPI.template_thumbnail_clear",
+      "field_destinations": {
+        "slug": {
+          "source": "positional",
+          "destination": "slug"
+        }
+      },
+      "context_destinations": {},
+      "wire": {
+        "method": "DELETE",
+        "path": "/dashboards/v3/templates/admin/{slug}/thumbnail",
+        "body": "none",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "support.template.thumbnail.set",
+      "operation_id": "DashboardV3AdminPutThumbnail",
+      "sdk_symbol": "mammoth.api.support.SupportAPI.template_thumbnail_set",
+      "field_destinations": {
+        "slug": {
+          "source": "positional",
+          "destination": "slug"
+        },
+        "file": {
+          "source": "positional",
+          "destination": "file"
+        }
+      },
+      "context_destinations": {},
+      "wire": {
+        "method": "PUT",
+        "path": "/dashboards/v3/templates/admin/{slug}/thumbnail",
+        "body": "multipart:data",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "support.template.unpublish",
+      "operation_id": "DashboardV3AdminUnpublish",
+      "sdk_symbol": "mammoth.api.support.SupportAPI.template_unpublish",
+      "field_destinations": {
+        "slug": {
+          "source": "positional",
+          "destination": "slug"
+        }
+      },
+      "context_destinations": {},
+      "wire": {
+        "method": "POST",
+        "path": "/dashboards/v3/templates/admin/{slug}/unpublish",
+        "body": "none",
         "checks": [
           "method",
           "path",

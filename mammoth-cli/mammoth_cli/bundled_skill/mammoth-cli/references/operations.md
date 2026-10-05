@@ -36,7 +36,14 @@ credentials because they call the live API. To find a dataset by name, run
 `dataset list --input '{"name": "NAME"}'` inside one project: a
 case-insensitive substring match over every page, returned as short rows
 (id, name, rows, cols) with `matched`. Do not page `dataset list` by hand;
-`limit` is at most 100.
+`limit` is at most 100. To find the dataset that holds given columns, pass
+`dataset find --input '{"columns": ["Order ID", "Region"]}'` (the name is then
+optional). To find the dataset that holds a value you were given (a campaign,
+a region, a product) when its name does not say, run `dataset search TERM`: it
+returns the project's datasets whose name, column names or sampled column
+values contain TERM, each with the matched column and value. `dataset find`
+and `browse` search match names only. A `browse` search hit carries `dataset_id` or `view_id`: use those,
+never the tree `id`.
 
 ```bash
 mammoth capability find "transform"
@@ -116,10 +123,44 @@ mammoth workflow create "Revenue report"
 mammoth workflow get WORKFLOW_ID
 ```
 
+`WORKFLOW_ID` is the workflow's record id (URL id `w12` is record 12). An
+unnamed workflow (long base64 URL id) has no record: list the workflows and
+root datasets with `workflow graph`, then name it with `workflow create
+NAME --input '{"seed_datasource_id": ROOT_DATASET_ID}'`, which returns its
+record id. `workflow cleanup` deletes the project's orphaned skeleton
+("ghost") workflows (destructive; needs `--yes`).
+
+To only *suggest* a workflow's shape for the user to review, use `workflow
+canvas WORKFLOW_ID --input '{"canvas_state": {"proposed_changes": [...]}}'`.
+Nothing is built until the user presses Save on the Workflows canvas; tell
+them the changes are waiting there. Changes are `add_view`, `rename_view`,
+`trash_view`, `rename_dataset`, `trash_dataset`, `send_to_new_dataset`,
+`send_to_dataset`, `join` and `export` (fields per op: `schema get
+workflow.canvas`). A later change in the same call can point at an earlier
+one: give the earlier change a `ref`, then use `view_ref`, `dataset_ref` or
+`target_dataset_ref` instead of an id. It cannot add filters, calculations or
+other tasks; if the request needs those, build it with `view` commands.
+
 Draft mode is server-side batching for view pipeline edits. Enter, inspect
 status, submit, and verify pipeline state; discard only with the required
 confirmation. A draft submit result is not proof that every intended task was
 applied.
+
+## Reading data and history without changing the pipeline
+
+- A trend, distribution or top-values answer: `view data explore VIEW_ID
+  COLUMN` (read-only; `level` sets the date bucket). `{"cumulative": true}`
+  adds a running total per bucket, whatever `sort` or `limit` shows. Figures
+  from `explore` and `view data aggregate` are rounded for display (2
+  decimals; 4 below 1); `view data compare` keeps full precision.
+- "Who changed X": `activity list` (a change list of time, user, action and a
+  `path` naming the dataset and view). Filter with `resource_id` in the log's
+  typed form, `dataview_<id>` or `datasource_<id>` (a bare number matches
+  nothing and is refused), plus `start_time`, `end_time`, `user_ids`; page
+  with `limit` and `offset`.
+- `view export dataset` that returns `status: pending` was accepted and is
+  still being written. Do not export again (that makes a second dataset); run
+  its `next` command (`dataset find NAME`) to get the new dataset id.
 
 ## Response shapes
 
@@ -128,6 +169,21 @@ Response shapes are not uniform; never reuse one `jq` path across commands.
 `data.datasets[]`. `project list` returns `data.projects[]`. Every other
 command returns its object directly under `data`. Inspect the first response
 before extracting a field.
+
+`project list` shows only the projects the user is a member of, the same as the
+Mammoth UI. A workspace owner or admin can read other projects but not open
+them, so never report them as access denied. Pass `include_non_members: true`
+only when the user asks about projects they are not in; each row then carries
+`member`.
+
+## Conditional formatting
+
+Colour cells in many columns by one threshold in a single command:
+`view conditional-format create --input '{"columns": ["Q1", "Q2"], "operator": "<", "value": 55, "color": "red"}'`
+(display names). Each cell is judged by its own value, so this makes one rule
+per column in that one call and returns every created rule id. `applies_to: "row"`
+makes one rule that colours whole rows when any (`match: "any"`, default) or all
+(`"all"`) of the columns match. A raw `rule` body still works.
 
 ## Exports
 

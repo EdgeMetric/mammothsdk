@@ -204,3 +204,75 @@ def agent_session_set_visibility(invocation: Invocation) -> HandlerResult:
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), session_id=session_id, visibility=visibility)
     return data, _meta(invocation, auth.workspace_id, resolved_project(invocation))
+
+
+def _require_session(invocation: Invocation) -> str:
+    """Return the agent chat session id, raising when none was given.
+
+    An embedded call gets the embedding chat's session as ``--session`` from
+    :func:`mammoth_cli.embed.invoke`; outside that, the caller passes it.
+
+    Raises:
+        CliError: ``missing_argument`` when no session id is set.
+    """
+    if not invocation.session:
+        raise CliError(
+            code=CODE_MISSING_ARGUMENT,
+            message="This command requires a session id.",
+            exit_status=EXIT_USAGE,
+            hint="Pass --session SESSION_ID (see 'mammoth agent session list').",
+        )
+    return invocation.session
+
+
+def _session_call(invocation: Invocation, **ids: str) -> HandlerResult:
+    """Call this command's SDK method on the session plus any extra ids."""
+    session_id = _require_session(invocation)
+    with open_service(invocation) as (service, auth):
+        data = service.call(_symbol(invocation), session_id=session_id, **ids)
+    return data, _meta(invocation, auth.workspace_id, resolved_project(invocation))
+
+
+def agent_action_list(invocation: Invocation) -> HandlerResult:
+    """List the changes one agent chat session made."""
+    return _session_call(invocation)
+
+
+def agent_action_delete(invocation: Invocation) -> HandlerResult:
+    """Delete one object the chat created, by action id. Prompt or ``--yes`` required."""
+    action_id = _require_string_positional(invocation, "action id")
+    enforce_confirmation(
+        invocation, policy=POLICY_PROMPT_OR_YES, action=f"delete what agent action {action_id} made"
+    )
+    return _session_call(invocation, action_id=action_id)
+
+
+def agent_run_status(invocation: Invocation) -> HandlerResult:
+    """Show the current run of one agent chat session."""
+    return _session_call(invocation)
+
+
+def agent_run_list(invocation: Invocation) -> HandlerResult:
+    """List the runs of one agent chat session."""
+    return _session_call(invocation)
+
+
+def _run_control(invocation: Invocation) -> HandlerResult:
+    """Pause, resume, stop or extend one run; the SDK method is the manifest's."""
+    return _session_call(invocation, run_id=_require_string_positional(invocation, "run id"))
+
+
+agent_run_pause = agent_run_resume = agent_run_stop = agent_run_extend = _run_control
+
+
+def agent_run_units_set(invocation: Invocation) -> HandlerResult:
+    """Report the objects one plan step of a run will work on, as queued units."""
+    run_id = _require_string_positional(invocation, "run id")
+    document = _bound_document(invocation)
+    kwargs = {field: _require_field(document, field) for field in ("step", "kind", "units")}
+    return _session_call(invocation, run_id=run_id, **kwargs)
+
+
+def agent_turn_cancel(invocation: Invocation) -> HandlerResult:
+    """Stop one turn of an agent chat session (the session's owner only)."""
+    return _session_call(invocation, turn_id=_require_string_positional(invocation, "turn id"))

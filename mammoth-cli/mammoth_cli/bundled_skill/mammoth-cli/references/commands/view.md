@@ -1,6 +1,6 @@
 # `view` commands
 
-Every command returns the standard JSON envelope. On nonzero exit, read the error envelope and its `recovery_commands`; do not guess request fields. "Status on release" is joined from `docs/release-capability-matrix.json`: *ran once* means one bounded live run succeeded on the named CLI release, *untried* means nobody has run it, *not supported* means the backend refuses it. When this file disagrees with [capabilities](../capabilities.md) or a recipe, they win. Envelope shapes: [machine output](../machine-output.md).
+Every command returns the standard JSON envelope. On nonzero exit, read the error envelope and its `recovery_commands`; do not guess request fields. "Status on release" is joined from `docs/release-capability-matrix.json`: *ran once* means one bounded live run succeeded on the named CLI release, *untried* means nobody has run it (use it normally: confirm writes with the user, check the result afterwards), *not supported* means the backend refuses it. When this file disagrees with [capabilities](../capabilities.md) or a recipe, they win. Envelope shapes: [machine output](../machine-output.md).
 
 ### `view.active-user.list`
 
@@ -116,7 +116,7 @@ Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19
 
 Run: `mammoth view conditional-format create`. Exact input fields: `mammoth schema get view.conditional-format.create`.
 
-Example: `mammoth view conditional-format create 123 123 --input '{"rule": {"cf_type": "RULE", "payload": {"FORMAT": {"name": "Flag open orders", "color": "red", "applies_to": "row", "column_ids": "[]"}, "CONDITION": {"OR": [{"column_1": {"CONTAINS": {"VALUE": ["Open"]}}}]}}}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth view conditional-format create 123 123 --input '{"columns": ["Q1", "Q2", "Q3"], "operator": "<", "value": 55, "color": "red"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ViewConditionalFormatCreateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
@@ -160,7 +160,7 @@ Example: `mammoth view create 123`. Placeholders are illustrative; resolve IDs a
 
 Result: `ViewCreateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `always_wait`.
 
-Status on release: ran once on CLI 2.0.18 — golden-data check 2026-09-19 (CLI 2.0.18): plain create on an owned dataset returned the new view's record (id, dataset_id; earlier releases printed '<unserializable View>'), and discard-duplicates then ran on it. clone_from is not usable on release: the clon…
+Status on release: ran once on CLI 2.0.18 — golden-data check 2026-09-19 (CLI 2.0.18): plain create on an owned dataset returned the new view's record (id, dataset_id; earlier releases printed '<unserializable View>'), and discard-duplicates then ran on it. clone_from works on a backend with mvc e56f23…
 
 ### `view.data-check.create`
 
@@ -220,7 +220,7 @@ Example: `mammoth view data aggregate 123 --input '{"group_by": ["Channel"], "ag
 
 Result: `ViewDataAggregateResult`; mutation `read`, confirmation `none`, wait policy `always_wait`.
 
-Status on release: untried; no live run recorded.
+Status on release: ran once on CLI 2.0.18 — golden-data check 2026-09-19 (CLI 2.0.18): condition on the pivoted view compiled to the backend clause shape and answered (exit 0); EQ with a column select and an AND of CONTAINS/NE also verified read-only on a pre-existing view. Before 2.0.18 the spec was f…
 
 ### `view.data.compare`
 
@@ -270,7 +270,7 @@ Example: `mammoth view data query 123 123`. Placeholders are illustrative; resol
 
 Result: `ViewDataQueryResult`; mutation `read`, confirmation `none`, wait policy `always_wait`.
 
-Status on release: ran once on CLI 2.0.18 — golden-data check 2026-09-19 (CLI 2.0.18): condition on the pivoted view compiled to the backend clause shape and answered (exit 0); EQ with a column select and an AND of CONTAINS/NE also verified read-only on a pre-existing view. Before 2.0.18 the spec was f…
+Status on release: ran once on CLI 2.0.28 — ILG simulation 2026-09-19: exit 0 on release with CLI 2.0.28. Paged reads (limit up to 500) used for every value check; envelope data.data rows keyed by display name. Single invocation only.
 
 ### `view.delete`
 
@@ -694,6 +694,16 @@ Result: `ViewGetResult`; mutation `read`, confirmation `none`, wait policy `not_
 
 Status on release: ran once on CLI 2.0.21 — ergonomics sweep 2026-09-19: exit 0 on release with CLI 2.0.21. Read back without a dataset id (parent from cache). row_count 6 after the append. Single invocation only.
 
+### `view.impact`
+
+Run: `mammoth view impact`. Exact input fields: `mammoth schema get view.impact`.
+
+Example: `mammoth view impact 123 123 --input '{"scope": "view"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `ViewImpactResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
 ### `view.list`
 
 Run: `mammoth view list`. Exact input fields: `mammoth schema get view.list`.
@@ -868,11 +878,11 @@ Status on release: ran once on CLI 2.0.14 — write sweep 2026-09-18: exit 0 on 
 
 Run: `mammoth view update`. Exact input fields: `mammoth schema get view.update`.
 
-Example: `mammoth view update 123 123 --input '{"patch_data": [{"sample_key": "Status"}]}'`. Discovery only: this command is fail-closed and must not dispatch a request.
+Example: `mammoth view update 123 123 --input '{"name": "Revenue report"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
-Execution is unavailable for the current contract and returns `unsupported_contract`. Do not infer request fields or retry it; use only a separately typed alternative.
+Result: `ViewUpdateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
-Known restriction: BLOCKED[B09 DATAVIEW_INPUT_UNTYPED]: patch_data is an arbitrary dictionary; reserved, not registered.
+Status on release: untried; no live run recorded.
 
 ### `view.version.apply`
 

@@ -329,3 +329,42 @@ class TestSubscriptionDetail:
         api, _ = _make_api()
         with pytest.raises(MammothValidationError, match="patch"):
             await api.subscription_update([])
+
+
+class TestStripePlanUpkeep:
+    async def test_stripe_resume(self):
+        api, mock_client = _make_api()
+        mock_client._request_json = AsyncMock(return_value={"message": "Subscription resumed"})
+        result = await api.stripe_resume()
+        mock_client._request_json.assert_called_once_with(
+            "POST", "/workspaces/2/subscription/resume"
+        )
+        assert result == {"message": "Subscription resumed"}
+
+    async def test_stripe_recheck_limits(self):
+        api, mock_client = _make_api()
+        report = {"over_limit_info": {"over_limit": False, "items": [], "advisory": []}}
+        mock_client._request_json = AsyncMock(return_value=report)
+        result = await api.stripe_recheck_limits()
+        mock_client._request_json.assert_called_once_with(
+            "POST", "/workspaces/2/subscription/recheck-limits"
+        )
+        assert result == report
+
+    async def test_stripe_storage_update(self):
+        api, mock_client = _make_api()
+        mock_client._request_json = AsyncMock(
+            return_value={"storage_gb": 50, "message": "Storage set to 50 GB"}
+        )
+        await api.stripe_storage_update(50)
+        mock_client._request_json.assert_called_once_with(
+            "PUT", "/workspaces/2/subscription/storage", json={"storage_gb": 50}
+        )
+
+    @pytest.mark.parametrize("storage_gb", [0, -5, True, "50"])
+    async def test_stripe_storage_update_rejects_non_positive(self, storage_gb):
+        api, mock_client = _make_api()
+        mock_client._request_json = AsyncMock()
+        with pytest.raises(MammothValidationError, match="storage_gb"):
+            await api.stripe_storage_update(storage_gb)
+        mock_client._request_json.assert_not_called()

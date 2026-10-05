@@ -158,7 +158,7 @@ commands:
   - CT-SCHEDULE-LIST-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: 'B04 SERVER_VARIANCE: unconditionally unimplemented on every backend
+  known_restrictions: 'Retired: the command answers not_available and names the web app. B04 SERVER_VARIANCE: unconditionally unimplemented on every backend
     release tested, not intermittent -- GET .../schedules always returns HTTP 400 with error
     code 5GENR011 NOT_IMPLEMENTED (mvc-service apiv2/apiv2/schedules/controller.py
     ScheduleController.list_schedules always raises ClientError(not_implemented_error); its

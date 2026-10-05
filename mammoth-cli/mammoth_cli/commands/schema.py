@@ -47,6 +47,27 @@ _PROTECTED_INPUT_PATH = "/private/path/request.json"
 _FIXED_EXAMPLES: dict[str, tuple[tuple[str, ...], dict[str, Any]]] = {
     "project.check": (("123", "456"), {}),
     "view.data.profile": (("123",), {"target": "Churn"}),
+    "workflow.canvas": (
+        ("12",),
+        {
+            "canvas_state": {
+                "proposed_changes": [
+                    {
+                        "op": "add_view",
+                        "dataset_id": 415,
+                        "name": "Urgent tickets",
+                        "ref": "urgent",
+                    },
+                    {
+                        "op": "send_to_new_dataset",
+                        "dataset_id": 415,
+                        "view_ref": "urgent",
+                        "name": "Urgent tickets by team",
+                    },
+                ]
+            }
+        },
+    ),
     "view.data.compare": (
         ("111", "222"),
         {
@@ -74,6 +95,7 @@ _GROUP_DISCOVERY_PURPOSES = {
 }
 
 _COMMAND_DISCOVERY_PURPOSES = {
+    "view.update": "rename change name to a new name title relabel",
     "file.upload": (
         "upload import CSV spreadsheet XLSX source data append add rows union stack "
         "a file into an existing dataset excel workbook tabs sheets drop in"
@@ -305,7 +327,8 @@ _COMMAND_DISCOVERY_PURPOSES = {
     "view.data.explore": (
         "explore trend trends trending over time per day week month quarter year by date "
         "distribution spread histogram top most common frequent values breakdown share "
-        "percentage profile"
+        "percentage profile period year quarter month date range coverage figure "
+        "cumulative"
     ),
     # "Give the West team their own copy they can change" / "duplicate this
     # dataset as an independent copy" / "clone it without changing the
@@ -323,7 +346,10 @@ _COMMAND_DISCOVERY_PURPOSES = {
     # value -- and neither can be dropped as a data word anyway, since
     # view.data.explore's own purpose text already uses both for its trend
     # feature.
-    "view.data.aggregate": "group and sum totals by month week without changing the pipeline",
+    "view.data.aggregate": (
+        "group and sum totals by month week without changing the pipeline "
+        "sum total figure answer a question, read only"
+    ),
     # Goals stated as "what is in this data" / "why do customers churn": one
     # whole-view profile answers both, so the phrasing must reach it.
     "view.data.profile": (
@@ -337,11 +363,129 @@ _COMMAND_DISCOVERY_PURPOSES = {
     "dashboard.suggestion.list": "ideas suggest suggestions what to show put on a board chart",
     "dashboard.analytics": "who viewed seen opened views visitors usage of a board",
     "dashboard.share": "share make live publish board for the team link access",
-    "connector.connection.list": "which outside external sources connected connections list",
+    # "Import a table from SQL Server / MySQL / Postgres into a dataset" is a
+    # connector flow -- list connectors, create a connection, then a ds-config
+    # (a table or query pulled in as a new dataset) -- but none of these
+    # commands said "database", "table", "SQL Server" or "import", so every
+    # phrasing missed them and only the unrelated view.export.* commands
+    # (which push data OUT to a database) matched.
+    "connector.list": (
+        "connectors available sources database SQL Server MSSQL MySQL Postgres Oracle "
+        "connect import pull load table into dataset"
+    ),
+    "connector.get": (
+        "connector database SQL Server MSSQL MySQL Postgres connection fields host port "
+        "username password required to connect import table dataset"
+    ),
+    "connector.connection.list": (
+        "which outside external sources connected connections list database SQL Server "
+        "MSSQL MySQL Postgres connector already connected import table dataset"
+    ),
+    "connector.connection.get": (
+        "connection database SQL Server MSSQL MySQL Postgres connector connected "
+        "import table dataset"
+    ),
+    "connector.connection.create": (
+        "connect a database such as SQL Server MSSQL MySQL Postgres Oracle host username "
+        "password new connection connector to import a table into a dataset"
+    ),
+    "connector.ds-config.create": (
+        "import pull load read retrieve a table or SQL query from a connected database such "
+        "as SQL Server MSSQL MySQL Postgres connector connection as a new dataset rows data"
+    ),
+    "connector.ds-config.list": (
+        "datasets imported from a connected database SQL Server MSSQL MySQL Postgres "
+        "connector table query import configurations"
+    ),
+    "connector.query.generate": (
+        "write SQL from plain words for a connected database SQL Server MSSQL MySQL "
+        "Postgres connector import rows query"
+    ),
     "project.pending-changes": (
         "source changes new rows not taken in yet pending updates waiting to apply"
     ),
+    # "I pasted a link to a file / dataset / view -- what is wrong with it?" (zulip
+    # Mammoth Agents, ws 247): the agent had no way to turn the app address into
+    # ids, and the unstructured-rows read said "broken" where users say "unstructured".
+    "link": (
+        "link url pasted address app page open file dataset view folder project "
+        "workspace ids selected resource parse"
+    ),
+    "dataset.broken-rows.list": (
+        "unstructured skipped ragged rows lines unparsed mismatched columns monitor "
+        "needs review file upload bad rows"
+    ),
+    "dataset.broken-rows.resolve": (
+        "fix unstructured skipped ragged lines discard correct resolve mismatched "
+        "columns review monitor needs review upload"
+    ),
+    "project.needs-attention": (
+        "monitor needs attention error failing pipeline views delete datasets behind list "
+        "unstructured pending review"
+    ),
     "project.resource-status": "stuck stale failing broken error status anything wrong health",
+    "dashboard.embed.usage.summary": (
+        "embedded sites how many websites pages embed my boards library all dashboards origins"
+    ),
+    "dashboard.format-preview": (
+        "switch format style what would change lose carry over preview dry run report slides"
+    ),
+    "workspace.home": (
+        "home screen health issues needs attention overview usage snapshot suggestions"
+    ),
+    "browse.resources": (
+        "page through project resources cursor next page has more folder children v2 listing"
+    ),
+    "browse.resource": "open one resource by type and id properties of a dataset view folder",
+    "browse.resources.bulk": "fetch many resources by type and id in one request batch lookup",
+    "agent.turn.cancel": "stop the agent now cancel this turn halt what the assistant is doing",
+    "dashboard.swap-fit": "which dataset fits this dashboard before swapping data score candidates",
+    "dashboard.audience.get": "who opened my dashboard readers visitors audience over time",
+    "dashboard.audience.summary": "how many people opened each dashboard in the library",
+    "dashboard.audience.digest.get": "weekly audience email setting for a dashboard get",
+    "dashboard.audience.digest.set": "turn the weekly audience email on or off for a dashboard",
+    "dashboard.columns": "columns of the dashboard source data profile samples ranges data panel",
+    "dashboard.context.review": "preview what the context change would do to the dashboard dry run",
+    "dashboard.context.apply": "apply the reviewed context change to the dashboard",
+    "dashboard.qa.insights": "what questions viewers asked on the dashboard grouped unanswered",
+    "view.impact": "what breaks if I delete this dataview or a task dependents impact",
+    "browse.ancestors": "folder path breadcrumb where does this folder live parent folders chain",
+    "browse.search": (
+        "find search a dataset view folder by name across all projects whole workspace global"
+    ),
+    "billing.stripe.resume": (
+        "keep my plan cancel scheduled downgrade undo cancellation stay on paid plan resume"
+    ),
+    "billing.stripe.recheck-limits": (
+        "over limit locked blocked after deleting items recheck plan limits clear the lock"
+    ),
+    "billing.stripe.storage.set": "buy more storage change purchased storage gb allocation",
+    "dashboard.template.thumbnail.get": "template picture card image thumbnail download",
+    "dashboard.template.thumbnail.set": "upload replace template picture card image thumbnail",
+    "dashboard.template.thumbnail.clear": "remove delete template picture card image thumbnail",
+    "dashboard.gallery.list": "public template gallery curated templates catalog examples browse",
+    "dashboard.gallery.get": "one public gallery template card by slug",
+    "support.plan.unarchive": "platform admin restore an archived subscription plan",
+    "support.plan.storage-option.list": "platform admin plan storage sizes prices options",
+    "support.plan.storage-option.create": "platform admin add a storage size price to a plan",
+    "support.plan.storage-option.update": "platform admin reprice resize a plan storage option",
+    "support.plan.storage-option.archive": "platform admin retire a plan storage option",
+    "support.template.list": "platform admin curated template catalog worklist drafts faults",
+    "support.template.edit": "platform admin retag rename reorder curated template filing",
+    "support.template.data-preview": "platform admin curated template sample rows",
+    "support.template.canvas": "platform admin curated template draft canvas review",
+    "support.template.publish": "platform admin take curated template live in gallery",
+    "support.template.unpublish": "platform admin take curated template down back to draft",
+    "support.template.retire": "platform admin retire curated template stop offering",
+    "support.template.inspect": "platform admin read template bundle zip before import",
+    "support.template.import": "platform admin import template bundle zip curated draft",
+    "support.template.thumbnail.set": "platform admin upload curated template picture",
+    "support.template.thumbnail.clear": "platform admin remove curated template picture",
+    "support.template.discard": "platform admin undo template import discard curated draft",
+    "support.template.snapshots": "platform admin stored datasets behind curated templates",
+    "support.template.audit": "platform admin audit curated template catalog gates faults",
+    "support.template.export": "platform admin download curated template bundle zip",
+    "support.template.export-dashboard": "platform admin download a board as template bundle zip",
     "connector.ai.chat": (
         "connect our own internal custom api build a connector for an unsupported source"
     ),
@@ -441,6 +585,16 @@ _COMMAND_DISCOVERY_PURPOSES = {
     ),
     "project.memory.list": "remembered saved preferences what do you remember memory",
     "project.memory.remove": "forget remove delete saved preference memory",
+    # A workflow's shape can be proposed for the user to review and Save on the
+    # canvas; neither this nor naming a workflow was findable from the way users
+    # ask (Workflow Zoo QA 10-02: "rename workflow" found column renames).
+    "workflow.canvas": (
+        "propose suggest sketch draft plan review approve save structural changes "
+        "to a workflow pipeline shape on the canvas new views datasets send to join "
+        "export for the user to review"
+    ),
+    "workflow.update": "rename name describe a workflow pipeline purpose notes summary",
+    "workflow.create": "name an unnamed workflow pipeline from the root dataset new workflow",
 }
 
 # A compact string scope is retained for existing discovery consumers.  These
@@ -469,6 +623,28 @@ _SCOPE_REQUIREMENTS: dict[str, dict[str, Any]] = {
 }
 
 _MAX_FIND_RESULTS = 20
+# View transform/task commands add a step to the GIVEN view. An agent asked for
+# a NEW dataset must know that before calling, so the statement is carried by
+# every such command's contract (schema get ``preconditions``, find, --help).
+_IN_PLACE_PREFIXES = ("view.transform.", "view.task.")
+IN_PLACE_RECIPE = (
+    "EDITS THE GIVEN VIEW IN PLACE: this adds a step to the view and changes that view "
+    "and its dataset's output. To make a NEW dataset and leave the source untouched: "
+    "`mammoth view create SOURCE_DATASET_ID` (working view), do the steps on that working "
+    'view, then `mammoth view export dataset WORKING_VIEW_ID --input \'{"dataset_name": "..."}\'`.'
+)
+_IN_PLACE_KEYWORDS = (
+    "new dataset create make in place edits given view working view source untouched"
+)
+
+
+def edits_view_in_place(record: dict[str, Any]) -> bool:
+    """True for a view transform/task command that changes an existing view."""
+    return bool(record.get("edits_target")) and str(record.get("command_id", "")).startswith(
+        _IN_PLACE_PREFIXES
+    )
+
+
 # Outranks any word-overlap score: a command named by its full path comes first.
 _NAMED_COMMAND_BOOST = 10_000
 # Bag-of-words scoring cannot tell "create a NEW VIEW from an existing
@@ -944,7 +1120,9 @@ def _compact_contract(record: dict[str, Any]) -> dict[str, Any]:
             "the intended postcondition."
         )
     restrictions = record.get("known_restrictions")
-    if restrictions is None:
+    if edits_view_in_place(record):
+        restrictions = f"{IN_PLACE_RECIPE} {restrictions or ''}".strip()
+    elif restrictions is None:
         required_positionals = [
             str(item.get("metavar") or item.get("name"))
             for item in record.get("positionals", [])
@@ -1264,6 +1442,7 @@ def runnable_example(
         "dashboard.embed.secret.rotate",
         "dashboard.embed.config.set",
         "dashboard.embed.origin.revoke",
+        "dashboard.context.apply",
     }:
         # These commands have a confirm_target policy.  Keep their generated
         # example executable in non-interactive mode instead of advertising a
@@ -1515,8 +1694,9 @@ def schema_index(family: str | None = None) -> dict[str, Any]:
     ``schema get`` for the command it picked.
     """
     entries = schema_entries()
-    if family:
-        wanted = family.strip().split(".")[0].split()[0]
+    words = (family or "").strip().split(".")[0].split()
+    if words:
+        wanted = words[0]
         commands = [
             {
                 "command_id": entry["command_id"],
@@ -1596,6 +1776,21 @@ def _inline_call_detail(entries: list[dict[str, Any]]) -> None:
             entry["agent_example"] = record["agent_example"]
 
 
+def _inline_picks(page: list[dict[str, Any]], offset: int) -> list[dict[str, Any]]:
+    """The entries to inline: the top ones, plus read commands ranked below a write.
+
+    A read that answers the question is worth its fields even when a write such as
+    ``view.transform.pivot`` outranks it; otherwise the caller needs a ``schema get``.
+    """
+    head = page[: max(0, _INLINE_DETAIL_COUNT - offset)]
+    reads = [
+        entry
+        for entry in page[len(head) :]
+        if (command_by_id(entry["command_id"]) or {}).get("mutation_class") == "read"
+    ]
+    return head + reads[:_INLINE_DETAIL_COUNT]
+
+
 #: How to drill down from a find: a family's full command list, or every family.
 _BROWSE_NEXT = (
     "mammoth schema list FAMILY lists every command in a family; mammoth schema list "
@@ -1664,6 +1859,7 @@ def find_schemas(
             (30, f"{record.get('human_example', '')} {record.get('agent_example', '')}"),
             (20, positional_help),
             (15, _operation_hints_by_command().get(command_id, "")),
+            (15, _IN_PLACE_KEYWORDS if edits_view_in_place(record) else ""),
             (60, _COMMAND_DISCOVERY_PURPOSES.get(command_id, "")),
             (3, _GROUP_DISCOVERY_PURPOSES.get(command_path.split()[0], "")),
         )
@@ -1757,7 +1953,7 @@ def find_schemas(
     )
     total_matches = len(ranked_matches)
     page = [match for _, match in ranked_matches[offset : offset + bounded_limit]]
-    _inline_call_detail(page[: max(0, _INLINE_DETAIL_COUNT - offset)])
+    _inline_call_detail(_inline_picks(page, offset))
     has_more = offset + len(page) < total_matches
     continuation = (
         {

@@ -134,5 +134,6 @@ def test_release_baseline_matches_canonical_matrix_method_path_inventory() -> No
 
     assert metadata["operation_count"] == 528
     assert len(baseline_operations) == metadata["operation_count"]
-    assert len(canonical_rows) == metadata["operation_count"]
-    assert set(baseline_operations) == set(canonical_rows)
+    # The matrix grows past the release baseline as the server adds operations;
+    # every baseline operation keeps its row (a removed one stays, with its evidence).
+    assert set(baseline_operations) <= set(canonical_rows)

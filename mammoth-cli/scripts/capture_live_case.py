@@ -22,7 +22,23 @@ from pathlib import Path
 FORBIDDEN = ("api_key", "api-secret", "api_secret", "password", "token")
 ALLOWED_ROOTS = {"project", "dataset", "batch", "view", "file", "folder", "dashboard"}
 MAX_OUTPUT = 1_000_000
-REDACT = re.compile(r"(?i)(api[_-]?(?:key|secret)|authorization|bearer)\s*[:=]\s*[^,\s}]+")
+# Matches ``key=value`` / ``key: value`` and the JSON form ``"key": "value"``.
+REDACT = re.compile(
+    r"(?i)([\"']?(?:api[_-]?(?:key|secret)|authorization|bearer|password|secret|token)[\"']?"
+    r"\s*[:=]\s*)(\"[^\"]*\"|'[^']*'|[^,\s}]+)"
+)
+BEARER = re.compile(r"(?i)\bBearer\s+[A-Za-z0-9._~+/=-]+")
+
+
+def redact(text: str) -> str:
+    """Mask secret-looking values, in ``key=value`` and in JSON form."""
+    text = BEARER.sub("Bearer [REDACTED]", text)
+    return REDACT.sub(lambda m: f"{m.group(1)}{_mask(m.group(2))}", text)
+
+
+def _mask(value: str) -> str:
+    """Keep a quoted value quoted."""
+    return '"[REDACTED]"' if value[:1] in "\"'" else "[REDACTED]"
 
 
 def sha256(value: bytes) -> str:
@@ -89,8 +105,8 @@ def main() -> int:
         "cli_version": version_result.stdout.decode("utf-8", errors="replace").strip(),
         "argv": command,
         "exit_code": exit_code,
-        "stdout": REDACT.sub("[REDACTED]", stdout[:MAX_OUTPUT].decode("utf-8", errors="replace")),
-        "stderr": REDACT.sub("[REDACTED]", stderr[:MAX_OUTPUT].decode("utf-8", errors="replace")),
+        "stdout": redact(stdout[:MAX_OUTPUT].decode("utf-8", errors="replace")),
+        "stderr": redact(stderr[:MAX_OUTPUT].decode("utf-8", errors="replace")),
         "stdout_sha256": sha256(stdout),
         "stderr_sha256": sha256(stderr),
     }

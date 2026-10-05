@@ -320,12 +320,75 @@ sdk_methods:
   wait_policy: not_async
   pagination_policy: none
   openapi_operation_ids: []
+- sdk_symbol: mammoth.api.agents.AgentsAPI.action_delete
+  canonical_command: agent.action.delete
+  alias_of: null
+  mutation_class: destructive
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.agents.AgentsAPI.action_list
+  canonical_command: agent.action.list
+  alias_of: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids: []
 - sdk_symbol: mammoth.api.agents.AgentsAPI.chat
   canonical_command: agent.chat
   alias_of: null
   mutation_class: null
   wait_policy: null
   pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.agents.AgentsAPI.run_extend
+  canonical_command: agent.run.extend
+  alias_of: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.agents.AgentsAPI.run_list
+  canonical_command: agent.run.list
+  alias_of: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.agents.AgentsAPI.run_pause
+  canonical_command: agent.run.pause
+  alias_of: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.agents.AgentsAPI.run_resume
+  canonical_command: agent.run.resume
+  alias_of: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.agents.AgentsAPI.run_status
+  canonical_command: agent.run.status
+  alias_of: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.agents.AgentsAPI.run_stop
+  canonical_command: agent.run.stop
+  alias_of: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.agents.AgentsAPI.run_units_set
+  canonical_command: agent.run.units.set
+  alias_of: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
   openapi_operation_ids: []
 - sdk_symbol: mammoth.api.agents.AgentsAPI.session_delete
   canonical_command: agent.session.delete
@@ -358,14 +421,14 @@ sdk_methods:
 - sdk_symbol: mammoth.api.ai.AIAPI.condition_generate
   canonical_command: ai.condition.generate
   alias_of: null
-  mutation_class: null
+  mutation_class: read
   wait_policy: null
   pagination_policy: null
   openapi_operation_ids: []
 - sdk_symbol: mammoth.api.ai.AIAPI.expression_generate
   canonical_command: ai.expression.generate
   alias_of: null
-  mutation_class: null
+  mutation_class: read
   wait_policy: null
   pagination_policy: null
   openapi_operation_ids: []
@@ -2181,6 +2244,13 @@ sdk_methods:
   wait_policy: not_async
   pagination_policy: none
   openapi_operation_ids: []
+- sdk_symbol: mammoth.api.datasets.DatasetsAPI.resolve_unstructured_rows
+  canonical_command: dataset.broken-rows.resolve
+  alias_of: null
+  mutation_class: destructive
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids: []
 - sdk_symbol: mammoth.api.datasets.DatasetsAPI.interpretation_confirm
   canonical_command: dataset.interpretation.confirm
   alias_of: null
@@ -3034,12 +3104,13 @@ sdk_methods:
   openapi_operation_ids: []
   notes: 'B04 SERVER_VARIANCE: documented as returning HTTP 500 on some servers; a 5xx response is not
     server_unavailable.'
-- sdk_symbol: mammoth.api.projects.ProjectsAPI.bulk_delete
+- sdk_symbol: mammoth.api.projects.ProjectsAPI.bulk_delete_and_verify
   canonical_command: project.bulk-delete
   alias_of: null
   mutation_class: destructive
   wait_policy: not_async
   pagination_policy: none
+  confirmation: confirm_target
   openapi_operation_ids: []
   notes: Sorted comma-separated ID-set confirmation.
 - sdk_symbol: mammoth.api.projects.ProjectsAPI.bulk_update
@@ -3072,7 +3143,7 @@ sdk_methods:
   wait_policy: null
   pagination_policy: null
   openapi_operation_ids: []
-- sdk_symbol: mammoth.api.projects.ProjectsAPI.delete
+- sdk_symbol: mammoth.api.projects.ProjectsAPI.delete_and_verify
   canonical_command: project.delete
   alias_of: null
   mutation_class: destructive
@@ -3104,6 +3175,13 @@ sdk_methods:
   openapi_operation_ids: []
   notes: 'Single page; the route caps limit at 100 (4GENR007). SDK 0.7.11 adds offset and list_all
     for the following pages.'
+- sdk_symbol: mammoth.api.projects.ProjectsAPI.needs_attention
+  canonical_command: project.needs-attention
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
 - sdk_symbol: mammoth.api.projects.ProjectsAPI.pending_changes
   canonical_command: project.pending-changes
   alias_of: null
@@ -3779,6 +3857,7 @@ sdk_methods:
   mutation_class: null
   wait_policy: null
   pagination_policy: null
+  confirmation: confirm_target
   openapi_operation_ids: []
 - sdk_symbol: mammoth.api.workflows.WorkflowsAPI.block_config
   canonical_command: workflow.block.config
@@ -3796,15 +3875,18 @@ sdk_methods:
   openapi_operation_ids: []
 - sdk_symbol: mammoth.api.workflows.WorkflowsAPI.canvas
   canonical_command: workflow.canvas
+  proposal_input: canvas_state.proposed_changes
   alias_of: null
   mutation_class: null
   wait_policy: null
   pagination_policy: null
   openapi_operation_ids: []
+  agent_example: "mammoth workflow canvas 12 --input '{\"canvas_state\": {\"proposed_changes\": [{\"op\": \"add_view\", \"dataset_id\": 415, \"name\": \"Urgent tickets\", \"ref\": \"urgent\"}, {\"op\": \"send_to_new_dataset\", \"dataset_id\": 415, \"view_ref\": \"urgent\", \"name\": \"Urgent tickets by team\"}]}}'"
+  notes: "Proposes structural changes to a workflow for the user to review and Save on the Workflows canvas; nothing is built until they Save. Use it when the user asks to suggest, sketch or draft a workflow's shape, or wants to review first. It cannot add filters, calculations or other tasks: when any part of the request needs tasks or data, build the whole request with view commands instead. WORKFLOW_ID is the workflow's record id (URL id w12 is record 12); an unnamed workflow has none, so name it first with workflow create --seed_datasource_id. Input: {\"canvas_state\": {\"proposed_changes\": [...]}}, each change one of (integer ids from workflow graph): {op: add_view, dataset_id, name, ref?}; {op: rename_view, dataset_id, view_id, name}; {op: trash_view, dataset_id, view_id}; {op: rename_dataset, dataset_id, name}; {op: trash_dataset, dataset_id}; {op: send_to_new_dataset, dataset_id, view_id, name, ref?}; {op: send_to_dataset, dataset_id, view_id, target_dataset_id}; {op: join, dataset_id, view_id, with_dataset_id, with_view_id}; {op: export, dataset_id, view_id, connector}. A later change in the same call can point at something an earlier one proposes: give the earlier change a ref, then use view_ref, dataset_ref or target_dataset_ref in place of the id (a new dataset's ref also names its first view), so a whole shape is proposed in one call. Join and export arrive needing setup. Tell the user the changes wait on the canvas for their review."
 - sdk_symbol: mammoth.api.workflows.WorkflowsAPI.cleanup
   canonical_command: workflow.cleanup
   alias_of: null
-  mutation_class: null
+  mutation_class: destructive
   wait_policy: null
   pagination_policy: null
   openapi_operation_ids: []
@@ -3815,6 +3897,7 @@ sdk_methods:
   wait_policy: null
   pagination_policy: null
   openapi_operation_ids: []
+  notes: "With seed_datasource_id set to a workflow's root dataset id (workflow graph lists each workflow's datasets), names that existing unnamed workflow and returns its record id; without it, starts a new empty workflow."
 - sdk_symbol: mammoth.api.workflows.WorkflowsAPI.delete
   canonical_command: workflow.delete
   alias_of: null
@@ -3857,6 +3940,7 @@ sdk_methods:
   wait_policy: null
   pagination_policy: null
   openapi_operation_ids: []
+  notes: "WORKFLOW_ID is the workflow's record id: URL id w12 is record 12. An unnamed workflow (base64 URL id) has no record; name it with workflow create --seed_datasource_id <its root dataset id> instead."
 - sdk_symbol: mammoth.api.workflows.WorkflowsAPI.workspace_datasets
   canonical_command: workflow.workspace-datasets
   alias_of: null
@@ -3964,6 +4048,41 @@ sdk_methods:
   wait_policy: null
   pagination_policy: null
   openapi_operation_ids: []
+- sdk_symbol: mammoth.api.workspaces.WorkspacesAPI.invite_delete
+  canonical_command: workspace.invite.delete
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.workspaces.WorkspacesAPI.invite_list
+  canonical_command: workspace.invite.list
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.workspaces.WorkspacesAPI.invite_resend
+  canonical_command: workspace.invite.resend
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.workspaces.WorkspacesAPI.invite_revoke
+  canonical_command: workspace.invite.revoke
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.workspaces.WorkspacesAPI.invite_role_update
+  canonical_command: workspace.invite.update-role
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
 - sdk_symbol: mammoth.api.workspaces.WorkspacesAPI.llm_task
   canonical_command: workspace.llm-task
   alias_of: null
@@ -4019,7 +4138,7 @@ sdk_methods:
 - sdk_symbol: mammoth.api.workspaces.WorkspacesAPI.user_update_batch
   canonical_command: workspace.user.update-batch
   alias_of: null
-  mutation_class: null
+  mutation_class: high_impact
   wait_policy: null
   pagination_policy: null
   openapi_operation_ids: []
@@ -4085,6 +4204,14 @@ sdk_methods:
   openapi_operation_ids: []
   notes: SDK-only generated-operation wait seam; CLI commands apply it from their reviewed wait policy
     rather than exposing a separate command.
+- sdk_symbol: mammoth.client.MammothClient.workspace_id
+  canonical_command: null
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+  notes: SDK-only property, the workspace of the credential, given for a key pair or learned from the server for a token; the CLI reads it from its profile.
 - sdk_symbol: mammoth.client.ViewsResource.bulk_delete
   canonical_command: null
   alias_of: view.delete
@@ -4424,6 +4551,258 @@ sdk_methods:
   pagination_policy: null
   openapi_operation_ids: []
   notes: Alias `view export tableau-server`. Prohibit secret in CA bundle file.
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.embed_usage_summary
+  canonical_command: dashboard.embed.usage.summary
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.format_preview
+  canonical_command: dashboard.format-preview
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.workspaces.WorkspacesAPI.home_summary
+  canonical_command: workspace.home
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.browse.BrowseAPI.resources_list
+  canonical_command: browse.resources
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.browse.BrowseAPI.resource_get
+  canonical_command: browse.resource
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.billing.BillingAPI.stripe_resume
+  canonical_command: billing.stripe.resume
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.billing.BillingAPI.stripe_recheck_limits
+  canonical_command: billing.stripe.recheck-limits
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.billing.BillingAPI.stripe_storage_update
+  canonical_command: billing.stripe.storage.set
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.browse.BrowseAPI.resource_ancestors
+  canonical_command: browse.ancestors
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.browse.BrowseAPI.resources_search
+  canonical_command: browse.search
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.template_thumbnail_get
+  canonical_command: dashboard.template.thumbnail.get
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.template_thumbnail_set
+  canonical_command: dashboard.template.thumbnail.set
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.template_thumbnail_clear
+  canonical_command: dashboard.template.thumbnail.clear
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.gallery_list
+  canonical_command: dashboard.gallery.list
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.gallery_get
+  canonical_command: dashboard.gallery.get
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.support.SupportAPI.plan_unarchive
+  canonical_command: support.plan.unarchive
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.support.SupportAPI.plan_storage_option_list
+  canonical_command: support.plan.storage-option.list
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.support.SupportAPI.plan_storage_option_create
+  canonical_command: support.plan.storage-option.create
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.support.SupportAPI.plan_storage_option_update
+  canonical_command: support.plan.storage-option.update
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.support.SupportAPI.plan_storage_option_archive
+  canonical_command: support.plan.storage-option.archive
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.support.SupportAPI.template_list
+  canonical_command: support.template.list
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.support.SupportAPI.template_edit
+  canonical_command: support.template.edit
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.support.SupportAPI.template_data_preview
+  canonical_command: support.template.data-preview
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.support.SupportAPI.template_canvas
+  canonical_command: support.template.canvas
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.support.SupportAPI.template_publish
+  canonical_command: support.template.publish
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.support.SupportAPI.template_unpublish
+  canonical_command: support.template.unpublish
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.support.SupportAPI.template_retire
+  canonical_command: support.template.retire
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.support.SupportAPI.template_inspect
+  canonical_command: support.template.inspect
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.support.SupportAPI.template_import
+  canonical_command: support.template.import
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.support.SupportAPI.template_thumbnail_set
+  canonical_command: support.template.thumbnail.set
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.support.SupportAPI.template_thumbnail_clear
+  canonical_command: support.template.thumbnail.clear
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.support.SupportAPI.template_discard
+  canonical_command: support.template.discard
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.support.SupportAPI.template_snapshots
+  canonical_command: support.template.snapshots
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.support.SupportAPI.template_audit
+  canonical_command: support.template.audit
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.support.SupportAPI.template_export
+  canonical_command: support.template.export
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.support.SupportAPI.template_export_dashboard
+  canonical_command: support.template.export-dashboard
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
 notes_on_dispositions:
 - 'DatasetsAPI.bulk_delete: "the SDK sends collection DELETE without target IDs. The command is forbidden
   until OpenAPI proves exact targets and a typed SDK request carries them" (BLOCKED[B08], and doc 09 states
@@ -4486,3 +4865,87 @@ notes_on_dispositions:
 - 'B01 FIRST_PAGE_ONLY: workspace/project/dataset/dataview list methods (and ProjectsAPI.get, ViewsResource.list,
   private dataview discovery) "have no offset/cursor. ... Add a public proven continuation contract before
   --all or completeness claims."'
+- sdk_symbol: mammoth.api.agents.AgentsAPI.turn_cancel
+  canonical_command: agent.turn.cancel
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.swap_fit
+  canonical_command: dashboard.swap-fit
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.audience
+  canonical_command: dashboard.audience.get
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.audience_summary
+  canonical_command: dashboard.audience.summary
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.audience_digest_get
+  canonical_command: dashboard.audience.digest.get
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.audience_digest_set
+  canonical_command: dashboard.audience.digest.set
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.column_roster
+  canonical_command: dashboard.columns
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.context_review
+  canonical_command: dashboard.context.review
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.context_apply
+  canonical_command: dashboard.context.apply
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.qa_insights
+  canonical_command: dashboard.qa.insights
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.dataviews.DataviewsAPI.delete_impact
+  canonical_command: view.impact
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.browse.BrowseAPI.resources_bulk
+  canonical_command: browse.resources.bulk
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []

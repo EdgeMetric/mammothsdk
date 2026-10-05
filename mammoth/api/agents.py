@@ -10,6 +10,7 @@ if TYPE_CHECKING:
     from ..client import MammothClient
 
 ERR_SESSION_ID_REQUIRED = "`session_id` must be a non-empty string, got {0!r}."
+ERR_ID_REQUIRED = "`{0}` must be a non-empty string, got {1!r}."
 ERR_VISIBILITY_INVALID = '`visibility` must be "private" or "shared", got {0!r}.'
 
 VALID_VISIBILITIES = frozenset({"private", "shared"})
@@ -156,3 +157,197 @@ class AgentsAPI:
             f"/agents/sessions/{session_id}",
             json={"visibility": visibility},
         )
+
+    async def action_list(self, session_id: str) -> dict[str, Any]:
+        """List the changes an agent chat session made (its write record).
+
+        Args:
+            session_id: ID of the session.
+
+        Returns:
+            Dict with the session's recorded actions, each marking whether the
+            chat created the object it touched.
+
+        Raises:
+            MammothValidationError: If *session_id* is empty.
+        """
+        _require_id("session_id", session_id)
+        return await self._client._request_json("GET", f"/agents/sessions/{session_id}/actions")
+
+    async def action_delete(self, session_id: str, action_id: str) -> dict[str, Any]:
+        """Delete the object an agent chat session created, by its action id.
+
+        The server refuses an action whose object the chat did not create.
+
+        Args:
+            session_id: ID of the session.
+            action_id: ID of the recorded action.
+
+        Returns:
+            Dict with the deletion result.
+
+        Raises:
+            MammothValidationError: If *session_id* or *action_id* is empty.
+        """
+        _require_id("session_id", session_id)
+        _require_id("action_id", action_id)
+        return await self._client._request_json(
+            "DELETE", f"/agents/sessions/{session_id}/actions/{action_id}"
+        )
+
+    async def run_status(self, session_id: str) -> dict[str, Any]:
+        """Get the current durable run of an agent chat session.
+
+        Args:
+            session_id: ID of the session.
+
+        Returns:
+            Dict with the session's current run (state, step, active time).
+
+        Raises:
+            MammothValidationError: If *session_id* is empty.
+        """
+        _require_id("session_id", session_id)
+        return await self._client._request_json("GET", f"/agents/sessions/{session_id}/run")
+
+    async def run_list(self, session_id: str) -> dict[str, Any]:
+        """List the durable runs of an agent chat session.
+
+        Args:
+            session_id: ID of the session.
+
+        Returns:
+            Dict with the session's runs.
+
+        Raises:
+            MammothValidationError: If *session_id* is empty.
+        """
+        _require_id("session_id", session_id)
+        return await self._client._request_json("GET", f"/agents/sessions/{session_id}/runs")
+
+    async def run_pause(self, session_id: str, run_id: str) -> dict[str, Any]:
+        """Pause a run after its current call.
+
+        Args:
+            session_id: ID of the session.
+            run_id: ID of the run.
+
+        Returns:
+            Dict with the run after the request.
+
+        Raises:
+            MammothValidationError: If *session_id* or *run_id* is empty.
+        """
+        return await self._run_action(session_id, run_id, "pause")
+
+    async def run_resume(self, session_id: str, run_id: str) -> dict[str, Any]:
+        """Resume a paused run. The server refuses this from inside the run itself.
+
+        Args:
+            session_id: ID of the session.
+            run_id: ID of the run.
+
+        Returns:
+            Dict with the run after the request.
+
+        Raises:
+            MammothValidationError: If *session_id* or *run_id* is empty.
+        """
+        return await self._run_action(session_id, run_id, "resume")
+
+    async def run_stop(self, session_id: str, run_id: str) -> dict[str, Any]:
+        """Stop a run and cancel its live step.
+
+        Args:
+            session_id: ID of the session.
+            run_id: ID of the run.
+
+        Returns:
+            Dict with the run after the request.
+
+        Raises:
+            MammothValidationError: If *session_id* or *run_id* is empty.
+        """
+        return await self._run_action(session_id, run_id, "stop")
+
+    async def run_extend(self, session_id: str, run_id: str) -> dict[str, Any]:
+        """Give a capped run a fresh time budget. The server refuses this from inside the run.
+
+        Args:
+            session_id: ID of the session.
+            run_id: ID of the run.
+
+        Returns:
+            Dict with the run after the request.
+
+        Raises:
+            MammothValidationError: If *session_id* or *run_id* is empty.
+        """
+        return await self._run_action(session_id, run_id, "extend")
+
+    async def run_units_set(
+        self, session_id: str, run_id: str, step: int, kind: str, units: list[dict[str, Any]]
+    ) -> dict[str, Any]:
+        """Report the objects a plan step of a run will work on, once, as queued units.
+
+        The server shows them in the run panel and measures progress and the time left
+        from their completions; the agent never states either. A unit already listed
+        is left as it is.
+
+        Args:
+            session_id: ID of the session.
+            run_id: ID of the run.
+            step: Number of the plan step that will work on the units.
+            kind: Kind of the objects, e.g. ``"dataset"`` or ``"view"``.
+            units: Objects, each ``{"id": 12, "name": "Sales", "project_id": 3}``
+                (``name`` and ``project_id`` optional); 1 to 1000.
+
+        Returns:
+            Dict with ``registered`` (units sent) and ``units_total`` (the run's total).
+
+        Raises:
+            MammothValidationError: If *session_id* or *run_id* is empty.
+        """
+        _require_id("session_id", session_id)
+        _require_id("run_id", run_id)
+        return await self._client._request_json(
+            "POST",
+            f"/agents/sessions/{session_id}/runs/{run_id}/units",
+            json={"step": step, "kind": kind, "units": units},
+        )
+
+    async def turn_cancel(self, session_id: str, turn_id: str) -> dict[str, Any]:
+        """Stop one agent turn. Only the session's owner may.
+
+        The turn starts no further model or tool call, the call running is cut, and the
+        turn ends with a ``stopped`` event listing the writes already made. Repeating the
+        call, or calling after the turn ended, is safe.
+
+        Args:
+            session_id: ID of the session.
+            turn_id: ID of the turn.
+
+        Returns:
+            Dict with ``session_id``, ``turn_id`` and ``status``: ``stopping``,
+            ``stopped`` or ``ended``.
+
+        Raises:
+            MammothValidationError: If *session_id* or *turn_id* is empty.
+        """
+        _require_id("session_id", session_id)
+        _require_id("turn_id", turn_id)
+        return await self._client._request_json(
+            "POST", f"/agents/sessions/{session_id}/turns/{turn_id}/cancel"
+        )
+
+    async def _run_action(self, session_id: str, run_id: str, action: str) -> dict[str, Any]:
+        _require_id("session_id", session_id)
+        _require_id("run_id", run_id)
+        return await self._client._request_json(
+            "POST", f"/agents/sessions/{session_id}/runs/{run_id}/{action}"
+        )
+
+
+def _require_id(name: str, value: str) -> None:
+    if not value:
+        raise MammothValidationError(ERR_ID_REQUIRED.format(name, value))

@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import asyncio
 import inspect
-
 import json
 from pathlib import Path
 from typing import Any
@@ -146,7 +145,11 @@ CASES = [
         "api": ProjectsAPI,
         "method": "list",
         "kwargs": {"limit": 23},
-        "wire": ["GET", "/workspaces/4/projects", {"params": {"fields": "id,name", "limit": 23}}],
+        "wire": [
+            "GET",
+            "/workspaces/4/projects",
+            {"params": {"fields": "id,name", "limit": 23, "subscribed": "true"}},
+        ],
         "response": {"projects": []},
     },
     {
@@ -313,14 +316,14 @@ CASES = [
             "limit": 21,
             "offset": 0,
             "sort": "(name:asc)",
-            "fields": "id,name,created_at,updated_at,status,stats,sources,data_schema,additional_info",
+            "fields": "id,name,created_at,updated_at,status,sources,additional_info",
         },
         "wire": [
             "GET",
             "/workspaces/4/projects/41/datasets",
             {
                 "params": {
-                    "fields": "id,name,created_at,updated_at,status,stats,sources,data_schema,additional_info",
+                    "fields": "id,name,created_at,updated_at,status,sources,additional_info",
                     "limit": 21,
                     "offset": 0,
                     "sort": "(name:asc)",
@@ -827,7 +830,11 @@ CASES = [
         "api": WorkspaceAPI,
         "method": "list_users",
         "kwargs": {"fields": "__full"},
-        "wire": ["GET", "/workspaces/4/users", {"params": {"fields": "__full"}}],
+        "wire": [
+            "GET",
+            "/workspaces/4/users",
+            {"params": {"fields": "__full", "limit": 100, "offset": 0}},
+        ],
         "response": {"users": []},
     },
     {
@@ -848,6 +855,7 @@ CASES = [
         "argv": ["project", "bulk-delete"],
         "input": {"project_ids": [42, 43]},
         "yes": True,
+        "confirm": "42,43",
         "api": ProjectsAPI,
         "method": "bulk_delete",
         "kwargs": {"project_ids": [42, 43]},
@@ -1060,7 +1068,7 @@ def test_cli_to_recording_transport_uses_independent_wire(
     if case["route"] in CLI_UNSUPPORTED_ROUTES:
         result = make_runner().invoke(_argv(case))
         assert result.exit_code == 2, result.output
-        assert json.loads(result.output)["error"]["code"] == "unsupported_contract"
+        assert json.loads(result.output)["error"]["code"] == "not_available"
         assert api.requests == []
         return
     method, path, kwargs = case["wire"]
@@ -1305,7 +1313,7 @@ def test_dataset_list_nonzero_offset_cli_wire_in_venv314(
     assert seen and seen[0].get("offset") == 6, seen
     request = api.last()
     assert {key: values[-1] for key, values in request.query.items()} == {
-        "fields": "id,name,created_at,updated_at,status,stats,sources,data_schema,additional_info",
+        "fields": "id,name,created_at,updated_at,status,sources,additional_info",
         "limit": "1",
         "offset": "6",
         "sort": "(name:asc)",
@@ -1346,7 +1354,7 @@ def test_dataset_list_nonzero_offset_cli_wire_in_mandatory_no_input_mode(
     assert seen and seen[0].get("offset") == 6, seen
     request = api.last()
     assert {key: values[-1] for key, values in request.query.items()} == {
-        "fields": "id,name,created_at,updated_at,status,stats,sources,data_schema,additional_info",
+        "fields": "id,name,created_at,updated_at,status,sources,additional_info",
         "limit": "1",
         "offset": "6",
         "sort": "(name:asc)",

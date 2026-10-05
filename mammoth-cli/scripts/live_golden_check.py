@@ -394,9 +394,8 @@ class Check:
             )
 
         # 8. export the cleaned rows before the pivot replaces them.  (A
-        #    ``clone_from`` copy is not usable on release: the clone job
-        #    succeeds, but the new view answers every read with 4DTVW019 and
-        #    its copied tasks never execute.)
+        #    ``clone_from`` copy would also work on a backend with mvc
+        #    e56f2338b6; this script just pivots in place.)
         cleaned = self.rows(v_o, ds_o, "cleaned rows before export")
         out = work / "orders_clean.csv"
         code, data, _ = self.run(

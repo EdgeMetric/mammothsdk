@@ -157,3 +157,46 @@ def test_workspace_forwards_optional_fields(
 def test_workspace_meta_has_no_project_when_unset(fake_service: FakeMammothService) -> None:
     _, meta = browse_cmd.browse_workspace(_inv("browse.workspace"))
     assert meta["project_id"] is None
+
+
+# -- browse.ancestors / browse.search (resources v2) -------------------------
+
+_ANCESTORS = "mammoth.api.browse.BrowseAPI.resource_ancestors"
+_SEARCH = "mammoth.api.browse.BrowseAPI.resources_search"
+
+
+def test_ancestors_requires_project(fake_service: FakeMammothService) -> None:
+    with pytest.raises(CliError) as excinfo:
+        browse_cmd.browse_ancestors(_inv("browse.ancestors", extra_args=["812"]))
+    assert excinfo.value.code == "project_required"
+
+
+def test_ancestors_requires_resource_id(fake_service: FakeMammothService) -> None:
+    with pytest.raises(CliError) as excinfo:
+        browse_cmd.browse_ancestors(_inv("browse.ancestors", project=180))
+    assert excinfo.value.code == "missing_argument"
+
+
+def test_ancestors_passes_resource_and_project(fake_service: FakeMammothService) -> None:
+    browse_cmd.browse_ancestors(_inv("browse.ancestors", project=180, extra_args=["812"]))
+    assert fake_service.call_log == [(_ANCESTORS, {"resource_id": 812, "project_id": 180})]
+
+
+def test_search_needs_no_project(fake_service: FakeMammothService) -> None:
+    _, meta = browse_cmd.browse_search(_inv("browse.search"))
+    assert fake_service.call_log == [(_SEARCH, {})]
+    assert meta["project_id"] is None
+
+
+def test_search_forwards_filters_and_cursor(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    doc = tmp_path / "in.json"
+    doc.write_text(
+        json.dumps({"search": "revenue", "resource_type": "dataset", "cursor": "c1", "limit": 5}),
+        encoding="utf-8",
+    )
+    browse_cmd.browse_search(_inv("browse.search", input_file=str(doc)))
+    assert fake_service.call_log == [
+        (_SEARCH, {"search": "revenue", "resource_type": "dataset", "cursor": "c1", "limit": 5})
+    ]

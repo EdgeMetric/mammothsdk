@@ -71,9 +71,13 @@ S2_ROUTE_INVENTORY = frozenset(
         "annotation.delete",
         "annotation.list",
         "annotation.update",
+        "browse.ancestors",
         "browse.folder",
         "browse.project",
+        "browse.resource",
+        "browse.resources",
         "browse.root",
+        "browse.search",
         "browse.workspace",
         "dataset.bulk-delete",
         "dataset.bulk-update",
@@ -124,6 +128,7 @@ S2_ROUTE_INVENTORY = frozenset(
         "project.memory.add",
         "project.memory.list",
         "project.memory.remove",
+        "project.needs-attention",
         "project.pending-changes",
         "project.publish-credentials",
         "project.resource-dependencies",
@@ -142,6 +147,7 @@ S2_ROUTE_INVENTORY = frozenset(
         "workspace.create",
         "workspace.delete",
         "workspace.get",
+        "workspace.home",
         "workspace.list",
         "workspace.llm-task",
         "workspace.reactivate",
@@ -201,7 +207,7 @@ def _write(tmp_path: Path, value: object) -> str:
 
 def test_inventory_is_exactly_the_closed_s2_surface() -> None:
     assert S2_COMMANDS == S2_ROUTE_INVENTORY
-    assert len(S2_ROUTE_INVENTORY) == 97
+    assert len(S2_ROUTE_INVENTORY) == 103
     for command_id in sorted(S2_ROUTE_INVENTORY):
         record = command_by_id(command_id)
         assert record is not None
@@ -250,7 +256,7 @@ def test_project_positional_alias_has_an_explicit_sdk_destination() -> None:
                 "limit": 97,
                 "offset": 918,
                 "sort": "S2-DATASET-SORT",
-                "fields": "id,name,created_at,updated_at,status,stats,sources,data_schema,additional_info",
+                "fields": "id,name,created_at,updated_at,status,sources,additional_info",
             },
             [],
         ),

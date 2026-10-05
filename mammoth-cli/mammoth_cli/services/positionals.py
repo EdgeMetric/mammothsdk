@@ -127,6 +127,142 @@ def _optional_project_id() -> tuple[PositionalSpec, ...]:
 # Commands whose positionals the signature cannot express correctly. Each entry
 # replaces the derivation wholesale; the drift test proves the union is right.
 POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
+    # The chat session is the global ``--session`` option, never a positional or
+    # an --input field; only the action or run being addressed is positional.
+    "agent.action.list": (),
+    # The parent is named in ``--input`` (``parent_id``), never positionally.
+    "browse.resources": (),
+    "browse.resource": (
+        PositionalSpec(
+            name="resource_type",
+            type=str,
+            required=True,
+            help="Resource type, for example dataset or dataview.",
+            example_value="dataset",
+        ),
+        PositionalSpec(
+            name="object_id", type=int, required=True, help="ID of the resource within its type."
+        ),
+    ),
+    # A folder's mm-auth resource id, which the derived "ID of the resource."
+    # would let an agent confuse with the folder's object id.
+    "browse.ancestors": (
+        PositionalSpec(
+            name="resource_id",
+            type=int,
+            required=True,
+            help="The folder's resource_id as browse resources returns it (not its object id).",
+        ),
+    ),
+    # The image is a local file, positional after the template like assess-pbix.
+    "dashboard.template.thumbnail.set": (
+        PositionalSpec(name="template_id", type=str, required=True, help="ID of the template."),
+        PositionalSpec(
+            name="file",
+            type=str,
+            required=True,
+            help="Path to a local PNG, JPEG or WebP image (1 MB at most).",
+            example_value="card.png",
+        ),
+    ),
+    "dashboard.gallery.get": (
+        PositionalSpec(name="slug", type=str, required=True, help="Template slug."),
+    ),
+    # Curated-catalog admin commands address a template by slug, never an id.
+    "support.template.edit": (
+        PositionalSpec(name="slug", type=str, required=True, help="Curated template slug."),
+    ),
+    "support.template.data-preview": (
+        PositionalSpec(name="slug", type=str, required=True, help="Curated template slug."),
+    ),
+    "support.template.canvas": (
+        PositionalSpec(name="slug", type=str, required=True, help="Curated template slug."),
+    ),
+    "support.template.publish": (
+        PositionalSpec(name="slug", type=str, required=True, help="Curated template slug."),
+    ),
+    "support.template.unpublish": (
+        PositionalSpec(name="slug", type=str, required=True, help="Curated template slug."),
+    ),
+    "support.template.retire": (
+        PositionalSpec(name="slug", type=str, required=True, help="Curated template slug."),
+    ),
+    "support.template.thumbnail.clear": (
+        PositionalSpec(name="slug", type=str, required=True, help="Curated template slug."),
+    ),
+    "support.template.discard": (
+        PositionalSpec(name="slug", type=str, required=True, help="Curated template slug."),
+    ),
+    "support.template.export": (
+        PositionalSpec(name="slug", type=str, required=True, help="Curated template slug."),
+    ),
+    "support.template.inspect": (
+        PositionalSpec(
+            name="file",
+            type=str,
+            required=True,
+            help="Path to a local template file (.zip).",
+            example_value="template.zip",
+        ),
+    ),
+    "support.template.import": (
+        PositionalSpec(
+            name="file",
+            type=str,
+            required=True,
+            help="Path to a local template file (.zip).",
+            example_value="template.zip",
+        ),
+    ),
+    "support.template.thumbnail.set": (
+        PositionalSpec(name="slug", type=str, required=True, help="Curated template slug."),
+        PositionalSpec(
+            name="file",
+            type=str,
+            required=True,
+            help="Path to a local PNG, JPEG or WebP image (1 MB at most).",
+            example_value="card.png",
+        ),
+    ),
+    # The invite is named in ``--input`` (``invite_id``), never positionally.
+    "workspace.invite.update-role": (),
+    "agent.run.status": (),
+    "agent.run.list": (),
+    "agent.action.delete": (
+        PositionalSpec(
+            name="action_id",
+            type=str,
+            required=True,
+            help="ID of the recorded action (from agent action list).",
+        ),
+    ),
+    "agent.run.units.set": (
+        PositionalSpec(
+            name="run_id",
+            type=str,
+            required=True,
+            help="ID of the run (from agent run status or agent run list).",
+        ),
+    ),
+    **{
+        f"agent.run.{verb}": (
+            PositionalSpec(
+                name="run_id",
+                type=str,
+                required=True,
+                help="ID of the run (from agent run status or agent run list).",
+            ),
+        )
+        for verb in ("pause", "resume", "stop", "extend")
+    },
+    "agent.turn.cancel": (
+        PositionalSpec(
+            name="turn_id",
+            type=str,
+            required=True,
+            help="ID of the turn to stop (from the chat's events or agent session messages).",
+        ),
+    ),
     "dashboard.assess-twb": (
         PositionalSpec(
             name="file",
@@ -259,16 +395,25 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
     # active project). The SDK signature marks it required or omits it, so the
     # dual-sourced optional locator is authored here.
     "project.get": _optional_project_id(),
-    # ``project check PROJECT_ID DATASET_ID`` narrows the check to one dataset.
+    # ``project check PROJECT_ID DATASET_ID [VIEW_ID]`` narrows the check to one dataset,
+    # and to one of its views (its first, most recent one when VIEW_ID is omitted).
     "project.check": (
         *_optional_project_id(),
         PositionalSpec(
             name="dataset_id",
             type=int,
             required=False,
-            help="Check only this dataset's first view; no other dataset or dashboard is read.",
+            help="Check only this dataset (its first view unless VIEW_ID is given); "
+            "no other dataset or dashboard is read.",
+        ),
+        PositionalSpec(
+            name="view_id",
+            type=int,
+            required=False,
+            help="Check this view of DATASET_ID instead of its first (most recent) one.",
         ),
     ),
+    "project.needs-attention": _optional_project_id(),
     "project.pending-changes": _optional_project_id(),
     "project.memory.list": _optional_project_id(),
     "project.memory.add": _optional_project_id(),
@@ -471,6 +616,15 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
             example_value="2063664 - 1917815",
         ),
     ),
+    "link": (
+        PositionalSpec(
+            name="url",
+            type=str,
+            required=True,
+            help="A Mammoth web app address pasted by the user.",
+            example_value="https://app.mammoth.io/workspaces/1/projects/2/data/datasets",
+        ),
+    ),
     "capability.find": (
         PositionalSpec(
             name="query",
@@ -498,9 +652,20 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
         PositionalSpec(
             name="name_substring",
             type=str,
-            required=True,
-            help="Case-insensitive substring to match against dataset names.",
+            required=False,
+            help="Case-insensitive substring to match against dataset names; optional "
+            "when --input gives 'columns'.",
             example_value="sales",
+        ),
+    ),
+    "dataset.search": (
+        PositionalSpec(
+            name="term",
+            type=str,
+            required=True,
+            help="Text to find in dataset names, column names or sampled column values "
+            "(case-insensitive, at least 2 characters).",
+            example_value="New Year Sale",
         ),
     ),
     "folder.find": (
@@ -613,6 +778,7 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
             "view.parameter-context",
             "view.restore",
             "view.trash",
+            "view.impact",
             "view.update",
             "view.conditional-format.create",
             "view.conditional-format.delete-all",

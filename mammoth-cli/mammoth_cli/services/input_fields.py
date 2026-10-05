@@ -7,6 +7,22 @@ from typing import Any
 from mammoth_cli.services.positionals import resolve_positionals
 
 _HANDLER_OWNED_FIELDS: dict[str, frozenset[str]] = {
+    # The chat session comes from the global ``--session`` option.
+    **{
+        f"agent.{command}": frozenset({"session_id"})
+        for command in (
+            "action.list",
+            "action.delete",
+            "run.status",
+            "run.list",
+            "run.pause",
+            "run.resume",
+            "run.stop",
+            "run.extend",
+            "run.units.set",
+            "turn.cancel",
+        )
+    },
     # Skill handlers deliberately derive filesystem roots from the running
     # process and generate their own backup timestamp.  User input must not
     # claim to control values that the handlers replace or omit.
@@ -30,6 +46,8 @@ _HANDLER_OWNED_FIELDS: dict[str, frozenset[str]] = {
     # ``sort`` is the backend's internal result-column pairs; the CLI takes
     # ``order_by`` (result labels) and maps it, so a raw ``sort`` would be dropped.
     "view.data.aggregate": frozenset({"sort"}),
+    # ``view update`` offers only the typed rename; the handler builds the patch.
+    "view.update": frozenset({"patch_data"}),
 }
 
 # CLI-only commands whose complete request is carried by positionals/context.
@@ -60,10 +78,23 @@ _EXAMPLE_INPUT_HINTS: dict[str, dict[str, Any]] = {
     },
     # View display settings: real column names read better than sample keys.
     "view.transform.rename-columns": {"renames": {"cust_id": "Customer ID"}},
+    "view.update": {"name": "Revenue report"},
     "view.transform.sort": {"order_by": [["Revenue", "DESC"]]},
     # The backend requires integer resource ids ("resource_ids must be
     # comma-separated integers"); the SDK annotation is a plain list[str].
     "project.resource-dependencies": {"resource_ids": [456]},
+    # ``rows`` are the set-aside lines as ``dataset broken-rows list`` returns them.
+    "dataset.broken-rows.resolve": {
+        "op": "add",
+        "batch_id": 1,
+        "rows": [{"line_num": 2, "line": "corrected,line,here"}],
+    },
+    # The server accepts only the formats it knows: dashboard, presentation, document, qa.
+    "dashboard.format-preview": {"style": "presentation"},
+    # ``task`` needs a task_id too; the whole-view scope is the one that stands alone.
+    "view.impact": {"scope": "view"},
+    # One [type, id] pair per resource, as ``browse resources`` lists them.
+    "browse.resources.bulk": {"items": [["dataview", 42]]},
     "view.export.azure-blob": {
         "storage_account_name": "storage-account",
         "tenant_id": "tenant-id",
@@ -195,22 +226,13 @@ _EXAMPLE_INPUT_HINTS: dict[str, dict[str, Any]] = {
     },
     "view.ai.profile": {"dataset_id": 456, "action": "insights"},
     "connector.query.generate": {"query": "Total sales for January"},
-    # HighlightEntry: cf_type + payload{FORMAT, CONDITION keyed by internal
-    # column name}; the create response and ``conditional-format list`` carry
-    # the generated rule_id that delete-all needs.
+    # One rule over many columns; the create response and ``conditional-format
+    # list`` carry the generated rule_id that delete-all needs.
     "view.conditional-format.create": {
-        "rule": {
-            "cf_type": "RULE",
-            "payload": {
-                "FORMAT": {
-                    "name": "Flag open orders",
-                    "color": "red",
-                    "applies_to": "row",
-                    "column_ids": "[]",
-                },
-                "CONDITION": {"OR": [{"column_1": {"CONTAINS": {"VALUE": ["Open"]}}}]},
-            },
-        }
+        "columns": ["Q1", "Q2", "Q3"],
+        "operator": "<",
+        "value": 55,
+        "color": "red",
     },
     "view.conditional-format.delete-all": {"rule_id": "bca0ff33bd6f8ed1"},
     "dataset.bulk-delete": {"dataset_ids": [456, 457]},

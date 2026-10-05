@@ -184,8 +184,7 @@ Onboard me first:
    `recommendation`, print exactly this and wait until I say done: "In the
    Mammoth web app open Workspace settings → API Tokens → Create token (no
    project, so I can create projects), copy the token (it starts with mm_ and
-   is shown once), and note the workspace id (the number after /workspaces/
-   in the address bar), then run in your own terminal: mammoth auth login" —
+   is shown once), then run in your own terminal: mammoth auth login" —
    never ask for, read, or pass the token yourself, and never run auth login.
 3. Require `mammoth doctor` to pass, then run `mammoth skill show` and
    follow the guide it prints.

@@ -139,6 +139,8 @@ class AIAPI:
     ) -> dict[str, Any]:
         """Get data generation information for a dataview.
 
+        The route answers only a validation request, so ``validate_only=true`` is sent.
+
         Args:
             dataview_id: ID of the dataview.
             dataset_id: ID of the dataset (auto-detected if not provided).
@@ -152,6 +154,7 @@ class AIAPI:
         return await self._client._request_json(
             "GET",
             f"/workspaces/{ws}/projects/{proj}/datasets/{ds}/dataviews/{dataview_id}/data/generate",
+            params={"validate_only": "true"},
         )
 
     async def generate_sql(

@@ -4,6 +4,7 @@ Dataviews API client for managing dataviews in Mammoth.
 
 from __future__ import annotations
 
+from decimal import Decimal
 from typing import TYPE_CHECKING, Any
 
 from mammoth.exceptions import MammothValidationError
@@ -14,6 +15,9 @@ if TYPE_CHECKING:
 _list = list  # Alias to avoid shadowing by method name
 
 ERR_DATAVIEW_ID_POSITIVE = "`dataview_id` must be a positive integer, got {0}."
+ERR_IMPACT_SCOPE = '`scope` must be "task" or "view", got {0!r}.'
+ERR_IMPACT_TASK_ID = '`task_id` is required when `scope` is "task".'
+_IMPACT_SCOPES = frozenset({"task", "view"})
 
 #: Aggregate functions supported by :meth:`DataviewsAPI.aggregate`. Deliberately
 #: a small, exact-match subset of the backend's ``PivotAggregationFunction``
@@ -188,6 +192,25 @@ def _add_explore_percentages(rows: list[dict[str, Any]]) -> None:
     total = sum(row.get("agg_0") or 0 for row in rows)
     for row in rows:
         row["percentage"] = round((row.get("agg_0") or 0) / total * 100, 2) if total else 0.0
+
+
+def _add_explore_cumulative(rows: list[dict[str, Any]]) -> None:
+    """Add a ``cumulative`` running total to each row, in bucket order.
+
+    The running total is of the per-bucket metric (``agg_1``) when the explore
+    carries one, else of the bucket count (``agg_0``). It always runs over every
+    bucket the query returned, in ascending bucket order, whatever display order
+    or page the caller then asks for. A blank bucket has no place in the order, so
+    it gets ``None``.
+    """
+    field = "agg_1" if any("agg_1" in row for row in rows) else "agg_0"
+    running = Decimal(0)
+    for row in sorted(rows, key=lambda r: (r.get("group_0") is None, r.get("group_0") or 0)):
+        if row.get("group_0") is None:
+            row["cumulative"] = None
+            continue
+        running += Decimal(str(row.get(field) or 0))
+        row["cumulative"] = float(running)
 
 
 #: ``sort`` values :meth:`DataviewsAPI.explore` accepts: by count or by bucket value.
@@ -383,7 +406,7 @@ class DataviewsAPI:
 
             await client.dataviews.update(
                 dataset_id=123, dataview_id=456,
-                patch_data=[{"op": "replace", "path": "/name", "value": "Renamed"}],
+                patch_data=[{"op": "replace", "path": "name", "value": "Renamed"}],
             )
         """
         ws = workspace_id or self._ws()
@@ -417,6 +440,49 @@ class DataviewsAPI:
         return await self._client._request_json(
             "DELETE",
             f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/dataviews/{dataview_id}",
+        )
+
+    async def delete_impact(
+        self,
+        dataset_id: int,
+        dataview_id: int,
+        scope: str,
+        task_id: int | None = None,
+        workspace_id: int | None = None,
+        project_id: int | None = None,
+    ) -> dict[str, Any]:
+        """List what deleting a pipeline task or a whole view would affect (read only).
+
+        Args:
+            dataset_id: ID of the dataset.
+            dataview_id: ID of the dataview.
+            scope: ``"task"`` for one pipeline task (then *task_id* is required) or
+                ``"view"`` for the whole view.
+            task_id: ID of the task, for ``scope="task"``.
+            workspace_id: ID of the workspace (uses client default if not provided).
+            project_id: ID of the project (uses client default if not provided).
+
+        Returns:
+            Dict with the affected ``dashboards``, ``exports``, ``views`` (dependent
+            dataviews) and ``automations``, plus ``dependencies`` when the scope is a task.
+
+        Raises:
+            MammothValidationError: If *scope* is not ``task`` or ``view``, or a task
+                scope has no *task_id*.
+        """
+        if scope not in _IMPACT_SCOPES:
+            raise MammothValidationError(ERR_IMPACT_SCOPE.format(scope))
+        if scope == "task" and task_id is None:
+            raise MammothValidationError(ERR_IMPACT_TASK_ID)
+        ws = workspace_id or self._ws()
+        proj = project_id or self._proj()
+        params: dict[str, Any] = {"scope": scope}
+        if task_id is not None:
+            params["task_id"] = task_id
+        return await self._client._request_json(
+            "GET",
+            f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/dataviews/{dataview_id}/impact",
+            params=params,
         )
 
     async def bulk_delete(
@@ -605,8 +671,8 @@ class DataviewsAPI:
         Raises:
             MammothValidationError: If neither or both of *aggregations*/
                 *group_by* and *metric* are given, if a *function* is not one
-                of SUM, COUNT, AVG, MIN, MAX, STDDEV, DISTINCT_COUNT, or if *column* is missing for a
-                non-COUNT aggregation.
+                of SUM, COUNT, AVG, MIN, MAX, STDDEV, DISTINCT_COUNT, or if *column* is missing
+                for a non-COUNT aggregation.
 
         Example::
 
@@ -655,6 +721,7 @@ class DataviewsAPI:
         limit: int | None = None,
         offset: int | None = None,
         sort: str | None = None,
+        cumulative: bool = False,
         workspace_id: int | None = None,
         project_id: int | None = None,
         timeout: int | None = None,
@@ -686,8 +753,8 @@ class DataviewsAPI:
             level: Truncation level (DATE) or resolution level (NUMERIC);
                 ignored for other column types. Defaults to "AUTO".
             metric: An optional ``{"column": ..., "function": ..., "as_name":
-                ...}`` dict (SUM, COUNT, AVG, MIN, MAX, STDDEV or DISTINCT_COUNT) computed per bucket
-                in addition to the COUNT.
+                ...}`` dict (SUM, COUNT, AVG, MIN, MAX, STDDEV or DISTINCT_COUNT) computed per
+                bucket in addition to the COUNT.
             condition: Filter condition dict applied before exploring (optional).
             sequence: Pipeline step to read data at (default: latest).
             limit: Maximum number of buckets to return (default: 20 for TEXT,
@@ -695,6 +762,9 @@ class DataviewsAPI:
             offset: Buckets to skip first ("load more"; default 0).
             sort: count_desc, count_asc, value_asc or value_desc (default:
                 count_desc for TEXT, value_asc for DATE/NUMERIC).
+            cumulative: Add a ``cumulative`` running total per bucket (of the
+                *metric* when given, else of the count), over every bucket in
+                ascending bucket order, before any *sort*/*limit* is applied.
             workspace_id: ID of the workspace (uses client default if not provided).
             project_id: ID of the project (uses client default if not provided).
             timeout: Max job wait time in seconds (default: client.job_timeout).
@@ -740,6 +810,8 @@ class DataviewsAPI:
         if isinstance(rows, list):
             typed_rows = [row for row in rows if isinstance(row, dict)]
             _add_explore_percentages(typed_rows)
+            if cumulative:
+                _add_explore_cumulative(typed_rows)
             typed_rows = _explore_sort_and_limit(typed_rows, normalized_type, sort, (offset, limit))
             response = {**response, "data": typed_rows}
         return response

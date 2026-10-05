@@ -8,7 +8,9 @@ captured envelope therefore live in a :class:`contextvars.ContextVar`, never in
 
 from __future__ import annotations
 
-from contextvars import ContextVar
+from collections.abc import Callable, Iterable
+from concurrent.futures import Executor
+from contextvars import ContextVar, copy_context
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
@@ -54,3 +56,15 @@ def enter(call: EmbeddedCall) -> Any:
 def leave(token: Any) -> None:
     """Restore the context that was current before :func:`enter`."""
     _CURRENT.reset(token)
+
+
+def pool_map[T, R](pool: Executor, fn: Callable[[T], R], items: Iterable[T]) -> list[R]:
+    """``pool.map(fn, items)`` with each worker running in a copy of this context.
+
+    A pool thread does not inherit context variables, so without this an
+    embedded call's workers would fall back to the host's own profile login.
+    The copies are taken here, in the calling thread, one per item (a context
+    cannot be entered by two threads at once).
+    """
+    jobs = [(copy_context(), item) for item in items]
+    return list(pool.map(lambda job: job[0].run(fn, job[1]), jobs))

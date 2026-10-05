@@ -212,6 +212,9 @@ DECLARATIONS["view.export.publish-db-update"] = _no(
 
 DECLARATIONS["dataset.create"] = _data_from_dataset("result.dataset_id")
 DECLARATIONS["dataset.create-from-pdf"] = _obj("dataset.list", {})
+DECLARATIONS["dataset.broken-rows.resolve"] = _obj(
+    "dataset.broken-rows.list", {"dataset_id": "positional.0"}
+)
 DECLARATIONS["dataset.bulk-delete"] = _obj("dataset.list", {})
 DECLARATIONS["dataset.bulk-update"] = _obj("dataset.list", {})
 DECLARATIONS["dataset.delete"] = _obj("dataset.list", {})

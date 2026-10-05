@@ -1,0 +1,12 @@
+{
+  "api_version": "0.1.0",
+  "artifact": "mammoth-cli-server-openapi-snapshot",
+  "generation_method": "litestar app.openapi_schema.to_schema() exported from a local worktree of origin/master (apiv2.main:app imported under SQLAlchemy 1.4.48 / py3.14; httpx2 and other optional service modules import-stubbed, no network, const.ini from MM_MVCSERVICE_CONST_PATH)",
+  "openapi_version": "3.1.0",
+  "operation_count": 544,
+  "path_count": 371,
+  "schema_count": 1038,
+  "sha256": "c27e6aebe71a7ca453570c6cb4dee6a2d9ffac6c6f6a0b0503b9af4488b24e21",
+  "source_ref": "origin/master",
+  "source_sha": "600d78ef6b6c379029b3a1e4205658bc8e8e19c4"
+}

@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import asyncio
 import inspect
+import os
 import re
 import threading
 from collections.abc import Callable
@@ -24,7 +25,7 @@ from types import TracebackType
 from typing import Any
 
 from mammoth.client import MammothClient
-from mammoth.exceptions import MammothColumnError
+from mammoth.exceptions import MammothAPIError, MammothColumnError
 
 from mammoth_cli.context.resolver import ResolvedAuth
 from mammoth_cli.errors.envelope import (
@@ -38,7 +39,7 @@ from mammoth_cli.errors.envelope import (
     missing_project_error,
 )
 from mammoth_cli.output.progress import spinner
-from mammoth_cli.runtime import parents
+from mammoth_cli.runtime import embedded, parents
 from mammoth_cli.runtime.dryrun import DryRunStop
 from mammoth_cli.services.coerce import coerce_arguments
 from mammoth_cli.services.conditions import CONDITION_KWARG, compile_condition
@@ -81,6 +82,25 @@ def _loop_running_here() -> bool:
     except RuntimeError:
         return False
     return True
+
+
+AGENT_RUN_ENV = "MAMMOTH_AGENT_RUN"
+AGENT_RUN_HEADER = "X-Mammoth-Agent-Run"
+
+
+def _signature_misfit(method: Any, kwargs: dict[str, Any]) -> str | None:
+    """Why ``kwargs`` do not bind to ``method``'s signature, or ``None`` when they do.
+
+    Tells a call made with the wrong fields apart from a ``TypeError`` raised
+    by a fault inside the SDK, which must not be reported as bad input.
+    """
+    try:
+        inspect.signature(method).bind(**kwargs)
+    except TypeError as exc:
+        return str(exc)
+    except ValueError:
+        return None
+    return None
 
 
 class SdkMammothService:
@@ -131,14 +151,21 @@ class SdkMammothService:
             kwargs["job_timeout"] = job_timeout
         if pipeline_timeout is not None:
             kwargs["pipeline_timeout"] = pipeline_timeout
+        if embedded.active():
+            # The server answering is this process's own worker: a retry of a 5xx read
+            # adds load to the worker that is already overloaded.
+            kwargs["retry_gateway_errors"] = False
         credential: dict[str, Any] = (
             {"api_token": auth.api_token}
             if auth.api_token is not None
-            else {"api_key": auth.api_key, "api_secret": auth.api_secret}
+            else {
+                "api_key": auth.api_key,
+                "api_secret": auth.api_secret,
+                "workspace_id": auth.workspace_id,
+            }
         )
         self._client = MammothClient(
             **credential,
-            workspace_id=auth.workspace_id,
             base_url=auth.base_url,
             **kwargs,
         )
@@ -147,12 +174,21 @@ class SdkMammothService:
         self._loop = asyncio.new_event_loop()
         # One loop serves every call; threads (view data profile fans out) take turns.
         self._loop_lock = threading.RLock()
-        if auth.headers:
-            # After construction: the client sets its credential headers in
-            # ``__init__``, and a forwarded session must replace them.
-            self._client.session.headers.update(auth.headers)
-        if project_id is not None:
-            self._client.set_project_id(project_id)
+        try:
+            if auth.headers:
+                # After construction: the client sets its credential headers in
+                # ``__init__``, and a forwarded session must replace them.
+                self._client.session.headers.update(auth.headers)
+            run_id = os.environ.get(AGENT_RUN_ENV, "").strip()
+            if run_id:
+                # A leg of a durable agent run names its run, so the server can
+                # refuse the run's own resume and extend.
+                self._client.session.headers[AGENT_RUN_HEADER] = run_id
+            if project_id is not None:
+                self._client.set_project_id(project_id)
+        except BaseException:
+            self._loop.close()
+            raise
 
     def _run(self, work: Any) -> Any:
         """Run one SDK coroutine to completion and hand back its result.
@@ -198,12 +234,21 @@ class SdkMammothService:
             with spinner(self._progress):
                 return self._run(method(**kwargs))
         except TypeError as exc:
+            reason = _signature_misfit(method, kwargs)
+            if reason is None:
+                # The arguments fit; this TypeError is a fault inside the call.
+                raise map_sdk_exception(
+                    exc,
+                    profile=self._profile,
+                    project_id=self._project_id,
+                    workspace_id=self._workspace_id,
+                ) from exc
             raise CliError(
                 code=CODE_INVALID_ARGUMENTS,
                 message=f"The supplied fields do not fit '{sdk_symbol}'.",
                 exit_status=EXIT_USAGE,
                 hint="Check the command schema with 'mammoth schema get'.",
-                details={"reason": str(exc)},
+                details={"reason": reason},
             ) from exc
         except ValueError as exc:
             # Every project-scoped SDK sub-client raises this exact message
@@ -234,7 +279,26 @@ class SdkMammothService:
                 profile=self._profile,
                 project_id=self._project_id,
                 workspace_id=self._workspace_id,
+                non_member_project_id=self._non_member_project(exc, kwargs),
             ) from exc
+
+    def _non_member_project(self, exc: Exception, kwargs: dict[str, Any]) -> int | None:
+        """The project a 403 was aimed at when the caller is not a member of it.
+
+        The API's 403 does not say why; the member-only project list does. One
+        extra read, made only on this error path, so the agent can tell a user
+        they are not in the project instead of "access denied".
+        """
+        if not (isinstance(exc, MammothAPIError) and exc.status_code == 403):
+            return None
+        project_id = kwargs.get("project_id") or self._project_id
+        if not isinstance(project_id, int):
+            return None
+        try:
+            members = self._run(self._client.projects.list_all())
+        except MammothAPIError:
+            return None
+        return None if any(p.get("id") == project_id for p in members) else project_id
 
     def _project_miss_error(self, exc: ValueError, project: Any) -> CliError | None:
         """Map ``ProjectsAPI.get``'s "Project ... not found" ValueError to not_found.
@@ -482,12 +546,15 @@ class SdkMammothService:
                 details={"reason": str(exc)},
             ) from exc
         except TypeError as exc:
+            reason = _signature_misfit(attribute, kwargs)
+            if reason is None:
+                raise map_sdk_exception(exc) from exc
             raise CliError(
                 code=CODE_INVALID_ARGUMENTS,
                 message=f"The supplied fields do not fit View.{method}.",
                 exit_status=EXIT_USAGE,
                 hint="Check the command schema with 'mammoth schema get'.",
-                details={"reason": str(exc)},
+                details={"reason": reason},
             ) from exc
         except Exception as exc:
             raise map_sdk_exception(exc) from exc
@@ -797,12 +864,15 @@ class SdkMammothService:
             CliError: Mapped from any SDK exception (auth, network, timeout).
         """
         try:
-            return self._run(self._client.projects.list(limit=1))
+            result: dict[str, Any] = self._run(self._client.projects.list(limit=1))
+            return result
         except Exception as exc:
             raise map_sdk_exception(exc) from exc
 
-    def list_projects(self, limit: int = 100, offset: int = 0) -> dict[str, Any]:
-        """List projects in the current workspace.
+    def list_projects(
+        self, limit: int = 100, offset: int = 0, include_non_members: bool = False
+    ) -> dict[str, Any]:
+        """List projects in the current workspace (member projects unless widened).
 
         The projects route caps ``limit`` at 100 and pages with a server-side
         ``offset``; a larger ``limit`` is served by walking the pages.
@@ -810,6 +880,8 @@ class SdkMammothService:
         Args:
             limit: Maximum number of results.
             offset: Number of leading results to skip.
+            include_non_members: Also list projects the caller is not a member
+                of; each row then carries ``member``.
 
         Returns:
             The raw project-list response, with ``projects`` holding at most
@@ -820,9 +892,15 @@ class SdkMammothService:
         """
         try:
             if limit <= _PROJECT_PAGE_SIZE:
-                response = self._run(self._client.projects.list(limit=limit, offset=offset))
+                response = self._run(
+                    self._client.projects.list(
+                        limit=limit, offset=offset, include_non_members=include_non_members
+                    )
+                )
                 return {**response, "projects": list(response.get("projects", []))}
-            everything = self._run(self._client.projects.list_all())
+            everything = self._run(
+                self._client.projects.list_all(include_non_members=include_non_members)
+            )
         except Exception as exc:
             raise map_sdk_exception(exc) from exc
         return {
@@ -832,14 +910,20 @@ class SdkMammothService:
             "next": "",
         }
 
-    def list_all_projects(self) -> list[dict[str, Any]]:
-        """Every project in the workspace, across the route's 100-row pages.
+    def list_all_projects(self, include_non_members: bool = False) -> list[dict[str, Any]]:
+        """Every member project in the workspace, across the route's 100-row pages.
+
+        Args:
+            include_non_members: Also list projects the caller is not a member
+                of; each row then carries ``member``.
 
         Raises:
             CliError: Mapped from any SDK exception.
         """
         try:
-            return list(self._run(self._client.projects.list_all()))
+            return list(
+                self._run(self._client.projects.list_all(include_non_members=include_non_members))
+            )
         except Exception as exc:
             raise map_sdk_exception(exc) from exc
 
@@ -856,7 +940,8 @@ class SdkMammothService:
             CliError: Mapped from any SDK exception, including not-found.
         """
         try:
-            return self._run(self._client.projects.get(project=project_id))
+            result: dict[str, Any] = self._run(self._client.projects.get(project=project_id))
+            return result
         except Exception as exc:
             raise map_sdk_exception(exc) from exc
 
@@ -876,7 +961,8 @@ class SdkMammothService:
         if self.gate is not None:
             self.gate("mammoth.api.projects.ProjectsAPI.create", {"name": name, **kwargs})
         try:
-            return self._run(self._client.projects.create(name, **kwargs))
+            result: dict[str, Any] = self._run(self._client.projects.create(name, **kwargs))
+            return result
         except Exception as exc:
             raise map_sdk_exception(exc) from exc
 
@@ -895,7 +981,8 @@ class SdkMammothService:
         if self.gate is not None:
             self.gate("mammoth.api.projects.ProjectsAPI.delete", {"project_id": project_id})
         try:
-            return self._run(self._client.projects.delete(project_id))
+            result: dict[str, Any] = self._run(self._client.projects.delete(project_id))
+            return result
         except Exception as exc:
             raise map_sdk_exception(exc) from exc
 
@@ -903,8 +990,10 @@ class SdkMammothService:
         """Close the owned HTTP session and its loop. Safe to call twice."""
         if self._loop.is_closed():
             return
-        self._run(self._client.close())
-        self._loop.close()
+        try:
+            self._run(self._client.close())
+        finally:
+            self._loop.close()
 
     def __enter__(self) -> SdkMammothService:
         """Enter the service as a context manager."""

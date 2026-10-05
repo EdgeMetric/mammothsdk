@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from mammoth_cli.commands.dataset import named_project
+from mammoth_cli.commands.dataset import named_project, search_cut_note, search_hits
 from mammoth_cli.errors.envelope import (
     CODE_INVALID_ARGUMENT,
     CODE_MISSING_ARGUMENT,
@@ -104,63 +104,43 @@ def _require_string_positional(invocation: Invocation, name: str) -> str:
     return str(invocation.extra_args[0])
 
 
-# The projects endpoint accepts at most limit=100 and exposes no offset, so a
-# cross-project search can see at most 100 projects; the result says when the
-# list was cut there.
-_MAX_PROJECTS_SEARCHED = 100
-
-
 def folder_find(invocation: Invocation) -> HandlerResult:
     """Search folder names for a substring across every visible project.
 
-    Read-only local composite: lists the projects the credential can see (or
-    just the one named by ``--project``), then lists folders in each and
-    keeps a case-insensitive substring match. Does not require an active
-    project.
+    Read-only local composite: one resource-search request (the workspace's, or
+    the project's with ``--project``) returns every folder whose name contains
+    the substring, case-insensitively, and the projects the credential can see
+    name them. Does not require an active project.
     """
     name_substring = _require_string_positional(invocation, "name substring")
-    needle = name_substring.lower()
-    matches: list[dict[str, Any]] = []
     with open_service(invocation) as (service, auth):
-        listing = service.list_projects(limit=_MAX_PROJECTS_SEARCHED)
-        visible = list(listing.get("projects", [])) if isinstance(listing, dict) else []
+        visible = list(service.list_all_projects())
         if invocation.project is not None:
             projects: list[dict[str, Any]] = [named_project(service, invocation.project, visible)]
         else:
             projects = visible
-        for project in projects:
-            project_id = project.get("id")
-            if project_id is None:
-                continue
-            project_name = project.get("name")
-            # FoldersAPI.list caps at 100 per page and has no list_all; request
-            # the maximum so a project's folders are not silently truncated.
-            response = service.call(
-                "mammoth.api.folders.FoldersAPI.list", project_id=project_id, limit=100
-            )
-            for folder in _folders_of(response):
-                name = folder.get("name") if isinstance(folder, dict) else None
-                if isinstance(name, str) and needle in name.lower():
-                    matches.append(
-                        {
-                            "project_id": project_id,
-                            "project_name": project_name,
-                            "id": folder.get("id"),
-                            "name": name,
-                        }
-                    )
+        rows, cut = search_hits(service, "label", name_substring, invocation.project)
+        names = {p.get("id"): p.get("name") for p in projects}
+        matches = [
+            {
+                "project_id": row["project_id"],
+                "project_name": names[row["project_id"]],
+                "id": row.get("object_id"),
+                "name": row.get("name"),
+            }
+            for row in rows
+            if row.get("project_id") in names
+        ]
         meta = {
             "profile": invocation.profile,
             "workspace_id": auth.workspace_id,
             "project_id": invocation.project,
         }
-    return {
-        "matches": matches,
-        "projects_searched": len(projects),
-        "projects_truncated": (
-            invocation.project is None and len(projects) >= _MAX_PROJECTS_SEARCHED
-        ),
-    }, meta
+    result: dict[str, Any] = {"matches": matches, "projects_searched": len(projects)}
+    if cut:
+        result["truncated"] = True
+        result["note"] = search_cut_note("folders")
+    return result, meta
 
 
 def folder_list(invocation: Invocation) -> HandlerResult:

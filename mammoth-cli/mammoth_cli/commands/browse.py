@@ -16,6 +16,7 @@ from typing import Any
 from mammoth_cli.errors.envelope import (
     CODE_INVALID_ARGUMENT,
     CODE_MISSING_ARGUMENT,
+    CODE_MISSING_FIELD,
     CODE_SDK_SYMBOL_UNRESOLVED,
     EXIT_USAGE,
     CliError,
@@ -85,6 +86,26 @@ def _forward_optional(
             kwargs[field] = document[field]
 
 
+#: The id a dataset or a view is known by elsewhere in the CLI; a hit's ``id`` is its tree id.
+_OBJECT_ID_KEYS = {"datasource": "dataset_id", "dataview": "view_id"}
+
+
+def _with_object_ids(data: Any) -> Any:
+    """Name the id a command takes: ``dataset_id`` / ``view_id`` beside the tree ``id``."""
+    rows = data.get("resources") if isinstance(data, dict) else None
+    if not isinstance(rows, list):
+        return data
+    named = [
+        (
+            {**row, key: row.get("object_id")}
+            if isinstance(row, dict) and (key := _OBJECT_ID_KEYS.get(str(row.get("resource_type"))))
+            else row
+        )
+        for row in rows
+    ]
+    return {**data, "resources": named}
+
+
 def browse_folder(invocation: Invocation) -> HandlerResult:
     """Browse resources inside one folder of the active project.
 
@@ -149,3 +170,90 @@ def browse_workspace(invocation: Invocation) -> HandlerResult:
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), **kwargs)
     return data, _meta(invocation, auth.workspace_id, resolved_project(invocation))
+
+
+def browse_resources(invocation: Invocation) -> HandlerResult:
+    """List one project's resources a cursor page at a time (resources v2)."""
+    project_id = require_project(invocation)
+    document = invocation.load_input() or {}
+    kwargs: dict[str, Any] = {"project_id": project_id}
+    _forward_optional(
+        document,
+        kwargs,
+        (
+            "parent_type",
+            "parent_id",
+            "resource_type",
+            "search",
+            "cursor",
+            "limit",
+            "sort",
+            "fields",
+        ),
+    )
+    with open_service(invocation) as (service, auth):
+        data = service.call(_symbol(invocation), **kwargs)
+    return _with_object_ids(data), _meta(invocation, auth.workspace_id, project_id)
+
+
+def browse_resource(invocation: Invocation) -> HandlerResult:
+    """Get one resource of the active project: type, then id, as positionals."""
+    project_id = require_project(invocation)
+    resource_type = invocation.positional("resource_type")
+    object_id = invocation.positional("object_id")
+    if not resource_type or object_id is None:
+        raise CliError(
+            code=CODE_MISSING_ARGUMENT,
+            message="This command requires a resource type and a resource id.",
+            exit_status=EXIT_USAGE,
+            hint="Pass the type, then the id: mammoth browse resource dataset 123.",
+        )
+    with open_service(invocation) as (service, auth):
+        data = service.call(
+            _symbol(invocation),
+            resource_type=str(resource_type),
+            object_id=int(object_id),
+            project_id=project_id,
+        )
+    return data, _meta(invocation, auth.workspace_id, project_id)
+
+
+def browse_ancestors(invocation: Invocation) -> HandlerResult:
+    """Get the folder path (root first) down to a folder of the active project."""
+    project_id = require_project(invocation)
+    resource_id = _require_int_positional(invocation, "resource id")
+    with open_service(invocation) as (service, auth):
+        data = service.call(_symbol(invocation), resource_id=resource_id, project_id=project_id)
+    return data, _meta(invocation, auth.workspace_id, project_id)
+
+
+def browse_search(invocation: Invocation) -> HandlerResult:
+    """Search resources across every project of the workspace (resources v2).
+
+    ``resource_type`` ``dataset`` means the route's ``datasource``. Each dataset hit
+    carries ``dataset_id`` and each view hit ``view_id``: pass those, never the tree ``id``.
+    """
+    document = invocation.load_input() or {}
+    kwargs: dict[str, Any] = {}
+    _forward_optional(
+        document, kwargs, ("search", "resource_type", "cursor", "limit", "sort", "fields")
+    )
+    with open_service(invocation) as (service, auth):
+        data = service.call(_symbol(invocation), **kwargs)
+    return _with_object_ids(data), _meta(invocation, auth.workspace_id, None)
+
+
+def browse_resources_bulk(invocation: Invocation) -> HandlerResult:
+    """Get many resources of the active project by type and id in one go (resources v2)."""
+    project_id = require_project(invocation)
+    document = invocation.load_input() or {}
+    if "items" not in document:
+        raise CliError(
+            code=CODE_MISSING_FIELD,
+            message="This command requires the 'items' input field.",
+            exit_status=EXIT_USAGE,
+            hint='Pass pairs via --input, for example: --input \'{"items": [["dataview", 42]]}\'.',
+        )
+    with open_service(invocation) as (service, auth):
+        data = service.call(_symbol(invocation), items=document["items"], project_id=project_id)
+    return {"resources": data}, _meta(invocation, auth.workspace_id, project_id)

@@ -85,11 +85,11 @@ class TestClientInit:
             mock_session = MagicMock()
             mock_session.headers = MagicMock()
             mock_session_cls.return_value = mock_session
-            client = MammothClient(api_token=" mm_abc123 ", workspace_id=42)
+            client = MammothClient(api_token=" mm_abc123 ")
         headers = mock_session.headers.update.call_args_list[0][0][0]
         assert headers["Authorization"] == "Bearer mm_abc123"
         assert "X-API-KEY" not in headers and "X-API-SECRET" not in headers
-        assert headers["X-WORKSPACE-ID"] == "42"
+        assert "X-WORKSPACE-ID" not in headers
         assert client.api_token == "mm_abc123"
 
     @pytest.mark.parametrize(
@@ -98,8 +98,8 @@ class TestClientInit:
             {"workspace_id": 1},
             {"api_key": "k", "workspace_id": 1},
             {"api_token": "mm_x", "api_key": "k", "api_secret": "s", "workspace_id": 1},
-            {"api_token": "  ", "workspace_id": 1},
-            {"api_token": "mm_x"},
+            {"api_token": "  "},
+            {"api_token": "mm_x", "workspace_id": 1},
         ],
     )
     async def test_credential_combinations_are_validated(self, kwargs):

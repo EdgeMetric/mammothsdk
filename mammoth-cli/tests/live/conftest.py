@@ -3,26 +3,26 @@
 These tests run the real CLI in-process against a real Mammoth tenant, with
 no faked transport. They are marked ``live`` and therefore deselected by the
 default ``-m 'not live'`` addopts; run them explicitly with ``-m live`` once a
-credentialed environment is loaded (for example ``set -a; . ./.env.plan; set
-+a``). The whole suite skips cleanly when credentials are absent, so it is a
-no-op in CI and offline development.
+credentialed environment is loaded. The whole suite skips cleanly when
+credentials are absent, so it is a no-op in CI and offline development.
 
-Authentication requires a login; there is no environment credential path. The
-suite reads a developer's credentials from the variables below purely as a
-convenience, then logs them into an isolated default profile so the in-process
-CLI authenticates the same way a real user would.
+Authentication is the ``mm_...`` API token only (a key + secret login no longer
+exists). The token is read from the file named by ``MAMMOTH_EVAL_TOKEN_FILE``
+(the test identity, for example ``apitests``) and the server comes from
+``MAMMOTH_SERVER_PREFIX`` (one DNS label, default ``app``; on koyal ``koyal``).
+The token names its own workspace; the CLI learns it from the server.
 
 Alternatively set ``MAMMOTH_LIVE_LOGIN_FACTORY`` to ``module:callable``
-returning an :class:`~mammoth_cli.context.resolver.ExplicitLogin` (for example
-``api.agents.evals.world:build_login`` on a box with a test identity). When it
-is set the factory wins: ``live_env`` needs no key/secret and ``_live_login``
-does nothing. Files that create their own scratch project and data use the
-``login``, ``live_cli`` and ``scratch_project`` fixtures below and run under
-either path.
+returning an :class:`~mammoth_cli.context.resolver.ExplicitLogin` carrying an
+``api_token`` (for example ``api.agents.evals.world:build_login`` on a box
+with a test identity). When it is set the factory wins.
 
-The suite never mutates pre-existing data. Any test that needs a write must
-create and delete its own disposable resource, in the configured test project
-or in a ``scratch_project``.
+Every command runs as the CLI a person runs, not as an embedded host call:
+the token is logged into an isolated default profile, so file uploads and
+``--input PATH`` work. The suite never touches a developer's real profiles
+and never prints the token. It never mutates pre-existing data. Any test that
+needs a write must create and delete its own disposable resource, in the
+configured test project or in a ``scratch_project``.
 """
 
 from __future__ import annotations
@@ -44,11 +44,9 @@ sys.path.append(str(Path(__file__).parent))
 
 from live_harness import LiveCli, SalesData  # noqa: E402
 
-# Variables the live harness reads a developer's credentials from. The resolver
-# never reads these; the ``_live_login`` fixture logs them into a profile.
-ENV_API_KEY = "MAMMOTH_API_KEY"
-ENV_API_SECRET = "MAMMOTH_API_SECRET"
-ENV_WORKSPACE_ID = "MAMMOTH_WORKSPACE_ID"
+# The file holding the ``mm_...`` token of the test identity.
+ENV_TOKEN_FILE = "MAMMOTH_EVAL_TOKEN_FILE"
+# One DNS label naming the server (default ``app``).
 ENV_SERVER_PREFIX = "MAMMOTH_SERVER_PREFIX"
 
 # Convention for the live suite only: the resolver reads the active project
@@ -57,65 +55,84 @@ ENV_SERVER_PREFIX = "MAMMOTH_SERVER_PREFIX"
 # ``--project``.
 ENV_PROJECT_ID = "MAMMOTH_PROJECT_ID"
 
-# ``module:callable`` returning an ExplicitLogin; replaces the key/secret login.
+# ``module:callable`` returning an ExplicitLogin with an ``api_token``.
 ENV_LOGIN_FACTORY = "MAMMOTH_LIVE_LOGIN_FACTORY"
 
-_REQUIRED = (ENV_API_KEY, ENV_API_SECRET, ENV_WORKSPACE_ID)
 
-
-def _missing_credentials() -> list[str]:
-    """Return the required credential variables that are unset or empty."""
-    return [name for name in _REQUIRED if not os.environ.get(name)]
+def _token_from_file(path_text: str) -> str:
+    """Read the token file; its content is never echoed, even on an error."""
+    path = Path(path_text)
+    if not path.is_file():
+        pytest.skip(f"{ENV_TOKEN_FILE} does not name a file")
+    token = path.read_text(encoding="utf-8").strip()
+    if not token.startswith("mm_"):
+        pytest.skip(f"the file named by {ENV_TOKEN_FILE} does not hold an mm_ token")
+    return token
 
 
 @pytest.fixture(scope="session")
-def live_env() -> dict[str, str]:
-    """Return the live credentials, skipping the suite when they are incomplete.
+def login() -> ExplicitLogin:
+    """The token login: the factory when set, else the token file; skips with neither."""
+    factory_ref = os.environ.get(ENV_LOGIN_FACTORY)
+    if factory_ref:
+        module, _, name = factory_ref.partition(":")
+        factory = getattr(importlib.import_module(module), name)
+        made: ExplicitLogin = factory()
+        return made
+    token_file = os.environ.get(ENV_TOKEN_FILE)
+    if not token_file:
+        pytest.skip(f"live credentials not set: {ENV_TOKEN_FILE} (or {ENV_LOGIN_FACTORY})")
+    return ExplicitLogin(
+        api_key=None,
+        api_secret=None,
+        server_prefix=os.environ.get(ENV_SERVER_PREFIX),
+        api_token=_token_from_file(token_file),
+    )
 
-    Includes the server prefix when set so the CLI resolves the correct
-    endpoint; otherwise the CLI falls back to its default base url.
-    """
-    if os.environ.get(ENV_LOGIN_FACTORY):
-        return {}
-    missing = _missing_credentials()
-    if missing:
-        pytest.skip(f"live credentials not set: {', '.join(missing)}")
-    env = {name: os.environ[name] for name in _REQUIRED}
-    prefix = os.environ.get(ENV_SERVER_PREFIX)
-    if prefix:
-        env[ENV_SERVER_PREFIX] = prefix
-    return env
 
-
-@pytest.fixture(autouse=True)
-def _live_login(live_env: dict[str, str], tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    """Log the live credentials into an isolated default profile.
+@pytest.fixture(scope="session", autouse=True)
+def live_profile(login: ExplicitLogin, tmp_path_factory: pytest.TempPathFactory) -> Iterator[None]:
+    """Log the token into an isolated default profile for the whole run.
 
     Isolates the config directory so the login never touches a developer's real
-    profiles, then saves the profile and file-backed credentials the resolver
-    reads. Depends on ``live_env`` so the whole suite skips when credentials are
-    absent. Does nothing when a login factory is configured.
+    profiles, then saves the profile and the file-backed credential the
+    resolver reads. Depends on ``login`` so the whole suite skips when
+    credentials are absent.
     """
-    if os.environ.get(ENV_LOGIN_FACTORY):
-        return
-    monkeypatch.setattr(
-        "mammoth_cli.context.profiles.platformdirs.user_config_dir",
-        lambda *_a, **_k: str(tmp_path),
+    if not login.api_token:
+        pytest.skip("the live login carries no api_token; key + secret login no longer exists")
+    config = tmp_path_factory.mktemp("live-config")
+    patch = pytest.MonkeyPatch()
+    patch.setattr(
+        "mammoth_cli.context.profiles.platformdirs.user_config_dir", lambda *_a, **_k: str(config)
     )
-    from mammoth_cli.context import credentials, profiles
+    patch.setenv("MAMMOTH_NO_UPDATE_CHECK", "1")
+    from mammoth_cli.context import credentials, profiles, resolver
+    from mammoth_cli.context.endpoint import resolve_base_url
 
-    prefix = live_env.get(ENV_SERVER_PREFIX)
+    workspace = resolver.resolve_token_workspace(
+        resolve_base_url(login.server_prefix), login.api_token, None
+    )
     profiles.save_profile(
         profiles.ProfileRecord(
-            name="default",
-            workspace_id=int(live_env[ENV_WORKSPACE_ID]),
-            server_prefix=prefix,
+            name="default", workspace_id=workspace, server_prefix=login.server_prefix
         )
     )
-    credentials.store_credentials(
-        "default", live_env[ENV_API_KEY], live_env[ENV_API_SECRET], storage="file"
-    )
+    credentials.store_credentials("default", storage="file", api_token=login.api_token)
     profiles.set_selected("default")
+    try:
+        yield
+    finally:
+        patch.undo()
+
+
+@pytest.fixture(scope="session")
+def live_env(live_profile: None) -> dict[str, str]:
+    """Extra environment for a CLI call: none, since the isolated profile carries the login.
+
+    Depends on ``live_profile`` so a test asking for it skips when credentials are absent.
+    """
+    return {}
 
 
 @pytest.fixture(scope="session")
@@ -128,25 +145,8 @@ def live_project(live_env: dict[str, str]) -> str:
 
 
 @pytest.fixture(scope="module")
-def login(live_env: dict[str, str]) -> ExplicitLogin:
-    """The credentials for embedded calls: the login factory, else key/secret."""
-    factory_ref = os.environ.get(ENV_LOGIN_FACTORY)
-    if factory_ref:
-        module, _, name = factory_ref.partition(":")
-        factory = getattr(importlib.import_module(module), name)
-        made: ExplicitLogin = factory()
-        return made
-    return ExplicitLogin(
-        api_key=live_env[ENV_API_KEY],
-        api_secret=live_env[ENV_API_SECRET],
-        workspace_id=int(live_env[ENV_WORKSPACE_ID]),
-        server_prefix=live_env.get(ENV_SERVER_PREFIX),
-    )
-
-
-@pytest.fixture(scope="module")
-def live_cli(login: ExplicitLogin) -> LiveCli:
-    return LiveCli(login)
+def live_cli(live_profile: None) -> LiveCli:
+    return LiveCli()
 
 
 @pytest.fixture(scope="module")

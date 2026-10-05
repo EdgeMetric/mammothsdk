@@ -30,6 +30,7 @@ from typer.core import TyperGroup
 from mammoth_cli import __version__
 from mammoth_cli.commands import BESPOKE
 from mammoth_cli.commands.registry import HANDLERS, Handler
+from mammoth_cli.commands.schema import IN_PLACE_RECIPE, edits_view_in_place
 from mammoth_cli.context import profiles
 from mammoth_cli.errors.envelope import EXIT_USAGE, CliError, not_implemented_error
 from mammoth_cli.manifest.loader import command_by_id, load_commands
@@ -60,7 +61,7 @@ OUTPUT_MODES = VALID_OUTPUTS
 _GROUP_DESCRIPTIONS = {
     "activity": "Inspect workspace activity and audit history.",
     "addon": "Manage workspace add-ons.",
-    "agent": "Work with Mammoth agent sessions and messages.",
+    "agent": "Work with Mammoth agent sessions, the changes a chat made, and its runs.",
     "ai": "Generate AI-assisted expressions and conditions.",
     "annotation": "Manage annotations on Mammoth resources.",
     "auth": "Sign in, sign out, and inspect credentials.",
@@ -456,6 +457,12 @@ class _EnvelopeGroup(TyperGroup):
                     # classify an argv flag that is not a known global option;
                     # a known option's malformed value remains usage_error.
                     known, _valued = _global_option_flags()
+                    command = getattr(getattr(error, "ctx", None), "command", None)
+                    known = known | {
+                        flag
+                        for param in getattr(command, "params", [])
+                        for flag in (*param.opts, *param.secondary_opts)
+                    }
                     option = next(
                         (
                             token.split("=", 1)[0]
@@ -552,6 +559,18 @@ def _shared_option_params() -> list[inspect.Parameter]:
                 typer.Option(
                     "--project",
                     help="Active project id override.",
+                    rich_help_panel="Context and timeouts",
+                ),
+            ],
+        ),
+        opt(
+            "session",
+            None,
+            Annotated[
+                str | None,
+                typer.Option(
+                    "--session",
+                    help="Agent chat session id for 'agent action' and 'agent run' commands.",
                     rich_help_panel="Context and timeouts",
                 ),
             ],
@@ -929,6 +948,8 @@ def _command_help(command_id: str, record: dict[str, Any] | None) -> str | None:
         summary = doc.strip().splitlines()[0].strip().replace("``", "'")
         if summary:
             parts.append(summary)
+    if record is not None and edits_view_in_place(record):
+        parts.append(IN_PLACE_RECIPE)
     example = (record or {}).get("agent_example")
     if example:
         parts.append(f"Example: {example}")

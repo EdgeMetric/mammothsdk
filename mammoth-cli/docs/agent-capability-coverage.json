@@ -81,16 +81,21 @@
   "artifact": "mammoth-cli-agent-capability-coverage",
   "as_of": "2026-09-15",
   "current_release_matrix": {
-    "operations": 528,
-    "paths": 355,
+    "operations": 544,
+    "paths": 371,
+    "rows": 545,
     "core_operations": 230,
     "miscellaneous_operations": 298,
+    "unclassified_operations": 17,
+    "server_spec": "spec/openapi/master-20261002.json",
+    "server_sha": "600d78ef6b6c379029b3a1e4205658bc8e8e19c4",
     "support_status": {
-      "partial": 7,
-      "unassessed": 521,
-      "full": 0
+      "full": 1,
+      "partial": 261,
+      "not_supported": 2,
+      "unassessed": 281
     },
-    "note": "Current release matrix is distinct from this historical pinned M0 command inventory; counts are planning/evidence status, not broad support."
+    "note": "Derived by scripts/generate_release_capability_matrix.py from the pinned server spec, the command manifests and the SDK; counts are planning/evidence status, not broad support."
   },
   "audited_product_revision": "303aebdd7c1be7a80967b2d975a79975119f6f30",
   "authority_order": [
@@ -31303,14 +31308,14 @@
       "sdk": {
         "canonical_bindings": [
           {
-            "implementation_origin": "mammoth.api.projects.ProjectsAPI.bulk_delete",
+            "implementation_origin": "mammoth.api.projects.ProjectsAPI.bulk_delete_and_verify",
             "no_command_reason": null,
-            "sdk_symbol": "mammoth.api.projects.ProjectsAPI.bulk_delete",
-            "signature": "bulk_delete(self, project_ids: '_list[int]', workspace_id: 'int | None' = None) -> 'dict[str, Any]'"
+            "sdk_symbol": "mammoth.api.projects.ProjectsAPI.bulk_delete_and_verify",
+            "signature": "bulk_delete_and_verify(self, project_ids: '_list[int]', workspace_id: 'int | None' = None, *, timeout: 'int | None' = None, poll_interval: 'float' = 2.0) -> 'dict[str, Any]'"
           }
         ],
-        "conversion": "Call mammoth.api.projects.ProjectsAPI.bulk_delete with validated request fields.",
-        "primary_symbol": "mammoth.api.projects.ProjectsAPI.bulk_delete",
+        "conversion": "Call mammoth.api.projects.ProjectsAPI.bulk_delete_and_verify with validated request fields.",
+        "primary_symbol": "mammoth.api.projects.ProjectsAPI.bulk_delete_and_verify",
         "request_model": "ProjectBulkDeleteRequest",
         "result_model": "ProjectBulkDeleteResult"
       },
@@ -31897,14 +31902,14 @@
       "sdk": {
         "canonical_bindings": [
           {
-            "implementation_origin": "mammoth.api.projects.ProjectsAPI.delete",
+            "implementation_origin": "mammoth.api.projects.ProjectsAPI.delete_and_verify",
             "no_command_reason": null,
-            "sdk_symbol": "mammoth.api.projects.ProjectsAPI.delete",
-            "signature": "delete(self, project_id: 'int', workspace_id: 'int | None' = None) -> 'dict[str, Any]'"
+            "sdk_symbol": "mammoth.api.projects.ProjectsAPI.delete_and_verify",
+            "signature": "delete_and_verify(self, project_id: 'int', workspace_id: 'int | None' = None, *, timeout: 'int | None' = None, poll_interval: 'float' = 2.0) -> 'dict[str, Any]'"
           }
         ],
-        "conversion": "Call mammoth.api.projects.ProjectsAPI.delete with validated request fields.",
-        "primary_symbol": "mammoth.api.projects.ProjectsAPI.delete",
+        "conversion": "Call mammoth.api.projects.ProjectsAPI.delete_and_verify with validated request fields.",
+        "primary_symbol": "mammoth.api.projects.ProjectsAPI.delete_and_verify",
         "request_model": "ProjectDeleteRequest",
         "result_model": "ProjectDeleteResult"
       },

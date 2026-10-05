@@ -20,6 +20,7 @@ the handler makes:
 
 from __future__ import annotations
 
+import dataclasses
 from collections.abc import Callable, Mapping
 from enum import Enum
 from functools import lru_cache
@@ -27,6 +28,7 @@ from typing import Any
 
 from mammoth.condition import CompoundCondition, Condition, NotCondition
 
+from mammoth_cli.errors.envelope import EXIT_USAGE, CliError
 from mammoth_cli.manifest.loader import command_by_id, load_commands
 
 Gate = Callable[..., None]
@@ -40,6 +42,38 @@ IRREVERSIBLE_CLASS = "destructive"
 NOTE_UNDECLARED = (
     "Stopped before an SDK call the command's manifest does not declare; nothing was sent for it."
 )
+
+
+CODE_DRY_RUN_UNSUPPORTED = "dry_run_unsupported"
+
+#: Local commands that change the host's profile, shell or install. They never open a
+#: service, so a dry run of one would just be the real run.
+NO_DRY_RUN = frozenset(
+    {
+        "auth.login",
+        "auth.logout",
+        "completion.install",
+        "config.set",
+        "context.project.clear",
+        "context.project.use",
+        "skill.agents-md.install",
+        "skill.install",
+        "skill.uninstall",
+        "skill.update",
+        "upgrade",
+    }
+)
+
+
+def refuse_unsupported_dry_run(command_id: str) -> None:
+    """Raise ``dry_run_unsupported`` for a command that cannot be previewed."""
+    if command_id in NO_DRY_RUN:
+        raise CliError(
+            code=CODE_DRY_RUN_UNSUPPORTED,
+            message=f"`{command_id.replace('.', ' ')}` has no --dry-run: it would really run.",
+            exit_status=EXIT_USAGE,
+            hint="Drop --dry-run to run it, or use `mammoth schema get` to read its contract.",
+        )
 
 
 class DryRunStop(Exception):
@@ -79,6 +113,10 @@ def jsonable(value: Any) -> Any:
         return value
     if isinstance(value, (Condition, CompoundCondition, NotCondition)):
         return str(value)  # no dict form; the readable text is what a confirm card shows
+    if dataclasses.is_dataclass(value) and not isinstance(value, type):
+        # an SDK spec (``ConversionSpec``): its fields, not its repr
+        fields = ((f.name, getattr(value, f.name)) for f in dataclasses.fields(value))
+        return {name: jsonable(item) for name, item in fields if item is not None}
     model_dump = getattr(value, "model_dump", None)
     if callable(model_dump):  # an SDK request model (pydantic)
         return jsonable(model_dump(mode="json", exclude_none=True))

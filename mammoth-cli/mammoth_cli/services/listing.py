@@ -17,6 +17,7 @@ from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any
 
+from mammoth_cli.runtime import embedded
 from mammoth_cli.services.stored_stats import stored_facts
 
 #: Characters of ``data`` a list may use; the agent tool caps a whole result at 4,000.
@@ -26,15 +27,20 @@ DATASET_LIST_FIELDS = (
     "id,name,created_at,updated_at,status,stats,sources,data_schema,additional_info"
 )
 
+#: ``fields`` for ``dataset list`` rows: only what the server computes cheaply. ``stats``
+#: (row count: DuckDB) and ``data_schema`` stay on ``dataset get``.
+DATASET_ROW_FIELDS = "id,name,created_at,updated_at,status,sources,additional_info"
+
 _MAX_COLUMNS = 4
 #: Columns whose stored sample values a view summary shows, and values per column.
 _SAMPLE_COLUMNS = 6
 _SAMPLE_VALUES = 2
-_MAX_CELL_CHARS = 12
+#: A longer value is cut to this many characters and ends in "…", so a cut is visible.
+_MAX_CELL_CHARS = 40
 #: Room reserved per view for its sample values, added after the size check.
 SAMPLE_ALLOWANCE = 150
 #: Concurrent stored-stats reads for one list.
-_STATS_WORKERS = 8
+_STATS_WORKERS = 4
 _SOURCE_KINDS = {
     "file": "file",
     "cloud": "connector",
@@ -129,7 +135,8 @@ def name_matches(records: list[dict[str, Any]], needle: str) -> list[dict[str, A
 
 def _name_hit(record: dict[str, Any]) -> dict[str, Any]:
     """One name-search row: identity and size only (no column list, so many rows fit)."""
-    stats = record.get("stats") if isinstance(record.get("stats"), dict) else {}
+    raw_stats = record.get("stats")
+    stats: dict[str, Any] = raw_stats if isinstance(raw_stats, dict) else {}
     hit: dict[str, Any] = {
         "id": record.get("id"),
         "name": record.get("name"),
@@ -152,7 +159,7 @@ def ambiguity_note(matched: int, needle: str) -> str | None:
         return None
     return (
         f"{matched} datasets match '{needle}' (a v2 or a copy can sit beside the one meant): "
-        "pick by id from rows/cols/created, and name the dataset you read in your answer."
+        "if nothing in the request tells them apart, ask the user which one before reading any."
     )
 
 
@@ -234,7 +241,8 @@ def fit_budget(
 def _cell_text(stored: Any) -> str:
     """A stored sample as text: the inner ``value`` of a ``{"value": ...}`` record."""
     inner = stored.get("value", stored) if isinstance(stored, dict) else stored
-    return str(inner)[:_MAX_CELL_CHARS]
+    text = str(inner)
+    return text if len(text) <= _MAX_CELL_CHARS else text[:_MAX_CELL_CHARS] + "…"
 
 
 def sample_values(payload: Any, metadata: list[Any]) -> dict[str, list[str]]:
@@ -346,18 +354,22 @@ def compact_view_list(
     Sizes and columns come from the records already fetched. Each kept view then
     gets ``sample_values`` from the backend's stored column stats via ``read_stats``
     (one stored-stats read per kept view, run concurrently; no query runs).
+    A list of one dataset's views names every column; several datasets cap it at a few.
     Returns ``{"dataviews", "shown"}`` plus
     ``first_dropped_dataset`` / ``views_omitted`` when something was cut, for the
     caller to turn into a way to the next page.
     """
     groups: dict[Any, list[tuple[dict[str, Any], dict[str, Any]]]] = {}
-    for ds_id, group in _group_by_dataset(views).items():
+    by_dataset = _group_by_dataset(views)
+    # One dataset's views are listed to be read from: the whole column list saves a `view get`.
+    every_column = all_columns or len(by_dataset) == 1
+    for ds_id, group in by_dataset.items():
         groups[ds_id] = [
-            (v, view_summary(v, datasets.get(ds_id), ds_id, all_columns)) for v in group
+            (v, view_summary(v, datasets.get(ds_id), ds_id, every_column)) for v in group
         ]
     chosen, dropped_dataset, omitted = _choose_views(groups)
     with ThreadPoolExecutor(max_workers=_STATS_WORKERS) as pool:
-        stats = list(pool.map(lambda pair: _view_stats(pair[0], read_stats), chosen))
+        stats = embedded.pool_map(pool, lambda pair: _view_stats(pair[0], read_stats), chosen)
     items = [
         {**summary, "sample_values": found, **({"date_range": dates} if dates else {})}
         for (_v, summary), (found, dates) in zip(chosen, stats, strict=True)

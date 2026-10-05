@@ -1,10 +1,10 @@
 # Command reference
 
-Generated from the reviewed command manifests for mammoth-cli 2.1.5.
+Generated from the reviewed command manifests for mammoth-cli 2.2.28.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
-Total commands: 580.
+Total commands: 646.
 
 ## activity
 
@@ -75,12 +75,99 @@ Total commands: 580.
 
 ## agent
 
+### `mammoth agent action delete`
+
+**Arguments**
+
+- `ACTION_ID` (str, required) — ID of the recorded action (from agent action list).
+
+- Mutation class: `destructive`
+- Confirmation: `prompt_or_yes`
+- Backing SDK: `mammoth.api.agents.AgentsAPI.action_delete`
+- Agent example: `mammoth agent action delete resource-123`
+
+### `mammoth agent action list`
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.agents.AgentsAPI.action_list`
+- Agent example: `mammoth agent action list`
+
 ### `mammoth agent chat`
 
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.agents.AgentsAPI.chat`
 - Agent example: `mammoth agent chat --input '{"message": "Summarize revenue by region", "scope": {"sample_key": "Status"}}'`
+
+### `mammoth agent run extend`
+
+**Arguments**
+
+- `RUN_ID` (str, required) — ID of the run (from agent run status or agent run list).
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.agents.AgentsAPI.run_extend`
+- Agent example: `mammoth agent run extend resource-123`
+
+### `mammoth agent run list`
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.agents.AgentsAPI.run_list`
+- Agent example: `mammoth agent run list`
+
+### `mammoth agent run pause`
+
+**Arguments**
+
+- `RUN_ID` (str, required) — ID of the run (from agent run status or agent run list).
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.agents.AgentsAPI.run_pause`
+- Agent example: `mammoth agent run pause resource-123`
+
+### `mammoth agent run resume`
+
+**Arguments**
+
+- `RUN_ID` (str, required) — ID of the run (from agent run status or agent run list).
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.agents.AgentsAPI.run_resume`
+- Agent example: `mammoth agent run resume resource-123`
+
+### `mammoth agent run status`
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.agents.AgentsAPI.run_status`
+- Agent example: `mammoth agent run status`
+
+### `mammoth agent run stop`
+
+**Arguments**
+
+- `RUN_ID` (str, required) — ID of the run (from agent run status or agent run list).
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.agents.AgentsAPI.run_stop`
+- Agent example: `mammoth agent run stop resource-123`
+
+### `mammoth agent run units set`
+
+**Arguments**
+
+- `RUN_ID` (str, required) — ID of the run (from agent run status or agent run list).
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.agents.AgentsAPI.run_units_set`
+- Agent example: `mammoth agent run units set resource-123 --input '{"step": 1, "kind": "sample", "units": [{"sample_key": "Status"}]}'`
 
 ### `mammoth agent session delete`
 
@@ -122,6 +209,17 @@ Total commands: 580.
 - Backing SDK: `mammoth.api.agents.AgentsAPI.session_set_visibility`
 - Agent example: `mammoth agent session set-visibility resource-123 --input '{"visibility": "sample"}'`
 
+### `mammoth agent turn cancel`
+
+**Arguments**
+
+- `TURN_ID` (str, required) — ID of the turn to stop (from the chat's events or agent session messages).
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.agents.AgentsAPI.turn_cancel`
+- Agent example: `mammoth agent turn cancel resource-123`
+
 ## ai
 
 ### `mammoth ai condition generate`
@@ -130,7 +228,7 @@ Total commands: 580.
 
 - `DATASET_ID` (int, required) — ID of the dataset to generate a condition for.
 
-- Mutation class: `benign_mutation`
+- Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.ai.AIAPI.condition_generate`
 - Agent example: `mammoth ai condition generate 123 --input '{"intent": "Summarize revenue by region"}'`
@@ -141,7 +239,7 @@ Total commands: 580.
 
 - `DATASET_ID` (int, required) — ID of the dataset to generate an expression for.
 
-- Mutation class: `benign_mutation`
+- Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.ai.AIAPI.expression_generate`
 - Agent example: `mammoth ai expression generate 123 --input '{"intent": "Summarize revenue by region", "mode": "sample"}'`
@@ -534,6 +632,20 @@ Total commands: 580.
 - Backing SDK: `mammoth.api.billing.BillingAPI.stripe_preview_invoice`
 - Agent example: `mammoth billing stripe preview-invoice`
 
+### `mammoth billing stripe recheck-limits`
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.billing.BillingAPI.stripe_recheck_limits`
+- Agent example: `mammoth billing stripe recheck-limits`
+
+### `mammoth billing stripe resume`
+
+- Mutation class: `high_impact`
+- Confirmation: `confirm_target`
+- Backing SDK: `mammoth.api.billing.BillingAPI.stripe_resume`
+- Agent example: `mammoth billing stripe resume`
+
 ### `mammoth billing stripe retry-payment`
 
 - Mutation class: `high_impact`
@@ -547,6 +659,13 @@ Total commands: 580.
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.billing.BillingAPI.stripe_status`
 - Agent example: `mammoth billing stripe status`
+
+### `mammoth billing stripe storage set`
+
+- Mutation class: `high_impact`
+- Confirmation: `confirm_target`
+- Backing SDK: `mammoth.api.billing.BillingAPI.stripe_storage_update`
+- Agent example: `mammoth billing stripe storage set --input '{"storage_gb": 1}'`
 
 ### `mammoth billing stripe sync`
 
@@ -585,6 +704,17 @@ Total commands: 580.
 
 ## browse
 
+### `mammoth browse ancestors`
+
+**Arguments**
+
+- `RESOURCE_ID` (int, required) — The folder's resource_id as browse resources returns it (not its object id).
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.browse.BrowseAPI.resource_ancestors`
+- Agent example: `mammoth browse ancestors 123`
+
 ### `mammoth browse folder`
 
 **Arguments**
@@ -603,12 +733,45 @@ Total commands: 580.
 - Backing SDK: `mammoth.api.projects.ProjectsAPI.browse`
 - Agent example: `mammoth browse project`
 
+### `mammoth browse resource`
+
+**Arguments**
+
+- `RESOURCE_TYPE` (str, required) — Resource type, for example dataset or dataview.
+- `OBJECT_ID` (int, required) — ID of the resource within its type.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.browse.BrowseAPI.resource_get`
+- Agent example: `mammoth browse resource dataset 123`
+
+### `mammoth browse resources`
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.browse.BrowseAPI.resources_list`
+- Agent example: `mammoth browse resources`
+
+### `mammoth browse resources bulk`
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.browse.BrowseAPI.resources_bulk`
+- Agent example: `mammoth browse resources bulk --input '{"items": [["dataview", 42]]}'`
+
 ### `mammoth browse root`
 
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.browse.BrowseAPI.root`
 - Agent example: `mammoth browse root`
+
+### `mammoth browse search`
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.browse.BrowseAPI.resources_search`
+- Agent example: `mammoth browse search`
 
 ### `mammoth browse workspace`
 
@@ -1095,6 +1258,46 @@ Total commands: 580.
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.assess_twb`
 - Agent example: `mammoth dashboard assess-twb sample.twb`
 
+### `mammoth dashboard audience digest get`
+
+**Arguments**
+
+- `DASHBOARD_ID` (int, required) — ID of the dashboard.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.dashboards.DashboardsAPI.audience_digest_get`
+- Agent example: `mammoth dashboard audience digest get 123`
+
+### `mammoth dashboard audience digest set`
+
+**Arguments**
+
+- `DASHBOARD_ID` (int, required) — ID of the dashboard.
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.dashboards.DashboardsAPI.audience_digest_set`
+- Agent example: `mammoth dashboard audience digest set 123 --input '{"enabled": true}'`
+
+### `mammoth dashboard audience get`
+
+**Arguments**
+
+- `DASHBOARD_ID` (int, required) — ID of the dashboard.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.dashboards.DashboardsAPI.audience`
+- Agent example: `mammoth dashboard audience get 123`
+
+### `mammoth dashboard audience summary`
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.dashboards.DashboardsAPI.audience_summary`
+- Agent example: `mammoth dashboard audience summary --input '{"dashboard_ids": [1]}'`
+
 ### `mammoth dashboard bi-export`
 
 **Arguments**
@@ -1183,6 +1386,29 @@ Total commands: 580.
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.chat_history`
 - Agent example: `mammoth dashboard chat history 123`
 
+### `mammoth dashboard columns`
+
+**Arguments**
+
+- `DASHBOARD_ID` (int, required) — ID of the dashboard.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.dashboards.DashboardsAPI.column_roster`
+- Agent example: `mammoth dashboard columns 123`
+
+### `mammoth dashboard context apply`
+
+**Arguments**
+
+- `DASHBOARD_ID` (int, required) — ID of the dashboard.
+- `REVIEW_ID` (str, required) — ID of the review.
+
+- Mutation class: `benign_mutation`
+- Confirmation: `confirm_target`
+- Backing SDK: `mammoth.api.dashboards.DashboardsAPI.context_apply`
+- Agent example: `mammoth dashboard context apply 123 resource-123 --yes --confirm 123`
+
 ### `mammoth dashboard context create`
 
 - Mutation class: `benign_mutation`
@@ -1214,6 +1440,17 @@ Total commands: 580.
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.context_list`
 - Agent example: `mammoth dashboard context list`
+
+### `mammoth dashboard context review`
+
+**Arguments**
+
+- `DASHBOARD_ID` (int, required) — ID of the dashboard.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.dashboards.DashboardsAPI.context_review`
+- Agent example: `mammoth dashboard context review 123`
 
 ### `mammoth dashboard context update`
 
@@ -1376,6 +1613,13 @@ Total commands: 580.
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.embed_usage_get`
 - Agent example: `mammoth dashboard embed usage get 123`
 
+### `mammoth dashboard embed usage summary`
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.dashboards.DashboardsAPI.embed_usage_summary`
+- Agent example: `mammoth dashboard embed usage summary --input '{"dashboard_ids": [1]}'`
+
 ### `mammoth dashboard exemplar extract`
 
 - Mutation class: `benign_mutation`
@@ -1426,6 +1670,35 @@ Total commands: 580.
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.canvas_save`
 - Agent example: `mammoth dashboard filter remove 123 --input '{"field": "sample"}'`
+
+### `mammoth dashboard format-preview`
+
+**Arguments**
+
+- `DASHBOARD_ID` (int, required) — ID of the dashboard.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.dashboards.DashboardsAPI.format_preview`
+- Agent example: `mammoth dashboard format-preview 123 --input '{"style": "presentation"}'`
+
+### `mammoth dashboard gallery get`
+
+**Arguments**
+
+- `SLUG` (str, required) — Template slug.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.dashboards.DashboardsAPI.gallery_get`
+- Agent example: `mammoth dashboard gallery get sample`
+
+### `mammoth dashboard gallery list`
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.dashboards.DashboardsAPI.gallery_list`
+- Agent example: `mammoth dashboard gallery list`
 
 ### `mammoth dashboard get`
 
@@ -1684,6 +1957,17 @@ Total commands: 580.
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.qa_feedback`
 - Agent example: `mammoth dashboard qa feedback 123 123 123 --input '{"body": {"params": {"rating": "up"}}}'`
+
+### `mammoth dashboard qa insights`
+
+**Arguments**
+
+- `DASHBOARD_ID` (int, required) — ID of the dashboard.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.dashboards.DashboardsAPI.qa_insights`
+- Agent example: `mammoth dashboard qa insights 123`
 
 ### `mammoth dashboard qa session create`
 
@@ -2013,6 +2297,17 @@ Total commands: 580.
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.swap_data`
 - Agent example: `mammoth dashboard swap-data 123 --input '{"body": {"params": {"dataview_id": 1}}}'`
 
+### `mammoth dashboard swap-fit`
+
+**Arguments**
+
+- `SOURCE_DASHBOARD_ID` (int, required) — ID of the source dashboard.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.dashboards.DashboardsAPI.swap_fit`
+- Agent example: `mammoth dashboard swap-fit 123 --input '{"target_dataview_ids": [1]}'`
+
 ### `mammoth dashboard tags delete`
 
 **Arguments**
@@ -2142,6 +2437,40 @@ Total commands: 580.
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.template_resolve_mapping`
 - Agent example: `mammoth dashboard template resolve-mapping --input '{"body": {"params": {"source_dashboard_id": 1, "target_dataview_id": 1}}}'`
+
+### `mammoth dashboard template thumbnail clear`
+
+**Arguments**
+
+- `TEMPLATE_ID` (str, required) — ID of the template.
+
+- Mutation class: `destructive`
+- Confirmation: `prompt_or_yes`
+- Backing SDK: `mammoth.api.dashboards.DashboardsAPI.template_thumbnail_clear`
+- Agent example: `mammoth dashboard template thumbnail clear resource-123`
+
+### `mammoth dashboard template thumbnail get`
+
+**Arguments**
+
+- `TEMPLATE_ID` (str, required) — ID of the template.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.dashboards.DashboardsAPI.template_thumbnail_get`
+- Agent example: `mammoth dashboard template thumbnail get resource-123`
+
+### `mammoth dashboard template thumbnail set`
+
+**Arguments**
+
+- `TEMPLATE_ID` (str, required) — ID of the template.
+- `FILE` (str, required) — Path to a local PNG, JPEG or WebP image (1 MB at most).
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.dashboards.DashboardsAPI.template_thumbnail_set`
+- Agent example: `mammoth dashboard template thumbnail set resource-123 card.png`
 
 ### `mammoth dashboard templates pending`
 
@@ -2388,6 +2717,17 @@ Total commands: 580.
 - Backing SDK: `mammoth.api.datasets.DatasetsAPI.get_unstructured_rows`
 - Agent example: `mammoth dataset broken-rows list 123`
 
+### `mammoth dataset broken-rows resolve`
+
+**Arguments**
+
+- `DATASET_ID` (int, required) — ID of the dataset.
+
+- Mutation class: `destructive`
+- Confirmation: `prompt_or_yes`
+- Backing SDK: `mammoth.api.datasets.DatasetsAPI.resolve_unstructured_rows`
+- Agent example: `mammoth dataset broken-rows resolve 123 --input '{"op": "add", "batch_id": 1, "rows": [{"line_num": 2, "line": "corrected,line,here"}]}'`
+
 ### `mammoth dataset bulk-delete`
 
 - Mutation class: `destructive`
@@ -2479,7 +2819,7 @@ Total commands: 580.
 
 **Arguments**
 
-- `NAME_SUBSTRING` (str, required) — Case-insensitive substring to match against dataset names.
+- `NAME_SUBSTRING` (str, optional) — Case-insensitive substring to match against dataset names; optional when --input gives 'columns'.
 
 - Mutation class: `read`
 - Confirmation: `none`
@@ -2547,6 +2887,17 @@ Total commands: 580.
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.datasets.DatasetsAPI.restore`
 - Agent example: `mammoth dataset restore 123`
+
+### `mammoth dataset search`
+
+**Arguments**
+
+- `TERM` (str, required) — Text to find in dataset names, column names or sampled column values (case-insensitive, at least 2 characters).
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth_cli.commands.dataset.search`
+- Agent example: `mammoth dataset search 'New Year Sale'`
 
 ### `mammoth dataset trash`
 
@@ -2845,6 +3196,19 @@ Total commands: 580.
 - Backing SDK: `mammoth.api.jobs.JobsAPI.wait_for_jobs`
 - Agent example: `mammoth job wait-many --input '{"job_ids": [1]}'`
 
+## link
+
+### `mammoth link`
+
+**Arguments**
+
+- `URL` (str, required) — A Mammoth web app address pasted by the user.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth_cli.commands.link.link`
+- Agent example: `mammoth link https://app.mammoth.io/workspaces/1/projects/2/data/datasets`
+
 ## log
 
 ### `mammoth log path`
@@ -3051,8 +3415,8 @@ Total commands: 580.
 ### `mammoth project bulk-delete`
 
 - Mutation class: `destructive`
-- Confirmation: `prompt_or_yes`
-- Backing SDK: `mammoth.api.projects.ProjectsAPI.bulk_delete`
+- Confirmation: `confirm_target`
+- Backing SDK: `mammoth.api.projects.ProjectsAPI.bulk_delete_and_verify`
 - Agent example: `mammoth project bulk-delete --input '{"project_ids": [1]}'`
 
 ### `mammoth project bulk-update`
@@ -3067,7 +3431,8 @@ Total commands: 580.
 **Arguments**
 
 - `PROJECT_ID` (int, optional) — ID of the project to act on; defaults to the active project.
-- `DATASET_ID` (int, optional) — Check only this dataset's first view; no other dataset or dashboard is read.
+- `DATASET_ID` (int, optional) — Check only this dataset (its first view unless VIEW_ID is given); no other dataset or dashboard is read.
+- `VIEW_ID` (int, optional) — Check this view of DATASET_ID instead of its first (most recent) one.
 
 - Mutation class: `read`
 - Confirmation: `none`
@@ -3115,7 +3480,7 @@ Total commands: 580.
 
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
-- Backing SDK: `mammoth.api.projects.ProjectsAPI.delete`
+- Backing SDK: `mammoth.api.projects.ProjectsAPI.delete_and_verify`
 - Agent example: `mammoth project delete 123`
 
 ### `mammoth project ensure`
@@ -3179,6 +3544,17 @@ Total commands: 580.
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.projects.ProjectsAPI.remove_agent_memory`
 - Agent example: `mammoth project memory remove 123 --input '{"index": 1}'`
+
+### `mammoth project needs-attention`
+
+**Arguments**
+
+- `PROJECT_ID` (int, optional) — ID of the project to act on; defaults to the active project.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.projects.ProjectsAPI.needs_attention`
+- Agent example: `mammoth project needs-attention 123`
 
 ### `mammoth project pending-changes`
 
@@ -3783,6 +4159,63 @@ Total commands: 580.
 - Backing SDK: `mammoth.api.support.SupportAPI.plan_self_serve_list`
 - Agent example: `mammoth support plan self-serve-list`
 
+### `mammoth support plan storage-option archive`
+
+**Arguments**
+
+- `PLAN_ID` (int, required) — ID of the plan.
+- `OPTION_ID` (int, required) — ID of the option.
+
+- Mutation class: `high_impact`
+- Confirmation: `confirm_target`
+- Backing SDK: `mammoth.api.support.SupportAPI.plan_storage_option_archive`
+- Agent example: `mammoth support plan storage-option archive 123 123`
+
+### `mammoth support plan storage-option create`
+
+**Arguments**
+
+- `PLAN_ID` (int, required) — ID of the plan.
+
+- Mutation class: `high_impact`
+- Confirmation: `confirm_target`
+- Backing SDK: `mammoth.api.support.SupportAPI.plan_storage_option_create`
+- Agent example: `mammoth support plan storage-option create 123 --input '{"storage_gb": 1, "monthly_price": 1.0, "annual_price": 1.0}'`
+
+### `mammoth support plan storage-option list`
+
+**Arguments**
+
+- `PLAN_ID` (int, required) — ID of the plan.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.support.SupportAPI.plan_storage_option_list`
+- Agent example: `mammoth support plan storage-option list 123`
+
+### `mammoth support plan storage-option update`
+
+**Arguments**
+
+- `PLAN_ID` (int, required) — ID of the plan.
+- `OPTION_ID` (int, required) — ID of the option.
+
+- Mutation class: `high_impact`
+- Confirmation: `confirm_target`
+- Backing SDK: `mammoth.api.support.SupportAPI.plan_storage_option_update`
+- Agent example: `mammoth support plan storage-option update 123 123`
+
+### `mammoth support plan unarchive`
+
+**Arguments**
+
+- `PLAN_ID` (int, required) — ID of the plan.
+
+- Mutation class: `high_impact`
+- Confirmation: `confirm_target`
+- Backing SDK: `mammoth.api.support.SupportAPI.plan_unarchive`
+- Agent example: `mammoth support plan unarchive 123`
+
 ### `mammoth support plan update`
 
 **Arguments**
@@ -3839,6 +4272,171 @@ Total commands: 580.
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.support.SupportAPI.subscription_update`
 - Agent example: `mammoth support subscription update 123 resource-123`
+
+### `mammoth support template audit`
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.support.SupportAPI.template_audit`
+- Agent example: `mammoth support template audit`
+
+### `mammoth support template canvas`
+
+**Arguments**
+
+- `SLUG` (str, required) — Curated template slug.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.support.SupportAPI.template_canvas`
+- Agent example: `mammoth support template canvas sample`
+
+### `mammoth support template data-preview`
+
+**Arguments**
+
+- `SLUG` (str, required) — Curated template slug.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.support.SupportAPI.template_data_preview`
+- Agent example: `mammoth support template data-preview sample`
+
+### `mammoth support template discard`
+
+**Arguments**
+
+- `SLUG` (str, required) — Curated template slug.
+
+- Mutation class: `destructive`
+- Confirmation: `confirm_target`
+- Backing SDK: `mammoth.api.support.SupportAPI.template_discard`
+- Agent example: `mammoth support template discard sample`
+
+### `mammoth support template edit`
+
+**Arguments**
+
+- `SLUG` (str, required) — Curated template slug.
+
+- Mutation class: `high_impact`
+- Confirmation: `confirm_target`
+- Backing SDK: `mammoth.api.support.SupportAPI.template_edit`
+- Agent example: `mammoth support template edit sample --input '{"changes": {"sample_key": "Status"}}'`
+
+### `mammoth support template export`
+
+**Arguments**
+
+- `SLUG` (str, required) — Curated template slug.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.support.SupportAPI.template_export`
+- Agent example: `mammoth support template export sample`
+
+### `mammoth support template export-dashboard`
+
+**Arguments**
+
+- `DASHBOARD_ID` (int, required) — ID of the dashboard.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.support.SupportAPI.template_export_dashboard`
+- Agent example: `mammoth support template export-dashboard 123 --input '{"slug": "sample"}'`
+
+### `mammoth support template import`
+
+**Arguments**
+
+- `FILE` (str, required) — Path to a local template file (.zip).
+
+- Mutation class: `high_impact`
+- Confirmation: `yes_always`
+- Backing SDK: `mammoth.api.support.SupportAPI.template_import`
+- Agent example: `mammoth support template import template.zip`
+
+### `mammoth support template inspect`
+
+**Arguments**
+
+- `FILE` (str, required) — Path to a local template file (.zip).
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.support.SupportAPI.template_inspect`
+- Agent example: `mammoth support template inspect template.zip`
+
+### `mammoth support template list`
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.support.SupportAPI.template_list`
+- Agent example: `mammoth support template list`
+
+### `mammoth support template publish`
+
+**Arguments**
+
+- `SLUG` (str, required) — Curated template slug.
+
+- Mutation class: `high_impact`
+- Confirmation: `confirm_target`
+- Backing SDK: `mammoth.api.support.SupportAPI.template_publish`
+- Agent example: `mammoth support template publish sample`
+
+### `mammoth support template retire`
+
+**Arguments**
+
+- `SLUG` (str, required) — Curated template slug.
+
+- Mutation class: `high_impact`
+- Confirmation: `confirm_target`
+- Backing SDK: `mammoth.api.support.SupportAPI.template_retire`
+- Agent example: `mammoth support template retire sample`
+
+### `mammoth support template snapshots`
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.support.SupportAPI.template_snapshots`
+- Agent example: `mammoth support template snapshots`
+
+### `mammoth support template thumbnail clear`
+
+**Arguments**
+
+- `SLUG` (str, required) — Curated template slug.
+
+- Mutation class: `high_impact`
+- Confirmation: `confirm_target`
+- Backing SDK: `mammoth.api.support.SupportAPI.template_thumbnail_clear`
+- Agent example: `mammoth support template thumbnail clear sample`
+
+### `mammoth support template thumbnail set`
+
+**Arguments**
+
+- `SLUG` (str, required) — Curated template slug.
+- `FILE` (str, required) — Path to a local PNG, JPEG or WebP image (1 MB at most).
+
+- Mutation class: `high_impact`
+- Confirmation: `confirm_target`
+- Backing SDK: `mammoth.api.support.SupportAPI.template_thumbnail_set`
+- Agent example: `mammoth support template thumbnail set sample card.png`
+
+### `mammoth support template unpublish`
+
+**Arguments**
+
+- `SLUG` (str, required) — Curated template slug.
+
+- Mutation class: `high_impact`
+- Confirmation: `confirm_target`
+- Backing SDK: `mammoth.api.support.SupportAPI.template_unpublish`
+- Agent example: `mammoth support template unpublish sample`
 
 ### `mammoth support user list-all`
 
@@ -4283,7 +4881,7 @@ Total commands: 580.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dataviews.DataviewsAPI.conditional_format_create`
-- Agent example: `mammoth view conditional-format create 123 123 --input '{"rule": {"cf_type": "RULE", "payload": {"FORMAT": {"name": "Flag open orders", "color": "red", "applies_to": "row", "column_ids": "[]"}, "CONDITION": {"OR": [{"column_1": {"CONTAINS": {"VALUE": ["Open"]}}}]}}}}'`
+- Agent example: `mammoth view conditional-format create 123 123 --input '{"columns": ["Q1", "Q2", "Q3"], "operator": "<", "value": 55, "color": "red"}'`
 
 ### `mammoth view conditional-format delete-all`
 
@@ -4941,6 +5539,18 @@ Total commands: 580.
 - Backing SDK: `mammoth.client.ViewsResource.get`
 - Agent example: `mammoth view get 123 123`
 
+### `mammoth view impact`
+
+**Arguments**
+
+- `VIEW_ID` (int, required) — ID of the view to act on.
+- `DATASET_ID` (int, optional) — ID of the dataset the view belongs to; resolved from the view when omitted.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.dataviews.DataviewsAPI.delete_impact`
+- Agent example: `mammoth view impact 123 123 --input '{"scope": "view"}'`
+
 ### `mammoth view list`
 
 **Arguments**
@@ -5525,12 +6135,7 @@ Total commands: 580.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dataviews.DataviewsAPI.update`
-- Agent example: `mammoth view update 123 123 --input '{"patch_data": [{"sample_key": "Status"}]}'`
-
-  **Agent note:** raw patch input is intentionally blocked because its
-  backend grammar is not a typed CLI contract. Do not infer an `op`,
-  `path`, or `value` from examples; use a separately typed command or
-  stop with the structured unsupported-contract result.
+- Agent example: `mammoth view update 123 123 --input '{"name": "Revenue report"}'`
 
 ### `mammoth view version apply`
 
@@ -5684,7 +6289,7 @@ Total commands: 580.
 - `BLOCK_ID` (int, required) — ID of the block.
 
 - Mutation class: `benign_mutation`
-- Confirmation: `none`
+- Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.workflows.WorkflowsAPI.block_auth`
 - Agent example: `mammoth workflow block auth 123 123 --input '{"auth_data": {"sample_key": "Status"}}'`
 
@@ -5721,12 +6326,12 @@ Total commands: 580.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.workflows.WorkflowsAPI.canvas`
-- Agent example: `mammoth workflow canvas 123 --input '{"canvas_state": {"sample_key": "Status"}}'`
+- Agent example: `mammoth workflow canvas 12 --input '{"canvas_state": {"proposed_changes": [{"op": "add_view", "dataset_id": 415, "name": "Urgent tickets", "ref": "urgent"}, {"op": "send_to_new_dataset", "dataset_id": 415, "view_ref": "urgent", "name": "Urgent tickets by team"}]}}'`
 
 ### `mammoth workflow cleanup`
 
-- Mutation class: `benign_mutation`
-- Confirmation: `none`
+- Mutation class: `destructive`
+- Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.workflows.WorkflowsAPI.cleanup`
 - Agent example: `mammoth workflow cleanup`
 
@@ -5872,6 +6477,48 @@ Total commands: 580.
 - Backing SDK: `mammoth.api.workspace.WorkspaceAPI.get`
 - Agent example: `mammoth workspace get 123`
 
+### `mammoth workspace home`
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.workspaces.WorkspacesAPI.home_summary`
+- Agent example: `mammoth workspace home`
+
+### `mammoth workspace invite delete`
+
+- Mutation class: `destructive`
+- Confirmation: `prompt_or_yes`
+- Backing SDK: `mammoth.api.workspaces.WorkspacesAPI.invite_delete`
+- Agent example: `mammoth workspace invite delete --input '{"invite_ids": [1]}'`
+
+### `mammoth workspace invite list`
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.workspaces.WorkspacesAPI.invite_list`
+- Agent example: `mammoth workspace invite list`
+
+### `mammoth workspace invite resend`
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.workspaces.WorkspacesAPI.invite_resend`
+- Agent example: `mammoth workspace invite resend --input '{"invite_ids": [1]}'`
+
+### `mammoth workspace invite revoke`
+
+- Mutation class: `destructive`
+- Confirmation: `prompt_or_yes`
+- Backing SDK: `mammoth.api.workspaces.WorkspacesAPI.invite_revoke`
+- Agent example: `mammoth workspace invite revoke --input '{"invite_ids": [1]}'`
+
+### `mammoth workspace invite update-role`
+
+- Mutation class: `high_impact`
+- Confirmation: `yes_always`
+- Backing SDK: `mammoth.api.workspaces.WorkspacesAPI.invite_role_update`
+- Agent example: `mammoth workspace invite update-role --input '{"invite_id": 1, "role": "sample"}'`
+
 ### `mammoth workspace list`
 
 - Mutation class: `read`
@@ -5985,7 +6632,7 @@ Total commands: 580.
 
 ### `mammoth workspace user update-batch`
 
-- Mutation class: `benign_mutation`
-- Confirmation: `none`
+- Mutation class: `high_impact`
+- Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.workspaces.WorkspacesAPI.user_update_batch`
 - Agent example: `mammoth workspace user update-batch --input '{"patches": [{"sample_key": "Status"}]}'`

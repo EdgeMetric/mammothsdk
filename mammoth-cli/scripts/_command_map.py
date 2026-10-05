@@ -38,10 +38,72 @@ PROTOCOL_ONLY: dict[str, str] = {
     "TrackView": "Published-dashboard viewer telemetry.",
 }
 
+# --- Server routes that exist for the web app, not for a CLI user ----------
+# Keyed by operationId; value is the reviewed reason. Reviewed 2026-10-02 against
+# the origin/master spec. A route listed here has no command by design; a route
+# that a user could drive from a terminal belongs in the matrix as unmapped
+# until a command binds it.
+INTERNAL_ONLY: dict[str, str] = {
+    "AgentNotifyJob": "Web-app callback: tells a connector agent that its async job finished.",
+    "WatchAgentTurn": "Server-Sent Events stream of one agent turn; a terminal cannot hold it.",
+    "ResourceEventsStream": "Server-Sent Events stream of project resource changes (web app).",
+    "GetDraftHead": "Canvas editor poll that announces a colleague's draft change.",
+    "PostPresence": "Canvas editor presence heartbeat (every ~15 seconds per open tab).",
+    "TrackAction": "Viewer-side counter for outward actions such as a copied link.",
+    "DashboardPublicGallery": "Public gallery HTML page for browsers and search engines.",
+    "DashboardPublicGalleryHead": "HEAD twin of the public gallery HTML page.",
+    "DashboardPublicGallerySitemap": "Public gallery sitemap.xml for search engines.",
+    "DashboardPublicGallerySitemapHead": "HEAD twin of the public gallery sitemap.",
+    "DashboardPublicGalleryTemplate": "Public gallery template HTML page for browsers.",
+    "DashboardPublicGalleryTemplateHead": "HEAD twin of the public gallery template page.",
+    "DashboardPublicTemplatesHead": "HEAD twin of the public template catalog.",
+    "DashboardPublicTemplateHead": "HEAD twin of one public template read.",
+    "DashboardPublicTemplateThumbnail": "Public template picture bytes served to the gallery page.",
+}
+
+# --- Routes the SDK calls that the server on master does not serve yet ------
+# Keyed by ``METHOD /normalised/path`` (placeholders as ``{}``); value names the
+# unmerged server branch that adds the route. An entry stops mattering once the
+# route is on master and the SDK call matches a real operation.
+PENDING_SERVER_RELEASE: dict[str, str] = {
+    f"{method} {path}": "origin/feat/agent-cli-surface@7e2bf189c4"
+    for method, path in (
+        ("GET", "/agents/sessions/{}/actions"),
+        ("DELETE", "/agents/sessions/{}/actions/{}"),
+        ("GET", "/agents/sessions/{}/run"),
+        ("GET", "/agents/sessions/{}/runs"),
+        ("GET", "/agents/sessions/{}/runs/{}/units"),
+        ("POST", "/agents/sessions/{}/runs/{}/units"),
+        ("POST", "/agents/sessions/{}/runs/{}/extend"),
+        ("POST", "/agents/sessions/{}/runs/{}/pause"),
+        ("POST", "/agents/sessions/{}/runs/{}/resume"),
+        ("POST", "/agents/sessions/{}/runs/{}/retry"),
+        ("POST", "/agents/sessions/{}/runs/{}/stop"),
+        ("GET", "/workspaces/current"),
+        ("PATCH", "/workspaces/{}/projects/{}/datasets/{}/unstructured_rows"),
+    )
+}
+# The SDK posts every run verb through one helper whose path ends in a variable.
+PENDING_SERVER_RELEASE["POST /agents/sessions/{}/runs/{}/{}"] = PENDING_SERVER_RELEASE[
+    "POST /agents/sessions/{}/runs/{}/stop"
+]
+
 # --- Operations that alias another command (identical behavior) ------------
 OP_ALIAS: dict[str, str] = {
     # POST body variant of the GET dataview-data read.
     "GetDataviewDataPost": "view.data.get",
+}
+
+# --- Operations the pinned spec documents but the server cannot serve --------
+# No command, no SDK symbol. Keyed by operationId; value is the reviewed reason.
+SERVER_UNAVAILABLE: dict[str, str] = {
+    "GenerateDashboard": (
+        "No POST handler for this route exists in current apiv2 "
+        "(apiv2/apiv2/mmai/dashboard/controller.py has no bare POST); every call 404s. "
+        "Historically returned a structured 409 (4DASH012 DASHBOARD_LEGACY_CREATION_RETIRED) "
+        "per dated evidence in docs/capability-evidence/dashboard-sweep-20260918/. "
+        "Use dashboard create-blank or dashboard v3 generate instead."
+    ),
 }
 
 # --- Explicit reviewed command ids by operationId --------------------------
@@ -58,6 +120,10 @@ OVERRIDES: dict[str, str] = {
     "UpdateUserPreferences": "user.preference.update",
     # Agents (AI chat).
     "AgentChat": "agent.chat",
+    # Automation capabilities and dataset interpretation (bound in 2.2.x).
+    "GetAutomationCapabilities": "automation.capabilities",
+    "PreviewDatasetInterpretation": "dataset.interpretation.preview",
+    "ConfirmDatasetInterpretation": "dataset.interpretation.confirm",
     "ListAgentSessions": "agent.session.list",
     "DeleteAgentSession": "agent.session.delete",
     "SetAgentSessionVisibility": "agent.session.set-visibility",
@@ -538,6 +604,8 @@ def disposition_for(operation_id: str) -> tuple[str, str | None, str | None, str
         return "protocol_only", None, None, PROTOCOL_ONLY[operation_id]
     if operation_id in OP_ALIAS:
         return "alias", None, OP_ALIAS[operation_id], "Identical behavior to the aliased command."
+    if operation_id in SERVER_UNAVAILABLE:
+        return "server_unavailable", None, None, SERVER_UNAVAILABLE[operation_id]
     command = OVERRIDES.get(operation_id)
     if command:
         return "command", command, None, "User-initiated production operation."

@@ -263,7 +263,8 @@ from mammoth import ExportFileType
 await view.export.to_s3(file_name="report.csv", file_type=ExportFileType.CSV)
 
 # Branch out to another dataset
-await view.branch_out(dest_dataset_id=42)
+new_id = await view.branch_out(dataset_name="Q1 snapshot")      # new dataset; returns its id
+await view.branch_out(dataset_name="Archive", target_ds_id=42)  # write into dataset 42 (save_as_mode=SaveAsDatasetMode.APPEND to append)
 ```
 
 ---

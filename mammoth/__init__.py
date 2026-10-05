@@ -8,7 +8,7 @@ Quick start::
 
     from mammoth import MammothClient, Condition, Operator, ColumnType, SetValue
 
-    client = MammothClient(api_token="mm_...", workspace_id=11)
+    client = MammothClient(api_token="mm_...")
     client.set_project_id(10)
 
     # Resource-based CRUD
@@ -153,7 +153,7 @@ from mammoth.models.workspaces import (
 )
 from mammoth.view import View, ViewExport
 
-__version__ = "0.8.2"
+__version__ = "0.8.17"
 __all__ = [
     # Client
     "MammothClient",

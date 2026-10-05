@@ -8,6 +8,9 @@ if TYPE_CHECKING:
     from ..client import MammothClient
 
 
+_BULK_IDS_LIMIT = 100  # server cap on ids per /resources/bulk request
+
+
 def _page(fields: str | None, limit: int | None, offset: int | None) -> dict[str, Any] | None:
     """The query a browse route takes to narrow and page what it returns.
 
@@ -22,6 +25,22 @@ def _page(fields: str | None, limit: int | None, offset: int | None) -> dict[str
     if offset is not None:
         params["offset"] = offset
     return params or None
+
+
+def _resource_type_filter(value: Any) -> Any:
+    """The route spells ``dataset`` as ``datasource`` (it answers 4RESO010 to ``dataset``)."""
+    if not isinstance(value, str):
+        return value
+    return ",".join(
+        "datasource" if part.strip() == "dataset" else part.strip() for part in value.split(",")
+    )
+
+
+def _resource_query(**fields: Any) -> dict[str, Any] | None:
+    """The resources-v2 query: only the filters the caller set."""
+    if "type" in fields:
+        fields["type"] = _resource_type_filter(fields["type"])
+    return {key: value for key, value in fields.items() if value is not None} or None
 
 
 class BrowseAPI:
@@ -266,3 +285,154 @@ class BrowseAPI:
             f"/workspaces/{ws}/projects/{proj}/folders/{folder_id}/browse",
             params=params,
         )
+
+    async def resources_list(
+        self,
+        project_id: int | None = None,
+        parent_type: str | None = None,
+        parent_id: int | None = None,
+        resource_type: str | None = None,
+        search: str | None = None,
+        cursor: str | None = None,
+        limit: int | None = None,
+        sort: str | None = None,
+        fields: str | None = None,
+    ) -> dict[str, Any]:
+        """List one project's resources, a cursor page at a time (resources v2).
+
+        Args:
+            project_id: Project ID (uses the client default if not provided).
+            parent_type: Type of the folder-like parent to list inside.
+            parent_id: ID of that parent; omit for the project root.
+            resource_type: Keep only this resource type.
+            search: Keep only resources whose name matches.
+            cursor: ``next_cursor`` of the previous page.
+            limit: Page size; the route defaults to 50.
+            sort: Sort specification.
+            fields: Field set to return; the route defaults to ``standard``.
+
+        Returns:
+            Dict with ``resources``, ``next_cursor`` and ``has_more``.
+        """
+        params = _resource_query(
+            parent_type=parent_type,
+            parent_id=parent_id,
+            type=resource_type,
+            search=search,
+            cursor=cursor,
+            limit=limit,
+            sort=sort,
+            fields=fields,
+        )
+        return await self._client._request_json(
+            "GET",
+            f"/workspaces/{self._ws()}/projects/{self._proj(project_id)}/resources",
+            params=params,
+        )
+
+    async def resource_get(
+        self, resource_type: str, object_id: int, project_id: int | None = None
+    ) -> dict[str, Any]:
+        """Get one resource with its full properties (resources v2).
+
+        Args:
+            resource_type: Resource type, e.g. ``dataset`` or ``dataview``.
+            object_id: ID of the resource within that type.
+            project_id: Project ID (uses the client default if not provided).
+
+        Returns:
+            Dict ``{"resource": {...}}``.
+        """
+        return await self._client._request_json(
+            "GET",
+            f"/workspaces/{self._ws()}/projects/{self._proj(project_id)}"
+            f"/resources/{resource_type}/{object_id}",
+        )
+
+    async def resource_ancestors(
+        self, resource_id: int, project_id: int | None = None
+    ) -> dict[str, Any]:
+        """Get the folder path of a folder: the chain from the project root down to it.
+
+        The breadcrumb for a deep link that knows only the folder's id.
+
+        Args:
+            resource_id: The folder's ``resource_id`` as resources v2 returns it
+                (not its object id). A value of 0 or less means the project root.
+            project_id: Project ID (uses the client default if not provided).
+
+        Returns:
+            Dict ``{"resources": [...]}``, root first and ending with the folder
+            itself; empty for the project root. The route answers 404 when the
+            id is not a live folder in the project.
+        """
+        return await self._client._request_json(
+            "GET",
+            f"/workspaces/{self._ws()}/projects/{self._proj(project_id)}/resources/ancestors",
+            params={"resource_id": resource_id},
+        )
+
+    async def resources_search(
+        self,
+        search: str | None = None,
+        resource_type: str | None = None,
+        cursor: str | None = None,
+        limit: int | None = None,
+        sort: str | None = None,
+        fields: str | None = None,
+    ) -> dict[str, Any]:
+        """Search resources across every project the user can open in the workspace.
+
+        Args:
+            search: Keep only resources whose name matches.
+            resource_type: Keep only these types (comma-separated).
+            cursor: ``next_cursor`` of the previous page.
+            limit: Page size; the route defaults to 50.
+            sort: Sort specification.
+            fields: Field set to return; the route defaults to ``standard``.
+
+        Returns:
+            Dict with ``resources``, ``next_cursor`` and ``has_more``.
+        """
+        params = _resource_query(
+            search=search,
+            type=resource_type,
+            cursor=cursor,
+            limit=limit,
+            sort=sort,
+            fields=fields,
+        )
+        return await self._client._request_json(
+            "GET", f"/workspaces/{self._ws()}/resources", params=params
+        )
+
+    async def resources_bulk(
+        self,
+        items: list[tuple[str, int]],
+        project_id: int | None = None,
+    ) -> list[dict[str, Any]]:
+        """Get many resources of one project by ``(type, object id)`` pair (resources v2).
+
+        One request per 100 pairs, the route's cap. A dataview row carries its
+        parent in ``dataset`` (``{id, name}``). Pairs that do not exist in the
+        project, or that the caller cannot read, are left out of the result.
+
+        Args:
+            items: ``(resource_type, object_id)`` pairs, e.g. ``("dataview", 42)``.
+            project_id: Project ID (uses the client default if not provided).
+
+        Returns:
+            The resources found, each as ``resource_get`` returns them.
+        """
+        found: list[dict[str, Any]] = []
+        proj = self._proj(project_id)
+        for first in range(0, len(items), _BULK_IDS_LIMIT):
+            chunk = items[first : first + _BULK_IDS_LIMIT]
+            response = await self._client._request_json(
+                "POST",
+                f"/workspaces/{self._ws()}/projects/{proj}/resources/bulk",
+                json={"ids": [{"type": kind, "id": object_id} for kind, object_id in chunk]},
+                operation_effect="read",
+            )
+            found += response.get("resources", [])
+        return found

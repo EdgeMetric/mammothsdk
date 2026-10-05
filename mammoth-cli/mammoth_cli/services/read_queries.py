@@ -19,13 +19,18 @@ from dataclasses import dataclass, field
 from datetime import date
 from typing import Any
 
-from mammoth.api.dataviews import _add_explore_percentages, _explore_sort_and_limit
+from mammoth.api.dataviews import (
+    _add_explore_cumulative,
+    _add_explore_percentages,
+    _explore_sort_and_limit,
+)
 
 from mammoth_cli.errors.envelope import (
     CODE_INVALID_ARGUMENTS,
     EXIT_USAGE,
     CliError,
 )
+from mammoth_cli.output.normalize import DataRows
 from mammoth_cli.services import data_profile as dp
 from mammoth_cli.services import text_dates
 from mammoth_cli.services.conditions import CONDITION_KWARG, _resolve_operator
@@ -382,10 +387,15 @@ def pivot_with_text_dates(
 
 
 def apply_explore_order(
-    rows: list[dict[str, Any]], sort: str | None, page: tuple[int | None, int | None]
+    rows: list[dict[str, Any]],
+    sort: str | None,
+    page: tuple[int | None, int | None],
+    cumulative: bool = False,
 ) -> list[dict[str, Any]]:
-    """Percentages, order and paging for a bucketed explore, like the SDK's own."""
+    """Percentages, running total, order and paging for a bucketed explore, like the SDK's own."""
     _add_explore_percentages(rows)
+    if cumulative:
+        _add_explore_cumulative(rows)
     return _explore_sort_and_limit(rows, "DATE", sort, page)
 
 
@@ -628,3 +638,32 @@ def with_assumptions(ctx: ReadContext, data: Any) -> Any:
     if not ctx.assumptions or not isinstance(data, dict):
         return data
     return {**data, "text_dates": list(ctx.assumptions.values())}
+
+
+# ---------------------------------------------------------------------------
+# Display rounding
+# ---------------------------------------------------------------------------
+
+
+def _round_for_display(value: Any) -> Any:
+    """A float rounded to what a person reads: 2 decimals, 4 below 1 so a rate survives."""
+    if isinstance(value, bool) or not isinstance(value, float):
+        return value
+    return round(value, 2 if abs(value) >= 1 else 4)
+
+
+def round_result_rows(data: Any) -> Any:
+    """``data`` with every float in its result rows rounded for display.
+
+    Sums and averages come back with float noise (``428257.2699000002``) that
+    would be quoted to a user as is. Only the answer rows are rounded; a caller
+    that joins or diffs figures reads the unrounded handler instead.
+    """
+    rows = data.get("data") if isinstance(data, dict) else None
+    if not isinstance(rows, list):
+        return data
+    rounded = [
+        {k: _round_for_display(v) for k, v in row.items()} if isinstance(row, dict) else row
+        for row in rows
+    ]
+    return {**data, "data": DataRows(rounded) if isinstance(rows, DataRows) else rounded}

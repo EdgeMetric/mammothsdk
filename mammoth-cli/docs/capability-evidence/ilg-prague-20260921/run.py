@@ -163,6 +163,9 @@ def run(label: str, *args: str, project: int | None = None, expect: int | tuple[
     return resp
 
 
+FAILED_CHECKS: list[str] = []
+
+
 def check(name: str, expected, actual, tol: float = 0.011) -> bool:
     if isinstance(expected, (int, float)) and isinstance(actual, (int, float)):
         ok = abs(float(expected) - float(actual)) <= tol
@@ -170,6 +173,8 @@ def check(name: str, expected, actual, tol: float = 0.011) -> bool:
         ok = expected == actual
     RESULTS.write(json.dumps({"check": name, "expected": expected, "actual": actual, "ok": ok}) + "\n"); RESULTS.flush()
     print(f"   check {name}: expected {expected!r} actual {actual!r} -> {'PASS' if ok else 'FAIL'}", flush=True)
+    if not ok:
+        FAILED_CHECKS.append(name)
     return ok
 
 
@@ -464,6 +469,8 @@ def main() -> None:
     st.update({"datasets": {"A": {"pnl": dsA_pnl}, "B": dsB, "T": {**sent, "consolidated": ds_cons}}, "views": {"A": {"pnl": vA_pnl}, "B": vB, "T": {**v, "consolidated": v_cons}}, "dashboards": [dash, dash2]})
     STATE.write_text(json.dumps(st, indent=1))
     print("DONE", json.dumps(st))
+    if FAILED_CHECKS:
+        raise SystemExit(f"{len(FAILED_CHECKS)} check(s) failed: {', '.join(FAILED_CHECKS)}")
 
 
 if __name__ == "__main__":

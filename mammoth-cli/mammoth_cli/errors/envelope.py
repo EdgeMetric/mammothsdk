@@ -44,6 +44,7 @@ CODE_RESOURCE_NOT_FOUND = "resource_not_found"
 CODE_PROFILE_NOT_FOUND = "profile_not_found"
 CODE_NO_SAVED_PROJECT = "no_saved_project"
 CODE_NOT_AVAILABLE_EMBEDDED = "not_available_embedded"
+CODE_NOT_AVAILABLE = "not_available"
 CODE_CONFIRMATION_REQUIRED = "confirmation_required"
 CODE_CONFIRMATION_DECLINED = "confirmation_declined"
 CODE_AUTHENTICATION_FAILED = "authentication_failed"
@@ -55,6 +56,7 @@ CODE_JOB_FAILED = "job_failed"
 CODE_INTERRUPTED = "interrupted"
 CODE_UNSUPPORTED_CONTRACT = "unsupported_contract"
 CODE_NO_OP = "no_op"
+CODE_WOULD_FAIL = "would_fail"
 
 # User-safe, one-line summaries shown to the customer instead of the model-facing
 # ``message``/``hint``. Plain language only: no command names, ids, field names
@@ -76,6 +78,7 @@ ERROR_SUMMARIES: dict[str, str] = {
     ),
     "api_error": "Mammoth couldn't complete this step.",
     "append_schema_mismatch": "The new data doesn't line up with the existing columns.",
+    "append_type_mismatch": "A column has a different type than in the existing data.",
     "append_schema_unreadable": "The columns of the existing data couldn't be read.",
     "authentication_failed": "Mammoth didn't accept the sign-in for this step.",
     "authorization_required": "You don't have permission to do this.",
@@ -90,6 +93,7 @@ ERROR_SUMMARIES: dict[str, str] = {
         "The assistant couldn't tell exactly which items this would change, so nothing was changed."
     ),
     "download_failed": "A download didn't complete.",
+    "dry_run_unsupported": "That command can't be previewed, so it was not run.",
     "duplicate_input_key": _S_BAD_INPUT,
     "empty_search_query": "The search was empty.",
     "export_already_exists": "An export with that name already exists.",
@@ -109,6 +113,7 @@ ERROR_SUMMARIES: dict[str, str] = {
     "invalid_argument": _S_BAD_REQUEST,
     "invalid_argument_combination": _S_BAD_REQUEST,
     "invalid_arguments": _S_BAD_REQUEST,
+    "invalid_rule": "A conditional-format rule wasn't valid.",
     "invalid_condition": "A filter condition wasn't valid.",
     "invalid_condition_value": "A filter condition used a value that isn't valid.",
     "invalid_config_value": _S_SETUP,
@@ -143,6 +148,7 @@ ERROR_SUMMARIES: dict[str, str] = {
     "profile_not_found": _S_SETUP,
     "no_saved_project": "This step can't save a project here; each step names its own.",
     "not_available_embedded": "This step isn't available inside the Mammoth app.",
+    "not_available": _S_UNAVAILABLE,
     "profile_write_failed": _S_SETUP,
     "project_required": "No project has been chosen for this step.",
     "pypi_response_invalid": "An update check didn't return a usable answer.",
@@ -169,6 +175,7 @@ ERROR_SUMMARIES: dict[str, str] = {
     "upgrade_failed": "The update didn't complete.",
     "usage_error": _S_BAD_REQUEST,
     "view_in_draft": "This view is still a draft and can't be used yet.",
+    "would_fail": "This step would fail when it runs, so it was not added.",
 }
 
 #: Shown for a code with no entry (a runtime backstop only; the exhaustiveness
@@ -267,6 +274,19 @@ def not_available_embedded_error(command: str) -> CliError:
         message=f"'{command}' is not available inside the Mammoth app.",
         exit_status=EXIT_USAGE,
         hint="The app supplies the login, project and tools; use the other commands.",
+    )
+
+
+def not_available_error(command: str, *, web_path: str, instead: str | None = None) -> CliError:
+    """A command whose server route no longer exists: say where the web app does it."""
+    hint = f"Do it in the web app: {web_path}."
+    if instead:
+        hint += f" {instead}"
+    return CliError(
+        code=CODE_NOT_AVAILABLE,
+        message=f"'{command}' is not available: the server no longer offers it.",
+        exit_status=EXIT_USAGE,
+        hint=hint,
     )
 
 

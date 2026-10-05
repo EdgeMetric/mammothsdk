@@ -1,6 +1,6 @@
 # `billing` commands
 
-Every command returns the standard JSON envelope. On nonzero exit, read the error envelope and its `recovery_commands`; do not guess request fields. "Status on release" is joined from `docs/release-capability-matrix.json`: *ran once* means one bounded live run succeeded on the named CLI release, *untried* means nobody has run it, *not supported* means the backend refuses it. When this file disagrees with [capabilities](../capabilities.md) or a recipe, they win. Envelope shapes: [machine output](../machine-output.md).
+Every command returns the standard JSON envelope. On nonzero exit, read the error envelope and its `recovery_commands`; do not guess request fields. "Status on release" is joined from `docs/release-capability-matrix.json`: *ran once* means one bounded live run succeeded on the named CLI release, *untried* means nobody has run it (use it normally: confirm writes with the user, check the result afterwards), *not supported* means the backend refuses it. When this file disagrees with [capabilities](../capabilities.md) or a recipe, they win. Envelope shapes: [machine output](../machine-output.md).
 
 ### `billing.chargebee-plan`
 
@@ -152,6 +152,26 @@ Result: `BillingStripePreviewInvoiceResult`; mutation `read`, confirmation `none
 
 Status on release: observed blocker — backend_error: The CLI gates this GET behind --yes --confirm WORKSPACE_ID; with confirmation: HTTP 400 4SUBS037 'Failed to perform subscription operation'. Re-check before relying on it.
 
+### `billing.stripe.recheck-limits`
+
+Run: `mammoth billing stripe recheck-limits`. Exact input fields: `mammoth schema get billing.stripe.recheck-limits`.
+
+Example: `mammoth billing stripe recheck-limits`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `BillingStripeRecheckLimitsResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `billing.stripe.resume`
+
+Run: `mammoth billing stripe resume`. Exact input fields: `mammoth schema get billing.stripe.resume`.
+
+Example: `mammoth billing stripe resume`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+
+Result: `BillingStripeResumeResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
 ### `billing.stripe.retry-payment`
 
 Run: `mammoth billing stripe retry-payment`. Exact input fields: `mammoth schema get billing.stripe.retry-payment`.
@@ -171,6 +191,16 @@ Example: `mammoth billing stripe status`. Placeholders are illustrative; resolve
 Result: `BillingStripeStatusResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
 Status on release: ran once on CLI 2.0.15 — admin read sweep 2026-09-18: exit 0 on release with CLI 2.0.15. The CLI gates this GET behind --yes --confirm WORKSPACE_ID (confirm_target policy); with confirmation: exit 0; data with billing_cycle, has_active_subscription, is_trial_expired, ... (20 keys) Si…
+
+### `billing.stripe.storage.set`
+
+Run: `mammoth billing stripe storage set`. Exact input fields: `mammoth schema get billing.stripe.storage.set`.
+
+Example: `mammoth billing stripe storage set --input '{"storage_gb": 1}'`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+
+Result: `BillingStripeStorageSetResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
 
 ### `billing.stripe.sync`
 

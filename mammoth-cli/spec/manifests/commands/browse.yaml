@@ -143,3 +143,206 @@ commands:
   undo_test: null
   known_restrictions: Validate level against the OpenAPI enum and report truncation.
   reviewed_by: primary
+- command_id: browse.resources
+  command_path: browse resources
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.browse.BrowseAPI.resources_list
+  sdk_conversion: Call mammoth.api.browse.BrowseAPI.resources_list with validated request fields.
+  request_model: BrowseResourcesRequest
+  result_model: BrowseResourcesResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: cursor
+  acceptance_evidence: live_read_only
+  live_test: LT-BROWSE-RESOURCES
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth browse resources --help
+  agent_example: 'mammoth browse resources'
+  unit_tests:
+  - UT-BROWSE-RESOURCES
+  contract_tests:
+  - CT-BROWSE-RESOURCES-HUMAN
+  - CT-BROWSE-RESOURCES-JSON
+  - CT-BROWSE-RESOURCES-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'One project''s resources a cursor page at a time (resources v2): pass next_cursor back as cursor while has_more is true. Optional parent_type and parent_id list inside a folder; resource_type, search, sort and fields narrow the page.'
+  reviewed_by: primary
+  readback:
+    command: browse.resources
+    ids: {}
+    kind: object
+- command_id: browse.resource
+  command_path: browse resource
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - name: resource_type
+    type: str
+    required: true
+    metavar: RESOURCE_TYPE
+    falls_back_to_field: null
+    help: Resource type, for example dataset or dataview.
+  - name: object_id
+    type: int
+    required: true
+    metavar: OBJECT_ID
+    falls_back_to_field: null
+    help: ID of the resource within its type.
+  options: []
+  sdk_symbol: mammoth.api.browse.BrowseAPI.resource_get
+  sdk_conversion: Call mammoth.api.browse.BrowseAPI.resource_get with validated request fields.
+  request_model: BrowseResourceRequest
+  result_model: BrowseResourceResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-BROWSE-RESOURCE
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth browse resource RESOURCE_TYPE OBJECT_ID --help
+  agent_example: 'mammoth browse resource dataset 123'
+  unit_tests:
+  - UT-BROWSE-RESOURCE
+  contract_tests:
+  - CT-BROWSE-RESOURCE-HUMAN
+  - CT-BROWSE-RESOURCE-JSON
+  - CT-BROWSE-RESOURCE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'One resource of the project with its full properties (resources v2); name the type, then the id.'
+  reviewed_by: primary
+  readback:
+    command: browse.resource
+    ids: {}
+    kind: object
+- command_id: browse.ancestors
+  command_path: browse ancestors
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - name: resource_id
+    type: int
+    required: true
+    metavar: RESOURCE_ID
+    falls_back_to_field: null
+    help: The folder's resource_id as browse resources returns it (not its object id).
+  options: []
+  sdk_symbol: mammoth.api.browse.BrowseAPI.resource_ancestors
+  sdk_conversion: Call mammoth.api.browse.BrowseAPI.resource_ancestors with validated request fields.
+  request_model: BrowseAncestorsRequest
+  result_model: BrowseAncestorsResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-BROWSE-ANCESTORS
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth browse ancestors RESOURCE_ID --help
+  agent_example: 'mammoth browse ancestors 123'
+  unit_tests:
+  - UT-BROWSE-ANCESTORS
+  contract_tests:
+  - CT-BROWSE-ANCESTORS-HUMAN
+  - CT-BROWSE-ANCESTORS-JSON
+  - CT-BROWSE-ANCESTORS-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'The folder path (breadcrumb) of a FOLDER of the active project: the chain from the project root down to the folder itself, root first (resources v2). Pass the folder''s resource_id from browse resources, not its object id. Any other id answers 404; 0 means the project root and returns an empty path. For a dataset or view, take its parent_resource_id first.'
+  reviewed_by: primary
+  readback:
+    command: browse.ancestors
+    ids: {}
+    kind: object
+- command_id: browse.search
+  command_path: browse search
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.browse.BrowseAPI.resources_search
+  sdk_conversion: Call mammoth.api.browse.BrowseAPI.resources_search with validated request fields.
+  request_model: BrowseSearchRequest
+  result_model: BrowseSearchResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: cursor
+  acceptance_evidence: live_read_only
+  live_test: LT-BROWSE-SEARCH
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth browse search --help
+  agent_example: 'mammoth browse search'
+  unit_tests:
+  - UT-BROWSE-SEARCH
+  contract_tests:
+  - CT-BROWSE-SEARCH-HUMAN
+  - CT-BROWSE-SEARCH-JSON
+  - CT-BROWSE-SEARCH-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Searches resources across every project you can open in the workspace (resources v2), a cursor page at a time: pass next_cursor back as cursor while has_more is true. search matches names; resource_type (comma-separated), sort and fields narrow the page. Needs no active project. Each dataset hit carries dataset_id (its object_id) and each view hit view_id: pass those, never the tree id.'
+  reviewed_by: primary
+  readback:
+    command: browse.search
+    ids: {}
+    kind: object
+- command_id: browse.resources.bulk
+  command_path: browse resources bulk
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.browse.BrowseAPI.resources_bulk
+  sdk_conversion: Call mammoth.api.browse.BrowseAPI.resources_bulk with validated request fields.
+  request_model: BrowseResourcesBulkRequest
+  result_model: BrowseResourcesBulkResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-BROWSE-RESOURCES-BULK
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth browse resources bulk --help
+  agent_example: 'mammoth browse resources bulk --input ''{"items": [["dataview", 42]]}'''
+  unit_tests:
+  - UT-BROWSE-RESOURCES-BULK
+  contract_tests:
+  - CT-BROWSE-RESOURCES-BULK-HUMAN
+  - CT-BROWSE-RESOURCES-BULK-JSON
+  - CT-BROWSE-RESOURCES-BULK-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Gets many resources of the active project by type and id in one request (resources v2; 100 pairs per request, more are chunked). Pass items in --input as [type, id] pairs, for example [["dataview", 42]]. A pair that does not exist in the project, or that you cannot read, is left out of the answer.'
+  reviewed_by: primary
+  readback:
+    command: browse.resources.bulk
+    ids: {}
+    kind: object

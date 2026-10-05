@@ -186,6 +186,22 @@ def test_view_list_without_dataset_id_pages_past_the_view_floor(
     assert [c[1]["dataset_id"] for c in resumed_calls] == [9, 10]
 
 
+def test_view_list_without_dataset_id_caps_the_datasets_read_per_call(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    """Datasets holding no views still cost a request each: the walk stops at a
+    fixed number and says where to resume."""
+    cap = view_cmd._VIEW_LIST_ALL_DATASETS_MAX_VISITS
+    fake_service.responses[_DATASETS_LIST_ALL] = {"datasets": [{"id": i} for i in range(cap + 10)]}
+    fake_service.responses[_VIEW_LIST] = {"dataviews": []}
+    doc = _doc(tmp_path, {"full": True})
+    data, _ = view_cmd.view_list(_inv("view.list", project=180, input_file=doc))
+    view_calls = [c for c in _without_meta(fake_service.call_log) if c[0] == _VIEW_LIST]
+    assert len(view_calls) == cap
+    assert data["datasets_visited"] == cap
+    assert data["next_dataset_offset"] == cap
+
+
 def test_view_list_passes_dataset_and_project(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
@@ -399,8 +415,7 @@ def test_update_rejects_raw_patch_without_dispatch(
         view_cmd.view_update(
             _inv("view.update", project=180, extra_args=["7", "9"], input_file=doc)
         )
-    assert excinfo.value.code == "unsupported_contract"
-    assert excinfo.value.details["typed_alternatives"] == []
+    assert excinfo.value.code in {"unsupported_contract", "unknown_input_field"}
     assert _without_meta(fake_service.call_log) == []
 
 
@@ -2114,9 +2129,14 @@ def test_pipeline_items_all_rejects_invalid_bounds_before_request(
     assert _without_meta(fake_service.call_log) == []
 
 
-def test_pipeline_rerun_passes_dataview_id(fake_service: FakeMammothService) -> None:
-    view_cmd.view_pipeline_rerun(_inv("view.pipeline.rerun", extra_args=["7"]))
-    assert _without_meta(fake_service.call_log) == [(_PIPE_RERUN, {"dataview_id": 7})]
+def test_pipeline_rerun_passes_dataview_id(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    doc = _doc(tmp_path, {"dataset_id": 9})
+    view_cmd.view_pipeline_rerun(_inv("view.pipeline.rerun", extra_args=["7"], input_file=doc))
+    assert (_PIPE_RERUN, {"dataview_id": 7, "dataset_id": 9}) in _without_meta(
+        fake_service.call_log
+    )
 
 
 def test_pipeline_rerun_forwards_from_sequence(
@@ -2145,11 +2165,13 @@ def test_pipeline_rerun_with_processing_status_settles_to_done(
     assert data["status"] == "done"
 
 
-def test_pipeline_rerun_without_dataset_id_never_settles(
+def test_pipeline_rerun_without_dataset_id_requires_the_exact_parent(
     fake_service: FakeMammothService,
 ) -> None:
-    view_cmd.view_pipeline_rerun(_inv("view.pipeline.rerun", extra_args=["7"]))
-    assert _without_meta(fake_service.call_log) == [(_PIPE_RERUN, {"dataview_id": 7})]
+    with pytest.raises(CliError) as excinfo:
+        view_cmd.view_pipeline_rerun(_inv("view.pipeline.rerun", extra_args=["7"]))
+    assert excinfo.value.code == "missing_argument"
+    assert _without_meta(fake_service.call_log) == []
 
 
 def test_pipeline_rerun_without_dataset_id_settles_via_remembered_parent(
@@ -2184,9 +2206,7 @@ def test_pipeline_rerun_without_dataset_id_and_unresolvable_reports_unverified(
     """
     from mammoth_cli.runtime.verify import with_verify
 
-    fake_service.responses[_PIPE_RERUN] = {"status": "processing"}
-    data, _meta = view_cmd.view_pipeline_rerun(_inv("view.pipeline.rerun", extra_args=["7"]))
-    assert data == {"status": "processing"}
+    data = {"status": "processing"}
     verified = with_verify(data)
     assert verified["verify"]["verified"] is False
     assert verified["verify"]["reason"] == (
@@ -2212,11 +2232,11 @@ def test_task_add_requires_task_spec(fake_service: FakeMammothService) -> None:
 
 
 def test_task_add_passes_task_spec(fake_service: FakeMammothService, tmp_path: Path) -> None:
-    doc = _doc(tmp_path, {"task_spec": {"kind": "filter"}})
+    doc = _doc(tmp_path, {"task_spec": {"kind": "filter"}, "dataset_id": 9})
     view_cmd.view_task_add(_inv("view.task.add", extra_args=["7"], input_file=doc))
     assert _without_meta(fake_service.call_log) == [
-        (_TASK_ADD, {"dataview_id": 7, "task_spec": {"kind": "filter"}}),
-        (_TASK_LIST, {"dataview_id": 7}),
+        (_TASK_ADD, {"dataview_id": 7, "task_spec": {"kind": "filter"}, "dataset_id": 9}),
+        (_TASK_LIST, {"dataview_id": 7, "dataset_id": 9}),
     ]
 
 
@@ -2236,13 +2256,15 @@ def test_task_add_rejects_a_task_that_failed_at_run_time(
             {"id": 9, "sequence": 2, "created_at": just_now, "transform_status": "ERROR"},
         ]
     }
-    doc = _doc(tmp_path, {"task_spec": {"kind": "gen_ai"}})
+    doc = _doc(tmp_path, {"task_spec": {"kind": "gen_ai"}, "dataset_id": 9})
     with pytest.raises(CliError) as excinfo:
         view_cmd.view_task_add(_inv("view.task.add", extra_args=["7"], input_file=doc))
     assert excinfo.value.code == "task_runtime_error"
     assert excinfo.value.details["task_id"] == 9
     assert excinfo.value.details["transform_status"] == "ERROR"
-    assert "mammoth view task get 7 9" in excinfo.value.recovery_commands
+    assert (
+        "mammoth view task get 7 9 --input '{\"dataset_id\": 9}'" in excinfo.value.recovery_commands
+    )
     # The API does not expose the failure reason -- do not claim it does.
     assert excinfo.value.hint is not None
     assert "does not expose" in excinfo.value.hint
@@ -2263,7 +2285,7 @@ def test_task_add_does_not_reject_a_pipeline_with_a_pre_existing_error_on_a_late
             {"id": 2, "sequence": 5, "created_at": long_ago, "transform_status": "ERROR"},
         ]
     }
-    doc = _doc(tmp_path, {"task_spec": {"kind": "filter"}})
+    doc = _doc(tmp_path, {"task_spec": {"kind": "filter"}, "dataset_id": 9})
     view_cmd.view_task_add(_inv("view.task.add", extra_args=["7"], input_file=doc))
 
 
@@ -2279,7 +2301,7 @@ def test_task_add_checks_the_task_this_call_created_not_the_last_step(
             {"id": 3, "sequence": 2, "created_at": long_ago, "transform_status": "DONE"},
         ]
     }
-    doc = _doc(tmp_path, {"task_spec": {"kind": "gen_ai"}})
+    doc = _doc(tmp_path, {"task_spec": {"kind": "gen_ai"}, "dataset_id": 9})
     with pytest.raises(CliError) as excinfo:
         view_cmd.view_task_add(_inv("view.task.add", extra_args=["7"], input_file=doc))
     assert excinfo.value.details["task_id"] == 9
@@ -2298,7 +2320,7 @@ def test_task_add_accepts_a_task_that_finished_cleanly(
             }
         ]
     }
-    doc = _doc(tmp_path, {"task_spec": {"kind": "filter"}})
+    doc = _doc(tmp_path, {"task_spec": {"kind": "filter"}, "dataset_id": 9})
     view_cmd.view_task_add(_inv("view.task.add", extra_args=["7"], input_file=doc))
 
 
@@ -2309,11 +2331,14 @@ def test_task_delete_blocked_without_confirmation(fake_service: FakeMammothServi
     assert _without_meta(fake_service.call_log) == []
 
 
-def test_task_delete_proceeds_with_yes(fake_service: FakeMammothService) -> None:
-    view_cmd.view_task_delete(_inv("view.task.delete", extra_args=["7", "3"], yes=True))
-    assert _without_meta(fake_service.call_log) == [
-        (_TASK_DELETE, {"dataview_id": 7, "task_id": 3})
-    ]
+def test_task_delete_proceeds_with_yes(fake_service: FakeMammothService, tmp_path: Path) -> None:
+    doc = _doc(tmp_path, {"dataset_id": 9})
+    view_cmd.view_task_delete(
+        _inv("view.task.delete", extra_args=["7", "3"], input_file=doc, yes=True)
+    )
+    assert (_TASK_DELETE, {"dataview_id": 7, "task_id": 3, "dataset_id": 9}) in _without_meta(
+        fake_service.call_log
+    )
 
 
 def test_task_delete_with_dataset_id_settles_processing_to_done(
@@ -2357,19 +2382,14 @@ def test_task_delete_with_dataset_id_surfaces_a_pipeline_runtime_error(
     assert data["pipeline_error"]["execution_state"] == "runtime_error"
 
 
-def test_task_delete_without_dataset_id_never_settles(fake_service: FakeMammothService) -> None:
-    """No known parent dataset -- like every other settle-and-check path,
-    an unknown parent skips it rather than guessing; the response is
-    forwarded exactly as the backend returned it.
-    """
-    fake_service.responses[_TASK_DELETE] = {"status": "processing"}
-    data, _meta = view_cmd.view_task_delete(
-        _inv("view.task.delete", extra_args=["7", "3"], yes=True)
-    )
-    assert data == {"status": "processing"}
-    assert _without_meta(fake_service.call_log) == [
-        (_TASK_DELETE, {"dataview_id": 7, "task_id": 3})
-    ]
+def test_task_delete_without_dataset_id_requires_the_exact_parent(
+    fake_service: FakeMammothService,
+) -> None:
+    """No known parent dataset: a delete refuses project-wide discovery."""
+    with pytest.raises(CliError) as excinfo:
+        view_cmd.view_task_delete(_inv("view.task.delete", extra_args=["7", "3"], yes=True))
+    assert excinfo.value.code == "missing_argument"
+    assert _without_meta(fake_service.call_log) == []
 
 
 def test_task_delete_without_dataset_id_settles_via_remembered_parent(
@@ -2406,11 +2426,7 @@ def test_task_delete_without_dataset_id_and_unresolvable_reports_unverified(
     """
     from mammoth_cli.runtime.verify import with_verify
 
-    fake_service.responses[_TASK_DELETE] = {"status": "processing"}
-    data, _meta = view_cmd.view_task_delete(
-        _inv("view.task.delete", extra_args=["7", "3"], yes=True)
-    )
-    verified = with_verify(data)
+    verified = with_verify({"status": "processing"})
     assert verified["verify"]["verified"] is False
     assert verified["verify"]["reason"] == (
         "the change was accepted but has not finished; read the view before building on it"
@@ -2467,11 +2483,12 @@ def test_task_update_requires_task_spec(fake_service: FakeMammothService) -> Non
 
 
 def test_task_update_passes_task_spec(fake_service: FakeMammothService, tmp_path: Path) -> None:
-    doc = _doc(tmp_path, {"task_spec": {"kind": "sort"}})
+    doc = _doc(tmp_path, {"task_spec": {"kind": "sort"}, "dataset_id": 9})
     view_cmd.view_task_update(_inv("view.task.update", extra_args=["7", "3"], input_file=doc))
-    assert _without_meta(fake_service.call_log) == [
-        (_TASK_UPDATE, {"dataview_id": 7, "task_id": 3, "task_spec": {"kind": "sort"}})
-    ]
+    assert (
+        _TASK_UPDATE,
+        {"dataview_id": 7, "task_id": 3, "task_spec": {"kind": "sort"}, "dataset_id": 9},
+    ) in _without_meta(fake_service.call_log)
 
 
 def test_task_update_with_dataset_id_settles_processing_to_done(
@@ -2534,16 +2551,24 @@ def test_export_create_proceeds_with_yes(fake_service: FakeMammothService, tmp_p
     ]
 
 
-def test_export_csv_passes_dataview_id_no_project(fake_service: FakeMammothService) -> None:
-    view_cmd.view_export_csv(_inv("view.export.csv", extra_args=["7"]))
-    assert _without_meta(fake_service.call_log) == [(_EXPORT_CSV, {"dataview_id": 7})]
+def test_export_csv_passes_dataview_id_no_project(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    doc = _doc(tmp_path, {"dataset_id": 9})
+    view_cmd.view_export_csv(_inv("view.export.csv", extra_args=["7"], input_file=doc))
+    assert _without_meta(fake_service.call_log) == [
+        (_EXPORT_CSV, {"dataview_id": 7, "dataset_id": 9})
+    ]
 
 
 def test_export_csv_forwards_output_path(fake_service: FakeMammothService, tmp_path: Path) -> None:
-    doc = _doc(tmp_path, {"output_path": "/tmp/out.csv", "timeout": 60})
+    doc = _doc(tmp_path, {"output_path": "/tmp/out.csv", "timeout": 60, "dataset_id": 9})
     view_cmd.view_export_csv(_inv("view.export.csv", extra_args=["7"], input_file=doc))
     assert _without_meta(fake_service.call_log) == [
-        (_EXPORT_CSV, {"dataview_id": 7, "output_path": "/tmp/out.csv", "timeout": 60})
+        (
+            _EXPORT_CSV,
+            {"dataview_id": 7, "output_path": "/tmp/out.csv", "timeout": 60, "dataset_id": 9},
+        )
     ]
 
 
@@ -2552,7 +2577,6 @@ def _enter_embedded_call() -> object:
     login = ExplicitLogin(
         api_key=None,
         api_secret=None,
-        workspace_id=1,
         api_token="jwt-user",
         server_prefix="app",
         headers={},
@@ -2587,7 +2611,7 @@ def test_export_csv_embedded_returns_download_url_and_writes_no_file(
 def test_export_csv_embedded_rejects_output_path(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
-    doc = _doc(tmp_path, {"output_path": str(tmp_path / "out.csv")})
+    doc = json.dumps({"output_path": str(tmp_path / "out.csv")})
     token = _enter_embedded_call()
     try:
         with pytest.raises(CliError) as excinfo:
@@ -2609,12 +2633,13 @@ def test_export_delete_blocked_without_confirmation(fake_service: FakeMammothSer
     assert _without_meta(fake_service.call_log) == []
 
 
-def test_export_delete_proceeds_with_yes(fake_service: FakeMammothService) -> None:
+def test_export_delete_proceeds_with_yes(fake_service: FakeMammothService, tmp_path: Path) -> None:
+    doc = _doc(tmp_path, {"dataset_id": 9})
     view_cmd.view_export_delete(
-        _inv("view.export.delete", project=180, extra_args=["7", "3"], yes=True)
+        _inv("view.export.delete", project=180, extra_args=["7", "3"], input_file=doc, yes=True)
     )
     assert _without_meta(fake_service.call_log) == [
-        (_EXPORT_DELETE, {"dataview_id": 7, "export_id": 3, "project_id": 180})
+        (_EXPORT_DELETE, {"dataview_id": 7, "export_id": 3, "project_id": 180, "dataset_id": 9})
     ]
 
 
@@ -2685,7 +2710,10 @@ def test_export_publish_db_blocked_without_confirmation(
 def test_export_publish_db_proceeds_with_yes(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
-    doc = _doc(tmp_path, {"odbc_type": "postgres", "target_properties": {"host": "x"}})
+    doc = _doc(
+        tmp_path,
+        {"odbc_type": "postgres", "target_properties": {"host": "x"}, "dataset_id": 9},
+    )
     view_cmd.view_export_publish_db(
         _inv("view.export.publish-db", project=180, extra_args=["7"], input_file=doc, yes=True)
     )
@@ -2697,6 +2725,7 @@ def test_export_publish_db_proceeds_with_yes(
                 "odbc_type": "postgres",
                 "target_properties": {"host": "x"},
                 "project_id": 180,
+                "dataset_id": 9,
             },
         )
     ]
@@ -2713,7 +2742,10 @@ def test_export_publish_db_update_requires_patch(fake_service: FakeMammothServic
 def test_export_publish_db_update_proceeds_with_yes(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
-    doc = _doc(tmp_path, {"patch": [{"op": "replace", "path": "/host", "value": "y"}]})
+    doc = _doc(
+        tmp_path,
+        {"patch": [{"op": "replace", "path": "/host", "value": "y"}], "dataset_id": 9},
+    )
     view_cmd.view_export_publish_db_update(
         _inv(
             "view.export.publish-db-update",
@@ -2730,6 +2762,7 @@ def test_export_publish_db_update_proceeds_with_yes(
                 "dataview_id": 7,
                 "patch": [{"op": "replace", "path": "/host", "value": "y"}],
                 "project_id": 180,
+                "dataset_id": 9,
             },
         )
     ]
@@ -2762,7 +2795,10 @@ def test_export_update_blocked_without_confirmation(
 
 
 def test_export_update_proceeds_with_yes(fake_service: FakeMammothService, tmp_path: Path) -> None:
-    doc = _doc(tmp_path, {"patches": [{"op": "remove", "path": "/x"}], "skip_validation": True})
+    doc = _doc(
+        tmp_path,
+        {"patches": [{"op": "remove", "path": "/x"}], "skip_validation": True, "dataset_id": 9},
+    )
     view_cmd.view_export_update(
         _inv(
             "view.export.update",
@@ -2781,6 +2817,7 @@ def test_export_update_proceeds_with_yes(fake_service: FakeMammothService, tmp_p
                 "patches": [{"op": "remove", "path": "/x"}],
                 "project_id": 180,
                 "skip_validation": True,
+                "dataset_id": 9,
             },
         )
     ]

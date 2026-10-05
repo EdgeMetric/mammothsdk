@@ -159,7 +159,7 @@ def test_read_records_filters_by_error_command_and_run(isolated_run_log: Path) -
     )
     bad.finish(5, error_code="resource_not_found")
 
-    everything = runlog.read_records(limit=0)
+    everything = runlog.read_records(limit=100)
     assert [r["event"] for r in everything] == [
         "command.start",
         "command.end",

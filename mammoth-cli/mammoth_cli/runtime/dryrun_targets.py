@@ -132,6 +132,16 @@ class Sub:
 
 _VIEW_FWD = ("dataset_id", "dataview_id", "project_id")
 
+#: A pending workspace invite, named by its email from ``workspace invite list``.
+_INVITE_SUB = Sub(
+    "invite",
+    "invite_ids",
+    source="workspace.invite.list",
+    container="invites",
+    label_paths=("email",),
+    name_fmt="invite for {label}",
+)
+
 #: Command -> the sub-resources it changes. Shapes verified live on koyal:
 #: task ``params.SEQUENCE_NUMBER``/``params.TASK_KEY``; version ``name``;
 #: agent session ``title``; parameter group ``name``; tag ``name``; context
@@ -181,6 +191,17 @@ SUBS: dict[str, tuple[Sub, ...]] = {
     ),
     "view.draft.discard": (
         Sub("draft", "view_id", "view", "view_id", name_fmt="{parent} › unsaved draft changes"),
+    ),
+    "agent.action.delete": (
+        Sub(
+            "agent action",
+            "action_id",
+            source="agent.action.list",
+            container="actions",
+            forward=("session_id",),
+            label_paths=("name", "kind"),
+            name_fmt="what agent action {action_id} made: {label}",
+        ),
     ),
     "agent.session.delete": (
         Sub(
@@ -239,6 +260,34 @@ SUBS: dict[str, tuple[Sub, ...]] = {
             "template_id",
             source="dashboard.template.get",
             label_paths=("title", "name", "label"),
+        ),
+    ),
+    "dashboard.template.thumbnail.clear": (
+        Sub(
+            "dashboard template picture",
+            "template_id",
+            source="dashboard.template.get",
+            label_paths=("title", "name", "label"),
+            name_fmt="picture of dashboard template {label}",
+        ),
+    ),
+    "support.template.discard": (
+        Sub(
+            "curated template",
+            "slug",
+            source="support.template.list",
+            container="templates",
+            id_field="slug",
+            label_paths=("title", "slug"),
+        ),
+    ),
+    "workflow.cleanup": (
+        Sub(
+            "ghost workflows",
+            "project_id",
+            "project",
+            "project_id",
+            name_fmt="ghost (orphaned skeleton) workflows in {parent}",
         ),
     ),
     "template.delete": (
@@ -303,6 +352,8 @@ SUBS: dict[str, tuple[Sub, ...]] = {
             name_fmt="{label} › access to {parent}",
         ),
     ),
+    "workspace.invite.delete": (_INVITE_SUB,),
+    "workspace.invite.revoke": (_INVITE_SUB,),
     "notification.delete": (Sub("notification", "notification_id"),),
     "notification.delete-batch": (Sub("notification", "ids"),),
 }
@@ -316,6 +367,7 @@ COMMAND_TARGETS: dict[str, tuple[str, str]] = {
     "dataset.delete": ("dataset", "dataset_id"),
     "dataset.bulk-delete": ("dataset", "dataset_ids"),
     "dataset.file-settings.undo": ("dataset", "dataset_id"),
+    "dataset.broken-rows.resolve": ("dataset", "dataset_id"),
     "view.delete": ("view", "view_id"),
     "view.bulk-delete": ("view", "dataview_ids"),
     "batch.delete": ("batch", "batch_id"),
@@ -338,6 +390,10 @@ COMMAND_TARGETS: dict[str, tuple[str, str]] = {
     "workspace.user.remove": ("user", "user_id"),
     "workspace.user.remove-batch": ("user", "ids"),
 }
+
+
+#: Commands that make a new resource and change no existing one: nothing to name.
+CREATES_ONLY: frozenset[str] = frozenset({"dataset.create", "dataset.create-from-pdf"})
 
 
 def unresolvable_error(command_id: str, reason: str) -> CliError:
@@ -405,6 +461,34 @@ def _read_name(
     return {"type": kind, "id": target_id, "name": name}
 
 
+#: Resource kinds one bulk request can name, and the resource type the route calls each.
+BULK_TYPES: dict[str, str] = {"dataset": "datasource", "view": "dataview", "folder": "label"}
+_BULK_SYMBOL = "mammoth.api.browse.BrowseAPI.resources_bulk"
+
+
+def _read_names(
+    service: MammothService, kind: str, ids: list[int], arguments: Mapping[str, Any]
+) -> list[dict[str, Any]]:
+    """Name every id of ``kind``: one bulk request per 100 ids where the route knows the kind.
+
+    An id the bulk read does not return (missing, or not readable by the
+    caller) is read on its own, so the error it raises is the resource's own.
+    """
+    if kind not in BULK_TYPES or len(ids) < 2:
+        return [_read_name(service, kind, item, arguments) for item in ids]
+    scope = {"project_id": arguments["project_id"]} if arguments.get("project_id") else {}
+    rows = service.call(_BULK_SYMBOL, items=[(BULK_TYPES[kind], item) for item in ids], **scope)
+    names = {row.get("object_id"): row.get("name") for row in rows if isinstance(row, Mapping)}
+    return [
+        (
+            {"type": kind, "id": item, "name": names[item]}
+            if isinstance(names.get(item), str) and names[item]
+            else _read_name(service, kind, item, arguments)
+        )
+        for item in ids
+    ]
+
+
 def _path(record: Any, dotted: str) -> object:
     """Follow ``a.b`` through nested mappings (or attributes)."""
     for part in dotted.split("."):
@@ -456,16 +540,37 @@ def _unresolved_name(kind: str, target_id: object, symbol: str, key: str) -> Cli
     )
 
 
-def _sub_record(service: MammothService, sub: Sub, target: object, args: Mapping[str, Any]) -> Any:
-    """Read the sub-resource (or find it in its list); None when nothing is declared."""
+def _container_items(listed: Any, container: str) -> list[Any]:
+    """The items of a list read: a bare list, a mapping, or a typed SDK model."""
+    if isinstance(listed, list):
+        return listed
+    held = (
+        listed.get(container) if isinstance(listed, Mapping) else getattr(listed, container, None)
+    )
+    return held if isinstance(held, list) else []
+
+
+def _sub_record(
+    service: MammothService,
+    sub: Sub,
+    target: object,
+    args: Mapping[str, Any],
+    lists: dict[str, Any],
+) -> Any:
+    """Read the sub-resource (or find it in its list); None when nothing is declared.
+
+    A list read serves every target of the call, so it is made once (``lists``).
+    """
     if sub.source is None:
         return None
     symbol = _symbol_of(sub.source)
     kwargs = {key: args[key] for key in sub.forward if args.get(key) is not None}
     if sub.container is None:
         return service.call(symbol, **{sub.ids_arg: target}, **kwargs)
-    listed = service.call(symbol, **kwargs)
-    items = listed if isinstance(listed, list) else (listed or {}).get(sub.container, [])
+    if symbol not in lists:
+        lists[symbol] = service.call(symbol, **kwargs)
+    listed = lists[symbol]
+    items = _container_items(listed, sub.container)
     found = next((i for i in items if str(_path(i, sub.id_field)) == str(target)), None)
     if found is None:
         raise _unresolved_name(sub.kind, target, symbol, sub.id_field)
@@ -487,8 +592,10 @@ def _sub_targets(
             raise unresolvable_error(command_id, f"the {sub.parent} id is unknown")
         parent = f"\u201c{_parent_name(service, sub.parent, parent_ids[0], args)}\u201d"
     targets = []
+    lists: dict[str, Any] = {}
     for target in ids:
-        label = _label(_sub_record(service, sub, target, args), sub) if target != "all" else None
+        record = _sub_record(service, sub, target, args, lists) if target != "all" else None
+        label = _label(record, sub) if target != "all" else None
         shown = f"\u201c{label}\u201d" if label else str(target)
         layout = sub.name_fmt or ("{parent} \u203a {kind} {label}" if parent else "{kind} {label}")
         name = layout.format(**{**args, "parent": parent, "kind": sub.kind, "label": shown})
@@ -515,6 +622,8 @@ def _target_spec(command_id: str, would_call: Mapping[str, Any]) -> tuple[str, s
     """
     if command_id in COMMAND_TARGETS:
         return COMMAND_TARGETS[command_id]
+    if command_id in CREATES_ONLY:
+        return None
     record = command_by_id(command_id) or {}
     if record.get("mutation_class") == "destructive":
         raise unresolvable_error(command_id, "no read command names this command's targets")
@@ -524,6 +633,41 @@ def _target_spec(command_id: str, would_call: Mapping[str, Any]) -> tuple[str, s
     if family == "view" and would_call.get("view_id") is not None:
         return "view", "view_id"
     return None
+
+
+def _remove_batch_invites(
+    service: MammothService, command_id: str, arguments: Mapping[str, Any]
+) -> list[dict[str, Any]]:
+    """The pending invites a ``user remove-batch`` call deletes, named by email."""
+    invite_ids = _ids(arguments.get("invite_ids"))
+    if not invite_ids:
+        return []
+    return _sub_targets(service, command_id, _INVITE_SUB, {"invite_ids": invite_ids})
+
+
+def _patched_dataset_ids(patch_data: Any) -> list[int]:
+    """The dataset ids a bulk patch renames: the keys of each operation's ``value``."""
+    operations = patch_data if isinstance(patch_data, list) else [patch_data]
+    found: list[int] = []
+    for operation in operations:
+        value = operation.get("value") if isinstance(operation, Mapping) else None
+        if isinstance(value, Mapping):
+            found.extend(int(key) for key in value if str(key).isdigit())
+    return list(dict.fromkeys(found))
+
+
+def _bulk_update_targets(
+    service: MammothService, command_id: str, arguments: Mapping[str, Any]
+) -> list[dict[str, Any]]:
+    """Name the datasets a ``dataset bulk-update`` patch changes, from its own ``patch_data``."""
+    ids = _patched_dataset_ids(arguments.get("patch_data"))
+    if not ids:
+        raise unresolvable_error(
+            command_id,
+            "'patch_data' names no dataset; pass "
+            '{"op": "replace", "path": "name", "value": {"<dataset_id>": "<new name>"}}',
+        )
+    return _read_names(service, "dataset", ids, arguments)
 
 
 def resolve_targets(
@@ -548,6 +692,8 @@ def resolve_targets(
     arguments = would_call.get("arguments") or {}
     if command_id == "user.avatar.delete":
         return _avatar_target(service)
+    if command_id == "dataset.bulk-update":
+        return _bulk_update_targets(service, command_id, arguments)
     if command_id in SUBS:
         scope = {k: v for k, v in would_call.items() if k in ("view_id", "dataset_id")}
         merged = {**scope, **arguments}
@@ -559,8 +705,9 @@ def resolve_targets(
         return []
     kind, id_arg = spec
     ids = _ids(arguments.get(id_arg, would_call.get(id_arg)))
-    if arguments.get("invite_ids"):
-        raise unresolvable_error(command_id, "pending invites have no read that names them")
+    invites = _remove_batch_invites(service, command_id, arguments)
+    if not ids and invites:
+        return invites
     if not ids:
         raise unresolvable_error(
             command_id, f"the call carries no explicit '{id_arg}' ids (it may target every {kind})"
@@ -572,7 +719,7 @@ def resolve_targets(
     parent = {**arguments}
     if "dataset_id" not in parent and would_call.get("dataset_id") is not None:
         parent["dataset_id"] = would_call["dataset_id"]
-    return [_read_name(service, kind, item, parent) for item in ids]
+    return _read_names(service, kind, ids, parent) + invites
 
 
 #: Deletes whose dry run also lists what depends on the resource: command ->

@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import dataclasses
 import inspect
+import shlex
 from datetime import UTC, datetime
 from decimal import Decimal, InvalidOperation
 from typing import Any
@@ -41,6 +42,7 @@ from mammoth_cli.errors.envelope import (
     CliError,
 )
 from mammoth_cli.manifest.loader import command_by_id
+from mammoth_cli.output.normalize import DataRows
 from mammoth_cli.runtime import embedded, parents
 from mammoth_cli.runtime.confirm import (
     POLICY_CONFIRM_TARGET,
@@ -48,13 +50,16 @@ from mammoth_cli.runtime.confirm import (
     POLICY_YES_ALWAYS,
     enforce_confirmation,
 )
+from mammoth_cli.runtime.dryrun import DryRunStop
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.session import open_service, require_project
+from mammoth_cli.services import conditional_format as cf_rules
 from mammoth_cli.services import read_queries, text_dates
 from mammoth_cli.services.conditions import CONDITION_KWARG, compile_condition
 from mammoth_cli.services.dashboard_review import UPLOAD_NOTE, upload_hints
 from mammoth_cli.services.data_quality import column_warnings, duplicate_rows_fact
 from mammoth_cli.services.listing import DATASET_LIST_FIELDS, compact_view_list
+from mammoth_cli.services.local_time import local_time
 from mammoth_cli.services.read_queries import ReadContext
 
 HandlerResult = tuple[Any, dict[str, Any]]
@@ -152,6 +157,18 @@ def _forward_optional(
             kwargs[field] = document[field]
 
 
+def _int_field(value: Any, name: str) -> int:
+    """``value`` as an integer, or an ``invalid_argument`` error naming the field."""
+    try:
+        return int(value)
+    except (TypeError, ValueError) as exc:
+        raise CliError(
+            code=CODE_INVALID_ARGUMENT,
+            message=f"The '{name}' input field must be an integer, got {value!r}.",
+            exit_status=EXIT_USAGE,
+        ) from exc
+
+
 def _resolve_dataset_id(
     service: Any,
     invocation: Invocation,
@@ -176,7 +193,7 @@ def _resolve_dataset_id(
         return explicit
     field = document.get(_DATASET_ID_FIELD)
     if field is not None:
-        return int(field)
+        return _int_field(field, _DATASET_ID_FIELD)
     profile_name = _profile_name(invocation)
     workspace_id = getattr(service, "_workspace_id", None)
     remembered = parents.lookup(profile_name, workspace_id, view_id)
@@ -249,6 +266,26 @@ def _require_discovery_allowed(invocation: Invocation, view_id: int) -> None:
         details={"view_id": view_id, "mutation_class": record.get("mutation_class")},
         recovery_commands=[lookup],
     )
+
+
+def _require_exact_parent(
+    service: Any, invocation: Invocation, view_id: int, kwargs: dict[str, Any]
+) -> None:
+    """Pin the exact parent dataset of a write in ``kwargs``, or refuse the write.
+
+    An explicit ``dataset_id`` or a remembered parent is used as it is; with
+    neither, a write must not let the SDK pick the parent by project-wide
+    discovery (see :func:`_require_discovery_allowed`). Reads pass untouched.
+    """
+    if kwargs.get(_DATASET_ID_FIELD) is not None:
+        return
+    remembered = parents.lookup(
+        _profile_name(invocation), getattr(service, "_workspace_id", None), view_id
+    )
+    if remembered is not None:
+        kwargs[_DATASET_ID_FIELD] = remembered
+        return
+    _require_discovery_allowed(invocation, view_id)
 
 
 def _meta(invocation: Invocation, workspace_id: int, project_id: int | None) -> dict[str, Any]:
@@ -383,9 +420,14 @@ def brief_view_record(record: Any) -> Any:
 _DATASETS_LIST_ALL_SYMBOL = "mammoth.api.datasets.DatasetsAPI.list_all"
 #: Soft floor for the no-DATASET_ID ``view list`` walk: whole per-dataset
 #: pages are pulled and appended until at least this many views have been
-#: collected (or every dataset in the project has been visited), so one call
-#: never silently returns a single dataset's worth from a large project.
-_VIEW_LIST_ALL_DATASETS_MIN_VIEWS = 100
+#: collected (or the visit cap below is reached), so one call never returns a
+#: single dataset's worth from a large project. Sized to what the agent output
+#: cap shows (about 15 summaries): reading more only to cut them is waste.
+_VIEW_LIST_ALL_DATASETS_MIN_VIEWS = 20
+#: Most datasets one no-DATASET_ID ``view list`` call reads views of, whether or
+#: not they hold any, so a project of many empty datasets costs a fixed number of
+#: requests. The result carries ``next_dataset_offset`` to resume from.
+_VIEW_LIST_ALL_DATASETS_MAX_VISITS = 25
 
 
 def view_list(invocation: Invocation) -> HandlerResult:
@@ -488,6 +530,11 @@ def _compact_view_list(
         stop = [d.get("id") for d in datasets].index(dropped)
         result["next_dataset_offset"] = stop
         result["datasets_visited"] = stop - start
+    if "next_dataset_offset" in result and not summary.get("views_omitted"):
+        result["more"] = (
+            f"Datasets from position {result['next_dataset_offset']} on were not read; "
+            "pass dataset_offset to continue, or list one dataset with 'view list DATASET_ID'."
+        )
     if summary.get("views_omitted"):
         result["more"] = (
             "Some views were cut to fit the output cap; list one dataset with "
@@ -507,9 +554,10 @@ def _view_list_across_project(
 
     Starts at ``dataset_offset`` (default 0) into the project's dataset
     list, pulling whole per-dataset view pages until either every dataset
-    has been visited or at least ``_VIEW_LIST_ALL_DATASETS_MIN_VIEWS`` views
-    have been collected. ``next_dataset_offset`` names where to resume when
-    the project holds more datasets than were visited. Returns the result and
+    has been visited, at least ``_VIEW_LIST_ALL_DATASETS_MIN_VIEWS`` views
+    have been collected, or ``_VIEW_LIST_ALL_DATASETS_MAX_VISITS`` datasets were
+    read. ``next_dataset_offset`` names where to resume when the project holds
+    more datasets than were visited. Returns the result and
     the project's dataset records (with the summary fields when ``compact``).
     """
     dataset_offset = int(document.get("dataset_offset", 0))
@@ -535,7 +583,10 @@ def _view_list_across_project(
             if isinstance(item, dict):
                 item = {**item, "dataset_id": dataset_id}
             dataviews.append(item)
-        if len(dataviews) >= _VIEW_LIST_ALL_DATASETS_MIN_VIEWS:
+        if (
+            len(dataviews) >= _VIEW_LIST_ALL_DATASETS_MIN_VIEWS
+            or visited - dataset_offset >= _VIEW_LIST_ALL_DATASETS_MAX_VISITS
+        ):
             break
     result: dict[str, Any] = {"dataviews": dataviews, "datasets_visited": visited - dataset_offset}
     if visited < len(datasets):
@@ -752,14 +803,14 @@ def _relabel_columns(
                 for row in rows
             ]
     if has_rows and isinstance(rows, list):
-        payload[rows_key] = [
+        payload[rows_key] = DataRows(
             (
                 {mapping.get(k, k): v for k, v in row.items() if k not in _SYSTEM_COLUMNS}
                 if isinstance(row, dict)
                 else row
             )
             for row in rows
-        ]
+        )
     return payload
 
 
@@ -830,20 +881,67 @@ def view_trash(invocation: Invocation) -> HandlerResult:
     return data, _meta(invocation, auth.workspace_id, project_id)
 
 
+def view_impact(invocation: Invocation) -> HandlerResult:
+    """List what deleting a pipeline task or this whole view would affect (read-only).
+
+    ``scope`` is ``task`` (then ``task_id`` is required) or ``view``. The dataset is
+    resolved from the view unless given as a trailing positional or ``dataset_id``.
+    """
+    project_id = require_project(invocation)
+    dataview_id = _require_int_positional_at(invocation, 0, "view id")
+    document = invocation.load_input() or {}
+    kwargs: dict[str, Any] = {
+        "dataview_id": dataview_id,
+        "project_id": project_id,
+        "scope": _require_field(document, "scope"),
+    }
+    _forward_optional(document, kwargs, ("task_id",))
+    with open_service(invocation) as (service, auth):
+        kwargs["dataset_id"] = _resolve_dataset_id(service, invocation, dataview_id, document)
+        data = service.call(_symbol(invocation), **kwargs)
+    return data, _meta(invocation, auth.workspace_id, project_id)
+
+
 def view_update(invocation: Invocation) -> HandlerResult:
-    """Reject free-form dataview patches until the API supplies typed variants."""
-    raise CliError(
+    """Rename a view from the name input field; any other patch is refused.
+
+    The dataview patch route leaves op, path and value unconstrained, so the only
+    typed change offered is the rename (``replace`` on ``name``).
+    """
+    project_id = require_project(invocation)
+    dataview_id = _require_int_positional_at(invocation, 0, "view id")
+    document = invocation.load_input() or {}
+    name = document.get("name")
+    # ``dataview_id`` is the VIEW_ID positional, bound into the document by the contract.
+    allowed = {"name", _DATASET_ID_FIELD, "dataview_id"}
+    if set(document) - allowed or not isinstance(name, str) or not name.strip():
+        raise _untyped_patch_error(invocation)
+    with open_service(invocation) as (service, auth):
+        dataset_id = _resolve_dataset_id(service, invocation, dataview_id, document)
+        data = service.call(
+            _symbol(invocation),
+            dataset_id=dataset_id,
+            dataview_id=dataview_id,
+            patch_data=[{"op": "replace", "path": "name", "value": name.strip()}],
+            project_id=project_id,
+        )
+    return data, _meta(invocation, auth.workspace_id, project_id)
+
+
+def _untyped_patch_error(invocation: Invocation) -> CliError:
+    """The refusal for a view patch that is not the typed rename."""
+    return CliError(
         code=CODE_UNSUPPORTED_CONTRACT,
         message="Raw dataview patch operations are not available through the CLI.",
         exit_status=EXIT_USAGE,
         hint=(
-            "The OpenAPI operation leaves op, path, and value unconstrained. "
-            "Use a separately typed view command when its schema covers the intended change."
+            "The OpenAPI operation leaves op, path, and value unconstrained. The typed "
+            'change is the rename: view update VIEW_ID --input \'{"name": "New name"}\'.'
         ),
         details={
             "command_id": invocation.command_id,
             "blocker": "B09 DATAVIEW_INPUT_UNTYPED",
-            "typed_alternatives": [],
+            "typed_alternatives": ['view update VIEW_ID --input \'{"name": "New name"}\''],
         },
         recovery_commands=[
             "mammoth schema find view",
@@ -873,8 +971,9 @@ def view_data_get(invocation: Invocation) -> HandlerResult:
             "project_id": project_id,
         }
         if document.get("offset") is not None:
-            kwargs["offset"] = int(document["offset"])
-            kwargs["limit"] = int(limit) if int(limit) > 0 else 400
+            kwargs["offset"] = _int_field(document["offset"], "offset")
+            page_limit = _int_field(limit, "limit")
+            kwargs["limit"] = page_limit if page_limit > 0 else 400
             _forward_optional(document, kwargs, ("sequence",))
             data = service.call(_QUERY_DATA_SYMBOL, **kwargs)
         else:
@@ -884,7 +983,8 @@ def view_data_get(invocation: Invocation) -> HandlerResult:
         data = _relabel_and_check(
             service, dataset_id, view_id, project_id, data, whole_view=whole_view
         )
-    return _trim_rows(data, limit), meta
+    page_size = _DATA_PAGE_ROWS if whole_view else kwargs["limit"]
+    return _trim_rows(data, limit, page_size), meta
 
 
 _QUERY_DATA_SYMBOL = "mammoth.api.dataviews.DataviewsAPI.query_data"
@@ -1038,6 +1138,10 @@ def key_overlap(left_counts: dict[Any, int], right_counts: dict[Any, int]) -> di
         "unmatched_keys": _unmatched(left_counts, right_keys),
         "right_rows_checked": right_total,
         "right_match_rate": round(right_matched / right_total, 3) if right_total else None,
+        "right_unmatched_rows": right_total - right_matched,
+        "right_unmatched_key_count": sum(
+            1 for key in right_counts if key in (None, "") or key not in left_keys
+        ),
         "right_unmatched_keys": _unmatched(right_counts, left_keys),
     }
 
@@ -1097,13 +1201,31 @@ def join_dry_run_preview(
     }
 
 
-def with_join_check(data: Any, before: Any, after: dict[str, Any], document: dict[str, Any]) -> Any:
+_RIGHT_CHECK_FIELDS = (
+    "right_rows_checked",
+    "right_match_rate",
+    "right_unmatched_rows",
+    "right_unmatched_key_count",
+    "right_unmatched_keys",
+)
+
+
+def with_join_check(
+    data: Any,
+    before: Any,
+    after: dict[str, Any],
+    document: dict[str, Any],
+    right: dict[str, Any] | None = None,
+) -> Any:
     """Add ``join_check`` (row counts, columns added, match rate) to a join result.
 
     ``unmatched_rows`` counts rows where every added column is blank: for a
     LEFT join these are rows whose key found no match in the other view. It is
     counted over the whole view when ``after`` carries ``unmatched_total``
     (see :func:`join_after_snapshot`), else over the sampled first page.
+    ``right`` is a :func:`join_dry_run_preview` of the same join: its right-side
+    fields (keys only the other view has) are copied in, so a LEFT join does not
+    hide them.
     """
     if not isinstance(data, dict) or not isinstance(before, dict):
         return data
@@ -1156,6 +1278,14 @@ def with_join_check(data: Any, before: Any, after: dict[str, Any], document: dic
                 f"{before_n - after_n} rows had no match and were dropped "
                 "(an INNER join keeps matched rows only)."
             )
+    if right and right.get("checked"):
+        check.update({k: right[k] for k in _RIGHT_CHECK_FIELDS})
+        if right["right_unmatched_key_count"]:
+            notes.append(
+                f"{right['right_unmatched_key_count']} key(s) in the other view found no "
+                "partner here (right_unmatched_keys lists the first ones); report them "
+                "as well as the unmatched rows on this side."
+            )
     if notes:
         check["notes"] = notes
     return {**data, "join_check": check}
@@ -1188,17 +1318,19 @@ def _relabel_and_check(
 ) -> Any:
     """Relabel a data page to display names and add ``column_warnings`` and ``duplicates``.
 
+    Only read-only data reads call this, so a dates-as-text finding carries no convert fix.
+
     The metadata read happens only when the page has rows and the caller has
     not read it already (one read serves both the names and the types).
     """
     rows = data.get(_ROWS_KEY) if isinstance(data, dict) else None
     if not isinstance(rows, list) or not rows:
         data = _relabel_columns(service, dataset_id, view_id, project_id, data, mapping)
-        return _with_column_warnings(data, types or {}, view_id, dataset_id)
+        return _with_column_warnings(data, types or {}, view_id, dataset_id, read_only=True)
     if mapping is None or types is None:
         mapping, types = _column_profile(service, dataset_id, view_id, project_id)
     data = _relabel_columns(service, dataset_id, view_id, project_id, data, mapping)
-    data = _with_column_warnings(data, types, view_id, dataset_id)
+    data = _with_column_warnings(data, types, view_id, dataset_id, read_only=True)
     return _with_duplicates_fact(data, view_id, dataset_id, whole_view)
 
 
@@ -1222,7 +1354,11 @@ COLUMN_CHECK_ISSUES = (
 
 
 def _with_column_warnings(
-    data: Any, types: dict[str, str], view_id: int, dataset_id: int | None = None
+    data: Any,
+    types: dict[str, str],
+    view_id: int,
+    dataset_id: int | None = None,
+    read_only: bool = False,
 ) -> Any:
     """Add ``column_checks`` (always) and ``column_warnings`` (when found).
 
@@ -1232,13 +1368,19 @@ def _with_column_warnings(
     """
     if not isinstance(data, dict) or not isinstance(data.get(_ROWS_KEY, []), list):
         return data
-    checks, warnings = _check_columns(data.get(_ROWS_KEY) or [], types, view_id, dataset_id)
+    checks, warnings = _check_columns(
+        data.get(_ROWS_KEY) or [], types, view_id, dataset_id, read_only
+    )
     out = {**data, "column_checks": checks}
     return {**out, "column_warnings": warnings} if warnings else out
 
 
 def _check_columns(
-    rows: list[Any], types: dict[str, str], view_id: int, dataset_id: int | None
+    rows: list[Any],
+    types: dict[str, str],
+    view_id: int,
+    dataset_id: int | None,
+    read_only: bool = False,
 ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     """Run ``column_warnings`` and describe what was checked (never raises)."""
     checks: dict[str, Any] = {
@@ -1250,7 +1392,7 @@ def _check_columns(
     warnings: list[dict[str, Any]] = []
     if rows and types:
         try:
-            warnings = column_warnings(rows, types, view_id, dataset_id)
+            warnings = column_warnings(rows, types, view_id, dataset_id, read_only)
         except Exception as exc:  # noqa: BLE001 -- a presentation aid must not fail the read
             checks["checked"] = []
             checks["error"] = f"{type(exc).__name__}: {exc}"
@@ -1261,13 +1403,17 @@ def _check_columns(
 #: Rows a plain ``view data get`` returns unless ``limit`` says otherwise.
 _DATA_GET_DEFAULT_LIMIT = 50
 
+#: Rows the server returns per data read when no ``offset`` is given (its page size).
+_DATA_PAGE_ROWS = 400
 
-def _trim_rows(data: Any, limit: Any) -> Any:
+
+def _trim_rows(data: Any, limit: Any, page_size: int | None = None) -> Any:
     """Keep the first ``limit`` rows of a data page and say what was cut.
 
-    The route returns every row of the view; an agent reading back a
-    transform needs a sample and the total. ``limit`` 0 or a negative value
-    means "all rows".
+    The route returns one page of the view (``page_size`` rows at most); an
+    agent reading back a transform needs a sample and the total. ``limit`` 0
+    or a negative value means "all rows of the page". A page that came back
+    full may have more rows behind it, so it is reported as truncated too.
     """
     if not isinstance(data, dict) or not isinstance(data.get(_ROWS_KEY), list):
         return data
@@ -1280,10 +1426,15 @@ def _trim_rows(data: Any, limit: Any) -> Any:
     rows = data[_ROWS_KEY]
     total = len(rows)
     if cap <= 0 or total <= cap:
-        return {**data, "rows_returned": total, "rows_total_in_page": total, "truncated": False}
+        page_full = page_size is not None and total >= page_size
+        result = {**data, "rows_returned": total, "rows_total_in_page": total}
+        result["truncated"] = page_full
+        if page_full:
+            result["more_rows_may_exist"] = "The page is full; read the next page with offset."
+        return result
     return {
         **data,
-        _ROWS_KEY: rows[:cap],
+        _ROWS_KEY: DataRows(rows[:cap]),
         "rows_returned": cap,
         "rows_total_in_page": total,
         "truncated": True,
@@ -1543,6 +1694,7 @@ def view_data_aggregate(invocation: Invocation) -> HandlerResult:
     TEXT-date) column groups by the named part of the date -- ``Monday``..``Sunday``,
     ``January``..``December``, ``Q1``..``Q4``, the year -- in calendar order: the
     read-only way to answer by-weekday and by-month questions.
+    Figures are rounded for display (2 decimals; 4 below 1).
     Never use ``view transform pivot`` just to read a number -- it mutates the
     view's pipeline.
     """
@@ -1598,6 +1750,15 @@ def view_data_aggregate(invocation: Invocation) -> HandlerResult:
     return data, meta
 
 
+def view_data_aggregate_rounded(invocation: Invocation) -> HandlerResult:
+    """``view data aggregate`` as the user reads it: floats rounded (2 decimals; 4 below 1).
+
+    ``view data compare`` calls :func:`view_data_aggregate` itself, at full precision.
+    """
+    data, meta = view_data_aggregate(invocation)
+    return read_queries.round_result_rows(data), meta
+
+
 def _compare_key_and_value_columns(document: dict[str, Any]) -> tuple[list[str], list[str]]:
     """Return the (key, value) display-column names an aggregate call over
     ``document`` will produce, without making the call -- mirrors the label
@@ -1619,7 +1780,7 @@ def _run_aggregate_for_compare(
 ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     """Run ``view data aggregate``'s own handler against one view, for compare."""
     sub_invocation = dataclasses.replace(
-        invocation, command_id="view.data.aggregate", extra_args=[str(view_id)]
+        invocation, command_id="view.data.aggregate", extra_args=[str(view_id)], positionals={}
     )
     data, meta = view_data_aggregate(sub_invocation)
     rows = data.get(_ROWS_KEY, [])
@@ -1783,7 +1944,9 @@ def _explore_text_dates(
         condition=condition,
     )
     page = (document.get("offset"), document.get("limit"))
-    rows = read_queries.apply_explore_order(response["data"], document.get("sort"), page)
+    rows = read_queries.apply_explore_order(
+        response["data"], document.get("sort"), page, bool(document.get("cumulative"))
+    )
     return {**response, "data": rows}
 
 
@@ -1806,7 +1969,13 @@ def view_data_explore(invocation: Invocation) -> HandlerResult:
     An optional ``metric`` ``{"column": ..., "function": ...}`` (SUM, COUNT,
     AVG, MIN, MAX, STDDEV or DISTINCT_COUNT) adds a second aggregate per bucket over another column,
     and an optional ``condition`` filters rows first -- same as ``view data
-    aggregate``, which this command wraps for the raw PIVOT shape. Never use
+    aggregate``, which this command wraps for the raw PIVOT shape. A date range
+    is one ``and`` condition (``>=`` a start, ``<=`` an end); one year is
+    ``{"column": ..., "operator": "=", "value": 2017, "component": "year"}``.
+    ``cumulative: true`` adds a running total of the metric (of ``count`` without
+    one) over the buckets in date order, whatever ``sort`` or ``limit`` shows:
+    the answer to "cumulative / running total through X". Figures are rounded for
+    display (2 decimals; 4 below 1). Never use
     ``view transform pivot`` just to explore a column; it mutates the
     pipeline.
     """
@@ -1842,6 +2011,8 @@ def view_data_explore(invocation: Invocation) -> HandlerResult:
         if isinstance(metric, dict):
             resolved_metric = _resolved_aggregate_item(metric, display_to_internal)
             as_map["agg_1"] = resolved_metric["as_name"]
+        if document.get("cumulative"):
+            as_map["cumulative"] = f"{as_map.get('agg_1', 'count')} (running total)"
         if bucket_dates:
             data = _explore_text_dates(reads, document, internal_column, resolved_metric)
         else:
@@ -1856,7 +2027,7 @@ def view_data_explore(invocation: Invocation) -> HandlerResult:
         data = read_queries.with_assumptions(reads, data)
         if not bucket_dates:
             data = read_queries.with_variant_hint(reads, data, column_arg)
-    return data, meta
+    return read_queries.round_result_rows(data), meta
 
 
 def _explore_on_backend(
@@ -1881,7 +2052,9 @@ def _explore_on_backend(
         kwargs[CONDITION_KWARG] = compile_condition(spec).build(
             reads.display_to_internal or None, reads.column_types or None
         )
-    _forward_optional(document, kwargs, ("level", "sequence", "limit", "offset", "sort"))
+    _forward_optional(
+        document, kwargs, ("level", "sequence", "limit", "offset", "sort", "cumulative")
+    )
     return reads.service.call(_symbol(invocation), **kwargs)
 
 
@@ -1961,22 +2134,87 @@ def view_exportable_config_apply(invocation: Invocation) -> HandlerResult:
 
 
 def view_conditional_format_create(invocation: Invocation) -> HandlerResult:
-    """Create a conditional-format rule on a dataview. ``rule`` is required."""
+    """Colour cells in many columns by one threshold in a single command (columns + operator + value + color): each cell is judged by its own value. applies_to=row colours whole rows when any/all of the columns match.
+
+    Per-cell means one rule per column, all made in this one call. A raw ``rule`` body still
+    works instead.
+    """  # noqa: E501
     project_id = require_project(invocation)
     dataview_id = _require_int_positional_at(invocation, 0, "view id")
-    document = invocation.load_input()
-    rule = _require_field(document, "rule")
-    assert document is not None
+    document = invocation.load_input() or {}
+    has_typed = any(field in document for field in cf_rules.TYPED_FIELDS)
+    if "rule" in document and has_typed:
+        raise CliError(
+            code=cf_rules.CODE_INVALID_RULE,
+            message="Pass either 'rule' or the typed fields (columns, operator, value, color).",
+            exit_status=EXIT_USAGE,
+        )
+    if "rule" not in document and not has_typed:
+        _require_field(document, "rule")
     with open_service(invocation) as (service, auth):
         dataset_id = _resolve_dataset_id(service, invocation, dataview_id, document)
-        data = service.call(
-            _symbol(invocation),
-            dataset_id=dataset_id,
-            dataview_id=dataview_id,
-            rule=rule,
-            project_id=project_id,
-        )
+        if has_typed:
+            metadata = _dataview_metadata(service, dataset_id, dataview_id, project_id)
+            column_map, column_types = _column_maps(metadata)
+            rules = cf_rules.build_rules(document, column_map, column_types)
+        else:
+            cf_rules.validate_rule(document["rule"])
+            rules = [document["rule"]]
+        data = _create_cf_rules(service, invocation, rules, (dataset_id, dataview_id, project_id))
     return data, _meta(invocation, auth.workspace_id, project_id)
+
+
+def _cf_sequence(rule: Any) -> int:
+    return rule.get("SEQUENCE", -1) if isinstance(rule, dict) else -1
+
+
+def _create_cf_rules(
+    service: Any, invocation: Invocation, rules: list[dict[str, Any]], scope: tuple[Any, ...]
+) -> Any:
+    """POST each rule in turn; a mid-way failure names the rule ids already created.
+
+    Every response is the dataview's whole rule map; the new rule has the highest SEQUENCE.
+    """
+    dataset_id, dataview_id, project_id = scope
+    ids: list[str] = []
+    data: Any = None
+    for rule in rules:
+        try:
+            data = service.call(
+                _symbol(invocation),
+                dataset_id=dataset_id,
+                dataview_id=dataview_id,
+                rule=rule,
+                project_id=project_id,
+            )
+        except DryRunStop as stop:
+            stop.record["rules"] = rules  # every body that would be sent, not just the first
+            raise
+        except CliError as error:
+            if ids:
+                error.details = {**error.details, "created_rule_ids": ids}
+                error.message += f" Rules already created before the failure: {ids}."
+            raise
+        if isinstance(data, dict) and data:
+            ids.append(max(data, key=lambda k: _cf_sequence(data[k])))
+    if len(rules) == 1:
+        return data
+    note = f"{len(rules)} rules, one per column, so each cell is coloured by its own value."
+    return {"created_rule_ids": ids, "rules_created": len(rules), "note": note}
+
+
+def _column_maps(metadata: list[dict[str, Any]]) -> tuple[dict[str, str], dict[str, str]]:
+    """Display -> internal name and display -> type maps from a view's column metadata."""
+    names: dict[str, str] = {}
+    types: dict[str, str] = {}
+    for column in metadata:
+        internal = column.get(_INTERNAL_NAME_KEY)
+        display = column.get(_DISPLAY_NAME_KEY)
+        if isinstance(internal, str) and isinstance(display, str):
+            names[display] = internal
+            if isinstance(column.get("type"), str):
+                types[display] = column["type"]
+    return names, types
 
 
 def view_conditional_format_delete_all(invocation: Invocation) -> HandlerResult:
@@ -2434,8 +2672,28 @@ def view_version_list(invocation: Invocation) -> HandlerResult:
     _forward_optional(document, kwargs, ("fields", "sort", "limit", "offset", "name"))
     with open_service(invocation) as (service, auth):
         kwargs["dataset_id"] = _resolve_dataset_id(service, invocation, dataview_id, document)
-        data = service.call(_symbol(invocation), **kwargs)
+        data = _with_version_times(service.call(_symbol(invocation), **kwargs))
     return data, _meta(invocation, auth.workspace_id, project_id)
+
+
+def _with_version_times(data: Any) -> Any:
+    """Give each version a ``when`` with an explicit offset.
+
+    ``created_at`` is naive UTC and the server-made ``name`` ("30-Sep-2026 11:17 AM")
+    is that same UTC wall time, so neither can be shown to a user as local time.
+    """
+    versions = data.get("versions") if isinstance(data, dict) else None
+    if not isinstance(versions, list):
+        return data
+    stamped = [
+        {**v, "when": local_time(v.get("created_at"))} if isinstance(v, dict) else v
+        for v in versions
+    ]
+    return {
+        **data,
+        "versions": stamped,
+        "time_note": "created_at and the version name are UTC; `when` carries its offset.",
+    }
 
 
 def view_version_update(invocation: Invocation) -> HandlerResult:
@@ -2534,11 +2792,33 @@ def view_draft_command(invocation: Invocation) -> HandlerResult:
     return data, _meta(invocation, auth.workspace_id, None)
 
 
+#: Pipeline patch paths that throw work away: a discarded rule or draft, a reset view.
+_DISCARDING_PATCH_PATHS = frozenset({"discard", "reset", "discard-changes"})
+
+
+def _discards_pipeline_work(patches: Any) -> bool:
+    """Whether any patch in ``patches`` is a ``discard``, ``reset`` or ``discard-changes``."""
+    if not isinstance(patches, list):
+        return False
+    for patch in patches:
+        path = str(patch.get("path", "")) if isinstance(patch, dict) else ""
+        if path.strip("/").lower().replace("_", "-") in _DISCARDING_PATCH_PATHS:
+            return True
+    return False
+
+
 def view_pipeline_edit(invocation: Invocation) -> HandlerResult:
     """Apply JSON Patch operations to a dataview's pipeline. ``patches`` required."""
     dataview_id = _require_int_positional_at(invocation, 0, "dataview id")
     document = invocation.load_input()
     patches = _require_field(document, "patches")
+    if _discards_pipeline_work(patches):
+        enforce_confirmation(
+            invocation,
+            policy=POLICY_CONFIRM_TARGET,
+            target=str(dataview_id),
+            action=f"discard or reset pipeline work of view {dataview_id}",
+        )
     kwargs: dict[str, Any] = {"dataview_id": dataview_id, "patches": patches}
     assert document is not None
     _forward_optional(document, kwargs, ("dataset_id",))
@@ -2676,6 +2956,7 @@ def view_pipeline_rerun(invocation: Invocation) -> HandlerResult:
     kwargs: dict[str, Any] = {"dataview_id": dataview_id}
     _forward_optional(document, kwargs, ("from_sequence", "dataset_id"))
     with open_service(invocation) as (service, auth):
+        _require_exact_parent(service, invocation, dataview_id, kwargs)
         dataset_id = kwargs.get("dataset_id")
         if dataset_id is None:
             dataset_id = _resolve_dataset_id_for_settle(
@@ -2689,11 +2970,20 @@ def view_pipeline_rerun(invocation: Invocation) -> HandlerResult:
     return data, _meta(invocation, auth.workspace_id, None)
 
 
+#: Seconds ``view pipeline wait`` waits when the caller names no ``timeout`` (the SDK's own
+#: default is an hour, one request every few seconds for as long as it runs).
+_PIPELINE_WAIT_TIMEOUT = 300.0
+
+
 def view_pipeline_wait(invocation: Invocation) -> HandlerResult:
-    """Wait for a dataview's pipeline to finish running."""
+    """Wait for a dataview's pipeline to finish running.
+
+    Waits up to ``_PIPELINE_WAIT_TIMEOUT`` seconds unless ``timeout`` says more,
+    polling less often the longer it waits.
+    """
     dataview_id = _require_int_positional_at(invocation, 0, "dataview id")
     document = invocation.load_input() or {}
-    kwargs: dict[str, Any] = {"dataview_id": dataview_id}
+    kwargs: dict[str, Any] = {"dataview_id": dataview_id, "timeout": _PIPELINE_WAIT_TIMEOUT}
     _forward_optional(document, kwargs, ("dataset_id", "timeout", "poll_interval"))
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), **kwargs)
@@ -2713,9 +3003,11 @@ def view_task_add(invocation: Invocation) -> HandlerResult:
         reject_pipeline_reference_errors,
         reject_task_runtime_error,
         require_expected_task_count,
+        with_in_place_note,
     )
 
     with open_service(invocation) as (service, auth):
+        _require_exact_parent(service, invocation, dataview_id, kwargs)
         require_expected_task_count(service, dataview_id, kwargs.get("dataset_id"), document)
         submitted_at = datetime.now(UTC)
         data = service.call(_symbol(invocation), **kwargs)
@@ -2723,7 +3015,7 @@ def view_task_add(invocation: Invocation) -> HandlerResult:
         reject_task_runtime_error(
             service, dataview_id, kwargs.get("dataset_id"), data, submitted_at
         )
-    return data, _meta(invocation, auth.workspace_id, None)
+    return with_in_place_note(data, dataview_id), _meta(invocation, auth.workspace_id, None)
 
 
 def view_task_delete(invocation: Invocation) -> HandlerResult:
@@ -2739,6 +3031,7 @@ def view_task_delete(invocation: Invocation) -> HandlerResult:
     kwargs: dict[str, Any] = {"dataview_id": dataview_id, "task_id": task_id}
     _forward_optional(document, kwargs, ("dataset_id",))
     with open_service(invocation) as (service, auth):
+        _require_exact_parent(service, invocation, dataview_id, kwargs)
         dataset_id = kwargs.get("dataset_id")
         if dataset_id is None:
             dataset_id = _resolve_dataset_id_for_settle(
@@ -2802,6 +3095,7 @@ def view_task_update(invocation: Invocation) -> HandlerResult:
     assert document is not None
     _forward_optional(document, kwargs, ("dataset_id",))
     with open_service(invocation) as (service, auth):
+        _require_exact_parent(service, invocation, dataview_id, kwargs)
         dataset_id = kwargs.get("dataset_id")
         if dataset_id is None:
             dataset_id = _resolve_dataset_id_for_settle(
@@ -2837,6 +3131,7 @@ def view_export_create(invocation: Invocation) -> HandlerResult:
     assert document is not None
     _forward_optional(document, kwargs, ("dataset_id",))
     with open_service(invocation) as (service, auth):
+        _require_exact_parent(service, invocation, dataview_id, kwargs)
         data = service.call(_symbol(invocation), **kwargs)
     return data, _meta(invocation, auth.workspace_id, project_id)
 
@@ -2859,6 +3154,7 @@ def view_export_csv(invocation: Invocation) -> HandlerResult:
     kwargs: dict[str, Any] = {"dataview_id": dataview_id}
     _forward_optional(document, kwargs, ("output_path", "timeout", "dataset_id"))
     with open_service(invocation) as (service, auth):
+        _require_exact_parent(service, invocation, dataview_id, kwargs)
         data = service.call(_symbol(invocation), **kwargs)
     # The SDK returns a Path; render it as a string so the written location is
     # visible in every output mode and serializes cleanly to JSON.
@@ -2901,6 +3197,7 @@ def view_export_delete(invocation: Invocation) -> HandlerResult:
     }
     _forward_optional(document, kwargs, ("skip_validation", "dataset_id"))
     with open_service(invocation) as (service, auth):
+        _require_exact_parent(service, invocation, dataview_id, kwargs)
         data = service.call(_symbol(invocation), **kwargs)
     return data, _meta(invocation, auth.workspace_id, project_id)
 
@@ -2976,6 +3273,7 @@ def view_export_publish_db(invocation: Invocation) -> HandlerResult:
     assert document is not None
     _forward_optional(document, kwargs, ("dataset_id",))
     with open_service(invocation) as (service, auth):
+        _require_exact_parent(service, invocation, dataview_id, kwargs)
         data = service.call(_symbol(invocation), **kwargs)
     return data, _meta(invocation, auth.workspace_id, project_id)
 
@@ -2997,6 +3295,7 @@ def view_export_publish_db_update(invocation: Invocation) -> HandlerResult:
     assert document is not None
     _forward_optional(document, kwargs, ("dataset_id",))
     with open_service(invocation) as (service, auth):
+        _require_exact_parent(service, invocation, dataview_id, kwargs)
         data = service.call(_symbol(invocation), **kwargs)
     return data, _meta(invocation, auth.workspace_id, project_id)
 
@@ -3022,6 +3321,7 @@ def view_export_update(invocation: Invocation) -> HandlerResult:
     assert document is not None
     _forward_optional(document, kwargs, ("skip_validation", "dataset_id"))
     with open_service(invocation) as (service, auth):
+        _require_exact_parent(service, invocation, dataview_id, kwargs)
         data = service.call(_symbol(invocation), **kwargs)
     return data, _meta(invocation, auth.workspace_id, project_id)
 
@@ -3285,7 +3585,14 @@ def view_export_specialized(invocation: Invocation) -> HandlerResult:
                     int(target_ds_id),
                     kwargs.get("column_mapping"),
                 )
-        data = service.call_view(dataview_id, method, dataset_id=dataset_id, **kwargs)
+        try:
+            data = service.call_view(dataview_id, method, dataset_id=dataset_id, **kwargs)
+        except CliError as error:
+            if not (is_dataset_route and error.details.get("export_pending")):
+                raise
+            return _pending_dataset_export(error, dataview_id, result_project_id), _meta(
+                invocation, auth.workspace_id, project_id
+            )
         if is_dataset_route and isinstance(data, int):
             # The SDK returns the bare id of the dataset written to; name it, and
             # say which project it landed in, so the agent's next read is obvious.
@@ -3346,6 +3653,33 @@ def view_export_specialized(invocation: Invocation) -> HandlerResult:
     return data, _meta(invocation, auth.workspace_id, project_id)
 
 
+def _pending_dataset_export(error: CliError, view_id: int, project_id: int) -> dict[str, Any]:
+    """A dataset export that was accepted but whose dataset id is not known yet.
+
+    The export was submitted and the server is writing it (or has written it); only
+    the lookup of its id ran out of time. That is not a failure, so say what is known
+    and how to read the dataset when it lands, never an error.
+    """
+    name = error.details.get("dataset_name")
+    pending: dict[str, Any] = {
+        "status": "pending",
+        "source_view_id": view_id,
+        "project_id": project_id,
+        "refreshes_on_pipeline_run": True,
+        "note": (
+            "The export was submitted and is still being written, so its dataset id is not "
+            "known yet. Do not export again: that would create a second dataset. Look it up "
+            f"in a moment with the next command (its source reads 'export of view {view_id}')."
+        ),
+    }
+    if name is not None:
+        pending["dataset_name"] = name
+        pending["next"] = f"mammoth dataset find {shlex.quote(str(name))} --project {project_id}"
+    if error.details.get("dataset_id") is not None:
+        pending["dataset_id"] = error.details["dataset_id"]
+    return pending
+
+
 _EXPORTS_LIST_SYMBOL = "mammoth.api.exports.ExportsAPI.list"
 _INTERNAL_DATASET_HANDLER_TYPE = "internal_dataset"
 
@@ -3385,8 +3719,8 @@ def _existing_internal_dataset_export(
 _DATASET_GET_SYMBOL = "mammoth.api.datasets.DatasetsAPI.get"
 
 
-def _target_dataset_schema_names(service: Any, target_ds_id: int) -> set[str]:
-    """The target dataset's own schema column display names.
+def _target_dataset_schema(service: Any, target_ds_id: int) -> dict[str, str]:
+    """The target dataset's own schema: column display name -> type ('' if absent).
 
     ``dataset.get``'s ``data_schema`` is the dataset's base schema, not any
     view's live/rendered columns -- a view's own rename task can show a
@@ -3410,7 +3744,7 @@ def _target_dataset_schema_names(service: Any, target_ds_id: int) -> set[str]:
             hint="Read the target dataset before appending to it.",
             details={"side": "target", "dataset_id": target_ds_id},
         )
-    names: set[str] = set()
+    names: dict[str, str] = {}
     for column in data_schema:
         display_name = column.get("c_name") if isinstance(column, dict) else None
         if not isinstance(display_name, str):
@@ -3420,8 +3754,49 @@ def _target_dataset_schema_names(service: Any, target_ds_id: int) -> set[str]:
                 hint="Read the target dataset before appending to it.",
                 details={"side": "target", "dataset_id": target_ds_id},
             )
-        names.add(display_name)
+        names[display_name] = str(column.get("c_type") or "")
     return names
+
+
+def _reject_append_type_mismatch(
+    source_types: Any,
+    target_schema: dict[str, str],
+    mapping: dict[str, str],
+    ids: tuple[int, int],
+) -> None:
+    """Refuse an append where a column both sides name has a different type.
+
+    The backend does not coerce: a same-named column of another type lands in
+    a separate new column, splitting the data. Columns only on one side, or
+    renamed through ``column_mapping``, are not compared; an unknown type
+    (empty) on either side is not a mismatch.
+    """
+    if not isinstance(source_types, dict):
+        return
+    mismatched = {
+        name: (str(source_types[name]).lower(), target_schema[name].lower())
+        for name in sorted(source_types.keys() & target_schema.keys() - set(mapping))
+        if source_types[name]
+        and target_schema[name]
+        and str(source_types[name]).lower() != target_schema[name].lower()
+    }
+    if not mismatched:
+        return
+    view_id, target_ds_id = ids
+    listed = "; ".join(f"{n}: source {src}, target {tgt}" for n, (src, tgt) in mismatched.items())
+    raise CliError(
+        code="append_type_mismatch",
+        message=(
+            f"View {view_id} has column(s) whose type differs from target dataset "
+            f"{target_ds_id}: {listed}. An append would create separate columns."
+        ),
+        exit_status=EXIT_USAGE,
+        hint=(
+            f"Run mammoth view transform convert-type on view {view_id} so each column "
+            "matches the target type, then retry the export."
+        ),
+        details={"mismatched": {n: {"source": s, "target": t} for n, (s, t) in mismatched.items()}},
+    )
 
 
 def _reject_append_schema_mismatch(
@@ -3451,7 +3826,8 @@ def _reject_append_schema_mismatch(
             hint="Read the source view before appending from it.",
             details={"side": "source", "dataview_id": dataview_id},
         )
-    target_names = _target_dataset_schema_names(service, target_ds_id)
+    target_schema = _target_dataset_schema(service, target_ds_id)
+    target_names = set(target_schema)
     mapping = column_mapping if isinstance(column_mapping, dict) else {}
     # View.columns (mammoth/view.py) maps display name -> internal name; these
     # dict keys are display names, matching what the backend's own schema
@@ -3459,6 +3835,12 @@ def _reject_append_schema_mismatch(
     source_names = set(source_columns)
     source_only = sorted(source_names - target_names - set(mapping))
     target_only = sorted(target_names - source_names - set(mapping.values()))
+    _reject_append_type_mismatch(
+        service.call_view(dataview_id, "column_types", dataset_id=dataset_id),
+        target_schema,
+        mapping,
+        (dataview_id, target_ds_id),
+    )
     if source_only:
         raise CliError(
             code="append_schema_mismatch",
@@ -3727,7 +4109,10 @@ def _settle_async_view_write(
     data = {**data, "row_check": row_check}
     if pipeline_error is not None:
         data["pipeline_error"] = pipeline_error
-        data["status"] = "failed"
+        # A pipeline still running (or unreadable) is not a failed one: keep the
+        # write's own status, and let verify report the pipeline_error.
+        if pipeline_error.get("execution_state") not in (UNFINISHED_STATE, "unknown"):
+            data["status"] = "failed"
     elif data.get("status") == "processing":
         data["status"] = "done"
     return data
@@ -3759,8 +4144,17 @@ _DATAVIEW_LIST_SYMBOL = "mammoth.api.dataviews.DataviewsAPI.list"
 _UPLOAD_SAMPLE_ROWS = 3
 
 
-def upload_preview(service: Any, dataset_id: int, project_id: int | None) -> dict[str, Any]:
-    """The first view of a new dataset: columns, types, sample rows, warnings.
+def _select_view(views: list[Any], view_id: int | None) -> dict[str, Any] | None:
+    """The view with ``view_id``, or the first (most recent) one when none is named."""
+    if view_id is None:
+        return views[0]
+    return next((v for v in views if isinstance(v, dict) and v.get("id") == view_id), None)
+
+
+def upload_preview(
+    service: Any, dataset_id: int, project_id: int | None, view_id: int | None = None
+) -> dict[str, Any]:
+    """A view of a dataset (the first unless ``view_id``): columns, types, sample rows, warnings.
 
     ``before_dashboard`` names the columns to add before any dashboard is
     made (revenue from a unit price and a quantity), since a dashboard does
@@ -3779,16 +4173,19 @@ def upload_preview(service: Any, dataset_id: int, project_id: int | None) -> dic
         views = listing.get("dataviews") if isinstance(listing, dict) else None
         if not isinstance(views, list) or not views or not isinstance(views[0], dict):
             return {"preview_error": f"dataset {dataset_id} has no view to preview"}
+        chosen = _select_view(views, view_id)
+        if chosen is None:
+            return {"preview_error": f"dataset {dataset_id} has no view {view_id}"}
         # A dataset with more than one live view has one previewed here; the
         # rest are named (id + name) so a caller (``project.check``) can say
         # a view besides the one checked exists, rather than silently acting
         # on the single view this function happens to preview.
         other_views = [
             {"id": other.get("id"), "name": other.get("name")}
-            for other in views[1:]
-            if isinstance(other, dict) and isinstance(other.get("id"), int)
+            for other in views
+            if other is not chosen and isinstance(other, dict) and isinstance(other.get("id"), int)
         ]
-        record = apply_column_renames(views[0])
+        record = apply_column_renames(chosen)
         view_id = record.get("id")
         if not isinstance(view_id, int):
             return {"preview_error": f"dataset {dataset_id}'s first view has no id"}
@@ -3813,6 +4210,7 @@ def upload_preview(service: Any, dataset_id: int, project_id: int | None) -> dic
     checks, warnings = _check_columns(rows, types, view_id, dataset_id)
     preview: dict[str, Any] = {
         "view_id": view_id,
+        "view_name": record.get("name"),
         "row_count": record.get("row_count"),
         "columns": types,
         "sample_rows": rows[:_UPLOAD_SAMPLE_ROWS],

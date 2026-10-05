@@ -13,6 +13,8 @@ from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.services.testing import FakeMammothService
 from mammoth_cli.testing import login_default_profile
 
+_SEARCH = "mammoth.api.browse.BrowseAPI.resources_search"
+_RESOURCES = "mammoth.api.browse.BrowseAPI.resources_list"
 _LIST = "mammoth.api.folders.FoldersAPI.list"
 _GET = "mammoth.api.folders.FoldersAPI.get"
 _ROOT = "mammoth.api.folders.FoldersAPI.get_project_root"
@@ -44,8 +46,13 @@ def test_find_without_project_searches_every_visible_project(
     fake_service: FakeMammothService,
 ) -> None:
     fake_service.projects = [{"id": 1, "name": "P1"}, {"id": 2, "name": "P2"}]
-    fake_service.responses[_LIST] = {
-        "folders": [{"id": 20, "name": "Reports 2024"}, {"id": 21, "name": "Other"}]
+    fake_service.responses[_SEARCH] = {
+        "resources": [
+            {"project_id": 1, "object_id": 20, "name": "Reports 2024"},
+            {"project_id": 2, "object_id": 20, "name": "Reports 2024"},
+            {"project_id": 9, "object_id": 30, "name": "Reports not mine"},
+        ],
+        "has_more": False,
     }
     result, meta = folder_cmd.folder_find(_inv("folder.find", extra_args=["report"]))
     assert result["projects_searched"] == 2
@@ -53,24 +60,49 @@ def test_find_without_project_searches_every_visible_project(
         {"project_id": 1, "project_name": "P1", "id": 20, "name": "Reports 2024"},
         {"project_id": 2, "project_name": "P2", "id": 20, "name": "Reports 2024"},
     ]
-    assert "list_projects" in fake_service.calls
+    assert "list_all_projects" in fake_service.calls
     assert fake_service.call_log == [
-        (_LIST, {"project_id": 1, "limit": 100}),
-        (_LIST, {"project_id": 2, "limit": 100}),
+        (
+            _SEARCH,
+            {
+                "search": "report",
+                "resource_type": "label",
+                "limit": 100,
+                "cursor": None,
+                "fields": "minimal",
+            },
+        )
     ]
     assert meta["project_id"] is None
 
 
 def test_find_with_project_restricts_to_one_project(fake_service: FakeMammothService) -> None:
     fake_service.projects = [{"id": 1, "name": "P1"}, {"id": 42, "name": "P42"}]
-    fake_service.responses[_LIST] = {"folders": [{"id": 20, "name": "Reports 2024"}]}
+    fake_service.responses[_RESOURCES] = {
+        "resources": [{"project_id": 42, "object_id": 20, "name": "Reports 2024"}],
+        "has_more": False,
+    }
     result, meta = folder_cmd.folder_find(_inv("folder.find", project=42, extra_args=["report"]))
     assert result["projects_searched"] == 1
     assert result["matches"] == [
         {"project_id": 42, "project_name": "P42", "id": 20, "name": "Reports 2024"}
     ]
-    assert fake_service.call_log == [(_LIST, {"project_id": 42, "limit": 100})]
+    assert [symbol for symbol, _ in fake_service.call_log] == [_RESOURCES]
+    assert fake_service.call_log[0][1]["project_id"] == 42
     assert meta["project_id"] == 42
+
+
+def test_find_says_when_the_search_was_cut(fake_service: FakeMammothService) -> None:
+    fake_service.projects = [{"id": 1, "name": "P1"}]
+    fake_service.responses[_SEARCH] = {
+        "resources": [{"project_id": 1, "object_id": 20, "name": "Reports"}],
+        "has_more": True,
+        "next_cursor": "c",
+    }
+    result, _meta = folder_cmd.folder_find(_inv("folder.find", extra_args=["report"]))
+    assert result["truncated"] is True
+    assert "longer name" in result["note"]
+    assert len(fake_service.call_log) == 5
 
 
 def test_list_requires_project(fake_service: FakeMammothService) -> None:

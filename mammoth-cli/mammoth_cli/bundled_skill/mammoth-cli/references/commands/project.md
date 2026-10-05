@@ -1,14 +1,14 @@
 # `project` commands
 
-Every command returns the standard JSON envelope. On nonzero exit, read the error envelope and its `recovery_commands`; do not guess request fields. "Status on release" is joined from `docs/release-capability-matrix.json`: *ran once* means one bounded live run succeeded on the named CLI release, *untried* means nobody has run it, *not supported* means the backend refuses it. When this file disagrees with [capabilities](../capabilities.md) or a recipe, they win. Envelope shapes: [machine output](../machine-output.md).
+Every command returns the standard JSON envelope. On nonzero exit, read the error envelope and its `recovery_commands`; do not guess request fields. "Status on release" is joined from `docs/release-capability-matrix.json`: *ran once* means one bounded live run succeeded on the named CLI release, *untried* means nobody has run it (use it normally: confirm writes with the user, check the result afterwards), *not supported* means the backend refuses it. When this file disagrees with [capabilities](../capabilities.md) or a recipe, they win. Envelope shapes: [machine output](../machine-output.md).
 
 ### `project.bulk-delete`
 
 Run: `mammoth project bulk-delete`. Exact input fields: `mammoth schema get project.bulk-delete`.
 
-Example: `mammoth project bulk-delete --input '{"project_ids": [1]}'`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth project bulk-delete --input '{"project_ids": [1]}'`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
-Result: `ProjectBulkDeleteResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
+Result: `ProjectBulkDeleteResult`; mutation `destructive`, confirmation `confirm_target`, wait policy `not_async`.
 
 Status on release: ran once on CLI 2.0.14 — write sweep 2026-09-18: exit 0 on release with CLI 2.0.14. Created throwaway project 22 (cli-write-sweep-throwaway-20260918), then bulk-deleted it. Without --yes: confirmation_required. With --yes: data:{}. Verified via project list: only project 3 (protected…
 
@@ -129,6 +129,16 @@ Run: `mammoth project memory remove`. Exact input fields: `mammoth schema get pr
 Example: `mammoth project memory remove 123 --input '{"index": 1}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ProjectMemoryRemoveResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `project.needs-attention`
+
+Run: `mammoth project needs-attention`. Exact input fields: `mammoth schema get project.needs-attention`.
+
+Example: `mammoth project needs-attention 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `ProjectNeedsAttentionResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
 Status on release: untried; no live run recorded.
 

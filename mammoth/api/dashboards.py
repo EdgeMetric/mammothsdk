@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import base64
 import builtins
 import os
@@ -57,6 +58,20 @@ _list = list  # Alias to avoid shadowing by method name
 # ── Validation error constants ────────────────────────────────────────────────
 
 ERR_DASHBOARD_ID_POSITIVE = "`dashboard_id` must be a positive integer, got {0}."
+ERR_DASHBOARD_IDS_EMPTY = "`dashboard_ids` must be a non-empty list of dashboard ids."
+ERR_STYLE_EMPTY = "`style` must be a non-empty string."
+ERR_TEMPLATE_ID_EMPTY = "`template_id` must be a non-empty template slug."
+ERR_SLUG_EMPTY = "`slug` must be a non-empty template slug."
+ERR_SWAP_FIT_TARGETS = "`target_dataview_ids` must hold 1 to 60 positive dataview ids."
+ERR_SWAP_FIT_SECONDS = "`seconds_budget` must be between 0 and 30, got {0}."
+ERR_WINDOW_DAYS = "`days` must be 7, 30 or 90, got {0!r}."
+ERR_DIGEST_ENABLED = "`enabled` must be true, false or null, got {0!r}."
+ERR_CONTEXT_NOTE_LONG = "`note` must be at most 1000 characters, got {0}."
+ERR_REVIEW_ID_EMPTY = "`review_id` must be a non-empty string."
+_SWAP_FIT_MAX_TARGETS = 60
+_SWAP_FIT_MAX_SECONDS = 30
+_AUDIENCE_WINDOWS = frozenset({7, 30, 90})
+_CONTEXT_NOTE_MAX = 1000
 ERR_PATCH_EMPTY = "`patch` must be a non-empty list of patch operations."
 ERR_INTENT_VALUE_TOO_SHORT = "Patch value for `intent` must be at least 10 characters, got {0!r}."
 ERR_INTENT_VALUE_NOT_STR = "Patch value for `intent` must be a string."
@@ -505,7 +520,7 @@ class DashboardsAPI:
             if output_path
             else Path(f"dashboard_{dashboard_id}_{target}.{_BI_EXPORT_EXTENSIONS[target]}")
         )
-        return _write_bytes_atomic(content, path)
+        return await asyncio.to_thread(_write_bytes_atomic, content, path)
 
     async def update(
         self,
@@ -1042,6 +1057,431 @@ class DashboardsAPI:
         )
         return EmbedUsageResponse.model_validate(response)
 
+    async def embed_usage_summary(self, dashboard_ids: _list[int]) -> dict[str, Any]:
+        """Count the active embed origins of several boards in one call.
+
+        The dashboard library's "embedded on N sites" figure. Boards outside
+        the workspace are ignored by the route.
+
+        Args:
+            dashboard_ids: Non-empty list of dashboard ids (each > 0).
+
+        Returns:
+            Dict with ``counts`` (origins that loaded each board in the last
+            90 days) and ``refused`` (origins refused per board).
+
+        Raises:
+            MammothValidationError: If *dashboard_ids* is empty or holds an id ≤ 0.
+        """
+        if not dashboard_ids:
+            raise MammothValidationError(ERR_DASHBOARD_IDS_EMPTY)
+        for dashboard_id in dashboard_ids:
+            if (
+                isinstance(dashboard_id, bool)
+                or not isinstance(dashboard_id, int)
+                or dashboard_id <= 0
+            ):
+                raise MammothValidationError(ERR_DASHBOARD_ID_POSITIVE.format(dashboard_id))
+        return await self._client._request_json(
+            "GET",
+            f"/workspaces/{self._client.workspace_id}/dashboards/embed-usage",
+            params={"ids": ",".join(str(i) for i in dashboard_ids)},
+        )
+
+    async def format_preview(self, dashboard_id: int, style: str) -> dict[str, Any]:
+        """Dry-run a format switch: what carries over, what is added, what is lost.
+
+        Computed by the server on a copy of the canvas; nothing is persisted.
+
+        Args:
+            dashboard_id: ID of the v3 dashboard (must be > 0).
+            style: Target format/style name (non-empty), as ``dashboard style
+                preset list`` names them.
+
+        Returns:
+            Dict with the carried and added counts and the ``not_shown`` ledger.
+
+        Raises:
+            MammothValidationError: If *dashboard_id* ≤ 0 or *style* is empty.
+        """
+        if isinstance(dashboard_id, bool) or not isinstance(dashboard_id, int) or dashboard_id <= 0:
+            raise MammothValidationError(ERR_DASHBOARD_ID_POSITIVE.format(dashboard_id))
+        if not style:
+            raise MammothValidationError(ERR_STYLE_EMPTY)
+        return await self._client._request_json(
+            "GET", f"/dashboards/{dashboard_id}/format-preview", params={"style": style}
+        )
+
+    async def swap_fit(
+        self,
+        source_dashboard_id: int,
+        target_dataview_ids: _list[int],
+        include_over_budget: bool = False,
+        seconds_budget: float | None = None,
+    ) -> dict[str, Any]:
+        """Score one board against candidate datasets before ``swap_data`` (no writes).
+
+        Pure computation over dataset profiles: no model call, nothing persisted.
+
+        Args:
+            source_dashboard_id: The v3 board that would be re-pointed (must be > 0).
+            target_dataview_ids: Candidate dataview ids, 1 to 60, returned in this order.
+            include_over_budget: Score even datasets past the cost budget (an explicit
+                per-dataset check).
+            seconds_budget: Seconds of cold profile building the request may spend
+                (0 to 30); the server default when omitted. 0 scores cached datasets only.
+
+        Returns:
+            Dict with ``fits`` (one entry per dataview: a grade with matched, total and
+            reasons, or a ``skipped`` reason), ``cell_budget``, ``sample_dataview_ids``,
+            ``seconds_spent`` and ``seconds_budget``.
+
+        Raises:
+            MammothValidationError: If an id is ≤ 0, the list is empty or over 60, or
+                *seconds_budget* is outside 0 to 30.
+        """
+        _require_dashboard_id(source_dashboard_id)
+        if not target_dataview_ids or len(target_dataview_ids) > _SWAP_FIT_MAX_TARGETS:
+            raise MammothValidationError(ERR_SWAP_FIT_TARGETS)
+        for dataview_id in target_dataview_ids:
+            if isinstance(dataview_id, bool) or not isinstance(dataview_id, int) or dataview_id < 1:
+                raise MammothValidationError(ERR_SWAP_FIT_TARGETS)
+        if seconds_budget is not None and not 0 <= seconds_budget <= _SWAP_FIT_MAX_SECONDS:
+            raise MammothValidationError(ERR_SWAP_FIT_SECONDS.format(seconds_budget))
+        params: dict[str, Any] = {
+            "source_dashboard_id": source_dashboard_id,
+            "target_dataview_ids": _list(target_dataview_ids),
+            "include_over_budget": include_over_budget,
+        }
+        if seconds_budget is not None:
+            params["seconds_budget"] = seconds_budget
+        return await self._client._request_json(
+            "POST", "/dashboards/v3/swap/fit", json={"params": params}, operation_effect="read"
+        )
+
+    async def audience(self, dashboard_id: int, days: int = 7) -> dict[str, Any]:
+        """Get who read a board: totals, daily series, viewers, reach and actions.
+
+        Editors only. The route never returns an IP or a city and never counts the
+        editors' own visits.
+
+        Args:
+            dashboard_id: ID of the dashboard (must be > 0).
+            days: Window length: 7, 30 or 90.
+
+        Returns:
+            Dict with totals against the window before, a 30-day daily series, named
+            workspace viewers, anonymous counts, country / device / viewport coverage,
+            people it was shared with who never opened it, page and tile reach, and
+            outward actions.
+
+        Raises:
+            MammothValidationError: If *dashboard_id* ≤ 0 or *days* is not 7, 30 or 90.
+        """
+        _require_dashboard_id(dashboard_id)
+        _require_window_days(days)
+        return await self._client._request_json(
+            "GET", f"/dashboards/{dashboard_id}/audience", params={"days": days}
+        )
+
+    async def audience_digest_get(self, dashboard_id: int) -> dict[str, Any]:
+        """Get the caller's weekly audience email setting for one board.
+
+        Args:
+            dashboard_id: ID of the dashboard (must be > 0).
+
+        Returns:
+            Dict with ``enabled`` (the effective answer), ``explicit`` (the stored
+            choice, null when never chosen) and ``default_on``. Editors only.
+
+        Raises:
+            MammothValidationError: If *dashboard_id* ≤ 0.
+        """
+        _require_dashboard_id(dashboard_id)
+        return await self._client._request_json(
+            "GET", f"/dashboards/{dashboard_id}/audience/digest"
+        )
+
+    async def audience_digest_set(self, dashboard_id: int, enabled: bool | None) -> dict[str, Any]:
+        """Store the caller's choice for one board's weekly audience email.
+
+        Args:
+            dashboard_id: ID of the dashboard (must be > 0).
+            enabled: ``True`` or ``False`` to choose; ``None`` clears the choice, which
+                returns to the default (on once the board has more than 5 viewers a week).
+
+        Returns:
+            Dict with ``enabled``, ``explicit`` and ``default_on`` after the change.
+            Editors only.
+
+        Raises:
+            MammothValidationError: If *dashboard_id* ≤ 0 or *enabled* is not a bool or None.
+        """
+        _require_dashboard_id(dashboard_id)
+        if enabled is not None and not isinstance(enabled, bool):
+            raise MammothValidationError(ERR_DIGEST_ENABLED.format(enabled))
+        return await self._client._request_json(
+            "PUT", f"/dashboards/{dashboard_id}/audience/digest", json={"enabled": enabled}
+        )
+
+    async def audience_summary(self, dashboard_ids: _list[int]) -> dict[str, Any]:
+        """Get views per board for the dashboard library: several boards in one call.
+
+        Args:
+            dashboard_ids: Non-empty list of dashboard ids (each > 0, 200 at most are read).
+
+        Returns:
+            Dict ``{"items": {dashboard_id: {...}}}`` with views and people over 7 days,
+            views over 30 days, the last view and a 14-day daily series. A board never
+            viewed is absent; boards outside the workspace or that the caller cannot
+            edit are ignored.
+
+        Raises:
+            MammothValidationError: If *dashboard_ids* is empty or holds an id ≤ 0.
+        """
+        if not dashboard_ids:
+            raise MammothValidationError(ERR_DASHBOARD_IDS_EMPTY)
+        for dashboard_id in dashboard_ids:
+            _require_dashboard_id(dashboard_id)
+        return await self._client._request_json(
+            "GET",
+            f"/workspaces/{self._client.workspace_id}/dashboards/audience-summary",
+            params={"ids": ",".join(str(i) for i in dashboard_ids)},
+        )
+
+    async def column_roster(self, dashboard_id: int) -> dict[str, Any]:
+        """Get every column of a board's source dataset with its profile.
+
+        Served from the cached dataset profile: value samples, measure ranges and
+        aggregates, date spans and the profiler's identifier and protected-attribute
+        verdicts (the Data panel).
+
+        Args:
+            dashboard_id: ID of the dashboard (must be > 0).
+
+        Returns:
+            Dict with ``columns``, ``on_board_count``, ``row_count`` and ``signals``.
+
+        Raises:
+            MammothValidationError: If *dashboard_id* ≤ 0.
+        """
+        _require_dashboard_id(dashboard_id)
+        return await self._client._request_json("GET", f"/dashboards/{dashboard_id}/columns")
+
+    async def context_review(
+        self,
+        dashboard_id: int,
+        scope: str | None = None,
+        note: str | None = None,
+        fresh: bool = False,
+    ) -> ObjectJobSchema:
+        """Dry-run what applying a board's current context would change.
+
+        Nothing is written: not the canvas, not the transcript, not the bake. The
+        planner runs under the grounding limit and the candidate is held server side.
+
+        Args:
+            dashboard_id: ID of the dashboard (must be > 0).
+            scope: How much prose to touch: ``summary`` (default), ``insights`` or ``all``.
+            note: Free text to steer the review (1000 characters at most).
+            fresh: Work the review out again instead of reusing a pending one.
+
+        Returns:
+            The job handle; its result holds the item-level change set and a
+            ``review_id`` (null when the context changes nothing).
+
+        Raises:
+            MammothValidationError: If *dashboard_id* ≤ 0 or *note* is over 1000 characters.
+        """
+        _require_dashboard_id(dashboard_id)
+        if note is not None and len(note) > _CONTEXT_NOTE_MAX:
+            raise MammothValidationError(ERR_CONTEXT_NOTE_LONG.format(len(note)))
+        params: dict[str, Any] = {"fresh": fresh}
+        if scope is not None:
+            params["scope"] = scope
+        if note is not None:
+            params["note"] = note
+        response = await self._client._request_json(
+            "POST",
+            f"/dashboards/{dashboard_id}/context-review",
+            json={"params": params},
+            operation_effect="read",
+        )
+        try:
+            return ObjectJobSchema.model_validate(response)
+        except ValidationError as exc:
+            raise MammothValidationError(f"Invalid context-review response: {exc}") from exc
+
+    async def context_apply(
+        self,
+        dashboard_id: int,
+        review_id: str,
+        keep: _list[str] | None = None,
+        base_sequence: int | None = None,
+    ) -> ObjectJobSchema:
+        """Write the candidate a context review proposed, as a new canvas version.
+
+        The change lands like a chat edit, so undo, revert and the version timeline
+        reach it. The server rejects it when the candidate expired or was superseded,
+        and when the board's head moved since the review.
+
+        Args:
+            dashboard_id: ID of the dashboard (must be > 0).
+            review_id: ``review_id`` from the ``context_review`` job result (non-empty).
+            keep: Roster keys whose hand-typed text to keep over the proposal.
+            base_sequence: The head the review was computed against; 409 if it moved.
+
+        Returns:
+            The job handle; its result holds ``sequence``, ``canvas``, ``version_before``
+            and ``bake_ok``.
+
+        Raises:
+            MammothValidationError: If *dashboard_id* ≤ 0 or *review_id* is empty.
+        """
+        _require_dashboard_id(dashboard_id)
+        if not review_id:
+            raise MammothValidationError(ERR_REVIEW_ID_EMPTY)
+        params: dict[str, Any] = {"keep": _list(keep or [])}
+        if base_sequence is not None:
+            params["base_sequence"] = base_sequence
+        response = await self._client._request_json(
+            "POST",
+            f"/dashboards/{dashboard_id}/context-review/{quote(review_id, safe='')}/apply",
+            json={"params": params},
+        )
+        try:
+            return ObjectJobSchema.model_validate(response)
+        except ValidationError as exc:
+            raise MammothValidationError(f"Invalid context-apply response: {exc}") from exc
+
+    async def qa_insights(self, dashboard_id: int, days: int = 7) -> dict[str, Any]:
+        """Get the questions viewers asked on a board, grouped by their text.
+
+        Editors only. Nobody is named: no user, session or name is returned, and the
+        editors' own questions are left out.
+
+        Args:
+            dashboard_id: ID of the dashboard (must be > 0).
+            days: Window length: 7, 30 or 90.
+
+        Returns:
+            Dict with ``groups`` (feedback and unanswered counts, the measure and
+            dimension each answer was about), ``feedback``, ``questions_total`` and
+            ``range_days``.
+
+        Raises:
+            MammothValidationError: If *dashboard_id* ≤ 0 or *days* is not 7, 30 or 90.
+        """
+        _require_dashboard_id(dashboard_id)
+        _require_window_days(days)
+        return await self._client._request_json(
+            "GET", f"/dashboards/{dashboard_id}/qa/insights", params={"days": days}
+        )
+
+    async def template_thumbnail_get(self, template_id: str) -> dict[str, Any]:
+        """Download the picture a template's card shows.
+
+        Args:
+            template_id: Template slug (non-empty).
+
+        Returns:
+            Dict with ``content_type``, ``size_bytes``, ``sha256`` and
+            ``content_base64``. The route answers 404 when the template has no
+            picture; the card then falls back to its og-card.
+
+        Raises:
+            MammothValidationError: If *template_id* is empty.
+        """
+        return await self._client._request_binary("GET", _thumbnail_path(template_id))
+
+    async def template_thumbnail_set(self, template_id: str, file: str | Path) -> dict[str, Any]:
+        """Replace the picture of a saved workspace template.
+
+        Owner or workspace admin only; curated templates are not writable.
+        The server accepts PNG, JPEG or WebP (by content) up to 1 MB.
+
+        Args:
+            template_id: Template slug (non-empty).
+            file: Path to a local image file.
+
+        Returns:
+            Dict ``{"ok": True}``.
+
+        Raises:
+            MammothValidationError: If *template_id* is empty or *file* is not
+                a readable local file.
+        """
+        endpoint = _thumbnail_path(template_id)
+        path = Path(file)
+        if not path.is_file():
+            raise MammothValidationError(f"File not found: {path}")
+        with path.open("rb") as opened:
+            return await self._client._request_json(
+                "PUT",
+                endpoint,
+                files=[("data", (path.name, opened, "application/octet-stream"))],
+            )
+
+    async def template_thumbnail_clear(self, template_id: str) -> dict[str, Any]:
+        """Remove a saved template's picture; its card falls back to the og-card.
+
+        Owner or workspace admin only.
+
+        Args:
+            template_id: Template slug (non-empty).
+
+        Returns:
+            Dict ``{"ok": bool}``: ``False`` when the template had no picture.
+
+        Raises:
+            MammothValidationError: If *template_id* is empty.
+        """
+        return await self._client._request_json("DELETE", _thumbnail_path(template_id))
+
+    async def gallery_list(
+        self, function: str | None = None, industry: str | None = None
+    ) -> dict[str, Any]:
+        """List the public template gallery: curated, live templates only.
+
+        The anonymous catalog (no internal ids). Each card carries its copy,
+        taxonomy labels, ``thumbnail_ref`` and ``viewer_url``.
+
+        Args:
+            function: Keep only templates for this business function.
+            industry: Keep only templates for this industry.
+
+        Returns:
+            Dict with the template cards and the facet lists with counts. The
+            route answers 404 for an unknown facet or one with nothing under it.
+        """
+        params = {
+            key: value
+            for key, value in (("function", function), ("industry", industry))
+            if value is not None
+        }
+        return await self._client._request_json(
+            "GET", "/dashboards/public/templates", params=params or None
+        )
+
+    async def gallery_get(self, slug: str) -> dict[str, Any]:
+        """Get one template card from the public gallery.
+
+        Args:
+            slug: Template slug (non-empty).
+
+        Returns:
+            Dict ``{"template": {...}}``. The route answers 404 for an unknown
+            slug, a user-saved template, or a curated one that is not live.
+
+        Raises:
+            MammothValidationError: If *slug* is empty.
+        """
+        if not slug:
+            raise MammothValidationError(ERR_SLUG_EMPTY)
+        return await self._client._request_json(
+            "GET", f"/dashboards/public/templates/{quote(slug, safe='')}"
+        )
+
     async def embed_origin_revoke(self, dashboard_id: int, origin: str) -> EmbedConfigResponse:
         """Remove one origin from a board's embed allowlist.
 
@@ -1140,6 +1580,25 @@ class DashboardsAPI:
 
 
 # ── Private helpers ───────────────────────────────────────────────────────────
+
+
+def _require_dashboard_id(dashboard_id: int) -> None:
+    """Reject a dashboard id that is not a positive integer."""
+    if isinstance(dashboard_id, bool) or not isinstance(dashboard_id, int) or dashboard_id <= 0:
+        raise MammothValidationError(ERR_DASHBOARD_ID_POSITIVE.format(dashboard_id))
+
+
+def _require_window_days(days: int) -> None:
+    """Reject an audience window the server does not serve."""
+    if isinstance(days, bool) or days not in _AUDIENCE_WINDOWS:
+        raise MammothValidationError(ERR_WINDOW_DAYS.format(days))
+
+
+def _thumbnail_path(template_id: str) -> str:
+    """The in-product thumbnail route of one template, its slug path-encoded."""
+    if not template_id:
+        raise MammothValidationError(ERR_TEMPLATE_ID_EMPTY)
+    return f"/dashboards/v3/templates/{quote(template_id, safe='')}/thumbnail"
 
 
 def _write_bytes_atomic(content: bytes, output_path: Path) -> Path:

@@ -482,13 +482,7 @@ class TestDatasetsAPI:
     async def test_get_unstructured_rows(self, client: MammothClient):
         await client.datasets.get_unstructured_rows(dataset_id=500)
         assert_called_with_method_and_endpoint(
-            client._request_json, "GET", "/datasets/500/unstructured_data"
-        )
-
-    async def test_discard_unstructured_rows(self, client: MammothClient):
-        await client.datasets.discard_unstructured_rows(dataset_id=500)
-        assert_called_with_method_and_endpoint(
-            client._request_json, "DELETE", "/datasets/500/unstructured_data"
+            client._request_json, "GET", "/datasets/500/unstructured_rows"
         )
 
     async def test_list_batches(self, client: MammothClient):
@@ -3276,7 +3270,11 @@ class TestWorkspaceAPI:
         (apiv2/apiv2/workspaces/user_schema.py:29); the SDK must pass it through."""
         await client.workspaces.list_users(fields="__full")
         assert_called_with_method_and_endpoint(client._request_json, "GET", "/workspaces/1/users")
-        assert client._request_json.call_args.kwargs["params"] == {"fields": "__full"}
+        assert client._request_json.call_args.kwargs["params"] == {
+            "fields": "__full",
+            "limit": 100,
+            "offset": 0,
+        }
 
     async def test_get_user(self, client: MammothClient):
         client._request_json.return_value = {
@@ -3285,7 +3283,11 @@ class TestWorkspaceAPI:
         user = await client.workspaces.get_user(user_id="6")
         assert user == {"id": 6, "email": "b@x.io"}
         assert_called_with_method_and_endpoint(client._request_json, "GET", "/workspaces/1/users")
-        assert client._request_json.call_args.kwargs["params"] == {"fields": "__full"}
+        assert client._request_json.call_args.kwargs["params"] == {
+            "fields": "__full",
+            "limit": 100,
+            "offset": 0,
+        }
 
     async def test_update_user_sends_patch_envelope(self, client: MammothClient):
         op = UserRolePatchOp(op="replace", path="role", value=WorkspaceRoleType.WORKSPACE_ADMIN)
@@ -3557,12 +3559,14 @@ class TestProjectsPagination:
         assert client._request_json.call_args.kwargs["params"] == {
             "fields": "id,name",
             "limit": 50,
+            "subscribed": "true",
         }
         client._request_json.reset_mock()
         await client.projects.list(limit=50, offset=50)
         assert client._request_json.call_args.kwargs["params"] == {
             "fields": "id,name",
             "limit": 50,
+            "subscribed": "true",
             "offset": 50,
         }
 
@@ -3600,3 +3604,138 @@ class TestProjectsPagination:
             "id": 100,
             "name": "From Claude",
         }
+
+
+class TestBrowseResourcesV2:
+    async def test_resource_ancestors(self, client: MammothClient):
+        await client.browse.resource_ancestors(resource_id=812)
+        client._request_json.assert_called_once_with(
+            "GET",
+            "/workspaces/1/projects/100/resources/ancestors",
+            params={"resource_id": 812},
+        )
+
+    async def test_resource_ancestors_explicit_project(self, client: MammothClient):
+        await client.browse.resource_ancestors(resource_id=812, project_id=7)
+        assert_called_with_method_and_endpoint(
+            client._request_json, "GET", "/workspaces/1/projects/7/resources/ancestors"
+        )
+
+    async def test_resources_search_sends_only_set_filters(self, client: MammothClient):
+        await client.browse.resources_search(search="revenue", resource_type="dataset,dataview")
+        client._request_json.assert_called_once_with(
+            "GET",
+            "/workspaces/1/resources",
+            params={"search": "revenue", "type": "datasource,dataview"},
+        )
+
+    async def test_resources_search_without_filters_keeps_route_defaults(
+        self, client: MammothClient
+    ):
+        await client.browse.resources_search()
+        client._request_json.assert_called_once_with("GET", "/workspaces/1/resources", params=None)
+
+    async def test_resources_bulk_chunks_at_the_route_cap(self, client: MammothClient):
+        client._request_json = AsyncMock(
+            side_effect=[{"resources": [{"object_id": 1}]}, {"resources": [{"object_id": 101}]}]
+        )
+        items = [("dataview", i) for i in range(1, 102)]
+        found = await client.browse.resources_bulk(items)
+        assert found == [{"object_id": 1}, {"object_id": 101}]
+        first, second = client._request_json.call_args_list
+        assert first.args == ("POST", "/workspaces/1/projects/100/resources/bulk")
+        assert len(first.kwargs["json"]["ids"]) == 100
+        assert second.kwargs["json"]["ids"] == [{"type": "dataview", "id": 101}]
+        assert first.kwargs["operation_effect"] == "read"
+
+    async def test_resources_bulk_with_nothing_asked_sends_nothing(self, client: MammothClient):
+        assert await client.browse.resources_bulk([]) == []
+        client._request_json.assert_not_called()
+
+    async def test_resources_search_pages_by_cursor(self, client: MammothClient):
+        await client.browse.resources_search(cursor="abc", limit=10, sort="name", fields="minimal")
+        assert client._request_json.call_args.kwargs["params"] == {
+            "cursor": "abc",
+            "limit": 10,
+            "sort": "name",
+            "fields": "minimal",
+        }
+
+
+class TestBuildGaps5:
+    async def test_swap_fit_is_a_read_post(self, client: MammothClient):
+        await client.dashboards.swap_fit(5, [1, 2], seconds_budget=0)
+        client._request_json.assert_called_once_with(
+            "POST",
+            "/dashboards/v3/swap/fit",
+            json={
+                "params": {
+                    "source_dashboard_id": 5,
+                    "target_dataview_ids": [1, 2],
+                    "include_over_budget": False,
+                    "seconds_budget": 0,
+                }
+            },
+            operation_effect="read",
+        )
+
+    async def test_swap_fit_rejects_bad_targets(self, client: MammothClient):
+        with pytest.raises(MammothValidationError):
+            await client.dashboards.swap_fit(5, [])
+        with pytest.raises(MammothValidationError):
+            await client.dashboards.swap_fit(5, [1], seconds_budget=31)
+        client._request_json.assert_not_called()
+
+    async def test_audience_routes(self, client: MammothClient):
+        await client.dashboards.audience(7, days=30)
+        client._request_json.assert_called_with(
+            "GET", "/dashboards/7/audience", params={"days": 30}
+        )
+        await client.dashboards.audience_digest_set(7, None)
+        client._request_json.assert_called_with(
+            "PUT", "/dashboards/7/audience/digest", json={"enabled": None}
+        )
+        await client.dashboards.audience_summary([7, 8])
+        client._request_json.assert_called_with(
+            "GET", "/workspaces/1/dashboards/audience-summary", params={"ids": "7,8"}
+        )
+        with pytest.raises(MammothValidationError):
+            await client.dashboards.audience(7, days=14)
+
+    async def test_context_review_and_apply(self, client: MammothClient):
+        client._request_json = AsyncMock(return_value={"job_id": 3, "status": "pending"})
+        await client.dashboards.context_review(7, scope="all")
+        assert client._request_json.call_args.args == ("POST", "/dashboards/7/context-review")
+        assert client._request_json.call_args.kwargs["operation_effect"] == "read"
+        await client.dashboards.context_apply(7, "r/1", base_sequence=4)
+        assert client._request_json.call_args.args == (
+            "POST",
+            "/dashboards/7/context-review/r%2F1/apply",
+        )
+        assert client._request_json.call_args.kwargs["json"] == {
+            "params": {"keep": [], "base_sequence": 4}
+        }
+        with pytest.raises(MammothValidationError):
+            await client.dashboards.context_apply(7, "")
+
+    async def test_columns_and_qa_insights(self, client: MammothClient):
+        await client.dashboards.column_roster(7)
+        client._request_json.assert_called_with("GET", "/dashboards/7/columns")
+        await client.dashboards.qa_insights(7)
+        client._request_json.assert_called_with(
+            "GET", "/dashboards/7/qa/insights", params={"days": 7}
+        )
+
+    async def test_turn_cancel_and_delete_impact(self, client: MammothClient):
+        await client.agents.turn_cancel("s1", "t1")
+        assert client._request_json.call_args.args == (
+            "POST",
+            "/agents/sessions/s1/turns/t1/cancel",
+        )
+        await client.dataviews.delete_impact(10, 20, scope="view")
+        assert client._request_json.call_args.args == (
+            "GET",
+            "/workspaces/1/projects/100/datasets/10/dataviews/20/impact",
+        )
+        with pytest.raises(MammothValidationError):
+            await client.dataviews.delete_impact(10, 20, scope="task")

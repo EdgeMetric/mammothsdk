@@ -4481,7 +4481,7 @@ operations:
   disposition_reason: User-initiated production operation.
   canonical_command: project.bulk-delete
   alias_of: null
-  sdk_symbol: mammoth.api.projects.ProjectsAPI.bulk_delete
+  sdk_symbol: mammoth.api.projects.ProjectsAPI.bulk_delete_and_verify
   reviewed_by: primary
 - identity: GET /workspaces/{workspace_id}/projects
   method: GET
@@ -4560,7 +4560,7 @@ operations:
   disposition_reason: User-initiated production operation.
   canonical_command: project.delete
   alias_of: null
-  sdk_symbol: mammoth.api.projects.ProjectsAPI.delete
+  sdk_symbol: mammoth.api.projects.ProjectsAPI.delete_and_verify
   reviewed_by: primary
 - identity: PATCH /workspaces/{workspace_id}/projects/{project_id}
   method: PATCH

@@ -14,7 +14,7 @@ Example::
     from mammoth_cli.embed import invoke
 
     login = ExplicitLogin(
-        api_key=None, api_secret=None, workspace_id=7, api_token="...",
+        api_key=None, api_secret=None, api_token="...",
         server_prefix="app", headers={"Cookie": "..."},
     )
     envelope = invoke(["project", "list"], login=login)
@@ -22,11 +22,13 @@ Example::
 
 from __future__ import annotations
 
-import io
+import copy
 from collections.abc import Sequence
-from contextlib import redirect_stdout
 from typing import Any
 
+from typer._click.core import Command, Context
+
+from mammoth_cli import __version__
 from mammoth_cli.app import _ABORT_ERRORS, _USAGE_ERRORS, _root_click_command
 from mammoth_cli.context.resolver import ExplicitLogin
 from mammoth_cli.errors.envelope import EXIT_API, EXIT_INTERRUPT, EXIT_USAGE, CliError
@@ -39,6 +41,7 @@ def invoke(
     *,
     login: ExplicitLogin,
     project_id: int | None = None,
+    session_id: str | None = None,
     timeout: float | None = None,
     pipeline_timeout: float | None = None,
     job_timeout: float | None = None,
@@ -52,6 +55,9 @@ def invoke(
         login: The credentials, endpoint and extra headers for this call.
         project_id: The active project, sent as ``--project`` unless ``args``
             already names one.
+        session_id: The embedding chat's session, sent as ``--session`` unless
+            ``args`` already names one; ``agent action`` and ``agent run``
+            commands act on it, so the model never has to know its id.
         timeout: Per-request timeout in seconds, sent as ``--timeout`` unless
             ``args`` already sets one.
         pipeline_timeout: Pipeline wait timeout in seconds, sent as
@@ -68,6 +74,7 @@ def invoke(
     argv = _argv(
         args,
         project_id=project_id,
+        session_id=session_id,
         timeout=timeout,
         pipeline_timeout=pipeline_timeout,
         job_timeout=job_timeout,
@@ -92,11 +99,14 @@ def _argv(
     pipeline_timeout: float | None,
     job_timeout: float | None,
     return_running: bool,
+    session_id: str | None = None,
 ) -> list[str]:
     """``args`` plus the options an embedded call always runs with."""
     argv = list(args)
     if project_id is not None and not _has_option(argv, "--project"):
         argv += ["--project", str(project_id)]
+    if session_id is not None and not _has_option(argv, "--session"):
+        argv += ["--session", session_id]
     if timeout is not None and not _has_option(argv, "--timeout"):
         argv += ["--timeout", str(timeout)]
     if pipeline_timeout is not None and not _has_option(argv, "--pipeline-timeout"):
@@ -116,10 +126,10 @@ def _has_option(argv: Sequence[str], name: str) -> bool:
 def _run(argv: list[str]) -> None:
     """Run the command; every outcome ends as a captured envelope."""
     root = _root_click_command()
-    buffer = io.StringIO()
+    if _capture_help(root, argv):
+        return
     try:
-        with redirect_stdout(buffer):
-            root.main(args=argv, prog_name="mammoth", standalone_mode=False)
+        root.main(args=argv, prog_name="mammoth", standalone_mode=False)
     except _USAGE_ERRORS as error:
         root.render_usage_error(error, argv)
     except _ABORT_ERRORS:
@@ -128,31 +138,60 @@ def _run(argv: list[str]) -> None:
         pass
     except Exception as exc:  # noqa: BLE001 -- the host gets an envelope, never a traceback
         embedded.capture(_error("internal_error", f"{type(exc).__name__}: {exc}", EXIT_API))
-    # --help (and a bare --version) print and return/exit normally, whether or
-    # not an exception was raised, instead of going through the executor's
-    # own embedded.capture; a normal command's envelope is already captured
-    # by then, so this only fires for output that bypassed it entirely.
-    _capture_printed_output(argv, buffer.getvalue())
 
 
-def _capture_printed_output(argv: list[str], text: str) -> None:
-    """``--help`` (and bare ``--version``) print instead of building an envelope.
+def _capture_help(root: Command, argv: list[str]) -> bool:
+    """Answer ``--help``, ``--version`` and a bare group as an envelope; True when it did.
 
-    A normal command's envelope is already captured (see
-    ``runtime.executor.render_success``) before its ``SystemExit`` reaches
-    ``_run``, so this only fires for output that bypassed the envelope
-    machinery entirely -- previously lost, and reported as ``no_output``.
+    Click and Typer print these to standard output, a process-wide stream the
+    host shares with every other thread, so they are rendered into a string
+    here instead and never printed.
     """
-    call = embedded.current()
-    if call is None or call.envelopes or not text.strip():
-        return
-    command_tokens: list[str] = []
-    for token in argv:
-        if token.startswith("--"):
-            break
-        command_tokens.append(token)
-    meta = Meta(command=" ".join(command_tokens) or " ".join(argv))
+    command_tokens = [token for token in argv if not token.startswith("-")]
+    if argv[:1] == ["--version"]:
+        text = __version__
+    elif "--help" in argv or _is_bare_group(root, command_tokens):
+        text = _help_text(root, command_tokens)
+    else:
+        return False
+    meta = Meta(command=" ".join(_resolve(root, command_tokens)[1]) or "mammoth")
     embedded.capture(Result(data={"help": text}, meta=meta).to_envelope())
+    return True
+
+
+def _resolve(root: Command, tokens: list[str]) -> tuple[Command, list[str]]:
+    """The deepest command ``tokens`` name, and the path of names that reached it."""
+    command, path = root, []
+    for token in tokens:
+        children = getattr(command, "commands", {})
+        if token in children:
+            command = children[token]
+            path.append(token)
+    return command, path
+
+
+def _is_bare_group(root: Command, tokens: list[str]) -> bool:
+    """A group named with nothing after it, which Typer answers with its help page."""
+    command, path = _resolve(root, tokens)
+    return (
+        hasattr(command, "commands")
+        and bool(getattr(command, "no_args_is_help", False))
+        and len(path) == len(tokens)
+    )
+
+
+def _help_text(root: Command, tokens: list[str]) -> str:
+    """The plain (no rich markup) help page of the command ``tokens`` name."""
+    command, path = _resolve(root, tokens)
+    context = Context(root, info_name="mammoth")
+    walk: Command = root
+    for name in path:
+        walk = walk.commands[name]  # type: ignore[attr-defined]
+        context = Context(walk, info_name=name, parent=context)
+    # A copy, so the shared command tree keeps its rich help for the terminal CLI.
+    plain = copy.copy(command)
+    plain.rich_markup_mode = None  # type: ignore[attr-defined]
+    return plain.get_help(context)
 
 
 def _error(code: str, message: str, exit_status: int) -> dict[str, Any]:

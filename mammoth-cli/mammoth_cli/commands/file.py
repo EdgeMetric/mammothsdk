@@ -237,9 +237,17 @@ def file_upload(invocation: Invocation) -> HandlerResult:
         # the status the platform holds for each dataset, not an assumed one.
         result = _upload_result(data, lambda dataset_id: _dataset_status(service, dataset_id))
         project_id = resolved_project(invocation)
+        previewed = 0
         for entry in result["datasets"]:
             if entry.get("status") != "ready":
                 continue
+            if previewed >= _UPLOAD_PREVIEW_LIMIT:
+                entry["preview_skipped"] = (
+                    f"Only the first {_UPLOAD_PREVIEW_LIMIT} datasets are previewed; "
+                    f"run 'view list {entry['id']}' to see this one."
+                )
+                continue
+            previewed += 1
             preview = upload_preview(service, int(entry["id"]), project_id)
             if "preview_error" in preview:
                 entry["preview_error"] = preview["preview_error"]
@@ -251,6 +259,10 @@ def file_upload(invocation: Invocation) -> HandlerResult:
                     {preview["view_id"]: int(entry["id"])},
                 )
     return result, _meta(invocation, auth.workspace_id, resolved_project(invocation))
+
+
+#: Uploaded datasets one ``file upload`` previews (several requests each).
+_UPLOAD_PREVIEW_LIMIT = 5
 
 
 def _require_local_files(files: Any) -> None:

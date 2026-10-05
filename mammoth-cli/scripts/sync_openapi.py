@@ -24,6 +24,14 @@ Usage::
     python scripts/sync_openapi.py --check    # re-project committed snapshot only
     python scripts/sync_openapi.py --scrub    # redact the committed snapshot in place
     python scripts/sync_openapi.py --check-live  # opt-in semantic contract drift check
+    python scripts/sync_openapi.py --from-file master.json --name master-20261002 \\
+        --source-ref origin/master --source-sha <git sha> --method "<how it was generated>"
+
+``--from-file`` pins a spec generated offline from server source (for example
+``litestar`` ``app.openapi_schema`` exported from a checkout) as a NEW named
+snapshot ``spec/openapi/<name>.json`` plus ``<name>.metadata.json``. It never
+touches the production snapshot above. The release capability matrix is derived
+from the newest ``master-<YYYYMMDD>.json``.
 
 After reviewing a newly fetched candidate, generate a local release-matrix
 drift queue with ``report_release_capability_drift.py``. That report is keyed
@@ -232,6 +240,30 @@ def fetch() -> None:
     print(json.dumps(metadata, indent=2))
 
 
+def pin_from_file(
+    source: Path, name: str, source_ref: str, source_sha: str, method: str
+) -> dict[str, Any]:
+    """Pin an offline-generated spec as ``spec/openapi/<name>.json`` and return its metadata."""
+    document = json.loads(scrub_examples(source.read_text(encoding="utf-8")))
+    raw = (json.dumps(document, sort_keys=True, separators=(",", ":")) + "\n").encode("utf-8")
+    SPEC_DIR.mkdir(parents=True, exist_ok=True)
+    (SPEC_DIR / f"{name}.json").write_bytes(raw)
+    metadata = {
+        "artifact": "mammoth-cli-server-openapi-snapshot",
+        "source_ref": source_ref,
+        "source_sha": source_sha,
+        "generation_method": method,
+        "sha256": hashlib.sha256(raw).hexdigest(),
+        "openapi_version": document.get("openapi"),
+        "api_version": document.get("info", {}).get("version"),
+        "path_count": len(document.get("paths", {})),
+        "operation_count": count_operations(document),
+        "schema_count": len(document.get("components", {}).get("schemas", {})),
+    }
+    write_json(SPEC_DIR / f"{name}.metadata.json", metadata)
+    return metadata
+
+
 def scrub() -> int:
     """Redact the committed snapshot in place and re-pin its digest."""
     text = SNAPSHOT_PATH.read_text(encoding="utf-8")
@@ -304,7 +336,25 @@ def main() -> int:
         action="store_true",
         help="opt-in comparison of the live and pinned semantic contracts",
     )
+    parser.add_argument("--from-file", type=Path, help="pin this offline-generated spec")
+    parser.add_argument("--name", help="snapshot name for --from-file, e.g. master-20261002")
+    parser.add_argument("--source-ref", help="git ref the spec was generated from")
+    parser.add_argument("--source-sha", help="git sha the spec was generated from")
+    parser.add_argument("--method", help="how the spec was generated")
     args = parser.parse_args()
+    if args.from_file:
+        required = (args.name, args.source_ref, args.source_sha, args.method)
+        if not all(required):
+            parser.error("--from-file needs --name, --source-ref, --source-sha and --method")
+        print(
+            json.dumps(
+                pin_from_file(
+                    args.from_file, args.name, args.source_ref, args.source_sha, args.method
+                ),
+                indent=2,
+            )
+        )
+        return 0
     if args.check:
         return check()
     if args.scrub:

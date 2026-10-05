@@ -273,7 +273,10 @@ def test_dataset_route_matches_the_target_datasets_own_schema_not_its_views(
     assert (_DATASET_GET, {"dataset_id": 9}) in fake_service.call_log
     # Only the source view's own columns are consulted -- never a target
     # VIEW's, which is exactly the mismatch this regression covers.
-    assert fake_service.view_call_log == [(7, "columns", {"dataset_id": 3})]
+    assert fake_service.view_call_log == [
+        (7, "columns", {"dataset_id": 3}),
+        (7, "column_types", {"dataset_id": 3}),
+    ]
 
 
 def test_dataset_route_source_columns_are_display_names_not_internal(

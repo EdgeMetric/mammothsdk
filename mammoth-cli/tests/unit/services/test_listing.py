@@ -133,10 +133,10 @@ def _stats(sample: list[object]) -> dict[str, object]:
 
 def test_sample_values_are_stored_values_for_the_first_columns_only() -> None:
     found = listing.sample_values(
-        _stats(["CA-2018-140151-with-a-long-suffix", "b", "c"]), _METADATA
+        _stats(["CA-2018-140151-" + "x" * 30 + "-long-suffix", "b", "c"]), _METADATA
     )
     assert list(found) == ["Order ID", "Order Date", "Region", "Sales", "A", "B"]
-    assert found["Order ID"] == ["CA-2018-1401", "b"]
+    assert found["Order ID"] == ["CA-2018-140151-" + "x" * 25 + "…", "b"]
 
 
 def test_a_column_with_no_stored_sample_is_left_out_not_invented() -> None:

@@ -25,6 +25,8 @@ HAND_CRAFT_COMMANDS = frozenset(
         "dashboard.templates.use",
         "dashboard.template.create",
         "dashboard.import-workbook",
+        "dashboard.filter.add",
+        "dashboard.filter.remove",
     }
 )
 

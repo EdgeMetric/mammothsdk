@@ -1740,3 +1740,273 @@ def test_workspace_user_transfer_forwards_remove_role(
             },
         )
     ]
+
+
+# --- plan.unarchive / plan.storage-option.* (platform admin) -----------------------------
+
+_SUPPORT = "mammoth.api.support.SupportAPI."
+
+
+def test_plan_unarchive_blocked_without_confirm(fake_service: FakeMammothService) -> None:
+    with pytest.raises(CliError) as excinfo:
+        support_cmd.support_plan_unarchive(_inv("support.plan.unarchive", extra_args=["6"]))
+    assert excinfo.value.code == "confirmation_required"
+    assert fake_service.call_log == []
+
+
+def test_plan_unarchive_proceeds(fake_service: FakeMammothService) -> None:
+    support_cmd.support_plan_unarchive(
+        _inv("support.plan.unarchive", extra_args=["6"], yes=True, confirm="6")
+    )
+    assert fake_service.call_log == [(_SUPPORT + "plan_unarchive", {"plan_id": 6})]
+
+
+def test_storage_option_list_needs_no_confirmation(fake_service: FakeMammothService) -> None:
+    support_cmd.support_plan_storage_option_list(
+        _inv("support.plan.storage-option.list", extra_args=["6"])
+    )
+    assert fake_service.call_log == [(_SUPPORT + "plan_storage_option_list", {"plan_id": 6})]
+
+
+def test_storage_option_create_requires_prices(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    doc = _write(tmp_path, {"storage_gb": 100})
+    with pytest.raises(CliError) as excinfo:
+        support_cmd.support_plan_storage_option_create(
+            _inv(
+                "support.plan.storage-option.create",
+                extra_args=["6"],
+                input_file=doc,
+                yes=True,
+                confirm="6",
+            )
+        )
+    assert excinfo.value.code == "missing_field"
+    assert fake_service.call_log == []
+
+
+def test_storage_option_create_proceeds(fake_service: FakeMammothService, tmp_path: Path) -> None:
+    doc = _write(tmp_path, {"storage_gb": 100, "monthly_price": 20.0, "annual_price": 200.0})
+    support_cmd.support_plan_storage_option_create(
+        _inv(
+            "support.plan.storage-option.create",
+            extra_args=["6"],
+            input_file=doc,
+            yes=True,
+            confirm="6",
+        )
+    )
+    assert fake_service.call_log == [
+        (
+            _SUPPORT + "plan_storage_option_create",
+            {"plan_id": 6, "storage_gb": 100, "monthly_price": 20.0, "annual_price": 200.0},
+        )
+    ]
+
+
+def test_storage_option_update_confirms_the_option(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    doc = _write(tmp_path, {"monthly_price": 25.0})
+    with pytest.raises(CliError) as excinfo:
+        support_cmd.support_plan_storage_option_update(
+            _inv(
+                "support.plan.storage-option.update",
+                extra_args=["6", "9"],
+                input_file=doc,
+                yes=True,
+                confirm="6",
+            )
+        )
+    assert excinfo.value.code == "confirmation_target_mismatch"
+    support_cmd.support_plan_storage_option_update(
+        _inv(
+            "support.plan.storage-option.update",
+            extra_args=["6", "9"],
+            input_file=doc,
+            yes=True,
+            confirm="9",
+        )
+    )
+    assert fake_service.call_log == [
+        (
+            _SUPPORT + "plan_storage_option_update",
+            {"plan_id": 6, "option_id": 9, "monthly_price": 25.0},
+        )
+    ]
+
+
+def test_storage_option_archive_requires_option_id(fake_service: FakeMammothService) -> None:
+    with pytest.raises(CliError) as excinfo:
+        support_cmd.support_plan_storage_option_archive(
+            _inv("support.plan.storage-option.archive", extra_args=["6"], yes=True, confirm="6")
+        )
+    assert excinfo.value.code == "missing_argument"
+
+
+def test_storage_option_archive_proceeds(fake_service: FakeMammothService) -> None:
+    support_cmd.support_plan_storage_option_archive(
+        _inv("support.plan.storage-option.archive", extra_args=["6", "9"], yes=True, confirm="9")
+    )
+    assert fake_service.call_log == [
+        (_SUPPORT + "plan_storage_option_archive", {"plan_id": 6, "option_id": 9})
+    ]
+
+
+# --- template.* (curated catalog, platform admin) ----------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("handler", "command_id", "method"),
+    [
+        (
+            support_cmd.support_template_data_preview,
+            "support.template.data-preview",
+            "data_preview",
+        ),
+        (support_cmd.support_template_canvas, "support.template.canvas", "canvas"),
+    ],
+)
+def test_template_reads_take_the_slug(
+    fake_service: FakeMammothService, handler: object, command_id: str, method: str
+) -> None:
+    handler(_inv(command_id, extra_args=["sales"]))  # type: ignore[operator]
+    assert fake_service.call_log == [(_SUPPORT + f"template_{method}", {"slug": "sales"})]
+
+
+@pytest.mark.parametrize(
+    ("handler", "command_id", "method"),
+    [
+        (support_cmd.support_template_publish, "support.template.publish", "publish"),
+        (support_cmd.support_template_unpublish, "support.template.unpublish", "unpublish"),
+        (support_cmd.support_template_retire, "support.template.retire", "retire"),
+        (
+            support_cmd.support_template_thumbnail_clear,
+            "support.template.thumbnail.clear",
+            "thumbnail_clear",
+        ),
+        (support_cmd.support_template_discard, "support.template.discard", "discard"),
+    ],
+)
+def test_template_writes_confirm_the_slug(
+    fake_service: FakeMammothService, handler: object, command_id: str, method: str
+) -> None:
+    with pytest.raises(CliError) as excinfo:
+        handler(_inv(command_id, extra_args=["sales"], yes=True))  # type: ignore[operator]
+    assert excinfo.value.code in {"confirmation_required", "confirmation_target_mismatch"}
+    assert fake_service.call_log == []
+    handler(_inv(command_id, extra_args=["sales"], yes=True, confirm="sales"))  # type: ignore[operator]
+    assert fake_service.call_log == [(_SUPPORT + f"template_{method}", {"slug": "sales"})]
+
+
+def test_template_list_audit_snapshots_take_nothing(fake_service: FakeMammothService) -> None:
+    support_cmd.support_template_list(_inv("support.template.list"))
+    support_cmd.support_template_audit(_inv("support.template.audit"))
+    support_cmd.support_template_snapshots(_inv("support.template.snapshots"))
+    assert fake_service.call_log == [
+        (_SUPPORT + "template_list", {}),
+        (_SUPPORT + "template_audit", {}),
+        (_SUPPORT + "template_snapshots", {}),
+    ]
+
+
+def test_template_edit_requires_changes(fake_service: FakeMammothService) -> None:
+    with pytest.raises(CliError) as excinfo:
+        support_cmd.support_template_edit(
+            _inv("support.template.edit", extra_args=["sales"], yes=True, confirm="sales")
+        )
+    assert excinfo.value.code == "missing_field"
+
+
+def test_template_edit_forwards_changes(fake_service: FakeMammothService, tmp_path: Path) -> None:
+    doc = _write(tmp_path, {"changes": {"title": "Sales", "function": None}})
+    support_cmd.support_template_edit(
+        _inv(
+            "support.template.edit", extra_args=["sales"], input_file=doc, yes=True, confirm="sales"
+        )
+    )
+    assert fake_service.call_log == [
+        (
+            _SUPPORT + "template_edit",
+            {"slug": "sales", "changes": {"title": "Sales", "function": None}},
+        )
+    ]
+
+
+def test_template_inspect_is_a_read(fake_service: FakeMammothService) -> None:
+    support_cmd.support_template_inspect(_inv("support.template.inspect", extra_args=["t.zip"]))
+    assert fake_service.call_log == [(_SUPPORT + "template_inspect", {"file": "t.zip"})]
+
+
+def test_template_import_requires_yes(fake_service: FakeMammothService) -> None:
+    with pytest.raises(CliError) as excinfo:
+        support_cmd.support_template_import(
+            _inv("support.template.import", extra_args=["t.zip"], output="json")
+        )
+    assert excinfo.value.code == "confirmation_required"
+    assert fake_service.call_log == []
+
+
+def test_template_import_forwards_dataset(fake_service: FakeMammothService, tmp_path: Path) -> None:
+    doc = _write(tmp_path, {"dataset": "Orders"})
+    support_cmd.support_template_import(
+        _inv("support.template.import", extra_args=["t.zip"], input_file=doc, yes=True)
+    )
+    assert fake_service.call_log == [
+        (_SUPPORT + "template_import", {"file": "t.zip", "dataset": "Orders"})
+    ]
+
+
+def test_template_thumbnail_set_takes_slug_and_file(fake_service: FakeMammothService) -> None:
+    support_cmd.support_template_thumbnail_set(
+        _inv(
+            "support.template.thumbnail.set",
+            extra_args=["sales", "card.png"],
+            yes=True,
+            confirm="sales",
+        )
+    )
+    assert fake_service.call_log == [
+        (_SUPPORT + "template_thumbnail_set", {"slug": "sales", "file": "card.png"})
+    ]
+
+
+def test_template_export_returns_the_written_path(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    doc = _write(tmp_path, {"output_path": "out.zip", "with_data": True})
+    fake_service.responses[_SUPPORT + "template_export"] = Path("out.zip")
+    data, _ = support_cmd.support_template_export(
+        _inv("support.template.export", extra_args=["sales"], input_file=doc)
+    )
+    assert data == {"output_path": "out.zip"}
+    assert fake_service.call_log == [
+        (
+            _SUPPORT + "template_export",
+            {"slug": "sales", "output_path": "out.zip", "with_data": True},
+        )
+    ]
+
+
+def test_template_export_dashboard_requires_slug(fake_service: FakeMammothService) -> None:
+    with pytest.raises(CliError) as excinfo:
+        support_cmd.support_template_export_dashboard(
+            _inv("support.template.export-dashboard", extra_args=["42"])
+        )
+    assert excinfo.value.code == "missing_field"
+
+
+def test_template_export_dashboard_forwards_slug(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    doc = _write(tmp_path, {"slug": "my-board", "with_data": False})
+    support_cmd.support_template_export_dashboard(
+        _inv("support.template.export-dashboard", extra_args=["42"], input_file=doc)
+    )
+    assert fake_service.call_log == [
+        (
+            _SUPPORT + "template_export_dashboard",
+            {"dashboard_id": 42, "slug": "my-board", "with_data": False},
+        )
+    ]

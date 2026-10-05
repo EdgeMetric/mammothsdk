@@ -486,7 +486,9 @@ def test_user_update_batch_forwards_patches(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
     doc = _write(tmp_path, {"patches": [{"op": "replace", "path": "role", "value": "x"}]})
-    workspace_cmd.workspace_user_update_batch(_inv("workspace.user.update-batch", input_file=doc))
+    workspace_cmd.workspace_user_update_batch(
+        _inv("workspace.user.update-batch", input_file=doc, yes=True, confirm="4")
+    )
     assert fake_service.call_log == [
         (_USER_UPDATE_BATCH, {"patches": [{"op": "replace", "path": "role", "value": "x"}]})
     ]

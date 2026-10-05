@@ -22,6 +22,7 @@ from mammoth_cli.output.normalize import normalize
 from mammoth_cli.output.policy import MACHINE_OUTPUTS, VALID_OUTPUTS
 from mammoth_cli.output.render import render
 from mammoth_cli.runtime import embedded, updates
+from mammoth_cli.runtime.dryrun import refuse_unsupported_dry_run
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.runlog import RunLog
 from mammoth_cli.services.mapping import map_sdk_exception, running_handle
@@ -41,6 +42,28 @@ EMBEDDED_UNAVAILABLE = frozenset(
         "skill.update",
         "skill.agents-md.install",
         "completion.install",
+        # Read or write the host's profile, run log or install state.
+        "auth.status",
+        "config.get",
+        "config.list",
+        "config.path",
+        "log.path",
+        "log.tail",
+        "skill.list",
+        "skill.path",
+        # Read or write a path on the host's filesystem.
+        "data-app.upload",
+        "file.upload",
+        "file.upload-folder",
+        "user.avatar.upload",
+        "dashboard.assess-pbix",
+        "dashboard.assess-twb",
+        "dashboard.template.thumbnail.set",
+        "support.template.inspect",
+        "support.template.import",
+        "support.template.thumbnail.set",
+        "support.template.export",
+        "support.template.export-dashboard",
     }
 )
 
@@ -117,7 +140,7 @@ def emit_success(
     """
     meta = Meta(
         command=command_id.replace(".", " "),
-        profile=profile,
+        profile=None if embedded.active() else profile,
         workspace_id=workspace_id,
         project_id=project_id,
         pagination=pagination,
@@ -213,6 +236,8 @@ def run(
     try:
         _validate_output(output)
         _refuse_if_embedded(command_id)
+        if invocation is not None and invocation.dry_run:
+            refuse_unsupported_dry_run(command_id)
         updates.auto_upgrade(command_id, run_log)
         data, meta_extra = producer()
         # Re-read: a command that asked PyPI itself (doctor) refreshed the

@@ -8,13 +8,13 @@ commands:
   - DeleteProjects
   positionals: []
   options: []
-  sdk_symbol: mammoth.api.projects.ProjectsAPI.bulk_delete
-  sdk_conversion: Call mammoth.api.projects.ProjectsAPI.bulk_delete with validated request fields.
+  sdk_symbol: mammoth.api.projects.ProjectsAPI.bulk_delete_and_verify
+  sdk_conversion: Call mammoth.api.projects.ProjectsAPI.bulk_delete_and_verify with validated request fields.
   request_model: ProjectBulkDeleteRequest
   result_model: ProjectBulkDeleteResult
   mutation_class: destructive
   edits_target: true
-  confirmation: prompt_or_yes
+  confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: live_disposable_project
@@ -98,7 +98,13 @@ commands:
     required: false
     metavar: DATASET_ID
     falls_back_to_field: null
-    help: Check only this dataset's first view; no other dataset or dashboard is read.
+    help: Check only this dataset (its first view unless VIEW_ID is given); no other dataset or dashboard is read.
+  - name: view_id
+    type: int
+    required: false
+    metavar: VIEW_ID
+    falls_back_to_field: null
+    help: Check this view of DATASET_ID instead of its first (most recent) one.
   options: []
   sdk_symbol: mammoth_cli.commands.project.project_check
   sdk_conversion: Call mammoth_cli.commands.project.project_check with validated request fields.
@@ -124,7 +130,7 @@ commands:
   - CT-PROJECT-CHECK-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: Reads the first view of each dataset (the one uploads and the playbooks use) and one data page per view, six resources at a time. `resources` has one status row per dataset and dashboard with its freshness (in_sync, out_of_sync or running, with data_updated_at) kept apart from its data quality (warning count), or the error that stopped its check. Given DATASET_ID it reads only that dataset's first view and skips the dashboards.
+  known_restrictions: Reads the first view of each dataset (the one uploads and the playbooks use) and one data page per view, six resources at a time. `resources` has one status row per dataset and dashboard with its freshness (in_sync, out_of_sync or running, with data_updated_at) kept apart from its data quality (warning count), or the error that stopped its check. Given DATASET_ID it reads only that dataset's first view and skips the dashboards; also given VIEW_ID it reads that view instead. Every status row names the view_id and view_name it checked, so compare it with the view the work was on.
   reviewed_by: primary
 - command_id: project.checkpoint.list
   command_path: project checkpoint list
@@ -313,8 +319,8 @@ commands:
     falls_back_to_field: null
     help: ID of the project to act on; defaults to the active project.
   options: []
-  sdk_symbol: mammoth.api.projects.ProjectsAPI.delete
-  sdk_conversion: Call mammoth.api.projects.ProjectsAPI.delete with validated request fields.
+  sdk_symbol: mammoth.api.projects.ProjectsAPI.delete_and_verify
+  sdk_conversion: Call mammoth.api.projects.ProjectsAPI.delete_and_verify with validated request fields.
   request_model: ProjectDeleteRequest
   result_model: ProjectDeleteResult
   mutation_class: high_impact
@@ -545,6 +551,49 @@ commands:
     command: project.memory.list
     ids:
       project_id: positional.0
+    kind: object
+- command_id: project.needs-attention
+  command_path: project needs-attention
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - name: project_id
+    type: int
+    required: false
+    metavar: PROJECT_ID
+    falls_back_to_field: null
+    help: ID of the project to act on; defaults to the active project.
+  options: []
+  sdk_symbol: mammoth.api.projects.ProjectsAPI.needs_attention
+  sdk_conversion: Call mammoth.api.projects.ProjectsAPI.needs_attention with validated request fields.
+  request_model: ProjectNeedsAttentionRequest
+  result_model: ProjectNeedsAttentionResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-PROJECT-NEEDS-ATTENTION
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth project needs-attention --help
+  agent_example: mammoth project needs-attention 123
+  unit_tests:
+  - UT-PROJECT-NEEDS-ATTENTION
+  contract_tests:
+  - CT-PROJECT-NEEDS-ATTENTION-HUMAN
+  - CT-PROJECT-NEEDS-ATTENTION-JSON
+  - CT-PROJECT-NEEDS-ATTENTION-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'The rows of the Monitor Needs Attention tab for one project (the app has no workspace-wide list): pipeline_error, pending_pipeline, pending_data, checkpoint (needs approval), data_check (failed), each with view_id and the owning dataset_id, and needs_input (a file or dataset waiting for a person; action is unstructured_rows, ambiguous_date_format, password_required, sheet_selection_required or schema_mismatch); datasets lists each affected dataset once with its view_ids. Pending retentions are not returned by the API and are not included. To delete the datasets behind the views, take dataset_id from datasets and run dataset delete or dataset bulk-delete (confirm first).'
+  reviewed_by: primary
+  readback:
+    command: project.needs-attention
+    ids: {}
     kind: object
 - command_id: project.pending-changes
   command_path: project pending-changes

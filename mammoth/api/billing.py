@@ -26,6 +26,7 @@ ERR_OBJECT_TYPE_EMPTY = "`object_type` must be a non-empty string."
 ERR_SUCCESS_URL_EMPTY = "`success_url` must be a non-empty string."
 ERR_CANCEL_URL_EMPTY = "`cancel_url` must be a non-empty string."
 ERR_SUBSCRIPTION_PATCH_EMPTY = "`patch` must be a non-empty list of patch operations."
+ERR_STORAGE_GB_POSITIVE = "`storage_gb` must be a positive integer, got {0}."
 
 
 class BillingAPI:
@@ -282,6 +283,54 @@ class BillingAPI:
         """
         return await self._client._request_json(
             "GET", f"/workspaces/{self._ws()}/subscription/upcoming-invoice"
+        )
+
+    async def stripe_resume(self) -> dict[str, Any]:
+        """Keep the paid plan: clear a scheduled cancel-at-period-end downgrade.
+
+        Returns:
+            Dict with ``message``: ``"Subscription resumed"``, or ``"No scheduled
+            downgrade to resume"`` when nothing was scheduled.
+        """
+        return await self._client._request_json(
+            "POST", f"/workspaces/{self._ws()}/subscription/resume"
+        )
+
+    async def stripe_recheck_limits(self) -> dict[str, Any]:
+        """Recompute which plan limits the workspace exceeds and store the lock.
+
+        Run it after deleting items to clear the over-limit lock once
+        everything is under the plan's limits.
+
+        Returns:
+            Dict with ``over_limit_info``: ``over_limit``, ``items`` and
+            ``advisory``.
+        """
+        return await self._client._request_json(
+            "POST", f"/workspaces/{self._ws()}/subscription/recheck-limits"
+        )
+
+    async def stripe_storage_update(self, storage_gb: int) -> dict[str, Any]:
+        """Set the workspace's TOTAL purchased storage allocation (GB).
+
+        The subscription is re-priced and the difference invoiced immediately.
+
+        Args:
+            storage_gb: Total storage in GB: the plan's included storage or one
+                of its storage options (must be > 0).
+
+        Returns:
+            Dict with ``storage_gb`` and ``message``.
+
+        Raises:
+            MammothValidationError: If *storage_gb* is not a positive integer.
+        """
+        if isinstance(storage_gb, bool) or not isinstance(storage_gb, int) or storage_gb <= 0:
+            raise MammothValidationError(ERR_STORAGE_GB_POSITIVE.format(storage_gb))
+        return await self._client._request_json(
+            "PUT",
+            f"/workspaces/{self._ws()}/subscription/storage",
+            json={"storage_gb": storage_gb},
         )
 
     # ── Payment methods ───────────────────────────────────────────────────

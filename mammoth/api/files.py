@@ -214,17 +214,16 @@ class FilesAPI:
             if not nested_job_ids:
                 return None
 
-            dataset_ids = []
-            for job_info in nested_job_ids:
-                nested_job_id = job_info.get("job_id")
-                if nested_job_id:
-                    completed_nested_job = await self._client.jobs.wait_for_job(
-                        nested_job_id, timeout=timeout
-                    )
-                    nested_response = completed_nested_job.get("response", {})
-                    ds_id = nested_response.get("ds_id")
-                    if ds_id:
-                        dataset_ids.append(ds_id)
+            nested = [job_info["job_id"] for job_info in nested_job_ids if job_info.get("job_id")]
+            # One batched poll for every nested job, not one poll loop per file.
+            finished = (
+                await self._client.jobs.wait_for_jobs(nested, timeout=timeout) if nested else {}
+            )
+            dataset_ids = [
+                ds_id
+                for job in finished.get("jobs", [])
+                if (ds_id := (job.get("response") or {}).get("ds_id"))
+            ]
 
             if len(files) == 1:
                 return dataset_ids[0] if dataset_ids else None

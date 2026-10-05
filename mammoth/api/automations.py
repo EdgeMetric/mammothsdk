@@ -14,7 +14,6 @@ from mammoth.models.automations import (
     AutomationPatchItem,
     AutomationPatchOp,
     AutomationPatchPath,
-    AutomationStatus,
     AutomationTaskSpec,
     AutomationTaskType,
     PatchAutomationDetails,

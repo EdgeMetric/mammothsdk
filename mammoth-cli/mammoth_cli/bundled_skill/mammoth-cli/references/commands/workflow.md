@@ -1,6 +1,6 @@
 # `workflow` commands
 
-Every command returns the standard JSON envelope. On nonzero exit, read the error envelope and its `recovery_commands`; do not guess request fields. "Status on release" is joined from `docs/release-capability-matrix.json`: *ran once* means one bounded live run succeeded on the named CLI release, *untried* means nobody has run it, *not supported* means the backend refuses it. When this file disagrees with [capabilities](../capabilities.md) or a recipe, they win. Envelope shapes: [machine output](../machine-output.md).
+Every command returns the standard JSON envelope. On nonzero exit, read the error envelope and its `recovery_commands`; do not guess request fields. "Status on release" is joined from `docs/release-capability-matrix.json`: *ran once* means one bounded live run succeeded on the named CLI release, *untried* means nobody has run it (use it normally: confirm writes with the user, check the result afterwards), *not supported* means the backend refuses it. When this file disagrees with [capabilities](../capabilities.md) or a recipe, they win. Envelope shapes: [machine output](../machine-output.md).
 
 ### `workflow.block.add`
 
@@ -16,9 +16,9 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth workflow block auth`. Exact input fields: `mammoth schema get workflow.block.auth`.
 
-Example: `mammoth workflow block auth 123 123 --input '{"auth_data": {"sample_key": "Status"}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth workflow block auth 123 123 --input '{"auth_data": {"sample_key": "Status"}}'`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
-Result: `WorkflowBlockAuthResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+Result: `WorkflowBlockAuthResult`; mutation `benign_mutation`, confirmation `confirm_target`, wait policy `not_async`.
 
 Status on release: untried; no live run recorded.
 
@@ -46,7 +46,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth workflow canvas`. Exact input fields: `mammoth schema get workflow.canvas`.
 
-Example: `mammoth workflow canvas 123 --input '{"canvas_state": {"sample_key": "Status"}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth workflow canvas 12 --input '{"canvas_state": {"proposed_changes": [{"op": "add_view", "dataset_id": 415, "name": "Urgent tickets", "ref": "urgent"}, {"op": "send_to_new_dataset", "dataset_id": 415, "view_ref": "urgent", "name": "Urgent tickets by team"}]}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `WorkflowCanvasResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
@@ -56,9 +56,9 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth workflow cleanup`. Exact input fields: `mammoth schema get workflow.cleanup`.
 
-Example: `mammoth workflow cleanup`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth workflow cleanup`. Illustrative only: append `--yes` after observing an owned target.
 
-Result: `WorkflowCleanupResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+Result: `WorkflowCleanupResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
 
 Status on release: untried; no live run recorded.
 

@@ -5,10 +5,9 @@ Datasets API client for managing datasets in Mammoth.
 from __future__ import annotations
 
 import asyncio
-
 import time
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 
 from mammoth.api._pagination import collect_offset_pages
 from mammoth.exceptions import (
@@ -111,6 +110,34 @@ class DatasetsAPI:
             item_key="datasets",
             limit=limit,
             max_pages=max_pages,
+            full_page_continues=True,
+        )
+
+    async def search(
+        self,
+        term: str,
+        workspace_id: int | None = None,
+        project_id: int | None = None,
+    ) -> dict[str, Any]:
+        """Find the project's datasets whose name, column names or sampled values hold ``term``.
+
+        Sampled values are the per-column samples the profiler keeps, so a dataset that was
+        never profiled matches on its name and column names only.
+
+        Args:
+            term: Text to look for (case-insensitive substring, at least 2 characters).
+            workspace_id: ID of the workspace (uses client default if not provided).
+            project_id: ID of the project (uses client default if not provided).
+
+        Returns:
+            Dict with ``datasets``: ``{id, name, matches}``, each match naming where it was
+            found (``found_in`` is ``name``, ``column`` or ``value``) with its ``column`` and
+            ``value``.
+        """
+        ws = workspace_id or self._ws()
+        proj = self._proj(project_id)
+        return await self._client._request_json(
+            "GET", f"/workspaces/{ws}/projects/{proj}/datasets/search", params={"q": term}
         )
 
     async def get(
@@ -479,32 +506,55 @@ class DatasetsAPI:
         ws = workspace_id or self._ws()
         proj = self._proj(project_id)
         return await self._client._request_json(
-            "GET", f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/unstructured_data"
+            "GET", f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/unstructured_rows"
         )
 
-    async def discard_unstructured_rows(
+    async def resolve_unstructured_rows(
         self,
         dataset_id: int,
+        op: Literal["add", "remove"],
+        batch_id: int,
+        rows: list[dict[str, Any]],  # type: ignore[valid-type]
         workspace_id: int | None = None,
         project_id: int | None = None,
     ) -> dict[str, Any]:
-        """Discard the set-aside lines and finish the dataset without them.
+        """Take corrected set-aside lines into the dataset, or discard them.
 
-        The discarded lines do not come back. A line worth keeping has to be
-        corrected in the source file and the dataset built again.
+        Runs as a job; once no set-aside line remains the dataset is finished.
+        Discarded lines do not come back: a line worth keeping has to be
+        corrected (``add``) or fixed in the source file and uploaded again.
 
         Args:
             dataset_id: ID of the dataset.
+            op: ``"add"`` to take the corrected lines in, ``"remove"`` to discard them.
+            batch_id: Upload the lines came from (``batch_id`` of each row from
+                :meth:`get_unstructured_rows`).
+            rows: ``{"line_num": int, "line": str}`` entries. ``line`` is the
+                corrected text for ``add`` and is ignored for ``remove``.
             workspace_id: ID of the workspace (uses client default if not provided).
             project_id: ID of the project (uses client default if not provided).
 
         Returns:
-            Dict with ``rows_deleted``.
+            The job record (``id``, ``status``, ...); wait on it before reading the dataset.
+
+        Raises:
+            MammothValidationError: If *dataset_id* <= 0 or *rows* is empty.
         """
+        if dataset_id <= 0:
+            raise MammothValidationError(ERR_DATASET_ID_POSITIVE.format(dataset_id))
+        if not rows:
+            raise MammothValidationError("rows must name at least one line")
         ws = workspace_id or self._ws()
         proj = self._proj(project_id)
+        patch = {
+            "op": op,
+            "path": "unstructured_rows",
+            "value": {"batch_id": batch_id, "data": rows},
+        }
         return await self._client._request_json(
-            "DELETE", f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/unstructured_data"
+            "PATCH",
+            f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/unstructured_rows",
+            json={"patch": patch},
         )
 
     async def list_batches(

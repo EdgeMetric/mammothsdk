@@ -133,9 +133,8 @@ _PROJECT_LIMIT = 20
 
 def _visible_projects(service: Any) -> list[dict[str, Any]]:
     """Return the projects this credential can list, or an empty list."""
-    response = service.list_projects(limit=_PROJECT_LIMIT + 1)
-    projects = response.get("projects", []) if isinstance(response, dict) else []
-    return [p for p in projects if isinstance(p, dict)]
+    # Every page: "is the selected project visible" must not stop at the first few.
+    return [p for p in service.list_all_projects() if isinstance(p, dict)]
 
 
 def _nearest_existing(path: Path) -> Path:

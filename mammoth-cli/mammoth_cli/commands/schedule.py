@@ -22,6 +22,7 @@ from mammoth_cli.errors.envelope import (
     CODE_SDK_SYMBOL_UNRESOLVED,
     EXIT_USAGE,
     CliError,
+    not_available_error,
 )
 from mammoth_cli.manifest.loader import command_by_id
 from mammoth_cli.runtime.confirm import (
@@ -154,14 +155,17 @@ def _meta(invocation: Invocation, workspace_id: int, project_id: int) -> dict[st
 
 
 def schedule_list(invocation: Invocation) -> HandlerResult:
-    """List schedules in the active project. ``limit``/``offset`` are optional."""
-    project_id = require_project(invocation)
-    document = _bound_document(invocation)
-    kwargs: dict[str, Any] = {"project_id": project_id}
-    _forward_optional(document, kwargs, ("limit", "offset"))
-    with open_service(invocation) as (service, auth):
-        data = service.call(_symbol(invocation), **kwargs)
-    return data, _meta(invocation, auth.workspace_id, project_id)
+    """Retired: the server does not implement listing a project's schedules.
+
+    ``GET /workspaces/{id}/projects/{id}/schedules`` always answers ``5GENR011
+    NOT_IMPLEMENTED`` (the server raises it on purpose). The command stays so a
+    caller gets a clear answer instead of a bare backend error.
+    """
+    raise not_available_error(
+        "schedule list",
+        web_path="the web app, which opens a schedule from the dataset or automation that owns it",
+        instead="`schedule get SCHEDULE_ID` reads one schedule by an id you already have.",
+    )
 
 
 def schedule_get(invocation: Invocation) -> HandlerResult:

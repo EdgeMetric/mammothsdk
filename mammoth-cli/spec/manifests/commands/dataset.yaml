@@ -84,6 +84,51 @@ commands:
   undo_test: null
   known_restrictions: Returns the first 100 lines the upload could not parse, each with its line number, upload (batch_id) and why it does not fit the columns; row_count is the total. A dataset not made from a file upload has none.
   reviewed_by: primary
+- command_id: dataset.broken-rows.resolve
+  command_path: dataset broken-rows resolve
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - name: dataset_id
+    type: int
+    required: true
+    metavar: DATASET_ID
+    falls_back_to_field: null
+    help: ID of the dataset.
+  options: []
+  sdk_symbol: mammoth.api.datasets.DatasetsAPI.resolve_unstructured_rows
+  sdk_conversion: Call mammoth.api.datasets.DatasetsAPI.resolve_unstructured_rows with validated request fields.
+  request_model: DatasetBrokenRowsResolveRequest
+  result_model: DatasetBrokenRowsResolveResult
+  mutation_class: destructive
+  edits_target: true
+  confirmation: prompt_or_yes
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  readback:
+    command: dataset.broken-rows.list
+    ids:
+      dataset_id: positional.0
+    kind: object
+  live_test: null
+  live_exemption_reason: Needs a file upload with ragged rows on a test server; not yet run live.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dataset broken-rows resolve DATASET_ID --help
+  agent_example: 'mammoth dataset broken-rows resolve 123 --input ''{"op": "add", "batch_id": 1, "rows": [{"line_num": 2, "line": "corrected,line,here"}]}'''
+  unit_tests:
+  - UT-DATASET-BROKEN-ROWS-RESOLVE
+  contract_tests:
+  - CT-DATASET-BROKEN-ROWS-RESOLVE-HUMAN
+  - CT-DATASET-BROKEN-ROWS-RESOLVE-JSON
+  - CT-DATASET-BROKEN-ROWS-RESOLVE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'op "add" takes each corrected line (line_num, batch_id and the original line from dataset broken-rows list, edited so its column count matches) into the dataset; op "remove" discards the lines for good. Returns a job: run job wait on it, then read broken-rows list (row_count 0 and dataset status ready mean it is finished). Confirm with the user first, and say that discarded lines do not come back.'
+  reviewed_by: primary
 - command_id: dataset.bulk-delete
   command_path: dataset bulk-delete
   disposition: command
@@ -201,12 +246,7 @@ commands:
   - CT-DATASET-CREATE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: ds_creation_type is freeform and dataset_spec is arbitrary, so variants beyond the
-    documented path are not qualified. Retained live evidence supports ds_creation_type=weburl with dataset_spec.url;
-    the CLI command waits for the raw SDK job and returned ready for five OWID URL imports. Re-read returned
-    dataset/view IDs and delete only IDs created by this task. A weburl dataset is a one-time copy that
-    keeps no source details to refresh from, so automation's run_data_retrieval task cannot refresh it
-    (only a cloud-connected dataset can be refreshed); say so rather than scheduling a refresh for it.
+  known_restrictions: 'ds_creation_type is freeform and dataset_spec is arbitrary, so variants beyond the documented path are not qualified. Retained live evidence supports ds_creation_type=weburl with dataset_spec.url; the CLI command waits for the raw SDK job and returned ready for five OWID URL imports. Re-read returned dataset/view IDs and delete only IDs created by this task. A weburl dataset is a one-time copy that keeps no source details to refresh from, so automation''s run_data_retrieval task cannot refresh it (only a cloud-connected dataset can be refreshed); say so rather than scheduling a refresh for it. The result''s name is the dataset''s real name; when the requested name was taken the server adds a suffix, and requested_name and note say so. Use name, not the name you asked for. To copy a dataset as a new independent one: {"ds_creation_type": "clone", "dataset_spec": {"ds_name": NEW_NAME, "source_ds_id": ID, "clone_dataview_ids": [DEFAULT_VIEW_ID], "exclude_data": false}}, DEFAULT_VIEW_ID being the id in dataset''s `default_view` from view list (other views only when asked); an empty clone_dataview_ids is refused here because it makes a blank view. A clone waits and returns the new dataset_id; never use view export dataset for a plain copy, which leaves a live export on the source. A weburl import names the dataset after the downloaded file: follow it with dataset rename to the name the user picked.'
   reviewed_by: primary
 - command_id: dataset.create-from-pdf
   command_path: dataset create-from-pdf
@@ -479,10 +519,11 @@ commands:
   positionals:
   - name: name_substring
     type: str
-    required: true
+    required: false
     metavar: NAME_SUBSTRING
     falls_back_to_field: null
-    help: Case-insensitive substring to match against dataset names.
+    help: Case-insensitive substring to match against dataset names; optional when --input
+      gives 'columns'.
   options: []
   sdk_symbol: mammoth_cli.commands.dataset.find
   sdk_conversion: Call mammoth_cli.commands.dataset.find with validated request fields.
@@ -498,7 +539,7 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth dataset find NAME_SUBSTRING --help
+  human_example: mammoth dataset find --help
   agent_example: mammoth dataset find sales
   unit_tests:
   - UT-DATASET-FIND
@@ -768,6 +809,46 @@ commands:
   - CT-DATASET-RESTORE-HUMAN
   - CT-DATASET-RESTORE-JSON
   - CT-DATASET-RESTORE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: dataset.search
+  command_path: dataset search
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - name: term
+    type: str
+    required: true
+    metavar: TERM
+    falls_back_to_field: null
+    help: Text to find in dataset names, column names or sampled column values (case-insensitive,
+      at least 2 characters).
+  options: []
+  sdk_symbol: mammoth_cli.commands.dataset.search
+  sdk_conversion: Call mammoth_cli.commands.dataset.search with validated request fields.
+  request_model: DatasetSearchRequest
+  result_model: DatasetSearchResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: null
+  live_exemption_reason: Read-only composite over the project's datasets search route.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dataset search TERM --help
+  agent_example: mammoth dataset search 'New Year Sale'
+  unit_tests:
+  - UT-DATASET-SEARCH
+  contract_tests:
+  - CT-DATASET-SEARCH-HUMAN
+  - CT-DATASET-SEARCH-JSON
+  - CT-DATASET-SEARCH-ERROR
   draft_test: null
   undo_test: null
   known_restrictions: null

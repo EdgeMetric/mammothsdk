@@ -4,11 +4,13 @@ Projects API client for managing projects in Mammoth.
 
 from __future__ import annotations
 
+import asyncio
+import time
 from typing import TYPE_CHECKING, Any, Literal
 
 from pydantic import ValidationError
 
-from ..exceptions import MammothValidationError
+from ..exceptions import MammothDeletionVerificationError, MammothValidationError
 from ..models.projects import DataSyncPatchItem
 
 if TYPE_CHECKING:
@@ -18,6 +20,9 @@ _list = list  # Alias to avoid shadowing by method name
 
 #: Largest ``limit`` the projects route accepts (``4GENR007`` above it).
 MAX_PAGE_SIZE = 100
+
+#: Views fetched per page when mapping views to their datasets.
+MAX_VIEW_PAGE_SIZE = 1000
 
 ERR_PROJECT_ID_POSITIVE = "`project_id` must be a positive integer, got {0}."
 ERR_USER_OR_INVITE_ID_REQUIRED = (
@@ -29,6 +34,128 @@ ERR_USER_OR_INVITE_ID_REQUIRED = (
 def _agent_memory_items(project: dict[str, Any]) -> _list[str]:
     """Return the caller's ``properties.agent_memory`` list (empty when absent)."""
     return _list((project.get("properties") or {}).get("agent_memory") or [])
+
+
+def _attention_row(kind: str, view_id: int | None, **detail: Any) -> dict[str, Any]:
+    return {"kind": kind, "view_id": view_id, "view_name": None, **detail}
+
+
+def _attention_pipeline_rows(pending: dict[str, Any]) -> _list[dict[str, Any]]:
+    """Error and draft rows from ``pending_changes`` (the web app keeps numeric keys only)."""
+    rows: _list[dict[str, Any]] = []
+    for key, change in (pending.get("pending_changes") or {}).items():
+        if not str(key).isdigit():
+            continue
+        kind = "pipeline_error" if change.get("is_pipeline_in_error") else "pending_pipeline"
+        rows.append(
+            _attention_row(
+                kind,
+                change.get("dataview_id"),
+                view_name=change.get("dataview_name"),
+                dataset_name=change.get("datasource_name"),
+                pending_steps_count=change.get("pending_steps_count"),
+                tasks_in_error=_list((change.get("tasks_in_error") or {}).values()),
+                actions_in_error=_list((change.get("actions_in_error") or {}).values()),
+            )
+        )
+    return rows
+
+
+def _attention_action_rows(pending: dict[str, Any]) -> _list[dict[str, Any]]:
+    """Files and datasets waiting for a person (``ds_action_needed_items``).
+
+    ``action`` is the web app's row title: ``unstructured_rows``, ``ambiguous_date_format``,
+    ``password_required``, ``sheet_selection_required`` or ``schema_mismatch``. Only a
+    dataset row carries its own ``dataset_id``; an upload still being read does not.
+    """
+    rows: _list[dict[str, Any]] = []
+    for item in pending.get("ds_action_needed_items") or []:
+        is_dataset = item.get("resource_type") == "datasource"
+        row = _attention_row(
+            "needs_input",
+            None,
+            action=(item.get("action_needed") or {}).get("type"),
+            name=item.get("name"),
+            resource_type=item.get("resource_type"),
+            append_to_dataset_id=item.get("append_to_ds_id"),
+            needs_review=item.get("needs_review", True),
+        )
+        row["dataset_id"] = item.get("id") if is_dataset else None
+        rows.append(row)
+    return rows
+
+
+def _attention_items(
+    pending: dict[str, Any],
+    checkpoints: _list[dict[str, Any]],
+    data_checks: _list[dict[str, Any]],
+) -> _list[dict[str, Any]]:
+    rows = _attention_pipeline_rows(pending) + _attention_action_rows(pending)
+    for dep in pending.get("pending_data_update_items") or []:
+        if dep.get("data_update_pending"):
+            rows.append(
+                _attention_row(
+                    "pending_data",
+                    dep.get("source_dataview_id"),
+                    operation_id=dep.get("op_id"),
+                    operation_type=dep.get("op_type"),
+                    operation_name=dep.get("op_name"),
+                )
+            )
+    rows.extend(
+        _attention_row(
+            "checkpoint", c.get("dataview_id"), checkpoint_id=c.get("id"), name=c.get("name")
+        )
+        for c in checkpoints
+        if c.get("status") == "needs_approval" and c.get("checkpoint_type") == "approval"
+    )
+    rows.extend(
+        _attention_row("data_check", d.get("dataview_id"), data_check_id=d.get("id"))
+        for d in data_checks
+        if d.get("status") == "failed"
+    )
+    return rows
+
+
+def _attention_result(
+    project_id: int,
+    items: _list[dict[str, Any]],
+    view_map: dict[int, dict[str, Any]],
+) -> dict[str, Any]:
+    datasets: dict[int, dict[str, Any]] = {}
+    unresolved: _list[int] = []
+    counts: dict[str, int] = {}
+    for item in items:
+        counts[item["kind"]] = counts.get(item["kind"], 0) + 1
+        found = view_map.get(item["view_id"]) if item["view_id"] is not None else None
+        item["dataset_id"] = found["dataset_id"] if found else item.get("dataset_id")
+        if found:
+            item["view_name"] = item["view_name"] or found["view_name"]
+            item["dataset_name"] = item.get("dataset_name") or found["dataset_name"]
+            entry = datasets.setdefault(
+                found["dataset_id"],
+                {
+                    "dataset_id": found["dataset_id"],
+                    "dataset_name": found["dataset_name"],
+                    "view_ids": [],
+                },
+            )
+            if item["view_id"] not in entry["view_ids"]:
+                entry["view_ids"].append(item["view_id"])
+        elif item["view_id"] is not None and item["view_id"] not in unresolved:
+            unresolved.append(item["view_id"])
+        elif item["kind"] == "needs_input" and item["dataset_id"] is not None:
+            datasets.setdefault(
+                item["dataset_id"],
+                {"dataset_id": item["dataset_id"], "dataset_name": item["name"], "view_ids": []},
+            )
+    return {
+        "project_id": project_id,
+        "items": items,
+        "datasets": _list(datasets.values()),
+        "counts": counts,
+        "unresolved_view_ids": unresolved,
+    }
 
 
 class ProjectsAPI:
@@ -54,8 +181,13 @@ class ProjectsAPI:
         limit: int = 100,
         offset: int = 0,
         fields: str = "id,name",
+        include_non_members: bool = False,
     ) -> dict[str, Any]:
         """List one page of projects in a workspace.
+
+        By default only projects the caller is a member of are returned, which
+        is what the Mammoth UI shows. A workspace owner or admin can read
+        every project, but cannot open the ones they are not a member of.
 
         The backend caps ``limit`` at :data:`MAX_PAGE_SIZE` (100) and rejects
         larger values with a validation error; use :meth:`list_all` to walk
@@ -66,36 +198,43 @@ class ProjectsAPI:
             limit: Maximum number of results (default and maximum 100).
             offset: Number of leading projects to skip (server-side).
             fields: Comma-separated project fields to return (default ``id,name``).
+            include_non_members: Also return projects the caller is not a member
+                of; every row then carries ``member`` (true/false).
 
         Returns:
             Dict containing projects list with the requested fields, plus ``limit``,
             ``offset`` and ``next`` (empty when this is the last page).
         """
         ws = workspace_id or self._ws()
+        page = await self._list_page(ws, limit, offset, fields, subscribed=not include_non_members)
+        if include_non_members:
+            await self._tag_members(ws, page.get("projects", []))
+        return page
+
+    async def _list_page(
+        self, ws: int, limit: int, offset: int, fields: str, subscribed: bool
+    ) -> dict[str, Any]:
+        """Fetch one page; ``subscribed`` selects member projects only, else all."""
         params: dict[str, Any] = {"fields": fields, "limit": limit}
+        if subscribed:
+            params["subscribed"] = "true"
         if offset:
             params["offset"] = offset
         return await self._client._request_json("GET", f"/workspaces/{ws}/projects", params=params)
 
-    async def list_all(
-        self, workspace_id: int | None = None, fields: str = "id,name"
-    ) -> _list[dict[str, Any]]:
-        """Return every project in the workspace, following the 100-row pages.
+    async def _tag_members(self, ws: int, rows: _list[dict[str, Any]]) -> None:
+        """Set ``member`` on each row from the caller's member-project ids."""
+        member_ids = {p.get("id") for p in await self._fetch_all(ws, "id", subscribed=True)}
+        for row in rows:
+            row["member"] = row.get("id") in member_ids
 
-        Args:
-            workspace_id: ID of the workspace (uses client default if not provided).
-            fields: Comma-separated project fields to return (default ``id,name``).
-
-        Returns:
-            List of project dicts with the requested fields across all pages.
-        """
+    async def _fetch_all(self, ws: int, fields: str, subscribed: bool) -> _list[dict[str, Any]]:
+        """Walk the 100-row pages of the projects route (untagged rows)."""
         projects: _list[dict[str, Any]] = []
         seen: set[Any] = set()
         offset = 0
         while True:
-            page = await self.list(
-                workspace_id=workspace_id, limit=MAX_PAGE_SIZE, offset=offset, fields=fields
-            )
+            page = await self._list_page(ws, MAX_PAGE_SIZE, offset, fields, subscribed)
             batch = page.get("projects", []) if isinstance(page, dict) else []
             fresh = [p for p in batch if p.get("id") not in seen]
             seen.update(p.get("id") for p in fresh)
@@ -105,6 +244,29 @@ class ProjectsAPI:
             if len(batch) < MAX_PAGE_SIZE or not fresh:
                 return projects
             offset += len(batch)
+
+    async def list_all(
+        self,
+        workspace_id: int | None = None,
+        fields: str = "id,name",
+        include_non_members: bool = False,
+    ) -> _list[dict[str, Any]]:
+        """Return every project the caller is a member of, following the 100-row pages.
+
+        Args:
+            workspace_id: ID of the workspace (uses client default if not provided).
+            fields: Comma-separated project fields to return (default ``id,name``).
+            include_non_members: Also return projects the caller is not a member
+                of; every row then carries ``member`` (true/false).
+
+        Returns:
+            List of project dicts with the requested fields across all pages.
+        """
+        ws = workspace_id or self._ws()
+        projects = await self._fetch_all(ws, fields, subscribed=not include_non_members)
+        if include_non_members:
+            await self._tag_members(ws, projects)
+        return projects
 
     async def get(
         self,
@@ -128,7 +290,11 @@ class ProjectsAPI:
         Raises:
             ValueError: If project not found or multiple projects without specification.
         """
-        projects = await self.list_all(workspace_id=workspace_id)
+        # An explicit id or name may name a project the caller can read but is
+        # not a member of; only the auto-selection is limited to member projects.
+        projects = await self._fetch_all(
+            workspace_id or self._ws(), "id,name", subscribed=project is None
+        )
 
         if not projects:
             raise ValueError("No projects found in workspace")
@@ -247,6 +413,85 @@ class ProjectsAPI:
         ws = workspace_id or self._ws()
         return await self._client._request_json("DELETE", f"/workspaces/{ws}/projects/{project_id}")
 
+    async def _wait_until_absent(
+        self,
+        project_ids: _list[int],
+        ack: dict[str, Any],
+        workspace_id: int | None,
+        timeout: int | None,
+        poll_interval: float,
+    ) -> None:
+        """Poll the project list until none of ``project_ids`` is in it.
+
+        The delete routes answer 202 with no job id, so absence from the list
+        is the only readback. Raises on timeout with the ids still present.
+        """
+        ws = workspace_id or self._ws()
+        deadline = time.monotonic() + (
+            timeout if timeout is not None else int(getattr(self._client, "job_timeout", 60))
+        )
+        while True:
+            rows = await self._fetch_all(ws, "id", subscribed=False)
+            present = sorted(set(project_ids) & {p.get("id") for p in rows})
+            if not present:
+                return
+            if time.monotonic() >= deadline:
+                raise MammothDeletionVerificationError(
+                    "Project delete was acknowledged but absence was not verified.",
+                    {
+                        "project_ids": list(project_ids),
+                        "still_present": present,
+                        "status": "pending",
+                        "verified": False,
+                        "ack": ack,
+                    },
+                )
+            await asyncio.sleep(poll_interval)
+
+    async def delete_and_verify(
+        self,
+        project_id: int,
+        workspace_id: int | None = None,
+        *,
+        timeout: int | None = None,
+        poll_interval: float = 2.0,
+    ) -> dict[str, Any]:
+        """Delete one project and verify it is gone from the project list.
+
+        The route acknowledges with 202 and an empty body, so this polls the
+        list until the project is absent (bounded by the client job timeout).
+
+        Raises:
+            MammothDeletionVerificationError: still listed when the timeout ends.
+        """
+        ack = await self.delete(project_id, workspace_id=workspace_id)
+        settled = await self._client._wait_if_job(ack)
+        await self._wait_until_absent([project_id], settled, workspace_id, timeout, poll_interval)
+        return {"project_id": project_id, "status": "deleted", "verified": True, "ack": settled}
+
+    async def bulk_delete_and_verify(
+        self,
+        project_ids: _list[int],
+        workspace_id: int | None = None,
+        *,
+        timeout: int | None = None,
+        poll_interval: float = 2.0,
+    ) -> dict[str, Any]:
+        """Bulk delete projects and verify every id is gone from the project list.
+
+        Raises:
+            MammothDeletionVerificationError: some ids still listed at timeout.
+        """
+        ack = await self.bulk_delete(project_ids, workspace_id=workspace_id)
+        settled = await self._client._wait_if_job(ack)
+        await self._wait_until_absent(project_ids, settled, workspace_id, timeout, poll_interval)
+        return {
+            "project_ids": list(project_ids),
+            "status": "deleted",
+            "verified": True,
+            "ack": settled,
+        }
+
     async def bulk_update(
         self,
         patch_data: dict[str, Any],
@@ -338,17 +583,25 @@ class ProjectsAPI:
 
         Args:
             project_id: ID of the project.
-            user_ids: List of user IDs to remove.
+            user_ids: List of user IDs to remove (one DELETE per user).
             workspace_id: ID of the workspace (uses client default if not provided).
 
         Returns:
-            Dict with result.
+            Dict with the last removal's result.
+
+        Raises:
+            MammothValidationError: If ``user_ids`` is empty.
         """
+        if not user_ids:
+            raise MammothValidationError("user_ids must contain at least one user id.")
         ws = workspace_id or self._ws()
-        ids_str = ",".join(str(uid) for uid in user_ids)
-        return await self._client._request_json(
-            "DELETE", f"/workspaces/{ws}/projects/{project_id}/users", params={"ids": ids_str}
-        )
+        result: dict[str, Any] = {}
+        for uid in user_ids:
+            # The route takes ONE ``user_id`` query parameter per call.
+            result = await self._client._request_json(
+                "DELETE", f"/workspaces/{ws}/projects/{project_id}/users", params={"user_id": uid}
+            )
+        return result
 
     async def browse(
         self,
@@ -517,6 +770,81 @@ class ProjectsAPI:
         return await self._client._request_json(
             "GET", f"/workspaces/{ws}/projects/{project_id}/pending-changes"
         )
+
+    async def needs_attention(
+        self,
+        project_id: int,
+        workspace_id: int | None = None,
+    ) -> dict[str, Any]:
+        """Return the rows of the Monitor modal's "Needs Attention" tab, with dataset ids.
+
+        Same sources and filters as the web app (mm-frontend
+        ``resources.storePinia.js`` ``fetchPipelineChanges`` and
+        ``monitor-needs-attention.vue``), for the view-bearing rows:
+
+        - ``pipeline_error``: ``pending_changes`` entries with ``is_pipeline_in_error``.
+        - ``pending_pipeline``: the remaining ``pending_changes`` entries (draft steps).
+        - ``pending_data``: ``pending_data_update_items`` with ``data_update_pending``
+          (one row per dependency; the web app groups JOIN/LOOKUP sources by destination).
+        - ``checkpoint``: project checkpoints with status ``needs_approval`` and type ``approval``.
+        - ``data_check``: project data checks with status ``failed``.
+        - ``needs_input``: ``ds_action_needed_items`` -- files and datasets waiting for a
+          person; ``action`` says which (``unstructured_rows``, ``ambiguous_date_format``,
+          ``password_required``, ``sheet_selection_required``, ``schema_mismatch``).
+
+        The web app also lists pending retentions, which the v2 route does not return, so
+        they are not included. Each row carries ``view_id`` and the owning ``dataset_id``
+        (null when the view is not found in the project), so a caller can act on the
+        datasets.
+
+        Args:
+            project_id: ID of the project (must be a positive integer).
+            workspace_id: ID of the workspace (uses client default if not provided).
+
+        Returns:
+            Dict with ``items``, ``datasets`` (unique, each with its ``view_ids``),
+            ``counts`` per kind and ``unresolved_view_ids``.
+
+        Raises:
+            MammothValidationError: If project_id is not a positive integer.
+        """
+        if project_id <= 0:
+            raise MammothValidationError(ERR_PROJECT_ID_POSITIVE.format(project_id))
+        ws = workspace_id or self._ws()
+        pending = await self.pending_changes(project_id, ws)
+        checkpoints = await self.checkpoint_list(project_id, ws)
+        data_checks = await self.data_check_list(project_id, ws)
+        items = _attention_items(
+            pending.get("pending_items") or {},
+            checkpoints.get("checkpoints") or [],
+            data_checks.get("data_checks") or [],
+        )
+        view_ids = {item["view_id"] for item in items if item["view_id"] is not None}
+        view_map = await self._dataset_of_views(project_id, ws, view_ids)
+        return _attention_result(project_id, items, view_map)
+
+    async def _dataset_of_views(
+        self, project_id: int, ws: int, view_ids: set[int]
+    ) -> dict[int, dict[str, Any]]:
+        """Map each of ``view_ids`` to ``{dataset_id, dataset_name, view_name}``.
+
+        One resources-bulk request per 100 views: each dataview row names its
+        parent dataset, so the cost does not depend on how many datasets the
+        project holds. A view the project does not hold stays unmapped.
+        """
+        found: dict[int, dict[str, Any]] = {}
+        rows = await self._client.browse.resources_bulk(
+            [("dataview", view_id) for view_id in sorted(view_ids)], project_id=project_id
+        )
+        for row in rows:
+            dataset = row.get("dataset")
+            if isinstance(dataset, dict) and dataset.get("id") is not None:
+                found[row["object_id"]] = {
+                    "dataset_id": dataset["id"],
+                    "dataset_name": dataset.get("name"),
+                    "view_name": row.get("name"),
+                }
+        return found
 
     async def list_agent_memory(
         self,

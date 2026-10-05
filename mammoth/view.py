@@ -8,7 +8,7 @@ Get a View via ``client.views.get(view_id)``::
 
     from mammoth import MammothClient, Condition, Operator, ColumnType, SetValue
 
-    client = MammothClient(api_token="mm_...", workspace_id=11)
+    client = MammothClient(api_token="mm_...")
     client.set_project_id(10)
 
     view = await client.views.get(1039)
@@ -38,7 +38,6 @@ Exports are accessed via ``view.export``::
 from __future__ import annotations
 
 import asyncio
-
 import datetime
 import random
 import string
@@ -118,6 +117,8 @@ ERR_REST_TIMEOUT = "to_rest_api `timeout_seconds` must be between 5 and 300 (got
 # Inclusive bounds the REST-API handler accepts.
 _REST_BATCH_SIZE_MIN = 1
 _REST_BATCH_SIZE_MAX = 10000
+_EXPORT_PAGE_LIMIT = 100  # server cap on /exports page size
+_EXPORT_POLL_MAX_SECONDS = 10.0  # export-trigger polls back off from 2s to this
 _REST_TIMEOUT_MIN = 5
 _REST_TIMEOUT_MAX = 300
 
@@ -519,10 +520,30 @@ class View(
         export apart from an earlier one already at EXECUTED against the
         same target dataset (see :meth:`_wait_for_dataset_export_write`).
         """
-        page = await self._client.exports.list(
-            self.id, handler_type=HandlerType.INTERNAL_DATASET, dataset_id=self.dataset_id
-        )
-        return max((export.id or 0 for export in page.exports), default=0)
+        exports = await self._list_internal_dataset_exports()
+        return max((export.id or 0 for export in exports), default=0)
+
+    async def _list_internal_dataset_exports(self) -> list[Any]:
+        """Every ``internal_dataset`` export trigger of this dataview.
+
+        The export list is paged (server default 50, cap 100), so a dataview
+        with more triggers than one page would otherwise hide the newest
+        ones from the write-confirmation poll.
+        """
+        exports: list[Any] = []
+        offset = 0
+        while True:
+            page = await self._client.exports.list(
+                self.id,
+                handler_type=HandlerType.INTERNAL_DATASET,
+                dataset_id=self.dataset_id,
+                limit=_EXPORT_PAGE_LIMIT,
+                offset=offset,
+            )
+            exports.extend(page.exports)
+            if len(page.exports) < _EXPORT_PAGE_LIMIT:
+                return exports
+            offset += _EXPORT_PAGE_LIMIT
 
     async def _poll_internal_dataset_exports(
         self, match: Callable[[Any], bool], timeout: int | None
@@ -536,15 +557,14 @@ class View(
         deadline = time.monotonic() + (timeout or getattr(self._client, "job_timeout", 60) or 60)
         poll_interval = 2.0
         while time.monotonic() < deadline:
-            page = await self._client.exports.list(
-                self.id, handler_type=HandlerType.INTERNAL_DATASET, dataset_id=self.dataset_id
-            )
-            matches = [e for e in page.exports if match(e)]
+            exports = await self._list_internal_dataset_exports()
+            matches = [e for e in exports if match(e)]
             if matches:
                 export = max(matches, key=lambda e: e.id or 0)
                 if export.status == ExportStatus.EXECUTED:
                     return export
             await asyncio.sleep(poll_interval)
+            poll_interval = min(_EXPORT_POLL_MAX_SECONDS, poll_interval * 1.5)
         return None
 
     async def _resolve_exported_dataset_id(
@@ -563,10 +583,36 @@ class View(
             target_id = (export.target_properties or {}).get("TARGET_DS_ID")
             if target_id is not None:
                 return int(target_id)
+        landed = await self._find_exported_dataset(dataset_name)
+        if landed is not None:
+            return landed
         raise MammothExportError(
             ERR_EXPORT_DATASET_UNRESOLVED.format(name=dataset_name),
-            {"dataset_name": dataset_name, "timeout": timeout},
+            {
+                "dataset_name": dataset_name,
+                "timeout": timeout,
+                "source_view_id": self.id,
+                "export_pending": True,
+            },
         )
+
+    async def _find_exported_dataset(self, dataset_name: str) -> int | None:
+        """The dataset an export of this view created, found by name and source view.
+
+        An export's dataset records the view it came from (``additional_info
+        .DATAVIEW_ID``), so a dataset that landed while the export trigger was
+        still not listed as ``EXECUTED`` is found here. The newest match wins.
+        """
+        listing = await self._client.datasets.list_all(fields="id,name,additional_info")
+        found = [
+            int(ds["id"])
+            for ds in listing.get("datasets", [])
+            if isinstance(ds, dict)
+            and ds.get("name") == dataset_name
+            and isinstance(ds.get("additional_info"), dict)
+            and str(ds["additional_info"].get("DATAVIEW_ID")) == str(self.id)
+        ]
+        return max(found, default=None)
 
     async def _wait_for_dataset_export_write(
         self, target_ds_id: int, timeout: int | None = None, floor: int | None = None
@@ -603,7 +649,12 @@ class View(
         if export is None:
             raise MammothExportError(
                 ERR_EXPORT_DATASET_WRITE_UNRESOLVED.format(dataset_id=target_ds_id),
-                {"dataset_id": target_ds_id, "timeout": timeout},
+                {
+                    "dataset_id": target_ds_id,
+                    "timeout": timeout,
+                    "source_view_id": self.id,
+                    "export_pending": True,
+                },
             )
 
     # ── Data Access ─────────────────────────────────────────────

@@ -10,7 +10,6 @@ Example::
 
     client = MammothClient(
         api_token="mm_...",
-        workspace_id=11,
         base_url="https://app.mammoth.io/api/v2",
     )
     client.set_project_id(10)
@@ -129,23 +128,48 @@ def _log_http(
     status: int | None,
     request_id: str | None = None,
     outcome: str,
+    attempt: int | None = None,
+    error: str | None = None,
 ) -> None:
     if not _HTTP_LOG.isEnabledFor(logging.INFO):
         return
+    elapsed_ms = round((time.perf_counter() - started) * 1000)
+    tried = f" attempt={attempt}/{_MAX_READ_RETRIES + 1}" if attempt else ""
+    failed = f" error={error}" if error else ""
     _HTTP_LOG.info(
-        "http",
+        "http %s %s%s outcome=%s status=%s%s elapsed_ms=%s",
+        method,
+        endpoint.split("?", 1)[0],
+        tried,
+        outcome,
+        status,
+        failed,
+        elapsed_ms,
         extra={
             "mammoth": {
                 "event": "http",
                 "method": method,
                 "path": endpoint,
                 "status": status,
-                "duration_ms": round((time.perf_counter() - started) * 1000),
+                "duration_ms": elapsed_ms,
                 "request_id": request_id,
                 "outcome": outcome,
             }
         },
     )
+
+
+def _log_attempt_start(method: str, endpoint: str, attempt: int, timeout: Any) -> None:
+    """One line when a request attempt starts, so a hang shows which attempt never ended."""
+    if _HTTP_LOG.isEnabledFor(logging.INFO):
+        _HTTP_LOG.info(
+            "http %s %s attempt=%s/%s start timeout=%s",
+            method,
+            endpoint.split("?", 1)[0],
+            attempt,
+            _MAX_READ_RETRIES + 1,
+            timeout,
+        )
 
 
 _RETRY_STATUSES = frozenset({502, 503, 504})
@@ -316,6 +340,60 @@ def _read_error_detail(body: dict[str, Any]) -> str | None:
     return None
 
 
+_TOKEN_WORKSPACES: dict[tuple[str, str], int] = {}
+_TOKEN_WORKSPACES_MAX = 64
+
+
+def resolve_token_workspace_id(base_url: str, api_token: str, timeout: float) -> int:
+    """Ask the server which workspace an ``mm_`` token belongs to.
+
+    The answer is cached per (server, token) for the life of the process, up
+    to the 64 most recent tokens.
+
+    Args:
+        base_url: The API base url, ending in ``/api/v2``.
+        api_token: The ``mm_...`` Bearer token.
+        timeout: Request timeout in seconds.
+
+    Raises:
+        MammothAuthError: The server rejected the token.
+        MammothAPIError: The request failed or the answer carried no workspace id.
+    """
+    key = (base_url, api_token)
+    if key not in _TOKEN_WORKSPACES:
+        try:
+            response = httpx.get(
+                f"{base_url}/workspaces/current",
+                headers={"Authorization": f"Bearer {api_token}"},
+                timeout=timeout,
+                follow_redirects=False,
+            )
+        except httpx.HTTPError as exc:
+            raise MammothAPIError(
+                "Could not reach Mammoth to resolve the token's workspace"
+            ) from exc
+        if response.status_code == 401:
+            raise MammothAuthError("Invalid API credentials")
+        workspace_id: object = None
+        if response.status_code == 200:
+            try:
+                body = response.json()
+            except ValueError as exc:
+                raise MammothAPIError(
+                    "Mammoth returned an unreadable answer for the token's workspace",
+                    status_code=response.status_code,
+                ) from exc
+            workspace_id = body.get("id") if isinstance(body, dict) else None
+        if not isinstance(workspace_id, int) or workspace_id <= 0:
+            raise MammothAPIError(
+                "Mammoth did not return the token's workspace", status_code=response.status_code
+            )
+        if len(_TOKEN_WORKSPACES) >= _TOKEN_WORKSPACES_MAX:
+            _TOKEN_WORKSPACES.pop(next(iter(_TOKEN_WORKSPACES)))
+        _TOKEN_WORKSPACES[key] = workspace_id
+    return _TOKEN_WORKSPACES[key]
+
+
 class MammothClient:
     """Main client for interacting with the Mammoth Analytics API.
 
@@ -323,7 +401,7 @@ class MammothClient:
 
     Example::
 
-        client = MammothClient(api_token="mm_...", workspace_id=11)
+        client = MammothClient(api_token="mm_...")
         client.set_project_id(10)
 
         # Resource-based CRUD
@@ -350,6 +428,7 @@ class MammothClient:
         *,
         api_token: str | None = None,
         api_root: str | None = "/api/v2",
+        retry_gateway_errors: bool = True,
     ) -> None:
         """Initialize the Mammoth client.
 
@@ -360,7 +439,9 @@ class MammothClient:
         Args:
             api_key: Deprecated API key; use ``api_token``.
             api_secret: Deprecated API secret; use ``api_token``.
-            workspace_id: Your Mammoth workspace ID.
+            workspace_id: Your Mammoth workspace ID. Only for the deprecated
+                ``api_key`` + ``api_secret`` pair; an ``api_token`` names its
+                own workspace and rejects this argument.
             base_url: Base URL for the Mammoth API.
             timeout: Request timeout in seconds.
             job_timeout: Job polling timeout in seconds.
@@ -376,6 +457,10 @@ class MammothClient:
                 ``base_url`` exactly as given, which is what a caller inside
                 the network needs: the server mounts these routes at their own
                 paths, and whatever sits in front of it adds the prefix.
+            retry_gateway_errors: Retry a read that got a 502/503/504, twice.
+                Turn it off when the server answering is the process making
+                the call: a retry then adds load to the very worker that is
+                overloaded. Connection errors are still retried.
         """
         if api_token is not None and (api_key is not None or api_secret is not None):
             raise ValueError("pass api_token or api_key + api_secret, not both")
@@ -383,7 +468,9 @@ class MammothClient:
             raise ValueError("pass api_token (mm_...) or both api_key and api_secret")
         if api_token is not None and (not isinstance(api_token, str) or not api_token.strip()):
             raise ValueError("api_token must be a non-empty string")
-        if workspace_id is None:
+        if api_token is not None and workspace_id is not None:
+            raise ValueError("workspace_id is not accepted with api_token: the token names it")
+        if api_token is None and workspace_id is None:
             raise ValueError("workspace_id is required")
         if not isinstance(base_url, str):
             raise ValueError("base_url must be an HTTPS URL")
@@ -418,7 +505,7 @@ class MammothClient:
         self.api_token = api_token.strip() if api_token is not None else None
         self.api_key = api_key
         self.api_secret = api_secret
-        self.workspace_id = workspace_id
+        self._workspace_id = workspace_id
         if isinstance(timeout, bool) or not isinstance(timeout, (int, float)):
             raise ValueError("timeout must be a positive finite number")
         if not math.isfinite(timeout) or timeout <= 0:
@@ -436,6 +523,7 @@ class MammothClient:
         self.job_timeout = job_timeout
         self.job_poll_seconds = job_poll_seconds
         self.pipeline_timeout = pipeline_timeout
+        self.retry_gateway_errors = retry_gateway_errors
 
         self.project_id: int | None = None
 
@@ -446,11 +534,11 @@ class MammothClient:
             credential_headers = {
                 "X-API-KEY": str(self.api_key),
                 "X-API-SECRET": str(self.api_secret),
+                "X-WORKSPACE-ID": str(workspace_id),
             }
         self.session.headers.update(
             {
                 **credential_headers,
-                "X-WORKSPACE-ID": str(self.workspace_id),
                 "User-Agent": f"mammoth-io/{_get_version()}",
             }
         )
@@ -536,7 +624,8 @@ class MammothClient:
     async def _send_with_read_retry(
         self, method: str, endpoint: str, url: str, request_kwargs: dict[str, Any]
     ) -> httpx.Response:
-        """Send once; retry only GET/HEAD on 502/503/504 or connect errors, at most twice.
+        """Send once; retry only GET/HEAD on 502/503/504 (unless ``retry_gateway_errors`` is off) or
+        connect errors, at most twice.
 
         A draining worker answers a read with one transient gateway error.
         Writes are never replayed. When retries run out the last response (or
@@ -546,21 +635,50 @@ class MammothClient:
         for attempt in range(_MAX_READ_RETRIES + 1):
             started = time.perf_counter()
             last = attempt == _MAX_READ_RETRIES or not retryable
+            _log_attempt_start(method, endpoint, attempt + 1, request_kwargs.get("timeout"))
             try:
                 response = await self.session.request(method, url, **request_kwargs)
-            except httpx.ConnectError:
+            except httpx.ConnectError as e:
                 if last:
                     raise
-                _log_http(method, endpoint, started=started, status=None, outcome="retry")
+                _log_http(
+                    method,
+                    endpoint,
+                    started=started,
+                    status=None,
+                    outcome="retry",
+                    attempt=attempt + 1,
+                    error=type(e).__name__,
+                )
                 await asyncio.sleep(_retry_delay(attempt, None))
                 continue
-            if last or response.status_code not in _RETRY_STATUSES:
+            if last or response.status_code not in _RETRY_STATUSES or not self.retry_gateway_errors:
                 return response
             _log_http(
-                method, endpoint, started=started, status=response.status_code, outcome="retry"
+                method,
+                endpoint,
+                started=started,
+                status=response.status_code,
+                outcome="retry",
+                attempt=attempt + 1,
             )
             await asyncio.sleep(_retry_delay(attempt, response.headers.get("Retry-After")))
         raise AssertionError("unreachable")
+
+    @property
+    def workspace_id(self) -> int:
+        """The workspace this client acts in.
+
+        Given at construction with ``api_key`` + ``api_secret``; an ``api_token``
+        names its own workspace, which is fetched once on first use and kept.
+        """
+        if self._workspace_id is None:
+            if self.api_token is None:
+                raise ValueError("workspace_id is required with api_key + api_secret")
+            self._workspace_id = resolve_token_workspace_id(
+                self.base_url, self.api_token, self.timeout
+            )
+        return self._workspace_id
 
     async def _request(
         self,
@@ -623,7 +741,7 @@ class MammothClient:
         if files:
             request_kwargs["files"] = files
             request_kwargs["headers"] = headers
-        elif json:
+        elif json is not None:
             headers["Content-Type"] = "application/json"
             request_kwargs["headers"] = headers
             request_kwargs["json"] = json
@@ -644,7 +762,14 @@ class MammothClient:
                 request_method, endpoint, url, request_kwargs
             )
         except httpx.TimeoutException as e:
-            _log_http(request_method, endpoint, started=started, status=None, outcome="timeout")
+            _log_http(
+                request_method,
+                endpoint,
+                started=started,
+                status=None,
+                outcome="timeout",
+                error=type(e).__name__,
+            )
             raise MammothAPIError(
                 "Request timed out",
                 details={"exception_type": type(e).__name__},
@@ -655,7 +780,12 @@ class MammothClient:
             ) from e
         except httpx.ConnectError as e:
             _log_http(
-                request_method, endpoint, started=started, status=None, outcome="connection_error"
+                request_method,
+                endpoint,
+                started=started,
+                status=None,
+                outcome="connection_error",
+                error=type(e).__name__,
             )
             raise MammothAPIError(
                 "Connection error",
@@ -667,7 +797,12 @@ class MammothClient:
             ) from e
         except httpx.HTTPError as e:
             _log_http(
-                request_method, endpoint, started=started, status=None, outcome="request_failed"
+                request_method,
+                endpoint,
+                started=started,
+                status=None,
+                outcome="request_failed",
+                error=type(e).__name__,
             )
             raise MammothAPIError(
                 "Request failed",

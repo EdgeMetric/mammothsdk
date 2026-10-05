@@ -109,7 +109,7 @@ commands:
   - CT-ADDON-LIST-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: 'Retired: the server no longer has a route that lists add-ons, so the command answers not_available and names the web app (Settings > Plan). Nothing replaces it; billing stripe status shows the storage allowance and plan.'
   reviewed_by: primary
 - command_id: addon.storage.add
   command_path: addon storage add

@@ -157,7 +157,7 @@ def _workspace_mismatch_error(exc: MammothAuthError, workspace_id: int | None) -
             f"(this sign-in is for workspace {workspace_id})."
         ),
         exit_status=EXIT_AUTH,
-        hint="Pass --workspace or use a profile signed in for that workspace.",
+        hint="Use a profile whose token belongs to that workspace.",
         details=_metadata(exc),
         request_id=exc.request_id,
         authorization_required=True,
@@ -238,6 +238,7 @@ def map_sdk_exception(
     profile: str | None = None,
     project_id: int | None = None,
     workspace_id: int | None = None,
+    non_member_project_id: int | None = None,
 ) -> CliError:
     """Map one SDK or transport failure to a typed, stable CLI outcome.
 
@@ -265,7 +266,7 @@ def map_sdk_exception(
             code=CODE_AUTHENTICATION_FAILED,
             message="Mammoth rejected the provided credentials.",
             exit_status=EXIT_AUTH,
-            hint=(EMBEDDED_AUTH_HINT if in_app else "Check the API key, secret, and workspace id."),
+            hint=(EMBEDDED_AUTH_HINT if in_app else "Check the API token."),
             details=_metadata(exc),
             request_id=exc.request_id,
             recovery_commands=[] if in_app else ["mammoth auth login"],
@@ -399,7 +400,7 @@ def map_sdk_exception(
             not _is_known_read(method)
             and (
                 status is None
-                or status in {408, 425, 429}
+                or status in {408, 425}  # 429 refused the request before any effect
                 or (status is not None and status >= 500)
             )
         )
@@ -436,6 +437,20 @@ def map_sdk_exception(
                 hint="Check the resource id and scope.",
                 details=details,
                 request_id=request_id,
+            )
+        if status == 403 and non_member_project_id is not None:
+            return CliError(
+                code=CODE_AUTHORIZATION_REQUIRED,
+                message=f"You are not a member of project {non_member_project_id}.",
+                exit_status=EXIT_AUTH,
+                hint=(
+                    "Project lists show only the projects you belong to. Ask a project "
+                    "admin to add you; a workspace owner can see the project but cannot "
+                    "open it without being a member."
+                ),
+                details=details,
+                request_id=request_id,
+                authorization_required=True,
             )
         if status == 403:
             return CliError(
@@ -484,7 +499,7 @@ def map_sdk_exception(
                 code=CODE_RETRYABLE,
                 message="Mammoth is temporarily unavailable or the request timed out.",
                 exit_status=EXIT_RETRYABLE,
-                hint="Retry the read after the indicated delay, honoring Retry-After when present.",
+                hint="Retry after the indicated delay, honoring Retry-After when present.",
                 details=details,
                 request_id=request_id,
                 retryable=True,

@@ -389,7 +389,7 @@ commands:
   - CT-DASHBOARD-CANVAS-GET-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: 'A board''s data is the view in the canvas dataset.dataview_id: read it with view data get VIEW_ID. After a board''s bake job, read the canvas and quote one number from it, such as a KPI total.'
   reviewed_by: primary
 - command_id: dashboard.canvas.restore
   command_path: dashboard canvas restore
@@ -5115,3 +5115,692 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+- command_id: dashboard.embed.usage.summary
+  command_path: dashboard embed usage summary
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.embed_usage_summary
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.embed_usage_summary with validated request fields.
+  request_model: DashboardEmbedUsageSummaryRequest
+  result_model: DashboardEmbedUsageSummaryResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-DASHBOARD-EMBED-USAGE-SUMMARY
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard embed usage summary --help
+  agent_example: 'mammoth dashboard embed usage summary --input ''{"dashboard_ids": [1]}'''
+  unit_tests:
+  - UT-DASHBOARD-EMBED-USAGE-SUMMARY
+  contract_tests:
+  - CT-DASHBOARD-EMBED-USAGE-SUMMARY-HUMAN
+  - CT-DASHBOARD-EMBED-USAGE-SUMMARY-JSON
+  - CT-DASHBOARD-EMBED-USAGE-SUMMARY-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Active embed origins per board over the last 90 days, for several boards in one call (the library view). Boards outside the workspace are ignored. For one board''s origins and render counts use dashboard embed usage get.'
+  reviewed_by: primary
+  readback:
+    command: dashboard.embed.usage.summary
+    ids: {}
+    kind: object
+- command_id: dashboard.format-preview
+  command_path: dashboard format-preview
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - name: dashboard_id
+    type: int
+    required: true
+    metavar: DASHBOARD_ID
+    falls_back_to_field: null
+    help: ID of the dashboard.
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.format_preview
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.format_preview with validated request fields.
+  request_model: DashboardFormatPreviewRequest
+  result_model: DashboardFormatPreviewResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-DASHBOARD-FORMAT-PREVIEW
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard format-preview DASHBOARD_ID --help
+  agent_example: 'mammoth dashboard format-preview 123 --input ''{"style": "presentation"}'''
+  unit_tests:
+  - UT-DASHBOARD-FORMAT-PREVIEW
+  contract_tests:
+  - CT-DASHBOARD-FORMAT-PREVIEW-HUMAN
+  - CT-DASHBOARD-FORMAT-PREVIEW-JSON
+  - CT-DASHBOARD-FORMAT-PREVIEW-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Dry run of a format switch on a copy of the canvas: what carries over, what the new style adds, and what the target cannot show (not_shown). Nothing is saved. Take style names from dashboard style preset list.'
+  reviewed_by: primary
+  readback:
+    command: dashboard.format-preview
+    ids: {}
+    kind: object
+- command_id: dashboard.template.thumbnail.get
+  command_path: dashboard template thumbnail get
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - name: template_id
+    type: str
+    required: true
+    metavar: TEMPLATE_ID
+    falls_back_to_field: null
+    help: ID of the template.
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.template_thumbnail_get
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.template_thumbnail_get with validated request fields.
+  request_model: DashboardTemplateThumbnailGetRequest
+  result_model: DashboardTemplateThumbnailGetResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-DASHBOARD-TEMPLATE-THUMBNAIL-GET
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard template thumbnail get TEMPLATE_ID --help
+  agent_example: 'mammoth dashboard template thumbnail get resource-123'
+  unit_tests:
+  - UT-DASHBOARD-TEMPLATE-THUMBNAIL-GET
+  contract_tests:
+  - CT-DASHBOARD-TEMPLATE-THUMBNAIL-GET-HUMAN
+  - CT-DASHBOARD-TEMPLATE-THUMBNAIL-GET-JSON
+  - CT-DASHBOARD-TEMPLATE-THUMBNAIL-GET-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'The picture a template''s card shows, as content_type and content_base64. A template with no picture answers 404; that is an ordinary state and its card falls back to the og-card.'
+  reviewed_by: primary
+  readback:
+    command: dashboard.template.thumbnail.get
+    ids: {}
+    kind: object
+- command_id: dashboard.template.thumbnail.set
+  command_path: dashboard template thumbnail set
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - name: template_id
+    type: str
+    required: true
+    metavar: TEMPLATE_ID
+    falls_back_to_field: null
+    help: ID of the template.
+  - name: file
+    type: str
+    required: true
+    metavar: FILE
+    falls_back_to_field: null
+    help: Path to a local PNG, JPEG or WebP image (1 MB at most).
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.template_thumbnail_set
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.template_thumbnail_set with validated request fields.
+  request_model: DashboardTemplateThumbnailSetRequest
+  result_model: DashboardTemplateThumbnailSetResult
+  mutation_class: benign_mutation
+  edits_target: true
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_no_disposable_fixture
+  readback:
+    command: dashboard.template.thumbnail.get
+    ids:
+      template_id: positional.0
+    kind: object
+  live_test: null
+  live_exemption_reason: Release-only multipart binding; no disposable saved-template fixture in tests/live.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard template thumbnail set TEMPLATE_ID FILE --help
+  agent_example: 'mammoth dashboard template thumbnail set resource-123 card.png'
+  unit_tests:
+  - UT-DASHBOARD-TEMPLATE-THUMBNAIL-SET
+  contract_tests:
+  - CT-DASHBOARD-TEMPLATE-THUMBNAIL-SET-HUMAN
+  - CT-DASHBOARD-TEMPLATE-THUMBNAIL-SET-JSON
+  - CT-DASHBOARD-TEMPLATE-THUMBNAIL-SET-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Replaces the picture of a SAVED workspace template (owner or workspace admin; curated templates are not writable). PNG, JPEG or WebP read from the file''s content, 1 MB at most. The file comes from the local disk.'
+  reviewed_by: primary
+- command_id: dashboard.template.thumbnail.clear
+  command_path: dashboard template thumbnail clear
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - name: template_id
+    type: str
+    required: true
+    metavar: TEMPLATE_ID
+    falls_back_to_field: null
+    help: ID of the template.
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.template_thumbnail_clear
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.template_thumbnail_clear with validated request fields.
+  request_model: DashboardTemplateThumbnailClearRequest
+  result_model: DashboardTemplateThumbnailClearResult
+  mutation_class: destructive
+  edits_target: true
+  confirmation: prompt_or_yes
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_no_disposable_fixture
+  readback:
+    command: dashboard.template.get
+    ids:
+      template_id: positional.0
+    kind: object
+  live_test: null
+  live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable saved-template
+    fixture in tests/live.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard template thumbnail clear TEMPLATE_ID --help
+  agent_example: 'mammoth dashboard template thumbnail clear resource-123'
+  unit_tests:
+  - UT-DASHBOARD-TEMPLATE-THUMBNAIL-CLEAR
+  contract_tests:
+  - CT-DASHBOARD-TEMPLATE-THUMBNAIL-CLEAR-HUMAN
+  - CT-DASHBOARD-TEMPLATE-THUMBNAIL-CLEAR-JSON
+  - CT-DASHBOARD-TEMPLATE-THUMBNAIL-CLEAR-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Removes a saved template''s picture (owner or workspace admin); its card falls back to the og-card. ok is false when there was no picture.'
+  reviewed_by: primary
+- command_id: dashboard.gallery.list
+  command_path: dashboard gallery list
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.gallery_list
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.gallery_list with validated request fields.
+  request_model: DashboardGalleryListRequest
+  result_model: DashboardGalleryListResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: single_page
+  acceptance_evidence: live_read_only
+  live_test: LT-DASHBOARD-GALLERY-LIST
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard gallery list --help
+  agent_example: 'mammoth dashboard gallery list'
+  unit_tests:
+  - UT-DASHBOARD-GALLERY-LIST
+  contract_tests:
+  - CT-DASHBOARD-GALLERY-LIST-HUMAN
+  - CT-DASHBOARD-GALLERY-LIST-JSON
+  - CT-DASHBOARD-GALLERY-LIST-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'The public template gallery as data: curated, live templates only, with copy, taxonomy labels, thumbnail_ref and viewer_url, and the function/industry facets with counts. No internal ids. Optional function or industry narrow it; an unknown facet answers 404. To use one in this workspace, use dashboard template list and dashboard templates use.'
+  reviewed_by: primary
+  readback:
+    command: dashboard.gallery.list
+    ids: {}
+    kind: object
+- command_id: dashboard.gallery.get
+  command_path: dashboard gallery get
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - name: slug
+    type: str
+    required: true
+    metavar: SLUG
+    falls_back_to_field: null
+    help: Template slug.
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.gallery_get
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.gallery_get with validated request fields.
+  request_model: DashboardGalleryGetRequest
+  result_model: DashboardGalleryGetResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-DASHBOARD-GALLERY-GET
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard gallery get SLUG --help
+  agent_example: 'mammoth dashboard gallery get sample'
+  unit_tests:
+  - UT-DASHBOARD-GALLERY-GET
+  contract_tests:
+  - CT-DASHBOARD-GALLERY-GET-HUMAN
+  - CT-DASHBOARD-GALLERY-GET-JSON
+  - CT-DASHBOARD-GALLERY-GET-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'One card of the public template gallery. A user-saved template, or a curated one that is not live, answers 404 exactly as an unknown slug does.'
+  reviewed_by: primary
+  readback:
+    command: dashboard.gallery.get
+    ids: {}
+    kind: object
+- command_id: dashboard.swap-fit
+  command_path: dashboard swap-fit
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - name: source_dashboard_id
+    type: int
+    required: true
+    metavar: SOURCE_DASHBOARD_ID
+    falls_back_to_field: null
+    help: ID of the source dashboard.
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.swap_fit
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.swap_fit with validated request fields.
+  request_model: DashboardSwapFitRequest
+  result_model: DashboardSwapFitResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-DASHBOARD-SWAP-FIT
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard swap-fit SOURCE_DASHBOARD_ID --help
+  agent_example: 'mammoth dashboard swap-fit 123 --input ''{"target_dataview_ids": [1]}'''
+  unit_tests:
+  - UT-DASHBOARD-SWAP-FIT
+  contract_tests:
+  - CT-DASHBOARD-SWAP-FIT-HUMAN
+  - CT-DASHBOARD-SWAP-FIT-JSON
+  - CT-DASHBOARD-SWAP-FIT-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Read-only check before dashboard swap-data: scores the dashboard (the positional) against up to 60 candidate dataviews, in the order given. Pass target_dataview_ids in --input. Each fit carries a grade (matched, total, reasons) or a skipped reason; too_large means the dataset was not profiled inline, so repeat with include_over_budget for that one. sample_dataview_ids names the template sample data to avoid. No model call, nothing written.'
+  reviewed_by: primary
+  readback:
+    command: dashboard.swap-fit
+    ids: {}
+    kind: object
+- command_id: dashboard.audience.get
+  command_path: dashboard audience get
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - name: dashboard_id
+    type: int
+    required: true
+    metavar: DASHBOARD_ID
+    falls_back_to_field: null
+    help: ID of the dashboard.
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.audience
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.audience with validated request fields.
+  request_model: DashboardAudienceGetRequest
+  result_model: DashboardAudienceGetResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-DASHBOARD-AUDIENCE-GET
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard audience get DASHBOARD_ID --help
+  agent_example: 'mammoth dashboard audience get 123'
+  unit_tests:
+  - UT-DASHBOARD-AUDIENCE-GET
+  contract_tests:
+  - CT-DASHBOARD-AUDIENCE-GET-HUMAN
+  - CT-DASHBOARD-AUDIENCE-GET-JSON
+  - CT-DASHBOARD-AUDIENCE-GET-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Who read the board over the last days (7, 30 or 90; default 7): totals against the window before, a daily series, named workspace viewers, anonymous counts, country, device and viewport coverage, people it was shared with who never opened it, page and tile reach, and outward actions. Editors only. Never returns an IP or a city; editors'' own visits are not counted.'
+  reviewed_by: primary
+  readback:
+    command: dashboard.audience.get
+    ids: {}
+    kind: object
+- command_id: dashboard.audience.summary
+  command_path: dashboard audience summary
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.audience_summary
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.audience_summary with validated request fields.
+  request_model: DashboardAudienceSummaryRequest
+  result_model: DashboardAudienceSummaryResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-DASHBOARD-AUDIENCE-SUMMARY
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard audience summary --help
+  agent_example: 'mammoth dashboard audience summary --input ''{"dashboard_ids": [1]}'''
+  unit_tests:
+  - UT-DASHBOARD-AUDIENCE-SUMMARY
+  contract_tests:
+  - CT-DASHBOARD-AUDIENCE-SUMMARY-HUMAN
+  - CT-DASHBOARD-AUDIENCE-SUMMARY-JSON
+  - CT-DASHBOARD-AUDIENCE-SUMMARY-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Views per board for the dashboard library: pass dashboard_ids in --input (200 are read at most). Per board: views and people over 7 days, views over 30 days, the last view and a 14-day daily series. A board never viewed is absent from items; boards outside the workspace or that you cannot edit are ignored.'
+  reviewed_by: primary
+  readback:
+    command: dashboard.audience.summary
+    ids: {}
+    kind: object
+- command_id: dashboard.audience.digest.get
+  command_path: dashboard audience digest get
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - name: dashboard_id
+    type: int
+    required: true
+    metavar: DASHBOARD_ID
+    falls_back_to_field: null
+    help: ID of the dashboard.
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.audience_digest_get
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.audience_digest_get with validated request fields.
+  request_model: DashboardAudienceDigestGetRequest
+  result_model: DashboardAudienceDigestGetResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-DASHBOARD-AUDIENCE-DIGEST-GET
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard audience digest get DASHBOARD_ID --help
+  agent_example: 'mammoth dashboard audience digest get 123'
+  unit_tests:
+  - UT-DASHBOARD-AUDIENCE-DIGEST-GET
+  contract_tests:
+  - CT-DASHBOARD-AUDIENCE-DIGEST-GET-HUMAN
+  - CT-DASHBOARD-AUDIENCE-DIGEST-GET-JSON
+  - CT-DASHBOARD-AUDIENCE-DIGEST-GET-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Your weekly audience email setting for the board: enabled is the effective answer, explicit the stored choice (null when you never chose; the email then turns on by itself above 5 people a week for the creator and directly-granted editors). Editors only.'
+  reviewed_by: primary
+  readback:
+    command: dashboard.audience.digest.get
+    ids: {}
+    kind: object
+- command_id: dashboard.audience.digest.set
+  command_path: dashboard audience digest set
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - name: dashboard_id
+    type: int
+    required: true
+    metavar: DASHBOARD_ID
+    falls_back_to_field: null
+    help: ID of the dashboard.
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.audience_digest_set
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.audience_digest_set with validated request fields.
+  request_model: DashboardAudienceDigestSetRequest
+  result_model: DashboardAudienceDigestSetResult
+  mutation_class: benign_mutation
+  edits_target: false
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_no_disposable_fixture
+  readback:
+    command: dashboard.audience.digest.get
+    ids: {}
+    kind: object
+  live_test: null
+  live_exemption_reason: Write with contract coverage but no automated disposable fixture in tests/live.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard audience digest set DASHBOARD_ID --help
+  agent_example: 'mammoth dashboard audience digest set 123 --input ''{"enabled": true}'''
+  unit_tests:
+  - UT-DASHBOARD-AUDIENCE-DIGEST-SET
+  contract_tests:
+  - CT-DASHBOARD-AUDIENCE-DIGEST-SET-HUMAN
+  - CT-DASHBOARD-AUDIENCE-DIGEST-SET-JSON
+  - CT-DASHBOARD-AUDIENCE-DIGEST-SET-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Writes your own weekly audience email setting for the board, nobody else''s. Pass enabled in --input: true, false, or null to clear the choice and return to the default. Editors only.'
+  reviewed_by: primary
+- command_id: dashboard.columns
+  command_path: dashboard columns
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - name: dashboard_id
+    type: int
+    required: true
+    metavar: DASHBOARD_ID
+    falls_back_to_field: null
+    help: ID of the dashboard.
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.column_roster
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.column_roster with validated request fields.
+  request_model: DashboardColumnsRequest
+  result_model: DashboardColumnsResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-DASHBOARD-COLUMNS
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard columns DASHBOARD_ID --help
+  agent_example: 'mammoth dashboard columns 123'
+  unit_tests:
+  - UT-DASHBOARD-COLUMNS
+  contract_tests:
+  - CT-DASHBOARD-COLUMNS-HUMAN
+  - CT-DASHBOARD-COLUMNS-JSON
+  - CT-DASHBOARD-COLUMNS-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Every column of the board''s source dataset with its profile: value samples, measure ranges and aggregates, date spans, and the profiler''s identifier and protected-attribute verdicts, plus on_board_count, row_count and signals. Served from the cached dataset profile.'
+  reviewed_by: primary
+  readback:
+    command: dashboard.columns
+    ids: {}
+    kind: object
+- command_id: dashboard.context.review
+  command_path: dashboard context review
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - name: dashboard_id
+    type: int
+    required: true
+    metavar: DASHBOARD_ID
+    falls_back_to_field: null
+    help: ID of the dashboard.
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.context_review
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.context_review with validated request fields.
+  request_model: DashboardContextReviewRequest
+  result_model: DashboardContextReviewResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: always_wait
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-DASHBOARD-CONTEXT-REVIEW
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard context review DASHBOARD_ID --help
+  agent_example: 'mammoth dashboard context review 123'
+  unit_tests:
+  - UT-DASHBOARD-CONTEXT-REVIEW
+  contract_tests:
+  - CT-DASHBOARD-CONTEXT-REVIEW-HUMAN
+  - CT-DASHBOARD-CONTEXT-REVIEW-JSON
+  - CT-DASHBOARD-CONTEXT-REVIEW-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Dry run of a context edit: what applying the board''s current context would change. Nothing is written (not the canvas, the transcript or the bake). Waits for the job; its result holds the item-level change set and a review_id, which is null when the context changes nothing. Optional scope (summary, insights or all), note (1000 characters at most) and fresh (work it out again). Pass review_id to dashboard context apply.'
+  reviewed_by: primary
+  readback:
+    command: dashboard.context.review
+    ids: {}
+    kind: object
+- command_id: dashboard.context.apply
+  command_path: dashboard context apply
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - name: dashboard_id
+    type: int
+    required: true
+    metavar: DASHBOARD_ID
+    falls_back_to_field: null
+    help: ID of the dashboard.
+  - name: review_id
+    type: str
+    required: true
+    metavar: REVIEW_ID
+    falls_back_to_field: null
+    help: ID of the review.
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.context_apply
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.context_apply with validated request fields.
+  request_model: DashboardContextApplyRequest
+  result_model: DashboardContextApplyResult
+  mutation_class: benign_mutation
+  edits_target: true
+  confirmation: confirm_target
+  wait_policy: always_wait
+  pagination_policy: none
+  acceptance_evidence: contract_only_no_disposable_fixture
+  readback:
+    command: dashboard.canvas.get
+    ids: {}
+    kind: object
+  live_test: null
+  live_exemption_reason: Write with contract coverage but no automated disposable fixture in tests/live.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard context apply DASHBOARD_ID REVIEW_ID --help
+  agent_example: 'mammoth dashboard context apply 123 resource-123 --yes --confirm 123'
+  unit_tests:
+  - UT-DASHBOARD-CONTEXT-APPLY
+  contract_tests:
+  - CT-DASHBOARD-CONTEXT-APPLY-HUMAN
+  - CT-DASHBOARD-CONTEXT-APPLY-JSON
+  - CT-DASHBOARD-CONTEXT-APPLY-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Writes the candidate a dashboard context review proposed, as a new canvas version that undo and the version timeline reach. The change is the server''s own reviewed plan, never canvas content from the caller. Pass the review_id from dashboard context review (second positional). Optional keep (roster keys whose hand-typed text to keep) and base_sequence (the head the review was computed against). The server rejects an expired or superseded review, and a board whose head moved since the review.'
+  reviewed_by: primary
+- command_id: dashboard.qa.insights
+  command_path: dashboard qa insights
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - name: dashboard_id
+    type: int
+    required: true
+    metavar: DASHBOARD_ID
+    falls_back_to_field: null
+    help: ID of the dashboard.
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.qa_insights
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.qa_insights with validated request fields.
+  request_model: DashboardQaInsightsRequest
+  result_model: DashboardQaInsightsResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-DASHBOARD-QA-INSIGHTS
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard qa insights DASHBOARD_ID --help
+  agent_example: 'mammoth dashboard qa insights 123'
+  unit_tests:
+  - UT-DASHBOARD-QA-INSIGHTS
+  contract_tests:
+  - CT-DASHBOARD-QA-INSIGHTS-HUMAN
+  - CT-DASHBOARD-QA-INSIGHTS-JSON
+  - CT-DASHBOARD-QA-INSIGHTS-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'The questions viewers asked on the board over the last days (7, 30 or 90; default 7), grouped by their text, with feedback and unanswered counts and the measure and dimension each answer was about. Editors only. Nobody is named: no user, session or name is returned, and editors'' own questions are left out.'
+  reviewed_by: primary
+  readback:
+    command: dashboard.qa.insights
+    ids: {}
+    kind: object

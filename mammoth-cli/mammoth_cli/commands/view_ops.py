@@ -20,6 +20,7 @@ enum-typed fields are forwarded as the plain string given on ``--input``.
 from __future__ import annotations
 
 import json
+import shlex
 from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
 from typing import Any
@@ -60,6 +61,7 @@ from mammoth_cli.runtime.session import open_service, resolved_project
 from mammoth_cli.services.command_contract import bind_command_inputs
 from mammoth_cli.services.conditions import CONDITION_KWARG
 from mammoth_cli.services.input_fields import TASK_COUNT_FIELD
+from mammoth_cli.services.sql_check import check_sql_binds
 from mammoth_cli.services.write_impact import (
     ImpactRead,
     Measure,
@@ -79,6 +81,7 @@ CODE_PIPELINE_REFERENCE_ERROR = "pipeline_reference_error"
 CODE_TASK_RUNTIME_ERROR = "task_runtime_error"
 _PIPELINE_SYMBOL = "mammoth.api.pipeline.PipelineAPI.get_pipeline"
 _PIPELINE_ITEMS_SYMBOL = "mammoth.api.pipeline.PipelineAPI.items"
+_PIPELINE_ITEMS_ALL_SYMBOL = "mammoth.api.pipeline.PipelineAPI.items_all"
 _PIPELINE_ITEMS_FULL = "__full"
 _ERROR_TRANSFORM_STATUSES = {"ERROR", "REFERROR"}
 #: Tolerance for clock skew between this process and the server when deciding
@@ -375,6 +378,25 @@ def _dispatch_view(
     return data, _meta(invocation, auth.workspace_id)
 
 
+def with_in_place_note(data: Any, view_id: int) -> Any:
+    """Tell the caller this write changed view ``view_id`` itself, and how to avoid that.
+
+    An agent asked for a NEW dataset edited the source's own view; the way to
+    leave the source untouched is a working view, then ``view export dataset``.
+    """
+    if not isinstance(data, dict):
+        return data
+    return {
+        **data,
+        "in_place_note": (
+            f"This edited existing view {view_id} in place. If the user asked for a NEW "
+            "dataset or the source must stay untouched, do not edit it: run 'mammoth view "
+            "create DATASET_ID' for a working view, make the steps on that view, then "
+            "'mammoth view export dataset' it into the new dataset."
+        ),
+    }
+
+
 def _flag_unsettled_pipeline(service: Any, dataset_id: int, view_id: int, data: Any) -> None:
     """Wait for the pipeline after a write with no row check, and record what it finds.
 
@@ -480,7 +502,14 @@ def reject_pipeline_reference_errors(
         read = service.call(_PIPELINE_SYMBOL, **kwargs)
         if isinstance(read, dict):
             pipeline = read
-        items = service.call(_PIPELINE_ITEMS_SYMBOL, fields=_PIPELINE_ITEMS_FULL, **kwargs)
+        # Every page: a broken task past the first 50 items must still be found.
+        items = (
+            service.call(_PIPELINE_ITEMS_ALL_SYMBOL, fields=_PIPELINE_ITEMS_FULL, **kwargs)
+            if "dataset_id" in kwargs
+            else service.call(
+                _PIPELINE_ITEMS_SYMBOL, fields=_PIPELINE_ITEMS_FULL, limit=100, **kwargs
+            )
+        )
         if isinstance(items, dict):
             broken = [
                 item
@@ -719,7 +748,11 @@ def _with_dashboards(service: Any, view_id: int, record: Any) -> Any:
     says "this board" is understood (eval T1-D-22); unchanged when none."""
     if not isinstance(record, dict):
         return record
-    boards = service.call(_DASHBOARDS_LIST_SYMBOL)
+    try:
+        boards = service.call(_DASHBOARDS_LIST_SYMBOL)
+    except CliError:
+        # A decoration must not fail the read it decorates.
+        return record
     built_on = [
         {"id": board.get("id"), "title": board.get("title")}
         for board in (boards if isinstance(boards, list) else [])
@@ -891,7 +924,30 @@ def view_transform_add_sql(invocation: Invocation) -> HandlerResult:
     _require_field(document, "query")
     assert document is not None
     kwargs = _bind_transform_inputs(invocation, document)
-    return _dispatch_view(invocation, view_id, "add_sql", **kwargs)
+    return _dispatch_view(
+        invocation, view_id, "add_sql", prepare=_sql_binding_check(invocation, view_id), **kwargs
+    )
+
+
+def _sql_binding_check(
+    invocation: Invocation, view_id: int
+) -> Callable[[Any, int, dict[str, Any]], Any]:
+    """A ``prepare`` hook: a dry run fails with ``would_fail`` when the SQL names a column
+    the step cannot bind (see :mod:`mammoth_cli.services.sql_check`). A real run is unchanged."""
+
+    def check(service: Any, dataset_id: int, kwargs: dict[str, Any]) -> Any:
+        if invocation.dry_run:
+            view = service.call(
+                _DATAVIEW_GET_SYMBOL,
+                dataset_id=dataset_id,
+                dataview_id=view_id,
+                project_id=resolved_project(invocation),
+            )
+            if isinstance(view, dict):
+                check_sql_binds(str(kwargs.get("query", "")), view)
+        return None
+
+    return check
 
 
 def view_transform_ai(invocation: Invocation) -> HandlerResult:
@@ -1149,7 +1205,7 @@ def view_transform_generate_sql(invocation: Invocation) -> HandlerResult:
             "sql": data,
             "applied": False,
             "note": "The view is unchanged. Run 'apply' to add the query as a SQL task.",
-            "apply": f"mammoth view transform add-sql {view_id} --input '{spec}'",
+            "apply": f"mammoth view transform add-sql {view_id} --input {shlex.quote(spec)}",
         }
 
     return _dispatch_view(invocation, view_id, "generate_sql", after=describe, **kwargs)
@@ -1193,6 +1249,7 @@ def view_transform_join(invocation: Invocation) -> HandlerResult:
             state,
             join_after_snapshot(service, dataset_id, view_id, project_id, state),
             document,
+            _join_preview(service, dataset_id, view_id, document, project_id),
         )
 
     try:

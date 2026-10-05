@@ -41,8 +41,10 @@ S1_ROUTES = (
     "context.project.status",
     "context.project.use",
     "dataset.find",
+    "dataset.search",
     "doctor",
     "folder.find",
+    "link",
     "log.path",
     "log.tail",
     "project.check",
@@ -62,7 +64,7 @@ S1_ROUTES = (
 )
 
 EXPECTED_FIELDS: dict[str, tuple[str, ...]] = {
-    "auth.login": ("api_token", "workspace_id", "server_prefix"),
+    "auth.login": ("api_token", "server_prefix"),
     "completion.install": ("shell",),
     "completion.show": ("shell",),
     "log.tail": ("days", "limit", "errors_only", "command_id", "run_id"),

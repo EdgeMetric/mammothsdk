@@ -4,6 +4,191 @@ All notable changes to `mammoth-io` are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+## [0.8.17]
+
+### Added
+
+- `ProjectsAPI.delete_and_verify(project_id)` and `ProjectsAPI.bulk_delete_and_verify(project_ids)`
+  delete, then poll the project list until every id is gone. The delete routes answer 202 with an
+  empty body and no job id, so `delete` alone never says whether the project went. The result is
+  `{"project_id": N, "status": "deleted", "verified": True, "ack": ...}`; on timeout (the client's
+  job timeout) they raise `MammothDeletionVerificationError` naming the ids still listed.
+
+## [0.8.16]
+
+### Added
+
+- `DatasetsAPI.search(term)` finds the project's datasets whose name, column names or sampled
+  column values contain `term`, with the matched column and value (route
+  `GET .../datasets/search`).
+
+## [0.8.15]
+
+### Fixed
+
+- `ActivityLogsAPI.list` sent `limit`, `offset` and `sort` in the request body, but the route reads
+  them from the query string: every page was the first page and `sort` was ignored. They now go
+  as query parameters. New `fields` argument chooses the entry fields (the route's default carries
+  every entry's full details).
+
+## [0.8.14]
+
+### Added
+
+- `DataviewsAPI.explore(cumulative=True)` adds a `cumulative` running total per bucket (of the
+  metric, else the count), in bucket order, before any sort or limit.
+
+### Fixed
+
+- `DatasetsAPI.list_all` no longer stops after the first page: the datasets list route sends no
+  `next`, so a full page now continues until a short one (datasets past the 100th were invisible).
+- `BrowseAPI.resources_search` / `resources_list` map the resource type `dataset` to the route's
+  `datasource` (the backend rejected `dataset`).
+- A `view.export.to_dataset` whose export trigger is slow to show `EXECUTED` resolves the new
+  dataset by name and source view before giving up; the error it raises when it still cannot
+  carries `export_pending: True`.
+
+## [0.8.13]
+
+### Fixed
+
+- `AiAPI.get_data_gen_info` now sends `validate_only=true`, which the route requires.
+- `DataviewsAPI.update` docstring example uses the server's patch path `name` (no leading slash).
+
+## [0.8.12]
+
+### Added
+
+- API gaps closed (PR "build gaps 5"), each with a CLI command in `mammoth-cli` 2.2.11:
+  - `DashboardsAPI.swap_fit`, `audience`, `audience_digest_get`, `audience_digest_set`,
+    `audience_summary`, `column_roster`, `context_review`, `context_apply` and
+    `qa_insights` (CLI: `dashboard swap-fit`, `dashboard audience get|summary`,
+    `dashboard audience digest get|set`, `dashboard columns`, `dashboard context
+    review|apply`, `dashboard qa insights`).
+  - `AgentsAPI.turn_cancel` (CLI: `agent turn cancel`).
+  - `DataviewsAPI.delete_impact` (CLI: `view impact`).
+  - `BrowseAPI.resources_bulk` now has a command: `browse resources bulk`.
+
+### Changed
+
+- `addon list` and `user change-password` are retired in the CLI: the server no
+  longer serves them, so they exit with a `not_available` error that names the web
+  path. `AddonsAPI.list` and `UserProfileAPI.change_password` stay and are marked
+  retired in their docstrings.
+
+## [0.8.11]
+
+### Changed
+
+- Burst fixes (PR #90) so one CLI or SDK call no longer floods the API:
+  - Lookups use the `/resources` routes instead of walking projects: a view's
+    parent is one read (was 1 + D/100 + D requests), `dataset find`, `dataset
+    list name` and `folder find` are one workspace search (was 2 + P or 1 + P),
+    and name lookups use `BrowseAPI.resources_bulk`. A cross-project `view list`
+    stops at 20 views or 25 datasets and says where to resume.
+  - `view data profile`, `project check` and stored-stats reads use fewer
+    workers (6 or 8 before, 2 or 4 now) and cap what they read: the 20 most
+    recent datasets, 10 dashboards and the first 20 columns. The output says how
+    many items were not checked.
+  - Job waits back off: the poll gap ceiling rises from 2s to 5s after 10s of
+    waiting (a 300s wait: about 154 polls before, about 70 now). Pipeline waits
+    grow from 3s to 15s, and `view pipeline wait` defaults to 300s instead of an
+    hour. Internal-dataset export polls grow from a flat 2s to 2..10s.
+  - File upload polls the nested jobs once as a batch instead of one poll loop
+    per file. The CLI previews the first 5 datasets and marks the rest
+    `preview_skipped`.
+  - `MammothClient(retry_gateway_errors=False)` turns off 502/503/504 read
+    retries. The CLI sets it when embedded. `mammoth-cli` 2.2.10 carries these
+    changes.
+
+## [0.8.10]
+
+### Fixed
+
+- `json={}` request bodies are sent instead of dropped; `rename_columns` and
+  `sort_rows` honour build-only mode; the export poll reads every page;
+  `/resources/bulk` lookups are chunked at the server cap of 100; `list_users`
+  and `get_user` page through all users; a pipeline dataset lookup that cannot
+  resolve a dataset now raises `MammothAPIError` instead of skipping silently.
+- `resolve_token_workspace_id` raises `MammothAPIError` on a non-JSON reply and
+  bounds its cache. Dashboard and support downloads write files off the event
+  loop. Embed secret fields are excluded from `repr`.
+- Embedded-mode security and safety fixes (PR #87), and correctness fixes
+  across `mammoth-cli` 2.2.9 (PR #86): complete folder, project and pipeline
+  reads, exact-parent rule on pipeline and export writes, honest truncation and
+  freshness flags, and refreshed lock files.
+
+## [0.8.9]
+
+### Added
+
+- Platform-admin `SupportAPI` methods (each route refuses callers without a
+  Mammoth staff role): `plan_unarchive`; `plan_storage_option_list`,
+  `plan_storage_option_create`, `plan_storage_option_update` and
+  `plan_storage_option_archive` for a plan's purchasable storage sizes; and the
+  curated template catalog: `template_list`, `template_edit`,
+  `template_data_preview`, `template_canvas`, `template_publish`,
+  `template_unpublish`, `template_retire`, `template_inspect`,
+  `template_import`, `template_thumbnail_set`, `template_thumbnail_clear`,
+  `template_discard`, `template_snapshots`, `template_audit`,
+  `template_export` and `template_export_dashboard`.
+- CLI: `support plan unarchive`, `support plan storage-option list|create|update|archive`,
+  `support template list|edit|data-preview|canvas|publish|unpublish|retire|inspect|import|discard|snapshots|audit|export|export-dashboard`
+  and `support template thumbnail set|clear`. Each help line starts with
+  "Platform admin only".
+
+## [0.8.8]
+
+### Added
+
+- `BillingAPI.stripe_resume` keeps the paid plan by clearing a scheduled
+  downgrade; `BillingAPI.stripe_recheck_limits` recomputes the over-limit lock;
+  `BillingAPI.stripe_storage_update` sets the purchased storage (total GB).
+- `BrowseAPI.resource_ancestors` reads a folder's path (root first);
+  `BrowseAPI.resources_search` searches resources across the workspace.
+- `DashboardsAPI.template_thumbnail_get`, `template_thumbnail_set` and
+  `template_thumbnail_clear` read, replace and remove a template's picture;
+  `DashboardsAPI.gallery_list` and `gallery_get` read the public template gallery.
+- CLI: `billing stripe resume`, `billing stripe recheck-limits`,
+  `billing stripe storage set`, `browse ancestors`, `browse search`,
+  `dashboard template thumbnail get|set|clear`, `dashboard gallery list|get`.
+
+## [0.8.7]
+
+### Added
+
+- `DashboardsAPI.embed_usage_summary` counts the active embed origins of several
+  boards at once; `DashboardsAPI.format_preview` dry-runs a format switch.
+- `WorkspacesAPI.home_summary` reads the Home summary (usage, health issues,
+  suggestions).
+- `BrowseAPI.resources_list` and `BrowseAPI.resource_get` read project
+  resources through the v2 cursor routes.
+- CLI: `dashboard embed usage summary`, `dashboard format-preview`,
+  `workspace home`, `browse resources`, `browse resource`.
+
+## [0.8.6]
+
+### Changed
+
+- Login sends the token alone: no workspace id goes with it. The workspace
+  comes from the token (`resolve_token_workspace_id`).
+- `except` clauses are parenthesised, so the package imports on Python 3.12
+  and 3.13.
+
+### Added
+
+- `mammoth link`.
+- `mammoth dataset broken-rows resolve` settles the unstructured rows of a
+  file whose dataset stopped for a decision.
+- `mammoth project needs-attention` also lists `needs_input` rows.
+- `mammoth folder find` searches every project, not only the first page.
+
+### Fixed
+
+- A 403 for a user who is not a member of the workspace now says so.
+
 ## [0.8.0]
 
 ### Added
@@ -53,7 +238,7 @@ Code that must stay sync should pin `mammoth-io<0.8`.
   takes `params_sequence` (restore a version) and `params_filter_column`
   (row-level security).
 - `DatasetsAPI.preview_interpretation`, `confirm_interpretation` and
-  `discard_unstructured_rows`, for a file whose dataset stopped for a decision.
+  `resolve_unstructured_rows`, for a file whose dataset stopped for a decision.
 
 ### Fixed
 
@@ -66,9 +251,8 @@ Code that must stay sync should pin `mammoth-io<0.8`.
   now streams through `httpx`, with the same atomic write and error handling.
 - `MammothClient.branch_out` returned an un-awaited coroutine instead of the
   dataset id.
-- `DatasetsAPI.get_unstructured_rows` reads `.../unstructured_data`, the same
-  route `discard_unstructured_rows` deletes from (it read
-  `.../unstructured_rows` in 0.7.40).
+- `DatasetsAPI.get_unstructured_rows` and `resolve_unstructured_rows` use the
+  same `.../unstructured_rows` route (read and PATCH).
 - Automations accept the task types, statuses and commands the routes accept
   today; `"restore"` is accepted as well as `"resume"`.
 - Export specs default the properties the route defaults.

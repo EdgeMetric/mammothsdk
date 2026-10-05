@@ -34,6 +34,9 @@ ERR_USER_ID_POSITIVE = "`user_id` must be a positive integer, got {0}."
 ERR_EMAIL_IDS_EMPTY = "`email_ids` must be a non-empty list of email addresses."
 ERR_SEGMENT_PATCH_EMPTY = "`patch` must be a non-empty list of patch operations."
 ERR_USER_PATCHES_EMPTY = "`patches` must be a non-empty list of patch operations."
+ERR_INVITE_IDS_EMPTY = "`invite_ids` must be a non-empty list of invite ids."
+ERR_INVITE_ID_POSITIVE = "invite ids must be positive integers, got {0!r}."
+ERR_INVITE_ROLE_EMPTY = "`role` must be a non-empty string."
 
 
 class WorkspacesAPI:
@@ -137,6 +140,19 @@ class WorkspacesAPI:
         return await self._client._request_json(
             "GET", f"/workspaces/{self._ws()}/app-usage", params=params or None
         )
+
+    async def home_summary(self) -> dict[str, Any]:
+        """Get the workspace Home read: usage snapshot, health issues, suggestions.
+
+        The same deterministic read the Home screen shows; it is not a chat
+        turn and changes nothing.
+
+        Returns:
+            Dict with ``usage_summary``, ``health_issues`` (each with
+            ``issue_type``, ``severity``, ``occurrence_count`` and
+            ``available_actions``) and ``suggestions``.
+        """
+        return await self._client._request_json("GET", f"/workspaces/{self._ws()}/home")
 
     async def storage_breakdown(
         self, limit: int | None = None, offset: int | None = None
@@ -286,3 +302,104 @@ class WorkspacesAPI:
             f"/workspaces/{self._ws()}/users",
             json={"patches": patches},
         )
+
+    # ── Workspace invites ────────────────────────────────────────────────────
+
+    async def invite_list(self, project_id: int | None = None) -> dict[str, Any]:
+        """List the workspace's pending invites, each with its invite id.
+
+        ``GET /workspaces/{id}/users`` returns invites only when asked with
+        ``invited=true``; the member list (``WorkspaceAPI.list_users``) never
+        includes them.
+
+        Args:
+            project_id: Keep only invites that grant a role on this project.
+
+        Returns:
+            Dict ``{"invites": [...]}``; each invite has ``id``, ``email``,
+            ``status``, ``role``, ``invited_at`` and ``user_roles``.
+        """
+        params: dict[str, Any] = {"invited": True, "limit": 1}
+        if project_id is not None:
+            params["project_id"] = project_id
+        response = await self._client._request_json(
+            "GET", f"/workspaces/{self._ws()}/users", params=params
+        )
+        return {"invites": response.get("invites") or []}
+
+    async def invite_resend(self, invite_ids: _list[int]) -> dict[str, Any]:
+        """Send the invitation email again for pending invites.
+
+        Args:
+            invite_ids: Non-empty list of invite ids (from :meth:`invite_list`).
+
+        Returns:
+            Dict with the update result.
+
+        Raises:
+            MammothValidationError: If ``invite_ids`` is empty.
+        """
+        return await self._invite_patch("command", "invite_resend", _invite_ids_csv(invite_ids))
+
+    async def invite_revoke(self, invite_ids: _list[int]) -> dict[str, Any]:
+        """Revoke pending invites (the invite row is kept, marked revoked).
+
+        Args:
+            invite_ids: Non-empty list of invite ids (from :meth:`invite_list`).
+
+        Returns:
+            Dict with the update result.
+
+        Raises:
+            MammothValidationError: If ``invite_ids`` is empty.
+        """
+        return await self._invite_patch("remove", "invite", _invite_ids_csv(invite_ids))
+
+    async def invite_role_update(self, invite_id: int, role: str) -> dict[str, Any]:
+        """Change the workspace role a pending invite will grant.
+
+        Args:
+            invite_id: Invite id (from :meth:`invite_list`).
+            role: ``workspace_member``, ``workspace_admin``, ``workspace_owner``
+                or ``workspace_guest``.
+
+        Returns:
+            Dict with the update result.
+
+        Raises:
+            MammothValidationError: If ``invite_id`` is not positive or ``role`` is empty.
+        """
+        if isinstance(invite_id, bool) or invite_id <= 0:
+            raise MammothValidationError(ERR_INVITE_ID_POSITIVE.format(invite_id))
+        if not role:
+            raise MammothValidationError(ERR_INVITE_ROLE_EMPTY)
+        return await self._invite_patch(
+            "replace", "invite_role", {"invite_id": invite_id, "new_role": role}
+        )
+
+    async def invite_delete(self, invite_ids: _list[int]) -> dict[str, Any]:
+        """Delete pending invites outright and free their seats.
+
+        Args:
+            invite_ids: Non-empty list of invite ids (from :meth:`invite_list`).
+
+        Returns:
+            Dict with the removal result.
+
+        Raises:
+            MammothValidationError: If ``invite_ids`` is empty.
+        """
+        return await self.user_remove_batch(invite_ids=_invite_ids_csv(invite_ids))
+
+    async def _invite_patch(self, op: str, path: str, value: Any) -> dict[str, Any]:
+        return await self.user_update_batch([{"op": op, "path": path, "value": value}])
+
+
+def _invite_ids_csv(invite_ids: _list[int]) -> str:
+    """Comma-separated invite ids, as the invite routes take them."""
+    if not invite_ids:
+        raise MammothValidationError(ERR_INVITE_IDS_EMPTY)
+    for raw in invite_ids:
+        if isinstance(raw, bool) or not str(raw).isdigit() or int(raw) <= 0:
+            raise MammothValidationError(ERR_INVITE_ID_POSITIVE.format(raw))
+    return ",".join(str(int(raw)) for raw in invite_ids)

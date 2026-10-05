@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import json
 import re
+import shlex
 from collections import Counter
 from collections.abc import Iterable, Mapping
 from datetime import datetime
@@ -67,13 +68,15 @@ def _is_date(text: str) -> bool:
 def _convert_hint(view_id: int | None, column: str, to: str) -> str:
     target = str(view_id) if view_id is not None else "VIEW_ID"
     spec = json.dumps({"conversions": [{"column": column, "to": to}]})
-    return f"mammoth view transform convert-type {target} --input '{spec}'"
+    return f"mammoth view transform convert-type {target} --input {shlex.quote(spec)}"
 
 
 def _bulk_replace_hint(view_id: int | None, column: str, mapping: list[dict[str, Any]]) -> str:
     target = str(view_id) if view_id is not None else "VIEW_ID"
-    spec = json.dumps({"columns": [column], "mapping": mapping})
-    return f"mammoth view transform bulk-replace {target} --input '{spec}'"
+    spec = json.dumps(
+        {"columns": [column], "mapping": mapping, "match_case": True, "match_words": True}
+    )
+    return f"mammoth view transform bulk-replace {target} --input {shlex.quote(spec)}"
 
 
 def _spelling_key(text: str) -> str:
@@ -214,13 +217,26 @@ def _renamed_label_warning(
     }
 
 
-def _duplicate_count(rows: list[Mapping[str, Any]]) -> int:
-    """How many of ``rows`` are exact copies of an earlier row."""
+_DUPLICATE_SAMPLE_LIMIT = 5
+
+
+def _duplicate_summary(rows: list[Mapping[str, Any]]) -> tuple[int, list[dict[str, Any]]]:
+    """Return (rows that copy an earlier row, up to 5 sample duplicated rows).
+
+    A sample is the row's values as read plus how many times it occurs.
+    """
     counts: dict[str, int] = {}
+    first_seen: dict[str, Mapping[str, Any]] = {}
     for row in rows:
         fingerprint = json.dumps(row, sort_keys=True, default=str)
         counts[fingerprint] = counts.get(fingerprint, 0) + 1
-    return sum(count - 1 for count in counts.values() if count > 1)
+        first_seen.setdefault(fingerprint, row)
+    repeated = [fp for fp, count in counts.items() if count > 1]
+    samples = [
+        {"row": dict(first_seen[fp]), "occurrences": counts[fp]}
+        for fp in repeated[:_DUPLICATE_SAMPLE_LIMIT]
+    ]
+    return sum(counts[fp] - 1 for fp in repeated), samples
 
 
 def duplicate_rows_fact(
@@ -242,23 +258,29 @@ def duplicate_rows_fact(
     if not materialised:
         return None
     checked = len(materialised)
-    duplicates = _duplicate_count(materialised)
+    duplicates, samples = _duplicate_summary(materialised)
     if whole_view:
-        return {
+        whole: dict[str, Any] = {
             "exact_duplicate_rows": duplicates,
             "rows_checked": checked,
             "row_count": checked,
             "scope": "every row of the view",
         }
+        if samples:
+            whole["duplicate_samples"] = samples
+        return whole
     fact: dict[str, Any] = {
         "exact_duplicate_rows_in_page": duplicates,
         "rows_checked": checked,
         "scope": "this page only",
     }
+    if samples:
+        fact["duplicate_samples"] = samples
     if view_id is not None and dataset_id is not None:
         spec = json.dumps({"dataset_id": dataset_id})
         fact["table_wide_check"] = (
-            f"mammoth view transform discard-duplicates {view_id} --input '{spec}' --dry-run"
+            f"mammoth view transform discard-duplicates {view_id} "
+            f"--input {shlex.quote(spec)} --dry-run"
         )
     return fact
 
@@ -274,7 +296,7 @@ def _duplicate_rows_warning(
     table-wide duplication without separately checking the full table (e.g.
     ``view data aggregate`` COUNT vs a distinct count).
     """
-    duplicate_count = _duplicate_count(rows)
+    duplicate_count, samples = _duplicate_summary(rows)
     if not duplicate_count:
         return None
     warning: dict[str, Any] = {
@@ -284,10 +306,13 @@ def _duplicate_rows_warning(
             "of another row in this page (not checked table-wide)."
         ),
         "rows_checked": len(rows),
+        "duplicate_samples": samples,
     }
     if view_id is not None and dataset_id is not None:
         spec = json.dumps({"dataset_id": dataset_id})
-        warning["fix"] = f"mammoth view transform discard-duplicates {view_id} --input '{spec}'"
+        warning["fix"] = (
+            f"mammoth view transform discard-duplicates {view_id} --input {shlex.quote(spec)}"
+        )
     return warning
 
 
@@ -340,7 +365,7 @@ def _remove_blank_rows_hint(view_id: int, dataset_id: int, column: str) -> str:
     spec = json.dumps(
         {"condition": {"column": column, "operator": "IS_NOT_EMPTY"}, "dataset_id": dataset_id}
     )
-    return f"mammoth view transform filter {view_id} --input '{spec}'"
+    return f"mammoth view transform filter {view_id} --input {shlex.quote(spec)}"
 
 
 def column_warnings(
@@ -348,6 +373,7 @@ def column_warnings(
     column_types: Mapping[str, str],
     view_id: int | None = None,
     dataset_id: int | None = None,
+    read_only: bool = False,
 ) -> list[dict[str, Any]]:
     """Return warnings for text columns that hold numbers or dates, and for blanks.
 
@@ -357,6 +383,8 @@ def column_warnings(
         view_id: The view the rows came from, used in the suggested command.
         dataset_id: The view's dataset, used for the duplicate-rows fix
             command (a mutation, so it needs the exact parent, not discovery).
+        read_only: The rows came from a read-only data read; a ``dates_stored_as_text``
+            finding then carries no ``fix``, since a read answers from the text as it is.
 
     Returns:
         One record per finding: ``column``, ``issue``
@@ -408,15 +436,10 @@ def column_warnings(
                         # there would be untrue.
                         detail += " (the conversion makes them empty)"
                     detail += "."
-                warnings.append(
-                    {
-                        "column": column,
-                        "issue": issue,
-                        "detail": detail,
-                        "fix": _convert_hint(view_id, column, to),
-                        "rows_checked": checked,
-                    }
-                )
+                finding: dict[str, Any] = {"column": column, "issue": issue, "detail": detail}
+                if not (read_only and kind == "dates"):
+                    finding["fix"] = _convert_hint(view_id, column, to)
+                warnings.append({**finding, "rows_checked": checked})
                 break
             variant_warning = _variant_spellings_warning(column, texts, view_id, checked)
             if variant_warning is not None:
