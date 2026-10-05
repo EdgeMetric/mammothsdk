@@ -1263,6 +1263,10 @@ class ViewExport:
                 an EXISTING dataset (``target_ds_id`` set) maps exactly the
                 listed columns, as before -- there the caller is matching a
                 specific target schema.
+                With ``save_as_mode=APPEND_TO_DS`` leave it empty to match every
+                column by name: the backend appends only the mapped columns of
+                a non-empty map and turns an unknown destination into a new
+                column, so a partial map leaves the other target cells NULL.
             label_ids: Folder/label ids for the new dataset.
             condition: Optional row filter applied before copying.
             timeout: Max seconds to wait for the job.
