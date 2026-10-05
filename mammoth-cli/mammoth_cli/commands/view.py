@@ -4104,7 +4104,11 @@ def _settle_async_view_write(
         return data
     dataset_id = int(dataset_id)
     row_check: dict[str, Any] = dict(before or {"rows_before": None})
-    rows_after, pipeline_error = wait_for_view_row_count(service, dataset_id, view_id, project_id)
+    # The response names the follow-on job that runs the pipeline; read back
+    # before it ends and the view still shows the old row count (FB-05).
+    rows_after, pipeline_error = wait_for_view_row_count(
+        service, dataset_id, view_id, project_id, write_result=data
+    )
     row_check["rows_after"] = rows_after
     data = {**data, "row_check": row_check}
     if pipeline_error is not None:
