@@ -49,5 +49,22 @@ ENCRYPTION_KEY = read("MCP_ENCRYPTION_KEY", "")
 # Keeps this server's records apart from another deployment's in one Redis.
 STORE_PREFIX = read("MCP_STORE_PREFIX", "mammoth_mcp")
 
+# Signing in with a Mammoth login, through Keycloak. This server signs the user
+# in as one Keycloak client of its own, which an admin creates once per realm:
+# a confidential client whose redirect URI is `KEYCLOAK_REDIRECT_URL`. Leave
+# `MCP_KEYCLOAK_CLIENT_ID` unset and the login page offers the API token only.
+KEYCLOAK_URL = read("MCP_KEYCLOAK_URL", "").rstrip("/")
+KEYCLOAK_REALM = read("MCP_KEYCLOAK_REALM", "")
+KEYCLOAK_CLIENT_ID = read("MCP_KEYCLOAK_CLIENT_ID", "")
+KEYCLOAK_CLIENT_SECRET = read("MCP_KEYCLOAK_CLIENT_SECRET", "")
+# `offline_access` asks for a session that outlives the browser's, so a
+# connector keeps working for as long as the realm lets an offline session live.
+KEYCLOAK_SCOPE = read("MCP_KEYCLOAK_SCOPE", "openid offline_access")
+KEYCLOAK_ENABLED = bool(KEYCLOAK_URL and KEYCLOAK_REALM and KEYCLOAK_CLIENT_ID)
+KEYCLOAK_ISSUER = f"{KEYCLOAK_URL}/realms/{KEYCLOAK_REALM}"
+KEYCLOAK_LOGIN_PATH = f"{MCP_LOGIN_PATH}/keycloak"
+KEYCLOAK_CALLBACK_PATH = f"{KEYCLOAK_LOGIN_PATH}/callback"
+KEYCLOAK_REDIRECT_URL = f"{SERVER_URL}{KEYCLOAK_CALLBACK_PATH}"
+
 HOST = read("MCP_HOST", "127.0.0.1")
 PORT = int(read("MCP_PORT", "8270"))

@@ -64,6 +64,11 @@ async def remember(kind: str, key: str, record: Record, seconds: int) -> None:
     await connect().set(redis_key(kind, key), json.dumps(record), ex=seconds)
 
 
+async def replace(kind: str, key: str, record: Record) -> None:
+    """Change a record and leave it the time it had left."""
+    await connect().set(redis_key(kind, key), json.dumps(record), keepttl=True)
+
+
 async def recall(kind: str, key: str) -> Record | None:
     """Read one record back, or None once it is gone."""
     stored = await connect().get(redis_key(kind, key))

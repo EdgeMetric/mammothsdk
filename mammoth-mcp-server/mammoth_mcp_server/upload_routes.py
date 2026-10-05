@@ -162,7 +162,7 @@ async def take_the_upload(request: Request, ticket_id: str) -> Response:
     """Send the files to Mammoth as the user who asked for the link.
 
     Returns:
-        The upload's status. The job is left running:  reads
+        The upload's status. The job is left running: `check_upload` reads
         it as the polling user, who is the only one entitled to.
     """
     ticket = await read_live_ticket(ticket_id)

@@ -3,7 +3,8 @@
 Claude web and ChatGPT offer a connector one way to sign in: OAuth. So this
 server runs a small authorization server of its own: the client registers
 itself, we show a login page that asks for the user's Mammoth API token
-(`mm_...`), and the client trades the code it gets back for a token of ours.
+(`mm_...`), and the client trades the code it gets back for a token of ours. The page also offers the user's
+own Mammoth login, through Keycloak (`keycloak`).
 
 Every later tool call carries our token alone, and the Mammoth API accepts only
 the user's own. So our token has to lead back to theirs: Redis holds it sealed
@@ -43,7 +44,7 @@ from .consts import (
     OAuthFields,
     TokenClaims,
 )
-from .store import forget, recall, remember, seal, unseal
+from .store import Record, forget, recall, remember, seal, unseal
 
 
 class LoginRefused(Exception):
@@ -144,6 +145,40 @@ class TokenOAuthProvider:
                 "Mammoth did not accept that API token. Copy it again from"
                 " Workspace settings, API Tokens."
             ) from refused
+        return await self.issue_code(
+            state,
+            asked,
+            {OAuthFields.API_TOKEN: api_token, OAuthFields.WORKSPACE_ID: workspace_id},
+            TOKEN_SECONDS,
+        )
+
+    async def accept_keycloak_login(self, state: str, tokens: Record, token_seconds: int) -> str:
+        """Send the user back to the client with a code, once Keycloak has signed them in.
+
+        Args:
+            state: What the login page was opened with.
+            tokens: The user's Keycloak tokens, as a caller's claims hold them.
+            token_seconds: How long Keycloak keeps the user's session.
+
+        Raises:
+            LoginRefused: If the sign-in has expired.
+        """
+        asked = await recall(OAuthFields.LOGIN, state)
+        if asked is None:
+            raise LoginRefused("This sign-in has expired. Start again from your client.")
+        return await self.issue_code(state, asked, tokens, token_seconds)
+
+    async def issue_code(
+        self, state: str, asked: Record, credentials: Record, token_seconds: int
+    ) -> str:
+        """End the sign-in, and send the user back to the client with a code.
+
+        Args:
+            state: What the login page was opened with.
+            asked: What the client asked for, kept while the user signed in.
+            credentials: What the caller's tool calls act with. Stored sealed.
+            token_seconds: How long the token the code buys may live.
+        """
         await forget(OAuthFields.LOGIN, state)
         code = secrets.token_urlsafe(32)
         await remember(
@@ -152,9 +187,8 @@ class TokenOAuthProvider:
             asked
             | {
                 OAuthFields.EXPIRES_AT: time.time() + CODE_SECONDS,
-                OAuthFields.CREDENTIALS: seal(
-                    {OAuthFields.API_TOKEN: api_token, OAuthFields.WORKSPACE_ID: workspace_id}
-                ),
+                OAuthFields.CREDENTIALS: seal(credentials),
+                OAuthFields.TOKEN_SECONDS: token_seconds,
             },
             CODE_SECONDS,
         )
@@ -198,6 +232,7 @@ class TokenOAuthProvider:
             )
         await forget(OAuthFields.CODE, authorization_code.code)
         token = secrets.token_urlsafe(48)
+        lives = int(issued.get(OAuthFields.TOKEN_SECONDS) or TOKEN_SECONDS)
         await remember(
             OAuthFields.TOKEN,
             token,
@@ -206,9 +241,9 @@ class TokenOAuthProvider:
                 OAuthFields.SCOPES: issued[OAuthFields.SCOPES],
                 OAuthFields.CREDENTIALS: issued[OAuthFields.CREDENTIALS],
             },
-            TOKEN_SECONDS,
+            lives,
         )
-        return OAuthToken(access_token=token, expires_in=TOKEN_SECONDS)
+        return OAuthToken(access_token=token, expires_in=lives)
 
     async def load_access_token(self, token: str) -> AccessToken | None:
         """Say who a bearer token stands for, or None when it stands for nobody.

@@ -1,17 +1,21 @@
-"""The login page of the authorization server: where a user pastes their API token.
+"""The login page of the authorization server: where a user signs in.
 
-The MCP SDK serves the OAuth endpoints themselves from .
-The page in between is ours:  sends the browser here, and a token
-Mammoth accepts sends it back to the client with a code.
+The MCP SDK serves the OAuth endpoints themselves from `oauth.TokenOAuthProvider`.
+The page in between is ours: `authorize` sends the browser here, and the user
+signs in one of two ways. They sign in with their Mammoth login, through
+Keycloak, or they paste an API token. Either way the browser goes back to the
+client with a code.
 """
 
 from html import escape
+from urllib.parse import urlencode
 
 from starlette.requests import Request
 from starlette.responses import HTMLResponse, RedirectResponse, Response
 
-from .config import MCP_LOGIN_URL
-from .consts import API_TOKEN_PREFIX, OAuthFields
+from . import keycloak
+from .config import KEYCLOAK_ENABLED, KEYCLOAK_LOGIN_PATH, MCP_LOGIN_URL
+from .consts import API_TOKEN_PREFIX, KeycloakFields, OAuthFields
 from .oauth import LoginRefused, oauth_provider
 
 LOGIN_PAGE = """\
@@ -36,6 +40,9 @@ LOGIN_PAGE = """\
     button {{ width: 100%; padding: .7rem; background: #4a90d9; color: #fff;
              border: none; border-radius: 6px; font-size: 1rem; font-weight: 600;
              cursor: pointer; }}
+    a.login {{ display: block; text-align: center; padding: .7rem; border-radius: 6px;
+              background: #1f2937; color: #fff; font-weight: 600; text-decoration: none; }}
+    .or {{ text-align: center; color: #999; font-size: .8rem; margin: 1.25rem 0; }}
     .error {{ background: #fef2f2; color: #b91c1c; padding: .75rem;
              border-radius: 6px; font-size: .85rem; margin-bottom: 1rem; }}
   </style>
@@ -43,9 +50,11 @@ LOGIN_PAGE = """\
 <body>
   <div class="card">
     <h1>Mammoth Analytics</h1>
-    <p class="sub">Paste your Mammoth API token to connect this client.
-      You create one in Mammoth: Workspace settings, API Tokens.</p>
+    <p class="sub">Connect this client to Mammoth.</p>
     {error}
+    {mammoth_login}
+    <p class="sub">Paste your Mammoth API token. You create one in Mammoth:
+      Workspace settings, API Tokens.</p>
     <form method="POST" action="{action}">
       <input type="hidden" name="{state_field}" value="{state}">
       <label for="api-token">API token</label>
@@ -58,6 +67,7 @@ LOGIN_PAGE = """\
 </html>
 """
 MISSING_TOKEN = "Paste your Mammoth API token."
+NO_MAMMOTH_LOGIN = "This server signs in with an API token only."
 NOT_A_TOKEN = f"A Mammoth API token starts with {API_TOKEN_PREFIX}. Copy the whole token."
 
 
@@ -69,7 +79,46 @@ def render_login(state: str, error: str = "") -> str:
         state_field=OAuthFields.STATE,
         state=escape(state),
         token_field=OAuthFields.API_TOKEN,
+        mammoth_login=render_mammoth_login(state),
     )
+
+
+def render_mammoth_login(state: str) -> str:
+    """The button that signs in with the user's Mammoth login, when this server offers it."""
+    if not KEYCLOAK_ENABLED:
+        return ""
+    link = escape(f"{KEYCLOAK_LOGIN_PATH}?{urlencode({OAuthFields.STATE: state})}")
+    return f'<a class="login" href="{link}">Sign in with Mammoth</a><p class="or">or</p>'
+
+
+async def login_with_mammoth(request: Request) -> Response:
+    """Send the user to Keycloak to sign in with their Mammoth login."""
+    state = request.query_params.get(OAuthFields.STATE, "")
+    if not KEYCLOAK_ENABLED:
+        return HTMLResponse(render_login(state, NO_MAMMOTH_LOGIN), status_code=404)
+    return RedirectResponse(await keycloak.start_sign_in(state), status_code=302)
+
+
+async def back_from_mammoth(request: Request) -> Response:
+    """Take the user back from Keycloak, and on to the client with a code.
+
+    A refusal is shown on the login page, where the user can try again or
+    paste an API token instead.
+    """
+    asked = request.query_params
+    try:
+        if asked.get(KeycloakFields.ERROR) or not asked.get(KeycloakFields.CODE):
+            raise keycloak.KeycloakRefused("Mammoth's sign-in was not completed. Try again.")
+        state, tokens, seconds = await keycloak.finish_sign_in(
+            asked.get(KeycloakFields.STATE, ""), asked[KeycloakFields.CODE]
+        )
+    except keycloak.KeycloakRefused as refused:
+        return HTMLResponse(render_login("", str(refused)), status_code=400)
+    try:
+        back_to_client = await oauth_provider.accept_keycloak_login(state, tokens, seconds)
+    except LoginRefused as refused:
+        return HTMLResponse(render_login(state, str(refused)), status_code=400)
+    return RedirectResponse(back_to_client, status_code=302)
 
 
 async def login(request: Request) -> Response:

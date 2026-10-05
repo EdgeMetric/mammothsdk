@@ -405,6 +405,9 @@ class ApiFields:
     FULL = "__full"
 
 
+# The header a call names the workspace it acts in with.
+WORKSPACE_HEADER = "X-WORKSPACE-ID"
+
 # What every Mammoth API token starts with. The API tells its own tokens from
 # any other bearer the same way.
 API_TOKEN_PREFIX = "mm_"
@@ -417,6 +420,33 @@ class TokenClaims:
     API_TOKEN = "api_token"
     # The one workspace that token belongs to.
     WORKSPACE_ID = "workspace_id"
+    # Or, for a Mammoth login: the Keycloak tokens, and when the access token ends.
+    KEYCLOAK_ACCESS = "keycloak_access_token"
+    KEYCLOAK_REFRESH = "keycloak_refresh_token"
+    KEYCLOAK_EXPIRES_AT = "keycloak_expires_at"
+
+
+class KeycloakFields:
+    """The OpenID Connect requests this server makes of Keycloak, and their answers."""
+
+    AUTH_PATH = "/protocol/openid-connect/auth"
+    TOKEN_PATH = "/protocol/openid-connect/token"
+    # One record per Keycloak sign-in in flight, keyed by the state sent to Keycloak.
+    SIGN_IN = "keycloak"
+    LOGIN_STATE = "login_state"
+    VERIFIER = "code_verifier"
+    ACCESS_TOKEN = "access_token"
+    REFRESH_TOKEN = "refresh_token"
+    EXPIRES_IN = "expires_in"
+    REFRESH_EXPIRES_IN = "refresh_expires_in"
+    CODE = "code"
+    STATE = "state"
+    ERROR = "error"
+
+
+# Refresh a Keycloak access token this long before it ends, so it does not end
+# in the middle of a tool call.
+KEYCLOAK_REFRESH_MARGIN_SECONDS = 30
 
 
 class OAuthFields:
@@ -438,6 +468,9 @@ class OAuthFields:
     CLIENT_STATE = "client_state"
     EXPIRES_AT = "expires_at"
     CREDENTIALS = "credentials"
+    # How long the token the code buys may live: a Keycloak session can end
+    # before the 30 days an API token sign-in is kept.
+    TOKEN_SECONDS = "token_seconds"
     # What the login page is opened with, and what the client is sent back with.
     STATE = "state"
     # The credentials a token leads back to, named as a tool call reads them.

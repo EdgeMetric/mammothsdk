@@ -34,6 +34,14 @@ class TestTheStore:
 
         assert run(store.recall("token", "abc")) is None
 
+    def test_a_changed_record_keeps_the_time_it_had_left(self, redis: FakeRedis) -> None:
+        run(store.remember("token", "abc", {"n": 1}, 300))
+
+        run(store.replace("token", "abc", {"n": 2}))
+
+        assert run(store.recall("token", "abc")) == {"n": 2}
+        assert redis.seconds[store.redis_key("token", "abc")] == 300
+
     def test_sealed_credentials_are_not_readable_in_the_store(self, redis: FakeRedis) -> None:
         sealed = store.seal({"api_token": "mm_secret"})
 

@@ -15,7 +15,8 @@ through the API, as the SDK does. The server imports no backend code.
 | `mammoth_mcp_server/jobs.py` | The wait for a job that an API route started. |
 | `mammoth_mcp_server/task_params.py` | The map from a transformation to the pipeline task the API takes. |
 | `mammoth_mcp_server/store.py` | Short-lived records in Redis: sign-ins, tokens, upload tickets. |
-| `mammoth_mcp_server/oauth.py`, `login.py` | The sign-in: an OAuth server whose login page asks for an API token. |
+| `mammoth_mcp_server/oauth.py`, `login.py` | The sign-in: an OAuth server whose login page offers a Mammoth login or an API token. |
+| `mammoth_mcp_server/keycloak.py` | The Mammoth login: this server's sign-in at Keycloak, and token refresh. |
 | `mammoth_mcp_server/upload_routes.py` | The page a user drops a local file on. |
 | `mammoth_mcp_server/app.py` | The ASGI app and `main()`. |
 | `mammoth_mcp_server/config.py` | Every deployment setting, read from the environment. |
@@ -32,21 +33,41 @@ through the API, as the SDK does. The server imports no backend code.
 | `MCP_REDIS_URL` | `redis://localhost:6379/0` | Where sign-ins, tokens and upload tickets are kept. |
 | `MCP_ENCRYPTION_KEY` | none | A Fernet key. Stored credentials are sealed with it. Required. |
 | `MCP_STORE_PREFIX` | `mammoth_mcp` | Keeps this deployment's records apart in a shared Redis. |
+| `MCP_KEYCLOAK_URL`, `MCP_KEYCLOAK_REALM` | none | Keycloak, and the realm Mammoth users sign in to. |
+| `MCP_KEYCLOAK_CLIENT_ID`, `MCP_KEYCLOAK_CLIENT_SECRET` | none | This server's Keycloak client. Unset: API token login only. |
+| `MCP_KEYCLOAK_SCOPE` | `openid offline_access` | What the server asks Keycloak for. |
 | `MCP_HOST`, `MCP_PORT` | `127.0.0.1`, `8270` | Where the server listens. |
 
 ## Sign-in
 
-A user signs in with their own Mammoth API token (`mm_...`), created in Mammoth at Workspace
-settings, API Tokens.
+Claude web and ChatGPT open this server's login page. The user signs in one of two ways:
 
-- **Claude web, ChatGPT (OAuth):** the client opens this server's login page. The user pastes the
-  token. The server checks it with Mammoth and gives the client a token of its own. The user's
-  token is kept sealed in Redis for 30 days.
-- **A client that sends headers (Claude Code):** send `Authorization: Bearer mm_...`. Nothing is
-  stored.
+- **Sign in with Mammoth:** the user's normal Mammoth login, through Keycloak. The server keeps the
+  user's Keycloak tokens sealed in Redis and refreshes them before they end. Every workspace the
+  user can open is available.
+- **API token:** the user pastes their own Mammoth API token (`mm_...`), created in Mammoth at
+  Workspace settings, API Tokens. The server checks it with Mammoth and keeps it sealed for 30
+  days. A token belongs to one workspace; a tool call for another workspace is refused.
 
-Every tool call reaches Mammoth with the user's own token, so the user's permissions apply. A
-token belongs to one workspace; a tool call for another workspace is refused.
+A client that can send headers (Claude Code) can instead send `Authorization: Bearer mm_...`.
+Nothing is stored for it.
+
+Every tool call reaches Mammoth with the user's own credentials, so the user's permissions apply.
+The client only ever holds a token of this server's.
+
+### Keycloak
+
+One-time setup per environment:
+
+1. In the realm, an admin creates a confidential OpenID Connect client, for example
+   `mammoth-mcp`, with the standard flow on and the redirect URI
+   `<MCP_SERVER_URL>/login/keycloak/callback`. For long-lived connectors, allow the
+   `offline_access` scope.
+2. Set `MCP_KEYCLOAK_URL`, `MCP_KEYCLOAK_REALM`, `MCP_KEYCLOAK_CLIENT_ID` and
+   `MCP_KEYCLOAK_CLIENT_SECRET` for this server.
+3. In mvc-service `const.ini`, section `[keycloak]`, add `MCP_CLIENTS = mammoth-mcp`. apiv2 then
+   asks no anti-CSRF cookie of tokens issued to that client: it holds no browser cookie, and its
+   token travels in a header no web page can set.
 
 ## Run
 

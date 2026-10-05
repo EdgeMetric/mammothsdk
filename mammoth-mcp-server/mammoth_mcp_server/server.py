@@ -8,9 +8,16 @@ caller without a token away with a pointer to where to sign in.
 from mcp.server import MCPServer
 from mcp.server.auth.settings import AuthSettings, ClientRegistrationOptions, RevocationOptions
 
-from .config import MCP_LOGIN_PATH, MCP_OAUTH_URL, MCP_RESOURCE_URL, MCP_UPLOAD_PATH
+from .config import (
+    KEYCLOAK_CALLBACK_PATH,
+    KEYCLOAK_LOGIN_PATH,
+    MCP_LOGIN_PATH,
+    MCP_OAUTH_URL,
+    MCP_RESOURCE_URL,
+    MCP_UPLOAD_PATH,
+)
 from .consts import MCP_INSTRUCTIONS, MCP_SERVER_NAME
-from .login import login
+from .login import back_from_mammoth, login, login_with_mammoth
 from .oauth import oauth_provider
 from .upload_app import upload_app
 from .upload_routes import upload
@@ -38,9 +45,11 @@ mcp_server = MCPServer(
         }
     ),
 )
-# Two pages a browser opens with no token of its own: the first is where a
-# token is asked for, and the second is guarded by its single-use ticket.
+# Pages a browser opens with no token of its own: the sign-in pages, which are
+# where a token is got, and the upload page, guarded by its single-use ticket.
 mcp_server.custom_route(MCP_LOGIN_PATH, methods=["GET", "POST"])(login)
+mcp_server.custom_route(KEYCLOAK_LOGIN_PATH, methods=["GET"])(login_with_mammoth)
+mcp_server.custom_route(KEYCLOAK_CALLBACK_PATH, methods=["GET"])(back_from_mammoth)
 mcp_server.custom_route(MCP_UPLOAD_PATH, methods=["GET", "POST"])(upload)
 
 

@@ -21,12 +21,16 @@ from mammoth.exceptions import MammothError
 from mcp.server.auth.middleware.auth_context import get_access_token
 from mcp.server.mcpserver.exceptions import ToolError
 
+from . import keycloak, store
 from .config import API_ROOT, API_URL
 from .consts import (
     JOB_POLL_SECONDS,
     JOB_TIMEOUT_SECONDS,
+    KEYCLOAK_REFRESH_MARGIN_SECONDS,
     ROUTE_TIMEOUT_SECONDS,
     UPLOAD_FIELD,
+    WORKSPACE_HEADER,
+    OAuthFields,
     TokenClaims,
 )
 
@@ -84,26 +88,31 @@ async def build_client(
 
     Yields:
         A client pointed at this deployment's Mammoth API, carrying the
-        caller's own API token.
+        caller's own credentials: their API token, or their Mammoth login.
 
     Raises:
         RuntimeError: If called outside an authenticated MCP request.
-        ToolError: If the call names a workspace the caller's token is not for.
+        ToolError: If the call names a workspace the caller's API token is not
+            for, or the caller's Mammoth login has ended.
     """
     access_token = get_access_token()
     if access_token is None:
         raise RuntimeError("no authenticated MCP caller for this tool call")
     claims = access_token.claims or {}
-    own_workspace = int(str(claims[TokenClaims.WORKSPACE_ID]))
-    if workspace_id is not None and workspace_id != own_workspace:
-        # An API token belongs to one workspace, and the API refuses it for any
-        # other. Said here, the model learns which workspace to name instead.
-        raise ToolError(
-            f"This sign-in is for workspace {own_workspace}, not {workspace_id}."
-            " Use that workspace, or sign in again with a token for the other."
-        )
-    client = MammothClient(
-        api_token=str(claims[TokenClaims.API_TOKEN]),
+    if TokenClaims.KEYCLOAK_ACCESS in claims:
+        client = await _client_for_a_login(access_token.token, claims, workspace_id)
+    else:
+        client = _client_for_a_token(claims, workspace_id)
+    if project_id is not None:
+        client.set_project_id(project_id)
+    async with client:
+        yield client
+
+
+def _client(bearer: str) -> MammothClient:
+    """One client, pointed at the Mammoth API this process was told to call."""
+    return MammothClient(
+        api_token=bearer,
         base_url=_api_url,
         api_root=_api_root,
         # Plain HTTP is taken only for a loopback address: the SDK refuses it
@@ -115,13 +124,78 @@ async def build_client(
         # script that started a long build and would add whole seconds here.
         job_poll_seconds=JOB_POLL_SECONDS,
     )
-    # The sign-in already asked the API which workspace the token is for. Left
-    # unset, the client would ask again, with a request that blocks the server.
-    client._workspace_id = own_workspace
-    if project_id is not None:
-        client.set_project_id(project_id)
-    async with client:
-        yield client
+
+
+def _act_in(client: MammothClient, workspace_id: int) -> None:
+    """Make the client act in one workspace.
+
+    Set here, the client does not ask the API which workspace its bearer is
+    for, with a request that blocks every other caller this worker serves.
+    """
+    client._workspace_id = workspace_id
+    client.session.headers[WORKSPACE_HEADER] = str(workspace_id)
+
+
+def _client_for_a_token(claims: dict[str, object], workspace_id: int | None) -> MammothClient:
+    """A client that acts with the caller's own Mammoth API token.
+
+    Raises:
+        ToolError: If the call names a workspace the token is not for.
+    """
+    own_workspace = int(str(claims[TokenClaims.WORKSPACE_ID]))
+    if workspace_id is not None and workspace_id != own_workspace:
+        # An API token belongs to one workspace, and the API refuses it for any
+        # other. Said here, the model learns which workspace to name instead.
+        raise ToolError(
+            f"This sign-in is for workspace {own_workspace}, not {workspace_id}."
+            " Use that workspace, or sign in again with a token for the other."
+        )
+    client = _client(str(claims[TokenClaims.API_TOKEN]))
+    _act_in(client, own_workspace)
+    return client
+
+
+async def _client_for_a_login(
+    ours: str, claims: dict[str, object], workspace_id: int | None
+) -> MammothClient:
+    """A client that acts with the caller's Mammoth login, in any of their workspaces.
+
+    Args:
+        ours: The token this server gave the caller's client.
+        claims: The caller's Keycloak tokens.
+        workspace_id: The workspace the call acts in, or None before one is known.
+    """
+    tokens = await fresh_login(ours, claims)
+    client = _client(str(tokens[TokenClaims.KEYCLOAK_ACCESS]))
+    if workspace_id is not None:
+        _act_in(client, workspace_id)
+    return client
+
+
+async def fresh_login(ours: str, claims: dict[str, object]) -> dict[str, object]:
+    """The caller's Keycloak tokens, refreshed first when the access token is ending.
+
+    The refreshed tokens are kept, sealed, in place of the old ones, so the
+    next call starts from them.
+
+    Raises:
+        ToolError: If Keycloak no longer keeps the user signed in. The token is
+            dropped, so the client signs the user in again.
+    """
+    if not keycloak.is_ending(claims, KEYCLOAK_REFRESH_MARGIN_SECONDS):
+        return claims
+    try:
+        renewed = await keycloak.refresh(claims)
+    except keycloak.KeycloakRefused as ended:
+        await store.forget(OAuthFields.TOKEN, ours)
+        raise ToolError(
+            "Your Mammoth sign-in has ended. Sign in again from your client."
+        ) from ended
+    record = await store.recall(OAuthFields.TOKEN, ours)
+    if record is not None:
+        record[OAuthFields.CREDENTIALS] = store.seal(renewed)
+        await store.replace(OAuthFields.TOKEN, ours, record)
+    return renewed
 
 
 T = TypeVar("T")

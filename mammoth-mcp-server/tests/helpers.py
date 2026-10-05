@@ -125,9 +125,10 @@ class FakeRedis:
         self.values: dict[str, str] = {}
         self.seconds: dict[str, int] = {}
 
-    async def set(self, key: str, value: str, ex: int) -> None:
+    async def set(self, key: str, value: str, ex: int | None = None, keepttl: bool = False) -> None:
         self.values[key] = value
-        self.seconds[key] = ex
+        if not keepttl:
+            self.seconds[key] = ex or 0
 
     async def get(self, key: str) -> str | None:
         return self.values.get(key)
