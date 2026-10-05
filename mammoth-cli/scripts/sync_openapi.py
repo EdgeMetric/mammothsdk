@@ -61,6 +61,10 @@ PIN_PATHS = (
     SPEC_DIR.parents[1] / "mammoth_cli" / "_spec.json",
 )
 
+#: ``--check-live`` exit code for real drift; any other non-zero code is an error
+#: (network failure, bad JSON, crash) and must never trigger a publish.
+DRIFT_EXIT = 2
+
 HTTP_METHODS = {"get", "put", "post", "delete", "options", "head", "patch", "trace"}
 
 #: Example fields whose string values are replaced before the snapshot is
@@ -346,7 +350,7 @@ def check_live() -> int:
         print(f"- {identity}", file=sys.stderr)
     if semantic_changed and not added and not removed:
         print("~ request, response, parameter, or component schema changed", file=sys.stderr)
-    return 1
+    return DRIFT_EXIT
 
 
 def main() -> int:
