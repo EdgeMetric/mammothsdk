@@ -108,6 +108,33 @@ def _variant_spelling_groups(texts: list[str]) -> list[tuple[str, list[str]]]:
     return sorted(groups, key=lambda item: item[0])
 
 
+def _squashed(text: str) -> str:
+    return _WHITESPACE.sub("", _PUNCTUATION.sub("", text))
+
+
+def _spelling_differences(value: str, canonical: str) -> list[str]:
+    """How ``value`` differs from ``canonical``: the part a chat view of it would hide."""
+    if value == canonical:
+        return []
+    found = []
+    if len(value) - len(value.lstrip()) != len(canonical) - len(canonical.lstrip()):
+        found.append("leading space")
+    if len(value) - len(value.rstrip()) != len(canonical) - len(canonical.rstrip()):
+        found.append("trailing space")
+    core, ref = value.strip(), canonical.strip()
+    if _squashed(core) != _squashed(ref):
+        found.append("case differs")
+    if core.lower() != ref.lower():
+        punctuation = _PUNCTUATION.findall(core) != _PUNCTUATION.findall(ref)
+        found.append("punctuation differs" if punctuation else "inner spacing differs")
+    return found
+
+
+def _spelling_label(value: str, canonical: str) -> str:
+    notes = _spelling_differences(value, canonical)
+    return repr(value) + (f" ({', '.join(notes)})" if notes else "")
+
+
 def _most_used_spelling(values: list[str], counts: Counter[str]) -> str:
     """The group's most frequent real spelling (first seen on a tie), trimmed.
 
@@ -131,7 +158,8 @@ def _variant_spellings_warning(
     canonical = {key: _most_used_spelling(values, counts) for key, values in shown}
     mapping = [{"search": sorted(values), "replace": canonical[key]} for key, values in shown]
     examples = "; ".join(
-        "{" + ", ".join(repr(v) for v in sorted(values)) + "}" + f" -> {canonical[key]!r}"
+        "{" + ", ".join(_spelling_label(v, canonical[key]) for v in sorted(values)) + "}"
+        f" -> {canonical[key]!r}"
         for key, values in shown
     )
     detail = (
