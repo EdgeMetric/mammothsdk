@@ -82,6 +82,9 @@ class ImpactRead:
 
     def aggregate(self, **fields: Any) -> list[dict[str, Any]]:
         """Rows of one read-only aggregate against this view."""
+        return _rows(self._query(**fields))
+
+    def _query(self, **fields: Any) -> dict[str, Any]:
         result = self.service.call(
             read_queries.AGGREGATE_SYMBOL,
             dataset_id=self.dataset_id,
@@ -89,7 +92,7 @@ class ImpactRead:
             project_id=self.project_id,
             **fields,
         )
-        return [row for row in (result or {}).get("data") or [] if isinstance(row, dict)]
+        return result if isinstance(result, dict) else {}
 
     def count(self, condition: Any = None) -> int:
         """Rows matching ``condition`` (a compiled condition; all rows without one)."""
@@ -98,10 +101,18 @@ class ImpactRead:
             if condition is not None
             else None
         )
-        rows = self.aggregate(aggregations=_COUNT, condition=built)
-        if not rows:
-            raise _unmeasurable("the count query returned no row")
-        return int(rows[0].get(_COUNT_KEY) or 0)
+        result = self._query(aggregations=_COUNT, condition=built)
+        rows = _rows(result)
+        if rows:
+            return int(rows[0].get(_COUNT_KEY) or 0)
+        # An answered count no row matches comes back with no row, not a row of 0.
+        if result.get("STATUS") == "READY":
+            return 0
+        raise _unmeasurable("the count query returned no row")
+
+
+def _rows(result: Mapping[str, Any]) -> list[dict[str, Any]]:
+    return [row for row in result.get("data") or [] if isinstance(row, dict)]
 
 
 def no_op_error(message: str, *, view_id: int) -> CliError:

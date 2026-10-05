@@ -21,7 +21,10 @@ _VIEW = {
 
 
 class _FakeService:
-    """``unit_price`` has one blank cell; ``qty`` has none."""
+    """``unit_price`` has one blank cell; ``qty`` has none.
+
+    A count no row matches answers as the backend does: ``data`` is empty, not a 0 row.
+    """
 
     def __init__(self) -> None:
         self.counted: list[str] = []
@@ -31,7 +34,9 @@ class _FakeService:
             return _VIEW
         sent = json.dumps(kwargs["condition"])
         self.counted.append(sent)
-        return {"data": [{"agg_0": 1 if "column_8" in sent else 0}]}
+        if "column_8" in sent:
+            return {"STATUS": "READY", "data": [{"agg_0": 1}]}
+        return {"STATUS": "READY", "row_count": 1, "data": []}
 
 
 def test_blank_inputs_counts_only_the_columns_the_expression_names() -> None:

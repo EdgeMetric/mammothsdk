@@ -315,7 +315,8 @@ def _run_no_match(
     def query(request: Any) -> tuple[int, Any]:
         if "GROUP_BY" in json.dumps(request.json_body):
             return 200, {"data": [{"group_0": "Ada", "agg_0": 31}, {"group_0": "Bo", "agg_0": 19}]}
-        return 200, {"data": [{"agg_0": 0}]}
+        # A count no row matches: the backend sends no row, not a 0 row.
+        return 200, {"STATUS": "READY", "row_count": 1, "data": []}
 
     api.on("POST", r"/data/query$", handler=query)
     result = make_runner().invoke(
