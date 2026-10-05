@@ -48,6 +48,13 @@ _ITEM_TYPE_TASK = "task"
 _ITEM_SEQUENCE_KEY = "sequence"
 _ITEM_STATUS_KEY = "status"
 _ITEM_STATUS_DELETED = "deleted"
+_ITEM_STATUS_SUSPENDED = "suspended"
+_ITEM_STATUS_SUSPENDING = "suspending"
+# Tasks the server does not count toward a view's valid sequence range, which
+# is [0, last ACTIVE task] (``Task.get_latest_sequence`` excludes these).
+_ITEM_STATUSES_INACTIVE = frozenset(
+    {_ITEM_STATUS_DELETED, _ITEM_STATUS_SUSPENDED, _ITEM_STATUS_SUSPENDING}
+)
 _ITEMS_FIELDS_STANDARD = "__standard"
 
 # OpenAPI `dataview_pipeline_consts_PipelineDraftMode` enum values (pinned in
@@ -691,7 +698,10 @@ class PipelineAPI:
         )
 
     async def latest_task_sequence(self, dataview_id: int, dataset_id: int | None = None) -> int:
-        """Return the highest non-deleted task sequence in the pipeline.
+        """Return the highest active task sequence in the pipeline.
+
+        Deleted, suspended and suspending tasks are skipped: the server rejects
+        a ``sequence`` beyond the last active task (404 4DTVW005).
 
         Data and metadata reads are scoped to a task *sequence*. Sequence 0 is
         the original dataset; each task adds a sequence, and the columns a task
@@ -712,7 +722,7 @@ class PipelineAPI:
             for item in page.get(_ITEMS_KEY) or []
             if item.get(_ITEM_TYPE_KEY) == _ITEM_TYPE_TASK
             and isinstance(item.get(_ITEM_SEQUENCE_KEY), int)
-            and item.get(_ITEM_STATUS_KEY) != _ITEM_STATUS_DELETED
+            and item.get(_ITEM_STATUS_KEY) not in _ITEM_STATUSES_INACTIVE
         ]
         return max(sequences) if sequences else 0
 

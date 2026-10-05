@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING, Any, BinaryIO
 if TYPE_CHECKING:
     from ..client import MammothClient
 
+from ..exceptions import MammothValidationError
 from ..models.files import (
     FileDetails,
     FilePatchData,
@@ -151,6 +152,62 @@ class FilesAPI:
         Returns:
             If wait_for_completion=False: Initial job ID.
             If wait_for_completion=True: List of dataset IDs (or single ID for one file).
+
+        Raises:
+            MammothValidationError: The server refused files (``errors`` on the
+                upload job, e.g. ``unsupported_files``) and no dataset was made.
+        """
+        outcome = await self.upload_result(
+            files,
+            folder_resource_id=folder_resource_id,
+            append_to_ds_id=append_to_ds_id,
+            override_target_schema=override_target_schema,
+            wait_for_completion=wait_for_completion,
+            timeout=timeout,
+        )
+        if not wait_for_completion:
+            return outcome["job_id"]
+        dataset_ids: _list[int] = outcome["dataset_ids"]
+        errors: dict[str, Any] = outcome["errors"]
+        if errors and not dataset_ids:
+            raise MammothValidationError(
+                f"The server refused the upload and created no dataset: {errors}",
+                details={"errors": errors},
+            )
+        if not outcome["job_id"] or not outcome["nested_job_ids"]:
+            return None
+        if not isinstance(files, _list) or len(files) == 1:
+            return dataset_ids[0] if dataset_ids else None
+        return dataset_ids
+
+    async def upload_result(
+        self,
+        files: _list[str | Path | BinaryIO] | str | Path | BinaryIO | None = None,
+        folder_resource_id: str | int | None = None,
+        append_to_ds_id: int | None = None,
+        override_target_schema: bool | None = None,
+        wait_for_completion: bool = True,
+        timeout: int = 300,
+    ) -> dict[str, Any]:
+        """Upload files and report the created datasets AND any server refusals.
+
+        Like :meth:`upload`, but returns ``{"job_id", "dataset_ids", "errors", "nested_job_ids"}``.
+        ``errors`` is the upload job's own ``errors`` map (for example
+        ``{"unsupported_files": ["X.pbix"]}``), empty when nothing was refused.
+
+        Each file becomes a separate dataset. Folder structure is preserved.
+
+        Args:
+            files: File(s) to upload — file paths, Path objects, or file-like objects.
+            folder_resource_id: Resource ID of target folder.
+            append_to_ds_id: Dataset ID to append to (if appending).
+            override_target_schema: Override target schema when appending.
+            wait_for_completion: Wait for upload processing to complete.
+            timeout: Timeout in seconds when waiting for completion.
+
+        Returns:
+            ``job_id`` is the initial job; with wait_for_completion=False the
+            other two are empty.
         """
         ws = self._ws()
         proj = self._proj()
@@ -201,35 +258,40 @@ class FilesAPI:
 
         initial_job_id = response.get("id")
 
+        outcome: dict[str, Any] = {
+            "job_id": initial_job_id,
+            "dataset_ids": [],
+            "errors": {},
+            "nested_job_ids": [],
+        }
         if not wait_for_completion:
-            return initial_job_id
+            return outcome
 
         if initial_job_id:
             completed_initial_job = await self._client.jobs.wait_for_job(
                 initial_job_id, timeout=timeout
             )
             job_response = completed_initial_job.get("response", {})
+            errors = job_response.get("errors")
+            outcome["errors"] = errors if isinstance(errors, dict) else {}
             nested_job_ids = job_response.get("job_ids", [])
 
             if not nested_job_ids:
-                return None
+                return outcome
 
+            outcome["nested_job_ids"] = nested_job_ids
             nested = [job_info["job_id"] for job_info in nested_job_ids if job_info.get("job_id")]
             # One batched poll for every nested job, not one poll loop per file.
             finished = (
                 await self._client.jobs.wait_for_jobs(nested, timeout=timeout) if nested else {}
             )
-            dataset_ids = [
+            outcome["dataset_ids"] = [
                 ds_id
                 for job in finished.get("jobs", [])
                 if (ds_id := (job.get("response") or {}).get("ds_id"))
             ]
 
-            if len(files) == 1:
-                return dataset_ids[0] if dataset_ids else None
-            return dataset_ids
-
-        return None
+        return outcome
 
     async def upload_folder(
         self,

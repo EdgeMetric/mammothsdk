@@ -226,16 +226,25 @@ def file_upload(invocation: Invocation) -> HandlerResult:
             hint="Pass the file(s) as positional arguments or a 'files' input field.",
         )
     with open_service(invocation) as (service, auth):
-        data = service.call(_symbol(invocation), **kwargs)
-        # The SDK waits for the upload job and returns the created dataset
-        # id(s) as a bare int/list. When the caller opts out of waiting
-        # (``wait_for_completion: false``) the bare job id is returned unchanged.
+        # When the caller opts out of waiting (``wait_for_completion: false``)
+        # the bare job id is returned unchanged.
         if not document.get("wait_for_completion", True):
+            data = service.call(_symbol(invocation), **kwargs)
             return data, _meta(invocation, auth.workspace_id, resolved_project(invocation))
+        # The SDK waits for the upload job; ``upload_result`` also returns the
+        # files the server refused, which the bare id list of ``upload`` drops.
+        outcome = service.call(_UPLOAD_RESULT_SYMBOL, **kwargs)
+        data = outcome["dataset_ids"]
+        refused = _refused_files(outcome.get("errors"))
+        if outcome.get("errors") and not data:
+            raise _upload_refused_error(outcome["errors"], refused)
         # A finished upload job does not mean a usable dataset: a CSV with an
         # ambiguous date column lands in ``need_action`` with no view. Report
         # the status the platform holds for each dataset, not an assumed one.
         result = _upload_result(data, lambda dataset_id: _dataset_status(service, dataset_id))
+        if refused:
+            result["warnings"] = [_upload_refused_message(outcome["errors"], refused)]
+            result["refused_files"] = refused
         project_id = resolved_project(invocation)
         previewed = 0
         for entry in result["datasets"]:
@@ -288,6 +297,45 @@ def _require_local_files(files: Any) -> None:
                 ),
                 details={"path": candidate, "cwd": str(Path.cwd())},
             )
+
+
+_UPLOAD_RESULT_SYMBOL = "mammoth.api.files.FilesAPI.upload_result"
+
+#: Workbook files that cannot become datasets; ``dashboard pbix-intent`` reads them.
+_WORKBOOK_SUFFIXES = (".pbix", ".twb", ".twbx")
+_WORKBOOK_HINT = (
+    "Power BI and Tableau workbooks are not datasets: attach the workbook in the chat "
+    "and use `dashboard pbix-intent` to read it."
+)
+
+
+def _refused_files(errors: Any) -> list[str]:
+    """File names the upload job refused, flattened from its ``errors`` map."""
+    if not isinstance(errors, dict):
+        return []
+    names: list[str] = []
+    for value in errors.values():
+        for item in value if isinstance(value, list) else [value]:
+            if isinstance(item, str) and item not in names:
+                names.append(item)
+    return names
+
+
+def _upload_refused_message(errors: dict[str, Any], refused: list[str]) -> str:
+    reasons = ", ".join(sorted(errors))
+    return f"The server refused {', '.join(refused) or 'the upload'} ({reasons})."
+
+
+def _upload_refused_error(errors: dict[str, Any], refused: list[str]) -> CliError:
+    """The error for an upload whose files were all refused (no dataset made)."""
+    workbook = any(name.lower().endswith(_WORKBOOK_SUFFIXES) for name in refused)
+    return CliError(
+        code=CODE_INVALID_ARGUMENT,
+        message=_upload_refused_message(errors, refused) + " No dataset was created.",
+        exit_status=EXIT_USAGE,
+        hint=_WORKBOOK_HINT if workbook else "Upload a supported file type (CSV, Excel, JSON).",
+        details={"errors": errors, "refused_files": refused},
+    )
 
 
 _DATASET_GET_SYMBOL = "mammoth.api.datasets.DatasetsAPI.get"

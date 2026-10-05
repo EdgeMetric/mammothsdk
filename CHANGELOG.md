@@ -6,6 +6,20 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.8.20]
+
+### Added
+
+- `FilesAPI.upload_result(...)` returns `{"job_id", "dataset_ids", "errors", "nested_job_ids"}`, so a
+  caller can see the files the server refused (`errors.unsupported_files`).
+
+### Fixed
+
+- `PipelineAPI.latest_task_sequence` skips `suspended` and `suspending` tasks as well as deleted ones,
+  so `DataviewsAPI.get_data` no longer sends a sequence the server rejects with 404 4DTVW005.
+- `FilesAPI.upload` raises `MammothValidationError` when the server refused the files and no dataset
+  was created, instead of returning `None`.
+
 ## [0.8.19]
 
 ### Added
