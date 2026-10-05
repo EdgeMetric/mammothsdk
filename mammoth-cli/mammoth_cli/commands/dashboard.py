@@ -746,6 +746,36 @@ def generated_dashboard(invocation: Invocation) -> HandlerResult:
     return data, _meta(invocation, auth.workspace_id)
 
 
+def dashboard_duplicate(invocation: Invocation) -> HandlerResult:
+    """Copy a v3 dashboard; with ``target_dataview_id`` also wait for its data swap.
+
+    The result keeps ``id`` and ``swap_job_id`` and adds ``swap_state`` and
+    ``swap_result`` when a swap job was queued.
+    """
+    document = _bound_document(invocation)
+    positionals = _generated_positionals(invocation)
+    kwargs = bind_command_inputs(invocation.command_id, document, **positionals)
+    with open_service(invocation) as (service, auth):
+        data = service.call(_symbol(invocation), **kwargs)
+        if hasattr(data, "model_dump"):
+            data = data.model_dump(mode="json")
+        if isinstance(data, dict) and data.get("swap_job_id") is not None:
+            settled = service.wait_if_job({"job_id": data["swap_job_id"]})
+            data = {**data, "swap_state": "success", "swap_result": settled}
+    return data, _meta(invocation, auth.workspace_id)
+
+
+def dashboard_attachment_read(invocation: Invocation) -> HandlerResult:
+    """Run a workbook read on an attachment (intent or assess) and return the job's result."""
+    positionals = _generated_positionals(invocation)
+    with open_service(invocation) as (service, auth):
+        queued = service.call(_symbol(invocation), **positionals)
+        if hasattr(queued, "model_dump"):
+            queued = queued.model_dump(mode="json")
+        data = service.wait_if_job(queued)
+    return data, _meta(invocation, auth.workspace_id)
+
+
 #: Board-building steps whose result carries the evaluated card/tile numbers.
 _VALUED_COMMANDS = frozenset({"dashboard.v3.generate", "dashboard.chat.edit"})
 

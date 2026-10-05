@@ -1024,3 +1024,59 @@ commands:
   known_restrictions: null
   reviewed_by: primary
   no_readback: "no CLI read command exposes per-project user role assignments"
+- command_id: project.copy
+  command_path: project copy
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - name: project_id
+    type: int
+    required: true
+    metavar: PROJECT_ID
+    falls_back_to_field: null
+    help: ID of the project to copy.
+  - name: name
+    type: str
+    required: true
+    metavar: NAME
+    falls_back_to_field: null
+    help: Name of the new project.
+  options: []
+  sdk_symbol: mammoth.api.projects.ProjectsAPI.copy
+  sdk_conversion: Call mammoth.api.projects.ProjectsAPI.copy with validated request fields.
+  request_model: ProjectCopyRequest
+  result_model: ProjectCopyResult
+  mutation_class: benign_mutation
+  edits_target: false
+  confirmation: none
+  wait_policy: always_wait
+  pagination_policy: none
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Backend route ships with this release; no disposable fixture runs it yet.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth project copy PROJECT_ID NAME --help
+  agent_example: mammoth project copy 123 'Revenue report'
+  unit_tests:
+  - UT-PROJECT-COPY
+  contract_tests:
+  - CT-PROJECT-COPY-HUMAN
+  - CT-PROJECT-COPY-JSON
+  - CT-PROJECT-COPY-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Creates a project: copies the datasets, views and pipelines of PROJECT_ID into
+    a new project NAME, in one job the command waits for. Input fields: dataset_ids (copy only these;
+    default all), include_dashboards (default false), exclude_data (default false, copies pipelines without
+    rows). The result is project_id, dataset_map, view_map, skipped (what was left behind or still points
+    outside the copy) and dashboards (dashboard_id, new_dashboard_id). Needs permission to create projects.
+    Sweep with ''project delete ID --yes --confirm ID''.'
+  reviewed_by: primary
+  readback:
+    command: project.get
+    ids:
+      project_id: result.project_id
+    kind: object

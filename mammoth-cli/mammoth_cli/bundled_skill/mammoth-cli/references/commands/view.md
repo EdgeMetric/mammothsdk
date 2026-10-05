@@ -52,6 +52,16 @@ Result: `ViewAiProfileResult`; mutation `benign_mutation`, confirmation `none`, 
 
 Status on release: ran once on CLI 2.0.15 — re-verification 2026-09-18: exit 0 on release with CLI 2.0.15. Fix held: release ProfileGenerationSpec {params:{action}} body accepted; returned real generated insights: {"data":{"insights":{"performance_analysis":{"domain_specific_insights":[...]}}}}. Single…
 
+### `view.analyze`
+
+Run: `mammoth view analyze`. Exact input fields: `mammoth schema get view.analyze`.
+
+Example: `mammoth view analyze 123 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `ViewAnalyzeResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
 ### `view.bulk-delete`
 
 Run: `mammoth view bulk-delete`. Exact input fields: `mammoth schema get view.bulk-delete`.
@@ -111,6 +121,16 @@ Example: `mammoth view checkpoint update 123 123 123 --input '{"body": {"patches
 Result: `ViewCheckpointUpdateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
 Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. First attempt sending a full AddCheckpointSpec body (matching create's shape) failed with invalid_input_field_type; update actually needs body.patches[] (CheckpointPatches/CheckPointPatch…
+
+### `view.compare`
+
+Run: `mammoth view compare`. Exact input fields: `mammoth schema get view.compare`.
+
+Example: `mammoth view compare --input '{"pairs": [[1, 2]]}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `ViewCompareResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
 
 ### `view.conditional-format.create`
 
@@ -713,6 +733,16 @@ Example: `mammoth view list 123`. Placeholders are illustrative; resolve IDs and
 Result: `ViewListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
 Status on release: ran once on CLI 2.0.21 — ergonomics sweep 2026-09-19: exit 0 on release with CLI 2.0.21. Listed dataview 116 (ds_id 94, row_count 3); the parent cache picked up 116 -> 94 so later view commands took the view id alone. Single invocation only.
+
+### `view.optimize`
+
+Run: `mammoth view optimize`. Exact input fields: `mammoth schema get view.optimize`.
+
+Example: `mammoth view optimize 123 123`. Illustrative only: append `--yes` after observing an owned target.
+
+Result: `ViewOptimizeResult`; mutation `reversible_pipeline`, confirmation `prompt_or_yes`, wait policy `start_or_wait`.
+
+Status on release: untried; no live run recorded.
 
 ### `view.parameter-context`
 
