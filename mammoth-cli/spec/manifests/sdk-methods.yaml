@@ -1,5 +1,5 @@
 manifest_schema_version: 1
-method_count: 578
+method_count: 584
 generator_version: '1'
 methods:
 - sdk_symbol: mammoth._mixins._advanced_ops.AdvancedOpsMixin.add_sql
@@ -2083,7 +2083,7 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.duplicate
   implementation_origin: mammoth.api.dashboards.DashboardsAPI.duplicate
-  signature: 'duplicate(self: ''Any'', dashboard_id: ''int'') -> ''DuplicateDashboardResponse'''
+  signature: 'duplicate(self, dashboard_id: ''int'', project_id: ''int | None'' = None, target_dataview_id: ''int | None'' = None) -> ''DuplicateDashboardResponse'''
   openapi_operation_ids: []
   canonical_command: dashboard.duplicate
   alias_of: null
@@ -3911,6 +3911,42 @@ methods:
   pagination_policy: none
   secret_fields: []
   reviewed_by: primary
+- sdk_symbol: mammoth.api.dataviews.DataviewsAPI.analysis
+  implementation_origin: mammoth.api.dataviews.DataviewsAPI.analysis
+  signature: 'analysis(self, dataset_id: ''int'', dataview_id: ''int'', workspace_id: ''int | None'' = None, project_id: ''int | None'' = None) -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: view.analyze
+  alias_of: null
+  no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.dataviews.DataviewsAPI.optimize
+  implementation_origin: mammoth.api.dataviews.DataviewsAPI.optimize
+  signature: 'optimize(self, dataset_id: ''int'', dataview_id: ''int'', apply_rules: ''_list[str] | None'' = None, workspace_id: ''int | None'' = None, project_id: ''int | None'' = None) -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: view.optimize
+  alias_of: null
+  no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.dataviews.DataviewsAPI.compare
+  implementation_origin: mammoth.api.dataviews.DataviewsAPI.compare
+  signature: 'compare(self, pairs: ''_list[_list[int]]'', workspace_id: ''int | None'' = None) -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: view.compare
+  alias_of: null
+  no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
 - sdk_symbol: mammoth.api.dataviews.DataviewsAPI.bulk_delete
   implementation_origin: mammoth.api.dataviews.DataviewsAPI.bulk_delete
   signature: 'bulk_delete(self, dataset_id: ''int'', dataview_ids: ''_list[int] | str'', workspace_id: ''int | None'' = None, project_id: ''int | None'' = None) -> ''dict[str, Any]'''
@@ -5449,6 +5485,18 @@ methods:
   signature: 'sample_flow(self, project_id: ''int'', label_resource_id: ''int | None'' = None, workspace_id: ''int | None'' = None) -> ''dict[str, Any]'''
   openapi_operation_ids: []
   canonical_command: project.sample-flow
+  alias_of: null
+  no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.projects.ProjectsAPI.copy
+  implementation_origin: mammoth.api.projects.ProjectsAPI.copy
+  signature: 'copy(self, project_id: ''int'', name: ''str'', dataset_ids: ''_list[int] | None'' = None, include_dashboards: ''bool'' = False, exclude_data: ''bool'' = False, workspace_id: ''int | None'' = None) -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: project.copy
   alias_of: null
   no_command_reason: null
   mutation_class: null
@@ -8025,6 +8073,30 @@ methods:
   signature: 'swap_fit(self, source_dashboard_id: ''int'', target_dataview_ids: ''_list[int]'', include_over_budget: ''bool'' = False, seconds_budget: ''float | None'' = None) -> ''dict[str, Any]'''
   openapi_operation_ids: []
   canonical_command: dashboard.swap-fit
+  alias_of: null
+  no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.attachment_intent
+  implementation_origin: mammoth.api.dashboards.DashboardsAPI.attachment_intent
+  signature: 'attachment_intent(self, attachment_id: ''int'', target_dataview_id: ''int'') -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: dashboard.pbix-intent
+  alias_of: null
+  no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.attachment_assess
+  implementation_origin: mammoth.api.dashboards.DashboardsAPI.attachment_assess
+  signature: 'attachment_assess(self, attachment_id: ''int'') -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: dashboard.pbix-assess
   alias_of: null
   no_command_reason: null
   mutation_class: null

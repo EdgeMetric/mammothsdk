@@ -6,6 +6,26 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.8.19]
+
+### Added
+
+- `DataviewsAPI.analysis(dataset_id, dataview_id)` lists pipeline steps that can be dropped or moved
+  without changing the result (read only); `DataviewsAPI.optimize(dataset_id, dataview_id,
+  apply_rules=None)` applies the safe findings and reruns the view (a write);
+  `DataviewsAPI.compare(pairs)` compares up to 20 dataview pairs: rows, column differences and
+  checksums (read only).
+- `DashboardsAPI.attachment_intent(attachment_id, target_dataview_id)` and
+  `DashboardsAPI.attachment_assess(attachment_id)` queue the read of an attached workbook; both return
+  `{"future_id": N}` to wait on.
+- `ProjectsAPI.copy(project_id, name, dataset_ids=None, include_dashboards=False,
+  exclude_data=False)` queues a project copy and returns `{"job_id": N}`.
+
+### Changed
+
+- `DashboardsAPI.duplicate` takes `project_id` and `target_dataview_id`. With a target view the copy is
+  made in that view's project and the result carries `swap_job_id`.
+
 ## [0.8.17]
 
 ### Added

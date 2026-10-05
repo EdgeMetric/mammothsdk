@@ -15,6 +15,7 @@ from urllib.parse import quote
 from pydantic import ValidationError
 
 from mammoth.exceptions import MammothValidationError
+from mammoth.models.dashboard_generated import DuplicateDashboardResponse
 from mammoth.models.dashboards import (
     AddPagesResponse,
     AddPagesSpec,
@@ -59,6 +60,8 @@ _list = list  # Alias to avoid shadowing by method name
 
 ERR_DASHBOARD_ID_POSITIVE = "`dashboard_id` must be a positive integer, got {0}."
 ERR_DASHBOARD_IDS_EMPTY = "`dashboard_ids` must be a non-empty list of dashboard ids."
+ERR_ATTACHMENT_ID_POSITIVE = "`attachment_id` must be a positive integer, got {0}."
+ERR_ATTACHMENT_VIEW_POSITIVE = "`target_dataview_id` must be a positive integer, got {0}."
 ERR_STYLE_EMPTY = "`style` must be a non-empty string."
 ERR_TEMPLATE_ID_EMPTY = "`template_id` must be a non-empty template slug."
 ERR_SLUG_EMPTY = "`slug` must be a non-empty template slug."
@@ -1159,6 +1162,90 @@ class DashboardsAPI:
             "POST", "/dashboards/v3/swap/fit", json={"params": params}, operation_effect="read"
         )
 
+    async def duplicate(
+        self,
+        dashboard_id: int,
+        project_id: int | None = None,
+        target_dataview_id: int | None = None,
+    ) -> DuplicateDashboardResponse:
+        """Duplicate a v3 dashboard, optionally onto another view.
+
+        With *target_dataview_id* the copy is made in that view's project and a data-swap
+        job is queued to re-point it; wait for ``swap_job_id`` with ``client.wait_if_job``.
+
+        Args:
+            dashboard_id: ID of the dashboard to copy (must be > 0).
+            project_id: Project to copy into when no target view is given.
+            target_dataview_id: View to re-point the copy at (must be > 0 when given).
+
+        Returns:
+            The new dashboard's ``id`` and ``swap_job_id`` (set only with a target view).
+
+        Raises:
+            MammothValidationError: If an id is not a positive integer.
+        """
+        _require_dashboard_id(dashboard_id)
+        if target_dataview_id is not None:
+            _require_attachment_view_id(target_dataview_id)
+        params = {
+            key: value
+            for key, value in {
+                "project_id": project_id,
+                "target_dataview_id": target_dataview_id,
+            }.items()
+            if value is not None
+        }
+        response = await self._client._request_json(
+            "POST",
+            f"/dashboards/v3/{dashboard_id}/duplicate",
+            params=params or None,
+        )
+        return DuplicateDashboardResponse.model_validate(response)
+
+    async def attachment_intent(
+        self, attachment_id: int, target_dataview_id: int
+    ) -> dict[str, Any]:
+        """Queue the read of an attached workbook against one of the caller's views.
+
+        The workbook is attached by the web app; this only reads it. Poll the returned
+        job (``client.wait_if_job``) for ``{intent, coverage, unmapped_visuals,
+        field_map, target_dataview_id}``, or ``{rejected, source}``.
+
+        Args:
+            attachment_id: ID of the attachment (must be > 0).
+            target_dataview_id: ID of the view to read the workbook against (must be > 0).
+
+        Returns:
+            Dict with ``future_id``, the job to wait for.
+
+        Raises:
+            MammothValidationError: If an id is not a positive integer.
+        """
+        _require_attachment_id(attachment_id)
+        _require_attachment_view_id(target_dataview_id)
+        return await self._client._request_json(
+            "POST",
+            f"/dashboards/v3/attachments/{attachment_id}/intent",
+            json={"target_dataview_id": target_dataview_id},
+        )
+
+    async def attachment_assess(self, attachment_id: int) -> dict[str, Any]:
+        """Queue the assessment of an attached workbook (what it holds, no view needed).
+
+        Args:
+            attachment_id: ID of the attachment (must be > 0).
+
+        Returns:
+            Dict with ``future_id``, the job to wait for.
+
+        Raises:
+            MammothValidationError: If *attachment_id* is not a positive integer.
+        """
+        _require_attachment_id(attachment_id)
+        return await self._client._request_json(
+            "POST", f"/dashboards/v3/attachments/{attachment_id}/assess"
+        )
+
     async def audience(self, dashboard_id: int, days: int = 7) -> dict[str, Any]:
         """Get who read a board: totals, daily series, viewers, reach and actions.
 
@@ -1586,6 +1673,18 @@ def _require_dashboard_id(dashboard_id: int) -> None:
     """Reject a dashboard id that is not a positive integer."""
     if isinstance(dashboard_id, bool) or not isinstance(dashboard_id, int) or dashboard_id <= 0:
         raise MammothValidationError(ERR_DASHBOARD_ID_POSITIVE.format(dashboard_id))
+
+
+def _require_attachment_id(attachment_id: int) -> None:
+    """Reject an attachment id that is not a positive integer."""
+    if isinstance(attachment_id, bool) or not isinstance(attachment_id, int) or attachment_id <= 0:
+        raise MammothValidationError(ERR_ATTACHMENT_ID_POSITIVE.format(attachment_id))
+
+
+def _require_attachment_view_id(dataview_id: int) -> None:
+    """Reject a target view id that is not a positive integer."""
+    if isinstance(dataview_id, bool) or not isinstance(dataview_id, int) or dataview_id <= 0:
+        raise MammothValidationError(ERR_ATTACHMENT_VIEW_POSITIVE.format(dataview_id))
 
 
 def _require_window_days(days: int) -> None:

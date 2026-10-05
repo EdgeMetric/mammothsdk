@@ -906,6 +906,57 @@ def view_impact(invocation: Invocation) -> HandlerResult:
     return data, _meta(invocation, auth.workspace_id, project_id)
 
 
+def view_analyze(invocation: Invocation) -> HandlerResult:
+    """List pipeline steps that can be dropped or moved without changing the result (read-only)."""
+    project_id = require_project(invocation)
+    dataview_id = _require_int_positional_at(invocation, 0, "view id")
+    document = invocation.load_input() or {}
+    with open_service(invocation) as (service, auth):
+        dataset_id = _resolve_dataset_id(service, invocation, dataview_id, document)
+        data = service.call(
+            _symbol(invocation),
+            dataset_id=dataset_id,
+            dataview_id=dataview_id,
+            project_id=project_id,
+        )
+    return data, _meta(invocation, auth.workspace_id, project_id)
+
+
+def view_optimize(invocation: Invocation) -> HandlerResult:
+    """Apply the safe pipeline findings, then wait for the rerun it queued.
+
+    ``apply_rules`` limits the rules applied; omitted, every safe finding is applied.
+    The result keeps the server's ``applied`` / ``skipped`` / step counts and adds
+    ``job_state`` and ``job_result`` when a rerun job was queued.
+    """
+    project_id = require_project(invocation)
+    dataview_id = _require_int_positional_at(invocation, 0, "view id")
+    document = invocation.load_input() or {}
+    enforce_confirmation(
+        invocation,
+        policy=POLICY_PROMPT_OR_YES,
+        action=f"optimize the pipeline of view {dataview_id}",
+    )
+    kwargs: dict[str, Any] = {"dataview_id": dataview_id, "project_id": project_id}
+    _forward_optional(document, kwargs, ("apply_rules",))
+    with open_service(invocation) as (service, auth):
+        kwargs["dataset_id"] = _resolve_dataset_id(service, invocation, dataview_id, document)
+        data = service.call(_symbol(invocation), **kwargs)
+        if isinstance(data, dict) and data.get("job_id") is not None:
+            settled = service.wait_if_job({"job_id": data["job_id"]})
+            data = {**data, "job_state": "success", "job_result": settled}
+    return data, _meta(invocation, auth.workspace_id, project_id)
+
+
+def view_compare(invocation: Invocation) -> HandlerResult:
+    """Compare dataviews pairwise: rows, column differences and checksums (read-only)."""
+    document = invocation.load_input()
+    pairs = _require_field(document, "pairs")
+    with open_service(invocation) as (service, auth):
+        data = service.call(_symbol(invocation), pairs=pairs)
+    return data, _meta(invocation, auth.workspace_id, None)
+
+
 def view_update(invocation: Invocation) -> HandlerResult:
     """Rename a view from the name input field; any other patch is refused.
 

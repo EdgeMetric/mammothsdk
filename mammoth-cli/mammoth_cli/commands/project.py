@@ -275,6 +275,34 @@ def project_create(invocation: Invocation) -> HandlerResult:
     return data, _meta(invocation, auth.workspace_id, resolved_project(invocation))
 
 
+def project_copy(invocation: Invocation) -> HandlerResult:
+    """Copy a project into a new one and wait for the copy job.
+
+    ``PROJECT_ID NAME`` are positional; ``dataset_ids``, ``include_dashboards`` and
+    ``exclude_data`` come from ``--input``. The result is the job's:
+    ``project_id``, ``dataset_map``, ``view_map``, ``skipped`` and ``dashboards``.
+    """
+    source_id = _int_positional(invocation, "project id")
+    name = invocation.extra_args[1] if len(invocation.extra_args) > 1 else None
+    if source_id is None or not name:
+        raise CliError(
+            code=CODE_MISSING_ARGUMENT,
+            message="A source project id and a name for the copy are required.",
+            exit_status=EXIT_USAGE,
+            hint="mammoth project copy PROJECT_ID NAME",
+        )
+    document = invocation.load_input() or {}
+    kwargs: dict[str, Any] = {"project_id": source_id, "name": name}
+    _forward_optional(document, kwargs, _COPY_OPTIONAL)
+    with open_service(invocation) as (service, auth):
+        queued = service.call(_symbol(invocation), **kwargs)
+        data = service.wait_if_job(queued)
+    return data, _meta(invocation, auth.workspace_id, source_id)
+
+
+_COPY_OPTIONAL = ("dataset_ids", "include_dashboards", "exclude_data")
+
+
 _ENSURE_CREATE_SYMBOL = "mammoth.api.projects.ProjectsAPI.create"
 
 
