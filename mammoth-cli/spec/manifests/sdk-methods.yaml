@@ -3811,7 +3811,7 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.datasets.DatasetsAPI.rename
   implementation_origin: mammoth.api.datasets.DatasetsAPI.rename
-  signature: 'rename(self, dataset_id: ''int'', name: ''str'', workspace_id: ''int | None'' = None, project_id: ''int | None'' = None) -> ''dict[str, Any]'''
+  signature: 'rename(self, dataset_id: ''int'', name: ''str'', workspace_id: ''int | None'' = None, project_id: ''int | None'' = None, unique: ''bool'' = False) -> ''dict[str, Any]'''
   openapi_operation_ids: []
   canonical_command: dataset.rename
   alias_of: null
