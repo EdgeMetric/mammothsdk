@@ -3545,6 +3545,7 @@ def view_export_specialized(invocation: Invocation) -> HandlerResult:
             _reject_export_into_draft(service, dataview_id, dataset_id)
         target_view_before = None
         target_only_columns: list[str] = []
+        mapped_type_warnings: list[str] = []
         if target_ds_id is not None:
             # Each `view export dataset` call creates its own PERSISTENT
             # export trigger on this view, which re-runs on every pipeline
@@ -3578,7 +3579,7 @@ def view_export_specialized(invocation: Invocation) -> HandlerResult:
             # before the call so a later re-read can never be confused with it.
             target_view_before = _dataset_view_info(service, int(target_ds_id), result_project_id)
             if save_as_mode == "APPEND_TO_DS":
-                target_only_columns = _reject_append_schema_mismatch(
+                target_only_columns, mapped_type_warnings = _reject_append_schema_mismatch(
                     service,
                     dataview_id,
                     dataset_id,
@@ -3640,13 +3641,17 @@ def view_export_specialized(invocation: Invocation) -> HandlerResult:
                 # An append is expected to grow the target; verify.py treats
                 # a non-increase here as unverified, not just an omitted count.
                 row_check["expected_row_increase"] = True
+            warnings = list(mapped_type_warnings)
             if target_only_columns:
                 # Allowed -- an append never has to cover every target column
                 # -- but worth surfacing rather than leaving silent.
-                row_check["warnings"] = [
+                warnings.insert(
+                    0,
                     "target dataset has column(s) the source view does not (kept "
-                    "as-is): " + ", ".join(target_only_columns)
-                ]
+                    "as-is): " + ", ".join(target_only_columns),
+                )
+            if warnings:
+                row_check["warnings"] = warnings
             data["row_check"] = row_check
             if pipeline_error is not None:
                 data["pipeline_error"] = pipeline_error
@@ -3799,15 +3804,83 @@ def _reject_append_type_mismatch(
     )
 
 
+def _reject_partial_append_mapping(
+    source_names: set[str],
+    target_names: set[str],
+    mapping: dict[str, str],
+    ids: tuple[int, int],
+) -> None:
+    """Refuse a non-empty append ``column_mapping`` that drops or invents columns.
+
+    The backend maps every column by name when the mapping is empty, but uses
+    a non-empty one as-is: unmapped source columns are not appended (their
+    target cells stay NULL) and a destination the target lacks becomes a new
+    column named after the source.
+    """
+    if not mapping:
+        return
+    unknown = {src: dest for src, dest in sorted(mapping.items()) if dest not in target_names}
+    unmapped = sorted(source_names - set(mapping))
+    if not unknown and not unmapped:
+        return
+    view_id, target_ds_id = ids
+    problems = []
+    if unknown:
+        listed = ", ".join(f"{dest!r} (for {src!r})" for src, dest in unknown.items())
+        problems.append(f"destination column(s) not in target dataset {target_ds_id}: {listed}")
+    if unmapped:
+        problems.append(f"source column(s) left unmapped and not appended: {', '.join(unmapped)}")
+    raise CliError(
+        code="append_mapping_incomplete",
+        message=(
+            f"column_mapping for appending view {view_id} into dataset {target_ds_id} would "
+            f"corrupt the append: {'; '.join(problems)}. A non-empty column_mapping is used "
+            "as-is: unmapped columns are not appended and an unknown destination creates a "
+            "new column."
+        ),
+        exit_status=EXIT_USAGE,
+        hint=(
+            "Omit column_mapping to map all columns by name, or map every source column to "
+            f"an existing column of dataset {target_ds_id}."
+        ),
+        details={
+            "unknown_destinations": unknown,
+            "unmapped_source_columns": unmapped,
+            "target_columns": sorted(target_names),
+        },
+    )
+
+
+def _mapped_type_warnings(
+    source_types: Any, target_schema: dict[str, str], mapping: dict[str, str]
+) -> list[str]:
+    """Warn where a mapped source column's type differs from its target column's."""
+    if not isinstance(source_types, dict):
+        return []
+    return [
+        f"mapped column {src!r} is {str(source_types[src]).lower()} but target column "
+        f"{dest!r} is {target_schema[dest].lower()}"
+        for src, dest in sorted(mapping.items())
+        if source_types.get(src)
+        and target_schema.get(dest)
+        and str(source_types[src]).lower() != target_schema[dest].lower()
+    ]
+
+
 def _reject_append_schema_mismatch(
     service: Any,
     dataview_id: int,
     dataset_id: int | None,
     target_ds_id: int,
     column_mapping: Any,
-) -> list[str]:
+) -> tuple[list[str], list[str]]:
     """Refuse an ``APPEND_TO_DS`` export whose source has a column the target
     dataset's schema does not, and ``column_mapping`` does not cover.
+
+    A non-empty ``column_mapping`` is stricter: the backend then copies only
+    the mapped columns and turns an unknown destination into a new column, so
+    every source column must be mapped to a column the target already has
+    (``_reject_partial_append_mapping``).
 
     An append writes into rows the target dataset already has; a source
     column with no home in the target schema and no explicit mapping would
@@ -3815,8 +3888,8 @@ def _reject_append_schema_mismatch(
     the call, so the refusal costs nothing and names exactly what to fix.
 
     Returns the target-only column names (present in the target schema, not
-    in the source, not a ``column_mapping`` destination) -- allowed, but
-    worth a warning rather than silence.
+    in the source, not a ``column_mapping`` destination) and the type
+    warnings for mapped pairs -- both allowed, but worth a warning.
     """
     source_columns = service.call_view(dataview_id, "columns", dataset_id=dataset_id)
     if not isinstance(source_columns, dict):
@@ -3833,14 +3906,11 @@ def _reject_append_schema_mismatch(
     # dict keys are display names, matching what the backend's own schema
     # match compares by -- never the internal ids in the dict's values.
     source_names = set(source_columns)
+    _reject_partial_append_mapping(source_names, target_names, mapping, (dataview_id, target_ds_id))
     source_only = sorted(source_names - target_names - set(mapping))
     target_only = sorted(target_names - source_names - set(mapping.values()))
-    _reject_append_type_mismatch(
-        service.call_view(dataview_id, "column_types", dataset_id=dataset_id),
-        target_schema,
-        mapping,
-        (dataview_id, target_ds_id),
-    )
+    source_types = service.call_view(dataview_id, "column_types", dataset_id=dataset_id)
+    _reject_append_type_mismatch(source_types, target_schema, mapping, (dataview_id, target_ds_id))
     if source_only:
         raise CliError(
             code="append_schema_mismatch",
@@ -3855,7 +3925,7 @@ def _reject_append_schema_mismatch(
             ),
             details={"source_only": source_only, "target_only": target_only},
         )
-    return target_only
+    return target_only, _mapped_type_warnings(source_types, target_schema, mapping)
 
 
 def _dataset_view_info(

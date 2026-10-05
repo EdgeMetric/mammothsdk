@@ -77,6 +77,7 @@ ERROR_SUMMARIES: dict[str, str] = {
         "More than one item matched, so the assistant needs to be more specific."
     ),
     "api_error": "Mammoth couldn't complete this step.",
+    "append_mapping_incomplete": "The column mapping would leave columns out or add new ones.",
     "append_schema_mismatch": "The new data doesn't line up with the existing columns.",
     "append_type_mismatch": "A column has a different type than in the existing data.",
     "append_schema_unreadable": "The columns of the existing data couldn't be read.",

@@ -373,7 +373,7 @@ def test_dataset_route_allows_append_when_column_mapping_covers_the_difference(
                     "dataset_name": "orders",
                     "target_ds_id": 9,
                     "save_as_mode": "APPEND_TO_DS",
-                    "column_mapping": {"Amt": "Amount"},
+                    "column_mapping": {"Region": "Region", "Amt": "Amount"},
                 },
             ),
             yes=True,
