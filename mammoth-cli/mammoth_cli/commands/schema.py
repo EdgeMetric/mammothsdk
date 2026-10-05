@@ -490,6 +490,10 @@ _COMMAND_DISCOVERY_PURPOSES = {
         "connect our own internal custom api build a connector for an unsupported source"
     ),
     "file.set-password": "locked password protected file pdf excel unlock",
+    "file.update": (
+        "pdf extraction method choose select pending tables only all content custom "
+        "uploaded pdf file extract_pdf_tables"
+    ),
     "project.sample-flow": "sample example demo starter data dataset try start from",
     "webhook.create": (
         "webhook http endpoint api push create data pushed in sent from another system receive "

@@ -941,3 +941,17 @@ def test_set_password_tells_the_agent_to_ask_for_the_files_password() -> None:
     assert "ask the user for the file's password" in schema["preconditions"]
     assert "never ask for an unlocked copy" in schema["preconditions"]
     assert "live-test" not in schema["preconditions"]
+
+
+@pytest.mark.parametrize(
+    "query",
+    [
+        "choose the pdf extraction method",
+        "select pdf extraction method for an uploaded pdf file",
+    ],
+)
+def test_a_pdf_waiting_for_its_extraction_method_finds_file_update(query: str) -> None:
+    """FB-14: an uploaded PDF waits at "Selecting pdf extraction method pending";
+    the command that sends the choice had no words a search for it could match."""
+    matches = [item["command_id"] for item in find_schemas(query)["matches"]]
+    assert matches and matches[0] == "file.update", f"{query!r} -> {matches}"
