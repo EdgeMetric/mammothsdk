@@ -1041,7 +1041,7 @@ commands:
     required: true
     metavar: NAME
     falls_back_to_field: null
-    help: Name of the new project.
+    help: Name of the new project. If it is already taken, the copy is named with the next free suffix ("NAME 2", "NAME 3", ...); no need to check the name first.
   options: []
   sdk_symbol: mammoth.api.projects.ProjectsAPI.copy
   sdk_conversion: Call mammoth.api.projects.ProjectsAPI.copy with validated request fields.
