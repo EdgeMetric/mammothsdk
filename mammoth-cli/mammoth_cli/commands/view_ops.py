@@ -30,6 +30,7 @@ from mammoth_cli.commands.view import (
     _DATAVIEW_GET_SYMBOL,
     _FIND_DATASET_SYMBOL,
     BRIEF_VIEW_FIELDS,
+    UNFINISHED_STATE,
     _dataview_metadata,
     _require_discovery_allowed,
     apply_column_renames,
@@ -39,6 +40,7 @@ from mammoth_cli.commands.view import (
     join_snapshot,
     wait_for_followon_job,
     wait_for_pipeline_to_settle,
+    wait_for_refreshed_view,
     wait_for_view_row_count,
     with_join_check,
 )
@@ -413,6 +415,7 @@ def _flag_unsettled_pipeline(service: Any, dataset_id: int, view_id: int, data: 
 
 
 CODE_PIPELINE_CHANGED = "pipeline_changed"
+_DRAFT_STATUS_SYMBOL = "mammoth.api.pipeline.PipelineAPI.get_draft_status"
 _TASK_LIST_SYMBOL = "mammoth.api.pipeline.PipelineAPI.list_tasks"
 
 
@@ -886,7 +889,62 @@ def view_draft_status(invocation: Invocation) -> HandlerResult:
 def view_draft_submit(invocation: Invocation) -> HandlerResult:
     """Submit a view's draft pipeline changes."""
     view_id = _view_id(invocation)
-    return _dispatch_view(invocation, view_id, "submit_draft")
+    project_id = invocation.project
+
+    def before(service: Any, dataset_id: int) -> dict[str, Any]:
+        return _draft_before_submit(service, dataset_id, view_id, project_id)
+
+    def after(service: Any, dataset_id: int, state: Any, data: Any) -> Any:
+        return _draft_submit_row_check(service, dataset_id, view_id, project_id, state, data)
+
+    return _dispatch_view(invocation, view_id, "submit_draft", before=before, after=after)
+
+
+def _draft_before_submit(
+    service: Any, dataset_id: int, view_id: int, project_id: int | None
+) -> dict[str, Any]:
+    """The view's row count and data timestamp, and whether its draft has changes to run."""
+    info = service.call(
+        _DATAVIEW_GET_SYMBOL, dataset_id=dataset_id, dataview_id=view_id, project_id=project_id
+    )
+    draft = service.call(_DRAFT_STATUS_SYMBOL, dataview_id=view_id)
+    return {
+        "row_count": info.get("row_count"),
+        "stamp": info.get("data_updated_at"),
+        "pending": bool(draft.get("has_pending_changes")),
+    }
+
+
+def _draft_submit_row_check(
+    service: Any,
+    dataset_id: int,
+    view_id: int,
+    project_id: int | None,
+    before: dict[str, Any],
+    data: Any,
+) -> Any:
+    """``data`` with the row count read once the submitted steps' data is in.
+
+    The submit returns with the pipeline ``idle`` while its steps still run, so a
+    count read at once is the old one (FB-22). A draft with nothing to run is
+    read at once; data that never refreshes is reported as unfinished.
+    """
+    if not isinstance(data, dict):
+        return data
+    if before["pending"]:
+        info = wait_for_refreshed_view(service, dataset_id, view_id, project_id, before["stamp"])
+    else:
+        info = service.call(
+            _DATAVIEW_GET_SYMBOL, dataset_id=dataset_id, dataview_id=view_id, project_id=project_id
+        )
+    rows_after = info.get("row_count") if info is not None else None
+    out = {**data, "row_check": {"rows_before": before["row_count"], "rows_after": rows_after}}
+    if info is None:
+        out["pipeline_error"] = {
+            "execution_state": UNFINISHED_STATE,
+            "wait_error": "the view's data was not refreshed after the submit; read it again",
+        }
+    return out
 
 
 def view_draft_discard(invocation: Invocation) -> HandlerResult:

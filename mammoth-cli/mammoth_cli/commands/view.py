@@ -23,6 +23,7 @@ from __future__ import annotations
 import dataclasses
 import inspect
 import shlex
+import time
 from datetime import UTC, datetime
 from decimal import Decimal, InvalidOperation
 from typing import Any
@@ -4118,6 +4119,29 @@ def wait_for_view_row_count(
         return None, pipeline_error
     rows_after = info.get("row_count") if isinstance(info, dict) else None
     return rows_after, pipeline_error
+
+
+#: Bounded wait for a submitted draft's data: its steps run after the submit returns.
+_REFRESH_ATTEMPTS = 40
+_REFRESH_RETRY_S = 0.5
+
+
+def wait_for_refreshed_view(
+    service: Any, dataset_id: int, view_id: int, project_id: int | None, stamp_before: Any
+) -> dict[str, Any] | None:
+    """The view's record once its ``data_updated_at`` has moved past ``stamp_before``.
+
+    ``None`` when it never did within the bound; the caller reports that as
+    unfinished, never as a row count it did not see refreshed.
+    """
+    for _ in range(_REFRESH_ATTEMPTS):
+        info = service.call(
+            _DATAVIEW_GET_SYMBOL, dataset_id=dataset_id, dataview_id=view_id, project_id=project_id
+        )
+        if isinstance(info, dict) and info.get("data_updated_at") != stamp_before:
+            return info
+        time.sleep(_REFRESH_RETRY_S)
+    return None
 
 
 def _row_count_now(service: Any, dataset_id: int, view_id: int, project_id: int | None) -> Any:
