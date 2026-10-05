@@ -18,6 +18,7 @@ See ``CONTRACT-write-state.md`` (D-077) for the manifest shape this reads.
 from __future__ import annotations
 
 import json
+import time
 from typing import Any
 
 from mammoth_cli.errors.envelope import CliError
@@ -45,6 +46,19 @@ _VIEW_LIST_COMMAND = "view.list"
 #: ``verify.state`` of a write that was accepted but has not finished.
 _UNFINISHED_VERIFY_STATE = "processing"
 
+_VIEW_TASK_LIST_COMMAND = "view.task.list"
+
+#: A write answered ``status: staged`` (auto-run off) put its step in a draft.
+_STAGED_STATUS = "staged"
+_STAGED_DETAIL = (
+    "Staged in the draft, not run: the live view is unchanged until 'view draft submit'."
+)
+
+#: The backend's answer to a data read of a step that has not produced data yet.
+_STEP_NOT_RUN_YET = "no data for pipeline step"
+_DATA_READ_ATTEMPTS = 6
+_DATA_READ_RETRY_S = 2.0
+
 
 def with_state(invocation: Invocation, data: Any) -> Any:
     """Return ``data`` with a ``state`` read-back block added, per the manifest.
@@ -60,7 +74,15 @@ def with_state(invocation: Invocation, data: Any) -> Any:
     if not isinstance(readback, dict):
         return data
     unfinished = _unfinished_state(data)
-    state = unfinished or _enforce_cap(_build_state(invocation, data, readback))
+    if (
+        unfinished is None
+        and data.get("status") == _STAGED_STATUS
+        and readback.get("kind") == "data"
+    ):
+        built = _staged_state(invocation, data, readback)
+    else:
+        built = unfinished or _build_state(invocation, data, readback)
+    state = _enforce_cap(built)
     return {**_unverified_if_unreadable(data, state), "state": state}
 
 
@@ -321,7 +343,7 @@ def _data_state(resolved_ids: dict[str, Any], base: Invocation) -> dict[str, Any
     if dataset_id is not None:
         view_ids["dataset_id"] = dataset_id
     info = _call_read(_VIEW_GET_COMMAND, view_ids, base)
-    page = _call_read(_VIEW_DATA_COMMAND, view_ids, base)
+    page = _read_data_once_run(view_ids, base)
     rows = page.get("data") if isinstance(page, dict) else None
     sample = [_trim_row(row) for row in (rows or [])[:_SAMPLE_ROW_CAP]]
     state: dict[str, Any] = {
@@ -336,6 +358,64 @@ def _data_state(resolved_ids: dict[str, Any], base: Invocation) -> dict[str, Any
     if changed:
         state["changed_columns"] = changed
     return state
+
+
+def _read_data_once_run(view_ids: dict[str, Any], base: Invocation) -> Any:
+    """The view's data, waiting (bounded) for a step that has not run yet.
+
+    Read right after a write, the new step may have no data yet; the read
+    fails with "no data for pipeline step N ... yet" though the step runs a
+    moment later (FB-18, FB-22). Any other failure is raised at once.
+    """
+    for attempt in range(_DATA_READ_ATTEMPTS):
+        try:
+            return _call_read(_VIEW_DATA_COMMAND, view_ids, base)
+        except CliError as exc:
+            if _STEP_NOT_RUN_YET not in exc.message or attempt == _DATA_READ_ATTEMPTS - 1:
+                raise
+            time.sleep(_DATA_READ_RETRY_S)
+    raise AssertionError("unreachable")
+
+
+def _staged_state(
+    invocation: Invocation, data: dict[str, Any], readback: dict[str, Any]
+) -> dict[str, Any]:
+    """A draft write's read-back: the view's steps, and that the staged ones have not run.
+
+    A staged step never ran, so its data cannot be read (FB-20: the agent got
+    ``unreadable`` and polled four read commands to learn what it had staged).
+    """
+    ids_spec: dict[str, Any] = readback.get("ids") or {}
+    resolved = {name: _resolve_source(str(src), data, invocation) for name, src in ids_spec.items()}
+    view_id = _as_int(resolved.get("view_id") or resolved.get("dataview_id"))
+    read_by = f"{_VIEW_TASK_LIST_COMMAND} {view_id}"
+    try:
+        if view_id is None:
+            raise ValueError("a staged write's read-back needs the view id")
+        info = _call_read(_VIEW_GET_COMMAND, {"view_id": view_id}, invocation)
+        tasks = _call_read(_VIEW_TASK_LIST_COMMAND, {"dataview_id": view_id}, invocation)
+    except Exception as exc:  # noqa: BLE001 -- a read failure must surface, never crash the write
+        reason = exc.message if isinstance(exc, CliError) else str(exc)
+        return {"kind": "unreadable", "read_by": read_by, "reason": reason or type(exc).__name__}
+    return {
+        "kind": "staged",
+        "read_by": read_by,
+        "detail": _STAGED_DETAIL,
+        "live_row_count": info.get("row_count") if isinstance(info, dict) else None,
+        "steps": [_step_summary(task) for task in _tasks_of(tasks)],
+    }
+
+
+def _tasks_of(read_data: Any) -> list[dict[str, Any]]:
+    tasks = read_data.get("tasks") if isinstance(read_data, dict) else read_data
+    return [task for task in tasks or [] if isinstance(task, dict)]
+
+
+def _step_summary(task: dict[str, Any]) -> dict[str, Any]:
+    params = task.get("params")
+    if not isinstance(params, dict):
+        params = {}
+    return {"id": task.get("id"), "task": params.get("TASK_KEY"), "status": task.get("status")}
 
 
 def changed_columns(document: Any) -> list[str]:
