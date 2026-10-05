@@ -297,3 +297,65 @@ def test_real_discard_duplicates_with_none_adds_no_task(
     data = json.loads(result.output)["data"]
     assert data["status"] == "no_change" and "No task was added" in data["note"]
     assert not [r for r in api.requests if r.method == "POST" and r.path.endswith("/tasks")]
+
+
+def _run_no_match(
+    monkeypatch: pytest.MonkeyPatch, real_service: ServiceFactory, doc: dict[str, Any]
+) -> tuple[Any, Any]:
+    """Dry-run a filter no row matches; a grouped read answers the column's values."""
+    service, api = real_service(project_id=180)
+    unused = iter([service])
+    monkeypatch.setattr(
+        factory,
+        "build_service",
+        lambda *a, **k: next(unused, None) or real_service(api=api, project_id=180)[0],
+    )
+    api.on("GET", r"/datasets/55/dataviews/3062$", body=_VIEW)
+
+    def query(request: Any) -> tuple[int, Any]:
+        if "GROUP_BY" in json.dumps(request.json_body):
+            return 200, {"data": [{"group_0": "Ada", "agg_0": 31}, {"group_0": "Bo", "agg_0": 19}]}
+        return 200, {"data": [{"agg_0": 0}]}
+
+    api.on("POST", r"/data/query$", handler=query)
+    result = make_runner().invoke(
+        [
+            "view",
+            "transform",
+            "filter",
+            "3062",
+            "--project",
+            "180",
+            "--input",
+            json.dumps({"dataset_id": 55, **doc}),
+            "--dry-run",
+            "--output",
+            "json",
+            "--no-input",
+        ]
+    )
+    return result, api
+
+
+_NO_SUCH_DONOR = {"condition": {"column": "Donor", "operator": "EQ", "value": "Cy"}}
+
+
+def test_a_filter_no_row_matches_names_the_values_the_column_holds(
+    monkeypatch: pytest.MonkeyPatch, real_service: ServiceFactory
+) -> None:
+    # FB-03: "keep only North" on East/West data; the dry run said only that
+    # the view would be left empty, so the agent never named East and West.
+    result, _ = _run_no_match(monkeypatch, real_service, _NO_SUCH_DONOR)
+    impact = json.loads(result.output)["data"]["predicted_impact"]
+    assert impact["rows_after"] == 0
+    assert impact["no_row_matches"] == {"column": "Donor", "values": {"Ada": 31, "Bo": 19}}
+
+
+def test_a_remove_filter_no_row_matches_names_the_values_in_its_no_op(
+    monkeypatch: pytest.MonkeyPatch, real_service: ServiceFactory
+) -> None:
+    doc = {**_NO_SUCH_DONOR, "filter_type": "REMOVE"}
+    result, _ = _run_no_match(monkeypatch, real_service, doc)
+    error = json.loads(result.output)["error"]
+    assert error["code"] == "no_op"
+    assert "Donor holds: Ada (31), Bo (19)" in error["message"]

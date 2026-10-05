@@ -27,6 +27,7 @@ from mammoth_cli.services.conditions import compile_condition
 #: Duplicate groups read back, largest first; more than this is reported as a floor.
 MAX_DUPLICATE_GROUPS = 1000
 _COUNT_KEY = "agg_0"
+_GROUP_KEY = "group_0"
 _COUNT = [{"function": "COUNT", "as_name": "rows"}]
 _REMOVE = "REMOVE"
 
@@ -186,14 +187,49 @@ def measure_filter(read: ImpactRead, kwargs: Mapping[str, Any]) -> Measured:
     matching = read.count(compile_condition(spec))
     removes = str(read.document.get("filter_type") or "SHOW").upper() == _REMOVE
     removed = matching if removes else total - matching
+    report = _rows_report(removed, total)
+    held = _values_when_nothing_matches(read, spec) if matching == 0 else None
+    if held is not None:
+        report["no_row_matches"] = held
     message = (
         f"No row of view {read.view_id} matches the condition (0 of {total}), so removing "
-        "matching rows changes nothing; nothing to change."
+        f"matching rows changes nothing; nothing to change.{_holds_note(held)}"
         if removes
         else f"Every row of view {read.view_id} matches the condition ({total} of {total}), "
         "so the filter keeps all of them; nothing to change."
     )
-    return Measured(removed, _rows_report(removed, total), message)
+    return Measured(removed, report, message)
+
+
+#: Distinct values named when a one-column condition matches no row.
+_HELD_VALUES_CAP = 20
+
+
+def _values_when_nothing_matches(read: ImpactRead, spec: Any) -> dict[str, Any] | None:
+    """The values a one-column condition's column holds, when no row matched it.
+
+    "Keep only North" on East/West data matches nothing; saying so without the
+    values there leaves the agent guessing what the user meant (FB-03).
+    """
+    column = spec.get("column") if isinstance(spec, dict) else None
+    internal = read.display_to_internal().get(str(column)) if column else None
+    if internal is None:
+        return None
+    rows = read.aggregate(
+        aggregations=_COUNT,
+        group_by=[internal],
+        sort=[[_COUNT_KEY, "DESC"]],
+        limit=_HELD_VALUES_CAP,
+    )
+    values = {str(row.get(_GROUP_KEY)): int(row.get(_COUNT_KEY) or 0) for row in rows}
+    return {"column": str(column), "values": values} if values else None
+
+
+def _holds_note(held: dict[str, Any] | None) -> str:
+    if held is None:
+        return ""
+    listed = ", ".join(f"{value} ({count})" for value, count in held["values"].items())
+    return f" {held['column']} holds: {listed}."
 
 
 # --- fill-missing ----------------------------------------------------------
