@@ -450,7 +450,7 @@ Total commands: 646.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.batches.BatchesAPI.create`
-- Agent example: `mammoth batch create 123 456 --input '{"mapping": {"column_1": "column_1"}}'`
+- Agent example: `mammoth batch create 123 123 --input '{"mapping": {"column_1": "column_1"}}'`
 
 ### `mammoth batch create-spec`
 

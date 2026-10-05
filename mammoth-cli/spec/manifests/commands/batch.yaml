@@ -82,7 +82,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth batch create DATASET_ID SOURCE_ID --help
-  agent_example: 'mammoth batch create 123 456 --input ''{"mapping": {"column_1": "column_1"}}'''
+  agent_example: 'mammoth batch create 123 123 --input ''{"mapping": {"column_1": "column_1"}}'''
   unit_tests:
   - UT-BATCH-CREATE
   contract_tests:
