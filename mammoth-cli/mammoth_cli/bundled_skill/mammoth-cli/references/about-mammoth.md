@@ -106,7 +106,7 @@ Checkpoint Alert are the `view data-check` and `view checkpoint` families.
 | Add columns from another view by matching keys | Join | `join` (`INNER`, `LEFT`, `RIGHT`, `OUTER`) |
 | Bring one value per key from another view | Lookup | `lookup` |
 | Totals, counts, averages per group | Group & Pivot | `pivot` (replaces the view's columns) |
-| A rows-by-columns summary table | Group & Pivot (crosstab) | `crosstab` (writes a new dataset) |
+| A rows-by-columns summary table | Group & Pivot (crosstab) | `crosstab` (writes a new dataset, and keeps rewriting it on every pipeline run of the view) |
 | Turn wide columns into label/value rows | Unpivot | `unnest` |
 | Read fields out of a JSON column | Extract JSON | `json-extract` |
 | Classify, tag or summarise rows with AI | Generative AI | `ai` |

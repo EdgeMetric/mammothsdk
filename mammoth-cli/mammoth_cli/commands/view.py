@@ -2963,11 +2963,51 @@ def view_pipeline_rerun(invocation: Invocation) -> HandlerResult:
                 service, invocation, dataview_id, document, 1
             )
         before = _rows_before(service, dataset_id, dataview_id, invocation.project)
+        fired = _end_of_pipeline_exports(service, dataview_id, dataset_id)
         data = service.call(_symbol(invocation), **kwargs)
         data = _settle_async_view_write(
             service, dataset_id, dataview_id, invocation.project, data, before
         )
+    if fired and isinstance(data, dict):
+        data = {**data, "exports_fired": fired}
     return data, _meta(invocation, auth.workspace_id, None)
+
+
+#: Non-secret ``target_properties`` keys that say where an export writes.
+_EXPORT_TARGET_HINT_KEYS = ("table", "host", "database", "TARGET_DS_ID", "DS_NAME", "emails")
+
+
+def _end_of_pipeline_exports(
+    service: Any, dataview_id: int, dataset_id: int | None
+) -> list[dict[str, Any]]:
+    """The live end-of-pipeline exports a rerun of this view fires again.
+
+    A rerun re-sends every one of them to its destination (database, email, REST
+    endpoint, another dataset), so the caller is told which, not just that the
+    pipeline ran. Soft-deleted exports do not fire.
+    """
+    listing = service.call(
+        _EXPORTS_LIST_SYMBOL,
+        dataview_id=dataview_id,
+        dataset_id=dataset_id,
+        end_of_pipeline=True,
+    )
+    fired: list[dict[str, Any]] = []
+    for export in getattr(listing, "exports", None) or []:
+        if export.status is ExportStatus.DELETED:
+            continue
+        handler = export.handler_type
+        properties = export.target_properties or {}
+        fired.append(
+            {
+                "export_id": export.id,
+                "handler_type": getattr(handler, "value", handler),
+                "target": {
+                    key: properties[key] for key in _EXPORT_TARGET_HINT_KEYS if key in properties
+                },
+            }
+        )
+    return fired
 
 
 #: Seconds ``view pipeline wait`` waits when the caller names no ``timeout`` (the SDK's own
@@ -3261,20 +3301,24 @@ def view_export_publish_db(invocation: Invocation) -> HandlerResult:
     document = invocation.load_input()
     odbc_type = _require_field(document, "odbc_type")
     target_properties = _require_field(document, "target_properties")
+    assert document is not None
+    table = target_properties.get("table") if isinstance(target_properties, dict) else None
     enforce_confirmation(
         invocation, policy=POLICY_YES_ALWAYS, action=f"publish-db on view {dataview_id}"
     )
+    table_note = _reject_unacknowledged_table_replace(invocation.command_id, document, table)
     kwargs: dict[str, Any] = {
         "dataview_id": dataview_id,
         "odbc_type": odbc_type,
         "target_properties": target_properties,
         "project_id": project_id,
     }
-    assert document is not None
     _forward_optional(document, kwargs, ("dataset_id",))
     with open_service(invocation) as (service, auth):
         _require_exact_parent(service, invocation, dataview_id, kwargs)
         data = service.call(_symbol(invocation), **kwargs)
+    if table_note is not None:
+        data = _with_recurrence_note(data, table_note)
     return data, _meta(invocation, auth.workspace_id, project_id)
 
 
@@ -3453,6 +3497,81 @@ def _reject_export_into_draft(service: Any, dataview_id: int, dataset_id: int) -
     )
 
 
+# Database exports rebuild their destination table: the distributary drops it
+# and recreates it from the view on the first write and on every later pipeline
+# run (BigQuery only for export_type REPLACE, its WRITE_TRUNCATE mode). Postgres
+# and MySQL also cut a table name to 60 characters, silently writing elsewhere.
+_REPLACE_TABLE_FIELD = "replace_table"
+_DB_REPLACE_ROUTES = frozenset(
+    {
+        "view.export.postgres",
+        "view.export.mysql",
+        "view.export.mssql",
+        "view.export.redshift",
+        "view.export.bigquery",
+    }
+)
+_DB_TABLE_NAME_LIMIT_ROUTES = frozenset({"view.export.postgres", "view.export.mysql"})
+_DB_TABLE_NAME_LIMIT = 60
+
+
+def _replaces_table(command_id: str, document: dict[str, Any]) -> bool:
+    """Whether this database export drops and recreates its destination table."""
+    if command_id == "view.export.bigquery":
+        return str(document.get("export_type") or "REPLACE").upper() == "REPLACE"
+    return command_id in _DB_REPLACE_ROUTES or command_id == "view.export.publish-db"
+
+
+def _reject_unacknowledged_table_replace(
+    command_id: str, document: dict[str, Any], table: Any
+) -> str | None:
+    """Refuse a database export that is not explicitly allowed to replace its table.
+
+    Returns the recurrence note for the result, or ``None`` when the export
+    does not replace a table.
+    """
+    if not _replaces_table(command_id, document):
+        return None
+    name = str(table)
+    if command_id in _DB_TABLE_NAME_LIMIT_ROUTES and len(name) > _DB_TABLE_NAME_LIMIT:
+        raise CliError(
+            code="table_name_too_long",
+            message=(
+                f"Table name {name!r} is {len(name)} characters; the database export cuts "
+                f"table names to {_DB_TABLE_NAME_LIMIT} and would write a different table "
+                f"({name[:_DB_TABLE_NAME_LIMIT]!r})."
+            ),
+            exit_status=EXIT_USAGE,
+            hint=f"Use a table name of at most {_DB_TABLE_NAME_LIMIT} characters.",
+            details={"table": name, "length": len(name), "limit": _DB_TABLE_NAME_LIMIT},
+        )
+    if document.get(_REPLACE_TABLE_FIELD) is not True:
+        raise CliError(
+            code="replace_table_not_acknowledged",
+            message=(
+                f"This export drops and recreates table {name!r} in the destination database "
+                "now and on every pipeline run of the view; any existing table of that name "
+                "and its rows are lost."
+            ),
+            exit_status=EXIT_USAGE,
+            hint=(
+                f'Pick a table that may be overwritten, then add "{_REPLACE_TABLE_FIELD}": true '
+                "to the input to confirm."
+            ),
+            details={"table": name, "field": _REPLACE_TABLE_FIELD},
+        )
+    return f"drops and recreates {name} now and on every pipeline run"
+
+
+def _with_recurrence_note(data: Any, note: str) -> dict[str, Any]:
+    """The export result as a mapping carrying ``refreshes_on_pipeline_run`` and ``note``."""
+    result = data.model_dump(mode="json") if hasattr(data, "model_dump") else data
+    record = dict(result) if isinstance(result, dict) else {"result": result}
+    record["refreshes_on_pipeline_run"] = True
+    record["note"] = note
+    return record
+
+
 def view_export_specialized(invocation: Invocation) -> HandlerResult:
     """Run one of the SDK's typed ``View.export`` destination helpers."""
     route = _SPECIAL_EXPORTS.get(invocation.command_id)
@@ -3493,6 +3612,8 @@ def view_export_specialized(invocation: Invocation) -> HandlerResult:
     )
     common_fields = _SPECIAL_EXPORT_COMMON_FIELDS if accepts_var_keyword else frozenset()
     allowed = explicit_fields | common_fields | {_DATASET_ID_FIELD}
+    if invocation.command_id in _DB_REPLACE_ROUTES:
+        allowed = allowed | {_REPLACE_TABLE_FIELD}
     unknown = sorted(set(document) - allowed)
     if unknown:
         raise CliError(
@@ -3520,8 +3641,12 @@ def view_export_specialized(invocation: Invocation) -> HandlerResult:
         policy=str(export_record.get("confirmation") or POLICY_YES_ALWAYS),
         action=f"export view {dataview_id} via {invocation.command_id.rsplit('.', 1)[-1]}",
     )
+    table_note = _reject_unacknowledged_table_replace(
+        invocation.command_id, document, document.get("table")
+    )
     kwargs = dict(document)
     kwargs.pop(_DATASET_ID_FIELD, None)
+    kwargs.pop(_REPLACE_TABLE_FIELD, None)
     is_dataset_route = invocation.command_id == "view.export.dataset"
     target_ds_id = kwargs.get("target_ds_id") if is_dataset_route else None
     save_as_mode = kwargs.get("save_as_mode") if is_dataset_route else None
@@ -3530,62 +3655,35 @@ def view_export_specialized(invocation: Invocation) -> HandlerResult:
     with open_service(invocation) as (service, auth):
         if dataset_id is None:
             dataset_id = _resolve_dataset_id(service, invocation, dataview_id, document)
-        if target_ds_id is not None and int(target_ds_id) == dataset_id:
-            raise CliError(
-                code=CODE_INVALID_ARGUMENTS,
-                message="target_ds_id equals the view's own dataset.",
-                exit_status=EXIT_USAGE,
-                hint=(
-                    "A view cannot write into its own dataset. Export to a new "
-                    "dataset name (omit target_ds_id), or target a different dataset."
-                ),
-                details={"dataset_id": dataset_id, "target_ds_id": int(target_ds_id)},
-            )
         if is_dataset_route:
-            _reject_export_into_draft(service, dataview_id, dataset_id)
+            reject_dataset_export_conflicts(
+                service,
+                dataview_id,
+                dataset_id,
+                int(target_ds_id) if target_ds_id is not None else None,
+            )
         target_view_before = None
         target_only_columns: list[str] = []
         mapped_type_warnings: list[str] = []
+        hidden_left_out = (
+            _hidden_column_names(service, dataset_id, dataview_id, project_id)
+            if is_dataset_route and target_ds_id is None
+            else []
+        )
         if target_ds_id is not None:
-            # Each `view export dataset` call creates its own PERSISTENT
-            # export trigger on this view, which re-runs on every pipeline
-            # run; REPLACE_IN_DS/APPEND_TO_DS only ever touch that trigger's
-            # OWN rows. A second export from this view into the same target
-            # is therefore a second writer, not a refresh of the first --
-            # the fix is to rerun the pipeline, not to export again.
-            existing_export = _existing_internal_dataset_export(
-                service, dataview_id, dataset_id, int(target_ds_id)
-            )
-            if existing_export is not None:
-                raise CliError(
-                    code="export_already_exists",
-                    message=(
-                        f"View {dataview_id} already exports into dataset "
-                        f"{int(target_ds_id)} (export {existing_export.id}). This export "
-                        "re-runs on every pipeline run, and REPLACE_IN_DS replaces only "
-                        "its own rows -- a second export into the same target duplicates "
-                        "rows instead of refreshing them."
-                    ),
-                    exit_status=EXIT_USAGE,
-                    hint="Refresh the target by rerunning the pipeline, not by exporting again.",
-                    recovery_commands=[f"mammoth view pipeline rerun {dataview_id}"],
-                    details={
-                        "dataview_id": dataview_id,
-                        "target_ds_id": int(target_ds_id),
-                        "export_id": existing_export.id,
-                    },
-                )
             # rows_before is the target's own count ahead of this write, read
             # before the call so a later re-read can never be confused with it.
             target_view_before = _dataset_view_info(service, int(target_ds_id), result_project_id)
-            if save_as_mode == "APPEND_TO_DS":
-                target_only_columns, mapped_type_warnings = _reject_append_schema_mismatch(
-                    service,
-                    dataview_id,
-                    dataset_id,
-                    int(target_ds_id),
-                    kwargs.get("column_mapping"),
-                )
+            # REPLACE_IN_DS into an existing target runs the same backend
+            # append code as APPEND_TO_DS (same mapping and schema handling),
+            # so both modes get the same guards.
+            target_only_columns, mapped_type_warnings = _reject_append_schema_mismatch(
+                service,
+                dataview_id,
+                dataset_id,
+                int(target_ds_id),
+                kwargs.get("column_mapping"),
+            )
         try:
             data = service.call_view(dataview_id, method, dataset_id=dataset_id, **kwargs)
         except CliError as error:
@@ -3642,6 +3740,11 @@ def view_export_specialized(invocation: Invocation) -> HandlerResult:
                 # a non-increase here as unverified, not just an omitted count.
                 row_check["expected_row_increase"] = True
             warnings = list(mapped_type_warnings)
+            if hidden_left_out:
+                warnings.append(
+                    "hidden column(s) of the source view are not in the new dataset: "
+                    + ", ".join(hidden_left_out)
+                )
             if target_only_columns:
                 # Allowed -- an append never has to cover every target column
                 # -- but worth surfacing rather than leaving silent.
@@ -3655,6 +3758,8 @@ def view_export_specialized(invocation: Invocation) -> HandlerResult:
             data["row_check"] = row_check
             if pipeline_error is not None:
                 data["pipeline_error"] = pipeline_error
+    if table_note is not None:
+        data = _with_recurrence_note(data, table_note)
     return data, _meta(invocation, auth.workspace_id, project_id)
 
 
@@ -3719,6 +3824,82 @@ def _existing_internal_dataset_export(
         and int(target) == target_ds_id
     ]
     return max(matches, key=lambda export: export.id or 0) if matches else None
+
+
+def _hidden_column_names(
+    service: Any, dataset_id: int, dataview_id: int, project_id: int | None
+) -> list[str]:
+    """Display names of the view's hidden columns, which a new-dataset export leaves out."""
+    info = apply_column_renames(
+        service.call(
+            _DATAVIEW_GET_SYMBOL,
+            dataset_id=dataset_id,
+            dataview_id=dataview_id,
+            project_id=project_id,
+        )
+    )
+    if not isinstance(info, dict):
+        return []
+    display = info.get("display_properties")
+    hidden = display.get("HIDDEN_COLUMNS") if isinstance(display, dict) else None
+    if not isinstance(hidden, list) or not hidden:
+        return []
+    names = {
+        column.get(_INTERNAL_NAME_KEY): column.get(_DISPLAY_NAME_KEY) or column.get("name")
+        for column in info.get(_METADATA_KEY) or []
+        if isinstance(column, dict)
+    }
+    return [str(names.get(column) or column) for column in hidden]
+
+
+def reject_dataset_export_conflicts(
+    service: Any, dataview_id: int, dataset_id: int, target_ds_id: int | None
+) -> None:
+    """Refuse a dataset export (or crosstab) that cannot write, or would double-write.
+
+    Not into the view's own dataset, not from a view holding its changes in a
+    draft, and not into a target this view already exports into. Each dataset
+    export creates its own PERSISTENT trigger on the view, which re-runs on
+    every pipeline run; REPLACE_IN_DS/APPEND_TO_DS only touch that trigger's OWN
+    rows, so a second export into the same target is a second writer, not a
+    refresh -- the fix is to rerun the pipeline, not to export again.
+    """
+    if target_ds_id is not None and target_ds_id == dataset_id:
+        raise CliError(
+            code=CODE_INVALID_ARGUMENTS,
+            message="target_ds_id equals the view's own dataset.",
+            exit_status=EXIT_USAGE,
+            hint=(
+                "A view cannot write into its own dataset. Export to a new "
+                "dataset name (omit target_ds_id), or target a different dataset."
+            ),
+            details={"dataset_id": dataset_id, "target_ds_id": target_ds_id},
+        )
+    _reject_export_into_draft(service, dataview_id, dataset_id)
+    if target_ds_id is None:
+        return
+    existing_export = _existing_internal_dataset_export(
+        service, dataview_id, dataset_id, target_ds_id
+    )
+    if existing_export is not None:
+        raise CliError(
+            code="export_already_exists",
+            message=(
+                f"View {dataview_id} already exports into dataset "
+                f"{target_ds_id} (export {existing_export.id}). This export "
+                "re-runs on every pipeline run, and REPLACE_IN_DS replaces only "
+                "its own rows -- a second export into the same target duplicates "
+                "rows instead of refreshing them."
+            ),
+            exit_status=EXIT_USAGE,
+            hint="Refresh the target by rerunning the pipeline, not by exporting again.",
+            recovery_commands=[f"mammoth view pipeline rerun {dataview_id}"],
+            details={
+                "dataview_id": dataview_id,
+                "target_ds_id": target_ds_id,
+                "export_id": existing_export.id,
+            },
+        )
 
 
 _DATASET_GET_SYMBOL = "mammoth.api.datasets.DatasetsAPI.get"
@@ -3874,7 +4055,8 @@ def _reject_append_schema_mismatch(
     target_ds_id: int,
     column_mapping: Any,
 ) -> tuple[list[str], list[str]]:
-    """Refuse an ``APPEND_TO_DS`` export whose source has a column the target
+    """Refuse an ``APPEND_TO_DS``/``REPLACE_IN_DS`` export into an existing target
+    whose source has a column the target
     dataset's schema does not, and ``column_mapping`` does not cover.
 
     A non-empty ``column_mapping`` is stricter: the backend then copies only

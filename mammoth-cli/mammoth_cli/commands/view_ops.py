@@ -36,6 +36,7 @@ from mammoth_cli.commands.view import (
     join_after_snapshot,
     join_dry_run_preview,
     join_snapshot,
+    reject_dataset_export_conflicts,
     wait_for_followon_job,
     wait_for_pipeline_to_settle,
     wait_for_view_row_count,
@@ -228,6 +229,32 @@ def _resolve_exact_dataset_id(
             exit_status=EXIT_USAGE,
         )
     return value
+
+
+def _require_one_destination(document: dict[str, Any], command_id: str) -> None:
+    """Refuse a transform that names both ``new_column`` and ``existing_column``, or neither.
+
+    The SDK silently keeps only ``new_column`` when both are given, and a step
+    with neither is saved and then fails in the worker ("No destination for
+    operation") after the pipeline has already been changed.
+    """
+    given = [name for name in ("new_column", "existing_column") if document.get(name) is not None]
+    if len(given) == 1:
+        return
+    command = command_id.replace(".", " ")
+    raise CliError(
+        code=CODE_INVALID_ARGUMENTS,
+        message=(
+            f"'{command}' needs exactly one of new_column or existing_column, "
+            + ("not both: existing_column would be ignored." if given else "but got neither.")
+        ),
+        exit_status=EXIT_USAGE,
+        hint=(
+            "Set new_column to write a new column, or existing_column to overwrite "
+            "one that is already in the view."
+        ),
+        details={"given": given},
+    )
 
 
 def _require_field(document: dict[str, Any] | None, field: str) -> Any:
@@ -979,6 +1006,7 @@ def view_transform_combine_columns(invocation: Invocation) -> HandlerResult:
     document = invocation.load_input()
     _require_field(document, "sources")
     assert document is not None
+    _require_one_destination(document, invocation.command_id)
     kwargs = _bind_transform_inputs(invocation, document)
     return _dispatch_view(invocation, view_id, "combine_columns", **kwargs)
 
@@ -1063,7 +1091,27 @@ def view_transform_crosstab(invocation: Invocation) -> HandlerResult:
     _require_field(document, "dataset_name")
     assert document is not None
     kwargs = _bind_transform_inputs(invocation, document)
-    return _dispatch_view(invocation, view_id, "crosstab", **kwargs)
+
+    def guard_target(service: Any, dataset_id: int, call_kwargs: dict[str, Any]) -> None:
+        target = call_kwargs.get("target_ds_id")
+        reject_dataset_export_conflicts(
+            service, view_id, dataset_id, int(target) if target is not None else None
+        )
+
+    def name_persistence(_service: Any, _dataset_id: int, _state: Any, data: Any) -> Any:
+        return {
+            "dataset_id": data,
+            "source_view_id": view_id,
+            "refreshes_on_pipeline_run": True,
+            "note": (
+                f"This crosstab is a standing export on view {view_id}: it rewrites dataset "
+                f"{data} on every pipeline run of that view, not just now."
+            ),
+        }
+
+    return _dispatch_view(
+        invocation, view_id, "crosstab", prepare=guard_target, after=name_persistence, **kwargs
+    )
 
 
 def view_transform_date_diff(invocation: Invocation) -> HandlerResult:
@@ -1325,6 +1373,7 @@ def view_transform_lookup(invocation: Invocation) -> HandlerResult:
     _require_field(document, "key")
     _require_field(document, "value")
     assert document is not None
+    _require_one_destination(document, invocation.command_id)
     kwargs = _bind_transform_inputs(invocation, document)
     return _dispatch_view(invocation, view_id, "lookup", **kwargs)
 
@@ -1335,6 +1384,7 @@ def view_transform_math(invocation: Invocation) -> HandlerResult:
     document = invocation.load_input()
     _require_field(document, "expression")
     assert document is not None
+    _require_one_destination(document, invocation.command_id)
     kwargs = _bind_transform_inputs(invocation, document)
     return _dispatch_view(invocation, view_id, "math", **kwargs)
 
@@ -1369,6 +1419,7 @@ def view_transform_set_values(invocation: Invocation) -> HandlerResult:
     document = invocation.load_input()
     _require_field(document, "values")
     assert document is not None
+    _require_one_destination(document, invocation.command_id)
     kwargs = _bind_transform_inputs(invocation, document)
     return _dispatch_view(invocation, view_id, "set_values", **kwargs)
 
@@ -1432,5 +1483,6 @@ def view_transform_window(invocation: Invocation) -> HandlerResult:
     document = invocation.load_input()
     _require_field(document, "function")
     assert document is not None
+    _require_one_destination(document, invocation.command_id)
     kwargs = _bind_transform_inputs(invocation, document)
     return _dispatch_view(invocation, view_id, "window", **kwargs)

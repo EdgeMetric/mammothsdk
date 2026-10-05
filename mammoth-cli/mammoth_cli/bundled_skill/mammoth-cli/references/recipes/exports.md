@@ -84,7 +84,7 @@ the run log. The connector command is `external_effect` with
 mammoth schema get view.export.postgres   # read secret_fields, required fields
 # operator writes /private/path/request.json (mode 0600):
 # {"host":"db.example","port":5432,"database":"analytics","table":"exports",
-#  "username":"agent","password":"…","dataset_id":DATASET_ID}
+#  "username":"agent","password":"…","replace_table":true,"dataset_id":DATASET_ID}
 mammoth view export postgres VIEW_ID DATASET_ID --project PROJECT_ID \
   --input /private/path/request.json --yes
 mammoth view export list VIEW_ID DATASET_ID --project PROJECT_ID
@@ -92,6 +92,16 @@ mammoth view export list VIEW_ID DATASET_ID --project PROJECT_ID
 
 If the operator has not supplied such a file, stop and ask for it; do not
 compose the body yourself from values seen in chat.
+
+A database export (`postgres`, `mysql`, `mssql`, `redshift`, `bigquery` with
+`export_type` REPLACE, and `publish-db`) drops and recreates its destination
+table now and on every later run of the view's pipeline, so any existing table
+of that name is lost. It is refused (`replace_table_not_acknowledged`) unless
+the input says `"replace_table": true`; only set that for a table the user said
+may be overwritten. `postgres` and `mysql` also cut a table name to 60
+characters and write a different table, so a longer name is refused
+(`table_name_too_long`). The result carries `refreshes_on_pipeline_run` and a
+`note` saying so.
 
 ## Generic export routes
 
