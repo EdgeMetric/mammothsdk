@@ -2967,7 +2967,9 @@ def view_pipeline_rerun(invocation: Invocation) -> HandlerResult:
                 service, invocation, dataview_id, document, 1
             )
         before = _rows_before(service, dataset_id, dataview_id, invocation.project)
-        fired = _end_of_pipeline_exports(service, dataview_id, dataset_id)
+        fired = _end_of_pipeline_exports(
+            service, dataview_id, dataset_id, with_blank_columns=invocation.dry_run
+        )
         try:
             data = service.call(_symbol(invocation), **kwargs)
         except DryRunStop as stop:
@@ -2998,13 +3000,15 @@ _WRITE_INTO_EXISTING_MODES = ("APPEND_TO_DS", "REPLACE_IN_DS")
 
 
 def _end_of_pipeline_exports(
-    service: Any, dataview_id: int, dataset_id: int | None
+    service: Any, dataview_id: int, dataset_id: int | None, *, with_blank_columns: bool = False
 ) -> list[dict[str, Any]]:
     """The live end-of-pipeline exports a rerun of this view fires again.
 
     A rerun re-sends every one of them to its destination (database, email, REST
     endpoint, another dataset), so the caller is told which, not just that the
-    pipeline ran. Soft-deleted exports do not fire.
+    pipeline ran. Soft-deleted exports do not fire. ``with_blank_columns`` (dry run
+    only) also reads the schemas to name the destination columns each append would
+    leave blank; a real rerun makes no such reads.
     """
     listing = service.call(
         _EXPORTS_LIST_SYMBOL,
@@ -3026,7 +3030,7 @@ def _end_of_pipeline_exports(
                 key: properties[key] for key in _EXPORT_TARGET_HINT_KEYS if key in properties
             },
         }
-        if _writes_into_existing_dataset(handler, properties):
+        if with_blank_columns and _writes_into_existing_dataset(handler, properties):
             if source_columns is None:
                 source_columns = _source_column_names(service, dataview_id, dataset_id)
             entry[BLANK_COLUMNS_FIELD] = _blank_destination_columns(
