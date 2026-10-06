@@ -8,7 +8,7 @@ tool sends and decides what the API answers.
 import asyncio
 import contextvars
 import json
-from collections.abc import Callable, Generator
+from collections.abc import Generator
 from contextlib import contextmanager
 from typing import Any
 from unittest.mock import patch
@@ -105,17 +105,6 @@ def call_tool(name: str, **arguments: object) -> Any:
     result = run(mcp_server.call_tool(name, dict(arguments)))
     assert result.structured_content is not None
     return dict(result.structured_content)
-
-
-def lends(client: Any) -> Callable[..., Any]:
-    """Stand in for `build_client`, which hands its client out of an `async with`."""
-    from contextlib import asynccontextmanager
-
-    @asynccontextmanager
-    async def lend(*_: object, **__: object) -> Any:
-        yield client
-
-    return lend
 
 
 class FakeRedis:

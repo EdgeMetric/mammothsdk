@@ -1,11 +1,10 @@
 """The file tools, on answers shaped like the API's.
 
-Each test stubs the SDK client or the one request helper a tool uses, and
-checks what the tool sends and what it makes of the answer.
+The SDK client is real; only its HTTP transport is replaced. Each test decides
+what the API answers, and checks what the tool sends and what it makes of it.
 """
 
 from typing import Any
-from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from mcp.server.mcpserver.exceptions import ToolError
@@ -28,11 +27,24 @@ from mammoth_mcp_server.tools.files import (
     unlock_file,
 )
 
-from .helpers import lends, run
+from .helpers import WORKSPACE, FakeApi, a_fake_api, as_caller, run
 
 REFUSED = "that would invent a column the file does not have"
-FILES = "mammoth_mcp_server.tools.files"
 INSTRUCTION = "the header is on row 4"
+PROJECT, DATASET, FILE = 2, 3, 3
+DATASET_PATH = f"/workspaces/{WORKSPACE}/projects/{PROJECT}/datasets/{DATASET}"
+PREVIEW = f"{DATASET_PATH}/interpretation/preview"
+CONFIRM = f"{DATASET_PATH}/interpretation"
+SET_ASIDE = f"{DATASET_PATH}/unstructured_rows"
+SETTINGS_PATH = f"{DATASET_PATH}/file_settings"
+FILE_PATH = f"/workspaces/{WORKSPACE}/projects/{PROJECT}/files/{FILE}"
+
+
+def a_finished_job(api: FakeApi, job_id: int) -> None:
+    """Answer the job route for `job_id` with a job that is done."""
+    api.answer(
+        "GET", f"/jobs/{job_id}", {"job": {"id": job_id, "status": "success", "response": {}}}
+    )
 
 
 class TestWhatAnInterpretationPreviewSays:
@@ -95,53 +107,46 @@ class TestApplyingWhatTheUserSaw:
     """Applying reads the whole file the way the preview read its first rows."""
 
     @staticmethod
-    def interpret(**arguments: Any) -> tuple[dict, AsyncMock]:
-        """Run the tool over a preview that worked, and hand back the confirm.
-
-        Both halves are the SDK's own methods now. What the confirm sends is
-        the SDK's business; what this holds to is that the tool asks it to
-        reuse the plan the preview saved rather than working one out again.
-        """
-        datasets = MagicMock()
-        datasets.preview_interpretation = AsyncMock(
-            return_value={
-                InterpretationFields.ROWS: [["name"], ["foo"]],
-                InterpretationFields.TOTAL_ROWS: 2,
-                InterpretationFields.STRUCTURE_MAP: {"header_row": 3},
-            }
-        )
-        datasets.confirm_interpretation = AsyncMock(return_value=None)
-        client = MagicMock(datasets=datasets)
-        with patch(f"{FILES}.build_client", lends(client)):
+    def interpret(**arguments: Any) -> tuple[dict, FakeApi]:
+        """Run the tool over a preview that worked, and hand back the API it called."""
+        with a_fake_api() as api, as_caller():
+            api.answer(
+                "POST",
+                PREVIEW,
+                {
+                    InterpretationFields.ROWS: [["name"], ["foo"]],
+                    InterpretationFields.TOTAL_ROWS: 2,
+                    InterpretationFields.STRUCTURE_MAP: {"header_row": 3},
+                },
+            )
+            api.answer("PATCH", CONFIRM, {})
             read = run(
                 interpret_file(
-                    workspace_id=1,
-                    project_id=2,
-                    dataset_id=3,
+                    workspace_id=WORKSPACE,
+                    project_id=PROJECT,
+                    dataset_id=DATASET,
                     instruction=INSTRUCTION,
                     **arguments,
                 )
             )
-        return read, datasets.confirm_interpretation
+        return read, api
 
     def test_a_preview_leaves_the_dataset_as_it_was(self) -> None:
         # The user has not seen the rows yet, so nothing may be read this way.
-        read, confirmed = self.interpret()
+        read, api = self.interpret()
 
         assert read[InterpretationFields.APPLIED] is False
-        confirmed.assert_not_called()
+        assert api.sent("PATCH", CONFIRM) == []
 
     def test_applying_reads_the_file_the_way_it_was_just_previewed(self) -> None:
         # Not the same instruction worked out again: it is worked out by a
         # model, which would not answer identically twice, and the user
         # approved the rows of one particular answer.
-        read, confirmed = self.interpret(apply=True)
+        read, api = self.interpret(apply=True)
 
         assert read[InterpretationFields.APPLIED] is True
-        confirmed.assert_awaited_once()
-        [dataset_id, instruction] = confirmed.call_args.args
-        assert dataset_id == 3
-        assert instruction == INSTRUCTION
+        [confirmed] = api.sent("PATCH", CONFIRM)
+        assert api.body(confirmed)["user_instruction"] == INSTRUCTION
 
 
 class TestTheRowsThatWouldNotGoIn:
@@ -166,23 +171,19 @@ class TestTheRowsThatWouldNotGoIn:
         }
 
     @staticmethod
-    def review(*answers: dict, **arguments: Any) -> tuple[dict, MagicMock]:
-        """Run the tool over the SDK's answers to each read, and hand back its datasets.
-
-        The tool calls the SDK, so what is stubbed is the SDK's own methods and
-        what is asserted is which one the tool chose — reading and discarding
-        are different methods rather than different HTTP verbs.
-        """
-        datasets = MagicMock()
-        datasets.get_unstructured_rows = AsyncMock(side_effect=answers)
-        datasets.resolve_unstructured_rows = AsyncMock(return_value={"id": 9})
-        client = MagicMock(datasets=datasets)
-        client.jobs.wait_for_job = AsyncMock(return_value={})
-        with patch(f"{FILES}.build_client", lends(client)):
+    def review(*answers: dict, **arguments: Any) -> tuple[dict, list[dict]]:
+        """Run the tool over the API's answers to each read, and hand back each discard sent."""
+        with a_fake_api() as api, as_caller():
+            for answer in answers:
+                api.answer("GET", SET_ASIDE, answer)
+            api.answer("PATCH", SET_ASIDE, {"id": 9})
+            a_finished_job(api, 9)
             read = run(
-                review_unreadable_rows(workspace_id=1, project_id=2, dataset_id=3, **arguments)
+                review_unreadable_rows(
+                    workspace_id=WORKSPACE, project_id=PROJECT, dataset_id=DATASET, **arguments
+                )
             )
-        return read, datasets
+        return read, [api.body(sent)["patch"] for sent in api.sent("PATCH", SET_ASIDE)]
 
     def test_reading_the_rows_discards_nothing(self) -> None:
         # The user has not seen them yet, and a discarded line does not come
@@ -196,8 +197,7 @@ class TestTheRowsThatWouldNotGoIn:
 
         assert read[UnstructuredFields.ROWS] == self.RAGGED
         assert read[UnstructuredFields.DISCARDED] is False
-        called.get_unstructured_rows.assert_awaited_once()
-        called.resolve_unstructured_rows.assert_not_awaited()
+        assert called == []
 
     def test_how_many_rows_there_are_is_reported_even_when_few_are_shown(self) -> None:
         # A file can set thousands of lines aside. Every one of them would go
@@ -224,8 +224,11 @@ class TestTheRowsThatWouldNotGoIn:
         assert read[UnstructuredFields.DELETED] == 3
         assert read[UnstructuredFields.DISCARDED] is True
         removed = {
-            call.args[2]: (call.args[1], [line["line_num"] for line in call.args[3]])
-            for call in called.resolve_unstructured_rows.await_args_list
+            sent["value"]["batch_id"]: (
+                sent["op"],
+                [line["line_num"] for line in sent["value"]["data"]],
+            )
+            for sent in called
         }
         assert removed == {5: ("remove", [7, 9]), 6: ("remove", [2])}
 
@@ -240,7 +243,7 @@ class TestTheRowsThatWouldNotGoIn:
         )
 
         assert read[UnstructuredFields.DELETED] == 2
-        assert called.resolve_unstructured_rows.await_count == 2
+        assert len(called) == 2
 
     def test_a_line_still_listed_after_it_went_is_not_discarded_twice(self) -> None:
         # A read made straight after a discard can still show the line.
@@ -249,7 +252,7 @@ class TestTheRowsThatWouldNotGoIn:
         read, called = self.review(stale, stale, discard=True)
 
         assert read[UnstructuredFields.DELETED] == 1
-        called.resolve_unstructured_rows.assert_awaited_once()
+        assert len(called) == 1
 
     def test_a_dataset_with_no_such_rows_reports_none(self) -> None:
         read = read_unreadable_rows({UnstructuredFields.ROWS: [], UnstructuredFields.ROW_COUNT: 0})
@@ -263,20 +266,20 @@ class TestChangingOneThingAboutAFile:
 
     @staticmethod
     def sent_by(call: Any) -> dict:
-        """The patch one tool puts on the wire, without a Mammoth to take it."""
-        patched = AsyncMock(return_value={})
-        with (
-            patch(f"{FILES}.request_api", patched),
-            patch(f"{FILES}.build_client", lends(MagicMock(workspace_id=1))),
-            patch(f"{FILES}.wait_for_job", AsyncMock(return_value={})),
-        ):
+        """The patch one tool puts on the wire."""
+        with a_fake_api() as api, as_caller():
+            api.answer("PATCH", FILE_PATH, {"job": {"id": 1}})
+            a_finished_job(api, 1)
             run(call)
-        [change] = patched.call_args.kwargs["body"][FilePatchFields.PATCH]
+        [sent] = api.sent("PATCH", FILE_PATH)
+        [change] = api.body(sent)[FilePatchFields.PATCH]
         return change
 
     def test_a_password_replaces_the_password_and_nothing_else(self) -> None:
         change = self.sent_by(
-            unlock_file(workspace_id=1, project_id=2, file_id=3, password="let me in")
+            unlock_file(
+                workspace_id=WORKSPACE, project_id=PROJECT, file_id=FILE, password="let me in"
+            )
         )
 
         assert change[FilePatchFields.OP] == FilePatchFields.REPLACE
@@ -287,7 +290,9 @@ class TestChangingOneThingAboutAFile:
         # A workbook's sheets are wrapped and a password is not: the two tools
         # share the patch, not what goes in it.
         change = self.sent_by(
-            extract_sheets(workspace_id=1, project_id=2, file_id=3, sheets=["North", "South"])
+            extract_sheets(
+                workspace_id=WORKSPACE, project_id=PROJECT, file_id=FILE, sheets=["North", "South"]
+            )
         )
 
         assert change[FilePatchFields.PATH] == FilePatchFields.EXTRACT_SHEETS
@@ -320,16 +325,21 @@ class TestWhichWayRoundTheDatesRead:
     }
 
     @classmethod
-    def read_then(cls, **arguments: Any) -> tuple[dict, AsyncMock]:
-        """Run the tool over a file with one unanswered column and one answered."""
-        called = AsyncMock(side_effect=[cls.SETTINGS, {"job": {"id": 1}}])
-        with (
-            patch(f"{FILES}.request_api", called),
-            patch(f"{FILES}.build_client", lends(MagicMock(workspace_id=1))),
-            patch(f"{FILES}.wait_for_job", AsyncMock(return_value={})),
-        ):
-            answer = run(set_date_format(workspace_id=1, project_id=2, dataset_id=3, **arguments))
-        return answer, called
+    def read_then(cls, **arguments: Any) -> tuple[dict, list[dict]]:
+        """Run the tool over a file with one unanswered column and one answered.
+
+        Hands back what it answered, and the body of each change it sent.
+        """
+        with a_fake_api() as api, as_caller():
+            api.answer("GET", SETTINGS_PATH, cls.SETTINGS)
+            api.answer("POST", SETTINGS_PATH, {"job": {"id": 1}})
+            a_finished_job(api, 1)
+            answer = run(
+                set_date_format(
+                    workspace_id=WORKSPACE, project_id=PROJECT, dataset_id=DATASET, **arguments
+                )
+            )
+        return answer, [api.body(sent) for sent in api.sent("POST", SETTINGS_PATH)]
 
     def test_asking_with_no_format_names_the_columns_and_changes_nothing(self) -> None:
         # The model cannot put a useful question to the user without them, and
@@ -341,19 +351,19 @@ class TestWhichWayRoundTheDatesRead:
             "shipped on",
         ]
         assert answer[FileSettingsFields.APPLIED] is False
-        assert called.call_count == 1
+        assert called == []
 
     def test_one_format_is_sent_for_the_whole_file(self) -> None:
         answer, called = self.read_then(date_format="US")
 
-        assert called.call_args.kwargs["body"][FileSettingsFields.DATE_FORMAT] == "US"
+        assert called[-1][FileSettingsFields.DATE_FORMAT] == "US"
         assert answer[FileSettingsFields.APPLIED] is True
 
     def test_a_column_is_named_the_way_the_route_knows_it(self) -> None:
         # The user says "ordered on"; the route only answers to "column_3".
         _, called = self.read_then(columns={"ordered on": "US"})
 
-        sent = called.call_args.kwargs["body"][FileSettingsFields.DATE_FORMATS]
+        sent = called[-1][FileSettingsFields.DATE_FORMATS]
         assert sent["column_3"] == "US"
 
     def test_a_column_already_answered_for_is_not_undone(self) -> None:
@@ -361,7 +371,7 @@ class TestWhichWayRoundTheDatesRead:
         # out, so answering about one column would silently reopen the other.
         _, called = self.read_then(columns={"ordered on": "US"})
 
-        sent = called.call_args.kwargs["body"][FileSettingsFields.DATE_FORMATS]
+        sent = called[-1][FileSettingsFields.DATE_FORMATS]
         assert sent == {"column_3": "US", "column_4": "UK"}
 
     def test_a_column_the_file_does_not_have_is_refused_by_name(self) -> None:
@@ -375,4 +385,4 @@ class TestWhichWayRoundTheDatesRead:
         # being asked. Nothing may turn that on by itself.
         _, called = self.read_then(date_format="UK")
 
-        assert called.call_args.kwargs["body"][FileSettingsFields.PROJECT_DEFAULT] is (False)
+        assert called[-1][FileSettingsFields.PROJECT_DEFAULT] is (False)
