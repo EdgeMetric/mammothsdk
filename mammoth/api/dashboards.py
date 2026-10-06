@@ -62,6 +62,9 @@ ERR_DASHBOARD_ID_POSITIVE = "`dashboard_id` must be a positive integer, got {0}.
 ERR_DASHBOARD_IDS_EMPTY = "`dashboard_ids` must be a non-empty list of dashboard ids."
 ERR_ATTACHMENT_ID_POSITIVE = "`attachment_id` must be a positive integer, got {0}."
 ERR_ATTACHMENT_VIEW_POSITIVE = "`target_dataview_id` must be a positive integer, got {0}."
+ERR_FIGURE_DATAVIEW_POSITIVE = "`dataview_id` must be a positive integer, got {0}."
+ERR_FIGURE_EMPTY = "`figure` must be a non-empty dict (an AddedFigure without its id)."
+ERR_FIGURE_PAGE = "Give `page_id` or `page_new_title`, not both."
 ERR_STYLE_EMPTY = "`style` must be a non-empty string."
 ERR_TEMPLATE_ID_EMPTY = "`template_id` must be a non-empty template slug."
 ERR_SLUG_EMPTY = "`slug` must be a non-empty template slug."
@@ -1201,6 +1204,58 @@ class DashboardsAPI:
             params=params or None,
         )
         return DuplicateDashboardResponse.model_validate(response)
+
+    async def append_figure(
+        self,
+        dashboard_id: int,
+        dataview_id: int,
+        figure: dict[str, Any],
+        banded: dict[str, Any] | None = None,
+        page_id: str | None = None,
+        page_new_title: str | None = None,
+    ) -> dict[str, Any]:
+        """Add one figure (an explore card) to a dashboard, with no LLM turn.
+
+        The server checks the figure against the board's source and profile before it
+        writes, appends it to the current draft and queues the bake.
+
+        Args:
+            dashboard_id: ID of the dashboard (must be > 0).
+            dataview_id: The figure's source; must be the board's own view (must be > 0).
+            figure: The figure as the canvas stores it, without its ``id`` (the server
+                mints it): ``kind`` plus its bindings, for example ``measure``, ``dim``,
+                ``agg``, ``title``.
+            banded: Optional banded dimension, without its id; ``figure["dim"]`` then
+                points at it.
+            page_id: Land on this existing content page.
+            page_new_title: Land on a new page with this title. With neither, the board's
+                first content page, else a new "From Explore" page.
+
+        Returns:
+            Dict with ``sequence`` (the new draft head), ``bake_job_id`` (the async bake;
+            wait with ``client.wait_if_job``), ``page_id``, ``figure_id`` and ``layout_key``.
+
+        Raises:
+            MammothValidationError: If an id is not positive, ``figure`` is empty, or both
+                a page id and a new page title are given.
+        """
+        _require_dashboard_id(dashboard_id)
+        if isinstance(dataview_id, bool) or not isinstance(dataview_id, int) or dataview_id <= 0:
+            raise MammothValidationError(ERR_FIGURE_DATAVIEW_POSITIVE.format(dataview_id))
+        if not isinstance(figure, dict) or not figure:
+            raise MammothValidationError(ERR_FIGURE_EMPTY)
+        if page_id is not None and page_new_title is not None:
+            raise MammothValidationError(ERR_FIGURE_PAGE)
+        params: dict[str, Any] = {"dataview_id": dataview_id, "figure": figure}
+        if banded is not None:
+            params["banded"] = banded
+        if page_id is not None:
+            params["page"] = {"id": page_id}
+        if page_new_title is not None:
+            params["page"] = {"new_title": page_new_title}
+        return await self._client._request_json(
+            "POST", f"/dashboards/{dashboard_id}/figures", json={"params": params}
+        )
 
     async def attachment_intent(
         self, attachment_id: int, target_dataview_id: int

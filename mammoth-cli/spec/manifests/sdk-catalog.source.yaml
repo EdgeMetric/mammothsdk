@@ -5018,3 +5018,24 @@ notes_on_dispositions:
   wait_policy: null
   pagination_policy: null
   openapi_operation_ids: []
+- sdk_symbol: mammoth.api.dataviews.DataviewsAPI.explore_panel
+  canonical_command: view.explore-panel.get
+  alias_of: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.dataviews.DataviewsAPI.set_explore_panel
+  canonical_command: view.explore-panel.set
+  alias_of: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.append_figure
+  canonical_command: dashboard.figure.add
+  alias_of: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids: []
