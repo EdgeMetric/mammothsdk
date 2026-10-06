@@ -6,6 +6,72 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added (mammoth-cli 2.2.45)
+
+- `mammoth resolve NAME`: read-only, says whether a name is a dataset, a view or a project, with ids
+  and projects, across every project the login can see.
+- `mammoth dataset find` with `--project` now also returns matches in every other visible project,
+  each marked `in_project`, so a name in another project is stated instead of asked about.
+
+## [0.8.23]
+
+### Changed
+
+- `client_apps.create` no longer swallows a model mismatch silently: it still returns the created
+  app and its one-time token, and also emits `MammothModelDriftWarning` naming the failing fields.
+  `mammoth token create` prints that warning in the result's `warnings`.
+
+## [0.8.22]
+
+### Fixed
+
+- `client_apps` models match apiv2: `list`/`get`/`update` read plain field values (not
+  `{"value": ...}` wrappers), and `create` returns the flat response with the one-time `token`.
+  Before, `token create` and `token list` failed model validation (QA W7-17) after the key was
+  already created, so its secret was never shown.
+- `client_apps.create` always sends `description` (empty when omitted), which apiv2 requires.
+- `client_apps.create` returns the created app and its token even if the 2xx body drifts from the
+  model, since the token cannot be fetched again.
+
+## [0.8.21]
+
+### Added
+
+- `MammothClient(token_provider=...)`: a callable returning the current `mm_...` token, called for
+  every request, so a short-lived token that is refreshed elsewhere is always sent fresh. Static
+  `api_token` and `api_key` + `api_secret` clients are unchanged.
+
+## mammoth-cli 2.2.42
+
+- `mammoth token list` and `mammoth token create` on an API-token profile now say the call used an API
+  token and that managing API keys needs `mammoth auth login` (browser sign-in), instead of claiming the
+  server refuses CLI-created keys.
+
+## mammoth-cli 2.2.41
+
+- OAuth login works on the koyal dev server.
+
+## mammoth-cli 2.2.40
+
+- `mammoth auth login` offers a browser sign-in (OAuth, PKCE, loopback) next to pasting an API
+  token; `--method oauth|token` and `--no-browser`. The session is a 1 h token that refreshes itself
+  under a file lock. `auth status` shows the method and expiry; `auth logout` also revokes the
+  connection on the server, and warns (still clearing local state) when it cannot.
+- `mammoth token create / list / revoke` are aliases of `client-app create / list / delete`.
+
+### Added
+
+- `mammoth-cli` 2.2.40: reads return what the agent fetched next. `view list` adds `built_from`/`feeds`
+  (view ids), `pipeline_status` and `in_sync`; `view analyze 5000,5001` takes several ids (up to 12) and
+  returns `{requested, analyses, errors}` with each view's rows, columns, dataset and pipeline `steps`;
+  `job wait` returns an `outcome` for a view run (rows, columns, status) and a `project copy`
+  (datasets, views, skipped, and per-view `runs` when the backend records them). Independent reads
+  now wait together (`call_many`) instead of in turn.
+- `mammoth-cli` 2.2.40: `schema get` takes several command ids joined by commas or semicolons
+  (`schema get view.list,view.analyze`) and returns one result, `{"requested", "schemas", "errors"}`;
+  an id with no schema is an entry in `errors` and does not fail the call. `schema find` already took
+  `;`-separated goals. Up to 12 ids per call (`too_many_ids` above that).
+
 ### Fixed
 
 - `mammoth-cli` 2.2.39: `project copy` now says in its NAME help that a taken name is fine: the server names the

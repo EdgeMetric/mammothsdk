@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import pytest
+from mammoth.exceptions import MammothValidationError
 
 from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.services import read_queries
@@ -201,3 +202,60 @@ def test_a_plain_text_filter_column_gets_no_coverage_and_costs_no_query() -> Non
         reads, {"data": [{"RESULT": 5}]}, ["Region"], coverage=True
     )
     assert "coverage" not in data and reads.service.calls == []
+
+
+# -- explore: percentage_of "metric" and metric_* sorts -----------------------
+
+
+def _bucketed_rows() -> list[dict[str, object]]:
+    """Rows as the backend returns them: a count (agg_0) and a metric (agg_1) per bucket."""
+    return [
+        {"group_0": "North", "agg_0": 50, "agg_1": 100.0},
+        {"group_0": "South", "agg_0": 30, "agg_1": 300.0},
+        {"group_0": "East", "agg_0": 20, "agg_1": 600.0},
+    ]
+
+
+def test_explore_percentage_of_metric_shares_by_the_metric_not_the_count() -> None:
+    rows = read_queries.apply_explore_order(
+        _bucketed_rows(), "value_asc", (None, None), percentage_of="metric"
+    )
+    assert {row["group_0"]: row["percentage"] for row in rows} == {
+        "North": 10.0,
+        "South": 30.0,
+        "East": 60.0,
+    }
+
+
+def test_explore_percentage_defaults_to_the_count_share() -> None:
+    rows = read_queries.apply_explore_order(_bucketed_rows(), "value_asc", (None, None))
+    assert {row["group_0"]: row["percentage"] for row in rows} == {
+        "North": 50.0,
+        "South": 30.0,
+        "East": 20.0,
+    }
+
+
+def test_explore_percentage_of_metric_without_a_metric_fails_loud() -> None:
+    counted = [{"group_0": "North", "agg_0": 5}, {"group_0": "South", "agg_0": 5}]
+    with pytest.raises(MammothValidationError):
+        read_queries.apply_explore_order(counted, None, (None, None), percentage_of="metric")
+
+
+def test_explore_sort_metric_desc_and_asc_rank_by_the_metric_with_blanks_last() -> None:
+    rows = [*_bucketed_rows(), {"group_0": "West", "agg_0": 9, "agg_1": None}]
+    descending = read_queries.apply_explore_order(
+        [dict(r) for r in rows], "metric_desc", (None, None)
+    )
+    ascending = read_queries.apply_explore_order(
+        [dict(r) for r in rows], "metric_asc", (None, None)
+    )
+    assert [r["group_0"] for r in descending] == ["East", "South", "North", "West"]
+    assert [r["group_0"] for r in ascending] == ["North", "South", "East", "West"]
+
+
+@pytest.mark.parametrize("order", ["metric_desc", "metric_asc"])
+def test_explore_sort_by_metric_without_a_metric_fails_loud(order: str) -> None:
+    counted = [{"group_0": "North", "agg_0": 5}, {"group_0": "South", "agg_0": 7}]
+    with pytest.raises(MammothValidationError):
+        read_queries.apply_explore_order(counted, order, (None, None))

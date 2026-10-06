@@ -6,6 +6,7 @@ come from the mapper itself or from a shared fake transport.
 
 from __future__ import annotations
 
+from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
@@ -17,6 +18,8 @@ from mammoth.exceptions import (
     MammothPipelineTimeoutError,
 )
 
+from mammoth_cli.context import credentials
+from mammoth_cli.context.oauth import OAuthSession
 from mammoth_cli.context.resolver import ResolvedAuth
 from mammoth_cli.errors.envelope import (
     EXIT_AUTH,
@@ -526,3 +529,42 @@ def test_a_retry_after_hint_names_the_delay() -> None:
     )
 
     assert "9 s" in (map_sdk_exception(error).hint or "")
+
+
+def _keys_refused() -> MammothAPIError:
+    """The 403 the server returns for an mm_ token on the client-apps routes."""
+    return MammothAPIError(
+        "Cannot access this API with API-tokens",
+        status_code=403,
+        method="POST",
+        endpoint="/workspaces/4/clientapps",
+        response_body={"name": "INVALID_TOKEN_FOR_CLIENT_APPS", "code": "4GENR012"},
+    )
+
+
+def test_keys_refused_for_an_api_token_profile_says_sign_in_with_the_browser(
+    isolated_cli_config: Path,
+) -> None:
+    credentials.store_credentials("default", storage="file", api_token="mm_" + "t" * 43)
+
+    mapped = map_sdk_exception(_keys_refused())
+
+    assert mapped.code == "cli_keys_need_browser_sign_in"
+    assert "API token" in mapped.message
+    assert "mammoth auth login" in mapped.message
+    assert "cannot create API keys" not in (mapped.hint or "")
+    assert mapped.recovery_commands == ["mammoth auth login"]
+
+
+def test_keys_refused_for_an_oauth_profile_keeps_the_server_wording(
+    isolated_cli_config: Path,
+) -> None:
+    session = OAuthSession("mm_" + "a" * 43, "12.secret.mac", 4_000_000_000, "oc_test", 12)
+    credentials.store_credentials("default", storage="file", oauth=session)
+
+    mapped = map_sdk_exception(_keys_refused())
+
+    assert mapped.code == "cli_keys_not_allowed"
+    assert "doesn't allow CLI-created keys" in mapped.message
+    assert mapped.hint == "A browser sign-in cannot create API keys on this server."
+    assert mapped.recovery_commands == ["mammoth auth login --method token"]

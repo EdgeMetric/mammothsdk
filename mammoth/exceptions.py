@@ -92,6 +92,15 @@ def _metadata_details(
     return metadata
 
 
+class MammothModelDriftWarning(UserWarning):
+    """A successful response did not fit the SDK's model, so raw data was returned.
+
+    Raised only where losing the response would lose something that cannot be
+    fetched again (a one-time token). The message names the failing fields,
+    never their values.
+    """
+
+
 class MammothError(Exception):
     """Base exception for all Mammoth SDK errors.
 

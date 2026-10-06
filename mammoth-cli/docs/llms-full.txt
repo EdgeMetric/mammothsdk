@@ -837,6 +837,11 @@ Sensitive structured input must come from a private file or pipe; never put secr
 - `mammoth report list` [read/none] -> mammoth.api.reports.ReportsAPI.list
   example: mammoth report list
 
+## resolve
+
+- `mammoth resolve` [read/none] -> mammoth_cli.commands.resolve.resolve
+  example: mammoth resolve uqa-w29-ren
+
 ## schedule
 
 - `mammoth schedule create` [external_effect/yes_always] -> mammoth.api.schedules.SchedulesAPI.create
@@ -1042,6 +1047,15 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth template list
 - `mammoth template update` [benign_mutation/none] -> mammoth.api.templates.TemplatesAPI.update
   example: mammoth template update 123 --input '{"body": {"name": "Revenue report"}}'
+
+## token
+
+- `mammoth token create` [high_impact/confirm_target] -> mammoth.api.clientapps.ClientAppsAPI.create
+  example: mammoth token create 'Revenue report'
+- `mammoth token list` [read/none] -> mammoth.api.clientapps.ClientAppsAPI.list
+  example: mammoth token list
+- `mammoth token revoke` [destructive/prompt_or_yes] -> mammoth.api.clientapps.ClientAppsAPI.delete
+  example: mammoth token revoke sample
 
 ## trash
 

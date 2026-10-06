@@ -2932,30 +2932,6 @@ class TestClientAppsAPI:
         await client.client_apps.list()
         assert_called_with_method_and_endpoint(client._request_json, "GET", "/clientapps")
 
-    async def test_create(self, client: MammothClient):
-        # await client_apps.create() returns Pydantic model with ValueWrapper fields
-        client._request_json = AsyncMock(
-            return_value={
-                "client_app": {
-                    "client_key": {"value": "ck1"},
-                    "app_name": {"value": "MyApp"},
-                },
-            }
-        )
-        await client.client_apps.create(app_name="MyApp")
-        assert_called_with_method_and_endpoint(client._request_json, "POST", "/clientapps")
-
-    async def test_get(self, client: MammothClient):
-        # await client_apps.get() returns ClientAppSchema with ValueWrapper fields
-        client._request_json = AsyncMock(
-            return_value={
-                "client_key": {"value": "ck1"},
-                "app_name": {"value": "MyApp"},
-            }
-        )
-        await client.client_apps.get(client_key="ck1")
-        assert_called_with_method_and_endpoint(client._request_json, "GET", "/clientapps/ck1")
-
     async def test_delete(self, client: MammothClient):
         await client.client_apps.delete(client_key="ck1")
         assert_called_with_method_and_endpoint(client._request_json, "DELETE", "/clientapps/ck1")

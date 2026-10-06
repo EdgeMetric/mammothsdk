@@ -14,7 +14,7 @@ MACHINE_OUTPUTS = {"json", "ndjson"}
 
 #: Every output mode the renderer supports. The tuple order is the order shown
 #: in ``--output`` help and error hints.
-VALID_OUTPUTS = ("table", "json", "yaml", "ndjson", "plain")
+VALID_OUTPUTS = ("table", "json", "yaml", "ndjson", "plain", "csv")
 
 #: The default ``--output`` value: resolves to a human table on a terminal and
 #: machine JSON when stdout is piped or redirected.

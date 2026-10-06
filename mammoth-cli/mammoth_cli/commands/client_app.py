@@ -17,7 +17,10 @@ SDK method named by the command's reviewed manifest ``sdk_symbol``.
 
 from __future__ import annotations
 
+import warnings
 from typing import Any
+
+from mammoth.exceptions import MammothModelDriftWarning
 
 from mammoth_cli.errors.envelope import (
     CODE_MISSING_ARGUMENT,
@@ -209,10 +212,18 @@ def client_app_create(invocation: Invocation) -> HandlerResult:
     )
     kwargs: dict[str, Any] = {"app_name": app_name}
     _forward_optional(document, kwargs, ("description",))
-    with open_service(invocation) as (service, auth):
+    with (
+        warnings.catch_warnings(record=True) as caught,
+        open_service(invocation) as (service, auth),
+    ):
+        warnings.simplefilter("always", MammothModelDriftWarning)
         data = service.call(_symbol(invocation), **kwargs)
     # The API shows the new app's token once; masking it would lose it for good.
-    data = Revealed(normalize(data, redact_secrets=False))
+    data = normalize(data, redact_secrets=False)
+    drift = [str(w.message) for w in caught if issubclass(w.category, MammothModelDriftWarning)]
+    if drift and isinstance(data, dict):
+        data["warnings"] = drift
+    data = Revealed(data)
     return data, _meta(invocation, auth.workspace_id, resolved_project(invocation))
 
 

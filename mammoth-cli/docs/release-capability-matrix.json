@@ -242,6 +242,7 @@
     "project.memory.list",
     "project.memory.remove",
     "project.needs-attention",
+    "resolve",
     "skill.agents-md.install",
     "skill.show",
     "view.export.azure-blob",
@@ -958,7 +959,8 @@
       "schema_id": "client-app.delete",
       "sdk_symbol": "mammoth.api.clientapps.ClientAppsAPI.delete",
       "bound_commands": [
-        "client-app.delete"
+        "client-app.delete",
+        "token.revoke"
       ],
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
@@ -4249,7 +4251,8 @@
       "schema_id": "client-app.list",
       "sdk_symbol": "mammoth.api.clientapps.ClientAppsAPI.list",
       "bound_commands": [
-        "client-app.list"
+        "client-app.list",
+        "token.list"
       ],
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
@@ -10724,7 +10727,8 @@
       "schema_id": "client-app.create",
       "sdk_symbol": "mammoth.api.clientapps.ClientAppsAPI.create",
       "bound_commands": [
-        "client-app.create"
+        "client-app.create",
+        "token.create"
       ],
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,

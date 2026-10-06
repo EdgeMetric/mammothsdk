@@ -11,12 +11,15 @@ embedded callers that explicitly opt into it.
 
 from __future__ import annotations
 
+import csv
 import json
 import os
 import sys
 from typing import Any, TextIO
 
 import yaml
+
+from mammoth_cli.errors.envelope import CODE_INVALID_ARGUMENTS, EXIT_USAGE, CliError
 
 from .normalize import normalize
 
@@ -56,6 +59,8 @@ def render(
         yaml.safe_dump(envelope, stream, sort_keys=True, allow_unicode=True)
     elif output == "plain":
         _render_plain(envelope.get("data"), stream)
+    elif output == "csv":
+        _render_csv(envelope.get("data"), stream)
     elif output == "table":
         _render_table(envelope.get("data"), stream)
     else:  # pragma: no cover - guarded by option validation
@@ -151,6 +156,31 @@ def _render_plain(data: Any, stream: TextIO) -> None:
             stream.write(f"{key}\t{_scalar(data[key])}\n")
     else:
         stream.write(f"{_scalar(data)}\n")
+
+
+def _csv_rows(data: Any) -> list[dict[str, Any]] | None:
+    """The result's rows: ``data`` itself, or the ``data`` list inside a read result."""
+    if isinstance(data, dict):
+        data = data.get("data")
+    if isinstance(data, list) and data and all(isinstance(row, dict) for row in data):
+        return data
+    return None
+
+
+def _render_csv(data: Any, stream: TextIO) -> None:
+    rows = _csv_rows(data)
+    if rows is None:
+        raise CliError(
+            code=CODE_INVALID_ARGUMENTS,
+            message="This result has no rows to write as CSV.",
+            exit_status=EXIT_USAGE,
+            hint="Use -o json, or a command that returns rows (view data explore, view data get).",
+        )
+    columns = list(dict.fromkeys(str(key) for row in rows for key in row))
+    writer = csv.writer(stream, lineterminator="\n")
+    writer.writerow(columns)
+    for row in rows:
+        writer.writerow([_scalar(row.get(column)) for column in columns])
 
 
 def _render_table(data: Any, stream: TextIO) -> None:
