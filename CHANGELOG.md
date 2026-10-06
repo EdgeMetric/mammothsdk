@@ -6,6 +6,13 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added (mammoth-cli 2.2.45)
+
+- `mammoth resolve NAME`: read-only, says whether a name is a dataset, a view or a project, with ids
+  and projects, across every project the login can see.
+- `mammoth dataset find` with `--project` now also returns matches in every other visible project,
+  each marked `in_project`, so a name in another project is stated instead of asked about.
+
 ## [0.8.23]
 
 ### Changed

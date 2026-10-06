@@ -644,6 +644,15 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
             example_value="https://app.mammoth.io/workspaces/1/projects/2/data/datasets",
         ),
     ),
+    "resolve": (
+        PositionalSpec(
+            name="name",
+            type=str,
+            required=True,
+            help="Case-insensitive name, or part of one, to look up as a dataset, view or project.",
+            example_value="uqa-w29-ren",
+        ),
+    ),
     "capability.find": (
         PositionalSpec(
             name="query",
@@ -673,7 +682,8 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
             type=str,
             required=False,
             help="Case-insensitive substring to match against dataset names; optional "
-            "when --input gives 'columns'.",
+            "when --input gives 'columns'. Matches in other projects are listed too, "
+            "marked in_project when --project is given.",
             example_value="sales",
         ),
     ),

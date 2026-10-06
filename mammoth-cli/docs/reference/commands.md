@@ -1,10 +1,10 @@
 # Command reference
 
-Generated from the reviewed command manifests for mammoth-cli 2.2.40.
+Generated from the reviewed command manifests for mammoth-cli 2.2.45.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
-Total commands: 655.
+Total commands: 656.
 
 ## activity
 
@@ -2842,7 +2842,7 @@ Total commands: 655.
 
 **Arguments**
 
-- `NAME_SUBSTRING` (str, optional) — Case-insensitive substring to match against dataset names; optional when --input gives 'columns'.
+- `NAME_SUBSTRING` (str, optional) — Case-insensitive substring to match against dataset names; optional when --input gives 'columns'. Matches in other projects are listed too, marked in_project when --project is given.
 
 - Mutation class: `read`
 - Confirmation: `none`
@@ -3709,6 +3709,19 @@ Total commands: 655.
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.reports.ReportsAPI.list`
 - Agent example: `mammoth report list`
+
+## resolve
+
+### `mammoth resolve`
+
+**Arguments**
+
+- `NAME` (str, required) — Case-insensitive name, or part of one, to look up as a dataset, view or project.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth_cli.commands.resolve.resolve`
+- Agent example: `mammoth resolve uqa-w29-ren`
 
 ## schedule
 

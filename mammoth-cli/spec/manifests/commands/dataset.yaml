@@ -523,7 +523,8 @@ commands:
     metavar: NAME_SUBSTRING
     falls_back_to_field: null
     help: Case-insensitive substring to match against dataset names; optional when --input
-      gives 'columns'.
+      gives 'columns'. Matches in other projects are listed too, marked in_project when
+      --project is given.
   options: []
   sdk_symbol: mammoth_cli.commands.dataset.find
   sdk_conversion: Call mammoth_cli.commands.dataset.find with validated request fields.

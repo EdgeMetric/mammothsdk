@@ -837,6 +837,11 @@ Sensitive structured input must come from a private file or pipe; never put secr
 - `mammoth report list` [read/none] -> mammoth.api.reports.ReportsAPI.list
   example: mammoth report list
 
+## resolve
+
+- `mammoth resolve` [read/none] -> mammoth_cli.commands.resolve.resolve
+  example: mammoth resolve uqa-w29-ren
+
 ## schedule
 
 - `mammoth schedule create` [external_effect/yes_always] -> mammoth.api.schedules.SchedulesAPI.create

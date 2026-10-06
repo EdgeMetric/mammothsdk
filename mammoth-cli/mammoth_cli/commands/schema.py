@@ -411,6 +411,10 @@ _COMMAND_DISCOVERY_PURPOSES = {
         "link url pasted address app page open file dataset view folder project "
         "workspace ids selected resource parse"
     ),
+    "resolve": (
+        "resolve name what is this dataset view project called named which kind "
+        "ambiguous same name another project lookup identify"
+    ),
     "dataset.broken-rows.list": (
         "unstructured skipped ragged rows lines unparsed mismatched columns monitor "
         "needs review file upload bad rows"

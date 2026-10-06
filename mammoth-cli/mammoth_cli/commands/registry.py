@@ -45,6 +45,7 @@ from mammoth_cli.commands import notification as notification_cmd
 from mammoth_cli.commands import parameter as parameter_cmd
 from mammoth_cli.commands import project as project_cmd
 from mammoth_cli.commands import report as report_cmd
+from mammoth_cli.commands import resolve as resolve_cmd
 from mammoth_cli.commands import schedule as schedule_cmd
 from mammoth_cli.commands import schema as schema_cmd
 from mammoth_cli.commands import skill as skill_cmd
@@ -283,6 +284,7 @@ HANDLERS: dict[str, Handler] = {
     "doctor": doctor_cmd.doctor,
     "calc": calc_cmd.calc,
     "link": link_cmd.link,
+    "resolve": resolve_cmd.resolve,
     "completion.show": completion_cmd.completion_show,
     "completion.install": completion_cmd.completion_install,
     "skill.agents-md.install": skill_cmd.skill_agents_md_install,
