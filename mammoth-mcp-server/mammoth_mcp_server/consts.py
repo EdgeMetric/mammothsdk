@@ -46,6 +46,9 @@ DATA_LIMIT_MAX = 400
 # Async API routes answer with a job, so a tool polls until the job finishes.
 # A tool call has to return inside the client's own request timeout.
 JOB_POLL_SECONDS = 0.2
+# A wait between checks doubles from `JOB_POLL_SECONDS` up to this: a short job is
+# seen at once, and a long build is not checked several times a second.
+JOB_POLL_MAX_SECONDS = 2.0
 JOB_TIMEOUT_SECONDS = 60.0
 # How long to wait on an AI dashboard build before answering "still building".
 # Shorter than the rest: a build outlasts any wait worth making, and a client

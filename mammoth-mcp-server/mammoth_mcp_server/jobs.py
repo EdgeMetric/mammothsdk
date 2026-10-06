@@ -10,7 +10,13 @@ import time
 
 from mcp.server.mcpserver.exceptions import ToolError
 
-from .consts import JOB_POLL_SECONDS, JOB_TIMEOUT_SECONDS, ErrorFields, JobFields
+from .consts import (
+    JOB_POLL_MAX_SECONDS,
+    JOB_POLL_SECONDS,
+    JOB_TIMEOUT_SECONDS,
+    ErrorFields,
+    JobFields,
+)
 from .sdk import (
     API_ERROR_PREFIX,
     UNREADABLE_API_ERROR,
@@ -51,6 +57,7 @@ async def wait_for_job(
     """
     job_id = find_job_id(started)
     deadline = time.monotonic() + seconds
+    gap = JOB_POLL_SECONDS
     async with build_client(workspace_id) as client:
         while True:
             job = read_job(await read_sdk_errors(client.jobs.get_job(job_id)))
@@ -58,7 +65,8 @@ async def wait_for_job(
                 break
             if time.monotonic() > deadline:
                 raise JobStillRunning(job, seconds)
-            await asyncio.sleep(JOB_POLL_SECONDS)
+            await asyncio.sleep(gap)
+            gap = min(gap * 2, JOB_POLL_MAX_SECONDS)
     if job[JobFields.STATUS] != JobFields.SUCCESS:
         raise ToolError(f"{API_ERROR_PREFIX}: {describe_job_failure(job)}")
     result = job[JobFields.RESPONSE]
