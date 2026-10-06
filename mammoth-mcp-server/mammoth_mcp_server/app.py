@@ -6,6 +6,21 @@ from starlette.applications import Starlette
 
 from .config import HOST, MCP_PATH, PORT
 from .server import mcp_server, register_tools
+from .store import cipher
+
+
+def check_settings() -> None:
+    """Fail now, with the reason, rather than at the first upload.
+
+    A worker that dies at startup is restarted for ever by the process that
+    runs it, so the deployment looks alive and serves nothing. Run this before
+    the server starts, and the process stops with the reason instead.
+
+    Raises:
+        RuntimeError: If the deployment set no `MCP_ENCRYPTION_KEY`.
+        ValueError: If it set one that is not a Fernet key.
+    """
+    cipher()
 
 
 def create_app() -> Starlette:
@@ -14,7 +29,12 @@ def create_app() -> Starlette:
     Stateless JSON mode: any worker can serve any request, and no response is
     a stream. So the server scales by adding workers, with nothing shared
     between them but the store.
+
+    Raises:
+        RuntimeError: If the deployment set no `MCP_ENCRYPTION_KEY`.
+        ValueError: If it set one that is not a Fernet key.
     """
+    check_settings()
     register_tools()
     return mcp_server.streamable_http_app(
         streamable_http_path=MCP_PATH,

@@ -1,9 +1,12 @@
 """The server as a client and a browser reach it, over HTTP."""
 
+from unittest.mock import patch
+
 import pytest
 from starlette.testclient import TestClient
 
-from mammoth_mcp_server.app import create_app
+from mammoth_mcp_server import store
+from mammoth_mcp_server.app import check_settings, create_app
 from mammoth_mcp_server.config import MCP_OAUTH_URL, MCP_RESOURCE_URL, SERVER_URL
 from mammoth_mcp_server.consts import UploadFields
 from mammoth_mcp_server.upload_tickets import mint_ticket, read_ticket
@@ -223,3 +226,32 @@ class TestTheUploadPage:
 
         assert refused.status_code == 400
         assert server.get("/upload", params={UploadFields.TICKET: ticket}).status_code == 200
+
+
+class TestWhatTheServerRefusesToStartWithout:
+    """A setting the server needs is checked once, before it serves anything."""
+
+    def test_a_deployment_without_an_encryption_key_does_not_start(self) -> None:
+        # Left to the first upload, the server looks healthy for days and then
+        # fails for one user, who is told nothing useful.
+        with (
+            patch.object(store, "ENCRYPTION_KEY", ""),
+            pytest.raises(RuntimeError, match="MCP_ENCRYPTION_KEY"),
+        ):
+            create_app()
+
+    def test_a_key_that_is_not_a_fernet_key_does_not_start_either(self) -> None:
+        with (
+            patch.object(store, "ENCRYPTION_KEY", "not-a-key"),
+            pytest.raises(ValueError, match="Fernet key"),
+        ):
+            create_app()
+
+    def test_the_same_check_runs_before_the_server_starts(self) -> None:
+        # The container runs this first: a worker that dies at startup is
+        # restarted for ever, so the deployment looks alive and serves nothing.
+        with (
+            patch.object(store, "ENCRYPTION_KEY", ""),
+            pytest.raises(RuntimeError, match="MCP_ENCRYPTION_KEY"),
+        ):
+            check_settings()
