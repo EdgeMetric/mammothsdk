@@ -1,10 +1,10 @@
 # Command reference
 
-Generated from the reviewed command manifests for mammoth-cli 2.2.30.
+Generated from the reviewed command manifests for mammoth-cli 2.2.39.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
-Total commands: 646.
+Total commands: 652.
 
 ## activity
 
@@ -1785,6 +1785,29 @@ Total commands: 646.
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.add_pages`
 - Agent example: `mammoth dashboard pages add 123 --input '{"body": {"params": {"pages": [{"title": "By region", "focus": {"measure": "Revenue", "dim": "Region", "kpis": [{"field": "Revenue", "agg": "sum", "label": "Revenue"}]}, "charts": [{"kind": "hbar", "title": "Revenue by region", "dim": "Region", "measure": "Revenue", "agg": "sum"}]}]}}}'`
 
+### `mammoth dashboard pbix-assess`
+
+**Arguments**
+
+- `ATTACHMENT_ID` (int, required) — ID of the attachment.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.dashboards.DashboardsAPI.attachment_assess`
+- Agent example: `mammoth dashboard pbix-assess 123`
+
+### `mammoth dashboard pbix-intent`
+
+**Arguments**
+
+- `ATTACHMENT_ID` (int, required) — ID of the attachment.
+- `TARGET_DATAVIEW_ID` (int, required) — ID of the target dataview.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.dashboards.DashboardsAPI.attachment_intent`
+- Agent example: `mammoth dashboard pbix-intent 123 123`
+
 ### `mammoth dashboard pdf export`
 
 **Arguments**
@@ -3450,6 +3473,18 @@ Total commands: 646.
 - Backing SDK: `mammoth.api.projects.ProjectsAPI.checkpoint_list`
 - Agent example: `mammoth project checkpoint list 123`
 
+### `mammoth project copy`
+
+**Arguments**
+
+- `PROJECT_ID` (int, required) — ID of the project to copy.
+- `NAME` (str, required) — Name of the new project. If it is already taken, the copy is named with the next free suffix ("NAME 2", "NAME 3", ...); no need to check the name first.
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.projects.ProjectsAPI.copy`
+- Agent example: `mammoth project copy 123 'Revenue report'`
+
 ### `mammoth project create`
 
 **Arguments**
@@ -4797,6 +4832,18 @@ Total commands: 646.
 - Backing SDK: `mammoth.api.ai.AIAPI.generate_profile`
 - Agent example: `mammoth view ai profile 123 --input '{"dataset_id": 456, "action": "insights"}'`
 
+### `mammoth view analyze`
+
+**Arguments**
+
+- `VIEW_ID` (int, required) — ID of the view to act on.
+- `DATASET_ID` (int, optional) — ID of the dataset the view belongs to; resolved from the view when omitted.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.dataviews.DataviewsAPI.analysis`
+- Agent example: `mammoth view analyze 123 123`
+
 ### `mammoth view bulk-delete`
 
 **Arguments**
@@ -4870,6 +4917,13 @@ Total commands: 646.
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.checkpoints.CheckpointsAPI.update`
 - Agent example: `mammoth view checkpoint update 123 123 123 --input '{"body": {"patches": [{"op": "command", "path": "approve", "value": null}]}}'`
+
+### `mammoth view compare`
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.dataviews.DataviewsAPI.compare`
+- Agent example: `mammoth view compare --input '{"pairs": [[1, 2]]}'`
 
 ### `mammoth view conditional-format create`
 
@@ -5561,6 +5615,18 @@ Total commands: 646.
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dataviews.DataviewsAPI.list`
 - Agent example: `mammoth view list 123`
+
+### `mammoth view optimize`
+
+**Arguments**
+
+- `VIEW_ID` (int, required) — ID of the view to act on.
+- `DATASET_ID` (int, optional) — Exact parent dataset ID. Required for this command: pass it here or as the 'dataset_id' input field; only read commands may omit it and discover the parent.
+
+- Mutation class: `reversible_pipeline`
+- Confirmation: `prompt_or_yes`
+- Backing SDK: `mammoth.api.dataviews.DataviewsAPI.optimize`
+- Agent example: `mammoth view optimize 123 123`
 
 ### `mammoth view parameter-context`
 

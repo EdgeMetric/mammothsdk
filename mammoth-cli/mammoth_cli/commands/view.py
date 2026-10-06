@@ -56,6 +56,10 @@ from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.session import open_service, require_project
 from mammoth_cli.services import conditional_format as cf_rules
 from mammoth_cli.services import read_queries, text_dates
+from mammoth_cli.services.append_blank_columns import (
+    BLANK_COLUMNS_FIELD,
+    acknowledged_blank_columns,
+)
 from mammoth_cli.services.conditions import CONDITION_KWARG, compile_condition
 from mammoth_cli.services.dashboard_review import UPLOAD_NOTE, upload_hints
 from mammoth_cli.services.data_quality import column_warnings, duplicate_rows_fact
@@ -901,6 +905,57 @@ def view_impact(invocation: Invocation) -> HandlerResult:
         kwargs["dataset_id"] = _resolve_dataset_id(service, invocation, dataview_id, document)
         data = service.call(_symbol(invocation), **kwargs)
     return data, _meta(invocation, auth.workspace_id, project_id)
+
+
+def view_analyze(invocation: Invocation) -> HandlerResult:
+    """List pipeline steps that can be dropped or moved without changing the result (read-only)."""
+    project_id = require_project(invocation)
+    dataview_id = _require_int_positional_at(invocation, 0, "view id")
+    document = invocation.load_input() or {}
+    with open_service(invocation) as (service, auth):
+        dataset_id = _resolve_dataset_id(service, invocation, dataview_id, document)
+        data = service.call(
+            _symbol(invocation),
+            dataset_id=dataset_id,
+            dataview_id=dataview_id,
+            project_id=project_id,
+        )
+    return data, _meta(invocation, auth.workspace_id, project_id)
+
+
+def view_optimize(invocation: Invocation) -> HandlerResult:
+    """Apply the safe pipeline findings, then wait for the rerun it queued.
+
+    ``apply_rules`` limits the rules applied; omitted, every safe finding is applied.
+    The result keeps the server's ``applied`` / ``skipped`` / step counts and adds
+    ``job_state`` and ``job_result`` when a rerun job was queued.
+    """
+    project_id = require_project(invocation)
+    dataview_id = _require_int_positional_at(invocation, 0, "view id")
+    document = invocation.load_input() or {}
+    enforce_confirmation(
+        invocation,
+        policy=POLICY_PROMPT_OR_YES,
+        action=f"optimize the pipeline of view {dataview_id}",
+    )
+    kwargs: dict[str, Any] = {"dataview_id": dataview_id, "project_id": project_id}
+    _forward_optional(document, kwargs, ("apply_rules",))
+    with open_service(invocation) as (service, auth):
+        kwargs["dataset_id"] = _resolve_dataset_id(service, invocation, dataview_id, document)
+        data = service.call(_symbol(invocation), **kwargs)
+        if isinstance(data, dict) and data.get("job_id") is not None:
+            settled = service.wait_if_job({"job_id": data["job_id"]})
+            data = {**data, "job_state": "success", "job_result": settled}
+    return data, _meta(invocation, auth.workspace_id, project_id)
+
+
+def view_compare(invocation: Invocation) -> HandlerResult:
+    """Compare dataviews pairwise: rows, column differences and checksums (read-only)."""
+    document = invocation.load_input()
+    pairs = _require_field(document, "pairs")
+    with open_service(invocation) as (service, auth):
+        data = service.call(_symbol(invocation), pairs=pairs)
+    return data, _meta(invocation, auth.workspace_id, None)
 
 
 def view_update(invocation: Invocation) -> HandlerResult:
@@ -2964,11 +3019,114 @@ def view_pipeline_rerun(invocation: Invocation) -> HandlerResult:
                 service, invocation, dataview_id, document, 1
             )
         before = _rows_before(service, dataset_id, dataview_id, invocation.project)
-        data = service.call(_symbol(invocation), **kwargs)
+        fired = _end_of_pipeline_exports(
+            service, dataview_id, dataset_id, with_blank_columns=invocation.dry_run
+        )
+        try:
+            data = service.call(_symbol(invocation), **kwargs)
+        except DryRunStop as stop:
+            # The dry run's report names the exports the real run would fire, and
+            # the destination columns each append would leave blank.
+            stop.record["exports_fired"] = fired
+            raise
         data = _settle_async_view_write(
             service, dataset_id, dataview_id, invocation.project, data, before
         )
+    if fired and isinstance(data, dict):
+        data = {**data, "exports_fired": fired}
     return data, _meta(invocation, auth.workspace_id, None)
+
+
+#: Non-secret ``target_properties`` keys that say where an export writes.
+_EXPORT_TARGET_HINT_KEYS = (
+    "table",
+    "host",
+    "database",
+    "TARGET_DS_ID",
+    "DS_NAME",
+    "SAVE_AS_DS_MODE",
+    "emails",
+)
+_INTERNAL_DATASET_HANDLER = "internal_dataset"
+_WRITE_INTO_EXISTING_MODES = ("APPEND_TO_DS", "REPLACE_IN_DS")
+
+
+def _end_of_pipeline_exports(
+    service: Any, dataview_id: int, dataset_id: int | None, *, with_blank_columns: bool = False
+) -> list[dict[str, Any]]:
+    """The live end-of-pipeline exports a rerun of this view fires again.
+
+    A rerun re-sends every one of them to its destination (database, email, REST
+    endpoint, another dataset), so the caller is told which, not just that the
+    pipeline ran. Soft-deleted exports do not fire. ``with_blank_columns`` (dry run
+    only) also reads the schemas to name the destination columns each append would
+    leave blank; a real rerun makes no such reads.
+    """
+    listing = service.call(
+        _EXPORTS_LIST_SYMBOL,
+        dataview_id=dataview_id,
+        dataset_id=dataset_id,
+        end_of_pipeline=True,
+    )
+    fired: list[dict[str, Any]] = []
+    source_columns: Any = None
+    for export in getattr(listing, "exports", None) or []:
+        if export.status is ExportStatus.DELETED:
+            continue
+        handler = getattr(export.handler_type, "value", export.handler_type)
+        properties = export.target_properties or {}
+        entry: dict[str, Any] = {
+            "export_id": export.id,
+            "handler_type": handler,
+            "target": {
+                key: properties[key] for key in _EXPORT_TARGET_HINT_KEYS if key in properties
+            },
+        }
+        if with_blank_columns and _writes_into_existing_dataset(handler, properties):
+            if source_columns is None:
+                source_columns = _source_column_names(service, dataview_id, dataset_id)
+            entry[BLANK_COLUMNS_FIELD] = _blank_destination_columns(
+                source_columns,
+                set(_target_dataset_schema(service, int(properties["TARGET_DS_ID"]))),
+                properties.get("COLUMN_MAPPING"),
+            )
+        fired.append(entry)
+    return fired
+
+
+def _writes_into_existing_dataset(handler: Any, properties: dict[str, Any]) -> bool:
+    """Whether an export appends or replaces into a dataset that already exists."""
+    return (
+        handler == _INTERNAL_DATASET_HANDLER
+        and properties.get("TARGET_DS_ID") is not None
+        and properties.get("SAVE_AS_DS_MODE") in _WRITE_INTO_EXISTING_MODES
+    )
+
+
+def _source_column_names(service: Any, dataview_id: int, dataset_id: int | None) -> set[str]:
+    """The source view's column display names; unreadable is an error, never "none"."""
+    columns = service.call_view(dataview_id, "columns", dataset_id=dataset_id)
+    if not isinstance(columns, dict):
+        raise CliError(
+            code="append_schema_unreadable",
+            message=f"Could not read view {dataview_id}'s columns before the append.",
+            hint="Read the source view before appending from it.",
+            details={"side": "source", "dataview_id": dataview_id},
+        )
+    return set(columns)
+
+
+def _blank_destination_columns(
+    source_names: set[str], target_names: set[str], column_mapping: Any
+) -> list[str]:
+    """The destination columns an append leaves NULL: in the target, fed by nothing.
+
+    That is a target column that is neither a source column (matched by name) nor a
+    ``column_mapping`` destination. The one rule behind both the export-create
+    acknowledgement and the rerun report.
+    """
+    mapping = column_mapping if isinstance(column_mapping, dict) else {}
+    return sorted(target_names - source_names - set(mapping.values()))
 
 
 #: Seconds ``view pipeline wait`` waits when the caller names no ``timeout`` (the SDK's own
@@ -3262,20 +3420,24 @@ def view_export_publish_db(invocation: Invocation) -> HandlerResult:
     document = invocation.load_input()
     odbc_type = _require_field(document, "odbc_type")
     target_properties = _require_field(document, "target_properties")
+    assert document is not None
+    table = target_properties.get("table") if isinstance(target_properties, dict) else None
     enforce_confirmation(
         invocation, policy=POLICY_YES_ALWAYS, action=f"publish-db on view {dataview_id}"
     )
+    table_note = _reject_unacknowledged_table_replace(invocation.command_id, document, table)
     kwargs: dict[str, Any] = {
         "dataview_id": dataview_id,
         "odbc_type": odbc_type,
         "target_properties": target_properties,
         "project_id": project_id,
     }
-    assert document is not None
     _forward_optional(document, kwargs, ("dataset_id",))
     with open_service(invocation) as (service, auth):
         _require_exact_parent(service, invocation, dataview_id, kwargs)
         data = service.call(_symbol(invocation), **kwargs)
+    if table_note is not None:
+        data = _with_recurrence_note(data, table_note)
     return data, _meta(invocation, auth.workspace_id, project_id)
 
 
@@ -3454,6 +3616,81 @@ def _reject_export_into_draft(service: Any, dataview_id: int, dataset_id: int) -
     )
 
 
+# Database exports rebuild their destination table: the distributary drops it
+# and recreates it from the view on the first write and on every later pipeline
+# run (BigQuery only for export_type REPLACE, its WRITE_TRUNCATE mode). Postgres
+# and MySQL also cut a table name to 60 characters, silently writing elsewhere.
+_REPLACE_TABLE_FIELD = "replace_table"
+_DB_REPLACE_ROUTES = frozenset(
+    {
+        "view.export.postgres",
+        "view.export.mysql",
+        "view.export.mssql",
+        "view.export.redshift",
+        "view.export.bigquery",
+    }
+)
+_DB_TABLE_NAME_LIMIT_ROUTES = frozenset({"view.export.postgres", "view.export.mysql"})
+_DB_TABLE_NAME_LIMIT = 60
+
+
+def _replaces_table(command_id: str, document: dict[str, Any]) -> bool:
+    """Whether this database export drops and recreates its destination table."""
+    if command_id == "view.export.bigquery":
+        return str(document.get("export_type") or "REPLACE").upper() == "REPLACE"
+    return command_id in _DB_REPLACE_ROUTES or command_id == "view.export.publish-db"
+
+
+def _reject_unacknowledged_table_replace(
+    command_id: str, document: dict[str, Any], table: Any
+) -> str | None:
+    """Refuse a database export that is not explicitly allowed to replace its table.
+
+    Returns the recurrence note for the result, or ``None`` when the export
+    does not replace a table.
+    """
+    if not _replaces_table(command_id, document):
+        return None
+    name = str(table)
+    if command_id in _DB_TABLE_NAME_LIMIT_ROUTES and len(name) > _DB_TABLE_NAME_LIMIT:
+        raise CliError(
+            code="table_name_too_long",
+            message=(
+                f"Table name {name!r} is {len(name)} characters; the database export cuts "
+                f"table names to {_DB_TABLE_NAME_LIMIT} and would write a different table "
+                f"({name[:_DB_TABLE_NAME_LIMIT]!r})."
+            ),
+            exit_status=EXIT_USAGE,
+            hint=f"Use a table name of at most {_DB_TABLE_NAME_LIMIT} characters.",
+            details={"table": name, "length": len(name), "limit": _DB_TABLE_NAME_LIMIT},
+        )
+    if document.get(_REPLACE_TABLE_FIELD) is not True:
+        raise CliError(
+            code="replace_table_not_acknowledged",
+            message=(
+                f"This export drops and recreates table {name!r} in the destination database "
+                "now and on every pipeline run of the view; any existing table of that name "
+                "and its rows are lost."
+            ),
+            exit_status=EXIT_USAGE,
+            hint=(
+                f'Pick a table that may be overwritten, then add "{_REPLACE_TABLE_FIELD}": true '
+                "to the input to confirm."
+            ),
+            details={"table": name, "field": _REPLACE_TABLE_FIELD},
+        )
+    return f"drops and recreates {name} now and on every pipeline run"
+
+
+def _with_recurrence_note(data: Any, note: str) -> dict[str, Any]:
+    """The export result as a mapping carrying ``refreshes_on_pipeline_run`` and ``note``."""
+    result = data.model_dump(mode="json") if hasattr(data, "model_dump") else data
+    record = dict(result) if isinstance(result, dict) else {"result": result}
+    record["refreshes_on_pipeline_run"] = True
+    record["note"] = note
+    return record
+
+
 def view_export_specialized(invocation: Invocation) -> HandlerResult:
     """Run one of the SDK's typed ``View.export`` destination helpers."""
     route = _SPECIAL_EXPORTS.get(invocation.command_id)
@@ -3494,6 +3731,10 @@ def view_export_specialized(invocation: Invocation) -> HandlerResult:
     )
     common_fields = _SPECIAL_EXPORT_COMMON_FIELDS if accepts_var_keyword else frozenset()
     allowed = explicit_fields | common_fields | {_DATASET_ID_FIELD}
+    if invocation.command_id in _DB_REPLACE_ROUTES:
+        allowed = allowed | {_REPLACE_TABLE_FIELD}
+    if invocation.command_id == "view.export.dataset":
+        allowed = allowed | {BLANK_COLUMNS_FIELD}
     unknown = sorted(set(document) - allowed)
     if unknown:
         raise CliError(
@@ -3521,8 +3762,13 @@ def view_export_specialized(invocation: Invocation) -> HandlerResult:
         policy=str(export_record.get("confirmation") or POLICY_YES_ALWAYS),
         action=f"export view {dataview_id} via {invocation.command_id.rsplit('.', 1)[-1]}",
     )
+    table_note = _reject_unacknowledged_table_replace(
+        invocation.command_id, document, document.get("table")
+    )
     kwargs = dict(document)
     kwargs.pop(_DATASET_ID_FIELD, None)
+    kwargs.pop(_REPLACE_TABLE_FIELD, None)
+    blank_columns = kwargs.pop(BLANK_COLUMNS_FIELD, None)
     is_dataset_route = invocation.command_id == "view.export.dataset"
     target_ds_id = kwargs.get("target_ds_id") if is_dataset_route else None
     save_as_mode = kwargs.get("save_as_mode") if is_dataset_route else None
@@ -3531,62 +3777,39 @@ def view_export_specialized(invocation: Invocation) -> HandlerResult:
     with open_service(invocation) as (service, auth):
         if dataset_id is None:
             dataset_id = _resolve_dataset_id(service, invocation, dataview_id, document)
-        if target_ds_id is not None and int(target_ds_id) == dataset_id:
-            raise CliError(
-                code=CODE_INVALID_ARGUMENTS,
-                message="target_ds_id equals the view's own dataset.",
-                exit_status=EXIT_USAGE,
-                hint=(
-                    "A view cannot write into its own dataset. Export to a new "
-                    "dataset name (omit target_ds_id), or target a different dataset."
-                ),
-                details={"dataset_id": dataset_id, "target_ds_id": int(target_ds_id)},
-            )
         if is_dataset_route:
-            _reject_export_into_draft(service, dataview_id, dataset_id)
+            reject_dataset_export_conflicts(
+                service,
+                dataview_id,
+                dataset_id,
+                int(target_ds_id) if target_ds_id is not None else None,
+            )
         target_view_before = None
+        blank_warnings: list[str] = []
         target_only_columns: list[str] = []
         mapped_type_warnings: list[str] = []
+        hidden_left_out = (
+            _hidden_column_names(service, dataset_id, dataview_id, project_id)
+            if is_dataset_route and target_ds_id is None
+            else []
+        )
         if target_ds_id is not None:
-            # Each `view export dataset` call creates its own PERSISTENT
-            # export trigger on this view, which re-runs on every pipeline
-            # run; REPLACE_IN_DS/APPEND_TO_DS only ever touch that trigger's
-            # OWN rows. A second export from this view into the same target
-            # is therefore a second writer, not a refresh of the first --
-            # the fix is to rerun the pipeline, not to export again.
-            existing_export = _existing_internal_dataset_export(
-                service, dataview_id, dataset_id, int(target_ds_id)
-            )
-            if existing_export is not None:
-                raise CliError(
-                    code="export_already_exists",
-                    message=(
-                        f"View {dataview_id} already exports into dataset "
-                        f"{int(target_ds_id)} (export {existing_export.id}). This export "
-                        "re-runs on every pipeline run, and REPLACE_IN_DS replaces only "
-                        "its own rows -- a second export into the same target duplicates "
-                        "rows instead of refreshing them."
-                    ),
-                    exit_status=EXIT_USAGE,
-                    hint="Refresh the target by rerunning the pipeline, not by exporting again.",
-                    recovery_commands=[f"mammoth view pipeline rerun {dataview_id}"],
-                    details={
-                        "dataview_id": dataview_id,
-                        "target_ds_id": int(target_ds_id),
-                        "export_id": existing_export.id,
-                    },
-                )
             # rows_before is the target's own count ahead of this write, read
             # before the call so a later re-read can never be confused with it.
             target_view_before = _dataset_view_info(service, int(target_ds_id), result_project_id)
-            if save_as_mode == "APPEND_TO_DS":
-                target_only_columns, mapped_type_warnings = _reject_append_schema_mismatch(
-                    service,
-                    dataview_id,
-                    dataset_id,
-                    int(target_ds_id),
-                    kwargs.get("column_mapping"),
-                )
+            # REPLACE_IN_DS into an existing target runs the same backend
+            # append code as APPEND_TO_DS (same mapping and schema handling),
+            # so both modes get the same guards.
+            target_only_columns, mapped_type_warnings = _reject_append_schema_mismatch(
+                service,
+                dataview_id,
+                dataset_id,
+                int(target_ds_id),
+                kwargs.get("column_mapping"),
+            )
+            blank_warnings = acknowledged_blank_columns(
+                int(target_ds_id), target_only_columns, blank_columns
+            )
         try:
             data = service.call_view(dataview_id, method, dataset_id=dataset_id, **kwargs)
         except CliError as error:
@@ -3643,19 +3866,19 @@ def view_export_specialized(invocation: Invocation) -> HandlerResult:
                 # a non-increase here as unverified, not just an omitted count.
                 row_check["expected_row_increase"] = True
             warnings = list(mapped_type_warnings)
-            if target_only_columns:
-                # Allowed -- an append never has to cover every target column
-                # -- but worth surfacing rather than leaving silent.
-                warnings.insert(
-                    0,
-                    "target dataset has column(s) the source view does not (kept "
-                    "as-is): " + ", ".join(target_only_columns),
+            if hidden_left_out:
+                warnings.append(
+                    "hidden column(s) of the source view are not in the new dataset: "
+                    + ", ".join(hidden_left_out)
                 )
+            warnings[:0] = blank_warnings
             if warnings:
                 row_check["warnings"] = warnings
             data["row_check"] = row_check
             if pipeline_error is not None:
                 data["pipeline_error"] = pipeline_error
+    if table_note is not None:
+        data = _with_recurrence_note(data, table_note)
     return data, _meta(invocation, auth.workspace_id, project_id)
 
 
@@ -3720,6 +3943,82 @@ def _existing_internal_dataset_export(
         and int(target) == target_ds_id
     ]
     return max(matches, key=lambda export: export.id or 0) if matches else None
+
+
+def _hidden_column_names(
+    service: Any, dataset_id: int, dataview_id: int, project_id: int | None
+) -> list[str]:
+    """Display names of the view's hidden columns, which a new-dataset export leaves out."""
+    info = apply_column_renames(
+        service.call(
+            _DATAVIEW_GET_SYMBOL,
+            dataset_id=dataset_id,
+            dataview_id=dataview_id,
+            project_id=project_id,
+        )
+    )
+    if not isinstance(info, dict):
+        return []
+    display = info.get("display_properties")
+    hidden = display.get("HIDDEN_COLUMNS") if isinstance(display, dict) else None
+    if not isinstance(hidden, list) or not hidden:
+        return []
+    names = {
+        column.get(_INTERNAL_NAME_KEY): column.get(_DISPLAY_NAME_KEY) or column.get("name")
+        for column in info.get(_METADATA_KEY) or []
+        if isinstance(column, dict)
+    }
+    return [str(names.get(column) or column) for column in hidden]
+
+
+def reject_dataset_export_conflicts(
+    service: Any, dataview_id: int, dataset_id: int, target_ds_id: int | None
+) -> None:
+    """Refuse a dataset export (or crosstab) that cannot write, or would double-write.
+
+    Not into the view's own dataset, not from a view holding its changes in a
+    draft, and not into a target this view already exports into. Each dataset
+    export creates its own PERSISTENT trigger on the view, which re-runs on
+    every pipeline run; REPLACE_IN_DS/APPEND_TO_DS only touch that trigger's OWN
+    rows, so a second export into the same target is a second writer, not a
+    refresh -- the fix is to rerun the pipeline, not to export again.
+    """
+    if target_ds_id is not None and target_ds_id == dataset_id:
+        raise CliError(
+            code=CODE_INVALID_ARGUMENTS,
+            message="target_ds_id equals the view's own dataset.",
+            exit_status=EXIT_USAGE,
+            hint=(
+                "A view cannot write into its own dataset. Export to a new "
+                "dataset name (omit target_ds_id), or target a different dataset."
+            ),
+            details={"dataset_id": dataset_id, "target_ds_id": target_ds_id},
+        )
+    _reject_export_into_draft(service, dataview_id, dataset_id)
+    if target_ds_id is None:
+        return
+    existing_export = _existing_internal_dataset_export(
+        service, dataview_id, dataset_id, target_ds_id
+    )
+    if existing_export is not None:
+        raise CliError(
+            code="export_already_exists",
+            message=(
+                f"View {dataview_id} already exports into dataset "
+                f"{target_ds_id} (export {existing_export.id}). This export "
+                "re-runs on every pipeline run, and REPLACE_IN_DS replaces only "
+                "its own rows -- a second export into the same target duplicates "
+                "rows instead of refreshing them."
+            ),
+            exit_status=EXIT_USAGE,
+            hint="Refresh the target by rerunning the pipeline, not by exporting again.",
+            recovery_commands=[f"mammoth view pipeline rerun {dataview_id}"],
+            details={
+                "dataview_id": dataview_id,
+                "target_ds_id": target_ds_id,
+                "export_id": existing_export.id,
+            },
+        )
 
 
 _DATASET_GET_SYMBOL = "mammoth.api.datasets.DatasetsAPI.get"
@@ -3875,7 +4174,8 @@ def _reject_append_schema_mismatch(
     target_ds_id: int,
     column_mapping: Any,
 ) -> tuple[list[str], list[str]]:
-    """Refuse an ``APPEND_TO_DS`` export whose source has a column the target
+    """Refuse an ``APPEND_TO_DS``/``REPLACE_IN_DS`` export into an existing target
+    whose source has a column the target
     dataset's schema does not, and ``column_mapping`` does not cover.
 
     A non-empty ``column_mapping`` is stricter: the backend then copies only
@@ -3892,24 +4192,16 @@ def _reject_append_schema_mismatch(
     in the source, not a ``column_mapping`` destination) and the type
     warnings for mapped pairs -- both allowed, but worth a warning.
     """
-    source_columns = service.call_view(dataview_id, "columns", dataset_id=dataset_id)
-    if not isinstance(source_columns, dict):
-        raise CliError(
-            code="append_schema_unreadable",
-            message=f"Could not read view {dataview_id}'s columns before the append.",
-            hint="Read the source view before appending from it.",
-            details={"side": "source", "dataview_id": dataview_id},
-        )
+    source_names = _source_column_names(service, dataview_id, dataset_id)
     target_schema = _target_dataset_schema(service, target_ds_id)
     target_names = set(target_schema)
     mapping = column_mapping if isinstance(column_mapping, dict) else {}
     # View.columns (mammoth/view.py) maps display name -> internal name; these
     # dict keys are display names, matching what the backend's own schema
     # match compares by -- never the internal ids in the dict's values.
-    source_names = set(source_columns)
     _reject_partial_append_mapping(source_names, target_names, mapping, (dataview_id, target_ds_id))
     source_only = sorted(source_names - target_names - set(mapping))
-    target_only = sorted(target_names - source_names - set(mapping.values()))
+    target_only = _blank_destination_columns(source_names, target_names, mapping)
     source_types = service.call_view(dataview_id, "column_types", dataset_id=dataset_id)
     _reject_append_type_mismatch(source_types, target_schema, mapping, (dataview_id, target_ds_id))
     if source_only:

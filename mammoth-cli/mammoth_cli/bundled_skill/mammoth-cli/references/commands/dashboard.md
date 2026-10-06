@@ -308,7 +308,7 @@ Run: `mammoth dashboard duplicate`. Exact input fields: `mammoth schema get dash
 
 Example: `mammoth dashboard duplicate 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
-Result: `DashboardDuplicateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+Result: `DashboardDuplicateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `start_or_wait`.
 
 Status on release: ran once on CLI 2.0.12 — Dashboard sweep 2026-09-18: exit 0 on release with CLI 2.0.12; result keys: id. duplicated D=52 -> D2=54 Single invocation only; no error-path or variant coverage.
 
@@ -561,6 +561,26 @@ Example: `mammoth dashboard pages add 123 --input '{"body": {"params": {"pages":
 Result: `DashboardPagesAddResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `returns_job`.
 
 Status on release: ran once on CLI 2.0.28 — ILG simulation 2026-09-19: exit 0 on release with CLI 2.0.28. Needs --yes --confirm DASHBOARD_ID. body.params.pages[] takes PageAdd objects (title, focus{kpis}, charts[]); the route runs through the LLM guard and dropped unit.prefix on a money card ('nothing…
+
+### `dashboard.pbix-assess`
+
+Run: `mammoth dashboard pbix-assess`. Exact input fields: `mammoth schema get dashboard.pbix-assess`.
+
+Example: `mammoth dashboard pbix-assess 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `DashboardPbixAssessResult`; mutation `read`, confirmation `none`, wait policy `always_wait`.
+
+Status on release: untried; no live run recorded.
+
+### `dashboard.pbix-intent`
+
+Run: `mammoth dashboard pbix-intent`. Exact input fields: `mammoth schema get dashboard.pbix-intent`.
+
+Example: `mammoth dashboard pbix-intent 123 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `DashboardPbixIntentResult`; mutation `read`, confirmation `none`, wait policy `always_wait`.
+
+Status on release: untried; no live run recorded.
 
 ### `dashboard.pdf-artifact`
 

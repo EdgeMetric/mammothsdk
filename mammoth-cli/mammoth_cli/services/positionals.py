@@ -440,6 +440,21 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
             falls_back_to_field="name",
         ),
     ),
+    # project copy: the source project is the resource, the new project's name follows.
+    "project.copy": (
+        PositionalSpec(
+            name="project_id", type=int, required=True, help="ID of the project to copy."
+        ),
+        PositionalSpec(
+            name="name",
+            type=str,
+            required=True,
+            help=(
+                "Name of the new project. If it is already taken, the copy is named with the next "
+                'free suffix ("NAME 2", "NAME 3", ...); no need to check the name first.'
+            ),
+        ),
+    ),
     # project ensure: exact name to find or create, positional or ``name`` field.
     "project.ensure": (
         PositionalSpec(
@@ -779,6 +794,8 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
             "view.restore",
             "view.trash",
             "view.impact",
+            "view.analyze",
+            "view.optimize",
             "view.update",
             "view.conditional-format.create",
             "view.conditional-format.delete-all",

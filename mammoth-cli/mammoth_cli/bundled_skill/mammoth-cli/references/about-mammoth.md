@@ -106,7 +106,7 @@ Checkpoint Alert are the `view data-check` and `view checkpoint` families.
 | Add columns from another view by matching keys | Join | `join` (`INNER`, `LEFT`, `RIGHT`, `OUTER`) |
 | Bring one value per key from another view | Lookup | `lookup` |
 | Totals, counts, averages per group | Group & Pivot | `pivot` (replaces the view's columns) |
-| A rows-by-columns summary table | Group & Pivot (crosstab) | `crosstab` (writes a new dataset) |
+| A rows-by-columns summary table | Group & Pivot (crosstab) | `crosstab` (writes a new dataset, and keeps rewriting it on every pipeline run of the view) |
 | Turn wide columns into label/value rows | Unpivot | `unnest` |
 | Read fields out of a JSON column | Extract JSON | `json-extract` |
 | Classify, tag or summarise rows with AI | Generative AI | `ai` |
@@ -146,7 +146,12 @@ No command:
   every source column to an existing target column. A partial mapping, or a
   destination the target lacks, is refused with `append_mapping_incomplete`
   before anything is written (the backend would append only the mapped columns
-  and add a new column for the unknown name). An append is a standing link: it is stored
+  and add a new column for the unknown name). A target column the append
+  leaves unfilled would be NULL in every appended row: it is refused with
+  `append_leaves_columns_blank` unless the input names exactly those columns,
+  e.g. `"blank_columns": ["id","score"]` (a deliberate partial append, such as
+  mapping only `name`); never delete source columns or clone the source view to
+  get around it. An append is a standing link: it is stored
   as a pipeline step of the source view, so every later re-run of that view
   appends again into the target dataset, not just the first run. A column
   with the same name but a different type in the source view and the target

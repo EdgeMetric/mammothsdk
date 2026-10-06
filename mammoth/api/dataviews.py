@@ -18,6 +18,15 @@ ERR_DATAVIEW_ID_POSITIVE = "`dataview_id` must be a positive integer, got {0}."
 ERR_IMPACT_SCOPE = '`scope` must be "task" or "view", got {0!r}.'
 ERR_IMPACT_TASK_ID = '`task_id` is required when `scope` is "task".'
 _IMPACT_SCOPES = frozenset({"task", "view"})
+ERR_OPTIMIZE_RULE = (
+    "`apply_rules` entries must be drop_suspended, drop_duplicate, drop_noop_filter or "
+    "hoist_filter, got {0}."
+)
+ERR_COMPARE_PAIRS = "`pairs` must hold 1 to 20 [view_a, view_b] pairs of positive dataview ids."
+_OPTIMIZE_RULES = frozenset(
+    {"drop_suspended", "drop_duplicate", "drop_noop_filter", "hoist_filter"}
+)
+_COMPARE_MAX_PAIRS = 20
 
 #: Aggregate functions supported by :meth:`DataviewsAPI.aggregate`. Deliberately
 #: a small, exact-match subset of the backend's ``PivotAggregationFunction``
@@ -483,6 +492,107 @@ class DataviewsAPI:
             "GET",
             f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/dataviews/{dataview_id}/impact",
             params=params,
+        )
+
+    async def analysis(
+        self,
+        dataset_id: int,
+        dataview_id: int,
+        workspace_id: int | None = None,
+        project_id: int | None = None,
+    ) -> dict[str, Any]:
+        """List pipeline steps that can be dropped or moved without changing the result.
+
+        Read only. Each finding says whether the change provably preserves results.
+
+        Args:
+            dataset_id: ID of the dataset.
+            dataview_id: ID of the dataview.
+            workspace_id: ID of the workspace (uses client default if not provided).
+            project_id: ID of the project (uses client default if not provided).
+
+        Returns:
+            Dict with ``findings``: a list of ``{rule, seqs, detail, proposed_order, safe}``.
+        """
+        ws = workspace_id or self._ws()
+        proj = project_id or self._proj()
+        return await self._client._request_json(
+            "GET",
+            f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/dataviews/{dataview_id}"
+            "/analysis",
+        )
+
+    async def optimize(
+        self,
+        dataset_id: int,
+        dataview_id: int,
+        apply_rules: _list[str] | None = None,
+        workspace_id: int | None = None,
+        project_id: int | None = None,
+    ) -> dict[str, Any]:
+        """Apply the safe pipeline findings of :meth:`analysis` (a write; reruns the pipeline).
+
+        Args:
+            dataset_id: ID of the dataset.
+            dataview_id: ID of the dataview.
+            apply_rules: Rules to apply (``drop_suspended``, ``drop_duplicate``,
+                ``drop_noop_filter``, ``hoist_filter``); ``None`` applies every safe finding.
+            workspace_id: ID of the workspace (uses client default if not provided).
+            project_id: ID of the project (uses client default if not provided).
+
+        Returns:
+            Dict with ``applied``, ``skipped`` (``{rule, seqs, reason}``), ``before_steps``,
+            ``after_steps`` and ``job_id`` (the rerun, when one was queued).
+
+        Raises:
+            MammothValidationError: If a rule is not one of the four known rules.
+        """
+        if apply_rules is not None:
+            unknown = [rule for rule in apply_rules if rule not in _OPTIMIZE_RULES]
+            if unknown:
+                raise MammothValidationError(ERR_OPTIMIZE_RULE.format(unknown))
+        ws = workspace_id or self._ws()
+        proj = project_id or self._proj()
+        return await self._client._request_json(
+            "POST",
+            f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/dataviews/{dataview_id}"
+            "/optimize",
+            json={"apply_rules": None if apply_rules is None else _list(apply_rules)},
+        )
+
+    async def compare(
+        self, pairs: _list[_list[int]], workspace_id: int | None = None
+    ) -> dict[str, Any]:
+        """Compare dataviews pairwise: row counts, column differences and checksums (read only).
+
+        Args:
+            pairs: 1 to 20 ``[view_a, view_b]`` pairs of dataview ids.
+            workspace_id: ID of the workspace (uses client default if not provided).
+
+        Returns:
+            Dict with ``results``, one entry per pair in request order: ``view_a``,
+            ``view_b``, ``status`` (``ok``, ``not_ready`` or ``not_comparable``),
+            ``problem_views``, ``rows_a``, ``rows_b``, ``columns_only_in_a``,
+            ``columns_only_in_b``, ``checksum_a``, ``checksum_b``, ``equal`` and
+            ``mismatched_columns``.
+
+        Raises:
+            MammothValidationError: If *pairs* is empty, has over 20 entries, or an entry
+                is not two positive ids.
+        """
+        if not pairs or len(pairs) > _COMPARE_MAX_PAIRS:
+            raise MammothValidationError(ERR_COMPARE_PAIRS)
+        for pair in pairs:
+            if len(pair) != 2 or any(
+                isinstance(view, bool) or not isinstance(view, int) or view <= 0 for view in pair
+            ):
+                raise MammothValidationError(ERR_COMPARE_PAIRS)
+        ws = workspace_id or self._ws()
+        return await self._client._request_json(
+            "POST",
+            f"/workspaces/{ws}/dataviews/compare",
+            json={"pairs": [_list(pair) for pair in pairs]},
+            operation_effect="read",
         )
 
     async def bulk_delete(
