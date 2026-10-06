@@ -1342,6 +1342,8 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth view trash 123 123
 - `mammoth view update` [benign_mutation/none] -> mammoth.api.dataviews.DataviewsAPI.update
   example: mammoth view update 123 123 --input '{"name": "Revenue report"}'
+- `mammoth view variants create` [benign_mutation/none] -> mammoth.client.ViewsResource.create
+  example: mammoth view variants create 123 --input '{"from_view": 456, "column": "Region", "values": ["East", "West"]}'
 - `mammoth view version apply` [benign_mutation/none] -> mammoth.api.pipeline_versions.PipelineVersionsAPI.apply
   example: mammoth view version apply 123 123 123
 - `mammoth view version delete` [destructive/prompt_or_yes] -> mammoth.api.pipeline_versions.PipelineVersionsAPI.delete

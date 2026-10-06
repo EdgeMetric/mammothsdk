@@ -32,6 +32,7 @@ from mammoth_cli.commands.view import (
     BRIEF_VIEW_FIELDS,
     UNFINISHED_STATE,
     _dataview_metadata,
+    _display_name_map,
     _require_discovery_allowed,
     apply_column_renames,
     brief_view_record,
@@ -66,6 +67,14 @@ from mammoth_cli.services.command_contract import bind_command_inputs
 from mammoth_cli.services.conditions import CONDITION_KWARG, compile_condition
 from mammoth_cli.services.input_fields import TASK_COUNT_FIELD
 from mammoth_cli.services.sql_check import check_sql_binds
+from mammoth_cli.services.view_variants import (
+    DEFAULT_NAME_TEMPLATE,
+    VariantPlan,
+    created_entry,
+    partial_failure,
+    plan_variants,
+    variants_result,
+)
 from mammoth_cli.services.write_impact import (
     ImpactRead,
     Measure,
@@ -770,6 +779,77 @@ def _require_clone_from_same_dataset(service: Any, clone_from: int, dataset_id: 
                 "dataset_id": dataset_id,
             },
         )
+
+
+_VIEW_CREATE_SYMBOL = "mammoth.client.ViewsResource.create"
+
+
+def view_variants_create(invocation: Invocation) -> HandlerResult:
+    """Create one view per value of a column: each a clone of ``from_view`` filtered to it.
+
+    Composes ``view create`` (``clone_from``) and ``view transform filter``. All
+    checks that need no write run first; the first failing write stops the run
+    and the error names every view already created.
+    """
+    dataset_id = _require_int_positional(invocation, "dataset id")
+    raw = invocation.load_input()
+    for field in ("from_view", "column", "values"):
+        _require_field(raw, field)
+    document = bind_command_inputs(invocation.command_id, raw)
+    from_view = int(document["from_view"])
+    column = str(document["column"])
+    with open_service(invocation) as (service, auth):
+        _require_clone_from_same_dataset(service, from_view, dataset_id)
+        source = service.call(_DATAVIEW_GET_SYMBOL, dataset_id=dataset_id, dataview_id=from_view)
+        _require_known_column(service, dataset_id, from_view, column)
+        plans = plan_variants(
+            str(source.get("name", "")) if isinstance(source, dict) else "",
+            column,
+            document["values"],
+            str(document.get("name_template", DEFAULT_NAME_TEMPLATE)),
+        )
+        created = _create_variants(service, dataset_id, from_view, plans)
+    result = variants_result(dataset_id, from_view, column, created)
+    return result, _meta(invocation, auth.workspace_id)
+
+
+def _require_known_column(service: Any, dataset_id: int, view_id: int, column: str) -> None:
+    """Refuse a column the source view lacks, before any view is created."""
+    names = set(_display_name_map(service, dataset_id, view_id, None).values())
+    if names and column not in names:
+        raise CliError(
+            code=CODE_INVALID_ARGUMENTS,
+            message=f"View {view_id} has no column '{column}'.",
+            exit_status=EXIT_USAGE,
+            hint="Use one of: " + ", ".join(sorted(names)) + ".",
+            details={"view_id": view_id, "column": column, "columns": sorted(names)},
+        )
+
+
+def _create_variants(
+    service: Any, dataset_id: int, from_view: int, plans: list[VariantPlan]
+) -> list[dict[str, Any]]:
+    """Create and filter each variant in order; the first failure stops with a full report."""
+    created: list[dict[str, Any]] = []
+    for position, plan in enumerate(plans):
+        new_id: int | None = None
+        try:
+            view = _view_payload(
+                service.call(
+                    _VIEW_CREATE_SYMBOL, dataset_id=dataset_id, name=plan.name, clone_from=from_view
+                )
+            )
+            new_id = int(view["id"])
+            data = service.call_view(
+                new_id, "filter_rows", dataset_id=dataset_id, condition=plan.condition
+            )
+            reject_pipeline_reference_errors(service, new_id, dataset_id, data)
+        except CliError as exc:
+            raise partial_failure(
+                plan, exc, created, plans[position + 1 :], new_id, dataset_id
+            ) from exc
+        created.append(created_entry(plan, view))
+    return created
 
 
 _DASHBOARDS_LIST_SYMBOL = "mammoth.api.dashboards.DashboardsAPI.list"

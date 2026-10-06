@@ -914,6 +914,16 @@ Result: `ViewUpdateResult`; mutation `benign_mutation`, confirmation `none`, wai
 
 Status on release: untried; no live run recorded.
 
+### `view.variants.create`
+
+Run: `mammoth view variants create`. Exact input fields: `mammoth schema get view.variants.create`.
+
+Example: `mammoth view variants create 123 --input '{"from_view": 456, "column": "Region", "values": ["East", "West"]}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `ViewVariantsCreateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `always_wait`.
+
+Status on release: untried; no live run recorded.
+
 ### `view.version.apply`
 
 Run: `mammoth view version apply`. Exact input fields: `mammoth schema get view.version.apply`.
