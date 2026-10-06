@@ -1,8 +1,13 @@
-"""Browser sign-in (OAuth 2.0 authorization code + PKCE) and token refresh.
+"""Browser sign-in (OAuth 2.0 authorization code + PKCE), device-code sign-in
+(RFC 8628) and token refresh.
 
 ``mammoth auth login`` opens the Mammoth consent page, receives the code on a
 loopback listener (RFC 8252), and exchanges it for a 1 h ``mm_`` access token
 plus a rotating refresh token. The CLI is a public client: it holds no secret.
+
+``mammoth auth login --device`` is for a machine with no browser: it prints a
+short code and a URL to open on any other device, then polls the token endpoint
+until the code is approved, denied or expired.
 
 The refresh token rotates on every use, and replaying an already-used one
 revokes the whole connection on the server. Two CLI processes must therefore
@@ -52,6 +57,14 @@ _LOCK_WAIT_SECONDS = 60.0
 CODE_LOGIN_EXPIRED = "login_expired"
 CODE_OAUTH_UNAVAILABLE = "oauth_unavailable"
 CODE_OAUTH_LOGIN_FAILED = "oauth_login_failed"
+CODE_DEVICE_LOGIN_EXPIRED = "device_login_expired"
+
+#: RFC 8628 §3.4: the grant type the device sign-in polls with.
+DEVICE_GRANT_TYPE = "urn:ietf:params:oauth:grant-type:device_code"
+#: RFC 8628 §3.5: a slow_down answer adds this many seconds to the interval.
+SLOW_DOWN_STEP_SECONDS = 5
+#: Added to every wait so a poll never lands a hair before the server's interval.
+POLL_MARGIN_SECONDS = 1.0
 
 
 def login_expired_error() -> CliError:
@@ -322,6 +335,114 @@ def browser_login(
         base_url, client_id=client_id, code=code, verifier=verifier, redirect_uri=redirect_uri
     )
     return session_from_grant(grant, client_id)
+
+
+# --- device code (RFC 8628) -----------------------------------------------------
+
+
+@dataclass(frozen=True)
+class DeviceChallenge:
+    """What the server issues to start a device sign-in."""
+
+    device_code: str
+    user_code: str
+    verification_uri: str
+    verification_uri_complete: str
+    expires_in: int
+    interval: int
+
+
+def parse_device_challenge(body: dict[str, object]) -> DeviceChallenge:
+    """Read the device-authorization answer; an unreadable one is a failed login."""
+    try:
+        return DeviceChallenge(
+            device_code=str(body["device_code"]),
+            user_code=str(body["user_code"]),
+            verification_uri=str(body["verification_uri"]),
+            verification_uri_complete=str(body.get("verification_uri_complete") or ""),
+            expires_in=int(str(body["expires_in"])),
+            interval=int(str(body["interval"])),
+        )
+    except (ValueError, KeyError, TypeError) as exc:
+        raise _login_failed("Mammoth's sign-in service returned an unreadable answer.") from exc
+
+
+def start_device_login(base_url: str, *, client_id: str) -> DeviceChallenge:
+    """Ask Mammoth for a device code and the code the person will type."""
+    try:
+        status, body = sdk_oauth.device_authorization_request(base_url, {"client_id": client_id})
+    except sdk_oauth.OAuthTransportError as exc:
+        raise CliError(
+            code="network_error",
+            message="Could not reach Mammoth's sign-in service.",
+            exit_status=EXIT_AUTH,
+            hint="Check your connection and try again.",
+        ) from exc
+    if status != 200 or not isinstance(body, dict):
+        raise _login_failed(f"Mammoth refused to start a device sign-in (HTTP {status}).")
+    return parse_device_challenge(body)
+
+
+def read_poll(status: int, body: dict[str, object], interval: int) -> TokenGrant | int:
+    """Interpret one poll answer.
+
+    Returns the tokens once approved, or the seconds to wait before the next
+    poll (longer after ``slow_down``).
+
+    Raises:
+        CliError: ``oauth_login_failed`` when the person denied the sign-in or
+            the answer is not one RFC 8628 lets the client retry on;
+            ``device_login_expired`` when the code ran out.
+    """
+    if status == 200:
+        return _parse_grant(body)
+    error = str(body.get("error", ""))
+    if error == "authorization_pending":
+        return interval
+    if error == "slow_down":
+        return interval + SLOW_DOWN_STEP_SECONDS
+    if error == "access_denied":
+        raise _login_failed("The sign-in was denied in the browser.")
+    if error == "expired_token":
+        raise device_login_expired_error()
+    raise _login_failed(f"Mammoth refused the sign-in ({error or f'HTTP {status}'}).")
+
+
+def device_login_expired_error() -> CliError:
+    return CliError(
+        code=CODE_DEVICE_LOGIN_EXPIRED,
+        message="The sign-in code expired before it was approved.",
+        exit_status=EXIT_AUTH,
+        hint="Run `mammoth auth login --device` again and approve the new code.",
+        recovery_commands=["mammoth auth login --device"],
+    )
+
+
+def device_login(base_url: str, *, client_id: str, say: Callable[[str], None]) -> OAuthSession:
+    """Run one device sign-in: print the code, poll until it is approved."""
+    challenge = start_device_login(base_url, client_id=client_id)
+    say(f"To sign in, open {challenge.verification_uri} on any device and enter:")
+    say(f"  {challenge.user_code}")
+    if challenge.verification_uri_complete:
+        say(f"Or open this link directly:\n  {challenge.verification_uri_complete}")
+    say("Waiting for approval ...")
+    deadline = time.monotonic() + challenge.expires_in
+    interval = challenge.interval
+    while time.monotonic() < deadline:
+        time.sleep(interval + POLL_MARGIN_SECONDS)
+        status, body = _post_token(
+            base_url,
+            {
+                "grant_type": DEVICE_GRANT_TYPE,
+                "device_code": challenge.device_code,
+                "client_id": client_id,
+            },
+        )
+        step = read_poll(status, body, interval)
+        if isinstance(step, TokenGrant):
+            return session_from_grant(step, client_id)
+        interval = step
+    raise device_login_expired_error()
 
 
 # --- refresh under a file lock ----------------------------------------------------

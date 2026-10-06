@@ -6,6 +6,15 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added (mammoth-io 0.8.24 / mammoth-cli 2.2.46)
+
+- `mammoth auth login --device`: device-code sign-in (RFC 8628) for a machine with no browser. The
+  CLI prints a short code and a URL, you approve on another device, and the CLI polls until you do.
+  Needs the matching Mammoth server release.
+- API keys made by `mammoth token create` now expire after 30 days. A command with an expired key
+  stops with `cli_key_expired` and tells you to run `mammoth auth login`.
+- SDK: `mammoth.oauth.device_authorization_request`; `ClientAppPostResponse.expires_at`.
+
 ### Added (mammoth-cli 2.2.45)
 
 - `mammoth resolve NAME`: read-only, says whether a name is a dataset, a view or a project, with ids

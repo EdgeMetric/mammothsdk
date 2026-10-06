@@ -115,3 +115,76 @@ def test_callback_checks_refuse_a_bad_redirect(params: dict[str, str]) -> None:
 def test_callback_checks_accept_the_matching_redirect() -> None:
     params = {"code": "c", "state": "s", "iss": "https://x.mammoth.io/api/v2"}
     assert oauth.check_callback(params, state="s", issuer="https://x.mammoth.io/api/v2") == "c"
+
+
+# --- device code (RFC 8628) ---------------------------------------------------------
+
+_CHALLENGE = {
+    "device_code": "dc_secret",
+    "user_code": "BCDF-GHJK",
+    "verification_uri": "https://app.mammoth.io/#/oauth/device",
+    "verification_uri_complete": "https://app.mammoth.io/#/oauth/device?user_code=BCDF-GHJK",
+    "expires_in": 900,
+    "interval": 5,
+}
+_GRANT = {"access_token": "mm_" + "a" * 43, "refresh_token": "12.r.m", "expires_in": 3600}
+
+
+def test_device_challenge_is_read_from_the_server_answer() -> None:
+    challenge = oauth.parse_device_challenge(dict(_CHALLENGE))
+    assert (challenge.user_code, challenge.interval, challenge.expires_in) == ("BCDF-GHJK", 5, 900)
+    assert challenge.verification_uri_complete.endswith("user_code=BCDF-GHJK")
+
+
+def test_device_challenge_without_a_complete_uri_is_still_usable() -> None:
+    body = {k: v for k, v in _CHALLENGE.items() if k != "verification_uri_complete"}
+    assert oauth.parse_device_challenge(body).verification_uri_complete == ""
+
+
+def test_an_unreadable_device_challenge_is_a_failed_login() -> None:
+    with pytest.raises(CliError) as caught:
+        oauth.parse_device_challenge({"device_code": "x"})
+    assert caught.value.code == oauth.CODE_OAUTH_LOGIN_FAILED
+
+
+def test_pending_keeps_the_interval() -> None:
+    assert oauth.read_poll(400, {"error": "authorization_pending"}, 5) == 5
+
+
+def test_slow_down_adds_five_seconds() -> None:
+    assert oauth.read_poll(400, {"error": "slow_down"}, 5) == 10
+    assert oauth.read_poll(400, {"error": "slow_down"}, 10) == 15
+
+
+def test_an_approved_poll_returns_the_tokens() -> None:
+    grant = oauth.read_poll(200, dict(_GRANT), 5)
+    assert isinstance(grant, oauth.TokenGrant)
+    assert grant.access == _GRANT["access_token"] and grant.expires_in == 3600
+
+
+def test_a_denied_poll_is_a_failed_login() -> None:
+    with pytest.raises(CliError) as caught:
+        oauth.read_poll(400, {"error": "access_denied"}, 5)
+    assert caught.value.code == oauth.CODE_OAUTH_LOGIN_FAILED
+    assert "denied" in caught.value.message
+
+
+def test_an_expired_code_says_to_run_device_login_again() -> None:
+    with pytest.raises(CliError) as caught:
+        oauth.read_poll(400, {"error": "expired_token"}, 5)
+    assert caught.value.code == oauth.CODE_DEVICE_LOGIN_EXPIRED
+    assert caught.value.recovery_commands == ["mammoth auth login --device"]
+
+
+@pytest.mark.parametrize(
+    "status, body",
+    [(400, {"error": "invalid_grant"}), (500, {}), (401, {"error": "invalid_client"})],
+)
+def test_any_other_poll_answer_stops_the_login(status: int, body: dict[str, object]) -> None:
+    with pytest.raises(CliError) as caught:
+        oauth.read_poll(status, body, 5)
+    assert caught.value.code == oauth.CODE_OAUTH_LOGIN_FAILED
+
+
+def test_device_grant_type_is_the_rfc_8628_urn() -> None:
+    assert oauth.DEVICE_GRANT_TYPE == "urn:ietf:params:oauth:grant-type:device_code"

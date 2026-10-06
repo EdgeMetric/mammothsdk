@@ -270,13 +270,13 @@ def _verify_login(invocation: Invocation, *, base_url: str, api_token: str) -> i
     return workspace_id
 
 
-_LOGIN_METHODS = ("oauth", "token")
+_LOGIN_METHODS = ("oauth", "device", "token")
 
 
 def _choose_method(
     method: str | None, invocation: Invocation, *, server_prefix: str | None, blockers: list[str]
 ) -> str:
-    """Pick ``oauth`` or ``token``: explicit, implied by ``--input``, or asked.
+    """Pick ``oauth``, ``device`` or ``token``: explicit, implied by ``--input``, or asked.
 
     A server with no CLI OAuth client, a non-interactive run, and ``--input``
     all keep the token login that existed before browser sign-in.
@@ -289,10 +289,10 @@ def _choose_method(
                 exit_status=EXIT_USAGE,
                 hint=f"Use one of: {', '.join(_LOGIN_METHODS)}.",
             )
-        if method == "oauth" and invocation.input_file is not None:
+        if method != "token" and invocation.input_file is not None:
             raise CliError(
                 code="invalid_argument_combination",
-                message="--input is for token logins; it cannot be used with --method oauth.",
+                message=f"--input is for token logins; it cannot be used with --method {method}.",
                 exit_status=EXIT_USAGE,
             )
         return method
@@ -302,16 +302,18 @@ def _choose_method(
         return "token"
     typer.echo("How do you want to sign in?", err=True)
     typer.echo("  1) Browser (OAuth)      recommended", err=True)
+    typer.echo("  2) Device code          no browser on this machine", err=True)
     typer.echo("  3) Paste an API token   for CI and scripts", err=True)
     choice = typer.prompt("Choose", default="1", show_default=False).strip()
-    if choice not in ("1", "3"):
+    methods = {"1": "oauth", "2": "device", "3": "token"}
+    if choice not in methods:
         raise CliError(
             code="invalid_login_method",
             message=f"'{choice}' is not one of the choices.",
             exit_status=EXIT_USAGE,
-            hint="Enter 1 for the browser or 3 to paste an API token.",
+            hint="Enter 1 for the browser, 2 for a device code or 3 to paste an API token.",
         )
-    return "oauth" if choice == "1" else "token"
+    return methods[choice]
 
 
 def _iso(epoch: int) -> str:
@@ -325,16 +327,18 @@ def _run_oauth_login(
     storage: str,
     open_browser: bool,
     interactive: bool,
+    device: bool = False,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
-    """Sign in through the browser and persist the refreshable session."""
+    """Sign in through the browser (or a device code) and persist the refreshable session."""
     base_url = resolve_base_url(server_prefix)
     client_id = oauth.client_id_for(server_prefix)
-    session = oauth.browser_login(
-        base_url,
-        client_id=client_id,
-        open_browser=open_browser,
-        say=lambda line: typer.echo(line, err=True),
-    )
+    say = lambda line: typer.echo(line, err=True)  # noqa: E731
+    if device:
+        session = oauth.device_login(base_url, client_id=client_id, say=say)
+    else:
+        session = oauth.browser_login(
+            base_url, client_id=client_id, open_browser=open_browser, say=say
+        )
     workspace_id = _verify_login(invocation, base_url=base_url, api_token=session.access)
 
     profile_name = invocation.profile or profiles.DEFAULT_PROFILE_NAME
@@ -378,8 +382,18 @@ def _run_login(
     storage: str,
     method: str | None = None,
     no_browser: bool = False,
+    device: bool = False,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     """Validate, connection-check, and persist one `auth login` invocation."""
+    if device:
+        if method not in (None, "device"):
+            raise CliError(
+                code="invalid_argument_combination",
+                message=f"--device cannot be used with --method {method}.",
+                exit_status=EXIT_USAGE,
+                hint="Use --device alone, or --method device.",
+            )
+        method = "device"
     if storage not in _STORAGE_MODES:
         raise CliError(
             code="invalid_storage_mode",
@@ -390,16 +404,15 @@ def _run_login(
 
     blockers = _prompt_blockers(invocation)
 
-    if (
-        _choose_method(method, invocation, server_prefix=server_prefix, blockers=blockers)
-        == "oauth"
-    ):
+    chosen = _choose_method(method, invocation, server_prefix=server_prefix, blockers=blockers)
+    if chosen in ("oauth", "device"):
         return _run_oauth_login(
             invocation,
             server_prefix=server_prefix,
             storage=storage,
             open_browser=not no_browser,
             interactive=not blockers,
+            device=chosen == "device",
         )
 
     if invocation.input_file is not None:
@@ -488,19 +501,33 @@ def auth_login(
     method: str | None = typer.Option(
         None,
         "--method",
-        help="How to sign in: a browser (oauth) or a pasted API token (token).",
-        metavar="oauth|token",
+        help=(
+            "How to sign in: a browser (oauth), a code typed on another device (device) "
+            "or a pasted API token (token)."
+        ),
+        metavar="oauth|device|token",
     ),
     no_browser: bool = typer.Option(
         False, "--no-browser", help="Print the sign-in URL instead of opening a browser."
+    ),
+    device: bool = typer.Option(
+        False,
+        "--device",
+        help=(
+            "Sign in with a device code, for a machine with no browser: the CLI prints "
+            "a short code and a URL, you approve on any other device, and the CLI "
+            "polls until you do. Same as --method device."
+        ),
     ),
 ) -> None:
     """Log in and store one profile's credentials.
 
     In a terminal, choose a browser sign-in (OAuth; the CLI keeps a token that
-    refreshes itself) or paste an API token (mm_..., from Workspace settings ->
-    API Tokens). The token names its workspace. For non-interactive use
-    (agents, CI), pass ``--input FILE`` with {"api_token": ...} instead.
+    refreshes itself), a device code (``--device``: for a machine with no
+    browser, you type a short code on any other device) or paste an API token
+    (mm_..., from Workspace settings -> API Tokens). The token names its
+    workspace. For non-interactive use (agents, CI), pass ``--input FILE`` with
+    {"api_token": ...} instead.
     Performs a lightweight connection check before saving anything; a failed
     check leaves existing profile state unchanged.
     """
@@ -531,6 +558,7 @@ def auth_login(
             storage=storage,
             method=method,
             no_browser=no_browser,
+            device=device,
         )
 
     executor.run(

@@ -17,8 +17,11 @@ created without a project.
 `mammoth auth login --method oauth` signs the operator in through the browser (PKCE, loopback
 `127.0.0.1`). The CLI keeps a 1 h `mm_` token and refreshes it under a file lock. `auth status`
 reports `credential: oauth` and `expires_at`. A refresh that fails exits 4 with `login_expired`:
-tell the operator to run `mammoth auth login` again. `--no-browser` prints the URL. Browser sign-in
-is for the operator's own terminal; an agent never runs it. `auth logout` also revokes the
+tell the operator to run `mammoth auth login` again. `--no-browser` prints the URL. `--device` is the sign-in for a
+machine with no browser: it prints a short code and a URL for the operator to approve on another
+device, then polls. Browser and device sign-in are for the operator's own terminal; an agent never
+runs them. A key made with `token create` expires after 30 days: `cli_key_expired` means run
+`mammoth auth login` again. `auth logout` also revokes the
 connection on the server, and warns (still clearing local state) if it cannot.
 
 `mammoth token create NAME`, `token list`, `token revoke KEY` are aliases of `client-app create`,

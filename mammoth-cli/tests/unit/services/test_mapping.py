@@ -506,3 +506,25 @@ def test_keys_refused_for_an_oauth_profile_keeps_the_server_wording(
     assert "doesn't allow CLI-created keys" in mapped.message
     assert mapped.hint == "A browser sign-in cannot create API keys on this server."
     assert mapped.recovery_commands == ["mammoth auth login --method token"]
+
+
+def _key_expired() -> MammothAuthError:
+    """The 401 the server returns for an mm_ key past its expiry."""
+    return MammothAuthError(
+        "This token has expired. Sign in again to get a new one.",
+        response_body={"name": "API_TOKEN_EXPIRED", "code": "4OAUT008"},
+    )
+
+
+def test_an_expired_key_says_to_sign_in_again() -> None:
+    mapped = map_sdk_exception(_key_expired())
+
+    assert mapped.code == "cli_key_expired"
+    assert "mammoth auth login" in mapped.message
+    assert mapped.recovery_commands == ["mammoth auth login"]
+
+
+def test_an_expired_key_is_told_apart_from_a_rejected_one() -> None:
+    mapped = map_sdk_exception(MammothAuthError("Invalid API credentials"))
+
+    assert mapped.code == "authentication_failed"

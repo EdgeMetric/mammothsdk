@@ -373,7 +373,14 @@ def resolve_token_workspace_id(base_url: str, api_token: str, timeout: float) ->
                 "Could not reach Mammoth to resolve the token's workspace"
             ) from exc
         if response.status_code == 401:
-            raise MammothAuthError("Invalid API credentials")
+            try:
+                refused = response.json()
+            except ValueError:
+                refused = None
+            raise MammothAuthError(
+                "Invalid API credentials",
+                response_body=refused if isinstance(refused, dict) else None,
+            )
         workspace_id: object = None
         if response.status_code == 200:
             try:

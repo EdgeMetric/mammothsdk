@@ -58,6 +58,11 @@ class ClientAppPostResponse(BaseModel):
     token: str = Field(
         ..., description="Plaintext Bearer token, returned once and never recoverable"
     )
+    expires_at: str | None = Field(
+        None,
+        description="When the token stops working (UTC); null = never. "
+        "Set on a token the Mammoth CLI creates.",
+    )
 
 
 class PatchOperation(BaseModel):
