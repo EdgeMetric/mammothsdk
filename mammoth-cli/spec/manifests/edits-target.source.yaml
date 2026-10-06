@@ -166,6 +166,7 @@ edits_target_commands:
 - support.workspace.user.transfer
 - template.delete
 - template.update
+- token.revoke
 - trash.add
 - trash.restore
 - user.avatar.delete

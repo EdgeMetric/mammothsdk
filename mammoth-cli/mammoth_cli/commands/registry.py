@@ -611,6 +611,10 @@ HANDLERS: dict[str, Handler] = {
     "client-app.get": client_app_cmd.client_app_get,
     "client-app.list": client_app_cmd.client_app_list,
     "client-app.update": client_app_cmd.client_app_update,
+    # token family: aliases of client-app create / list / delete
+    "token.create": client_app_cmd.client_app_create,
+    "token.list": client_app_cmd.client_app_list,
+    "token.revoke": client_app_cmd.client_app_delete,
     # report + activity families
     "report.list": report_cmd.report_list,
     "activity.list": activity_cmd.activity_list,

@@ -74,6 +74,7 @@ _GROUP_DESCRIPTIONS = {
         "Manage the workspace's API keys (client apps): key + secret credentials "
         "for scripts and integrations."
     ),
+    "token": "Create, list, and revoke long-lived API keys (aliases of client-app).",
     "completion": "Install or print shell completion.",
     "config": "Read and update local CLI configuration.",
     "connector": "Manage data connectors and connector profiles.",
@@ -134,6 +135,7 @@ _ROOT_HELP_PANELS = {
     "annotation": "Manage resources",
     "billing": "Manage resources",
     "client-app": "Manage resources",
+    "token": "Manage resources",
     "external-key": "Manage resources",
     "notification": "Manage resources",
     "parameter": "Manage resources",

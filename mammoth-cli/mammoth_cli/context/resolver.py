@@ -12,13 +12,13 @@ overrides no project at all.
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 
 from mammoth import DEFAULT_TIMEOUT
 from mammoth.client import resolve_token_workspace_id
 
-from mammoth_cli.context import credentials, profiles
+from mammoth_cli.context import credentials, oauth, profiles
 from mammoth_cli.context.endpoint import resolve_base_url
 from mammoth_cli.context.profiles import ProfileRecord
 from mammoth_cli.errors.envelope import (
@@ -71,6 +71,8 @@ class ResolvedAuth:
         base_url: The resolved API base url.
         api_token: The ``mm_...`` Bearer token, or None with a key + secret.
         headers: Extra request headers from an embedding host, or None.
+        token_provider: Returns the current access token of a browser login
+            (refreshing it when due); set instead of ``api_token``.
     """
 
     api_key: str | None
@@ -79,6 +81,7 @@ class ResolvedAuth:
     base_url: str
     api_token: str | None = None
     headers: Mapping[str, str] | None = None
+    token_provider: Callable[[], str] | None = None
 
 
 def not_authenticated_error() -> CliError:
@@ -198,6 +201,14 @@ def resolve_auth(
         credential = credentials.load_credential(profile_name)
         if credential is not None:
             base_url = _endpoint(record.server_prefix)
+            if credential.oauth is not None:
+                return ResolvedAuth(
+                    None,
+                    None,
+                    _require_positive_workspace(record.workspace_id, source="profile"),
+                    base_url,
+                    token_provider=oauth.token_source(profile_name, base_url),
+                )
             return ResolvedAuth(
                 credential.api_key,
                 credential.api_secret,

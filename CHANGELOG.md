@@ -6,6 +6,22 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.8.21]
+
+### Added
+
+- `MammothClient(token_provider=...)`: a callable returning the current `mm_...` token, called for
+  every request, so a short-lived token that is refreshed elsewhere is always sent fresh. Static
+  `api_token` and `api_key` + `api_secret` clients are unchanged.
+
+## mammoth-cli 2.2.40
+
+- `mammoth auth login` offers a browser sign-in (OAuth, PKCE, loopback) next to pasting an API
+  token; `--method oauth|token` and `--no-browser`. The session is a 1 h token that refreshes itself
+  under a file lock. `auth status` shows the method and expiry; `auth logout` also revokes the
+  connection on the server, and warns (still clearing local state) when it cannot.
+- `mammoth token create / list / revoke` are aliases of `client-app create / list / delete`.
+
 ### Fixed
 
 - `mammoth-cli` 2.2.39: `project copy` now says in its NAME help that a taken name is fine: the server names the
