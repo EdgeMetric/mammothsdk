@@ -190,7 +190,7 @@ def test_task_draft_and_math_routes_have_literal_wires(
                     _write(
                         tmp_path,
                         "math-invalid",
-                        {"dataset_id": DATASET, "expression": "unknown * 2"},
+                        {"dataset_id": DATASET, "expression": "unknown * 2", "new_column": "out"},
                     ),
                 )
             )

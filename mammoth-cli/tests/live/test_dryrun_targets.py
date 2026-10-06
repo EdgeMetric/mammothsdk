@@ -37,7 +37,7 @@ from mammoth_cli.runtime.dryrun_targets import (
 
 pytestmark = pytest.mark.live
 
-PREFIX = "dryrun-targets"
+PREFIX = "uqa-live-dryrun-targets"
 _QUIET = ["--no-input"]
 _YES = ["--yes", "--no-input"]
 

@@ -62,7 +62,9 @@ def test_dataset_list_items_are_self_describing_and_fit_the_tool_cap(
     assert data["datasets"], "the scratch project has the uploaded dataset"
     for item in data["datasets"]:
         assert {"id", "name", "created", "source"} <= item.keys(), item
-        assert "rows" in item or "columns" in item, item
+        # Row and column counts are not on list rows: ca4cf0a0 left them to `dataset get`
+        # because the list route computes them in DuckDB.
+        assert "rows" not in item and "columns" not in item, item
     assert data["order"], "the list must state its order"
     assert "sample_values" in data["note"], "the list must say where sample values are"
 

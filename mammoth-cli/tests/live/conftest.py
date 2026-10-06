@@ -153,7 +153,7 @@ def live_cli(live_profile: None) -> LiveCli:
 def scratch_project(live_cli: LiveCli, request: pytest.FixtureRequest) -> Iterator[int]:
     """A project this module owns; deleted (with its data) at the end, even on failure."""
     stem = request.module.__name__.rsplit(".", 1)[-1].removeprefix("test_")
-    name = f"live-{stem.replace('_', '-')}-{int(time.time())}"
+    name = f"uqa-live-{stem.replace('_', '-')}-{int(time.time())}"
     data, _ = live_cli.ok("project", "create", name, "--yes")
     project = int(data["id"])
     try:
