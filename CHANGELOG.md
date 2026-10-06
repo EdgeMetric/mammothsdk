@@ -8,6 +8,12 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- `mammoth-cli` 2.2.41: reads return what the agent fetched next. `view list` adds `built_from`/`feeds`
+  (view ids), `pipeline_status` and `in_sync`; `view analyze 5000,5001` takes several ids (up to 12) and
+  returns `{requested, analyses, errors}` with each view's rows, columns, dataset and pipeline `steps`;
+  `job wait` returns an `outcome` for a view run (rows, columns, status) and a `project copy`
+  (datasets, views, skipped, and per-view `runs` when the backend records them). Independent reads
+  now wait together (`call_many`) instead of in turn.
 - `mammoth-cli` 2.2.40: `schema get` takes several command ids joined by commas or semicolons
   (`schema get view.list,view.analyze`) and returns one result, `{"requested", "schemas", "errors"}`;
   an id with no schema is an entry in `errors` and does not fail the call. `schema find` already took
