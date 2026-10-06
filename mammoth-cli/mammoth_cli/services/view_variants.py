@@ -11,6 +11,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
+from mammoth.models.pipeline import Operator
+
 from mammoth_cli.errors.envelope import (
     CODE_INVALID_ARGUMENTS,
     EXIT_API,
@@ -48,7 +50,7 @@ def plan_variants(
         VariantPlan(
             value=value,
             name=_render_name(name_template, source_name, value),
-            condition={"column": column, "operator": "EQ", "value": value},
+            condition={"column": column, "operator": Operator.EQ.value, "value": value},
         )
         for value in values
     ]
@@ -58,6 +60,31 @@ def plan_variants(
             hint="Include {value} in name_template.",
         )
     return plans
+
+
+def name_template_of(document: dict[str, Any]) -> str:
+    """The document's name template; absent, null or empty means the default."""
+    return str(document.get("name_template") or DEFAULT_NAME_TEMPLATE)
+
+
+def require_known_column(view_id: int, column: str, names: set[str]) -> None:
+    """Refuse a column the source view lacks; an unreadable column list is an error too."""
+    if not names:
+        raise CliError(
+            code=CODE_INVALID_ARGUMENTS,
+            message=f"Could not read the columns of view {view_id}, so '{column}' was not checked.",
+            exit_status=EXIT_API,
+            hint=f"Run `mammoth view get {view_id}` and retry; no view was created.",
+            details={"view_id": view_id, "column": column},
+        )
+    if column not in names:
+        raise CliError(
+            code=CODE_INVALID_ARGUMENTS,
+            message=f"View {view_id} has no column '{column}'.",
+            exit_status=EXIT_USAGE,
+            hint="Use one of: " + ", ".join(sorted(names)) + ".",
+            details={"view_id": view_id, "column": column, "columns": sorted(names)},
+        )
 
 
 def _render_name(template: str, source_name: str, value: VariantValue) -> str:

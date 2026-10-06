@@ -68,11 +68,12 @@ from mammoth_cli.services.conditions import CONDITION_KWARG, compile_condition
 from mammoth_cli.services.input_fields import TASK_COUNT_FIELD
 from mammoth_cli.services.sql_check import check_sql_binds
 from mammoth_cli.services.view_variants import (
-    DEFAULT_NAME_TEMPLATE,
     VariantPlan,
     created_entry,
+    name_template_of,
     partial_failure,
     plan_variants,
+    require_known_column,
     variants_result,
 )
 from mammoth_cli.services.write_impact import (
@@ -801,29 +802,17 @@ def view_variants_create(invocation: Invocation) -> HandlerResult:
     with open_service(invocation) as (service, auth):
         _require_clone_from_same_dataset(service, from_view, dataset_id)
         source = service.call(_DATAVIEW_GET_SYMBOL, dataset_id=dataset_id, dataview_id=from_view)
-        _require_known_column(service, dataset_id, from_view, column)
+        names = set(_display_name_map(service, dataset_id, from_view, None).values())
+        require_known_column(from_view, column, names)
         plans = plan_variants(
             str(source.get("name", "")) if isinstance(source, dict) else "",
             column,
             document["values"],
-            str(document.get("name_template", DEFAULT_NAME_TEMPLATE)),
+            name_template_of(document),
         )
         created = _create_variants(service, dataset_id, from_view, plans)
     result = variants_result(dataset_id, from_view, column, created)
     return result, _meta(invocation, auth.workspace_id)
-
-
-def _require_known_column(service: Any, dataset_id: int, view_id: int, column: str) -> None:
-    """Refuse a column the source view lacks, before any view is created."""
-    names = set(_display_name_map(service, dataset_id, view_id, None).values())
-    if names and column not in names:
-        raise CliError(
-            code=CODE_INVALID_ARGUMENTS,
-            message=f"View {view_id} has no column '{column}'.",
-            exit_status=EXIT_USAGE,
-            hint="Use one of: " + ", ".join(sorted(names)) + ".",
-            details={"view_id": view_id, "column": column, "columns": sorted(names)},
-        )
 
 
 def _create_variants(
