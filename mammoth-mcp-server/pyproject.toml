@@ -7,7 +7,7 @@ license = "LicenseRef-Proprietary"
 readme = "README.md"
 requires-python = ">=3.12,<3.15"
 dependencies = [
-    "mammoth-io (>=0.8.17,<0.9)",
+    "mammoth-io (>=0.8.21,<0.9)",
     "mcp (>=2.2.0,<3)",
     "pydantic (>=2.12.5,<3)",
     "redis (>=5,<8)",

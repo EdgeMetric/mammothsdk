@@ -11,7 +11,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
 
-from mammoth._pure.builders import (
+from mammoth.builders import (
     build_add_column_params,
     build_bulk_replace_params,
     build_combine_params,
@@ -41,8 +41,8 @@ from mammoth._pure.builders import (
     build_text_transform_params,
     build_unnest_params,
     build_window_params,
+    resolve_column,
 )
-from mammoth._pure.resolve import resolve_column
 from mammoth.client import MammothClient
 from mammoth.condition import CompoundCondition, Condition, NotCondition
 from mammoth.exceptions import MammothValidationError
@@ -109,7 +109,7 @@ _SQL_GENERATION_FAILED_MESSAGE = (
 @dataclass(frozen=True)
 class _ColumnContext:
     """A View's column metadata resolved once — the inputs every pysdk pure
-    builder takes (mirrors their shared signature in ``mammoth._pure.builders``).
+    builder takes (mirrors their shared signature in ``mammoth.builders``).
 
     ``col_map`` maps display→internal name, ``internal_names`` is every internal
     name (pass-through resolution), and ``column_types`` maps display→backend

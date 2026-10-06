@@ -406,22 +406,8 @@ class ApiFields:
     FULL = "__full"
 
 
-# The header a call names the workspace it acts in with.
-WORKSPACE_HEADER = "X-WORKSPACE-ID"
-
-# The route that says what a bearer token is for, which also proves it is good.
-CURRENT_WORKSPACE_PATH = "/workspaces/current"
 # Whoever the token was issued to: Mammoth does not say, and nothing here asks.
 TOKEN_CLIENT = "mammoth"
-
-
-class TokenFields:
-    """What Mammoth says a bearer token is for."""
-
-    # The one workspace the token acts in.
-    WORKSPACE_ID = "id"
-    # The server the token was issued for (RFC 8707), as its URI.
-    RESOURCE = "resource"
 
 
 class TokenClaims:

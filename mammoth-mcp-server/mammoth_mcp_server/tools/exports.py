@@ -4,13 +4,13 @@ An export is the tail of a pipeline. It runs when the view runs and writes the
 view's rows to a database, a file store, an email or another Mammoth dataset.
 
 The destinations, the settings each one needs and the envelope the API takes are
-mm-pysdk's (`mammoth._pure.builders`), imported rather than copied, so the SDK
+mm-pysdk's (`mammoth.builders`), imported rather than copied, so the SDK
 and this server always accept the same settings. The settings differ so much
 between destinations that sending them all with every request is not possible:
 `get_export_schema` returns one destination's settings on demand.
 """
 
-from mammoth._pure.builders import _EXPORT_CONTRACTS, build_export_spec
+from mammoth.builders import EXPORT_CONTRACTS, build_export_spec, export_contract
 from mammoth.client import MammothClient
 from mammoth.exceptions import MammothValidationError
 from mammoth.models.exports import AddExportSpec, HandlerType, TriggerType
@@ -26,7 +26,7 @@ from .pipeline import view_ids
 DESTINATIONS = ", ".join(sorted(handler.value for handler in HandlerType))
 # Destinations mm-pysdk has no settings contract for. Their settings go to
 # the API unchecked, which judges them itself.
-_UNCHECKED = frozenset(HandlerType) - frozenset(_EXPORT_CONTRACTS)
+_UNCHECKED = frozenset(HandlerType) - frozenset(EXPORT_CONTRACTS)
 
 
 @mcp_server.tool(
@@ -89,7 +89,7 @@ async def get_export_schema(destination: str) -> dict[str, JsonValue]:
         judges the settings itself.
     """
     handler = read_destination(destination)
-    contract = _EXPORT_CONTRACTS.get(handler)
+    contract = export_contract(handler)
     if contract is None:
         return {"destination": handler.value, "checked": False}
     return {

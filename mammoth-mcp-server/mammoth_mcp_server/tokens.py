@@ -15,12 +15,7 @@ from mammoth.exceptions import MammothAuthError
 from mcp.server.auth.provider import AccessToken
 
 from . import sdk
-from .consts import (
-    CURRENT_WORKSPACE_PATH,
-    TOKEN_CLIENT,
-    TokenClaims,
-    TokenFields,
-)
+from .consts import TOKEN_CLIENT, TokenClaims
 
 
 class MammothTokenVerifier:
@@ -39,16 +34,15 @@ class MammothTokenVerifier:
         """
         try:
             async with sdk.client_with(token) as client:
-                issued = await client._request_json("GET", CURRENT_WORKSPACE_PATH)
+                issued = await client.workspaces.current()
         except MammothAuthError:
             return None
-        resource = issued.get(TokenFields.RESOURCE)
         return AccessToken(
             token=token,
             client_id=TOKEN_CLIENT,
             scopes=[],
-            resource=resource if isinstance(resource, str) else None,
-            claims={TokenClaims.WORKSPACE_ID: int(issued[TokenFields.WORKSPACE_ID])},
+            resource=issued.resource,
+            claims={TokenClaims.WORKSPACE_ID: issued.id},
         )
 
 

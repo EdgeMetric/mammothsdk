@@ -27,7 +27,6 @@ from .consts import (
     JOB_TIMEOUT_SECONDS,
     ROUTE_TIMEOUT_SECONDS,
     UPLOAD_FIELD,
-    WORKSPACE_HEADER,
     TokenClaims,
 )
 
@@ -103,7 +102,9 @@ async def build_client(
             " Use that workspace, or connect again and choose the other."
         )
     client = client_with(access_token.token)
-    _act_in(client, own_workspace)
+    # Named here, the client does not ask the API which workspace its bearer
+    # is for, with a request that blocks every other caller this worker serves.
+    client.set_workspace_id(own_workspace)
     if project_id is not None:
         client.set_project_id(project_id)
     async with client:
@@ -125,16 +126,6 @@ def client_with(bearer: str) -> MammothClient:
         # script that started a long build and would add whole seconds here.
         job_poll_seconds=JOB_POLL_SECONDS,
     )
-
-
-def _act_in(client: MammothClient, workspace_id: int) -> None:
-    """Make the client act in one workspace.
-
-    Set here, the client does not ask the API which workspace its bearer is
-    for, with a request that blocks every other caller this worker serves.
-    """
-    client._workspace_id = workspace_id
-    client.session.headers[WORKSPACE_HEADER] = str(workspace_id)
 
 
 T = TypeVar("T")
@@ -193,6 +184,6 @@ async def request_api(
     # Every file goes under the same field, which is what the API reads.
     files = [(UPLOAD_FIELD, one) for one in upload] if upload else None
     payload: dict[str, JsonValue] = await read_sdk_errors(
-        client._request_json(method, path, params=query, json=body, files=files)
+        client.request_json(method, path, params=query, json=body, files=files)
     )
     return payload
