@@ -1,6 +1,6 @@
 # Command reference
 
-Generated from the reviewed command manifests for mammoth-cli 2.2.40.
+Generated from the reviewed command manifests for mammoth-cli 2.2.41.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
@@ -3776,7 +3776,7 @@ Total commands: 655.
 
 **Arguments**
 
-- `COMMAND_ID` (str, required) — Command id to fetch the schema for (e.g. view.transform.bulk-replace).
+- `COMMAND_ID` (str, required) — Command id to fetch the schema for (e.g. view.transform.bulk-replace); join several with commas (view.list,view.analyze) for one result with all of them.
 
 - Mutation class: `read`
 - Confirmation: `none`
@@ -4867,7 +4867,7 @@ Total commands: 655.
 
 **Arguments**
 
-- `VIEW_ID` (int, required) — ID of the view to act on.
+- `VIEW_ID` (str, required) — ID of the view to analyze; join several with commas (5000,5001) for one result with all of them.
 - `DATASET_ID` (int, optional) — ID of the dataset the view belongs to; resolved from the view when omitted.
 
 - Mutation class: `read`

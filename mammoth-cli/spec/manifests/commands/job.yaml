@@ -113,7 +113,10 @@ commands:
   - CT-JOB-WAIT-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: 'On success, outcome is the state of what the job acted on: a view run gives the view (rows, cols,
+    columns, status, pipeline_running) from one read, a project copy gives datasets, views, skipped and runs (ok, failed with
+    each error, pending) from the job itself. No view get or view analyze is needed after it. A view that cannot be read
+    is outcome_error, not a failed wait.'
   reviewed_by: primary
 - command_id: job.wait-many
   command_path: job wait-many

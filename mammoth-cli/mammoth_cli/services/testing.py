@@ -8,7 +8,7 @@ contract tests can import one shared fake, mirroring
 
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -90,6 +90,16 @@ class FakeMammothService:
                 raise programmed
             return programmed
         return {}
+
+    def call_many(self, calls: Sequence[tuple[str, dict[str, Any]]]) -> list[Any]:
+        """Run each call in turn, keeping a failure as that call's result like the real one."""
+        results: list[Any] = []
+        for sdk_symbol, kwargs in calls:
+            try:
+                results.append(self.call(sdk_symbol, **kwargs))
+            except CliError as error:
+                results.append(error)
+        return results
 
     def wait_if_job(self, response: Any, *, dashboard_url: str | None = None) -> Any:
         """Resolve a job-shaped response like the real service would.

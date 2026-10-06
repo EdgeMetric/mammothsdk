@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+
 import pytest
 
 from mammoth_cli.commands.registry import _schema_find
@@ -384,3 +386,42 @@ def test_workflow_canvas_declares_which_input_only_proposes() -> None:
 
     assert record["edits_target"] is True
     assert record["proposal_input"] == "canvas_state.proposed_changes"
+
+
+def _get(*ids: str) -> dict:
+    result = make_runner().invoke(["schema", "get", *ids, "--output", "json", "--no-input"])
+    assert result.exit_code == 0, result.output
+    return json.loads(result.output)
+
+
+def test_schema_get_returns_one_schema_per_comma_joined_id_in_a_single_call() -> None:
+    ids = ["view.list", "view.analyze", "view.transform.bulk-replace"]
+    combined = _get(",".join(ids))["data"]
+
+    assert combined["requested"] == 3
+    assert combined["errors"] == []
+    assert [entry["command_id"] for entry in combined["schemas"]] == ids
+    for entry in combined["schemas"]:
+        assert entry == _get(entry["command_id"])["data"]
+
+
+def test_schema_get_unknown_id_is_an_entry_in_errors_not_a_failed_call() -> None:
+    combined = _get("view.list;no.such.command,view.list")["data"]
+
+    assert combined["requested"] == 2
+    assert [entry["command_id"] for entry in combined["schemas"]] == ["view.list"]
+    assert combined["errors"][0]["command_id"] == "no.such.command"
+    assert combined["errors"][0]["code"] == "schema_not_found"
+
+
+def test_schema_get_single_unknown_id_still_fails() -> None:
+    result = make_runner().invoke(["schema", "get", "no.such.command", "--output", "json"])
+    assert result.exit_code == 2
+
+
+def test_schema_get_caps_the_ids_per_call() -> None:
+    result = make_runner().invoke(
+        ["schema", "get", ",".join(f"x.y{i}" for i in range(13)), "--output", "json"]
+    )
+    assert result.exit_code == 2
+    assert "too_many_ids" in result.output

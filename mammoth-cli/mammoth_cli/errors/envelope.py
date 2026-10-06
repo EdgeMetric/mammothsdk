@@ -178,6 +178,7 @@ ERROR_SUMMARIES: dict[str, str] = {
     "task_runtime_error": "A background task hit an error while running.",
     "timeout": "This step took too long. It may still be running.",
     "too_many_goals": _S_BAD_REQUEST,
+    "too_many_ids": _S_BAD_REQUEST,
     "unexpected_argument": _S_BAD_REQUEST,
     "unknown_agent": _S_SETUP,
     "unknown_column": "A column the assistant referred to doesn't exist.",
