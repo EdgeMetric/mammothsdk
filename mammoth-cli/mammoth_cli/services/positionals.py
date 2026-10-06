@@ -797,7 +797,6 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
             "view.restore",
             "view.trash",
             "view.impact",
-            "view.analyze",
             "view.optimize",
             "view.update",
             "view.conditional-format.create",
@@ -813,6 +812,28 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
             "view.version.list",
         )
     },
+    # ``view analyze`` reads several views in one call, so VIEW_ID is text that the
+    # handler splits (5000,5001); the trailing DATASET_ID then applies to every id.
+    "view.analyze": (
+        PositionalSpec(
+            name="view_id",
+            type=str,
+            required=True,
+            help=(
+                "ID of the view to analyze; join several with commas (5000,5001) for one "
+                "result with all of them."
+            ),
+            fills_sdk_param="dataview_id",
+            example_value="123",
+        ),
+        PositionalSpec(
+            name="dataset_id",
+            type=int,
+            required=False,
+            help="ID of the dataset the view belongs to; resolved from the view when omitted.",
+            falls_back_to_field="dataset_id",
+        ),
+    ),
     # The sub-resource commands that also take a specific item id: VIEW_ID first,
     # then the required sub id, then the OPTIONAL trailing DATASET_ID resolved from
     # the view. The sub id keeps its own name (a real, positional-sourced SDK
