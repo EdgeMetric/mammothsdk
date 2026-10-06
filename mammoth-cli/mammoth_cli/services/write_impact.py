@@ -19,7 +19,7 @@ from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field
 from typing import Any
 
-from mammoth_cli.errors.envelope import CODE_NO_OP, EXIT_USAGE, CliError
+from mammoth_cli.errors.envelope import CODE_EMPTIES_VIEW, CODE_NO_OP, EXIT_USAGE, CliError
 from mammoth_cli.services import data_profile as dp
 from mammoth_cli.services import read_queries
 from mammoth_cli.services.conditions import compile_condition
@@ -27,6 +27,7 @@ from mammoth_cli.services.conditions import compile_condition
 #: Duplicate groups read back, largest first; more than this is reported as a floor.
 MAX_DUPLICATE_GROUPS = 1000
 _COUNT_KEY = "agg_0"
+_GROUP_KEY = "group_0"
 _COUNT = [{"function": "COUNT", "as_name": "rows"}]
 _REMOVE = "REMOVE"
 
@@ -39,11 +40,14 @@ class Measured:
         changes: Rows or cells the step would change; 0 makes the dry run a no-op.
         report: The ``predicted_impact`` block of the dry-run report.
         no_op_message: What the ``no_op`` error says when ``changes`` is 0.
+        empties_message: What the ``empties_view`` error says when a keep filter
+            matches no row; ``None`` for every other step.
     """
 
     changes: int
     report: dict[str, Any]
     no_op_message: str
+    empties_message: str | None = None
 
 
 @dataclass(frozen=True)
@@ -81,6 +85,9 @@ class ImpactRead:
 
     def aggregate(self, **fields: Any) -> list[dict[str, Any]]:
         """Rows of one read-only aggregate against this view."""
+        return _rows(self._query(**fields))
+
+    def _query(self, **fields: Any) -> dict[str, Any]:
         result = self.service.call(
             read_queries.AGGREGATE_SYMBOL,
             dataset_id=self.dataset_id,
@@ -88,7 +95,7 @@ class ImpactRead:
             project_id=self.project_id,
             **fields,
         )
-        return [row for row in (result or {}).get("data") or [] if isinstance(row, dict)]
+        return result if isinstance(result, dict) else {}
 
     def count(self, condition: Any = None) -> int:
         """Rows matching ``condition`` (a compiled condition; all rows without one)."""
@@ -97,10 +104,18 @@ class ImpactRead:
             if condition is not None
             else None
         )
-        rows = self.aggregate(aggregations=_COUNT, condition=built)
-        if not rows:
-            raise _unmeasurable("the count query returned no row")
-        return int(rows[0].get(_COUNT_KEY) or 0)
+        result = self._query(aggregations=_COUNT, condition=built)
+        rows = _rows(result)
+        if rows:
+            return int(rows[0].get(_COUNT_KEY) or 0)
+        # An answered count no row matches comes back with no row, not a row of 0.
+        if result.get("STATUS") == "READY":
+            return 0
+        raise _unmeasurable("the count query returned no row")
+
+
+def _rows(result: Mapping[str, Any]) -> list[dict[str, Any]]:
+    return [row for row in result.get("data") or [] if isinstance(row, dict)]
 
 
 def no_op_error(message: str, *, view_id: int) -> CliError:
@@ -110,6 +125,19 @@ def no_op_error(message: str, *, view_id: int) -> CliError:
         message=message,
         exit_status=EXIT_USAGE,
         hint="Nothing was changed and nothing needs to be; tell the user there is no work.",
+        details={"view_id": view_id},
+    )
+
+
+def empties_view_error(message: str, *, view_id: int) -> CliError:
+    """The dry-run failure for a keep filter that matches no row."""
+    return CliError(
+        code=CODE_EMPTIES_VIEW,
+        message=message,
+        exit_status=EXIT_USAGE,
+        hint="Nothing was changed. Tell the user no row matches and name the values the "
+        "column holds, then ask which they meant. Only if the user then asks for the empty "
+        "filter anyway, run the command again with --allow-empty.",
         details={"view_id": view_id},
     )
 
@@ -186,14 +214,55 @@ def measure_filter(read: ImpactRead, kwargs: Mapping[str, Any]) -> Measured:
     matching = read.count(compile_condition(spec))
     removes = str(read.document.get("filter_type") or "SHOW").upper() == _REMOVE
     removed = matching if removes else total - matching
+    report = _rows_report(removed, total)
+    held = _values_when_nothing_matches(read, spec) if matching == 0 else None
+    if held is not None:
+        report["no_row_matches"] = held
     message = (
         f"No row of view {read.view_id} matches the condition (0 of {total}), so removing "
-        "matching rows changes nothing; nothing to change."
+        f"matching rows changes nothing; nothing to change.{_holds_note(held)}"
         if removes
         else f"Every row of view {read.view_id} matches the condition ({total} of {total}), "
         "so the filter keeps all of them; nothing to change."
     )
-    return Measured(removed, _rows_report(removed, total), message)
+    empties = (
+        f"No row of view {read.view_id} matches the condition (0 of {total}), so keeping "
+        f"only matching rows would leave the view empty.{_holds_note(held)}"
+        if matching == 0 and total and not removes
+        else None
+    )
+    return Measured(removed, report, message, empties)
+
+
+#: Distinct values named when a one-column condition matches no row.
+_HELD_VALUES_CAP = 20
+
+
+def _values_when_nothing_matches(read: ImpactRead, spec: Any) -> dict[str, Any] | None:
+    """The values a one-column condition's column holds, when no row matched it.
+
+    "Keep only North" on East/West data matches nothing; saying so without the
+    values there leaves the agent guessing what the user meant (FB-03).
+    """
+    column = spec.get("column") if isinstance(spec, dict) else None
+    internal = read.display_to_internal().get(str(column)) if column else None
+    if internal is None:
+        return None
+    rows = read.aggregate(
+        aggregations=_COUNT,
+        group_by=[internal],
+        sort=[[_COUNT_KEY, "DESC"]],
+        limit=_HELD_VALUES_CAP,
+    )
+    values = {str(row.get(_GROUP_KEY)): int(row.get(_COUNT_KEY) or 0) for row in rows}
+    return {"column": str(column), "values": values} if values else None
+
+
+def _holds_note(held: dict[str, Any] | None) -> str:
+    if held is None:
+        return ""
+    listed = ", ".join(f"{value} ({count})" for value, count in held["values"].items())
+    return f" {held['column']} holds: {listed}."
 
 
 # --- fill-missing ----------------------------------------------------------

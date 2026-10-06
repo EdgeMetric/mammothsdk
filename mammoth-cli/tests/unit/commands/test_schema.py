@@ -931,3 +931,27 @@ def test_a_find_with_no_match_still_points_into_families() -> None:
 
     assert "browse" in result
     assert "mammoth schema list" in result["browse"]["next"]
+
+
+def test_set_password_tells_the_agent_to_ask_for_the_files_password() -> None:
+    """FB-15: the contract said only "do not live-test password changes", so the
+    agent asked for an unlocked copy instead of the locked file's password."""
+    schema = get_schema("file.set-password")
+    assert schema is not None
+    assert "ask the user for the file's password" in schema["preconditions"]
+    assert "never ask for an unlocked copy" in schema["preconditions"]
+    assert "live-test" not in schema["preconditions"]
+
+
+@pytest.mark.parametrize(
+    "query",
+    [
+        "choose the pdf extraction method",
+        "select pdf extraction method for an uploaded pdf file",
+    ],
+)
+def test_a_pdf_waiting_for_its_extraction_method_finds_file_update(query: str) -> None:
+    """FB-14: an uploaded PDF waits at "Selecting pdf extraction method pending";
+    the command that sends the choice had no words a search for it could match."""
+    matches = [item["command_id"] for item in find_schemas(query)["matches"]]
+    assert matches and matches[0] == "file.update", f"{query!r} -> {matches}"

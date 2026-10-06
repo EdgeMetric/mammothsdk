@@ -141,6 +141,16 @@
     },
     {
       "method": "GET",
+      "path": "/workspaces/current",
+      "state": "pending_server_release",
+      "pending_in": "origin/feat/agent-cli-surface@7e2bf189c4",
+      "sdk_symbols": [
+        "mammoth.api.workspace.WorkspaceAPI.current"
+      ],
+      "commands": []
+    },
+    {
+      "method": "GET",
       "path": "/workspaces/{}/addons",
       "state": "removed_on_server",
       "pending_in": null,

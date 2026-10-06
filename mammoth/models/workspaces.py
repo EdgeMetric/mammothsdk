@@ -31,6 +31,13 @@ class WorkspaceSchema(BaseModel):
     total_users: int | None = Field(None, description="Total number of users in the workspace")
 
 
+class CurrentWorkspace(BaseModel):
+    """The workspace a credential acts in, and the server it was issued for."""
+
+    id: int
+    resource: str | None = None
+
+
 class WorkspacesSchema(BaseModel):
     """Schema for a list of workspaces with pagination."""
 

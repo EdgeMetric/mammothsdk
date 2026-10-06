@@ -1019,6 +1019,33 @@ class MammothClient:
         # response before it reaches this typed wrapper.
         return cast(dict[str, Any], result)
 
+    async def request_json(
+        self,
+        method: str,
+        path: str,
+        *,
+        params: dict[str, Any] | None = None,
+        json: dict[str, Any] | None = None,
+        files: list[Any] | None = None,
+    ) -> dict[str, Any]:
+        """Call a route this SDK has no method for, and return its JSON object.
+
+        The request carries this client's credentials, timeouts, retries and
+        error handling, as every SDK method's does.
+
+        Args:
+            method: HTTP method, e.g. ``"GET"``.
+            path: The route's path under the API root, e.g. ``"/workspaces"``.
+            params: Query parameters.
+            json: JSON body.
+            files: Files for a multipart body, as httpx takes them.
+
+        Raises:
+            MammothAPIError: If the route refuses the call, or answers with
+                anything but a JSON object.
+        """
+        return await self._request_json(method, path, params=params, json=json, files=files)
+
     async def _request_binary(
         self,
         method: str,
@@ -1139,6 +1166,19 @@ class MammothClient:
         return await self._wait_if_job(
             response, timeout=timeout, poll_interval=poll_interval, fetch=fetch
         )
+
+    def set_workspace_id(self, workspace_id: int) -> None:
+        """Name the workspace this client acts in.
+
+        A token client otherwise asks the API once, on first use. A caller that
+        already knows the token's workspace saves that request. The API still
+        refuses a workspace the token is not for.
+
+        Args:
+            workspace_id: ID of the workspace.
+        """
+        self._workspace_id = workspace_id
+        self.session.headers["X-WORKSPACE-ID"] = str(workspace_id)
 
     def set_project_id(self, project_id: int) -> None:
         """Set the active project for subsequent API calls.

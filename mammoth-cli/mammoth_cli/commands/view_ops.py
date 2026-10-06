@@ -20,6 +20,7 @@ enum-typed fields are forwarded as the plain string given on ``--input``.
 from __future__ import annotations
 
 import json
+import re
 import shlex
 from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
@@ -29,6 +30,7 @@ from mammoth_cli.commands.view import (
     _DATAVIEW_GET_SYMBOL,
     _FIND_DATASET_SYMBOL,
     BRIEF_VIEW_FIELDS,
+    UNFINISHED_STATE,
     _dataview_metadata,
     _require_discovery_allowed,
     apply_column_renames,
@@ -39,6 +41,7 @@ from mammoth_cli.commands.view import (
     reject_dataset_export_conflicts,
     wait_for_followon_job,
     wait_for_pipeline_to_settle,
+    wait_for_refreshed_view,
     wait_for_view_row_count,
     with_join_check,
 )
@@ -60,12 +63,13 @@ from mammoth_cli.runtime.dryrun import DryRunStop
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.session import open_service, resolved_project
 from mammoth_cli.services.command_contract import bind_command_inputs
-from mammoth_cli.services.conditions import CONDITION_KWARG
+from mammoth_cli.services.conditions import CONDITION_KWARG, compile_condition
 from mammoth_cli.services.input_fields import TASK_COUNT_FIELD
 from mammoth_cli.services.sql_check import check_sql_binds
 from mammoth_cli.services.write_impact import (
     ImpactRead,
     Measure,
+    empties_view_error,
     measure_bulk_replace,
     measure_duplicates,
     measure_fill_missing,
@@ -438,6 +442,7 @@ def _flag_unsettled_pipeline(service: Any, dataset_id: int, view_id: int, data: 
 
 
 CODE_PIPELINE_CHANGED = "pipeline_changed"
+_DRAFT_STATUS_SYMBOL = "mammoth.api.pipeline.PipelineAPI.get_draft_status"
 _TASK_LIST_SYMBOL = "mammoth.api.pipeline.PipelineAPI.list_tasks"
 
 
@@ -911,7 +916,62 @@ def view_draft_status(invocation: Invocation) -> HandlerResult:
 def view_draft_submit(invocation: Invocation) -> HandlerResult:
     """Submit a view's draft pipeline changes."""
     view_id = _view_id(invocation)
-    return _dispatch_view(invocation, view_id, "submit_draft")
+    project_id = invocation.project
+
+    def before(service: Any, dataset_id: int) -> dict[str, Any]:
+        return _draft_before_submit(service, dataset_id, view_id, project_id)
+
+    def after(service: Any, dataset_id: int, state: Any, data: Any) -> Any:
+        return _draft_submit_row_check(service, dataset_id, view_id, project_id, state, data)
+
+    return _dispatch_view(invocation, view_id, "submit_draft", before=before, after=after)
+
+
+def _draft_before_submit(
+    service: Any, dataset_id: int, view_id: int, project_id: int | None
+) -> dict[str, Any]:
+    """The view's row count and data timestamp, and whether its draft has changes to run."""
+    info = service.call(
+        _DATAVIEW_GET_SYMBOL, dataset_id=dataset_id, dataview_id=view_id, project_id=project_id
+    )
+    draft = service.call(_DRAFT_STATUS_SYMBOL, dataview_id=view_id)
+    return {
+        "row_count": info.get("row_count"),
+        "stamp": info.get("data_updated_at"),
+        "pending": bool(draft.get("has_pending_changes")),
+    }
+
+
+def _draft_submit_row_check(
+    service: Any,
+    dataset_id: int,
+    view_id: int,
+    project_id: int | None,
+    before: dict[str, Any],
+    data: Any,
+) -> Any:
+    """``data`` with the row count read once the submitted steps' data is in.
+
+    The submit returns with the pipeline ``idle`` while its steps still run, so a
+    count read at once is the old one (FB-22). A draft with nothing to run is
+    read at once; data that never refreshes is reported as unfinished.
+    """
+    if not isinstance(data, dict):
+        return data
+    if before["pending"]:
+        info = wait_for_refreshed_view(service, dataset_id, view_id, project_id, before["stamp"])
+    else:
+        info = service.call(
+            _DATAVIEW_GET_SYMBOL, dataset_id=dataset_id, dataview_id=view_id, project_id=project_id
+        )
+    rows_after = info.get("row_count") if info is not None else None
+    out = {**data, "row_check": {"rows_before": before["row_count"], "rows_after": rows_after}}
+    if info is None:
+        out["pipeline_error"] = {
+            "execution_state": UNFINISHED_STATE,
+            "wait_error": "the view's data was not refreshed after the submit; read it again",
+        }
+    return out
 
 
 def view_draft_discard(invocation: Invocation) -> HandlerResult:
@@ -1161,7 +1221,8 @@ def _impact_check(
 
     A count of zero is a no-op: ``--dry-run`` fails with ``no_op`` and a real run
     adds no task (``status: no_change``, like a same-type convert). Otherwise a
-    dry run reports the count as ``predicted_impact``. A count that cannot run
+    dry run reports the count as ``predicted_impact``. A keep filter no row matches
+    fails a dry run with ``empties_view`` unless ``--allow-empty`` is set. A count that cannot run
     is reported as unchecked in a dry run, never as zero, and never blocks a write.
     """
 
@@ -1187,6 +1248,8 @@ def _impact_check(
                     invocation, "predicted_impact", {"checked": False, "reason": exc.message}
                 )
             return None
+        if measured.empties_message and invocation.dry_run and not invocation.allow_empty:
+            raise empties_view_error(measured.empties_message, view_id=view_id)
         if measured.changes == 0:
             if invocation.dry_run:
                 raise no_op_error(measured.no_op_message, view_id=view_id)
@@ -1386,7 +1449,57 @@ def view_transform_math(invocation: Invocation) -> HandlerResult:
     assert document is not None
     _require_one_destination(document, invocation.command_id)
     kwargs = _bind_transform_inputs(invocation, document)
-    return _dispatch_view(invocation, view_id, "math", **kwargs)
+    blanks: dict[str, int] = {}
+
+    def count_blank_inputs(service: Any, dataset_id: int, _kwargs: dict[str, Any]) -> None:
+        blanks.update(
+            _blank_math_inputs(
+                service, dataset_id, view_id, resolved_project(invocation), document["expression"]
+            )
+        )
+
+    data, meta = _dispatch_view(invocation, view_id, "math", prepare=count_blank_inputs, **kwargs)
+    return _with_blank_input_note(data, blanks), meta
+
+
+def _blank_math_inputs(
+    service: Any, dataset_id: int, view_id: int, project_id: int | None, expression: Any
+) -> dict[str, int]:
+    """Blank cells of each column a math expression names, for the columns that have any.
+
+    Mammoth computes a blank input as 0, so ``qty * unit_price`` gives 0 for an
+    unpriced row and a later total counts it with no warning (FB-01).
+    """
+    info = service.call(
+        _DATAVIEW_GET_SYMBOL, dataset_id=dataset_id, dataview_id=view_id, project_id=project_id
+    )
+    read = ImpactRead(service, dataset_id, view_id, project_id, apply_column_renames(info))
+    text = str(expression)
+    named = [
+        name
+        for name in read.display_to_internal()
+        if re.search(rf"(?<![\w]){re.escape(name)}(?![\w])", text)
+    ]
+    try:
+        counts = {
+            name: read.count(compile_condition({"column": name, "operator": "IS_EMPTY"}))
+            for name in named
+        }
+    except CliError:
+        return {}  # A count that cannot run never blocks the write; it only drops the note.
+    return {name: count for name, count in counts.items() if count}
+
+
+def _with_blank_input_note(data: Any, blanks: dict[str, int]) -> Any:
+    """``data`` with a ``blank_inputs`` note when a math input column has blanks."""
+    if not blanks or not isinstance(data, dict):
+        return data
+    listed = ", ".join(f"{name} is blank in {count} row(s)" for name, count in blanks.items())
+    note = (
+        f"A blank input counts as 0 in this math step: {listed}, so the result there is "
+        "computed as if it were 0. Fill or filter those rows first if a blank must not count as 0."
+    )
+    return {**data, "blank_inputs": {"columns": blanks, "note": note}}
 
 
 def view_transform_pivot(invocation: Invocation) -> HandlerResult:

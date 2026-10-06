@@ -250,7 +250,7 @@ commands:
   - CT-FILE-SET-PASSWORD-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: password is secret and never a normal flag; do not live-test password changes.
+  known_restrictions: "Unlocks a password-protected file: ask the user for the file's password and pass it in --input; never ask for an unlocked copy. The password is secret and never a normal flag."
   reviewed_by: primary
 - command_id: file.update
   command_path: file update

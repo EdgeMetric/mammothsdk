@@ -58,6 +58,7 @@ CODE_INTERRUPTED = "interrupted"
 CODE_UNSUPPORTED_CONTRACT = "unsupported_contract"
 CODE_NO_OP = "no_op"
 CODE_WOULD_FAIL = "would_fail"
+CODE_EMPTIES_VIEW = "empties_view"
 
 # User-safe, one-line summaries shown to the customer instead of the model-facing
 # ``message``/``hint``. Plain language only: no command names, ids, field names
@@ -102,6 +103,7 @@ ERROR_SUMMARIES: dict[str, str] = {
     "download_failed": "A download didn't complete.",
     "dry_run_unsupported": "That command can't be previewed, so it was not run.",
     "duplicate_input_key": _S_BAD_INPUT,
+    "empties_view": "No row matches, so this step would leave the view empty.",
     "empty_search_query": "The search was empty.",
     "export_already_exists": "An export with that name already exists.",
     "incomplete_environment_auth": _S_SIGN_IN,

@@ -1,0 +1,18 @@
+# Copy to `.dockerignore` at the REPOSITORY ROOT: the build context is the root,
+# and these never belong in the image.
+.git
+.github
+.venv
+venv
+**/__pycache__
+**/*.pyc
+**/.pytest_cache
+**/.mypy_cache
+**/.ruff_cache
+tests
+docs
+site
+bridge
+mammoth-cli
+mammoth-mcp
+scripts

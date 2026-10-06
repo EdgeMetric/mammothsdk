@@ -1,0 +1,26 @@
+# systemd unit that runs the Mammoth MCP server as a container, for a fleet
+# that manages services with systemd. Copy it to
+# /lib/systemd/system/mammoth_<env>_mcp.service.
+#
+# Use this OR `mammoth-mcp-server.service.example`, which runs the server from
+# a virtual environment instead. Both read the same `.env`.
+[Unit]
+Description=Mammoth MCP server (container)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+# Each start runs a fresh container, and stopping removes it, so a restart
+# never meets a name that is already taken.
+ExecStartPre=-/usr/bin/docker rm -f mammoth-mcp-server
+ExecStart=/usr/bin/docker run --rm --name mammoth-mcp-server \
+    --env-file /etc/mammoth/mcp.env \
+    --publish 127.0.0.1:8270:8270 \
+    mammoth-mcp-server:latest
+ExecStop=/usr/bin/docker stop mammoth-mcp-server
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

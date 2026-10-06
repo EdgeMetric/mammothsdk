@@ -469,6 +469,68 @@ def test_dashboard_job_timeout_resumes_through_the_url_scoped_wait() -> None:
     assert mapped.recovery_commands[0] == "mammoth dashboard job-by-url sales 44"
 
 
+def test_a_not_allowed_400_is_an_authorization_error_with_the_backends_reason() -> None:
+    # FB-10: 4DASH019 came back as a generic api_error, hint "Inspect the
+    # structured details"; the agent got through only by reading the body.
+    reason = (
+        "You can view this project's dashboards but not create them. "
+        "Ask a project admin for analyst access."
+    )
+    error = MammothAPIError(
+        "Bad request",
+        status_code=400,
+        method="POST",
+        operation_state="failed",
+        response_body={
+            "error_code": "4DASH019",
+            "name": "DASHBOARD_CREATE_NOT_ALLOWED",
+            "message": reason,
+            "status_code": 400,
+        },
+    )
+
+    mapped = map_sdk_exception(error)
+
+    assert mapped.code == "authorization_required"
+    assert mapped.exit_status == EXIT_AUTH
+    assert mapped.authorization_required is True
+    assert mapped.message == reason
+    assert "Do not retry" in (mapped.hint or "")
+
+
+def test_an_ordinary_400_stays_an_api_error() -> None:
+    error = MammothAPIError(
+        "Bad request",
+        status_code=400,
+        method="POST",
+        operation_state="failed",
+        response_body={"error_code": "4DSET053", "name": "MUST_PROVIDE_TABLE_LIST_OR_PREVIEW"},
+    )
+
+    assert map_sdk_exception(error).code == "api_error"
+
+
+def test_a_read_timeout_hint_names_no_delay_the_server_never_gave() -> None:
+    # FB-07: "Retry after the indicated delay" with no delay indicated.
+    error = MammothAPIError(
+        "timed out", status_code=None, method="GET", operation_state="not_started"
+    )
+
+    mapped = map_sdk_exception(error)
+
+    assert mapped.code == "retryable_error"
+    assert "indicated delay" not in (mapped.hint or "")
+    assert "Retry the read" in (mapped.hint or "")
+
+
+def test_a_retry_after_hint_names_the_delay() -> None:
+    error = MammothAPIError(
+        "busy", status_code=503, method="GET", operation_state="not_started", retry_after="9"
+    )
+
+    assert "9 s" in (map_sdk_exception(error).hint or "")
+
+
 def _keys_refused() -> MammothAPIError:
     """The 403 the server returns for an mm_ token on the client-apps routes."""
     return MammothAPIError(

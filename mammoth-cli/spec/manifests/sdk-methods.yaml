@@ -6729,6 +6729,18 @@ methods:
   pagination_policy: none
   secret_fields: []
   reviewed_by: primary
+- sdk_symbol: mammoth.api.workspace.WorkspaceAPI.current
+  implementation_origin: mammoth.api.workspace.WorkspaceAPI.current
+  signature: 'current(self) -> ''CurrentWorkspace'''
+  openapi_operation_ids: []
+  canonical_command: null
+  alias_of: null
+  no_command_reason: SDK-only seam for a resource server that checks which server an OAuth token was issued for.
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
 - sdk_symbol: mammoth.api.workspace.WorkspaceAPI.get
   implementation_origin: mammoth.api.workspace.WorkspaceAPI.get
   signature: 'get(self, workspace_id: ''int | None'' = None) -> ''dict[str, Any]'''
@@ -7067,6 +7079,18 @@ methods:
   pagination_policy: null
   secret_fields: []
   reviewed_by: primary
+- sdk_symbol: mammoth.client.MammothClient.set_workspace_id
+  implementation_origin: mammoth.client.MammothClient.set_workspace_id
+  signature: 'set_workspace_id(self, workspace_id: ''int'') -> ''None'''
+  openapi_operation_ids: []
+  canonical_command: null
+  alias_of: null
+  no_command_reason: SDK-only seam for a caller that already knows the token's workspace.
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
 - sdk_symbol: mammoth.client.MammothClient.set_project_id
   implementation_origin: mammoth.client.MammothClient.set_project_id
   signature: 'set_project_id(self, project_id: ''int'') -> ''None'''
@@ -7088,6 +7112,18 @@ methods:
   no_command_reason: null
   mutation_class: read
   wait_policy: not_async
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.client.MammothClient.request_json
+  implementation_origin: mammoth.client.MammothClient.request_json
+  signature: 'request_json(self, method: ''str'', path: ''str'', *, params: ''dict[str, Any] | None'' = None, json: ''dict[str, Any] | None'' = None, files: ''list[Any] | None'' = None) -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: null
+  alias_of: null
+  no_command_reason: SDK-only seam for a route the SDK has no method for; the CLI calls typed SDK methods instead.
+  mutation_class: null
+  wait_policy: null
   pagination_policy: null
   secret_fields: []
   reviewed_by: primary
