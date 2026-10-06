@@ -17,7 +17,7 @@ from ..consts import (
     PREVIEW_ROWS_MAX,
     PipelineFields,
 )
-from ..jobs import wait_for_job
+from ..jobs import JobStillRunning, still_running, wait_for_job
 from ..sdk import JsonValue, build_client, read_sdk_errors
 from ..server import mcp_server
 from ..transform_operations import TransformOperation
@@ -28,6 +28,18 @@ from .transformations import (
     check_run,
     read_operation,
     wait_for_change,
+)
+
+# What a tool tells the model when the run it started outlasts the call.
+RUN_GOES_ON = "The run is still going. Do not run it again: call get_pipeline later to see it end."
+STEPS_RUN_ON = (
+    "The steps were added and their run is still going. Do not add them again."
+    " Call get_pipeline later; once the run is over, call manage_draft with"
+    ' action "stop" to leave draft mode.'
+)
+DELETE_RUNS_ON = (
+    "The step was deleted and the view's run is still going. Call get_pipeline"
+    " later to see it end."
 )
 
 type DraftAction = Literal["start", "run", "drop", "stop"]
@@ -91,7 +103,10 @@ async def delete_transformation_step(
         answer = await read_sdk_errors(
             pipeline.delete_task(ids["dataview_id"], step_id, dataset_id=ids["dataset_id"])
         )
-    return await wait_for_change(workspace_id, answer)
+    try:
+        return await wait_for_change(workspace_id, answer)
+    except JobStillRunning as running:
+        return still_running(running, DELETE_RUNS_ON)
 
 
 @mcp_server.tool()
@@ -157,13 +172,17 @@ async def manage_draft(
             mode off. The view stays in draft mode after "run" and "drop".
 
     Returns:
-        The pipeline's state afterwards, as `get_pipeline` reports it.
+        The pipeline's state afterwards, as `get_pipeline` reports it. When
+        the run outlasts the call: the run's `job_id` and what to do next.
     """
     ids = view_ids(workspace_id, project_id, dataset_id, view_id)
     answer = await change_draft(ids, DRAFT_ACTIONS[action])
     if action == RUN_THE_DRAFT:
         # Only the submit starts a run; the other three answer for themselves.
-        await wait_for_job(workspace_id, answer)
+        try:
+            await wait_for_job(workspace_id, answer)
+        except JobStillRunning as running:
+            return still_running(running, RUN_GOES_ON)
     return await read_pipeline(ids)
 
 
@@ -187,9 +206,10 @@ async def add_transformations(
     """Add transformations to a view, and run its pipeline once.
 
     The steps are staged in draft mode and run together after the last one, so
-    a step may use a column an earlier one adds. If a step fails, none is
-    kept. If the view is already in draft mode, the steps stay staged for
-    `manage_draft`.
+    a step may use a column an earlier one adds. If a step cannot be added,
+    none is kept. A step that is added and then fails when it runs IS kept:
+    the view keeps it, and `get_pipeline` shows its error. If the view is
+    already in draft mode, the steps stay staged for `manage_draft`.
 
     A step that adds a column leaves the view with columns this does not
     report. Call `get_view` again before reading rows or naming a column: the
@@ -206,14 +226,18 @@ async def add_transformations(
             describes for its `op`.
 
     Returns:
-        The pipeline's state afterwards, as `get_pipeline` reports it.
+        The pipeline's state afterwards, as `get_pipeline` reports it. When
+        the run outlasts the call: the run's `job_id` and what to do next.
     """
     ids = view_ids(workspace_id, project_id, dataset_id, view_id)
     # The API refuses to show the pipeline to a caller who may not see the view.
     pipeline = await read_pipeline(ids)
     steps = [read_operation(operation) for operation in operations]
     if pipeline[PipelineFields.DRAFT_MODE] == PipelineFields.NOT_DRAFTING:
-        await run_in_one_draft(ids, steps)
+        try:
+            await run_in_one_draft(ids, steps)
+        except JobStillRunning as running:
+            return still_running(running, STEPS_RUN_ON)
     else:
         await stage_steps(ids, steps)
     return await read_pipeline(ids)
@@ -234,7 +258,8 @@ async def run_pipeline(
         view_id: Which view.
 
     Returns:
-        The pipeline's state after the run, as `get_pipeline` reports it.
+        The pipeline's state after the run, as `get_pipeline` reports it. When
+        the run outlasts the call: the run's `job_id` and what to do next.
     """
     ids = view_ids(workspace_id, project_id, dataset_id, view_id)
     async with _pipeline(ids) as pipeline:
@@ -245,7 +270,11 @@ async def run_pipeline(
                 dataset_id=ids["dataset_id"],
             )
         )
-    check_run(await wait_for_job(workspace_id, started), "The pipeline")
+    try:
+        finished = await wait_for_job(workspace_id, started)
+    except JobStillRunning as running:
+        return still_running(running, RUN_GOES_ON)
+    check_run(finished, "The pipeline")
     return await read_pipeline(ids)
 
 
@@ -267,6 +296,12 @@ async def run_in_one_draft(ids: dict[str, int], steps: list[TransformOperation])
     spent, and the route refuses to discard it. Either way the caller is told
     why the step failed — the tidying up can fail too, and its own error must
     never take the place of that reason.
+
+    A run that outlasts the tool call is left in draft mode: leaving it now
+    would land under the run.
+
+    Raises:
+        JobStillRunning: If the run outlasts the tool call.
     """
     await change_draft(ids, PipelineFields.DRAFT_ON)
     try:
@@ -277,9 +312,14 @@ async def run_in_one_draft(ids: dict[str, int], steps: list[TransformOperation])
         await tidy_up(ids, PipelineFields.DRAFT_OFF)
         raise
     try:
-        check_run(await wait_for_job(ids["workspace_id"], submitted), "The pipeline")
-    finally:
+        finished = await wait_for_job(ids["workspace_id"], submitted)
+    except JobStillRunning:
+        raise
+    except Exception:
         await tidy_up(ids, PipelineFields.DRAFT_OFF)
+        raise
+    await tidy_up(ids, PipelineFields.DRAFT_OFF)
+    check_run(finished, "The pipeline")
 
 
 async def tidy_up(ids: dict[str, int], operation: str) -> None:

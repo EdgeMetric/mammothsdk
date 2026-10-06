@@ -1,5 +1,6 @@
 """Waiting for the job an async route started."""
 
+import time
 from unittest.mock import patch
 
 import pytest
@@ -97,3 +98,27 @@ class TestReadingWhatARouteStarted:
 
     def test_a_failure_with_no_message_names_what_the_job_did_say(self) -> None:
         assert describe_job_failure({"response": {"name": "NOT_FOUND"}}) == "NOT_FOUND"
+
+
+class TestOneDeadlinePerToolCall:
+    def test_every_wait_in_a_tool_call_spends_from_one_deadline(self) -> None:
+        # A client gives up on a call after about a minute: two waits of a
+        # minute each would answer nobody.
+        async def two_waits() -> None:
+            await wait_for_job(WORKSPACE, {"job_id": 11})
+            await wait_for_job(WORKSPACE, {"job_id": 12})
+
+        with (
+            a_fake_api() as api,
+            as_caller(),
+            patch("mammoth_mcp_server.deadline.TOOL_CALL_SECONDS", 0.3),
+        ):
+            api.answer("GET", JOB, a_job("processing"))
+            api.answer("GET", JOB, a_job("success", {"rows": 3}))
+            api.answer("GET", "/jobs/12", a_job("processing"))
+            started = time.monotonic()
+            with pytest.raises(JobStillRunning):
+                run(two_waits())
+
+        # The second wait got what the first left, not a minute of its own.
+        assert time.monotonic() - started < 5

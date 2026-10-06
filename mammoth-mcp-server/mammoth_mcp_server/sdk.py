@@ -29,6 +29,7 @@ from .consts import (
     UPLOAD_FIELD,
     TokenClaims,
 )
+from .deadline import seconds_left, start_the_clock
 
 type JsonValue = (dict[str, "JsonValue"] | list["JsonValue"] | str | int | float | bool | None)
 
@@ -101,7 +102,8 @@ async def build_client(
             f"This sign-in is for workspace {own_workspace}, not {workspace_id}."
             " Use that workspace, or connect again and choose the other."
         )
-    client = client_with(access_token.token)
+    start_the_clock()
+    client = client_with(access_token.token, job_timeout=max(1.0, seconds_left()))
     # Named here, the client does not ask the API which workspace its bearer
     # is for, with a request that blocks every other caller this worker serves.
     client.set_workspace_id(own_workspace)
@@ -111,8 +113,13 @@ async def build_client(
         yield client
 
 
-def client_with(bearer: str) -> MammothClient:
-    """One client, pointed at the Mammoth API this process was told to call."""
+def client_with(bearer: str, job_timeout: float = JOB_TIMEOUT_SECONDS) -> MammothClient:
+    """One client, pointed at the Mammoth API this process was told to call.
+
+    Args:
+        bearer: The caller's token.
+        job_timeout: How long the SDK's own waits on a job may take.
+    """
     return MammothClient(
         api_token=bearer,
         base_url=_api_url,
@@ -121,7 +128,7 @@ def client_with(bearer: str) -> MammothClient:
         # for any other host.
         allow_insecure_loopback_http=True,
         timeout=ROUTE_TIMEOUT_SECONDS,
-        job_timeout=JOB_TIMEOUT_SECONDS,
+        job_timeout=job_timeout,
         # A person is waiting on this answer. The SDK's own default suits a
         # script that started a long build and would add whole seconds here.
         job_poll_seconds=JOB_POLL_SECONDS,

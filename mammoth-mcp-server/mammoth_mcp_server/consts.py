@@ -45,6 +45,9 @@ JOB_POLL_SECONDS = 0.2
 # seen at once, and a long build is not checked several times a second.
 JOB_POLL_MAX_SECONDS = 2.0
 JOB_TIMEOUT_SECONDS = 60.0
+# How long one tool call may wait in all, over every job it waits on. A client
+# gives up on a call after about a minute, so the answer must come before then.
+TOOL_CALL_SECONDS = 45.0
 # How long to wait on an AI dashboard build before answering "still building".
 # Shorter than the rest: a build outlasts any wait worth making, and a client
 # that gives up first never sees the answer at all — so the model is told
@@ -297,6 +300,8 @@ class JobFields:
     RESPONSE = "response"
     PROCESSING = "processing"
     SUCCESS = "success"
+    # What a tool that answers before its job finished tells the model to do.
+    NOTE = "note"
 
 
 class ViewFields:

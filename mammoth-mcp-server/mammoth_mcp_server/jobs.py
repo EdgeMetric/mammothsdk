@@ -17,6 +17,7 @@ from .consts import (
     ErrorFields,
     JobFields,
 )
+from .deadline import seconds_left
 from .sdk import (
     API_ERROR_PREFIX,
     UNREADABLE_API_ERROR,
@@ -45,7 +46,8 @@ async def wait_for_job(
         workspace_id: The workspace the tool call acts in.
         started: The payload of the route that started the job. Every async the API
             route answers `202` with the job under the key `job`.
-        seconds: How long to wait before giving up on the job.
+        seconds: How long to wait before giving up on the job, at most. The
+            tool call's own deadline can cut it shorter.
 
     Returns:
         The job's result.
@@ -56,6 +58,7 @@ async def wait_for_job(
         ToolError: If the job fails, or returns something other than an object.
     """
     job_id = find_job_id(started)
+    seconds = min(seconds, seconds_left())
     deadline = time.monotonic() + seconds
     gap = JOB_POLL_SECONDS
     async with build_client(workspace_id) as client:
@@ -73,6 +76,20 @@ async def wait_for_job(
     if not isinstance(result, dict):
         raise ToolError(f"{API_ERROR_PREFIX}: the job returned no object to read")
     return result
+
+
+def still_running(running: JobStillRunning, note: str) -> dict[str, JsonValue]:
+    """Answer for a job that outlasted the tool call: it is going, and what to do.
+
+    Args:
+        running: The wait that ran out.
+        note: What the model should do now, so it does not start the job again.
+    """
+    return {
+        JobFields.JOB_ID: running.job[JobFields.ID],
+        JobFields.STATUS: JobFields.PROCESSING,
+        JobFields.NOTE: note,
+    }
 
 
 def find_job_id(payload: dict[str, JsonValue]) -> int:
