@@ -58,6 +58,7 @@ def test_activity_list_filters_are_fully_typed() -> None:
         "limit",
         "offset",
         "sort",
+        "fields",
         "project_id",
         "categories",
         "activities",

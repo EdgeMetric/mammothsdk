@@ -54,13 +54,14 @@ def test_dataset_list(live_env: dict[str, str], live_project: str) -> None:
     assert isinstance(datasets, list)
 
 
-def test_view_list_missing_id_is_usage_error(live_env: dict[str, str], live_project: str) -> None:
-    """`view list` without its required dataset id fails as a usage error."""
-    result = make_runner().invoke(
-        ["view", "list", "--project", live_project, "--output", "json", "--no-input"],
-        env=live_env,
-    )
-    assert result.exit_code == 2, result.output
+def test_view_list_without_id_lists_views_across_datasets(
+    live_env: dict[str, str], live_project: str
+) -> None:
+    """`view list` with no dataset id walks the project's datasets (222b8ef0): no usage error."""
+    data = _run(["view", "list", "--project", live_project], live_env)["data"]
+    assert isinstance(data["dataviews"], list)
+    assert data["datasets_visited"] >= 1
+    assert all("dataset_id" in view for view in data["dataviews"])
 
 
 def test_view_list_and_draft_status(live_env: dict[str, str], live_project: str) -> None:

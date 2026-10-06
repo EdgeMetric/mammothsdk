@@ -52,7 +52,9 @@ def test_transform_input_dataset_id_reaches_view_service(
 def test_typed_resource_reference_reaches_view_service(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
-    input_file = _write(tmp_path / "request.json", {"expression": "Price * Qty"})
+    input_file = _write(
+        tmp_path / "request.json", {"expression": "Price * Qty", "new_column": "Total"}
+    )
     view_ops.view_transform_math(
         Invocation(
             command_id="view.transform.math",
@@ -63,5 +65,9 @@ def test_typed_resource_reference_reaches_view_service(
     )
 
     assert fake_service.view_call_log == [
-        (1039, "math", {"dataset_id": 55, "expression": "Price * Qty"})
+        (
+            1039,
+            "math",
+            {"dataset_id": 55, "expression": "Price * Qty", "new_column": "Total"},
+        )
     ]

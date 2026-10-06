@@ -6,22 +6,24 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added (mammoth-io 0.8.25)
+
+- Public names for a server built on the SDK. `WorkspaceAPI.current()` returns the token's workspace
+  and the `resource` (RFC 8707) an OAuth token was issued for. `MammothClient.set_workspace_id(...)`
+  names the workspace a token client acts in, so it does not ask the API.
+  `MammothClient.request_json(...)` calls a route the SDK has no method for. `mammoth.builders` holds
+  the spec builders, `export_contract(...)` and `EXPORT_CONTRACTS`.
+
+### Fixed (mammoth-io 0.8.24, mammoth-cli 2.2.46)
+
+- `view data explore`: a blank bucket sorts last under `metric_*` and `count_*` orders too (it ranked by its own metric before).
+
 ### Added (mammoth-cli 2.2.45)
 
 - `mammoth resolve NAME`: read-only, says whether a name is a dataset, a view or a project, with ids
   and projects, across every project the login can see.
 - `mammoth dataset find` with `--project` now also returns matches in every other visible project,
   each marked `in_project`, so a name in another project is stated instead of asked about.
-
-## [0.8.25]
-
-### Added
-
-- `mammoth-io` 0.8.25: public names for a server built on the SDK. `WorkspaceAPI.current()` returns the
-  token's workspace and the `resource` (RFC 8707) an OAuth token was issued for.
-  `MammothClient.set_workspace_id(...)` names the workspace a token client acts in, so it does not ask
-  the API. `MammothClient.request_json(...)` calls a route the SDK has no method for. `mammoth.builders`
-  holds the spec builders, `export_contract(...)` and `EXPORT_CONTRACTS`.
 
 ## [0.8.23]
 
