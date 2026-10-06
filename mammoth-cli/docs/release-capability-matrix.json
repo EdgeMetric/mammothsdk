@@ -11376,7 +11376,8 @@
       "schema_id": "view.create",
       "sdk_symbol": "mammoth.client.ViewsResource.create",
       "bound_commands": [
-        "view.create"
+        "view.create",
+        "view.variants.create"
       ],
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
@@ -11820,7 +11821,8 @@
         "view.transform.substring",
         "view.transform.text",
         "view.transform.unnest",
-        "view.transform.window"
+        "view.transform.window",
+        "view.variants.create"
       ],
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,

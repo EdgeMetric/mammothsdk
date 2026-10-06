@@ -350,6 +350,15 @@ _VIEW_DATA_PROFILE_FIELDS = (
     FieldSpec("limit", required=False, annotation=int, default=50),
 )
 
+# view.variants.create is a CLI composite over view create (clone_from) and
+# view transform filter; its document fields are authored here.
+_VIEW_VARIANTS_CREATE_FIELDS = (
+    FieldSpec("from_view", required=True, annotation=int),
+    FieldSpec("column", required=True, annotation=str),
+    FieldSpec("values", required=True, annotation=list[str | int | float]),
+    FieldSpec("name_template", required=False, annotation=str | None, default=None),
+)
+
 # view.conditional-format.create: ``rule`` (raw body) stays accepted; the typed fields build one
 # rule per column (per-cell threshold) or one row rule (see
 # mammoth_cli.services.conditional_format). ``rule`` is therefore optional here -- the handler
@@ -803,6 +812,8 @@ def resolve_command_contract(command_id: str) -> ResolvedCommandContract | None:
         special_fields = _VIEW_DATA_COMPARE_FIELDS
     elif command_id == "view.data.profile":
         special_fields = _VIEW_DATA_PROFILE_FIELDS
+    elif command_id == "view.variants.create":
+        special_fields = _VIEW_VARIANTS_CREATE_FIELDS
     elif command_id == "dashboard.filter.add":
         special_fields = _DASHBOARD_FILTER_ADD_FIELDS
     elif command_id == "dashboard.filter.remove":

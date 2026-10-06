@@ -53,6 +53,10 @@ _FIXED_EXAMPLES: dict[str, tuple[tuple[str, ...], dict[str, Any]]] = {
     ),
     "project.check": (("123", "456"), {}),
     "view.data.profile": (("123",), {"target": "Churn"}),
+    "view.variants.create": (
+        ("123",),
+        {"from_view": 456, "column": "Region", "values": ["East", "West"]},
+    ),
     "workflow.canvas": (
         ("12",),
         {

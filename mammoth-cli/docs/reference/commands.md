@@ -4,7 +4,7 @@ Generated from the reviewed command manifests for mammoth-cli 2.2.48.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
-Total commands: 659.
+Total commands: 660.
 
 ## activity
 
@@ -6281,6 +6281,17 @@ Total commands: 659.
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dataviews.DataviewsAPI.update`
 - Agent example: `mammoth view update 123 123 --input '{"name": "Revenue report"}'`
+
+### `mammoth view variants create`
+
+**Arguments**
+
+- `DATASET_ID` (int, required) — ID of the dataset.
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.client.ViewsResource.create`
+- Agent example: `mammoth view variants create 123 --input '{"from_view": 456, "column": "Region", "values": ["East", "West"]}'`
 
 ### `mammoth view version apply`
 
