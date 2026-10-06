@@ -64,7 +64,33 @@ token, sealed, in Redis until the user uploads or 30 minutes pass.
 - `GET /workspaces/current` must return the token's `resource` beside the workspace `id`. Without
   it this server refuses every token.
 
+**Before it works in an environment** below lists every step, in the order to check them.
+
 ## Run
+
+### As a container, which needs nothing on the host but Docker
+
+The image is built from this repository, so a deployment never waits for a
+release of the SDK. Build it from the **repository root**, which is the build
+context:
+
+```bash
+cp mammoth-mcp-server/deploy/.dockerignore.example .dockerignore
+docker build -f mammoth-mcp-server/deploy/Dockerfile -t mammoth-mcp-server .
+docker run --env-file mammoth-mcp-server/deploy/.env -p 8270:8270 mammoth-mcp-server
+```
+
+With a Redis of its own, as one stack:
+
+```bash
+cp mammoth-mcp-server/.env.example mammoth-mcp-server/deploy/.env   # then set the values
+docker compose -f mammoth-mcp-server/deploy/compose.yaml up -d --build
+```
+
+The server keeps nothing in memory between requests, so it scales by adding
+containers. They share only Redis.
+
+### From a virtual environment
 
 ```bash
 pip install mammoth-mcp-server
@@ -72,7 +98,44 @@ cp .env.example .env        # then set the values
 mammoth-mcp-server          # or: uvicorn mammoth_mcp_server.app:create_app --factory
 ```
 
-`deploy/` holds an example systemd unit and an example nginx server block.
+### What `deploy/` holds
+
+| File | What it is for |
+|---|---|
+| `Dockerfile` | The image, built from this repository |
+| `compose.yaml` | The server and a Redis, as one stack |
+| `.dockerignore.example` | Copy to the repository root before building |
+| `mammoth-mcp-server-container.service.example` | systemd, running the container |
+| `mammoth-mcp-server.service.example` | systemd, running a virtual environment |
+| `nginx.example.conf` | Both server blocks a deployment needs |
+
+## Before it works in an environment
+
+Each of these stops the sign-in on its own, so check them in order.
+
+1. **DNS and the front door** point `MCP_SERVER_URL` at the server's port.
+   `deploy/nginx.example.conf` holds the server block.
+2. **`MCP_ENCRYPTION_KEY` is set.** It is the only secret this server keeps.
+   Nothing else is required that has no default; see **Settings**.
+3. **Mammoth knows this server:** `MCP_RESOURCES = <MCP_SERVER_URL>/mcp`, in
+   mvc-service `const.ini`, section `[oauth]`. Mammoth issues a token for no
+   other resource.
+4. **The Mammoth host serves its OAuth metadata where a client looks for it.**
+   For an issuer with a path, RFC 8414 puts the document at
+   `/.well-known/oauth-authorization-server/api/v2`, and apiv2 serves it at its
+   own path, so the front door has to join the two. The second server block in
+   `deploy/nginx.example.conf` does it. Check it with:
+
+   ```bash
+   curl https://<mammoth host>/.well-known/oauth-authorization-server/api/v2
+   ```
+
+   It must answer the document, not `404`.
+5. **The web app's OAuth consent page is deployed.** Without it the user lands
+   on a page that does not exist, and approves nothing.
+
+Then a client connects to `<MCP_SERVER_URL>/mcp`, and the user signs in to
+Mammoth and picks a workspace and a project.
 
 ## Tests
 
