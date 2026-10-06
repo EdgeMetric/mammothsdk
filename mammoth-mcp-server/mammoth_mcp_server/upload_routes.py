@@ -143,12 +143,21 @@ def render_upload(upload_id: str) -> str:
     return UPLOAD_PAGE.format(url=link, field=UPLOAD_FIELD, message_field=ErrorFields.MESSAGE)
 
 
+# The in-chat uploader runs in the host's sandboxed frame, on an origin of the
+# host's own. The browser hides an answer from another origin unless it says the
+# frame may read it. Any origin may: the request carries no cookie, and the
+# single-use ticket in its URL is what lets it in.
+ANY_ORIGIN = {"Access-Control-Allow-Origin": "*"}
+
+
 async def upload(request: Request) -> Response:
     """Show the drop zone, or take the files the browser picked."""
     ticket_id = request.query_params.get(UploadFields.TICKET, "")
     if request.method == "GET":
         return await show_upload_page(ticket_id)
-    return await take_the_upload(request, ticket_id)
+    answer = await take_the_upload(request, ticket_id)
+    answer.headers.update(ANY_ORIGIN)
+    return answer
 
 
 async def show_upload_page(ticket_id: str) -> Response:

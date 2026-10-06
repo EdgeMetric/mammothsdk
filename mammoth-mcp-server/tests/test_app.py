@@ -160,6 +160,34 @@ class TestTheUploadPage:
         assert UploadFields.CALLER not in spent
         assert server.get("/upload", params={UploadFields.TICKET: ticket}).status_code == 410
 
+    def test_the_in_chat_uploader_may_read_the_answer(self, server: TestClient) -> None:
+        # The uploader runs in the host's sandboxed frame, on another origin. Without
+        # this header the browser hides the answer, and the uploader says the file
+        # never arrived when it did.
+        ticket = self.a_ticket()
+        with a_fake_api() as api:
+            api.answer("POST", FILES, {"id": 31, "status": "processing"})
+            sent = server.post(
+                "/upload",
+                params={UploadFields.TICKET: ticket},
+                files={"data": ("sales.csv", b"a,b\n1,2\n", "text/csv")},
+                headers={"Origin": "https://sandbox.example"},
+            )
+
+        assert sent.status_code == 200
+        assert sent.headers["access-control-allow-origin"] == "*"
+
+    def test_the_in_chat_uploader_may_read_a_refusal_too(self, server: TestClient) -> None:
+        refused = server.post(
+            "/upload",
+            params={UploadFields.TICKET: "made-up"},
+            files={"data": ("sales.csv", b"a,b\n1,2\n", "text/csv")},
+            headers={"Origin": "https://sandbox.example"},
+        )
+
+        assert refused.status_code == 410
+        assert refused.headers["access-control-allow-origin"] == "*"
+
     def test_a_file_sent_on_a_link_that_is_no_longer_good_goes_nowhere(
         self, server: TestClient
     ) -> None:
