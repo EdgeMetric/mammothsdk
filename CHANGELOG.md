@@ -6,6 +6,15 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added (mammoth-io 0.8.27, mammoth-cli 2.2.49)
+
+- `mammoth view variants create` makes one filtered view per value of a column in one call (#152, #154). A null name template defaults, and an unreadable column list fails loud.
+- `mammoth view explore-panel get|set` reads and writes a view's explore panel, and `mammoth dashboard figure add` appends a figure (#153). SDK: `explore_panel`, `set_explore_panel`, `append_figure`.
+
+### Changed (mammoth-cli 2.2.49)
+
+- The CLI now requires `mammoth-io>=0.8.27`.
+
 ### Added (mammoth-io 0.8.26, mammoth-cli 2.2.48)
 
 - `mammoth auth login --device`: device-code sign-in (RFC 8628) for a machine with no browser. SDK: `mammoth.oauth.device_authorization_request`; `ClientAppPostResponse.expires_at`. API keys made by `mammoth token create` expire after 30 days. Needs the matching Mammoth server release.
