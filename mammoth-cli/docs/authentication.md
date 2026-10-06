@@ -88,9 +88,25 @@ Choose 1. The CLI opens the Mammoth sign-in page and waits on a local address
 then holds a token that lasts one hour and refreshes itself. You do not paste
 a secret.
 
-Use `--method oauth` or `--method token` to skip the question. Add
-`--no-browser` to print the sign-in URL instead of opening a browser. The
-browser must run on the same machine as the CLI.
+Use `--method oauth`, `--method device` or `--method token` to skip the
+question. Add `--no-browser` to print the sign-in URL instead of opening a
+browser. The browser must run on the same machine as the CLI.
+
+### Sign in on a machine with no browser
+
+Run `mammoth auth login --device` (or choose 2 at the prompt). The CLI prints a
+short code and a web address. Open the address on any other device where you are
+signed in to Mammoth, type the code, and approve. The CLI waits and polls until
+you do. The code works once and expires after 15 minutes; if it expires the CLI
+stops with `device_login_expired`. The sign-in you get is the same as the browser
+one: a token that lasts one hour and refreshes itself.
+
+### API keys the CLI creates expire
+
+An API key made with `mammoth token create` after a browser or device sign-in
+stops working after 30 days. A command that uses an expired key stops with
+`cli_key_expired` (exit code 4). Run `mammoth auth login` again, then create a new
+key. Keys you create in Settings never expire.
 
 - `mammoth auth status` shows `credential: oauth` and when the token expires.
 - If the refresh fails, commands stop with `login_expired` (exit code 4). Run

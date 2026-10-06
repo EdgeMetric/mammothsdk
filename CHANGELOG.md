@@ -26,6 +26,15 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - `view data explore`: a blank bucket sorts last under `metric_*` and `count_*` orders too (it ranked by its own metric before).
 
+### Added (unreleased: next mammoth-io and mammoth-cli)
+
+- `mammoth auth login --device`: device-code sign-in (RFC 8628) for a machine with no browser. The
+  CLI prints a short code and a URL, you approve on another device, and the CLI polls until you do.
+  Needs the matching Mammoth server release.
+- API keys made by `mammoth token create` now expire after 30 days. A command with an expired key
+  stops with `cli_key_expired` and tells you to run `mammoth auth login`.
+- SDK: `mammoth.oauth.device_authorization_request`; `ClientAppPostResponse.expires_at`.
+
 ### Added (mammoth-cli 2.2.45)
 
 - `mammoth resolve NAME`: read-only, says whether a name is a dataset, a view or a project, with ids

@@ -258,6 +258,8 @@ def _not_allowed_reason(body: Any, status: int | None) -> str | None:
 
 CODE_CLI_KEYS_NOT_ALLOWED = "cli_keys_not_allowed"
 CODE_CLI_KEYS_NEED_BROWSER_SIGN_IN = "cli_keys_need_browser_sign_in"
+CODE_CLI_KEY_EXPIRED = "cli_key_expired"
+_TOKEN_EXPIRED_NAME = "API_TOKEN_EXPIRED"  # noqa: S105 - an error name
 _TOKEN_REFUSED_NAME = "INVALID_TOKEN_FOR_CLIENT_APPS"  # noqa: S105 - an error name
 
 
@@ -265,6 +267,12 @@ def _is_cli_keys_refused(exc: BaseException) -> bool:
     """True for the server's refusal of an ``mm_`` token on the client-apps routes."""
     body = getattr(exc, "response_body", None)
     return isinstance(body, dict) and body.get("name") == _TOKEN_REFUSED_NAME
+
+
+def _is_token_expired(exc: BaseException) -> bool:
+    """True for the server's 401 naming an API key that is past its expiry."""
+    body = getattr(exc, "response_body", None)
+    return isinstance(body, dict) and body.get("name") == _TOKEN_EXPIRED_NAME
 
 
 def _stored_credential_kind(profile: str | None) -> str | None:
@@ -301,6 +309,17 @@ def map_sdk_exception(
             operation_state=getattr(exc, "operation_state", None),
             phase=getattr(exc, "phase", None),
             details=getattr(exc, "details", None),
+        )
+
+    if isinstance(exc, MammothAuthError) and _is_token_expired(exc):
+        return CliError(
+            code=CODE_CLI_KEY_EXPIRED,
+            message="This API key has expired; run `mammoth auth login` to sign in again.",
+            exit_status=EXIT_AUTH,
+            hint="Sign in again to get a new key.",
+            details=_metadata(exc),
+            request_id=exc.request_id,
+            recovery_commands=["mammoth auth login"],
         )
 
     if isinstance(exc, MammothAuthError):

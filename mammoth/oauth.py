@@ -18,15 +18,10 @@ class OAuthTransportError(Exception):
     """Mammoth could not be reached."""
 
 
-def token_request(base_url: str, form: dict[str, str]) -> tuple[int, Any]:
-    """POST a form to ``/oauth/token``. Return ``(status_code, json_body_or_None)``.
-
-    Raises:
-        OAuthTransportError: when the server cannot be reached.
-    """
+def _post_form(base_url: str, path: str, form: dict[str, str]) -> tuple[int, Any]:
     try:
         response = httpx.post(
-            f"{base_url}/oauth/token",
+            f"{base_url}{path}",
             data=form,
             timeout=_TIMEOUT_SECONDS,
             follow_redirects=False,
@@ -37,6 +32,26 @@ def token_request(base_url: str, form: dict[str, str]) -> tuple[int, Any]:
         return response.status_code, response.json()
     except ValueError:
         return response.status_code, None
+
+
+def token_request(base_url: str, form: dict[str, str]) -> tuple[int, Any]:
+    """POST a form to ``/oauth/token``. Return ``(status_code, json_body_or_None)``.
+
+    Raises:
+        OAuthTransportError: when the server cannot be reached.
+    """
+    return _post_form(base_url, "/oauth/token", form)
+
+
+def device_authorization_request(base_url: str, form: dict[str, str]) -> tuple[int, Any]:
+    """POST a form to ``/oauth/device-authorization`` (RFC 8628 §3.1).
+
+    Return ``(status_code, json_body_or_None)``.
+
+    Raises:
+        OAuthTransportError: when the server cannot be reached.
+    """
+    return _post_form(base_url, "/oauth/device-authorization", form)
 
 
 def revoke_grant(base_url: str, grant_id: int, access_token: str) -> int:

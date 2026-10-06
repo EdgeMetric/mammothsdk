@@ -89,6 +89,7 @@ ERROR_SUMMARIES: dict[str, str] = {
     "authentication_failed": "Mammoth didn't accept the sign-in for this step.",
     "authorization_required": "You don't have permission to do this.",
     "capability_not_found": "The assistant tried something Mammoth doesn't support.",
+    "cli_key_expired": "The saved API key has expired, so the assistant needs to sign in again.",
     "cli_keys_need_browser_sign_in": "Managing API keys needs a browser sign-in, not an API token.",
     "cli_keys_not_allowed": "This server doesn't let a browser sign-in create API keys.",
     "confirmation_declined": "This step was not confirmed, so nothing was changed.",
@@ -97,6 +98,7 @@ ERROR_SUMMARIES: dict[str, str] = {
         "The confirmation was for a different item, so nothing was changed."
     ),
     "conflict": "This conflicts with the current state of your data, so nothing was changed.",
+    "device_login_expired": "The sign-in code expired before it was approved.",
     "dry_run_targets_unresolvable": (
         "The assistant couldn't tell exactly which items this would change, so nothing was changed."
     ),

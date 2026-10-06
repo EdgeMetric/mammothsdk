@@ -593,3 +593,42 @@ def test_status_asks_a_legacy_key_secret_profile_to_log_in_with_a_token(
     data = json.loads(result.stdout)["data"]
     assert data["credential"] == "key_secret"
     assert "mammoth auth login" in data["recommendation"]
+
+
+def test_device_flag_cannot_be_combined_with_another_method(
+    isolated_cli_config: Path,
+) -> None:
+    runner = make_runner()
+    result = runner.invoke(
+        ["auth", "login", "--device", "--method", "token", "--output", "json", "--no-input"],
+        env={},
+    )
+    assert result.exit_code == 2
+    assert json.loads(result.stderr)["error"]["code"] == "invalid_argument_combination"
+
+
+def test_device_flag_cannot_be_combined_with_input(
+    isolated_cli_config: Path, tmp_path: Path
+) -> None:
+    doc = _write_login_doc(tmp_path, api_token=_TOKEN)
+    runner = make_runner()
+    result = runner.invoke(
+        ["auth", "login", "--device", "--input", str(doc), "--output", "json", "--no-input"],
+        env={},
+    )
+    assert result.exit_code == 2
+    assert json.loads(result.stderr)["error"]["code"] == "invalid_argument_combination"
+
+
+def test_device_login_on_a_server_without_a_cli_client_says_so(
+    isolated_cli_config: Path,
+) -> None:
+    runner = make_runner()
+    result = runner.invoke(
+        [
+            *("auth", "login", "--device", "--server-prefix", "nosuchenv"),
+            *("--output", "json", "--no-input"),
+        ],
+        env={},
+    )
+    assert json.loads(result.stderr)["error"]["code"] == "oauth_unavailable"
