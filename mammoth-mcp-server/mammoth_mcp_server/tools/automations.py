@@ -25,7 +25,6 @@ from mammoth.models.automations import (
 from mcp.server.mcpserver.exceptions import ToolError
 from pydantic import ValidationError
 
-from ..automation_examples import AUTOMATION_EXAMPLES
 from ..consts import AutomationFields
 from ..sdk import JsonValue, build_client, read_sdk_errors
 from ..server import mcp_server
@@ -36,7 +35,6 @@ from ..tool_kinds import DESTRUCTIVE, READS
 # from the SDK's, which carry what the route accepts.
 TASK_TYPES = ", ".join(sorted(task.value for task in AutomationTaskType))
 CONDITION_TYPES = ", ".join(sorted(condition.value for condition in AutomationConditionType))
-DOCUMENTED_EXAMPLES = AUTOMATION_EXAMPLES
 
 
 @mcp_server.tool(
@@ -86,27 +84,36 @@ async def create_automation(
 
 
 @mcp_server.tool(annotations=READS)
-async def get_automation_schema(task_type: str) -> dict[str, JsonValue]:
-    """Get what one kind of automation task needs, with a worked example.
+async def get_automation_schema(
+    workspace_id: int, project_id: int, task_type: str
+) -> dict[str, JsonValue]:
+    """Get what one kind of automation task needs, and the conditions there are.
+
+    Mammoth answers from the same schemas it checks a new automation with.
 
     Args:
+        workspace_id: Which workspace the project is in.
+        project_id: Which project the automation would be in.
         task_type: The kind of work, e.g. "run_data_retrieval" or
             "send_an_alert".
 
     Returns:
-        `example`: a whole `create_automation` body that uses this task type,
-        if one is written down. `condition_types`: the conditions an automation
-        can run on.
+        `task`: the task type's `summary`, `required_fields`,
+        `optional_fields` and the values each field accepts (`options`).
+        `conditions`: each condition an automation can run on, with its
+        fields.
     """
-    task = read_task_type(task_type)
-    conditions: list[JsonValue] = [
-        *sorted(condition.value for condition in AutomationConditionType)
-    ]
-    return {
-        AutomationFields.TASK_TYPE: task.value,
-        "example": find_example(task, DOCUMENTED_EXAMPLES),
-        "condition_types": conditions,
-    }
+    async with build_client(workspace_id, project_id) as client:
+        capabilities = await read_sdk_errors(client.automations.capabilities())
+    tasks = typing.cast(list[dict[str, JsonValue]], capabilities[AutomationFields.TASKS])
+    for task in tasks:
+        if task[AutomationFields.TASK_TYPE] == task_type:
+            return {
+                AutomationFields.TASK: task,
+                AutomationFields.CONDITIONS: capabilities[AutomationFields.CONDITIONS],
+            }
+    names = ", ".join(str(task[AutomationFields.TASK_TYPE]) for task in tasks)
+    raise ToolError(f"There is no automation task type {task_type!r}. Task types: {names}.")
 
 
 @mcp_server.tool(annotations=READS)
@@ -189,42 +196,6 @@ async def delete_automation(
     async with build_client(workspace_id, project_id) as client:
         await read_sdk_errors(client.automations.trash(automation_id))
     return await read_automations(workspace_id, project_id)
-
-
-def read_task_type(task_type: str) -> AutomationTaskType:
-    """Read a task type's name, or name the ones there are.
-
-    Raises:
-        ToolError: If no task type goes by that name.
-    """
-    try:
-        return AutomationTaskType(task_type)
-    except ValueError as unknown:
-        raise ToolError(
-            f"There is no automation task type {task_type!r}." f" Task types: {TASK_TYPES}."
-        ) from unknown
-
-
-def find_example(
-    task: AutomationTaskType, examples: list[dict[str, JsonValue]]
-) -> dict[str, JsonValue] | None:
-    """Find a worked example that uses a task type.
-
-    Two of the create route's examples once carried a name no enum has, which
-    the route itself would have rejected. So an example is offered only when
-    every task type in it is real — a stale one is skipped rather than taught.
-
-    Args:
-        task: The task type the example has to use.
-        examples: Whole `create_automation` bodies to choose from.
-    """
-    real = {member.value for member in AutomationTaskType}
-    for body in examples:
-        tasks = typing.cast(list[dict[str, JsonValue]], body[AutomationFields.TASKS])
-        types = {task_spec[AutomationFields.TASK_TYPE] for task_spec in tasks}
-        if task.value in types and types <= real:
-            return body
-    return None
 
 
 def build_patches(

@@ -361,6 +361,9 @@ class AutomationFields:
     DESCRIPTION = "description"
     TASKS = "tasks"
     TASK_TYPE = "task_type"
+    # What `get_automation_schema` answers: one task type, and every condition.
+    TASK = "task"
+    CONDITIONS = "conditions"
     AUTOMATIONS = "automations"
     # The status patch names the ACTION, not the status it leaves behind:
     # "suspend" sets the status "suspended".
