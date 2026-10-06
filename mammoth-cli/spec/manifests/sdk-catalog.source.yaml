@@ -3970,6 +3970,15 @@ sdk_methods:
   pagination_policy: none
   openapi_operation_ids: []
   notes: Exact immutable workspace-ID confirmation, not --yes alone.
+- sdk_symbol: mammoth.api.workspace.WorkspaceAPI.current
+  canonical_command: null
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+  notes: SDK-only seam for a resource server that checks which server an OAuth token was issued for; the
+    CLI reads the token's workspace through MammothClient.workspace_id.
 - sdk_symbol: mammoth.api.workspace.WorkspaceAPI.get
   canonical_command: workspace.get
   alias_of: null
@@ -4195,6 +4204,24 @@ sdk_methods:
   notes: alias; auth status --check uses a typed diagnostic distinguishing invalid credentials, forbidden
     workspace, server unavailability, and timeout. Do not implement the SDK method's lossy boolean behavior
     in the CLI.
+- sdk_symbol: mammoth.client.MammothClient.request_json
+  canonical_command: null
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+  notes: SDK-only seam for a route the SDK has no method for, with the client's credentials and error
+    handling; the CLI calls typed SDK methods instead.
+- sdk_symbol: mammoth.client.MammothClient.set_workspace_id
+  canonical_command: null
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+  notes: SDK-only seam for a caller that already knows the token's workspace; the CLI reads it from the
+    token through MammothClient.workspace_id.
 - sdk_symbol: mammoth.client.MammothClient.wait_if_job
   canonical_command: null
   alias_of: null

@@ -6,6 +6,14 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- `mammoth-io` 0.8.21: public names for a server built on the SDK. `WorkspaceAPI.current()` returns the
+  token's workspace and the `resource` (RFC 8707) an OAuth token was issued for.
+  `MammothClient.set_workspace_id(...)` names the workspace a token client acts in, so it does not ask
+  the API. `MammothClient.request_json(...)` calls a route the SDK has no method for. `mammoth.builders`
+  holds the spec builders, `export_contract(...)` and `EXPORT_CONTRACTS`.
+
 ### Fixed
 
 - `mammoth-cli` 2.2.39: `project copy` now says in its NAME help that a taken name is fine: the server names the
