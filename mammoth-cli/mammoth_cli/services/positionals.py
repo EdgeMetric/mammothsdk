@@ -573,6 +573,7 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
         for command, field, label in (
             ("automation.create", "name", "Name of the new automation"),
             ("client-app.create", "app_name", "Name of the new client app"),
+            ("token.create", "app_name", "Name of the new API key"),
             ("folder.create", "name", "Name of the new folder"),
             ("parameter.create", "name", "Name of the new parameter"),
             ("parameter.group.create", "name", "Name of the new parameter group"),

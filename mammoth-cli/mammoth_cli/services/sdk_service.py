@@ -164,13 +164,17 @@ class SdkMammothService:
             # adds load to the worker that is already overloaded.
             kwargs["retry_gateway_errors"] = False
         credential: dict[str, Any] = (
-            {"api_token": auth.api_token}
-            if auth.api_token is not None
-            else {
-                "api_key": auth.api_key,
-                "api_secret": auth.api_secret,
-                "workspace_id": auth.workspace_id,
-            }
+            {"token_provider": auth.token_provider, "workspace_id": auth.workspace_id}
+            if auth.token_provider is not None
+            else (
+                {"api_token": auth.api_token}
+                if auth.api_token is not None
+                else {
+                    "api_key": auth.api_key,
+                    "api_secret": auth.api_secret,
+                    "workspace_id": auth.workspace_id,
+                }
+            )
         )
         self._client = MammothClient(
             **credential,

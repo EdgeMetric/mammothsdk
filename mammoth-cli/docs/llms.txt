@@ -60,6 +60,7 @@
 - `snippet` (8 commands)
 - `support` (66 commands)
 - `template` (5 commands)
+- `token` (3 commands)
 - `trash` (3 commands)
 - `upgrade` (1 commands)
 - `user` (8 commands)

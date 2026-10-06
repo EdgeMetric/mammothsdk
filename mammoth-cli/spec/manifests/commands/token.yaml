@@ -1,0 +1,128 @@
+manifest_schema_version: 1
+commands:
+- command_id: token.create
+  command_path: token create
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - CreateApp
+  positionals:
+  - name: app_name
+    type: str
+    required: false
+    metavar: APP_NAME
+    falls_back_to_field: app_name
+    help: Name of the new API key; or pass it via the 'app_name' input field.
+  options: []
+  sdk_symbol: mammoth.api.clientapps.ClientAppsAPI.create
+  sdk_conversion: Call mammoth.api.clientapps.ClientAppsAPI.create with validated request fields.
+  request_model: ClientAppCreateRequest
+  result_model: ClientAppCreateResult
+  mutation_class: high_impact
+  edits_target: false
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth token create --help
+  agent_example: mammoth token create 'Revenue report'
+  unit_tests:
+  - UT-CLIENT-APP-CREATE
+  contract_tests:
+  - CT-CLIENT-APP-CREATE-HUMAN
+  - CT-CLIENT-APP-CREATE-JSON
+  - CT-CLIENT-APP-CREATE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: App key/token emitted only once through approved secret output and redacted from
+    diagnostics. B20.
+  reviewed_by: primary
+  readback:
+    command: client-app.get
+    ids:
+      client_key: result.app_key
+    kind: object
+- command_id: token.list
+  command_path: token list
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - ListApps
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.clientapps.ClientAppsAPI.list
+  sdk_conversion: Call mammoth.api.clientapps.ClientAppsAPI.list with validated request fields.
+  request_model: ClientAppListRequest
+  result_model: ClientAppListResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: offset
+  acceptance_evidence: live_read_only
+  live_test: LT-CLIENT-APP-LIST
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth token list --help
+  agent_example: mammoth token list
+  unit_tests:
+  - UT-CLIENT-APP-LIST
+  contract_tests:
+  - CT-CLIENT-APP-LIST-HUMAN
+  - CT-CLIENT-APP-LIST-JSON
+  - CT-CLIENT-APP-LIST-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: B20.
+  reviewed_by: primary
+- command_id: token.revoke
+  command_path: token revoke
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - DeleteApp
+  positionals:
+  - name: client_key
+    type: str
+    required: true
+    metavar: CLIENT_KEY
+    falls_back_to_field: null
+    help: Key identifying the client.
+  options: []
+  sdk_symbol: mammoth.api.clientapps.ClientAppsAPI.delete
+  sdk_conversion: Call mammoth.api.clientapps.ClientAppsAPI.delete with validated request fields.
+  request_model: ClientAppDeleteRequest
+  result_model: ClientAppDeleteResult
+  mutation_class: destructive
+  edits_target: true
+  confirmation: prompt_or_yes
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-CLIENT-APP-DELETE
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth token revoke CLIENT_KEY --help
+  agent_example: mammoth token revoke sample
+  unit_tests:
+  - UT-CLIENT-APP-DELETE
+  contract_tests:
+  - CT-CLIENT-APP-DELETE-HUMAN
+  - CT-CLIENT-APP-DELETE-JSON
+  - CT-CLIENT-APP-DELETE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Exact client-key confirmation. B20.
+  reviewed_by: primary
+  readback:
+    command: client-app.list
+    ids: {}
+    kind: object

@@ -232,6 +232,16 @@ def running_handle(error: CliError, command_id: str) -> dict[str, Any] | None:
     }
 
 
+CODE_CLI_KEYS_NOT_ALLOWED = "cli_keys_not_allowed"
+_TOKEN_REFUSED_NAME = "INVALID_TOKEN_FOR_CLIENT_APPS"  # noqa: S105 - an error name
+
+
+def _is_cli_keys_refused(exc: BaseException) -> bool:
+    """True for the server's refusal of an ``mm_`` token on the client-apps routes."""
+    body = getattr(exc, "response_body", None)
+    return isinstance(body, dict) and body.get("name") == _TOKEN_REFUSED_NAME
+
+
 def map_sdk_exception(
     exc: BaseException,
     *,
@@ -248,6 +258,11 @@ def map_sdk_exception(
     retryable.  This function only describes recovery; it never sends a second
     request.
     """
+    if isinstance(exc, CliError):
+        # Already a typed outcome (for example a login that could not refresh
+        # mid-call); mapping it again would flatten it into a generic failure.
+        return exc
+
     if isinstance(exc, KeyboardInterrupt):
         job_id = getattr(exc, "job_handle", None) or getattr(exc, "job_id", None)
         return interrupted_error(
@@ -451,6 +466,19 @@ def map_sdk_exception(
                 details=details,
                 request_id=request_id,
                 authorization_required=True,
+            )
+        if status == 403 and _is_cli_keys_refused(exc):
+            return CliError(
+                code=CODE_CLI_KEYS_NOT_ALLOWED,
+                message=(
+                    "This server doesn't allow CLI-created keys yet; create one in "
+                    "Settings → API keys, then `mammoth auth login --method token`."
+                ),
+                exit_status=EXIT_AUTH,
+                hint="A browser sign-in cannot create API keys on this server.",
+                details=details,
+                request_id=request_id,
+                recovery_commands=["mammoth auth login --method token"],
             )
         if status == 403:
             return CliError(

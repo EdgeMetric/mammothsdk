@@ -1,11 +1,13 @@
 """Bespoke `auth` command family: login, status, logout.
 
-Authentication needs only an API token (``mm_...``, sent as ``Authorization:
-Bearer``), plus an optional server prefix (default ``app``). The token names its
-own workspace, which login learns from the server. There is no environment
-credential path. These commands never accept a secret as an
-ordinary command-line value: it comes from a hidden TTY prompt or a
-permission-checked JSON/YAML login document read through ``--input``.
+Two ways in. A browser sign-in (OAuth, PKCE) stores a refreshable ``mm_`` access
+token; pasting an API token (``mm_...``, sent as ``Authorization: Bearer``)
+stores that token. Either way the token names its own workspace, which login
+learns from the server, and there is an optional server prefix (default
+``app``). There is no environment credential path. These commands never accept
+a secret as an ordinary command-line value: it comes from the browser, a hidden
+TTY prompt, or a permission-checked JSON/YAML login document read through
+``--input``.
 """
 
 from __future__ import annotations
@@ -13,13 +15,14 @@ from __future__ import annotations
 import os
 import stat
 import sys
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, cast
 
 import typer
 from pydantic import ValidationError
 
-from mammoth_cli.context import credentials, profiles, resolver
+from mammoth_cli.context import credentials, oauth, profiles, resolver
 from mammoth_cli.context.endpoint import resolve_base_url
 from mammoth_cli.context.resolver import ResolvedAuth, resolve_auth
 from mammoth_cli.contracts.auth import LoginRequest
@@ -267,11 +270,114 @@ def _verify_login(invocation: Invocation, *, base_url: str, api_token: str) -> i
     return workspace_id
 
 
+_LOGIN_METHODS = ("oauth", "token")
+
+
+def _choose_method(
+    method: str | None, invocation: Invocation, *, server_prefix: str | None, blockers: list[str]
+) -> str:
+    """Pick ``oauth`` or ``token``: explicit, implied by ``--input``, or asked.
+
+    A server with no CLI OAuth client, a non-interactive run, and ``--input``
+    all keep the token login that existed before browser sign-in.
+    """
+    if method is not None:
+        if method not in _LOGIN_METHODS:
+            raise CliError(
+                code="invalid_login_method",
+                message=f"'{method}' is not a valid --method value.",
+                exit_status=EXIT_USAGE,
+                hint=f"Use one of: {', '.join(_LOGIN_METHODS)}.",
+            )
+        if method == "oauth" and invocation.input_file is not None:
+            raise CliError(
+                code="invalid_argument_combination",
+                message="--input is for token logins; it cannot be used with --method oauth.",
+                exit_status=EXIT_USAGE,
+            )
+        return method
+    if invocation.input_file is not None or blockers:
+        return "token"
+    if not oauth.has_client_id(server_prefix):
+        return "token"
+    typer.echo("How do you want to sign in?", err=True)
+    typer.echo("  1) Browser (OAuth)      recommended", err=True)
+    typer.echo("  3) Paste an API token   for CI and scripts", err=True)
+    choice = typer.prompt("Choose", default="1", show_default=False).strip()
+    if choice not in ("1", "3"):
+        raise CliError(
+            code="invalid_login_method",
+            message=f"'{choice}' is not one of the choices.",
+            exit_status=EXIT_USAGE,
+            hint="Enter 1 for the browser or 3 to paste an API token.",
+        )
+    return "oauth" if choice == "1" else "token"
+
+
+def _iso(epoch: int) -> str:
+    return datetime.fromtimestamp(epoch, UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def _run_oauth_login(
+    invocation: Invocation,
+    *,
+    server_prefix: str | None,
+    storage: str,
+    open_browser: bool,
+    interactive: bool,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Sign in through the browser and persist the refreshable session."""
+    base_url = resolve_base_url(server_prefix)
+    client_id = oauth.client_id_for(server_prefix)
+    session = oauth.browser_login(
+        base_url,
+        client_id=client_id,
+        open_browser=open_browser,
+        say=lambda line: typer.echo(line, err=True),
+    )
+    workspace_id = _verify_login(invocation, base_url=base_url, api_token=session.access)
+
+    profile_name = invocation.profile or profiles.DEFAULT_PROFILE_NAME
+    profiles.validate_profile_name(profile_name)
+    existing = profiles.get_profile(profile_name)
+    profiles.save_profile(
+        profiles.ProfileRecord(
+            name=profile_name,
+            workspace_id=workspace_id,
+            server_prefix=server_prefix,
+            project_id=existing.project_id if existing is not None else None,
+        ),
+        select=True,
+    )
+    storage_used = credentials.store_credentials(
+        profile_name,
+        storage=cast(credentials.StorageMode, storage),
+        interactive=interactive,
+        oauth=session,
+    )
+    typer.echo(
+        f"Signed in to workspace {workspace_id}. Credential stored in {storage_used} "
+        f'(profile "{profile_name}"). The token refreshes automatically.',
+        err=True,
+    )
+    data = {
+        "profile": profile_name,
+        "workspace_id": workspace_id,
+        "base_url": base_url,
+        "storage": storage_used,
+        "credential": "oauth",
+        "expires_at": _iso(session.expires_at),
+    }
+    return data, {"profile": profile_name, "workspace_id": workspace_id}
+
+
 def _run_login(
     invocation: Invocation,
     *,
     server_prefix: str | None,
     storage: str,
+    method: str | None = None,
+    no_browser: bool = False,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     """Validate, connection-check, and persist one `auth login` invocation."""
     if storage not in _STORAGE_MODES:
@@ -283,6 +389,18 @@ def _run_login(
         )
 
     blockers = _prompt_blockers(invocation)
+
+    if (
+        _choose_method(method, invocation, server_prefix=server_prefix, blockers=blockers)
+        == "oauth"
+    ):
+        return _run_oauth_login(
+            invocation,
+            server_prefix=server_prefix,
+            storage=storage,
+            open_browser=not no_browser,
+            interactive=not blockers,
+        )
 
     if invocation.input_file is not None:
         # The permission check is deliberately separate from parsing so a
@@ -367,11 +485,21 @@ def auth_login(
     storage: str = typer.Option(
         "auto", "--storage", help="Credential storage backend.", metavar="auto|keyring|file"
     ),
+    method: str | None = typer.Option(
+        None,
+        "--method",
+        help="How to sign in: a browser (oauth) or a pasted API token (token).",
+        metavar="oauth|token",
+    ),
+    no_browser: bool = typer.Option(
+        False, "--no-browser", help="Print the sign-in URL instead of opening a browser."
+    ),
 ) -> None:
     """Log in and store one profile's credentials.
 
-    Prompts for the API token (mm_..., from Workspace settings -> API Tokens)
-    in a terminal; the token names its workspace. For non-interactive use
+    In a terminal, choose a browser sign-in (OAuth; the CLI keeps a token that
+    refreshes itself) or paste an API token (mm_..., from Workspace settings ->
+    API Tokens). The token names its workspace. For non-interactive use
     (agents, CI), pass ``--input FILE`` with {"api_token": ...} instead.
     Performs a lightweight connection check before saving anything; a failed
     check leaves existing profile state unchanged.
@@ -401,6 +529,8 @@ def auth_login(
             invocation,
             server_prefix=server_prefix,
             storage=storage,
+            method=method,
+            no_browser=no_browser,
         )
 
     executor.run(
@@ -435,6 +565,9 @@ def _run_status(invocation: Invocation, *, check: bool) -> tuple[dict[str, Any],
         "checked": False,
         "connected": None,
     }
+    if credential is not None and credential.oauth is not None:
+        data["expires_at"] = _iso(credential.oauth.expires_at)
+        data["client_id"] = credential.oauth.client_id
     if credential is not None and credential.kind == "key_secret":
         data["recommendation"] = (
             "This profile uses a legacy API key + secret. Create an API token in "
@@ -501,6 +634,29 @@ def auth_status(
     )
 
 
+def _revoke_oauth_connection(profile_name: str, warnings: list[str]) -> None:
+    """Revoke a browser login's server-side connection; warn on failure, never raise.
+
+    Logout must always clear local state, so every failure here (no record, an
+    unreadable keyring, a refused or unreachable server) becomes a warning.
+    """
+    try:
+        credential = credentials.load_credential(profile_name)
+        record = profiles.get_profile(profile_name)
+        if credential is None or credential.oauth is None or record is None:
+            return
+        base_url = resolve_base_url(record.server_prefix)
+        session = credential.oauth
+        if not oauth.is_fresh(session):
+            session = oauth.refresh_session(profile_name, base_url)
+        problem = oauth.revoke_grant(base_url, session)
+    except CliError as exc:
+        problem = f"Could not revoke the connection on the server: {exc.message}"
+    if problem is not None:
+        warnings.append(problem)
+        typer.echo(f"Warning: {problem} Local credentials are still removed.", err=True)
+
+
 def _run_logout(
     invocation: Invocation, *, all_profiles: bool, yes: bool
 ) -> tuple[dict[str, Any], dict[str, Any]]:
@@ -533,21 +689,26 @@ def _run_logout(
             )
 
     removed: list[str] = []
+    warnings: list[str] = []
     if all_profiles:
         # Iterate raw profile names so an unparseable legacy profile (for
         # example one with an unsupported base_url) is still cleaned up rather
         # than blocking the very command meant to remove it.
         for name in profiles.list_profile_names():
+            _revoke_oauth_connection(name, warnings)
             if credentials.delete_credentials(name):
                 removed.append(name)
             profiles.delete_profile(name)
     else:
         profile_name = invocation.profile or profiles.get_selected()
+        _revoke_oauth_connection(profile_name, warnings)
         if credentials.delete_credentials(profile_name):
             removed.append(profile_name)
         profiles.delete_profile(profile_name)
 
-    data = {"removed_profiles": sorted(removed), "all": all_profiles}
+    data: dict[str, Any] = {"removed_profiles": sorted(removed), "all": all_profiles}
+    if warnings:
+        data["warnings"] = warnings
     return data, {}
 
 

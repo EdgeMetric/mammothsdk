@@ -73,6 +73,39 @@ Leave `--storage` at `auto` and the CLI picks the OS keyring when one exists.
 A real terminal always prompts, even when `CI` is set in your shell. Without a
 terminal the CLI needs `--input` instead, as shown below.
 
+## Sign in with your browser
+
+On a server that supports it, `mammoth auth login` offers two ways to sign in:
+
+```text
+How do you want to sign in?
+  1) Browser (OAuth)      recommended
+  3) Paste an API token   for CI and scripts
+```
+
+Choose 1. The CLI opens the Mammoth sign-in page and waits on a local address
+(`127.0.0.1` with a random port). Approve the request in the browser. The CLI
+then holds a token that lasts one hour and refreshes itself. You do not paste
+a secret.
+
+Use `--method oauth` or `--method token` to skip the question. Add
+`--no-browser` to print the sign-in URL instead of opening a browser. The
+browser must run on the same machine as the CLI.
+
+- `mammoth auth status` shows `credential: oauth` and when the token expires.
+- If the refresh fails, commands stop with `login_expired` (exit code 4). Run
+  `mammoth auth login` again.
+- `mammoth auth logout` removes the local login and asks the server to revoke
+  the connection. If the server cannot revoke it, the CLI warns and still
+  removes the local login. Remove the connection under **Settings → Connected
+  apps**.
+
+For a long-lived key for CI, use `mammoth token create NAME`, `mammoth token
+list`, and `mammoth token revoke KEY`. These are aliases of `client-app
+create`, `list`, and `delete`. A server can refuse them for a browser sign-in
+with the error `cli_keys_not_allowed`. Then create the key under **Settings →
+API keys** and run `mammoth auth login --method token`.
+
 ## Log in without a terminal (agents and CI)
 
 An agent or CI job cannot answer hidden prompts. On POSIX hosts without an OS
