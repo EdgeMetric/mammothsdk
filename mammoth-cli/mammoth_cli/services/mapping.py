@@ -554,7 +554,9 @@ def map_sdk_exception(
                 message="Mammoth denied access to the requested resource or operation.",
                 exit_status=EXIT_AUTH,
                 hint=(
-                    "Check the target scope or ask an administrator for permission. "
+                    "Check the ids and scope first: a view id given with another dataset's id, "
+                    "or an id from a different project, is refused the same way. Then ask an "
+                    "administrator for permission. "
                     "An API token limited to one project gets this in every other "
                     "project, including one it created: pass that project's --project ID, "
                     "or log in with a token created without a project."

@@ -1231,6 +1231,9 @@ EXACT_PARENT_HELP = (
 # instead and hit a not-found on the (unrelated) source view's own parent
 # (WPP evidence c38/c39).
 _EXACT_PARENT_HELP_OVERRIDES: dict[str, str] = {
+    "view.optimize": (
+        "Optional parent dataset ID. Leave it out and the CLI looks up the view's dataset. A value that is not the view's dataset is refused before the write."
+    ),
     "view.export.dataset": (
         "Exact parent dataset ID of the SOURCE view being exported -- not the "
         "destination. Required for this command: pass it here or as the "

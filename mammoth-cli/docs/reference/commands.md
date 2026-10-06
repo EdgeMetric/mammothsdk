@@ -5665,12 +5665,12 @@ Total commands: 656.
 **Arguments**
 
 - `VIEW_ID` (int, required) — ID of the view to act on.
-- `DATASET_ID` (int, optional) — Exact parent dataset ID. Required for this command: pass it here or as the 'dataset_id' input field; only read commands may omit it and discover the parent.
+- `DATASET_ID` (int, optional) — Optional parent dataset ID. Leave it out and the CLI looks up the view's dataset. A value that is not the view's dataset is refused before the write.
 
 - Mutation class: `reversible_pipeline`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.dataviews.DataviewsAPI.optimize`
-- Agent example: `mammoth view optimize 123 123`
+- Agent example: `mammoth view optimize 123`
 
 ### `mammoth view parameter-context`
 
