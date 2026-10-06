@@ -592,7 +592,10 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
             name="command_id",
             type=str,
             required=True,
-            help="Command id to fetch the schema for (e.g. view.transform.bulk-replace).",
+            help=(
+                "Command id to fetch the schema for (e.g. view.transform.bulk-replace); "
+                "join several with commas (view.list,view.analyze) for one result with all of them."
+            ),
             # The generated example is executed offline against the real command
             # catalog (see the discovery-example subprocess test), so its
             # placeholder must be a genuine, resolvable command id -- the generic
