@@ -10,6 +10,7 @@ makes a request.
 from __future__ import annotations
 
 import json
+import shlex
 from collections.abc import Iterator
 from typing import Any
 
@@ -113,7 +114,7 @@ def _entry(record: dict[str, Any]) -> dict[str, Any]:
         entry["stored_suggestions"] = suggestions
         entry["fix"] = (
             f"mammoth dataset interpretation preview {dataset_id} --input "
-            + json.dumps({"user_instruction": suggestions[0]})
+            + shlex.quote(json.dumps({"user_instruction": suggestions[0]}))
             + "; then mammoth dataset interpretation confirm "
             + f"{dataset_id} with the same input"
         )
