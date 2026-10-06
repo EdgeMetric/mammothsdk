@@ -6,6 +6,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed (mammoth-io 0.8.24, mammoth-cli 2.2.46)
+
+- `view data explore`: a blank bucket sorts last under `metric_*` and `count_*` orders too (it ranked by its own metric before).
+
 ### Added (mammoth-cli 2.2.45)
 
 - `mammoth resolve NAME`: read-only, says whether a name is a dataset, a view or a project, with ids
