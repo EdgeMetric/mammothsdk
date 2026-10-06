@@ -410,6 +410,7 @@ _LOCAL_COMMANDS = frozenset(
         "doctor",
         "project.check",
         "project.ensure",
+        "resolve",
         "folder.find",
         "link",
         "log.path",

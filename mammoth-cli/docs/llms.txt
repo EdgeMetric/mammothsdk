@@ -54,6 +54,7 @@
 - `parameter` (14 commands)
 - `project` (25 commands)
 - `report` (1 commands)
+- `resolve` (1 commands)
 - `schedule` (5 commands)
 - `schema` (3 commands)
 - `skill` (7 commands)

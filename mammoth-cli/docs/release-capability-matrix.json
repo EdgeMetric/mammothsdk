@@ -242,6 +242,7 @@
     "project.memory.list",
     "project.memory.remove",
     "project.needs-attention",
+    "resolve",
     "skill.agents-md.install",
     "skill.show",
     "view.export.azure-blob",

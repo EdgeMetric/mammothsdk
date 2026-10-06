@@ -98,11 +98,13 @@ def test_find_matches_are_case_insensitive(fake_service: FakeMammothService) -> 
     assert [m["id"] for m in result["matches"]] == [10]
 
 
-def test_find_with_project_restricts_to_one_project(fake_service: FakeMammothService) -> None:
+def test_find_with_project_puts_its_own_matches_first_and_marks_them(
+    fake_service: FakeMammothService,
+) -> None:
     fake_service.projects = [{"id": 1, "name": "P1"}, {"id": 42, "name": "P42"}]
     fake_service.responses[_LIST_ALL] = {"datasets": [{"id": 10, "name": "Sales Q1"}]}
     result, meta = dataset_cmd.dataset_find(_inv("dataset.find", project=42, extra_args=["sales"]))
-    assert result["projects_searched"] == 1
+    assert result["projects_searched"] == 2
     assert result["matches"] == [
         {
             "project_id": 42,
@@ -110,9 +112,10 @@ def test_find_with_project_restricts_to_one_project(fake_service: FakeMammothSer
             "id": 10,
             "name": "Sales Q1",
             "source": "unknown",
+            "in_project": True,
         }
     ]
-    assert fake_service.call_log == [(_LIST_ALL, {"project_id": 42, "fields": DATASET_ROW_FIELDS})]
+    assert (_LIST_ALL, {"project_id": 42, "fields": DATASET_ROW_FIELDS}) in fake_service.call_log
     assert meta["project_id"] == 42
 
 
