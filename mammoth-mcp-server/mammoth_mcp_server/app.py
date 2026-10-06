@@ -9,7 +9,7 @@ from .server import mcp_server, register_tools
 
 
 def create_app() -> Starlette:
-    """Build the app a server runs: every tool, behind the sign-in.
+    """Build the app a server runs: every tool, behind the token check.
 
     Stateless JSON mode: any worker can serve any request, and no response is
     a stream. So the server scales by adding workers, with nothing shared

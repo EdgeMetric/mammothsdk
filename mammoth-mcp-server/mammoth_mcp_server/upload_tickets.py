@@ -8,11 +8,10 @@ link sends Mammoth the file.
 
 The browser that opens the page carries no Mammoth login, and asking for one
 loses a meaningful share of users. So the ticket stands in for the caller: the
-record holds the MCP caller's own access token, sealed with the same key the
-sign-in seals credentials with (`store.seal`). It is spent on
-the first upload and expires after `UPLOAD_SECONDS`, and the link that carries
-it is 256 bits of randomness — the same thing that guards an authorization
-code.
+record holds the MCP caller's own access token, sealed (`store.seal`). It is
+spent on the first upload and expires after `UPLOAD_SECONDS`, and the link
+that carries it is 256 bits of randomness — the same thing that guards an
+authorization code.
 """
 
 import secrets

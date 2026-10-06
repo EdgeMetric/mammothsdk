@@ -1,4 +1,4 @@
-"""The short-lived records this server keeps: sign-ins, tokens and upload tickets.
+"""The short-lived records this server keeps: upload tickets.
 
 Each is one Redis key that expires by itself, so no worker keeps anything in
 memory and any worker can serve any request. A record that holds a credential
@@ -62,11 +62,6 @@ def unseal(sealed: str) -> Record:
 async def remember(kind: str, key: str, record: Record, seconds: int) -> None:
     """Store one record until it expires."""
     await connect().set(redis_key(kind, key), json.dumps(record), ex=seconds)
-
-
-async def replace(kind: str, key: str, record: Record) -> None:
-    """Change a record and leave it the time it had left."""
-    await connect().set(redis_key(kind, key), json.dumps(record), keepttl=True)
 
 
 async def recall(kind: str, key: str) -> Record | None:

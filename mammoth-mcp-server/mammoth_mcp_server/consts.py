@@ -27,11 +27,6 @@ ENGINE_V3 = "v3"
 VIEWER_ROUTE = {ENGINE_V3: "dashboard-v3"}
 EDITOR_ROUTE = {ENGINE_V3: "publish"}
 OLDER_ENGINE_ROUTE = "dashboard"
-# How long each step of that sign-in lives: long enough to read a login page,
-# to be sent back to the client, and to work for a month before signing in again.
-LOGIN_SECONDS = 10 * 60
-CODE_SECONDS = 5 * 60
-TOKEN_SECONDS = 30 * 24 * 60 * 60
 # How long an upload link is good for: long enough to leave the conversation,
 # find the file and come back, and no longer.
 UPLOAD_SECONDS = 30 * 60
@@ -408,74 +403,26 @@ class ApiFields:
 # The header a call names the workspace it acts in with.
 WORKSPACE_HEADER = "X-WORKSPACE-ID"
 
-# What every Mammoth API token starts with. The API tells its own tokens from
-# any other bearer the same way.
-API_TOKEN_PREFIX = "mm_"
+# The route that says what a bearer token is for, which also proves it is good.
+CURRENT_WORKSPACE_PATH = "/workspaces/current"
+# Whoever the token was issued to: Mammoth does not say, and nothing here asks.
+TOKEN_CLIENT = "mammoth"
+
+
+class TokenFields:
+    """What Mammoth says a bearer token is for."""
+
+    # The one workspace the token acts in.
+    WORKSPACE_ID = "id"
+    # The server the token was issued for (RFC 8707), as its URI.
+    RESOURCE = "resource"
 
 
 class TokenClaims:
     """What a caller's access token carries, so a tool call can act as them."""
 
-    # The caller's own Mammoth API token (`mm_...`), which the API takes as a bearer.
-    API_TOKEN = "api_token"
-    # The one workspace that token belongs to.
+    # The one workspace the caller's token belongs to.
     WORKSPACE_ID = "workspace_id"
-    # Or, for a Mammoth login: the Keycloak tokens, and when the access token ends.
-    KEYCLOAK_ACCESS = "keycloak_access_token"
-    KEYCLOAK_REFRESH = "keycloak_refresh_token"
-    KEYCLOAK_EXPIRES_AT = "keycloak_expires_at"
-
-
-class KeycloakFields:
-    """The OpenID Connect requests this server makes of Keycloak, and their answers."""
-
-    AUTH_PATH = "/protocol/openid-connect/auth"
-    TOKEN_PATH = "/protocol/openid-connect/token"
-    # One record per Keycloak sign-in in flight, keyed by the state sent to Keycloak.
-    SIGN_IN = "keycloak"
-    LOGIN_STATE = "login_state"
-    VERIFIER = "code_verifier"
-    ACCESS_TOKEN = "access_token"
-    REFRESH_TOKEN = "refresh_token"
-    EXPIRES_IN = "expires_in"
-    REFRESH_EXPIRES_IN = "refresh_expires_in"
-    CODE = "code"
-    STATE = "state"
-    ERROR = "error"
-
-
-# Refresh a Keycloak access token this long before it ends, so it does not end
-# in the middle of a tool call.
-KEYCLOAK_REFRESH_MARGIN_SECONDS = 30
-
-
-class OAuthFields:
-    """What the sign-in stores, and the query it redirects with."""
-
-    # One record per step of the sign-in, each under its own kind.
-    CLIENT = "client"
-    LOGIN = "login"
-    CODE = "code"
-    TOKEN = "token"
-    # What those records hold. The first seven are what the client asked for,
-    # kept while the user is away on the login page.
-    CLIENT_ID = "client_id"
-    REDIRECT_URI = "redirect_uri"
-    EXPLICIT_REDIRECT = "redirect_uri_provided_explicitly"
-    CODE_CHALLENGE = "code_challenge"
-    SCOPES = "scopes"
-    RESOURCE = "resource"
-    CLIENT_STATE = "client_state"
-    EXPIRES_AT = "expires_at"
-    CREDENTIALS = "credentials"
-    # How long the token the code buys may live: a Keycloak session can end
-    # before the 30 days an API token sign-in is kept.
-    TOKEN_SECONDS = "token_seconds"
-    # What the login page is opened with, and what the client is sent back with.
-    STATE = "state"
-    # The credentials a token leads back to, named as a tool call reads them.
-    API_TOKEN = TokenClaims.API_TOKEN
-    WORKSPACE_ID = TokenClaims.WORKSPACE_ID
 
 
 class PipelineFields:

@@ -29,10 +29,10 @@ API_ROOT: str | None = os.environ.get("MAMMOTH_API_ROOT", "/api/v2") or None
 SERVER_URL = read("MCP_SERVER_URL", "https://mcp.mammoth.io").rstrip("/")
 MCP_PATH = "/mcp"
 MCP_RESOURCE_URL = f"{SERVER_URL}{MCP_PATH}"
-# The authorization server this server runs itself, and its login page.
-MCP_OAUTH_URL = SERVER_URL
-MCP_LOGIN_PATH = "/login"
-MCP_LOGIN_URL = f"{SERVER_URL}{MCP_LOGIN_PATH}"
+# The authorization server that signs users in for this server: Mammoth's own,
+# which the API serves. A client is sent there, and a token it issues for
+# `MCP_RESOURCE_URL` is the one bearer this server takes.
+MCP_OAUTH_URL = read("MAMMOTH_OAUTH_URL", f"{APP_URL}/api/v2").rstrip("/")
 # The upload page, as the user's browser reaches it. A tool hands out this URL
 # with a ticket.
 MCP_UPLOAD_PATH = "/upload"
@@ -41,30 +41,13 @@ MCP_UPLOAD_URL = f"{SERVER_URL}{MCP_UPLOAD_PATH}"
 # fetch only from the origins its resource names.
 UPLOAD_ORIGIN = "{0.scheme}://{0.netloc}".format(urlparse(MCP_UPLOAD_URL))
 
-# Where sign-ins, tokens and upload tickets are kept, and the key their
-# credentials are sealed with. Generate the key with
+# Where upload tickets are kept, and the key the caller's token in one is
+# sealed with. Generate the key with
 # `python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"`.
 REDIS_URL = read("MCP_REDIS_URL", "redis://localhost:6379/0")
 ENCRYPTION_KEY = read("MCP_ENCRYPTION_KEY", "")
 # Keeps this server's records apart from another deployment's in one Redis.
 STORE_PREFIX = read("MCP_STORE_PREFIX", "mammoth_mcp")
-
-# Signing in with a Mammoth login, through Keycloak. This server signs the user
-# in as one Keycloak client of its own, which an admin creates once per realm:
-# a confidential client whose redirect URI is `KEYCLOAK_REDIRECT_URL`. Leave
-# `MCP_KEYCLOAK_CLIENT_ID` unset and the login page offers the API token only.
-KEYCLOAK_URL = read("MCP_KEYCLOAK_URL", "").rstrip("/")
-KEYCLOAK_REALM = read("MCP_KEYCLOAK_REALM", "")
-KEYCLOAK_CLIENT_ID = read("MCP_KEYCLOAK_CLIENT_ID", "")
-KEYCLOAK_CLIENT_SECRET = read("MCP_KEYCLOAK_CLIENT_SECRET", "")
-# `offline_access` asks for a session that outlives the browser's, so a
-# connector keeps working for as long as the realm lets an offline session live.
-KEYCLOAK_SCOPE = read("MCP_KEYCLOAK_SCOPE", "openid offline_access")
-KEYCLOAK_ENABLED = bool(KEYCLOAK_URL and KEYCLOAK_REALM and KEYCLOAK_CLIENT_ID)
-KEYCLOAK_ISSUER = f"{KEYCLOAK_URL}/realms/{KEYCLOAK_REALM}"
-KEYCLOAK_LOGIN_PATH = f"{MCP_LOGIN_PATH}/keycloak"
-KEYCLOAK_CALLBACK_PATH = f"{KEYCLOAK_LOGIN_PATH}/callback"
-KEYCLOAK_REDIRECT_URL = f"{SERVER_URL}{KEYCLOAK_CALLBACK_PATH}"
 
 HOST = read("MCP_HOST", "127.0.0.1")
 PORT = int(read("MCP_PORT", "8270"))

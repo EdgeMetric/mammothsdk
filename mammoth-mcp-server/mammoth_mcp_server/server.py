@@ -1,24 +1,17 @@
 """The MCP server object every tool registers itself on, and who may call it.
 
 The MCP SDK builds the whole HTTP side from what is given here: the MCP
-endpoint, the OAuth endpoints and their metadata, and the check that turns a
-caller without a token away with a pointer to where to sign in.
+endpoint, the metadata that names where to sign in, and the check that turns a
+caller without a token away with a pointer to that metadata. This server is a
+resource server alone: it has no sign-in of its own.
 """
 
 from mcp.server import MCPServer
-from mcp.server.auth.settings import AuthSettings, ClientRegistrationOptions, RevocationOptions
+from mcp.server.auth.settings import AuthSettings
 
-from .config import (
-    KEYCLOAK_CALLBACK_PATH,
-    KEYCLOAK_LOGIN_PATH,
-    MCP_LOGIN_PATH,
-    MCP_OAUTH_URL,
-    MCP_RESOURCE_URL,
-    MCP_UPLOAD_PATH,
-)
+from .config import MCP_OAUTH_URL, MCP_RESOURCE_URL, MCP_UPLOAD_PATH
 from .consts import MCP_INSTRUCTIONS, MCP_SERVER_NAME
-from .login import back_from_mammoth, login, login_with_mammoth
-from .oauth import oauth_provider
+from .tokens import token_verifier
 from .upload_app import upload_app
 from .upload_routes import upload
 
@@ -26,30 +19,22 @@ mcp_server = MCPServer(
     MCP_SERVER_NAME,
     instructions=MCP_INSTRUCTIONS,
     extensions=[upload_app],
-    auth_server_provider=oauth_provider,
-    # The two URLs are validated from their text, which keeps a URL with no
-    # path as it was written. A client compares an issuer letter for letter.
+    token_verifier=token_verifier,
+    # The two URLs are validated from their text, which keeps a URL as it was
+    # written. A client compares an issuer letter for letter.
     auth=AuthSettings.model_validate(
         {
             "issuer_url": MCP_OAUTH_URL,
             "resource_server_url": MCP_RESOURCE_URL,
-            # A client names itself and is given an id: Claude web and ChatGPT
-            # register themselves, and no one registers them by hand. Revoking
-            # is how a client signs the user out again.
-            "client_registration_options": ClientRegistrationOptions(enabled=True),
-            "revocation_options": RevocationOptions(enabled=True),
             "required_scopes": [],
-            # Every token this server admits says it is for this server, so one
-            # issued for another resource is turned away.
+            # A token is taken only when Mammoth issued it for this server, so
+            # one issued for another resource, or for none, is turned away.
             "validate_token_resource": True,
         }
     ),
 )
-# Pages a browser opens with no token of its own: the sign-in pages, which are
-# where a token is got, and the upload page, guarded by its single-use ticket.
-mcp_server.custom_route(MCP_LOGIN_PATH, methods=["GET", "POST"])(login)
-mcp_server.custom_route(KEYCLOAK_LOGIN_PATH, methods=["GET"])(login_with_mammoth)
-mcp_server.custom_route(KEYCLOAK_CALLBACK_PATH, methods=["GET"])(back_from_mammoth)
+# The page a browser opens with no token of its own, guarded by its single-use
+# ticket.
 mcp_server.custom_route(MCP_UPLOAD_PATH, methods=["GET", "POST"])(upload)
 
 

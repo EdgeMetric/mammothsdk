@@ -38,13 +38,13 @@ def run(awaitable: Any) -> Any:
 
 @contextmanager
 def as_caller(token: str = TOKEN, workspace_id: int = WORKSPACE) -> Generator[None]:
-    """Run the block as a caller signed in with a Mammoth API token."""
+    """Run the block as a caller whose token Mammoth issued for this server."""
     access = AccessToken(
-        token="issued-by-this-server",
+        token=token,
         client_id="a-client",
         scopes=[],
         resource=MCP_RESOURCE_URL,
-        claims={TokenClaims.API_TOKEN: token, TokenClaims.WORKSPACE_ID: workspace_id},
+        claims={TokenClaims.WORKSPACE_ID: workspace_id},
     )
     reset = auth_context_var.set(AuthenticatedUser(access))
     try:
@@ -156,15 +156,13 @@ def a_fake_store() -> Generator[FakeRedis]:
 GOOD_TOKEN = "mm_good"
 
 
-@contextmanager
-def a_mammoth_that_knows(token: str = GOOD_TOKEN, workspace_id: int = WORKSPACE) -> Generator[None]:
-    """Stand in for Mammoth's answer to "which workspace is this token for"."""
-    from mammoth.exceptions import MammothAuthError
-
-    async def read_token_workspace(asked: str) -> int:
-        if asked != token:
-            raise MammothAuthError("Invalid API credentials")
-        return workspace_id
-
-    with patch("mammoth_mcp_server.oauth.read_token_workspace", read_token_workspace):
-        yield
+def knows_the_token(
+    api: FakeApi,
+    workspace_id: int = WORKSPACE,
+    resource: str | None = MCP_RESOURCE_URL,
+) -> None:
+    """Have the fake Mammoth say what a bearer token is for."""
+    issued: dict[str, Any] = {"id": workspace_id}
+    if resource is not None:
+        issued["resource"] = resource
+    api.answer("GET", "/workspaces/current", issued)
