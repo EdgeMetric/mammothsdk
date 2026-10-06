@@ -6,6 +6,13 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- `mammoth-cli` 2.2.40: `schema get` takes several command ids joined by commas or semicolons
+  (`schema get view.list,view.analyze`) and returns one result, `{"requested", "schemas", "errors"}`;
+  an id with no schema is an entry in `errors` and does not fail the call. `schema find` already took
+  `;`-separated goals. Up to 12 ids per call (`too_many_ids` above that).
+
 ### Fixed
 
 - `mammoth-cli` 2.2.39: `project copy` now says in its NAME help that a taken name is fine: the server names the
