@@ -269,8 +269,10 @@ def _explore_sort_and_limit(
     field = {"count": "agg_0", "metric": "agg_1"}.get(order.split("_")[0], "group_0")
     if field == "agg_1" and rows and not any("agg_1" in row for row in rows):
         raise MammothValidationError(ERR_EXPLORE_METRIC_NEEDED.format(f"sort {order}"))
-    present = [row for row in rows if row.get(field) is not None]
-    blank = [row for row in rows if row.get(field) is None]
+    # A blank bucket (null group) goes last whatever the order ranks by; so does a row whose
+    # ranked value is itself null.
+    blank = [row for row in rows if row.get("group_0") is None or row.get(field) is None]
+    present = [row for row in rows if row not in blank]
     ordered = sorted(present, key=lambda row: row[field], reverse=order.endswith("desc")) + blank
     offset, limit = page
     if limit is None and column_type not in ("DATE", "NUMERIC"):

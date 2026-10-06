@@ -1,0 +1,49 @@
+# The MCP server and a Redis of its own, as one stack.
+#
+# Build it from the REPOSITORY ROOT, which is the build context:
+#
+#   docker compose -f mammoth-mcp-server/deploy/compose.yaml up -d --build
+#
+# The settings come from `.env` beside this file; `.env.example` lists them.
+# `MCP_REDIS_URL` is set here, so a deployment with its own Redis sets that
+# variable in `.env` and starts only the `server` service.
+
+services:
+  server:
+    build:
+      context: ../..
+      dockerfile: mammoth-mcp-server/deploy/Dockerfile
+    env_file: .env
+    environment:
+      # Reached inside the stack, whatever the host's own Redis is.
+      MCP_REDIS_URL: ${MCP_REDIS_URL:-redis://redis:6379/0}
+      MCP_PORT: 8270
+    # Only the front door reaches it; nothing else should.
+    ports:
+      - "127.0.0.1:8270:8270"
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      # The one route that answers without a token.
+      test:
+        - CMD
+        - python
+        - -c
+        - import urllib.request;urllib.request.urlopen("http://127.0.0.1:8270/.well-known/oauth-protected-resource/mcp",timeout=4)
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
+
+  redis:
+    image: redis:7-alpine
+    # Upload tickets die by themselves within 30 minutes, so nothing is kept.
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5

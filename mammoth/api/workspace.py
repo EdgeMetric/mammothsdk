@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 from mammoth.exceptions import MammothAPIError, MammothValidationError
-from mammoth.models.workspaces import UserRolePatchOp, WorkspacePatchOp
+from mammoth.models.workspaces import CurrentWorkspace, UserRolePatchOp, WorkspacePatchOp
 
 if TYPE_CHECKING:
     from ..client import MammothClient
@@ -47,6 +47,18 @@ class WorkspaceAPI:
         """
         params = {"fields": "id,name", "limit": limit}
         return await self._client._request_json("GET", "/workspaces", params=params)
+
+    async def current(self) -> CurrentWorkspace:
+        """Ask which workspace this client's token acts in.
+
+        Returns:
+            The workspace's ``id``, and the ``resource`` (RFC 8707) an OAuth
+            token was issued for: the URI of the one server the user let it
+            reach. ``resource`` is None for a token made by hand, and for a
+            token issued for no server.
+        """
+        answer = await self._client._request_json("GET", "/workspaces/current")
+        return CurrentWorkspace.model_validate(answer)
 
     async def get(self, workspace_id: int | None = None) -> dict[str, Any]:
         """Get details of a specific workspace.

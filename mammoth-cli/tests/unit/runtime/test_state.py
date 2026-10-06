@@ -315,3 +315,107 @@ def test_id_source_alternatives_take_the_first_that_resolves(
     state = with_state(_invocation(), {"job": {"id": 7660, "status": "processing"}})["state"]
     assert state["read_by"] == "job.get 7660"
     assert state["status"] == "success"
+
+
+_DATA_READBACK = {
+    "readback": {"command": "view.data.get", "ids": {"view_id": "positional.0"}, "kind": "data"}
+}
+_NOT_RUN_YET = (
+    "The Mammoth job failed: Failed to retrieve the latest data item from dataview - "
+    "Additional Info: no data for pipeline step 1 of dataview 3310 yet; the step is 'added'"
+)
+
+
+def _view_get(invocation: Invocation) -> tuple[dict[str, Any], dict[str, Any]]:
+    return (
+        {
+            "id": 3310,
+            "row_count": 20,
+            "metadata": [{"internal_name": "c1", "display_name": "status", "type": "TEXT"}],
+        },
+        {},
+    )
+
+
+def test_a_staged_draft_step_reports_the_staged_steps_not_unreadable(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # FB-20: a step staged in a draft never ran, so reading its data fails;
+    # the agent got "unreadable" and polled four read commands to learn what
+    # was staged.
+    _patch_record(monkeypatch, _DATA_READBACK)
+
+    def fake_task_list(invocation: Invocation) -> tuple[dict[str, Any], dict[str, Any]]:
+        assert invocation.extra_args == ["3310"]
+        return (
+            {
+                "tasks": [
+                    {"id": 1, "params": {"TASK_KEY": "SELECT"}, "status": "executed"},
+                    {"id": 2, "params": {"TASK_KEY": "MATH"}, "status": "added"},
+                ]
+            },
+            {},
+        )
+
+    def no_data_read(invocation: Invocation) -> tuple[dict[str, Any], dict[str, Any]]:
+        raise AssertionError("a staged step has no data to read")
+
+    _patch_handlers(
+        monkeypatch,
+        {"view.get": _view_get, "view.task.list": fake_task_list, "view.data.get": no_data_read},
+    )
+
+    result = with_state(_invocation(), {"status": "staged", "message": "staged, not run"})
+
+    assert result["state"] == {
+        "kind": "staged",
+        "read_by": "view.task.list 3310",
+        "detail": "Staged in the draft, not run: the live view is unchanged until "
+        "'view draft submit'.",
+        "live_row_count": 20,
+        "steps": [
+            {"id": 1, "task": "SELECT", "status": "executed"},
+            {"id": 2, "task": "MATH", "status": "added"},
+        ],
+    }
+
+
+def test_a_live_read_back_waits_for_the_new_step_to_have_data(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # FB-18/FB-22: read right after the write, the new step had no data yet,
+    # the read-back said "unreadable", and the agent re-read the view itself.
+    _patch_record(monkeypatch, _DATA_READBACK)
+    monkeypatch.setattr(state_mod.time, "sleep", lambda seconds: None)
+    reads = {"n": 0}
+
+    def fake_view_data_get(invocation: Invocation) -> tuple[dict[str, Any], dict[str, Any]]:
+        reads["n"] += 1
+        if reads["n"] < 3:
+            raise state_mod.CliError(code="job_failed", message=_NOT_RUN_YET)
+        return {"data": [{"status": "Shipped"}]}, {}
+
+    _patch_handlers(monkeypatch, {"view.get": _view_get, "view.data.get": fake_view_data_get})
+
+    result = with_state(_invocation(), {"status": "done"})
+
+    assert result["state"]["kind"] == "data"
+    assert result["state"]["sample"] == [{"status": "Shipped"}]
+    assert reads["n"] == 3
+
+
+def test_a_read_back_that_never_gets_data_is_still_unreadable(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _patch_record(monkeypatch, _DATA_READBACK)
+    monkeypatch.setattr(state_mod.time, "sleep", lambda seconds: None)
+
+    def fake_view_data_get(invocation: Invocation) -> tuple[dict[str, Any], dict[str, Any]]:
+        raise state_mod.CliError(code="job_failed", message=_NOT_RUN_YET)
+
+    _patch_handlers(monkeypatch, {"view.get": _view_get, "view.data.get": fake_view_data_get})
+
+    result = with_state(_invocation(), {"status": "done"})
+
+    assert result["state"]["kind"] == "unreadable"
+    assert "no data for pipeline step" in result["state"]["reason"]

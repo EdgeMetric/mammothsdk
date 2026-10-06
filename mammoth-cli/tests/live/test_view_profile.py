@@ -188,6 +188,7 @@ def test_reading_an_existing_board_returns_its_numbers_and_their_period(
     try:
         read, _ = live_cli.ok("dashboard", "get", str(board), project=project)
         assert read["dashboard_link"].endswith(f"/publish/{board}")
+        assert "values" in read["values"], read["values"]
         cards = [v for v in read["values"]["values"] if v["kind"] == "kpi"]
         assert cards and all("value" in card or "error" in card for card in cards)
     finally:

@@ -20,6 +20,7 @@ import os
 import re
 import threading
 from collections.abc import Callable, Sequence
+from concurrent.futures import ThreadPoolExecutor
 from types import TracebackType
 from typing import Any, NoReturn
 
@@ -72,6 +73,15 @@ def _unrecognized_expression_token(message: str, expression: Any) -> str:
     tail = expression[int(match.group(1)) :]
     token = re.split(r"[-+*/%(),]", tail, maxsplit=1)[0].strip()
     return token or expression
+
+
+def _loop_running_here() -> bool:
+    """Whether the calling thread is already inside a running event loop."""
+    try:
+        asyncio.get_running_loop()
+    except RuntimeError:
+        return False
+    return True
 
 
 AGENT_RUN_ENV = "MAMMOTH_AGENT_RUN"
@@ -211,6 +221,15 @@ class SdkMammothService:
         """
         if not inspect.isawaitable(work):
             return work
+        if _loop_running_here():
+            # An async caller (the agent eval harness) already runs a loop on this
+            # thread, and a thread runs one loop at a time: run ours on a helper.
+            with ThreadPoolExecutor(max_workers=1) as helper:
+                return helper.submit(self._run_on_own_loop, work).result()
+        return self._run_on_own_loop(work)
+
+    def _run_on_own_loop(self, work: Any) -> Any:
+        """Run ``work`` on the service's loop; threads take turns."""
         with self._loop_lock:
             return self._loop.run_until_complete(work)
 
