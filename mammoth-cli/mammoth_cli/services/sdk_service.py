@@ -19,9 +19,9 @@ import inspect
 import os
 import re
 import threading
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from types import TracebackType
-from typing import Any
+from typing import Any, NoReturn
 
 from mammoth.client import MammothClient
 from mammoth.exceptions import MammothAPIError, MammothColumnError
@@ -91,6 +91,24 @@ def _signature_misfit(method: Any, kwargs: dict[str, Any]) -> str | None:
     except ValueError:
         return None
     return None
+
+
+#: Reads of one ``call_many`` in flight at once; the rest wait their turn.
+_CALL_MANY_LIMIT = 8
+
+
+async def _settle_all(works: list[Any]) -> list[Any]:
+    """Await every piece of work together; each result is its value or the exception it raised."""
+    turn = asyncio.Semaphore(_CALL_MANY_LIMIT)
+
+    async def settle(work: Any) -> Any:
+        async with turn:
+            try:
+                return await work if inspect.isawaitable(work) else work
+            except Exception as exc:
+                return exc
+
+    return list(await asyncio.gather(*(settle(work) for work in works)))
 
 
 class SdkMammothService:
@@ -207,14 +225,26 @@ class SdkMammothService:
                 ``invalid_arguments`` when the supplied fields do not fit the
                 method signature; otherwise the mapped SDK exception.
         """
+        method, kwargs = self._prepare_call(sdk_symbol, kwargs)
+        try:
+            with spinner(self._progress):
+                return self._run(method(**kwargs))
+        except Exception as exc:
+            self._raise_mapped(exc, sdk_symbol, method, kwargs)
+
+    def _prepare_call(self, sdk_symbol: str, kwargs: dict[str, Any]) -> tuple[Any, dict[str, Any]]:
+        """The SDK method for ``sdk_symbol`` and its coerced keyword arguments."""
         method = resolve_sdk_method(self._client, sdk_symbol)
         kwargs = self._coerce_call_arguments(method, kwargs)
         if self.gate is not None:
             self.gate(sdk_symbol, kwargs)
-        try:
-            with spinner(self._progress):
-                return self._run(method(**kwargs))
-        except TypeError as exc:
+        return method, kwargs
+
+    def _raise_mapped(
+        self, exc: Exception, sdk_symbol: str, method: Any, kwargs: dict[str, Any]
+    ) -> NoReturn:
+        """Raise the stable ``CliError`` for a failed SDK call."""
+        if isinstance(exc, TypeError):
             reason = _signature_misfit(method, kwargs)
             if reason is None:
                 # The arguments fit; this TypeError is a fault inside the call.
@@ -231,7 +261,7 @@ class SdkMammothService:
                 hint="Check the command schema with 'mammoth schema get'.",
                 details={"reason": reason},
             ) from exc
-        except ValueError as exc:
+        if isinstance(exc, ValueError):
             # Every project-scoped SDK sub-client raises this exact message
             # when ``project_id`` is unset (23 call sites across mammoth/api/
             # *.py); catching it by text, rather than special-casing each
@@ -254,14 +284,59 @@ class SdkMammothService:
                 project_id=self._project_id,
                 workspace_id=self._workspace_id,
             ) from exc
+        raise map_sdk_exception(
+            exc,
+            profile=self._profile,
+            project_id=self._project_id,
+            workspace_id=self._workspace_id,
+            non_member_project_id=self._non_member_project(exc, kwargs),
+        ) from exc
+
+    def call_many(self, calls: Sequence[tuple[str, dict[str, Any]]]) -> list[Any]:
+        """Run independent reads at once on the one loop; one result per call, in order.
+
+        Threads cannot overlap here (they take turns on the loop), so a list of reads
+        run one by one costs the sum of their round trips. Here they all wait together.
+        A result is the SDK return value, or the ``CliError`` that call would have
+        raised; one failing never stops the others.
+        """
+        started = [self._start_call(symbol, kwargs) for symbol, kwargs in calls]
+        live = [slot for slot in started if not isinstance(slot, CliError)]
+        with spinner(self._progress):
+            settled = iter(self._run(_settle_all([slot[3] for slot in live])))
+        return [
+            slot if isinstance(slot, CliError) else self._call_result(slot, next(settled))
+            for slot in started
+        ]
+
+    def _start_call(
+        self, sdk_symbol: str, kwargs: dict[str, Any]
+    ) -> CliError | tuple[str, Any, dict[str, Any], Any]:
+        """Begin one call: its ``(symbol, method, kwargs, work)``, or the error that stopped it."""
+        try:
+            method, kwargs = self._prepare_call(sdk_symbol, kwargs)
+        except CliError as error:
+            return error
+        try:
+            return sdk_symbol, method, kwargs, method(**kwargs)
         except Exception as exc:
-            raise map_sdk_exception(
-                exc,
-                profile=self._profile,
-                project_id=self._project_id,
-                workspace_id=self._workspace_id,
-                non_member_project_id=self._non_member_project(exc, kwargs),
-            ) from exc
+            return self._mapped(exc, sdk_symbol, method, kwargs)
+
+    def _call_result(self, slot: tuple[str, Any, dict[str, Any], Any], settled: Any) -> Any:
+        """A started call's value, or its mapped ``CliError`` when it failed."""
+        if not isinstance(settled, Exception):
+            return settled
+        return self._mapped(settled, slot[0], slot[1], slot[2])
+
+    def _mapped(
+        self, exc: Exception, sdk_symbol: str, method: Any, kwargs: dict[str, Any]
+    ) -> CliError:
+        """The ``CliError`` :meth:`_raise_mapped` raises for ``exc``, returned instead."""
+        try:
+            self._raise_mapped(exc, sdk_symbol, method, kwargs)
+        except CliError as error:
+            return error
+        raise AssertionError("_raise_mapped always raises")  # pragma: no cover
 
     def _non_member_project(self, exc: Exception, kwargs: dict[str, Any]) -> int | None:
         """The project a 403 was aimed at when the caller is not a member of it.
