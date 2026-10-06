@@ -6,6 +6,14 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.8.23]
+
+### Changed
+
+- `client_apps.create` no longer swallows a model mismatch silently: it still returns the created
+  app and its one-time token, and also emits `MammothModelDriftWarning` naming the failing fields.
+  `mammoth token create` prints that warning in the result's `warnings`.
+
 ## [0.8.22]
 
 ### Fixed
