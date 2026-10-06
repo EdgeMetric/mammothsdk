@@ -116,6 +116,9 @@ class UploadReportFields:
     KIND = "kind"
     FILE_ID = "file_id"
     DATASET_ID = "dataset_id"
+    # The view a finished dataset is read through: a dashboard, a read or a
+    # transformation takes the view, not the dataset.
+    VIEW_ID = "view_id"
     NAME = "name"
     NEEDS = "needs"
     ACTION = "action"

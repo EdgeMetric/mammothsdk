@@ -20,6 +20,7 @@ from datetime import UTC, datetime
 
 from .consts import (
     MAMMOTH_PROJECT_URL,
+    ApiFields,
     ApiPaths,
     DatasetStatus,
     FileStatus,
@@ -29,7 +30,7 @@ from .consts import (
     UploadReportFields,
     UserActions,
 )
-from .sdk import JsonValue, build_client, request_api
+from .sdk import JsonValue, build_client, read_sdk_errors, request_api
 from .store import Record
 
 type Item = dict[str, JsonValue]
@@ -139,12 +140,48 @@ NEWEST_ITEMS = 50
 
 
 async def report_upload(ticket: Record) -> dict[str, JsonValue]:
-    """Say whether Mammoth has finished reading an upload, and what it made."""
+    """Say whether Mammoth has finished reading an upload, and what it made.
+
+    A dataset that is ready also names its view, which every later step reads
+    through: left out, the model guesses one.
+    """
     since = read_time(ticket[UploadFields.UPLOADED_AT])
-    listed = await list_newest(
-        int(ticket[UploadFields.WORKSPACE_ID]), int(ticket[UploadFields.PROJECT_ID])
+    workspace_id = int(ticket[UploadFields.WORKSPACE_ID])
+    project_id = int(ticket[UploadFields.PROJECT_ID])
+    made = find_made_since(await list_newest(workspace_id, project_id), since)
+    described = [describe(item, ticket) for item in made]
+    for item, entry in zip(made, described, strict=True):
+        if is_ready_dataset(item):
+            entry[UploadReportFields.VIEW_ID] = await read_first_view(
+                workspace_id, project_id, int(str(item["object_id"]))
+            )
+    return {UploadFields.STATUS: upload_status(made), UploadFields.FILES: list(described)}
+
+
+def is_ready_dataset(item: Item) -> bool:
+    """A dataset Mammoth finished reading, which has its view."""
+    return item["resource_type"] == ResourceTypes.DATASET and item[UploadFields.STATUS] in (
+        FINISHED[ResourceTypes.DATASET]
     )
-    return summarize(find_made_since(listed, since), ticket)
+
+
+async def read_first_view(workspace_id: int, project_id: int, dataset_id: int) -> JsonValue:
+    """The dataset's first view: the one Mammoth made with it.
+
+    An upload makes a dataset with one view. Should there be more, the oldest
+    is the one it came with, and the lowest id is the oldest.
+    """
+    async with build_client(workspace_id, project_id) as client:
+        listed = await read_sdk_errors(
+            client.browse.dataviews(
+                dataset_id,
+                project_id=project_id,
+                workspace_id=workspace_id,
+                fields=ApiFields.MINIMAL,
+            )
+        )
+    ids = [view["id"] for view in listed.get("dataviews") or [] if isinstance(view, dict)]
+    return min(ids, default=None)
 
 
 async def list_newest(workspace_id: int, project_id: int) -> list[Item]:
@@ -179,13 +216,16 @@ def read_time(stamp: JsonValue) -> datetime:
 
 
 def summarize(items: list[Item], ticket: Record) -> dict[str, JsonValue]:
-    """`processing` while any item is still being read, else `done`."""
+    """What the upload made, and whether it is over."""
     return {
-        UploadFields.STATUS: (
-            UploadFields.PROCESSING if any(is_busy(item) for item in items) else UploadFields.DONE
-        ),
+        UploadFields.STATUS: upload_status(items),
         UploadFields.FILES: [describe(item, ticket) for item in items],
     }
+
+
+def upload_status(items: list[Item]) -> str:
+    """`processing` while any item is still being read, else `done`."""
+    return UploadFields.PROCESSING if any(is_busy(item) for item in items) else UploadFields.DONE
 
 
 def is_busy(item: Item) -> bool:

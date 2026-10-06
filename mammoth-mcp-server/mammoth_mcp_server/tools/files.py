@@ -87,7 +87,8 @@ async def check_upload(upload_id: str) -> dict[str, JsonValue]:
     Returns:
         `status`: `waiting` (nothing uploaded yet), `processing` (Mammoth is
         still reading them) or `done`. With the last two, `files`: every file
-        and dataset the upload made. An item Mammoth cannot finish without the
+        and dataset the upload made. A dataset that is ready carries `view_id`:
+        read, transform and build dashboards on that view. An item Mammoth cannot finish without the
         user carries `needs`: the `action`, the `next_step` to take, and
         whatever that step needs — the `sheets` to choose from, or the
         `summary` of what could not be decided and the `suggested_instructions`
