@@ -13,6 +13,7 @@ than a crash. Handlers are added per family as each area is implemented.
 
 from __future__ import annotations
 
+import re
 from collections.abc import Callable
 from typing import Any
 
@@ -44,6 +45,7 @@ from mammoth_cli.commands import notification as notification_cmd
 from mammoth_cli.commands import parameter as parameter_cmd
 from mammoth_cli.commands import project as project_cmd
 from mammoth_cli.commands import report as report_cmd
+from mammoth_cli.commands import resolve as resolve_cmd
 from mammoth_cli.commands import schedule as schedule_cmd
 from mammoth_cli.commands import schema as schema_cmd
 from mammoth_cli.commands import skill as skill_cmd
@@ -126,33 +128,79 @@ def _schema_list(invocation: Invocation) -> HandlerResult:
     return schema_cmd.schema_index(str(family) if family else None), {}
 
 
+#: Same ceiling as ``schema find``: more ids than this in one ``schema get`` is
+#: a pasted list, not a lookup.
+_MAX_GET_IDS = 12
+
+
+def _resolve_schema(command_id: str, rest: list[str]) -> tuple[str, dict[str, Any] | None]:
+    """Look up one schema, also accepting the command as typed.
+
+    ``view transform math`` (quoted or not) and ``mammoth view transform math``
+    both mean ``view.transform.math``. Returns the id that resolved, and the
+    entry (``None`` when nothing matched).
+    """
+    entry = schema_cmd.get_schema(command_id)
+    if entry is not None:
+        return command_id, entry
+    if rest and rest[0] == command_id:
+        rest = rest[1:]
+    words = [*command_id.split(), *rest]
+    if words and words[0] == "mammoth":
+        words = words[1:]
+    dotted = ".".join(words)
+    if dotted and dotted != command_id:
+        entry = schema_cmd.get_schema(dotted)
+        if entry is not None:
+            return dotted, entry
+    return command_id, None
+
+
+def _schema_not_found(command_id: str) -> CliError:
+    return CliError(
+        code="schema_not_found",
+        message=f"No schema record for command '{command_id}'.",
+        exit_status=EXIT_USAGE,
+        hint="Use the dotted id (view.transform.math); 'mammoth schema find WORDS' searches.",
+    )
+
+
+def _schema_get_many(ids: list[str], full: bool) -> dict[str, Any]:
+    """One result for several ids: the schemas found, and one error per id not found."""
+    if len(ids) > _MAX_GET_IDS:
+        raise CliError(
+            code="too_many_ids",
+            message=f"schema get accepts at most {_MAX_GET_IDS} ids per call; got {len(ids)}.",
+            exit_status=EXIT_USAGE,
+            hint="Split the ids across more than one 'schema get' call.",
+        )
+    schemas: list[dict[str, Any]] = []
+    errors: list[dict[str, Any]] = []
+    for command_id in ids:
+        _, entry = _resolve_schema(command_id, [])
+        if entry is None:
+            error = _schema_not_found(command_id)
+            errors.append({"command_id": command_id, "code": error.code, "message": error.message})
+        else:
+            schemas.append(entry if full else schema_cmd.brief_schema(entry))
+    return {"requested": len(ids), "schemas": schemas, "errors": errors}
+
+
 def _schema_get(invocation: Invocation) -> HandlerResult:
     command_id = _require_arg(invocation, "command id")
-    entry = schema_cmd.get_schema(command_id)
+    full = bool(invocation.bound_input().get("full"))
+    # 'schema get A,B,C' (or 'A;B;C'): several ids in one call, like the
+    # ';'-separated goals of 'schema find'. Command ids never contain either.
+    ids = list(
+        dict.fromkeys(part.strip() for part in re.split(r"[,;]", command_id) if part.strip())
+    )
+    if len(ids) > 1:
+        return _schema_get_many(ids, full), {}
+    rest = [str(arg) for arg in invocation.extra_args or []]
+    command_id, entry = _resolve_schema(ids[0] if ids else command_id, rest)
     if entry is None:
-        # Also accept the command as typed: 'view transform math' (quoted or
-        # not) or 'mammoth view transform math' for view.transform.math.
-        rest = [str(arg) for arg in invocation.extra_args or []]
-        if rest and rest[0] == command_id:
-            rest = rest[1:]
-        words = [*command_id.split(), *rest]
-        if words and words[0] == "mammoth":
-            words = words[1:]
-        dotted = ".".join(words)
-        if dotted and dotted != command_id:
-            entry = schema_cmd.get_schema(dotted)
-            if entry is not None:
-                command_id = dotted
-    if entry is None:
-        raise CliError(
-            code="schema_not_found",
-            message=f"No schema record for command '{command_id}'.",
-            exit_status=EXIT_USAGE,
-            hint="Use the dotted id (view.transform.math); 'mammoth schema find WORDS' searches.",
-        )
-    if invocation.bound_input().get("full"):
-        return entry, {}
-    return schema_cmd.brief_schema(entry), {}
+        raise _schema_not_found(command_id)
+    return (entry if full else schema_cmd.brief_schema(entry)), {}
 
 
 #: Above this many ';'-separated goals in one 'schema find' call, an agent is
@@ -236,6 +284,7 @@ HANDLERS: dict[str, Handler] = {
     "doctor": doctor_cmd.doctor,
     "calc": calc_cmd.calc,
     "link": link_cmd.link,
+    "resolve": resolve_cmd.resolve,
     "completion.show": completion_cmd.completion_show,
     "completion.install": completion_cmd.completion_install,
     "skill.agents-md.install": skill_cmd.skill_agents_md_install,
@@ -611,6 +660,10 @@ HANDLERS: dict[str, Handler] = {
     "client-app.get": client_app_cmd.client_app_get,
     "client-app.list": client_app_cmd.client_app_list,
     "client-app.update": client_app_cmd.client_app_update,
+    # token family: aliases of client-app create / list / delete
+    "token.create": client_app_cmd.client_app_create,
+    "token.list": client_app_cmd.client_app_list,
+    "token.revoke": client_app_cmd.client_app_delete,
     # report + activity families
     "report.list": report_cmd.report_list,
     "activity.list": activity_cmd.activity_list,

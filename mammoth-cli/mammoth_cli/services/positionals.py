@@ -573,6 +573,7 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
         for command, field, label in (
             ("automation.create", "name", "Name of the new automation"),
             ("client-app.create", "app_name", "Name of the new client app"),
+            ("token.create", "app_name", "Name of the new API key"),
             ("folder.create", "name", "Name of the new folder"),
             ("parameter.create", "name", "Name of the new parameter"),
             ("parameter.group.create", "name", "Name of the new parameter group"),
@@ -592,7 +593,10 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
             name="command_id",
             type=str,
             required=True,
-            help="Command id to fetch the schema for (e.g. view.transform.bulk-replace).",
+            help=(
+                "Command id to fetch the schema for (e.g. view.transform.bulk-replace); "
+                "join several with commas (view.list,view.analyze) for one result with all of them."
+            ),
             # The generated example is executed offline against the real command
             # catalog (see the discovery-example subprocess test), so its
             # placeholder must be a genuine, resolvable command id -- the generic
@@ -640,6 +644,15 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
             example_value="https://app.mammoth.io/workspaces/1/projects/2/data/datasets",
         ),
     ),
+    "resolve": (
+        PositionalSpec(
+            name="name",
+            type=str,
+            required=True,
+            help="Case-insensitive name, or part of one, to look up as a dataset, view or project.",
+            example_value="uqa-w29-ren",
+        ),
+    ),
     "capability.find": (
         PositionalSpec(
             name="query",
@@ -669,7 +682,8 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
             type=str,
             required=False,
             help="Case-insensitive substring to match against dataset names; optional "
-            "when --input gives 'columns'.",
+            "when --input gives 'columns'. Matches in other projects are listed too, "
+            "marked in_project when --project is given.",
             example_value="sales",
         ),
     ),
@@ -794,7 +808,6 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
             "view.restore",
             "view.trash",
             "view.impact",
-            "view.analyze",
             "view.optimize",
             "view.update",
             "view.conditional-format.create",
@@ -810,6 +823,28 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
             "view.version.list",
         )
     },
+    # ``view analyze`` reads several views in one call, so VIEW_ID is text that the
+    # handler splits (5000,5001); the trailing DATASET_ID then applies to every id.
+    "view.analyze": (
+        PositionalSpec(
+            name="view_id",
+            type=str,
+            required=True,
+            help=(
+                "ID of the view to analyze; join several with commas (5000,5001) for one "
+                "result with all of them."
+            ),
+            fills_sdk_param="dataview_id",
+            example_value="123",
+        ),
+        PositionalSpec(
+            name="dataset_id",
+            type=int,
+            required=False,
+            help="ID of the dataset the view belongs to; resolved from the view when omitted.",
+            falls_back_to_field="dataset_id",
+        ),
+    ),
     # The sub-resource commands that also take a specific item id: VIEW_ID first,
     # then the required sub id, then the OPTIONAL trailing DATASET_ID resolved from
     # the view. The sub id keeps its own name (a real, positional-sourced SDK

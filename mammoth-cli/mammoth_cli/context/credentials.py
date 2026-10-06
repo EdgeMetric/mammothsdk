@@ -1,7 +1,8 @@
 """Secret credential storage: OS keyring first, permission-checked file second.
 
-Stores a JSON blob ``{"api_token": ...}`` (the ``mm_...`` Bearer token) or
-the deprecated ``{"api_key": ..., "api_secret": ...}`` under keyring service
+Stores a JSON blob ``{"api_token": ...}`` (the ``mm_...`` Bearer token), a
+browser login ``{"access": ..., "refresh": ..., "expires_at": ..., "client_id":
+...}``, or the deprecated ``{"api_key": ..., "api_secret": ...}`` under keyring service
 ``mammoth-cli`` with the profile name as username. When no keyring
 backend is available, an explicit or interactively-approved fallback stores
 the same blob in ``credentials.toml`` beside ``profiles.toml``, with
@@ -135,15 +136,66 @@ def _bounded_keyring_call[T](call: Callable[[], T]) -> T:
 
 
 @dataclass(frozen=True)
+class OAuthSession:
+    """A browser login's tokens: a short-lived access token and its refresh token.
+
+    ``expires_at`` is a Unix timestamp in whole seconds. ``grant_id`` is the
+    server-side connection id, used to revoke it on logout.
+    """
+
+    access: str
+    refresh: str
+    expires_at: int
+    client_id: str
+    grant_id: int | None = None
+
+    def document(self) -> dict[str, str | int]:
+        document: dict[str, str | int] = {
+            "access": self.access,
+            "refresh": self.refresh,
+            "expires_at": self.expires_at,
+            "client_id": self.client_id,
+        }
+        if self.grant_id is not None:
+            document["grant_id"] = self.grant_id
+        return document
+
+    @classmethod
+    def from_document(cls, data: Any) -> OAuthSession | None:
+        access, refresh = data.get("access"), data.get("refresh")
+        expires_at, client_id = data.get("expires_at"), data.get("client_id")
+        if not (access and refresh and client_id) or isinstance(expires_at, bool):
+            return None
+        if not isinstance(expires_at, int):
+            return None
+        grant_id = data.get("grant_id")
+        return cls(
+            access=str(access),
+            refresh=str(refresh),
+            expires_at=expires_at,
+            client_id=str(client_id),
+            grant_id=int(grant_id) if isinstance(grant_id, int) else None,
+        )
+
+
+@dataclass(frozen=True)
 class Credential:
-    """One stored credential: a Bearer token, or a deprecated key + secret pair."""
+    """One stored credential: a Bearer token, a browser login, or a deprecated key + secret."""
 
     api_token: str | None = None
     api_key: str | None = None
     api_secret: str | None = None
+    oauth: OAuthSession | None = None
 
     def __post_init__(self) -> None:
-        if self.api_token is not None:
+        if self.oauth is not None:
+            if (
+                self.api_token is not None
+                or self.api_key is not None
+                or self.api_secret is not None
+            ):
+                raise ValueError("a credential is one of: oauth session, token, key + secret")
+        elif self.api_token is not None:
             if self.api_key is not None or self.api_secret is not None:
                 raise ValueError("a credential is a token or a key + secret, not both")
         elif not self.api_key or not self.api_secret:
@@ -151,10 +203,14 @@ class Credential:
 
     @property
     def kind(self) -> str:
-        """``"token"`` or ``"key_secret"`` (never the value)."""
+        """``"oauth"``, ``"token"`` or ``"key_secret"`` (never the value)."""
+        if self.oauth is not None:
+            return "oauth"
         return "token" if self.api_token is not None else "key_secret"
 
-    def document(self) -> dict[str, str]:
+    def document(self) -> dict[str, str | int]:
+        if self.oauth is not None:
+            return self.oauth.document()
         if self.api_token is not None:
             return {"api_token": self.api_token}
         return {"api_key": str(self.api_key), "api_secret": str(self.api_secret)}
@@ -163,6 +219,9 @@ class Credential:
     def from_document(cls, data: Any) -> Credential | None:
         if not hasattr(data, "get"):
             return None
+        session = OAuthSession.from_document(data)
+        if session is not None:
+            return cls(oauth=session)
         token = data.get("api_token")
         if token:
             return cls(api_token=str(token))
@@ -377,6 +436,7 @@ def store_credentials(
     *,
     interactive: bool = False,
     api_token: str | None = None,
+    oauth: OAuthSession | None = None,
 ) -> str:
     """Store one profile's secret credential.
 
@@ -390,6 +450,7 @@ def store_credentials(
         interactive: Whether the current process has an interactive TTY.
             Only consulted by ``"auto"`` when no keyring backend exists.
         api_token: The ``mm_...`` Bearer token, instead of a key + secret.
+        oauth: A browser login's tokens, instead of a token or key + secret.
 
     Returns:
         The storage backend actually used: ``"keyring"`` or ``"file"``.
@@ -400,7 +461,9 @@ def store_credentials(
             ``keyring_unresponsive`` when the keyring hangs, fails, or loses
             the credential and no file fallback is allowed.
     """
-    credential = Credential(api_token=api_token, api_key=api_key, api_secret=api_secret)
+    credential = Credential(
+        api_token=api_token, api_key=api_key, api_secret=api_secret, oauth=oauth
+    )
     if storage == "file":
         _store_file(profile, credential)
         return "file"
@@ -452,6 +515,28 @@ def load_credential(profile: str) -> Credential | None:
         return _load_keyring(profile)
     except KeyringUnresponsiveError:
         raise keyring_unresponsive_error() from None
+
+
+def replace_oauth_session(profile: str, session: OAuthSession) -> str:
+    """Overwrite a profile's OAuth session in the backend that already holds it.
+
+    A refresh must not move the credential between the keyring and the file.
+
+    Returns:
+        ``"file"`` or ``"keyring"``, the backend written.
+
+    Raises:
+        CliError: ``keyring_unresponsive`` when the keyring hangs or fails.
+    """
+    credential = Credential(oauth=session)
+    if _load_file(profile) is not None:
+        _store_file(profile, credential)
+        return "file"
+    try:
+        _store_keyring(profile, credential)
+    except KeyringUnresponsiveError:
+        raise keyring_unresponsive_error() from None
+    return "keyring"
 
 
 def load_credentials(profile: str) -> tuple[str, str] | None:

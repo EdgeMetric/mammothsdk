@@ -4,17 +4,40 @@ Client Apps API for managing API tokens and client applications in Mammoth.
 
 from __future__ import annotations
 
+import warnings
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from ..client import MammothClient
 
+from pydantic import ValidationError
+
+from ..exceptions import MammothModelDriftWarning
 from ..models.clientapps import (
     ClientAppPostResponse,
     ClientAppSchema,
     ClientAppsListResponse,
     PatchRequest,
 )
+
+
+def parse_post_response(response: dict[str, Any]) -> ClientAppPostResponse:
+    """Parse a create response; on model drift keep the raw token and warn."""
+    try:
+        return ClientAppPostResponse(**response)
+    except ValidationError as exc:
+        # The key already exists and its token is shown only in this
+        # response: hand it back rather than lose it to a model mismatch,
+        # and say loudly that the SDK model has drifted from the API.
+        drift = "; ".join(f"{'.'.join(str(p) for p in e['loc'])}: {e['msg']}" for e in exc.errors())
+        warnings.warn(
+            "The API created the client app, but its response did not match the SDK "
+            f"model ClientAppPostResponse ({drift}). The token is returned as sent; "
+            "upgrade mammoth-io.",
+            MammothModelDriftWarning,
+            stacklevel=3,
+        )
+        return ClientAppPostResponse.model_construct(**response)
 
 
 class ClientAppsAPI:
@@ -88,13 +111,11 @@ class ClientAppsAPI:
             ClientAppPostResponse with created app details and tokens.
         """
         ws = workspace_id or self._ws()
-        payload = {"app_name": app_name}
-        if description:
-            payload["description"] = description
+        payload = {"app_name": app_name, "description": description or ""}
         response = await self._client._request_json(
             "POST", f"/workspaces/{ws}/clientapps", json=payload
         )
-        return ClientAppPostResponse(**response)
+        return parse_post_response(response)
 
     async def get(
         self,

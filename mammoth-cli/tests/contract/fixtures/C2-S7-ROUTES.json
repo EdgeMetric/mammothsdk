@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "task": "C2/S7 remaining-families",
-  "route_count": 138,
+  "route_count": 141,
   "families": {
     "activity": 2,
     "agent": 15,
@@ -11,6 +11,7 @@
     "client-app": 5,
     "schedule": 5,
     "support": 66,
+    "token": 3,
     "user": 8
   },
   "routes": [
@@ -5161,6 +5162,127 @@
         "method": "PATCH",
         "path": "/support/workspaces/{workspace_id}/users",
         "body": "json:WorkspaceUserPatch",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "token.create",
+      "operation_id": "CreateApp",
+      "sdk_symbol": "mammoth.api.clientapps.ClientAppsAPI.create",
+      "field_destinations": {
+        "app_name": {
+          "source": "input",
+          "destination": "app_name",
+          "wire": "sdk_argument"
+        },
+        "description": {
+          "source": "input",
+          "destination": "description",
+          "wire": "sdk_argument"
+        }
+      },
+      "context_destinations": {},
+      "wire": {
+        "method": "POST",
+        "path": "/workspaces/{workspace_id}/clientapps",
+        "body": "json:ClientAppCreate",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "token.list",
+      "operation_id": "ListApps",
+      "sdk_symbol": "mammoth.api.clientapps.ClientAppsAPI.list",
+      "field_destinations": {
+        "limit": {
+          "source": "input",
+          "destination": "limit",
+          "wire": "sdk_argument"
+        },
+        "offset": {
+          "source": "input",
+          "destination": "offset",
+          "wire": "sdk_argument"
+        },
+        "fields": {
+          "source": "input",
+          "destination": "fields",
+          "wire": "sdk_argument"
+        },
+        "sort": {
+          "source": "input",
+          "destination": "sort",
+          "wire": "sdk_argument"
+        }
+      },
+      "context_destinations": {},
+      "wire": {
+        "method": "GET",
+        "path": "/workspaces/{workspace_id}/clientapps",
+        "body": "none",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "token.revoke",
+      "operation_id": "DeleteApp",
+      "sdk_symbol": "mammoth.api.clientapps.ClientAppsAPI.delete",
+      "field_destinations": {
+        "client_key": {
+          "source": "positional",
+          "destination": "client_key"
+        }
+      },
+      "context_destinations": {},
+      "wire": {
+        "method": "DELETE",
+        "path": "/workspaces/{workspace_id}/clientapps/{client_key}",
+        "body": "none",
         "checks": [
           "method",
           "path",

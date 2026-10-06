@@ -50,7 +50,7 @@ commands:
     required: true
     metavar: COMMAND_ID
     falls_back_to_field: null
-    help: Command id to fetch the schema for (e.g. view.transform.bulk-replace).
+    help: Command id to fetch the schema for (e.g. view.transform.bulk-replace); join several with commas (view.list,view.analyze) for one result with all of them.
   options: []
   sdk_symbol: mammoth_cli.commands.schema.get
   sdk_conversion: Call mammoth_cli.commands.schema.get with validated request fields.

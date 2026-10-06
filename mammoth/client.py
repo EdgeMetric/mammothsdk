@@ -429,6 +429,7 @@ class MammothClient:
         api_token: str | None = None,
         api_root: str | None = "/api/v2",
         retry_gateway_errors: bool = True,
+        token_provider: Callable[[], str] | None = None,
     ) -> None:
         """Initialize the Mammoth client.
 
@@ -457,20 +458,31 @@ class MammothClient:
                 ``base_url`` exactly as given, which is what a caller inside
                 the network needs: the server mounts these routes at their own
                 paths, and whatever sits in front of it adds the prefix.
+            token_provider: A callable returning the current ``mm_...`` token. It
+                is called for every request, so a short-lived token that is
+                refreshed elsewhere is always sent fresh. Use it instead of
+                ``api_token``; ``workspace_id`` is optional and, when absent,
+                is learned from the token the provider returns.
             retry_gateway_errors: Retry a read that got a 502/503/504, twice.
                 Turn it off when the server answering is the process making
                 the call: a retry then adds load to the very worker that is
                 overloaded. Connection errors are still retried.
         """
+        if token_provider is not None and (
+            api_token is not None or api_key is not None or api_secret is not None
+        ):
+            raise ValueError("pass token_provider or an api_token / api_key + api_secret, not both")
+        if token_provider is not None and not callable(token_provider):
+            raise ValueError("token_provider must be callable")
         if api_token is not None and (api_key is not None or api_secret is not None):
             raise ValueError("pass api_token or api_key + api_secret, not both")
-        if api_token is None and (not api_key or not api_secret):
+        if token_provider is None and api_token is None and (not api_key or not api_secret):
             raise ValueError("pass api_token (mm_...) or both api_key and api_secret")
         if api_token is not None and (not isinstance(api_token, str) or not api_token.strip()):
             raise ValueError("api_token must be a non-empty string")
         if api_token is not None and workspace_id is not None:
             raise ValueError("workspace_id is not accepted with api_token: the token names it")
-        if api_token is None and workspace_id is None:
+        if api_token is None and token_provider is None and workspace_id is None:
             raise ValueError("workspace_id is required")
         if not isinstance(base_url, str):
             raise ValueError("base_url must be an HTTPS URL")
@@ -503,6 +515,7 @@ class MammothClient:
             )
 
         self.api_token = api_token.strip() if api_token is not None else None
+        self._token_provider = token_provider
         self.api_key = api_key
         self.api_secret = api_secret
         self._workspace_id = workspace_id
@@ -528,7 +541,10 @@ class MammothClient:
         self.project_id: int | None = None
 
         self.session = httpx.AsyncClient(timeout=self.timeout, follow_redirects=False)
-        if self.api_token is not None:
+        if self._token_provider is not None:
+            # The Authorization header is computed per request in ``_request``.
+            credential_headers = {}
+        elif self.api_token is not None:
             credential_headers = {"Authorization": f"Bearer {self.api_token}"}
         else:
             credential_headers = {
@@ -673,11 +689,10 @@ class MammothClient:
         names its own workspace, which is fetched once on first use and kept.
         """
         if self._workspace_id is None:
-            if self.api_token is None:
+            token = self._token_provider() if self._token_provider else self.api_token
+            if token is None:
                 raise ValueError("workspace_id is required with api_key + api_secret")
-            self._workspace_id = resolve_token_workspace_id(
-                self.base_url, self.api_token, self.timeout
-            )
+            self._workspace_id = resolve_token_workspace_id(self.base_url, token, self.timeout)
         return self._workspace_id
 
     async def _request(
@@ -735,6 +750,8 @@ class MammothClient:
             request_kwargs["params"] = params
 
         headers = dict(self.session.headers)
+        if self._token_provider is not None:
+            headers["Authorization"] = f"Bearer {self._token_provider().strip()}"
         if "headers" in kwargs:
             headers.update(kwargs.pop("headers"))
 

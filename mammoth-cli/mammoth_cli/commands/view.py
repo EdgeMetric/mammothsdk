@@ -24,6 +24,7 @@ import dataclasses
 import inspect
 import shlex
 import time
+from collections.abc import Callable
 from datetime import UTC, datetime
 from decimal import Decimal, InvalidOperation
 from typing import Any
@@ -55,7 +56,7 @@ from mammoth_cli.runtime.dryrun import DryRunStop
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.session import open_service, require_project
 from mammoth_cli.services import conditional_format as cf_rules
-from mammoth_cli.services import read_queries, text_dates
+from mammoth_cli.services import read_queries, text_dates, view_analysis
 from mammoth_cli.services.append_blank_columns import (
     BLANK_COLUMNS_FIELD,
     acknowledged_blank_columns,
@@ -78,6 +79,8 @@ _METADATA_KEY = "metadata"
 _INTERNAL_NAME_KEY = "internal_name"
 _DISPLAY_NAME_KEY = "display_name"
 _DATAVIEW_GET_SYMBOL = "mammoth.api.dataviews.DataviewsAPI.get"
+_ANALYSIS_SYMBOL = "mammoth.api.dataviews.DataviewsAPI.analysis"
+_PIPELINE_ITEMS_ALL_SYMBOL = "mammoth.api.pipeline.PipelineAPI.items_all"
 _DATASET_GET_SYMBOL = "mammoth.api.datasets.DatasetsAPI.get"
 # Public SDK resolver that finds the dataset containing a dataview, so the
 # data-read commands can take the view id alone and fill the dataset for the
@@ -492,25 +495,36 @@ def _dataset_record(service: Any, dataset_id: int, project_id: int) -> dict[str,
 _PROFILE_SYMBOL = "mammoth.api.ai.AIAPI.generate_profile"
 
 
-def _stored_stats_reader(service: Any) -> Any:
-    """A reader of one view's stored column stats (``view ai profile`` action ``stats``).
+def _stored_stats_reader(service: Any) -> Callable[[list[dict[str, Any]]], list[Any]]:
+    """A reader of the stored column stats of several views at once (``view ai profile``
+    action ``stats``): one result per view, or the error that read raised.
 
     The backend answers from the stats it stored after ingest / the last pipeline
     run: no job is queued and no query runs.
     """
 
-    def read(view: dict[str, Any]) -> Any:
-        dataset_id = (
-            view.get("dataset_id") if view.get("dataset_id") is not None else view.get("ds_id")
+    def read(views: list[dict[str, Any]]) -> list[Any]:
+        results: list[Any] = service.call_many(
+            [
+                (
+                    _PROFILE_SYMBOL,
+                    {
+                        "dataview_id": view.get("id"),
+                        "dataset_id": _view_dataset_id(view),
+                        "action": "stats",
+                    },
+                )
+                for view in views
+            ]
         )
-        return service.call(
-            _PROFILE_SYMBOL,
-            dataview_id=view.get("id"),
-            dataset_id=dataset_id,
-            action="stats",
-        )
+        return results
 
     return read
+
+
+def _view_dataset_id(view: dict[str, Any]) -> Any:
+    """The dataset a listed view belongs to (``dataset_id``, else the record's ``ds_id``)."""
+    return view.get("dataset_id") if view.get("dataset_id") is not None else view.get("ds_id")
 
 
 def _compact_view_list(
@@ -908,19 +922,94 @@ def view_impact(invocation: Invocation) -> HandlerResult:
 
 
 def view_analyze(invocation: Invocation) -> HandlerResult:
-    """List pipeline steps that can be dropped or moved without changing the result (read-only)."""
+    """List pipeline steps that can be dropped or moved without changing the result (read-only).
+
+    ``VIEW_ID`` may be several ids joined by commas. Each result carries the
+    ``findings`` plus the view's name, dataset, rows, columns and state and its
+    pipeline ``steps`` count, all read concurrently: the reads that always followed
+    it. One id failing is an entry in ``errors``, not a failed call; a single id that
+    fails fails the command, as before.
+    """
     project_id = require_project(invocation)
-    dataview_id = _require_int_positional_at(invocation, 0, "view id")
+    if not invocation.extra_args:
+        raise CliError(
+            code=CODE_MISSING_ARGUMENT,
+            message="This command requires a view id argument.",
+            exit_status=EXIT_USAGE,
+            hint="Pass the view id as a positional argument.",
+        )
+    ids = view_analysis.view_ids(str(invocation.extra_args[0]))
     document = invocation.load_input() or {}
     with open_service(invocation) as (service, auth):
-        dataset_id = _resolve_dataset_id(service, invocation, dataview_id, document)
-        data = service.call(
-            _symbol(invocation),
-            dataset_id=dataset_id,
-            dataview_id=dataview_id,
-            project_id=project_id,
+        outcomes = _analyze_views(service, invocation, ids, document, project_id)
+    if len(ids) == 1:
+        only = outcomes[ids[0]]
+        if isinstance(only, CliError):
+            raise only
+        return only, _meta(invocation, auth.workspace_id, project_id)
+    return view_analysis.many_result(ids, outcomes), _meta(
+        invocation, auth.workspace_id, project_id
+    )
+
+
+def _analyze_views(
+    service: Any,
+    invocation: Invocation,
+    ids: list[int],
+    document: dict[str, Any],
+    project_id: int,
+) -> dict[int, dict[str, Any] | CliError]:
+    """Analyze each view: its entry, or the error that stopped that id."""
+    outcomes: dict[int, dict[str, Any] | CliError] = {}
+    parents_of: dict[int, int] = {}
+    for view_id in ids:
+        try:
+            parents_of[view_id] = _resolve_dataset_id(service, invocation, view_id, document)
+        except CliError as error:
+            outcomes[view_id] = error
+    reads = _analysis_reads(parents_of, project_id)
+    results = dict(zip(reads, service.call_many(list(reads.values())), strict=True))
+    for view_id, dataset_id in parents_of.items():
+        outcomes[view_id] = _analysis_outcome(results, view_id, dataset_id)
+    return outcomes
+
+
+def _analysis_reads(
+    parents_of: dict[int, int], project_id: int
+) -> dict[tuple[str, int], tuple[str, dict[str, Any]]]:
+    """Every read an analysis needs, keyed by (kind, id): per view, and once per dataset."""
+    reads: dict[tuple[str, int], tuple[str, dict[str, Any]]] = {}
+    for view_id, dataset_id in parents_of.items():
+        scope = {"dataset_id": dataset_id, "dataview_id": view_id}
+        with_project = {**scope, "project_id": project_id}
+        reads[("analysis", view_id)] = (_ANALYSIS_SYMBOL, with_project)
+        reads[("view", view_id)] = (_DATAVIEW_GET_SYMBOL, with_project)
+        reads[("steps", view_id)] = (_PIPELINE_ITEMS_ALL_SYMBOL, scope)
+        reads[("dataset", dataset_id)] = (
+            _DATASET_GET_SYMBOL,
+            {"dataset_id": dataset_id, "project_id": project_id, "fields": DATASET_LIST_FIELDS},
         )
-    return data, _meta(invocation, auth.workspace_id, project_id)
+    return reads
+
+
+def _analysis_outcome(
+    results: dict[tuple[str, int], Any], view_id: int, dataset_id: int
+) -> dict[str, Any] | CliError:
+    """One view's entry from its reads; the first failed read is the id's error."""
+    keys = [("analysis", view_id), ("view", view_id), ("steps", view_id), ("dataset", dataset_id)]
+    for key in keys:
+        failed = results[key]
+        if isinstance(failed, CliError):
+            return failed
+    view = apply_column_renames(results[("view", view_id)])
+    dataset = results[("dataset", dataset_id)]
+    record = dataset.get("dataset", dataset) if isinstance(dataset, dict) else {}
+    return view_analysis.analysis_entry(
+        results[("analysis", view_id)],
+        view if isinstance(view, dict) else {},
+        {**record, "id": record.get("id", dataset_id)},
+        view_analysis.step_count(results[("steps", view_id)]),
+    )
 
 
 def view_optimize(invocation: Invocation) -> HandlerResult:
@@ -2001,14 +2090,30 @@ def _explore_text_dates(
     )
     page = (document.get("offset"), document.get("limit"))
     rows = read_queries.apply_explore_order(
-        response["data"], document.get("sort"), page, bool(document.get("cumulative"))
+        response["data"],
+        document.get("sort"),
+        page,
+        bool(document.get("cumulative")),
+        document.get("percentage_of"),
     )
     return {**response, "data": rows}
 
 
+def _explore_range(
+    reads: ReadContext, document: dict[str, Any], column: str, text_dates_read: bool
+) -> dict[str, Any]:
+    """The explored column's exact earliest and latest value, under the explore condition."""
+    condition = None
+    if document.get(CONDITION_KWARG) is not None:
+        spec = read_queries.resolve_text_date_conditions(reads, document[CONDITION_KWARG])
+        condition = compile_condition(spec).build(
+            reads.display_to_internal or None, reads.column_types or None
+        )
+    return read_queries.explore_range(reads, column, condition, text_dates_read)
+
+
 def view_data_explore(invocation: Invocation) -> HandlerResult:
-    """Explore one column: trend, distribution, or top values, like the web app's
-    column Explore card.
+    """Explore one column like the web app's Explore card (read-only): DATE counts per ``level`` bucket (AUTO, SECOND to MILLENNIUM), NUMERIC per power-of-10 ``level``, TEXT top values (``limit`` 20), each with ``count`` and ``percentage``; ``metric`` (a column plus SUM/AVG/MIN/MAX/STDDEV/COUNT/DISTINCT_COUNT) adds a per-bucket value, ``percentage_of`` "metric" shares by it, ``sort`` count_/value_/metric_ + asc/desc, ``condition`` filters first (include, exclude, blanks, range, contains; an exclude drops blank rows the card keeps, so or it with IS_EMPTY; drill down = finer ``level`` + ``condition`` on the bucket), ``limit``/``offset`` page, ``range`` true adds the exact earliest and latest value, ``cumulative`` a running total; ``-o csv`` saves the card's values; to put it on a dashboard say it in words to 'dashboard chat edit'.
 
     Read-only: computes and returns the result without adding a task to the
     view's pipeline or otherwise changing it. Buckets by the column's type --
@@ -2028,13 +2133,20 @@ def view_data_explore(invocation: Invocation) -> HandlerResult:
     aggregate``, which this command wraps for the raw PIVOT shape. A date range
     is one ``and`` condition (``>=`` a start, ``<=`` an end); one year is
     ``{"column": ..., "operator": "=", "value": 2017, "component": "year"}``.
+    ``percentage_of: "metric"`` makes ``percentage`` each bucket's share of the ``metric`` total
+    (default: of the count). ``sort`` ``metric_desc``/``metric_asc`` ranks by the ``metric``.
+    ``range: true`` adds ``range`` {column, type, min, max}: the exact earliest and latest
+    value of a DATE (or NUMERIC) column under the same ``condition``. Excluding a value
+    (NE, NOT_IN_LIST, ``not``) also drops blank rows, but the card keeps them: write
+    ``or`` of the exclusion and IS_EMPTY on that column to match the card. Blank buckets
+    sort last here, first in the card. ``-o csv`` prints the buckets as CSV.
     ``cumulative: true`` adds a running total of the metric (of ``count`` without
     one) over the buckets in date order, whatever ``sort`` or ``limit`` shows:
     the answer to "cumulative / running total through X". Figures are rounded for
     display (2 decimals; 4 below 1). Never use
     ``view transform pivot`` just to explore a column; it mutates the
     pipeline.
-    """
+    """  # noqa: E501
     project_id = require_project(invocation)
     view_id = _require_int_positional_at(invocation, 0, "view id")
     column_arg = _require_string_positional_at(invocation, 1, "column")
@@ -2080,6 +2192,8 @@ def view_data_explore(invocation: Invocation) -> HandlerResult:
         if bucket_dates:
             range_columns.append(column_arg)
         data = read_queries.with_observed_range(reads, data, list(dict.fromkeys(range_columns)))
+        if document.get("range") and isinstance(data, dict):
+            data = {**data, "range": _explore_range(reads, document, column_arg, bucket_dates)}
         data = read_queries.with_assumptions(reads, data)
         if not bucket_dates:
             data = read_queries.with_variant_hint(reads, data, column_arg)
@@ -2109,7 +2223,9 @@ def _explore_on_backend(
             reads.display_to_internal or None, reads.column_types or None
         )
     _forward_optional(
-        document, kwargs, ("level", "sequence", "limit", "offset", "sort", "cumulative")
+        document,
+        kwargs,
+        ("level", "sequence", "limit", "offset", "sort", "cumulative", "percentage_of"),
     )
     return reads.service.call(_symbol(invocation), **kwargs)
 

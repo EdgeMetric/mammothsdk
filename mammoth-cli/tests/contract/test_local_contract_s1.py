@@ -49,6 +49,7 @@ S1_ROUTES = (
     "log.tail",
     "project.check",
     "project.ensure",
+    "resolve",
     "schema.find",
     "schema.get",
     "schema.list",

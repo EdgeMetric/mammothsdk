@@ -353,15 +353,38 @@ def _find_by_columns(
     return matches, cut
 
 
+def _tag_scope(matches: list[dict[str, Any]], project_id: int) -> list[dict[str, Any]]:
+    """Mark each match ``in_project``: whether it sits in the project the call runs under."""
+    return [{**m, "in_project": m.get("project_id") == project_id} for m in matches]
+
+
+def _find_scoped(
+    service: Any,
+    needle: str,
+    visible: list[dict[str, Any]],
+    project_id: int,
+    skipped: list[dict[str, Any]],
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]], bool]:
+    """``(matches, projects searched, cut)``: the project's own matches, then every other one's."""
+    home = named_project(service, project_id, visible)
+    own = _find_in_projects(service, needle, [home], skipped)
+    holding, cut = _projects_holding(service, needle, visible)
+    outside = _find_in_projects(service, needle, _other_projects(holding, project_id), skipped)
+    searched = [home] + _other_projects(visible, project_id)
+    return _tag_scope(own + outside, project_id), searched, cut
+
+
 def dataset_find(invocation: Invocation) -> HandlerResult:
     """Search dataset names for a substring across every visible project.
 
     Read-only local composite: lists the projects the credential can see, then
     lists datasets in each and keeps a case-insensitive substring match. With
-    ``--project`` that project is searched first, and the rest only when it holds
-    no match: the in-product agent runs every call under the project the user
-    last opened, which is often not the one the named dataset is in. Does not
-    require an active project.
+    ``--project`` the project's own matches come first and the matches in every
+    other visible project are returned too, each row marked ``in_project`` and
+    carrying its ``project_id`` and ``project_name``: the in-product agent runs
+    every call under the project the user last opened, which is often not the one
+    the named dataset is in, so it states where the name is instead of asking the
+    user to switch. Does not require an active project.
     """
     name_substring = _require_string_positional(invocation, "name substring")
     needle = name_substring.lower()
@@ -370,14 +393,9 @@ def dataset_find(invocation: Invocation) -> HandlerResult:
         visible = _visible_projects(service)
         cut = False
         if invocation.project is not None:
-            projects: list[dict[str, Any]] = [named_project(service, invocation.project, visible)]
-            matches = _find_in_projects(service, needle, projects, skipped)
-            if not matches:
-                holding, cut = _projects_holding(service, needle, visible)
-                matches = _find_in_projects(
-                    service, needle, _other_projects(holding, invocation.project), skipped
-                )
-                projects += _other_projects(visible, invocation.project)
+            matches, projects, cut = _find_scoped(
+                service, needle, visible, invocation.project, skipped
+            )
         else:
             projects = visible
             holding, cut = _projects_holding(service, needle, visible)
