@@ -268,3 +268,40 @@ def test_labels_that_share_dates_are_not_a_rename() -> None:
         for w in column_warnings(rows, {"date": "DATE", "store": "TEXT"})
         if w["issue"] == "renamed_label"
     ]
+
+
+def _fixes_by_issue(warnings: list[dict[str, Any]]) -> dict[str, str]:
+    return {w["issue"]: w["fix"] for w in warnings if "fix" in w}
+
+
+def test_every_fix_command_names_the_project_it_was_read_from() -> None:
+    """A fix run from a profile whose default project differs, or inside the agent
+    (no saved project), is refused unless it carries ``--project``."""
+    rows = [
+        {"price": "30.00", "brand": "Pepsi", "n": 1, "m": None},
+        {"price": "12.50", "brand": "pepsi", "n": 2, "m": None},
+        {"price": "7.25", "brand": "Pepsi", "n": 3, "m": None},
+        {"price": "7.25", "brand": "pepsi", "n": 3, "m": None},
+        {"price": "7.25", "brand": "pepsi", "n": 3, "m": None},
+    ]
+    types = {"price": "TEXT", "brand": "TEXT", "n": "NUMERIC", "m": "NUMERIC"}
+    fixes = _fixes_by_issue(column_warnings(rows, types, view_id=62, dataset_id=9, project_id=77))
+    assert set(fixes) == {"numbers_stored_as_text", "variant_spellings", "duplicate_rows"}
+    for hint in fixes.values():
+        assert hint.endswith(" --project 77")
+    assert fixes["duplicate_rows"].startswith("mammoth view transform discard-duplicates 62 ")
+
+
+def test_blank_row_removal_fix_names_the_project() -> None:
+    rows = [{"cpm": "150"}, {"cpm": None}, {"cpm": "145"}]
+    (warning,) = column_warnings(
+        rows, {"cpm": "NUMERIC"}, view_id=3428, dataset_id=2791, project_id=5
+    )
+    assert warning["fix"].startswith("mammoth view transform filter 3428 --input ")
+    assert warning["fix"].endswith(" --project 5")
+
+
+def test_fix_commands_carry_no_project_flag_when_the_project_is_not_known() -> None:
+    rows = _rows(["30.00", "12.50", "7.25", "4.00"])
+    (warning,) = column_warnings(rows, {"price": "TEXT"}, view_id=62)
+    assert "--project" not in warning["fix"]

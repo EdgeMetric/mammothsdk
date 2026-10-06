@@ -65,18 +65,31 @@ def _is_date(text: str) -> bool:
     return False
 
 
-def _convert_hint(view_id: int | None, column: str, to: str) -> str:
+def _project_flag(project_id: int | None) -> str:
+    """`` --project N`` for a fix command, or nothing when the project is not known."""
+    return f" --project {project_id}" if project_id is not None else ""
+
+
+def _convert_hint(view_id: int | None, column: str, to: str, project_id: int | None) -> str:
     target = str(view_id) if view_id is not None else "VIEW_ID"
     spec = json.dumps({"conversions": [{"column": column, "to": to}]})
-    return f"mammoth view transform convert-type {target} --input {shlex.quote(spec)}"
+    return (
+        f"mammoth view transform convert-type {target} --input {shlex.quote(spec)}"
+        f"{_project_flag(project_id)}"
+    )
 
 
-def _bulk_replace_hint(view_id: int | None, column: str, mapping: list[dict[str, Any]]) -> str:
+def _bulk_replace_hint(
+    view_id: int | None, column: str, mapping: list[dict[str, Any]], project_id: int | None
+) -> str:
     target = str(view_id) if view_id is not None else "VIEW_ID"
     spec = json.dumps(
         {"columns": [column], "mapping": mapping, "match_case": True, "match_words": True}
     )
-    return f"mammoth view transform bulk-replace {target} --input {shlex.quote(spec)}"
+    return (
+        f"mammoth view transform bulk-replace {target} --input {shlex.quote(spec)}"
+        f"{_project_flag(project_id)}"
+    )
 
 
 def _spelling_key(text: str) -> str:
@@ -149,6 +162,7 @@ def _variant_spellings_warning(
     texts: list[str],
     view_id: int | None,
     checked: int,
+    project_id: int | None,
 ) -> dict[str, Any] | None:
     groups = _variant_spelling_groups(texts)
     if not groups:
@@ -172,7 +186,7 @@ def _variant_spellings_warning(
         "column": column,
         "issue": "variant_spellings",
         "detail": detail,
-        "fix": _bulk_replace_hint(view_id, column, mapping),
+        "fix": _bulk_replace_hint(view_id, column, mapping, project_id),
         "rows_checked": checked,
     }
 
@@ -206,6 +220,7 @@ def _renamed_label_warning(
     column: str,
     date_column: str,
     view_id: int | None,
+    project_id: int | None,
 ) -> dict[str, Any] | None:
     """A label that stops before a longer label starting with its words begins
     reads as one thing renamed ("Riverside" -> "Riverside Mall"): left apart, its
@@ -240,7 +255,7 @@ def _renamed_label_warning(
             "its figures split across two names and a period comparison shows a drop "
             "and a new entry that are the same thing; confirm, then unify them."
         ),
-        "fix": _bulk_replace_hint(view_id, column, mapping),
+        "fix": _bulk_replace_hint(view_id, column, mapping, project_id),
         "rows_checked": len(rows),
     }
 
@@ -317,6 +332,7 @@ def _duplicate_rows_warning(
     rows: list[Mapping[str, Any]],
     view_id: int | None,
     dataset_id: int | None,
+    project_id: int | None,
 ) -> dict[str, Any] | None:
     """Return a table-level warning when the page itself holds exact duplicates.
 
@@ -340,6 +356,7 @@ def _duplicate_rows_warning(
         spec = json.dumps({"dataset_id": dataset_id})
         warning["fix"] = (
             f"mammoth view transform discard-duplicates {view_id} --input {shlex.quote(spec)}"
+            f"{_project_flag(project_id)}"
         )
     return warning
 
@@ -389,11 +406,16 @@ def _blank_values_warning(
     }
 
 
-def _remove_blank_rows_hint(view_id: int, dataset_id: int, column: str) -> str:
+def _remove_blank_rows_hint(
+    view_id: int, dataset_id: int, column: str, project_id: int | None
+) -> str:
     spec = json.dumps(
         {"condition": {"column": column, "operator": "IS_NOT_EMPTY"}, "dataset_id": dataset_id}
     )
-    return f"mammoth view transform filter {view_id} --input {shlex.quote(spec)}"
+    return (
+        f"mammoth view transform filter {view_id} --input {shlex.quote(spec)}"
+        f"{_project_flag(project_id)}"
+    )
 
 
 def column_warnings(
@@ -402,6 +424,7 @@ def column_warnings(
     view_id: int | None = None,
     dataset_id: int | None = None,
     read_only: bool = False,
+    project_id: int | None = None,
 ) -> list[dict[str, Any]]:
     """Return warnings for text columns that hold numbers or dates, and for blanks.
 
@@ -413,6 +436,8 @@ def column_warnings(
             command (a mutation, so it needs the exact parent, not discovery).
         read_only: The rows came from a read-only data read; a ``dates_stored_as_text``
             finding then carries no ``fix``, since a read answers from the text as it is.
+        project_id: The project the rows were read from; each fix command names it
+            with ``--project`` (the saved profile project may differ, or be absent).
 
     Returns:
         One record per finding: ``column``, ``issue``
@@ -428,7 +453,7 @@ def column_warnings(
     checked = len(materialised)
     warnings: list[dict[str, Any]] = []
     figures = _varying_numbers(materialised, column_types)
-    duplicate_warning = _duplicate_rows_warning(materialised, view_id, dataset_id)
+    duplicate_warning = _duplicate_rows_warning(materialised, view_id, dataset_id, project_id)
     if duplicate_warning is not None:
         warnings.append(duplicate_warning)
     for column, col_type in column_types.items():
@@ -466,10 +491,12 @@ def column_warnings(
                     detail += "."
                 finding: dict[str, Any] = {"column": column, "issue": issue, "detail": detail}
                 if not (read_only and kind == "dates"):
-                    finding["fix"] = _convert_hint(view_id, column, to)
+                    finding["fix"] = _convert_hint(view_id, column, to, project_id)
                 warnings.append({**finding, "rows_checked": checked})
                 break
-            variant_warning = _variant_spellings_warning(column, texts, view_id, checked)
+            variant_warning = _variant_spellings_warning(
+                column, texts, view_id, checked, project_id
+            )
             if variant_warning is not None:
                 warnings.append(variant_warning)
             date_column = next(
@@ -477,7 +504,7 @@ def column_warnings(
                 None,
             )
             renamed = (
-                _renamed_label_warning(materialised, column, date_column, view_id)
+                _renamed_label_warning(materialised, column, date_column, view_id, project_id)
                 if date_column is not None
                 else None
             )
@@ -486,6 +513,6 @@ def column_warnings(
         if blanks:
             remove_fix = None
             if figures == [column] and view_id is not None and dataset_id is not None:
-                remove_fix = _remove_blank_rows_hint(view_id, dataset_id, column)
+                remove_fix = _remove_blank_rows_hint(view_id, dataset_id, column, project_id)
             warnings.append(_blank_values_warning(column, blanks, len(values), checked, remove_fix))
     return warnings
