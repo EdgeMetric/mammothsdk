@@ -25,6 +25,9 @@ MAX_PAGE_SIZE = 100
 MAX_VIEW_PAGE_SIZE = 1000
 
 ERR_PROJECT_ID_POSITIVE = "`project_id` must be a positive integer, got {0}."
+ERR_COPY_NAME = "`name` must be 1 to 63 characters."
+ERR_COPY_DATASETS = "`dataset_ids` must hold at least one dataset id, or be omitted to copy all."
+_PROJECT_NAME_MAX = 63
 ERR_USER_OR_INVITE_ID_REQUIRED = (
     "Exactly one of `user_id` or `invite_id` must be provided, got user_id={0!r}, "
     "invite_id={1!r}."
@@ -357,6 +360,52 @@ class ProjectsAPI:
             properties["project_access"] = project_access
         payload: dict[str, Any] = {"name": name, "properties": properties}
         return await self._client._request_json("POST", f"/workspaces/{ws}/projects", json=payload)
+
+    async def copy(
+        self,
+        project_id: int,
+        name: str,
+        dataset_ids: _list[int] | None = None,
+        include_dashboards: bool = False,
+        exclude_data: bool = False,
+        workspace_id: int | None = None,
+    ) -> dict[str, Any]:
+        """Copy a project's datasets, views and pipelines into a new project (a write).
+
+        Runs as one background job; wait for it with ``client.wait_if_job``. The job's
+        result is ``{project_id, dataset_map, view_map, skipped, dashboards}``.
+
+        Args:
+            project_id: ID of the source project (must be > 0).
+            name: Name of the new project (1 to 63 characters).
+            dataset_ids: Datasets of the source project to copy; ``None`` copies them all.
+            include_dashboards: Also copy the dashboards built on the copied datasets.
+            exclude_data: Copy every dataset's pipeline without its rows.
+            workspace_id: ID of the workspace (uses client default if not provided).
+
+        Returns:
+            Dict with ``job_id``, the copy job to wait for.
+
+        Raises:
+            MammothValidationError: If *project_id* is not positive, *name* is not 1 to 63
+                characters, or *dataset_ids* is an empty list.
+        """
+        if isinstance(project_id, bool) or not isinstance(project_id, int) or project_id <= 0:
+            raise MammothValidationError(ERR_PROJECT_ID_POSITIVE.format(project_id))
+        if not name or len(name) > _PROJECT_NAME_MAX:
+            raise MammothValidationError(ERR_COPY_NAME)
+        if dataset_ids is not None and not dataset_ids:
+            raise MammothValidationError(ERR_COPY_DATASETS)
+        ws = workspace_id or self._ws()
+        payload: dict[str, Any] = {
+            "name": name,
+            "dataset_ids": None if dataset_ids is None else _list(dataset_ids),
+            "include_dashboards": include_dashboards,
+            "exclude_data": exclude_data,
+        }
+        return await self._client._request_json(
+            "POST", f"/workspaces/{ws}/projects/{project_id}/copy", json=payload
+        )
 
     async def update(
         self,

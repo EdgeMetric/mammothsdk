@@ -1,9 +1,11 @@
 """Waiting for the job an async route started."""
 
+from unittest.mock import patch
+
 import pytest
 from mcp.server.mcpserver.exceptions import ToolError
 
-from mammoth_mcp_server.consts import JobFields
+from mammoth_mcp_server.consts import JOB_POLL_MAX_SECONDS, JOB_POLL_SECONDS, JobFields
 from mammoth_mcp_server.jobs import (
     JobStillRunning,
     describe_job_failure,
@@ -30,6 +32,25 @@ class TestWaitingForAJob:
 
         assert result == {"rows": 3}
         assert len(api.sent("GET", JOB)) == 2
+
+    def test_the_wait_between_checks_grows_and_stops_at_its_cap(self) -> None:
+        # A long build is checked about once every couple of seconds, not four
+        # times a second; a short job is still seen at once.
+        waited: list[float] = []
+
+        async def note(seconds: float) -> None:
+            waited.append(seconds)
+
+        with a_fake_api() as api, as_caller(), patch("mammoth_mcp_server.jobs.asyncio.sleep", note):
+            for _ in range(8):
+                api.answer("GET", JOB, a_job("processing"))
+            api.answer("GET", JOB, a_job("success", {"rows": 3}))
+            run(wait_for_job(WORKSPACE, {"job": {"id": 11}}))
+
+        assert waited[0] == JOB_POLL_SECONDS
+        assert waited == sorted(waited)
+        assert waited[-1] == JOB_POLL_MAX_SECONDS
+        assert max(waited) == JOB_POLL_MAX_SECONDS
 
     def test_a_failed_job_is_reported_with_its_reason(self) -> None:
         with a_fake_api() as api, as_caller():

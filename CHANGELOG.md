@@ -6,6 +6,49 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+
+- `mammoth-cli` 2.2.39: `project copy` now says in its NAME help that a taken name is fine: the server names the
+  copy with the next free suffix ("NAME 2", "NAME 3", ...), so an assistant no longer looks the name up or asks
+  the user for another one.
+- `mammoth-cli` 2.2.38: a file type the server refuses in `file upload` now fails with code
+  `upload_refused` (still exit status 2) and the summary "Mammoth doesn't accept this kind of file, so
+  nothing was uploaded.", instead of `invalid_argument`'s "request wasn't valid" framing.
+
+## [0.8.20]
+
+### Added
+
+- `FilesAPI.upload_result(...)` returns `{"job_id", "dataset_ids", "errors", "nested_job_ids"}`, so a
+  caller can see the files the server refused (`errors.unsupported_files`).
+
+### Fixed
+
+- `PipelineAPI.latest_task_sequence` skips `suspended` and `suspending` tasks as well as deleted ones,
+  so `DataviewsAPI.get_data` no longer sends a sequence the server rejects with 404 4DTVW005.
+- `FilesAPI.upload` raises `MammothValidationError` when the server refused the files and no dataset
+  was created, instead of returning `None`.
+
+## [0.8.19]
+
+### Added
+
+- `DataviewsAPI.analysis(dataset_id, dataview_id)` lists pipeline steps that can be dropped or moved
+  without changing the result (read only); `DataviewsAPI.optimize(dataset_id, dataview_id,
+  apply_rules=None)` applies the safe findings and reruns the view (a write);
+  `DataviewsAPI.compare(pairs)` compares up to 20 dataview pairs: rows, column differences and
+  checksums (read only).
+- `DashboardsAPI.attachment_intent(attachment_id, target_dataview_id)` and
+  `DashboardsAPI.attachment_assess(attachment_id)` queue the read of an attached workbook; both return
+  `{"future_id": N}` to wait on.
+- `ProjectsAPI.copy(project_id, name, dataset_ids=None, include_dashboards=False,
+  exclude_data=False)` queues a project copy and returns `{"job_id": N}`.
+
+### Changed
+
+- `DashboardsAPI.duplicate` takes `project_id` and `target_dataview_id`. With a target view the copy is
+  made in that view's project and the result carries `swap_job_id`.
+
 ## [0.8.17]
 
 ### Added

@@ -32,6 +32,7 @@ CODE_MISSING_ARGUMENT = "missing_argument"
 CODE_MISSING_FIELD = "missing_field"
 CODE_SDK_SYMBOL_UNRESOLVED = "sdk_symbol_unresolved"
 CODE_INVALID_ARGUMENT = "invalid_argument"
+CODE_UPLOAD_REFUSED = "upload_refused"
 CODE_INVALID_ARGUMENTS = "invalid_arguments"
 CODE_INVALID_CONFIG_VALUE = "invalid_config_value"
 CODE_INVALID_INPUT_DOCUMENT = "invalid_input_document"
@@ -78,6 +79,9 @@ ERROR_SUMMARIES: dict[str, str] = {
         "More than one item matched, so the assistant needs to be more specific."
     ),
     "api_error": "Mammoth couldn't complete this step.",
+    "append_leaves_columns_blank": (
+        "This append would leave columns of the destination empty, and needs them named."
+    ),
     "append_mapping_incomplete": "The column mapping would leave columns out or add new ones.",
     "append_schema_mismatch": "The new data doesn't line up with the existing columns.",
     "append_type_mismatch": "A column has a different type than in the existing data.",
@@ -156,12 +160,16 @@ ERROR_SUMMARIES: dict[str, str] = {
     "project_required": "No project has been chosen for this step.",
     "pypi_response_invalid": "An update check didn't return a usable answer.",
     "pypi_unreachable": "An update check couldn't connect.",
+    "replace_table_not_acknowledged": (
+        "This export would drop and recreate a database table, and needs an explicit yes."
+    ),
     "resource_identity_required": "The assistant needs to say which item it means.",
     "resource_not_found": _S_NOT_FOUND,
     "retryable_error": "Mammoth was temporarily unavailable. Trying again may work.",
     "schema_not_found": _S_NOT_FOUND,
     "sdk_symbol_unresolved": _S_INTERNAL,
     "skill_conflict": _S_SETUP,
+    "table_name_too_long": "The database would cut this table name and write a different table.",
     "task_runtime_error": "A background task hit an error while running.",
     "timeout": "This step took too long. It may still be running.",
     "too_many_goals": _S_BAD_REQUEST,
@@ -175,6 +183,7 @@ ERROR_SUMMARIES: dict[str, str] = {
     "unsupported_contract": _S_UNAVAILABLE,
     "unsupported_profile_base_url": _S_SETUP,
     "unsupported_shell": _S_UNAVAILABLE,
+    "upload_refused": "Mammoth doesn't accept this kind of file, so nothing was uploaded.",
     "upgrade_failed": "The update didn't complete.",
     "usage_error": _S_BAD_REQUEST,
     "view_in_draft": "This view is still a draft and can't be used yet.",

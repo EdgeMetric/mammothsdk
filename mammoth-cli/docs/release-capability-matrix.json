@@ -105,6 +105,30 @@
     },
     {
       "method": "POST",
+      "path": "/dashboards/v3/attachments/{}/assess",
+      "state": "pending_server_release",
+      "pending_in": "origin/feat/agent-cli-surface-w5@0a52995994",
+      "sdk_symbols": [
+        "mammoth.api.dashboards.DashboardsAPI.attachment_assess"
+      ],
+      "commands": [
+        "dashboard.pbix-assess"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/dashboards/v3/attachments/{}/intent",
+      "state": "pending_server_release",
+      "pending_in": "origin/feat/agent-cli-surface-w5@0a52995994",
+      "sdk_symbols": [
+        "mammoth.api.dashboards.DashboardsAPI.attachment_intent"
+      ],
+      "commands": [
+        "dashboard.pbix-intent"
+      ]
+    },
+    {
+      "method": "POST",
       "path": "/user/change_password",
       "state": "removed_on_server",
       "pending_in": null,
@@ -128,6 +152,30 @@
       ]
     },
     {
+      "method": "POST",
+      "path": "/workspaces/{}/dataviews/compare",
+      "state": "pending_server_release",
+      "pending_in": "origin/feat/agent-cli-surface-w5@0a52995994",
+      "sdk_symbols": [
+        "mammoth.api.dataviews.DataviewsAPI.compare"
+      ],
+      "commands": [
+        "view.compare"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/workspaces/{}/projects/{}/copy",
+      "state": "pending_server_release",
+      "pending_in": "origin/feat/agent-cli-surface-w5@0a52995994",
+      "sdk_symbols": [
+        "mammoth.api.projects.ProjectsAPI.copy"
+      ],
+      "commands": [
+        "project.copy"
+      ]
+    },
+    {
       "method": "GET",
       "path": "/workspaces/{}/projects/{}/datasets/search",
       "state": "removed_on_server",
@@ -136,6 +184,30 @@
         "mammoth.api.datasets.DatasetsAPI.search"
       ],
       "commands": []
+    },
+    {
+      "method": "GET",
+      "path": "/workspaces/{}/projects/{}/datasets/{}/dataviews/{}/analysis",
+      "state": "pending_server_release",
+      "pending_in": "origin/feat/agent-cli-surface-w5@0a52995994",
+      "sdk_symbols": [
+        "mammoth.api.dataviews.DataviewsAPI.analysis"
+      ],
+      "commands": [
+        "view.analyze"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/workspaces/{}/projects/{}/datasets/{}/dataviews/{}/optimize",
+      "state": "pending_server_release",
+      "pending_in": "origin/feat/agent-cli-surface-w5@0a52995994",
+      "sdk_symbols": [
+        "mammoth.api.dataviews.DataviewsAPI.optimize"
+      ],
+      "commands": [
+        "view.optimize"
+      ]
     },
     {
       "method": "PATCH",

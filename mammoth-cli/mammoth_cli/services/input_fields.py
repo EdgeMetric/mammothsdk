@@ -93,6 +93,7 @@ _EXAMPLE_INPUT_HINTS: dict[str, dict[str, Any]] = {
     "dashboard.format-preview": {"style": "presentation"},
     # ``task`` needs a task_id too; the whole-view scope is the one that stands alone.
     "view.impact": {"scope": "view"},
+    "view.compare": {"pairs": [[1, 2]]},
     # One [type, id] pair per resource, as ``browse resources`` lists them.
     "browse.resources.bulk": {"items": [["dataview", 42]]},
     "view.export.azure-blob": {

@@ -83,6 +83,19 @@ PENDING_SERVER_RELEASE: dict[str, str] = {
         ("PATCH", "/workspaces/{}/projects/{}/datasets/{}/unstructured_rows"),
     )
 }
+PENDING_SERVER_RELEASE.update(
+    {
+        f"{method} {path}": "origin/feat/agent-cli-surface-w5@0a52995994"
+        for method, path in (
+            ("POST", "/dashboards/v3/attachments/{}/assess"),
+            ("POST", "/dashboards/v3/attachments/{}/intent"),
+            ("POST", "/workspaces/{}/dataviews/compare"),
+            ("POST", "/workspaces/{}/projects/{}/copy"),
+            ("GET", "/workspaces/{}/projects/{}/datasets/{}/dataviews/{}/analysis"),
+            ("POST", "/workspaces/{}/projects/{}/datasets/{}/dataviews/{}/optimize"),
+        )
+    }
+)
 # The SDK posts every run verb through one helper whose path ends in a variable.
 PENDING_SERVER_RELEASE["POST /agents/sessions/{}/runs/{}/{}"] = PENDING_SERVER_RELEASE[
     "POST /agents/sessions/{}/runs/{}/stop"

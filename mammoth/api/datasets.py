@@ -268,6 +268,7 @@ class DatasetsAPI:
         name: str,
         workspace_id: int | None = None,
         project_id: int | None = None,
+        unique: bool = False,
     ) -> dict[str, Any]:
         """Rename a dataset.
 
@@ -280,6 +281,9 @@ class DatasetsAPI:
             name: New name for the dataset.
             workspace_id: ID of the workspace (uses client default if not provided).
             project_id: ID of the project (uses client default if not provided).
+            unique: When true the server picks a free name (``name 2``, ``name 3``...)
+                if ``name`` is taken, as dataset creation does. The result's ``name``
+                is the name applied.
 
         Returns:
             Dict with update result.
@@ -290,6 +294,7 @@ class DatasetsAPI:
             "PATCH",
             f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}",
             json={"patch": {"op": "replace", "path": "name", "value": name}},
+            **({"params": {"unique": "true"}} if unique else {}),
         )
 
     async def delete(

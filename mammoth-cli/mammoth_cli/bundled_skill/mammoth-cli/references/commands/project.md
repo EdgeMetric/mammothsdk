@@ -42,6 +42,16 @@ Result: `ProjectCheckpointListResult`; mutation `read`, confirmation `none`, wai
 
 Status on release: ran once on CLI an earlier release — Bounded release read in project 3 succeeded; empty checkpoint list observed. No Full claim: no non-empty fixture.
 
+### `project.copy`
+
+Run: `mammoth project copy`. Exact input fields: `mammoth schema get project.copy`.
+
+Example: `mammoth project copy 123 'Revenue report'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `ProjectCopyResult`; mutation `benign_mutation`, confirmation `none`, wait policy `always_wait`.
+
+Status on release: untried; no live run recorded.
+
 ### `project.create`
 
 Run: `mammoth project create`. Exact input fields: `mammoth schema get project.create`.

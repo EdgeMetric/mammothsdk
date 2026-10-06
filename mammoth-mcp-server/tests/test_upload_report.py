@@ -356,3 +356,47 @@ class TestABatchThatFinishesByItself:
         )
 
         assert "interpret_file" in needs[UploadReportFields.NEXT_STEP]
+
+
+class TestTheViewAFinishedDatasetIsReadThrough:
+    """A dashboard, a read or a step needs the dataset's view, not the dataset. Named
+    here, the model never guesses one."""
+
+    RESOURCES = "/workspaces/7/projects/9/resources"
+    VIEWS = "/workspaces/7/projects/9/datasets/21/dataviews"
+    UPLOADED = {**TICKET, UploadFields.UPLOADED_AT: SENT.isoformat()}
+
+    def report(self, item: dict, views: list[dict]) -> dict:
+        from mammoth_mcp_server.upload_report import report_upload
+
+        from .helpers import a_fake_api, as_caller, run
+
+        with a_fake_api() as api, as_caller(workspace_id=7):
+            api.answer("GET", self.RESOURCES, {"resources": [item]})
+            api.answer("GET", self.VIEWS, {"dataviews": views})
+            report = run(report_upload(self.UPLOADED))
+        self.asked_for_views = len(api.sent("GET", self.VIEWS))
+        [described] = report[UploadFields.FILES]
+        return described
+
+    def test_a_finished_dataset_names_its_view(self) -> None:
+        described = self.report(a_dataset(DatasetStatus.PROCESSED), [{"id": 8161}])
+
+        assert described[UploadReportFields.DATASET_ID] == 21
+        assert described[UploadReportFields.VIEW_ID] == 8161
+
+    def test_the_first_view_is_named_when_there_are_more(self) -> None:
+        described = self.report(a_dataset(DatasetStatus.PROCESSED), [{"id": 8170}, {"id": 8161}])
+
+        assert described[UploadReportFields.VIEW_ID] == 8161
+
+    def test_a_dataset_still_being_read_names_none_yet(self) -> None:
+        described = self.report(a_dataset(DatasetStatus.PROCESSING), [{"id": 8161}])
+
+        assert UploadReportFields.VIEW_ID not in described
+        assert self.asked_for_views == 0
+
+    def test_a_file_names_no_view(self) -> None:
+        described = self.report(a_file(FileStatus.PROCESSED), [{"id": 8161}])
+
+        assert UploadReportFields.VIEW_ID not in described

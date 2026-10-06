@@ -1034,7 +1034,7 @@ commands:
   mutation_class: benign_mutation
   edits_target: false
   confirmation: none
-  wait_policy: not_async
+  wait_policy: start_or_wait
   pagination_policy: none
   acceptance_evidence: contract_only_no_disposable_fixture
   readback:
@@ -1058,7 +1058,7 @@ commands:
   - CT-DASHBOARD-DUPLICATE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: 'Copies the dashboard over the same dataset. Example: mammoth dashboard duplicate 123 --input ''{"target_dataview_id": 456}''. With the target_dataview_id input field the copy is made in that view''s project and its data swap is queued: the command waits for that job and adds swap_state and swap_result next to id and swap_job_id. project_id (optional) names the project for the copy.'
   reviewed_by: primary
 - command_id: dashboard.embed.config.get
   command_path: dashboard embed config get
@@ -5804,3 +5804,91 @@ commands:
     command: dashboard.qa.insights
     ids: {}
     kind: object
+- command_id: dashboard.pbix-intent
+  command_path: dashboard pbix-intent
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - name: attachment_id
+    type: int
+    required: true
+    metavar: ATTACHMENT_ID
+    falls_back_to_field: null
+    help: ID of the attachment.
+  - name: target_dataview_id
+    type: int
+    required: true
+    metavar: TARGET_DATAVIEW_ID
+    falls_back_to_field: null
+    help: ID of the target dataview.
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.attachment_intent
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.attachment_intent with validated request fields.
+  request_model: DashboardPbixIntentRequest
+  result_model: DashboardPbixIntentResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: always_wait
+  pagination_policy: none
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Backend route ships with this release; no disposable fixture runs it yet.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard pbix-intent ATTACHMENT_ID TARGET_DATAVIEW_ID --help
+  agent_example: mammoth dashboard pbix-intent 123 123
+  unit_tests:
+  - UT-DASHBOARD-PBIX-INTENT
+  contract_tests:
+  - CT-DASHBOARD-PBIX-INTENT-HUMAN
+  - CT-DASHBOARD-PBIX-INTENT-JSON
+  - CT-DASHBOARD-PBIX-INTENT-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Read-only. Reads a Power BI workbook the web app already attached (ATTACHMENT_ID)
+    against one of your views (TARGET_DATAVIEW_ID), waits for the job and returns its result: intent,
+    coverage {mapped, total}, unmapped_visuals, field_map and target_dataview_id, or {rejected, source}.
+    No dashboard or sample data is made. Uploading the attachment is done in the web app.'
+  reviewed_by: primary
+- command_id: dashboard.pbix-assess
+  command_path: dashboard pbix-assess
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - name: attachment_id
+    type: int
+    required: true
+    metavar: ATTACHMENT_ID
+    falls_back_to_field: null
+    help: ID of the attachment.
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.attachment_assess
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.attachment_assess with validated request fields.
+  request_model: DashboardPbixAssessRequest
+  result_model: DashboardPbixAssessResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: always_wait
+  pagination_policy: none
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Backend route ships with this release; no disposable fixture runs it yet.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard pbix-assess ATTACHMENT_ID --help
+  agent_example: mammoth dashboard pbix-assess 123
+  unit_tests:
+  - UT-DASHBOARD-PBIX-ASSESS
+  contract_tests:
+  - CT-DASHBOARD-PBIX-ASSESS-HUMAN
+  - CT-DASHBOARD-PBIX-ASSESS-JSON
+  - CT-DASHBOARD-PBIX-ASSESS-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Read-only. Assesses a workbook the web app already attached (ATTACHMENT_ID): waits
+    for the job and returns its result. Use dashboard assess-pbix for a local file.'
+  reviewed_by: primary

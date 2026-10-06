@@ -400,7 +400,7 @@ def test_transform_combine_columns_requires_sources(fake_service: FakeMammothSer
 def test_transform_combine_columns_forwards_optional(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
-    doc = _write(tmp_path, {"sources": ["a", "b"], "separator": "-"})
+    doc = _write(tmp_path, {"sources": ["a", "b"], "separator": "-", "new_column": "ab"})
     view_ops_cmd.view_transform_combine_columns(
         _inv(
             "view.transform.combine-columns",
@@ -410,7 +410,11 @@ def test_transform_combine_columns_forwards_optional(
         )
     )
     assert fake_service.view_call_log == [
-        (3, "combine_columns", {"dataset_id": 122, "sources": ["a", "b"], "separator": "-"})
+        (
+            3,
+            "combine_columns",
+            {"dataset_id": 122, "sources": ["a", "b"], "separator": "-", "new_column": "ab"},
+        )
     ]
 
 
@@ -1155,12 +1159,24 @@ def test_transform_window_requires_function(fake_service: FakeMammothService) ->
 def test_transform_window_forwards_optional(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
-    doc = _write(tmp_path, {"function": "RANK", "partition_by": ["a"], "column": "b"})
+    doc = _write(
+        tmp_path, {"function": "RANK", "partition_by": ["a"], "column": "b", "new_column": "r"}
+    )
     view_ops_cmd.view_transform_window(
         _inv("view.transform.window", extra_args=["3"], resource_ref=_parent(3), input_file=doc)
     )
     assert fake_service.view_call_log == [
-        (3, "window", {"dataset_id": 122, "function": "RANK", "partition_by": ["a"], "column": "b"})
+        (
+            3,
+            "window",
+            {
+                "dataset_id": 122,
+                "function": "RANK",
+                "partition_by": ["a"],
+                "column": "b",
+                "new_column": "r",
+            },
+        )
     ]
 
 

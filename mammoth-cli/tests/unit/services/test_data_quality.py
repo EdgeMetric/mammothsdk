@@ -159,7 +159,10 @@ def test_no_duplicate_rows_is_quiet() -> None:
 def test_variant_spellings_are_grouped_with_a_bulk_replace_fix() -> None:
     rows = _rows(["PEPSI", "Pepsi ", "pepsi", "Pepsi", "Pepsi", "Coke", "Sprite"], column="brand")
     warning = _variant_warning(rows, view_id=62)
-    assert "{'PEPSI', 'Pepsi', 'Pepsi ', 'pepsi'} -> 'Pepsi'" in warning["detail"]
+    assert (
+        "{'PEPSI' (case differs), 'Pepsi', 'Pepsi ' (trailing space), 'pepsi' (case differs)} -> 'Pepsi'"
+        in warning["detail"]
+    )
     assert warning["fix"].startswith("mammoth view transform bulk-replace 62 --input ")
     payload = json.loads(warning["fix"].split("--input ", 1)[1].strip("'"))
     assert payload["columns"] == ["brand"]
