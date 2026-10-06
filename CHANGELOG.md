@@ -6,6 +6,14 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed (mammoth-cli 2.2.47)
+
+- A write's read-back waits for the new step's data and describes a staged draft step; a draft submit and a task delete or update are read back after their job finishes.
+- A keep filter that no row matches fails its dry run and names the values its column holds; `--allow-empty` adds it anyway. A math step names the input columns that have blanks and is never blocked by a count that cannot run.
+- A password-protected file in a result names the command that unlocks it and says to ask for the password.
+- A backend NOT_ALLOWED refusal is an authorization error with the backend's reason. A retryable read's hint names the server's delay only when it gave one. A call from inside a running event loop runs the SDK work on a helper thread.
+- The CLI now requires `mammoth-io>=0.8.25`.
+
 ### Added (mammoth-io 0.8.25)
 
 - Public names for a server built on the SDK. `WorkspaceAPI.current()` returns the token's workspace
