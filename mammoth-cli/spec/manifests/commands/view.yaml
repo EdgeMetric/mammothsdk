@@ -6268,6 +6268,106 @@ commands:
     ids:
       view_id: positional.0
     kind: data
+- command_id: view.explore-panel.get
+  command_path: view explore-panel get
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - name: view_id
+    type: int
+    required: true
+    metavar: VIEW_ID
+    falls_back_to_field: null
+    help: ID of the view to act on.
+  - name: dataset_id
+    type: int
+    required: false
+    metavar: DATASET_ID
+    falls_back_to_field: dataset_id
+    help: ID of the dataset the view belongs to; resolved from the view when omitted.
+  options: []
+  sdk_symbol: mammoth.api.dataviews.DataviewsAPI.explore_panel
+  sdk_conversion: Call mammoth.api.dataviews.DataviewsAPI.explore_panel with validated request fields.
+  request_model: ViewExplorePanelGetRequest
+  result_model: ViewExplorePanelGetResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Needs a disposable project with a saved Explore panel; no live config locally.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view explore-panel get VIEW_ID --help
+  agent_example: mammoth view explore-panel get 123
+  unit_tests:
+  - UT-VIEW-EXPLORE-PANEL-GET
+  contract_tests:
+  - CT-VIEW-EXPLORE-PANEL-GET-HUMAN
+  - CT-VIEW-EXPLORE-PANEL-GET-JSON
+  - CT-VIEW-EXPLORE-PANEL-GET-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Read-only. Returns the Explore panel the caller saved on this view, {open, items}, or {}
+    when none is saved. It is a per-user preference: other users do not see it. VIEW_ID is the only id needed.'
+  reviewed_by: primary
+- command_id: view.explore-panel.set
+  command_path: view explore-panel set
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - name: view_id
+    type: int
+    required: true
+    metavar: VIEW_ID
+    falls_back_to_field: null
+    help: ID of the view to act on.
+  - name: dataset_id
+    type: int
+    required: false
+    metavar: DATASET_ID
+    falls_back_to_field: dataset_id
+    help: "Optional parent dataset ID. Leave it out and the CLI looks up the view's dataset. A value that is not the view's dataset is refused before the write."
+  options: []
+  sdk_symbol: mammoth.api.dataviews.DataviewsAPI.set_explore_panel
+  sdk_conversion: Call mammoth.api.dataviews.DataviewsAPI.set_explore_panel with validated request fields.
+  request_model: ViewExplorePanelSetRequest
+  result_model: ViewExplorePanelSetResult
+  mutation_class: benign_mutation
+  edits_target: true
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_no_disposable_fixture
+  readback:
+    command: view.explore-panel.get
+    ids:
+      view_id: positional.0
+    kind: object
+  live_test: null
+  live_exemption_reason: Needs a disposable project; no live config locally.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view explore-panel set VIEW_ID --help
+  agent_example: 'mammoth view explore-panel set 123 --input ''{"panel": {"open": true, "items": [{"column":
+    "column_1", "renderType": "chart"}]}}'''
+  unit_tests:
+  - UT-VIEW-EXPLORE-PANEL-SET
+  contract_tests:
+  - CT-VIEW-EXPLORE-PANEL-SET-HUMAN
+  - CT-VIEW-EXPLORE-PANEL-SET-JSON
+  - CT-VIEW-EXPLORE-PANEL-SET-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Replaces the whole panel of the caller on this view: run view explore-panel get first,
+    change its items and write it back. The panel input field is the {open, items} object that get returns.
+    It is a per-user preference: it does not change the view or what other users see.'
+  reviewed_by: primary
 - command_id: view.compare
   command_path: view compare
   disposition: command

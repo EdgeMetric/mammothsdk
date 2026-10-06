@@ -48,6 +48,8 @@ _HANDLER_OWNED_FIELDS: dict[str, frozenset[str]] = {
     "view.data.aggregate": frozenset({"sort"}),
     # ``view update`` offers only the typed rename; the handler builds the patch.
     "view.update": frozenset({"patch_data"}),
+    # The endpoint names the target page as ``page``; the handler maps it onto these two.
+    "dashboard.figure.add": frozenset({"page_id", "page_new_title"}),
 }
 
 # CLI-only commands whose complete request is carried by positionals/context.
@@ -79,6 +81,16 @@ _EXAMPLE_INPUT_HINTS: dict[str, dict[str, Any]] = {
     # View display settings: real column names read better than sample keys.
     "view.transform.rename-columns": {"renames": {"cust_id": "Customer ID"}},
     "view.update": {"name": "Revenue report"},
+    "dashboard.figure.add": {
+        "dataview_id": 1,
+        "figure": {
+            "kind": "hbar",
+            "title": "Revenue by region",
+            "dim": "Region",
+            "measure": "Revenue",
+            "agg": "sum",
+        },
+    },
     "view.transform.sort": {"order_by": [["Revenue", "DESC"]]},
     # The backend requires integer resource ids ("resource_ids must be
     # comma-separated integers"); the SDK annotation is a plain list[str].

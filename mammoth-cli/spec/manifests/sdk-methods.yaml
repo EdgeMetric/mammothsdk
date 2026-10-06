@@ -1,5 +1,5 @@
 manifest_schema_version: 1
-method_count: 584
+method_count: 684
 generator_version: '1'
 methods:
 - sdk_symbol: mammoth._mixins._advanced_ops.AdvancedOpsMixin.add_sql
@@ -1834,6 +1834,18 @@ methods:
   mutation_class: high_impact
   wait_policy: returns_job
   pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.append_figure
+  implementation_origin: mammoth.api.dashboards.DashboardsAPI.append_figure
+  signature: 'append_figure(self, dashboard_id: ''int'', dataview_id: ''int'', figure: ''dict[str, Any]'', banded: ''dict[str, Any] | None'' = None, page_id: ''str | None'' = None, page_new_title: ''str | None'' = None) -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: dashboard.figure.add
+  alias_of: null
+  no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
   secret_fields: []
   reviewed_by: primary
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.analytics
@@ -3928,6 +3940,30 @@ methods:
   signature: 'optimize(self, dataset_id: ''int'', dataview_id: ''int'', apply_rules: ''_list[str] | None'' = None, workspace_id: ''int | None'' = None, project_id: ''int | None'' = None) -> ''dict[str, Any]'''
   openapi_operation_ids: []
   canonical_command: view.optimize
+  alias_of: null
+  no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.dataviews.DataviewsAPI.set_explore_panel
+  implementation_origin: mammoth.api.dataviews.DataviewsAPI.set_explore_panel
+  signature: 'set_explore_panel(self, dataset_id: ''int'', dataview_id: ''int'', panel: ''dict[str, Any]'', workspace_id: ''int | None'' = None, project_id: ''int | None'' = None) -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: view.explore-panel.set
+  alias_of: null
+  no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.dataviews.DataviewsAPI.explore_panel
+  implementation_origin: mammoth.api.dataviews.DataviewsAPI.explore_panel
+  signature: 'explore_panel(self, dataset_id: ''int'', dataview_id: ''int'', workspace_id: ''int | None'' = None, project_id: ''int | None'' = None) -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: view.explore-panel.get
   alias_of: null
   no_command_reason: null
   mutation_class: null

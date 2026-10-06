@@ -129,6 +129,18 @@
     },
     {
       "method": "POST",
+      "path": "/dashboards/{}/figures",
+      "state": "pending_server_release",
+      "pending_in": "origin/feat/agent-cli-surface-w8@15c7fe863f",
+      "sdk_symbols": [
+        "mammoth.api.dashboards.DashboardsAPI.append_figure"
+      ],
+      "commands": [
+        "dashboard.figure.add"
+      ]
+    },
+    {
+      "method": "POST",
       "path": "/user/change_password",
       "state": "removed_on_server",
       "pending_in": null,
@@ -255,6 +267,8 @@
     "resolve",
     "skill.agents-md.install",
     "skill.show",
+    "view.explore-panel.get",
+    "view.explore-panel.set",
     "view.export.azure-blob",
     "view.export.bigquery",
     "view.export.dataset",

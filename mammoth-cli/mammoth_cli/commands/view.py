@@ -1115,6 +1115,40 @@ def view_update(invocation: Invocation) -> HandlerResult:
     return data, _meta(invocation, auth.workspace_id, project_id)
 
 
+def view_explore_panel_get(invocation: Invocation) -> HandlerResult:
+    """Read the Explore panel the caller saved on a view (empty when none is saved)."""
+    project_id = require_project(invocation)
+    dataview_id = _require_int_positional_at(invocation, 0, "view id")
+    document = invocation.load_input() or {}
+    with open_service(invocation) as (service, auth):
+        dataset_id = _resolve_dataset_id(service, invocation, dataview_id, document)
+        data = service.call(
+            _symbol(invocation),
+            dataset_id=dataset_id,
+            dataview_id=dataview_id,
+            project_id=project_id,
+        )
+    return data, _meta(invocation, auth.workspace_id, project_id)
+
+
+def view_explore_panel_set(invocation: Invocation) -> HandlerResult:
+    """Replace the caller's saved Explore panel with the ``panel`` input field."""
+    project_id = require_project(invocation)
+    dataview_id = _require_int_positional_at(invocation, 0, "view id")
+    document = invocation.load_input() or {}
+    panel = _require_field(document, "panel")
+    with open_service(invocation) as (service, auth):
+        dataset_id = _verified_dataset_id(service, invocation, dataview_id, document)
+        data = service.call(
+            _symbol(invocation),
+            dataset_id=dataset_id,
+            dataview_id=dataview_id,
+            panel=panel,
+            project_id=project_id,
+        )
+    return data, _meta(invocation, auth.workspace_id, project_id)
+
+
 def _untyped_patch_error(invocation: Invocation) -> CliError:
     """The refusal for a view patch that is not the typed rename."""
     return CliError(

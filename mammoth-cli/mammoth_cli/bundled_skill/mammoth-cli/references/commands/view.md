@@ -412,6 +412,26 @@ Result: `ViewDraftSubmitResult`; mutation `reversible_pipeline`, confirmation `n
 
 Status on release: untried; no live run recorded.
 
+### `view.explore-panel.get`
+
+Run: `mammoth view explore-panel get`. Exact input fields: `mammoth schema get view.explore-panel.get`.
+
+Example: `mammoth view explore-panel get 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `ViewExplorePanelGetResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `view.explore-panel.set`
+
+Run: `mammoth view explore-panel set`. Exact input fields: `mammoth schema get view.explore-panel.set`.
+
+Example: `mammoth view explore-panel set 123 --input '{"panel": {"open": true, "items": [{"column": "column_1", "renderType": "chart"}]}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `ViewExplorePanelSetResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
 ### `view.export.azure-blob`
 
 Run: `mammoth view export azure-blob`. Exact input fields: `mammoth schema get view.export.azure-blob`.

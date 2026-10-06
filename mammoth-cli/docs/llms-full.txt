@@ -390,6 +390,8 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth dashboard embed usage summary --input '{"dashboard_ids": [1]}'
 - `mammoth dashboard exemplar extract` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.extract_exemplar
   example: mammoth dashboard exemplar extract --input '{"body": {"params": {"name": "Revenue report"}}}'
+- `mammoth dashboard figure add` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.append_figure
+  example: mammoth dashboard figure add 123 --input '{"dataview_id": 1, "figure": {"kind": "hbar", "title": "Revenue by region", "dim": "Region", "measure": "Revenue", "agg": "sum"}}'
 - `mammoth dashboard figure-intent` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.figure_intent
   example: mammoth dashboard figure-intent 123 --input '{"body": {"params": {"intent": "Summarize revenue by region"}}}'
 - `mammoth dashboard filter add` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.canvas_save
@@ -1179,6 +1181,10 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth view draft status 123
 - `mammoth view draft submit` [reversible_pipeline/none] -> mammoth.view.View.submit_draft
   example: mammoth view draft submit 123 --input '{"dataset_id": 456}'
+- `mammoth view explore-panel get` [read/none] -> mammoth.api.dataviews.DataviewsAPI.explore_panel
+  example: mammoth view explore-panel get 123
+- `mammoth view explore-panel set` [benign_mutation/none] -> mammoth.api.dataviews.DataviewsAPI.set_explore_panel
+  example: mammoth view explore-panel set 123 --input '{"panel": {"open": true, "items": [{"column": "column_1", "renderType": "chart"}]}}'
 - `mammoth view export azure-blob` [external_effect/yes_always] -> mammoth.view.ViewExport.to_azure_blob
   example: mammoth view export azure-blob 123 123 --input /private/path/request.json
 - `mammoth view export bigquery` [external_effect/yes_always] -> mammoth.view.ViewExport.to_bigquery

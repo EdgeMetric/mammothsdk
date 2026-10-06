@@ -4,7 +4,7 @@ Generated from the reviewed command manifests for mammoth-cli 2.2.48.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
-Total commands: 656.
+Total commands: 659.
 
 ## activity
 
@@ -1626,6 +1626,17 @@ Total commands: 656.
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.extract_exemplar`
 - Agent example: `mammoth dashboard exemplar extract --input '{"body": {"params": {"name": "Revenue report"}}}'`
+
+### `mammoth dashboard figure add`
+
+**Arguments**
+
+- `DASHBOARD_ID` (int, required) — ID of the dashboard.
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.dashboards.DashboardsAPI.append_figure`
+- Agent example: `mammoth dashboard figure add 123 --input '{"dataview_id": 1, "figure": {"kind": "hbar", "title": "Revenue by region", "dim": "Region", "measure": "Revenue", "agg": "sum"}}'`
 
 ### `mammoth dashboard figure-intent`
 
@@ -5304,6 +5315,30 @@ Total commands: 656.
 - Confirmation: `none`
 - Backing SDK: `mammoth.view.View.submit_draft`
 - Agent example: `mammoth view draft submit 123 --input '{"dataset_id": 456}'`
+
+### `mammoth view explore-panel get`
+
+**Arguments**
+
+- `VIEW_ID` (int, required) — ID of the view to act on.
+- `DATASET_ID` (int, optional) — ID of the dataset the view belongs to; resolved from the view when omitted.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.dataviews.DataviewsAPI.explore_panel`
+- Agent example: `mammoth view explore-panel get 123`
+
+### `mammoth view explore-panel set`
+
+**Arguments**
+
+- `VIEW_ID` (int, required) — ID of the view to act on.
+- `DATASET_ID` (int, optional) — Optional parent dataset ID. Leave it out and the CLI looks up the view's dataset. A value that is not the view's dataset is refused before the write.
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.dataviews.DataviewsAPI.set_explore_panel`
+- Agent example: `mammoth view explore-panel set 123 --input '{"panel": {"open": true, "items": [{"column": "column_1", "renderType": "chart"}]}}'`
 
 ### `mammoth view export azure-blob`
 
