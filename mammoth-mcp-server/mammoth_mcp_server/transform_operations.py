@@ -1,19 +1,14 @@
-"""Pydantic v2 input models for workflow_agent tools.
+"""The transformations `add_transformations` takes, one Pydantic model each.
 
-One model per tool. Tool names are module-level constants so the ToolSpec,
-the handler dispatch, and tests all reference the same string.
-
-The column-type enum is reused from mm-pysdk (``mammoth.models.pipeline``) so
-the agent's contract and the backend builders share one source of truth — the
+The column-type enum is reused from the SDK (``mammoth.models.pipeline``) so
+the tool's contract and the SDK's builders share one source of truth — the
 JSON schema then advertises exactly the backend-valid types (TEXT/NUMERIC/DATE).
 """
 
 from __future__ import annotations
 
-import json
-from typing import Annotated, Any, Literal
+from typing import Annotated, Literal
 
-from mammoth.models.exports import HandlerType
 from mammoth.models.pipeline import (
     AggregateFunction,
     ColumnType,
@@ -34,101 +29,14 @@ from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
-    field_validator,
     model_validator,
 )
-
-GET_COLUMNS_TOOL_NAME = "get_columns"
-GET_COLUMN_PROFILE_TOOL_NAME = "get_column_profile"
-GET_DATA_QUALITY_TOOL_NAME = "get_data_quality"
-GET_SAMPLE_ROWS_TOOL_NAME = "get_sample_rows"
-GET_PIPELINE_TOOL_NAME = "get_pipeline"
-ADD_STEP_TOOL_NAME = "add_step"
-RUN_PIPELINE_TOOL_NAME = "run_pipeline"
-DISCARD_DRAFT_TOOL_NAME = "discard_draft"
-EXPORT_TO_TARGET_TOOL_NAME = "export_to_target"
-GENERATE_DASHBOARD_TOOL_NAME = "generate_dashboard"
-
-# Default/maximum sample-row page size. The default mirrors the backend's
-# ROW_CONSIDERED_FOR_LLM heuristic (a handful of rows is enough to read intent);
-# the cap keeps the heavy DuckDB read and the LLM context bounded.
-_SAMPLE_ROWS_DEFAULT = 20
-_SAMPLE_ROWS_MAX = 200
 
 # Shared across every op that can target an existing column instead of a new one
 # (overwrite-in-place). One source of truth so the contract reads identically.
 _OVERWRITE_EXISTING_COLUMN_DESCRIPTION = (
     "Display name of an existing column to overwrite. " "Provide this OR new_column (exactly one)."
 )
-
-
-class GetColumnsInput(BaseModel):
-    """Input for ``get_columns`` — read a View's column metadata.
-
-    ``view_id`` is the numeric id of the View (dataview) to inspect; the
-    handler returns its display↔internal name map and column types.
-    """
-
-    model_config = ConfigDict(extra="forbid")
-
-    view_id: int = Field(ge=1, description="Numeric id of the View to inspect.")
-
-
-class GetColumnProfileInput(BaseModel):
-    """Input for ``get_column_profile`` — read a View's stored column stats.
-
-    ``view_id`` is the numeric id of the View to profile; the handler returns
-    per-column row counts, distinct counts, and uniqueness from stored
-    statistics (a cheap read — no full-table scan).
-    """
-
-    model_config = ConfigDict(extra="forbid")
-
-    view_id: int = Field(ge=1, description="Numeric id of the View to profile.")
-
-
-class GetDataQualityInput(BaseModel):
-    """Input for ``get_data_quality`` — read a View's stored quality report.
-
-    ``view_id`` is the numeric id of the View. The handler reads the report the
-    Data Quality panel already generated; it never generates one, so the call is
-    a single stored-row read regardless of how large the View is.
-    """
-
-    model_config = ConfigDict(extra="forbid")
-
-    view_id: int = Field(ge=1, description="Numeric id of the View to report on.")
-
-
-class GetPipelineInput(BaseModel):
-    """Input for ``get_pipeline`` — read a View's existing transform steps.
-
-    ``view_id`` is the numeric id of the View whose pipeline to enumerate; the
-    handler returns its ordered steps (op type, sequence, status, label).
-    """
-
-    model_config = ConfigDict(extra="forbid")
-
-    view_id: int = Field(ge=1, description="Numeric id of the View whose pipeline to read.")
-
-
-class GetSampleRowsInput(BaseModel):
-    """Input for ``get_sample_rows`` — read a small page of a View's data.
-
-    ``view_id`` selects the View; ``limit`` caps how many rows are returned
-    (display-formatted). This runs a real query, so keep ``limit`` small —
-    a handful of rows is enough to read example values and confirm intent.
-    """
-
-    model_config = ConfigDict(extra="forbid")
-
-    view_id: int = Field(ge=1, description="Numeric id of the View to sample.")
-    limit: int = Field(
-        default=_SAMPLE_ROWS_DEFAULT,
-        ge=1,
-        le=_SAMPLE_ROWS_MAX,
-        description="Maximum number of rows to return (display-formatted).",
-    )
 
 
 class ConvertColumnSpec(BaseModel):
@@ -1279,9 +1187,9 @@ class UnnestOperation(BaseModel):
 
 
 # Discriminated union of transform operations: the model selects an operation by
-# its ``op`` discriminator, and the handler routes it to the matching pysdk pure
-# builder (handlers._OPERATION_BUILDERS). Adding an operation = a new member here
-# + one registry entry — no new tool, no handler branching.
+# its ``op`` discriminator, and `task_params` routes it to the matching SDK
+# builder (`task_params._OPERATION_BUILDERS`). Adding an operation = a new member
+# here + one registry entry — no new tool, no branching.
 TransformOperation = Annotated[
     ConvertOperation
     | TextTransformOperation
@@ -1314,127 +1222,3 @@ TransformOperation = Annotated[
     | UnnestOperation,
     Field(discriminator="op"),
 ]
-
-
-class AddStepInput(BaseModel):
-    """Input for ``add_step`` — add one transform step to a View's draft.
-
-    The step is added to the View's *draft* pipeline (entering draft mode on the
-    first step), where it is staged and statically projected but NOT run. The
-    pipeline executes only when ``run_pipeline`` submits the draft. Always
-    ``get_columns`` first so the operation references real column names.
-    """
-
-    model_config = ConfigDict(extra="forbid")
-
-    view_id: int = Field(ge=1, description="Numeric id of the View to transform.")
-    operation: TransformOperation = Field(
-        description="The transform operation to add to the View's draft."
-    )
-
-    @field_validator("operation", mode="before")
-    @classmethod
-    def _parse_stringified_operation(cls, v: object) -> object:
-        """Anthropic tool-use serializes a deeply-nested object parameter as a
-        JSON string rather than an object, so ``operation`` arrives as e.g.
-        ``'{"op": "join", ...}'``. Parse it back to a dict before the
-        discriminated union validates; leave a non-JSON string for the union to
-        reject with a clear error.
-        """
-        if isinstance(v, str):
-            try:
-                return json.loads(v)
-            except json.JSONDecodeError:
-                return v
-        return v
-
-
-class RunPipelineInput(BaseModel):
-    """Input for ``run_pipeline`` — submit a View's draft for execution.
-
-    Submits every step added since the draft began and fires the pipeline run in
-    the background (the agent does not wait for it to finish).
-    """
-
-    model_config = ConfigDict(extra="forbid")
-
-    view_id: int = Field(ge=1, description="Numeric id of the View whose draft to run.")
-
-
-class DiscardDraftInput(BaseModel):
-    """Input for ``discard_draft`` — throw away a View's pending draft steps.
-
-    Restores the View to its last submitted state; use this to abandon a plan
-    before it is run.
-    """
-
-    model_config = ConfigDict(extra="forbid")
-
-    view_id: int = Field(ge=1, description="Numeric id of the View whose draft to discard.")
-
-
-class ExportToTargetInput(BaseModel):
-    """Input for ``export_to_target`` — send a View's data to an external target.
-
-    ``handler_type`` selects the destination (a database, cloud store, file
-    transfer, email, BI tool, …). ``target_properties`` carries that handler's
-    connection/destination config as a flat dict — its keys are handler-specific
-    and validated against the destination's contract by the pysdk builder, which
-    raises an actionable error for a missing/unknown key (surfaced as a typed
-    FAILED result, never a silent mis-send). Credentials passed here are split
-    into the encrypted trigger store backend-side.
-    """
-
-    model_config = ConfigDict(extra="forbid")
-
-    view_id: int = Field(ge=1, description="Numeric id of the View to export from.")
-    handler_type: HandlerType = Field(
-        description="Destination handler, e.g. mysql/postgres/s3/email/sftp/bigquery."
-    )
-    target_properties: dict[str, Any] = Field(
-        description=(
-            "Handler-specific destination config (host/port/database/table/… for "
-            "databases, emails for email, domain/directory/file for ftp, …). "
-            "Credentials go here and are encrypted backend-side."
-        )
-    )
-    run_immediately: bool = Field(
-        True, description="Run the export as soon as it is added (default True)."
-    )
-    end_of_pipeline: bool = Field(
-        True, description="Export after all transforms have run (default True)."
-    )
-
-    @field_validator("target_properties", mode="before")
-    @classmethod
-    def _parse_stringified_target(cls, v: object) -> object:
-        """Anthropic tool-use serializes a nested object parameter as a JSON
-        string rather than an object, so ``target_properties`` can arrive as e.g.
-        ``'{"host": "...", ...}'``. Parse it back to a dict before validation;
-        leave a non-JSON string for the dict-type check to reject clearly.
-        """
-        if isinstance(v, str):
-            try:
-                return json.loads(v)
-            except json.JSONDecodeError:
-                return v
-        return v
-
-
-class GenerateDashboardInput(BaseModel):
-    """Input for ``generate_dashboard`` — build an AI dashboard from a View.
-
-    ``intent`` is a plain-English description of the dashboard to build; the
-    backend's AI turns it into charts over the View's data. Validation of the
-    intent (length) and source happens in the pysdk dashboard-spec builder, whose
-    actionable error is surfaced as a typed FAILED result.
-    """
-
-    model_config = ConfigDict(extra="forbid")
-
-    view_id: int = Field(ge=1, description="Numeric id of the View the dashboard draws from.")
-    intent: str = Field(description="Plain-English description of the dashboard to build.")
-    enable_filters: bool = Field(True, description="Generate interactive filters (default True).")
-    enable_pages: bool = Field(
-        False, description="Generate multiple dashboard pages (default False)."
-    )
