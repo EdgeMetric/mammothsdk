@@ -16,18 +16,22 @@ class ValueWrapper(BaseModel):
 
 
 class ClientAppSchema(BaseModel):
-    """Schema for a client app object."""
+    """Schema for a client app object.
 
-    id: ValueWrapper | None = Field(None, description="Unique identifier for the client app")
-    app_name: ValueWrapper | None = Field(None, description="Name of the client app")
-    description: ValueWrapper | None = Field(None, description="Description of the client app")
-    app_key: ValueWrapper | None = Field(None, description="Client key for API access")
-    workspace_id: ValueWrapper | None = Field(None, description="Workspace ID")
-    user_id: ValueWrapper | None = Field(None, description="User ID")
-    project_id: ValueWrapper | None = Field(None, description="Project ID")
-    last_usage: ValueWrapper | None = Field(
-        None, description="Timestamp when the app was last used"
-    )
+    Every field is optional because ``fields=`` narrows what the API returns.
+    Values are plain, as apiv2 sends them (not ``{"value": ...}`` wrapped).
+    """
+
+    id: int | None = Field(None, description="Unique identifier for the client app")
+    app_name: str | None = Field(None, description="Name of the client app")
+    description: str | None = Field(None, description="Description of the client app")
+    app_key: str | None = Field(None, description="Client key for API access")
+    type: str | None = Field(None, description="Credential type (token or legacy)")
+    workspace_id: int | None = Field(None, description="Workspace ID")
+    user_id: int | None = Field(None, description="User ID")
+    project_id: int | None = Field(None, description="Project ID")
+    last_usage: str | None = Field(None, description="Timestamp when the app was last used")
+    created_at: str | None = Field(None, description="Timestamp when the app was created")
 
 
 class ClientAppsListResponse(BaseModel):
@@ -40,14 +44,20 @@ class ClientAppCreate(BaseModel):
     """Schema for creating a new client app."""
 
     app_name: str = Field(..., min_length=1, description="Name for the client app")
-    description: str | None = Field(None, description="Optional description for the app")
+    description: str = Field("", description="Description for the app (the API requires the field)")
 
 
 class ClientAppPostResponse(BaseModel):
-    """Schema for client app creation response."""
+    """Schema for client app creation response (flat; carries the one-time token)."""
 
-    client_app: ClientAppSchema = Field(..., description="Created client app details")
-    message: str | None = Field(None, description="Success message")
+    app_name: str = Field(..., description="Name of the client app")
+    app_key: str = Field(..., description="Client key for API access")
+    description: str = Field(..., description="Description of the client app")
+    workspace_id: int = Field(..., description="Workspace ID")
+    user_id: int = Field(..., description="User ID")
+    token: str = Field(
+        ..., description="Plaintext Bearer token, returned once and never recoverable"
+    )
 
 
 class PatchOperation(BaseModel):

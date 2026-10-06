@@ -6,6 +6,18 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.8.22]
+
+### Fixed
+
+- `client_apps` models match apiv2: `list`/`get`/`update` read plain field values (not
+  `{"value": ...}` wrappers), and `create` returns the flat response with the one-time `token`.
+  Before, `token create` and `token list` failed model validation (QA W7-17) after the key was
+  already created, so its secret was never shown.
+- `client_apps.create` always sends `description` (empty when omitted), which apiv2 requires.
+- `client_apps.create` returns the created app and its token even if the 2xx body drifts from the
+  model, since the token cannot be fetched again.
+
 ## [0.8.21]
 
 ### Added

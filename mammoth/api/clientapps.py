@@ -9,6 +9,8 @@ from typing import TYPE_CHECKING, Any
 if TYPE_CHECKING:
     from ..client import MammothClient
 
+from pydantic import ValidationError
+
 from ..models.clientapps import (
     ClientAppPostResponse,
     ClientAppSchema,
@@ -88,13 +90,16 @@ class ClientAppsAPI:
             ClientAppPostResponse with created app details and tokens.
         """
         ws = workspace_id or self._ws()
-        payload = {"app_name": app_name}
-        if description:
-            payload["description"] = description
+        payload = {"app_name": app_name, "description": description or ""}
         response = await self._client._request_json(
             "POST", f"/workspaces/{ws}/clientapps", json=payload
         )
-        return ClientAppPostResponse(**response)
+        try:
+            return ClientAppPostResponse(**response)
+        except ValidationError:
+            # The key already exists and its token is shown only in this
+            # response: hand it back rather than lose it to a model mismatch.
+            return ClientAppPostResponse.model_construct(**response)
 
     async def get(
         self,

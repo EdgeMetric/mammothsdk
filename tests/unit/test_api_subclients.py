@@ -94,9 +94,9 @@ def assert_called_with_method_and_endpoint(
     mock.assert_called_once()
     args = mock.call_args
     assert args[0][0] == method, f"Expected HTTP {method}, got {args[0][0]}"
-    assert (
-        endpoint_substring in args[0][1]
-    ), f"Expected endpoint containing '{endpoint_substring}', got '{args[0][1]}'"
+    assert endpoint_substring in args[0][1], (
+        f"Expected endpoint containing '{endpoint_substring}', got '{args[0][1]}'"
+    )
 
 
 def assert_json_body(mock: MagicMock, expected: dict) -> None:
@@ -2933,24 +2933,27 @@ class TestClientAppsAPI:
         assert_called_with_method_and_endpoint(client._request_json, "GET", "/clientapps")
 
     async def test_create(self, client: MammothClient):
-        # await client_apps.create() returns Pydantic model with ValueWrapper fields
+        # await client_apps.create() returns the flat apiv2 payload with the one-time token
         client._request_json = AsyncMock(
             return_value={
-                "client_app": {
-                    "client_key": {"value": "ck1"},
-                    "app_name": {"value": "MyApp"},
-                },
+                "app_name": "MyApp",
+                "app_key": "ck1",
+                "description": "",
+                "workspace_id": 1,
+                "user_id": 5,
+                "token": "mm_x",
             }
         )
         await client.client_apps.create(app_name="MyApp")
         assert_called_with_method_and_endpoint(client._request_json, "POST", "/clientapps")
 
     async def test_get(self, client: MammothClient):
-        # await client_apps.get() returns ClientAppSchema with ValueWrapper fields
+        # await client_apps.get() returns ClientAppSchema with plain values
         client._request_json = AsyncMock(
             return_value={
-                "client_key": {"value": "ck1"},
-                "app_name": {"value": "MyApp"},
+                "id": 1,
+                "app_key": "ck1",
+                "app_name": "MyApp",
             }
         )
         await client.client_apps.get(client_key="ck1")
