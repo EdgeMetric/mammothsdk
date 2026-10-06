@@ -451,6 +451,69 @@ class DataviewsAPI:
             json={"patch": patch_data},
         )
 
+    async def explore_panel(
+        self,
+        dataset_id: int,
+        dataview_id: int,
+        workspace_id: int | None = None,
+        project_id: int | None = None,
+    ) -> dict[str, Any]:
+        """Get the Explore panel the caller saved on a dataview (their own, not shared).
+
+        Args:
+            dataset_id: ID of the dataset.
+            dataview_id: ID of the dataview.
+            workspace_id: ID of the workspace (uses client default if not provided).
+            project_id: ID of the project (uses client default if not provided).
+
+        Returns:
+            The saved panel, for example ``{"open": True, "items": [{"column": "column_1",
+            "renderType": "chart", "selectedAggregation": {...}}]}``; ``{}`` when the caller
+            saved none.
+        """
+        info = await self.get(
+            dataset_id, dataview_id, workspace_id=workspace_id, project_id=project_id
+        )
+        saved = info.get("user_display_properties") or {}
+        panel = saved.get("EXPLORE_PANEL") if isinstance(saved, dict) else None
+        return panel if isinstance(panel, dict) else {}
+
+    async def set_explore_panel(
+        self,
+        dataset_id: int,
+        dataview_id: int,
+        panel: dict[str, Any],
+        workspace_id: int | None = None,
+        project_id: int | None = None,
+    ) -> dict[str, Any]:
+        """Replace the caller's saved Explore panel on a dataview.
+
+        The whole panel is replaced, so read it with :meth:`explore_panel` first, change
+        its ``items`` and write it back. It is a per-user preference: nobody else sees it.
+
+        Args:
+            dataset_id: ID of the dataset.
+            dataview_id: ID of the dataview.
+            panel: The new panel (``open`` and ``items``), as :meth:`explore_panel` returns it.
+            workspace_id: ID of the workspace (uses client default if not provided).
+            project_id: ID of the project (uses client default if not provided).
+
+        Returns:
+            Dict with the patch result.
+
+        Raises:
+            ValueError: If ``panel`` is not a dict.
+        """
+        if not isinstance(panel, dict):
+            raise ValueError("`panel` must be a dict (open and items).")
+        return await self.update(
+            dataset_id,
+            dataview_id,
+            [{"op": "replace", "path": "display_properties/EXPLORE_PANEL", "value": panel}],
+            workspace_id=workspace_id,
+            project_id=project_id,
+        )
+
     async def delete(
         self,
         dataset_id: int,

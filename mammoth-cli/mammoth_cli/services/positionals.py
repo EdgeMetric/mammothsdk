@@ -165,6 +165,10 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
             example_value="card.png",
         ),
     ),
+    # The figure's source view is the ``dataview_id`` input field, never a second positional.
+    "dashboard.figure.add": (
+        PositionalSpec(name="dashboard_id", type=int, required=True, help="ID of the dashboard."),
+    ),
     "dashboard.gallery.get": (
         PositionalSpec(name="slug", type=str, required=True, help="Template slug."),
     ),
@@ -810,6 +814,8 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
             "view.impact",
             "view.optimize",
             "view.update",
+            "view.explore-panel.get",
+            "view.explore-panel.set",
             "view.conditional-format.create",
             "view.conditional-format.delete-all",
             "view.conditional-format.list",
@@ -1233,6 +1239,10 @@ EXACT_PARENT_HELP = (
 _EXACT_PARENT_HELP_OVERRIDES: dict[str, str] = {
     "view.optimize": (
         "Optional parent dataset ID. Leave it out and the CLI looks up the view's dataset. A value that is not the view's dataset is refused before the write."
+    ),
+    "view.explore-panel.set": (
+        "Optional parent dataset ID. Leave it out and the CLI looks up the view's dataset. "
+        "A value that is not the view's dataset is refused before the write."
     ),
     "view.export.dataset": (
         "Exact parent dataset ID of the SOURCE view being exported -- not the "

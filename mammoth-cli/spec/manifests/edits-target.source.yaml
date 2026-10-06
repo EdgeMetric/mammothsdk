@@ -57,6 +57,7 @@ edits_target_commands:
 - dashboard.embed.lifetime.set
 - dashboard.embed.origin.revoke
 - dashboard.embed.secret.rotate
+- dashboard.figure.add
 - dashboard.filter.add
 - dashboard.filter.remove
 - dashboard.pages.add
@@ -193,6 +194,7 @@ edits_target_commands:
 - view.draft.discard
 - view.draft.enter
 - view.draft.submit
+- view.explore-panel.set
 - view.export.delete
 - view.export.publish-db-update
 - view.export.update

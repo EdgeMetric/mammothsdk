@@ -732,6 +732,14 @@ _S7_ADDITIONAL_INPUT_FIELDS: dict[str, tuple[FieldSpec, ...]] = {
     # The typed rename: the handler builds the one ``replace`` on ``name``; the
     # SDK's free-form ``patch_data`` is handler-owned and never offered.
     "view.update": (FieldSpec("name", required=True, annotation=str),),
+    # The endpoint's own params: ``page`` is {"id"} or {"new_title"}; the handler maps
+    # it onto the SDK's page_id / page_new_title.
+    "dashboard.figure.add": (
+        FieldSpec("dataview_id", required=True, annotation=int),
+        FieldSpec("figure", required=True, annotation=dict[str, Any]),
+        FieldSpec("banded", required=False, annotation=dict[str, Any] | None, default=None),
+        FieldSpec("page", required=False, annotation=dict[str, Any] | None, default=None),
+    ),
     "user.preference.update": (
         # PreferencesPatchRequest: replace ops on dotted paths rooted at
         # GLOBAL or WORKSPACE_PREFERENCES.

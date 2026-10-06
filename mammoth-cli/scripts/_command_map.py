@@ -96,6 +96,7 @@ PENDING_SERVER_RELEASE.update(
         )
     }
 )
+PENDING_SERVER_RELEASE["POST /dashboards/{}/figures"] = "origin/feat/agent-cli-surface-w8@15c7fe863f"
 # The SDK posts every run verb through one helper whose path ends in a variable.
 PENDING_SERVER_RELEASE["POST /agents/sessions/{}/runs/{}/{}"] = PENDING_SERVER_RELEASE[
     "POST /agents/sessions/{}/runs/{}/stop"

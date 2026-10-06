@@ -608,6 +608,40 @@ def dashboard_share(invocation: Invocation) -> HandlerResult:
     return data, _meta(invocation, auth.workspace_id)
 
 
+def _figure_page_kwargs(page: Any) -> dict[str, Any]:
+    """Map the endpoint's ``page`` ({"id"} or {"new_title"}) onto the SDK's page arguments."""
+    if not isinstance(page, dict) or set(page) not in ({"id"}, {"new_title"}):
+        raise CliError(
+            code=CODE_INVALID_ARGUMENT,
+            message='The \'page\' input field must be {"id": ...} or {"new_title": ...}.',
+            exit_status=EXIT_USAGE,
+        )
+    if "id" in page:
+        return {"page_id": page["id"]}
+    return {"page_new_title": page["new_title"]}
+
+
+def dashboard_figure_add(invocation: Invocation) -> HandlerResult:
+    """Add one figure to a dashboard. The input is the endpoint's own shape.
+
+    ``dataview_id`` and ``figure`` are required; ``banded`` and ``page`` (``{"id": ...}``
+    or ``{"new_title": ...}``) are optional. The result carries ``bake_job_id``.
+    """
+    dashboard_id = _require_int_positional(invocation, "dashboard id")
+    document = _bound_document(invocation)
+    kwargs: dict[str, Any] = {
+        "dashboard_id": dashboard_id,
+        "dataview_id": _require_field(document, "dataview_id"),
+        "figure": _require_field(document, "figure"),
+    }
+    _forward_optional(document, kwargs, ("banded",))
+    if document.get("page") is not None:
+        kwargs.update(_figure_page_kwargs(document["page"]))
+    with open_service(invocation) as (service, auth):
+        data = service.call(_symbol(invocation), **kwargs)
+    return data, _meta(invocation, auth.workspace_id)
+
+
 def dashboard_cancel_generation(invocation: Invocation) -> HandlerResult:
     """Cancel an in-progress dashboard generation."""
     dashboard_id = _require_int_positional(invocation, "dashboard id")

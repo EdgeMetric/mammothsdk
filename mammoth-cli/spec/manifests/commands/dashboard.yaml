@@ -3178,6 +3178,58 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+- command_id: dashboard.figure.add
+  command_path: dashboard figure add
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - name: dashboard_id
+    type: int
+    required: true
+    metavar: DASHBOARD_ID
+    falls_back_to_field: null
+    help: ID of the dashboard.
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.append_figure
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.append_figure with validated request fields.
+  request_model: DashboardFigureAddRequest
+  result_model: DashboardFigureAddResult
+  mutation_class: benign_mutation
+  edits_target: true
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_no_disposable_fixture
+  readback:
+    command: dashboard.canvas.get
+    ids:
+      dashboard_id: positional.0
+    kind: object
+  live_test: null
+  live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
+    fixture in tests/live.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard figure add DASHBOARD_ID --help
+  agent_example: 'mammoth dashboard figure add 123 --input ''{"dataview_id": 1, "figure": {"kind": "hbar",
+    "title": "Revenue by region", "dim": "Region", "measure": "Revenue", "agg": "sum"}}'''
+  unit_tests:
+  - UT-DASHBOARD-FIGURE-ADD
+  contract_tests:
+  - CT-DASHBOARD-FIGURE-ADD-HUMAN
+  - CT-DASHBOARD-FIGURE-ADD-JSON
+  - CT-DASHBOARD-FIGURE-ADD-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Adds one figure (an explore card) with no chat turn. dataview_id must be the dashboard''s
+    own view. figure is the figure as the canvas stores it, without its id: kind plus its bindings (measure,
+    dim, agg, title). Optional banded (a banded dimension without its id; figure.dim then points at it) and
+    page: {"id": PAGE_ID} for an existing content page or {"new_title": "..."} for a new one; with neither the
+    figure lands on the first content page. The server checks the figure against the dashboard''s source and
+    queues the bake: the result carries bake_job_id; wait for it with job wait.'
+  reviewed_by: primary
 - command_id: dashboard.restore
   command_path: dashboard restore
   disposition: command

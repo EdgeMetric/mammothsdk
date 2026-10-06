@@ -422,6 +422,16 @@ Result: `DashboardFigureIntentResult`; mutation `benign_mutation`, confirmation 
 
 Status on release: ran once on CLI 2.0.14 — dashboard re-verification 2026-09-18: exit 0 on release with CLI 2.0.14. CLI defect fixed, confirmed: returned a full matched structured body ({"added":{...},"kind":"bar","spec":{...},"intentApplied":true,...}) instead of raising ValidationError on an unmatch…
 
+### `dashboard.figure.add`
+
+Run: `mammoth dashboard figure add`. Exact input fields: `mammoth schema get dashboard.figure.add`.
+
+Example: `mammoth dashboard figure add 123 --input '{"dataview_id": 1, "figure": {"kind": "hbar", "title": "Revenue by region", "dim": "Region", "measure": "Revenue", "agg": "sum"}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `DashboardFigureAddResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
 ### `dashboard.filter.add`
 
 Run: `mammoth dashboard filter add`. Exact input fields: `mammoth schema get dashboard.filter.add`.

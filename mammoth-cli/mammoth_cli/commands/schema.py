@@ -46,6 +46,11 @@ _PROTECTED_INPUT_PATH = "/private/path/request.json"
 # second id, an optional-but-central input field, or two views to compare.
 _FIXED_EXAMPLES: dict[str, tuple[tuple[str, ...], dict[str, Any]]] = {
     "view.optimize": (("123",), {}),
+    "view.explore-panel.get": (("123",), {}),
+    "view.explore-panel.set": (
+        ("123",),
+        {"panel": {"open": True, "items": [{"column": "column_1", "renderType": "chart"}]}},
+    ),
     "project.check": (("123", "456"), {}),
     "view.data.profile": (("123",), {"target": "Churn"}),
     "view.variants.create": (
@@ -101,6 +106,11 @@ _GROUP_DISCOVERY_PURPOSES = {
 
 _COMMAND_DISCOVERY_PURPOSES = {
     "view.update": "rename change name to a new name title relabel",
+    "view.explore-panel.get": "explore cards saved panel the data editor explore side panel read",
+    "view.explore-panel.set": "save replace explore cards panel items chart a column in the editor",
+    "dashboard.figure.add": (
+        "append an explore card figure tile to a dashboard from a payload, no chat turn"
+    ),
     "file.upload": (
         "upload import CSV spreadsheet XLSX source data append add rows union stack "
         "a file into an existing dataset excel workbook tabs sheets drop in"
