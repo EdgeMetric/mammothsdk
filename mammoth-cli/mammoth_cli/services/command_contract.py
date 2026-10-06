@@ -675,8 +675,10 @@ _S7_ADDITIONAL_INPUT_FIELDS: dict[str, tuple[FieldSpec, ...]] = {
         FieldSpec("top", required=False, annotation=int | None, default=None),
         FieldSpec("text_date_format", required=False, annotation=str | None, default=None),
     ),
+    # ``range`` adds the exact earliest and latest value of the explored column.
     "view.data.explore": (
         FieldSpec("text_date_format", required=False, annotation=str | None, default=None),
+        FieldSpec("range", required=False, annotation=bool, default=False),
     ),
     "view.data.query": (
         FieldSpec("text_date_format", required=False, annotation=str | None, default=None),

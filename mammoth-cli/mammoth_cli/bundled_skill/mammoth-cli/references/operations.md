@@ -150,7 +150,12 @@ applied.
 
 - A trend, distribution or top-values answer: `view data explore VIEW_ID
   COLUMN` (read-only; `level` sets the date bucket). `{"cumulative": true}`
-  adds a running total per bucket, whatever `sort` or `limit` shows. Figures
+  adds a running total per bucket, whatever `sort` or `limit` shows.
+  `{"range": true}` adds the exact earliest and latest value;
+  `{"percentage_of": "metric"}` shares by the `metric`; `sort` `metric_desc`
+  ranks by it; `-o csv` saves the buckets. Excluding a value (`NE`, `not`)
+  drops blank rows, which the web card keeps: `or` it with `IS_EMPTY`. To
+  put a card on a dashboard, say it to `dashboard chat edit`. Figures
   from `explore` and `view data aggregate` are rounded for display (2
   decimals; 4 below 1); `view data compare` keeps full precision.
 - "Who changed X": `activity list` (a change list of time, user, action and a

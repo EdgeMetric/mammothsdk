@@ -8,7 +8,7 @@ description: "Use Mammoth Analytics from a terminal: install or authenticate the
 
 Use this skill for Mammoth shell work, not Python SDK integration. The CLI
 is the contract: it validates requests locally and returns one JSON
-envelope, with no flag needed for that when piped.
+envelope (compact when piped).
 
 ## What Mammoth is
 
@@ -18,15 +18,15 @@ calculated in a **pipeline** of tasks on a **view**, and the result is
 published as a dashboard or delivered as a CSV, a database table, a BI feed
 or another dataset. The pipeline re-runs when new data arrives, so build the
 steps in Mammoth rather than computing a result locally. The web app and
-this CLI call the same API: every Transform-menu task is a `mammoth view
-transform` command. The data model, capabilities and full web-to-CLI map:
+this CLI call the same API: each Transform-menu task is a `view transform`
+command. The data model, capabilities and full web-to-CLI map:
 [about Mammoth](references/about-mammoth.md).
 
 ## Start
 
 ```bash
 mammoth doctor                          # auth, endpoint, connectivity; must succeed
-mammoth project ensure 'PROJECT NAME'   # get-or-create; active project
+mammoth project ensure 'PROJECT NAME'   # active project
 ```
 
 Never proceed if `doctor` fails.
@@ -63,7 +63,7 @@ downloads return `download_url`. On an auth error, ask the user to reload.
 
 ## Find the command for a goal
 
-State the goal in plain words; the search knows common phrasing, and
+State the goal in plain words;
 `view transform --help` is the Transform menu with one line per task:
 
 ```bash
@@ -74,20 +74,21 @@ mammoth schema find "join two datasets; remove duplicates; build a dashboard"   
 
 | Goal | Command |
 |---|---|
-| Combine two datasets on a key (merge, VLOOKUP) | `view transform join`; one value per key: `view transform lookup` |
+| Combine two datasets on a key | `view transform join`; one value per key: `view transform lookup` |
 | Add rows to an existing dataset, or combine sources | Local file: `file upload FILE --input '{"append_to_ds_id": DATASET_ID}'`. Already in Mammoth: `view export dataset VIEW_ID --input '{"dataset_name": "NAME"}'`, then per further source `view export dataset VIEW_ID --input '{"dataset_name": "NAME", "target_ds_id": DATASET_ID, "save_as_mode": "APPEND_TO_DS"}'` — combine first, clean once; then `discard-duplicates` and diff `row_count` before/after ([about Mammoth](references/about-mammoth.md#view-settings-and-what-has-no-command)) |
 | Keep or remove rows | `view transform filter` |
 | Remove duplicate rows | read `duplicates`; 0: stop. Else `view transform discard-duplicates` |
-| Totals, counts, averages per group — just to read the number | `view data aggregate` (read-only: `--input '{"group_by": [...], "aggregations": [{"column": ..., "function": "SUM"}]}'` or `{"metric": {...}}`); never add a `pivot` task just to answer a question |
+| Totals, counts, averages per group, to read | `view data aggregate` (read-only: `--input '{"group_by": [...], "aggregations": [{"column": ..., "function": "SUM"}]}'` or `{"metric": {...}}`); never a `pivot` task |
+| Top values, distribution, trend, earliest/latest date, unique count, filter a column | `view data explore VIEW_ID COLUMN` (read-only; `--help` lists the options; `-o csv`) |
 | Totals, counts, averages per group — as a lasting change to the pipeline | `view transform pivot` |
 | A calculated column | `view transform math` |
 | Blanks to a constant, or to the previous row's value | `view transform set-values` (`IS_EMPTY`), `view transform fill-missing` |
 | Clean text | `view transform text`, `replace`, `bulk-replace` |
 | Change a column's type | `view transform convert-type` |
-| Rename a column, sort the rows (view settings, not tasks) | `view transform rename-columns`, `view transform sort` |
+| Rename a column, sort the rows | `view transform rename-columns`, `view transform sort` |
 | Rank, running total, previous row | `view transform window` |
 | A dashboard, or its PDF or slides | `dashboard v3 generate`, then `chat edit` ([dashboards](references/recipes/dashboards.md)) |
-| Deliver the rows | `view export csv`, `view export postgres` (and more), `view export dataset` |
+| Deliver the rows | `view export csv`, `view export postgres`, `view export dataset` |
 | Run something on a schedule or on new data (refresh, append, alert) | `automation create`: a condition (`at_specific_time`, new file in a folder, ...) and tasks (`run_data_retrieval`, `append_data`, `send_an_alert`, `pull_cloud_files`). `schedule create` only pulls a connector's data. A dataset from an uploaded file or URL is a one-time copy with no source to refresh; say so. Recipe and caveats: [recurring work](references/recipes/scheduling.md) |
 
 Call a find result (or `suggestions` entry) from its `accepted_fields` and

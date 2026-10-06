@@ -190,17 +190,31 @@ def _build_metric_param(metric: dict[str, Any]) -> dict[str, Any]:
 _EXPLORE_DEFAULT_TEXT_LIMIT = 20
 
 
-def _add_explore_percentages(rows: list[dict[str, Any]]) -> None:
-    """Add a local ``percentage`` (of the total count across every bucket) to each row.
+def _add_explore_percentages(rows: list[dict[str, Any]], field: str = "agg_0") -> None:
+    """Add a local ``percentage`` (of the total of ``field`` across every bucket) to each row.
+
+    ``field`` is ``agg_0`` (the count, the default) or ``agg_1`` (the ``metric``).
 
     Mirrors the Explore card's PERCENTAGE(AGGREGATION=COUNT) select item
     without asking the backend for it (:func:`_build_aggregate_select_item`
     sends no PERCENTAGE), so the percentage is always against
     every bucket the query returned, never just a page truncated by ``limit``.
     """
-    total = sum(row.get("agg_0") or 0 for row in rows)
+    total = sum(row.get(field) or 0 for row in rows)
     for row in rows:
-        row["percentage"] = round((row.get("agg_0") or 0) / total * 100, 2) if total else 0.0
+        row["percentage"] = round((row.get(field) or 0) / total * 100, 2) if total else 0.0
+
+
+def _explore_percentage_field(percentage_of: str | None, has_metric: bool) -> str:
+    """The row field ``percentage`` is a share of: the count, or the ``metric`` when asked."""
+    of = (percentage_of or "count").lower()
+    if of not in _EXPLORE_PERCENTAGE_OF:
+        raise MammothValidationError(ERR_EXPLORE_PERCENTAGE_OF.format(percentage_of))
+    if of == "count":
+        return "agg_0"
+    if not has_metric:
+        raise MammothValidationError(ERR_EXPLORE_METRIC_NEEDED.format("percentage_of metric"))
+    return "agg_1"
 
 
 def _add_explore_cumulative(rows: list[dict[str, Any]]) -> None:
@@ -223,10 +237,16 @@ def _add_explore_cumulative(rows: list[dict[str, Any]]) -> None:
 
 
 #: ``sort`` values :meth:`DataviewsAPI.explore` accepts: by count or by bucket value.
-_EXPLORE_SORTS = frozenset({"count_desc", "count_asc", "value_asc", "value_desc"})
-ERR_EXPLORE_SORT_UNSUPPORTED = (
-    "`sort` must be one of count_desc, count_asc, value_asc, value_desc, got {0!r}."
+_EXPLORE_SORTS = frozenset(
+    {"count_desc", "count_asc", "value_asc", "value_desc", "metric_desc", "metric_asc"}
 )
+ERR_EXPLORE_SORT_UNSUPPORTED = (
+    "`sort` must be one of count_desc, count_asc, value_asc, value_desc, metric_desc, "
+    "metric_asc, got {0!r}."
+)
+ERR_EXPLORE_METRIC_NEEDED = "{0} needs a `metric` ({{column, function}}) to rank or share by."
+_EXPLORE_PERCENTAGE_OF = frozenset({"count", "metric"})
+ERR_EXPLORE_PERCENTAGE_OF = "`percentage_of` must be 'count' or 'metric', got {0!r}."
 
 
 def _explore_sort_and_limit(
@@ -240,12 +260,15 @@ def _explore_sort_and_limit(
     Default order: a DATE/NUMERIC bucket ascending by value (a trend or
     distribution reads left to right); a TEXT top-values list by count
     descending, defaulting to the top 20 when no ``limit`` is given. ``sort``
-    overrides it (the card's sort menu). Blanks sort last either way.
+    overrides it (the card's sort menu); ``metric_desc``/``metric_asc`` rank by
+    the ``metric`` value instead of the count. Blanks sort last either way.
     """
     order = sort or ("count_desc" if column_type not in ("DATE", "NUMERIC") else "value_asc")
     if order not in _EXPLORE_SORTS:
         raise MammothValidationError(ERR_EXPLORE_SORT_UNSUPPORTED.format(sort))
-    field = "agg_0" if order.startswith("count") else "group_0"
+    field = {"count": "agg_0", "metric": "agg_1"}.get(order.split("_")[0], "group_0")
+    if field == "agg_1" and rows and not any("agg_1" in row for row in rows):
+        raise MammothValidationError(ERR_EXPLORE_METRIC_NEEDED.format(f"sort {order}"))
     present = [row for row in rows if row.get(field) is not None]
     blank = [row for row in rows if row.get(field) is None]
     ordered = sorted(present, key=lambda row: row[field], reverse=order.endswith("desc")) + blank
@@ -832,6 +855,7 @@ class DataviewsAPI:
         offset: int | None = None,
         sort: str | None = None,
         cumulative: bool = False,
+        percentage_of: str | None = None,
         workspace_id: int | None = None,
         project_id: int | None = None,
         timeout: int | None = None,
@@ -870,8 +894,11 @@ class DataviewsAPI:
             limit: Maximum number of buckets to return (default: 20 for TEXT,
                 unlimited for DATE/NUMERIC).
             offset: Buckets to skip first ("load more"; default 0).
-            sort: count_desc, count_asc, value_asc or value_desc (default:
-                count_desc for TEXT, value_asc for DATE/NUMERIC).
+            sort: count_desc, count_asc, value_asc, value_desc, metric_desc or
+                metric_asc (default: count_desc for TEXT, value_asc for
+                DATE/NUMERIC). The ``metric_*`` orders rank by *metric*.
+            percentage_of: ``"count"`` (default) or ``"metric"``: what each
+                bucket's ``percentage`` is a share of. ``"metric"`` needs *metric*.
             cumulative: Add a ``cumulative`` running total per bucket (of the
                 *metric* when given, else of the count), over every bucket in
                 ascending bucket order, before any *sort*/*limit* is applied.
@@ -895,6 +922,7 @@ class DataviewsAPI:
                 column="column_3", column_type="DATE", level="MONTH",
             )
         """
+        percentage_field = _explore_percentage_field(percentage_of, metric is not None)
         group_by: dict[str, Any] = {"column": column}
         normalized_type = str(column_type or "").upper()
         if normalized_type == "DATE":
@@ -919,7 +947,7 @@ class DataviewsAPI:
         rows = response.get("data")
         if isinstance(rows, list):
             typed_rows = [row for row in rows if isinstance(row, dict)]
-            _add_explore_percentages(typed_rows)
+            _add_explore_percentages(typed_rows, percentage_field)
             if cumulative:
                 _add_explore_cumulative(typed_rows)
             typed_rows = _explore_sort_and_limit(typed_rows, normalized_type, sort, (offset, limit))
