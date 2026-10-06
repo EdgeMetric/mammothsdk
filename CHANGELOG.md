@@ -6,6 +6,18 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added (mammoth-io 0.8.26, mammoth-cli 2.2.48)
+
+- `mammoth auth login --device`: device-code sign-in (RFC 8628) for a machine with no browser. SDK: `mammoth.oauth.device_authorization_request`; `ClientAppPostResponse.expires_at`. API keys made by `mammoth token create` expire after 30 days. Needs the matching Mammoth server release.
+- `mammoth view optimize VIEW_ID` takes one id: the dataset is read from the view. A DATASET_ID that is not the view's parent fails before any write, naming the real one.
+- A copy job's result adds `derived_datasets: [{dataset_id, from_view_id}]` beside the old `derived` map.
+- Dataset health and column warning `fix` hints are quoted and checked against the command manifest.
+
+### Changed (mammoth-cli 2.2.48)
+
+- A 403 hint says to check the ids and scope first; only a 401 session failure says to ask the user to sign in again.
+- The CLI now requires `mammoth-io>=0.8.26`.
+
 ### Changed (mammoth-cli 2.2.47)
 
 - A write's read-back waits for the new step's data and describes a staged draft step; a draft submit and a task delete or update are read back after their job finishes.
