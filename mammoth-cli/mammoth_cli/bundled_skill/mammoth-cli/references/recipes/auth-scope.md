@@ -19,5 +19,6 @@ condition, not permission to retry mutations. The credential rule lives in
 Exit 4 is auth/authorization; preserve the structured error and stop safely.
 
 In the Mammoth app none of the above applies: there is no `auth status`,
-`doctor` or profile, and the app passes the login and project. On exit 4 ask
-the user to reload the page.
+`doctor` or profile, and the app passes the login and project. On `authentication_failed` or
+`not_authenticated` ask the user to reload the page; on `authorization_required` (403)
+check the ids and scope first, since a reload does not fix them.

@@ -1240,7 +1240,7 @@ Sensitive structured input must come from a private file or pipe; never put secr
 - `mammoth view list` [read/none] -> mammoth.api.dataviews.DataviewsAPI.list
   example: mammoth view list 123
 - `mammoth view optimize` [reversible_pipeline/prompt_or_yes] -> mammoth.api.dataviews.DataviewsAPI.optimize
-  example: mammoth view optimize 123 123
+  example: mammoth view optimize 123
 - `mammoth view parameter-context` [read/none] -> mammoth.api.dataviews.DataviewsAPI.parameter_context
   example: mammoth view parameter-context 123 123
 - `mammoth view pipeline edit` [benign_mutation/none] -> mammoth.api.pipeline.PipelineAPI.edit_pipeline

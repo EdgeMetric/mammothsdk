@@ -49,7 +49,7 @@ MAMMOTH_OUTPUT=json MAMMOTH_NO_INPUT=1` once.
 Use the project you are given; never `project ensure`. No `doctor`, auth,
 profiles, `config set`, `upgrade`, `skill install`, env vars, local files,
 stdin, `--input FILE` or `output_path` (they fail `not_available_embedded`);
-downloads return `download_url`. On an auth error, ask the user to reload.
+downloads return `download_url`. Ask for a reload on `authentication_failed` only; on a 403 check ids and scope.
 
 ## Defaults you do not repeat
 

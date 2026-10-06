@@ -36,6 +36,7 @@ from mammoth_cli.runtime.confirm import (
 )
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.session import open_service, resolved_project
+from mammoth_cli.services import job_outcome
 
 HandlerResult = tuple[Any, dict[str, Any]]
 
@@ -299,7 +300,7 @@ def project_copy(invocation: Invocation) -> HandlerResult:
     _forward_optional(document, kwargs, _COPY_OPTIONAL)
     with open_service(invocation) as (service, auth):
         queued = service.call(_symbol(invocation), **kwargs)
-        data = service.wait_if_job(queued)
+        data = job_outcome.with_derived_datasets(service.wait_if_job(queued))
     return data, _meta(invocation, auth.workspace_id, source_id)
 
 

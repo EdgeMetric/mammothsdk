@@ -286,7 +286,7 @@ def no_saved_project_error() -> CliError:
     )
 
 
-EMBEDDED_AUTH_HINT = "Your session expired or is not authorised; ask the user to reload the page."
+EMBEDDED_AUTH_HINT = "Your session expired or is invalid; ask the user to reload the page."
 EMBEDDED_NO_PROFILE_HINT = "This environment keeps no profiles; the login comes from the host."
 
 
