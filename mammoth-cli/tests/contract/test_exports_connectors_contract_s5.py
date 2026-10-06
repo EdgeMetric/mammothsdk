@@ -105,6 +105,7 @@ def test_postgres_export_executes_exact_scoped_wire(
                     "table": "exports",
                     "username": "agent",
                     "password": "secret-sentinel",
+                    "replace_table": True,
                     "run_immediately": False,
                     "validate_only": True,
                 },

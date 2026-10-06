@@ -348,15 +348,6 @@ async def published_data(
     return _typed_response(response, (ObjectJobSchema, JobResponse), allow_untyped=False)
 
 
-async def duplicate(self: Any, dashboard_id: int) -> DuplicateDashboardResponse:
-    """Duplicate a v3 dashboard."""
-    path = "/dashboards/v3/{dashboard_id}/duplicate"
-    path = path.replace("{dashboard_id}", str(dashboard_id))
-    params = None
-    response = await self._client._request_json("POST", path, params=params)
-    return _typed_response(response, (DuplicateDashboardResponse,), allow_untyped=False)
-
-
 async def pdf_export(
     self: Any, dashboard_id: int, body: PdfExportSpec
 ) -> ObjectJobSchema | JobResponse:
@@ -913,7 +904,6 @@ GENERATED_METHODS = [
     "suggestion_list",
     "descriptor_data",
     "published_data",
-    "duplicate",
     "pdf_export",
     "published_pdf_export",
     "video_export",

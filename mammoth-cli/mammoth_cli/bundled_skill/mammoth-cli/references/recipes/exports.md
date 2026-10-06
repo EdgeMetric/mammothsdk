@@ -55,7 +55,11 @@ there is no separate Auto-Sync endpoint or field to find.
 `target_ds_id` writes into an existing dataset instead of creating one
 (`save_as_mode` `REPLACE_IN_DS` or `APPEND_TO_DS`). Read the delivery back in
 the target project (`view list N --project P`, `view data get`) before
-reporting it. Do not build this with `view export create`: the raw
+reporting it. An append that leaves target columns unfilled (a partial
+`column_mapping`, or a source with fewer columns) is refused with
+`append_leaves_columns_blank` unless the input lists exactly those columns,
+`"blank_columns": ["id","score"]`; confirm that with the user, and never
+clone the source view or delete its columns to get around the refusal. Do not build this with `view export create`: the raw
 `internal_dataset` spec needs `USER_ID` and the `export_project` /
 `project_id` / `source_project_id` trio, and without them the backend answers
 `4GENR007 Validation error` with no detail; the typed command fills them.
@@ -84,7 +88,7 @@ the run log. The connector command is `external_effect` with
 mammoth schema get view.export.postgres   # read secret_fields, required fields
 # operator writes /private/path/request.json (mode 0600):
 # {"host":"db.example","port":5432,"database":"analytics","table":"exports",
-#  "username":"agent","password":"…","dataset_id":DATASET_ID}
+#  "username":"agent","password":"…","replace_table":true,"dataset_id":DATASET_ID}
 mammoth view export postgres VIEW_ID DATASET_ID --project PROJECT_ID \
   --input /private/path/request.json --yes
 mammoth view export list VIEW_ID DATASET_ID --project PROJECT_ID
@@ -92,6 +96,16 @@ mammoth view export list VIEW_ID DATASET_ID --project PROJECT_ID
 
 If the operator has not supplied such a file, stop and ask for it; do not
 compose the body yourself from values seen in chat.
+
+A database export (`postgres`, `mysql`, `mssql`, `redshift`, `bigquery` with
+`export_type` REPLACE, and `publish-db`) drops and recreates its destination
+table now and on every later run of the view's pipeline, so any existing table
+of that name is lost. It is refused (`replace_table_not_acknowledged`) unless
+the input says `"replace_table": true`; only set that for a table the user said
+may be overwritten. `postgres` and `mysql` also cut a table name to 60
+characters and write a different table, so a longer name is refused
+(`table_name_too_long`). The result carries `refreshes_on_pipeline_run` and a
+`note` saying so.
 
 ## Generic export routes
 

@@ -449,6 +449,12 @@ _COMMAND_DISCOVERY_PURPOSES = {
     "dashboard.context.apply": "apply the reviewed context change to the dashboard",
     "dashboard.qa.insights": "what questions viewers asked on the dashboard grouped unanswered",
     "view.impact": "what breaks if I delete this dataview or a task dependents impact",
+    "view.analyze": "which pipeline steps are wasted duplicate suspended no-op filter move earlier",
+    "view.optimize": "drop wasted pipeline steps hoist filters",
+    "view.compare": "are these two views the same data row counts column differences checksums",
+    "dashboard.pbix-intent": "read an attached Power BI workbook against my view what would map",
+    "dashboard.pbix-assess": "what does an attached Power BI workbook hold",
+    "project.copy": "copy a whole project into a new one datasets views pipelines dashboards",
     "browse.ancestors": "folder path breadcrumb where does this folder live parent folders chain",
     "browse.search": (
         "find search a dataset view folder by name across all projects whole workspace global"

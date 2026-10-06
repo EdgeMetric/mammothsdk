@@ -241,6 +241,8 @@ def _verify_and_reason(
         return False, _pipeline_error_reason(pipeline_error)
     if data.get("has_error"):
         return False, "the operation reported an error"
+    if data.get("refused_files"):
+        return False, "the server refused some of the files"
     for status in (data.get("status"), _job_status(data)):
         if isinstance(status, str) and status.lower() in _FAILURE_STATUSES:
             return False, "the operation failed"

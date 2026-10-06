@@ -196,6 +196,7 @@ edits_target_commands:
 - view.export.publish-db-update
 - view.export.update
 - view.exportable-config.apply
+- view.optimize
 - view.pipeline.edit
 - view.restore
 - view.task.add

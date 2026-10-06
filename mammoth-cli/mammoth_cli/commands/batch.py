@@ -25,6 +25,10 @@ from mammoth_cli.manifest.loader import command_by_id
 from mammoth_cli.runtime.confirm import POLICY_PROMPT_OR_YES, enforce_confirmation
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.session import open_service, require_project
+from mammoth_cli.services.append_blank_columns import (
+    BLANK_COLUMNS_FIELD,
+    acknowledged_blank_columns,
+)
 
 HandlerResult = tuple[Any, dict[str, Any]]
 
@@ -221,15 +225,32 @@ def _reject_type_change(item: dict[str, Any], dest_col: dict[str, Any], dataset_
     )
 
 
+def _filled_destination_names(
+    items: list[dict[str, Any]], dest: list[dict[str, Any]], source: list[dict[str, Any]]
+) -> set[str]:
+    """Destination column names some mapping item fills (``add_column`` items included)."""
+    dest_names = {col["c_name"] for col in dest}
+    filled: set[str] = set()
+    for item in items:
+        _, dest_col = _resolve_item(item, source, dest)
+        if dest_col is not None:
+            filled.add(dest_col["c_name"])
+        elif item.get("action") == "add_column" and item.get("destination_c_name") in dest_names:
+            filled.add(item["destination_c_name"])
+    return filled
+
+
 def _checked_batch_mapping(
-    service: Any, dataset_id: int, source_id: int, mapping: Any
+    service: Any, dataset_id: int, source_id: int, mapping: Any, blank_columns: Any = None
 ) -> tuple[list[dict[str, Any]], list[str]]:
     """Validate a batch mapping against both schemas; return typed items and warnings.
 
     Refuses unmapped source columns and unknown destinations (the backend appends
     only the mapped columns) and stamps every item with the destination's actual
     current type, so no destination column is silently re-typed. A mapped pair
-    whose source and destination types differ is returned as a warning.
+    whose source and destination types differ is returned as a warning. A
+    destination column no item fills is refused unless ``blank_columns`` names
+    exactly those columns; the confirmed blanks are returned as a warning.
     """
     source = _dataset_columns(service, source_id, "source")
     dest = _dataset_columns(service, dataset_id, "target")
@@ -258,7 +279,8 @@ def _checked_batch_mapping(
     _reject_incomplete_batch_mapping(
         (dataset_id, source_id), {col["c_name"] for col in source}, mapped_sources, unknown
     )
-    return typed, warnings
+    blank = sorted({col["c_name"] for col in dest} - _filled_destination_names(typed, dest, source))
+    return typed, acknowledged_blank_columns(dataset_id, blank, blank_columns) + warnings
 
 
 def batch_create(invocation: Invocation) -> HandlerResult:
@@ -297,7 +319,7 @@ def batch_create(invocation: Invocation) -> HandlerResult:
         )
     with open_service(invocation) as (service, auth):
         kwargs["mapping"], warnings = _checked_batch_mapping(
-            service, dataset_id, source_id, mapping
+            service, dataset_id, source_id, mapping, document.get(BLANK_COLUMNS_FIELD)
         )
         data = service.call(_symbol(invocation), **kwargs)
     if warnings and isinstance(data, dict):

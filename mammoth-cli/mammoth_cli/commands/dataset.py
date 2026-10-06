@@ -804,6 +804,9 @@ def dataset_create(invocation: Invocation) -> HandlerResult:
     dataset_spec = _require_field(document, "dataset_spec")
     ds_creation_type = _require_field(document, "ds_creation_type")
     _require_clone_views(ds_creation_type, dataset_spec)
+    # A clone can land in another project (``dataset_spec.target_project_id``): the
+    # name check and the result's scope are that project's, not the active one's.
+    landing_project_id = _clone_target_project(ds_creation_type, dataset_spec) or project_id
     kwargs: dict[str, Any] = {
         "dataset_spec": dataset_spec,
         "ds_creation_type": ds_creation_type,
@@ -813,15 +816,31 @@ def dataset_create(invocation: Invocation) -> HandlerResult:
     _forward_optional(document, kwargs, ("folder_resource_id",))
     with open_service(invocation) as (service, auth):
         if invocation.dry_run:
-            _predict_final_name(invocation, service, dataset_spec, project_id)
+            _predict_final_name(invocation, service, dataset_spec, landing_project_id)
         data = service.call(_symbol(invocation), **kwargs)
         # ``datasets.create`` returns a bare job handle and never waits. Block on
         # it here (honoring ``--job-timeout``) so the command reports a finished
         # dataset id instead of a job id the caller must poll separately.
         settled = service.wait_if_job(data)
         result = _created_dataset(data, settled)
-        _add_final_name(service, result, dataset_spec, project_id)
-    return result, _meta(invocation, auth.workspace_id, project_id)
+        _add_final_name(service, result, dataset_spec, landing_project_id)
+    return result, _meta(invocation, auth.workspace_id, landing_project_id)
+
+
+def _clone_target_project(ds_creation_type: object, dataset_spec: object) -> int | None:
+    """The clone's ``target_project_id`` (a positive integer), or None when it is not set."""
+    if ds_creation_type != "clone" or not isinstance(dataset_spec, dict):
+        return None
+    target = dataset_spec.get("target_project_id")
+    if target is None:
+        return None
+    if isinstance(target, bool) or not isinstance(target, int) or target <= 0:
+        raise CliError(
+            code=CODE_INVALID_ARGUMENT,
+            message=f"dataset_spec.target_project_id must be a positive integer, got {target!r}.",
+            exit_status=EXIT_USAGE,
+        )
+    return target
 
 
 def _require_clone_views(ds_creation_type: object, dataset_spec: object) -> None:
@@ -998,15 +1017,20 @@ def dataset_create_from_pdf(invocation: Invocation) -> HandlerResult:
 
 
 def dataset_rename(invocation: Invocation) -> HandlerResult:
-    """Rename a dataset. Dataset id is positional; new name comes from ``--input``."""
+    """Rename a dataset. Dataset id is positional; new name comes from ``--input``.
+
+    ``{"unique": true}`` makes the server pick a free name when the requested one is
+    taken; the result's ``name`` is the name applied.
+    """
     project_id = require_project(invocation)
     dataset_id = _require_int_positional(invocation, "dataset id")
     document = invocation.load_input()
     name = _require_field(document, "name")
+    kwargs: dict[str, Any] = {"dataset_id": dataset_id, "name": name, "project_id": project_id}
+    if document.get("unique") is True:
+        kwargs["unique"] = True
     with open_service(invocation) as (service, auth):
-        data = service.call(
-            _symbol(invocation), dataset_id=dataset_id, name=name, project_id=project_id
-        )
+        data = service.call(_symbol(invocation), **kwargs)
     return data, _meta(invocation, auth.workspace_id, project_id)
 
 

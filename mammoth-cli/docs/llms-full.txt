@@ -420,6 +420,10 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth dashboard page plan 123 --input '{"body": {"params": {"intent": "Summarize revenue by region"}}}'
 - `mammoth dashboard pages add` [high_impact/confirm_target] -> mammoth.api.dashboards.DashboardsAPI.add_pages
   example: mammoth dashboard pages add 123 --input '{"body": {"params": {"pages": [{"title": "By region", "focus": {"measure": "Revenue", "dim": "Region", "kpis": [{"field": "Revenue", "agg": "sum", "label": "Revenue"}]}, "charts": [{"kind": "hbar", "title": "Revenue by region", "dim": "Region", "measure": "Revenue", "agg": "sum"}]}]}}}'
+- `mammoth dashboard pbix-assess` [read/none] -> mammoth.api.dashboards.DashboardsAPI.attachment_assess
+  example: mammoth dashboard pbix-assess 123
+- `mammoth dashboard pbix-intent` [read/none] -> mammoth.api.dashboards.DashboardsAPI.attachment_intent
+  example: mammoth dashboard pbix-intent 123 123
 - `mammoth dashboard pdf export` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.pdf_export
   example: mammoth dashboard pdf export 123 --input '{"body": {"params": {"data": {}}}}'
 - `mammoth dashboard pdf-artifact` [read/none] -> mammoth.api.dashboards.DashboardsAPI.pdf_artifact
@@ -785,6 +789,8 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth project check 123 456
 - `mammoth project checkpoint list` [read/none] -> mammoth.api.projects.ProjectsAPI.checkpoint_list
   example: mammoth project checkpoint list 123
+- `mammoth project copy` [benign_mutation/none] -> mammoth.api.projects.ProjectsAPI.copy
+  example: mammoth project copy 123 'Revenue report'
 - `mammoth project create` [benign_mutation/none] -> mammoth.api.projects.ProjectsAPI.create
   example: mammoth project create 'Revenue report'
 - `mammoth project data-check list` [read/none] -> mammoth.api.projects.ProjectsAPI.data_check_list
@@ -1087,6 +1093,8 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth view ai generation-info 123
 - `mammoth view ai profile` [benign_mutation/none] -> mammoth.api.ai.AIAPI.generate_profile
   example: mammoth view ai profile 123 --input '{"dataset_id": 456, "action": "insights"}'
+- `mammoth view analyze` [read/none] -> mammoth.api.dataviews.DataviewsAPI.analysis
+  example: mammoth view analyze 123 123
 - `mammoth view bulk-delete` [destructive/prompt_or_yes] -> mammoth.api.dataviews.DataviewsAPI.bulk_delete
   example: mammoth view bulk-delete 123 --input '{"dataview_ids": [1]}'
 - `mammoth view checkpoint create` [benign_mutation/none] -> mammoth.api.checkpoints.CheckpointsAPI.create
@@ -1099,6 +1107,8 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth view checkpoint list 123 123
 - `mammoth view checkpoint update` [benign_mutation/none] -> mammoth.api.checkpoints.CheckpointsAPI.update
   example: mammoth view checkpoint update 123 123 123 --input '{"body": {"patches": [{"op": "command", "path": "approve", "value": null}]}}'
+- `mammoth view compare` [read/none] -> mammoth.api.dataviews.DataviewsAPI.compare
+  example: mammoth view compare --input '{"pairs": [[1, 2]]}'
 - `mammoth view conditional-format create` [benign_mutation/none] -> mammoth.api.dataviews.DataviewsAPI.conditional_format_create
   example: mammoth view conditional-format create 123 123 --input '{"columns": ["Q1", "Q2", "Q3"], "operator": "<", "value": 55, "color": "red"}'
 - `mammoth view conditional-format delete-all` [destructive/prompt_or_yes] -> mammoth.api.dataviews.DataviewsAPI.conditional_format_delete
@@ -1215,6 +1225,8 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth view impact 123 123 --input '{"scope": "view"}'
 - `mammoth view list` [read/none] -> mammoth.api.dataviews.DataviewsAPI.list
   example: mammoth view list 123
+- `mammoth view optimize` [reversible_pipeline/prompt_or_yes] -> mammoth.api.dataviews.DataviewsAPI.optimize
+  example: mammoth view optimize 123 123
 - `mammoth view parameter-context` [read/none] -> mammoth.api.dataviews.DataviewsAPI.parameter_context
   example: mammoth view parameter-context 123 123
 - `mammoth view pipeline edit` [benign_mutation/none] -> mammoth.api.pipeline.PipelineAPI.edit_pipeline
