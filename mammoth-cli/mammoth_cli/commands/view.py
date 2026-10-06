@@ -1556,14 +1556,23 @@ def _relabel_and_check(
     data = _with_column_warnings(
         data, types, view_id, dataset_id, read_only=True, project_id=project_id
     )
-    return _with_duplicates_fact(data, view_id, dataset_id, whole_view)
+    return _with_duplicates_fact(data, view_id, dataset_id, whole_view, project_id=project_id)
 
 
-def _with_duplicates_fact(data: Any, view_id: int, dataset_id: int | None, whole_view: bool) -> Any:
+def _with_duplicates_fact(
+    data: Any,
+    view_id: int,
+    dataset_id: int | None,
+    whole_view: bool,
+    *,
+    project_id: int | None = None,
+) -> Any:
     """Add ``duplicates``: the read's own statement about exact duplicate rows."""
     if not isinstance(data, dict) or not isinstance(data.get(_ROWS_KEY), list):
         return data
-    fact = duplicate_rows_fact(data[_ROWS_KEY], view_id, dataset_id, whole_view=whole_view)
+    fact = duplicate_rows_fact(
+        data[_ROWS_KEY], view_id, dataset_id, whole_view=whole_view, project_id=project_id
+    )
     return {**data, "duplicates": fact} if fact is not None else data
 
 

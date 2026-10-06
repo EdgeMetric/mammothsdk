@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from typing import Any
 
-from mammoth_cli.services.data_quality import column_warnings
+from mammoth_cli.services.data_quality import column_warnings, duplicate_rows_fact
 
 
 def _rows(values: list[object], column: str = "price") -> list[dict[str, object]]:
@@ -305,3 +305,11 @@ def test_fix_commands_carry_no_project_flag_when_the_project_is_not_known() -> N
     rows = _rows(["30.00", "12.50", "7.25", "4.00"])
     (warning,) = column_warnings(rows, {"price": "TEXT"}, view_id=62)
     assert "--project" not in warning["fix"]
+
+
+def test_table_wide_duplicate_check_names_the_project() -> None:
+    fact = duplicate_rows_fact([{"a": "1"}, {"a": "2"}], 62, 9, whole_view=False, project_id=77)
+    assert fact is not None
+    assert fact["table_wide_check"].startswith("mammoth view transform discard-duplicates 62 ")
+    assert "--dry-run" in fact["table_wide_check"]
+    assert fact["table_wide_check"].endswith(" --project 77")

@@ -288,6 +288,7 @@ def duplicate_rows_fact(
     dataset_id: int | None,
     *,
     whole_view: bool,
+    project_id: int | None = None,
 ) -> dict[str, Any] | None:
     """The read's positive statement about exact duplicate rows (zero included).
 
@@ -323,7 +324,7 @@ def duplicate_rows_fact(
         spec = json.dumps({"dataset_id": dataset_id})
         fact["table_wide_check"] = (
             f"mammoth view transform discard-duplicates {view_id} "
-            f"--input {shlex.quote(spec)} --dry-run"
+            f"--input {shlex.quote(spec)} --dry-run{_project_flag(project_id)}"
         )
     return fact
 
