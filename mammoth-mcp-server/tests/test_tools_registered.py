@@ -71,3 +71,68 @@ def test_a_tool_reaches_the_api_as_the_caller_before_a_workspace_is_known() -> N
     [request] = api.sent("GET", "/workspaces")
     assert listed["workspaces"] == [{"id": WORKSPACE, "name": "Home"}]
     assert request.headers["authorization"].startswith("Bearer mm_")
+
+
+READ_ONLY = {
+    "check_upload",
+    "get_automation",
+    "get_automation_schema",
+    "get_dashboard",
+    "get_data",
+    "get_dataset",
+    "get_export",
+    "get_export_schema",
+    "get_file",
+    "get_help",
+    "get_pipeline",
+    "get_transformation_schema",
+    "get_view",
+    "list_automations",
+    "list_dashboard_tags",
+    "list_dashboards",
+    "list_datasets",
+    "list_exports",
+    "list_files",
+    "list_projects",
+    "list_views",
+    "list_workspaces",
+    "preview_transformation",
+}
+# Deletes, sends rows out, publishes, sets something to run, or throws data away.
+DESTRUCTIVE = {
+    "add_export",
+    "create_automation",
+    "delete_automation",
+    "delete_dashboard",
+    "delete_export",
+    "delete_file",
+    "delete_transformation_step",
+    "delete_views",
+    "manage_draft",
+    "publish_dashboard",
+    "review_unreadable_rows",
+    "run_pipeline",
+    "update_automation",
+}
+
+
+def offered() -> dict[str, object]:
+    register_tools()
+    return {tool.name: tool for tool in run(mcp_server.list_tools())}
+
+
+def test_every_tool_says_whether_it_changes_anything() -> None:
+    # A client treats a tool with no annotations as one that may do anything.
+    for name, tool in offered().items():
+        annotations = tool.annotations  # type: ignore[attr-defined]
+        assert annotations is not None, name
+        read_only = annotations.read_only_hint is True
+        assert read_only == (name in READ_ONLY), name
+        if not read_only:
+            assert annotations.destructive_hint == (name in DESTRUCTIVE), name
+
+
+def test_tools_that_send_data_out_or_publish_say_to_ask_the_user_first() -> None:
+    tools = offered()
+    for name in ("add_export", "publish_dashboard", "create_automation"):
+        assert "Ask the user first" in tools[name].description, name  # type: ignore[attr-defined]

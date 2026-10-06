@@ -8,9 +8,10 @@ call and never has to poll for itself.
 from ..consts import DATA_LIMIT_DEFAULT, DATA_LIMIT_MAX
 from ..sdk import JsonValue, build_client, read_sdk_errors
 from ..server import mcp_server
+from ..tool_kinds import READS
 
 
-@mcp_server.tool()
+@mcp_server.tool(annotations=READS)
 async def get_data(
     workspace_id: int,
     project_id: int,

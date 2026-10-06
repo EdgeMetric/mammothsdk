@@ -24,6 +24,7 @@ from ..jobs import wait_for_job
 from ..sdk import JsonValue, build_client, read_sdk_errors
 from ..server import mcp_server
 from ..task_params import build_task_param
+from ..tool_kinds import READS
 from ..transform_operations import TransformOperation
 
 _OPERATION_ADAPTER: TypeAdapter[TransformOperation] = TypeAdapter(TransformOperation)
@@ -34,7 +35,7 @@ _OPERATIONS: dict[str, type[BaseModel]] = {
 OPERATION_NAMES = ", ".join(sorted(_OPERATIONS))
 
 
-@mcp_server.tool()
+@mcp_server.tool(annotations=READS)
 async def get_transformation_schema(operation: str) -> dict[str, JsonValue]:
     """Get the arguments one transformation takes, as a JSON schema.
 

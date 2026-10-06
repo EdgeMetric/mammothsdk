@@ -20,6 +20,7 @@ from ..consts import (
 from ..jobs import JobStillRunning, still_running, wait_for_job
 from ..sdk import JsonValue, build_client, read_sdk_errors
 from ..server import mcp_server
+from ..tool_kinds import CHANGES, DESTRUCTIVE, READS
 from ..transform_operations import TransformOperation
 from .transformations import (
     OPERATION_NAMES,
@@ -53,7 +54,7 @@ DRAFT_ACTIONS: dict[str, str] = {
 }
 
 
-@mcp_server.tool()
+@mcp_server.tool(annotations=READS)
 async def get_pipeline(
     workspace_id: int, project_id: int, dataset_id: int, view_id: int
 ) -> dict[str, JsonValue]:
@@ -85,7 +86,7 @@ async def get_pipeline(
     }
 
 
-@mcp_server.tool()
+@mcp_server.tool(annotations=DESTRUCTIVE)
 async def delete_transformation_step(
     workspace_id: int, project_id: int, dataset_id: int, view_id: int, step_id: int
 ) -> dict[str, JsonValue]:
@@ -109,7 +110,7 @@ async def delete_transformation_step(
         return still_running(running, DELETE_RUNS_ON)
 
 
-@mcp_server.tool()
+@mcp_server.tool(annotations=READS)
 async def preview_transformation(
     workspace_id: int,
     project_id: int,
@@ -146,7 +147,7 @@ async def preview_transformation(
         )
 
 
-@mcp_server.tool()
+@mcp_server.tool(annotations=DESTRUCTIVE)
 async def manage_draft(
     workspace_id: int,
     project_id: int,
@@ -187,6 +188,7 @@ async def manage_draft(
 
 
 @mcp_server.tool(
+    annotations=CHANGES,
     description=(
         "Add transformations to a view's pipeline and wait for them to run."
         " Pass one operation or several: several are run together, once, after"
@@ -194,7 +196,7 @@ async def manage_draft(
         " get_transformation_schema for the arguments of an operation before"
         " using it, and get_view for the view's column names. Columns are named"
         " by their display name."
-    )
+    ),
 )
 async def add_transformations(
     workspace_id: int,
@@ -243,7 +245,7 @@ async def add_transformations(
     return await read_pipeline(ids)
 
 
-@mcp_server.tool()
+@mcp_server.tool(annotations=DESTRUCTIVE)
 async def run_pipeline(
     workspace_id: int, project_id: int, dataset_id: int, view_id: int
 ) -> dict[str, JsonValue]:

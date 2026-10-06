@@ -31,6 +31,7 @@ from .consts import (
     UploadReportFields,
 )
 from .sdk import JsonValue
+from .tool_kinds import CHANGES
 from .upload_tickets import mint_ticket
 
 upload_app = Apps()
@@ -230,7 +231,7 @@ upload_app.add_html_resource(
 )
 
 
-@upload_app.tool(resource_uri=UPLOAD_APP_URI)
+@upload_app.tool(resource_uri=UPLOAD_APP_URI, annotations=CHANGES)
 async def request_upload(workspace_id: int, project_id: int) -> dict[str, JsonValue]:
     """Let the user upload files from their own machine.
 

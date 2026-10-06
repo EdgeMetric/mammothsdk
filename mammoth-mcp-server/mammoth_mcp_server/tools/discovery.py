@@ -8,9 +8,10 @@ one of them calls the same API route the web app calls, as the signed-in user.
 from ..consts import LIST_LIMIT_DEFAULT, ApiFields, ApiPaths
 from ..sdk import JsonValue, build_client, read_sdk_errors, request_api
 from ..server import mcp_server
+from ..tool_kinds import READS
 
 
-@mcp_server.tool()
+@mcp_server.tool(annotations=READS)
 async def list_workspaces(limit: int = LIST_LIMIT_DEFAULT, offset: int = 0) -> dict[str, JsonValue]:
     """List the workspaces the signed-in user can open.
 
@@ -35,7 +36,7 @@ async def list_workspaces(limit: int = LIST_LIMIT_DEFAULT, offset: int = 0) -> d
         )
 
 
-@mcp_server.tool()
+@mcp_server.tool(annotations=READS)
 async def list_projects(
     workspace_id: int, limit: int = LIST_LIMIT_DEFAULT, offset: int = 0
 ) -> dict[str, JsonValue]:
@@ -59,7 +60,7 @@ async def list_projects(
         )
 
 
-@mcp_server.tool()
+@mcp_server.tool(annotations=READS)
 async def list_datasets(
     workspace_id: int,
     project_id: int,
@@ -89,7 +90,7 @@ async def list_datasets(
         )
 
 
-@mcp_server.tool()
+@mcp_server.tool(annotations=READS)
 async def get_dataset(workspace_id: int, project_id: int, dataset_id: int) -> dict[str, JsonValue]:
     """Get one dataset with its columns, row counts and status.
 
@@ -111,7 +112,7 @@ async def get_dataset(workspace_id: int, project_id: int, dataset_id: int) -> di
         )
 
 
-@mcp_server.tool()
+@mcp_server.tool(annotations=READS)
 async def list_views(
     workspace_id: int,
     project_id: int,
@@ -143,7 +144,7 @@ async def list_views(
         )
 
 
-@mcp_server.tool()
+@mcp_server.tool(annotations=READS)
 async def get_view(
     workspace_id: int, project_id: int, dataset_id: int, view_id: int
 ) -> dict[str, JsonValue]:

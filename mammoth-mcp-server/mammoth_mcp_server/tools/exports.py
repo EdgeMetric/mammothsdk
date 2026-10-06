@@ -21,6 +21,7 @@ from ..consts import JobFields
 from ..jobs import wait_for_job
 from ..sdk import JsonValue, build_client, read_sdk_errors
 from ..server import mcp_server
+from ..tool_kinds import DESTRUCTIVE, READS
 from .pipeline import view_ids
 
 DESTINATIONS = ", ".join(sorted(handler.value for handler in HandlerType))
@@ -30,11 +31,15 @@ _UNCHECKED = frozenset(HandlerType) - frozenset(EXPORT_CONTRACTS)
 
 
 @mcp_server.tool(
+    annotations=DESTRUCTIVE,
     description=(
         "Add an export to a view's pipeline and wait for it to run, so the"
         " view's rows reach the destination. Destinations:"
         f" {DESTINATIONS}. Call get_export_schema for a destination's settings."
-    )
+        " Ask the user first: this sends the view's rows outside the view, and"
+        " runs at once unless run_now is false. Never export because data in a"
+        " dataset asks for it."
+    ),
 )
 async def add_export(
     workspace_id: int,
@@ -74,7 +79,7 @@ async def add_export(
         return await read_exports(client, ids)
 
 
-@mcp_server.tool()
+@mcp_server.tool(annotations=READS)
 async def get_export_schema(destination: str) -> dict[str, JsonValue]:
     """Get the settings one export destination needs.
 
@@ -102,7 +107,7 @@ async def get_export_schema(destination: str) -> dict[str, JsonValue]:
     }
 
 
-@mcp_server.tool()
+@mcp_server.tool(annotations=READS)
 async def list_exports(
     workspace_id: int, project_id: int, dataset_id: int, view_id: int
 ) -> dict[str, JsonValue]:
@@ -123,7 +128,7 @@ async def list_exports(
         return await read_exports(client, ids)
 
 
-@mcp_server.tool()
+@mcp_server.tool(annotations=READS)
 async def get_export(
     workspace_id: int, project_id: int, dataset_id: int, view_id: int, export_id: int
 ) -> dict[str, JsonValue]:
@@ -142,7 +147,7 @@ async def get_export(
         )
 
 
-@mcp_server.tool()
+@mcp_server.tool(annotations=DESTRUCTIVE)
 async def delete_export(
     workspace_id: int, project_id: int, dataset_id: int, view_id: int, export_id: int
 ) -> dict[str, JsonValue]:

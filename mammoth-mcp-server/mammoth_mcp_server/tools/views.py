@@ -10,9 +10,10 @@ from ..consts import ViewFields
 from ..jobs import wait_for_job
 from ..sdk import JsonValue, build_client, read_sdk_errors
 from ..server import mcp_server
+from ..tool_kinds import CHANGES, DESTRUCTIVE
 
 
-@mcp_server.tool()
+@mcp_server.tool(annotations=CHANGES)
 async def create_view(
     workspace_id: int,
     project_id: int,
@@ -50,7 +51,7 @@ async def create_view(
         )
 
 
-@mcp_server.tool()
+@mcp_server.tool(annotations=DESTRUCTIVE)
 async def delete_views(
     workspace_id: int, project_id: int, dataset_id: int, view_ids: list[int]
 ) -> dict[str, JsonValue]:

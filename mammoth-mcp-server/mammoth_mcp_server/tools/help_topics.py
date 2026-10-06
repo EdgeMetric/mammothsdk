@@ -9,6 +9,7 @@ from mcp.server.mcpserver.exceptions import ToolError
 
 from ..sdk import JsonValue
 from ..server import mcp_server
+from ..tool_kinds import READS
 
 HELP_TOPICS: dict[str, str] = {
     "overview": (
@@ -56,7 +57,7 @@ converted before any date operation works.
 }
 
 
-@mcp_server.tool()
+@mcp_server.tool(annotations=READS)
 async def get_help(topic: str) -> dict[str, JsonValue]:
     """Explain how Mammoth works. Read this before a first transformation.
 
