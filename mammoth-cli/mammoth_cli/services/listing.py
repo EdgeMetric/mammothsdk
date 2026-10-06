@@ -14,10 +14,8 @@ from __future__ import annotations
 
 import json
 from collections.abc import Callable
-from concurrent.futures import ThreadPoolExecutor
 from typing import Any
 
-from mammoth_cli.runtime import embedded
 from mammoth_cli.services.stored_stats import stored_facts
 
 #: Characters of ``data`` a list may use; the agent tool caps a whole result at 4,000.
@@ -39,8 +37,6 @@ _SAMPLE_VALUES = 2
 _MAX_CELL_CHARS = 40
 #: Room reserved per view for its sample values, added after the size check.
 SAMPLE_ALLOWANCE = 150
-#: Concurrent stored-stats reads for one list.
-_STATS_WORKERS = 4
 _SOURCE_KINDS = {
     "file": "file",
     "cloud": "connector",
@@ -208,9 +204,37 @@ def view_summary(
             compact_columns(columns, None if all_columns else _MAX_COLUMNS) if columns else None
         ),
     }
-    if view.get("pipeline_status") not in (None, "ready"):
-        summary["pipeline_status"] = view["pipeline_status"]
+    # A list record names its state ``status``; a ``view get`` record, ``pipeline_status``.
+    state = view.get("pipeline_status") or view.get("status")
+    if state not in (None, "ready"):
+        summary["pipeline_status"] = state
+    if view.get("is_dataview_data_in_sync") is False:
+        summary["in_sync"] = False
+    summary.update(view_links(view))
     return {k: v for k, v in summary.items() if v is not None}
+
+
+def _linked_view_ids(info: Any, side: str, own_id: Any) -> list[int] | None:
+    """Ids of the views on one side of ``dependencies_info``, never the view itself."""
+    linked = info.get(side) if isinstance(info, dict) else None
+    if not isinstance(linked, dict):
+        return None
+    ids = sorted(int(key) for key in linked if str(key).isdigit() and key != str(own_id))
+    return ids or None
+
+
+def view_links(view: dict[str, Any]) -> dict[str, list[int]]:
+    """``built_from`` (views this one reads: joins, lookups) and ``feeds`` (views reading it).
+
+    Both come from the ``dependencies_info`` the record already carries, so naming a
+    view's source and dependents costs no call. A side with none is left out.
+    """
+    info = view.get("dependencies_info")
+    links = {
+        "built_from": _linked_view_ids(info, "dependees", view.get("id")),
+        "feeds": _linked_view_ids(info, "dependents", view.get("id")),
+    }
+    return {name: ids for name, ids in links.items() if ids}
 
 
 def json_size(value: Any) -> int:
@@ -265,14 +289,16 @@ def sample_values(payload: Any, metadata: list[Any]) -> dict[str, list[str]]:
 
 
 def _view_stats(
-    view: dict[str, Any], read_stats: Callable[[dict[str, Any]], Any]
+    view: dict[str, Any], payload: Any
 ) -> tuple[dict[str, list[str]] | str, dict[str, str]]:
     """One view's stored samples (or why there are none) and its date columns' ranges.
 
-    One stored-stats read serves both; a failed read says so instead of a silent gap.
+    ``payload`` is the one stored-stats read that serves both, or the error that read
+    raised: a failed read says so instead of a silent gap.
     """
     try:
-        payload = read_stats(view)
+        if isinstance(payload, BaseException):
+            raise payload
         metadata = view.get("metadata") or []
         return sample_values(payload, metadata) or "none stored", date_ranges(payload, metadata)
     except Exception as exc:  # noqa: BLE001 -- one unreadable view must not sink the list
@@ -346,14 +372,15 @@ def _choose_views(
 def compact_view_list(
     views: list[dict[str, Any]],
     datasets: dict[Any, dict[str, Any]],
-    read_stats: Callable[[dict[str, Any]], Any],
+    read_stats: Callable[[list[dict[str, Any]]], list[Any]],
     all_columns: bool = False,
 ) -> dict[str, Any]:
     """Summaries of ``views`` (records with renames applied), within the output cap.
 
     Sizes and columns come from the records already fetched. Each kept view then
     gets ``sample_values`` from the backend's stored column stats via ``read_stats``
-    (one stored-stats read per kept view, run concurrently; no query runs).
+    (one stored-stats read per kept view, all made at once; no query runs). ``read_stats``
+    takes the kept views and returns one payload, or the error it raised, per view.
     A list of one dataset's views names every column; several datasets cap it at a few.
     Returns ``{"dataviews", "shown"}`` plus
     ``first_dropped_dataset`` / ``views_omitted`` when something was cut, for the
@@ -368,8 +395,11 @@ def compact_view_list(
             (v, view_summary(v, datasets.get(ds_id), ds_id, every_column)) for v in group
         ]
     chosen, dropped_dataset, omitted = _choose_views(groups)
-    with ThreadPoolExecutor(max_workers=_STATS_WORKERS) as pool:
-        stats = embedded.pool_map(pool, lambda pair: _view_stats(pair[0], read_stats), chosen)
+    payloads = read_stats([view for view, _summary in chosen])
+    stats = [
+        _view_stats(view, payload)
+        for (view, _summary), payload in zip(chosen, payloads, strict=True)
+    ]
     items = [
         {**summary, "sample_values": found, **({"date_range": dates} if dates else {})}
         for (_v, summary), (found, dates) in zip(chosen, stats, strict=True)

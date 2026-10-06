@@ -26,6 +26,7 @@ from mammoth_cli.errors.envelope import (
 from mammoth_cli.manifest.loader import command_by_id
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.session import open_service
+from mammoth_cli.services import job_outcome
 from mammoth_cli.services.board_values import board_values, dashboard_link
 
 HandlerResult = tuple[Any, dict[str, Any]]
@@ -171,6 +172,7 @@ def job_wait(invocation: Invocation) -> HandlerResult:
     try:
         with open_service(invocation) as (service, auth):
             data = _with_board(service, auth, _wait_result(job_id, service.call(symbol, **kwargs)))
+            data = _with_outcome(service, data)
     except KeyboardInterrupt as exc:
         # Keep the explicit handle even when the polling implementation raises
         # a bare SIGINT.  A caller can inspect/resume it without replaying the
@@ -185,6 +187,34 @@ def job_wait(invocation: Invocation) -> HandlerResult:
             invocation.profile,
         ) from exc
     return data, _meta(invocation, auth.workspace_id)
+
+
+_DATAVIEW_GET_SYMBOL = "mammoth.api.dataviews.DataviewsAPI.get"
+
+
+def _with_outcome(service: Any, data: dict[str, Any]) -> dict[str, Any]:
+    """Add ``outcome``: the state of what the finished job acted on.
+
+    A job on a view gets that view's rows, columns and state (one read); a project copy
+    gets its copied counts and per-view runs (no read). The job succeeded either way, so
+    a view that cannot be read is an ``outcome_error``, never a failed wait.
+    """
+    copied = job_outcome.copy_outcome(data.get("result"))
+    if copied is not None and data.get("operation") == job_outcome.COPY_PROJECT_OPERATION:
+        return {**data, "outcome": copied}
+    target = job_outcome.view_target(data)
+    if target is None:
+        return data
+    try:
+        record = service.call(
+            _DATAVIEW_GET_SYMBOL,
+            dataset_id=target.dataset_id,
+            dataview_id=target.view_id,
+            project_id=target.project_id,
+        )
+    except CliError as error:
+        return {**data, "outcome_error": f"{error.code}: {error.message}"}
+    return {**data, "outcome": job_outcome.view_outcome(record, target)}
 
 
 #: Jobs that build a board. A build that outlived its own wait hands back a running

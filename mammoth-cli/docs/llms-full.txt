@@ -1043,6 +1043,15 @@ Sensitive structured input must come from a private file or pipe; never put secr
 - `mammoth template update` [benign_mutation/none] -> mammoth.api.templates.TemplatesAPI.update
   example: mammoth template update 123 --input '{"body": {"name": "Revenue report"}}'
 
+## token
+
+- `mammoth token create` [high_impact/confirm_target] -> mammoth.api.clientapps.ClientAppsAPI.create
+  example: mammoth token create 'Revenue report'
+- `mammoth token list` [read/none] -> mammoth.api.clientapps.ClientAppsAPI.list
+  example: mammoth token list
+- `mammoth token revoke` [destructive/prompt_or_yes] -> mammoth.api.clientapps.ClientAppsAPI.delete
+  example: mammoth token revoke sample
+
 ## trash
 
 - `mammoth trash add` [benign_mutation/none] -> mammoth.api.trash.TrashAPI.add

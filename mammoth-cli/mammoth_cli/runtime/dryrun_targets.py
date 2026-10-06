@@ -316,6 +316,9 @@ SUBS: dict[str, tuple[Sub, ...]] = {
     "client-app.delete": (
         Sub("client app", "client_key", source="client-app.get", label_paths=("app_name", "name")),
     ),
+    "token.revoke": (
+        Sub("client app", "client_key", source="client-app.get", label_paths=("app_name", "name")),
+    ),
     "connector.connection.delete": (
         Sub(
             "connection",

@@ -6,6 +6,35 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.8.21]
+
+### Added
+
+- `MammothClient(token_provider=...)`: a callable returning the current `mm_...` token, called for
+  every request, so a short-lived token that is refreshed elsewhere is always sent fresh. Static
+  `api_token` and `api_key` + `api_secret` clients are unchanged.
+
+## mammoth-cli 2.2.40
+
+- `mammoth auth login` offers a browser sign-in (OAuth, PKCE, loopback) next to pasting an API
+  token; `--method oauth|token` and `--no-browser`. The session is a 1 h token that refreshes itself
+  under a file lock. `auth status` shows the method and expiry; `auth logout` also revokes the
+  connection on the server, and warns (still clearing local state) when it cannot.
+- `mammoth token create / list / revoke` are aliases of `client-app create / list / delete`.
+
+### Added
+
+- `mammoth-cli` 2.2.41: reads return what the agent fetched next. `view list` adds `built_from`/`feeds`
+  (view ids), `pipeline_status` and `in_sync`; `view analyze 5000,5001` takes several ids (up to 12) and
+  returns `{requested, analyses, errors}` with each view's rows, columns, dataset and pipeline `steps`;
+  `job wait` returns an `outcome` for a view run (rows, columns, status) and a `project copy`
+  (datasets, views, skipped, and per-view `runs` when the backend records them). Independent reads
+  now wait together (`call_many`) instead of in turn.
+- `mammoth-cli` 2.2.40: `schema get` takes several command ids joined by commas or semicolons
+  (`schema get view.list,view.analyze`) and returns one result, `{"requested", "schemas", "errors"}`;
+  an id with no schema is an entry in `errors` and does not fail the call. `schema find` already took
+  `;`-separated goals. Up to 12 ids per call (`too_many_ids` above that).
+
 ### Fixed
 
 - `mammoth-cli` 2.2.39: `project copy` now says in its NAME help that a taken name is fine: the server names the

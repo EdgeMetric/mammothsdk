@@ -639,6 +639,7 @@ S7_COMMANDS = frozenset(
         "billing",
         "client-app",
         "schedule",
+        "token",
         "support",
         "user",
     }

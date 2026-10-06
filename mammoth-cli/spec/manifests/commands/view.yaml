@@ -3484,7 +3484,8 @@ commands:
   undo_test: null
   known_restrictions: 'B01. Each view names its dataset (dataset_id and dataset_name) and carries rows
     and cols, created and updated time, the dataset''s source kind, its column names with types and stored per-column sample_values (one stored-stats read per
-    listed view, no query), cut to fit the agent tool output cap (next_dataset_offset and views_omitted say where
+    listed view, all made at once, no query), plus built_from and feeds (the view ids it reads and the ones that read it), pipeline_status when
+    not ready, and in_sync false when its data is stale; cut to fit the agent tool output cap (next_dataset_offset and views_omitted say where
     the rest is). Newest first. full true returns the raw records.'
   reviewed_by: primary
 - command_id: view.parameter-context
@@ -6165,11 +6166,11 @@ commands:
   operation_ids: []
   positionals:
   - name: view_id
-    type: int
+    type: str
     required: true
     metavar: VIEW_ID
     falls_back_to_field: null
-    help: ID of the view to act on.
+    help: ID of the view to analyze; join several with commas (5000,5001) for one result with all of them.
   - name: dataset_id
     type: int
     required: false
@@ -6203,7 +6204,10 @@ commands:
   undo_test: null
   known_restrictions: 'Read-only. Lists pipeline steps that can be dropped or moved without changing the
     result: findings of {rule, seqs, detail, proposed_order, safe}. Rules: drop_suspended, drop_duplicate,
-    drop_noop_filter, hoist_filter. Only a safe finding is applied by view optimize.'
+    drop_noop_filter, hoist_filter. Only a safe finding is applied by view optimize. Also returns the
+    view (name, dataset, rows, columns, state) and its pipeline step count, so no view get or task list
+    follows. VIEW_ID may be several ids joined by commas: one result with an analysis per id, and an
+    entry in errors for an id that failed.'
   reviewed_by: primary
   readback:
     command: view.analyze

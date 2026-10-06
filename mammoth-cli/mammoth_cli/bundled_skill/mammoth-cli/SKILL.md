@@ -53,12 +53,13 @@ downloads return `download_url`. On an auth error, ask the user to reload.
 
 ## Defaults you do not repeat
 
-- The CLI remembers which dataset owns each view from any read (`view list
-  DATASET_ID`, `view get VIEW_ID`, an upload). After that, no `dataset_id`
+- The CLI remembers which dataset owns each view from any read (`view list`,
+  `view get`, an upload). After that, no `dataset_id`
   on transforms, exports or deletes. If a command asks for the parent
   `DATASET_ID`, read the view once and repeat it; an explicit value wins.
-- Commands that start platform work wait up to 300 s for the job; on
-  `timeout` use the `job get` recovery command printed, do not resubmit.
+- Commands that start platform work wait up to 300 s; on `timeout` run the
+  `job get` recovery printed, never resubmit. `job wait` returns `outcome`
+  (view rows and state, copy `runs`): no `view get` after it.
 
 ## Find the command for a goal
 
@@ -104,9 +105,9 @@ dashboard from t_a and t_b"). Work it out from the data before building:
 
 1. Upload every file, or find the ones already uploaded. An upload result
    carries a `view` preview of what Mammoth made of it (`view_id`, column
-   types, sample rows, `column_warnings`, `before_dashboard`). What Mammoth
-   made of the files is what counts, not the raw files. Run `view data get VIEW_ID` per view;
-   warnings list numbers/dates stored as text, and blanks, each with its fix.
+   types, sample rows, `column_warnings`, `before_dashboard`). Run `view
+   data get VIEW_ID` per view; warnings list numbers/dates stored as text,
+   and blanks, each with its fix.
 2. Find the keys. A column in one view whose values appear in a column of
    the other (`customer_id` and `id`, `order_ref` and `order_no`) is a
    foreign key; the view with many rows per key is the main one.
@@ -141,15 +142,15 @@ your report. If no column links the files, ask before you combine them.
 - Ids are positionals; request fields are one `--input '{...}'` document;
   no per-field flags (`project create NAME`, not `--name`).
 - `COMMAND --help` lists input fields; `schema find WORDS` inlines
-  `accepted_fields`/`agent_example` for top matches, else `mammoth schema
-  get COMMAND_ID` (`--input '{"full": true}'` for the schema); `schema
-  list`/`schema list view` list families.
+  `accepted_fields`/`agent_example` for top matches, else `schema get
+  ID,ID` (one call; `--input '{"full": true}'` for all
+  fields); `schema list`/`schema list view` list families.
 - Uploads return a **dataset** id; transforms, joins, exports and previews
   take the **view** id from `view list DATASET_ID`.
-- `view list` and `view get` return the brief record (id, ds_id, name,
-  status, row_count, `metadata` columns and types, pipeline state);
-  `view get ... --input '{"fields": "__full"}'` or `view list ... --input
-  '{"full": true}'` returns the dependency and display trees too.
+- `view list` gives rows, columns, samples, `built_from`/`feeds`; `view get`
+  the brief record; `view analyze A,B` adds `view` and `steps`. `view get
+  ... --input '{"fields": "__full"}'` or `view list ... --input '{"full":
+  true}'` adds the dependency and display trees.
 - Column inputs/expressions use the exact **display names** the view
   returns, never backend aliases.
 - `--dry-run` on any API-backed command resolves and reports the request

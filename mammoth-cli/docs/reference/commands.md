@@ -1,10 +1,10 @@
 # Command reference
 
-Generated from the reviewed command manifests for mammoth-cli 2.2.39.
+Generated from the reviewed command manifests for mammoth-cli 2.2.41.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
-Total commands: 652.
+Total commands: 655.
 
 ## activity
 
@@ -3776,7 +3776,7 @@ Total commands: 652.
 
 **Arguments**
 
-- `COMMAND_ID` (str, required) — Command id to fetch the schema for (e.g. view.transform.bulk-replace).
+- `COMMAND_ID` (str, required) — Command id to fetch the schema for (e.g. view.transform.bulk-replace); join several with commas (view.list,view.analyze) for one result with all of them.
 
 - Mutation class: `read`
 - Confirmation: `none`
@@ -4670,6 +4670,37 @@ Total commands: 652.
 - Backing SDK: `mammoth.api.templates.TemplatesAPI.update`
 - Agent example: `mammoth template update 123 --input '{"body": {"name": "Revenue report"}}'`
 
+## token
+
+### `mammoth token create`
+
+**Arguments**
+
+- `APP_NAME` (str, optional) — Name of the new API key; or pass it via the 'app_name' input field.
+
+- Mutation class: `high_impact`
+- Confirmation: `confirm_target`
+- Backing SDK: `mammoth.api.clientapps.ClientAppsAPI.create`
+- Agent example: `mammoth token create 'Revenue report'`
+
+### `mammoth token list`
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.clientapps.ClientAppsAPI.list`
+- Agent example: `mammoth token list`
+
+### `mammoth token revoke`
+
+**Arguments**
+
+- `CLIENT_KEY` (str, required) — Key identifying the client.
+
+- Mutation class: `destructive`
+- Confirmation: `prompt_or_yes`
+- Backing SDK: `mammoth.api.clientapps.ClientAppsAPI.delete`
+- Agent example: `mammoth token revoke sample`
+
 ## trash
 
 ### `mammoth trash add`
@@ -4836,7 +4867,7 @@ Total commands: 652.
 
 **Arguments**
 
-- `VIEW_ID` (int, required) — ID of the view to act on.
+- `VIEW_ID` (str, required) — ID of the view to analyze; join several with commas (5000,5001) for one result with all of them.
 - `DATASET_ID` (int, optional) — ID of the dataset the view belongs to; resolved from the view when omitted.
 
 - Mutation class: `read`

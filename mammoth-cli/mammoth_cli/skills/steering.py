@@ -34,7 +34,8 @@ guide. If `mammoth` is missing, install it with `pip install mammoth-cli`
 credentials, tell the operator the exact `mammoth auth login` command to run
 in their own terminal and wait; never ask for, read, or pass a key or secret.
 Piped output is compact JSON. Take ids only from reads; run `mammoth schema get
-COMMAND_ID` before a command you have not used; destructive commands need
+COMMAND_ID` before a command you have not used (`schema get A,B,C` reads
+several in one call); destructive commands need
 `--yes --confirm ID`, and only for ids this task created.
 """
 

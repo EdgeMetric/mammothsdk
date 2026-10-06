@@ -164,6 +164,9 @@ S7_ROUTE_INVENTORY = frozenset(
         "support.workspace.user.list",
         "support.workspace.user.remove",
         "support.workspace.user.transfer",
+        "token.create",
+        "token.list",
+        "token.revoke",
         "user.avatar.delete",
         "user.avatar.upload",
         "user.change-password",
@@ -218,7 +221,7 @@ def fake_family_service(monkeypatch: pytest.MonkeyPatch) -> FakeMammothService:
 def test_s7_inventory_and_ledger_are_exact() -> None:
     ledger = json.loads(LEDGER.read_text(encoding="utf-8"))
     assert S7_COMMANDS == S7_ROUTE_INVENTORY
-    assert ledger["route_count"] == 138
+    assert ledger["route_count"] == 141
     assert ledger["families"] == {
         "activity": 2,
         "agent": 15,
@@ -228,6 +231,7 @@ def test_s7_inventory_and_ledger_are_exact() -> None:
         "client-app": 5,
         "schedule": 5,
         "support": 66,
+        "token": 3,
         "user": 8,
     }
     assert {route["command_id"] for route in ledger["routes"]} == S7_ROUTE_INVENTORY

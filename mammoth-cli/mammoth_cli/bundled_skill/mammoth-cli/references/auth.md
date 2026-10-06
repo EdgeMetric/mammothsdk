@@ -12,6 +12,20 @@ created. When that happens, stop creating projects: ask the operator which
 project the token belongs to and pass `--project ID`, or ask for a token
 created without a project.
 
+## Browser sign-in
+
+`mammoth auth login --method oauth` signs the operator in through the browser (PKCE, loopback
+`127.0.0.1`). The CLI keeps a 1 h `mm_` token and refreshes it under a file lock. `auth status`
+reports `credential: oauth` and `expires_at`. A refresh that fails exits 4 with `login_expired`:
+tell the operator to run `mammoth auth login` again. `--no-browser` prints the URL. Browser sign-in
+is for the operator's own terminal; an agent never runs it. `auth logout` also revokes the
+connection on the server, and warns (still clearing local state) if it cannot.
+
+`mammoth token create NAME`, `token list`, `token revoke KEY` are aliases of `client-app create`,
+`list`, `delete`. `cli_keys_not_allowed` means this server does not let a browser sign-in create
+keys: the operator creates one in **Settings → API keys** and runs
+`mammoth auth login --method token`.
+
 ## Precedence
 1. Explicit login handed to the current command (secure prompt or `--input`).
 2. The selected or `--profile` profile's saved credentials.

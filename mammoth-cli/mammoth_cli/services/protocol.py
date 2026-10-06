@@ -8,6 +8,7 @@ grows as later command families are implemented.
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from typing import Any, Protocol
 
 
@@ -29,6 +30,14 @@ class MammothService(Protocol):
 
         Returns:
             The raw SDK return value (typically a mapping).
+        """
+        ...
+
+    def call_many(self, calls: Sequence[tuple[str, dict[str, Any]]]) -> list[Any]:
+        """Invoke several independent reads together; one result per call, in order.
+
+        A result is the SDK return value, or the ``CliError`` that call would have
+        raised: one failing never stops the others.
         """
         ...
 
