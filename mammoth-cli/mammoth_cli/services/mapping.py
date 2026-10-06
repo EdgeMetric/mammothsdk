@@ -234,6 +234,7 @@ def running_handle(error: CliError, command_id: str) -> dict[str, Any] | None:
 
 
 CODE_CLI_KEYS_NOT_ALLOWED = "cli_keys_not_allowed"
+CODE_CLI_KEYS_NEED_BROWSER_SIGN_IN = "cli_keys_need_browser_sign_in"
 _TOKEN_REFUSED_NAME = "INVALID_TOKEN_FOR_CLIENT_APPS"  # noqa: S105 - an error name
 
 
@@ -480,7 +481,7 @@ def map_sdk_exception(
             and _stored_credential_kind(profile) == "token"
         ):
             return CliError(
-                code=CODE_CLI_KEYS_NOT_ALLOWED,
+                code=CODE_CLI_KEYS_NEED_BROWSER_SIGN_IN,
                 message=(
                     "This call used an API token, and the server refuses API tokens when "
                     "creating or listing API keys; run `mammoth auth login` (browser "

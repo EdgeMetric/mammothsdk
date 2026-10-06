@@ -487,7 +487,7 @@ def test_keys_refused_for_an_api_token_profile_says_sign_in_with_the_browser(
 
     mapped = map_sdk_exception(_keys_refused())
 
-    assert mapped.code == "cli_keys_not_allowed"
+    assert mapped.code == "cli_keys_need_browser_sign_in"
     assert "API token" in mapped.message
     assert "mammoth auth login" in mapped.message
     assert "cannot create API keys" not in (mapped.hint or "")
@@ -502,6 +502,7 @@ def test_keys_refused_for_an_oauth_profile_keeps_the_server_wording(
 
     mapped = map_sdk_exception(_keys_refused())
 
+    assert mapped.code == "cli_keys_not_allowed"
     assert "doesn't allow CLI-created keys" in mapped.message
     assert mapped.hint == "A browser sign-in cannot create API keys on this server."
     assert mapped.recovery_commands == ["mammoth auth login --method token"]
