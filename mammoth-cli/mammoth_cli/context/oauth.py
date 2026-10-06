@@ -38,7 +38,7 @@ from mammoth_cli.errors.envelope import EXIT_AUTH, EXIT_USAGE, CliError
 #: server prefix). The server allow-lists these ids, so they are not
 #: configurable at run time. An environment absent here has no CLI client yet.
 OAUTH_CLIENT_IDS: dict[str, str] = {
-    "challenger": "oc_7ba3a2906ca86329",
+    "challenger": "oc_aea5c2ce829da3f8",
 }
 
 #: Refresh when the access token has less than this long to live.
