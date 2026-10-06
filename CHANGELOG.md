@@ -14,6 +14,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   every request, so a short-lived token that is refreshed elsewhere is always sent fresh. Static
   `api_token` and `api_key` + `api_secret` clients are unchanged.
 
+## mammoth-cli 2.2.41
+
+- OAuth login works on the koyal dev server.
+
 ## mammoth-cli 2.2.40
 
 - `mammoth auth login` offers a browser sign-in (OAuth, PKCE, loopback) next to pasting an API
@@ -24,7 +28,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
-- `mammoth-cli` 2.2.41: reads return what the agent fetched next. `view list` adds `built_from`/`feeds`
+- `mammoth-cli` 2.2.40: reads return what the agent fetched next. `view list` adds `built_from`/`feeds`
   (view ids), `pipeline_status` and `in_sync`; `view analyze 5000,5001` takes several ids (up to 12) and
   returns `{requested, analyses, errors}` with each view's rows, columns, dataset and pipeline `steps`;
   `job wait` returns an `outcome` for a view run (rows, columns, status) and a `project copy`
