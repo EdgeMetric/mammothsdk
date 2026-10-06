@@ -13,11 +13,11 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `mammoth dataset find` with `--project` now also returns matches in every other visible project,
   each marked `in_project`, so a name in another project is stated instead of asked about.
 
-## [0.8.24]
+## [0.8.25]
 
 ### Added
 
-- `mammoth-io` 0.8.24: public names for a server built on the SDK. `WorkspaceAPI.current()` returns the
+- `mammoth-io` 0.8.25: public names for a server built on the SDK. `WorkspaceAPI.current()` returns the
   token's workspace and the `resource` (RFC 8707) an OAuth token was issued for.
   `MammothClient.set_workspace_id(...)` names the workspace a token client acts in, so it does not ask
   the API. `MammothClient.request_json(...)` calls a route the SDK has no method for. `mammoth.builders`
