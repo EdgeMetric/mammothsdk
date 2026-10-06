@@ -987,6 +987,27 @@ class TestDataviewsAPI:
         )
         assert [row["group_0"] for row in result["data"]] == ["2024-01-01", None]
 
+    @pytest.mark.parametrize("sort", ["metric_asc", "metric_desc", "count_asc", "count_desc"])
+    async def test_explore_blank_bucket_sorts_last_whatever_the_order_ranks_by(
+        self, client: MammothClient, sort: str
+    ):
+        client._request_json.return_value = {
+            "data": [
+                {"group_0": None, "agg_0": 5, "agg_1": 1},
+                {"group_0": "a", "agg_0": 9, "agg_1": 10},
+                {"group_0": "b", "agg_0": 7, "agg_1": 20},
+            ]
+        }
+        result = await client.dataviews.explore(
+            dataset_id=500,
+            dataview_id=42,
+            column="column_1",
+            column_type="TEXT",
+            metric={"column": "m", "function": "SUM", "as_name": "m"},
+            sort=sort,
+        )
+        assert result["data"][-1]["group_0"] is None
+
     async def test_explore_rejects_unknown_sort(self, client: MammothClient):
         client._request_json.return_value = {"data": [{"group_0": "a", "agg_0": 1}]}
         with pytest.raises(MammothValidationError):
