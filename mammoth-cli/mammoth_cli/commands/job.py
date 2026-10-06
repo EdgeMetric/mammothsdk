@@ -199,7 +199,9 @@ def _with_outcome(service: Any, data: dict[str, Any]) -> dict[str, Any]:
     gets its copied counts and per-view runs (no read). The job succeeded either way, so
     a view that cannot be read is an ``outcome_error``, never a failed wait.
     """
-    copied = job_outcome.copy_outcome(data.get("result"))
+    result = job_outcome.with_derived_datasets(data.get("result"))
+    data = {**data, "result": result} if result is not data.get("result") else data
+    copied = job_outcome.copy_outcome(result)
     if copied is not None and data.get("operation") == job_outcome.COPY_PROJECT_OPERATION:
         return {**data, "outcome": copied}
     target = job_outcome.view_target(data)

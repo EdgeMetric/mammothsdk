@@ -213,6 +213,48 @@ def _resolve_dataset_id(
     return dataset_id
 
 
+def _check_parent_matches(view_id: int, given: int, real: int) -> None:
+    """Refuse a DATASET_ID that is not the view's parent, before any write."""
+    if given == real:
+        return
+    raise CliError(
+        code=CODE_INVALID_ARGUMENT,
+        message=f"view {view_id} belongs to dataset {real}, not {given}",
+        exit_status=EXIT_USAGE,
+        hint=f"Run it again with dataset {real}, or leave DATASET_ID out: mammoth looks it up.",
+        details={"view_id": view_id, "given_dataset_id": given, "dataset_id": real},
+    )
+
+
+def _view_parent_dataset_id(service: Any, invocation: Invocation, view_id: int) -> int:
+    """The view's own dataset: the remembered parent, else one read of the view's row."""
+    profile_name = _profile_name(invocation)
+    workspace_id = getattr(service, "_workspace_id", None)
+    remembered = parents.lookup(profile_name, workspace_id, view_id)
+    if remembered is not None:
+        return remembered
+    dataset_id = int(service.call(_FIND_DATASET_SYMBOL, dataview_id=view_id))
+    parents.remember(profile_name, workspace_id, {view_id: dataset_id})
+    return dataset_id
+
+
+def _verified_dataset_id(
+    service: Any, invocation: Invocation, view_id: int, document: dict[str, Any]
+) -> int:
+    """The view's dataset for a write, so the caller never has to supply it.
+
+    A DATASET_ID (positional or ``dataset_id`` input field) is checked against the
+    view's real parent and refused when it differs; with none, the parent is looked up.
+    """
+    explicit = _int_positional_at(invocation, 1, "dataset id")
+    if explicit is None and document.get(_DATASET_ID_FIELD) is not None:
+        explicit = _int_field(document[_DATASET_ID_FIELD], _DATASET_ID_FIELD)
+    real = _view_parent_dataset_id(service, invocation, view_id)
+    if explicit is not None:
+        _check_parent_matches(view_id, explicit, real)
+    return real
+
+
 def _resolve_dataset_id_for_settle(
     service: Any,
     invocation: Invocation,
@@ -1030,7 +1072,7 @@ def view_optimize(invocation: Invocation) -> HandlerResult:
     kwargs: dict[str, Any] = {"dataview_id": dataview_id, "project_id": project_id}
     _forward_optional(document, kwargs, ("apply_rules",))
     with open_service(invocation) as (service, auth):
-        kwargs["dataset_id"] = _resolve_dataset_id(service, invocation, dataview_id, document)
+        kwargs["dataset_id"] = _verified_dataset_id(service, invocation, dataview_id, document)
         data = service.call(_symbol(invocation), **kwargs)
         if isinstance(data, dict) and data.get("job_id") is not None:
             settled = service.wait_if_job({"job_id": data["job_id"]})

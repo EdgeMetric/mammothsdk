@@ -91,6 +91,26 @@ def view_outcome(record: Any, target: ViewTarget) -> dict[str, Any]:
     }
 
 
+def with_derived_datasets(result: Any) -> Any:
+    """Add ``derived_datasets`` beside a copy's ``derived``, whose direction misleads.
+
+    The backend records ``derived`` as ``{"5214": [5224]}``: dataset 5214 is derived,
+    and view 5224 exports into it. Read as "view 5224 of dataset 5214", it sent an agent
+    to the wrong parent. ``derived_datasets`` says the same thing in words:
+    ``[{"dataset_id": 5214, "from_view_ids": [5224]}]``. ``derived`` stays as it was.
+    """
+    derived = result.get("derived") if isinstance(result, dict) else None
+    if not isinstance(derived, dict) or not derived:
+        return result
+    return {
+        **result,
+        "derived_datasets": [
+            {"dataset_id": _int_or_none(dataset) or dataset, "from_view_ids": list(views or [])}
+            for dataset, views in sorted(derived.items(), key=lambda item: str(item[0]))
+        ],
+    }
+
+
 def copy_outcome(result: Any) -> dict[str, Any] | None:
     """A project copy's outcome: what was copied, what was skipped, and how each run ended.
 
@@ -107,6 +127,9 @@ def copy_outcome(result: Any) -> dict[str, Any] | None:
         "views": len(result.get("view_map") or {}),
         "skipped": len(result.get("skipped") or []),
     }
+    derived = with_derived_datasets(result).get("derived_datasets")
+    if derived:
+        outcome["derived_datasets"] = derived
     runs = result.get("runs")
     if isinstance(runs, dict):
         outcome["runs"] = _run_summary(runs, result.get("run_views"))

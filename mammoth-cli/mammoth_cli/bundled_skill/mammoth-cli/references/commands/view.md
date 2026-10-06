@@ -738,7 +738,7 @@ Status on release: ran once on CLI 2.0.21 — ergonomics sweep 2026-09-19: exit 
 
 Run: `mammoth view optimize`. Exact input fields: `mammoth schema get view.optimize`.
 
-Example: `mammoth view optimize 123 123`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth view optimize 123`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `ViewOptimizeResult`; mutation `reversible_pipeline`, confirmation `prompt_or_yes`, wait policy `start_or_wait`.
 

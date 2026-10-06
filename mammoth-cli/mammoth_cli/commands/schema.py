@@ -45,6 +45,7 @@ _PROTECTED_INPUT_PATH = "/private/path/request.json"
 # Commands whose useful example the SDK signature cannot express: a distinct
 # second id, an optional-but-central input field, or two views to compare.
 _FIXED_EXAMPLES: dict[str, tuple[tuple[str, ...], dict[str, Any]]] = {
+    "view.optimize": (("123",), {}),
     "project.check": (("123", "456"), {}),
     "view.data.profile": (("123",), {"target": "Churn"}),
     "workflow.canvas": (
