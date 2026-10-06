@@ -809,6 +809,53 @@ commands:
   undo_test: null
   known_restrictions: 'To work on a dataset''s changes without touching its own views, create a working view; clone_from (a view id of the same dataset) carries that view''s steps. A dataset''s own view is the default_view of view list, never the newest or an agent-made view: read it, or clone it with clone_from when steps are needed; edit it in place only when asked to change that view.'
   reviewed_by: primary
+- command_id: view.variants.create
+  command_path: view variants create
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - AddDataview
+  - AddTask
+  positionals:
+  - name: dataset_id
+    type: int
+    required: true
+    metavar: DATASET_ID
+    falls_back_to_field: null
+    help: ID of the dataset.
+  options: []
+  sdk_symbol: mammoth.client.ViewsResource.create
+  sdk_conversion: 'CLI composite: per value, ViewsResource.create (clone_from the source view) then View.filter_rows (column = value), from mammoth_cli.commands.view_ops; the accepted document fields are in command_contract.py.'
+  request_model: ViewVariantsCreateRequest
+  result_model: ViewVariantsCreateResult
+  mutation_class: benign_mutation
+  edits_target: false
+  confirmation: none
+  wait_policy: always_wait
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  readback:
+    command: view.get
+    ids:
+      view_id: result.view_ids.0
+    kind: object
+  live_test: null
+  live_exemption_reason: 'Live coverage is tests/live/test_view_variants.py (runs on the test server); the plan and the partial-failure report are unit-tested in tests/unit/services/test_view_variants.py.'
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view variants create DATASET_ID --help
+  agent_example: 'mammoth view variants create 123 --input ''{"from_view": 456, "column": "Region", "values": ["East", "West"]}'''
+  unit_tests:
+  - UT-VIEW-VARIANTS-CREATE
+  contract_tests:
+  - CT-VIEW-VARIANTS-CREATE-HUMAN
+  - CT-VIEW-VARIANTS-CREATE-JSON
+  - CT-VIEW-VARIANTS-CREATE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Use when the user wants the same view once per value ("per region", "one view for each segment") and separate views are needed; for one view the viewer filters, use dashboard filter add. --input: "from_view" (a view of DATASET_ID whose steps every variant copies, required), "column" (a column of that view, required), "values" (1 to 50 distinct values, required), optional "name_template" (default "{view} - {value}"; must make distinct names, so keep {value}). Each variant is a new view cloned from from_view, then filtered to column = value. Refuses an unknown column before creating anything. Stops at the first failure with variants_partial_failure, whose details list the views already created, the failed value, the values not attempted and the unfiltered view left by the failed value (delete it, then rerun the rest). Returns view_ids and per-value variants.'
+  reviewed_by: primary
 - command_id: view.data-check.create
   command_path: view data-check create
   disposition: command

@@ -153,6 +153,7 @@ ERROR_SUMMARIES: dict[str, str] = {
     "missing_field": _S_MISSING_INFO,
     "network_error": "Mammoth couldn't be reached over the network.",
     "no_op": "There is nothing to change, so this step isn't needed.",
+    "variants_partial_failure": "Some of the variant views were created and one failed.",
     "no_output": "This step didn't return anything.",
     "nonfinite_input_number": _S_BAD_INPUT,
     "not_authenticated": _S_SIGN_IN,

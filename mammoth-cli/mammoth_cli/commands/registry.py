@@ -852,6 +852,7 @@ HANDLERS: dict[str, Handler] = {
     "view.export.tableau": view_cmd.view_export_specialized,
     # view family (View-object: create/get/delete, draft, transforms)
     "view.create": view_ops_cmd.view_create,
+    "view.variants.create": view_ops_cmd.view_variants_create,
     "view.get": view_ops_cmd.view_get,
     "view.delete": view_ops_cmd.view_delete,
     "view.draft.enter": view_ops_cmd.view_draft_enter,
