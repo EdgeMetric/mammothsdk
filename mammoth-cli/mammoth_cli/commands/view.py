@@ -2000,14 +2000,30 @@ def _explore_text_dates(
     )
     page = (document.get("offset"), document.get("limit"))
     rows = read_queries.apply_explore_order(
-        response["data"], document.get("sort"), page, bool(document.get("cumulative"))
+        response["data"],
+        document.get("sort"),
+        page,
+        bool(document.get("cumulative")),
+        document.get("percentage_of"),
     )
     return {**response, "data": rows}
 
 
+def _explore_range(
+    reads: ReadContext, document: dict[str, Any], column: str, text_dates_read: bool
+) -> dict[str, Any]:
+    """The explored column's exact earliest and latest value, under the explore condition."""
+    condition = None
+    if document.get(CONDITION_KWARG) is not None:
+        spec = read_queries.resolve_text_date_conditions(reads, document[CONDITION_KWARG])
+        condition = compile_condition(spec).build(
+            reads.display_to_internal or None, reads.column_types or None
+        )
+    return read_queries.explore_range(reads, column, condition, text_dates_read)
+
+
 def view_data_explore(invocation: Invocation) -> HandlerResult:
-    """Explore one column: trend, distribution, or top values, like the web app's
-    column Explore card.
+    """Explore one column like the web app's Explore card (read-only): DATE counts per ``level`` bucket (AUTO, SECOND to MILLENNIUM), NUMERIC per power-of-10 ``level``, TEXT top values (``limit`` 20), each with ``count`` and ``percentage``; ``metric`` (a column plus SUM/AVG/MIN/MAX/STDDEV/COUNT/DISTINCT_COUNT) adds a per-bucket value, ``percentage_of`` "metric" shares by it, ``sort`` count_/value_/metric_ + asc/desc, ``condition`` filters first (include, exclude, blanks, range, contains; an exclude drops blank rows the card keeps, so or it with IS_EMPTY; drill down = finer ``level`` + ``condition`` on the bucket), ``limit``/``offset`` page, ``range`` true adds the exact earliest and latest value, ``cumulative`` a running total; ``-o csv`` saves the card's values; to put it on a dashboard say it in words to 'dashboard chat edit'.
 
     Read-only: computes and returns the result without adding a task to the
     view's pipeline or otherwise changing it. Buckets by the column's type --
@@ -2027,13 +2043,20 @@ def view_data_explore(invocation: Invocation) -> HandlerResult:
     aggregate``, which this command wraps for the raw PIVOT shape. A date range
     is one ``and`` condition (``>=`` a start, ``<=`` an end); one year is
     ``{"column": ..., "operator": "=", "value": 2017, "component": "year"}``.
+    ``percentage_of: "metric"`` makes ``percentage`` each bucket's share of the ``metric`` total
+    (default: of the count). ``sort`` ``metric_desc``/``metric_asc`` ranks by the ``metric``.
+    ``range: true`` adds ``range`` {column, type, min, max}: the exact earliest and latest
+    value of a DATE (or NUMERIC) column under the same ``condition``. Excluding a value
+    (NE, NOT_IN_LIST, ``not``) also drops blank rows, but the card keeps them: write
+    ``or`` of the exclusion and IS_EMPTY on that column to match the card. Blank buckets
+    sort last here, first in the card. ``-o csv`` prints the buckets as CSV.
     ``cumulative: true`` adds a running total of the metric (of ``count`` without
     one) over the buckets in date order, whatever ``sort`` or ``limit`` shows:
     the answer to "cumulative / running total through X". Figures are rounded for
     display (2 decimals; 4 below 1). Never use
     ``view transform pivot`` just to explore a column; it mutates the
     pipeline.
-    """
+    """  # noqa: E501
     project_id = require_project(invocation)
     view_id = _require_int_positional_at(invocation, 0, "view id")
     column_arg = _require_string_positional_at(invocation, 1, "column")
@@ -2079,6 +2102,8 @@ def view_data_explore(invocation: Invocation) -> HandlerResult:
         if bucket_dates:
             range_columns.append(column_arg)
         data = read_queries.with_observed_range(reads, data, list(dict.fromkeys(range_columns)))
+        if document.get("range") and isinstance(data, dict):
+            data = {**data, "range": _explore_range(reads, document, column_arg, bucket_dates)}
         data = read_queries.with_assumptions(reads, data)
         if not bucket_dates:
             data = read_queries.with_variant_hint(reads, data, column_arg)
@@ -2108,7 +2133,9 @@ def _explore_on_backend(
             reads.display_to_internal or None, reads.column_types or None
         )
     _forward_optional(
-        document, kwargs, ("level", "sequence", "limit", "offset", "sort", "cumulative")
+        document,
+        kwargs,
+        ("level", "sequence", "limit", "offset", "sort", "cumulative", "percentage_of"),
     )
     return reads.service.call(_symbol(invocation), **kwargs)
 

@@ -22,6 +22,7 @@ from typing import Any
 from mammoth.api.dataviews import (
     _add_explore_cumulative,
     _add_explore_percentages,
+    _explore_percentage_field,
     _explore_sort_and_limit,
 )
 
@@ -391,9 +392,12 @@ def apply_explore_order(
     sort: str | None,
     page: tuple[int | None, int | None],
     cumulative: bool = False,
+    percentage_of: str | None = None,
 ) -> list[dict[str, Any]]:
     """Percentages, running total, order and paging for a bucketed explore, like the SDK's own."""
-    _add_explore_percentages(rows)
+    _add_explore_percentages(
+        rows, _explore_percentage_field(percentage_of, any("agg_1" in r for r in rows))
+    )
     if cumulative:
         _add_explore_cumulative(rows)
     return _explore_sort_and_limit(rows, "DATE", sort, page)
@@ -471,7 +475,7 @@ def sort_locally(rows: list[dict[str, Any]], sort: list[list[str]] | None) -> li
 # ---------------------------------------------------------------------------
 
 
-def _column_range(ctx: ReadContext, column: str) -> dict[str, Any] | None:
+def _column_range(ctx: ReadContext, column: str, condition: Any = None) -> dict[str, Any] | None:
     kind = ctx.column_types.get(column, "")
     if kind == "TEXT":
         try:
@@ -487,7 +491,8 @@ def _column_range(ctx: ReadContext, column: str) -> dict[str, Any] | None:
         aggregations=[
             {"function": "MIN", "column": internal, "as_name": "min"},
             {"function": "MAX", "column": internal, "as_name": "max"},
-        ]
+        ],
+        **({} if condition is None else {"condition": condition}),
     )
     rows = _rows(response)
     if not rows:
@@ -498,6 +503,30 @@ def _column_range(ctx: ReadContext, column: str) -> dict[str, Any] | None:
         "min": rows[0].get("agg_0"),
         "max": rows[0].get("agg_1"),
     }
+
+
+def explore_range(
+    ctx: ReadContext, column: str, condition: Any, text_dates_read: bool
+) -> dict[str, Any]:
+    """The exact earliest and latest value of the explored column (the card's footer).
+
+    A DATE or NUMERIC column honours the explore ``condition``; a TEXT column of dates is
+    read whole, so a condition on one fails loud rather than answering for other rows.
+    """
+    kind = ctx.column_types.get(column, "")
+    if kind not in ("DATE", "NUMERIC") and not text_dates_read:
+        raise _fail(
+            f"'range' needs a DATE, NUMERIC or text-date column; '{column}' is "
+            f"{kind or 'unknown'}.",
+            "Drop 'range', or explore a DATE or NUMERIC column.",
+        )
+    if text_dates_read and condition is not None:
+        raise _fail(
+            f"'range' of the text-date column '{column}' cannot honour a condition.",
+            "Drop 'condition', or convert the column with 'view transform convert-type'.",
+        )
+    found = _column_range(ctx, column, condition)
+    return found or {"column": column, "type": kind, "min": None, "max": None}
 
 
 def with_variant_hint(ctx: ReadContext, data: Any, column: str) -> Any:
