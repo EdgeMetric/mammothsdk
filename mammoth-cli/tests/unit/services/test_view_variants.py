@@ -2,16 +2,24 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 import pytest
+from mammoth.condition import Condition
+from mammoth.models.pipeline import Operator
 
 from mammoth_cli.errors.envelope import EXIT_API, EXIT_USAGE, CliError
+from mammoth_cli.services.command_contract import bind_command_inputs
+from mammoth_cli.services.conditions import compile_condition
 from mammoth_cli.services.view_variants import (
     CODE_VARIANTS_PARTIAL,
     DEFAULT_NAME_TEMPLATE,
     MAX_VARIANTS,
     created_entry,
+    name_template_of,
     partial_failure,
     plan_variants,
+    require_known_column,
     variants_result,
 )
 
@@ -87,3 +95,48 @@ def test_a_failure_before_the_view_existed_leaves_nothing_to_delete() -> None:
 
     assert error.recovery_commands == []
     assert error.details["unfiltered_view_id"] is None
+
+
+@pytest.mark.parametrize("given", [{}, {"name_template": None}, {"name_template": ""}])
+def test_a_call_without_a_usable_name_template_gets_the_default_and_plans(
+    given: dict[str, Any],
+) -> None:
+    document = bind_command_inputs(
+        "view.variants.create", {"from_view": 1, "column": "Region", "values": ["a", "b"], **given}
+    )
+
+    plans = plan_variants("Sales", "Region", document["values"], name_template_of(document))
+
+    assert [plan.name for plan in plans] == ["Sales - a", "Sales - b"]
+
+
+def test_a_given_name_template_is_used() -> None:
+    assert name_template_of({"name_template": "{value} sales"}) == "{value} sales"
+
+
+def test_the_filter_is_the_condition_the_filter_command_compiles() -> None:
+    (plan,) = plan_variants("Sales", "Region", ["East"], DEFAULT_NAME_TEMPLATE)
+
+    compiled = compile_condition(plan.condition)
+    expected = Condition("Region", Operator.EQ, "East")
+
+    assert isinstance(compiled, Condition)
+    assert (compiled.column, str(compiled.operator), compiled.value) == (
+        expected.column,
+        str(expected.operator),
+        expected.value,
+    )
+
+
+def test_an_unreadable_column_list_fails_loud_and_a_missing_column_names_the_real_ones() -> None:
+    with pytest.raises(CliError) as unreadable:
+        require_known_column(5, "Region", set())
+    assert unreadable.value.exit_status == EXIT_API
+    assert "was not checked" in unreadable.value.message
+
+    with pytest.raises(CliError) as missing:
+        require_known_column(5, "Reigon", {"Region", "Sales"})
+    assert missing.value.exit_status == EXIT_USAGE
+    assert missing.value.details["columns"] == ["Region", "Sales"]
+
+    require_known_column(5, "Region", {"Region", "Sales"})
