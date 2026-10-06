@@ -6,6 +6,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed (mammoth-cli 2.2.50)
+
+- The fix commands in `column_warnings` (convert-type, bulk-replace, discard-duplicates, filter) now include `--project <id>`. Run from a profile with another default project, or inside the agent (no saved project), they failed.
+
 ### Added (mammoth-io 0.8.27, mammoth-cli 2.2.49)
 
 - `mammoth view variants create` makes one filtered view per value of a column in one call (#152, #154). A null name template defaults, and an unreadable column list fails loud.
