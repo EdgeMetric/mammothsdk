@@ -14,6 +14,12 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   every request, so a short-lived token that is refreshed elsewhere is always sent fresh. Static
   `api_token` and `api_key` + `api_secret` clients are unchanged.
 
+## mammoth-cli 2.2.42
+
+- `mammoth token list` and `mammoth token create` on an API-token profile now say the call used an API
+  token and that managing API keys needs `mammoth auth login` (browser sign-in), instead of claiming the
+  server refuses CLI-created keys.
+
 ## mammoth-cli 2.2.41
 
 - OAuth login works on the koyal dev server.

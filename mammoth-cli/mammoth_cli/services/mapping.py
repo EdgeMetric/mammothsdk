@@ -19,6 +19,7 @@ from mammoth.exceptions import (
     safe_response_body,
 )
 
+from mammoth_cli.context import credentials, profiles
 from mammoth_cli.errors.envelope import (
     CODE_API_ERROR,
     CODE_AUTHENTICATION_FAILED,
@@ -233,6 +234,7 @@ def running_handle(error: CliError, command_id: str) -> dict[str, Any] | None:
 
 
 CODE_CLI_KEYS_NOT_ALLOWED = "cli_keys_not_allowed"
+CODE_CLI_KEYS_NEED_BROWSER_SIGN_IN = "cli_keys_need_browser_sign_in"
 _TOKEN_REFUSED_NAME = "INVALID_TOKEN_FOR_CLIENT_APPS"  # noqa: S105 - an error name
 
 
@@ -240,6 +242,12 @@ def _is_cli_keys_refused(exc: BaseException) -> bool:
     """True for the server's refusal of an ``mm_`` token on the client-apps routes."""
     body = getattr(exc, "response_body", None)
     return isinstance(body, dict) and body.get("name") == _TOKEN_REFUSED_NAME
+
+
+def _stored_credential_kind(profile: str | None) -> str | None:
+    """The stored credential kind of ``profile`` (the selected one when None)."""
+    credential = credentials.load_credential(profile or profiles.get_selected())
+    return credential.kind if credential is not None else None
 
 
 def map_sdk_exception(
@@ -466,6 +474,24 @@ def map_sdk_exception(
                 details=details,
                 request_id=request_id,
                 authorization_required=True,
+            )
+        if (
+            status == 403
+            and _is_cli_keys_refused(exc)
+            and _stored_credential_kind(profile) == "token"
+        ):
+            return CliError(
+                code=CODE_CLI_KEYS_NEED_BROWSER_SIGN_IN,
+                message=(
+                    "This call used an API token, and the server refuses API tokens when "
+                    "creating or listing API keys; run `mammoth auth login` (browser "
+                    "sign-in) and try again."
+                ),
+                exit_status=EXIT_AUTH,
+                hint="Sign in with the browser, not an API token, to manage API keys.",
+                details=details,
+                request_id=request_id,
+                recovery_commands=["mammoth auth login"],
             )
         if status == 403 and _is_cli_keys_refused(exc):
             return CliError(

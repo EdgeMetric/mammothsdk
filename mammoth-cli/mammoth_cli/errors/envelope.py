@@ -88,6 +88,7 @@ ERROR_SUMMARIES: dict[str, str] = {
     "authentication_failed": "Mammoth didn't accept the sign-in for this step.",
     "authorization_required": "You don't have permission to do this.",
     "capability_not_found": "The assistant tried something Mammoth doesn't support.",
+    "cli_keys_need_browser_sign_in": "Managing API keys needs a browser sign-in, not an API token.",
     "cli_keys_not_allowed": "This server doesn't let a browser sign-in create API keys.",
     "confirmation_declined": "This step was not confirmed, so nothing was changed.",
     "confirmation_required": "This step needs your confirmation before it can go ahead.",
