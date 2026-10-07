@@ -78,8 +78,11 @@ from mammoth_cli.services.view_variants import (
     variants_result,
 )
 from mammoth_cli.services.write_impact import (
+    STANDING_HINT,
+    STANDING_NOTE,
     ImpactRead,
     Measure,
+    Measured,
     empties_view_error,
     measure_bulk_replace,
     measure_duplicates,
@@ -450,10 +453,12 @@ def _dispatch_view(
                 service, int(dataset_id), view_id, invocation.project, write_result=data
             )
             data["row_check"] = {"rows_before": rows_before, "rows_after": rows_after}
-            if reduces_rows:
+            if reduces_rows and not invocation.standing_noop:
                 data["row_check"]["expected_row_decrease"] = True
             if pipeline_error is not None:
                 data["pipeline_error"] = pipeline_error
+    if invocation.standing_noop and isinstance(data, dict):
+        data["standing_rule"] = {"removed_now": 0, "note": STANDING_NOTE}
     return data, _meta(invocation, auth.workspace_id)
 
 
@@ -1504,13 +1509,23 @@ def view_transform_discard_duplicates(invocation: Invocation) -> HandlerResult:
     )
 
 
+def _stage_standing(invocation: Invocation, measured: Measured) -> None:
+    """Let a step that changes no row today go ahead, and say so in the envelope."""
+    if invocation.dry_run:
+        report = {**measured.report, "standing": True, "note": STANDING_NOTE}
+        object.__setattr__(invocation, "predicted_impact", report)
+    else:
+        object.__setattr__(invocation, "standing_noop", True)
+
+
 def _impact_check(
     invocation: Invocation, view_id: int, measure: Measure
 ) -> Callable[[Any, int, dict[str, Any]], Any]:
     """A ``prepare`` hook: measure what the step would change, by a read.
 
     A count of zero is a no-op: ``--dry-run`` fails with ``no_op`` and a real run
-    adds no task (``status: no_change``, like a same-type convert). Otherwise a
+    adds no task (``status: no_change``, like a same-type convert) unless
+    ``--standing`` stages the step as a rule for future rows. Otherwise a
     dry run reports the count as ``predicted_impact``. A keep filter no row matches
     fails a dry run with ``empties_view`` unless ``--allow-empty`` is set. A count that cannot run
     is reported as unchecked in a dry run, never as zero, and never blocks a write.
@@ -1541,9 +1556,16 @@ def _impact_check(
         if measured.empties_message and invocation.dry_run and not invocation.allow_empty:
             raise empties_view_error(measured.empties_message, view_id=view_id)
         if measured.changes == 0:
+            if invocation.standing:
+                _stage_standing(invocation, measured)
+                return None
             if invocation.dry_run:
                 raise no_op_error(measured.no_op_message, view_id=view_id)
-            return {"status": "no_change", "note": f"{measured.no_op_message} No task was added."}
+            return {
+                "status": "no_change",
+                "note": f"{measured.no_op_message} No task was added.",
+                "hint": STANDING_HINT,
+            }
         if invocation.dry_run:
             object.__setattr__(invocation, "predicted_impact", measured.report)
         return None
