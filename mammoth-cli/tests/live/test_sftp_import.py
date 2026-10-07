@@ -31,11 +31,10 @@ def connection(
     if missing:
         pytest.skip(f"SFTP QA server not configured: {', '.join(missing)}")
     config = {
-        "host": os.environ["SFTP_HOST"],
+        "domain": os.environ["SFTP_HOST"],
         "port": int(os.environ["SFTP_PORT"]),
         "username": os.environ["SFTP_USER"],
         "password": os.environ["SFTP_PASS"],
-        "ssh_auth_type": "password",
     }
     body = tmp_path_factory.mktemp("sftp") / "connection.json"
     body.write_text(json.dumps({"config": config}), encoding="utf-8")

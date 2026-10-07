@@ -15,10 +15,11 @@ mammoth connector connection list sftp                    # reuse a connection t
 mammoth connector get sftp                                # its spec = the fields a connection needs
 ```
 
-No connection yet: ask the user once for host, port, username and password (or
-the key). Write them under `config` in a file with mode 0600, never inline --
-`{"config": {"host": "...", "port": 22, "username": "...", "password": "...",
-"ssh_auth_type": "password"}}` -- then create it (a write: get the user's
+No connection yet: ask the user once for the host, port, username and password
+(`mammoth connector get sftp` lists no fields; the SFTP ones are `domain` (the host
+name), `port`, `username`, `password`). Write them under `config` in a file with mode 0600, never inline --
+`{"config": {"domain": "sftp.example.com", "port": 22, "username": "...",
+"password": "..."}}` -- then create it (a write: get the user's
 confirmation):
 
 ```bash
