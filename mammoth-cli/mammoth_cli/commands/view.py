@@ -366,6 +366,9 @@ def _read_meta(
         project_id=project_id,
         fields="__min",
     )
+    # The read just proved this dataset holds the view; keep the pair so the
+    # next command on it (a transform) needs no ``dataset_id`` of its own.
+    parents.remember(_profile_name(invocation), workspace_id, {view_id: dataset_id})
     dataset = service.call(
         _DATASET_GET_SYMBOL, dataset_id=dataset_id, project_id=project_id, fields="id,name"
     )

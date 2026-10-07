@@ -46,15 +46,22 @@ from mammoth_cli.runtime import embedded
 _RETRYABLE_READ_STATUSES = frozenset({408, 425, 429, 502, 503, 504})
 
 
+#: A client app's key is a credential identifier; an envelope never repeats it.
+_CLIENT_KEY_SEGMENT = re.compile(r"(/clientapps/)[^/?#]+")
+
+
 def _metadata(exc: MammothAPIError) -> dict[str, Any]:
     """Copy only safe, bounded recovery metadata from an SDK exception."""
     details: dict[str, Any] = {}
     if exc.status_code is not None:
         details["status_code"] = exc.status_code
-    for name in ("method", "operation_state", "phase", "job_handle", "resource_handle", "endpoint"):
+    for name in ("method", "operation_state", "phase", "job_handle", "resource_handle"):
         value = getattr(exc, name, None)
         if value is not None:
             details[name] = value
+    endpoint = getattr(exc, "endpoint", None)
+    if endpoint is not None:
+        details["endpoint"] = _CLIENT_KEY_SEGMENT.sub(r"\1{client_key}", str(endpoint))
     if exc.retry_after is not None:
         details["retry_after"] = exc.retry_after
     if exc.request_id is not None:

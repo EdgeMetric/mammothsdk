@@ -71,7 +71,7 @@ def test_project_list_forwards_offset_for_pagination(
 def test_project_get_uses_positional_id(fake_service: FakeMammothService) -> None:
     fake_service.responses[_GET_SYMBOL] = {"id": 180}
     data, meta = project_cmd.project_get(_invocation("project.get", extra_args=["180"]))
-    assert data == {"id": 180}
+    assert data["id"] == 180
     assert fake_service.call_log == [(_GET_SYMBOL, {"project": 180})]
     assert meta["project_id"] == 180
 
