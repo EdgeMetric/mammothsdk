@@ -80,6 +80,7 @@ def _convert_type(
     real_service: ServiceFactory,
     api_routes: Callable[[Any], None],
     execution_state: str = "ready",
+    run: Callable[[], Any] | None = None,
 ) -> dict[str, Any]:
     import json
 
@@ -100,8 +101,11 @@ def _convert_type(
         "row_count": 50,
         "metadata": [{"display_name": "Gift", "internal_name": "col_b", "type": "TEXT"}],
     }
-    api.on("GET", rf"/datasets/{DATASET}/dataviews/{VIEW}$", body=view)
-    api.on("POST", r"/pipeline/tasks", body={})
+    if run is None:
+        api.on("GET", rf"/datasets/{DATASET}/dataviews/{VIEW}$", body=view)
+        api.on("POST", r"/pipeline/tasks", body={})
+    else:
+        run.mount(api)
     api.on("GET", r"/pipeline$", body={"state": "ready", "execution_state": execution_state})
     api_routes(api)
     result = make_runner().invoke(
@@ -159,4 +163,97 @@ def test_a_pipeline_that_errored_after_the_write_is_not_verified(
     data = _convert_type(monkeypatch, real_service, routes, execution_state="runtime_error")
 
     assert data["pipeline_error"]["execution_state"] == "runtime_error"
+    assert data["verify"]["verified"] is False
+
+
+# --- the read-back comes from the run of the task this write added ------------
+
+
+class _TaskRun:
+    """One task added by the write; its run is over after ``polls_until_done`` task reads.
+
+    The prod trace: the pipeline reads ``state: ready`` / ``execution_state: idle``
+    from the moment the task is added, while the view still shows the old column
+    type until the task's own run has finished.
+    """
+
+    TASK_ID = 7158
+
+    def __init__(self, polls_until_done: int) -> None:
+        self.polls_until_done = polls_until_done
+        self.added = False
+        self.task_reads_after_add = 0
+
+    @property
+    def done(self) -> bool:
+        return self.added and self.task_reads_after_add > self.polls_until_done
+
+    def mount(self, api: Any) -> None:
+        def task_list(_request: Any) -> tuple[int, Any]:
+            tasks: list[dict[str, Any]] = [{"id": 1, "transform_status": "DONE"}]
+            if self.added:
+                self.task_reads_after_add += 1
+                tasks.append(
+                    {
+                        "id": self.TASK_ID,
+                        "transform_status": "DONE" if self.done else "QUEUED",
+                    }
+                )
+            return 200, {"tasks": tasks}
+
+        def add(_request: Any) -> tuple[int, Any]:
+            self.added = True
+            return 202, {"status": "processing", "future_id": 41}
+
+        def view(_request: Any) -> tuple[int, Any]:
+            column = {"display_name": "Gift", "internal_name": "col_b"}
+            column["type"] = "NUMERIC" if self.done else "TEXT"
+            return 200, {"id": VIEW, "row_count": 50, "metadata": [column]}
+
+        api.on("GET", r"/jobs/41$", body={"id": 41, "status": "success", "response": {}})
+        api.on("GET", r"/pipeline/tasks$", handler=task_list)
+        api.on("POST", r"/pipeline/tasks$", handler=add)
+        api.on("GET", rf"/datasets/{DATASET}/dataviews/{VIEW}$", handler=view)
+
+
+def test_convert_type_reads_back_after_its_own_task_ran(
+    monkeypatch: Any, real_service: ServiceFactory
+) -> None:
+    """Pipeline ready + idle at once; the read-back must still wait for the task's run."""
+    from mammoth_cli.commands import view_ops
+
+    monkeypatch.setattr(view_ops, "_RUN_RETRY_S", 0)
+    run = _TaskRun(polls_until_done=3)
+
+    data = _convert_type(
+        monkeypatch,
+        real_service,
+        lambda api: api.on("GET", r"/data$", body={"data": []}),
+        execution_state="idle",
+        run=run,
+    )
+
+    assert data["state"]["columns"] == [{"name": "Gift", "type": "NUMERIC"}]
+    assert data["run"] == {"task_id": _TaskRun.TASK_ID, "transform_status": "DONE"}
+    assert "pipeline_error" not in data
+
+
+def test_a_task_whose_run_never_finishes_is_not_verified(
+    monkeypatch: Any, real_service: ServiceFactory
+) -> None:
+    from mammoth_cli.commands import view_ops
+
+    monkeypatch.setattr(view_ops, "_RUN_RETRY_S", 0)
+    monkeypatch.setattr(view_ops, "_RUN_ATTEMPTS", 5)
+
+    data = _convert_type(
+        monkeypatch,
+        real_service,
+        lambda api: api.on("GET", r"/data$", body={"data": []}),
+        execution_state="idle",
+        run=_TaskRun(polls_until_done=10**6),
+    )
+
+    assert data["pipeline_error"]["execution_state"] == "unfinished"
+    assert data["run"]["transform_status"] == "QUEUED"
     assert data["verify"]["verified"] is False
