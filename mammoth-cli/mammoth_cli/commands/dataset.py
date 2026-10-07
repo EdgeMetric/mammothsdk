@@ -395,8 +395,22 @@ def elsewhere_note(dropped: int) -> str:
     if not dropped:
         return ""
     return (
-        f"{dropped} more match(es) in other projects are not listed: "
-        """--input '{"all_projects": true}' lists them."""
+        f"{dropped} more match(es) in other projects are not listed; the match in the "
+        "current project is the answer. They matter only when the user names another "
+        """project: then --input '{"all_projects": true}' lists them."""
+    )
+
+
+def _find_note(
+    matches: list[dict[str, Any]], is_exact: Callable[[dict[str, Any]], bool], needle: str
+) -> str | None:
+    """The ambiguity note, unless exactly one match in the project is the exact name."""
+    own = [m for m in matches if m.get("in_project") and is_exact(m)]
+    if len(own) != 1 or len(matches) < 2:
+        return ambiguity_note(len(matches), needle)
+    return (
+        f"'{own[0]['name']}' is dataset {own[0]['id']} in the current project; the other "
+        f"{len(matches) - 1} match(es) are other datasets or sit in other projects: use this id."
     )
 
 
@@ -431,15 +445,17 @@ def dataset_find(invocation: Invocation) -> HandlerResult:
     name_substring = _require_string_positional(invocation, "name substring")
     needle = name_substring.lower()
     dropped = 0
+
+    def is_exact(m: dict[str, Any]) -> bool:
+        return str(m.get("name", "")).lower() == needle
+
     with open_service(invocation) as (service, auth):
         visible = _visible_projects(service)
         cut = False
         if invocation.project is not None:
             matches, projects, cut = _find_scoped(service, needle, visible, invocation.project)
             if not all_projects_requested(invocation):
-                matches, dropped = narrow_to_project(
-                    matches, lambda m: str(m.get("name", "")).lower() == needle
-                )
+                matches, dropped = narrow_to_project(matches, is_exact)
         else:
             projects = visible
             matches, cut = _find_by_name(service, needle, visible)
@@ -452,7 +468,7 @@ def dataset_find(invocation: Invocation) -> HandlerResult:
         "matches": matches,
         "projects_searched": len(projects),
     }
-    notes = [ambiguity_note(len(matches), name_substring)]
+    notes = [_find_note(matches, is_exact, name_substring)]
     if dropped:
         result["elsewhere"] = dropped
         notes.append(elsewhere_note(dropped))
