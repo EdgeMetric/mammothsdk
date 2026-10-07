@@ -1207,6 +1207,8 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth view export get 123 123
 - `mammoth view export list` [read/none] -> mammoth.api.exports.ExportsAPI.list
   example: mammoth view export list 123 123
+- `mammoth view export live-link` [external_effect/yes_always] -> mammoth.view.ViewExport.to_live_link
+  example: mammoth view export live-link 123 123 --input '{"file_name": "report_share.csv"}'
 - `mammoth view export managed-s3` [external_effect/yes_always] -> mammoth.view.ViewExport.to_s3
   example: mammoth view export managed-s3 123 123 --input '{"file_name": "report.csv"}'
 - `mammoth view export mssql` [external_effect/yes_always] -> mammoth.view.ViewExport.to_mssql

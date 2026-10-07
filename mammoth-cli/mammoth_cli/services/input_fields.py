@@ -136,6 +136,7 @@ _EXAMPLE_INPUT_HINTS: dict[str, dict[str, Any]] = {
         "password": "replace-with-secret",
     },
     "view.export.managed-s3": {"file_name": "report.csv"},
+    "view.export.live-link": {"file_name": "report_share.csv"},
     "view.export.mssql": {
         "host": "db.example",
         "port": 1433,

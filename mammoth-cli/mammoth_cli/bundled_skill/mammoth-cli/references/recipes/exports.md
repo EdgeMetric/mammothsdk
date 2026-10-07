@@ -29,6 +29,20 @@ If `schema get view.export.csv` rejects requested fields, preserve the
 structured error and discover another declared export route rather than using
 raw HTTP.
 
+## Share a view as a live link
+
+```bash
+mammoth view export live-link VIEW_ID DATASET_ID --project PROJECT_ID --yes
+# -> {"url": "<the live link>"}
+```
+
+An S3 export flagged `liveLink`: a public URL that serves the view's data and
+stays current as the view's pipeline re-runs. Optional `--input` fields are
+`file_name` (`<prefix>_<token>.csv`; the server replaces the token), `file_type`
+(`csv`, `json`, `parquet`) and `include_hidden`. A plan without live links is
+refused by the backend; its message comes back as the error. Hand the URL to the
+user as returned; anyone holding it can read the data.
+
 ## Send a view into another project (parallel send, branch-out)
 
 `view export dataset` writes the view's rows into a Mammoth dataset **as a

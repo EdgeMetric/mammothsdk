@@ -1098,6 +1098,7 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
         for command in (
             "view.export.dataset",
             "view.export.managed-s3",
+            "view.export.live-link",
             "view.export.azure-blob",
             "view.export.bigquery",
             "view.export.elasticsearch",

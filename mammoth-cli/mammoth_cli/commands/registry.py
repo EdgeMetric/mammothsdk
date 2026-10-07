@@ -830,6 +830,7 @@ _TARGETS: dict[str, str] = {
     "view.export.update": "mammoth_cli.commands.view:view_export_update",
     "view.export.dataset": "mammoth_cli.commands.view:view_export_specialized",
     "view.export.managed-s3": "mammoth_cli.commands.view:view_export_specialized",
+    "view.export.live-link": "mammoth_cli.commands.view:view_export_specialized",
     "view.export.azure-blob": "mammoth_cli.commands.view:view_export_specialized",
     "view.export.bigquery": "mammoth_cli.commands.view:view_export_specialized",
     "view.export.elasticsearch": "mammoth_cli.commands.view:view_export_specialized",

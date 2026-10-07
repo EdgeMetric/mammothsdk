@@ -529,6 +529,7 @@
   "view.export.ftp": "Run one of the SDK's typed 'View.export' destination helpers.",
   "view.export.get": "Get one export by id.",
   "view.export.list": "List exports for a dataview, with optional filters from '--input'.",
+  "view.export.live-link": "Run one of the SDK's typed 'View.export' destination helpers.",
   "view.export.managed-s3": "Run one of the SDK's typed 'View.export' destination helpers.",
   "view.export.mssql": "Run one of the SDK's typed 'View.export' destination helpers.",
   "view.export.mysql": "Run one of the SDK's typed 'View.export' destination helpers.",
