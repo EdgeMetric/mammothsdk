@@ -1072,6 +1072,13 @@ class TestBranchOut:
             "TRANSFORM": None,
         }
 
+    def test_omitted_name_uses_product_default(self) -> None:
+        tp = b.build_branch_out_params()
+        assert tp["DS_NAME"] == b.DEFAULT_BRANCH_OUT_DATASET_NAME == "Result Dataset"
+
+    def test_given_name_wins_over_default(self) -> None:
+        assert b.build_branch_out_params("Orders")["DS_NAME"] == "Orders"
+
     def test_existing_dataset_append_with_mapping_and_labels(self) -> None:
         tp = b.build_branch_out_params(
             "Existing",

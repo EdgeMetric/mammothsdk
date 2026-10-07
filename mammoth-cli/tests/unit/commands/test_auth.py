@@ -650,19 +650,33 @@ def _choose_at_real_prompt(server_prefix: str | None, typed: bytes) -> tuple[str
     return chosen, shown
 
 
-def test_menu_on_a_server_without_oauth_marks_browser_unavailable_and_enter_picks_token() -> None:
+def test_menu_on_a_server_without_oauth_marks_browser_unavailable() -> None:
     # The default "app" prefix genuinely has no OAuth client registered.
-    chosen, shown = _choose_at_real_prompt(None, b"\n")
+    chosen, shown = _choose_at_real_prompt(None, b"3\n")
     assert chosen == "token"
     assert "1) Browser (OAuth)      (not yet available on app)" in shown
     assert "2) Device code          (not yet available on app)" in shown
     assert "3) Paste an API token" in shown
 
 
-def test_menu_on_a_server_with_oauth_makes_enter_pick_the_browser() -> None:
-    chosen, shown = _choose_at_real_prompt("koyal", b"\n")
-    assert chosen == "oauth"
-    assert "not yet available" not in shown
+@pytest.mark.parametrize("prefix", [None, "koyal"])
+def test_empty_enter_at_the_menu_picks_nothing_and_asks_again(prefix: str | None) -> None:
+    chosen, _shown = _choose_at_real_prompt(prefix, b"\n\n2\n")
+    assert chosen == "device"
+
+
+@pytest.mark.parametrize("prefix", [None, "koyal"])
+def test_only_empty_enter_at_the_menu_never_picks_a_default(prefix: str | None) -> None:
+    with pytest.raises(CliError) as excinfo:
+        _choose_at_real_prompt(prefix, b"\n")
+    assert excinfo.value.code == "login_input_required"
+
+
+def test_invalid_choice_at_the_menu_names_the_valid_ones() -> None:
+    with pytest.raises(CliError) as excinfo:
+        _choose_at_real_prompt("koyal", b"9\n")
+    assert excinfo.value.code == "invalid_login_method"
+    assert "'9' is not a valid choice; choose 1, 2 or 3" in excinfo.value.message
 
 
 def test_choosing_the_browser_without_a_client_names_the_token_option() -> None:
@@ -765,14 +779,20 @@ def test_a_single_keypress_picks_the_method_without_enter(
     assert b"Choose: 3 API token" in seen, seen
 
 
-def test_enter_takes_the_default_on_a_terminal(isolated_cli_config: Path) -> None:
-    seen = _drive_login_in_a_pty("app", b"\r", b"Choose: 3 API token")
-    assert b"Choose: 3 API token" in seen, seen
+def test_enter_on_a_terminal_picks_nothing_and_asks_again(isolated_cli_config: Path) -> None:
+    seen = _drive_login_in_a_pty("koyal", b"\r", b"Enter 1, 2 or 3.")
+    assert b"Enter 1, 2 or 3." in seen, seen
+    assert b"Choose: 1" not in seen and b"Choose: 3" not in seen, seen
 
 
-def test_two_wrong_keys_on_a_terminal_are_a_clean_error(isolated_cli_config: Path) -> None:
-    seen = _drive_login_in_a_pty("koyal", b"xx", b"not one of the choices")
-    assert b"not one of the choices" in seen, seen
+def test_three_wrong_keys_on_a_terminal_are_a_clean_error(isolated_cli_config: Path) -> None:
+    seen = _drive_login_in_a_pty("koyal", b"xxx", b"is not a valid choice; choose 1, 2 or 3")
+    assert b"'x' is not a valid choice; choose 1, 2 or 3" in seen, seen
+
+
+def test_a_wrong_key_then_ctrl_d_names_the_invalid_choice(isolated_cli_config: Path) -> None:
+    seen = _drive_login_in_a_pty("koyal", b"9\x04", b"is not a valid choice; choose 1, 2 or 3")
+    assert b"'9' is not a valid choice; choose 1, 2 or 3" in seen, seen
 
 
 def test_ctrl_d_on_a_terminal_is_a_clean_error(isolated_cli_config: Path) -> None:

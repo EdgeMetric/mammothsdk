@@ -15,6 +15,7 @@ mocks of it.
 from __future__ import annotations
 
 import json
+import os
 import re
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -29,6 +30,24 @@ import pytest
 
 from mammoth_cli.context.resolver import ResolvedAuth
 from mammoth_cli.services.sdk_service import SdkMammothService
+
+#: Environment that makes a real browser unreachable from any test or child process.
+#: ``BROWSER=true`` makes ``webbrowser.open`` run ``true``; with no display variable
+#: there is nothing for a desktop browser to draw on either.
+NO_BROWSER_ENV = {"BROWSER": "true"}
+DISPLAY_VARIABLES = ("DISPLAY", "WAYLAND_DISPLAY")
+
+
+def pytest_configure(config: pytest.Config) -> None:
+    """Cut the test process, and every child it spawns, off from the desktop browser.
+
+    Runs before collection, so a test that spawns ``auth login`` (OAuth opens the
+    system browser) can never open one, however the suite is invoked.
+    """
+    os.environ.update(NO_BROWSER_ENV)
+    for name in DISPLAY_VARIABLES:
+        os.environ.pop(name, None)
+
 
 #: Keyring backend child processes use in tests: no keyring at all.
 NO_KEYRING_BACKEND = "keyring.backends.fail.Keyring"

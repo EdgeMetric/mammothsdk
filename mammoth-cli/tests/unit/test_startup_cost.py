@@ -62,7 +62,42 @@ def test_cache_key_changes_when_a_manifest_changes(
     loader.clear_cache()
     loader.load_commands()
     names = {p.name for p in cache_dir.glob("commands-*.json")}
-    assert before.name in names and len(names) == 2
+    assert before.name not in names and len(names) == 1
+
+
+def test_a_cache_miss_prunes_older_files_of_this_install_only(cache_dir: Path) -> None:
+    import os
+    import time
+
+    loader.load_commands()
+    (current,) = cache_dir.glob("commands-*.json")
+    install = current.name.split("-")[1]
+    mine_stale = cache_dir / f"commands-{install}-{'0' * 24}.json"
+    other_install = cache_dir / f"commands-ffffffff-{'1' * 24}.json"
+    legacy_fresh = cache_dir / f"commands-{'2' * 24}.json"
+    legacy_cold = cache_dir / f"commands-{'3' * 24}.json"
+    for path in (mine_stale, other_install, legacy_fresh, legacy_cold):
+        path.write_text("[]")
+    month_ago = time.time() - 30 * 24 * 3600
+    os.utime(legacy_cold, (month_ago, month_ago))
+
+    current.unlink()  # force a miss, which writes and then prunes
+    loader.clear_cache()
+    loader.load_commands()
+
+    left = {p.name for p in cache_dir.glob("commands-*.json")}
+    assert mine_stale.name not in left and legacy_cold.name not in left
+    assert other_install.name in left and legacy_fresh.name in left
+    assert len(left) == 3
+
+
+def test_a_cache_hit_prunes_nothing(cache_dir: Path) -> None:
+    loader.load_commands()
+    stray = cache_dir / f"commands-ffffffff-{'4' * 24}.json"
+    stray.write_text("[]")
+    loader.clear_cache()
+    loader.load_commands()
+    assert stray.exists()
 
 
 def test_corrupt_cache_falls_back_to_yaml(cache_dir: Path) -> None:
@@ -92,8 +127,15 @@ def test_top_level_groups_are_built_on_demand() -> None:
     app_module._top_level_typer.cache_clear()
     root: Any = typer.main.get_command(app_module.app)
     eager = root.__dict__.get("_eager_commands", {})
-    assert "doctor" in eager and "view" not in eager
-    assert "view" in root.list_commands(None) and "dataset" in root.list_commands(None)
+    assert "doctor" not in eager and "view" not in eager
+    names = root.list_commands(None)
+    assert {"doctor", "view", "dataset"} <= set(names)
+    # Top-level leaves list ahead of groups, as they were registered.
+    assert names.index("doctor") < names.index("view")
+
+    doctor = root.get_command(None, "doctor")
+    assert doctor is not None and doctor.name == "doctor"
+    assert "view" not in root.__dict__["_eager_commands"]
 
     view = root.get_command(None, "view")
     assert view is not None and "list" in view.commands
@@ -126,6 +168,28 @@ _HEAVY_MODULES = (
     "keyring",
 )
 
+# The lazy command boundary: no command module, SDK service or schema machinery
+# is imported until a command is dispatched. ``--help`` and typo suggestions
+# read names (and, for top-level leaves, a pinned help string), nothing more.
+_ERROR_PATH_MODULES = (
+    "pydantic",
+    "mammoth_cli.services.command_contract",
+    "mammoth_cli.runtime.executor",
+)
+_COMMAND_BOUNDARY = (
+    "pydantic",
+    "mammoth.models.pipeline",
+    "mammoth_cli.commands.project",
+    "mammoth_cli.commands.view",
+    "mammoth_cli.commands.doctor",
+    "mammoth_cli.commands.schema",
+    "mammoth_cli.services.sdk_service",
+    "mammoth_cli.services.command_contract",
+    "mammoth_cli.runtime.session",
+    "mammoth_cli.runtime.executor",
+    "mammoth_cli.context.resolver",
+)
+
 _PROBE = """
 import json, sys
 sys.argv = ["mammoth", *sys.argv[1:]]
@@ -138,12 +202,12 @@ sys.stdout.write("\\n" + json.dumps([m for m in {heavy!r} if m in sys.modules]))
 """
 
 
-def _loaded_heavy_modules(*argv: str) -> list[str]:
+def _loaded_heavy_modules(*argv: str, watched: tuple[str, ...] = _HEAVY_MODULES) -> list[str]:
     import subprocess
     import sys
 
     done = subprocess.run(
-        [sys.executable, "-c", _PROBE.format(heavy=_HEAVY_MODULES), *argv],
+        [sys.executable, "-c", _PROBE.format(heavy=watched), *argv],
         capture_output=True,
         text=True,
         timeout=120,
@@ -161,6 +225,68 @@ def _loaded_heavy_modules(*argv: str) -> list[str]:
 )
 def test_startup_before_dispatch_loads_no_heavy_modules(argv: list[str]) -> None:
     assert _loaded_heavy_modules(*argv) == []
+
+
+@pytest.mark.subprocess
+@pytest.mark.parametrize(
+    "argv",
+    [["--version"], ["--help"], ["lst"]],
+    ids=["version", "root-help", "typo-suggestion"],
+)
+def test_root_help_and_typo_import_no_command_module(argv: list[str]) -> None:
+    # A typo ends in the error envelope, which legitimately loads the executor.
+    emits_error = argv == ["lst"]
+    boundary = tuple(m for m in _COMMAND_BOUNDARY if not (emits_error and m in _ERROR_PATH_MODULES))
+    watched = (*_HEAVY_MODULES, *boundary)
+    assert _loaded_heavy_modules(*argv, watched=watched) == []
+
+
+_BUILD_PROBE = """
+import json, sys
+from mammoth_cli import app
+app._load_top_level_group("project")
+sys.stdout.write("\\n" + json.dumps([m for m in {watched!r} if m in sys.modules]))
+"""
+
+
+@pytest.mark.subprocess
+def test_building_a_group_imports_no_handler_module() -> None:
+    """Dispatching ``project ...`` builds the project group, not its 24 handler modules."""
+    import subprocess
+    import sys
+
+    watched = (
+        "httpx",
+        "mammoth.client",
+        "mammoth_cli.commands.project",
+        "mammoth_cli.commands.view",
+        "mammoth_cli.services.sdk_service",
+        "mammoth_cli.runtime.session",
+    )
+    done = subprocess.run(
+        [sys.executable, "-c", _BUILD_PROBE.format(watched=watched)],
+        capture_output=True,
+        text=True,
+        timeout=120,
+        check=False,
+    )
+    assert json.loads(done.stdout.rsplit("\n", 1)[-1]) == []
+
+
+def test_root_leaf_help_table_matches_the_handler_docstrings() -> None:
+    """``--help`` prints a pinned string for top-level leaves; it must equal the real one."""
+    from mammoth_cli.manifest.loader import command_by_id
+
+    assert set(app_module._ROOT_LEAF_HELP) == set(app_module._LAZY_LEAF_IDS)
+    for name, command_id in app_module._LAZY_LEAF_IDS.items():
+        real = app_module._command_help(command_id, command_by_id(command_id))
+        assert app_module._ROOT_LEAF_HELP[name] == real, name
+
+
+def test_group_command_help_is_read_from_the_handler_when_printed() -> None:
+    result = make_runner().invoke(["project", "list", "--help"])
+    assert result.exit_code == 0
+    assert "List the caller's member projects" in result.output
 
 
 def test_every_dashboard_command_still_has_a_handler() -> None:
@@ -187,3 +313,34 @@ def test_sdk_sub_clients_resolve_without_being_built_up_front() -> None:
     method = resolve_sdk_method(client, "mammoth.api.projects.ProjectsAPI.list")
     assert callable(method)
     assert type(vars(client)["projects"]).__name__ == "ProjectsAPI"
+
+
+def test_help_summary_index_matches_handler_docstrings() -> None:
+    """The listing reads the index, so it must not drift from the live docstrings.
+
+    Regenerate with ``python scripts/gen_help_summaries.py``.
+    """
+    import importlib.util
+
+    script = Path(__file__).resolve().parents[2] / "scripts" / "gen_help_summaries.py"
+    spec = importlib.util.spec_from_file_location("gen_help_summaries", script)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    assert json.loads(module.INDEX.read_text(encoding="utf-8")) == module.live_index()
+
+
+def test_group_help_does_not_import_the_sdk_models() -> None:
+    """``mammoth view --help`` lists commands without importing handlers or SDK models."""
+    import subprocess
+    import sys
+
+    code = (
+        "import sys; from mammoth_cli.__main__ import main\n"
+        "sys.argv = ['mammoth', 'view', '--help']\n"
+        "try:\n    main()\nexcept SystemExit:\n    pass\n"
+        "sys.stderr.write('LOADED=' + str('mammoth.view' in sys.modules or "
+        "'mammoth_cli.commands.view' in sys.modules))"
+    )
+    done = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, check=False)
+    assert "LOADED=False" in done.stderr, done.stderr[-300:]

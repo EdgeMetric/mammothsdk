@@ -429,6 +429,7 @@ def _dispatch_view(
                 if task_ids_before is not None and not _is_staged(data)
                 else (None, None)
             )
+            reject_unrun_task_with_reference_errors(service, view_id, dataset_id, run_error)
             data = after(service, int(dataset_id), state, data)
             _flag_unsettled_pipeline(service, int(dataset_id), view_id, data)
             if isinstance(data, dict) and run is not None:
@@ -667,9 +668,22 @@ def reject_pipeline_reference_errors(
     """
     if not (isinstance(data, dict) and data.get("has_error") is True):
         return
+    kwargs = _pipeline_kwargs(view_id, dataset_id)
+    pipeline, broken = _read_broken_items(service, kwargs)
+    raise _reference_error(view_id, kwargs, pipeline, broken, data)
+
+
+def _pipeline_kwargs(view_id: int, dataset_id: Any) -> dict[str, Any]:
     kwargs: dict[str, Any] = {"dataview_id": view_id}
     if dataset_id is not None:
         kwargs["dataset_id"] = int(dataset_id)
+    return kwargs
+
+
+def _read_broken_items(
+    service: Any, kwargs: dict[str, Any]
+) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+    """The pipeline and its items that carry reference errors; a failed read gives what was read."""
     pipeline: dict[str, Any] = {}
     broken: list[dict[str, Any]] = []
     try:
@@ -693,6 +707,35 @@ def reject_pipeline_reference_errors(
     except CliError:
         # The mutation already failed; a failed follow-up read must not hide that.
         pass
+    return pipeline, broken
+
+
+def reject_unrun_task_with_reference_errors(
+    service: Any, view_id: int, dataset_id: Any, run_error: dict[str, Any] | None
+) -> None:
+    """Fail a write whose added task never ran because a step of the view no longer binds.
+
+    The backend validates a new task after it answers, so a convert-type that
+    breaks a step reading the column as a number answers without ``has_error``
+    and the task then stays ``added`` for good. When the wait for the task's run
+    ended unfinished and the pipeline holds reference errors, that is the cause:
+    raise the same envelope a task refused at once gets, with the recovery command.
+    """
+    if run_error is None or run_error.get("execution_state") != UNFINISHED_STATE:
+        return
+    kwargs = _pipeline_kwargs(view_id, dataset_id)
+    pipeline, broken = _read_broken_items(service, kwargs)
+    if broken:
+        raise _reference_error(view_id, kwargs, pipeline, broken, run_error)
+
+
+def _reference_error(
+    view_id: int,
+    kwargs: dict[str, Any],
+    pipeline: dict[str, Any],
+    broken: list[dict[str, Any]],
+    response: dict[str, Any],
+) -> CliError:
     reference_errors = [
         _compact_reference_error(entry)
         for item in broken
@@ -704,7 +747,7 @@ def reject_pipeline_reference_errors(
     column = first.get("column")
     what = f"column '{column}' ({first.get('type')})" if column else "a column it references"
     why = _REFERROR_REASON_HINTS.get(reason, f"reason: {reason or 'unknown'}")
-    raise CliError(
+    return CliError(
         code=CODE_PIPELINE_REFERENCE_ERROR,
         message=(
             f"The task was added to view {view_id} but cannot bind to {what}; "
@@ -721,7 +764,7 @@ def reject_pipeline_reference_errors(
             "pipeline_state": pipeline.get("state"),
             "task_ids": task_ids,
             "reference_errors": reference_errors,
-            "response": data,
+            "response": response,
         },
         recovery_commands=[
             f"mammoth view task delete {view_id} {task_id} --yes"

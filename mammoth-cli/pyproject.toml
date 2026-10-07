@@ -1,13 +1,13 @@
 [project]
 name = "mammoth-cli"
-version = "2.2.54"
+version = "2.2.56"
 description = "Command-line interface for the Mammoth Analytics platform"
 authors = [{name = "Mammoth Analytics", email = "support@mammoth.io"}]
 readme = "README.md"
 license = "LicenseRef-Proprietary"
 requires-python = ">=3.12,<3.15"
 dependencies = [
-    "mammoth-io (>=0.8.28,<0.9)",
+    "mammoth-io (>=0.8.30,<0.9)",
     "typer (>=0.27,<0.28)",
     "rich (>=15,<16)",
     "platformdirs (>=4.10,<5)",
@@ -71,6 +71,8 @@ ignore = ["S101"]
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["S", "B"]
 "scripts/**" = ["S"]
+# A table of "module:attr" import paths: one entry per line, no useful wrapping.
+"mammoth_cli/commands/registry.py" = ["E501"]
 
 [tool.mypy]
 python_version = "3.12"

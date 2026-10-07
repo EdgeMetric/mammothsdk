@@ -57,7 +57,7 @@ _FIXED_EXAMPLES: dict[str, tuple[tuple[str, ...], dict[str, Any]]] = {
     "view.explore-panel.get": (("123",), {}),
     "view.explore-panel.set": (
         ("123",),
-        {"panel": {"open": True, "items": [{"column": "column_1", "renderType": "chart"}]}},
+        {"panel": {"columns": "all"}},
     ),
     "project.check": (("123", "456"), {}),
     "view.data.profile": (("123",), {"target": "Churn"}),
@@ -115,7 +115,7 @@ _GROUP_DISCOVERY_PURPOSES = {
 _COMMAND_DISCOVERY_PURPOSES = {
     "view.update": "rename change name to a new name title relabel",
     "view.explore-panel.get": "explore cards saved panel the data editor explore side panel read",
-    "view.explore-panel.set": "save replace explore cards panel items chart a column in the editor",
+    "view.explore-panel.set": "open show explore cards for all or some columns, replace the panel",
     "dashboard.figure.add": (
         "append an explore card figure tile to a dashboard from a payload, no chat turn"
     ),
