@@ -6,6 +6,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed (mammoth-cli 2.2.51)
+
+- OAuth login adopts the project the grant is pinned to, instead of keeping a different saved default project.
+
 ### Fixed (mammoth-cli 2.2.50)
 
 - The fix commands in `column_warnings` (convert-type, bulk-replace, discard-duplicates, filter) now include `--project <id>`. Run from a profile with another default project, or inside the agent (no saved project), they failed.
