@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import time
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
 
 from mammoth_cli.testing import make_runner
@@ -56,6 +57,18 @@ class LiveCli:
         assert "error" in envelope, f"`{' '.join(args)}` should have failed: {envelope}"
         error: dict[str, Any] = envelope["error"]
         return error
+
+
+def upload_csv(cli: LiveCli, project: int, path: Path, text: str) -> tuple[int, int]:
+    """Upload ``text`` as the CSV ``path``; return the new dataset's id and its first view's id."""
+    path.write_text(text, encoding="utf-8")
+    uploaded, _ = cli.ok("file", "upload", str(path), "--yes", project=project)
+    dataset = int(uploaded["dataset_id"])
+    listed, _ = cli.ok("view", "list", str(dataset), project=project)
+    if listed["dataviews"]:
+        return dataset, int(listed["dataviews"][0]["id"])
+    created, _ = cli.ok("view", "create", str(dataset), "--yes", project=project)
+    return dataset, int(created["id"])
 
 
 def envelope_size(envelope: dict[str, Any]) -> int:

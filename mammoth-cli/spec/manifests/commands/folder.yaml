@@ -83,7 +83,7 @@ commands:
   readback:
     command: folder.get
     ids:
-      folder_id: result.folder.id
+      folder_id: result.id
     kind: object
 - command_id: folder.delete
   command_path: folder delete

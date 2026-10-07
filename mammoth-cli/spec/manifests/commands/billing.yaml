@@ -830,7 +830,8 @@ commands:
   command_path: billing stripe resume
   disposition: command
   alias_of: null
-  operation_ids: []
+  operation_ids:
+  - ResumeWorkspaceSubscription
   positionals: []
   options: []
   sdk_symbol: mammoth.api.billing.BillingAPI.stripe_resume
@@ -868,7 +869,8 @@ commands:
   command_path: billing stripe recheck-limits
   disposition: command
   alias_of: null
-  operation_ids: []
+  operation_ids:
+  - RecheckWorkspaceLimits
   positionals: []
   options: []
   sdk_symbol: mammoth.api.billing.BillingAPI.stripe_recheck_limits
@@ -903,7 +905,8 @@ commands:
   command_path: billing stripe storage set
   disposition: command
   alias_of: null
-  operation_ids: []
+  operation_ids:
+  - UpdateSubscriptionStorage
   positionals: []
   options: []
   sdk_symbol: mammoth.api.billing.BillingAPI.stripe_storage_update

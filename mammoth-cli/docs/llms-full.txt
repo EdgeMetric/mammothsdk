@@ -29,12 +29,56 @@ Sensitive structured input must come from a private file or pipe; never put secr
 
 ## agent
 
+- `mammoth agent access set` [benign_mutation/none] -> mammoth.api.agent_definitions.AgentDefinitionsAPI.update
+  example: mammoth agent access set sample --input '{"role": "member", "propose": true}'
 - `mammoth agent action delete` [destructive/prompt_or_yes] -> mammoth.api.agents.AgentsAPI.action_delete
   example: mammoth agent action delete resource-123
 - `mammoth agent action list` [read/none] -> mammoth.api.agents.AgentsAPI.action_list
   example: mammoth agent action list
+- `mammoth agent charter get` [read/none] -> mammoth.api.agent_definitions.AgentDefinitionsAPI.get
+  example: mammoth agent charter get sample
+- `mammoth agent charter restore` [benign_mutation/none] -> mammoth.api.agent_definitions.AgentDefinitionsAPI.charter_restore
+  example: mammoth agent charter restore sample 123
+- `mammoth agent charter set` [benign_mutation/none] -> mammoth.api.agent_definitions.AgentDefinitionsAPI.update
+  example: mammoth agent charter set sample --input '{"charter": "Watch weekly margin and report the three biggest drops."}'
+- `mammoth agent charter versions` [read/none] -> mammoth.api.agent_definitions.AgentDefinitionsAPI.charter_versions
+  example: mammoth agent charter versions sample
 - `mammoth agent chat` [benign_mutation/none] -> mammoth.api.agents.AgentsAPI.chat
   example: mammoth agent chat --input '{"message": "Summarize revenue by region", "scope": {"sample_key": "Status"}}'
+- `mammoth agent create` [benign_mutation/none] -> mammoth.api.agent_definitions.AgentDefinitionsAPI.create
+  example: mammoth agent create Status --input '{"name": "Revenue report"}'
+- `mammoth agent delete` [destructive/prompt_or_yes] -> mammoth.api.agent_definitions.AgentDefinitionsAPI.delete
+  example: mammoth agent delete sample
+- `mammoth agent disable` [benign_mutation/none] -> mammoth.api.agent_definitions.AgentDefinitionsAPI.disable
+  example: mammoth agent disable sample
+- `mammoth agent feedback list` [read/none] -> mammoth.api.agent_definitions.AgentDefinitionsAPI.feedback_list
+  example: mammoth agent feedback list sample
+- `mammoth agent get` [read/none] -> mammoth.api.agent_definitions.AgentDefinitionsAPI.get
+  example: mammoth agent get sample
+- `mammoth agent goldens add` [benign_mutation/none] -> mammoth.api.agent_definitions.AgentDefinitionsAPI.goldens_add
+  example: mammoth agent goldens add sample --input '{"question": "Summarize revenue by region", "expected": "sample"}'
+- `mammoth agent goldens list` [read/none] -> mammoth.api.agent_definitions.AgentDefinitionsAPI.goldens_list
+  example: mammoth agent goldens list sample
+- `mammoth agent goldens remove` [destructive/prompt_or_yes] -> mammoth.api.agent_definitions.AgentDefinitionsAPI.goldens_remove
+  example: mammoth agent goldens remove sample 123
+- `mammoth agent goldens run` [benign_mutation/none] -> mammoth.api.agent_definitions.AgentDefinitionsAPI.goldens_run
+  example: mammoth agent goldens run sample
+- `mammoth agent goldens status` [read/none] -> mammoth.api.agent_definitions.AgentDefinitionsAPI.goldens_status
+  example: mammoth agent goldens status sample
+- `mammoth agent list` [read/none] -> mammoth.api.agent_definitions.AgentDefinitionsAPI.list
+  example: mammoth agent list
+- `mammoth agent memory add` [benign_mutation/none] -> mammoth.api.agent_definitions.AgentDefinitionsAPI.notes_upsert
+  example: mammoth agent memory add sample --input '{"name": "Revenue report", "content": "sample"}'
+- `mammoth agent memory list` [read/none] -> mammoth.api.agent_definitions.AgentDefinitionsAPI.notes_list
+  example: mammoth agent memory list sample
+- `mammoth agent memory remove` [destructive/prompt_or_yes] -> mammoth.api.agent_definitions.AgentDefinitionsAPI.notes_delete
+  example: mammoth agent memory remove sample 123
+- `mammoth agent projects set` [benign_mutation/none] -> mammoth.api.agent_definitions.AgentDefinitionsAPI.update
+  example: mammoth agent projects set sample --input '{"project_ids": [12, 15]}'
+- `mammoth agent publish` [benign_mutation/none] -> mammoth.api.agent_definitions.AgentDefinitionsAPI.publish
+  example: mammoth agent publish sample
+- `mammoth agent roles` [read/none] -> mammoth.api.agent_definitions.AgentDefinitionsAPI.roles
+  example: mammoth agent roles
 - `mammoth agent run extend` [benign_mutation/none] -> mammoth.api.agents.AgentsAPI.run_extend
   example: mammoth agent run extend resource-123
 - `mammoth agent run list` [read/none] -> mammoth.api.agents.AgentsAPI.run_list
@@ -49,6 +93,14 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth agent run stop resource-123
 - `mammoth agent run units set` [benign_mutation/none] -> mammoth.api.agents.AgentsAPI.run_units_set
   example: mammoth agent run units set resource-123 --input '{"step": 1, "kind": "sample", "units": [{"sample_key": "Status"}]}'
+- `mammoth agent scratch clear` [destructive/prompt_or_yes] -> mammoth.api.agent_definitions.AgentDefinitionsAPI.notes_delete
+  example: mammoth agent scratch clear sample 'Revenue report'
+- `mammoth agent scratch get` [read/none] -> mammoth.api.agent_definitions.AgentDefinitionsAPI.notes_list
+  example: mammoth agent scratch get sample 'Revenue report'
+- `mammoth agent scratch list` [read/none] -> mammoth.api.agent_definitions.AgentDefinitionsAPI.notes_list
+  example: mammoth agent scratch list sample
+- `mammoth agent scratch set` [benign_mutation/none] -> mammoth.api.agent_definitions.AgentDefinitionsAPI.notes_upsert
+  example: mammoth agent scratch set sample 'Revenue report' --input '{"content": "sample"}'
 - `mammoth agent session delete` [destructive/prompt_or_yes] -> mammoth.api.agents.AgentsAPI.session_delete
   example: mammoth agent session delete resource-123
 - `mammoth agent session list` [read/none] -> mammoth.api.agents.AgentsAPI.session_list
@@ -57,8 +109,12 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth agent session messages resource-123
 - `mammoth agent session set-visibility` [benign_mutation/none] -> mammoth.api.agents.AgentsAPI.session_set_visibility
   example: mammoth agent session set-visibility resource-123 --input '{"visibility": "sample"}'
+- `mammoth agent team set` [benign_mutation/none] -> mammoth.api.agent_definitions.AgentDefinitionsAPI.update
+  example: mammoth agent team set sample --input '{"team": {"agents": ["margin-watch"], "max_rounds": 4}}'
 - `mammoth agent turn cancel` [benign_mutation/none] -> mammoth.api.agents.AgentsAPI.turn_cancel
   example: mammoth agent turn cancel resource-123
+- `mammoth agent update` [benign_mutation/none] -> mammoth.api.agent_definitions.AgentDefinitionsAPI.update
+  example: mammoth agent update sample --input '{"name": "Margin watch"}'
 
 ## ai
 

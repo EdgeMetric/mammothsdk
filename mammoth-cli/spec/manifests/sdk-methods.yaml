@@ -523,6 +523,234 @@ methods:
   pagination_policy: none
   secret_fields: []
   reviewed_by: primary
+- sdk_symbol: mammoth.api.agent_definitions.AgentDefinitionsAPI.charter_restore
+  implementation_origin: mammoth.api.agent_definitions.AgentDefinitionsAPI.charter_restore
+  signature: 'charter_restore(self, agent_key: ''str'', version: ''int'') -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: agent.charter.restore
+  alias_of: null
+  no_command_reason: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.agent_definitions.AgentDefinitionsAPI.charter_versions
+  implementation_origin: mammoth.api.agent_definitions.AgentDefinitionsAPI.charter_versions
+  signature: 'charter_versions(self, agent_key: ''str'') -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: agent.charter.versions
+  alias_of: null
+  no_command_reason: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.agent_definitions.AgentDefinitionsAPI.create
+  implementation_origin: mammoth.api.agent_definitions.AgentDefinitionsAPI.create
+  signature: 'create(self, key: ''str'', name: ''str'', description: ''str | None'' = None, charter: ''str | None'' = None, role: ''str | None'' = None, propose: ''bool | None'' = None, project_ids: ''_list[int] | None'' = None, team: ''dict[str, Any] | None'' = None) -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: agent.create
+  alias_of: null
+  no_command_reason: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.agent_definitions.AgentDefinitionsAPI.delete
+  implementation_origin: mammoth.api.agent_definitions.AgentDefinitionsAPI.delete
+  signature: 'delete(self, agent_key: ''str'') -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: agent.delete
+  alias_of: null
+  no_command_reason: null
+  mutation_class: destructive
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.agent_definitions.AgentDefinitionsAPI.disable
+  implementation_origin: mammoth.api.agent_definitions.AgentDefinitionsAPI.disable
+  signature: 'disable(self, agent_key: ''str'') -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: agent.disable
+  alias_of: null
+  no_command_reason: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.agent_definitions.AgentDefinitionsAPI.feedback_list
+  implementation_origin: mammoth.api.agent_definitions.AgentDefinitionsAPI.feedback_list
+  signature: 'feedback_list(self, agent_key: ''str'') -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: agent.feedback.list
+  alias_of: null
+  no_command_reason: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.agent_definitions.AgentDefinitionsAPI.get
+  implementation_origin: mammoth.api.agent_definitions.AgentDefinitionsAPI.get
+  signature: 'get(self, agent_key: ''str'') -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: agent.get
+  alias_of: null
+  no_command_reason: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.agent_definitions.AgentDefinitionsAPI.goldens_add
+  implementation_origin: mammoth.api.agent_definitions.AgentDefinitionsAPI.goldens_add
+  signature: 'goldens_add(self, agent_key: ''str'', question: ''str'', expected: ''str'') -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: agent.goldens.add
+  alias_of: null
+  no_command_reason: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.agent_definitions.AgentDefinitionsAPI.goldens_list
+  implementation_origin: mammoth.api.agent_definitions.AgentDefinitionsAPI.goldens_list
+  signature: 'goldens_list(self, agent_key: ''str'') -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: agent.goldens.list
+  alias_of: null
+  no_command_reason: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.agent_definitions.AgentDefinitionsAPI.goldens_remove
+  implementation_origin: mammoth.api.agent_definitions.AgentDefinitionsAPI.goldens_remove
+  signature: 'goldens_remove(self, agent_key: ''str'', golden_id: ''int'') -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: agent.goldens.remove
+  alias_of: null
+  no_command_reason: null
+  mutation_class: destructive
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.agent_definitions.AgentDefinitionsAPI.goldens_run
+  implementation_origin: mammoth.api.agent_definitions.AgentDefinitionsAPI.goldens_run
+  signature: 'goldens_run(self, agent_key: ''str'') -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: agent.goldens.run
+  alias_of: null
+  no_command_reason: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.agent_definitions.AgentDefinitionsAPI.goldens_status
+  implementation_origin: mammoth.api.agent_definitions.AgentDefinitionsAPI.goldens_status
+  signature: 'goldens_status(self, agent_key: ''str'') -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: agent.goldens.status
+  alias_of: null
+  no_command_reason: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.agent_definitions.AgentDefinitionsAPI.list
+  implementation_origin: mammoth.api.agent_definitions.AgentDefinitionsAPI.list
+  signature: 'list(self, status: ''str | None'' = None) -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: agent.list
+  alias_of: null
+  no_command_reason: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.agent_definitions.AgentDefinitionsAPI.notes_delete
+  implementation_origin: mammoth.api.agent_definitions.AgentDefinitionsAPI.notes_delete
+  signature: 'notes_delete(self, agent_key: ''str'', note_id: ''int'') -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: agent.memory.remove
+  alias_of: null
+  no_command_reason: null
+  mutation_class: destructive
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.agent_definitions.AgentDefinitionsAPI.notes_list
+  implementation_origin: mammoth.api.agent_definitions.AgentDefinitionsAPI.notes_list
+  signature: 'notes_list(self, agent_key: ''str'', project_id: ''int | None'' = None, kind: ''str | None'' = None) -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: agent.memory.list
+  alias_of: null
+  no_command_reason: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.agent_definitions.AgentDefinitionsAPI.notes_upsert
+  implementation_origin: mammoth.api.agent_definitions.AgentDefinitionsAPI.notes_upsert
+  signature: 'notes_upsert(self, agent_key: ''str'', project_id: ''int'', kind: ''str'', name: ''str'', content: ''str'') -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: agent.memory.add
+  alias_of: null
+  no_command_reason: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.agent_definitions.AgentDefinitionsAPI.publish
+  implementation_origin: mammoth.api.agent_definitions.AgentDefinitionsAPI.publish
+  signature: 'publish(self, agent_key: ''str'') -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: agent.publish
+  alias_of: null
+  no_command_reason: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.agent_definitions.AgentDefinitionsAPI.roles
+  implementation_origin: mammoth.api.agent_definitions.AgentDefinitionsAPI.roles
+  signature: roles(self) -> 'dict[str, Any]'
+  openapi_operation_ids: []
+  canonical_command: agent.roles
+  alias_of: null
+  no_command_reason: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.agent_definitions.AgentDefinitionsAPI.update
+  implementation_origin: mammoth.api.agent_definitions.AgentDefinitionsAPI.update
+  signature: 'update(self, agent_key: ''str'', name: ''str | None'' = None, description: ''str | None'' = None, charter: ''str | None'' = None, role: ''str | None'' = None, propose: ''bool | None'' = None, project_ids: ''_list[int] | None'' = None, team: ''dict[str, Any] | None'' = None) -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: agent.update
+  alias_of: null
+  no_command_reason: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
 - sdk_symbol: mammoth.api.agents.AgentsAPI.action_delete
   implementation_origin: mammoth.api.agents.AgentsAPI.action_delete
   signature: 'action_delete(self, session_id: ''str'', action_id: ''str'') -> ''dict[str, Any]'''

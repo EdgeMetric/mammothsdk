@@ -23,6 +23,28 @@ _HANDLER_OWNED_FIELDS: dict[str, frozenset[str]] = {
             "turn.cancel",
         )
     },
+    # The focused ``set`` commands send one slice of ``AgentDefinitionsAPI.update``;
+    # the other update fields belong to ``agent update``.
+    **{
+        f"agent.{command}": (
+            frozenset({"name", "description", "charter", "role", "propose", "project_ids", "team"})
+            - frozenset(fields)
+        )
+        for command, fields in {
+            "charter.set": ("charter",),
+            "access.set": ("role", "propose"),
+            "projects.set": ("project_ids",),
+            "team.set": ("team",),
+        }.items()
+    },
+    # The note kind comes from the command (``memory`` is facts, ``scratch`` is working notes).
+    **{
+        f"agent.{command}": frozenset({"kind"})
+        for command in ("memory.add", "memory.list", "scratch.set", "scratch.get", "scratch.list")
+    },
+    # ``scratch get`` and ``scratch clear`` find the note by the NAME positional; the
+    # handler supplies ``note_id`` (clear) and filters the listing by name (get).
+    "agent.scratch.clear": frozenset({"note_id"}),
     # Skill handlers deliberately derive filesystem roots from the running
     # process and generate their own backup timestamp.  User input must not
     # claim to control values that the handlers replace or omit.
@@ -101,6 +123,12 @@ _EXAMPLE_INPUT_HINTS: dict[str, dict[str, Any]] = {
         "batch_id": 1,
         "rows": [{"line_num": 2, "line": "corrected,line,here"}],
     },
+    # ``agent update`` fields are all optional; each focused ``set`` command needs its own.
+    "agent.charter.set": {"charter": "Watch weekly margin and report the three biggest drops."},
+    "agent.access.set": {"role": "member", "propose": True},
+    "agent.projects.set": {"project_ids": [12, 15]},
+    "agent.team.set": {"team": {"agents": ["margin-watch"], "max_rounds": 4}},
+    "agent.update": {"name": "Margin watch"},
     # The server accepts only the formats it knows: dashboard, presentation, document, qa.
     "dashboard.format-preview": {"style": "presentation"},
     # ``task`` needs a task_id too; the whole-view scope is the one that stands alone.
