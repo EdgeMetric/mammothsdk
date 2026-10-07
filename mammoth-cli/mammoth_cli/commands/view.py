@@ -24,7 +24,7 @@ import dataclasses
 import inspect
 import shlex
 import time
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
 from datetime import UTC, datetime
 from decimal import Decimal, InvalidOperation
 from typing import Any
@@ -359,20 +359,53 @@ def _read_meta(
     A number in an answer needs its source; without the names an agent that
     silently used the wrong one of two look-alike datasets never says so.
     """
+    view, dataset = _raised(service.call_many(_read_meta_calls(dataset_id, view_id, project_id)))
+    ids = (dataset_id, view_id, project_id)
+    return _read_meta_from(invocation, workspace_id, ids, view, dataset)
+
+
+def _raised(results: list[Any]) -> list[Any]:
+    """``results`` as they are, or the first error among them raised."""
+    for result in results:
+        if isinstance(result, BaseException):
+            raise result
+    return results
+
+
+def _read_meta_calls(
+    dataset_id: int, view_id: int, project_id: int | None
+) -> list[tuple[str, dict[str, Any]]]:
+    """The two independent reads that name a view and its dataset, for ``call_many``."""
+    return [
+        (
+            _DATAVIEW_GET_SYMBOL,
+            {
+                "dataset_id": dataset_id,
+                "dataview_id": view_id,
+                "project_id": project_id,
+                "fields": "__min",
+            },
+        ),
+        (
+            _DATASET_GET_SYMBOL,
+            {"dataset_id": dataset_id, "project_id": project_id, "fields": "id,name"},
+        ),
+    ]
+
+
+def _read_meta_from(
+    invocation: Invocation,
+    workspace_id: int,
+    ids: tuple[int, int, int | None],
+    view: Any,
+    dataset: Any,
+) -> dict[str, Any]:
+    """The envelope metadata from the two reads of :func:`_read_meta_calls`."""
+    dataset_id, view_id, project_id = ids
     meta = _meta(invocation, workspace_id, project_id)
-    view = service.call(
-        _DATAVIEW_GET_SYMBOL,
-        dataset_id=dataset_id,
-        dataview_id=view_id,
-        project_id=project_id,
-        fields="__min",
-    )
     # The read just proved this dataset holds the view; keep the pair so the
     # next command on it (a transform) needs no ``dataset_id`` of its own.
     parents.remember(_profile_name(invocation), workspace_id, {view_id: dataset_id})
-    dataset = service.call(
-        _DATASET_GET_SYMBOL, dataset_id=dataset_id, project_id=project_id, fields="id,name"
-    )
     dataset = dataset.get("dataset", dataset) if isinstance(dataset, dict) else {}
     meta["dataset"] = {"id": dataset_id, "name": dataset.get("name")}
     meta["view"] = {"id": view_id, "name": view.get("name") if isinstance(view, dict) else None}
@@ -480,6 +513,8 @@ _VIEW_LIST_ALL_DATASETS_MIN_VIEWS = 20
 #: not they hold any, so a project of many empty datasets costs a fixed number of
 #: requests. The result carries ``next_dataset_offset`` to resume from.
 _VIEW_LIST_ALL_DATASETS_MAX_VISITS = 25
+#: Datasets whose views one wave of a project-wide ``view list`` reads at the same time.
+_VIEW_LIST_WAVE = 5
 
 
 def view_list(invocation: Invocation) -> HandlerResult:
@@ -606,6 +641,45 @@ def _compact_view_list(
     return result
 
 
+def _dataset_ids(datasets: list[Any], dataset_offset: int) -> list[tuple[int, int]]:
+    """``(position, id)`` of the datasets one listing may read, all fetched at once."""
+    end = min(len(datasets), dataset_offset + _VIEW_LIST_ALL_DATASETS_MAX_VISITS)
+    return [
+        (index, datasets[index]["id"])
+        for index in range(dataset_offset, end)
+        if isinstance(datasets[index], dict) and isinstance(datasets[index].get("id"), int)
+    ]
+
+
+def _dataset_view_pages(
+    service: Any,
+    view_list_symbol: str,
+    window: list[tuple[int, int]],
+    project_id: int,
+    view_kwargs: dict[str, Any],
+) -> Iterator[tuple[int, int, Any]]:
+    """``(position, dataset id, view page)`` in order, each wave of datasets read at once.
+
+    A wave is only read when the caller asks for its first page, so a listing that
+    stops early never reads the waves after it.
+    """
+    for start in range(0, len(window), _VIEW_LIST_WAVE):
+        wave = window[start : start + _VIEW_LIST_WAVE]
+        pages = _raised(
+            service.call_many(
+                [
+                    (
+                        view_list_symbol,
+                        {"dataset_id": dataset_id, "project_id": project_id, **view_kwargs},
+                    )
+                    for _index, dataset_id in wave
+                ]
+            )
+        )
+        for (index, dataset_id), page in zip(wave, pages, strict=True):
+            yield index, dataset_id, page
+
+
 def _view_list_across_project(
     service: Any,
     view_list_symbol: str,
@@ -633,15 +707,11 @@ def _view_list_across_project(
     _forward_optional(document, view_kwargs, ("sort",))
     dataviews: list[Any] = []
     visited = dataset_offset
-    for index in range(dataset_offset, len(datasets)):
-        dataset = datasets[index]
+    window = _dataset_ids(datasets, dataset_offset)
+    for index, dataset_id, page in _dataset_view_pages(
+        service, view_list_symbol, window, project_id, view_kwargs
+    ):
         visited = index + 1
-        dataset_id = dataset.get("id") if isinstance(dataset, dict) else None
-        if not isinstance(dataset_id, int):
-            continue
-        page = service.call(
-            view_list_symbol, dataset_id=dataset_id, project_id=project_id, **view_kwargs
-        )
         for item in page.get("dataviews", []) if isinstance(page, dict) else []:
             if isinstance(item, dict):
                 item = {**item, "dataset_id": dataset_id}
@@ -743,6 +813,13 @@ def _dataview_metadata(
             project_id=project_id,
         )
     except Exception:  # noqa: BLE001 -- labels are a presentation nicety, never fatal
+        return []
+    return _metadata_of(info)
+
+
+def _metadata_of(info: Any) -> list[dict[str, Any]]:
+    """The column metadata records of a dataview record read earlier, renames applied."""
+    if isinstance(info, BaseException):
         return []
     info = apply_column_renames(info)
     metadata = info.get(_METADATA_KEY) if isinstance(info, dict) else None
@@ -1214,7 +1291,6 @@ def view_data_get(invocation: Invocation) -> HandlerResult:
     limit = document.get("limit", _DATA_GET_DEFAULT_LIMIT)
     with open_service(invocation) as (service, auth):
         dataset_id = _resolve_dataset_id(service, invocation, view_id, document)
-        meta = _read_meta(service, invocation, auth.workspace_id, dataset_id, view_id, project_id)
         kwargs: dict[str, Any] = {
             "dataset_id": dataset_id,
             "dataview_id": view_id,
@@ -1225,13 +1301,29 @@ def view_data_get(invocation: Invocation) -> HandlerResult:
             page_limit = _int_field(limit, "limit")
             kwargs["limit"] = page_limit if page_limit > 0 else 400
             _forward_optional(document, kwargs, ("sequence",))
-            data = service.call(_QUERY_DATA_SYMBOL, **kwargs)
+            data_symbol = _QUERY_DATA_SYMBOL
         else:
             _forward_optional(document, kwargs, ("timeout", "poll_interval", "sequence"))
-            data = service.call(_symbol(invocation), **kwargs)
+            data_symbol = _symbol(invocation)
+        # The names, the column metadata and the data do not depend on each other.
+        view, dataset, data, info = service.call_many(
+            [
+                *_read_meta_calls(dataset_id, view_id, project_id),
+                (data_symbol, kwargs),
+                (
+                    _DATAVIEW_GET_SYMBOL,
+                    {"dataset_id": dataset_id, "dataview_id": view_id, "project_id": project_id},
+                ),
+            ]
+        )
+        _raised([view, dataset, data])
+        meta = _read_meta_from(
+            invocation, auth.workspace_id, (dataset_id, view_id, project_id), view, dataset
+        )
+        mapping, types = _column_profile_of(info)
         whole_view = document.get("offset") is None
         data = _relabel_and_check(
-            service, dataset_id, view_id, project_id, data, whole_view=whole_view
+            service, dataset_id, view_id, project_id, data, mapping, types, whole_view=whole_view
         )
     page_size = _DATA_PAGE_ROWS if whole_view else kwargs["limit"]
     return _trim_rows(data, limit, page_size), meta
@@ -1545,9 +1637,21 @@ def _column_profile(
     service: Any, dataset_id: int, dataview_id: int, project_id: int | None
 ) -> tuple[dict[str, str], dict[str, str]]:
     """One metadata read: internal-to-display names, and display name to type."""
+    columns = _dataview_metadata(service, dataset_id, dataview_id, project_id)
+    return _column_profile_of_columns(columns)
+
+
+def _column_profile_of(info: Any) -> tuple[dict[str, str], dict[str, str]]:
+    """Internal-to-display names and display name to type, from a dataview record read earlier."""
+    return _column_profile_of_columns(_metadata_of(info))
+
+
+def _column_profile_of_columns(
+    columns: list[dict[str, Any]],
+) -> tuple[dict[str, str], dict[str, str]]:
     mapping: dict[str, str] = {}
     types: dict[str, str] = {}
-    for column in _dataview_metadata(service, dataset_id, dataview_id, project_id):
+    for column in columns:
         internal = column.get(_INTERNAL_NAME_KEY)
         display = column.get(_DISPLAY_NAME_KEY)
         if isinstance(internal, str) and isinstance(display, str):
