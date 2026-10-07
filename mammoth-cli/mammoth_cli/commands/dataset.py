@@ -10,6 +10,7 @@ seam to the public SDK method named by the command's reviewed manifest
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from typing import Any, Protocol
 
 from mammoth_cli.errors.envelope import (
@@ -358,6 +359,44 @@ def _tag_scope(matches: list[dict[str, Any]], project_id: int) -> list[dict[str,
     return [{**m, "in_project": m.get("project_id") == project_id} for m in matches]
 
 
+def all_projects_requested(invocation: Invocation) -> bool:
+    """Whether ``--input '{"all_projects": true}'`` asks for matches outside the project."""
+    value = (invocation.load_input() or {}).get("all_projects", False)
+    if not isinstance(value, bool):
+        raise CliError(
+            code=CODE_INVALID_ARGUMENT,
+            message="all_projects must be true or false.",
+            exit_status=EXIT_USAGE,
+        )
+    return value
+
+
+def narrow_to_project(
+    rows: list[dict[str, Any]], is_exact: Callable[[dict[str, Any]], bool]
+) -> tuple[list[dict[str, Any]], int]:
+    """``(rows, dropped)``: only the project's own rows when one of them is an exact match.
+
+    The name already is in the project the call runs under, so the same name in
+    every other project is noise that reads as an ambiguity to ask the user about.
+    Rows must carry ``in_project``. With no exact match in the project, all rows
+    stay: the name may live elsewhere. ``dropped`` counts the rows left out.
+    """
+    own = [r for r in rows if r.get("in_project")]
+    if not any(is_exact(r) for r in own):
+        return rows, 0
+    return own, len(rows) - len(own)
+
+
+def elsewhere_note(dropped: int) -> str:
+    """Says how many matches in other projects were left out, and how to list them."""
+    if not dropped:
+        return ""
+    return (
+        f"{dropped} more match(es) in other projects are not listed: "
+        """--input '{"all_projects": true}' lists them."""
+    )
+
+
 def _find_scoped(
     service: Any,
     needle: str,
@@ -384,11 +423,14 @@ def dataset_find(invocation: Invocation) -> HandlerResult:
     carrying its ``project_id`` and ``project_name``: the in-product agent runs
     every call under the project the user last opened, which is often not the one
     the named dataset is in, so it states where the name is instead of asking the
-    user to switch. Does not require an active project.
+    user to switch. When the project holds an exact match, only the project's own
+    matches are returned and ``elsewhere`` counts the rest; ``--input
+    '{"all_projects": true}'`` returns them all. Does not require an active project.
     """
     name_substring = _require_string_positional(invocation, "name substring")
     needle = name_substring.lower()
     skipped: list[dict[str, Any]] = []
+    dropped = 0
     with open_service(invocation) as (service, auth):
         visible = _visible_projects(service)
         cut = False
@@ -396,6 +438,10 @@ def dataset_find(invocation: Invocation) -> HandlerResult:
             matches, projects, cut = _find_scoped(
                 service, needle, visible, invocation.project, skipped
             )
+            if not all_projects_requested(invocation):
+                matches, dropped = narrow_to_project(
+                    matches, lambda m: str(m.get("name", "")).lower() == needle
+                )
         else:
             projects = visible
             holding, cut = _projects_holding(service, needle, visible)
@@ -412,6 +458,9 @@ def dataset_find(invocation: Invocation) -> HandlerResult:
     if skipped:
         result["projects_skipped"] = skipped
     notes = [ambiguity_note(len(matches), name_substring)]
+    if dropped:
+        result["elsewhere"] = dropped
+        notes.append(elsewhere_note(dropped))
     if cut:
         result["truncated"] = True
         notes.append(search_cut_note("datasets"))

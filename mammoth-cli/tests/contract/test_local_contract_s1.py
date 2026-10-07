@@ -71,6 +71,8 @@ EXPECTED_FIELDS: dict[str, tuple[str, ...]] = {
     "log.tail": ("days", "limit", "errors_only", "command_id", "run_id"),
     "project.ensure": ("name",),
     "doctor": ("wait",),
+    "resolve": ("all_projects",),
+    "dataset.find": ("all_projects",),
     "schema.get": ("full",),
     "schema.list": ("family", "full"),
     "skill.install": ("agents", "scope", "force"),
