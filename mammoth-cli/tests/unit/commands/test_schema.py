@@ -972,3 +972,21 @@ def test_open_explore_cards_ranks_the_panel_command_first(query: str) -> None:
     top = result["matches"] or result.get("suggestions", [])
     assert top, f"no match or suggestion for {query!r}"
     assert top[0]["command_id"] == "view.explore-panel.set", (query, top)
+
+
+def _find_ids(query: str) -> list[str]:
+    from mammoth_cli.commands.schema import find_schemas
+
+    return [m["command_id"] for m in find_schemas(query)["matches"]]
+
+
+def test_managed_postgres_finds_the_mammoth_hosted_export_first() -> None:
+    assert _find_ids("managed postgres")[0] == "view.export.publish-db"
+    assert "view.export.publish-db" in _find_ids("postgres")
+    assert "view.export.publish-db" in _find_ids("mammoth managed")
+
+
+def test_the_customer_postgres_export_points_to_publish_db() -> None:
+    from mammoth_cli.commands.schema import _COMMAND_DISCOVERY_PURPOSES  # noqa: PLC0415
+
+    assert "publish-db" in _COMMAND_DISCOVERY_PURPOSES["view.export.postgres"]

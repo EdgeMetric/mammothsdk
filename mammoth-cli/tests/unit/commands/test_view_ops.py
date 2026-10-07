@@ -238,8 +238,8 @@ def test_draft_status_reads_server_backed_pipeline(fake_service: FakeMammothServ
     symbol = "mammoth.api.pipeline.PipelineAPI.get_draft_status"
     fake_service.responses[symbol] = {"dataview_id": 3, "is_draft": True}
     data, _ = view_ops_cmd.view_draft_status(_inv("view.draft.status", extra_args=["3"]))
-    assert data == {"dataview_id": 3, "is_draft": True}
-    assert fake_service.call_log == [(symbol, {"dataview_id": 3})]
+    assert data == {"dataview_id": 3, "is_draft": True, "step_errors": []}
+    assert fake_service.call_log[0] == (symbol, {"dataview_id": 3})
     assert fake_service.view_call_log == []
 
 
