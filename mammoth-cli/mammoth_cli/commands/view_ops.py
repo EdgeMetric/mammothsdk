@@ -22,6 +22,7 @@ from __future__ import annotations
 import json
 import re
 import shlex
+import time
 from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
 from typing import Any
@@ -326,9 +327,16 @@ def _dispatch_view(
     after: Callable[[Any, int, Any, Any], Any] | None = None,
     prepare: Callable[[Any, int, dict[str, Any]], Any] | None = None,
     reduces_rows: bool = False,
+    waits_for_run: bool = False,
     **kwargs: Any,
 ) -> HandlerResult:
     """Open the service, dispatch a View method call, and build the envelope.
+
+    ``waits_for_run`` marks a write that adds a task to this view. Its result
+    then waits for that task's own run to finish (see
+    :func:`wait_for_added_task_run`) before ``after`` and the read-back, and
+    carries that run as ``run``; a pipeline definition reading ``ready`` is not
+    proof the task ran.
 
     ``before(service, dataset_id)`` runs ahead of the call and its value is
     handed to ``after(service, dataset_id, state, data)``, which returns the
@@ -373,6 +381,11 @@ def _dispatch_view(
             if early is not None:
                 return early, _meta(invocation, auth.workspace_id)
         state = before(service, int(dataset_id)) if before and dataset_id is not None else None
+        task_ids_before = (
+            _task_ids(service, int(dataset_id), view_id)
+            if waits_for_run and dataset_id is not None
+            else None
+        )
         rows_before = (
             _view_row_count(service, int(dataset_id), view_id, invocation.project)
             if auto_row_check and dataset_id is not None
@@ -396,8 +409,17 @@ def _dispatch_view(
                 _profile_name(invocation), auth.workspace_id, {view_id: int(dataset_id)}
             )
         if after is not None and dataset_id is not None:
+            run, run_error = (
+                wait_for_added_task_run(service, int(dataset_id), view_id, task_ids_before)
+                if task_ids_before is not None
+                else (None, None)
+            )
             data = after(service, int(dataset_id), state, data)
             _flag_unsettled_pipeline(service, int(dataset_id), view_id, data)
+            if isinstance(data, dict) and run is not None:
+                data["run"] = run
+                if run_error is not None:
+                    data.setdefault("pipeline_error", run_error)
         elif (
             auto_row_check
             and dataset_id is not None
@@ -434,6 +456,68 @@ def with_in_place_note(data: Any, view_id: int) -> Any:
             "dataset or the source must stay untouched, do not edit it: run 'mammoth view "
             "create DATASET_ID' for a working view, make the steps on that view, then "
             "'mammoth view export dataset' it into the new dataset."
+        ),
+    }
+
+
+#: A task's own ``transform_status`` once its run is over; ``DONE`` is the only success.
+_RUN_DONE_STATUS = "DONE"
+_RUN_OVER_STATUSES = frozenset({_RUN_DONE_STATUS, "ERROR", "REFERROR", "EXCEPTION"})
+#: Bounded wait for the run of a task just added: it starts after the add returns.
+_RUN_ATTEMPTS = 40
+_RUN_RETRY_S = 0.5
+
+
+def _tasks(service: Any, dataset_id: int, view_id: int) -> list[dict[str, Any]]:
+    listing = service.call(_TASK_LIST_SYMBOL, dataview_id=view_id, dataset_id=dataset_id)
+    tasks = listing.get("tasks") if isinstance(listing, dict) else None
+    return [task for task in tasks or [] if isinstance(task, dict)]
+
+
+def _task_ids(service: Any, dataset_id: int, view_id: int) -> set[Any]:
+    return {task.get("id") for task in _tasks(service, dataset_id, view_id)}
+
+
+def wait_for_added_task_run(
+    service: Any, dataset_id: int, view_id: int, task_ids_before: set[Any]
+) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
+    """The run of the task this write added, once its own ``transform_status`` says it is over.
+
+    The add's response names no task (the SDK has already waited out the job that
+    modified the pipeline), and the pipeline's definition ``state`` reads ``ready``
+    before the task's run has started. The task is the one id not in
+    ``task_ids_before``; its run is over when its ``transform_status`` is
+    ``DONE`` or an error. Returns ``(run, error)``: ``run`` is the handle the
+    read-back came from (``task_id``, ``transform_status``), or
+    ``None`` when the write added no task; ``error`` is ``None`` for ``DONE``,
+    else the pipeline_error that keeps the write from reading verified.
+    """
+    run: dict[str, Any] = {}
+    for _ in range(_RUN_ATTEMPTS):
+        added = [
+            task
+            for task in _tasks(service, dataset_id, view_id)
+            if task.get("id") not in task_ids_before
+        ]
+        if not added:
+            return None, None
+        status = added[-1].get("transform_status")
+        run.update(task_id=added[-1].get("id"), transform_status=status)
+        if status in _RUN_OVER_STATUSES:
+            if status == _RUN_DONE_STATUS:
+                return run, None
+            return run, {
+                "execution_state": "runtime_error",
+                "task_id": run["task_id"],
+                "transform_status": status,
+            }
+        time.sleep(_RUN_RETRY_S)
+    return run, {
+        "execution_state": UNFINISHED_STATE,
+        "task_id": run.get("task_id"),
+        "wait_error": (
+            f"task {run.get('task_id')} had not finished running "
+            f"(transform_status {run.get('transform_status')})"
         ),
     }
 
@@ -1195,6 +1279,7 @@ def view_transform_convert_type(invocation: Invocation) -> HandlerResult:
         "convert_type",
         prepare=drop_same_type,
         after=note_skipped,
+        waits_for_run=True,
         **kwargs,
     )
 
