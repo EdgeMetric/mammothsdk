@@ -4915,6 +4915,52 @@ commands:
   undo_test: LT-VIEW-TRANSFORM-FILTER-UNDO
   known_restrictions: 'Observe first: count the rows that match with `view data aggregate` using the same condition, and the total with no condition.'
   reviewed_by: primary
+- command_id: view.transform.first-name
+  command_path: view transform first-name
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - AddTask
+  positionals:
+  - name: view_id
+    type: int
+    required: true
+    metavar: VIEW_ID
+    falls_back_to_field: null
+    help: ID of the view to act on.
+  options: []
+  sdk_symbol: mammoth._mixins._text_ops.TextOpsMixin.substring
+  sdk_conversion: 'CLI one-call op: View.substring with a first-word regex, then View.submit_draft when the step was staged; from mammoth_cli.commands.view_ops. The accepted document fields are in command_contract.py.'
+  request_model: ViewTransformFirstNameRequest
+  result_model: ViewTransformFirstNameResult
+  mutation_class: reversible_pipeline
+  edits_target: true
+  confirmation: none
+  wait_policy: always_wait
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  readback:
+    command: view.data.get
+    ids:
+      view_id: positional.0
+    kind: data
+  live_test: null
+  live_exemption_reason: 'Covered by tests/realcode/test_one_call_transform_ops.py, which drives the real CLI and SDK against a recording HTTP socket; no live case is recorded yet.'
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view transform first-name VIEW_ID --help
+  agent_example: 'mammoth view transform first-name 123 --input ''{"column": "Name", "new_column": "First name", "dataset_id": 456}'''
+  unit_tests:
+  - UT-VIEW-TRANSFORM-FIRST-NAME
+  contract_tests:
+  - CT-VIEW-TRANSFORM-FIRST-NAME-HUMAN
+  - CT-VIEW-TRANSFORM-FIRST-NAME-JSON
+  - CT-VIEW-TRANSFORM-FIRST-NAME-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Use for "extract the first name" or the first word of a text column. --input: "column" (a TEXT column, required) and exactly one of "new_column" or "existing_column". Takes the text up to the first space. One call: if the view is in draft mode the step is staged, the draft is submitted and the result waits on this step''s own run (run.transform_status DONE), not on the pipeline reading ready. A draft that already held other staged steps is left staged (status staged) because submitting would run them too; run view draft submit when that is intended.'
+  reviewed_by: primary
 - command_id: view.transform.generate-sql
   command_path: view transform generate-sql
   disposition: command
@@ -5724,6 +5770,52 @@ commands:
   draft_test: LT-VIEW-TRANSFORM-UNNEST-DRAFT
   undo_test: LT-VIEW-TRANSFORM-UNNEST-UNDO
   known_restrictions: 'Observe first: `view data get VIEW_ID` on the column to see how the nested values are stored.'
+  reviewed_by: primary
+- command_id: view.transform.update-column
+  command_path: view transform update-column
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - AddTask
+  positionals:
+  - name: view_id
+    type: int
+    required: true
+    metavar: VIEW_ID
+    falls_back_to_field: null
+    help: ID of the view to act on.
+  options: []
+  sdk_symbol: mammoth._mixins._math_ops.MathOpsMixin.math
+  sdk_conversion: 'CLI one-call op: View.math with existing_column, then View.submit_draft when the step was staged; from mammoth_cli.commands.view_ops. The accepted document fields are in command_contract.py.'
+  request_model: ViewTransformUpdateColumnRequest
+  result_model: ViewTransformUpdateColumnResult
+  mutation_class: reversible_pipeline
+  edits_target: true
+  confirmation: none
+  wait_policy: always_wait
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  readback:
+    command: view.data.get
+    ids:
+      view_id: positional.0
+    kind: data
+  live_test: null
+  live_exemption_reason: 'Covered by tests/realcode/test_one_call_transform_ops.py, which drives the real CLI and SDK against a recording HTTP socket; no live case is recorded yet.'
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view transform update-column VIEW_ID --help
+  agent_example: 'mammoth view transform update-column 123 --input ''{"column": "Cost", "expression": "Cost + 5", "dataset_id": 456}'''
+  unit_tests:
+  - UT-VIEW-TRANSFORM-UPDATE-COLUMN
+  contract_tests:
+  - CT-VIEW-TRANSFORM-UPDATE-COLUMN-HUMAN
+  - CT-VIEW-TRANSFORM-UPDATE-COLUMN-JSON
+  - CT-VIEW-TRANSFORM-UPDATE-COLUMN-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Use to overwrite a numeric column with an expression over its own values ("add 5 to Cost"). --input: "column" (an existing column, required) and "expression" (required, as in view transform math). Same as view transform math with existing_column set. One call: if the view is in draft mode the step is staged, the draft is submitted and the result waits on this step''s own run (run.transform_status DONE), not on the pipeline reading ready. A draft that already held other staged steps is left staged (status staged); run view draft submit when that is intended.'
   reviewed_by: primary
 - command_id: view.transform.window
   command_path: view transform window

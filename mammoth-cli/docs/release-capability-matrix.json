@@ -11806,6 +11806,7 @@
         "view.transform.extract-date",
         "view.transform.fill-missing",
         "view.transform.filter",
+        "view.transform.first-name",
         "view.transform.generate-sql",
         "view.transform.increment-date",
         "view.transform.join",
@@ -11821,6 +11822,7 @@
         "view.transform.substring",
         "view.transform.text",
         "view.transform.unnest",
+        "view.transform.update-column",
         "view.transform.window",
         "view.variants.create"
       ],

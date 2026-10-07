@@ -328,6 +328,7 @@ def _dispatch_view(
     prepare: Callable[[Any, int, dict[str, Any]], Any] | None = None,
     reduces_rows: bool = False,
     waits_for_run: bool = False,
+    apply_draft: bool = False,
     **kwargs: Any,
 ) -> HandlerResult:
     """Open the service, dispatch a View method call, and build the envelope.
@@ -336,7 +337,10 @@ def _dispatch_view(
     then waits for that task's own run to finish (see
     :func:`wait_for_added_task_run`) before ``after`` and the read-back, and
     carries that run as ``run``; a pipeline definition reading ``ready`` is not
-    proof the task ran.
+    proof the task ran. ``apply_draft`` (with ``waits_for_run``) makes a step
+    staged in draft mode run in this same call: the draft is submitted and the
+    wait is on the added task's own run. A draft that already held other staged
+    steps is left staged, because submitting would run steps the caller never named.
 
     ``before(service, dataset_id)`` runs ahead of the call and its value is
     handed to ``after(service, dataset_id, state, data)``, which returns the
@@ -386,6 +390,11 @@ def _dispatch_view(
             if waits_for_run and dataset_id is not None
             else None
         )
+        held_steps = (
+            _draft_has_pending_changes(service, view_id)
+            if apply_draft and dataset_id is not None
+            else True
+        )
         rows_before = (
             _view_row_count(service, int(dataset_id), view_id, invocation.project)
             if auto_row_check and dataset_id is not None
@@ -408,10 +417,15 @@ def _dispatch_view(
             parents.remember(
                 _profile_name(invocation), auth.workspace_id, {view_id: int(dataset_id)}
             )
+        if apply_draft and not held_steps and dataset_id is not None and _is_staged(data):
+            service.call_view(view_id, "submit_draft", dataset_id=int(dataset_id))
+            data = {key: value for key, value in data.items() if key != "message"}
+            data["status"] = "done"
+            data["draft_applied"] = True
         if after is not None and dataset_id is not None:
             run, run_error = (
                 wait_for_added_task_run(service, int(dataset_id), view_id, task_ids_before)
-                if task_ids_before is not None
+                if task_ids_before is not None and not _is_staged(data)
                 else (None, None)
             )
             data = after(service, int(dataset_id), state, data)
@@ -520,6 +534,17 @@ def wait_for_added_task_run(
             f"(transform_status {run.get('transform_status')})"
         ),
     }
+
+
+def _is_staged(data: Any) -> bool:
+    """Whether a write only staged its step in a draft, so no run is to be waited on."""
+    return isinstance(data, dict) and data.get("status") == "staged"
+
+
+def _draft_has_pending_changes(service: Any, view_id: int) -> bool:
+    """Whether the view's draft already holds staged steps (``False`` outside draft mode)."""
+    status = service.call(_DRAFT_STATUS_SYMBOL, dataview_id=view_id)
+    return bool(status.get("has_pending_changes")) if isinstance(status, dict) else False
 
 
 def _flag_unsettled_pipeline(service: Any, dataset_id: int, view_id: int, data: Any) -> None:
@@ -797,7 +822,9 @@ def _without_resource_context(document: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def _bind_transform_inputs(invocation: Invocation, document: dict[str, Any]) -> dict[str, Any]:
+def _bind_transform_inputs(
+    invocation: Invocation, document: dict[str, Any], command_id: str | None = None
+) -> dict[str, Any]:
     """Bind every admitted transform field through its reviewed contract.
 
     Transform handlers still own domain-specific required-field checks and the
@@ -807,7 +834,9 @@ def _bind_transform_inputs(invocation: Invocation, document: dict[str, Any]) -> 
     optional ``dataset_id`` is resource identity context for resolving the
     target view and must never be passed to a View transform method.
     """
-    bound = bind_command_inputs(invocation.command_id, _without_resource_context(document))
+    bound = bind_command_inputs(
+        command_id or invocation.command_id, _without_resource_context(document)
+    )
     direction = str(getattr(bound.get("direction"), "value", bound.get("direction"))).upper()
     if direction in {"LEFT", "RIGHT"} and bound.get("num_char") is not None:
         raise CliError(
@@ -1602,7 +1631,14 @@ def view_transform_math(invocation: Invocation) -> HandlerResult:
     _require_field(document, "expression")
     assert document is not None
     _require_one_destination(document, invocation.command_id)
-    kwargs = _bind_transform_inputs(invocation, document)
+    return _math_into_column(invocation, view_id, document)
+
+
+def _math_into_column(
+    invocation: Invocation, view_id: int, document: dict[str, Any], **dispatch: Any
+) -> HandlerResult:
+    """The math write for a ``view transform math`` input ``document``, with its blank-input note."""
+    kwargs = _bind_transform_inputs(invocation, document, "view.transform.math")
     blanks: dict[str, int] = {}
 
     def count_blank_inputs(service: Any, dataset_id: int, _kwargs: dict[str, Any]) -> None:
@@ -1612,8 +1648,64 @@ def view_transform_math(invocation: Invocation) -> HandlerResult:
             )
         )
 
-    data, meta = _dispatch_view(invocation, view_id, "math", prepare=count_blank_inputs, **kwargs)
+    data, meta = _dispatch_view(
+        invocation, view_id, "math", prepare=count_blank_inputs, **dispatch, **kwargs
+    )
     return _with_blank_input_note(data, blanks), meta
+
+
+def _keep_data(service: Any, dataset_id: int, state: Any, data: Any) -> Any:
+    """An ``after`` that adds nothing: the write is read back by waiting on its own task."""
+    return data
+
+
+def view_transform_update_column(invocation: Invocation) -> HandlerResult:
+    """Overwrite a column with a math expression in one call; ``column``, ``expression`` required.
+
+    ``view transform math`` with ``existing_column``, except that a step staged
+    in draft mode is submitted here and the result waits on its own task's run.
+    """
+    view_id = _view_id(invocation)
+    document = invocation.load_input()
+    column = _require_field(document, "column")
+    _require_field(document, "expression")
+    assert document is not None
+    math_document = {
+        **{key: value for key, value in document.items() if key != "column"},
+        "existing_column": column,
+    }
+    return _math_into_column(
+        invocation, view_id, math_document, after=_keep_data, waits_for_run=True, apply_draft=True
+    )
+
+
+#: The text up to the first whitespace: a person's first name, a path's first segment.
+_FIRST_WORD_PATTERN = r"^\S+"
+
+
+def view_transform_first_name(invocation: Invocation) -> HandlerResult:
+    """Extract the first word of a text column, in one call. ``column`` is required.
+
+    ``view transform substring`` with the first-word regex, with the same draft
+    apply and own-task wait as ``view transform update-column``.
+    """
+    view_id = _view_id(invocation)
+    document = invocation.load_input()
+    _require_field(document, "column")
+    assert document is not None
+    _require_one_destination(document, invocation.command_id)
+    kwargs = _bind_transform_inputs(
+        invocation, {**document, "regex_pattern": _FIRST_WORD_PATTERN}, "view.transform.substring"
+    )
+    return _dispatch_view(
+        invocation,
+        view_id,
+        "substring",
+        after=_keep_data,
+        waits_for_run=True,
+        apply_draft=True,
+        **kwargs,
+    )
 
 
 def _blank_math_inputs(
