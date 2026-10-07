@@ -26,6 +26,7 @@ from __future__ import annotations
 import datetime as _dt
 import json
 import os
+import subprocess
 import sys
 from pathlib import Path
 from typing import Any
@@ -201,6 +202,34 @@ def refresh_if_stale(command_id: str | None = None) -> None:
     write_cache(_fetch_latest())
 
 
+def refresh_in_background(command_id: str | None = None) -> None:
+    """Refresh a stale cache in a detached process, so the command exits at once.
+
+    :func:`refresh_if_stale` asks PyPI with a 3 s timeout; run inline it keeps
+    the finished command alive for up to that long once a day. The cache is
+    stamped first so concurrent commands do not each spawn a check; the child
+    (``python -m mammoth_cli.runtime.updates``) writes the answer.
+    """
+    if not enabled() or (command_id or "").split(".")[0] in _SELF_MANAGING:
+        return
+    cached = read_cache()
+    if cache_is_fresh(cached):
+        return
+    previous = cached.get("latest") if cached else None
+    write_cache(previous if isinstance(previous, str) else None)
+    try:
+        subprocess.Popen(  # noqa: S603 -- fixed argv, our own module
+            [sys.executable, "-m", "mammoth_cli.runtime.updates"],
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            start_new_session=True,
+            close_fds=True,
+        )
+    except OSError:
+        return
+
+
 def emit_hint(update: dict[str, Any] | None, *, output: str) -> None:
     """One stderr line in human output modes only."""
     if update is None or output in {"json", "ndjson", "yaml"}:
@@ -268,3 +297,11 @@ def auto_upgrade(command_id: str, run_log: Any = None) -> dict[str, Any] | None:
         except Exception:  # noqa: BLE001, S110 -- the run log is best effort
             pass
     return record
+
+
+if __name__ == "__main__":  # pragma: no cover - the detached refresh process
+    _latest = _fetch_latest()
+    if _latest is None:
+        _previous = (read_cache() or {}).get("latest")
+        _latest = _previous if isinstance(_previous, str) else None
+    write_cache(_latest)

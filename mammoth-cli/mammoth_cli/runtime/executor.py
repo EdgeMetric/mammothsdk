@@ -273,7 +273,7 @@ def run(
         raise typer.Exit(mapped_error.exit_status) from None
     if run_log is not None:
         run_log.finish(0)
-    updates.refresh_if_stale(command_id)
+    updates.refresh_in_background(command_id)
     _sync_skill_installs(command_id, output)
 
 

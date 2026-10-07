@@ -32,7 +32,6 @@ import webbrowser
 from collections.abc import Callable, Iterator
 from dataclasses import dataclass
 
-from mammoth import oauth as sdk_oauth
 from mammoth_cli.context import credentials
 from mammoth_cli.context.credentials import OAuthSession
 from mammoth_cli.context.endpoint import DEFAULT_SERVER_PREFIX
@@ -247,6 +246,8 @@ class TokenGrant:
 
 
 def _post_token(base_url: str, form: dict[str, str]) -> tuple[int, dict[str, object]]:
+    from mammoth import oauth as sdk_oauth
+
     try:
         status, body = sdk_oauth.token_request(base_url, form)
     except sdk_oauth.OAuthTransportError as exc:
@@ -379,6 +380,8 @@ def parse_device_challenge(body: dict[str, object]) -> DeviceChallenge:
 
 def start_device_login(base_url: str, *, client_id: str) -> DeviceChallenge:
     """Ask Mammoth for a device code and the code the person will type."""
+    from mammoth import oauth as sdk_oauth
+
     try:
         status, body = sdk_oauth.device_authorization_request(base_url, {"client_id": client_id})
     except sdk_oauth.OAuthTransportError as exc:
@@ -591,6 +594,8 @@ def token_source(profile: str, base_url: str) -> TokenSource:
 
 def revoke_grant(base_url: str, session: OAuthSession) -> str | None:
     """Ask the server to drop this connection. Return a warning, or None on success."""
+    from mammoth import oauth as sdk_oauth
+
     if session.grant_id is None:
         return "The server connection id is unknown, so it was not revoked on the server."
     try:

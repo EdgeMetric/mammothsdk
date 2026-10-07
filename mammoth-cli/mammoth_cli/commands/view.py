@@ -29,9 +29,6 @@ from datetime import UTC, datetime
 from decimal import Decimal, InvalidOperation
 from typing import Any
 
-from mammoth.models.exports import ExportStatus
-from mammoth.view import ViewExport
-
 from mammoth_cli.context import profiles
 from mammoth_cli.errors.envelope import (
     CODE_INVALID_ARGUMENT,
@@ -3275,6 +3272,8 @@ def _end_of_pipeline_exports(
         dataset_id=dataset_id,
         end_of_pipeline=True,
     )
+    from mammoth.models.exports import ExportStatus
+
     fired: list[dict[str, Any]] = []
     source_columns: Any = None
     for export in getattr(listing, "exports", None) or []:
@@ -3920,6 +3919,8 @@ def view_export_specialized(invocation: Invocation) -> HandlerResult:
     # reviewed trigger controls may flow through its **kwargs extension point;
     # using a union of every destination's fields would silently accept, for
     # example, email-only fields on a database export.
+    from mammoth.view import ViewExport
+
     signature = inspect.signature(getattr(ViewExport, method))
     explicit_fields = {
         name
@@ -4135,6 +4136,8 @@ def _existing_internal_dataset_export(
     and the list endpoint does not filter on status, so a deleted export
     would otherwise block every later export into that target forever.
     """
+    from mammoth.models.exports import ExportStatus
+
     listing = service.call(
         _EXPORTS_LIST_SYMBOL,
         dataview_id=dataview_id,
