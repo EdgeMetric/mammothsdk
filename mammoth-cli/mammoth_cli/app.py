@@ -1026,6 +1026,14 @@ def _indexed_summary(command_id: str) -> str | None:
     return _summary_index().get(command_id)
 
 
+#: A line of ``--help`` a command needs that its handler's shared docstring cannot carry.
+_HELP_NOTES = {
+    "view.export.dataset": (
+        "Omit dataset_name unless the user gave one; the product default 'Result Dataset' is used."
+    ),
+}
+
+
 def _command_help(command_id: str, record: dict[str, Any] | None) -> str | None:
     """Build a command's user-facing ``--help`` summary.
 
@@ -1046,6 +1054,8 @@ def _command_help(command_id: str, record: dict[str, Any] | None) -> str | None:
         parts.append(summary)
     if record is not None and edits_view_in_place(record):
         parts.append(IN_PLACE_RECIPE)
+    if command_id in _HELP_NOTES:
+        parts.append(_HELP_NOTES[command_id])
     example = (record or {}).get("agent_example")
     if example:
         parts.append(f"Example: {example}")

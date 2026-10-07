@@ -480,7 +480,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth view export dataset`. Exact input fields: `mammoth schema get view.export.dataset`.
 
-Example: `mammoth view export dataset 123 123 --input '{"dataset_name": "snapshot"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth view export dataset 123 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ViewExportDatasetResult`; mutation `benign_mutation`, confirmation `none`, wait policy `always_wait`.
 
