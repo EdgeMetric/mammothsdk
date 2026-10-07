@@ -6,7 +6,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-### Fixed (mammoth-cli, next release)
+### Fixed (mammoth-cli 2.2.60)
 
 - A folder has one id in CLI output: the resource id the web app opens it by (QA RS-12: the agent showed a folder under its label id and its receipt under its resource id, two cards and a broken link). `folder create/get/list/update/find` and every folder in `browse project/folder/root/workspace/resources/resource/search/ancestors` print that id as `id`; the separate `resource_id` field, the label id, and the label ids in `parent_id` and `resource_path` are gone. `folder get/update/delete/trash/bulk-delete`, `folder list` `folder_ids`, a `folder move` target, `browse folder`, and `browse resource label` take that id. The old label id is no longer accepted (the feature is unshipped). `folder create --input parent_resource_id` is unchanged.
 
