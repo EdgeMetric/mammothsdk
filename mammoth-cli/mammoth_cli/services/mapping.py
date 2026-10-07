@@ -275,8 +275,8 @@ def _backend_message(body: Any, status: int | None) -> str | None:
     extra = details.get("extra")
     if isinstance(extra, list) and extra:
         text = "\n".join([text, *(_field_error_line(item) for item in extra)])
-    code = body.get("error_code") or body.get("code")
-    return f"{text} [{code}]" if isinstance(code, str) and code else text
+    backend_code = body.get("error_code") or body.get("code")
+    return f"{text} [{backend_code}]" if isinstance(backend_code, str) and backend_code else text
 
 
 def _field_error_line(item: Any) -> str:
