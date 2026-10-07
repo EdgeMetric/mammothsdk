@@ -1,4 +1,4 @@
-"""Live: ``view pipeline rerun --dry-run`` names the exports it would fire and the columns they blank.
+"""Live: ``view pipeline rerun --dry-run`` names the exports it fires and the columns they blank.
 
 A real source view with an end-of-pipeline export that appends into a real destination
 dataset. Run on the box with the test identity (see ``conftest.py``)::
@@ -31,7 +31,12 @@ class Pipes:
 
 def _export_into(live_cli: LiveCli, pipes: Pipes, target: int, **document: Any) -> int:
     """Create the append-into-``target`` export on the source view; return its id."""
-    body = {"dataset_name": "append", "dataset_id": pipes.dataset, "target_ds_id": target, "save_as_mode": "APPEND_TO_DS"}
+    body = {
+        "dataset_name": "append",
+        "dataset_id": pipes.dataset,
+        "target_ds_id": target,
+        "save_as_mode": "APPEND_TO_DS",
+    }
     live_cli.ok(
         *("view", "export", "dataset", str(pipes.view), "--input", json.dumps(body | document)),
         "--yes",
@@ -88,11 +93,13 @@ def test_an_append_that_fills_every_destination_column_reports_none_blank(
     live_cli: LiveCli, pipes: Pipes
 ) -> None:
     same, _ = upload_csv(
-        live_cli, pipes.project, pipes.folder / f"same_{int(time.time() * 1000)}.csv", "Donor,Gift\nz,1\n"
+        live_cli,
+        pipes.project,
+        pipes.folder / f"same_{int(time.time() * 1000)}.csv",
+        "Donor,Gift\nz,1\n",
     )
     _export_into(live_cli, pipes, same)
 
     (fired,) = _dry_run(live_cli, pipes)
 
     assert fired.get("blank_columns") == []
-
