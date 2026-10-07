@@ -6,6 +6,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed (mammoth-cli 2.2.66)
+
+- `dataset find` names the in-project exact match instead of telling the caller to ask; the elsewhere note says the in-project match is the answer and other projects matter only when the user names one.
+
 ### Fixed (mammoth-cli 2.2.65)
 
 - `dataset find` (and the name fallback of `dataset list`) reads one workspace search instead of every holding project's dataset list, which took 20+ s for a project of a few hundred datasets.
