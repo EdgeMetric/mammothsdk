@@ -3749,7 +3749,7 @@ def view_export_update(invocation: Invocation) -> HandlerResult:
 _SPECIAL_EXPORTS: dict[str, tuple[str, tuple[str, ...], tuple[str, ...]]] = {
     "view.export.dataset": (
         "to_dataset",
-        ("dataset_name",),
+        (),
         (),
     ),
     "view.export.managed-s3": ("to_s3", (), ()),

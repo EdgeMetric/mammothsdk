@@ -1016,7 +1016,7 @@ class View(
 
     async def branch_out(
         self,
-        dataset_name: str,
+        dataset_name: str | None = None,
         *,
         target_ds_id: int | None = None,
         save_as_mode: SaveAsDatasetMode = SaveAsDatasetMode.REPLACE,
@@ -1034,7 +1034,7 @@ class View(
 
         Args:
             dataset_name: Name for the new dataset (display name when writing
-                into an existing one).
+                into an existing one); omit to use the product default 'Result Dataset' (what the app's Branch out form uses).
             target_ds_id: Existing dataset to write into; None creates a new one.
             save_as_mode: Replace or append when writing the output dataset.
             column_mapping: Source -> destination column-name map (empty = all).
@@ -1278,7 +1278,7 @@ class ViewExport:
 
     async def to_dataset(
         self,
-        dataset_name: str,
+        dataset_name: str | None = None,
         *,
         target_ds_id: int | None = None,
         save_as_mode: SaveAsDatasetMode = SaveAsDatasetMode.REPLACE,
@@ -1295,7 +1295,7 @@ class ViewExport:
 
         Args:
             dataset_name: Name for the new dataset (display name when writing
-                into an existing one).
+                into an existing one); omit to use the product default 'Result Dataset' (what the app's Branch out form uses).
             target_ds_id: Existing dataset to write into; None creates a new one.
             save_as_mode: Replace or append when writing the output dataset.
             column_mapping: Source -> destination column-name map (empty = all).
