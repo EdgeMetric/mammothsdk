@@ -16,7 +16,12 @@ from typing import Any
 
 import typer
 
-from mammoth_cli.errors.envelope import EXIT_USAGE, CliError, not_available_embedded_error
+from mammoth_cli.errors.envelope import (
+    EXIT_USAGE,
+    CliError,
+    cancelled_error,
+    not_available_embedded_error,
+)
 from mammoth_cli.output.envelope import Meta, Result
 from mammoth_cli.output.normalize import normalize
 from mammoth_cli.output.policy import MACHINE_OUTPUTS, VALID_OUTPUTS
@@ -264,6 +269,12 @@ def run(
         mapped_error = _profile_scope_recovery(map_sdk_exception(exc), profile)
         fail(mapped_error)
         raise typer.Exit(mapped_error.exit_status) from None
+    except typer.Abort:
+        # Ctrl-C, EOF or an unusable answer at any prompt: a clean cancel, not
+        # an unexpected failure.
+        cancelled = cancelled_error()
+        fail(cancelled)
+        raise typer.Exit(cancelled.exit_status) from None
     except Exception as exc:
         # Bespoke handlers should normally cross the SDK service seam, but a
         # malformed response or filesystem fault must still obey the same

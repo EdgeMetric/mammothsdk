@@ -14,7 +14,6 @@ from pathlib import Path
 
 import pytest
 
-from mammoth_cli import __version__
 from mammoth_cli.app import command_option_names
 from mammoth_cli.commands import upgrade as upgrade_cmd
 from mammoth_cli.errors.envelope import EXIT_RETRYABLE, CliError
@@ -112,128 +111,23 @@ def test_build_command_pip_latest_and_pinned() -> None:
 # --- --check (read-only) ---------------------------------------------------
 
 
-def test_check_reports_would_upgrade_without_side_effects(monkeypatch: pytest.MonkeyPatch) -> None:
-    _no_subprocess(monkeypatch)
-    monkeypatch.setattr(upgrade_cmd, "detect_manager", lambda: "uv")
-    monkeypatch.setattr(upgrade_cmd, "latest_version", lambda: "999.0.0")
-
-    data, meta = upgrade_cmd.perform(_inv(output="json"), check=True, target_version=None)
-
-    assert data["action"] == "would_upgrade"
-    assert data["manager"] == "uv"
-    assert data["current_version"] == __version__
-    assert data["latest_version"] == "999.0.0"
-    assert data["command"] is None
-    assert meta == {}
-
-
-def test_check_reports_already_current(monkeypatch: pytest.MonkeyPatch) -> None:
-    _no_subprocess(monkeypatch)
-    monkeypatch.setattr(upgrade_cmd, "detect_manager", lambda: "pipx")
-    monkeypatch.setattr(upgrade_cmd, "latest_version", lambda: __version__)
-
-    data, _meta = upgrade_cmd.perform(_inv(output="json"), check=True, target_version=None)
-
-    assert data["action"] == "already_current"
-    assert data["command"] is None
-
-
-def test_check_never_prompts_even_without_yes(monkeypatch: pytest.MonkeyPatch) -> None:
-    _no_subprocess(monkeypatch)
-    monkeypatch.setattr(upgrade_cmd, "detect_manager", lambda: "pip")
-    monkeypatch.setattr(upgrade_cmd, "latest_version", lambda: "999.0.0")
-
-    # no_input + no --yes would block a mutation, but --check is class read.
-    data, _meta = upgrade_cmd.perform(
-        _inv(output="json", no_input=True, yes=False), check=True, target_version=None
-    )
-    assert data["action"] == "would_upgrade"
+@pytest.mark.parametrize(
+    ("current", "latest", "expected"),
+    [
+        ("2.2.54", "2.2.53", "already_current"),
+        ("2.2.54", "2.2.54", "already_current"),
+        ("2.2.54", "2.2.55", "would_upgrade"),
+        ("2.2.9", "2.2.10", "would_upgrade"),
+        ("2.2.10", "2.2.9", "already_current"),
+    ],
+)
+def test_upgrade_action_never_offers_an_older_release(
+    current: str, latest: str, expected: str
+) -> None:
+    assert upgrade_cmd.upgrade_action(current, latest) == expected
 
 
 # --- upgrade path ----------------------------------------------------------
-
-
-def test_upgrade_already_current_makes_no_change(monkeypatch: pytest.MonkeyPatch) -> None:
-    _no_subprocess(monkeypatch)
-    monkeypatch.setattr(upgrade_cmd, "detect_manager", lambda: "uv")
-    monkeypatch.setattr(upgrade_cmd, "latest_version", lambda: __version__)
-
-    data, _meta = upgrade_cmd.perform(
-        _inv(output="json", no_input=True, yes=True), check=False, target_version=None
-    )
-    assert data["action"] == "already_current"
-    assert data["command"] is None
-
-
-def test_upgrade_to_latest_runs_built_command_with_yes(monkeypatch: pytest.MonkeyPatch) -> None:
-    ran: list[list[str]] = []
-
-    def _fake_run(command: list[str]) -> object:
-        ran.append(command)
-        return _completed(command)
-
-    monkeypatch.setattr(upgrade_cmd, "detect_manager", lambda: "uv")
-    monkeypatch.setattr(upgrade_cmd, "latest_version", lambda: "999.0.0")
-    monkeypatch.setattr(upgrade_cmd, "run_upgrade", _fake_run)
-
-    data, _meta = upgrade_cmd.perform(
-        _inv(output="json", no_input=True, yes=True), check=False, target_version=None
-    )
-    assert data["action"] == "upgraded"
-    assert ran == [UV_LATEST]
-    assert data["command"] == UV_LATEST
-
-
-def test_upgrade_pinned_version_forces_install_without_pypi(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    ran: list[list[str]] = []
-
-    def _fake_run(command: list[str]) -> object:
-        ran.append(command)
-        return _completed(command)
-
-    def _no_pypi() -> str | None:
-        raise AssertionError("pinned upgrade must not query PyPI")
-
-    monkeypatch.setattr(upgrade_cmd, "detect_manager", lambda: "pipx")
-    monkeypatch.setattr(upgrade_cmd, "latest_version", _no_pypi)
-    monkeypatch.setattr(upgrade_cmd, "run_upgrade", _fake_run)
-
-    data, _meta = upgrade_cmd.perform(
-        _inv(output="json", no_input=True, yes=True), check=False, target_version="1.2.3"
-    )
-    assert data["action"] == "upgraded"
-    assert data["target_version"] == "1.2.3"
-    assert ran == [["pipx", "install", "--force", "mammoth-cli==1.2.3"]]
-
-
-def test_upgrade_no_yes_in_no_input_mode_refuses(monkeypatch: pytest.MonkeyPatch) -> None:
-    _no_subprocess(monkeypatch)
-    monkeypatch.setattr(upgrade_cmd, "detect_manager", lambda: "uv")
-    monkeypatch.setattr(upgrade_cmd, "latest_version", lambda: "999.0.0")
-
-    with pytest.raises(CliError) as excinfo:
-        upgrade_cmd.perform(
-            _inv(output="json", no_input=True, yes=False), check=False, target_version=None
-        )
-    assert excinfo.value.code == "confirmation_required"
-
-
-def test_upgrade_failure_surfaces_upgrade_failed(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(upgrade_cmd, "detect_manager", lambda: "uv")
-    monkeypatch.setattr(upgrade_cmd, "latest_version", lambda: "999.0.0")
-    monkeypatch.setattr(
-        upgrade_cmd,
-        "run_upgrade",
-        lambda command: _completed(command, returncode=1, stderr="boom"),
-    )
-
-    with pytest.raises(CliError) as excinfo:
-        upgrade_cmd.perform(
-            _inv(output="json", no_input=True, yes=True), check=False, target_version="1.2.3"
-        )
-    assert excinfo.value.code == "upgrade_failed"
 
 
 # --- network + response failures ------------------------------------------

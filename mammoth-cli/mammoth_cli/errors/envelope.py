@@ -55,6 +55,7 @@ CODE_RETRYABLE = "retryable_error"
 CODE_OUTCOME_UNKNOWN = "outcome_unknown"
 CODE_JOB_FAILED = "job_failed"
 CODE_INTERRUPTED = "interrupted"
+CODE_ABORTED = "aborted"
 CODE_UNSUPPORTED_CONTRACT = "unsupported_contract"
 CODE_NO_OP = "no_op"
 CODE_WOULD_FAIL = "would_fail"
@@ -392,6 +393,16 @@ def interrupted_error(
         details=merged,
         retryable=False,
         recovery_commands=recovery,
+    )
+
+
+def cancelled_error() -> CliError:
+    """Return the clean cancel for a prompt ended by Ctrl-C, EOF or no usable answer."""
+    return CliError(
+        code=CODE_ABORTED,
+        message="Cancelled: no answer was given at the prompt, so nothing was changed.",
+        exit_status=EXIT_INTERRUPT,
+        hint="Run the command again and answer the prompt, or pass --yes to skip it.",
     )
 
 

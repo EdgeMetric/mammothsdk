@@ -314,10 +314,10 @@ def _choose_method(
     typer.echo(f"  1) Browser (OAuth)      {browser_note}", err=True)
     typer.echo(f"  2) Device code          {device_note}", err=True)
     typer.echo("  3) Paste an API token   for CI and scripts", err=True)
-    default = "1" if available else "3"
     if sys.stdin.isatty():
-        return _choose_by_keypress(default)
-    choice = _ask("Choose", default=default, show_default=False).strip()
+        return _choose_by_keypress()
+    # No default: an empty line is asked again, so Enter never picks a method.
+    choice = _ask("Choose").strip()
     if choice not in _METHOD_KEYS:
         raise _bad_choice(choice)
     return _METHOD_KEYS[choice]
@@ -330,31 +330,32 @@ _METHOD_LABELS = {"1": "Browser (OAuth)", "2": "Device code", "3": "API token"}
 def _bad_choice(choice: str) -> CliError:
     return CliError(
         code="invalid_login_method",
-        message=f"'{choice}' is not one of the choices.",
+        message=f"'{choice}' is not a valid choice; choose 1, 2 or 3.",
         exit_status=EXIT_USAGE,
         hint="Enter 1 for the browser, 2 for a device code or 3 to paste an API token.",
     )
 
 
-def _choose_by_keypress(default: str) -> str:
-    """Read one key on a terminal: 1, 2 or 3 selects at once, Enter takes ``default``.
+def _choose_by_keypress() -> str:
+    """Read one key on a terminal: 1, 2 or 3 selects at once.
 
-    Any other key asks once more, then errors; Ctrl-C and Ctrl-D are a usage error.
+    Enter picks nothing: it and any other key ask again, up to three times, then
+    error naming the last key. Ctrl-C and Ctrl-D are a usage error, or an invalid
+    choice when a wrong key came first.
     """
     key = ""
-    for _attempt in range(2):
+    for _attempt in range(3):
         typer.echo("Choose: ", nl=False, err=True)
         try:
             key = typer.getchar()
         except (KeyboardInterrupt, EOFError):
             typer.echo("", err=True)
-            raise _no_choice() from None
-        if key in ("\r", "\n"):
-            key = default
+            raise (_bad_choice(key) if key.strip() else _no_choice()) from None
         if key in _METHOD_KEYS:
             typer.echo(f"{key} {_METHOD_LABELS[key]}", err=True)
             return _METHOD_KEYS[key]
         typer.echo("", err=True)
+        typer.echo("Enter 1, 2 or 3.", err=True)
     raise _bad_choice(key)
 
 
