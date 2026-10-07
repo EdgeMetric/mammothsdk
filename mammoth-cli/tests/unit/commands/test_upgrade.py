@@ -400,3 +400,25 @@ def test_uv_executable_prefers_path_and_defaults_to_uv(
 def test_upgrade_declares_check_version_and_confirmation_options() -> None:
     opts = command_option_names("upgrade")
     assert {"--check", "--version", "--yes", "--output", "--no-input"} <= opts
+
+
+def test_upgrade_prompt_defaults_to_yes_on_enter(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Pressing Enter at the real prompt, on a real tty, runs the upgrade."""
+    ran: list[list[str]] = []
+
+    def _fake_run(command: list[str]) -> object:
+        ran.append(command)
+        return _completed(command)
+
+    master, slave = os.openpty()
+    os.write(master, b"\n")
+    monkeypatch.setattr(sys, "stdin", os.fdopen(slave, "r"))
+    monkeypatch.setattr(upgrade_cmd, "detect_manager", lambda: "uv")
+    monkeypatch.setattr(upgrade_cmd, "latest_version", lambda: "999.0.0")
+    monkeypatch.setattr(upgrade_cmd, "run_upgrade", _fake_run)
+    try:
+        data, _meta = upgrade_cmd.perform(_inv(), check=False, target_version=None)
+    finally:
+        os.close(master)
+    assert data["action"] == "upgraded"
+    assert ran == [UV_LATEST]

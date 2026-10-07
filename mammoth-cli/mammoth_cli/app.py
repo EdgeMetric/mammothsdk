@@ -447,11 +447,16 @@ class _EnvelopeGroup(TyperGroup):
                     )
                 elif isinstance(error, _typer_click_exceptions.NoSuchOption):
                     option = getattr(error, "option_name", None) or "unknown"
+                    close = getattr(error, "possibilities", None) or []
                     report = CliError(
                         code="unknown_option",
                         message=f"Unknown option '{option}'.",
                         exit_status=EXIT_USAGE,
-                        hint="Check the command schema with 'mammoth schema get'.",
+                        hint=(
+                            f"Did you mean {' or '.join(sorted(close))}?"
+                            if close
+                            else "Check the command schema with 'mammoth schema get'."
+                        ),
                         details={"option": option},
                     )
                 elif isinstance(error, _typer_click_exceptions.BadParameter):
@@ -1032,6 +1037,15 @@ def _command_tree() -> tuple[dict[tuple[str, ...], str], frozenset[tuple[str, ..
     return path_to_command, frozenset(prefixes & path_to_command.keys())
 
 
+def _leaf_context_settings(command_id: str) -> dict[str, bool]:
+    """Click settings for one command: a bespoke command declares every option it
+    accepts, so Click itself rejects an unknown one; a generic leaf collects its
+    trailing tokens and validates them in :func:`validate_extra_args`."""
+    if command_id in BESPOKE:
+        return {}
+    return {"allow_extra_args": True, "ignore_unknown_options": True}
+
+
 def _group_typer(tokens: tuple[str, ...], command_id: str | None) -> typer.Typer:
     if command_id is not None:
         # This node is both a group and an invocable command.
@@ -1088,7 +1102,7 @@ def _populate(base: tuple[str, ...], group: typer.Typer) -> None:
             name=tokens[-1],
             help=_command_help(command_id, record),
             rich_help_panel=_ROOT_HELP_PANELS.get(tokens[0]) if len(tokens) == 1 else None,
-            context_settings={"allow_extra_args": True, "ignore_unknown_options": True},
+            context_settings=_leaf_context_settings(command_id),
         )(callback)
 
 
@@ -1160,7 +1174,7 @@ def build_app() -> typer.Typer:
             name=name,
             help=_command_help(command_id, command_by_id(command_id)),
             rich_help_panel=_ROOT_HELP_PANELS.get(name),
-            context_settings={"allow_extra_args": True, "ignore_unknown_options": True},
+            context_settings=_leaf_context_settings(command_id),
         )(BESPOKE.get(command_id) or _build_leaf(command_id))
     _LAZY_GROUP_NAMES[:] = lazy
     _LAZY_SETTINGS.update(

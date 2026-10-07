@@ -10,10 +10,13 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from typer.testing import CliRunner
 
+from mammoth_cli.commands import BESPOKE
 from mammoth_cli.commands import auth as auth_cmd
 from mammoth_cli.context import credentials, profiles
-from mammoth_cli.errors.envelope import CliError
+from mammoth_cli.errors.envelope import EXIT_USAGE, CliError
+from mammoth_cli.manifest.loader import load_commands
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.services import factory as service_factory
 from mammoth_cli.services.testing import FakeMammothService
@@ -226,7 +229,7 @@ def test_login_stdin_uses_strict_shared_admission(
         input_format="json",
     )
     with pytest.raises(CliError) as excinfo:
-        auth_cmd._run_login(invocation, server_prefix=None, storage="file")
+        auth_cmd._run_login(invocation, server_prefix=None, storage="file", method="token")
     assert excinfo.value.code == "duplicate_input_key"
     assert "check_connection" not in fake_service.calls
 
@@ -247,7 +250,9 @@ def test_login_prompt_path_when_interactive(
 
     monkeypatch.setattr(auth_cmd.typer, "prompt", fake_prompt)
     invocation = Invocation(command_id="auth.login", output="table", no_input=False)
-    data, _meta = auth_cmd._run_login(invocation, server_prefix=None, storage="file")
+    data, _meta = auth_cmd._run_login(
+        invocation, server_prefix=None, storage="file", method="token"
+    )
     assert data["workspace_id"] == 4
     stored = credentials.load_credential("default")
     assert stored is not None and stored.api_token == _TOKEN
@@ -269,7 +274,9 @@ def test_login_bare_prompts_for_the_token_only(
 
     monkeypatch.setattr(auth_cmd.typer, "prompt", fake_prompt)
     invocation = Invocation(command_id="auth.login", output="table", no_input=False)
-    data, _meta = auth_cmd._run_login(invocation, server_prefix=None, storage="file")
+    data, _meta = auth_cmd._run_login(
+        invocation, server_prefix=None, storage="file", method="token"
+    )
     assert asked == ["API token"], asked
     assert data["workspace_id"] == 4
     assert data["credential"] == "token"
@@ -285,7 +292,7 @@ def test_login_no_tty_names_the_reason(
     monkeypatch.setattr(auth_cmd.sys.stdin, "isatty", lambda: False)
     invocation = Invocation(command_id="auth.login", output="table", no_input=False)
     with pytest.raises(CliError) as excinfo:
-        auth_cmd._run_login(invocation, server_prefix=None, storage="file")
+        auth_cmd._run_login(invocation, server_prefix=None, storage="file", method="token")
     assert excinfo.value.code == "login_input_required"
     assert "stdin is not an interactive terminal" in (excinfo.value.hint or "")
 
@@ -441,7 +448,7 @@ def test_login_prompt_strips_whitespace_and_prints_masked_receipt(
 
     monkeypatch.setattr(auth_cmd.typer, "prompt", fake_prompt)
     invocation = Invocation(command_id="auth.login", output="table", no_input=False)
-    auth_cmd._run_login(invocation, server_prefix=None, storage="file")
+    auth_cmd._run_login(invocation, server_prefix=None, storage="file", method="token")
     stored = credentials.load_credential("default")
     assert stored is not None and stored.api_token == _TOKEN
     err = capsys.readouterr().err
@@ -458,7 +465,7 @@ def test_login_prompt_rejects_empty_secret_before_any_request(
     monkeypatch.setattr(auth_cmd.typer, "prompt", lambda *a, **k: "   ")
     invocation = Invocation(command_id="auth.login", output="table", no_input=False)
     with pytest.raises(CliError) as excinfo:
-        auth_cmd._run_login(invocation, server_prefix=None, storage="file")
+        auth_cmd._run_login(invocation, server_prefix=None, storage="file", method="token")
     assert excinfo.value.code == "login_input_required"
     assert fake_service.call_log == []
 
@@ -537,7 +544,7 @@ def test_login_prompt_refuses_a_legacy_api_key_without_asking_for_a_secret(
     monkeypatch.setattr(auth_cmd.typer, "prompt", fake_prompt)
     invocation = Invocation(command_id="auth.login", output="table", no_input=False)
     with pytest.raises(CliError) as excinfo:
-        auth_cmd._run_login(invocation, server_prefix=None, storage="file")
+        auth_cmd._run_login(invocation, server_prefix=None, storage="file", method="token")
     assert excinfo.value.code == "invalid_credentials"
     assert "mm_" in excinfo.value.message
     assert asked == ["API token"]
@@ -632,3 +639,142 @@ def test_device_login_on_a_server_without_a_cli_client_says_so(
         env={},
     )
     assert json.loads(result.stderr)["error"]["code"] == "oauth_unavailable"
+
+
+def _choose_at_real_prompt(server_prefix: str | None, typed: bytes) -> tuple[str, str]:
+    """Run the real menu with ``typed`` on stdin; return the choice and the menu text."""
+    invocation = Invocation(command_id="auth.login", output="table", no_input=False)
+    with CliRunner().isolation(input=typed, color=False) as streams:
+        chosen = auth_cmd._choose_method(None, invocation, server_prefix=server_prefix, blockers=[])
+        shown = streams[1].getvalue().decode()
+    return chosen, shown
+
+
+def test_menu_on_a_server_without_oauth_marks_browser_unavailable_and_enter_picks_token() -> None:
+    # The default "app" prefix genuinely has no OAuth client registered.
+    chosen, shown = _choose_at_real_prompt(None, b"\n")
+    assert chosen == "token"
+    assert "1) Browser (OAuth)      (not yet available on app)" in shown
+    assert "2) Device code          (not yet available on app)" in shown
+    assert "3) Paste an API token" in shown
+
+
+def test_menu_on_a_server_with_oauth_makes_enter_pick_the_browser() -> None:
+    chosen, shown = _choose_at_real_prompt("koyal", b"\n")
+    assert chosen == "oauth"
+    assert "not yet available" not in shown
+
+
+def test_choosing_the_browser_without_a_client_names_the_token_option() -> None:
+    with pytest.raises(CliError) as excinfo:
+        auth_cmd._run_oauth_login(
+            Invocation(command_id="auth.login", output="table"),
+            server_prefix=None,
+            storage="file",
+            open_browser=False,
+            interactive=True,
+        )
+    assert excinfo.value.code == "oauth_unavailable"
+    assert "option 3" in (excinfo.value.hint or "")
+
+
+def test_choose_method_stays_silent_when_not_interactive() -> None:
+    invocation = Invocation(command_id="auth.login", output="table", no_input=True)
+    with CliRunner().isolation(color=False) as streams:
+        chosen = auth_cmd._choose_method(
+            None, invocation, server_prefix=None, blockers=["--no-input was passed"]
+        )
+        shown = streams[1].getvalue()
+    assert chosen == "token"
+    assert shown == b""
+
+
+def test_closed_stdin_at_the_menu_is_a_usage_error() -> None:
+    with pytest.raises(CliError) as excinfo:
+        _choose_at_real_prompt("koyal", b"")
+    assert excinfo.value.code == "login_input_required"
+    assert excinfo.value.exit_status == EXIT_USAGE
+    assert "--method" in (excinfo.value.hint or "")
+
+
+def test_closed_stdin_at_the_token_prompt_is_a_usage_error() -> None:
+    with CliRunner().isolation(input=b"", color=False), pytest.raises(CliError) as excinfo:
+        auth_cmd._prompt_secret("API token")
+    assert excinfo.value.code == "login_input_required"
+    assert excinfo.value.exit_status == EXIT_USAGE
+
+
+def test_login_rejects_server_and_suggests_server_prefix() -> None:
+    result = make_runner().invoke(["auth", "login", "--server", "koyal", "--output", "json"])
+    assert result.exit_code == EXIT_USAGE
+    error = json.loads(result.output)["error"]
+    assert error["code"] == "unknown_option"
+    assert "--server-prefix" in error["hint"]
+
+
+@pytest.mark.parametrize("command_id", sorted(BESPOKE))
+def test_every_bespoke_command_rejects_an_unknown_option(command_id: str) -> None:
+    path = next(r["command_path"] for r in load_commands() if r["command_id"] == command_id).split()
+    result = make_runner().invoke([*path, "--bogus", "--output", "json"])
+    assert result.exit_code == EXIT_USAGE, result.output
+    assert json.loads(result.output)["error"]["code"] == "unknown_option"
+
+
+def _drive_login_in_a_pty(prefix: str, keys: bytes, expect: bytes) -> bytes:
+    """Run the real CLI on a pseudo-terminal, send ``keys`` raw, return what it printed."""
+    import pty
+    import select
+    import sys
+    import time
+
+    pid, fd = pty.fork()
+    if pid == 0:
+        os.execv(
+            sys.executable,
+            [sys.executable, "-m", "mammoth_cli", "auth", "login", "--server-prefix", prefix],
+        )
+    seen = b""
+    deadline = time.monotonic() + 20
+    sent = False
+    try:
+        while time.monotonic() < deadline and expect not in seen:
+            if select.select([fd], [], [], 0.2)[0]:
+                try:
+                    chunk = os.read(fd, 4096)
+                except OSError:
+                    break
+                if not chunk:
+                    break
+                seen += chunk
+            if not sent and b"Choose: " in seen:
+                for key in keys:
+                    time.sleep(0.5)  # let the CLI switch the terminal to raw mode first
+                    os.write(fd, bytes([key]))
+                sent = True
+    finally:
+        os.close(fd)
+        os.kill(pid, 9)
+        os.waitpid(pid, 0)
+    return seen
+
+
+def test_a_single_keypress_picks_the_method_without_enter(
+    isolated_cli_config: Path,
+) -> None:
+    seen = _drive_login_in_a_pty("koyal", b"3", b"Choose: 3 API token")
+    assert b"Choose: 3 API token" in seen, seen
+
+
+def test_enter_takes_the_default_on_a_terminal(isolated_cli_config: Path) -> None:
+    seen = _drive_login_in_a_pty("app", b"\r", b"Choose: 3 API token")
+    assert b"Choose: 3 API token" in seen, seen
+
+
+def test_two_wrong_keys_on_a_terminal_are_a_clean_error(isolated_cli_config: Path) -> None:
+    seen = _drive_login_in_a_pty("koyal", b"xx", b"not one of the choices")
+    assert b"not one of the choices" in seen, seen
+
+
+def test_ctrl_d_on_a_terminal_is_a_clean_error(isolated_cli_config: Path) -> None:
+    seen = _drive_login_in_a_pty("koyal", b"\x04", b"No choice was entered")
+    assert b"No choice was entered" in seen, seen
