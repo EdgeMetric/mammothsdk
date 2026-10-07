@@ -73,3 +73,15 @@ def test_note_names_the_projects_when_one_kind_repeats() -> None:
     exact = [r for r in rows if r["kind"] == "dataset"]
     note = kinds_note("sales", exact)
     assert note == "'sales' is 2 datasets, in projects Sales Hub, uqa-w29-ren: ask which."
+
+
+def test_note_picks_the_one_copy_in_the_current_project() -> None:
+    copies = [{"object_id": 13689, "name": "uqa", "project_id": 1}] + [
+        {"object_id": 100 + i, "name": "uqa", "project_id": 2} for i in range(35)
+    ]
+    rows = resolve_matches("uqa", _PROJECTS[:2], {"dataset": copies}, home=1)
+    assert kinds_note("uqa", rows) == (
+        "'uqa' is a dataset (id 13689) in the current project; 35 more elsewhere."
+    )
+    elsewhere = resolve_matches("uqa", _PROJECTS[:2], {"dataset": copies}, home=3)
+    assert "ask which" in kinds_note("uqa", elsewhere)
