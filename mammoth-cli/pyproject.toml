@@ -71,6 +71,8 @@ ignore = ["S101"]
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["S", "B"]
 "scripts/**" = ["S"]
+# A table of "module:attr" import paths: one entry per line, no useful wrapping.
+"mammoth_cli/commands/registry.py" = ["E501"]
 
 [tool.mypy]
 python_version = "3.12"

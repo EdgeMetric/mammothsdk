@@ -15,24 +15,25 @@ positionals and options are added per family as each handler is implemented.
 from __future__ import annotations
 
 import inspect
+import json
 import re
 import sys
 from collections.abc import Callable, Sequence
 from dataclasses import replace
 from difflib import get_close_matches
 from functools import cache
-from typing import Annotated, Any
+from pathlib import Path
+from typing import TYPE_CHECKING, Annotated, Any, cast
 
 import typer
 from typer._click import exceptions as _typer_click_exceptions
 from typer._click.core import Command as _ClickCommand
-from typer.core import TyperGroup
+from typer._click.core import Parameter as _ClickParameter
+from typer.core import TyperCommand, TyperGroup
 
 from mammoth_cli import __version__
 from mammoth_cli.commands import BESPOKE
-from mammoth_cli.commands.registry import HANDLERS, Handler
-from mammoth_cli.commands.schema import IN_PLACE_RECIPE, edits_view_in_place
-from mammoth_cli.context import profiles
+from mammoth_cli.commands.registry import HANDLERS
 from mammoth_cli.errors.envelope import EXIT_USAGE, CliError, not_implemented_error
 from mammoth_cli.manifest.loader import command_by_id, load_commands
 from mammoth_cli.output.policy import (
@@ -43,16 +44,11 @@ from mammoth_cli.output.policy import (
     VALID_OUTPUTS,
     resolve_output,
 )
-from mammoth_cli.runtime import executor, validate
-from mammoth_cli.runtime.dataset_health import with_dataset_health
-from mammoth_cli.runtime.intent_only import refuse_hand_crafted_write
-from mammoth_cli.runtime.invocation import Invocation
-from mammoth_cli.runtime.locked_files import with_locked_files
-from mammoth_cli.runtime.new_data import with_new_data_path
-from mammoth_cli.runtime.state import with_state
-from mammoth_cli.runtime.strict import validate_extra_args
-from mammoth_cli.runtime.verify import with_verify
 from mammoth_cli.services.positionals import PositionalSpec, resolve_positionals
+
+if TYPE_CHECKING:
+    from mammoth_cli.commands.registry import Handler
+    from mammoth_cli.runtime.invocation import Invocation
 
 OUTPUT_MODES = VALID_OUTPUTS
 
@@ -370,7 +366,7 @@ class _EnvelopeGroup(TyperGroup):
         loaded: dict[str, Any] = self.__dict__.setdefault("_eager_commands", {})
         for name in _LAZY_GROUP_NAMES:
             if name not in loaded:
-                loaded[name] = _load_top_level_group(name)
+                loaded[name] = _load_lazy_root(name)
         return loaded
 
     @commands.setter
@@ -379,14 +375,18 @@ class _EnvelopeGroup(TyperGroup):
 
     def list_commands(self, ctx: Any) -> list[str]:
         eager = self.__dict__.get("_eager_commands", {})
-        return [*eager, *(name for name in _LAZY_GROUP_NAMES if name not in eager)]
+        # Top-level leaves list ahead of groups, the order they were registered in.
+        lazy = sorted(_LAZY_GROUP_NAMES, key=lambda name: name not in _LAZY_LEAF_IDS)
+        return [*eager, *(name for name in lazy if name not in eager)]
 
     def get_command(self, ctx: Any, cmd_name: str) -> Any:
         eager: dict[str, Any] = self.__dict__.setdefault("_eager_commands", {})
         if cmd_name not in eager and cmd_name in _LAZY_GROUP_NAMES:
             if self.__dict__.get("_listing_help"):
+                if cmd_name in _LAZY_LEAF_IDS:
+                    return _root_leaf_stub(cmd_name)
                 return _group_stub(cmd_name)
-            eager[cmd_name] = _load_top_level_group(cmd_name)
+            eager[cmd_name] = _load_lazy_root(cmd_name)
         return eager.get(cmd_name)
 
     def resolve_command(self, ctx: Any, args: list[str]) -> Any:
@@ -526,6 +526,8 @@ class _EnvelopeGroup(TyperGroup):
                         exit_status=EXIT_USAGE,
                         hint="Check the command schema with 'mammoth schema get'.",
                     )
+            from mammoth_cli.runtime import executor
+
             executor.emit_error(report, machine=True)
         elif report is None:
             error.show()
@@ -850,6 +852,8 @@ def _build_leaf(command_id: str, *, is_group_callback: bool = False) -> Callable
     positional_names = tuple(spec.name for spec in positionals)
 
     def leaf(**params: Any) -> None:
+        from mammoth_cli.runtime.invocation import Invocation
+
         ctx: typer.Context = params.pop("ctx")
         if is_group_callback and ctx.invoked_subcommand is not None:
             return
@@ -883,6 +887,14 @@ def _execute(invocation: Invocation) -> None:
     # Freeze the fallback profile before opening a service.  A recovery command
     # must inspect the same account that submitted/observed a job, rather than
     # resolving the mutable selected-profile pointer after an interrupt.
+    from mammoth_cli.context import profiles
+    from mammoth_cli.runtime import executor, validate
+    from mammoth_cli.runtime.dataset_health import with_dataset_health
+    from mammoth_cli.runtime.intent_only import refuse_hand_crafted_write
+    from mammoth_cli.runtime.locked_files import with_locked_files
+    from mammoth_cli.runtime.new_data import with_new_data_path
+    from mammoth_cli.runtime.strict import validate_extra_args
+
     if invocation.profile is None:
         invocation = replace(invocation, profile=profiles.get_selected())
 
@@ -938,6 +950,9 @@ def _apply_verify(invocation: Invocation, data: Any) -> Any:
     command's manifest ``readback``/``no_readback`` declaration -- see
     :mod:`mammoth_cli.runtime.state`).
     """
+    from mammoth_cli.runtime.state import with_state
+    from mammoth_cli.runtime.verify import with_verify
+
     record = command_by_id(invocation.command_id) or {}
     if record.get("mutation_class") == "read" or not record.get("sdk_symbol"):
         return data
@@ -973,6 +988,32 @@ def _dry_run(handler: Handler, invocation: Invocation) -> tuple[Any, dict[str, A
         return report, {"profile": invocation.profile, "project_id": resolved_project(invocation)}
 
 
+def live_command_summary(command_id: str) -> str | None:
+    """The backing handler's docstring first line, the lead of a command's help.
+
+    Reading it imports the handler's module, so a group listing takes it from
+    the generated index (:func:`_indexed_summary`) instead.
+    """
+    handler = HANDLERS.get(command_id) or BESPOKE.get(command_id)
+    doc = inspect.getdoc(handler) if handler is not None else None
+    if not doc:
+        return None
+    # First non-empty line, with RST inline-code backticks flattened to plain
+    # quotes so the help reads as prose rather than reStructuredText.
+    return doc.strip().splitlines()[0].strip().replace("``", "'") or None
+
+
+@cache
+def _summary_index() -> dict[str, str]:
+    """Every command's help summary, generated by ``scripts/gen_help_summaries.py``."""
+    path = Path(__file__).parent / "commands" / "help_summaries.json"
+    return cast(dict[str, str], json.loads(path.read_text(encoding="utf-8")))
+
+
+def _indexed_summary(command_id: str) -> str | None:
+    return _summary_index().get(command_id)
+
+
 def _command_help(command_id: str, record: dict[str, Any] | None) -> str | None:
     """Build a command's user-facing ``--help`` summary.
 
@@ -985,15 +1026,12 @@ def _command_help(command_id: str, record: dict[str, Any] | None) -> str | None:
     every required positional and ``--input`` field. ``known_restrictions``
     remains available to machines through ``schema get``.
     """
+    from mammoth_cli.commands.schema import IN_PLACE_RECIPE, edits_view_in_place
+
     parts: list[str] = []
-    handler = HANDLERS.get(command_id) or BESPOKE.get(command_id)
-    doc = inspect.getdoc(handler) if handler is not None else None
-    if doc:
-        # First non-empty line, with RST inline-code backticks flattened to plain
-        # quotes so the help reads as prose rather than reStructuredText.
-        summary = doc.strip().splitlines()[0].strip().replace("``", "'")
-        if summary:
-            parts.append(summary)
+    summary = live_command_summary(command_id)
+    if summary:
+        parts.append(summary)
     if record is not None and edits_view_in_place(record):
         parts.append(IN_PLACE_RECIPE)
     example = (record or {}).get("agent_example")
@@ -1089,6 +1127,86 @@ def _group_typer(tokens: tuple[str, ...], command_id: str | None) -> typer.Typer
     )
 
 
+def _lazy_help_command(command_id: str) -> type[TyperCommand]:
+    """A command class whose help is read from the handler only when printed.
+
+    Building a group registers every command in it; reading each help text up
+    front imports every handler module of the group, though a run uses one.
+    """
+
+    class LazyHelpCommand(TyperCommand):
+        @property
+        def help(self) -> str | None:
+            return _command_help(command_id, command_by_id(command_id))
+
+        @help.setter
+        def help(self, value: str | None) -> None:
+            """Ignore the registration-time placeholder; the handler is the source."""
+
+        @property
+        def short_help(self) -> str | None:
+            """The group listing prints only the first paragraph, which is the summary."""
+            return _indexed_summary(command_id)
+
+        @short_help.setter
+        def short_help(self, value: str | None) -> None:
+            """Ignore the registration-time value; the handler is the source."""
+
+    return LazyHelpCommand
+
+
+def _unbuilt_leaf() -> None:
+    """Registration placeholder: a lazy leaf takes its real callback from the built command."""
+
+
+def _lazy_leaf_command(command_id: str) -> type[TyperCommand]:
+    """A generic leaf whose parameters and callback are built when first read.
+
+    Building a leaf derives its positionals from the SDK signature, which
+    imports the SDK model modules. A group's ``--help`` lists names and help
+    only, so it never reads them; a run reads them for the one command used.
+    """
+
+    class LazyLeafCommand(_lazy_help_command(command_id)):  # type: ignore[misc]
+        _built: _ClickCommand | None = None
+
+        def _real(self) -> _ClickCommand:
+            if self._built is None:
+                from typer.models import CommandInfo
+
+                info = CommandInfo(
+                    name=self.name,
+                    callback=_build_leaf(command_id),
+                    help=_command_help(command_id, command_by_id(command_id)),
+                    rich_help_panel=self.rich_help_panel,
+                    context_settings=_leaf_context_settings(command_id),
+                )
+                self._built = typer.main.get_command_from_info(
+                    info,
+                    pretty_exceptions_short=_LAZY_SETTINGS["pretty_exceptions_short"],
+                    rich_markup_mode=self.rich_markup_mode,
+                )
+            return self._built
+
+        @property
+        def params(self) -> list[_ClickParameter]:
+            return self._real().params
+
+        @params.setter
+        def params(self, value: list[_ClickParameter]) -> None:
+            """Ignore the registration-time parameters; the built command owns them."""
+
+        @property
+        def callback(self) -> Any:
+            return self._real().callback
+
+        @callback.setter
+        def callback(self, value: Any) -> None:
+            """Ignore the registration-time placeholder callback."""
+
+    return LazyLeafCommand
+
+
 def _populate(base: tuple[str, ...], group: typer.Typer) -> None:
     """Register every command below ``base`` (exclusive) on ``group``."""
     path_to_command, containers = _command_tree()
@@ -1121,14 +1239,14 @@ def _populate(base: tuple[str, ...], group: typer.Typer) -> None:
     for tokens, command_id in sorted(below.items()):
         if tokens in containers:
             continue
-        record = command_by_id(command_id)
-        callback = BESPOKE.get(command_id) or _build_leaf(command_id)
+        bespoke = BESPOKE.get(command_id)
         _group_for(tokens[:-1]).command(
             name=tokens[-1],
-            help=_command_help(command_id, record),
+            cls=_lazy_help_command(command_id) if bespoke else _lazy_leaf_command(command_id),
+            help="",
             rich_help_panel=_ROOT_HELP_PANELS.get(tokens[0]) if len(tokens) == 1 else None,
             context_settings=_leaf_context_settings(command_id),
-        )(callback)
+        )(bespoke or _unbuilt_leaf)
 
 
 @cache
@@ -1158,6 +1276,67 @@ def _load_top_level_group(name: str) -> Any:
         rich_help_panel=_ROOT_HELP_PANELS.get(name),
     )
     return typer.main.get_group_from_info(info, **_LAZY_SETTINGS)
+
+
+# Root ``--help`` prints each top-level leaf's help; reading it from the handler
+# would import the handler's module (and its SDK dependencies). A test pins this
+# table to :func:`_command_help` so it cannot drift.
+_ROOT_LEAF_HELP: dict[str, str] = {
+    "calc": (
+        "Evaluate one arithmetic expression exactly."
+        "\n\nExample: mammoth calc '2063664 - 1917815'"
+    ),
+    "doctor": (
+        "Run environment and connectivity diagnostics."
+        "\n\nExample: mammoth doctor\n\nInput fields: wait (int)"
+    ),
+    "link": (
+        "Read the workspace, project, folder, dataset and view ids out of a pasted app URL."
+        "\n\nExample: mammoth link https://app.mammoth.io/workspaces/1/projects/2/data/datasets"
+    ),
+    "resolve": (
+        "Say what NAME refers to: a dataset, a view or a project, with ids and projects."
+        "\n\nExample: mammoth resolve uqa-w29-ren"
+    ),
+    "upgrade": (
+        "Upgrade the mammoth CLI to the latest (or a specified) version from PyPI."
+        "\n\nExample: mammoth upgrade"
+    ),
+    "version": "Example: mammoth version",
+}
+_LAZY_LEAF_IDS: dict[str, str] = {}
+
+
+def _load_root_leaf(name: str) -> Any:
+    from typer.models import CommandInfo
+
+    command_id = _LAZY_LEAF_IDS[name]
+    info = CommandInfo(
+        name=name,
+        callback=BESPOKE.get(command_id) or _build_leaf(command_id),
+        help=_command_help(command_id, command_by_id(command_id)),
+        rich_help_panel=_ROOT_HELP_PANELS.get(name),
+        context_settings=_leaf_context_settings(command_id),
+    )
+    return typer.main.get_command_from_info(
+        info,
+        pretty_exceptions_short=_LAZY_SETTINGS["pretty_exceptions_short"],
+        rich_markup_mode=_LAZY_SETTINGS["rich_markup_mode"],
+    )
+
+
+def _root_leaf_stub(name: str) -> Any:
+    """A placeholder leaf carrying only what the root ``--help`` listing prints."""
+    return TyperCommand(
+        name=name,
+        help=_ROOT_LEAF_HELP[name],
+        rich_help_panel=_ROOT_HELP_PANELS.get(name),
+        rich_markup_mode=_LAZY_SETTINGS["rich_markup_mode"],
+    )
+
+
+def _load_lazy_root(name: str) -> Any:
+    return _load_root_leaf(name) if name in _LAZY_LEAF_IDS else _load_top_level_group(name)
 
 
 def _group_stub(name: str) -> Any:
@@ -1204,13 +1383,8 @@ def build_app() -> typer.Typer:
         if (name,) in containers or (name,) not in path_to_command:
             lazy.append(name)
             continue
-        command_id = path_to_command[(name,)]
-        root.command(
-            name=name,
-            help=_command_help(command_id, command_by_id(command_id)),
-            rich_help_panel=_ROOT_HELP_PANELS.get(name),
-            context_settings=_leaf_context_settings(command_id),
-        )(BESPOKE.get(command_id) or _build_leaf(command_id))
+        _LAZY_LEAF_IDS[name] = path_to_command[(name,)]
+        lazy.append(name)
     _LAZY_GROUP_NAMES[:] = lazy
     _LAZY_SETTINGS.update(
         pretty_exceptions_short=root.pretty_exceptions_short,
@@ -1245,6 +1419,9 @@ def registered_command_paths() -> set[str]:
 
     walk(app, ())
     for name in _LAZY_GROUP_NAMES:
+        if name in _LAZY_LEAF_IDS:
+            paths.add(name)
+            continue
         sub = _top_level_typer(name)
         if sub.registered_callback is not None:
             paths.add(name)
