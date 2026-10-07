@@ -11,13 +11,16 @@ SDK method named by the command's reviewed manifest ``sdk_symbol``.
 
 from __future__ import annotations
 
+from dataclasses import replace
 from typing import Any
 
 from mammoth_cli.errors.envelope import (
     CODE_MISSING_ARGUMENT,
     CODE_MISSING_FIELD,
+    CODE_RESOURCE_NOT_FOUND,
     CODE_SDK_SYMBOL_UNRESOLVED,
     CODE_USER_CONTROL,
+    EXIT_NOT_FOUND,
     EXIT_USAGE,
     CliError,
 )
@@ -25,8 +28,9 @@ from mammoth_cli.manifest.loader import command_by_id
 from mammoth_cli.runtime import embedded
 from mammoth_cli.runtime.confirm import POLICY_PROMPT_OR_YES, enforce_confirmation
 from mammoth_cli.runtime.invocation import Invocation
-from mammoth_cli.runtime.session import open_service, resolved_project
+from mammoth_cli.runtime.session import open_service, require_project, resolved_project
 from mammoth_cli.services.command_contract import bind_command_inputs
+from mammoth_cli.services.protocol import MammothService
 
 HandlerResult = tuple[Any, dict[str, Any]]
 
@@ -288,3 +292,231 @@ def agent_run_units_set(invocation: Invocation) -> HandlerResult:
 def agent_turn_cancel(invocation: Invocation) -> HandlerResult:
     """Stop one turn of an agent chat session (the session's owner only)."""
     return _session_call(invocation, turn_id=_require_string_positional(invocation, "turn id"))
+
+
+def _definition_call(invocation: Invocation, **kwargs: Any) -> HandlerResult:
+    """Call this command's SDK method on the agent key positional plus ``kwargs``."""
+    agent_key = _require_string_positional(invocation, "agent key")
+    with open_service(invocation) as (service, auth):
+        data = service.call(_symbol(invocation), agent_key=agent_key, **kwargs)
+    return data, _meta(invocation, auth.workspace_id, resolved_project(invocation))
+
+
+def _field_call(invocation: Invocation, *fields: str) -> HandlerResult:
+    """Call this command's SDK method with the required ``--input`` ``fields``."""
+    document = _bound_document(invocation)
+    return _definition_call(
+        invocation, **{field: _require_field(document, field) for field in fields}
+    )
+
+
+def agent_list(invocation: Invocation) -> HandlerResult:
+    """List the workspace's agent definitions; ``status`` is optional input."""
+    with open_service(invocation) as (service, auth):
+        data = service.call(_symbol(invocation), **_bound_document(invocation))
+    return data, _meta(invocation, auth.workspace_id, resolved_project(invocation))
+
+
+def agent_roles(invocation: Invocation) -> HandlerResult:
+    """List the built-in roles an agent definition can take."""
+    with open_service(invocation) as (service, auth):
+        data = service.call(_symbol(invocation))
+    return data, _meta(invocation, auth.workspace_id, resolved_project(invocation))
+
+
+def agent_create(invocation: Invocation) -> HandlerResult:
+    """Create an agent definition under the KEY positional; ``name`` is required input."""
+    key = _require_string_positional(invocation, "agent key")
+    document = _bound_document(invocation)
+    _require_field(document, "name")
+    with open_service(invocation) as (service, auth):
+        data = service.call(_symbol(invocation), key=key, **document)
+    return data, _meta(invocation, auth.workspace_id, resolved_project(invocation))
+
+
+def agent_get(invocation: Invocation) -> HandlerResult:
+    """Get one agent definition."""
+    return _definition_call(invocation)
+
+
+def agent_publish(invocation: Invocation) -> HandlerResult:
+    """Publish an agent definition so it can take work."""
+    return _definition_call(invocation)
+
+
+def agent_disable(invocation: Invocation) -> HandlerResult:
+    """Disable an agent definition so it stops taking work."""
+    return _definition_call(invocation)
+
+
+def agent_charter_versions(invocation: Invocation) -> HandlerResult:
+    """List the saved charter versions of an agent definition."""
+    return _definition_call(invocation)
+
+
+def agent_goldens_list(invocation: Invocation) -> HandlerResult:
+    """List the golden cases an agent definition is proven against."""
+    return _definition_call(invocation)
+
+
+def agent_goldens_run(invocation: Invocation) -> HandlerResult:
+    """Start a proof run of the agent definition's golden cases."""
+    return _definition_call(invocation)
+
+
+def agent_goldens_status(invocation: Invocation) -> HandlerResult:
+    """Show the latest proof run of the agent definition's golden cases."""
+    return _definition_call(invocation)
+
+
+def agent_feedback_list(invocation: Invocation) -> HandlerResult:
+    """List the thumbs up/down feedback on the agent definition's answers."""
+    return _definition_call(invocation)
+
+
+def agent_update(invocation: Invocation) -> HandlerResult:
+    """Change an agent definition; only the ``--input`` fields given are sent."""
+    return _definition_call(invocation, **_bound_document(invocation))
+
+
+def agent_delete(invocation: Invocation) -> HandlerResult:
+    """Delete an agent definition. Prompt or ``--yes`` required."""
+    agent_key = _require_string_positional(invocation, "agent key")
+    enforce_confirmation(
+        invocation, policy=POLICY_PROMPT_OR_YES, action=f"delete agent definition {agent_key}"
+    )
+    return _definition_call(invocation)
+
+
+def agent_charter_get(invocation: Invocation) -> HandlerResult:
+    """Show the charter text and version of one agent definition."""
+    definition, meta = _definition_call(invocation)
+    return {key: definition[key] for key in ("key", "charter_version", "charter")}, meta
+
+
+def agent_charter_set(invocation: Invocation) -> HandlerResult:
+    """Replace the charter; the new text becomes a new charter version."""
+    return _field_call(invocation, "charter")
+
+
+def agent_charter_restore(invocation: Invocation) -> HandlerResult:
+    """Restore an older charter version as a new version."""
+    return _definition_call(invocation, version=invocation.positional("version"))
+
+
+def agent_access_set(invocation: Invocation) -> HandlerResult:
+    """Set the built-in ``role`` and, when given, ``propose``."""
+    document = _bound_document(invocation)
+    propose = {"propose": document["propose"]} if "propose" in document else {}
+    return _definition_call(invocation, role=_require_field(document, "role"), **propose)
+
+
+def agent_projects_set(invocation: Invocation) -> HandlerResult:
+    """Set the projects the agent may work in (replaces the list)."""
+    return _field_call(invocation, "project_ids")
+
+
+def agent_team_set(invocation: Invocation) -> HandlerResult:
+    """Replace the team: the agents this agent may ask, and the rounds of asking."""
+    return _field_call(invocation, "team")
+
+
+def agent_goldens_add(invocation: Invocation) -> HandlerResult:
+    """Add a golden question and the answer it must reach."""
+    return _field_call(invocation, "question", "expected")
+
+
+def agent_goldens_remove(invocation: Invocation) -> HandlerResult:
+    """Remove one golden by id. Prompt or ``--yes`` required."""
+    golden_id = invocation.positional("golden_id")
+    enforce_confirmation(
+        invocation, policy=POLICY_PROMPT_OR_YES, action=f"remove golden {golden_id}"
+    )
+    return _definition_call(invocation, golden_id=golden_id)
+
+
+def _note_call(invocation: Invocation, kind: str, **kwargs: Any) -> HandlerResult:
+    """Call this command's SDK method on a ``kind`` note of the project in scope."""
+    return _definition_call(invocation, project_id=require_project(invocation), kind=kind, **kwargs)
+
+
+def agent_memory_add(invocation: Invocation) -> HandlerResult:
+    """Save a learned fact (``name`` and ``content`` from ``--input``) for the project."""
+    document = _bound_document(invocation)
+    return _note_call(
+        invocation,
+        "fact",
+        name=_require_field(document, "name"),
+        content=_require_field(document, "content"),
+    )
+
+
+def agent_memory_list(invocation: Invocation) -> HandlerResult:
+    """List the facts the agent learned in the project."""
+    return _note_call(invocation, "fact")
+
+
+def agent_memory_remove(invocation: Invocation) -> HandlerResult:
+    """Remove one fact by note id (from ``agent memory list``). Prompt or ``--yes`` required."""
+    note_id = invocation.positional("note_id")
+    enforce_confirmation(invocation, policy=POLICY_PROMPT_OR_YES, action=f"remove note {note_id}")
+    return _definition_call(invocation, note_id=note_id)
+
+
+def agent_scratch_set(invocation: Invocation) -> HandlerResult:
+    """Save a working note NAME (``content`` from ``--input``) for the project."""
+    document = _bound_document(invocation)
+    return _note_call(
+        invocation,
+        "scratch",
+        name=invocation.positional("name"),
+        content=_require_field(document, "content"),
+    )
+
+
+def agent_scratch_list(invocation: Invocation) -> HandlerResult:
+    """List the agent's working notes in the project."""
+    return _note_call(invocation, "scratch")
+
+
+def _scratch_note(service: MammothService, invocation: Invocation) -> dict[str, Any]:
+    """Return the working note NAME of the project in scope, or raise not found."""
+    name = invocation.positional("name")
+    listing = service.call(
+        _symbol(replace(invocation, command_id="agent.scratch.list")),
+        agent_key=_require_string_positional(invocation, "agent key"),
+        project_id=require_project(invocation),
+        kind="scratch",
+    )
+    for note in listing["result"]:
+        if note["name"] == name:
+            return dict(note)
+    raise CliError(
+        code=CODE_RESOURCE_NOT_FOUND,
+        message=f"No working note named '{name}' for this agent in this project.",
+        exit_status=EXIT_NOT_FOUND,
+        hint="List the names with 'mammoth agent scratch list KEY'.",
+    )
+
+
+def agent_scratch_get(invocation: Invocation) -> HandlerResult:
+    """Show the working note NAME."""
+    with open_service(invocation) as (service, auth):
+        note = _scratch_note(service, invocation)
+    return note, _meta(invocation, auth.workspace_id, resolved_project(invocation))
+
+
+def agent_scratch_clear(invocation: Invocation) -> HandlerResult:
+    """Delete the working note NAME. Prompt or ``--yes`` required."""
+    name = invocation.positional("name")
+    enforce_confirmation(
+        invocation, policy=POLICY_PROMPT_OR_YES, action=f"clear working note {name}"
+    )
+    with open_service(invocation) as (service, auth):
+        note = _scratch_note(service, invocation)
+        data = service.call(
+            _symbol(invocation),
+            agent_key=_require_string_positional(invocation, "agent key"),
+            note_id=note["id"],
+        )
+    return data, _meta(invocation, auth.workspace_id, resolved_project(invocation))

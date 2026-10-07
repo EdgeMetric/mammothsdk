@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
   "task": "C2/S7 remaining-families",
-  "route_count": 141,
+  "route_count": 169,
   "families": {
     "activity": 2,
-    "agent": 15,
+    "agent": 43,
     "ai": 4,
     "automation": 8,
     "billing": 25,
@@ -186,6 +186,74 @@
       }
     },
     {
+      "command_id": "agent.access.set",
+      "operation_id": "UpdateAgentDefinition",
+      "sdk_symbol": "mammoth.api.agent_definitions.AgentDefinitionsAPI.update",
+      "field_destinations": {
+        "agent_key": {
+          "source": "positional",
+          "destination": "agent_key"
+        },
+        "name": {
+          "source": "input",
+          "destination": "name",
+          "wire": "sdk_argument"
+        },
+        "description": {
+          "source": "input",
+          "destination": "description",
+          "wire": "sdk_argument"
+        },
+        "charter": {
+          "source": "input",
+          "destination": "charter",
+          "wire": "sdk_argument"
+        },
+        "role": {
+          "source": "input",
+          "destination": "role",
+          "wire": "sdk_argument"
+        },
+        "propose": {
+          "source": "input",
+          "destination": "propose",
+          "wire": "sdk_argument"
+        },
+        "project_ids": {
+          "source": "input",
+          "destination": "project_ids",
+          "wire": "sdk_argument"
+        },
+        "team": {
+          "source": "input",
+          "destination": "team",
+          "wire": "sdk_argument"
+        }
+      },
+      "context_destinations": {},
+      "wire": {
+        "method": "PATCH",
+        "path": "/workspaces/{workspace_id}/agent-definitions/{agent_key}",
+        "body": "json:update",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
       "command_id": "agent.action.delete",
       "operation_id": "DeleteAgentSessionAction",
       "sdk_symbol": "mammoth.api.agents.AgentsAPI.action_delete",
@@ -257,6 +325,171 @@
       }
     },
     {
+      "command_id": "agent.charter.get",
+      "operation_id": "GetAgentDefinition",
+      "sdk_symbol": "mammoth.api.agent_definitions.AgentDefinitionsAPI.get",
+      "field_destinations": {
+        "agent_key": {
+          "source": "positional",
+          "destination": "agent_key"
+        }
+      },
+      "context_destinations": {},
+      "wire": {
+        "method": "GET",
+        "path": "/workspaces/{workspace_id}/agent-definitions/{agent_key}",
+        "checks": [
+          "method",
+          "path"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "agent.charter.restore",
+      "operation_id": "RestoreAgentDefinitionCharter",
+      "sdk_symbol": "mammoth.api.agent_definitions.AgentDefinitionsAPI.charter_restore",
+      "field_destinations": {
+        "agent_key": {
+          "source": "positional",
+          "destination": "agent_key"
+        },
+        "version": {
+          "source": "positional",
+          "destination": "version"
+        }
+      },
+      "context_destinations": {},
+      "wire": {
+        "method": "POST",
+        "path": "/workspaces/{workspace_id}/agent-definitions/{agent_key}/charter-versions/{version}/restore",
+        "checks": [
+          "method",
+          "path"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "agent.charter.set",
+      "operation_id": "UpdateAgentDefinition",
+      "sdk_symbol": "mammoth.api.agent_definitions.AgentDefinitionsAPI.update",
+      "field_destinations": {
+        "agent_key": {
+          "source": "positional",
+          "destination": "agent_key"
+        },
+        "name": {
+          "source": "input",
+          "destination": "name",
+          "wire": "sdk_argument"
+        },
+        "description": {
+          "source": "input",
+          "destination": "description",
+          "wire": "sdk_argument"
+        },
+        "charter": {
+          "source": "input",
+          "destination": "charter",
+          "wire": "sdk_argument"
+        },
+        "role": {
+          "source": "input",
+          "destination": "role",
+          "wire": "sdk_argument"
+        },
+        "propose": {
+          "source": "input",
+          "destination": "propose",
+          "wire": "sdk_argument"
+        },
+        "project_ids": {
+          "source": "input",
+          "destination": "project_ids",
+          "wire": "sdk_argument"
+        },
+        "team": {
+          "source": "input",
+          "destination": "team",
+          "wire": "sdk_argument"
+        }
+      },
+      "context_destinations": {},
+      "wire": {
+        "method": "PATCH",
+        "path": "/workspaces/{workspace_id}/agent-definitions/{agent_key}",
+        "body": "json:update",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "agent.charter.versions",
+      "operation_id": "ListAgentDefinitionCharterVersions",
+      "sdk_symbol": "mammoth.api.agent_definitions.AgentDefinitionsAPI.charter_versions",
+      "field_destinations": {
+        "agent_key": {
+          "source": "positional",
+          "destination": "agent_key"
+        }
+      },
+      "context_destinations": {},
+      "wire": {
+        "method": "GET",
+        "path": "/workspaces/{workspace_id}/agent-definitions/{agent_key}/charter-versions",
+        "checks": [
+          "method",
+          "path"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
       "command_id": "agent.chat",
       "operation_id": "AgentChat",
       "sdk_symbol": "mammoth.api.agents.AgentsAPI.chat",
@@ -301,6 +534,655 @@
           "method",
           "path",
           "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "agent.create",
+      "operation_id": "CreateAgentDefinition",
+      "sdk_symbol": "mammoth.api.agent_definitions.AgentDefinitionsAPI.create",
+      "field_destinations": {
+        "key": {
+          "source": "positional",
+          "destination": "key"
+        },
+        "name": {
+          "source": "input",
+          "destination": "name",
+          "wire": "sdk_argument"
+        },
+        "description": {
+          "source": "input",
+          "destination": "description",
+          "wire": "sdk_argument"
+        },
+        "charter": {
+          "source": "input",
+          "destination": "charter",
+          "wire": "sdk_argument"
+        },
+        "role": {
+          "source": "input",
+          "destination": "role",
+          "wire": "sdk_argument"
+        },
+        "propose": {
+          "source": "input",
+          "destination": "propose",
+          "wire": "sdk_argument"
+        },
+        "project_ids": {
+          "source": "input",
+          "destination": "project_ids",
+          "wire": "sdk_argument"
+        },
+        "team": {
+          "source": "input",
+          "destination": "team",
+          "wire": "sdk_argument"
+        }
+      },
+      "context_destinations": {},
+      "wire": {
+        "method": "POST",
+        "path": "/workspaces/{workspace_id}/agent-definitions",
+        "body": "json:create",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "agent.delete",
+      "operation_id": "DeleteAgentDefinition",
+      "sdk_symbol": "mammoth.api.agent_definitions.AgentDefinitionsAPI.delete",
+      "field_destinations": {
+        "agent_key": {
+          "source": "positional",
+          "destination": "agent_key"
+        }
+      },
+      "context_destinations": {},
+      "wire": {
+        "method": "DELETE",
+        "path": "/workspaces/{workspace_id}/agent-definitions/{agent_key}",
+        "checks": [
+          "method",
+          "path"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "agent.disable",
+      "operation_id": "DisableAgentDefinition",
+      "sdk_symbol": "mammoth.api.agent_definitions.AgentDefinitionsAPI.disable",
+      "field_destinations": {
+        "agent_key": {
+          "source": "positional",
+          "destination": "agent_key"
+        }
+      },
+      "context_destinations": {},
+      "wire": {
+        "method": "POST",
+        "path": "/workspaces/{workspace_id}/agent-definitions/{agent_key}/disable",
+        "checks": [
+          "method",
+          "path"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "agent.feedback.list",
+      "operation_id": "ListAgentDefinitionFeedback",
+      "sdk_symbol": "mammoth.api.agent_definitions.AgentDefinitionsAPI.feedback_list",
+      "field_destinations": {
+        "agent_key": {
+          "source": "positional",
+          "destination": "agent_key"
+        }
+      },
+      "context_destinations": {},
+      "wire": {
+        "method": "GET",
+        "path": "/workspaces/{workspace_id}/agent-definitions/{agent_key}/feedback",
+        "checks": [
+          "method",
+          "path"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "agent.get",
+      "operation_id": "GetAgentDefinition",
+      "sdk_symbol": "mammoth.api.agent_definitions.AgentDefinitionsAPI.get",
+      "field_destinations": {
+        "agent_key": {
+          "source": "positional",
+          "destination": "agent_key"
+        }
+      },
+      "context_destinations": {},
+      "wire": {
+        "method": "GET",
+        "path": "/workspaces/{workspace_id}/agent-definitions/{agent_key}",
+        "checks": [
+          "method",
+          "path"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "agent.goldens.add",
+      "operation_id": "AddAgentDefinitionGolden",
+      "sdk_symbol": "mammoth.api.agent_definitions.AgentDefinitionsAPI.goldens_add",
+      "field_destinations": {
+        "agent_key": {
+          "source": "positional",
+          "destination": "agent_key"
+        },
+        "question": {
+          "source": "input",
+          "destination": "question",
+          "wire": "sdk_argument"
+        },
+        "expected": {
+          "source": "input",
+          "destination": "expected",
+          "wire": "sdk_argument"
+        }
+      },
+      "context_destinations": {},
+      "wire": {
+        "method": "POST",
+        "path": "/workspaces/{workspace_id}/agent-definitions/{agent_key}/goldens",
+        "body": "json:goldens_add",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "agent.goldens.list",
+      "operation_id": "ListAgentDefinitionGoldens",
+      "sdk_symbol": "mammoth.api.agent_definitions.AgentDefinitionsAPI.goldens_list",
+      "field_destinations": {
+        "agent_key": {
+          "source": "positional",
+          "destination": "agent_key"
+        }
+      },
+      "context_destinations": {},
+      "wire": {
+        "method": "GET",
+        "path": "/workspaces/{workspace_id}/agent-definitions/{agent_key}/goldens",
+        "checks": [
+          "method",
+          "path"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "agent.goldens.remove",
+      "operation_id": "DeleteAgentDefinitionGolden",
+      "sdk_symbol": "mammoth.api.agent_definitions.AgentDefinitionsAPI.goldens_remove",
+      "field_destinations": {
+        "agent_key": {
+          "source": "positional",
+          "destination": "agent_key"
+        },
+        "golden_id": {
+          "source": "positional",
+          "destination": "golden_id"
+        }
+      },
+      "context_destinations": {},
+      "wire": {
+        "method": "DELETE",
+        "path": "/workspaces/{workspace_id}/agent-definitions/{agent_key}/goldens/{golden_id}",
+        "checks": [
+          "method",
+          "path"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "agent.goldens.run",
+      "operation_id": "RunAgentDefinitionGoldens",
+      "sdk_symbol": "mammoth.api.agent_definitions.AgentDefinitionsAPI.goldens_run",
+      "field_destinations": {
+        "agent_key": {
+          "source": "positional",
+          "destination": "agent_key"
+        }
+      },
+      "context_destinations": {},
+      "wire": {
+        "method": "POST",
+        "path": "/workspaces/{workspace_id}/agent-definitions/{agent_key}/goldens/run",
+        "checks": [
+          "method",
+          "path"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "agent.goldens.status",
+      "operation_id": "GetAgentDefinitionProofRun",
+      "sdk_symbol": "mammoth.api.agent_definitions.AgentDefinitionsAPI.goldens_status",
+      "field_destinations": {
+        "agent_key": {
+          "source": "positional",
+          "destination": "agent_key"
+        }
+      },
+      "context_destinations": {},
+      "wire": {
+        "method": "GET",
+        "path": "/workspaces/{workspace_id}/agent-definitions/{agent_key}/goldens/run",
+        "checks": [
+          "method",
+          "path"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "agent.list",
+      "operation_id": "ListAgentDefinitions",
+      "sdk_symbol": "mammoth.api.agent_definitions.AgentDefinitionsAPI.list",
+      "field_destinations": {
+        "status": {
+          "source": "input",
+          "destination": "status",
+          "wire": "sdk_argument"
+        }
+      },
+      "context_destinations": {},
+      "wire": {
+        "method": "GET",
+        "path": "/workspaces/{workspace_id}/agent-definitions",
+        "checks": [
+          "method",
+          "path"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "agent.memory.add",
+      "operation_id": "UpsertAgentDefinitionNote",
+      "sdk_symbol": "mammoth.api.agent_definitions.AgentDefinitionsAPI.notes_upsert",
+      "field_destinations": {
+        "agent_key": {
+          "source": "positional",
+          "destination": "agent_key"
+        },
+        "project_id": {
+          "source": "input",
+          "destination": "project_id",
+          "wire": "sdk_argument"
+        },
+        "kind": {
+          "source": "input",
+          "destination": "kind",
+          "wire": "sdk_argument"
+        },
+        "name": {
+          "source": "input",
+          "destination": "name",
+          "wire": "sdk_argument"
+        },
+        "content": {
+          "source": "input",
+          "destination": "content",
+          "wire": "sdk_argument"
+        }
+      },
+      "context_destinations": {},
+      "wire": {
+        "method": "PUT",
+        "path": "/workspaces/{workspace_id}/agent-definitions/{agent_key}/notes",
+        "body": "json:notes_upsert",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "agent.memory.list",
+      "operation_id": "ListAgentDefinitionNotes",
+      "sdk_symbol": "mammoth.api.agent_definitions.AgentDefinitionsAPI.notes_list",
+      "field_destinations": {
+        "agent_key": {
+          "source": "positional",
+          "destination": "agent_key"
+        },
+        "project_id": {
+          "source": "input",
+          "destination": "project_id",
+          "wire": "sdk_argument"
+        },
+        "kind": {
+          "source": "input",
+          "destination": "kind",
+          "wire": "sdk_argument"
+        }
+      },
+      "context_destinations": {},
+      "wire": {
+        "method": "GET",
+        "path": "/workspaces/{workspace_id}/agent-definitions/{agent_key}/notes",
+        "checks": [
+          "method",
+          "path"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "agent.memory.remove",
+      "operation_id": "DeleteAgentDefinitionNote",
+      "sdk_symbol": "mammoth.api.agent_definitions.AgentDefinitionsAPI.notes_delete",
+      "field_destinations": {
+        "agent_key": {
+          "source": "positional",
+          "destination": "agent_key"
+        },
+        "note_id": {
+          "source": "positional",
+          "destination": "note_id"
+        }
+      },
+      "context_destinations": {},
+      "wire": {
+        "method": "DELETE",
+        "path": "/workspaces/{workspace_id}/agent-definitions/{agent_key}/notes/{note_id}",
+        "checks": [
+          "method",
+          "path"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "agent.projects.set",
+      "operation_id": "UpdateAgentDefinition",
+      "sdk_symbol": "mammoth.api.agent_definitions.AgentDefinitionsAPI.update",
+      "field_destinations": {
+        "agent_key": {
+          "source": "positional",
+          "destination": "agent_key"
+        },
+        "name": {
+          "source": "input",
+          "destination": "name",
+          "wire": "sdk_argument"
+        },
+        "description": {
+          "source": "input",
+          "destination": "description",
+          "wire": "sdk_argument"
+        },
+        "charter": {
+          "source": "input",
+          "destination": "charter",
+          "wire": "sdk_argument"
+        },
+        "role": {
+          "source": "input",
+          "destination": "role",
+          "wire": "sdk_argument"
+        },
+        "propose": {
+          "source": "input",
+          "destination": "propose",
+          "wire": "sdk_argument"
+        },
+        "project_ids": {
+          "source": "input",
+          "destination": "project_ids",
+          "wire": "sdk_argument"
+        },
+        "team": {
+          "source": "input",
+          "destination": "team",
+          "wire": "sdk_argument"
+        }
+      },
+      "context_destinations": {},
+      "wire": {
+        "method": "PATCH",
+        "path": "/workspaces/{workspace_id}/agent-definitions/{agent_key}",
+        "body": "json:update",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "agent.publish",
+      "operation_id": "PublishAgentDefinition",
+      "sdk_symbol": "mammoth.api.agent_definitions.AgentDefinitionsAPI.publish",
+      "field_destinations": {
+        "agent_key": {
+          "source": "positional",
+          "destination": "agent_key"
+        }
+      },
+      "context_destinations": {},
+      "wire": {
+        "method": "POST",
+        "path": "/workspaces/{workspace_id}/agent-definitions/{agent_key}/publish",
+        "checks": [
+          "method",
+          "path"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "agent.roles",
+      "operation_id": "ListAgentDefinitionRoles",
+      "sdk_symbol": "mammoth.api.agent_definitions.AgentDefinitionsAPI.roles",
+      "field_destinations": {},
+      "context_destinations": {},
+      "wire": {
+        "method": "GET",
+        "path": "/workspaces/{workspace_id}/agent-definitions/roles",
+        "checks": [
+          "method",
+          "path"
         ]
       },
       "dropped_field_sentinel": "__s7_dropped_field__",
@@ -587,6 +1469,176 @@
       }
     },
     {
+      "command_id": "agent.scratch.clear",
+      "operation_id": "ListAgentDefinitionNotes",
+      "sdk_symbol": "mammoth.api.agent_definitions.AgentDefinitionsAPI.notes_delete",
+      "field_destinations": {
+        "agent_key": {
+          "source": "positional",
+          "destination": "agent_key"
+        },
+        "note_id": {
+          "source": "input",
+          "destination": "note_id",
+          "wire": "sdk_argument"
+        }
+      },
+      "context_destinations": {},
+      "wire": {
+        "method": "DELETE",
+        "path": "/workspaces/{workspace_id}/agent-definitions/{agent_key}/notes/{note_id}",
+        "checks": [
+          "method",
+          "path"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "agent.scratch.get",
+      "operation_id": "ListAgentDefinitionNotes",
+      "sdk_symbol": "mammoth.api.agent_definitions.AgentDefinitionsAPI.notes_list",
+      "field_destinations": {
+        "agent_key": {
+          "source": "positional",
+          "destination": "agent_key"
+        },
+        "project_id": {
+          "source": "input",
+          "destination": "project_id",
+          "wire": "sdk_argument"
+        },
+        "kind": {
+          "source": "input",
+          "destination": "kind",
+          "wire": "sdk_argument"
+        }
+      },
+      "context_destinations": {},
+      "wire": {
+        "method": "GET",
+        "path": "/workspaces/{workspace_id}/agent-definitions/{agent_key}/notes",
+        "checks": [
+          "method",
+          "path"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "agent.scratch.list",
+      "operation_id": "ListAgentDefinitionNotes",
+      "sdk_symbol": "mammoth.api.agent_definitions.AgentDefinitionsAPI.notes_list",
+      "field_destinations": {
+        "agent_key": {
+          "source": "positional",
+          "destination": "agent_key"
+        },
+        "project_id": {
+          "source": "input",
+          "destination": "project_id",
+          "wire": "sdk_argument"
+        },
+        "kind": {
+          "source": "input",
+          "destination": "kind",
+          "wire": "sdk_argument"
+        }
+      },
+      "context_destinations": {},
+      "wire": {
+        "method": "GET",
+        "path": "/workspaces/{workspace_id}/agent-definitions/{agent_key}/notes",
+        "checks": [
+          "method",
+          "path"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "agent.scratch.set",
+      "operation_id": "UpsertAgentDefinitionNote",
+      "sdk_symbol": "mammoth.api.agent_definitions.AgentDefinitionsAPI.notes_upsert",
+      "field_destinations": {
+        "agent_key": {
+          "source": "positional",
+          "destination": "agent_key"
+        },
+        "project_id": {
+          "source": "input",
+          "destination": "project_id",
+          "wire": "sdk_argument"
+        },
+        "kind": {
+          "source": "input",
+          "destination": "kind",
+          "wire": "sdk_argument"
+        },
+        "name": {
+          "source": "positional",
+          "destination": "name"
+        },
+        "content": {
+          "source": "input",
+          "destination": "content",
+          "wire": "sdk_argument"
+        }
+      },
+      "context_destinations": {},
+      "wire": {
+        "method": "PUT",
+        "path": "/workspaces/{workspace_id}/agent-definitions/{agent_key}/notes",
+        "body": "json:notes_upsert",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
       "command_id": "agent.session.delete",
       "operation_id": "DeleteAgentSession",
       "sdk_symbol": "mammoth.api.agents.AgentsAPI.session_delete",
@@ -740,6 +1792,74 @@
       }
     },
     {
+      "command_id": "agent.team.set",
+      "operation_id": "UpdateAgentDefinition",
+      "sdk_symbol": "mammoth.api.agent_definitions.AgentDefinitionsAPI.update",
+      "field_destinations": {
+        "agent_key": {
+          "source": "positional",
+          "destination": "agent_key"
+        },
+        "name": {
+          "source": "input",
+          "destination": "name",
+          "wire": "sdk_argument"
+        },
+        "description": {
+          "source": "input",
+          "destination": "description",
+          "wire": "sdk_argument"
+        },
+        "charter": {
+          "source": "input",
+          "destination": "charter",
+          "wire": "sdk_argument"
+        },
+        "role": {
+          "source": "input",
+          "destination": "role",
+          "wire": "sdk_argument"
+        },
+        "propose": {
+          "source": "input",
+          "destination": "propose",
+          "wire": "sdk_argument"
+        },
+        "project_ids": {
+          "source": "input",
+          "destination": "project_ids",
+          "wire": "sdk_argument"
+        },
+        "team": {
+          "source": "input",
+          "destination": "team",
+          "wire": "sdk_argument"
+        }
+      },
+      "context_destinations": {},
+      "wire": {
+        "method": "PATCH",
+        "path": "/workspaces/{workspace_id}/agent-definitions/{agent_key}",
+        "body": "json:update",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
       "command_id": "agent.turn.cancel",
       "operation_id": "CancelAgentTurn",
       "sdk_symbol": "mammoth.api.agents.AgentsAPI.turn_cancel",
@@ -759,6 +1879,74 @@
         "method": "POST",
         "path": "/agents/sessions/{session_id}/turns/{turn_id}/cancel",
         "body": "none",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "agent.update",
+      "operation_id": "UpdateAgentDefinition",
+      "sdk_symbol": "mammoth.api.agent_definitions.AgentDefinitionsAPI.update",
+      "field_destinations": {
+        "agent_key": {
+          "source": "positional",
+          "destination": "agent_key"
+        },
+        "name": {
+          "source": "input",
+          "destination": "name",
+          "wire": "sdk_argument"
+        },
+        "description": {
+          "source": "input",
+          "destination": "description",
+          "wire": "sdk_argument"
+        },
+        "charter": {
+          "source": "input",
+          "destination": "charter",
+          "wire": "sdk_argument"
+        },
+        "role": {
+          "source": "input",
+          "destination": "role",
+          "wire": "sdk_argument"
+        },
+        "propose": {
+          "source": "input",
+          "destination": "propose",
+          "wire": "sdk_argument"
+        },
+        "project_ids": {
+          "source": "input",
+          "destination": "project_ids",
+          "wire": "sdk_argument"
+        },
+        "team": {
+          "source": "input",
+          "destination": "team",
+          "wire": "sdk_argument"
+        }
+      },
+      "context_destinations": {},
+      "wire": {
+        "method": "PATCH",
+        "path": "/workspaces/{workspace_id}/agent-definitions/{agent_key}",
+        "body": "json:update",
         "checks": [
           "method",
           "path",
