@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from mammoth_cli.commands.dataset import _tag_scope
+from mammoth_cli.commands.dataset import _tag_scope, elsewhere_note, narrow_to_project
 from mammoth_cli.commands.resolve import kinds_note, resolve_matches
 
 _PROJECTS = [
@@ -85,3 +85,33 @@ def test_note_picks_the_one_copy_in_the_current_project() -> None:
     )
     elsewhere = resolve_matches("uqa", _PROJECTS[:2], {"dataset": copies}, home=3)
     assert "ask which" in kinds_note("uqa", elsewhere)
+
+
+def _copies(home: int) -> list[dict[str, object]]:
+    rows = resolve_matches(
+        "uqa",
+        [],
+        {
+            "dataset": [
+                {"object_id": 100 + i, "name": "uqa", "project_id": 1 + i % 2} for i in range(5)
+            ]
+        },
+        home=home,
+    )
+    return rows
+
+
+def test_an_exact_match_in_the_project_leaves_only_the_projects_rows() -> None:
+    kept, dropped = narrow_to_project(_copies(home=2), lambda r: bool(r["exact"]))
+    assert [r["project_id"] for r in kept] == [2, 2]
+    assert dropped == 3
+
+
+def test_no_exact_match_in_the_project_keeps_every_row() -> None:
+    rows = _copies(home=3)
+    assert narrow_to_project(rows, lambda r: bool(r["exact"])) == (rows, 0)
+
+
+def test_the_elsewhere_note_names_the_flag_that_lists_them() -> None:
+    assert elsewhere_note(0) == ""
+    assert '"all_projects": true' in elsewhere_note(36)

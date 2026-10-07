@@ -77,7 +77,10 @@ def _kinds(data: dict[str, Any], kind: str) -> dict[int, dict[str, Any]]:
 def test_find_keeps_other_projects_when_the_project_has_its_own_match(
     live_cli: LiveCli, twins: Twins
 ) -> None:
-    found, _ = live_cli.ok("dataset", "find", twins.dataset_name, project=twins.project_b)
+    flag = json.dumps({"all_projects": True})
+    found, _ = live_cli.ok(
+        "dataset", "find", twins.dataset_name, "--input", flag, project=twins.project_b
+    )
 
     by_id = {row["id"]: row for row in found["matches"]}
     assert by_id[twins.dataset_b]["in_project"] is True
@@ -90,7 +93,8 @@ def test_find_keeps_other_projects_when_the_project_has_its_own_match(
 def test_resolve_a_dataset_name_says_dataset_with_both_projects(
     live_cli: LiveCli, twins: Twins
 ) -> None:
-    data, _ = live_cli.ok("resolve", twins.dataset_name, project=twins.project_b)
+    flag = json.dumps({"all_projects": True})
+    data, _ = live_cli.ok("resolve", twins.dataset_name, "--input", flag, project=twins.project_b)
 
     assert _kinds(data, "project") == {}
     datasets = _kinds(data, "dataset")
@@ -125,3 +129,50 @@ def test_resolve_nothing_says_so(live_cli: LiveCli) -> None:
 
     assert data["matches"] == []
     assert "Nothing visible" in data["note"]
+
+
+def test_resolve_under_a_project_with_the_exact_name_returns_only_that_one(
+    live_cli: LiveCli, twins: Twins
+) -> None:
+    data, _ = live_cli.ok("resolve", twins.dataset_name, project=twins.project_b)
+
+    assert [(r["kind"], r["id"]) for r in data["matches"]] == [("dataset", twins.dataset_b)]
+    assert data["elsewhere"] >= 1
+    assert "all_projects" in data["note"]
+
+
+def test_resolve_all_projects_lists_the_copies_elsewhere_too(
+    live_cli: LiveCli, twins: Twins
+) -> None:
+    flag = json.dumps({"all_projects": True})
+    data, _ = live_cli.ok("resolve", twins.dataset_name, "--input", flag, project=twins.project_b)
+
+    assert {twins.dataset_a, twins.dataset_b} <= set(_kinds(data, "dataset"))
+    assert "elsewhere" not in data
+
+
+def test_resolve_without_a_project_returns_every_copy(live_cli: LiveCli, twins: Twins) -> None:
+    data, _ = live_cli.ok("resolve", twins.dataset_name)
+
+    assert {twins.dataset_a, twins.dataset_b} <= set(_kinds(data, "dataset"))
+    assert "elsewhere" not in data
+
+
+def test_find_under_a_project_with_the_exact_name_returns_only_that_one(
+    live_cli: LiveCli, twins: Twins
+) -> None:
+    found, _ = live_cli.ok("dataset", "find", twins.dataset_name, project=twins.project_b)
+
+    assert [row["id"] for row in found["matches"]] == [twins.dataset_b]
+    assert found["elsewhere"] == 1
+    assert "all_projects" in found["note"]
+
+
+def test_find_all_projects_lists_the_copies_elsewhere_too(live_cli: LiveCli, twins: Twins) -> None:
+    flag = json.dumps({"all_projects": True})
+    found, _ = live_cli.ok(
+        "dataset", "find", twins.dataset_name, "--input", flag, project=twins.project_b
+    )
+
+    assert {twins.dataset_a, twins.dataset_b} <= {row["id"] for row in found["matches"]}
+    assert "elsewhere" not in found
