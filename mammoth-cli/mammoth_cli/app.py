@@ -110,12 +110,12 @@ _AGENT_SUBGROUP_DESCRIPTIONS = {
     "charter": "Read, change and restore an agent definition's charter.",
     "feedback": "Read the feedback an agent definition has received.",
     "goldens": "Manage and run the golden cases an agent definition is proven against.",
-    "memory": "Manage the notes an agent definition remembers.",
+    "memory": "Manage the facts an agent definition has learned, per project.",
     "projects": "Set the projects an agent definition works in.",
     "run": "Inspect and control an agent's runs.",
-    "scratch": "Read and write an agent session's scratch space.",
+    "scratch": "Read, write and clear an agent definition's scratchpad notes per project.",
     "session": "List, read, delete and share agent chat sessions.",
-    "team": "Set the team that owns an agent definition.",
+    "team": "Set the agents this agent may consult while answering.",
     "turn": "Control one turn of an agent chat session.",
 }
 
