@@ -102,7 +102,8 @@ commands:
   command_path: batch create-spec
   disposition: command
   alias_of: null
-  operation_ids: []
+  operation_ids:
+  - CreateBatch
   positionals:
   - name: dataset_id
     type: int

@@ -79,6 +79,37 @@ def test_every_command_disposition_has_typed_sdk_symbol() -> None:
         assert _resolve_symbol(symbol) is not None, f"unresolved sdk_symbol {symbol}"
 
 
+# Non-read commands that make no HTTP call, so they have no operationId.
+_LOCAL_COMMAND_ALLOWLIST: dict[str, str] = {
+    "auth.login": "no HTTP call: writes the local credential profile",
+    "auth.logout": "no HTTP call: removes the local credential profile",
+    "completion.install": "no HTTP call: writes a shell completion file",
+    "config.set": "no HTTP call: writes the local CLI config",
+    "context.project.clear": "no HTTP call: clears the saved active project locally",
+    "context.project.use": "no HTTP call: saves the active project locally",
+    "skill.agents-md.install": "no HTTP call: writes a local AGENTS.md",
+    "skill.install": "no HTTP call: copies the bundled skill to disk",
+    "skill.uninstall": "no HTTP call: removes the installed skill from disk",
+    "skill.update": "no HTTP call: refreshes the installed skill on disk",
+    "upgrade": "no HTTP call to the Mammoth API: runs the package installer",
+}
+
+
+def test_every_remote_write_command_names_its_operation_ids() -> None:
+    """A non-read command that calls the API must say which operations it calls."""
+    allowed = _LOCAL_COMMAND_ALLOWLIST.keys()
+    missing = [
+        record["command_id"]
+        for record in load_commands()
+        if record.get("disposition") == "command"
+        and record.get("sdk_symbol")
+        and record.get("mutation_class") != "read"
+        and not record.get("operation_ids")
+        and record["command_id"] not in allowed
+    ]
+    assert not missing, f"non-read commands without operation_ids: {missing}"
+
+
 def test_manifest_has_no_unknown_openapi_or_sdk_symbols() -> None:
     import json
 

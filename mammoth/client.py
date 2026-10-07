@@ -364,6 +364,7 @@ def resolve_token_workspace_id(base_url: str, api_token: str, timeout: float) ->
 if TYPE_CHECKING:
     from mammoth.api.activity_logs import ActivityLogsAPI
     from mammoth.api.addons import AddonsAPI
+    from mammoth.api.agent_definitions import AgentDefinitionsAPI
     from mammoth.api.agents import AgentsAPI
     from mammoth.api.ai import AIAPI
     from mammoth.api.annotations import AnnotationsAPI
@@ -433,6 +434,7 @@ SUB_CLIENTS: dict[str, tuple[str, str]] = {
     "addons": ("mammoth.api.addons", "AddonsAPI"),
     "reports": ("mammoth.api.reports", "ReportsAPI"),
     "agents": ("mammoth.api.agents", "AgentsAPI"),
+    "agent_definitions": ("mammoth.api.agent_definitions", "AgentDefinitionsAPI"),
     "annotations": ("mammoth.api.annotations", "AnnotationsAPI"),
     "billing": ("mammoth.api.billing", "BillingAPI"),
     "checkpoints": ("mammoth.api.checkpoints", "CheckpointsAPI"),
@@ -501,6 +503,7 @@ class MammothClient:
         addons: AddonsAPI
         reports: ReportsAPI
         agents: AgentsAPI
+        agent_definitions: AgentDefinitionsAPI
         annotations: AnnotationsAPI
         billing: BillingAPI
         checkpoints: CheckpointsAPI
