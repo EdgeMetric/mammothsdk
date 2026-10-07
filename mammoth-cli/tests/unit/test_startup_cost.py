@@ -112,3 +112,78 @@ def test_lazy_root_help_and_group_help_render() -> None:
     group = make_runner().invoke(["view", "--help"])
     assert group.exit_code == 0
     assert "transform" in group.output
+
+
+# Modules that must stay unloaded until a command actually dispatches: the
+# generated dashboard models and the HTTP stack cost hundreds of milliseconds
+# each, and `--version`, `--help` and a mistyped command never use them.
+_HEAVY_MODULES = (
+    "mammoth.models.dashboard_generated",
+    "mammoth.api.dashboard_generated",
+    "mammoth.client",
+    "mammoth.view",
+    "httpx",
+    "keyring",
+)
+
+_PROBE = """
+import json, sys
+sys.argv = ["mammoth", *sys.argv[1:]]
+from mammoth_cli.__main__ import main
+try:
+    main()
+except SystemExit:
+    pass
+sys.stdout.write("\\n" + json.dumps([m for m in {heavy!r} if m in sys.modules]))
+"""
+
+
+def _loaded_heavy_modules(*argv: str) -> list[str]:
+    import subprocess
+    import sys
+
+    done = subprocess.run(
+        [sys.executable, "-c", _PROBE.format(heavy=_HEAVY_MODULES), *argv],
+        capture_output=True,
+        text=True,
+        timeout=120,
+        check=False,
+    )
+    loaded: list[str] = json.loads(done.stdout.rsplit("\n", 1)[-1])
+    return loaded
+
+
+@pytest.mark.subprocess
+@pytest.mark.parametrize(
+    "argv",
+    [["--version"], ["--help"], ["project", "--help"], ["list"]],
+    ids=["version", "root-help", "group-help", "unknown-command"],
+)
+def test_startup_before_dispatch_loads_no_heavy_modules(argv: list[str]) -> None:
+    assert _loaded_heavy_modules(*argv) == []
+
+
+def test_every_dashboard_command_still_has_a_handler() -> None:
+    """Dashboard commands are matched by SDK symbol prefix, not by importing the generated list."""
+    from mammoth.api.dashboard_generated import GENERATED_METHODS
+
+    from mammoth_cli.commands.registry import HANDLERS
+    from mammoth_cli.manifest.loader import load_commands
+
+    prefix = "mammoth.api.dashboards.DashboardsAPI."
+    generated = {f"{prefix}{method}" for method in GENERATED_METHODS}
+    for record in load_commands():
+        if record.get("sdk_symbol") in generated:
+            assert str(record["command_id"]) in HANDLERS
+
+
+def test_sdk_sub_clients_resolve_without_being_built_up_front() -> None:
+    from mammoth.client import MammothClient
+
+    from mammoth_cli.services.dispatch import resolve_sdk_method
+
+    client = MammothClient(api_token="mm_unit_test_token")
+    assert "projects" not in vars(client)
+    method = resolve_sdk_method(client, "mammoth.api.projects.ProjectsAPI.list")
+    assert callable(method)
+    assert type(vars(client)["projects"]).__name__ == "ProjectsAPI"

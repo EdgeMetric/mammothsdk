@@ -27,57 +27,17 @@ from __future__ import annotations
 import asyncio
 import base64
 import hashlib
+import importlib
 import logging
 import math
 import time
 from collections.abc import Awaitable, Callable
 from ipaddress import ip_address
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
 from urllib.parse import urljoin, urlsplit
 
 import httpx
 
-from mammoth.api.activity_logs import ActivityLogsAPI
-from mammoth.api.addons import AddonsAPI
-from mammoth.api.agents import AgentsAPI
-from mammoth.api.ai import AIAPI
-from mammoth.api.annotations import AnnotationsAPI
-from mammoth.api.automations import AutomationsAPI
-from mammoth.api.batches import BatchesAPI
-from mammoth.api.billing import BillingAPI
-from mammoth.api.browse import BrowseAPI
-from mammoth.api.checkpoints import CheckpointsAPI
-from mammoth.api.clientapps import ClientAppsAPI
-from mammoth.api.connector_ai import ConnectorAIAPI
-from mammoth.api.connectors import ConnectorsAPI
-from mammoth.api.dashboards import DashboardsAPI
-from mammoth.api.data_apps import DataAppsAPI
-from mammoth.api.data_checks import DataChecksAPI
-from mammoth.api.datasets import DatasetsAPI
-from mammoth.api.dataviews import DataviewsAPI
-from mammoth.api.derivatives import DerivativesAPI
-from mammoth.api.exports import ExportsAPI
-from mammoth.api.external_keys import ExternalKeysAPI
-from mammoth.api.files import FilesAPI
-from mammoth.api.folders import FoldersAPI
-from mammoth.api.jobs import JobsAPI
-from mammoth.api.notifications import NotificationsAPI
-from mammoth.api.parameters import ParametersAPI
-from mammoth.api.pipeline import PipelineAPI
-from mammoth.api.pipeline_versions import PipelineVersionsAPI
-from mammoth.api.projects import ProjectsAPI
-from mammoth.api.reports import ReportsAPI
-from mammoth.api.schedules import SchedulesAPI
-from mammoth.api.snippets import SnippetsAPI
-from mammoth.api.support import SupportAPI
-from mammoth.api.templates import TemplatesAPI
-from mammoth.api.trash import TrashAPI
-from mammoth.api.user_profile import UserProfileAPI
-from mammoth.api.users import UsersAPI
-from mammoth.api.webhooks import WebhooksAPI
-from mammoth.api.workflows import WorkflowsAPI
-from mammoth.api.workspace import WorkspaceAPI
-from mammoth.api.workspaces import WorkspacesAPI
 from mammoth.exceptions import MammothAPIError, MammothAuthError, safe_response_body
 
 
@@ -401,6 +361,101 @@ def resolve_token_workspace_id(base_url: str, api_token: str, timeout: float) ->
     return _TOKEN_WORKSPACES[key]
 
 
+if TYPE_CHECKING:
+    from mammoth.api.activity_logs import ActivityLogsAPI
+    from mammoth.api.addons import AddonsAPI
+    from mammoth.api.agents import AgentsAPI
+    from mammoth.api.ai import AIAPI
+    from mammoth.api.annotations import AnnotationsAPI
+    from mammoth.api.automations import AutomationsAPI
+    from mammoth.api.batches import BatchesAPI
+    from mammoth.api.billing import BillingAPI
+    from mammoth.api.browse import BrowseAPI
+    from mammoth.api.checkpoints import CheckpointsAPI
+    from mammoth.api.clientapps import ClientAppsAPI
+    from mammoth.api.connector_ai import ConnectorAIAPI
+    from mammoth.api.connectors import ConnectorsAPI
+    from mammoth.api.dashboards import DashboardsAPI
+    from mammoth.api.data_apps import DataAppsAPI
+    from mammoth.api.data_checks import DataChecksAPI
+    from mammoth.api.datasets import DatasetsAPI
+    from mammoth.api.dataviews import DataviewsAPI
+    from mammoth.api.derivatives import DerivativesAPI
+    from mammoth.api.exports import ExportsAPI
+    from mammoth.api.external_keys import ExternalKeysAPI
+    from mammoth.api.files import FilesAPI
+    from mammoth.api.folders import FoldersAPI
+    from mammoth.api.jobs import JobsAPI
+    from mammoth.api.notifications import NotificationsAPI
+    from mammoth.api.parameters import ParametersAPI
+    from mammoth.api.pipeline import PipelineAPI
+    from mammoth.api.pipeline_versions import PipelineVersionsAPI
+    from mammoth.api.projects import ProjectsAPI
+    from mammoth.api.reports import ReportsAPI
+    from mammoth.api.schedules import SchedulesAPI
+    from mammoth.api.snippets import SnippetsAPI
+    from mammoth.api.support import SupportAPI
+    from mammoth.api.templates import TemplatesAPI
+    from mammoth.api.trash import TrashAPI
+    from mammoth.api.user_profile import UserProfileAPI
+    from mammoth.api.users import UsersAPI
+    from mammoth.api.webhooks import WebhooksAPI
+    from mammoth.api.workflows import WorkflowsAPI
+    from mammoth.api.workspace import WorkspaceAPI
+    from mammoth.api.workspaces import WorkspacesAPI
+
+
+# Sub-client attribute -> (module, class). Built on first access so a
+# caller that never touches an API (or only one) does not import every API
+# module and its models at ``import mammoth.client`` time.
+SUB_CLIENTS: dict[str, tuple[str, str]] = {
+    "files": ("mammoth.api.files", "FilesAPI"),
+    "jobs": ("mammoth.api.jobs", "JobsAPI"),
+    "exports": ("mammoth.api.exports", "ExportsAPI"),
+    "workspaces": ("mammoth.api.workspace", "WorkspaceAPI"),
+    "client_apps": ("mammoth.api.clientapps", "ClientAppsAPI"),
+    "projects": ("mammoth.api.projects", "ProjectsAPI"),
+    "folders": ("mammoth.api.folders", "FoldersAPI"),
+    "datasets": ("mammoth.api.datasets", "DatasetsAPI"),
+    "dataviews": ("mammoth.api.dataviews", "DataviewsAPI"),
+    "pipeline": ("mammoth.api.pipeline", "PipelineAPI"),
+    "connectors": ("mammoth.api.connectors", "ConnectorsAPI"),
+    "dashboards": ("mammoth.api.dashboards", "DashboardsAPI"),
+    "webhooks": ("mammoth.api.webhooks", "WebhooksAPI"),
+    "automations": ("mammoth.api.automations", "AutomationsAPI"),
+    "ai": ("mammoth.api.ai", "AIAPI"),
+    "schedules": ("mammoth.api.schedules", "SchedulesAPI"),
+    "batches": ("mammoth.api.batches", "BatchesAPI"),
+    "external_keys": ("mammoth.api.external_keys", "ExternalKeysAPI"),
+    "activity_logs": ("mammoth.api.activity_logs", "ActivityLogsAPI"),
+    "browse": ("mammoth.api.browse", "BrowseAPI"),
+    "user_profile": ("mammoth.api.user_profile", "UserProfileAPI"),
+    "addons": ("mammoth.api.addons", "AddonsAPI"),
+    "reports": ("mammoth.api.reports", "ReportsAPI"),
+    "agents": ("mammoth.api.agents", "AgentsAPI"),
+    "annotations": ("mammoth.api.annotations", "AnnotationsAPI"),
+    "billing": ("mammoth.api.billing", "BillingAPI"),
+    "checkpoints": ("mammoth.api.checkpoints", "CheckpointsAPI"),
+    "connector_ai": ("mammoth.api.connector_ai", "ConnectorAIAPI"),
+    "data_apps": ("mammoth.api.data_apps", "DataAppsAPI"),
+    "data_checks": ("mammoth.api.data_checks", "DataChecksAPI"),
+    "derivatives": ("mammoth.api.derivatives", "DerivativesAPI"),
+    "notifications": ("mammoth.api.notifications", "NotificationsAPI"),
+    "parameters": ("mammoth.api.parameters", "ParametersAPI"),
+    "pipeline_versions": ("mammoth.api.pipeline_versions", "PipelineVersionsAPI"),
+    "snippets": ("mammoth.api.snippets", "SnippetsAPI"),
+    "support": ("mammoth.api.support", "SupportAPI"),
+    "templates": ("mammoth.api.templates", "TemplatesAPI"),
+    "trash": ("mammoth.api.trash", "TrashAPI"),
+    "users": ("mammoth.api.users", "UsersAPI"),
+    "workflows": ("mammoth.api.workflows", "WorkflowsAPI"),
+    # ``workspaces`` (WorkspaceAPI) is the current-workspace CRUD seam kept
+    # for backward compatibility; ``workspace`` (WorkspacesAPI) exposes the
+    # workspace-collection, membership, invite, usage, and AI operations.
+    "workspace": ("mammoth.api.workspaces", "WorkspacesAPI"),
+}
+
+
 class MammothClient:
     """Main client for interacting with the Mammoth Analytics API.
 
@@ -420,6 +475,49 @@ class MammothClient:
         await view.filter_rows(Condition("Sales", Operator.GTE, 1000))
         await view.export.to_csv("output.csv")
     """
+
+    if TYPE_CHECKING:
+        files: FilesAPI
+        jobs: JobsAPI
+        exports: ExportsAPI
+        workspaces: WorkspaceAPI
+        client_apps: ClientAppsAPI
+        projects: ProjectsAPI
+        folders: FoldersAPI
+        datasets: DatasetsAPI
+        dataviews: DataviewsAPI
+        pipeline: PipelineAPI
+        connectors: ConnectorsAPI
+        dashboards: DashboardsAPI
+        webhooks: WebhooksAPI
+        automations: AutomationsAPI
+        ai: AIAPI
+        schedules: SchedulesAPI
+        batches: BatchesAPI
+        external_keys: ExternalKeysAPI
+        activity_logs: ActivityLogsAPI
+        browse: BrowseAPI
+        user_profile: UserProfileAPI
+        addons: AddonsAPI
+        reports: ReportsAPI
+        agents: AgentsAPI
+        annotations: AnnotationsAPI
+        billing: BillingAPI
+        checkpoints: CheckpointsAPI
+        connector_ai: ConnectorAIAPI
+        data_apps: DataAppsAPI
+        data_checks: DataChecksAPI
+        derivatives: DerivativesAPI
+        notifications: NotificationsAPI
+        parameters: ParametersAPI
+        pipeline_versions: PipelineVersionsAPI
+        snippets: SnippetsAPI
+        support: SupportAPI
+        templates: TemplatesAPI
+        trash: TrashAPI
+        users: UsersAPI
+        workflows: WorkflowsAPI
+        workspace: WorkspacesAPI
 
     def __init__(
         self,
@@ -571,51 +669,17 @@ class MammothClient:
         self.download_session = httpx.AsyncClient(timeout=self.timeout)
 
         # ── Sub-clients ──
-        self.files = FilesAPI(self)
-        self.jobs = JobsAPI(self)
-        self.exports = ExportsAPI(self)
-        self.workspaces = WorkspaceAPI(self)
-        self.client_apps = ClientAppsAPI(self)
-        self.projects = ProjectsAPI(self)
-        self.folders = FoldersAPI(self)
-        self.datasets = DatasetsAPI(self)
-        self.dataviews = DataviewsAPI(self)
-        self.pipeline = PipelineAPI(self)
         self.views = ViewsResource(self)
-        self.connectors = ConnectorsAPI(self)
-        self.dashboards = DashboardsAPI(self)
-        self.webhooks = WebhooksAPI(self)
-        self.automations = AutomationsAPI(self)
-        self.ai = AIAPI(self)
-        self.schedules = SchedulesAPI(self)
-        self.batches = BatchesAPI(self)
-        self.external_keys = ExternalKeysAPI(self)
-        self.activity_logs = ActivityLogsAPI(self)
-        self.browse = BrowseAPI(self)
-        self.user_profile = UserProfileAPI(self)
-        self.addons = AddonsAPI(self)
-        self.reports = ReportsAPI(self)
-        self.agents = AgentsAPI(self)
-        self.annotations = AnnotationsAPI(self)
-        self.billing = BillingAPI(self)
-        self.checkpoints = CheckpointsAPI(self)
-        self.connector_ai = ConnectorAIAPI(self)
-        self.data_apps = DataAppsAPI(self)
-        self.data_checks = DataChecksAPI(self)
-        self.derivatives = DerivativesAPI(self)
-        self.notifications = NotificationsAPI(self)
-        self.parameters = ParametersAPI(self)
-        self.pipeline_versions = PipelineVersionsAPI(self)
-        self.snippets = SnippetsAPI(self)
-        self.support = SupportAPI(self)
-        self.templates = TemplatesAPI(self)
-        self.trash = TrashAPI(self)
-        self.users = UsersAPI(self)
-        self.workflows = WorkflowsAPI(self)
-        # ``workspaces`` (WorkspaceAPI) is the current-workspace CRUD seam kept
-        # for backward compatibility; ``workspace`` (WorkspacesAPI) exposes the
-        # workspace-collection, membership, invite, usage, and AI operations.
-        self.workspace = WorkspacesAPI(self)
+
+    def __getattr__(self, name: str) -> Any:
+        """Build a sub-client the first time it is read, then cache it."""
+        target = SUB_CLIENTS.get(name)
+        if target is None:
+            raise AttributeError(f"{type(self).__name__!r} object has no attribute {name!r}")
+        module_name, class_name = target
+        api = getattr(importlib.import_module(module_name), class_name)(self)
+        setattr(self, name, api)
+        return api
 
     async def find_dataset_for_dataview(
         self, dataview_id: int, dataset_id: int | None = None
@@ -1308,5 +1372,14 @@ class MammothClient:
         await self.close()
 
 
-# Type alias for forward references
-from mammoth.view import View as View  # noqa: E402
+if TYPE_CHECKING:
+    from mammoth.view import View as View
+
+
+def __getattr__(name: str) -> Any:
+    """Serve ``mammoth.client.View`` without importing the view stack up front."""
+    if name == "View":
+        from mammoth.view import View
+
+        return View
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

@@ -27,6 +27,17 @@ def _unresolved_error(sdk_symbol: str) -> CliError:
     )
 
 
+def _lazy_sub_client(client: object, class_name: str) -> object | None:
+    """Build the sub-client named ``class_name``; the SDK client creates them on first use."""
+    from mammoth.client import SUB_CLIENTS
+
+    for attribute, (_module, name) in SUB_CLIENTS.items():
+        if name == class_name:
+            sub_client: object = getattr(client, attribute)
+            return sub_client
+    return None
+
+
 def resolve_sdk_method(client: object, sdk_symbol: str) -> Callable[..., Any]:
     """Return the bound public SDK method named by ``sdk_symbol``.
 
@@ -54,6 +65,8 @@ def resolve_sdk_method(client: object, sdk_symbol: str) -> Callable[..., Any]:
         (value for value in vars(client).values() if type(value).__name__ == class_name),
         None,
     )
+    if sub_client is None:
+        sub_client = _lazy_sub_client(client, class_name)
     if sub_client is None:
         raise _unresolved_error(sdk_symbol)
 

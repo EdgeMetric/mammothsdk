@@ -29,8 +29,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Literal
 
-import keyring
-import keyring.errors
 import tomlkit
 from tomlkit import TOMLDocument
 
@@ -88,6 +86,9 @@ def keyring_unresponsive_error() -> CliError:
 
 
 def _keyring_available() -> bool:
+    import keyring
+    import keyring.errors
+
     try:
         backend = keyring.get_keyring()
     except keyring.errors.NoKeyringError:
@@ -247,6 +248,8 @@ def _store_keyring(profile: str, credential: Credential) -> None:
         KeyringUnresponsiveError: The keyring hung, raised, or did not return
             the stored credential.
     """
+    import keyring
+
     payload = json.dumps(credential.document())
     _bounded_keyring_call(lambda: keyring.set_password(KEYRING_SERVICE, profile, payload))
     stored = _bounded_keyring_call(lambda: keyring.get_password(KEYRING_SERVICE, profile))
@@ -260,6 +263,8 @@ def _load_keyring(profile: str) -> Credential | None:
     Raises:
         KeyringUnresponsiveError: The keyring hung or raised.
     """
+    import keyring
+
     raw = _bounded_keyring_call(lambda: keyring.get_password(KEYRING_SERVICE, profile))
     if raw is None:
         return None
@@ -267,6 +272,8 @@ def _load_keyring(profile: str) -> Credential | None:
 
 
 def _delete_keyring(profile: str) -> bool:
+    import keyring
+
     try:
         _bounded_keyring_call(lambda: keyring.delete_password(KEYRING_SERVICE, profile))
         return True

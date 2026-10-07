@@ -24,7 +24,6 @@ from concurrent.futures import ThreadPoolExecutor
 from types import TracebackType
 from typing import Any, NoReturn
 
-from mammoth.client import MammothClient
 from mammoth.exceptions import MammothAPIError, MammothColumnError
 
 from mammoth_cli.context.resolver import ResolvedAuth
@@ -186,6 +185,8 @@ class SdkMammothService:
                 }
             )
         )
+        from mammoth.client import MammothClient
+
         self._client = MammothClient(
             **credential,
             base_url=auth.base_url,

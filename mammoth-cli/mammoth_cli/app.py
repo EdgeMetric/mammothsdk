@@ -19,6 +19,7 @@ import re
 import sys
 from collections.abc import Callable, Sequence
 from dataclasses import replace
+from difflib import get_close_matches
 from functools import cache
 from typing import Annotated, Any
 
@@ -383,8 +384,32 @@ class _EnvelopeGroup(TyperGroup):
     def get_command(self, ctx: Any, cmd_name: str) -> Any:
         eager: dict[str, Any] = self.__dict__.setdefault("_eager_commands", {})
         if cmd_name not in eager and cmd_name in _LAZY_GROUP_NAMES:
+            if self.__dict__.get("_listing_help"):
+                return _group_stub(cmd_name)
             eager[cmd_name] = _load_top_level_group(cmd_name)
         return eager.get(cmd_name)
+
+    def resolve_command(self, ctx: Any, args: list[str]) -> Any:
+        # Typer's override suggests close names from ``self.commands``, which
+        # builds every group; the names alone are all a suggestion needs.
+        try:
+            return self._click_resolve_command(ctx, args)
+        except _typer_click_exceptions.UsageError as error:
+            if self.suggest_commands and args:
+                matches = get_close_matches(args[0], self.list_commands(ctx))
+                if matches:
+                    suggestions = ", ".join(f"{m!r}" for m in matches)
+                    error.message = f"{error.message.rstrip('.')}. Did you mean {suggestions}?"
+            raise
+
+    def format_help(self, ctx: Any, formatter: Any) -> None:
+        # Root ``--help`` only needs each group's name, panel and one-line
+        # description; building all ~550 commands to print them cost seconds.
+        self.__dict__["_listing_help"] = True
+        try:
+            super().format_help(ctx, formatter)
+        finally:
+            self.__dict__["_listing_help"] = False
 
     def main(self, *args: Any, **kwargs: Any) -> Any:
         if not kwargs.get("standalone_mode", True):
@@ -1133,6 +1158,16 @@ def _load_top_level_group(name: str) -> Any:
         rich_help_panel=_ROOT_HELP_PANELS.get(name),
     )
     return typer.main.get_group_from_info(info, **_LAZY_SETTINGS)
+
+
+def _group_stub(name: str) -> Any:
+    """A placeholder group carrying only what the root ``--help`` listing prints."""
+    return TyperGroup(
+        name=name,
+        help=_GROUP_DESCRIPTIONS.get(name, f"Commands for {name}."),
+        rich_help_panel=_ROOT_HELP_PANELS.get(name),
+        rich_markup_mode=_LAZY_SETTINGS["rich_markup_mode"],
+    )
 
 
 def build_app() -> typer.Typer:

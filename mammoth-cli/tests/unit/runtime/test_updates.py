@@ -22,6 +22,8 @@ def check_enabled(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> Path:
     monkeypatch.delenv("MAMMOTH_AUTO_UPGRADE", raising=False)
     cache = tmp_path / "update-check.json"
     monkeypatch.setenv("MAMMOTH_UPDATE_CACHE", str(cache))
+    # A refresh runs in a detached child; it must fail fast instead of reaching PyPI.
+    monkeypatch.setenv("HTTPS_PROXY", "http://127.0.0.1:9")
     return cache
 
 
@@ -119,12 +121,12 @@ def test_hint_goes_to_stderr_in_human_modes_only(
 
 
 def test_success_envelope_carries_update_available(
-    check_enabled: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+    check_enabled: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    monkeypatch.setattr(updates, "_fetch_latest", lambda: "99.0.0")
     executor.run("project.list", "json", lambda: ({"projects": []}, {}))
     first = json.loads(capsys.readouterr().out)
-    assert "update_available" not in first["meta"]  # cache was empty at start; nulls are omitted
+    assert "update_available" not in first["meta"]  # no cached answer; nulls are omitted
+    _write(check_enabled, "99.0.0")
     executor.run("project.list", "json", lambda: ({"projects": []}, {}))
     second = json.loads(capsys.readouterr().out)
     assert second["meta"]["update_available"]["latest"] == "99.0.0"
@@ -204,3 +206,25 @@ def test_auto_upgrade_failure_never_breaks_the_command(
     record = updates.auto_upgrade("project.list")
     assert record is not None and record["ok"] is False
     assert "failed" in stream.getvalue()
+
+
+def test_background_refresh_stamps_the_cache_and_returns(check_enabled: Path) -> None:
+    _write(check_enabled, "99.0.0", age=_dt.timedelta(days=3))
+    updates.refresh_in_background("project.list")
+    document = json.loads(check_enabled.read_text())
+    assert updates.cache_is_fresh(document)  # claimed before the child runs
+    assert document["latest"] == "99.0.0"  # the earlier answer survives
+
+
+def test_background_refresh_leaves_a_fresh_cache_alone(check_enabled: Path) -> None:
+    _write(check_enabled, "99.0.0")
+    before = check_enabled.read_text()
+    updates.refresh_in_background("project.list")
+    assert check_enabled.read_text() == before
+
+
+def test_background_refresh_skips_commands_that_check_pypi_themselves(
+    check_enabled: Path,
+) -> None:
+    updates.refresh_in_background("doctor")
+    assert not check_enabled.exists()

@@ -4,144 +4,278 @@ Data models for the Mammoth Analytics SDK.
 
 from __future__ import annotations
 
-from .automations import (
-    AutomationInfo,
-    ScheduleInfo,
-)
-from .batches import (
-    BatchesPostRequest,
-    ColumnIdMapping,
-    ColumnNameMapping,
-    NewDsDetails,
-    ProjectedSourceColumn,
-)
-from .clientapps import (
-    ClientAppCreate,
-    ClientAppPostResponse,
-    ClientAppSchema,
-    ClientAppsListResponse,
-    ValueWrapper,
-)
-from .connectors import (
-    ConnectionInfo,
-    ConnectorInfo,
-    DsConfigInfo,
-)
-from .dashboards import (
-    CreateBlankParams,
-    CreateBlankResponse,
-    CreateBlankSpec,
-    DashboardAnalytics,
-    DashboardInfo,
-    DashboardSource,
-)
-from .datasets import (
-    DatasetCreateSpec,
-    DatasetDataResponse,
-    DatasetPatchData,
-    DatasetPatchRequest,
-    DatasetProperties,
-    DatasetSchema,
-    DatasetsList,
-)
-from .dataviews import (
-    ActiveUser,
-    ActiveUsersList,
-    DataviewColumn,
-    DataviewCreateRequest,
-    DataviewDataRequest,
-    DataviewDataResponse,
-    DataviewPatchData,
-    DataviewPatchRequest,
-    DataviewProperties,
-    DataviewSchema,
-    DataviewsList,
-)
-from .exports import (
-    AddExportSpec,
-    ExportStatus,
-    HandlerType,
-    ItemExportInfo,
-    PipelineExportsModificationResp,
-    PipelineExportsPaginated,
-    S3TargetProperties,
-    TriggerType,
-)
-from .files import (
-    AdditionalInfo,
-    ExtractSheetsPatch,
-    FileDetails,
-    FilePatchData,
-    FilePatchOperation,
-    FilePatchPath,
-    FilePatchRequest,
-    FileSchema,
-    FilesList,
-    SheetInfo,
-    StatusInfo,
-)
-from .folders import (
-    BulkFolderPatchRequest,
-    CreateFolder,
-    FolderDetails,
-    FolderSchema,
-    FoldersList,
-)
-from .jobs import (
-    JobResponse,
-    JobSchema,
-    JobsGetResponse,
-    JobStatus,
-    ObjectJobSchema,
-)
-from .pipeline import (
-    AggregateFunction,
-    ColumnType,
-    DateComponent,
-    DateDiffUnit,
-    FillDirection,
-    FilterType,
-    JoinType,
-    JsonType,
-    MathOperator,
-    Operator,
-    PipelineInfo,
-    PipelineTaskInfo,
-    PipelineTasksList,
-    ProviderType,
-    SetValue,
-    SmallLargeFunction,
-    SortDirection,
-    SubstringDirection,
-    TaskType,
-    TextCase,
-    ValueType,
-    WindowFunction,
-    WindowRange,
-)
-from .projects import (
-    AddUsersToProject,
-    DataSyncPatchItem,
-    DataSyncPatchRequest,
-    DataSyncPatchValue,
-    PatchOperation,
-    ProjectCreate,
-    ProjectList,
-    ProjectPatch,
-    ProjectProperties,
-    ProjectSchema,
-    ProjectsPatch,
-    ProjectUserPatch,
-)
-from .webhooks import (
-    WebhookCreate,
-    WebhookInfo,
-    WebhookMode,
-)
-from .workspaces import (
-    WorkspaceSchema,
-    WorkspacesSchema,
-)
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from .automations import (
+        AutomationInfo,
+        ScheduleInfo,
+    )
+    from .batches import (
+        BatchesPostRequest,
+        ColumnIdMapping,
+        ColumnNameMapping,
+        NewDsDetails,
+        ProjectedSourceColumn,
+    )
+    from .clientapps import (
+        ClientAppCreate,
+        ClientAppPostResponse,
+        ClientAppSchema,
+        ClientAppsListResponse,
+        ValueWrapper,
+    )
+    from .connectors import (
+        ConnectionInfo,
+        ConnectorInfo,
+        DsConfigInfo,
+    )
+    from .dashboards import (
+        CreateBlankParams,
+        CreateBlankResponse,
+        CreateBlankSpec,
+        DashboardAnalytics,
+        DashboardInfo,
+        DashboardSource,
+    )
+    from .datasets import (
+        DatasetCreateSpec,
+        DatasetDataResponse,
+        DatasetPatchData,
+        DatasetPatchRequest,
+        DatasetProperties,
+        DatasetSchema,
+        DatasetsList,
+    )
+    from .dataviews import (
+        ActiveUser,
+        ActiveUsersList,
+        DataviewColumn,
+        DataviewCreateRequest,
+        DataviewDataRequest,
+        DataviewDataResponse,
+        DataviewPatchData,
+        DataviewPatchRequest,
+        DataviewProperties,
+        DataviewSchema,
+        DataviewsList,
+    )
+    from .exports import (
+        AddExportSpec,
+        ExportStatus,
+        HandlerType,
+        ItemExportInfo,
+        PipelineExportsModificationResp,
+        PipelineExportsPaginated,
+        S3TargetProperties,
+        TriggerType,
+    )
+    from .files import (
+        AdditionalInfo,
+        ExtractSheetsPatch,
+        FileDetails,
+        FilePatchData,
+        FilePatchOperation,
+        FilePatchPath,
+        FilePatchRequest,
+        FileSchema,
+        FilesList,
+        SheetInfo,
+        StatusInfo,
+    )
+    from .folders import (
+        BulkFolderPatchRequest,
+        CreateFolder,
+        FolderDetails,
+        FolderSchema,
+        FoldersList,
+    )
+    from .jobs import (
+        JobResponse,
+        JobSchema,
+        JobsGetResponse,
+        JobStatus,
+        ObjectJobSchema,
+    )
+    from .pipeline import (
+        AggregateFunction,
+        ColumnType,
+        DateComponent,
+        DateDiffUnit,
+        FillDirection,
+        FilterType,
+        JoinType,
+        JsonType,
+        MathOperator,
+        Operator,
+        PipelineInfo,
+        PipelineTaskInfo,
+        PipelineTasksList,
+        ProviderType,
+        SetValue,
+        SmallLargeFunction,
+        SortDirection,
+        SubstringDirection,
+        TaskType,
+        TextCase,
+        ValueType,
+        WindowFunction,
+        WindowRange,
+    )
+    from .projects import (
+        AddUsersToProject,
+        DataSyncPatchItem,
+        DataSyncPatchRequest,
+        DataSyncPatchValue,
+        PatchOperation,
+        ProjectCreate,
+        ProjectList,
+        ProjectPatch,
+        ProjectProperties,
+        ProjectSchema,
+        ProjectsPatch,
+        ProjectUserPatch,
+    )
+    from .webhooks import (
+        WebhookCreate,
+        WebhookInfo,
+        WebhookMode,
+    )
+    from .workspaces import (
+        WorkspaceSchema,
+        WorkspacesSchema,
+    )
+
+_LAZY: dict[str, tuple[str, str]] = {
+    "AutomationInfo": ("mammoth.models.automations", "AutomationInfo"),
+    "ScheduleInfo": ("mammoth.models.automations", "ScheduleInfo"),
+    "BatchesPostRequest": ("mammoth.models.batches", "BatchesPostRequest"),
+    "ColumnIdMapping": ("mammoth.models.batches", "ColumnIdMapping"),
+    "ColumnNameMapping": ("mammoth.models.batches", "ColumnNameMapping"),
+    "NewDsDetails": ("mammoth.models.batches", "NewDsDetails"),
+    "ProjectedSourceColumn": ("mammoth.models.batches", "ProjectedSourceColumn"),
+    "ClientAppCreate": ("mammoth.models.clientapps", "ClientAppCreate"),
+    "ClientAppPostResponse": ("mammoth.models.clientapps", "ClientAppPostResponse"),
+    "ClientAppSchema": ("mammoth.models.clientapps", "ClientAppSchema"),
+    "ClientAppsListResponse": ("mammoth.models.clientapps", "ClientAppsListResponse"),
+    "ValueWrapper": ("mammoth.models.clientapps", "ValueWrapper"),
+    "ConnectionInfo": ("mammoth.models.connectors", "ConnectionInfo"),
+    "ConnectorInfo": ("mammoth.models.connectors", "ConnectorInfo"),
+    "DsConfigInfo": ("mammoth.models.connectors", "DsConfigInfo"),
+    "CreateBlankParams": ("mammoth.models.dashboards", "CreateBlankParams"),
+    "CreateBlankResponse": ("mammoth.models.dashboards", "CreateBlankResponse"),
+    "CreateBlankSpec": ("mammoth.models.dashboards", "CreateBlankSpec"),
+    "DashboardAnalytics": ("mammoth.models.dashboards", "DashboardAnalytics"),
+    "DashboardInfo": ("mammoth.models.dashboards", "DashboardInfo"),
+    "DashboardSource": ("mammoth.models.dashboards", "DashboardSource"),
+    "DatasetCreateSpec": ("mammoth.models.datasets", "DatasetCreateSpec"),
+    "DatasetDataResponse": ("mammoth.models.datasets", "DatasetDataResponse"),
+    "DatasetPatchData": ("mammoth.models.datasets", "DatasetPatchData"),
+    "DatasetPatchRequest": ("mammoth.models.datasets", "DatasetPatchRequest"),
+    "DatasetProperties": ("mammoth.models.datasets", "DatasetProperties"),
+    "DatasetSchema": ("mammoth.models.datasets", "DatasetSchema"),
+    "DatasetsList": ("mammoth.models.datasets", "DatasetsList"),
+    "ActiveUser": ("mammoth.models.dataviews", "ActiveUser"),
+    "ActiveUsersList": ("mammoth.models.dataviews", "ActiveUsersList"),
+    "DataviewColumn": ("mammoth.models.dataviews", "DataviewColumn"),
+    "DataviewCreateRequest": ("mammoth.models.dataviews", "DataviewCreateRequest"),
+    "DataviewDataRequest": ("mammoth.models.dataviews", "DataviewDataRequest"),
+    "DataviewDataResponse": ("mammoth.models.dataviews", "DataviewDataResponse"),
+    "DataviewPatchData": ("mammoth.models.dataviews", "DataviewPatchData"),
+    "DataviewPatchRequest": ("mammoth.models.dataviews", "DataviewPatchRequest"),
+    "DataviewProperties": ("mammoth.models.dataviews", "DataviewProperties"),
+    "DataviewSchema": ("mammoth.models.dataviews", "DataviewSchema"),
+    "DataviewsList": ("mammoth.models.dataviews", "DataviewsList"),
+    "AddExportSpec": ("mammoth.models.exports", "AddExportSpec"),
+    "ExportStatus": ("mammoth.models.exports", "ExportStatus"),
+    "HandlerType": ("mammoth.models.exports", "HandlerType"),
+    "ItemExportInfo": ("mammoth.models.exports", "ItemExportInfo"),
+    "PipelineExportsModificationResp": (
+        "mammoth.models.exports",
+        "PipelineExportsModificationResp",
+    ),
+    "PipelineExportsPaginated": ("mammoth.models.exports", "PipelineExportsPaginated"),
+    "S3TargetProperties": ("mammoth.models.exports", "S3TargetProperties"),
+    "TriggerType": ("mammoth.models.exports", "TriggerType"),
+    "AdditionalInfo": ("mammoth.models.files", "AdditionalInfo"),
+    "ExtractSheetsPatch": ("mammoth.models.files", "ExtractSheetsPatch"),
+    "FileDetails": ("mammoth.models.files", "FileDetails"),
+    "FilePatchData": ("mammoth.models.files", "FilePatchData"),
+    "FilePatchOperation": ("mammoth.models.files", "FilePatchOperation"),
+    "FilePatchPath": ("mammoth.models.files", "FilePatchPath"),
+    "FilePatchRequest": ("mammoth.models.files", "FilePatchRequest"),
+    "FileSchema": ("mammoth.models.files", "FileSchema"),
+    "FilesList": ("mammoth.models.files", "FilesList"),
+    "SheetInfo": ("mammoth.models.files", "SheetInfo"),
+    "StatusInfo": ("mammoth.models.files", "StatusInfo"),
+    "BulkFolderPatchRequest": ("mammoth.models.folders", "BulkFolderPatchRequest"),
+    "CreateFolder": ("mammoth.models.folders", "CreateFolder"),
+    "FolderDetails": ("mammoth.models.folders", "FolderDetails"),
+    "FolderSchema": ("mammoth.models.folders", "FolderSchema"),
+    "FoldersList": ("mammoth.models.folders", "FoldersList"),
+    "JobResponse": ("mammoth.models.jobs", "JobResponse"),
+    "JobSchema": ("mammoth.models.jobs", "JobSchema"),
+    "JobsGetResponse": ("mammoth.models.jobs", "JobsGetResponse"),
+    "JobStatus": ("mammoth.models.jobs", "JobStatus"),
+    "ObjectJobSchema": ("mammoth.models.jobs", "ObjectJobSchema"),
+    "AggregateFunction": ("mammoth.models.pipeline", "AggregateFunction"),
+    "ColumnType": ("mammoth.models.pipeline", "ColumnType"),
+    "DateComponent": ("mammoth.models.pipeline", "DateComponent"),
+    "DateDiffUnit": ("mammoth.models.pipeline", "DateDiffUnit"),
+    "FillDirection": ("mammoth.models.pipeline", "FillDirection"),
+    "FilterType": ("mammoth.models.pipeline", "FilterType"),
+    "JoinType": ("mammoth.models.pipeline", "JoinType"),
+    "JsonType": ("mammoth.models.pipeline", "JsonType"),
+    "MathOperator": ("mammoth.models.pipeline", "MathOperator"),
+    "Operator": ("mammoth.models.pipeline", "Operator"),
+    "PipelineInfo": ("mammoth.models.pipeline", "PipelineInfo"),
+    "PipelineTaskInfo": ("mammoth.models.pipeline", "PipelineTaskInfo"),
+    "PipelineTasksList": ("mammoth.models.pipeline", "PipelineTasksList"),
+    "ProviderType": ("mammoth.models.pipeline", "ProviderType"),
+    "SetValue": ("mammoth.models.pipeline", "SetValue"),
+    "SmallLargeFunction": ("mammoth.models.pipeline", "SmallLargeFunction"),
+    "SortDirection": ("mammoth.models.pipeline", "SortDirection"),
+    "SubstringDirection": ("mammoth.models.pipeline", "SubstringDirection"),
+    "TaskType": ("mammoth.models.pipeline", "TaskType"),
+    "TextCase": ("mammoth.models.pipeline", "TextCase"),
+    "ValueType": ("mammoth.models.pipeline", "ValueType"),
+    "WindowFunction": ("mammoth.models.pipeline", "WindowFunction"),
+    "WindowRange": ("mammoth.models.pipeline", "WindowRange"),
+    "AddUsersToProject": ("mammoth.models.projects", "AddUsersToProject"),
+    "DataSyncPatchItem": ("mammoth.models.projects", "DataSyncPatchItem"),
+    "DataSyncPatchRequest": ("mammoth.models.projects", "DataSyncPatchRequest"),
+    "DataSyncPatchValue": ("mammoth.models.projects", "DataSyncPatchValue"),
+    "PatchOperation": ("mammoth.models.projects", "PatchOperation"),
+    "ProjectCreate": ("mammoth.models.projects", "ProjectCreate"),
+    "ProjectList": ("mammoth.models.projects", "ProjectList"),
+    "ProjectPatch": ("mammoth.models.projects", "ProjectPatch"),
+    "ProjectProperties": ("mammoth.models.projects", "ProjectProperties"),
+    "ProjectSchema": ("mammoth.models.projects", "ProjectSchema"),
+    "ProjectsPatch": ("mammoth.models.projects", "ProjectsPatch"),
+    "ProjectUserPatch": ("mammoth.models.projects", "ProjectUserPatch"),
+    "WebhookCreate": ("mammoth.models.webhooks", "WebhookCreate"),
+    "WebhookInfo": ("mammoth.models.webhooks", "WebhookInfo"),
+    "WebhookMode": ("mammoth.models.webhooks", "WebhookMode"),
+    "WorkspaceSchema": ("mammoth.models.workspaces", "WorkspaceSchema"),
+    "WorkspacesSchema": ("mammoth.models.workspaces", "WorkspacesSchema"),
+}
+
+
+def __getattr__(name: str) -> Any:
+    """Import a re-exported name from its module on first access (PEP 562)."""
+    target = _LAZY.get(name)
+    if target is None:
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+    from importlib import import_module
+
+    value = getattr(import_module(target[0]), target[1])
+    globals()[name] = value
+    return value
+
+
+def __dir__() -> list[str]:
+    return sorted({*globals(), *_LAZY})
+
 
 __all__ = [
     "BatchesPostRequest",
