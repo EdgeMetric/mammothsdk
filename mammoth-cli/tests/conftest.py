@@ -23,12 +23,43 @@ from typing import Any
 from urllib.parse import parse_qs, urlparse
 
 import httpx
+import keyring
+import keyring.backends.fail
 import pytest
 
 from mammoth_cli.context.resolver import ResolvedAuth
 from mammoth_cli.services.sdk_service import SdkMammothService
 
+#: Keyring backend child processes use in tests: no keyring at all.
+NO_KEYRING_BACKEND = "keyring.backends.fail.Keyring"
+
 Route = Callable[["RecordedRequest"], "tuple[int, Any]"]
+
+
+@pytest.fixture(autouse=True)
+def isolated_credentials(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Keep every test, and every subprocess it spawns, off the real credentials.
+
+    HOME and the XDG directories move into ``tmp_path`` so no config or credential
+    file under the developer's home is read or written. The OS keyring is reached
+    through the D-Bus session, so that address is dropped and the keyring backend
+    is the always-failing one: a child process (which ignores the in-process
+    keyring the unit and realcode fixtures install) finds no keyring and can never
+    log in, log out or delete a stored profile on the real one.
+    """
+    home = tmp_path / "isolated-home"
+    home.mkdir()
+    monkeypatch.setenv("HOME", str(home))
+    for name, leaf in (
+        ("XDG_CONFIG_HOME", "config"),
+        ("XDG_DATA_HOME", "data"),
+        ("XDG_STATE_HOME", "state"),
+        ("XDG_CACHE_HOME", "cache"),
+    ):
+        monkeypatch.setenv(name, str(home / leaf))
+    monkeypatch.delenv("DBUS_SESSION_BUS_ADDRESS", raising=False)
+    monkeypatch.setenv("PYTHON_KEYRING_BACKEND", NO_KEYRING_BACKEND)
+    keyring.set_keyring(keyring.backends.fail.Keyring())
 
 
 @pytest.fixture(autouse=True)

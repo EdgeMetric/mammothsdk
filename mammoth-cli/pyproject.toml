@@ -45,6 +45,7 @@ dev = [
     "black (>=24)",
     "datamodel-code-generator (>=0.69,<0.70)",
     "types-PyYAML",
+    "pexpect (>=4.9,<5)",
 ]
 
 [build-system]
@@ -81,9 +82,10 @@ files = ["mammoth_cli"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 markers = [
-    "live: guarded live tests that require a dedicated test tenant (deselect with -m 'not live')",
+    "live: guarded live tests that require a dedicated test tenant (deselect with -m 'not live and not fuzz')",
     "subprocess: tests that spawn the installed executable or module entry point",
+    "fuzz: input fuzz of every command (about 20 minutes; run with -m fuzz tests/fuzz)",
 ]
 # Import test files by their full paths so equally named realcode and unit
 # modules can be collected together by the documented ``pytest tests/`` command.
-addopts = "--import-mode=importlib -m 'not live'"
+addopts = "--import-mode=importlib -m 'not live and not fuzz'"

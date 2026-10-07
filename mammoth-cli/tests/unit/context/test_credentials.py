@@ -105,6 +105,23 @@ def test_delete_credentials_from_keyring(
     assert credentials.load_credentials("default") is None
 
 
+def test_deleting_a_missing_profile_does_not_create_the_credentials_file(
+    isolated_cli_config: Path, fake_keyring_available: dict[tuple[str, str], str]
+) -> None:
+    credentials.store_credentials("default", "key-1", "secret-1", storage="keyring")
+    credentials.delete_credentials("other")
+    assert not credentials.credentials_path().exists()
+
+
+def test_deleting_the_last_file_profile_removes_the_credentials_file(
+    isolated_cli_config: Path, fake_keyring_unavailable: None
+) -> None:
+    credentials.store_credentials("default", "key-1", "secret-1", interactive=True)
+    assert credentials.credentials_path().exists()
+    credentials.delete_credentials("default")
+    assert not credentials.credentials_path().exists()
+
+
 def test_error_envelope_never_contains_the_secret(
     isolated_cli_config: Path, fake_keyring_unavailable: None
 ) -> None:
