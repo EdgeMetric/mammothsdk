@@ -14,7 +14,6 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any, Literal, cast
 
-from mammoth.models.dashboards import AddPagesSpec
 from pydantic import ValidationError
 
 from mammoth_cli.commands.view import _FIND_DATASET_SYMBOL, view_profiles
@@ -733,6 +732,8 @@ def generated_dashboard(invocation: Invocation) -> HandlerResult:
     # AddPages has a release-level minItems constraint that must be enforced
     # before confirmation or transport.
     if invocation.command_id == "dashboard.pages.add" and "body" in kwargs:
+        from mammoth.models.dashboards import AddPagesSpec
+
         try:
             kwargs["body"] = AddPagesSpec.model_validate(kwargs["body"]).model_dump(
                 mode="json", exclude_none=True

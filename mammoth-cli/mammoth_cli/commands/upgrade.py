@@ -361,6 +361,7 @@ def perform(invocation: Invocation, *, check: bool, target_version: str | None) 
         invocation,
         policy=POLICY_PROMPT_OR_YES,
         action=f"upgrade {PACKAGE_NAME} to {action_target} using {manager}",
+        default=True,
     )
     result = run_upgrade(command)
     if result.returncode != 0:

@@ -142,6 +142,16 @@ Result: `ViewTransformFilterResult`; mutation `reversible_pipeline`, confirmatio
 
 Status on release: ran once on CLI 2.0.40 through `view.task.add` and was read back with `view data get`; other inputs for this transform are untried.
 
+### `view.transform.first-name`
+
+Run: `mammoth view transform first-name`. Exact input fields: `mammoth schema get view.transform.first-name`.
+
+Example: `mammoth view transform first-name 123 --input '{"column": "Name", "new_column": "First name", "dataset_id": 456}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `ViewTransformFirstNameResult`; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`.
+
+Status on release: untried; it submits through `view.task.add`, but this transform was not among those run.
+
 ### `view.transform.generate-sql`
 
 Run: `mammoth view transform generate-sql`. Exact input fields: `mammoth schema get view.transform.generate-sql`.
@@ -311,6 +321,16 @@ Example: `mammoth view transform unnest 123 --input '{"columns": ["Status"], "da
 Result: `ViewTransformUnnestResult`; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`.
 
 Status on release: ran once on CLI 2.0.40 through `view.task.add` and was read back with `view data get`; other inputs for this transform are untried.
+
+### `view.transform.update-column`
+
+Run: `mammoth view transform update-column`. Exact input fields: `mammoth schema get view.transform.update-column`.
+
+Example: `mammoth view transform update-column 123 --input '{"column": "Cost", "expression": "Cost + 5", "dataset_id": 456}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `ViewTransformUpdateColumnResult`; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`.
+
+Status on release: untried; it submits through `view.task.add`, but this transform was not among those run.
 
 ### `view.transform.window`
 

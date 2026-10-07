@@ -6,6 +6,14 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed (mammoth-io 0.8.28, mammoth-cli 2.2.54)
+
+- Combined CLI fixes from #163 (see the entries below). The CLI now requires `mammoth-io>=0.8.28`.
+
+### Changed (mammoth-io, mammoth-cli)
+
+- Start-up is much faster. `mammoth --version` no longer builds the command tree, root `--help` and a mistyped command no longer build all ~550 commands, and the SDK package, its API sub-clients and its models load on first use instead of at `import mammoth`. A daily PyPI check now runs in a detached process instead of holding the finished command open for up to 3 seconds.
+
 ### Added (mammoth-cli 2.2.53)
 
 - A TEXT column with blank cells now carries `fill_template` in its `blank_values` warning: a `view transform set-values` command with a `<value>` placeholder. The agent offers the fill, asks the user for the value and never runs the template as is; `fix` is unchanged.

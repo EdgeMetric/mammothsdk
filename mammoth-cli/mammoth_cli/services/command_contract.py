@@ -16,13 +16,6 @@ from functools import cache
 from types import MappingProxyType
 from typing import Any, Literal, cast
 
-from mammoth.models.batches import (
-    ColumnIdMapping,
-    ColumnNameMapping,
-    NewDsDetails,
-    ProjectedSourceColumn,
-)
-
 from mammoth_cli.manifest.loader import command_by_id, load_commands
 from mammoth_cli.services.argspec import ArgSpec, FieldSpec, arg_spec
 from mammoth_cli.services.input_fields import (
@@ -303,25 +296,37 @@ _LOCAL_CONTRACT_FIELDS: dict[str, tuple[FieldSpec, ...]] = {
     ),
 }
 
-_RELEASE_BATCH_SPEC_FIELDS = (
-    FieldSpec("source_id", required=False, annotation=int | None, default=None),
-    FieldSpec(
-        "mapping",
-        required=False,
-        annotation=list[ColumnNameMapping] | list[ColumnIdMapping] | None,
-        default=None,
-    ),
-    FieldSpec("validate_only", required=False, annotation=bool, default=False),
-    FieldSpec("delete_source_ds", required=False, annotation=bool, default=False),
-    FieldSpec("new_ds_details", required=False, annotation=NewDsDetails | None, default=None),
-    FieldSpec("file_id", required=False, annotation=int | None, default=None),
-    FieldSpec(
-        "projected_source_schema",
-        required=False,
-        annotation=list[ProjectedSourceColumn] | None,
-        default=None,
-    ),
-)
+
+@cache
+def _release_batch_spec_fields() -> tuple[FieldSpec, ...]:
+    """The accepted batch-spec fields; built on first use so the batch models stay unloaded."""
+    from mammoth.models.batches import (
+        ColumnIdMapping,
+        ColumnNameMapping,
+        NewDsDetails,
+        ProjectedSourceColumn,
+    )
+
+    return (
+        FieldSpec("source_id", required=False, annotation=int | None, default=None),
+        FieldSpec(
+            "mapping",
+            required=False,
+            annotation=list[ColumnNameMapping] | list[ColumnIdMapping] | None,
+            default=None,
+        ),
+        FieldSpec("validate_only", required=False, annotation=bool, default=False),
+        FieldSpec("delete_source_ds", required=False, annotation=bool, default=False),
+        FieldSpec("new_ds_details", required=False, annotation=NewDsDetails | None, default=None),
+        FieldSpec("file_id", required=False, annotation=int | None, default=None),
+        FieldSpec(
+            "projected_source_schema",
+            required=False,
+            annotation=list[ProjectedSourceColumn] | None,
+            default=None,
+        ),
+    )
+
 
 # view.data.compare's own handler never calls its manifest sdk_symbol directly
 # -- it runs view.data.aggregate's own handler once per view and joins
@@ -357,6 +362,19 @@ _VIEW_VARIANTS_CREATE_FIELDS = (
     FieldSpec("column", required=True, annotation=str),
     FieldSpec("values", required=True, annotation=list[str | int | float]),
     FieldSpec("name_template", required=False, annotation=str | None, default=None),
+)
+
+# view.transform.update-column and view.transform.first-name are CLI one-call ops over
+# view.transform.math (existing_column) and view.transform.substring (first-word regex);
+# their document fields are authored here.
+_VIEW_UPDATE_COLUMN_FIELDS = (
+    FieldSpec("column", required=True, annotation=str),
+    FieldSpec("expression", required=True, annotation=str),
+)
+_VIEW_FIRST_NAME_FIELDS = (
+    FieldSpec("column", required=True, annotation=str),
+    FieldSpec("new_column", required=False, annotation=str | None, default=None),
+    FieldSpec("existing_column", required=False, annotation=str | None, default=None),
 )
 
 # view.conditional-format.create: ``rule`` (raw body) stays accepted; the typed fields build one
@@ -808,13 +826,17 @@ def resolve_command_contract(command_id: str) -> ResolvedCommandContract | None:
     )
     special_fields = _special_export_fields(command_id, spec)
     if command_id == "batch.create-spec":
-        special_fields = _RELEASE_BATCH_SPEC_FIELDS
+        special_fields = _release_batch_spec_fields()
     elif command_id == "view.data.compare":
         special_fields = _VIEW_DATA_COMPARE_FIELDS
     elif command_id == "view.data.profile":
         special_fields = _VIEW_DATA_PROFILE_FIELDS
     elif command_id == "view.variants.create":
         special_fields = _VIEW_VARIANTS_CREATE_FIELDS
+    elif command_id == "view.transform.update-column":
+        special_fields = _VIEW_UPDATE_COLUMN_FIELDS
+    elif command_id == "view.transform.first-name":
+        special_fields = _VIEW_FIRST_NAME_FIELDS
     elif command_id == "dashboard.filter.add":
         special_fields = _DASHBOARD_FILTER_ADD_FIELDS
     elif command_id == "dashboard.filter.remove":

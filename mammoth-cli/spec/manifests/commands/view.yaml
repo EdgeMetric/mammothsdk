@@ -1394,7 +1394,7 @@ commands:
   - CT-VIEW-DATA-EXPLORE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: 'Read-only: explore one column the way the web app''s column Explore card does -- trend, distribution, histogram, or top values -- without adding a task to the view''s pipeline (never use ''view transform pivot'' just to explore). DATE column: counts per ''level'' bucket (AUTO default; SECOND, MINUTE, HOUR, DAY, WEEK, MONTH, QUARTER, YEAR, DECADE, CENTURY, MILLENNIUM) for "what''s trending", "over time", "by month", "by year". NUMERIC column: counts per ''level'' resolution (AUTO default; a power of 10) for a distribution or histogram. TEXT column: top values by count, ''limit'' default 20 -- "what''s in this column". Every bucket has ''count'' and ''percentage'' of the total. ''row_count'' is the number of unique values (buckets). Options (--input): ''metric'' {"column","function"} adds a per-bucket SUM, COUNT, AVG, MIN, MAX, STDDEV or DISTINCT_COUNT over another column (the custom card); ''condition'' filters rows first -- include/exclude values, blanks, a date or number range, text contains -- and several cards'' selections combine as one AND condition (cross-filter); drill down by re-running at a finer ''level'' with a ''condition'' on the chosen bucket''s range; ''percentage_of'' "metric" makes ''percentage'' the share of the ''metric'' total (default: of the count); ''sort'' count_desc, count_asc, value_asc, value_desc, metric_desc or metric_asc (blanks last; the card puts them first); ''limit'' and ''offset'' page the buckets ("load more"); ''range'' true adds the exact earliest and latest value of a DATE or NUMERIC column under the same condition; ''-o csv'' prints the buckets as CSV; ''sequence'' explores at a pipeline step. To exclude a value the way the card does (blank rows stay), use or(NE value, IS_EMPTY on that column): a plain NE, NOT_IN_LIST or not drops blank rows. To put the card on a dashboard, say it in words: ''dashboard chat edit DASHBOARD_ID'' (prompt) or ''dashboard v3 generate''. Search several columns for text: or of CONTAINS per text column. Replace all values like this: ''view transform replace''. Related: distinct raw values of a DATE/NUMERIC column, a summary (min/max/sum/avg) or a matching-row count -> ''view data aggregate''; keep the filter as a pipeline step -> ''view transform filter''; save it as a new view -> ''view create'' then ''view transform filter'' on it; download all rows -> ''view export csv''. A TEXT column of dates takes a level (or column_type DATE): the format is detected from the data and stated in text_dates; ambiguous or unreadable dates fail loud. A column_type that disagrees with the stored type is refused, never dropped. Example: --input ''{"level": "MONTH", "condition": {"column": "Results", "operator": "EQ", "value": "Fail"}}''. A figure for a period (year, quarter, month) is one explore of the DATE column with level YEAR, QUARTER or MONTH and a metric {"column": AMOUNT, "function": "SUM"}: it returns one figure per period and the date range the data covers, so no rows need paging. cumulative true adds a running total; keep one year or range with condition, for a year {"column": DATE_COLUMN, "operator": "=", "value": 2017, "component": "year"}. Figures come back rounded to two decimals: quote them as returned.'
+  known_restrictions: 'Read-only: reads one column''s value distribution -- trend, distribution, histogram, or top values. It does not open or change any card in the UI; to open Explore cards use ''view explore-panel set''. It reads without adding a task to the view''s pipeline (never use ''view transform pivot'' just to explore). DATE column: counts per ''level'' bucket (AUTO default; SECOND, MINUTE, HOUR, DAY, WEEK, MONTH, QUARTER, YEAR, DECADE, CENTURY, MILLENNIUM) for "what''s trending", "over time", "by month", "by year". NUMERIC column: counts per ''level'' resolution (AUTO default; a power of 10) for a distribution or histogram. TEXT column: top values by count, ''limit'' default 20 -- "what''s in this column". Every bucket has ''count'' and ''percentage'' of the total. ''row_count'' is the number of unique values (buckets). Options (--input): ''metric'' {"column","function"} adds a per-bucket SUM, COUNT, AVG, MIN, MAX, STDDEV or DISTINCT_COUNT over another column (the custom card); ''condition'' filters rows first -- include/exclude values, blanks, a date or number range, text contains -- and several cards'' selections combine as one AND condition (cross-filter); drill down by re-running at a finer ''level'' with a ''condition'' on the chosen bucket''s range; ''percentage_of'' "metric" makes ''percentage'' the share of the ''metric'' total (default: of the count); ''sort'' count_desc, count_asc, value_asc, value_desc, metric_desc or metric_asc (blanks last; the card puts them first); ''limit'' and ''offset'' page the buckets ("load more"); ''range'' true adds the exact earliest and latest value of a DATE or NUMERIC column under the same condition; ''-o csv'' prints the buckets as CSV; ''sequence'' explores at a pipeline step. To exclude a value the way the card does (blank rows stay), use or(NE value, IS_EMPTY on that column): a plain NE, NOT_IN_LIST or not drops blank rows. To put the card on a dashboard, say it in words: ''dashboard chat edit DASHBOARD_ID'' (prompt) or ''dashboard v3 generate''. Search several columns for text: or of CONTAINS per text column. Replace all values like this: ''view transform replace''. Related: distinct raw values of a DATE/NUMERIC column, a summary (min/max/sum/avg) or a matching-row count -> ''view data aggregate''; keep the filter as a pipeline step -> ''view transform filter''; save it as a new view -> ''view create'' then ''view transform filter'' on it; download all rows -> ''view export csv''. A TEXT column of dates takes a level (or column_type DATE): the format is detected from the data and stated in text_dates; ambiguous or unreadable dates fail loud. A column_type that disagrees with the stored type is refused, never dropped. Example: --input ''{"level": "MONTH", "condition": {"column": "Results", "operator": "EQ", "value": "Fail"}}''. A figure for a period (year, quarter, month) is one explore of the DATE column with level YEAR, QUARTER or MONTH and a metric {"column": AMOUNT, "function": "SUM"}: it returns one figure per period and the date range the data covers, so no rows need paging. cumulative true adds a running total; keep one year or range with condition, for a year {"column": DATE_COLUMN, "operator": "=", "value": 2017, "component": "year"}. Figures come back rounded to two decimals: quote them as returned.'
   reviewed_by: primary
 - command_id: view.data.profile
   command_path: view data profile
@@ -1567,7 +1567,10 @@ commands:
   undo_test: null
   known_restrictions: 'ARGUMENT and any column reference in the METRIC expression are internal names (metadata[].internal_name
     from view get, e.g. column_1), not display names; a display name makes the backend fail with HTTP
-    500. The result is {"id": N}; read the value with view derivative data.'
+    500. The result is {"id": N, "card": bool}; read the value with view derivative data. A METRIC
+    shows as an explore-panel card only through display_properties; when it is absent or null the CLI
+    defaults it to the metric card (type metric, info.title = the AS name); pass display_properties
+    to override. card says whether a card exists (verify.card mirrors it).'
   reviewed_by: primary
 - command_id: view.derivative.data
   command_path: view derivative data
@@ -4960,6 +4963,52 @@ commands:
   undo_test: LT-VIEW-TRANSFORM-FILTER-UNDO
   known_restrictions: 'Observe first: count the rows that match with `view data aggregate` using the same condition, and the total with no condition.'
   reviewed_by: primary
+- command_id: view.transform.first-name
+  command_path: view transform first-name
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - AddTask
+  positionals:
+  - name: view_id
+    type: int
+    required: true
+    metavar: VIEW_ID
+    falls_back_to_field: null
+    help: ID of the view to act on.
+  options: []
+  sdk_symbol: mammoth._mixins._text_ops.TextOpsMixin.substring
+  sdk_conversion: 'CLI one-call op: View.substring with a first-word regex, then View.submit_draft when the step was staged; from mammoth_cli.commands.view_ops. The accepted document fields are in command_contract.py.'
+  request_model: ViewTransformFirstNameRequest
+  result_model: ViewTransformFirstNameResult
+  mutation_class: reversible_pipeline
+  edits_target: true
+  confirmation: none
+  wait_policy: always_wait
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  readback:
+    command: view.data.get
+    ids:
+      view_id: positional.0
+    kind: data
+  live_test: null
+  live_exemption_reason: 'Covered by tests/realcode/test_one_call_transform_ops.py, which drives the real CLI and SDK against a recording HTTP socket; no live case is recorded yet.'
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view transform first-name VIEW_ID --help
+  agent_example: 'mammoth view transform first-name 123 --input ''{"column": "Name", "new_column": "First name", "dataset_id": 456}'''
+  unit_tests:
+  - UT-VIEW-TRANSFORM-FIRST-NAME
+  contract_tests:
+  - CT-VIEW-TRANSFORM-FIRST-NAME-HUMAN
+  - CT-VIEW-TRANSFORM-FIRST-NAME-JSON
+  - CT-VIEW-TRANSFORM-FIRST-NAME-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Use for "extract the first name" or the first word of a text column. --input: "column" (a TEXT column, required) and exactly one of "new_column" or "existing_column". Takes the text up to the first space. One call: if the view is in draft mode the step is staged, the draft is submitted and the result waits on this step''s own run (run.transform_status DONE), not on the pipeline reading ready. A draft that already held other staged steps is left staged (status staged) because submitting would run them too; run view draft submit when that is intended.'
+  reviewed_by: primary
 - command_id: view.transform.generate-sql
   command_path: view transform generate-sql
   disposition: command
@@ -5770,6 +5819,52 @@ commands:
   undo_test: LT-VIEW-TRANSFORM-UNNEST-UNDO
   known_restrictions: 'Observe first: `view data get VIEW_ID` on the column to see how the nested values are stored.'
   reviewed_by: primary
+- command_id: view.transform.update-column
+  command_path: view transform update-column
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - AddTask
+  positionals:
+  - name: view_id
+    type: int
+    required: true
+    metavar: VIEW_ID
+    falls_back_to_field: null
+    help: ID of the view to act on.
+  options: []
+  sdk_symbol: mammoth._mixins._math_ops.MathOpsMixin.math
+  sdk_conversion: 'CLI one-call op: View.math with existing_column, then View.submit_draft when the step was staged; from mammoth_cli.commands.view_ops. The accepted document fields are in command_contract.py.'
+  request_model: ViewTransformUpdateColumnRequest
+  result_model: ViewTransformUpdateColumnResult
+  mutation_class: reversible_pipeline
+  edits_target: true
+  confirmation: none
+  wait_policy: always_wait
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  readback:
+    command: view.data.get
+    ids:
+      view_id: positional.0
+    kind: data
+  live_test: null
+  live_exemption_reason: 'Covered by tests/realcode/test_one_call_transform_ops.py, which drives the real CLI and SDK against a recording HTTP socket; no live case is recorded yet.'
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view transform update-column VIEW_ID --help
+  agent_example: 'mammoth view transform update-column 123 --input ''{"column": "Cost", "expression": "Cost + 5", "dataset_id": 456}'''
+  unit_tests:
+  - UT-VIEW-TRANSFORM-UPDATE-COLUMN
+  contract_tests:
+  - CT-VIEW-TRANSFORM-UPDATE-COLUMN-HUMAN
+  - CT-VIEW-TRANSFORM-UPDATE-COLUMN-JSON
+  - CT-VIEW-TRANSFORM-UPDATE-COLUMN-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Use to overwrite a numeric column with an expression over its own values ("add 5 to Cost"). --input: "column" (an existing column, required) and "expression" (required, as in view transform math). Same as view transform math with existing_column set. One call: if the view is in draft mode the step is staged, the draft is submitted and the result waits on this step''s own run (run.transform_status DONE), not on the pipeline reading ready. A draft that already held other staged steps is left staged (status staged); run view draft submit when that is intended.'
+  reviewed_by: primary
 - command_id: view.transform.window
   command_path: view transform window
   disposition: command
@@ -6438,11 +6533,7 @@ commands:
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: contract_only_no_disposable_fixture
-  readback:
-    command: view.explore-panel.get
-    ids:
-      view_id: positional.0
-    kind: object
+  no_readback: the command reads the saved panel back itself and returns it as "panel" (the same data view explore-panel get returns); a generic state block would drop the open flag and nested fields
   live_test: null
   live_exemption_reason: Needs a disposable project; no live config locally.
   contract_fixture: null
@@ -6459,8 +6550,9 @@ commands:
   - CT-VIEW-EXPLORE-PANEL-SET-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: 'Replaces the whole panel of the caller on this view: run view explore-panel get first,
+  known_restrictions: 'This is the command that opens Explore cards in the UI. Replaces the whole panel of the caller on this view: run view explore-panel get first,
     change its items and write it back. The panel input field is the {open, items} object that get returns.
+    The result carries "panel", the panel read back after the write (what get returns): check it to see which cards are open.
     It is a per-user preference: it does not change the view or what other users see.'
   reviewed_by: primary
 - command_id: view.compare

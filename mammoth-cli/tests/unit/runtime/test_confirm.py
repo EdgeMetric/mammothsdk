@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import pytest
+from typer.testing import CliRunner
 
 from mammoth_cli.errors.envelope import EXIT_USAGE, CliError
 from mammoth_cli.runtime.confirm import enforce_confirmation
@@ -96,3 +97,25 @@ def test_confirm_target_passes_on_exact_match() -> None:
     enforce_confirmation(
         _inv(yes=True, confirm="180"), policy="confirm_target", action="delete", target="180"
     )
+
+
+def _enter_at_real_prompt(**kwargs: object) -> None:
+    """Run the guard with the real typer prompt and an empty answer (Enter)."""
+    with CliRunner().isolation(input="\n"):
+        enforce_confirmation(
+            _inv(),
+            policy="prompt_or_yes",
+            action="delete X",
+            is_tty=True,
+            **kwargs,  # type: ignore[arg-type]
+        )
+
+
+def test_enter_at_prompt_declines_by_default() -> None:
+    with pytest.raises(CliError) as excinfo:
+        _enter_at_real_prompt()
+    assert excinfo.value.code == "confirmation_declined"
+
+
+def test_enter_at_prompt_proceeds_when_default_is_yes() -> None:
+    _enter_at_real_prompt(default=True)

@@ -1,10 +1,10 @@
 # Command reference
 
-Generated from the reviewed command manifests for mammoth-cli 2.2.53.
+Generated from the reviewed command manifests for mammoth-cli 2.2.54.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
-Total commands: 661.
+Total commands: 663.
 
 ## activity
 
@@ -6072,6 +6072,17 @@ Total commands: 661.
 - Backing SDK: `mammoth.View.filter_rows`
 - Agent example: `mammoth view transform filter 123 --input '{"condition": {"column": "Status", "operator": "EQ", "value": "Active"}, "dataset_id": 456}'`
 
+### `mammoth view transform first-name`
+
+**Arguments**
+
+- `VIEW_ID` (int, required) — ID of the view to act on.
+
+- Mutation class: `reversible_pipeline`
+- Confirmation: `none`
+- Backing SDK: `mammoth.View.substring`
+- Agent example: `mammoth view transform first-name 123 --input '{"column": "Name", "new_column": "First name", "dataset_id": 456}'`
+
 ### `mammoth view transform generate-sql`
 
 **Arguments**
@@ -6258,6 +6269,17 @@ Total commands: 661.
 - Confirmation: `none`
 - Backing SDK: `mammoth.View.unnest`
 - Agent example: `mammoth view transform unnest 123 --input '{"columns": ["Status"], "dataset_id": 456}'`
+
+### `mammoth view transform update-column`
+
+**Arguments**
+
+- `VIEW_ID` (int, required) — ID of the view to act on.
+
+- Mutation class: `reversible_pipeline`
+- Confirmation: `none`
+- Backing SDK: `mammoth.View.math`
+- Agent example: `mammoth view transform update-column 123 --input '{"column": "Cost", "expression": "Cost + 5", "dataset_id": 456}'`
 
 ### `mammoth view transform window`
 

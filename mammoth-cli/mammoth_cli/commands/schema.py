@@ -46,6 +46,14 @@ _PROTECTED_INPUT_PATH = "/private/path/request.json"
 # second id, an optional-but-central input field, or two views to compare.
 _FIXED_EXAMPLES: dict[str, tuple[tuple[str, ...], dict[str, Any]]] = {
     "view.optimize": (("123",), {}),
+    "view.transform.first-name": (
+        ("123",),
+        {"column": "Name", "new_column": "First name", "dataset_id": 456},
+    ),
+    "view.transform.update-column": (
+        ("123",),
+        {"column": "Cost", "expression": "Cost + 5", "dataset_id": 456},
+    ),
     "view.explore-panel.get": (("123",), {}),
     "view.explore-panel.set": (
         ("123",),
@@ -328,6 +336,8 @@ _COMMAND_DISCOVERY_PURPOSES = {
     ),
     "view.transform.split": "split column by delimiter separator into columns",
     "view.transform.substring": "substring left right characters regex pattern extract part text",
+    "view.transform.first-name": "first name given name first word of a full name",
+    "view.transform.update-column": "overwrite a column in place with an expression, one call",
     "view.transform.text": (
         "text case upper uppercase lower lowercase title trim whitespace normalise normalize"
     ),
@@ -338,8 +348,8 @@ _COMMAND_DISCOVERY_PURPOSES = {
         "window rank row number running total cumulative sum moving average lag lead "
         "previous next row partition"
     ),
-    # The web app's column Explore cards: what is trending, how a column is
-    # spread, its top values, a count over time.
+    # Reads a column's value distribution: what is trending, how a column is
+    # spread, its top values, a count over time. It opens no card in the UI.
     "view.data.explore": (
         "explore trend trends trending over time per day week month quarter year by date "
         "distribution spread histogram top most common frequent values breakdown share "
@@ -573,7 +583,10 @@ _COMMAND_DISCOVERY_PURPOSES = {
         "condition checkpoint value changes"
     ),
     "view.data-check.create": "data quality check rule validate rows match condition flag",
-    "view.derivative.create": "metric kpi number single value to check track daily monitor",
+    "view.derivative.create": (
+        "metric kpi number single value to check track daily monitor add a metric "
+        "sum of column explore panel card metric card"
+    ),
     "view.draft.auto-run": (
         "stop prevent re-running rerun automatically when source changes auto run enable disable"
     ),

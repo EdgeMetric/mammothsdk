@@ -23,7 +23,7 @@ import typer
 from pydantic import ValidationError
 
 from mammoth_cli.context import credentials, oauth, profiles, resolver
-from mammoth_cli.context.endpoint import resolve_base_url
+from mammoth_cli.context.endpoint import DEFAULT_SERVER_PREFIX, resolve_base_url
 from mammoth_cli.context.resolver import ResolvedAuth, resolve_auth
 from mammoth_cli.contracts.auth import LoginRequest
 from mammoth_cli.errors.envelope import (
@@ -143,6 +143,14 @@ def _masked_receipt(value: str) -> str:
     return f"{len(value)} characters, ending in …{value[-4:]}"
 
 
+def _ask(label: str, **options: Any) -> str:
+    """Prompt once; a closed stdin (Ctrl-D, EOF) is a usage error, not a crash."""
+    try:
+        return str(typer.prompt(label, **options))
+    except typer.Abort:
+        raise _no_choice(label) from None
+
+
 def _prompt_secret(label: str) -> str:
     """Prompt for one secret with hidden input, then confirm what was captured.
 
@@ -152,7 +160,7 @@ def _prompt_secret(label: str) -> str:
     entry is rejected here, and a masked receipt (length and last four
     characters, never the value) is printed to stderr as feedback.
     """
-    value = typer.prompt(label, hide_input=True).strip()
+    value = _ask(label, hide_input=True).strip()
     if not value:
         raise CliError(
             code="login_input_required",
@@ -298,22 +306,65 @@ def _choose_method(
         return method
     if invocation.input_file is not None or blockers:
         return "token"
-    if not oauth.has_client_id(server_prefix):
-        return "token"
+    available = oauth.has_client_id(server_prefix)
+    prefix = server_prefix if server_prefix is not None else DEFAULT_SERVER_PREFIX
+    browser_note = "recommended" if available else f"(not yet available on {prefix})"
+    device_note = "no browser on this machine" if available else browser_note
     typer.echo("How do you want to sign in?", err=True)
-    typer.echo("  1) Browser (OAuth)      recommended", err=True)
-    typer.echo("  2) Device code          no browser on this machine", err=True)
+    typer.echo(f"  1) Browser (OAuth)      {browser_note}", err=True)
+    typer.echo(f"  2) Device code          {device_note}", err=True)
     typer.echo("  3) Paste an API token   for CI and scripts", err=True)
-    choice = typer.prompt("Choose", default="1", show_default=False).strip()
-    methods = {"1": "oauth", "2": "device", "3": "token"}
-    if choice not in methods:
-        raise CliError(
-            code="invalid_login_method",
-            message=f"'{choice}' is not one of the choices.",
-            exit_status=EXIT_USAGE,
-            hint="Enter 1 for the browser, 2 for a device code or 3 to paste an API token.",
-        )
-    return methods[choice]
+    default = "1" if available else "3"
+    if sys.stdin.isatty():
+        return _choose_by_keypress(default)
+    choice = _ask("Choose", default=default, show_default=False).strip()
+    if choice not in _METHOD_KEYS:
+        raise _bad_choice(choice)
+    return _METHOD_KEYS[choice]
+
+
+_METHOD_KEYS = {"1": "oauth", "2": "device", "3": "token"}
+_METHOD_LABELS = {"1": "Browser (OAuth)", "2": "Device code", "3": "API token"}
+
+
+def _bad_choice(choice: str) -> CliError:
+    return CliError(
+        code="invalid_login_method",
+        message=f"'{choice}' is not one of the choices.",
+        exit_status=EXIT_USAGE,
+        hint="Enter 1 for the browser, 2 for a device code or 3 to paste an API token.",
+    )
+
+
+def _choose_by_keypress(default: str) -> str:
+    """Read one key on a terminal: 1, 2 or 3 selects at once, Enter takes ``default``.
+
+    Any other key asks once more, then errors; Ctrl-C and Ctrl-D are a usage error.
+    """
+    key = ""
+    for _attempt in range(2):
+        typer.echo("Choose: ", nl=False, err=True)
+        try:
+            key = typer.getchar()
+        except (KeyboardInterrupt, EOFError):
+            typer.echo("", err=True)
+            raise _no_choice() from None
+        if key in ("\r", "\n"):
+            key = default
+        if key in _METHOD_KEYS:
+            typer.echo(f"{key} {_METHOD_LABELS[key]}", err=True)
+            return _METHOD_KEYS[key]
+        typer.echo("", err=True)
+    raise _bad_choice(key)
+
+
+def _no_choice(label: str = "choice") -> CliError:
+    return CliError(
+        code="login_input_required",
+        message=f"No {label} was entered.",
+        exit_status=EXIT_USAGE,
+        hint="Pass --method oauth|device|token, or --input FILE for a non-interactive login.",
+    )
 
 
 def _iso(epoch: int) -> str:

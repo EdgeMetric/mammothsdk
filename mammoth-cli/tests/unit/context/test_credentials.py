@@ -37,9 +37,9 @@ def fake_keyring_available(monkeypatch: pytest.MonkeyPatch) -> dict[tuple[str, s
         store.pop((service, profile), None)
 
     monkeypatch.setattr(credentials, "_keyring_available", lambda: True)
-    monkeypatch.setattr(credentials.keyring, "set_password", _set)
-    monkeypatch.setattr(credentials.keyring, "get_password", _get)
-    monkeypatch.setattr(credentials.keyring, "delete_password", _delete)
+    monkeypatch.setattr(keyring, "set_password", _set)
+    monkeypatch.setattr(keyring, "get_password", _get)
+    monkeypatch.setattr(keyring, "delete_password", _delete)
     return store
 
 
@@ -103,6 +103,23 @@ def test_delete_credentials_from_keyring(
     credentials.store_credentials("default", "key-1", "secret-1", storage="keyring")
     assert credentials.delete_credentials("default") is True
     assert credentials.load_credentials("default") is None
+
+
+def test_deleting_a_missing_profile_does_not_create_the_credentials_file(
+    isolated_cli_config: Path, fake_keyring_available: dict[tuple[str, str], str]
+) -> None:
+    credentials.store_credentials("default", "key-1", "secret-1", storage="keyring")
+    credentials.delete_credentials("other")
+    assert not credentials.credentials_path().exists()
+
+
+def test_deleting_the_last_file_profile_removes_the_credentials_file(
+    isolated_cli_config: Path, fake_keyring_unavailable: None
+) -> None:
+    credentials.store_credentials("default", "key-1", "secret-1", interactive=True)
+    assert credentials.credentials_path().exists()
+    credentials.delete_credentials("default")
+    assert not credentials.credentials_path().exists()
 
 
 def test_error_envelope_never_contains_the_secret(
@@ -220,9 +237,9 @@ def hanging_keyring(
         release.wait(5)
 
     monkeypatch.setattr(credentials, "_keyring_available", lambda: True)
-    monkeypatch.setattr(credentials.keyring, "set_password", _block)
-    monkeypatch.setattr(credentials.keyring, "get_password", _block)
-    monkeypatch.setattr(credentials.keyring, "delete_password", _block)
+    monkeypatch.setattr(keyring, "set_password", _block)
+    monkeypatch.setattr(keyring, "get_password", _block)
+    monkeypatch.setattr(keyring, "delete_password", _block)
     yield release
     release.set()
 
@@ -280,7 +297,7 @@ def test_file_profile_never_touches_keyring(
         raise AssertionError("keyring must not be consulted for a file-stored profile")
 
     monkeypatch.setattr(credentials, "_keyring_available", lambda: True)
-    monkeypatch.setattr(credentials.keyring, "get_password", _forbidden)
+    monkeypatch.setattr(keyring, "get_password", _forbidden)
     assert credentials.load_credentials("default") == ("key-1", "secret-1")
 
 
@@ -291,7 +308,7 @@ def test_raising_keyring_load_reports_keyring_unresponsive(
         raise keyring.errors.KeyringError("errSecInteractionNotAllowed")
 
     monkeypatch.setattr(credentials, "_keyring_available", lambda: True)
-    monkeypatch.setattr(credentials.keyring, "get_password", _raise)
+    monkeypatch.setattr(keyring, "get_password", _raise)
     with pytest.raises(CliError) as excinfo:
         credentials.load_credentials("default")
     assert excinfo.value.code == "keyring_unresponsive"
@@ -301,8 +318,8 @@ def test_discarding_keyring_is_not_trusted(
     isolated_cli_config: Path, monkeypatch: pytest.MonkeyPatch, short_keyring_timeout: None
 ) -> None:
     monkeypatch.setattr(credentials, "_keyring_available", lambda: True)
-    monkeypatch.setattr(credentials.keyring, "set_password", lambda *_a: None)
-    monkeypatch.setattr(credentials.keyring, "get_password", lambda *_a: None)
+    monkeypatch.setattr(keyring, "set_password", lambda *_a: None)
+    monkeypatch.setattr(keyring, "get_password", lambda *_a: None)
     storage = credentials.store_credentials(
         "default", "key-1", "secret-1", storage="auto", interactive=True
     )

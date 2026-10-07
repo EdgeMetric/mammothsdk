@@ -214,6 +214,12 @@ def test_agent_transform_language_finds_typed_routes() -> None:
     }
 
 
+def test_adding_a_metric_finds_the_command_that_names_the_card() -> None:
+    top = find_schemas("add a metric to a view")["matches"][0]
+    assert top["command_id"] == "view.derivative.create"
+    assert "explore panel card" in top["matched_on"]
+
+
 def test_bind_parameter_finds_the_filter_transform() -> None:
     """WPP evidence: an agent asked to 'filter by parameter' or 'bind a
     parameter' to a condition value never reached view.transform.filter,
@@ -956,3 +962,13 @@ def test_a_pdf_waiting_for_its_extraction_method_finds_file_update(query: str) -
     the command that sends the choice had no words a search for it could match."""
     matches = [item["command_id"] for item in find_schemas(query)["matches"]]
     assert matches and matches[0] == "file.update", f"{query!r} -> {matches}"
+
+
+@pytest.mark.parametrize("query", ["open explore cards", "open all explore cards"])
+def test_open_explore_cards_ranks_the_panel_command_first(query: str) -> None:
+    """Opening cards in the UI is ``view explore-panel set``; ``view data explore`` only
+    reads a column's distribution and must never outrank it for this intent."""
+    result = find_schemas(query)
+    top = result["matches"] or result.get("suggestions", [])
+    assert top, f"no match or suggestion for {query!r}"
+    assert top[0]["command_id"] == "view.explore-panel.set", (query, top)

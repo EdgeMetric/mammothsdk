@@ -893,18 +893,19 @@ HANDLERS: dict[str, Handler] = {
     "view.transform.sort": view_ops_cmd.view_transform_sort,
     "view.transform.split": view_ops_cmd.view_transform_split,
     "view.transform.substring": view_ops_cmd.view_transform_substring,
+    "view.transform.first-name": view_ops_cmd.view_transform_first_name,
+    "view.transform.update-column": view_ops_cmd.view_transform_update_column,
     "view.transform.text": view_ops_cmd.view_transform_text,
     "view.transform.unnest": view_ops_cmd.view_transform_unnest,
     "view.transform.window": view_ops_cmd.view_transform_window,
 }
 
 # Dashboard operations generated from the reviewed OpenAPI inventory share one
-# manifest-driven handler. Existing authored handlers remain authoritative.
-from mammoth.api.dashboard_generated import GENERATED_METHODS  # noqa: E402
-
-_GENERATED_DASHBOARD_SYMBOLS = {
-    f"mammoth.api.dashboards.DashboardsAPI.{method}" for method in GENERATED_METHODS
-}
+# manifest-driven handler. Existing authored handlers remain authoritative, so
+# ``setdefault`` only fills the dashboard commands that have none. Matching on
+# the SDK symbol prefix (rather than importing the generated method list) keeps
+# the generated dashboard models off the startup import path.
+_DASHBOARD_SDK_PREFIX = "mammoth.api.dashboards.DashboardsAPI."
 for _record in load_commands():
-    if _record.get("sdk_symbol") in _GENERATED_DASHBOARD_SYMBOLS:
+    if str(_record.get("sdk_symbol", "")).startswith(_DASHBOARD_SDK_PREFIX):
         HANDLERS.setdefault(str(_record["command_id"]), dashboard_cmd.generated_dashboard)
