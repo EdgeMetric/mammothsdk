@@ -313,3 +313,34 @@ def test_sdk_sub_clients_resolve_without_being_built_up_front() -> None:
     method = resolve_sdk_method(client, "mammoth.api.projects.ProjectsAPI.list")
     assert callable(method)
     assert type(vars(client)["projects"]).__name__ == "ProjectsAPI"
+
+
+def test_help_summary_index_matches_handler_docstrings() -> None:
+    """The listing reads the index, so it must not drift from the live docstrings.
+
+    Regenerate with ``python scripts/gen_help_summaries.py``.
+    """
+    import importlib.util
+
+    script = Path(__file__).resolve().parents[2] / "scripts" / "gen_help_summaries.py"
+    spec = importlib.util.spec_from_file_location("gen_help_summaries", script)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    assert json.loads(module.INDEX.read_text(encoding="utf-8")) == module.live_index()
+
+
+def test_group_help_does_not_import_the_sdk_models() -> None:
+    """``mammoth view --help`` lists commands without importing handlers or SDK models."""
+    import subprocess
+    import sys
+
+    code = (
+        "import sys; from mammoth_cli.__main__ import main\n"
+        "sys.argv = ['mammoth', 'view', '--help']\n"
+        "try:\n    main()\nexcept SystemExit:\n    pass\n"
+        "sys.stderr.write('LOADED=' + str('mammoth.view' in sys.modules or "
+        "'mammoth_cli.commands.view' in sys.modules))"
+    )
+    done = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, check=False)
+    assert "LOADED=False" in done.stderr, done.stderr[-300:]
