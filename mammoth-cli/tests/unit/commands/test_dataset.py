@@ -391,6 +391,7 @@ def test_create_requires_dataset_spec(fake_service: FakeMammothService, tmp_path
 def test_create_forwards_folder_resource_id(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
+    fake_service.job_result = {"ds_id": 1}
     input_file = _write(
         tmp_path,
         {
@@ -400,7 +401,7 @@ def test_create_forwards_folder_resource_id(
         },
     )
     dataset_cmd.dataset_create(_inv("dataset.create", project=180, input_file=input_file))
-    assert fake_service.call_log == [
+    assert fake_service.call_log[:1] == [
         (
             _CREATE,
             {

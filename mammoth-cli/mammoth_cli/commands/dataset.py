@@ -15,10 +15,12 @@ from typing import Any, Protocol
 
 from mammoth_cli.errors.envelope import (
     CODE_INVALID_ARGUMENT,
+    CODE_JOB_FAILED,
     CODE_MISSING_ARGUMENT,
     CODE_MISSING_FIELD,
     CODE_SDK_SYMBOL_UNRESOLVED,
     CODE_UNSUPPORTED_CONTRACT,
+    EXIT_API,
     EXIT_USAGE,
     CliError,
 )
@@ -877,6 +879,7 @@ def dataset_create(invocation: Invocation) -> HandlerResult:
     # A clone can land in another project (``dataset_spec.target_project_id``): the
     # name check and the result's scope are that project's, not the active one's.
     landing_project_id = _clone_target_project(ds_creation_type, dataset_spec) or project_id
+    _default_data_pull_file(ds_creation_type, dataset_spec)
     kwargs: dict[str, Any] = {
         "dataset_spec": dataset_spec,
         "ds_creation_type": ds_creation_type,
@@ -927,12 +930,40 @@ def _require_clone_views(ds_creation_type: object, dataset_spec: object) -> None
         )
 
 
+#: The server's ``data_pull_file`` values for a cloud file import; the first is the app default.
+_DATA_PULL_FILE_VALUES = ("Pull same file", "Pull next file based on name pattern")
+
+
+def _default_data_pull_file(ds_creation_type: object, dataset_spec: object) -> None:
+    """Default a cloud file import's ``data_pull_file`` to "Pull same file", as the web app does.
+
+    Raises:
+        CliError: ``invalid_argument`` listing the allowed values when it is not one of them.
+    """
+    if ds_creation_type != "cloud" or not isinstance(dataset_spec, dict):
+        return
+    properties = dataset_spec.get("query_properties")
+    if not isinstance(properties, dict) or not properties.get("file_path"):
+        return
+    pull = properties.setdefault("data_pull_file", _DATA_PULL_FILE_VALUES[0])
+    if pull not in _DATA_PULL_FILE_VALUES:
+        raise CliError(
+            code=CODE_INVALID_ARGUMENT,
+            message="query_properties.data_pull_file must be one of "
+            f"{list(_DATA_PULL_FILE_VALUES)}, got {pull!r}.",
+            exit_status=EXIT_USAGE,
+        )
+
+
 def _created_dataset(handle: Any, settled: Any) -> dict[str, Any]:
     """Shape a create job (handle + settled result) into a labeled result.
 
     ``wait_if_job`` returns the completed job's inner response, where the new
-    dataset id lives under ``ds_id``. Falls back to the raw job handle when the
-    server returned something unrecognized, so no information is lost.
+    dataset id lives under ``ds_id``. A job that settled without one did not make
+    a dataset, so it raises with the server's reason rather than report success.
+
+    Raises:
+        CliError: ``job_failed`` when the settled job names no dataset.
     """
     job_id = handle.get("job_id") if isinstance(handle, dict) else None
     ds_id = None
@@ -943,13 +974,29 @@ def _created_dataset(handle: Any, settled: Any) -> dict[str, Any]:
             ds_id = nested.get("ds_id") or nested.get("dataset_id")
         job_id = settled.get("job_id", job_id)
     if ds_id is None:
-        # No recognizable dataset id: surface the settled payload untouched
-        # rather than claim a readiness we cannot confirm.
-        return settled if isinstance(settled, dict) else {"job_id": job_id}
+        reason = _job_reason(settled)
+        raise CliError(
+            code=CODE_JOB_FAILED,
+            message="The dataset was not created"
+            + (f": {reason}" if reason else f" (job {job_id} finished without a dataset id)."),
+            exit_status=EXIT_API,
+        )
     result: dict[str, Any] = {"status": "ready", "dataset_id": ds_id}
     if job_id is not None:
         result["job_id"] = job_id
     return result
+
+
+def _job_reason(settled: Any) -> str | None:
+    """The failure reason a settled job carries (``failure_reason``, ``message``, ``error``)."""
+    if not isinstance(settled, dict):
+        return None
+    nested = settled.get("response")
+    for source in (settled, nested if isinstance(nested, dict) else {}):
+        for key in ("failure_reason", "message", "error"):
+            if source.get(key):
+                return str(source[key])
+    return None
 
 
 #: Pages (of 100) read to predict a final name; past it the answer is "a suffix may be added".
