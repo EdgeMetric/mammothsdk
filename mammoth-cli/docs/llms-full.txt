@@ -73,6 +73,8 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth agent memory list sample
 - `mammoth agent memory remove` [destructive/prompt_or_yes] -> mammoth.api.agent_definitions.AgentDefinitionsAPI.notes_delete
   example: mammoth agent memory remove sample 123
+- `mammoth agent projects clear` [benign_mutation/none] -> mammoth.api.agent_definitions.AgentDefinitionsAPI.update
+  example: mammoth agent projects clear sample
 - `mammoth agent projects set` [benign_mutation/none] -> mammoth.api.agent_definitions.AgentDefinitionsAPI.update
   example: mammoth agent projects set sample --input '{"project_ids": [12, 15]}'
 - `mammoth agent publish` [benign_mutation/none] -> mammoth.api.agent_definitions.AgentDefinitionsAPI.publish

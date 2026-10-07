@@ -1,10 +1,10 @@
 # Command reference
 
-Generated from the reviewed command manifests for mammoth-cli 2.2.60.
+Generated from the reviewed command manifests for mammoth-cli 2.2.61.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
-Total commands: 691.
+Total commands: 692.
 
 ## activity
 
@@ -307,6 +307,17 @@ Total commands: 691.
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.agent_definitions.AgentDefinitionsAPI.notes_delete`
 - Agent example: `mammoth agent memory remove sample 123`
+
+### `mammoth agent projects clear`
+
+**Arguments**
+
+- `AGENT_KEY` (str, required) — Key identifying the agent.
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.agent_definitions.AgentDefinitionsAPI.update`
+- Agent example: `mammoth agent projects clear sample`
 
 ### `mammoth agent projects set`
 

@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
   "task": "C2/S7 remaining-families",
-  "route_count": 169,
+  "route_count": 170,
   "families": {
     "activity": 2,
-    "agent": 43,
+    "agent": 44,
     "ai": 4,
     "automation": 8,
     "billing": 25,
@@ -1058,6 +1058,74 @@
         "checks": [
           "method",
           "path"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "agent.projects.clear",
+      "operation_id": "UpdateAgentDefinition",
+      "sdk_symbol": "mammoth.api.agent_definitions.AgentDefinitionsAPI.update",
+      "field_destinations": {
+        "agent_key": {
+          "source": "positional",
+          "destination": "agent_key"
+        },
+        "name": {
+          "source": "input",
+          "destination": "name",
+          "wire": "sdk_argument"
+        },
+        "description": {
+          "source": "input",
+          "destination": "description",
+          "wire": "sdk_argument"
+        },
+        "charter": {
+          "source": "input",
+          "destination": "charter",
+          "wire": "sdk_argument"
+        },
+        "role": {
+          "source": "input",
+          "destination": "role",
+          "wire": "sdk_argument"
+        },
+        "propose": {
+          "source": "input",
+          "destination": "propose",
+          "wire": "sdk_argument"
+        },
+        "project_ids": {
+          "source": "input",
+          "destination": "project_ids",
+          "wire": "sdk_argument"
+        },
+        "team": {
+          "source": "input",
+          "destination": "team",
+          "wire": "sdk_argument"
+        }
+      },
+      "context_destinations": {},
+      "wire": {
+        "method": "PATCH",
+        "path": "/workspaces/{workspace_id}/agent-definitions/{agent_key}",
+        "body": "json:update",
+        "checks": [
+          "method",
+          "path",
+          "body"
         ]
       },
       "dropped_field_sentinel": "__s7_dropped_field__",

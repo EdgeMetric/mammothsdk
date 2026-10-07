@@ -30,6 +30,7 @@
   "agent.memory.add": "Save a learned fact ('name' and 'content' from '--input') for the project.",
   "agent.memory.list": "List the facts the agent learned in the project.",
   "agent.memory.remove": "Remove one fact by note id (from 'agent memory list'). Prompt or '--yes' required.",
+  "agent.projects.clear": "Clear the projects the agent may work in (sets the list to empty).",
   "agent.projects.set": "Set the projects the agent may work in (replaces the list).",
   "agent.publish": "Publish an agent definition so it can take work.",
   "agent.roles": "List the built-in roles an agent definition can take.",

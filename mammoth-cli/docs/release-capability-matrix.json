@@ -476,6 +476,7 @@
     "agent.access.set",
     "agent.charter.get",
     "agent.charter.set",
+    "agent.projects.clear",
     "agent.projects.set",
     "agent.run.extend",
     "agent.run.pause",

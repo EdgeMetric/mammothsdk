@@ -33,6 +33,7 @@ _HANDLER_OWNED_FIELDS: dict[str, frozenset[str]] = {
         for command, fields in {
             "charter.set": ("charter",),
             "access.set": ("role", "propose"),
+            "projects.clear": (),
             "projects.set": ("project_ids",),
             "team.set": ("team",),
         }.items()
