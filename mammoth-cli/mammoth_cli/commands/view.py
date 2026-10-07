@@ -371,12 +371,36 @@ def _read_meta(
     # next command on it (a transform) needs no ``dataset_id`` of its own.
     parents.remember(_profile_name(invocation), workspace_id, {view_id: dataset_id})
     dataset = service.call(
-        _DATASET_GET_SYMBOL, dataset_id=dataset_id, project_id=project_id, fields="id,name"
+        _DATASET_GET_SYMBOL,
+        dataset_id=dataset_id,
+        project_id=project_id,
+        fields="id,name,stats",
     )
     dataset = dataset.get("dataset", dataset) if isinstance(dataset, dict) else {}
+    view = view if isinstance(view, dict) else {}
     meta["dataset"] = {"id": dataset_id, "name": dataset.get("name")}
-    meta["view"] = {"id": view_id, "name": view.get("name") if isinstance(view, dict) else None}
+    meta["view"] = {"id": view_id, "name": view.get("name")}
+    meta["read"] = _read_statement(view, dataset)
     return meta
+
+
+def _read_statement(view: dict[str, Any], dataset: dict[str, Any]) -> str:
+    """One sentence saying what a read covered: the view after its steps, not the source.
+
+    A view's pipeline can filter or reshape the dataset, so a total read from it
+    is not the dataset's total; an agent that reports "the total in <dataset>"
+    from a view's output must be able to see the two row counts differ.
+    """
+    stats = dataset.get("stats")
+    rows = view.get("row_count")
+    source_rows = stats.get("row_count") if isinstance(stats, dict) else None
+    named = f"view '{view.get('name')}'"
+    source = f"dataset '{dataset.get('name')}'"
+    if rows is None or source_rows is None:
+        return f"{named} of {source} (row counts unavailable)"
+    if rows == source_rows:
+        return f"{named} ({rows} rows, all of {source})"
+    return f"{named} ({rows} rows after its steps; {source} has {source_rows})"
 
 
 # ---------------------------------------------------------------------------

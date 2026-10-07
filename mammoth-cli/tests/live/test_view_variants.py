@@ -62,3 +62,22 @@ def test_an_unknown_column_is_refused_before_any_view_is_created(
     assert "No Such Column" in error["message"]
     after, _ = live_cli.ok("view", "list", str(sales_data.dataset), project=sales_data.project)
     assert len(after["dataviews"]) == len(before["dataviews"])
+
+
+def test_aggregate_on_a_filtered_view_says_it_read_the_view_not_the_dataset(
+    live_cli: LiveCli, sales_data: SalesData
+) -> None:
+    """ISS-244: a total read from a filtered view was reported as the dataset's total."""
+    result, _ = live_cli.ok(
+        *("view", "variants", "create", str(sales_data.dataset)),
+        *_input({"from_view": sales_data.view, "column": "Region", "values": ["East"]}),
+        project=sales_data.project,
+    )
+    filtered = result["view_ids"][0]
+    _, meta = live_cli.ok(
+        *("view", "data", "aggregate", str(filtered)),
+        *_input({"metric": {"function": "SUM", "column": "Revenue"}}),
+        project=sales_data.project,
+    )
+    assert f"{_ROWS_PER_REGION} rows after its steps" in meta["read"], meta
+    assert "has 60" in meta["read"], meta
