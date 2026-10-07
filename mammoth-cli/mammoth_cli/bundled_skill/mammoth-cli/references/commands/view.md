@@ -428,7 +428,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth view explore-panel set`. Exact input fields: `mammoth schema get view.explore-panel.set`.
 
-Example: `mammoth view explore-panel set 123 --input '{"panel": {"open": true, "items": [{"column": "column_1", "renderType": "chart"}]}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth view explore-panel set 123 --input '{"panel": {"columns": "all"}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ViewExplorePanelSetResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 

@@ -6501,7 +6501,7 @@ commands:
   - CT-VIEW-EXPLORE-PANEL-GET-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: 'Read-only. Returns the Explore panel the caller saved on this view, {open, items}, or {}
+  known_restrictions: 'Read-only. Returns the Explore panel the caller saved on this view, {height, cards}, or {}
     when none is saved. It is a per-user preference: other users do not see it. VIEW_ID is the only id needed.'
   reviewed_by: primary
 - command_id: view.explore-panel.set
@@ -6540,8 +6540,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view explore-panel set VIEW_ID --help
-  agent_example: 'mammoth view explore-panel set 123 --input ''{"panel": {"open": true, "items": [{"column":
-    "column_1", "renderType": "chart"}]}}'''
+  agent_example: 'mammoth view explore-panel set 123 --input ''{"panel": {"columns": "all"}}'''
   unit_tests:
   - UT-VIEW-EXPLORE-PANEL-SET
   contract_tests:
@@ -6550,10 +6549,7 @@ commands:
   - CT-VIEW-EXPLORE-PANEL-SET-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: 'This is the command that opens Explore cards in the UI. Replaces the whole panel of the caller on this view: run view explore-panel get first,
-    change its items and write it back. The panel input field is the {open, items} object that get returns.
-    The result carries "panel", the panel read back after the write (what get returns): check it to see which cards are open.
-    It is a per-user preference: it does not change the view or what other users see.'
+  known_restrictions: 'This is the command that opens Explore cards in the UI. Open a card per column with {"panel": {"columns": "all"}} or {"panel": {"columns": ["Region", "Amount"]}}: each named column that has no card gets one and the saved cards stay. To replace the whole panel, run view explore-panel get first and write back {"panel": {"cards": [...]}}. A panel with no cards list is refused, because the web app shows only cards. The result carries "panel", the panel read back after the write (what get returns): check its cards to see which are open. It is a per-user preference: it does not change the view or what other users see.'
   reviewed_by: primary
 - command_id: view.compare
   command_path: view compare

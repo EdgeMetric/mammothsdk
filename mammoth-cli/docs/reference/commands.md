@@ -5338,7 +5338,7 @@ Total commands: 663.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dataviews.DataviewsAPI.set_explore_panel`
-- Agent example: `mammoth view explore-panel set 123 --input '{"panel": {"open": true, "items": [{"column": "column_1", "renderType": "chart"}]}}'`
+- Agent example: `mammoth view explore-panel set 123 --input '{"panel": {"columns": "all"}}'`
 
 ### `mammoth view export azure-blob`
 
