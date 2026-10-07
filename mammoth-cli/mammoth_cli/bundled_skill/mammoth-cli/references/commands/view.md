@@ -312,6 +312,8 @@ Result: `ViewDerivativeCreateResult`; mutation `benign_mutation`, confirmation `
 
 Status on release: ran once on CLI 2.0.24 — payload probe 2026-09-19: exit 0 on release with CLI 2.0.24. Created derivative id=6 on view 123 (project 52, dataset 104) with the column INTERNAL name as ARGUMENT; metric_status DONE on read-back. The same call with the display name reproduces the HTTP 500…
 
+A METRIC shows as an explore-panel card via `display_properties`; the CLI defaults it to the metric card, and the result's `card` says whether one exists.
+
 ### `view.derivative.data`
 
 Run: `mammoth view derivative data`. Exact input fields: `mammoth schema get view.derivative.data`.

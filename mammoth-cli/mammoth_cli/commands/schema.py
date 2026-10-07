@@ -572,7 +572,10 @@ _COMMAND_DISCOVERY_PURPOSES = {
         "condition checkpoint value changes"
     ),
     "view.data-check.create": "data quality check rule validate rows match condition flag",
-    "view.derivative.create": "metric kpi number single value to check track daily monitor",
+    "view.derivative.create": (
+        "metric kpi number single value to check track daily monitor add a metric to a view "
+        "sum of column explore panel card metric card"
+    ),
     "view.draft.auto-run": (
         "stop prevent re-running rerun automatically when source changes auto run enable disable"
     ),

@@ -214,6 +214,12 @@ def test_agent_transform_language_finds_typed_routes() -> None:
     }
 
 
+def test_adding_a_metric_finds_the_command_that_names_the_card() -> None:
+    top = find_schemas("add a metric to a view")["matches"][0]
+    assert top["command_id"] == "view.derivative.create"
+    assert "explore panel card" in top["matched_on"]
+
+
 def test_bind_parameter_finds_the_filter_transform() -> None:
     """WPP evidence: an agent asked to 'filter by parameter' or 'bind a
     parameter' to a condition value never reached view.transform.filter,
