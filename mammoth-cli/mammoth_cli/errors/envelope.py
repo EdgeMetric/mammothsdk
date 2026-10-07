@@ -46,6 +46,7 @@ CODE_PROFILE_NOT_FOUND = "profile_not_found"
 CODE_NO_SAVED_PROJECT = "no_saved_project"
 CODE_NOT_AVAILABLE_EMBEDDED = "not_available_embedded"
 CODE_NOT_AVAILABLE = "not_available"
+CODE_USER_CONTROL = "user_control"
 CODE_CONFIRMATION_REQUIRED = "confirmation_required"
 CODE_CONFIRMATION_DECLINED = "confirmation_declined"
 CODE_AUTHENTICATION_FAILED = "authentication_failed"
@@ -169,6 +170,7 @@ ERROR_SUMMARIES: dict[str, str] = {
     "no_saved_project": "This step can't save a project here; each step names its own.",
     "not_available_embedded": "This step isn't available inside the Mammoth app.",
     "not_available": _S_UNAVAILABLE,
+    "user_control": "Stopping, pausing or extending a run is left to you, not the assistant.",
     "profile_write_failed": _S_SETUP,
     "project_required": "No project has been chosen for this step.",
     "pypi_response_invalid": "An update check didn't return a usable answer.",
