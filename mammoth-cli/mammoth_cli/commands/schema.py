@@ -573,7 +573,7 @@ _COMMAND_DISCOVERY_PURPOSES = {
     ),
     "view.data-check.create": "data quality check rule validate rows match condition flag",
     "view.derivative.create": (
-        "metric kpi number single value to check track daily monitor add a metric to a view "
+        "metric kpi number single value to check track daily monitor add a metric "
         "sum of column explore panel card metric card"
     ),
     "view.draft.auto-run": (

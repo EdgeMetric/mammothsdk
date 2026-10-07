@@ -19,7 +19,6 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, cast
 
-import click
 import typer
 from pydantic import ValidationError
 
@@ -346,7 +345,7 @@ def _choose_by_keypress(default: str) -> str:
     for _attempt in range(2):
         typer.echo("Choose: ", nl=False, err=True)
         try:
-            key = click.getchar()
+            key = typer.getchar()
         except (KeyboardInterrupt, EOFError):
             typer.echo("", err=True)
             raise _no_choice() from None
