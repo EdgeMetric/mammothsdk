@@ -103,6 +103,30 @@ _GROUP_DESCRIPTIONS = {
     "workspace": "Manage workspace settings and members.",
 }
 
+# One line per ``agent`` subgroup, so ``mammoth agent --help`` tells them apart.
+_AGENT_SUBGROUP_DESCRIPTIONS = {
+    "access": "Set who may use an agent definition.",
+    "action": "List and delete the changes an agent chat made.",
+    "charter": "Read, change and restore an agent definition's charter.",
+    "feedback": "Read the feedback an agent definition has received.",
+    "goldens": "Manage and run the golden cases an agent definition is proven against.",
+    "memory": "Manage the facts an agent definition has learned, per project.",
+    "projects": "Set the projects an agent definition works in.",
+    "run": "Inspect and control an agent's runs.",
+    "scratch": "Read, write and clear an agent definition's scratchpad notes per project.",
+    "session": "List, read, delete and share agent chat sessions.",
+    "team": "Set the agents this agent may consult while answering.",
+    "turn": "Control one turn of an agent chat session.",
+}
+
+
+def _group_description(tokens: tuple[str, ...]) -> str:
+    """Return the help line for the group at ``tokens``."""
+    if tokens[0] == "agent" and len(tokens) > 1 and tokens[1] in _AGENT_SUBGROUP_DESCRIPTIONS:
+        return _AGENT_SUBGROUP_DESCRIPTIONS[tokens[1]]
+    return _GROUP_DESCRIPTIONS.get(tokens[0], f"Commands for {' '.join(tokens)}.")
+
+
 _ROOT_HELP_PANELS = {
     "auth": "Start here",
     "context": "Start here",
@@ -1133,7 +1157,7 @@ def _group_typer(tokens: tuple[str, ...], command_id: str | None) -> typer.Typer
         sub.callback()(_build_leaf(command_id, is_group_callback=True))
         return sub
     return typer.Typer(
-        help=_GROUP_DESCRIPTIONS.get(tokens[0], f"Commands for {' '.join(tokens)}."),
+        help=_group_description(tokens),
         no_args_is_help=True,
         context_settings={"allow_extra_args": True, "ignore_unknown_options": True},
     )
@@ -1233,7 +1257,7 @@ def _populate(base: tuple[str, ...], group: typer.Typer) -> None:
         parent.add_typer(
             sub,
             name=tokens[-1],
-            help=_GROUP_DESCRIPTIONS.get(top_level, f"Commands for {' '.join(tokens)}."),
+            help=_group_description(tokens),
             rich_help_panel=_ROOT_HELP_PANELS.get(top_level) if len(tokens) == 1 else None,
         )
         groups[tokens] = sub

@@ -484,8 +484,8 @@ commands:
   - CT-AGENT-DISABLE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: Writes. Takes a published agent out of use; chat no longer finds it. Publish it
-    again to bring it back.
+  known_restrictions: Writes. Takes an agent out of use, draft or published; chat no longer finds it.
+    Publish it again to bring it back.
   reviewed_by: primary
   no_readback: returns the changed definition itself
 - command_id: agent.feedback.list

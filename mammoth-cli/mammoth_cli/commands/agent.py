@@ -314,11 +314,12 @@ def agent_roles(invocation: Invocation) -> HandlerResult:
 
 def agent_create(invocation: Invocation) -> HandlerResult:
     """Create an agent definition under the KEY positional; ``name`` is required input."""
-    key = _require_string_positional(invocation, "agent key")
+    _require_string_positional(invocation, "agent key")
     document = _bound_document(invocation)
     _require_field(document, "name")
+    # The bound document already carries the KEY positional as ``key``.
     with open_service(invocation) as (service, auth):
-        data = service.call(_symbol(invocation), key=key, **document)
+        data = service.call(_symbol(invocation), **document)
     return data, _meta(invocation, auth.workspace_id, resolved_project(invocation))
 
 
@@ -364,7 +365,8 @@ def agent_feedback_list(invocation: Invocation) -> HandlerResult:
 
 def agent_update(invocation: Invocation) -> HandlerResult:
     """Change an agent definition; only the ``--input`` fields given are sent."""
-    return _definition_call(invocation, **_bound_document(invocation))
+    fields = {k: v for k, v in _bound_document(invocation).items() if k != "agent_key"}
+    return _definition_call(invocation, **fields)
 
 
 def agent_delete(invocation: Invocation) -> HandlerResult:
