@@ -335,13 +335,8 @@ _COMMAND_DISCOVERY_PURPOSES = {
     ),
     "view.transform.split": "split column by delimiter separator into columns",
     "view.transform.substring": "substring left right characters regex pattern extract part text",
-    "view.transform.first-name": (
-        "first name given name first word extract name from full name text before the first space"
-    ),
-    "view.transform.update-column": (
-        "update overwrite a column in place with its own expression add 5 to cost plus minus "
-        "times formula one call in draft mode"
-    ),
+    "view.transform.first-name": "first name given name first word of a full name",
+    "view.transform.update-column": "overwrite a column in place with an expression, one call",
     "view.transform.text": (
         "text case upper uppercase lower lowercase title trim whitespace normalise normalize"
     ),
