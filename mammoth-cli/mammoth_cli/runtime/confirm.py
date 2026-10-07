@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import sys
 from collections.abc import Callable
+from functools import partial
 
 import typer
 
@@ -64,6 +65,7 @@ def enforce_confirmation(
     target: str | None = None,
     is_tty: bool | None = None,
     prompt: Prompter | None = None,
+    default: bool = False,
 ) -> None:
     """Enforce ``policy`` for one mutating command, or raise.
 
@@ -80,6 +82,10 @@ def enforce_confirmation(
             ``sys.stdin.isatty()``; injectable for tests.
         prompt: The yes/no prompt function. Defaults to :func:`typer.confirm`;
             injectable for tests.
+        default: The answer the default prompt takes when the user just presses
+            Enter. Destructive commands keep ``False``; only a safe, expected
+            action such as ``upgrade`` passes ``True``. Ignored when ``prompt``
+            is injected.
 
     Raises:
         CliError: ``confirmation_required`` when a needed flag is absent and no
@@ -97,7 +103,7 @@ def enforce_confirmation(
     tty = sys.stdin.isatty() if is_tty is None else is_tty
     machine = invocation.output in MACHINE_OUTPUTS
     can_prompt = tty and not invocation.no_input and not machine
-    ask = prompt if prompt is not None else typer.confirm
+    ask = prompt if prompt is not None else partial(typer.confirm, default=default)
 
     if policy == POLICY_CONFIRM_TARGET:
         if not invocation.yes:
