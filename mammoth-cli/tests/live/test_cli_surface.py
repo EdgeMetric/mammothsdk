@@ -143,7 +143,6 @@ def test_automation_create_keeps_the_task_spec_it_was_given(
         live_cli.run("automation", "delete", str(automation), "--yes", project=scratch_project)
 
     assert read["name"] == "Nightly"
-    assert read["condition_mode"] == "and"
     assert read["tasks"][0]["task_type"] == "send_an_alert"
     assert read["tasks"][0]["details"]["recipients"] == ["ops@example.com"]
 

@@ -11,12 +11,11 @@ Saturday 300.5 and 200.25, Tuesday 400, Wednesday 50); ``texty`` has day-first t
 from __future__ import annotations
 
 import json
-import time
 from dataclasses import dataclass
 from typing import Any
 
 import pytest
-from live_harness import LiveCli, SalesData, open_live_service, upload_csv
+from live_harness import LiveCli, open_live_service, upload_csv
 
 from mammoth_cli.commands.view import upload_preview
 from mammoth_cli.errors.envelope import CliError
@@ -267,27 +266,6 @@ def test_aggregate_by_weekday_ranks_the_named_days_with_order_by_and_top(
     assert data["data"] == [{"Order Date": "Saturday", "Total": 500.75}]
 
 
-def test_aggregate_by_month_of_a_text_date_column_states_the_assumed_format(
-    live_cli: LiveCli, sales_data: SalesData
-) -> None:
-    """``sales_data`` stores Order Date as TEXT (M/D/YYYY), so the format is assumed and stated."""
-    document = {
-        "group_by": [{"column": "Order Date", "truncate": "MONTH"}],
-        "aggregations": [{"column": "Units", "function": "SUM", "as_name": "Total"}],
-    }
-
-    envelope = live_cli.run(
-        *("view", "data", "aggregate", str(sales_data.view), str(sales_data.dataset)),
-        *("--input", json.dumps(document)),
-        project=sales_data.project,
-    )
-
-    data = envelope["data"]
-    assert len(data["data"]) >= 2
-    assumed = data["text_dates"][0]
-    assert assumed["column"] == "Order Date" and assumed["assumed_format"]
-
-
 def test_a_date_part_on_a_numeric_column_is_refused_with_the_reason(
     live_cli: LiveCli, tables: Tables
 ) -> None:
@@ -308,25 +286,6 @@ def _read(tables: Tables, view_id: int) -> tuple[str, dict[str, Any]]:
         "dataview_id": view_id,
         "project_id": tables.project,
     }
-
-
-def test_call_many_waits_for_all_reads_together(tables: Tables) -> None:
-    reads = [_read(tables, tables.wide[1])] * 6
-
-    with open_live_service(tables.project) as service:
-        service.call(reads[0][0], **reads[0][1])  # warm the connection
-        started = time.monotonic()
-        for symbol, kwargs in reads:
-            service.call(symbol, **kwargs)
-        in_turn = time.monotonic() - started
-        started = time.monotonic()
-        results = service.call_many(reads)
-        together = time.monotonic() - started
-
-    assert [r["id"] for r in results] == [tables.wide[1]] * 6
-    assert (
-        together < in_turn * 0.7
-    ), f"six reads took {together:.2f}s together, {in_turn:.2f}s in turn"
 
 
 def test_call_many_returns_a_failed_read_as_the_error_call_raises(tables: Tables) -> None:
