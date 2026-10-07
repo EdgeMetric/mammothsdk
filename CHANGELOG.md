@@ -6,6 +6,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed (mammoth-cli 2.2.52)
+
+- The auth-failed hint now also covers expired or revoked OAuth sign-ins (`mammoth auth login`), not only API tokens.
+
 ### Fixed (mammoth-cli 2.2.51)
 
 - OAuth login adopts the project the grant is pinned to, instead of keeping a different saved default project.

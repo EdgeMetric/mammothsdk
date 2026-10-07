@@ -331,7 +331,14 @@ def map_sdk_exception(
             code=CODE_AUTHENTICATION_FAILED,
             message="Mammoth rejected the provided credentials.",
             exit_status=EXIT_AUTH,
-            hint=(EMBEDDED_AUTH_HINT if in_app else "Check the API token."),
+            hint=(
+                EMBEDDED_AUTH_HINT
+                if in_app
+                else (
+                    "Your sign-in may have expired or been revoked: "
+                    "run `mammoth auth login` again, or check the API token."
+                )
+            ),
             details=_metadata(exc),
             request_id=exc.request_id,
             recovery_commands=[] if in_app else ["mammoth auth login"],
