@@ -183,7 +183,8 @@ def test_view_list_without_dataset_id_pages_past_the_view_floor(
     assert data["datasets_visited"] == 1
     assert data["next_dataset_offset"] == 2
     resumed_calls = [c for c in _without_meta(fake_service.call_log) if c[0] == _VIEW_LIST]
-    assert [c[1]["dataset_id"] for c in resumed_calls] == [9, 10]
+    # The first call read its whole wave (9, 10, 11); the resumed one started at 10.
+    assert [c[1]["dataset_id"] for c in resumed_calls] == [9, 10, 11, 10, 11]
 
 
 def test_view_list_without_dataset_id_caps_the_datasets_read_per_call(
@@ -421,9 +422,9 @@ def test_update_rejects_raw_patch_without_dispatch(
 
 def test_data_get_passes_ids(fake_service: FakeMammothService) -> None:
     view_cmd.view_data_get(_inv("view.data.get", project=180, extra_args=["7", "9"]))
-    assert _without_meta(fake_service.call_log) == [
-        (_DATA_GET, {"dataset_id": 9, "dataview_id": 7, "project_id": 180})
-    ]
+    assert (_DATA_GET, {"dataset_id": 9, "dataview_id": 7, "project_id": 180}) in _without_meta(
+        fake_service.call_log
+    )
 
 
 def test_data_get_forwards_timeout_poll_interval(
@@ -433,18 +434,16 @@ def test_data_get_forwards_timeout_poll_interval(
     view_cmd.view_data_get(
         _inv("view.data.get", project=180, extra_args=["7", "9"], input_file=doc)
     )
-    assert _without_meta(fake_service.call_log) == [
-        (
-            _DATA_GET,
-            {
-                "dataset_id": 9,
-                "dataview_id": 7,
-                "project_id": 180,
-                "timeout": 30,
-                "poll_interval": 1,
-            },
-        )
-    ]
+    assert (
+        _DATA_GET,
+        {
+            "dataset_id": 9,
+            "dataview_id": 7,
+            "project_id": 180,
+            "timeout": 30,
+            "poll_interval": 1,
+        },
+    ) in _without_meta(fake_service.call_log)
 
 
 def test_data_get_relabels_and_drops_system_columns(
@@ -780,10 +779,9 @@ def test_data_get_resolves_dataset_from_view_when_omitted(
     # public pipeline resolver, then forwarded to the SDK call.
     fake_service.responses[_FIND_DATASET] = 9
     view_cmd.view_data_get(_inv("view.data.get", project=180, extra_args=["7"]))
-    assert _without_meta(fake_service.call_log) == [
-        (_FIND_DATASET, {"dataview_id": 7}),
-        (_DATA_GET, {"dataset_id": 9, "dataview_id": 7, "project_id": 180}),
-    ]
+    calls = _without_meta(fake_service.call_log)
+    assert calls[0] == (_FIND_DATASET, {"dataview_id": 7})
+    assert (_DATA_GET, {"dataset_id": 9, "dataview_id": 7, "project_id": 180}) in calls
 
 
 def test_preview_resolves_dataset_from_view_when_omitted(

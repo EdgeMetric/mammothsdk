@@ -14,7 +14,6 @@ never cached, so the user's explicit choice always wins.
 from __future__ import annotations
 
 import importlib
-import importlib.metadata
 import json
 import os
 from pathlib import Path
@@ -50,11 +49,13 @@ def install_cached() -> None:
     global _recorded
     if not _enabled or not _choice_is_automatic():
         return
+    from importlib.metadata import version
+
     import keyring
 
     try:
         cached = json.loads(_cache_path().read_text(encoding="utf-8"))
-        if cached["keyring"] != importlib.metadata.version("keyring"):
+        if cached["keyring"] != version("keyring"):
             return
         module, _, name = cached["backend"].partition(":")
         backend_class = getattr(importlib.import_module(module), name)
@@ -70,10 +71,12 @@ def remember(backend: object) -> None:
     global _recorded
     if _recorded or not _enabled or not _choice_is_automatic():
         return
+    from importlib.metadata import version
+
     kind = type(backend)
     record = {
         "backend": f"{kind.__module__}:{kind.__qualname__}",
-        "keyring": importlib.metadata.version("keyring"),
+        "keyring": version("keyring"),
     }
     path = _cache_path()
     try:

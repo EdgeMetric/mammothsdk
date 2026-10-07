@@ -180,24 +180,26 @@ def _find_in_projects(
     recorded there (id, name, why) and the rest are still searched.
     """
     matches: list[dict[str, Any]] = []
-    for project in projects:
-        project_id = project.get("id")
-        if project_id is None:
-            continue
-        try:
-            response = service.call(
+    readable = [p for p in projects if p.get("id") is not None]
+    responses = service.call_many(
+        [
+            (
                 "mammoth.api.datasets.DatasetsAPI.list_all",
-                project_id=project_id,
-                fields=DATASET_ROW_FIELDS,
+                {"project_id": p["id"], "fields": DATASET_ROW_FIELDS},
             )
-        except CliError as error:
+            for p in readable
+        ]
+    )
+    for project, response in zip(readable, responses, strict=True):
+        project_id = project["id"]
+        if isinstance(response, CliError):
             if skipped is None:
-                raise
+                raise response
             skipped.append(
                 {
                     "project_id": project_id,
                     "project_name": project.get("name"),
-                    "error": error.message,
+                    "error": response.message,
                 }
             )
             continue
