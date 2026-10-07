@@ -55,7 +55,7 @@ after a filter was added upstream).
 
 ```bash
 mammoth view export dataset SOURCE_VIEW_ID SOURCE_DATASET_ID --yes \
-  --input '{"dataset_name": "Finance feed", "target_project_id": TARGET_PROJECT_ID}'
+  --input '{"target_project_id": TARGET_PROJECT_ID}'
 # -> {"dataset_id": N, "project_id": TARGET_PROJECT_ID, "next": "mammoth view list N --project TARGET_PROJECT_ID"}
 mammoth view export list SOURCE_VIEW_ID SOURCE_DATASET_ID     # handler internal_dataset, status executed, TARGET_DS_ID N
 ```
