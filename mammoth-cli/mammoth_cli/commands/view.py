@@ -387,6 +387,8 @@ def _read_meta(
         "row_count": stats.get("row_count") if isinstance(stats, dict) else None,
     }
     meta["view"] = {"id": view_id, "name": view.get("name"), "row_count": view.get("row_count")}
+    # A read that goes async raises before it returns; the executor reads this.
+    object.__setattr__(invocation, "read_meta", meta)
     return meta
 
 
