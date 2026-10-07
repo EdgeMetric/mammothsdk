@@ -357,7 +357,9 @@ def _read_meta(
     """Envelope metadata for a data read, naming the dataset and view it read.
 
     A number in an answer needs its source; without the names an agent that
-    silently used the wrong one of two look-alike datasets never says so.
+    silently used the wrong one of two look-alike datasets never says so. Both
+    carry their row count: a view's steps can filter rows, so a total read from
+    it is not the dataset's total, and the two counts are how an agent sees that.
     """
     meta = _meta(invocation, workspace_id, project_id)
     view = service.call(
@@ -365,17 +367,26 @@ def _read_meta(
         dataset_id=dataset_id,
         dataview_id=view_id,
         project_id=project_id,
-        fields="__min",
+        fields="id,name,row_count",
     )
     # The read just proved this dataset holds the view; keep the pair so the
     # next command on it (a transform) needs no ``dataset_id`` of its own.
     parents.remember(_profile_name(invocation), workspace_id, {view_id: dataset_id})
     dataset = service.call(
-        _DATASET_GET_SYMBOL, dataset_id=dataset_id, project_id=project_id, fields="id,name"
+        _DATASET_GET_SYMBOL,
+        dataset_id=dataset_id,
+        project_id=project_id,
+        fields="id,name,stats",
     )
     dataset = dataset.get("dataset", dataset) if isinstance(dataset, dict) else {}
-    meta["dataset"] = {"id": dataset_id, "name": dataset.get("name")}
-    meta["view"] = {"id": view_id, "name": view.get("name") if isinstance(view, dict) else None}
+    view = view if isinstance(view, dict) else {}
+    stats = dataset.get("stats")
+    meta["dataset"] = {
+        "id": dataset_id,
+        "name": dataset.get("name"),
+        "row_count": stats.get("row_count") if isinstance(stats, dict) else None,
+    }
+    meta["view"] = {"id": view_id, "name": view.get("name"), "row_count": view.get("row_count")}
     return meta
 
 
