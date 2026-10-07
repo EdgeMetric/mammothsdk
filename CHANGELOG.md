@@ -11,6 +11,11 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `mammoth agent projects clear AGENT_KEY` empties an agent's project list (`projects set` cannot: `*_ids` lists need one item).
 - Table mode shows the backend's own message (and code) on a 4xx, one line per field for validation errors; `agent roles` prints a table.
 
+### Fixed (mammoth-cli 2.2.63)
+
+- `connector list` uses the server's `is_available` instead of inferring availability from `is_premium` and `is_added`.
+- Under `--project`, `resolve` and `dataset find` return only the project's own rows when one matches the name exactly; `elsewhere` counts the rest, and `--input '{"all_projects": true}'` lists all.
+
 ### Fixed (mammoth-cli 2.2.62)
 
 - The agent no longer invents a name for a new dataset (QA ISS-195: "Branch out View 1 of X into a new dataset" produced "X - View 1 branch" instead of "Result Dataset"). The bundled skill's new-dataset examples (`view export dataset`, the cross-project send recipe, the in-place-edit recipe in `schema`) omit `dataset_name`, and SKILL.md states the rule: pass it only when the user named the dataset; omitted it is "Result Dataset", as in the app. Appending to an existing dataset (`target_ds_id`) is unchanged. `view transform crosstab` still requires `dataset_name`.
