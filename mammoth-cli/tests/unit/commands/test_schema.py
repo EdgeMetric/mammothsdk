@@ -961,3 +961,13 @@ def test_a_pdf_waiting_for_its_extraction_method_finds_file_update(query: str) -
     the command that sends the choice had no words a search for it could match."""
     matches = [item["command_id"] for item in find_schemas(query)["matches"]]
     assert matches and matches[0] == "file.update", f"{query!r} -> {matches}"
+
+
+@pytest.mark.parametrize("query", ["open explore cards", "open all explore cards"])
+def test_open_explore_cards_ranks_the_panel_command_first(query: str) -> None:
+    """Opening cards in the UI is ``view explore-panel set``; ``view data explore`` only
+    reads a column's distribution and must never outrank it for this intent."""
+    result = find_schemas(query)
+    top = result["matches"] or result.get("suggestions", [])
+    assert top, f"no match or suggestion for {query!r}"
+    assert top[0]["command_id"] == "view.explore-panel.set", (query, top)

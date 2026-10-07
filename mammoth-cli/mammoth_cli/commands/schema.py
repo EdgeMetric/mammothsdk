@@ -337,8 +337,8 @@ _COMMAND_DISCOVERY_PURPOSES = {
         "window rank row number running total cumulative sum moving average lag lead "
         "previous next row partition"
     ),
-    # The web app's column Explore cards: what is trending, how a column is
-    # spread, its top values, a count over time.
+    # Reads a column's value distribution: what is trending, how a column is
+    # spread, its top values, a count over time. It opens no card in the UI.
     "view.data.explore": (
         "explore trend trends trending over time per day week month quarter year by date "
         "distribution spread histogram top most common frequent values breakdown share "
