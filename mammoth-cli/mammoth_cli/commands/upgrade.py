@@ -31,9 +31,8 @@ import typer
 
 from mammoth_cli import __version__
 from mammoth_cli.errors.envelope import EXIT_API, EXIT_RETRYABLE, CliError
-from mammoth_cli.runtime import executor
+from mammoth_cli.runtime import executor, updates
 from mammoth_cli.runtime import options as go
-from mammoth_cli.runtime import updates
 from mammoth_cli.runtime.confirm import POLICY_PROMPT_OR_YES, enforce_confirmation
 from mammoth_cli.runtime.invocation import Invocation
 

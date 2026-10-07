@@ -50,7 +50,7 @@ def _spawn(argv: list[str], home: Path) -> pexpect.spawn:
 @pytest.mark.parametrize("key", ["EOF", "INT"])
 def test_prompt_cancel_is_clean(argv: list[str], key: str, tmp_path: Path) -> None:
     child = _spawn(argv, tmp_path)
-    child.expect(r"\?\s*\[|\?")
+    child.expect(r"\[[Yy]/[Nn]\]: ")
     child.sendeof() if key == "EOF" else child.sendintr()
     child.expect(pexpect.EOF)
     child.close()
