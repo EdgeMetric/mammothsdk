@@ -4082,6 +4082,10 @@ def view_export_specialized(invocation: Invocation) -> HandlerResult:
             )
         try:
             data = service.call_view(dataview_id, method, dataset_id=dataset_id, **kwargs)
+        except DryRunStop as stop:
+            if is_dataset_route and target_ds_id is None:
+                stop.record.update(_new_dataset_facts(kwargs.get("dataset_name"), hidden_left_out))
+            raise
         except CliError as error:
             if not (is_dataset_route and error.details.get("export_pending")):
                 raise
@@ -4150,6 +4154,22 @@ def view_export_specialized(invocation: Invocation) -> HandlerResult:
     if table_note is not None:
         data = _with_recurrence_note(data, table_note)
     return data, _meta(invocation, auth.workspace_id, project_id)
+
+
+#: The name the SDK gives a branch-out dataset when none is given (the app's Branch out form's).
+_DEFAULT_NEW_DATASET_NAME = "Result Dataset"
+
+
+def _new_dataset_facts(name: Any, hidden_left_out: list[str]) -> dict[str, Any]:
+    """What a dry run of an export into a NEW dataset says beyond the call: the dataset it
+    creates, the source view's hidden columns it leaves out, and that the export stays on
+    the view and writes again on every rerun. Read from what the export already looked up."""
+    return {
+        "creates_dataset": True,
+        "new_dataset_name": name or _DEFAULT_NEW_DATASET_NAME,
+        "hidden_columns_left_out": hidden_left_out,
+        "standing_export": True,
+    }
 
 
 def _pending_dataset_export(error: CliError, view_id: int, project_id: int) -> dict[str, Any]:
