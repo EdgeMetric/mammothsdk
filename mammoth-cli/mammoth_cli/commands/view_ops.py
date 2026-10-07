@@ -64,6 +64,7 @@ from mammoth_cli.runtime.confirm import POLICY_PROMPT_OR_YES, enforce_confirmati
 from mammoth_cli.runtime.dryrun import DryRunStop
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.session import open_service, resolved_project
+from mammoth_cli.runtime.verify import read_export_stamps
 from mammoth_cli.services.command_contract import bind_command_inputs
 from mammoth_cli.services.conditions import CONDITION_KWARG, compile_condition
 from mammoth_cli.services.input_fields import TASK_COUNT_FIELD
@@ -380,6 +381,10 @@ def _dispatch_view(
             # Verify and the state readback reuse it; neither may walk datasets.
             object.__setattr__(invocation, "known_dataset_id", int(dataset_id))
         require_expected_task_count(service, view_id, dataset_id, document)
+        if dataset_id is not None:
+            object.__setattr__(
+                invocation, "exports_before", read_export_stamps(service, view_id, int(dataset_id))
+            )
         if prepare is not None and dataset_id is not None:
             early = prepare(service, int(dataset_id), kwargs)
             if early is not None:

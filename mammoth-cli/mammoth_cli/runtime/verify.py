@@ -10,6 +10,7 @@ what it should" instead of re-deriving it per command.
 
 from __future__ import annotations
 
+import time
 from typing import Any
 
 from mammoth_cli.runtime.invocation import Invocation
@@ -28,7 +29,19 @@ _EXPORT_BREAKING_COMMANDS = frozenset(
     {"view.task.delete", "view.transform.rename-columns", "view.pipeline.edit"}
 )
 
-_VIEW_EXPORT_LIST_COMMAND = "view.export.list"
+_EXPORTS_LIST_SYMBOL = "mammoth.api.exports.ExportsAPI.list"
+#: The export list's default representation leaves out ``error_info``, the only
+#: place a saved export that can no longer run says why (ISS-225).
+_EXPORT_FIELDS_FULL = "__full"
+#: The backend re-validates a view's exports after a pipeline write has run, a few
+#: seconds later; wait up to this long for that to show before reading them as clean.
+_EXPORT_SETTLE_S = 25.0
+_EXPORT_SETTLE_POLL_S = 1.0
+
+OUTCOME_SETTLED = "settled"
+OUTCOME_PENDING = "pending"
+OUTCOME_FAILED = "failed"
+_PENDING_STATES = frozenset({"staged", "processing"})
 
 _FAILURE_STATUSES = frozenset({"error", "failed", "failure"})
 _FAILURE_PIPELINE_STATES = frozenset({"error", "ref_error"})
@@ -99,7 +112,25 @@ def with_verify(data: Any, invocation: Invocation | None = None) -> Any:
         data, verified=verified, rows_before=rows_before, rows_after=rows_after
     )
     _apply_downstream_export_check(verify, invocation)
+    verify["outcome"] = _outcome(data, verify)
     return {**data, "verify": verify}
+
+
+def _outcome(data: dict[str, Any], verify: dict[str, Any]) -> str:
+    """One word for what the write came to: ``settled``, ``pending`` or ``failed``.
+
+    ``pending`` is a write that has not taken effect yet (staged in a draft, still
+    processing, or a pipeline still running when the wait ended); the caller reads
+    the view again before building on it. ``failed`` is any other write that is not
+    verified. Everything else is ``settled`` and its ``state`` block is the read-back.
+    """
+    pipeline_error = data.get("pipeline_error")
+    unfinished = (
+        isinstance(pipeline_error, dict) and pipeline_error.get("execution_state") == "unfinished"
+    )
+    if unfinished or verify["state"] in _PENDING_STATES or verify["reason"] == _UNSETTLED_REASON:
+        return OUTCOME_PENDING
+    return OUTCOME_SETTLED if verify["verified"] else OUTCOME_FAILED
 
 
 def _removed_nothing(check: dict[str, Any] | None, before: Any, after: Any) -> bool:
@@ -418,7 +449,7 @@ def _known_dataset_id(invocation: Invocation) -> int | None:
 def _broken_downstream_exports(
     invocation: Invocation, view_id: int, dataset_id: int | None = None
 ) -> list[dict[str, Any]] | str:
-    """Exports on ``view_id`` now in error, read via the existing ``view.export.list``.
+    """Exports on ``view_id`` now in error, read at ``__full`` (the default omits ``error_info``).
 
     Each export the backend hands back already carries its own ``error_info``
     when it can no longer run (see ``mammoth.models.exports.ItemExportInfo``);
@@ -426,31 +457,69 @@ def _broken_downstream_exports(
     the warning to show instead: it must not hide the write's own,
     already-settled success, nor pass silently.
     """
-    from mammoth_cli.commands.registry import HANDLERS
+    # Imported here: the session and parent memory pull in the command layer.
+    from mammoth_cli.context import profiles
+    from mammoth_cli.runtime import parents
+    from mammoth_cli.runtime.session import open_service
 
-    handler = HANDLERS.get(_VIEW_EXPORT_LIST_COMMAND)
-    if handler is None:
-        return []
-    read_invocation = Invocation(
-        command_id=_VIEW_EXPORT_LIST_COMMAND,
-        output="json",
-        profile=invocation.profile,
-        project=invocation.project,
-        timeout=invocation.timeout,
-        job_timeout=invocation.job_timeout,
-        pipeline_timeout=invocation.pipeline_timeout,
-        no_input=True,
-        positionals={"dataview_id": view_id, "dataset_id": dataset_id},
-        extra_args=[str(view_id)] if dataset_id is None else [str(view_id), str(dataset_id)],
-    )
+    kwargs: dict[str, Any] = {"dataview_id": view_id, "fields": _EXPORT_FIELDS_FULL}
     try:
-        read_data, _meta = handler(read_invocation)
+        with open_service(invocation) as (service, auth):
+            if dataset_id is None:
+                dataset_id = parents.lookup(
+                    invocation.profile or profiles.get_selected(), auth.workspace_id, view_id
+                )
+            if dataset_id is not None:
+                kwargs["dataset_id"] = dataset_id
+            read_data = service.call(_EXPORTS_LIST_SYMBOL, **kwargs)
+            deadline = time.monotonic() + _EXPORT_SETTLE_S
+            while (
+                invocation.exports_before is not None
+                and export_stamps(read_data) == invocation.exports_before
+                and export_stamps(read_data)
+                and time.monotonic() < deadline
+            ):
+                time.sleep(_EXPORT_SETTLE_POLL_S)
+                read_data = service.call(_EXPORTS_LIST_SYMBOL, **kwargs)
     except Exception as exc:  # noqa: BLE001 -- the write already succeeded
         return f"could not check this view's saved exports: {exc}"
-    exports = read_data.get("exports") if isinstance(read_data, dict) else None
-    if not isinstance(exports, list):
-        return []
-    return [item for item in exports if isinstance(item, dict) and item.get("error_info")]
+    return [
+        item
+        for item in _listing_exports(read_data)
+        if isinstance(item, dict) and item.get("error_info")
+    ]
+
+
+def _listing_exports(listing: Any) -> list[Any]:
+    """The ``exports`` of a listing the SDK answered (a model, or a dict)."""
+    plain = listing.model_dump(mode="json") if hasattr(listing, "model_dump") else listing
+    exports = plain.get("exports") if isinstance(plain, dict) else None
+    return exports if isinstance(exports, list) else []
+
+
+def export_stamps(listing: Any) -> dict[int, str]:
+    """Each export's ``last_modified_time`` by id, from an exports listing."""
+    exports = _listing_exports(listing)
+    return {
+        int(item["id"]): str(item.get("last_modified_time"))
+        for item in exports
+        if isinstance(item, dict) and item.get("id") is not None
+    }
+
+
+def read_export_stamps(service: Any, view_id: int, dataset_id: int) -> dict[int, str] | None:
+    """The view's exports' stamps, read before a pipeline write (see ``exports_before``).
+
+    ``None`` when the read fails: the check after the write reads the exports again and
+    reports a failure there, so this one only loses the wait for the backend's re-validation.
+    """
+    try:
+        listing = service.call(
+            _EXPORTS_LIST_SYMBOL, dataview_id=view_id, dataset_id=dataset_id, fields="__standard"
+        )
+    except Exception:  # noqa: BLE001 -- see the docstring
+        return None
+    return export_stamps(listing)
 
 
 def _export_error_detail(item: dict[str, Any]) -> str:

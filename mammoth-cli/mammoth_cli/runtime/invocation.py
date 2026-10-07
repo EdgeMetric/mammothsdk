@@ -78,6 +78,9 @@ class Invocation:
     # handler so its verify and readback reads address the view directly
     # instead of walking every dataset to find it.
     known_dataset_id: int | None = field(default=None, repr=False, compare=False)
+    #: ``last_modified_time`` of each export on the view, read before a pipeline write;
+    #: verify waits for one to move (the backend re-validates exports after the run).
+    exports_before: dict[int, str] | None = field(default=None, repr=False, compare=False)
     #: What a dry-run transform predicted it would change; set by its handler,
     #: added to the dry-run report.
     predicted_impact: dict[str, Any] | None = field(default=None, repr=False, compare=False)
