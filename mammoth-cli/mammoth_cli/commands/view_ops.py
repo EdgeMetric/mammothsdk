@@ -413,6 +413,7 @@ def _dispatch_view(
             raise
         reject_pipeline_reference_errors(service, view_id, dataset_id, data)
         if dataset_id is not None:
+            data = _mark_staged_in_draft(service, dataset_id, view_id, data)
             # Later commands that know only the view (a dashboard's check) use it.
             parents.remember(
                 _profile_name(invocation), auth.workspace_id, {view_id: int(dataset_id)}
@@ -546,6 +547,28 @@ def _draft_has_pending_changes(service: Any, view_id: int) -> bool:
     """Whether the view's draft already holds staged steps (``False`` outside draft mode)."""
     status = service.call(_DRAFT_STATUS_SYMBOL, dataview_id=view_id)
     return bool(status.get("has_pending_changes")) if isinstance(status, dict) else False
+
+
+def _mark_staged_in_draft(service: Any, dataset_id: int, view_id: int, data: Any) -> Any:
+    """Answer ``status: staged`` for a write the SDK did not already stage.
+
+    The SDK stages the tasks it adds in draft mode, but a write that is not a
+    task (a sort) comes back without a status. In a draft pipeline nothing
+    runs, so every wait that follows the write would only burn its timeout.
+    """
+    if not isinstance(data, dict) or data.get("status") is not None:
+        return data
+    draft = service.call(_DRAFT_STATUS_SYMBOL, dataview_id=view_id, dataset_id=dataset_id)
+    if not (isinstance(draft, dict) and draft.get("is_draft") is True):
+        return data
+    return {
+        **data,
+        "status": "staged",
+        "message": (
+            f"The view is in draft mode; this step is staged, not run. Run "
+            f"'mammoth view draft submit {view_id}' to run staged steps."
+        ),
+    }
 
 
 def _flag_unsettled_pipeline(service: Any, dataset_id: int, view_id: int, data: Any) -> None:
@@ -1135,7 +1158,48 @@ def view_draft_status(invocation: Invocation) -> HandlerResult:
     view_id = _view_id(invocation)
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), dataview_id=view_id)
+        dataset_id = _resolve_exact_dataset_id(
+            invocation, view_id, invocation.load_input() or {}, required=False, allow_missing=True
+        ) or parents.lookup(_profile_name(invocation), auth.workspace_id, view_id)
+        if isinstance(data, dict):
+            data = {**data, "step_errors": pipeline_step_errors(service, view_id, dataset_id)}
     return data, _meta(invocation, auth.workspace_id)
+
+
+def pipeline_step_errors(service: Any, view_id: int, dataset_id: Any) -> list[dict[str, Any]]:
+    """Every pipeline step (task or export) whose reference is in error, and why.
+
+    The web app disables Apply while any step is in reference error (a column
+    that is gone or changed type under an export); the draft status alone
+    only says the pipeline is dirty, so the reasons are read from the items.
+    """
+    kwargs: dict[str, Any] = {"dataview_id": view_id}
+    if dataset_id is not None:
+        kwargs["dataset_id"] = int(dataset_id)
+    listing = (
+        service.call(_PIPELINE_ITEMS_ALL_SYMBOL, fields=_PIPELINE_ITEMS_FULL, **kwargs)
+        if "dataset_id" in kwargs
+        else service.call(_PIPELINE_ITEMS_SYMBOL, fields=_PIPELINE_ITEMS_FULL, limit=100, **kwargs)
+    )
+    items = listing.get("items") if isinstance(listing, dict) else None
+    errors: list[dict[str, Any]] = []
+    for item in items or []:
+        if not isinstance(item, dict):
+            continue
+        reference_errors = (item.get("reference_errors") or {}).get("reference_errors") or []
+        if not reference_errors and item.get("has_refferror") is not True:
+            continue
+        errors.append(
+            {
+                "item_type": item.get("item_type"),
+                "id": item.get("id"),
+                "sequence": item.get("sequence"),
+                "handler_type": item.get("handler_type"),
+                "reference_errors": [_compact_reference_error(e) for e in reference_errors],
+                "error_info": item.get("error_info"),
+            }
+        )
+    return errors
 
 
 def view_draft_submit(invocation: Invocation) -> HandlerResult:

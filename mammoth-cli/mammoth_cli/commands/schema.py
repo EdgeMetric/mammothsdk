@@ -139,13 +139,18 @@ _COMMAND_DISCOVERY_PURPOSES = {
     "view.export.email": "email send mail attachment",
     "view.export.ftp": "ftp file transfer protocol server",
     "view.export.managed-s3": "s3 amazon aws bucket managed storage",
+    "view.export.live-link": "live link add create public url share link always latest shareable",
     "view.export.mssql": "sql server mssql microsoft database",
     "view.export.mysql": "mysql database",
     "view.export.onedrive": "one drive onedrive microsoft cloud storage",
-    "view.export.postgres": "postgres postgresql database",
+    "view.export.postgres": (
+        "postgres postgresql database your own server; "
+        "for the Postgres Mammoth hosts, use publish-db"
+    ),
     "view.export.powerbi": "power bi powerbi microsoft dashboard workspace",
     "view.export.publish-db": (
-        "publish database live connection odbc bi tool reads table point straight at always latest"
+        "publish database live connection odbc bi tool reads table point straight at always latest "
+        "postgres managed mammoth managed"
     ),
     "view.export.publish-db-update": "publish database update refresh live connection",
     "view.export.redshift": "redshift amazon aws database warehouse",

@@ -70,7 +70,7 @@ def test_s5_ledger_covers_exact_manifest_surface() -> None:
         for record in load_commands()
         if record["command_id"].startswith(S5_PREFIXES)
     )
-    assert ledger["route_count"] == 60
+    assert ledger["route_count"] == 61
     assert sorted(route["command_id"] for route in routes) == expected
     for route in routes:
         record = command_by_id(route["command_id"])

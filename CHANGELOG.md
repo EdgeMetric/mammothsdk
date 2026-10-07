@@ -13,6 +13,8 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Changed (mammoth-io, mammoth-cli)
 
 - Start-up is much faster. `mammoth --version` no longer builds the command tree, root `--help` and a mistyped command no longer build all ~550 commands, and the SDK package, its API sub-clients and its models load on first use instead of at `import mammoth`. A daily PyPI check now runs in a detached process instead of holding the finished command open for up to 3 seconds.
+- A command group's `--help` (for example `mammoth view --help`) no longer imports every command's handler module and the SDK models: each command builds its parameters when it is first used, and the listing reads its summaries from `mammoth_cli/commands/help_summaries.json` (regenerate with `python scripts/gen_help_summaries.py`; a unit test fails on drift). The help text is unchanged.
+- Start-up round 2: command modules and handlers are imported per command, only when that command runs, so `--help` and typo suggestions import none of them; the OS keyring backend is remembered after the first run instead of re-detected (~0.3 s) on every run that reads a keyring credential.
 
 ### Added (mammoth-cli 2.2.53)
 

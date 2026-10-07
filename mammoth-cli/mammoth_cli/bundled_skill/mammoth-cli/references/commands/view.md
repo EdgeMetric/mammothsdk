@@ -550,6 +550,16 @@ Result: `ViewExportListResult`; mutation `read`, confirmation `none`, wait polic
 
 Status on release: ran once on CLI 2.0.28 — ILG simulation 2026-09-19: exit 0 on release with CLI 2.0.28. Listed both internal_dataset exports with target_properties (DS_NAME, COLUMN_MAPPING, project fields). Single invocation only.
 
+### `view.export.live-link`
+
+Run: `mammoth view export live-link`. Exact input fields: `mammoth schema get view.export.live-link`.
+
+Example: `mammoth view export live-link 123 123 --input '{"file_name": "report_share.csv"}'`. Illustrative only: append `--yes` after observing an owned target.
+
+Result: `ViewExportLiveLinkResult`; mutation `external_effect`, confirmation `yes_always`, wait policy `always_wait`.
+
+Status on release: untried; no live run recorded.
+
 ### `view.export.managed-s3`
 
 Run: `mammoth view export managed-s3`. Exact input fields: `mammoth schema get view.export.managed-s3`.

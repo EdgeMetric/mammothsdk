@@ -4,7 +4,7 @@ Generated from the reviewed command manifests for mammoth-cli 2.2.54.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
-Total commands: 662.
+Total commands: 663.
 
 ## activity
 
@@ -5469,6 +5469,18 @@ Total commands: 662.
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.exports.ExportsAPI.list`
 - Agent example: `mammoth view export list 123 123`
+
+### `mammoth view export live-link`
+
+**Arguments**
+
+- `VIEW_ID` (int, required) — ID of the view to export.
+- `DATASET_ID` (int, optional) — Exact parent dataset ID. Required for this command: pass it here or as the 'dataset_id' input field; only read commands may omit it and discover the parent.
+
+- Mutation class: `external_effect`
+- Confirmation: `yes_always`
+- Backing SDK: `mammoth.view.ViewExport.to_live_link`
+- Agent example: `mammoth view export live-link 123 123 --input '{"file_name": "report_share.csv"}'`
 
 ### `mammoth view export managed-s3`
 

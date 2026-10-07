@@ -26,7 +26,9 @@ def main() -> Any:
         sys.stdout.write(f"{__version__}\n")
         return 0
     from mammoth_cli.app import app
+    from mammoth_cli.context import keyring_backend
 
+    keyring_backend.enable()
     return app()
 
 
