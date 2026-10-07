@@ -11,21 +11,21 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
-from mammoth_cli.commands import auth as auth_cmd
-from mammoth_cli.commands import config as config_cmd
-from mammoth_cli.commands import context as context_cmd
-from mammoth_cli.commands import upgrade as upgrade_cmd
+from mammoth_cli.commands._lazy import LazyTable
 
-BESPOKE: dict[str, Callable[..., None]] = {
-    "auth.login": auth_cmd.auth_login,
-    "auth.status": auth_cmd.auth_status,
-    "auth.logout": auth_cmd.auth_logout,
-    "config.get": config_cmd.config_get,
-    "config.set": config_cmd.config_set,
-    "config.list": config_cmd.config_list,
-    "config.path": config_cmd.config_path,
-    "context.project.status": context_cmd.context_project_status,
-    "context.project.use": context_cmd.context_project_use,
-    "context.project.clear": context_cmd.context_project_clear,
-    "upgrade": upgrade_cmd.upgrade_command,
+_TARGETS: dict[str, str] = {
+    "auth.login": "mammoth_cli.commands.auth:auth_login",
+    "auth.status": "mammoth_cli.commands.auth:auth_status",
+    "auth.logout": "mammoth_cli.commands.auth:auth_logout",
+    "config.get": "mammoth_cli.commands.config:config_get",
+    "config.set": "mammoth_cli.commands.config:config_set",
+    "config.list": "mammoth_cli.commands.config:config_list",
+    "config.path": "mammoth_cli.commands.config:config_path",
+    "context.project.status": "mammoth_cli.commands.context:context_project_status",
+    "context.project.use": "mammoth_cli.commands.context:context_project_use",
+    "context.project.clear": "mammoth_cli.commands.context:context_project_clear",
+    "upgrade": "mammoth_cli.commands.upgrade:upgrade_command",
 }
+
+#: Command id -> bespoke Typer callback, imported from its module on first use.
+BESPOKE: LazyTable[Callable[..., None]] = LazyTable(_TARGETS)

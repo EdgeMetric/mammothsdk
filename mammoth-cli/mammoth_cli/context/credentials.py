@@ -32,6 +32,7 @@ from typing import Any, Literal
 import tomlkit
 from tomlkit import TOMLDocument
 
+from mammoth_cli.context import keyring_backend
 from mammoth_cli.context.profiles import config_dir
 from mammoth_cli.errors.envelope import EXIT_USAGE, CliError
 
@@ -89,11 +90,15 @@ def _keyring_available() -> bool:
     import keyring
     import keyring.errors
 
+    keyring_backend.install_cached()
     try:
         backend = keyring.get_keyring()
     except keyring.errors.NoKeyringError:
         return False
-    return type(backend).__module__ not in _UNUSABLE_BACKEND_MODULES
+    usable = type(backend).__module__ not in _UNUSABLE_BACKEND_MODULES
+    if usable:
+        keyring_backend.remember(backend)
+    return usable
 
 
 def _bounded_keyring_call[T](call: Callable[[], T]) -> T:

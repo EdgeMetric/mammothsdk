@@ -92,8 +92,15 @@ def test_top_level_groups_are_built_on_demand() -> None:
     app_module._top_level_typer.cache_clear()
     root: Any = typer.main.get_command(app_module.app)
     eager = root.__dict__.get("_eager_commands", {})
-    assert "doctor" in eager and "view" not in eager
-    assert "view" in root.list_commands(None) and "dataset" in root.list_commands(None)
+    assert "doctor" not in eager and "view" not in eager
+    names = root.list_commands(None)
+    assert {"doctor", "view", "dataset"} <= set(names)
+    # Top-level leaves list ahead of groups, as they were registered.
+    assert names.index("doctor") < names.index("view")
+
+    doctor = root.get_command(None, "doctor")
+    assert doctor is not None and doctor.name == "doctor"
+    assert "view" not in root.__dict__["_eager_commands"]
 
     view = root.get_command(None, "view")
     assert view is not None and "list" in view.commands
@@ -126,6 +133,28 @@ _HEAVY_MODULES = (
     "keyring",
 )
 
+# The lazy command boundary: no command module, SDK service or schema machinery
+# is imported until a command is dispatched. ``--help`` and typo suggestions
+# read names (and, for top-level leaves, a pinned help string), nothing more.
+_ERROR_PATH_MODULES = (
+    "pydantic",
+    "mammoth_cli.services.command_contract",
+    "mammoth_cli.runtime.executor",
+)
+_COMMAND_BOUNDARY = (
+    "pydantic",
+    "mammoth.models.pipeline",
+    "mammoth_cli.commands.project",
+    "mammoth_cli.commands.view",
+    "mammoth_cli.commands.doctor",
+    "mammoth_cli.commands.schema",
+    "mammoth_cli.services.sdk_service",
+    "mammoth_cli.services.command_contract",
+    "mammoth_cli.runtime.session",
+    "mammoth_cli.runtime.executor",
+    "mammoth_cli.context.resolver",
+)
+
 _PROBE = """
 import json, sys
 sys.argv = ["mammoth", *sys.argv[1:]]
@@ -138,12 +167,12 @@ sys.stdout.write("\\n" + json.dumps([m for m in {heavy!r} if m in sys.modules]))
 """
 
 
-def _loaded_heavy_modules(*argv: str) -> list[str]:
+def _loaded_heavy_modules(*argv: str, watched: tuple[str, ...] = _HEAVY_MODULES) -> list[str]:
     import subprocess
     import sys
 
     done = subprocess.run(
-        [sys.executable, "-c", _PROBE.format(heavy=_HEAVY_MODULES), *argv],
+        [sys.executable, "-c", _PROBE.format(heavy=watched), *argv],
         capture_output=True,
         text=True,
         timeout=120,
@@ -161,6 +190,68 @@ def _loaded_heavy_modules(*argv: str) -> list[str]:
 )
 def test_startup_before_dispatch_loads_no_heavy_modules(argv: list[str]) -> None:
     assert _loaded_heavy_modules(*argv) == []
+
+
+@pytest.mark.subprocess
+@pytest.mark.parametrize(
+    "argv",
+    [["--version"], ["--help"], ["lst"]],
+    ids=["version", "root-help", "typo-suggestion"],
+)
+def test_root_help_and_typo_import_no_command_module(argv: list[str]) -> None:
+    # A typo ends in the error envelope, which legitimately loads the executor.
+    emits_error = argv == ["lst"]
+    boundary = tuple(m for m in _COMMAND_BOUNDARY if not (emits_error and m in _ERROR_PATH_MODULES))
+    watched = (*_HEAVY_MODULES, *boundary)
+    assert _loaded_heavy_modules(*argv, watched=watched) == []
+
+
+_BUILD_PROBE = """
+import json, sys
+from mammoth_cli import app
+app._load_top_level_group("project")
+sys.stdout.write("\\n" + json.dumps([m for m in {watched!r} if m in sys.modules]))
+"""
+
+
+@pytest.mark.subprocess
+def test_building_a_group_imports_no_handler_module() -> None:
+    """Dispatching ``project ...`` builds the project group, not its 24 handler modules."""
+    import subprocess
+    import sys
+
+    watched = (
+        "httpx",
+        "mammoth.client",
+        "mammoth_cli.commands.project",
+        "mammoth_cli.commands.view",
+        "mammoth_cli.services.sdk_service",
+        "mammoth_cli.runtime.session",
+    )
+    done = subprocess.run(
+        [sys.executable, "-c", _BUILD_PROBE.format(watched=watched)],
+        capture_output=True,
+        text=True,
+        timeout=120,
+        check=False,
+    )
+    assert json.loads(done.stdout.rsplit("\n", 1)[-1]) == []
+
+
+def test_root_leaf_help_table_matches_the_handler_docstrings() -> None:
+    """``--help`` prints a pinned string for top-level leaves; it must equal the real one."""
+    from mammoth_cli.manifest.loader import command_by_id
+
+    assert set(app_module._ROOT_LEAF_HELP) == set(app_module._LAZY_LEAF_IDS)
+    for name, command_id in app_module._LAZY_LEAF_IDS.items():
+        real = app_module._command_help(command_id, command_by_id(command_id))
+        assert app_module._ROOT_LEAF_HELP[name] == real, name
+
+
+def test_group_command_help_is_read_from_the_handler_when_printed() -> None:
+    result = make_runner().invoke(["project", "list", "--help"])
+    assert result.exit_code == 0
+    assert "List the caller's member projects" in result.output
 
 
 def test_every_dashboard_command_still_has_a_handler() -> None:

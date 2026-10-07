@@ -17,7 +17,6 @@ from pathlib import Path
 from typing import Any
 
 import platformdirs
-import yaml
 
 SPEC_ROOT = Path(__file__).resolve().parent.parent.parent / "spec"
 MANIFEST_DIR = SPEC_ROOT / "manifests"
@@ -29,15 +28,17 @@ SDK_METHODS_PATH = MANIFEST_DIR / "sdk-methods.yaml"
 MANIFEST_SCHEMA_VERSION = 1
 CACHE_ENV = "MAMMOTH_CLI_MANIFEST_CACHE"
 
-# libyaml parses the 800 KiB of command manifests in ~0.2 s; the pure-Python
-# loader takes ~2 s, which used to be most of the CLI's start-up time.
-_YAML_LOADER = getattr(yaml, "CSafeLoader", yaml.SafeLoader)
-
 
 def _read_yaml(path: Path) -> Any:
     if not path.exists():
         return None
-    return yaml.load(path.read_text(encoding="utf-8"), Loader=_YAML_LOADER)  # noqa: S506
+    # Imported here: a warm manifest cache means most runs never parse YAML.
+    import yaml
+
+    # libyaml parses the 800 KiB of command manifests in ~0.2 s; the pure-Python
+    # loader takes ~2 s, which used to be most of the CLI's start-up time.
+    loader = getattr(yaml, "CSafeLoader", yaml.SafeLoader)
+    return yaml.load(path.read_text(encoding="utf-8"), Loader=loader)  # noqa: S506
 
 
 def cache_dir() -> Path:

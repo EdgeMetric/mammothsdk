@@ -15,11 +15,10 @@ A spec is one of:
 
 from __future__ import annotations
 
-from functools import reduce
+from functools import cache, reduce
 from typing import Any
 
 from mammoth.condition import CompoundCondition, Condition, NotCondition
-from mammoth.models.pipeline import Operator
 
 from mammoth_cli.errors.envelope import EXIT_USAGE, CliError
 
@@ -40,39 +39,59 @@ _LEAF_FIELDS = {
 }
 
 
-#: Comparison symbols accepted as aliases for the backend operator names. The
-#: SDK ``Condition`` forwards any string, so an unaliased symbol would reach the
-#: backend as an unknown operator; validate here, at the CLI boundary.
-_OPERATOR_ALIASES = {
-    "=": Operator.EQ,
-    "==": Operator.EQ,
-    "!=": Operator.NE,
-    "<>": Operator.NE,
-    ">": Operator.GT,
-    ">=": Operator.GTE,
-    "<": Operator.LT,
-    "<=": Operator.LTE,
-}
-OPERATOR_NAMES = tuple(member.value for member in Operator)
+@cache
+def _operator_aliases() -> dict[str, str]:
+    """Comparison symbols accepted as aliases for the backend operator names.
+
+    The SDK ``Condition`` forwards any string, so an unaliased symbol would
+    reach the backend as an unknown operator; validate here, at the CLI
+    boundary. Built on first use: the operator enum lives in a models module
+    that most commands never need.
+    """
+    from mammoth.models.pipeline import Operator
+
+    return {
+        "=": Operator.EQ.value,
+        "==": Operator.EQ.value,
+        "!=": Operator.NE.value,
+        "<>": Operator.NE.value,
+        ">": Operator.GT.value,
+        ">=": Operator.GTE.value,
+        "<": Operator.LT.value,
+        "<=": Operator.LTE.value,
+    }
+
+
+@cache
+def _operator_names() -> tuple[str, ...]:
+    from mammoth.models.pipeline import Operator
+
+    return tuple(member.value for member in Operator)
+
+
+def __getattr__(name: str) -> tuple[str, ...]:
+    if name == "OPERATOR_NAMES":
+        return _operator_names()
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
 def _resolve_operator(raw: Any) -> str:
     if isinstance(raw, str):
-        alias = _OPERATOR_ALIASES.get(raw.strip())
+        alias = _operator_aliases().get(raw.strip())
         if alias is not None:
-            return alias.value
+            return alias
         name = raw.strip().upper()
-        if name in OPERATOR_NAMES:
+        if name in _operator_names():
             return name
     raise CliError(
         code="invalid_condition",
         message=f"Unknown condition operator {raw!r}.",
         exit_status=EXIT_USAGE,
         hint=(
-            "Use one of: " + ", ".join(OPERATOR_NAMES) + ". Symbols =, !=, >, >=, <, <= are "
+            "Use one of: " + ", ".join(_operator_names()) + ". Symbols =, !=, >, >=, <, <= are "
             "accepted as aliases. IS_EMPTY / IS_NOT_EMPTY take no value."
         ),
-        details={"operator": raw, "accepted": list(OPERATOR_NAMES)},
+        details={"operator": raw, "accepted": list(_operator_names())},
     )
 
 
