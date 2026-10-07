@@ -25,6 +25,7 @@ from mammoth_cli.errors.envelope import (
     CliError,
 )
 from mammoth_cli.manifest.loader import command_by_id
+from mammoth_cli.services.folder_ids import FolderIds
 from mammoth_cli.services.protocol import MammothService
 
 CODE_TARGETS_UNRESOLVABLE = "dry_run_targets_unresolvable"
@@ -448,6 +449,8 @@ def _read_name(
     symbol = reader.symbol or str((manifest or {}).get("sdk_symbol") or "")
     scope = {key: arguments[key] for key in reader.scope_args if arguments.get(key) is not None}
     sent_id = str(target_id) if reader.id_as_str else target_id
+    if kind == "folder":  # the id shown is the open id; the folder route takes the label id
+        sent_id = FolderIds(service).label(int(scope["project_id"]), target_id)
     record = service.call(symbol, **{reader.id_arg: sent_id}, **scope)
     name = _name_of(record, reader)
     if not isinstance(name, str) or not name:
@@ -480,15 +483,16 @@ def _read_names(
     if kind not in BULK_TYPES or len(ids) < 2:
         return [_read_name(service, kind, item, arguments) for item in ids]
     scope = {"project_id": arguments["project_id"]} if arguments.get("project_id") else {}
-    rows = service.call(_BULK_SYMBOL, items=[(BULK_TYPES[kind], item) for item in ids], **scope)
+    wire = FolderIds(service).labels(scope["project_id"], ids) if kind == "folder" else ids
+    rows = service.call(_BULK_SYMBOL, items=[(BULK_TYPES[kind], item) for item in wire], **scope)
     names = {row.get("object_id"): row.get("name") for row in rows if isinstance(row, Mapping)}
     return [
         (
-            {"type": kind, "id": item, "name": names[item]}
-            if isinstance(names.get(item), str) and names[item]
+            {"type": kind, "id": item, "name": names[sent]}
+            if isinstance(names.get(sent), str) and names[sent]
             else _read_name(service, kind, item, arguments)
         )
-        for item in ids
+        for item, sent in zip(ids, wire, strict=True)
     ]
 
 

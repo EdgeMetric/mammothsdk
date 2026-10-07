@@ -151,7 +151,7 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
             name="resource_id",
             type=int,
             required=True,
-            help="The folder's resource_id as browse resources returns it (not its object id).",
+            help="The folder's id, as folder list and browse return it.",
         ),
     ),
     # The image is a local file, positional after the template like assess-pbix.
