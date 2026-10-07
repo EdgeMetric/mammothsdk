@@ -6,9 +6,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-### Changed (mammoth-io 0.8.29, mammoth-cli 2.2.55)
+### Changed (mammoth-io 0.8.30, mammoth-cli 2.2.56)
 
-- Adds `view export live-link` (#169), explore-panel real cards (#167), draft-write fixes (#170), start-up perf (#171) and prompt-cancel/login fixes (#172). The CLI now requires `mammoth-io>=0.8.29`.
+- 2.2.55 shipped without #173 (PyPI is immutable); 2.2.56 adds it: `view export dataset` dataset name is optional (default "Result Dataset").
+- Adds `view export live-link` (#169), explore-panel real cards (#167), draft-write fixes (#170), start-up perf (#171) and prompt-cancel/login fixes (#172). The CLI now requires `mammoth-io>=0.8.30`.
 
 ### Changed (mammoth-io 0.8.28, mammoth-cli 2.2.54)
 
