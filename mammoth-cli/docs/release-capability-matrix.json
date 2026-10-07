@@ -174,6 +174,234 @@
       ]
     },
     {
+      "method": "GET",
+      "path": "/workspaces/{}/agent-definitions",
+      "state": "removed_on_server",
+      "pending_in": null,
+      "sdk_symbols": [
+        "mammoth.api.agent_definitions.AgentDefinitionsAPI.list"
+      ],
+      "commands": [
+        "agent.list"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/workspaces/{}/agent-definitions",
+      "state": "removed_on_server",
+      "pending_in": null,
+      "sdk_symbols": [
+        "mammoth.api.agent_definitions.AgentDefinitionsAPI.create"
+      ],
+      "commands": [
+        "agent.create"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/workspaces/{}/agent-definitions/roles",
+      "state": "removed_on_server",
+      "pending_in": null,
+      "sdk_symbols": [
+        "mammoth.api.agent_definitions.AgentDefinitionsAPI.roles"
+      ],
+      "commands": [
+        "agent.roles"
+      ]
+    },
+    {
+      "method": "DELETE",
+      "path": "/workspaces/{}/agent-definitions/{}",
+      "state": "removed_on_server",
+      "pending_in": null,
+      "sdk_symbols": [
+        "mammoth.api.agent_definitions.AgentDefinitionsAPI.delete"
+      ],
+      "commands": [
+        "agent.delete"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/workspaces/{}/agent-definitions/{}",
+      "state": "removed_on_server",
+      "pending_in": null,
+      "sdk_symbols": [
+        "mammoth.api.agent_definitions.AgentDefinitionsAPI.get"
+      ],
+      "commands": [
+        "agent.get"
+      ]
+    },
+    {
+      "method": "PATCH",
+      "path": "/workspaces/{}/agent-definitions/{}",
+      "state": "removed_on_server",
+      "pending_in": null,
+      "sdk_symbols": [
+        "mammoth.api.agent_definitions.AgentDefinitionsAPI.update"
+      ],
+      "commands": [
+        "agent.update"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/workspaces/{}/agent-definitions/{}/charter-versions",
+      "state": "removed_on_server",
+      "pending_in": null,
+      "sdk_symbols": [
+        "mammoth.api.agent_definitions.AgentDefinitionsAPI.charter_versions"
+      ],
+      "commands": [
+        "agent.charter.versions"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/workspaces/{}/agent-definitions/{}/charter-versions/{}/restore",
+      "state": "removed_on_server",
+      "pending_in": null,
+      "sdk_symbols": [
+        "mammoth.api.agent_definitions.AgentDefinitionsAPI.charter_restore"
+      ],
+      "commands": [
+        "agent.charter.restore"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/workspaces/{}/agent-definitions/{}/disable",
+      "state": "removed_on_server",
+      "pending_in": null,
+      "sdk_symbols": [
+        "mammoth.api.agent_definitions.AgentDefinitionsAPI.disable"
+      ],
+      "commands": [
+        "agent.disable"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/workspaces/{}/agent-definitions/{}/feedback",
+      "state": "removed_on_server",
+      "pending_in": null,
+      "sdk_symbols": [
+        "mammoth.api.agent_definitions.AgentDefinitionsAPI.feedback_list"
+      ],
+      "commands": [
+        "agent.feedback.list"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/workspaces/{}/agent-definitions/{}/goldens",
+      "state": "removed_on_server",
+      "pending_in": null,
+      "sdk_symbols": [
+        "mammoth.api.agent_definitions.AgentDefinitionsAPI.goldens_list"
+      ],
+      "commands": [
+        "agent.goldens.list"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/workspaces/{}/agent-definitions/{}/goldens",
+      "state": "removed_on_server",
+      "pending_in": null,
+      "sdk_symbols": [
+        "mammoth.api.agent_definitions.AgentDefinitionsAPI.goldens_add"
+      ],
+      "commands": [
+        "agent.goldens.add"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/workspaces/{}/agent-definitions/{}/goldens/run",
+      "state": "removed_on_server",
+      "pending_in": null,
+      "sdk_symbols": [
+        "mammoth.api.agent_definitions.AgentDefinitionsAPI.goldens_status"
+      ],
+      "commands": [
+        "agent.goldens.status"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/workspaces/{}/agent-definitions/{}/goldens/run",
+      "state": "removed_on_server",
+      "pending_in": null,
+      "sdk_symbols": [
+        "mammoth.api.agent_definitions.AgentDefinitionsAPI.goldens_run"
+      ],
+      "commands": [
+        "agent.goldens.run"
+      ]
+    },
+    {
+      "method": "DELETE",
+      "path": "/workspaces/{}/agent-definitions/{}/goldens/{}",
+      "state": "removed_on_server",
+      "pending_in": null,
+      "sdk_symbols": [
+        "mammoth.api.agent_definitions.AgentDefinitionsAPI.goldens_remove"
+      ],
+      "commands": [
+        "agent.goldens.remove"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/workspaces/{}/agent-definitions/{}/notes",
+      "state": "removed_on_server",
+      "pending_in": null,
+      "sdk_symbols": [
+        "mammoth.api.agent_definitions.AgentDefinitionsAPI.notes_list"
+      ],
+      "commands": [
+        "agent.memory.list"
+      ]
+    },
+    {
+      "method": "PUT",
+      "path": "/workspaces/{}/agent-definitions/{}/notes",
+      "state": "removed_on_server",
+      "pending_in": null,
+      "sdk_symbols": [
+        "mammoth.api.agent_definitions.AgentDefinitionsAPI.notes_upsert"
+      ],
+      "commands": [
+        "agent.memory.add"
+      ]
+    },
+    {
+      "method": "DELETE",
+      "path": "/workspaces/{}/agent-definitions/{}/notes/{}",
+      "state": "removed_on_server",
+      "pending_in": null,
+      "sdk_symbols": [
+        "mammoth.api.agent_definitions.AgentDefinitionsAPI.notes_delete"
+      ],
+      "commands": [
+        "agent.memory.remove"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/workspaces/{}/agent-definitions/{}/publish",
+      "state": "removed_on_server",
+      "pending_in": null,
+      "sdk_symbols": [
+        "mammoth.api.agent_definitions.AgentDefinitionsAPI.publish"
+      ],
+      "commands": [
+        "agent.publish"
+      ]
+    },
+    {
       "method": "POST",
       "path": "/workspaces/{}/dataviews/compare",
       "state": "pending_server_release",
@@ -245,10 +473,19 @@
     }
   ],
   "commands_without_route": [
+    "agent.access.set",
+    "agent.charter.get",
+    "agent.charter.set",
+    "agent.projects.set",
     "agent.run.extend",
     "agent.run.pause",
     "agent.run.resume",
     "agent.run.stop",
+    "agent.scratch.clear",
+    "agent.scratch.get",
+    "agent.scratch.list",
+    "agent.scratch.set",
+    "agent.team.set",
     "billing.invoice.list",
     "calc",
     "dataset.find",
@@ -258,40 +495,14 @@
     "log.path",
     "log.tail",
     "project.check",
-    "project.ensure",
     "project.get",
-    "project.memory.add",
     "project.memory.list",
-    "project.memory.remove",
     "project.needs-attention",
     "resolve",
     "skill.agents-md.install",
     "skill.show",
     "view.explore-panel.get",
-    "view.explore-panel.set",
-    "view.export.azure-blob",
-    "view.export.bigquery",
-    "view.export.dataset",
-    "view.export.elasticsearch",
-    "view.export.email",
-    "view.export.ftp",
-    "view.export.live-link",
-    "view.export.managed-s3",
-    "view.export.mssql",
-    "view.export.mysql",
-    "view.export.onedrive",
-    "view.export.postgres",
-    "view.export.powerbi",
-    "view.export.redshift",
-    "view.export.rest",
-    "view.export.sftp",
-    "view.export.sharepoint",
-    "view.export.tableau",
     "view.pipeline.items-all",
-    "workspace.invite.delete",
-    "workspace.invite.resend",
-    "workspace.invite.revoke",
-    "workspace.invite.update-role",
     "workspace.user.get"
   ],
   "rows": [
@@ -4588,6 +4799,7 @@
       "sdk_symbol": "mammoth.api.projects.ProjectsAPI.list",
       "bound_commands": [
         "auth.status",
+        "project.ensure",
         "project.list"
       ],
       "mapping_state": "cli_and_sdk_mapped",
@@ -7552,6 +7764,8 @@
       "schema_id": "project.update",
       "sdk_symbol": "mammoth.api.projects.ProjectsAPI.update",
       "bound_commands": [
+        "project.memory.add",
+        "project.memory.remove",
         "project.update"
       ],
       "mapping_state": "cli_and_sdk_mapped",
@@ -7749,6 +7963,7 @@
       "schema_id": "view.update",
       "sdk_symbol": "mammoth.api.dataviews.DataviewsAPI.update",
       "bound_commands": [
+        "view.explore-panel.set",
         "view.transform.rename-columns",
         "view.transform.sort",
         "view.update"
@@ -8446,6 +8661,10 @@
       "schema_id": "workspace.user.update-batch",
       "sdk_symbol": "mammoth.api.workspaces.WorkspacesAPI.user_update_batch",
       "bound_commands": [
+        "workspace.invite.delete",
+        "workspace.invite.resend",
+        "workspace.invite.revoke",
+        "workspace.invite.update-role",
         "workspace.user.update-batch"
       ],
       "mapping_state": "cli_and_sdk_mapped",
@@ -11005,7 +11224,8 @@
       "schema_id": "project.create",
       "sdk_symbol": "mammoth.api.projects.ProjectsAPI.create",
       "bound_commands": [
-        "project.create"
+        "project.create",
+        "project.ensure"
       ],
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
@@ -11710,8 +11930,26 @@
       "schema_id": "view.export.create",
       "sdk_symbol": "mammoth.api.exports.ExportsAPI.create",
       "bound_commands": [
+        "view.export.azure-blob",
+        "view.export.bigquery",
         "view.export.create",
-        "view.export.csv"
+        "view.export.csv",
+        "view.export.dataset",
+        "view.export.elasticsearch",
+        "view.export.email",
+        "view.export.ftp",
+        "view.export.live-link",
+        "view.export.managed-s3",
+        "view.export.mssql",
+        "view.export.mysql",
+        "view.export.onedrive",
+        "view.export.postgres",
+        "view.export.powerbi",
+        "view.export.redshift",
+        "view.export.rest",
+        "view.export.sftp",
+        "view.export.sharepoint",
+        "view.export.tableau"
       ],
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,

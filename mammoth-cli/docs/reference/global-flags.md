@@ -25,6 +25,7 @@ schema get COMMAND.ID`.
 | `--yes`, `-y` | Confirm a mutation without prompting. |
 | `--confirm TARGET` | Exact target name required for high-impact actions. |
 | `--allow-empty` | Add a keep filter that matches no row; without it the dry run fails. |
+| `--standing` | Stage a step that changes no row today (a filter on a clean column) as a rule for future data; without it the dry run fails `no_op` and a real run returns `no_change`. |
 
 ## Choosing an output format
 

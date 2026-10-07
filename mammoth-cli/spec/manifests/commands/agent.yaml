@@ -1,10 +1,57 @@
 manifest_schema_version: 1
 commands:
+- command_id: agent.access.set
+  command_path: agent access set
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - UpdateAgentDefinition
+  positionals:
+  - name: agent_key
+    type: str
+    required: true
+    metavar: AGENT_KEY
+    falls_back_to_field: null
+    help: Key identifying the agent.
+  options: []
+  sdk_symbol: mammoth.api.agent_definitions.AgentDefinitionsAPI.update
+  sdk_conversion: Call mammoth.api.agent_definitions.AgentDefinitionsAPI.update with validated request
+    fields.
+  request_model: AgentAccessSetRequest
+  result_model: AgentAccessSetResult
+  mutation_class: benign_mutation
+  edits_target: true
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: null
+  live_exemption_reason: Live coverage runs on the test server once the backend release carries agent
+    definitions.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth agent access set AGENT_KEY --help
+  agent_example: 'mammoth agent access set sample --input ''{"role": "member", "propose": true}'''
+  unit_tests:
+  - UT-AGENT-ACCESS-SET
+  contract_tests:
+  - CT-AGENT-ACCESS-SET-HUMAN
+  - CT-AGENT-ACCESS-SET-JSON
+  - CT-AGENT-ACCESS-SET-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Writes. Sets the built-in role (see agent roles) and, when given, propose (the
+    agent proposes changes for approval instead of making them). Admin or owner only. Input: role (required),
+    propose.'
+  reviewed_by: primary
+  no_readback: returns the changed definition itself
 - command_id: agent.action.delete
   command_path: agent action delete
   disposition: command
   alias_of: null
-  operation_ids: []
+  operation_ids:
+  - DeleteAgentSessionAction
   positionals:
   - name: action_id
     type: str
@@ -81,6 +128,187 @@ commands:
     state after the write). Read it before agent action delete. Needs --session SESSION_ID; an embedded
     chat supplies it.'
   reviewed_by: primary
+- command_id: agent.charter.get
+  command_path: agent charter get
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetAgentDefinition
+  positionals:
+  - name: agent_key
+    type: str
+    required: true
+    metavar: AGENT_KEY
+    falls_back_to_field: null
+    help: Key identifying the agent.
+  options: []
+  sdk_symbol: mammoth.api.agent_definitions.AgentDefinitionsAPI.get
+  sdk_conversion: Call mammoth.api.agent_definitions.AgentDefinitionsAPI.get with validated request fields.
+  request_model: AgentCharterGetRequest
+  result_model: AgentCharterGetResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: null
+  live_exemption_reason: Live coverage runs on the test server once the backend release carries agent
+    definitions.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth agent charter get AGENT_KEY --help
+  agent_example: mammoth agent charter get sample
+  unit_tests:
+  - UT-AGENT-CHARTER-GET
+  contract_tests:
+  - CT-AGENT-CHARTER-GET-HUMAN
+  - CT-AGENT-CHARTER-GET-JSON
+  - CT-AGENT-CHARTER-GET-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Read-only. Prints the charter text and its version.
+  reviewed_by: primary
+- command_id: agent.charter.restore
+  command_path: agent charter restore
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - RestoreAgentDefinitionCharter
+  positionals:
+  - name: agent_key
+    type: str
+    required: true
+    metavar: AGENT_KEY
+    falls_back_to_field: null
+    help: Key identifying the agent.
+  - name: version
+    type: int
+    required: true
+    metavar: VERSION
+    falls_back_to_field: null
+    help: Charter version to restore (from agent charter versions).
+  options: []
+  sdk_symbol: mammoth.api.agent_definitions.AgentDefinitionsAPI.charter_restore
+  sdk_conversion: Call mammoth.api.agent_definitions.AgentDefinitionsAPI.charter_restore with validated
+    request fields.
+  request_model: AgentCharterRestoreRequest
+  result_model: AgentCharterRestoreResult
+  mutation_class: benign_mutation
+  edits_target: true
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: null
+  live_exemption_reason: Live coverage runs on the test server once the backend release carries agent
+    definitions.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth agent charter restore AGENT_KEY VERSION --help
+  agent_example: mammoth agent charter restore sample 123
+  unit_tests:
+  - UT-AGENT-CHARTER-RESTORE
+  contract_tests:
+  - CT-AGENT-CHARTER-RESTORE-HUMAN
+  - CT-AGENT-CHARTER-RESTORE-JSON
+  - CT-AGENT-CHARTER-RESTORE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Writes. Restores an older charter as a new version (the old versions stay). Versions
+    come from agent charter versions.
+  reviewed_by: primary
+  no_readback: returns the changed definition itself
+- command_id: agent.charter.set
+  command_path: agent charter set
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - UpdateAgentDefinition
+  positionals:
+  - name: agent_key
+    type: str
+    required: true
+    metavar: AGENT_KEY
+    falls_back_to_field: null
+    help: Key identifying the agent.
+  options: []
+  sdk_symbol: mammoth.api.agent_definitions.AgentDefinitionsAPI.update
+  sdk_conversion: Call mammoth.api.agent_definitions.AgentDefinitionsAPI.update with validated request
+    fields.
+  request_model: AgentCharterSetRequest
+  result_model: AgentCharterSetResult
+  mutation_class: benign_mutation
+  edits_target: true
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: null
+  live_exemption_reason: Live coverage runs on the test server once the backend release carries agent
+    definitions.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth agent charter set AGENT_KEY --help
+  agent_example: 'mammoth agent charter set sample --input ''{"charter": "Watch weekly margin and report
+    the three biggest drops."}'''
+  unit_tests:
+  - UT-AGENT-CHARTER-SET
+  contract_tests:
+  - CT-AGENT-CHARTER-SET-HUMAN
+  - CT-AGENT-CHARTER-SET-JSON
+  - CT-AGENT-CHARTER-SET-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Writes. Replaces the charter; the new text becomes a new charter version, and a
+    published agent needs a new proof run (agent goldens run) before it can be published again. Input:
+    charter (required).'
+  reviewed_by: primary
+  no_readback: returns the changed definition itself
+- command_id: agent.charter.versions
+  command_path: agent charter versions
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - ListAgentDefinitionCharterVersions
+  positionals:
+  - name: agent_key
+    type: str
+    required: true
+    metavar: AGENT_KEY
+    falls_back_to_field: null
+    help: Key identifying the agent.
+  options: []
+  sdk_symbol: mammoth.api.agent_definitions.AgentDefinitionsAPI.charter_versions
+  sdk_conversion: Call mammoth.api.agent_definitions.AgentDefinitionsAPI.charter_versions with validated
+    request fields.
+  request_model: AgentCharterVersionsRequest
+  result_model: AgentCharterVersionsResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: null
+  live_exemption_reason: Live coverage runs on the test server once the backend release carries agent
+    definitions.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth agent charter versions AGENT_KEY --help
+  agent_example: mammoth agent charter versions sample
+  unit_tests:
+  - UT-AGENT-CHARTER-VERSIONS
+  contract_tests:
+  - CT-AGENT-CHARTER-VERSIONS-HUMAN
+  - CT-AGENT-CHARTER-VERSIONS-JSON
+  - CT-AGENT-CHARTER-VERSIONS-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Read-only. The last 10 charter versions, newest first.
+  reviewed_by: primary
 - command_id: agent.chat
   command_path: agent chat
   disposition: command
@@ -121,11 +349,773 @@ commands:
     command: agent.session.list
     ids: {}
     kind: object
+- command_id: agent.create
+  command_path: agent create
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - CreateAgentDefinition
+  positionals:
+  - name: key
+    type: str
+    required: true
+    metavar: KEY
+    falls_back_to_field: null
+    help: Key identifying the resource.
+  options: []
+  sdk_symbol: mammoth.api.agent_definitions.AgentDefinitionsAPI.create
+  sdk_conversion: Call mammoth.api.agent_definitions.AgentDefinitionsAPI.create with validated request
+    fields.
+  request_model: AgentCreateRequest
+  result_model: AgentCreateResult
+  mutation_class: benign_mutation
+  edits_target: false
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: null
+  live_exemption_reason: Live coverage runs on the test server once the backend release carries agent
+    definitions.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth agent create KEY --help
+  agent_example: 'mammoth agent create Status --input ''{"name": "Revenue report"}'''
+  unit_tests:
+  - UT-AGENT-CREATE
+  contract_tests:
+  - CT-AGENT-CREATE-HUMAN
+  - CT-AGENT-CREATE-JSON
+  - CT-AGENT-CREATE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Writes. Creates a draft agent. KEY is a slug (lowercase letters, digits, - and
+    _, 2 to 63 characters) that is unique in the workspace; built-in agent names are reserved. Input:
+    name (required), description, charter, role, propose, project_ids, team. Add goldens, run the proof
+    (agent goldens run), then agent publish.'
+  reviewed_by: primary
+  no_readback: returns the changed definition itself
+- command_id: agent.delete
+  command_path: agent delete
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - DeleteAgentDefinition
+  positionals:
+  - name: agent_key
+    type: str
+    required: true
+    metavar: AGENT_KEY
+    falls_back_to_field: null
+    help: Key identifying the agent.
+  options: []
+  sdk_symbol: mammoth.api.agent_definitions.AgentDefinitionsAPI.delete
+  sdk_conversion: Call mammoth.api.agent_definitions.AgentDefinitionsAPI.delete with validated request
+    fields.
+  request_model: AgentDeleteRequest
+  result_model: AgentDeleteResult
+  mutation_class: destructive
+  edits_target: true
+  confirmation: prompt_or_yes
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: null
+  live_exemption_reason: Live coverage runs on the test server once the backend release carries agent
+    definitions.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth agent delete AGENT_KEY --help
+  agent_example: mammoth agent delete sample
+  unit_tests:
+  - UT-AGENT-DELETE
+  contract_tests:
+  - CT-AGENT-DELETE-HUMAN
+  - CT-AGENT-DELETE-JSON
+  - CT-AGENT-DELETE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Writes. Deletes the agent. Its key stays reserved in the workspace. Prompt or --yes.
+  reviewed_by: primary
+  readback:
+    command: agent.list
+    ids: {}
+    kind: object
+- command_id: agent.disable
+  command_path: agent disable
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - DisableAgentDefinition
+  positionals:
+  - name: agent_key
+    type: str
+    required: true
+    metavar: AGENT_KEY
+    falls_back_to_field: null
+    help: Key identifying the agent.
+  options: []
+  sdk_symbol: mammoth.api.agent_definitions.AgentDefinitionsAPI.disable
+  sdk_conversion: Call mammoth.api.agent_definitions.AgentDefinitionsAPI.disable with validated request
+    fields.
+  request_model: AgentDisableRequest
+  result_model: AgentDisableResult
+  mutation_class: benign_mutation
+  edits_target: true
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: null
+  live_exemption_reason: Live coverage runs on the test server once the backend release carries agent
+    definitions.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth agent disable AGENT_KEY --help
+  agent_example: mammoth agent disable sample
+  unit_tests:
+  - UT-AGENT-DISABLE
+  contract_tests:
+  - CT-AGENT-DISABLE-HUMAN
+  - CT-AGENT-DISABLE-JSON
+  - CT-AGENT-DISABLE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Writes. Takes a published agent out of use; chat no longer finds it. Publish it
+    again to bring it back.
+  reviewed_by: primary
+  no_readback: returns the changed definition itself
+- command_id: agent.feedback.list
+  command_path: agent feedback list
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - ListAgentDefinitionFeedback
+  positionals:
+  - name: agent_key
+    type: str
+    required: true
+    metavar: AGENT_KEY
+    falls_back_to_field: null
+    help: Key identifying the agent.
+  options: []
+  sdk_symbol: mammoth.api.agent_definitions.AgentDefinitionsAPI.feedback_list
+  sdk_conversion: Call mammoth.api.agent_definitions.AgentDefinitionsAPI.feedback_list with validated
+    request fields.
+  request_model: AgentFeedbackListRequest
+  result_model: AgentFeedbackListResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: null
+  live_exemption_reason: Live coverage runs on the test server once the backend release carries agent
+    definitions.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth agent feedback list AGENT_KEY --help
+  agent_example: mammoth agent feedback list sample
+  unit_tests:
+  - UT-AGENT-FEEDBACK-LIST
+  contract_tests:
+  - CT-AGENT-FEEDBACK-LIST-HUMAN
+  - CT-AGENT-FEEDBACK-LIST-JSON
+  - CT-AGENT-FEEDBACK-LIST-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Read-only. The thumbs up and down people gave this agent's answers, with the question
+    and answer.
+  reviewed_by: primary
+- command_id: agent.get
+  command_path: agent get
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetAgentDefinition
+  positionals:
+  - name: agent_key
+    type: str
+    required: true
+    metavar: AGENT_KEY
+    falls_back_to_field: null
+    help: Key identifying the agent.
+  options: []
+  sdk_symbol: mammoth.api.agent_definitions.AgentDefinitionsAPI.get
+  sdk_conversion: Call mammoth.api.agent_definitions.AgentDefinitionsAPI.get with validated request fields.
+  request_model: AgentGetRequest
+  result_model: AgentGetResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: null
+  live_exemption_reason: Live coverage runs on the test server once the backend release carries agent
+    definitions.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth agent get AGENT_KEY --help
+  agent_example: mammoth agent get sample
+  unit_tests:
+  - UT-AGENT-GET
+  contract_tests:
+  - CT-AGENT-GET-HUMAN
+  - CT-AGENT-GET-JSON
+  - CT-AGENT-GET-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Read-only. One agent definition: status, charter version, role, projects, team
+    and proof result.'
+  reviewed_by: primary
+- command_id: agent.goldens.add
+  command_path: agent goldens add
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - AddAgentDefinitionGolden
+  positionals:
+  - name: agent_key
+    type: str
+    required: true
+    metavar: AGENT_KEY
+    falls_back_to_field: null
+    help: Key identifying the agent.
+  options: []
+  sdk_symbol: mammoth.api.agent_definitions.AgentDefinitionsAPI.goldens_add
+  sdk_conversion: Call mammoth.api.agent_definitions.AgentDefinitionsAPI.goldens_add with validated request
+    fields.
+  request_model: AgentGoldensAddRequest
+  result_model: AgentGoldensAddResult
+  mutation_class: benign_mutation
+  edits_target: true
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: null
+  live_exemption_reason: Live coverage runs on the test server once the backend release carries agent
+    definitions.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth agent goldens add AGENT_KEY --help
+  agent_example: 'mammoth agent goldens add sample --input ''{"question": "Summarize revenue by region",
+    "expected": "sample"}'''
+  unit_tests:
+  - UT-AGENT-GOLDENS-ADD
+  contract_tests:
+  - CT-AGENT-GOLDENS-ADD-HUMAN
+  - CT-AGENT-GOLDENS-ADD-JSON
+  - CT-AGENT-GOLDENS-ADD-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Writes. Adds one golden: a question and what a right answer says (50 goldens at
+    most). Input: question, expected.'
+  reviewed_by: primary
+  no_readback: returns the new golden itself
+- command_id: agent.goldens.list
+  command_path: agent goldens list
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - ListAgentDefinitionGoldens
+  positionals:
+  - name: agent_key
+    type: str
+    required: true
+    metavar: AGENT_KEY
+    falls_back_to_field: null
+    help: Key identifying the agent.
+  options: []
+  sdk_symbol: mammoth.api.agent_definitions.AgentDefinitionsAPI.goldens_list
+  sdk_conversion: Call mammoth.api.agent_definitions.AgentDefinitionsAPI.goldens_list with validated request
+    fields.
+  request_model: AgentGoldensListRequest
+  result_model: AgentGoldensListResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: null
+  live_exemption_reason: Live coverage runs on the test server once the backend release carries agent
+    definitions.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth agent goldens list AGENT_KEY --help
+  agent_example: mammoth agent goldens list sample
+  unit_tests:
+  - UT-AGENT-GOLDENS-LIST
+  contract_tests:
+  - CT-AGENT-GOLDENS-LIST-HUMAN
+  - CT-AGENT-GOLDENS-LIST-JSON
+  - CT-AGENT-GOLDENS-LIST-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Read-only. The goldens with the last answer, verdict and reason of each.
+  reviewed_by: primary
+- command_id: agent.goldens.remove
+  command_path: agent goldens remove
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - DeleteAgentDefinitionGolden
+  positionals:
+  - name: agent_key
+    type: str
+    required: true
+    metavar: AGENT_KEY
+    falls_back_to_field: null
+    help: Key identifying the agent.
+  - name: golden_id
+    type: int
+    required: true
+    metavar: GOLDEN_ID
+    falls_back_to_field: null
+    help: ID of the golden.
+  options: []
+  sdk_symbol: mammoth.api.agent_definitions.AgentDefinitionsAPI.goldens_remove
+  sdk_conversion: Call mammoth.api.agent_definitions.AgentDefinitionsAPI.goldens_remove with validated
+    request fields.
+  request_model: AgentGoldensRemoveRequest
+  result_model: AgentGoldensRemoveResult
+  mutation_class: destructive
+  edits_target: true
+  confirmation: prompt_or_yes
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: null
+  live_exemption_reason: Live coverage runs on the test server once the backend release carries agent
+    definitions.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth agent goldens remove AGENT_KEY GOLDEN_ID --help
+  agent_example: mammoth agent goldens remove sample 123
+  unit_tests:
+  - UT-AGENT-GOLDENS-REMOVE
+  contract_tests:
+  - CT-AGENT-GOLDENS-REMOVE-HUMAN
+  - CT-AGENT-GOLDENS-REMOVE-JSON
+  - CT-AGENT-GOLDENS-REMOVE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Writes. Removes one golden by id (from agent goldens list). Prompt or --yes.
+  reviewed_by: primary
+  readback:
+    command: agent.goldens.list
+    ids:
+      agent_key: positional.0
+    kind: object
+- command_id: agent.goldens.run
+  command_path: agent goldens run
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - RunAgentDefinitionGoldens
+  positionals:
+  - name: agent_key
+    type: str
+    required: true
+    metavar: AGENT_KEY
+    falls_back_to_field: null
+    help: Key identifying the agent.
+  options: []
+  sdk_symbol: mammoth.api.agent_definitions.AgentDefinitionsAPI.goldens_run
+  sdk_conversion: Call mammoth.api.agent_definitions.AgentDefinitionsAPI.goldens_run with validated request
+    fields.
+  request_model: AgentGoldensRunRequest
+  result_model: AgentGoldensRunResult
+  mutation_class: benign_mutation
+  edits_target: true
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: null
+  live_exemption_reason: Live coverage runs on the test server once the backend release carries agent
+    definitions.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth agent goldens run AGENT_KEY --help
+  agent_example: mammoth agent goldens run sample
+  unit_tests:
+  - UT-AGENT-GOLDENS-RUN
+  contract_tests:
+  - CT-AGENT-GOLDENS-RUN-HUMAN
+  - CT-AGENT-GOLDENS-RUN-JSON
+  - CT-AGENT-GOLDENS-RUN-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Writes. Starts the proof run: the agent answers every golden under its current
+    charter. It returns at once; poll agent goldens status until the status is finished. Starting again
+    for the same charter returns the same run.'
+  reviewed_by: primary
+  no_readback: returns the proof run itself; read its progress with agent goldens status
+- command_id: agent.goldens.status
+  command_path: agent goldens status
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetAgentDefinitionProofRun
+  positionals:
+  - name: agent_key
+    type: str
+    required: true
+    metavar: AGENT_KEY
+    falls_back_to_field: null
+    help: Key identifying the agent.
+  options: []
+  sdk_symbol: mammoth.api.agent_definitions.AgentDefinitionsAPI.goldens_status
+  sdk_conversion: Call mammoth.api.agent_definitions.AgentDefinitionsAPI.goldens_status with validated
+    request fields.
+  request_model: AgentGoldensStatusRequest
+  result_model: AgentGoldensStatusResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: null
+  live_exemption_reason: Live coverage runs on the test server once the backend release carries agent
+    definitions.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth agent goldens status AGENT_KEY --help
+  agent_example: mammoth agent goldens status sample
+  unit_tests:
+  - UT-AGENT-GOLDENS-STATUS
+  contract_tests:
+  - CT-AGENT-GOLDENS-STATUS-HUMAN
+  - CT-AGENT-GOLDENS-STATUS-JSON
+  - CT-AGENT-GOLDENS-STATUS-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Read-only. The latest proof run: status (queued, running, finished, failed), passed
+    and total. Failed goldens are shown, not blocking: agent publish needs a finished run for the current
+    charter.'
+  reviewed_by: primary
+- command_id: agent.list
+  command_path: agent list
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - ListAgentDefinitions
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.agent_definitions.AgentDefinitionsAPI.list
+  sdk_conversion: Call mammoth.api.agent_definitions.AgentDefinitionsAPI.list with validated request fields.
+  request_model: AgentListRequest
+  result_model: AgentListResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: null
+  live_exemption_reason: Live coverage runs on the test server once the backend release carries agent
+    definitions.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth agent list --help
+  agent_example: mammoth agent list
+  unit_tests:
+  - UT-AGENT-LIST
+  contract_tests:
+  - CT-AGENT-LIST-HUMAN
+  - CT-AGENT-LIST-JSON
+  - CT-AGENT-LIST-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Read-only. The workspace''s agent definitions (deleted ones are left out). Input:
+    status (draft, published, disabled).'
+  reviewed_by: primary
+- command_id: agent.memory.add
+  command_path: agent memory add
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - UpsertAgentDefinitionNote
+  positionals:
+  - name: agent_key
+    type: str
+    required: true
+    metavar: AGENT_KEY
+    falls_back_to_field: null
+    help: Key identifying the agent.
+  options: []
+  sdk_symbol: mammoth.api.agent_definitions.AgentDefinitionsAPI.notes_upsert
+  sdk_conversion: Call mammoth.api.agent_definitions.AgentDefinitionsAPI.notes_upsert with validated request
+    fields.
+  request_model: AgentMemoryAddRequest
+  result_model: AgentMemoryAddResult
+  mutation_class: benign_mutation
+  edits_target: true
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: null
+  live_exemption_reason: Live coverage runs on the test server once the backend release carries agent
+    definitions.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth agent memory add AGENT_KEY --help
+  agent_example: 'mammoth agent memory add sample --input ''{"name": "Revenue report", "content": "sample"}'''
+  unit_tests:
+  - UT-AGENT-MEMORY-ADD
+  contract_tests:
+  - CT-AGENT-MEMORY-ADD-HUMAN
+  - CT-AGENT-MEMORY-ADD-JSON
+  - CT-AGENT-MEMORY-ADD-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Writes. Saves a fact the agent learned in a project, shared with every user of
+    the agent; the same name replaces the fact. Needs --project (one the agent is assigned to). Input:
+    name, content.'
+  reviewed_by: primary
+  no_readback: returns the saved note itself
+- command_id: agent.memory.list
+  command_path: agent memory list
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - ListAgentDefinitionNotes
+  positionals:
+  - name: agent_key
+    type: str
+    required: true
+    metavar: AGENT_KEY
+    falls_back_to_field: null
+    help: Key identifying the agent.
+  options: []
+  sdk_symbol: mammoth.api.agent_definitions.AgentDefinitionsAPI.notes_list
+  sdk_conversion: Call mammoth.api.agent_definitions.AgentDefinitionsAPI.notes_list with validated request
+    fields.
+  request_model: AgentMemoryListRequest
+  result_model: AgentMemoryListResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: null
+  live_exemption_reason: Live coverage runs on the test server once the backend release carries agent
+    definitions.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth agent memory list AGENT_KEY --help
+  agent_example: mammoth agent memory list sample
+  unit_tests:
+  - UT-AGENT-MEMORY-LIST
+  contract_tests:
+  - CT-AGENT-MEMORY-LIST-HUMAN
+  - CT-AGENT-MEMORY-LIST-JSON
+  - CT-AGENT-MEMORY-LIST-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Read-only. The facts the agent learned in the project (--project).
+  reviewed_by: primary
+- command_id: agent.memory.remove
+  command_path: agent memory remove
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - DeleteAgentDefinitionNote
+  positionals:
+  - name: agent_key
+    type: str
+    required: true
+    metavar: AGENT_KEY
+    falls_back_to_field: null
+    help: Key identifying the agent.
+  - name: note_id
+    type: int
+    required: true
+    metavar: NOTE_ID
+    falls_back_to_field: null
+    help: ID of the note.
+  options: []
+  sdk_symbol: mammoth.api.agent_definitions.AgentDefinitionsAPI.notes_delete
+  sdk_conversion: Call mammoth.api.agent_definitions.AgentDefinitionsAPI.notes_delete with validated request
+    fields.
+  request_model: AgentMemoryRemoveRequest
+  result_model: AgentMemoryRemoveResult
+  mutation_class: destructive
+  edits_target: true
+  confirmation: prompt_or_yes
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: null
+  live_exemption_reason: Live coverage runs on the test server once the backend release carries agent
+    definitions.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth agent memory remove AGENT_KEY NOTE_ID --help
+  agent_example: mammoth agent memory remove sample 123
+  unit_tests:
+  - UT-AGENT-MEMORY-REMOVE
+  contract_tests:
+  - CT-AGENT-MEMORY-REMOVE-HUMAN
+  - CT-AGENT-MEMORY-REMOVE-JSON
+  - CT-AGENT-MEMORY-REMOVE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Writes. Removes one fact by note id (from agent memory list). Prompt or --yes.
+  reviewed_by: primary
+  readback:
+    command: agent.memory.list
+    ids:
+      agent_key: positional.0
+    kind: object
+- command_id: agent.projects.set
+  command_path: agent projects set
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - UpdateAgentDefinition
+  positionals:
+  - name: agent_key
+    type: str
+    required: true
+    metavar: AGENT_KEY
+    falls_back_to_field: null
+    help: Key identifying the agent.
+  options: []
+  sdk_symbol: mammoth.api.agent_definitions.AgentDefinitionsAPI.update
+  sdk_conversion: Call mammoth.api.agent_definitions.AgentDefinitionsAPI.update with validated request
+    fields.
+  request_model: AgentProjectsSetRequest
+  result_model: AgentProjectsSetResult
+  mutation_class: benign_mutation
+  edits_target: true
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: null
+  live_exemption_reason: Live coverage runs on the test server once the backend release carries agent
+    definitions.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth agent projects set AGENT_KEY --help
+  agent_example: 'mammoth agent projects set sample --input ''{"project_ids": [12, 15]}'''
+  unit_tests:
+  - UT-AGENT-PROJECTS-SET
+  contract_tests:
+  - CT-AGENT-PROJECTS-SET-HUMAN
+  - CT-AGENT-PROJECTS-SET-JSON
+  - CT-AGENT-PROJECTS-SET-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Writes. Replaces the list of projects the agent may work in. Input: project_ids
+    (required).'
+  reviewed_by: primary
+  no_readback: returns the changed definition itself
+- command_id: agent.publish
+  command_path: agent publish
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - PublishAgentDefinition
+  positionals:
+  - name: agent_key
+    type: str
+    required: true
+    metavar: AGENT_KEY
+    falls_back_to_field: null
+    help: Key identifying the agent.
+  options: []
+  sdk_symbol: mammoth.api.agent_definitions.AgentDefinitionsAPI.publish
+  sdk_conversion: Call mammoth.api.agent_definitions.AgentDefinitionsAPI.publish with validated request
+    fields.
+  request_model: AgentPublishRequest
+  result_model: AgentPublishResult
+  mutation_class: benign_mutation
+  edits_target: true
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: null
+  live_exemption_reason: Live coverage runs on the test server once the backend release carries agent
+    definitions.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth agent publish AGENT_KEY --help
+  agent_example: mammoth agent publish sample
+  unit_tests:
+  - UT-AGENT-PUBLISH
+  contract_tests:
+  - CT-AGENT-PUBLISH-HUMAN
+  - CT-AGENT-PUBLISH-JSON
+  - CT-AGENT-PUBLISH-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Writes. Makes the agent available in chat. Refused (proof_run_required) unless
+    a finished proof run exists for the current charter version: run agent goldens run, then agent goldens
+    status.'
+  reviewed_by: primary
+  no_readback: returns the changed definition itself
+- command_id: agent.roles
+  command_path: agent roles
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - ListAgentDefinitionRoles
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.agent_definitions.AgentDefinitionsAPI.roles
+  sdk_conversion: Call mammoth.api.agent_definitions.AgentDefinitionsAPI.roles with validated request
+    fields.
+  request_model: AgentRolesRequest
+  result_model: AgentRolesResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: null
+  live_exemption_reason: Live coverage runs on the test server once the backend release carries agent
+    definitions.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth agent roles --help
+  agent_example: mammoth agent roles
+  unit_tests:
+  - UT-AGENT-ROLES
+  contract_tests:
+  - CT-AGENT-ROLES-HUMAN
+  - CT-AGENT-ROLES-JSON
+  - CT-AGENT-ROLES-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Read-only. The built-in roles an agent can take, with their permissions.
+  reviewed_by: primary
 - command_id: agent.run.extend
   command_path: agent run extend
   disposition: command
   alias_of: null
-  operation_ids: []
+  operation_ids:
+  - ExtendAgentRun
   positionals:
   - name: run_id
     type: str
@@ -204,7 +1194,8 @@ commands:
   command_path: agent run pause
   disposition: command
   alias_of: null
-  operation_ids: []
+  operation_ids:
+  - PauseAgentRun
   positionals:
   - name: run_id
     type: str
@@ -248,7 +1239,8 @@ commands:
   command_path: agent run resume
   disposition: command
   alias_of: null
-  operation_ids: []
+  operation_ids:
+  - ResumeAgentRun
   positionals:
   - name: run_id
     type: str
@@ -328,7 +1320,8 @@ commands:
   command_path: agent run stop
   disposition: command
   alias_of: null
-  operation_ids: []
+  operation_ids:
+  - StopAgentRun
   positionals:
   - name: run_id
     type: str
@@ -372,7 +1365,8 @@ commands:
   command_path: agent run units set
   disposition: command
   alias_of: null
-  operation_ids: []
+  operation_ids:
+  - RegisterAgentRunUnits
   positionals:
   - name: run_id
     type: str
@@ -414,6 +1408,204 @@ commands:
     command: agent.run.status
     ids: {}
     kind: object
+- command_id: agent.scratch.clear
+  command_path: agent scratch clear
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - ListAgentDefinitionNotes
+  - DeleteAgentDefinitionNote
+  positionals:
+  - name: agent_key
+    type: str
+    required: true
+    metavar: AGENT_KEY
+    falls_back_to_field: null
+    help: Key identifying the agent.
+  - name: name
+    type: str
+    required: true
+    metavar: NAME
+    falls_back_to_field: null
+    help: Name of the working note (from agent scratch list).
+  options: []
+  sdk_symbol: mammoth.api.agent_definitions.AgentDefinitionsAPI.notes_delete
+  sdk_conversion: Call mammoth.api.agent_definitions.AgentDefinitionsAPI.notes_delete with validated request
+    fields.
+  request_model: AgentScratchClearRequest
+  result_model: AgentScratchClearResult
+  mutation_class: destructive
+  edits_target: true
+  confirmation: prompt_or_yes
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: null
+  live_exemption_reason: Live coverage runs on the test server once the backend release carries agent
+    definitions.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth agent scratch clear AGENT_KEY NAME --help
+  agent_example: mammoth agent scratch clear sample 'Revenue report'
+  unit_tests:
+  - UT-AGENT-SCRATCH-CLEAR
+  contract_tests:
+  - CT-AGENT-SCRATCH-CLEAR-HUMAN
+  - CT-AGENT-SCRATCH-CLEAR-JSON
+  - CT-AGENT-SCRATCH-CLEAR-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Writes. Deletes the working note NAME in the project (--project). Prompt or --yes.
+  reviewed_by: primary
+  readback:
+    command: agent.scratch.list
+    ids:
+      agent_key: positional.0
+    kind: object
+- command_id: agent.scratch.get
+  command_path: agent scratch get
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - ListAgentDefinitionNotes
+  positionals:
+  - name: agent_key
+    type: str
+    required: true
+    metavar: AGENT_KEY
+    falls_back_to_field: null
+    help: Key identifying the agent.
+  - name: name
+    type: str
+    required: true
+    metavar: NAME
+    falls_back_to_field: null
+    help: Name of the working note (from agent scratch list).
+  options: []
+  sdk_symbol: mammoth.api.agent_definitions.AgentDefinitionsAPI.notes_list
+  sdk_conversion: Call mammoth.api.agent_definitions.AgentDefinitionsAPI.notes_list with validated request
+    fields.
+  request_model: AgentScratchGetRequest
+  result_model: AgentScratchGetResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: null
+  live_exemption_reason: Live coverage runs on the test server once the backend release carries agent
+    definitions.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth agent scratch get AGENT_KEY NAME --help
+  agent_example: mammoth agent scratch get sample 'Revenue report'
+  unit_tests:
+  - UT-AGENT-SCRATCH-GET
+  contract_tests:
+  - CT-AGENT-SCRATCH-GET-HUMAN
+  - CT-AGENT-SCRATCH-GET-JSON
+  - CT-AGENT-SCRATCH-GET-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Read-only. The working note NAME in the project (--project); not found when there
+    is none.
+  reviewed_by: primary
+- command_id: agent.scratch.list
+  command_path: agent scratch list
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - ListAgentDefinitionNotes
+  positionals:
+  - name: agent_key
+    type: str
+    required: true
+    metavar: AGENT_KEY
+    falls_back_to_field: null
+    help: Key identifying the agent.
+  options: []
+  sdk_symbol: mammoth.api.agent_definitions.AgentDefinitionsAPI.notes_list
+  sdk_conversion: Call mammoth.api.agent_definitions.AgentDefinitionsAPI.notes_list with validated request
+    fields.
+  request_model: AgentScratchListRequest
+  result_model: AgentScratchListResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: null
+  live_exemption_reason: Live coverage runs on the test server once the backend release carries agent
+    definitions.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth agent scratch list AGENT_KEY --help
+  agent_example: mammoth agent scratch list sample
+  unit_tests:
+  - UT-AGENT-SCRATCH-LIST
+  contract_tests:
+  - CT-AGENT-SCRATCH-LIST-HUMAN
+  - CT-AGENT-SCRATCH-LIST-JSON
+  - CT-AGENT-SCRATCH-LIST-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Read-only. The agent's working notes in the project (--project).
+  reviewed_by: primary
+- command_id: agent.scratch.set
+  command_path: agent scratch set
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - UpsertAgentDefinitionNote
+  positionals:
+  - name: agent_key
+    type: str
+    required: true
+    metavar: AGENT_KEY
+    falls_back_to_field: null
+    help: Key identifying the agent.
+  - name: name
+    type: str
+    required: true
+    metavar: NAME
+    falls_back_to_field: null
+    help: Name of the working note (from agent scratch list).
+  options: []
+  sdk_symbol: mammoth.api.agent_definitions.AgentDefinitionsAPI.notes_upsert
+  sdk_conversion: Call mammoth.api.agent_definitions.AgentDefinitionsAPI.notes_upsert with validated request
+    fields.
+  request_model: AgentScratchSetRequest
+  result_model: AgentScratchSetResult
+  mutation_class: benign_mutation
+  edits_target: true
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: null
+  live_exemption_reason: Live coverage runs on the test server once the backend release carries agent
+    definitions.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth agent scratch set AGENT_KEY NAME --help
+  agent_example: 'mammoth agent scratch set sample ''Revenue report'' --input ''{"content": "sample"}'''
+  unit_tests:
+  - UT-AGENT-SCRATCH-SET
+  contract_tests:
+  - CT-AGENT-SCRATCH-SET-HUMAN
+  - CT-AGENT-SCRATCH-SET-JSON
+  - CT-AGENT-SCRATCH-SET-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Writes. Saves the working note NAME in the project (--project); the same name replaces
+    it. Working notes are for the agent''s current work, not learned facts (those go to agent memory add).
+    Input: content.'
+  reviewed_by: primary
+  no_readback: returns the saved note itself
 - command_id: agent.session.delete
   command_path: agent session delete
   disposition: command
@@ -578,11 +1770,59 @@ commands:
     command: agent.session.list
     ids: {}
     kind: object
+- command_id: agent.team.set
+  command_path: agent team set
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - UpdateAgentDefinition
+  positionals:
+  - name: agent_key
+    type: str
+    required: true
+    metavar: AGENT_KEY
+    falls_back_to_field: null
+    help: Key identifying the agent.
+  options: []
+  sdk_symbol: mammoth.api.agent_definitions.AgentDefinitionsAPI.update
+  sdk_conversion: Call mammoth.api.agent_definitions.AgentDefinitionsAPI.update with validated request
+    fields.
+  request_model: AgentTeamSetRequest
+  result_model: AgentTeamSetResult
+  mutation_class: benign_mutation
+  edits_target: true
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: null
+  live_exemption_reason: Live coverage runs on the test server once the backend release carries agent
+    definitions.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth agent team set AGENT_KEY --help
+  agent_example: 'mammoth agent team set sample --input ''{"team": {"agents": ["margin-watch"], "max_rounds":
+    4}}'''
+  unit_tests:
+  - UT-AGENT-TEAM-SET
+  contract_tests:
+  - CT-AGENT-TEAM-SET-HUMAN
+  - CT-AGENT-TEAM-SET-JSON
+  - CT-AGENT-TEAM-SET-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Writes. Replaces the team, up to 5 published agents of this workspace this agent
+    may ask, and max_rounds (1 to 6) of asking. Input team (required) is an object with the fields agents
+    (a list of keys) and max_rounds.
+  reviewed_by: primary
+  no_readback: returns the changed definition itself
 - command_id: agent.turn.cancel
   command_path: agent turn cancel
   disposition: command
   alias_of: null
-  operation_ids: []
+  operation_ids:
+  - CancelAgentTurn
   positionals:
   - name: turn_id
     type: str
@@ -622,3 +1862,48 @@ commands:
   undo_test: null
   known_restrictions: 'Writes. Stops one turn of the chat session: no further model or tool call starts, the call running is cut, and the turn ends with a stopped event that lists the writes already made. Only the session''s owner may; a repeat, or a call after the turn ended, answers the turn''s state (stopping, stopped or ended). Needs --session SESSION_ID; an embedded chat supplies it.'
   reviewed_by: primary
+- command_id: agent.update
+  command_path: agent update
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - UpdateAgentDefinition
+  positionals:
+  - name: agent_key
+    type: str
+    required: true
+    metavar: AGENT_KEY
+    falls_back_to_field: null
+    help: Key identifying the agent.
+  options: []
+  sdk_symbol: mammoth.api.agent_definitions.AgentDefinitionsAPI.update
+  sdk_conversion: Call mammoth.api.agent_definitions.AgentDefinitionsAPI.update with validated request
+    fields.
+  request_model: AgentUpdateRequest
+  result_model: AgentUpdateResult
+  mutation_class: benign_mutation
+  edits_target: true
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: null
+  live_exemption_reason: Live coverage runs on the test server once the backend release carries agent
+    definitions.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth agent update AGENT_KEY --help
+  agent_example: 'mammoth agent update sample --input ''{"name": "Margin watch"}'''
+  unit_tests:
+  - UT-AGENT-UPDATE
+  contract_tests:
+  - CT-AGENT-UPDATE-HUMAN
+  - CT-AGENT-UPDATE-JSON
+  - CT-AGENT-UPDATE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Writes. Changes the fields given: name, description, charter, role, propose, project_ids,
+    team. A new charter becomes a new charter version.'
+  reviewed_by: primary
+  no_readback: returns the changed definition itself
