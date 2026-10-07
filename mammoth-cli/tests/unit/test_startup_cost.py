@@ -62,7 +62,42 @@ def test_cache_key_changes_when_a_manifest_changes(
     loader.clear_cache()
     loader.load_commands()
     names = {p.name for p in cache_dir.glob("commands-*.json")}
-    assert before.name in names and len(names) == 2
+    assert before.name not in names and len(names) == 1
+
+
+def test_a_cache_miss_prunes_older_files_of_this_install_only(cache_dir: Path) -> None:
+    import os
+    import time
+
+    loader.load_commands()
+    (current,) = cache_dir.glob("commands-*.json")
+    install = current.name.split("-")[1]
+    mine_stale = cache_dir / f"commands-{install}-{'0' * 24}.json"
+    other_install = cache_dir / f"commands-ffffffff-{'1' * 24}.json"
+    legacy_fresh = cache_dir / f"commands-{'2' * 24}.json"
+    legacy_cold = cache_dir / f"commands-{'3' * 24}.json"
+    for path in (mine_stale, other_install, legacy_fresh, legacy_cold):
+        path.write_text("[]")
+    month_ago = time.time() - 30 * 24 * 3600
+    os.utime(legacy_cold, (month_ago, month_ago))
+
+    current.unlink()  # force a miss, which writes and then prunes
+    loader.clear_cache()
+    loader.load_commands()
+
+    left = {p.name for p in cache_dir.glob("commands-*.json")}
+    assert mine_stale.name not in left and legacy_cold.name not in left
+    assert other_install.name in left and legacy_fresh.name in left
+    assert len(left) == 3
+
+
+def test_a_cache_hit_prunes_nothing(cache_dir: Path) -> None:
+    loader.load_commands()
+    stray = cache_dir / f"commands-ffffffff-{'4' * 24}.json"
+    stray.write_text("[]")
+    loader.clear_cache()
+    loader.load_commands()
+    assert stray.exists()
 
 
 def test_corrupt_cache_falls_back_to_yaml(cache_dir: Path) -> None:
