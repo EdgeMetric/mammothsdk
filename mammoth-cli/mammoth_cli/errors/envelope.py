@@ -109,7 +109,6 @@ ERROR_SUMMARIES: dict[str, str] = {
     "duplicate_input_key": _S_BAD_INPUT,
     "empties_view": "No row matches, so this step would leave the view empty.",
     "empty_search_query": "The search was empty.",
-    "error_code": _S_INTERNAL,
     "export_already_exists": "An export with that name already exists.",
     "incomplete_environment_auth": _S_SIGN_IN,
     "input_file_not_found": _S_NOT_FOUND,
