@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "task": "C2/S5 exports-connectors",
-  "route_count": 60,
+  "route_count": 61,
   "families": {
     "view_export": 27,
     "connector": 22,
@@ -1956,6 +1956,97 @@
         "method": "POST",
         "path": "/workspaces/{workspace}/projects/{project}/datasets/{dataset_id}/dataviews/{view_id}/pipeline/exports",
         "body": "json:ftp target+controls",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s5_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "view.export.live-link",
+      "sdk_symbol": "mammoth.view.ViewExport.to_live_link",
+      "field_destinations": {
+        "view_id": {
+          "source": "positional",
+          "destination": "view_id",
+          "wire": "path_or_context"
+        },
+        "dataset_id": {
+          "source": "input",
+          "destination": "dataset_id",
+          "wire": "sdk_argument"
+        },
+        "file_name": {
+          "source": "input",
+          "destination": "file_name",
+          "wire": "sdk_argument"
+        },
+        "file_type": {
+          "source": "input",
+          "destination": "file_type",
+          "wire": "sdk_argument"
+        },
+        "include_hidden": {
+          "source": "input",
+          "destination": "include_hidden",
+          "wire": "sdk_argument"
+        },
+        "timeout": {
+          "source": "input",
+          "destination": "timeout",
+          "wire": "sdk_argument"
+        },
+        "trigger_type": {
+          "source": "input",
+          "destination": "trigger_type",
+          "wire": "sdk_argument"
+        },
+        "run_immediately": {
+          "source": "input",
+          "destination": "run_immediately",
+          "wire": "sdk_argument"
+        },
+        "validate_only": {
+          "source": "input",
+          "destination": "validate_only",
+          "wire": "sdk_argument"
+        },
+        "end_of_pipeline": {
+          "source": "input",
+          "destination": "end_of_pipeline",
+          "wire": "sdk_argument"
+        },
+        "additional_properties": {
+          "source": "input",
+          "destination": "additional_properties",
+          "wire": "sdk_argument"
+        },
+        "condition": {
+          "source": "input",
+          "destination": "condition",
+          "wire": "sdk_argument"
+        }
+      },
+      "context_destinations": {
+        "project_id": "resolved project where applicable",
+        "workspace_id": "resolved auth workspace"
+      },
+      "wire": {
+        "method": "POST",
+        "path": "/workspaces/{workspace}/projects/{project}/datasets/{dataset_id}/dataviews/{view_id}/pipeline/exports",
+        "body": "json:s3 target+controls",
         "checks": [
           "method",
           "path",

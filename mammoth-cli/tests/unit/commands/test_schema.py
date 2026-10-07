@@ -281,6 +281,7 @@ _EXPORT_DESTINATION_NATURAL_QUERIES = {
     "view.export.elasticsearch": "export to elastic search",
     "view.export.email": "email the export",
     "view.export.ftp": "export via ftp",
+    "view.export.live-link": "add a live link",
     "view.export.managed-s3": "export to s3 bucket",
     "view.export.mssql": "export to sql server",
     "view.export.mysql": "export to mysql database",

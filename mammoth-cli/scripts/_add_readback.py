@@ -199,6 +199,9 @@ DECLARATIONS["view.export.csv"] = _no(
 DECLARATIONS["view.export.managed-s3"] = _no(
     "S3 delivery is external; no CLI read command can confirm the object landed in the bucket"
 )
+DECLARATIONS["view.export.live-link"] = _no(
+    "the live link is external; the command returns its URL, and no CLI read command can open it"
+)
 DECLARATIONS["view.export.publish-db"] = _no(
     "ODBC publish-to-database has no CLI read command to confirm the external table was written"
 )

@@ -275,6 +275,7 @@
     "view.export.elasticsearch",
     "view.export.email",
     "view.export.ftp",
+    "view.export.live-link",
     "view.export.managed-s3",
     "view.export.mssql",
     "view.export.mysql",

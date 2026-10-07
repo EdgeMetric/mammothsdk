@@ -838,6 +838,7 @@ HANDLERS: dict[str, Handler] = {
     "view.export.update": view_cmd.view_export_update,
     "view.export.dataset": view_cmd.view_export_specialized,
     "view.export.managed-s3": view_cmd.view_export_specialized,
+    "view.export.live-link": view_cmd.view_export_specialized,
     "view.export.azure-blob": view_cmd.view_export_specialized,
     "view.export.bigquery": view_cmd.view_export_specialized,
     "view.export.elasticsearch": view_cmd.view_export_specialized,

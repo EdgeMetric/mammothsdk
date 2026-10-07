@@ -2665,6 +2665,54 @@ commands:
   known_restrictions: 'Alias `view export s3`. Destination policy is dynamic: start_or_wait/benign_mutation/live_disposable_project
     for download-only, otherwise external_effect/live_dedicated_external_fixture.'
   reviewed_by: primary
+- command_id: view.export.live-link
+  command_path: view export live-link
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - name: view_id
+    type: int
+    required: true
+    metavar: VIEW_ID
+    falls_back_to_field: null
+    help: ID of the view to export.
+  - name: dataset_id
+    type: int
+    required: false
+    metavar: DATASET_ID
+    falls_back_to_field: dataset_id
+    help: 'Exact parent dataset ID. Required for this command: pass it here or as the ''dataset_id'' input
+      field; only read commands may omit it and discover the parent.'
+  options: []
+  sdk_symbol: mammoth.view.ViewExport.to_live_link
+  sdk_conversion: Call mammoth.view.ViewExport.to_live_link with validated request fields.
+  request_model: ViewExportLiveLinkRequest
+  result_model: ViewExportLiveLinkResult
+  mutation_class: external_effect
+  edits_target: false
+  confirmation: yes_always
+  wait_policy: always_wait
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  no_readback: the live link is external; the command returns its URL, and no CLI read command can open it
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view export live-link VIEW_ID --help
+  agent_example: 'mammoth view export live-link 123 123 --input ''{"file_name": "report_share.csv"}'''
+  unit_tests:
+  - UT-VIEW-EXPORT-LIVE-LINK
+  contract_tests:
+  - CT-VIEW-EXPORT-LIVE-LINK-HUMAN
+  - CT-VIEW-EXPORT-LIVE-LINK-JSON
+  - CT-VIEW-EXPORT-LIVE-LINK-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Needs a plan that includes live links; the backend's refusal is returned as is.
+  reviewed_by: primary
 - command_id: view.export.mssql
   command_path: view export mssql
   disposition: command
