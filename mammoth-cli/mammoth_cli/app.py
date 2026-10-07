@@ -198,6 +198,25 @@ def _output_mode_from_argv(argv: Sequence[str] | None) -> str:
     return resolve_output(mode, is_tty=sys.stdout.isatty())
 
 
+def _unknown_flag_in(error: Any, tokens: Sequence[str]) -> str | None:
+    """The first ``--flag`` in ``tokens`` that neither a global option nor the command declares."""
+    known, _valued = _global_option_flags()
+    command = getattr(getattr(error, "ctx", None), "command", None)
+    known = known | {
+        flag
+        for param in getattr(command, "params", [])
+        for flag in (*param.opts, *param.secondary_opts)
+    }
+    return next(
+        (
+            token.split("=", 1)[0]
+            for token in tokens
+            if token.startswith("--") and token.split("=", 1)[0] not in known
+        ),
+        None,
+    )
+
+
 @cache
 def _global_option_flags() -> tuple[frozenset[str], frozenset[str]]:
     """Return every global option spelling, and the subset that takes a value.
@@ -321,6 +340,8 @@ class _LeafGroup(TyperGroup):
     """
 
     def parse_args(self, ctx: Any, args: list[str]) -> list[str]:
+        # Click's parser consumes ``args`` in place; keep the tokens for the second parse.
+        tokens = list(args)
         super().parse_args(ctx, args)
         protected = list(getattr(ctx, "_protected_args", ()) or ())
         if protected and protected[0] not in self.commands:
@@ -329,7 +350,7 @@ class _LeafGroup(TyperGroup):
             # plain command with interspersed options, keeping the bare tokens
             # as the callback's positional arguments.
             ctx.allow_interspersed_args = True
-            ctx.args = _ClickCommand.parse_args(self, ctx, list(args))
+            ctx.args = _ClickCommand.parse_args(self, ctx, tokens)
             # Click's own attribute for the pending subcommand token (Click
             # >= 8.2 made it private); not an SDK member.
             setattr(ctx, "_protected_args", [])  # noqa: B010
@@ -460,6 +481,15 @@ class _EnvelopeGroup(TyperGroup):
             or bool(re.match(r"^Missing argument '[^']+'\.", error_message))
         )
         report = None if is_missing_parameter else _usage_error_report(error, tokens)
+        if is_missing_parameter and (option := _unknown_flag_in(error, tokens)):
+            # A misspelt flag is the first thing to fix, ahead of a missing argument.
+            report = CliError(
+                code="unknown_option",
+                message=f"Unknown option '{option}'.",
+                exit_status=EXIT_USAGE,
+                hint="Check the command schema with 'mammoth schema get'.",
+                details={"option": option},
+            )
         if _output_mode_from_argv(argv) in MACHINE_OUTPUTS:
             if report is None:
                 missing = is_missing_parameter
@@ -489,21 +519,7 @@ class _EnvelopeGroup(TyperGroup):
                     # unknown option token as the positional value. Only
                     # classify an argv flag that is not a known global option;
                     # a known option's malformed value remains usage_error.
-                    known, _valued = _global_option_flags()
-                    command = getattr(getattr(error, "ctx", None), "command", None)
-                    known = known | {
-                        flag
-                        for param in getattr(command, "params", [])
-                        for flag in (*param.opts, *param.secondary_opts)
-                    }
-                    option = next(
-                        (
-                            token.split("=", 1)[0]
-                            for token in tokens
-                            if token.startswith("--") and token.split("=", 1)[0] not in known
-                        ),
-                        None,
-                    )
+                    option = _unknown_flag_in(error, tokens)
                     if option:
                         report = CliError(
                             code="unknown_option",
