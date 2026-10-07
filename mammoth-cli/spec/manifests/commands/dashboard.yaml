@@ -91,7 +91,8 @@ commands:
   command_path: dashboard archive
   disposition: command
   alias_of: null
-  operation_ids: []
+  operation_ids:
+  - ArchiveDashboard
   positionals:
   - name: dashboard_id
     type: int
@@ -798,7 +799,8 @@ commands:
   command_path: dashboard create-blank
   disposition: command
   alias_of: null
-  operation_ids: []
+  operation_ids:
+  - CreateBlankDashboard
   positionals: []
   options: []
   sdk_symbol: mammoth.api.dashboards.DashboardsAPI.create_blank
@@ -1920,7 +1922,8 @@ commands:
   command_path: dashboard pages add
   disposition: command
   alias_of: null
-  operation_ids: []
+  operation_ids:
+  - AddPages
   positionals:
   - name: dashboard_id
     type: int
@@ -3182,7 +3185,8 @@ commands:
   command_path: dashboard figure add
   disposition: command
   alias_of: null
-  operation_ids: []
+  operation_ids:
+  - AppendFigure
   positionals:
   - name: dashboard_id
     type: int
@@ -5294,7 +5298,8 @@ commands:
   command_path: dashboard template thumbnail set
   disposition: command
   alias_of: null
-  operation_ids: []
+  operation_ids:
+  - DashboardV3PutTemplateThumbnail
   positionals:
   - name: template_id
     type: str
@@ -5345,7 +5350,8 @@ commands:
   command_path: dashboard template thumbnail clear
   disposition: command
   alias_of: null
-  operation_ids: []
+  operation_ids:
+  - DashboardV3DeleteTemplateThumbnail
   positionals:
   - name: template_id
     type: str
@@ -5637,7 +5643,8 @@ commands:
   command_path: dashboard audience digest set
   disposition: command
   alias_of: null
-  operation_ids: []
+  operation_ids:
+  - SetAudienceDigest
   positionals:
   - name: dashboard_id
     type: int
@@ -5767,7 +5774,8 @@ commands:
   command_path: dashboard context apply
   disposition: command
   alias_of: null
-  operation_ids: []
+  operation_ids:
+  - ApplyContextReview
   positionals:
   - name: dashboard_id
     type: int

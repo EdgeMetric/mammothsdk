@@ -222,7 +222,9 @@ commands:
   command_path: project ensure
   disposition: command
   alias_of: null
-  operation_ids: []
+  operation_ids:
+  - GetProject
+  - CreateProject
   positionals:
   - name: name
     type: str
@@ -466,7 +468,8 @@ commands:
   command_path: project memory add
   disposition: command
   alias_of: null
-  operation_ids: []
+  operation_ids:
+  - UpdateProject
   positionals:
   - name: project_id
     type: int
@@ -511,7 +514,8 @@ commands:
   command_path: project memory remove
   disposition: command
   alias_of: null
-  operation_ids: []
+  operation_ids:
+  - UpdateProject
   positionals:
   - name: project_id
     type: int
@@ -719,7 +723,8 @@ commands:
   command_path: project resource-dependencies update
   disposition: command
   alias_of: null
-  operation_ids: []
+  operation_ids:
+  - BulkModify
   positionals:
   - name: project_id
     type: int
@@ -1028,7 +1033,8 @@ commands:
   command_path: project copy
   disposition: command
   alias_of: null
-  operation_ids: []
+  operation_ids:
+  - CopyProject
   positionals:
   - name: project_id
     type: int
