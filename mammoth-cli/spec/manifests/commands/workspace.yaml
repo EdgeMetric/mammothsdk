@@ -274,7 +274,8 @@ commands:
   command_path: workspace invite delete
   disposition: command
   alias_of: null
-  operation_ids: []
+  operation_ids:
+  - UpdateUserToWorkspace
   positionals: []
   options: []
   sdk_symbol: mammoth.api.workspaces.WorkspacesAPI.invite_delete
@@ -350,7 +351,8 @@ commands:
   command_path: workspace invite resend
   disposition: command
   alias_of: null
-  operation_ids: []
+  operation_ids:
+  - UpdateUserToWorkspace
   positionals: []
   options: []
   sdk_symbol: mammoth.api.workspaces.WorkspacesAPI.invite_resend
@@ -388,7 +390,8 @@ commands:
   command_path: workspace invite revoke
   disposition: command
   alias_of: null
-  operation_ids: []
+  operation_ids:
+  - UpdateUserToWorkspace
   positionals: []
   options: []
   sdk_symbol: mammoth.api.workspaces.WorkspacesAPI.invite_revoke
@@ -426,7 +429,8 @@ commands:
   command_path: workspace invite update-role
   disposition: command
   alias_of: null
-  operation_ids: []
+  operation_ids:
+  - UpdateUserToWorkspace
   positionals: []
   options: []
   sdk_symbol: mammoth.api.workspaces.WorkspacesAPI.invite_role_update

@@ -88,7 +88,8 @@ commands:
   command_path: dataset broken-rows resolve
   disposition: command
   alias_of: null
-  operation_ids: []
+  operation_ids:
+  - PatchUnstructuredRows
   positionals:
   - name: dataset_id
     type: int

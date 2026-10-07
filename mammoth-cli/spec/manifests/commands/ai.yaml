@@ -85,7 +85,8 @@ commands:
   command_path: ai retention condition
   disposition: command
   alias_of: null
-  operation_ids: []
+  operation_ids:
+  - RetentionCondition
   positionals:
   - name: dataset_id
     type: int
