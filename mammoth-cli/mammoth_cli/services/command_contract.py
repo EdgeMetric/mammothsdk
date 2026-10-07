@@ -575,7 +575,7 @@ S2_COMMANDS = frozenset(
 # its boundary so discovery and strict admission show the reviewed destination
 # shape instead of an unbounded dictionary.
 _SPECIAL_EXPORT_REQUIRED: dict[str, frozenset[str]] = {
-    "view.export.dataset": frozenset({"dataset_name"}),
+    "view.export.dataset": frozenset(),
     "view.export.managed-s3": frozenset(),
     "view.export.live-link": frozenset(),
     "view.export.azure-blob": frozenset(

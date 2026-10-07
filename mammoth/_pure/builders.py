@@ -1008,6 +1008,9 @@ def build_crosstab_params(
     }
 
 
+# The name the web app's Branch out form pre-fills (mm-frontend branch-out.vue
+# ``newDsName``); used when a branch-out is requested without a name.
+DEFAULT_BRANCH_OUT_DATASET_NAME = "Result Dataset"
 ERR_BRANCHOUT_DATASET_NAME = "Branch-out `dataset_name` must be a non-empty string."
 ERR_BRANCHOUT_APPEND_NO_TARGET = (
     "APPEND mode needs an existing `target_ds_id` to append into; "
@@ -1020,7 +1023,7 @@ ERR_BRANCHOUT_CROSS_PROJECT_USER = (
 
 
 def build_branch_out_params(
-    dataset_name: str,
+    dataset_name: str | None = None,
     target_ds_id: int | None = None,
     save_as_mode: SaveAsDatasetMode = SaveAsDatasetMode.REPLACE,
     column_mapping: dict[str, str] | None = None,
@@ -1035,7 +1038,8 @@ def build_branch_out_params(
     Branch-out copies the view's data into a Mammoth dataset via the same
     internal-dataset export handler as crosstab, but with NO transform.
 
-    ``target_ds_id`` None creates a new dataset named *dataset_name*; an int
+    ``target_ds_id`` None creates a new dataset named *dataset_name* (``DEFAULT_BRANCH_OUT_DATASET_NAME`` when
+    None); an int
     replaces/appends into that existing dataset (per *save_as_mode*).
     ``target_project_id`` sends the dataset into another project (the web
     app's cross-project branch-out): the backend then requires ``USER_ID``
@@ -1047,9 +1051,11 @@ def build_branch_out_params(
     non-dict transform as "plain copy".
 
     Raises:
-        MammothValidationError: If *dataset_name* is empty, or APPEND mode is
+        MammothValidationError: If *dataset_name* is an empty string, or APPEND mode is
             requested without a *target_ds_id* to append into.
     """
+    if dataset_name is None:
+        dataset_name = DEFAULT_BRANCH_OUT_DATASET_NAME
     if not dataset_name:
         raise MammothValidationError(ERR_BRANCHOUT_DATASET_NAME)
     if save_as_mode is SaveAsDatasetMode.APPEND and target_ds_id is None:
