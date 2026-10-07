@@ -125,7 +125,7 @@ CASES = [
     },
     {
         "route": "browse.folder",
-        "argv": ["browse", "folder", "811"],
+        "argv": ["browse", "folder", "1811"],
         "project": 41,
         "input": {"level": 4, "fields": "C2_FOLDER_FIELDS"},
         "api": BrowseAPI,
@@ -447,7 +447,7 @@ CASES = [
     },
     {
         "route": "folder.get",
-        "argv": ["folder", "get", "902"],
+        "argv": ["folder", "get", "1902"],
         "project": 41,
         "input": {"fields": "__full"},
         "api": FoldersAPI,
@@ -462,7 +462,7 @@ CASES = [
         "project": 41,
         "input": {
             "fields": "__full",
-            "folder_ids": [903, 904],
+            "folder_ids": [1903, 1904],
             "names": ["C2_A", "C2_B"],
             "statuses": ["active"],
             "created_at": "2026-01-01",
@@ -509,7 +509,7 @@ CASES = [
     },
     {
         "route": "folder.update",
-        "argv": ["folder", "update", "905"],
+        "argv": ["folder", "update", "1905"],
         "project": 41,
         "input": {"name": "C2_FOLDER_RENAMED"},
         "api": FoldersAPI,
@@ -1058,6 +1058,22 @@ def _argv(case: dict[str, Any]) -> list[str]:
 # refuse before any request leaves the process.
 CLI_UNSUPPORTED_ROUTES = frozenset({"addon.list"})
 
+#: The project's folders as the backend lists them: each folder is shown by 1000 + its own id.
+_FOLDER_SCAN = {"folders": [{"id": n, "resource_id": 1000 + n} for n in (811, 902, 903, 904, 905)]}
+
+
+def _on_folder_routes(api: Any, case: dict[str, Any]) -> None:
+    """Answer the CLI's one project folder listing (limit 100) ahead of the case's own route."""
+    if case["route"].startswith("folder.") or case["route"] == "browse.folder":
+        api.on(
+            "GET",
+            r"/projects/41/folders$",
+            handler=lambda req: (
+                200,
+                _FOLDER_SCAN if req.query.get("limit") == ["100"] else case["response"],
+            ),
+        )
+
 
 @pytest.mark.parametrize("case", CASES, ids=lambda c: c["route"])
 def test_cli_to_recording_transport_uses_independent_wire(
@@ -1072,6 +1088,7 @@ def test_cli_to_recording_transport_uses_independent_wire(
         assert api.requests == []
         return
     method, path, kwargs = case["wire"]
+    _on_folder_routes(api, case)
     _drive(api.on(method, "/api/v2" + path, body=case["response"]))
     result = make_runner().invoke(_argv(case))
     assert result.exit_code == 0, result.output
@@ -1194,6 +1211,7 @@ def test_batch02_folder_update_adapter_mutation_fails_wire_oracle(
 
     _drive(monkeypatch.setattr(service, "call", misroute_name))
     _drive(monkeypatch.setattr(factory, "build_service", lambda *args, **kwargs: service))
+    _on_folder_routes(api, case)
     _drive(api.on("PATCH", "/api/v2/workspaces/4/projects/41/folders/905", body=case["response"]))
     result = make_runner().invoke(_argv(case))
     assert result.exit_code in (0, 1, 2), result.output

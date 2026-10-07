@@ -25,6 +25,16 @@ _TRASH = "mammoth.api.folders.FoldersAPI.trash"
 _DELETE = "mammoth.api.folders.FoldersAPI.delete"
 _BULK_DELETE = "mammoth.api.folders.FoldersAPI.bulk_delete"
 
+# Folder 7 is shown as 707 (its resource id, the id the app opens it by); 1 and 2 likewise.
+_PROJECT_FOLDERS = {
+    "folders": [
+        {"id": 1, "resource_id": 701},
+        {"id": 2, "resource_id": 702},
+        {"id": 7, "resource_id": 707},
+    ]
+}
+_LISTED = (_LIST, {"project_id": 180, "limit": 100, "offset": 0})
+
 
 @pytest.fixture(autouse=True)
 def _env_auth(isolated_cli_config: Path) -> None:
@@ -48,9 +58,9 @@ def test_find_without_project_searches_every_visible_project(
     fake_service.projects = [{"id": 1, "name": "P1"}, {"id": 2, "name": "P2"}]
     fake_service.responses[_SEARCH] = {
         "resources": [
-            {"project_id": 1, "object_id": 20, "name": "Reports 2024"},
-            {"project_id": 2, "object_id": 20, "name": "Reports 2024"},
-            {"project_id": 9, "object_id": 30, "name": "Reports not mine"},
+            {"project_id": 1, "resource_id": 20, "name": "Reports 2024"},
+            {"project_id": 2, "resource_id": 20, "name": "Reports 2024"},
+            {"project_id": 9, "resource_id": 30, "name": "Reports not mine"},
         ],
         "has_more": False,
     }
@@ -79,7 +89,7 @@ def test_find_without_project_searches_every_visible_project(
 def test_find_with_project_restricts_to_one_project(fake_service: FakeMammothService) -> None:
     fake_service.projects = [{"id": 1, "name": "P1"}, {"id": 42, "name": "P42"}]
     fake_service.responses[_RESOURCES] = {
-        "resources": [{"project_id": 42, "object_id": 20, "name": "Reports 2024"}],
+        "resources": [{"project_id": 42, "resource_id": 20, "name": "Reports 2024"}],
         "has_more": False,
     }
     result, meta = folder_cmd.folder_find(_inv("folder.find", project=42, extra_args=["report"]))
@@ -95,7 +105,7 @@ def test_find_with_project_restricts_to_one_project(fake_service: FakeMammothSer
 def test_find_says_when_the_search_was_cut(fake_service: FakeMammothService) -> None:
     fake_service.projects = [{"id": 1, "name": "P1"}]
     fake_service.responses[_SEARCH] = {
-        "resources": [{"project_id": 1, "object_id": 20, "name": "Reports"}],
+        "resources": [{"project_id": 1, "resource_id": 20, "name": "Reports"}],
         "has_more": True,
         "next_cursor": "c",
     }
@@ -121,8 +131,9 @@ def test_list_passes_project_and_optional_limit(
 
 
 def test_get_uses_positional_folder_id(fake_service: FakeMammothService) -> None:
-    folder_cmd.folder_get(_inv("folder.get", project=180, extra_args=["7"]))
-    assert fake_service.call_log == [(_GET, {"folder_id": 7, "project_id": 180})]
+    fake_service.responses[_LIST] = _PROJECT_FOLDERS
+    folder_cmd.folder_get(_inv("folder.get", project=180, extra_args=["707"]))
+    assert fake_service.call_log == [_LISTED, (_GET, {"folder_id": 7, "project_id": 180})]
 
 
 def test_get_without_folder_id_is_usage_error(fake_service: FakeMammothService) -> None:
@@ -159,10 +170,14 @@ def test_update_requires_name(fake_service: FakeMammothService) -> None:
 def test_update_forwards_name(fake_service: FakeMammothService, tmp_path: Path) -> None:
     doc = tmp_path / "in.json"
     doc.write_text(json.dumps({"name": "New"}), encoding="utf-8")
+    fake_service.responses[_LIST] = _PROJECT_FOLDERS
     folder_cmd.folder_update(
-        _inv("folder.update", project=180, extra_args=["7"], input_file=str(doc))
+        _inv("folder.update", project=180, extra_args=["707"], input_file=str(doc))
     )
-    assert fake_service.call_log == [(_UPDATE, {"folder_id": 7, "name": "New", "project_id": 180})]
+    assert fake_service.call_log == [
+        _LISTED,
+        (_UPDATE, {"folder_id": 7, "name": "New", "project_id": 180}),
+    ]
 
 
 def test_move_requires_resource_ids(fake_service: FakeMammothService) -> None:
@@ -174,13 +189,14 @@ def test_move_requires_resource_ids(fake_service: FakeMammothService) -> None:
 def test_move_forwards_targets(fake_service: FakeMammothService, tmp_path: Path) -> None:
     doc = tmp_path / "in.json"
     doc.write_text(
-        json.dumps({"resource_ids": ["a"], "target_folder_resource_id": "t"}), encoding="utf-8"
+        json.dumps({"resource_ids": ["a"], "target_folder_resource_id": 707}), encoding="utf-8"
     )
+    fake_service.responses[_LIST] = _PROJECT_FOLDERS
     folder_cmd.folder_move(_inv("folder.move", project=180, input_file=str(doc)))
-    # The target is looked up among the project's folders first; "t" is none, so it is sent as is.
+    # The target is the folder's shown id; the backend is sent the folder's own id.
     assert fake_service.call_log[-1] == (
         _MOVE,
-        {"resource_ids": ["a"], "project_id": 180, "target_folder_resource_id": "t"},
+        {"resource_ids": ["a"], "project_id": 180, "target_folder_resource_id": 7},
     )
 
 
@@ -197,8 +213,9 @@ def test_move_requires_one_of_resource_dataset_view_ids(
 
 
 def test_trash_passes_folder_and_project(fake_service: FakeMammothService) -> None:
-    folder_cmd.folder_trash(_inv("folder.trash", project=180, extra_args=["7"]))
-    assert fake_service.call_log == [(_TRASH, {"folder_id": 7, "project_id": 180})]
+    fake_service.responses[_LIST] = _PROJECT_FOLDERS
+    folder_cmd.folder_trash(_inv("folder.trash", project=180, extra_args=["707"]))
+    assert fake_service.call_log == [_LISTED, (_TRASH, {"folder_id": 7, "project_id": 180})]
 
 
 def test_delete_blocked_without_confirmation(fake_service: FakeMammothService) -> None:
@@ -211,8 +228,9 @@ def test_delete_blocked_without_confirmation(fake_service: FakeMammothService) -
 
 
 def test_delete_proceeds_with_yes(fake_service: FakeMammothService) -> None:
-    folder_cmd.folder_delete(_inv("folder.delete", project=180, extra_args=["7"], yes=True))
-    assert fake_service.call_log == [(_DELETE, {"folder_ids": [7], "project_id": 180})]
+    fake_service.responses[_LIST] = _PROJECT_FOLDERS
+    folder_cmd.folder_delete(_inv("folder.delete", project=180, extra_args=["707"], yes=True))
+    assert fake_service.call_log == [_LISTED, (_DELETE, {"folder_ids": [7], "project_id": 180})]
 
 
 def test_bulk_delete_requires_folder_ids(fake_service: FakeMammothService) -> None:
@@ -223,8 +241,12 @@ def test_bulk_delete_requires_folder_ids(fake_service: FakeMammothService) -> No
 
 def test_bulk_delete_proceeds_with_yes(fake_service: FakeMammothService, tmp_path: Path) -> None:
     doc = tmp_path / "in.json"
-    doc.write_text(json.dumps({"folder_ids": [1, 2]}), encoding="utf-8")
+    doc.write_text(json.dumps({"folder_ids": [701, 702]}), encoding="utf-8")
+    fake_service.responses[_LIST] = _PROJECT_FOLDERS
     folder_cmd.folder_bulk_delete(
         _inv("folder.bulk-delete", project=180, input_file=str(doc), yes=True)
     )
-    assert fake_service.call_log == [(_BULK_DELETE, {"folder_ids": [1, 2], "project_id": 180})]
+    assert fake_service.call_log == [
+        _LISTED,
+        (_BULK_DELETE, {"folder_ids": [1, 2], "project_id": 180}),
+    ]
