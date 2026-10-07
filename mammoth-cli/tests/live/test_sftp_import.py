@@ -13,6 +13,7 @@ import json
 import os
 import time
 from collections.abc import Iterator
+from datetime import datetime, timedelta
 
 import pytest
 from live_harness import LiveCli
@@ -43,7 +44,7 @@ def connection(
         *("connector", "connection", "create", "sftp", "--input", str(body), "--yes"),
         project=scratch_project,
     )
-    key = str(created["connection_key"])
+    key = str(created["identity_key"])
     try:
         yield key
     finally:
@@ -82,3 +83,79 @@ def test_a_file_on_the_sftp_server_imports_as_a_dataset(
             *("dataset", "delete", str(dataset), "--yes", "--confirm", str(dataset)),
             project=scratch_project,
         )
+
+
+def test_a_missing_sftp_file_fails_the_create_instead_of_reporting_success(
+    live_cli: LiveCli, scratch_project: int, connection: str
+) -> None:
+    spec = {
+        "ds_creation_type": "cloud",
+        "dataset_spec": {
+            "connector_key": "sftp",
+            "connection_key": connection,
+            "query_properties": {
+                "ds_name": f"sftp-missing-{int(time.time())}",
+                "file_path": "/data/no-such-file.csv",
+            },
+        },
+    }
+
+    error = live_cli.err(
+        *("dataset", "create", "--input", json.dumps(spec), "--yes"), project=scratch_project
+    )
+
+    assert error["code"] == "job_failed", error
+
+
+def test_a_data_pull_file_that_is_not_a_listed_value_names_the_allowed_ones(
+    live_cli: LiveCli, scratch_project: int, connection: str
+) -> None:
+    spec = {
+        "ds_creation_type": "cloud",
+        "dataset_spec": {
+            "connector_key": "sftp",
+            "connection_key": connection,
+            "query_properties": {
+                "ds_name": "sftp-bad-pull",
+                "file_path": os.environ["SFTP_IMPORT_PATH"],
+                "data_pull_file": True,
+            },
+        },
+    }
+
+    error = live_cli.err(
+        *("dataset", "create", "--input", json.dumps(spec), "--yes"), project=scratch_project
+    )
+
+    assert error["code"] == "invalid_argument", error
+    assert "Pull same file" in error["message"], error
+
+
+def test_an_import_scheduled_for_later_reports_scheduled_not_failed(
+    live_cli: LiveCli, scratch_project: int, connection: str
+) -> None:
+    later = (datetime.now() + timedelta(days=2)).isoformat()
+    spec = {
+        "ds_creation_type": "cloud",
+        "dataset_spec": {
+            "connector_key": "sftp",
+            "connection_key": connection,
+            "query_properties": {
+                "ds_name": f"sftp-later-{int(time.time())}",
+                "file_path": os.environ["SFTP_IMPORT_PATH"],
+            },
+            "schedule_properties": {
+                "schedule_type": "period",
+                "first_pull_at": "later",
+                "on_refresh_action": "combine",
+            },
+            "recurrence_info": {"interval": 1, "frequency": "daily", "start_at": later},
+        },
+    }
+
+    created, _ = live_cli.ok(
+        *("dataset", "create", "--input", json.dumps(spec), "--yes"), project=scratch_project
+    )
+
+    assert created["status"] == "scheduled", created
+    assert created["datasource_config_id"], created

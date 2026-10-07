@@ -14,6 +14,9 @@ from typing import Any
 from mammoth_cli.commands.dataset import (
     _require_string_positional,
     _visible_projects,
+    all_projects_requested,
+    elsewhere_note,
+    narrow_to_project,
     search_cut_note,
     search_hits,
 )
@@ -99,10 +102,11 @@ def kinds_note(name: str, rows: list[dict[str, Any]]) -> str:
 def resolve(invocation: Invocation) -> HandlerResult:
     """Say what NAME refers to: a dataset, a view or a project, with ids and projects.
 
-    Read-only. NAME is a case-insensitive substring and the only argument; the
-    command has no options besides the global ``--project``, which only marks
-    each match ``in_project`` (matches elsewhere are always returned). Searches
-    every project the credential can see. Does not require an active project.
+    Read-only. NAME is a case-insensitive substring. Searches every project the
+    credential can see and marks each match ``in_project`` under ``--project``.
+    When the project holds an exact match, only the project's own matches are
+    returned and ``elsewhere`` counts the rest; ``--input '{"all_projects": true}'``
+    returns them all. Does not require an active project.
     """
     name = _require_string_positional(invocation, "name")
     cut = False
@@ -118,7 +122,13 @@ def resolve(invocation: Invocation) -> HandlerResult:
             "project_id": invocation.project,
         }
     rows = resolve_matches(name, projects, hits, invocation.project)
+    dropped = 0
+    if invocation.project is not None and not all_projects_requested(invocation):
+        rows, dropped = narrow_to_project(rows, lambda r: r["exact"])
     result: dict[str, Any] = {"name": name, "matches": rows, "note": kinds_note(name, rows)}
+    if dropped:
+        result["elsewhere"] = dropped
+        result["note"] += " " + elsewhere_note(dropped)
     if cut:
         result["truncated"] = True
         result["note"] += " " + search_cut_note("datasets or views")

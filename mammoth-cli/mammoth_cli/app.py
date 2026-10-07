@@ -1343,7 +1343,7 @@ _ROOT_LEAF_HELP: dict[str, str] = {
     ),
     "resolve": (
         "Say what NAME refers to: a dataset, a view or a project, with ids and projects."
-        "\n\nExample: mammoth resolve uqa-w29-ren"
+        "\n\nExample: mammoth resolve uqa-w29-ren\n\nInput fields: all_projects (bool)"
     ),
     "upgrade": (
         "Upgrade the mammoth CLI to the latest (or a specified) version from PyPI."

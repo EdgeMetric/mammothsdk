@@ -10,14 +10,17 @@ seam to the public SDK method named by the command's reviewed manifest
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from typing import Any, Protocol
 
 from mammoth_cli.errors.envelope import (
     CODE_INVALID_ARGUMENT,
+    CODE_JOB_FAILED,
     CODE_MISSING_ARGUMENT,
     CODE_MISSING_FIELD,
     CODE_SDK_SYMBOL_UNRESOLVED,
     CODE_UNSUPPORTED_CONTRACT,
+    EXIT_API,
     EXIT_USAGE,
     CliError,
 )
@@ -359,6 +362,44 @@ def _tag_scope(matches: list[dict[str, Any]], project_id: int) -> list[dict[str,
     return [{**m, "in_project": m.get("project_id") == project_id} for m in matches]
 
 
+def all_projects_requested(invocation: Invocation) -> bool:
+    """Whether ``--input '{"all_projects": true}'`` asks for matches outside the project."""
+    value = (invocation.load_input() or {}).get("all_projects", False)
+    if not isinstance(value, bool):
+        raise CliError(
+            code=CODE_INVALID_ARGUMENT,
+            message="all_projects must be true or false.",
+            exit_status=EXIT_USAGE,
+        )
+    return value
+
+
+def narrow_to_project(
+    rows: list[dict[str, Any]], is_exact: Callable[[dict[str, Any]], bool]
+) -> tuple[list[dict[str, Any]], int]:
+    """``(rows, dropped)``: only the project's own rows when one of them is an exact match.
+
+    The name already is in the project the call runs under, so the same name in
+    every other project is noise that reads as an ambiguity to ask the user about.
+    Rows must carry ``in_project``. With no exact match in the project, all rows
+    stay: the name may live elsewhere. ``dropped`` counts the rows left out.
+    """
+    own = [r for r in rows if r.get("in_project")]
+    if not any(is_exact(r) for r in own):
+        return rows, 0
+    return own, len(rows) - len(own)
+
+
+def elsewhere_note(dropped: int) -> str:
+    """Says how many matches in other projects were left out, and how to list them."""
+    if not dropped:
+        return ""
+    return (
+        f"{dropped} more match(es) in other projects are not listed: "
+        """--input '{"all_projects": true}' lists them."""
+    )
+
+
 def _find_scoped(
     service: Any,
     needle: str,
@@ -383,15 +424,22 @@ def dataset_find(invocation: Invocation) -> HandlerResult:
     carrying its ``project_id`` and ``project_name``: the in-product agent runs
     every call under the project the user last opened, which is often not the one
     the named dataset is in, so it states where the name is instead of asking the
-    user to switch. Does not require an active project.
+    user to switch. When the project holds an exact match, only the project's own
+    matches are returned and ``elsewhere`` counts the rest; ``--input
+    '{"all_projects": true}'`` returns them all. Does not require an active project.
     """
     name_substring = _require_string_positional(invocation, "name substring")
     needle = name_substring.lower()
+    dropped = 0
     with open_service(invocation) as (service, auth):
         visible = _visible_projects(service)
         cut = False
         if invocation.project is not None:
             matches, projects, cut = _find_scoped(service, needle, visible, invocation.project)
+            if not all_projects_requested(invocation):
+                matches, dropped = narrow_to_project(
+                    matches, lambda m: str(m.get("name", "")).lower() == needle
+                )
         else:
             projects = visible
             matches, cut = _find_by_name(service, needle, visible)
@@ -405,6 +453,9 @@ def dataset_find(invocation: Invocation) -> HandlerResult:
         "projects_searched": len(projects),
     }
     notes = [ambiguity_note(len(matches), name_substring)]
+    if dropped:
+        result["elsewhere"] = dropped
+        notes.append(elsewhere_note(dropped))
     if cut:
         result["truncated"] = True
         notes.append(search_cut_note("datasets"))
@@ -819,6 +870,7 @@ def dataset_create(invocation: Invocation) -> HandlerResult:
     # A clone can land in another project (``dataset_spec.target_project_id``): the
     # name check and the result's scope are that project's, not the active one's.
     landing_project_id = _clone_target_project(ds_creation_type, dataset_spec) or project_id
+    _default_data_pull_file(ds_creation_type, dataset_spec)
     kwargs: dict[str, Any] = {
         "dataset_spec": dataset_spec,
         "ds_creation_type": ds_creation_type,
@@ -869,29 +921,92 @@ def _require_clone_views(ds_creation_type: object, dataset_spec: object) -> None
         )
 
 
+#: The server's ``data_pull_file`` values for a cloud file import; the first is the app default.
+_DATA_PULL_FILE_VALUES = ("Pull same file", "Pull next file based on name pattern")
+
+
+def _default_data_pull_file(ds_creation_type: object, dataset_spec: object) -> None:
+    """Default a cloud file import's ``data_pull_file`` to "Pull same file", as the web app does.
+
+    Raises:
+        CliError: ``invalid_argument`` listing the allowed values when it is not one of them.
+    """
+    if ds_creation_type != "cloud" or not isinstance(dataset_spec, dict):
+        return
+    properties = dataset_spec.get("query_properties")
+    if not isinstance(properties, dict) or not properties.get("file_path"):
+        return
+    pull = properties.setdefault("data_pull_file", _DATA_PULL_FILE_VALUES[0])
+    if pull not in _DATA_PULL_FILE_VALUES:
+        raise CliError(
+            code=CODE_INVALID_ARGUMENT,
+            message="query_properties.data_pull_file must be one of "
+            f"{list(_DATA_PULL_FILE_VALUES)}, got {pull!r}.",
+            exit_status=EXIT_USAGE,
+        )
+
+
 def _created_dataset(handle: Any, settled: Any) -> dict[str, Any]:
     """Shape a create job (handle + settled result) into a labeled result.
 
-    ``wait_if_job`` returns the completed job's inner response, where the new
-    dataset id lives under ``ds_id``. Falls back to the raw job handle when the
-    server returned something unrecognized, so no information is lost.
+    What each creation type settles with: weburl, clone and a single cloud file or
+    database import carry the new dataset id (``ds_id``, ``dataset_id`` or
+    ``datasource_id``); a cloud import deferred to a later start carries
+    ``datasource_config_id`` and reports ``scheduled``; a bulk cloud file import
+    carries ``files_found``/``created``/``failed`` and is returned as the server
+    sent it; a sketch is not a job and answers with the dataset itself. A job that
+    settled with none of these made nothing, so it raises with the server's reason
+    rather than report success.
+
+    Raises:
+        CliError: ``job_failed`` when the settled job made no dataset.
     """
-    job_id = handle.get("job_id") if isinstance(handle, dict) else None
+    if not isinstance(handle, dict) or "job_id" not in handle:
+        return settled if isinstance(settled, dict) else {"job_id": None}
+    job_id = handle["job_id"]
     ds_id = None
+    config_id = None
     if isinstance(settled, dict):
-        ds_id = settled.get("ds_id") or settled.get("dataset_id")
-        nested = settled.get("response")
-        if ds_id is None and isinstance(nested, dict):
-            ds_id = nested.get("ds_id") or nested.get("dataset_id")
+        for source in (settled, settled.get("response")):
+            if not isinstance(source, dict):
+                continue
+            ds_id = ds_id or _first_id(source, _DATASET_ID_KEYS)
+            config_id = config_id or source.get("datasource_config_id")
         job_id = settled.get("job_id", job_id)
+    if ds_id is None and config_id is not None:
+        return {"status": "scheduled", "datasource_config_id": config_id, "job_id": job_id}
+    if ds_id is None and isinstance(settled, dict) and "files_found" in settled:
+        return settled
     if ds_id is None:
-        # No recognizable dataset id: surface the settled payload untouched
-        # rather than claim a readiness we cannot confirm.
-        return settled if isinstance(settled, dict) else {"job_id": job_id}
-    result: dict[str, Any] = {"status": "ready", "dataset_id": ds_id}
-    if job_id is not None:
-        result["job_id"] = job_id
-    return result
+        reason = _job_reason(settled)
+        raise CliError(
+            code=CODE_JOB_FAILED,
+            message="The dataset was not created"
+            + (f": {reason}" if reason else f" (job {job_id} finished without a dataset id)."),
+            exit_status=EXIT_API,
+        )
+    return {"status": "ready", "dataset_id": ds_id, "job_id": job_id}
+
+
+#: Keys a settled create job may carry its dataset id under.
+_DATASET_ID_KEYS = ("ds_id", "dataset_id", "datasource_id")
+
+
+def _first_id(source: dict[str, Any], keys: tuple[str, ...]) -> Any:
+    """The first non-empty value of ``keys`` in ``source``, or None."""
+    return next((source[key] for key in keys if source.get(key)), None)
+
+
+def _job_reason(settled: Any) -> str | None:
+    """The failure reason a settled job carries (``failure_reason``, ``message``, ``error``)."""
+    if not isinstance(settled, dict):
+        return None
+    nested = settled.get("response")
+    for source in (settled, nested if isinstance(nested, dict) else {}):
+        for key in ("failure_reason", "message", "error"):
+            if source.get(key):
+                return str(source[key])
+    return None
 
 
 #: Pages (of 100) read to predict a final name; past it the answer is "a suffix may be added".

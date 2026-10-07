@@ -6,10 +6,20 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed (mammoth-cli 2.2.64)
+
+- `dataset create` raises `job_failed` when a waited create job settled without a dataset; a cloud import deferred to a later start reports `scheduled`, and `datasource_id` counts as the dataset id.
+- A cloud file create with `file_path` and no `data_pull_file` defaults to "Pull same file"; a bad pull mode lists the allowed values.
+
 ### Added (mammoth-cli 2.2.61)
 
 - `mammoth agent projects clear AGENT_KEY` empties an agent's project list (`projects set` cannot: `*_ids` lists need one item).
 - Table mode shows the backend's own message (and code) on a 4xx, one line per field for validation errors; `agent roles` prints a table.
+
+### Fixed (mammoth-cli 2.2.63)
+
+- `connector list` uses the server's `is_available` instead of inferring availability from `is_premium` and `is_added`.
+- Under `--project`, `resolve` and `dataset find` return only the project's own rows when one matches the name exactly; `elsewhere` counts the rest, and `--input '{"all_projects": true}'` lists all.
 
 ### Fixed (mammoth-cli 2.2.62)
 

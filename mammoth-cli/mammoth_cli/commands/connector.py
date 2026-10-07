@@ -145,26 +145,23 @@ def connector_get(invocation: Invocation) -> HandlerResult:
     return data, _meta(invocation, auth.workspace_id, resolved_project(invocation))
 
 
-#: ``availability`` a premium connector gets when it is not yet added to the
-#: workspace -- distinct from an ordinary connector nobody has added yet.
-_PREMIUM_NOT_ENABLED = "premium_not_enabled"
+#: ``availability`` a connector gets when the server says this workspace's plan
+#: does not include it.
+_NOT_IN_PLAN = "not_in_plan"
 
 
-_PREMIUM_NOT_ENABLED_NOTE = (
-    "Premium connector, not enabled in this workspace: Mammoth sales must enable"
-    " it before it can be connected. Tell the user so and offer to contact sales."
-)
+_NOT_IN_PLAN_NOTE = "Not included in this workspace's plan. Mammoth sales can enable it."
 
 
-def _with_premium_availability(data: Any) -> Any:
-    """Mark each premium, not-yet-added connector with why it cannot be connected.
+def _with_plan_availability(data: Any) -> Any:
+    """Mark each connector the server reports unavailable to this workspace.
 
-    ``is_premium``/``is_added`` alone said a connector could not be connected
-    but never why: a premium connector must be enabled by Mammoth sales
-    before this workspace can use it, unlike an ordinary connector nobody has
-    added yet. Without this, an agent that reads ``connector list`` can route
-    a user to sales but never explain why (T2-WPP-W7). ``ConnectorsAPI.list``
-    returns a list, which stays a list.
+    The server's ``is_available`` is the same plan check that gates creating a
+    connection. ``is_premium``/``is_added`` cannot stand in for it: ``is_added``
+    only says a legacy integration row exists, so a premium connector the plan
+    does include read as "not enabled". A response without ``is_available`` (an
+    older server) is left unmarked. ``ConnectorsAPI.list`` returns a list, which
+    stays a list.
     """
     if not isinstance(data, list):
         return data
@@ -172,10 +169,10 @@ def _with_premium_availability(data: Any) -> Any:
         (
             {
                 **item,
-                "availability": _PREMIUM_NOT_ENABLED,
-                "availability_note": _PREMIUM_NOT_ENABLED_NOTE,
+                "availability": _NOT_IN_PLAN,
+                "availability_note": _NOT_IN_PLAN_NOTE,
             }
-            if isinstance(item, dict) and item.get("is_premium") and not item.get("is_added")
+            if isinstance(item, dict) and item.get("is_available") is False
             else item
         )
         for item in data
@@ -187,7 +184,7 @@ def connector_list(invocation: Invocation) -> HandlerResult:
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation))
     return (
-        _with_premium_availability(data),
+        _with_plan_availability(data),
         _meta(invocation, auth.workspace_id, resolved_project(invocation)),
     )
 
