@@ -220,6 +220,7 @@ def test_generated_dashboard_async_result_waits_for_job(
         "warnings": [],
         "reason": None,
         "needs_user": None,
+        "outcome": "settled",
     }
     assert data["deliverable_check"]["checked"] is True
     assert data["state"]["kind"] == "object"
