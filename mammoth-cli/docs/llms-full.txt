@@ -1184,7 +1184,7 @@ Sensitive structured input must come from a private file or pipe; never put secr
 - `mammoth view explore-panel get` [read/none] -> mammoth.api.dataviews.DataviewsAPI.explore_panel
   example: mammoth view explore-panel get 123
 - `mammoth view explore-panel set` [benign_mutation/none] -> mammoth.api.dataviews.DataviewsAPI.set_explore_panel
-  example: mammoth view explore-panel set 123 --input '{"panel": {"open": true, "items": [{"column": "column_1", "renderType": "chart"}]}}'
+  example: mammoth view explore-panel set 123 --input '{"panel": {"columns": "all"}}'
 - `mammoth view export azure-blob` [external_effect/yes_always] -> mammoth.view.ViewExport.to_azure_blob
   example: mammoth view export azure-blob 123 123 --input /private/path/request.json
 - `mammoth view export bigquery` [external_effect/yes_always] -> mammoth.view.ViewExport.to_bigquery

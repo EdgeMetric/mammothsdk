@@ -20,8 +20,8 @@ from tests.realcode.test_end_to_end_cli import _bind_real_service
 ServiceFactory = Callable[..., Any]
 PROJECT, DATASET, VIEW = 180, 9, 7
 PANEL = {
-    "open": True,
-    "items": [{"column": "column_1", "renderType": "chart"}, {"column": "column_2"}],
+    "height": 248,
+    "cards": [{"colId": "column_1", "renderType": "chart"}, {"colId": "column_2"}],
 }
 
 

@@ -61,6 +61,7 @@ from mammoth_cli.services.append_blank_columns import (
 from mammoth_cli.services.conditions import CONDITION_KWARG, compile_condition
 from mammoth_cli.services.dashboard_review import UPLOAD_NOTE, upload_hints
 from mammoth_cli.services.data_quality import column_warnings, duplicate_rows_fact
+from mammoth_cli.services.explore_cards import resolve_panel as resolve_explore_panel
 from mammoth_cli.services.listing import DATASET_LIST_FIELDS, compact_view_list
 from mammoth_cli.services.local_time import local_time
 from mammoth_cli.services.read_queries import ReadContext
@@ -1138,6 +1139,23 @@ def view_explore_panel_get(invocation: Invocation) -> HandlerResult:
     return data, _meta(invocation, auth.workspace_id, project_id)
 
 
+def _panel_to_write(
+    service: Any, panel: Any, dataset_id: int, dataview_id: int, project_id: int
+) -> dict[str, Any]:
+    """The panel as the web app reads it; ``{"columns": ...}`` becomes a card per column."""
+    if not isinstance(panel, dict):
+        raise CliError(
+            code=CODE_INVALID_ARGUMENT,
+            message='"panel" must be an object.',
+            exit_status=EXIT_USAGE,
+        )
+    saved = _read_explore_panel(
+        service, _EXPLORE_PANEL_GET_SYMBOL, dataset_id, dataview_id, project_id
+    )
+    metadata = _dataview_metadata(service, dataset_id, dataview_id, project_id)
+    return resolve_explore_panel(panel, metadata, saved)
+
+
 def view_explore_panel_set(invocation: Invocation) -> HandlerResult:
     """Replace the caller's saved Explore panel; the result carries the panel read back after."""
     project_id = require_project(invocation)
@@ -1146,6 +1164,7 @@ def view_explore_panel_set(invocation: Invocation) -> HandlerResult:
     panel = _require_field(document, "panel")
     with open_service(invocation) as (service, auth):
         dataset_id = _verified_dataset_id(service, invocation, dataview_id, document)
+        panel = _panel_to_write(service, panel, dataset_id, dataview_id, project_id)
         data = service.call(
             _symbol(invocation),
             dataset_id=dataset_id,
