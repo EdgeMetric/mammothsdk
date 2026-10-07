@@ -6,6 +6,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed (mammoth-cli 2.2.57)
+
+- `folder create` now reads the new folder back: its `readback` named `result.folder.id`, but the command returns the folder flat (`result.id`), so the `state` block was `unreadable` and callers got no folder id receipt. The id now resolves from `result.id`.
+
 ### Changed (mammoth-io 0.8.30, mammoth-cli 2.2.56)
 
 - 2.2.55 shipped without #173 (PyPI is immutable); 2.2.56 adds it: `view export dataset` dataset name is optional (default "Result Dataset").
