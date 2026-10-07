@@ -400,24 +400,26 @@ _COMMAND_DISCOVERY_PURPOSES = {
     # phrasing missed them and only the unrelated view.export.* commands
     # (which push data OUT to a database) matched.
     "connector.list": (
-        "connectors available sources database SQL Server MSSQL MySQL Postgres Oracle "
-        "connect import pull load table into dataset"
+        "connectors available sources database SQL Server MSSQL MySQL Postgres Oracle SFTP "
+        "file server connect import pull load table file into dataset"
     ),
     "connector.get": (
-        "connector database SQL Server MSSQL MySQL Postgres connection fields host port "
-        "username password required to connect import table dataset"
+        "connector database SQL Server MSSQL MySQL Postgres SFTP file server connection fields "
+        "host port username password required to connect import table file dataset"
     ),
     "connector.connection.list": (
         "which outside external sources connected connections list database SQL Server "
-        "MSSQL MySQL Postgres connector already connected import table dataset"
+        "MSSQL MySQL Postgres SFTP file server connector already connected import table "
+        "file dataset"
     ),
     "connector.connection.get": (
-        "connection database SQL Server MSSQL MySQL Postgres connector connected "
-        "import table dataset"
+        "connection database SQL Server MSSQL MySQL Postgres SFTP file server connector "
+        "connected import table file dataset"
     ),
     "connector.connection.create": (
-        "connect a database such as SQL Server MSSQL MySQL Postgres Oracle host username "
-        "password new connection connector to import a table into a dataset"
+        "connect a database such as SQL Server MSSQL MySQL Postgres Oracle or an SFTP file "
+        "server host port username password new connection connector to import a table or "
+        "file into a dataset"
     ),
     "connector.ds-config.create": (
         "import pull load read retrieve a table or SQL query from a connected database such "
@@ -545,7 +547,8 @@ _COMMAND_DISCOVERY_PURPOSES = {
     # (ds_creation_type=weburl) -- the capability exists and works once found,
     # it just had no discovery-purpose text at all.
     "dataset.create": (
-        "url web link fetch retrieve pull import public website endpoint api json data weburl"
+        "url web link fetch retrieve pull import public website endpoint api json data weburl "
+        "file csv from an SFTP server folder cloud storage connection connector as a new dataset"
     ),
     "dashboard.v3.generate": (
         "create build make new generate dashboard board report from a view description "

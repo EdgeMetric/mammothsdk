@@ -816,7 +816,10 @@ def dataset_interpretation(invocation: Invocation) -> HandlerResult:
 
 
 def dataset_create(invocation: Invocation) -> HandlerResult:
-    """Create a dataset from a spec and creation type (required ``--input`` fields)."""
+    """Create a dataset (web URL, clone, or import from a connection such as SFTP).
+
+    ``--input`` needs ``dataset_spec`` and ``ds_creation_type``.
+    """
     project_id = require_project(invocation)
     document = invocation.load_input()
     dataset_spec = _require_field(document, "dataset_spec")
