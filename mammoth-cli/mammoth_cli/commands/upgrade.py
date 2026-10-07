@@ -33,6 +33,7 @@ from mammoth_cli import __version__
 from mammoth_cli.errors.envelope import EXIT_API, EXIT_RETRYABLE, CliError
 from mammoth_cli.runtime import executor
 from mammoth_cli.runtime import options as go
+from mammoth_cli.runtime import updates
 from mammoth_cli.runtime.confirm import POLICY_PROMPT_OR_YES, enforce_confirmation
 from mammoth_cli.runtime.invocation import Invocation
 
@@ -297,6 +298,15 @@ def _envelope(
     }
 
 
+def upgrade_action(current: str, latest: str) -> str:
+    """Return ``would_upgrade`` only when ``latest`` is newer than ``current``.
+
+    An equal or older latest (a dev build ahead of PyPI) is ``already_current``;
+    the command never offers a downgrade.
+    """
+    return ACTION_WOULD_UPGRADE if updates.is_newer(latest, current) else ACTION_ALREADY_CURRENT
+
+
 def perform(invocation: Invocation, *, check: bool, target_version: str | None) -> HandlerResult:
     """Report or perform a CLI upgrade.
 
@@ -320,12 +330,7 @@ def perform(invocation: Invocation, *, check: bool, target_version: str | None) 
 
     if check:
         latest = latest_version()
-        if latest is None:
-            action = ACTION_CHECKED
-        elif latest == current:
-            action = ACTION_ALREADY_CURRENT
-        else:
-            action = ACTION_WOULD_UPGRADE
+        action = ACTION_CHECKED if latest is None else upgrade_action(current, latest)
         return (
             _envelope(
                 manager=manager,
@@ -342,7 +347,7 @@ def perform(invocation: Invocation, *, check: bool, target_version: str | None) 
     latest = None
     if target_version is None:
         latest = latest_version()
-        if latest is not None and latest == current:
+        if latest is not None and upgrade_action(current, latest) == ACTION_ALREADY_CURRENT:
             return (
                 _envelope(
                     manager=manager,

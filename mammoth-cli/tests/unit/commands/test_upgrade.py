@@ -138,6 +138,22 @@ def test_check_reports_already_current(monkeypatch: pytest.MonkeyPatch) -> None:
     assert data["command"] is None
 
 
+@pytest.mark.parametrize(
+    ("current", "latest", "expected"),
+    [
+        ("2.2.54", "2.2.53", "already_current"),
+        ("2.2.54", "2.2.54", "already_current"),
+        ("2.2.54", "2.2.55", "would_upgrade"),
+        ("2.2.9", "2.2.10", "would_upgrade"),
+        ("2.2.10", "2.2.9", "already_current"),
+    ],
+)
+def test_upgrade_action_never_offers_an_older_release(
+    current: str, latest: str, expected: str
+) -> None:
+    assert upgrade_cmd.upgrade_action(current, latest) == expected
+
+
 def test_check_never_prompts_even_without_yes(monkeypatch: pytest.MonkeyPatch) -> None:
     _no_subprocess(monkeypatch)
     monkeypatch.setattr(upgrade_cmd, "detect_manager", lambda: "pip")
