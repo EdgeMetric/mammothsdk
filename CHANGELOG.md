@@ -6,6 +6,11 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed (mammoth-cli 2.2.67)
+
+- A view read that goes async (`--return-running`) keeps its dataset and view meta in the running envelope.
+- The error-summary AST scan no longer false-positives on `_backend_message`'s local (renamed to `backend_code`).
+
 ### Fixed (mammoth-cli 2.2.66)
 
 - `dataset find` names the in-project exact match instead of telling the caller to ask; the elsewhere note says the in-project match is the answer and other projects matter only when the user names one.
