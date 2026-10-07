@@ -418,6 +418,11 @@ def agent_projects_set(invocation: Invocation) -> HandlerResult:
     return _field_call(invocation, "project_ids")
 
 
+def agent_projects_clear(invocation: Invocation) -> HandlerResult:
+    """Clear the projects the agent may work in (sets the list to empty)."""
+    return _definition_call(invocation, project_ids=[])
+
+
 def agent_team_set(invocation: Invocation) -> HandlerResult:
     """Replace the team: the agents this agent may ask, and the rounds of asking."""
     return _field_call(invocation, "team")

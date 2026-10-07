@@ -22,7 +22,7 @@ mammoth agent publish KEY
   go back) and run again. `agent publish` is refused without a finished run
   for the current charter.
 - `agent projects set KEY --input '{"project_ids": [12, 15]}'` chooses where
-  it works. `agent team set KEY --input '{"team": {"agents": ["other-key"],
+  it works; `agent projects clear KEY` empties that list. `agent team set KEY --input '{"team": {"agents": ["other-key"],
   "max_rounds": 4}}'` lets it ask other published agents.
 - `agent feedback list KEY` shows the thumbs up and down people gave it.
 

@@ -222,6 +222,16 @@ Result: `AgentMemoryRemoveResult`; mutation `destructive`, confirmation `prompt_
 
 Status on release: untried; no live run recorded.
 
+### `agent.projects.clear`
+
+Run: `mammoth agent projects clear`. Exact input fields: `mammoth schema get agent.projects.clear`.
+
+Example: `mammoth agent projects clear sample`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `AgentProjectsClearResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
 ### `agent.projects.set`
 
 Run: `mammoth agent projects set`. Exact input fields: `mammoth schema get agent.projects.set`.

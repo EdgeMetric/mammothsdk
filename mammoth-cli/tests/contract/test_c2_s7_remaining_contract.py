@@ -55,6 +55,7 @@ S7_ROUTE_INVENTORY = frozenset(
         "agent.memory.add",
         "agent.memory.list",
         "agent.memory.remove",
+        "agent.projects.clear",
         "agent.projects.set",
         "agent.publish",
         "agent.roles",
@@ -249,10 +250,10 @@ def fake_family_service(monkeypatch: pytest.MonkeyPatch) -> FakeMammothService:
 def test_s7_inventory_and_ledger_are_exact() -> None:
     ledger = json.loads(LEDGER.read_text(encoding="utf-8"))
     assert S7_COMMANDS == S7_ROUTE_INVENTORY
-    assert ledger["route_count"] == 169
+    assert ledger["route_count"] == 170
     assert ledger["families"] == {
         "activity": 2,
-        "agent": 43,
+        "agent": 44,
         "ai": 4,
         "automation": 8,
         "billing": 25,
