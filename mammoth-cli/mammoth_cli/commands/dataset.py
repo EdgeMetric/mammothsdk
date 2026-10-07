@@ -958,21 +958,34 @@ def _default_data_pull_file(ds_creation_type: object, dataset_spec: object) -> N
 def _created_dataset(handle: Any, settled: Any) -> dict[str, Any]:
     """Shape a create job (handle + settled result) into a labeled result.
 
-    ``wait_if_job`` returns the completed job's inner response, where the new
-    dataset id lives under ``ds_id``. A job that settled without one did not make
-    a dataset, so it raises with the server's reason rather than report success.
+    What each creation type settles with: weburl, clone and a single cloud file or
+    database import carry the new dataset id (``ds_id``, ``dataset_id`` or
+    ``datasource_id``); a cloud import deferred to a later start carries
+    ``datasource_config_id`` and reports ``scheduled``; a bulk cloud file import
+    carries ``files_found``/``created``/``failed`` and is returned as the server
+    sent it; a sketch is not a job and answers with the dataset itself. A job that
+    settled with none of these made nothing, so it raises with the server's reason
+    rather than report success.
 
     Raises:
-        CliError: ``job_failed`` when the settled job names no dataset.
+        CliError: ``job_failed`` when the settled job made no dataset.
     """
-    job_id = handle.get("job_id") if isinstance(handle, dict) else None
+    if not isinstance(handle, dict) or "job_id" not in handle:
+        return settled if isinstance(settled, dict) else {"job_id": None}
+    job_id = handle["job_id"]
     ds_id = None
+    config_id = None
     if isinstance(settled, dict):
-        ds_id = settled.get("ds_id") or settled.get("dataset_id")
-        nested = settled.get("response")
-        if ds_id is None and isinstance(nested, dict):
-            ds_id = nested.get("ds_id") or nested.get("dataset_id")
+        for source in (settled, settled.get("response")):
+            if not isinstance(source, dict):
+                continue
+            ds_id = ds_id or _first_id(source, _DATASET_ID_KEYS)
+            config_id = config_id or source.get("datasource_config_id")
         job_id = settled.get("job_id", job_id)
+    if ds_id is None and config_id is not None:
+        return {"status": "scheduled", "datasource_config_id": config_id, "job_id": job_id}
+    if ds_id is None and isinstance(settled, dict) and "files_found" in settled:
+        return settled
     if ds_id is None:
         reason = _job_reason(settled)
         raise CliError(
@@ -981,10 +994,16 @@ def _created_dataset(handle: Any, settled: Any) -> dict[str, Any]:
             + (f": {reason}" if reason else f" (job {job_id} finished without a dataset id)."),
             exit_status=EXIT_API,
         )
-    result: dict[str, Any] = {"status": "ready", "dataset_id": ds_id}
-    if job_id is not None:
-        result["job_id"] = job_id
-    return result
+    return {"status": "ready", "dataset_id": ds_id, "job_id": job_id}
+
+
+#: Keys a settled create job may carry its dataset id under.
+_DATASET_ID_KEYS = ("ds_id", "dataset_id", "datasource_id")
+
+
+def _first_id(source: dict[str, Any], keys: tuple[str, ...]) -> Any:
+    """The first non-empty value of ``keys`` in ``source``, or None."""
+    return next((source[key] for key in keys if source.get(key)), None)
 
 
 def _job_reason(settled: Any) -> str | None:

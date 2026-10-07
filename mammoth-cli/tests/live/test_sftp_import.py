@@ -13,6 +13,7 @@ import json
 import os
 import time
 from collections.abc import Iterator
+from datetime import datetime, timedelta
 
 import pytest
 from live_harness import LiveCli
@@ -128,3 +129,33 @@ def test_a_data_pull_file_that_is_not_a_listed_value_names_the_allowed_ones(
 
     assert error["code"] == "invalid_argument", error
     assert "Pull same file" in error["message"], error
+
+
+def test_an_import_scheduled_for_later_reports_scheduled_not_failed(
+    live_cli: LiveCli, scratch_project: int, connection: str
+) -> None:
+    later = (datetime.now() + timedelta(days=2)).isoformat()
+    spec = {
+        "ds_creation_type": "cloud",
+        "dataset_spec": {
+            "connector_key": "sftp",
+            "connection_key": connection,
+            "query_properties": {
+                "ds_name": f"sftp-later-{int(time.time())}",
+                "file_path": os.environ["SFTP_IMPORT_PATH"],
+            },
+            "schedule_properties": {
+                "schedule_type": "period",
+                "first_pull_at": "later",
+                "on_refresh_action": "combine",
+            },
+            "recurrence_info": {"interval": 1, "frequency": "daily", "start_at": later},
+        },
+    }
+
+    created, _ = live_cli.ok(
+        *("dataset", "create", "--input", json.dumps(spec), "--yes"), project=scratch_project
+    )
+
+    assert created["status"] == "scheduled", created
+    assert created["datasource_config_id"], created
