@@ -150,7 +150,7 @@ _COMMAND_DISCOVERY_PURPOSES = {
     "view.export.powerbi": "power bi powerbi microsoft dashboard workspace",
     "view.export.publish-db": (
         "publish database live connection odbc bi tool reads table point straight at always latest "
-        "postgres managed mammoth managed"
+        "postgres managed mammoth managed write into our sql database"
     ),
     "view.export.publish-db-update": "publish database update refresh live connection",
     "view.export.redshift": "redshift amazon aws database warehouse",
