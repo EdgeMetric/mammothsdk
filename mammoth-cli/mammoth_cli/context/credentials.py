@@ -435,7 +435,10 @@ def _delete_file(profile: str) -> bool:
     if not table or profile not in table:
         return False
     del table[profile]
-    _write_file_document(document)
+    if table:
+        _write_file_document(document)
+    else:
+        credentials_path().unlink()
     return True
 
 
