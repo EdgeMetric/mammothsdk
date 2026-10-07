@@ -22,10 +22,13 @@ from typing import Any
 
 from mammoth.exceptions import MammothModelDriftWarning
 
+from mammoth_cli.context import credentials, oauth, profiles
+from mammoth_cli.context.endpoint import resolve_base_url
 from mammoth_cli.errors.envelope import (
     CODE_MISSING_ARGUMENT,
     CODE_MISSING_FIELD,
     CODE_SDK_SYMBOL_UNRESOLVED,
+    EXIT_API,
     EXIT_USAGE,
     CliError,
 )
@@ -254,6 +257,37 @@ def client_app_delete(invocation: Invocation) -> HandlerResult:
     enforce_confirmation(
         invocation, policy=POLICY_PROMPT_OR_YES, action=f"delete client app {client_key}"
     )
+    own = _own_oauth_session(invocation, client_key)
+    if own is not None:
+        return _revoke_own_grant(invocation, own)
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), client_key=client_key)
     return data, _meta(invocation, auth.workspace_id, resolved_project(invocation))
+
+
+def _own_oauth_session(invocation: Invocation, client_key: str) -> credentials.OAuthSession | None:
+    """The caller's browser-login session when ``client_key`` is the client it signed in as."""
+    credential = credentials.load_credential(invocation.profile or profiles.get_selected())
+    session = credential.oauth if credential is not None else None
+    return session if session is not None and session.client_id == client_key else None
+
+
+def _revoke_own_grant(invocation: Invocation, session: credentials.OAuthSession) -> HandlerResult:
+    """Disconnect the caller's own grant: the workspace client-app route does not know it."""
+    profile_name = invocation.profile or profiles.get_selected()
+    record = profiles.get_profile(profile_name)
+    if record is None:
+        raise CliError(
+            code=CODE_MISSING_ARGUMENT,
+            message=f"Profile {profile_name} is not configured.",
+            exit_status=EXIT_USAGE,
+        )
+    base_url = resolve_base_url(record.server_prefix)
+    if not oauth.is_fresh(session):
+        session = oauth.refresh_session(profile_name, base_url)
+    problem = oauth.revoke_grant(base_url, session)
+    if problem is not None:
+        raise CliError(code="oauth_grant_revoke_failed", message=problem, exit_status=EXIT_API)
+    return {"revoked": "own OAuth grant", "grant_id": session.grant_id}, _meta(
+        invocation, record.workspace_id, resolved_project(invocation)
+    )
