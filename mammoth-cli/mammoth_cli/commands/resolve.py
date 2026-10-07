@@ -81,6 +81,12 @@ def kinds_note(name: str, rows: list[dict[str, Any]]) -> str:
     if len(exact) == 1:
         only = exact[0]
         return f"'{name}' is a {only['kind']} (id {only['id']}) in project {only['project_name']}."
+    here = [r for r in exact if r.get("in_project")]
+    if len(here) == 1:
+        return (
+            f"'{name}' is a {here[0]['kind']} (id {here[0]['id']}) in the current project; "
+            f"{len(exact) - 1} more elsewhere."
+        )
     if len(kinds) == 1:
         where = sorted({str(r["project_name"]) for r in exact})
         return f"'{name}' is {len(exact)} {kinds[0]}s, in projects {', '.join(where)}: ask which."

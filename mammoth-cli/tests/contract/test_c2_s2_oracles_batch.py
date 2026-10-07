@@ -161,6 +161,12 @@ def test_cli_binding_reaches_real_sdk_transport(
         return
     expected = _expected_wire(case)
     response = case["response"]
+    if (
+        case["route"] == "browse.folder"
+    ):  # the folder is named by its resource id: 1811 is folder 811
+        api.on(
+            "GET", r"/projects/41/folders$", body={"folders": [{"id": 811, "resource_id": 1811}]}
+        )
     api.on(expected[0], re.escape("/api/v2" + expected[1]) + r"$", body=response)
 
     result = make_runner().invoke(_cli_argv(case))

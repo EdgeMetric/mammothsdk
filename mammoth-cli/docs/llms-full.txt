@@ -1252,7 +1252,7 @@ Sensitive structured input must come from a private file or pipe; never put secr
 - `mammoth view export csv` [benign_mutation/none] -> mammoth.api.exports.ExportsAPI.to_csv
   example: mammoth view export csv 123
 - `mammoth view export dataset` [benign_mutation/none] -> mammoth.view.ViewExport.to_dataset
-  example: mammoth view export dataset 123 123 --input '{"dataset_name": "snapshot"}'
+  example: mammoth view export dataset 123 123
 - `mammoth view export delete` [external_effect/yes_always] -> mammoth.api.exports.ExportsAPI.delete
   example: mammoth view export delete 123 123
 - `mammoth view export elasticsearch` [external_effect/yes_always] -> mammoth.view.ViewExport.to_elasticsearch

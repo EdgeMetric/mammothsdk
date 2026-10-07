@@ -2233,7 +2233,7 @@ def _explore_range(
 
 
 def view_data_explore(invocation: Invocation) -> HandlerResult:
-    """Read one column's value distribution (read-only; opens and changes no card in the UI, that is ``view explore-panel set``): DATE counts per ``level`` bucket (AUTO, SECOND to MILLENNIUM), NUMERIC per power-of-10 ``level``, TEXT top values (``limit`` 20), each with ``count`` and ``percentage``; ``metric`` (a column plus SUM/AVG/MIN/MAX/STDDEV/COUNT/DISTINCT_COUNT) adds a per-bucket value, ``percentage_of`` "metric" shares by it, ``sort`` count_/value_/metric_ + asc/desc, ``condition`` filters first (include, exclude, blanks, range, contains; an exclude drops blank rows the card keeps, so or it with IS_EMPTY; drill down = finer ``level`` + ``condition`` on the bucket), ``limit``/``offset`` page, ``range`` true adds the exact earliest and latest value, ``cumulative`` a running total; ``-o csv`` saves the values; to put it on a dashboard say it in words to 'dashboard chat edit'.
+    """Read one column's values: top values, distribution, trend over time, date range (read-only; this is not an Explore card, it opens and changes no card in the UI, that is ``view explore-panel set``): DATE counts per ``level`` bucket (AUTO, SECOND to MILLENNIUM), NUMERIC per power-of-10 ``level``, TEXT top values (``limit`` 20), each with ``count`` and ``percentage``; ``metric`` (a column plus SUM/AVG/MIN/MAX/STDDEV/COUNT/DISTINCT_COUNT) adds a per-bucket value, ``percentage_of`` "metric" shares by it, ``sort`` count_/value_/metric_ + asc/desc, ``condition`` filters first (include, exclude, blanks, range, contains; an exclude drops blank rows the card keeps, so or it with IS_EMPTY; drill down = finer ``level`` + ``condition`` on the bucket), ``limit``/``offset`` page, ``range`` true adds the exact earliest and latest value, ``cumulative`` a running total; ``-o csv`` saves the values; to put it on a dashboard say it in words to 'dashboard chat edit'.
 
     Read-only: computes and returns the result without adding a task to the
     view's pipeline or otherwise changing it. Buckets by the column's type --
@@ -4082,6 +4082,10 @@ def view_export_specialized(invocation: Invocation) -> HandlerResult:
             )
         try:
             data = service.call_view(dataview_id, method, dataset_id=dataset_id, **kwargs)
+        except DryRunStop as stop:
+            if is_dataset_route and target_ds_id is None:
+                stop.record.update(_new_dataset_facts(kwargs.get("dataset_name"), hidden_left_out))
+            raise
         except CliError as error:
             if not (is_dataset_route and error.details.get("export_pending")):
                 raise
@@ -4150,6 +4154,22 @@ def view_export_specialized(invocation: Invocation) -> HandlerResult:
     if table_note is not None:
         data = _with_recurrence_note(data, table_note)
     return data, _meta(invocation, auth.workspace_id, project_id)
+
+
+#: The name the SDK gives a branch-out dataset when none is given (the app's Branch out form's).
+_DEFAULT_NEW_DATASET_NAME = "Result Dataset"
+
+
+def _new_dataset_facts(name: Any, hidden_left_out: list[str]) -> dict[str, Any]:
+    """What a dry run of an export into a NEW dataset says beyond the call: the dataset it
+    creates, the source view's hidden columns it leaves out, and that the export stays on
+    the view and writes again on every rerun. Read from what the export already looked up."""
+    return {
+        "creates_dataset": True,
+        "new_dataset_name": name or _DEFAULT_NEW_DATASET_NAME,
+        "hidden_columns_left_out": hidden_left_out,
+        "standing_export": True,
+    }
 
 
 def _pending_dataset_export(error: CliError, view_id: int, project_id: int) -> dict[str, Any]:

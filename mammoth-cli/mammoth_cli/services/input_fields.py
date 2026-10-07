@@ -149,7 +149,6 @@ _EXAMPLE_INPUT_HINTS: dict[str, dict[str, Any]] = {
         "selected_identity": {},
         "table": "exports",
     },
-    "view.export.dataset": {"dataset_name": "snapshot"},
     "view.export.elasticsearch": {
         "host": "elastic.example",
         "username": "agent",

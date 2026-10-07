@@ -24,6 +24,7 @@ from mammoth_cli.errors.envelope import (
 from mammoth_cli.manifest.loader import command_by_id
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.session import open_service, require_project, resolved_project
+from mammoth_cli.services.folder_ids import FolderIds
 
 HandlerResult = tuple[Any, dict[str, Any]]
 
@@ -118,7 +119,9 @@ def browse_folder(invocation: Invocation) -> HandlerResult:
     kwargs: dict[str, Any] = {"folder_id": folder_id, "project_id": project_id}
     _forward_optional(document, kwargs, ("level", "fields"))
     with open_service(invocation) as (service, auth):
-        data = service.call(_symbol(invocation), **kwargs)
+        folders = FolderIds(service)
+        kwargs["folder_id"] = folders.label(project_id, folder_id)
+        data = folders.open_data(service.call(_symbol(invocation), **kwargs), project_id)
     return data, _meta(invocation, auth.workspace_id, project_id)
 
 
@@ -131,7 +134,7 @@ def browse_project(invocation: Invocation) -> HandlerResult:
         document, kwargs, ("fields", "name", "browse_type", "sort", "offset", "limit")
     )
     with open_service(invocation) as (service, auth):
-        data = service.call(_symbol(invocation), **kwargs)
+        data = FolderIds(service).open_data(service.call(_symbol(invocation), **kwargs), project_id)
     return data, _meta(invocation, auth.workspace_id, project_id)
 
 
@@ -158,7 +161,7 @@ def browse_root(invocation: Invocation) -> HandlerResult:
         ),
     )
     with open_service(invocation) as (service, auth):
-        data = service.call(_symbol(invocation), **kwargs)
+        data = FolderIds(service).open_data(service.call(_symbol(invocation), **kwargs), None)
     return data, _meta(invocation, auth.workspace_id, resolved_project(invocation))
 
 
@@ -168,7 +171,7 @@ def browse_workspace(invocation: Invocation) -> HandlerResult:
     kwargs: dict[str, Any] = {}
     _forward_optional(document, kwargs, ("level", "fields", "limit"))
     with open_service(invocation) as (service, auth):
-        data = service.call(_symbol(invocation), **kwargs)
+        data = FolderIds(service).open_data(service.call(_symbol(invocation), **kwargs), None)
     return data, _meta(invocation, auth.workspace_id, resolved_project(invocation))
 
 
@@ -192,7 +195,7 @@ def browse_resources(invocation: Invocation) -> HandlerResult:
         ),
     )
     with open_service(invocation) as (service, auth):
-        data = service.call(_symbol(invocation), **kwargs)
+        data = FolderIds(service).open_data(service.call(_symbol(invocation), **kwargs), project_id)
     return _with_object_ids(data), _meta(invocation, auth.workspace_id, project_id)
 
 
@@ -209,12 +212,16 @@ def browse_resource(invocation: Invocation) -> HandlerResult:
             hint="Pass the type, then the id: mammoth browse resource dataset 123.",
         )
     with open_service(invocation) as (service, auth):
+        folders = FolderIds(service)
+        if str(resource_type) == "label":
+            object_id = folders.label(project_id, int(object_id))
         data = service.call(
             _symbol(invocation),
             resource_type=str(resource_type),
             object_id=int(object_id),
             project_id=project_id,
         )
+        data = folders.open_data(data, project_id)
     return data, _meta(invocation, auth.workspace_id, project_id)
 
 
@@ -223,7 +230,8 @@ def browse_ancestors(invocation: Invocation) -> HandlerResult:
     project_id = require_project(invocation)
     resource_id = _require_int_positional(invocation, "resource id")
     with open_service(invocation) as (service, auth):
-        data = service.call(_symbol(invocation), resource_id=resource_id, project_id=project_id)
+        found = service.call(_symbol(invocation), resource_id=resource_id, project_id=project_id)
+        data = FolderIds(service).open_data(found, project_id)
     return data, _meta(invocation, auth.workspace_id, project_id)
 
 
@@ -239,7 +247,7 @@ def browse_search(invocation: Invocation) -> HandlerResult:
         document, kwargs, ("search", "resource_type", "cursor", "limit", "sort", "fields")
     )
     with open_service(invocation) as (service, auth):
-        data = service.call(_symbol(invocation), **kwargs)
+        data = FolderIds(service).open_data(service.call(_symbol(invocation), **kwargs), None)
     return _with_object_ids(data), _meta(invocation, auth.workspace_id, None)
 
 
@@ -255,5 +263,12 @@ def browse_resources_bulk(invocation: Invocation) -> HandlerResult:
             hint='Pass pairs via --input, for example: --input \'{"items": [["dataview", 42]]}\'.',
         )
     with open_service(invocation) as (service, auth):
-        data = service.call(_symbol(invocation), items=document["items"], project_id=project_id)
+        folders = FolderIds(service)
+        items = [list(item) for item in document["items"]]
+        open_ids = [int(item[1]) for item in items if item[0] == "label"]
+        label_ids = iter(folders.labels(project_id, open_ids))
+        items = [[item[0], next(label_ids)] if item[0] == "label" else item for item in items]
+        data = folders.open_data(
+            service.call(_symbol(invocation), items=items, project_id=project_id), project_id
+        )
     return {"resources": data}, _meta(invocation, auth.workspace_id, project_id)

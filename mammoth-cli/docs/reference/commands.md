@@ -1025,7 +1025,7 @@ Total commands: 692.
 
 **Arguments**
 
-- `RESOURCE_ID` (int, required) — The folder's resource_id as browse resources returns it (not its object id).
+- `RESOURCE_ID` (int, required) — The folder's id, as folder list and browse return it.
 
 - Mutation class: `read`
 - Confirmation: `none`
@@ -5713,7 +5713,7 @@ Total commands: 692.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.view.ViewExport.to_dataset`
-- Agent example: `mammoth view export dataset 123 123 --input '{"dataset_name": "snapshot"}'`
+- Agent example: `mammoth view export dataset 123 123`
 
 ### `mammoth view export delete`
 
