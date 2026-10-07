@@ -265,7 +265,12 @@ def run(
             raise typer.Exit(error.exit_status) from None
         # --return-running: a wait that ran out is not a failure; hand back the
         # handle to resume with.
-        emit_success(command_id, running, output, profile=profile)
+        emit_success(
+            command_id,
+            running,
+            output,
+            **{"profile": profile, **((invocation.read_meta if invocation else None) or {})},
+        )
     except KeyboardInterrupt as exc:
         # Polling can be interrupted after a job handle was observed.  Keep
         # that handle when an SDK exception exposes one; never turn Ctrl-C
