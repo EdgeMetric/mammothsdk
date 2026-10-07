@@ -892,6 +892,8 @@ HANDLERS: dict[str, Handler] = {
     "view.transform.sort": view_ops_cmd.view_transform_sort,
     "view.transform.split": view_ops_cmd.view_transform_split,
     "view.transform.substring": view_ops_cmd.view_transform_substring,
+    "view.transform.first-name": view_ops_cmd.view_transform_first_name,
+    "view.transform.update-column": view_ops_cmd.view_transform_update_column,
     "view.transform.text": view_ops_cmd.view_transform_text,
     "view.transform.unnest": view_ops_cmd.view_transform_unnest,
     "view.transform.window": view_ops_cmd.view_transform_window,

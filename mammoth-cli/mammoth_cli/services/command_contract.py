@@ -364,6 +364,19 @@ _VIEW_VARIANTS_CREATE_FIELDS = (
     FieldSpec("name_template", required=False, annotation=str | None, default=None),
 )
 
+# view.transform.update-column and view.transform.first-name are CLI one-call ops over
+# view.transform.math (existing_column) and view.transform.substring (first-word regex);
+# their document fields are authored here.
+_VIEW_UPDATE_COLUMN_FIELDS = (
+    FieldSpec("column", required=True, annotation=str),
+    FieldSpec("expression", required=True, annotation=str),
+)
+_VIEW_FIRST_NAME_FIELDS = (
+    FieldSpec("column", required=True, annotation=str),
+    FieldSpec("new_column", required=False, annotation=str | None, default=None),
+    FieldSpec("existing_column", required=False, annotation=str | None, default=None),
+)
+
 # view.conditional-format.create: ``rule`` (raw body) stays accepted; the typed fields build one
 # rule per column (per-cell threshold) or one row rule (see
 # mammoth_cli.services.conditional_format). ``rule`` is therefore optional here -- the handler
@@ -819,6 +832,10 @@ def resolve_command_contract(command_id: str) -> ResolvedCommandContract | None:
         special_fields = _VIEW_DATA_PROFILE_FIELDS
     elif command_id == "view.variants.create":
         special_fields = _VIEW_VARIANTS_CREATE_FIELDS
+    elif command_id == "view.transform.update-column":
+        special_fields = _VIEW_UPDATE_COLUMN_FIELDS
+    elif command_id == "view.transform.first-name":
+        special_fields = _VIEW_FIRST_NAME_FIELDS
     elif command_id == "dashboard.filter.add":
         special_fields = _DASHBOARD_FILTER_ADD_FIELDS
     elif command_id == "dashboard.filter.remove":

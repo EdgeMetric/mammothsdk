@@ -46,6 +46,14 @@ _PROTECTED_INPUT_PATH = "/private/path/request.json"
 # second id, an optional-but-central input field, or two views to compare.
 _FIXED_EXAMPLES: dict[str, tuple[tuple[str, ...], dict[str, Any]]] = {
     "view.optimize": (("123",), {}),
+    "view.transform.first-name": (
+        ("123",),
+        {"column": "Name", "new_column": "First name", "dataset_id": 456},
+    ),
+    "view.transform.update-column": (
+        ("123",),
+        {"column": "Cost", "expression": "Cost + 5", "dataset_id": 456},
+    ),
     "view.explore-panel.get": (("123",), {}),
     "view.explore-panel.set": (
         ("123",),
@@ -327,6 +335,13 @@ _COMMAND_DISCOVERY_PURPOSES = {
     ),
     "view.transform.split": "split column by delimiter separator into columns",
     "view.transform.substring": "substring left right characters regex pattern extract part text",
+    "view.transform.first-name": (
+        "first name given name first word extract name from full name text before the first space"
+    ),
+    "view.transform.update-column": (
+        "update overwrite a column in place with its own expression add 5 to cost plus minus "
+        "times formula one call in draft mode"
+    ),
     "view.transform.text": (
         "text case upper uppercase lower lowercase title trim whitespace normalise normalize"
     ),

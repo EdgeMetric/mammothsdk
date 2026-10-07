@@ -219,6 +219,7 @@ edits_target_commands:
 - view.transform.extract-date
 - view.transform.fill-missing
 - view.transform.filter
+- view.transform.first-name
 - view.transform.increment-date
 - view.transform.join
 - view.transform.json-extract
@@ -235,6 +236,7 @@ edits_target_commands:
 - view.transform.substring
 - view.transform.text
 - view.transform.unnest
+- view.transform.update-column
 - view.transform.window
 - view.trash
 - view.update

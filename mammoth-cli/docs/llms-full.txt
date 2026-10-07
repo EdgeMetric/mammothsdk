@@ -1308,6 +1308,8 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth view transform fill-missing 123 --input '{"column": "Status", "direction": "FIRST_VALUE", "dataset_id": 456}'
 - `mammoth view transform filter` [reversible_pipeline/none] -> mammoth.View.filter_rows
   example: mammoth view transform filter 123 --input '{"condition": {"column": "Status", "operator": "EQ", "value": "Active"}, "dataset_id": 456}'
+- `mammoth view transform first-name` [reversible_pipeline/none] -> mammoth.View.substring
+  example: mammoth view transform first-name 123 --input '{"column": "Name", "new_column": "First name", "dataset_id": 456}'
 - `mammoth view transform generate-sql` [reversible_pipeline/none] -> mammoth.View.generate_sql
   example: mammoth view transform generate-sql 123 --input '{"intent": "Summarize revenue by region", "dataset_id": 456}'
 - `mammoth view transform increment-date` [reversible_pipeline/none] -> mammoth.View.increment_date
@@ -1342,6 +1344,8 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth view transform text 123 --input '{"columns": ["Status"], "dataset_id": 456}'
 - `mammoth view transform unnest` [reversible_pipeline/none] -> mammoth.View.unnest
   example: mammoth view transform unnest 123 --input '{"columns": ["Status"], "dataset_id": 456}'
+- `mammoth view transform update-column` [reversible_pipeline/none] -> mammoth.View.math
+  example: mammoth view transform update-column 123 --input '{"column": "Cost", "expression": "Cost + 5", "dataset_id": 456}'
 - `mammoth view transform window` [reversible_pipeline/none] -> mammoth.View.window
   example: mammoth view transform window 123 --input '{"function": "ROW_NUMBER", "dataset_id": 456}'
 - `mammoth view trash` [benign_mutation/none] -> mammoth.api.dataviews.DataviewsAPI.trash
