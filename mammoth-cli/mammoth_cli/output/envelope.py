@@ -21,6 +21,8 @@ class Meta:
     #: number in an answer can name its source.
     dataset: dict[str, Any] | None = None
     view: dict[str, Any] | None = None
+    #: ``{"kind", "id", "url", "created"}`` of each object a write made or changed.
+    opens: list[dict[str, Any]] | None = None
     #: ``{"current", "latest", "command"}`` when a newer CLI is on PyPI
     #: (from the daily cached check), else None.
     update_available: dict[str, Any] | None = None
@@ -36,6 +38,7 @@ class Meta:
             "pagination": self.pagination,
             "dataset": self.dataset,
             "view": self.view,
+            "opens": self.opens,
             "update_available": self.update_available,
         }
         return {key: value for key, value in document.items() if value is not None}
