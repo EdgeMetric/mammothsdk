@@ -171,52 +171,62 @@ def _tokens_in_order(needle: str, name: str) -> bool:
     return True
 
 
-def _find_in_projects(
-    service: Any,
-    needle: str,
-    projects: list[dict[str, Any]],
-    skipped: list[dict[str, Any]] | None = None,
-) -> list[dict[str, Any]]:
-    """Datasets whose name has every token of ``needle`` in order, in each of ``projects``.
+def _search_term(needle: str) -> str:
+    """The longest word of ``needle``: the server searches a substring, the words are
+    matched in order here."""
+    return max(needle.split(), key=len, default="")
 
-    A project that cannot be read does not end the search: with ``skipped`` it is
-    recorded there (id, name, why) and the rest are still searched.
+
+def _hit_record(hit: dict[str, Any]) -> dict[str, Any]:
+    """A resource-search hit in the shape of a dataset record, for ``name_hit``/``source_of``."""
+    info = hit.get("additional_info")
+    original = info.get("ORIGINAL_FILE_PROPS") if isinstance(info, dict) else None
+    file_name = original.get("FILE_NAME") if isinstance(original, dict) else None
+    return {
+        "id": hit.get("object_id"),
+        "name": hit.get("name"),
+        "status": hit.get("status"),
+        "created_at": hit.get("created_at"),
+        "updated_at": hit.get("last_updated_at"),
+        "stats": {"row_count": hit.get("row_count"), "column_count": hit.get("column_count")},
+        "additional_info": info,
+        "sources": [
+            {
+                "type": hit.get("source_type"),
+                "details": {"file_name": file_name, "connector_key": hit.get("integration_key")},
+            }
+        ],
+    }
+
+
+def _find_by_name(
+    service: Any, needle: str, projects: list[dict[str, Any]]
+) -> tuple[list[dict[str, Any]], bool]:
+    """Datasets in ``projects`` whose name has every token of ``needle`` in order, and whether cut.
+
+    One workspace search returns each hit with its size, times and source, so no
+    project's dataset list is read: that route costs the server a few queries per
+    dataset, and a project of a few hundred datasets took 20+ s to list.
     """
-    matches: list[dict[str, Any]] = []
-    for project in projects:
-        project_id = project.get("id")
-        if project_id is None:
+    names = {p.get("id"): p.get("name") for p in projects}
+    hits, cut = search_hits(service, "datasource", _search_term(needle), fields="standard")
+    matches = []
+    for hit in hits:
+        name = hit.get("name")
+        if hit.get("project_id") not in names or not isinstance(name, str):
             continue
-        try:
-            response = service.call(
-                "mammoth.api.datasets.DatasetsAPI.list_all",
-                project_id=project_id,
-                fields=DATASET_ROW_FIELDS,
-            )
-        except CliError as error:
-            if skipped is None:
-                raise
-            skipped.append(
-                {
-                    "project_id": project_id,
-                    "project_name": project.get("name"),
-                    "error": error.message,
-                }
-            )
+        if not _tokens_in_order(needle, name):
             continue
-        datasets = response.get("datasets", []) if isinstance(response, dict) else []
-        for dataset in datasets:
-            name = dataset.get("name") if isinstance(dataset, dict) else None
-            if isinstance(name, str) and _tokens_in_order(needle, name):
-                matches.append(
-                    {
-                        "project_id": project_id,
-                        "project_name": project.get("name"),
-                        **name_hit(dataset),
-                        "source": source_of(dataset),
-                    }
-                )
-    return matches
+        record = _hit_record(hit)
+        matches.append(
+            {
+                "project_id": hit["project_id"],
+                "project_name": names[hit["project_id"]],
+                **name_hit(record),
+                "source": source_of(record),
+            }
+        )
+    return matches, cut
 
 
 #: Pages of resource search read for one name (100 hits each); past it the result says so.
@@ -269,15 +279,6 @@ def search_cut_note(kind: str) -> str:
         f"The name matched more than {_SEARCH_PAGES * _SEARCH_PAGE_SIZE} {kind}, so only the "
         "first of them were read. Use a longer name, or --project, to narrow it."
     )
-
-
-def _projects_holding(
-    service: Any, needle: str, visible: list[dict[str, Any]]
-) -> tuple[list[dict[str, Any]], bool]:
-    """The visible projects that hold a dataset whose name contains ``needle``."""
-    rows, cut = search_hits(service, "datasource", needle)
-    holding = {r.get("project_id") for r in rows}
-    return [p for p in visible if p.get("id") in holding], cut
 
 
 def _other_projects(visible: list[dict[str, Any]], project_id: int) -> list[dict[str, Any]]:
@@ -404,22 +405,20 @@ def _find_scoped(
     needle: str,
     visible: list[dict[str, Any]],
     project_id: int,
-    skipped: list[dict[str, Any]],
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]], bool]:
     """``(matches, projects searched, cut)``: the project's own matches, then every other one's."""
-    home = named_project(service, project_id, visible)
-    own = _find_in_projects(service, needle, [home], skipped)
-    holding, cut = _projects_holding(service, needle, visible)
-    outside = _find_in_projects(service, needle, _other_projects(holding, project_id), skipped)
-    searched = [home] + _other_projects(visible, project_id)
-    return _tag_scope(own + outside, project_id), searched, cut
+    searched = [named_project(service, project_id, visible), *_other_projects(visible, project_id)]
+    found, cut = _find_by_name(service, needle, searched)
+    matches = sorted(_tag_scope(found, project_id), key=lambda m: not m["in_project"])
+    return matches, searched, cut
 
 
 def dataset_find(invocation: Invocation) -> HandlerResult:
     """Search dataset names for a substring across every visible project.
 
     Read-only local composite: lists the projects the credential can see, then
-    lists datasets in each and keeps a case-insensitive substring match. With
+    reads one workspace search for the name and keeps the datasets whose name has
+    every word of the substring, in order, ignoring case. With
     ``--project`` the project's own matches come first and the matches in every
     other visible project are returned too, each row marked ``in_project`` and
     carrying its ``project_id`` and ``project_name``: the in-product agent runs
@@ -431,23 +430,19 @@ def dataset_find(invocation: Invocation) -> HandlerResult:
     """
     name_substring = _require_string_positional(invocation, "name substring")
     needle = name_substring.lower()
-    skipped: list[dict[str, Any]] = []
     dropped = 0
     with open_service(invocation) as (service, auth):
         visible = _visible_projects(service)
         cut = False
         if invocation.project is not None:
-            matches, projects, cut = _find_scoped(
-                service, needle, visible, invocation.project, skipped
-            )
+            matches, projects, cut = _find_scoped(service, needle, visible, invocation.project)
             if not all_projects_requested(invocation):
                 matches, dropped = narrow_to_project(
                     matches, lambda m: str(m.get("name", "")).lower() == needle
                 )
         else:
             projects = visible
-            holding, cut = _projects_holding(service, needle, visible)
-            matches = _find_in_projects(service, needle, holding, skipped)
+            matches, cut = _find_by_name(service, needle, visible)
         meta = {
             "profile": invocation.profile,
             "workspace_id": auth.workspace_id,
@@ -455,10 +450,8 @@ def dataset_find(invocation: Invocation) -> HandlerResult:
         }
     result: dict[str, Any] = {
         "matches": matches,
-        "projects_searched": len(projects) - len(skipped),
+        "projects_searched": len(projects),
     }
-    if skipped:
-        result["projects_skipped"] = skipped
     notes = [ambiguity_note(len(matches), name_substring)]
     if dropped:
         result["elsewhere"] = dropped
@@ -563,10 +556,8 @@ def _dataset_name_search(
         records = data.get("datasets", []) if isinstance(data, dict) else []
         page = search_page(records, name, int(document.get("offset", 0)), document.get("limit"))
         if page["matched"] == 0:
-            holding, cut = _projects_holding(service, name.lower(), _visible_projects(service))
-            elsewhere = _find_in_projects(
-                service, name.lower(), _other_projects(holding, project_id)
-            )
+            found, cut = _find_by_name(service, name.lower(), _visible_projects(service))
+            elsewhere = [m for m in found if m["project_id"] != project_id]
             if elsewhere:
                 page["in_other_projects"] = elsewhere
                 page["note"] = (

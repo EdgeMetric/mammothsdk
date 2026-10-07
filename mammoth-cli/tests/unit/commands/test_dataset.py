@@ -61,6 +61,10 @@ def test_find_requires_name_substring(fake_service: FakeMammothService) -> None:
     assert excinfo.value.code == "missing_argument"
 
 
+def _hit(project_id: int, object_id: int, name: str) -> dict[str, object]:
+    return {"project_id": project_id, "object_id": object_id, "name": name}
+
+
 def test_find_without_project_searches_every_visible_project(
     fake_service: FakeMammothService,
 ) -> None:
@@ -68,11 +72,8 @@ def test_find_without_project_searches_every_visible_project(
         {"id": 1, "name": "P1"},
         {"id": 2, "name": "P2"},
     ]
-    fake_service.responses[_LIST_ALL] = {
-        "datasets": [{"id": 10, "name": "Sales Q1"}, {"id": 11, "name": "Other"}]
-    }
     fake_service.responses[_SEARCH] = {
-        "resources": [{"project_id": 1}, {"project_id": 2}],
+        "resources": [_hit(1, 10, "Sales Q1"), _hit(2, 10, "Sales Q1"), _hit(2, 11, "Other")],
         "has_more": False,
     }
     result, meta = dataset_cmd.dataset_find(_inv("dataset.find", extra_args=["sales"]))
@@ -82,18 +83,16 @@ def test_find_without_project_searches_every_visible_project(
         {"project_id": 2, "project_name": "P2", "id": 10, "name": "Sales Q1", "source": "unknown"},
     ]
     assert "list_all_projects" in fake_service.calls
-    assert [symbol for symbol, _ in fake_service.call_log] == [_SEARCH, _LIST_ALL, _LIST_ALL]
-    assert fake_service.call_log[1:] == [
-        (_LIST_ALL, {"project_id": 1, "fields": DATASET_ROW_FIELDS}),
-        (_LIST_ALL, {"project_id": 2, "fields": DATASET_ROW_FIELDS}),
-    ]
+    assert [symbol for symbol, _ in fake_service.call_log] == [_SEARCH]
     assert meta["project_id"] is None
 
 
 def test_find_matches_are_case_insensitive(fake_service: FakeMammothService) -> None:
     fake_service.projects = [{"id": 1, "name": "P1"}]
-    fake_service.responses[_LIST_ALL] = {"datasets": [{"id": 10, "name": "SALES Q1"}]}
-    fake_service.responses[_SEARCH] = {"resources": [{"project_id": 1}], "has_more": False}
+    fake_service.responses[_SEARCH] = {
+        "resources": [_hit(1, 10, "SALES Q1")],
+        "has_more": False,
+    }
     result, _meta = dataset_cmd.dataset_find(_inv("dataset.find", extra_args=["sales"]))
     assert [m["id"] for m in result["matches"]] == [10]
 
@@ -102,7 +101,10 @@ def test_find_with_project_puts_its_own_matches_first_and_marks_them(
     fake_service: FakeMammothService,
 ) -> None:
     fake_service.projects = [{"id": 1, "name": "P1"}, {"id": 42, "name": "P42"}]
-    fake_service.responses[_LIST_ALL] = {"datasets": [{"id": 10, "name": "Sales Q1"}]}
+    fake_service.responses[_SEARCH] = {
+        "resources": [_hit(1, 9, "Sales 2023"), _hit(42, 10, "Sales Q1")],
+        "has_more": False,
+    }
     result, meta = dataset_cmd.dataset_find(_inv("dataset.find", project=42, extra_args=["sales"]))
     assert result["projects_searched"] == 2
     assert result["matches"] == [
@@ -113,9 +115,17 @@ def test_find_with_project_puts_its_own_matches_first_and_marks_them(
             "name": "Sales Q1",
             "source": "unknown",
             "in_project": True,
-        }
+        },
+        {
+            "project_id": 1,
+            "project_name": "P1",
+            "id": 9,
+            "name": "Sales 2023",
+            "source": "unknown",
+            "in_project": False,
+        },
     ]
-    assert (_LIST_ALL, {"project_id": 42, "fields": DATASET_ROW_FIELDS}) in fake_service.call_log
+    assert [symbol for symbol, _ in fake_service.call_log] == [_SEARCH]
     assert meta["project_id"] == 42
 
 
