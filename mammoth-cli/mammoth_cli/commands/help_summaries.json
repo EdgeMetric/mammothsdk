@@ -302,7 +302,7 @@
   "dataset.broken-rows.resolve": "Add corrected set-aside lines to a dataset, or discard them. Prompt or '--yes'.",
   "dataset.bulk-delete": "Permanently delete the listed datasets. 'dataset_ids' from '--input'; '--yes' required.",
   "dataset.bulk-update": "Apply a bulk patch across the active project's datasets. High-impact.",
-  "dataset.create": "Create a dataset from a spec and creation type (required '--input' fields).",
+  "dataset.create": "Create a dataset (web URL, clone, or import from a connection such as SFTP).",
   "dataset.create-from-pdf": "Create dataset(s) from tables extracted out of a PDF file.",
   "dataset.data": "Fetch a dataset's data, waiting for the backing job to complete.",
   "dataset.delete": "Permanently delete one dataset by id. Prompt or '--yes' required.",
