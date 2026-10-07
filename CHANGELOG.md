@@ -6,6 +6,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed (mammoth-io 0.8.29, mammoth-cli 2.2.55)
+
+- Adds `view export live-link` (#169), explore-panel real cards (#167), draft-write fixes (#170), start-up perf (#171) and prompt-cancel/login fixes (#172). The CLI now requires `mammoth-io>=0.8.29`.
+
 ### Changed (mammoth-io 0.8.28, mammoth-cli 2.2.54)
 
 - Combined CLI fixes from #163 (see the entries below). The CLI now requires `mammoth-io>=0.8.28`.
