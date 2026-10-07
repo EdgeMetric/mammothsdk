@@ -664,3 +664,40 @@ def test_update_rejects_raw_patch_even_with_confirmation(
         "dataset.file-settings.update",
     ]
     assert fake_service.call_log == []
+
+
+# -- what a create job settles with -----------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("settled", "expected"),
+    [
+        ({"ds_id": 5}, {"status": "ready", "dataset_id": 5, "job_id": 9}),
+        ({"dataset_id": 5}, {"status": "ready", "dataset_id": 5, "job_id": 9}),
+        ({"datasource_id": 5}, {"status": "ready", "dataset_id": 5, "job_id": 9}),
+        (
+            {"datasource_config_id": 7},
+            {"status": "scheduled", "datasource_config_id": 7, "job_id": 9},
+        ),
+        (
+            {"files_found": 2, "created": ["a", "b"], "failed": []},
+            {"files_found": 2, "created": ["a", "b"], "failed": []},
+        ),
+    ],
+)
+def test_created_dataset_reads_every_settled_shape(
+    settled: dict[str, object], expected: dict[str, object]
+) -> None:
+    assert dataset_cmd._created_dataset({"job_id": 9}, settled) == expected
+
+
+def test_created_dataset_raises_when_the_job_made_nothing() -> None:
+    with pytest.raises(CliError) as excinfo:
+        dataset_cmd._created_dataset({"job_id": 9}, {"message": "No such file"})
+    assert excinfo.value.code == "job_failed"
+    assert "No such file" in excinfo.value.message
+
+
+def test_created_dataset_passes_a_sketch_through() -> None:
+    sketch = {"id": 12, "name": "n", "status": "ready"}
+    assert dataset_cmd._created_dataset(sketch, sketch) == sketch
