@@ -94,14 +94,10 @@ _LOCAL_COMMAND_ALLOWLIST: dict[str, str] = {
     "upgrade": "no HTTP call to the Mammoth API: runs the package installer",
 }
 
-# Remote commands whose route is absent from the release backend, as
-# command_id -> "METHOD /path: reason". Empty: every remote command maps.
-_UNMAPPED_REMOTE_ALLOWLIST: dict[str, str] = {}
-
 
 def test_every_remote_write_command_names_its_operation_ids() -> None:
     """A non-read command that calls the API must say which operations it calls."""
-    allowed = _LOCAL_COMMAND_ALLOWLIST.keys() | _UNMAPPED_REMOTE_ALLOWLIST.keys()
+    allowed = _LOCAL_COMMAND_ALLOWLIST.keys()
     missing = [
         record["command_id"]
         for record in load_commands()

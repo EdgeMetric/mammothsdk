@@ -298,11 +298,6 @@ def _field_call(invocation: Invocation, *fields: str) -> HandlerResult:
     )
 
 
-def _only(document: dict[str, Any], *fields: str) -> dict[str, Any]:
-    """Return the ``fields`` the ``--input`` document carries."""
-    return {field: document[field] for field in fields if field in document}
-
-
 def agent_list(invocation: Invocation) -> HandlerResult:
     """List the workspace's agent definitions; ``status`` is optional input."""
     with open_service(invocation) as (service, auth):
@@ -332,8 +327,39 @@ def agent_get(invocation: Invocation) -> HandlerResult:
     return _definition_call(invocation)
 
 
-agent_publish = agent_disable = agent_charter_versions = agent_get
-agent_goldens_list = agent_goldens_run = agent_goldens_status = agent_feedback_list = agent_get
+def agent_publish(invocation: Invocation) -> HandlerResult:
+    """Publish an agent definition so it can take work."""
+    return _definition_call(invocation)
+
+
+def agent_disable(invocation: Invocation) -> HandlerResult:
+    """Disable an agent definition so it stops taking work."""
+    return _definition_call(invocation)
+
+
+def agent_charter_versions(invocation: Invocation) -> HandlerResult:
+    """List the saved charter versions of an agent definition."""
+    return _definition_call(invocation)
+
+
+def agent_goldens_list(invocation: Invocation) -> HandlerResult:
+    """List the golden cases an agent definition is proven against."""
+    return _definition_call(invocation)
+
+
+def agent_goldens_run(invocation: Invocation) -> HandlerResult:
+    """Start a proof run of the agent definition's golden cases."""
+    return _definition_call(invocation)
+
+
+def agent_goldens_status(invocation: Invocation) -> HandlerResult:
+    """Show the latest proof run of the agent definition's golden cases."""
+    return _definition_call(invocation)
+
+
+def agent_feedback_list(invocation: Invocation) -> HandlerResult:
+    """List the thumbs up/down feedback on the agent definition's answers."""
+    return _definition_call(invocation)
 
 
 def agent_update(invocation: Invocation) -> HandlerResult:
@@ -369,9 +395,8 @@ def agent_charter_restore(invocation: Invocation) -> HandlerResult:
 def agent_access_set(invocation: Invocation) -> HandlerResult:
     """Set the built-in ``role`` and, when given, ``propose``."""
     document = _bound_document(invocation)
-    return _definition_call(
-        invocation, role=_require_field(document, "role"), **_only(document, "propose")
-    )
+    propose = {"propose": document["propose"]} if "propose" in document else {}
+    return _definition_call(invocation, role=_require_field(document, "role"), **propose)
 
 
 def agent_projects_set(invocation: Invocation) -> HandlerResult:

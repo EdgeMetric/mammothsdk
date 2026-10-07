@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
+from mammoth.api.support import _check_id
 from mammoth.exceptions import MammothValidationError
 
 if TYPE_CHECKING:
@@ -12,7 +13,6 @@ if TYPE_CHECKING:
 _list = list  # Alias to avoid shadowing by method name
 
 ERR_KEY_REQUIRED = "`agent_key` must be a non-empty string, got {0!r}."
-ERR_ID_POSITIVE = "`{0}` must be a positive integer, got {1}."
 ERR_NOTE_KIND = '`kind` must be "fact" or "scratch", got {0!r}.'
 
 VALID_NOTE_KINDS = frozenset({"fact", "scratch"})
@@ -39,11 +39,6 @@ class AgentDefinitionsAPI:
         if not agent_key:
             raise MammothValidationError(ERR_KEY_REQUIRED.format(agent_key))
         return f"{self._base()}/{agent_key}{suffix}"
-
-    @staticmethod
-    def _check_id(name: str, value: int) -> None:
-        if value <= 0:
-            raise MammothValidationError(ERR_ID_POSITIVE.format(name, value))
 
     async def list(self, status: str | None = None) -> dict[str, Any]:
         """List the workspace's agent definitions (deleted ones are excluded).
@@ -85,16 +80,15 @@ class AgentDefinitionsAPI:
             The created definition.
         """
         body: dict[str, Any] = {"key": key, "name": name}
-        body.update(
-            _present(
-                description=description,
-                charter=charter,
-                role=role,
-                propose=propose,
-                project_ids=project_ids,
-                team=team,
-            )
-        )
+        optional = {
+            "description": description,
+            "charter": charter,
+            "role": role,
+            "propose": propose,
+            "project_ids": project_ids,
+            "team": team,
+        }
+        body.update({name: value for name, value in optional.items() if value is not None})
         return await self._client._request_json("POST", self._base(), json=body)
 
     async def roles(self) -> dict[str, Any]:
@@ -150,15 +144,16 @@ class AgentDefinitionsAPI:
         Raises:
             MammothValidationError: If *agent_key* is empty.
         """
-        body = _present(
-            name=name,
-            description=description,
-            charter=charter,
-            role=role,
-            propose=propose,
-            project_ids=project_ids,
-            team=team,
-        )
+        fields = {
+            "name": name,
+            "description": description,
+            "charter": charter,
+            "role": role,
+            "propose": propose,
+            "project_ids": project_ids,
+            "team": team,
+        }
+        body = {key: value for key, value in fields.items() if value is not None}
         return await self._client._request_json("PATCH", self._path(agent_key), json=body)
 
     async def delete(self, agent_key: str) -> dict[str, Any]:
@@ -233,7 +228,7 @@ class AgentDefinitionsAPI:
         Raises:
             MammothValidationError: If *agent_key* is empty or *version* is not positive.
         """
-        self._check_id("version", version)
+        _check_id("version", version)
         return await self._client._request_json(
             "POST", self._path(agent_key, f"/charter-versions/{version}/restore")
         )
@@ -285,7 +280,7 @@ class AgentDefinitionsAPI:
         Raises:
             MammothValidationError: If *agent_key* is empty or *golden_id* is not positive.
         """
-        self._check_id("golden_id", golden_id)
+        _check_id("golden_id", golden_id)
         return await self._client._request_json(
             "DELETE", self._path(agent_key, f"/goldens/{golden_id}")
         )
@@ -341,7 +336,11 @@ class AgentDefinitionsAPI:
         """
         if kind is not None and kind not in VALID_NOTE_KINDS:
             raise MammothValidationError(ERR_NOTE_KIND.format(kind))
-        params = _present(project_id=project_id, kind=kind)
+        params = {
+            key: value
+            for key, value in (("project_id", project_id), ("kind", kind))
+            if value is not None
+        }
         return await self._client._request_json(
             "GET", self._path(agent_key, "/notes"), params=params or None
         )
@@ -365,7 +364,7 @@ class AgentDefinitionsAPI:
             MammothValidationError: If *agent_key* is empty, *project_id* is not
                 positive or *kind* is not valid.
         """
-        self._check_id("project_id", project_id)
+        _check_id("project_id", project_id)
         if kind not in VALID_NOTE_KINDS:
             raise MammothValidationError(ERR_NOTE_KIND.format(kind))
         return await self._client._request_json(
@@ -387,7 +386,7 @@ class AgentDefinitionsAPI:
         Raises:
             MammothValidationError: If *agent_key* is empty or *note_id* is not positive.
         """
-        self._check_id("note_id", note_id)
+        _check_id("note_id", note_id)
         return await self._client._request_json(
             "DELETE", self._path(agent_key, f"/notes/{note_id}")
         )
@@ -405,8 +404,3 @@ class AgentDefinitionsAPI:
             MammothValidationError: If *agent_key* is empty.
         """
         return await self._client._request_json("GET", self._path(agent_key, "/feedback"))
-
-
-def _present(**fields: Any) -> dict[str, Any]:
-    """Return the fields that are not None."""
-    return {name: value for name, value in fields.items() if value is not None}
