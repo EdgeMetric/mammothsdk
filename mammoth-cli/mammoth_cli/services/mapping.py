@@ -264,25 +264,27 @@ def _not_allowed_reason(body: Any, status: int | None) -> str | None:
 
 
 def _backend_message(body: Any, status: int | None) -> str | None:
-    """The backend's own words for a 4xx: its ``detail``/``message``, one line per field error."""
+    """The backend's own words for a 4xx: its message, one line per field error, then its code."""
     if status is None or not 400 <= status < 500 or not isinstance(body, dict):
         return None
-    text = body.get("detail", body.get("message"))
-    if isinstance(text, list):
-        lines = [_field_error_line(item) for item in text]
-        text = "\n".join(line for line in lines if line)
+    details = body.get("details")
+    details = details if isinstance(details, dict) else {}
+    text = body.get("message") or details.get("detail")
     if not isinstance(text, str) or not text:
         return None
-    code = body.get("code")
+    extra = details.get("extra")
+    if isinstance(extra, list) and extra:
+        text = "\n".join([text, *(_field_error_line(item) for item in extra)])
+    code = body.get("error_code") or body.get("code")
     return f"{text} [{code}]" if isinstance(code, str) and code else text
 
 
 def _field_error_line(item: Any) -> str:
-    """One validation error as ``field: message``."""
-    if not isinstance(item, dict) or not isinstance(item.get("msg"), str):
-        return str(item) if isinstance(item, str) else ""
-    loc = [str(part) for part in item.get("loc", ()) if part not in ("body", "query", "path")]
-    return f"{'.'.join(loc)}: {item['msg']}" if loc else item["msg"]
+    """One ``extra`` entry as ``key: message``."""
+    if not isinstance(item, dict):
+        return str(item)
+    message = str(item.get("message", ""))
+    return f"{item['key']}: {message}" if item.get("key") else message
 
 
 CODE_CLI_KEYS_NOT_ALLOWED = "cli_keys_not_allowed"

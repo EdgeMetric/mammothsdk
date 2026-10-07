@@ -11,29 +11,49 @@ def _api_error(status: int, body: dict[str, object]) -> MammothAPIError:
     return MammothAPIError("x", status_code=status, method="POST", response_body=body)
 
 
-def test_conflict_shows_backend_detail_and_code() -> None:
+def test_conflict_shows_backend_message_and_error_code() -> None:
     mapped = map_sdk_exception(
-        _api_error(409, {"detail": "Agent key 'sample' is taken.", "code": "agent_key_taken"})
+        _api_error(
+            409,
+            {
+                "message": "This workspace already has an agent with this key.",
+                "name": "CONFLICT",
+                "error_code": "4GENR007",
+                "details": {
+                    "detail": "Conflict for POST /workspaces/4/agent-definitions",
+                    "status_code": 409,
+                },
+            },
+        )
     )
-    assert "Agent key 'sample' is taken." in mapped.message
-    assert "agent_key_taken" in mapped.message
+    assert mapped.message.startswith("This workspace already has an agent with this key.")
+    assert mapped.message.endswith("[4GENR007]")
     assert mapped.exit_status == 6
 
 
-def test_validation_errors_list_one_field_per_line() -> None:
+def test_validation_error_lists_one_field_per_line() -> None:
     mapped = map_sdk_exception(
         _api_error(
-            422,
+            400,
             {
-                "detail": [
-                    {"loc": ["body", "key"], "msg": "must match ^[a-z][a-z0-9_-]{1,62}$"},
-                    {"loc": ["body", "name"], "msg": "field required"},
-                ]
+                "details": {
+                    "detail": "Validation failed for POST /workspaces/4/agent-definitions",
+                    "extra": [
+                        {
+                            "key": "key",
+                            "message": "String should match pattern '^[a-z][a-z0-9_-]{1,62}$'",
+                        }
+                    ],
+                    "status_code": 400,
+                },
+                "error_code": "4GENR007",
+                "message": "Validation error",
+                "name": "VALIDATION_ERROR",
             },
         )
     )
     assert mapped.message.splitlines() == [
-        "key: must match ^[a-z][a-z0-9_-]{1,62}$",
-        "name: field required",
+        "Validation error",
+        "key: String should match pattern '^[a-z][a-z0-9_-]{1,62}$' [4GENR007]",
     ]
     assert mapped.exit_status == 1
