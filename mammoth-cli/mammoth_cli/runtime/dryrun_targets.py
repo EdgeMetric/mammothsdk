@@ -449,8 +449,6 @@ def _read_name(
     symbol = reader.symbol or str((manifest or {}).get("sdk_symbol") or "")
     scope = {key: arguments[key] for key in reader.scope_args if arguments.get(key) is not None}
     sent_id = str(target_id) if reader.id_as_str else target_id
-    if kind == "folder":  # the id shown is the open id; the folder route takes the label id
-        sent_id = FolderIds(service).label(int(scope["project_id"]), target_id)
     record = service.call(symbol, **{reader.id_arg: sent_id}, **scope)
     name = _name_of(record, reader)
     if not isinstance(name, str) or not name:
@@ -464,7 +462,15 @@ def _read_name(
             hint=f"Check the id with `mammoth {kind} get {target_id}`; nothing was changed.",
             details={"type": kind, "id": target_id},
         )
-    return {"type": kind, "id": target_id, "name": name}
+    return {"type": kind, "id": _shown_id(FolderIds(service), kind, target_id, scope), "name": name}
+
+
+def _shown_id(folders: FolderIds, kind: str, target_id: int, scope: Mapping[str, Any]) -> int:
+    """The id the report shows: a folder's arrives as the label id its call carries, and is shown
+    by the id the app opens it by."""
+    if kind != "folder":
+        return target_id
+    return folders.to_open(int(scope["project_id"])).get(target_id, target_id)
 
 
 #: Resource kinds one bulk request can name, and the resource type the route calls each.
@@ -483,16 +489,16 @@ def _read_names(
     if kind not in BULK_TYPES or len(ids) < 2:
         return [_read_name(service, kind, item, arguments) for item in ids]
     scope = {"project_id": arguments["project_id"]} if arguments.get("project_id") else {}
-    wire = FolderIds(service).labels(scope["project_id"], ids) if kind == "folder" else ids
-    rows = service.call(_BULK_SYMBOL, items=[(BULK_TYPES[kind], item) for item in wire], **scope)
+    rows = service.call(_BULK_SYMBOL, items=[(BULK_TYPES[kind], item) for item in ids], **scope)
     names = {row.get("object_id"): row.get("name") for row in rows if isinstance(row, Mapping)}
+    folders = FolderIds(service)
     return [
         (
-            {"type": kind, "id": item, "name": names[sent]}
-            if isinstance(names.get(sent), str) and names[sent]
+            {"type": kind, "id": _shown_id(folders, kind, item, scope), "name": names[item]}
+            if isinstance(names.get(item), str) and names[item]
             else _read_name(service, kind, item, arguments)
         )
-        for item, sent in zip(ids, wire, strict=True)
+        for item in ids
     ]
 
 
