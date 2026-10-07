@@ -1980,7 +1980,8 @@ commands:
   command_path: support plan unarchive
   disposition: command
   alias_of: null
-  operation_ids: []
+  operation_ids:
+  - UnarchivePlan
   positionals:
   - &id001
     name: plan_id
@@ -2069,7 +2070,8 @@ commands:
   command_path: support plan storage-option create
   disposition: command
   alias_of: null
-  operation_ids: []
+  operation_ids:
+  - CreateStorageOption
   positionals:
   - *id001
   options: []
@@ -2113,7 +2115,8 @@ commands:
   command_path: support plan storage-option update
   disposition: command
   alias_of: null
-  operation_ids: []
+  operation_ids:
+  - UpdateStorageOption
   positionals:
   - *id001
   - &id002
@@ -2164,7 +2167,8 @@ commands:
   command_path: support plan storage-option archive
   disposition: command
   alias_of: null
-  operation_ids: []
+  operation_ids:
+  - ArchiveStorageOption
   positionals:
   - *id001
   - *id002
@@ -2249,7 +2253,8 @@ commands:
   command_path: support template edit
   disposition: command
   alias_of: null
-  operation_ids: []
+  operation_ids:
+  - DashboardV3AdminEditRow
   positionals:
   - &id003
     name: slug
@@ -2378,7 +2383,8 @@ commands:
   command_path: support template publish
   disposition: command
   alias_of: null
-  operation_ids: []
+  operation_ids:
+  - DashboardV3AdminPublish
   positionals:
   - *id003
   options: []
@@ -2420,7 +2426,8 @@ commands:
   command_path: support template unpublish
   disposition: command
   alias_of: null
-  operation_ids: []
+  operation_ids:
+  - DashboardV3AdminUnpublish
   positionals:
   - *id003
   options: []
@@ -2461,7 +2468,8 @@ commands:
   command_path: support template retire
   disposition: command
   alias_of: null
-  operation_ids: []
+  operation_ids:
+  - DashboardV3AdminRetire
   positionals:
   - *id003
   options: []
@@ -2549,7 +2557,8 @@ commands:
   command_path: support template import
   disposition: command
   alias_of: null
-  operation_ids: []
+  operation_ids:
+  - DashboardV3AdminImportBundle
   positionals:
   - *id004
   options: []
@@ -2591,7 +2600,8 @@ commands:
   command_path: support template thumbnail set
   disposition: command
   alias_of: null
-  operation_ids: []
+  operation_ids:
+  - DashboardV3AdminPutThumbnail
   positionals:
   - *id003
   - name: file
@@ -2638,7 +2648,8 @@ commands:
   command_path: support template thumbnail clear
   disposition: command
   alias_of: null
-  operation_ids: []
+  operation_ids:
+  - DashboardV3AdminDeleteThumbnail
   positionals:
   - *id003
   options: []
@@ -2680,7 +2691,8 @@ commands:
   command_path: support template discard
   disposition: command
   alias_of: null
-  operation_ids: []
+  operation_ids:
+  - DashboardV3AdminDiscardImport
   positionals:
   - *id003
   options: []

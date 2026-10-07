@@ -380,7 +380,7 @@ def agent_projects_set(invocation: Invocation) -> HandlerResult:
 
 
 def agent_team_set(invocation: Invocation) -> HandlerResult:
-    """Set the team: ``{"agents": [keys], "max_rounds": 1..6}`` (replaces the team)."""
+    """Replace the team: the agents this agent may ask, and the rounds of asking."""
     return _field_call(invocation, "team")
 
 

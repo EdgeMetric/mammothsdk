@@ -2067,7 +2067,8 @@ commands:
   command_path: view export azure-blob
   disposition: command
   alias_of: null
-  operation_ids: []
+  operation_ids:
+  - AddExport
   positionals:
   - name: view_id
     type: int
@@ -2120,7 +2121,8 @@ commands:
   command_path: view export bigquery
   disposition: command
   alias_of: null
-  operation_ids: []
+  operation_ids:
+  - AddExport
   positionals:
   - name: view_id
     type: int
@@ -2264,7 +2266,8 @@ commands:
   command_path: view export dataset
   disposition: command
   alias_of: null
-  operation_ids: []
+  operation_ids:
+  - AddExport
   positionals:
   - name: view_id
     type: int
@@ -2369,7 +2372,8 @@ commands:
   command_path: view export elasticsearch
   disposition: command
   alias_of: null
-  operation_ids: []
+  operation_ids:
+  - AddExport
   positionals:
   - name: view_id
     type: int
@@ -2422,7 +2426,8 @@ commands:
   command_path: view export email
   disposition: command
   alias_of: null
-  operation_ids: []
+  operation_ids:
+  - AddExport
   positionals:
   - name: view_id
     type: int
@@ -2475,7 +2480,8 @@ commands:
   command_path: view export ftp
   disposition: command
   alias_of: null
-  operation_ids: []
+  operation_ids:
+  - AddExport
   positionals:
   - name: view_id
     type: int
@@ -2620,7 +2626,8 @@ commands:
   command_path: view export managed-s3
   disposition: command
   alias_of: null
-  operation_ids: []
+  operation_ids:
+  - AddExport
   positionals:
   - name: view_id
     type: int
@@ -2669,7 +2676,8 @@ commands:
   command_path: view export live-link
   disposition: command
   alias_of: null
-  operation_ids: []
+  operation_ids:
+  - AddExport
   positionals:
   - name: view_id
     type: int
@@ -2717,7 +2725,8 @@ commands:
   command_path: view export mssql
   disposition: command
   alias_of: null
-  operation_ids: []
+  operation_ids:
+  - AddExport
   positionals:
   - name: view_id
     type: int
@@ -2770,7 +2779,8 @@ commands:
   command_path: view export mysql
   disposition: command
   alias_of: null
-  operation_ids: []
+  operation_ids:
+  - AddExport
   positionals:
   - name: view_id
     type: int
@@ -2823,7 +2833,8 @@ commands:
   command_path: view export onedrive
   disposition: command
   alias_of: null
-  operation_ids: []
+  operation_ids:
+  - AddExport
   positionals:
   - name: view_id
     type: int
@@ -2876,7 +2887,8 @@ commands:
   command_path: view export postgres
   disposition: command
   alias_of: null
-  operation_ids: []
+  operation_ids:
+  - AddExport
   positionals:
   - name: view_id
     type: int
@@ -2929,7 +2941,8 @@ commands:
   command_path: view export powerbi
   disposition: command
   alias_of: null
-  operation_ids: []
+  operation_ids:
+  - AddExport
   positionals:
   - name: view_id
     type: int
@@ -3074,7 +3087,8 @@ commands:
   command_path: view export redshift
   disposition: command
   alias_of: null
-  operation_ids: []
+  operation_ids:
+  - AddExport
   positionals:
   - name: view_id
     type: int
@@ -3127,7 +3141,8 @@ commands:
   command_path: view export rest
   disposition: command
   alias_of: null
-  operation_ids: []
+  operation_ids:
+  - AddExport
   positionals:
   - name: view_id
     type: int
@@ -3182,7 +3197,8 @@ commands:
   command_path: view export sftp
   disposition: command
   alias_of: null
-  operation_ids: []
+  operation_ids:
+  - AddExport
   positionals:
   - name: view_id
     type: int
@@ -3237,7 +3253,8 @@ commands:
   command_path: view export sharepoint
   disposition: command
   alias_of: null
-  operation_ids: []
+  operation_ids:
+  - AddExport
   positionals:
   - name: view_id
     type: int
@@ -3290,7 +3307,8 @@ commands:
   command_path: view export tableau
   disposition: command
   alias_of: null
-  operation_ids: []
+  operation_ids:
+  - AddExport
   positionals:
   - name: view_id
     type: int
@@ -3396,7 +3414,8 @@ commands:
   command_path: view exportable-config apply
   disposition: command
   alias_of: null
-  operation_ids: []
+  operation_ids:
+  - ApplyExportableConfig
   positionals:
   - name: view_id
     type: int
@@ -6407,7 +6426,8 @@ commands:
   command_path: view optimize
   disposition: command
   alias_of: null
-  operation_ids: []
+  operation_ids:
+  - OptimizePipeline
   positionals:
   - name: view_id
     type: int
@@ -6508,7 +6528,8 @@ commands:
   command_path: view explore-panel set
   disposition: command
   alias_of: null
-  operation_ids: []
+  operation_ids:
+  - Patch
   positionals:
   - name: view_id
     type: int
