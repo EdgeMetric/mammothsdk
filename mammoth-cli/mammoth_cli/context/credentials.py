@@ -140,7 +140,9 @@ class OAuthSession:
     """A browser login's tokens: a short-lived access token and its refresh token.
 
     ``expires_at`` is a Unix timestamp in whole seconds. ``grant_id`` is the
-    server-side connection id, used to revoke it on logout.
+    server-side connection id, used to revoke it on logout. ``workspace_id`` and
+    ``project_id`` are the scope the server pinned the grant to at login; they are
+    adopted into the profile then and are not stored with the credential.
     """
 
     access: str
@@ -148,6 +150,8 @@ class OAuthSession:
     expires_at: int
     client_id: str
     grant_id: int | None = None
+    workspace_id: int | None = None
+    project_id: int | None = None
 
     def document(self) -> dict[str, str | int]:
         document: dict[str, str | int] = {

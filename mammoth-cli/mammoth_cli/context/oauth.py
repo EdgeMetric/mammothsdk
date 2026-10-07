@@ -242,6 +242,8 @@ class TokenGrant:
     access: str
     refresh: str
     expires_in: int
+    workspace_id: int | None = None
+    project_id: int | None = None
 
 
 def _post_token(base_url: str, form: dict[str, str]) -> tuple[int, dict[str, object]]:
@@ -257,12 +259,18 @@ def _post_token(base_url: str, form: dict[str, str]) -> tuple[int, dict[str, obj
     return status, body if isinstance(body, dict) else {}
 
 
+def _optional_id(value: object) -> int | None:
+    return None if value is None else int(str(value))
+
+
 def _parse_grant(body: dict[str, object]) -> TokenGrant:
     try:
         return TokenGrant(
             access=str(body["access_token"]),
             refresh=str(body["refresh_token"]),
             expires_in=int(str(body["expires_in"])),
+            workspace_id=_optional_id(body.get("workspace_id")),
+            project_id=_optional_id(body.get("project_id")),
         )
     except (ValueError, KeyError, TypeError) as exc:
         raise _login_failed("Mammoth's sign-in service returned an unreadable answer.") from exc
@@ -301,6 +309,8 @@ def session_from_grant(grant: TokenGrant, client_id: str, now: float | None = No
         expires_at=issued + grant.expires_in,
         client_id=client_id,
         grant_id=grant_id_from_refresh_token(grant.refresh),
+        workspace_id=grant.workspace_id,
+        project_id=grant.project_id,
     )
 
 

@@ -339,17 +339,22 @@ def _run_oauth_login(
         session = oauth.browser_login(
             base_url, client_id=client_id, open_browser=open_browser, say=say
         )
+    # The server-verified workspace wins over the grant's own workspace_id.
     workspace_id = _verify_login(invocation, base_url=base_url, api_token=session.access)
 
     profile_name = invocation.profile or profiles.DEFAULT_PROFILE_NAME
     profiles.validate_profile_name(profile_name)
     existing = profiles.get_profile(profile_name)
+    if session.project_id is not None:
+        project_id = session.project_id
+    else:
+        project_id = existing.project_id if existing is not None else None
     profiles.save_profile(
         profiles.ProfileRecord(
             name=profile_name,
             workspace_id=workspace_id,
             server_prefix=server_prefix,
-            project_id=existing.project_id if existing is not None else None,
+            project_id=project_id,
         ),
         select=True,
     )

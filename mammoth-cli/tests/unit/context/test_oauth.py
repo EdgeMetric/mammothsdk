@@ -188,3 +188,16 @@ def test_any_other_poll_answer_stops_the_login(status: int, body: dict[str, obje
 
 def test_device_grant_type_is_the_rfc_8628_urn() -> None:
     assert oauth.DEVICE_GRANT_TYPE == "urn:ietf:params:oauth:grant-type:device_code"
+
+
+def test_a_grant_carries_the_workspace_and_project_the_server_pinned() -> None:
+    grant = oauth._parse_grant({**_GRANT, "workspace_id": 247, "project_id": 16712})
+    assert (grant.workspace_id, grant.project_id) == (247, 16712)
+    session = oauth.session_from_grant(grant, "oc_test")
+    assert (session.workspace_id, session.project_id) == (247, 16712)
+
+
+@pytest.mark.parametrize("extra", [{}, {"workspace_id": None, "project_id": None}])
+def test_a_grant_without_scope_has_none(extra: dict[str, object]) -> None:
+    grant = oauth._parse_grant({**_GRANT, **extra})
+    assert grant.workspace_id is None and grant.project_id is None
