@@ -99,7 +99,7 @@ def client_id_for(server_prefix: str | None) -> str:
             code=CODE_OAUTH_UNAVAILABLE,
             message=f"Browser sign-in is not available on '{prefix}' yet.",
             exit_status=EXIT_USAGE,
-            hint="Paste an API token instead: mammoth auth login --method token",
+            hint="Pick option 3 (paste an API token) or run: mammoth auth login --method token",
             recovery_commands=["mammoth auth login --method token"],
         ) from None
 
