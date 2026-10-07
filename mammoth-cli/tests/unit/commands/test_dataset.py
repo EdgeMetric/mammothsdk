@@ -482,7 +482,9 @@ def test_rename_forwards_name(fake_service: FakeMammothService, tmp_path: Path) 
     dataset_cmd.dataset_rename(
         _inv("dataset.rename", project=180, extra_args=["7"], input_file=input_file)
     )
-    assert fake_service.call_log == [(_RENAME, {"dataset_id": 7, "name": "New", "project_id": 180})]
+    assert fake_service.call_log == [
+        (_RENAME, {"dataset_id": 7, "name": "New", "project_id": 180, "unique": True})
+    ]
 
 
 # -- trash / restore --------------------------------------------------------

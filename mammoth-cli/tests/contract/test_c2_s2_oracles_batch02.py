@@ -353,11 +353,19 @@ CASES = [
         "input": {"name": "C2_DATASET_RENAMED"},
         "api": DatasetsAPI,
         "method": "rename",
-        "kwargs": {"dataset_id": 763, "name": "C2_DATASET_RENAMED", "project_id": 41},
+        "kwargs": {
+            "dataset_id": 763,
+            "name": "C2_DATASET_RENAMED",
+            "project_id": 41,
+            "unique": True,
+        },
         "wire": [
             "PATCH",
             "/workspaces/4/projects/41/datasets/763",
-            {"json": {"patch": {"op": "replace", "path": "name", "value": "C2_DATASET_RENAMED"}}},
+            {
+                "json": {"patch": {"op": "replace", "path": "name", "value": "C2_DATASET_RENAMED"}},
+                "params": {"unique": "true"},
+            },
         ],
         "response": {"name": "C2_DATASET_RENAMED"},
     },
