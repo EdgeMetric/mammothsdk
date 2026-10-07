@@ -681,7 +681,7 @@ IN_PLACE_RECIPE = (
     "EDITS THE GIVEN VIEW IN PLACE: this adds a step to the view and changes that view "
     "and its dataset's output. To make a NEW dataset and leave the source untouched: "
     "`mammoth view create SOURCE_DATASET_ID` (working view), do the steps on that working "
-    'view, then `mammoth view export dataset WORKING_VIEW_ID --input \'{"dataset_name": "..."}\'`.'
+    'view, then `mammoth view export dataset WORKING_VIEW_ID` (add dataset_name only if the user named it).'
 )
 _IN_PLACE_KEYWORDS = (
     "new dataset create make in place edits given view working view source untouched"
