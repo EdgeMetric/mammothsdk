@@ -19,7 +19,10 @@ from mammoth_cli.errors.envelope import EXIT_INTERRUPT
 def _spawn(argv: list[str], home: Path) -> pexpect.spawn:
     env = {k: v for k, v in os.environ.items() if not k.startswith("MAMMOTH_")}
     env.pop("DBUS_SESSION_BUS_ADDRESS", None)
+    env.pop("DISPLAY", None)
+    env.pop("WAYLAND_DISPLAY", None)
     env.update(
+        BROWSER="true",
         HOME=str(home),
         XDG_CONFIG_HOME=str(home / "config"),
         XDG_DATA_HOME=str(home / "data"),

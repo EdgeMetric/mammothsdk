@@ -90,6 +90,10 @@ def child_env(home: Path) -> dict[str, str]:
     # The OS keyring is reached over the D-Bus session; a fuzzed login, logout or
     # profile delete must never find the developer's real one.
     env.pop("DBUS_SESSION_BUS_ADDRESS", None)
+    # A fuzzed ``auth login`` must never open the developer's browser.
+    env["BROWSER"] = "true"
+    env.pop("DISPLAY", None)
+    env.pop("WAYLAND_DISPLAY", None)
     env["PYTHON_KEYRING_BACKEND"] = NO_KEYRING_BACKEND
     env.pop("NO_PROXY", None)
     env.pop("no_proxy", None)
