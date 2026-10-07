@@ -267,6 +267,37 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
             help="ID of the turn to stop (from the chat's events or agent session messages).",
         ),
     ),
+    "agent.charter.restore": (
+        PositionalSpec(
+            name="agent_key",
+            type=str,
+            required=True,
+            help="Key identifying the agent.",
+        ),
+        PositionalSpec(
+            name="version",
+            type=int,
+            required=True,
+            help="Charter version to restore (from agent charter versions).",
+        ),
+    ),
+    **{
+        f"agent.scratch.{verb}": (
+            PositionalSpec(
+                name="agent_key",
+                type=str,
+                required=True,
+                help="Key identifying the agent.",
+            ),
+            PositionalSpec(
+                name="name",
+                type=str,
+                required=True,
+                help="Name of the working note (from agent scratch list).",
+            ),
+        )
+        for verb in ("set", "get", "clear")
+    },
     "dashboard.assess-twb": (
         PositionalSpec(
             name="file",

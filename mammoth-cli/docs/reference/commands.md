@@ -1,10 +1,10 @@
 # Command reference
 
-Generated from the reviewed command manifests for mammoth-cli 2.2.57.
+Generated from the reviewed command manifests for mammoth-cli 2.2.59.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
-Total commands: 663.
+Total commands: 691.
 
 ## activity
 
@@ -75,6 +75,17 @@ Total commands: 663.
 
 ## agent
 
+### `mammoth agent access set`
+
+**Arguments**
+
+- `AGENT_KEY` (str, required) — Key identifying the agent.
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.agent_definitions.AgentDefinitionsAPI.update`
+- Agent example: `mammoth agent access set sample --input '{"role": "member", "propose": true}'`
+
 ### `mammoth agent action delete`
 
 **Arguments**
@@ -93,12 +104,238 @@ Total commands: 663.
 - Backing SDK: `mammoth.api.agents.AgentsAPI.action_list`
 - Agent example: `mammoth agent action list`
 
+### `mammoth agent charter get`
+
+**Arguments**
+
+- `AGENT_KEY` (str, required) — Key identifying the agent.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.agent_definitions.AgentDefinitionsAPI.get`
+- Agent example: `mammoth agent charter get sample`
+
+### `mammoth agent charter restore`
+
+**Arguments**
+
+- `AGENT_KEY` (str, required) — Key identifying the agent.
+- `VERSION` (int, required) — Charter version to restore (from agent charter versions).
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.agent_definitions.AgentDefinitionsAPI.charter_restore`
+- Agent example: `mammoth agent charter restore sample 123`
+
+### `mammoth agent charter set`
+
+**Arguments**
+
+- `AGENT_KEY` (str, required) — Key identifying the agent.
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.agent_definitions.AgentDefinitionsAPI.update`
+- Agent example: `mammoth agent charter set sample --input '{"charter": "Watch weekly margin and report the three biggest drops."}'`
+
+### `mammoth agent charter versions`
+
+**Arguments**
+
+- `AGENT_KEY` (str, required) — Key identifying the agent.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.agent_definitions.AgentDefinitionsAPI.charter_versions`
+- Agent example: `mammoth agent charter versions sample`
+
 ### `mammoth agent chat`
 
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.agents.AgentsAPI.chat`
 - Agent example: `mammoth agent chat --input '{"message": "Summarize revenue by region", "scope": {"sample_key": "Status"}}'`
+
+### `mammoth agent create`
+
+**Arguments**
+
+- `KEY` (str, required) — Key identifying the resource.
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.agent_definitions.AgentDefinitionsAPI.create`
+- Agent example: `mammoth agent create Status --input '{"name": "Revenue report"}'`
+
+### `mammoth agent delete`
+
+**Arguments**
+
+- `AGENT_KEY` (str, required) — Key identifying the agent.
+
+- Mutation class: `destructive`
+- Confirmation: `prompt_or_yes`
+- Backing SDK: `mammoth.api.agent_definitions.AgentDefinitionsAPI.delete`
+- Agent example: `mammoth agent delete sample`
+
+### `mammoth agent disable`
+
+**Arguments**
+
+- `AGENT_KEY` (str, required) — Key identifying the agent.
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.agent_definitions.AgentDefinitionsAPI.disable`
+- Agent example: `mammoth agent disable sample`
+
+### `mammoth agent feedback list`
+
+**Arguments**
+
+- `AGENT_KEY` (str, required) — Key identifying the agent.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.agent_definitions.AgentDefinitionsAPI.feedback_list`
+- Agent example: `mammoth agent feedback list sample`
+
+### `mammoth agent get`
+
+**Arguments**
+
+- `AGENT_KEY` (str, required) — Key identifying the agent.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.agent_definitions.AgentDefinitionsAPI.get`
+- Agent example: `mammoth agent get sample`
+
+### `mammoth agent goldens add`
+
+**Arguments**
+
+- `AGENT_KEY` (str, required) — Key identifying the agent.
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.agent_definitions.AgentDefinitionsAPI.goldens_add`
+- Agent example: `mammoth agent goldens add sample --input '{"question": "Summarize revenue by region", "expected": "sample"}'`
+
+### `mammoth agent goldens list`
+
+**Arguments**
+
+- `AGENT_KEY` (str, required) — Key identifying the agent.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.agent_definitions.AgentDefinitionsAPI.goldens_list`
+- Agent example: `mammoth agent goldens list sample`
+
+### `mammoth agent goldens remove`
+
+**Arguments**
+
+- `AGENT_KEY` (str, required) — Key identifying the agent.
+- `GOLDEN_ID` (int, required) — ID of the golden.
+
+- Mutation class: `destructive`
+- Confirmation: `prompt_or_yes`
+- Backing SDK: `mammoth.api.agent_definitions.AgentDefinitionsAPI.goldens_remove`
+- Agent example: `mammoth agent goldens remove sample 123`
+
+### `mammoth agent goldens run`
+
+**Arguments**
+
+- `AGENT_KEY` (str, required) — Key identifying the agent.
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.agent_definitions.AgentDefinitionsAPI.goldens_run`
+- Agent example: `mammoth agent goldens run sample`
+
+### `mammoth agent goldens status`
+
+**Arguments**
+
+- `AGENT_KEY` (str, required) — Key identifying the agent.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.agent_definitions.AgentDefinitionsAPI.goldens_status`
+- Agent example: `mammoth agent goldens status sample`
+
+### `mammoth agent list`
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.agent_definitions.AgentDefinitionsAPI.list`
+- Agent example: `mammoth agent list`
+
+### `mammoth agent memory add`
+
+**Arguments**
+
+- `AGENT_KEY` (str, required) — Key identifying the agent.
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.agent_definitions.AgentDefinitionsAPI.notes_upsert`
+- Agent example: `mammoth agent memory add sample --input '{"name": "Revenue report", "content": "sample"}'`
+
+### `mammoth agent memory list`
+
+**Arguments**
+
+- `AGENT_KEY` (str, required) — Key identifying the agent.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.agent_definitions.AgentDefinitionsAPI.notes_list`
+- Agent example: `mammoth agent memory list sample`
+
+### `mammoth agent memory remove`
+
+**Arguments**
+
+- `AGENT_KEY` (str, required) — Key identifying the agent.
+- `NOTE_ID` (int, required) — ID of the note.
+
+- Mutation class: `destructive`
+- Confirmation: `prompt_or_yes`
+- Backing SDK: `mammoth.api.agent_definitions.AgentDefinitionsAPI.notes_delete`
+- Agent example: `mammoth agent memory remove sample 123`
+
+### `mammoth agent projects set`
+
+**Arguments**
+
+- `AGENT_KEY` (str, required) — Key identifying the agent.
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.agent_definitions.AgentDefinitionsAPI.update`
+- Agent example: `mammoth agent projects set sample --input '{"project_ids": [12, 15]}'`
+
+### `mammoth agent publish`
+
+**Arguments**
+
+- `AGENT_KEY` (str, required) — Key identifying the agent.
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.agent_definitions.AgentDefinitionsAPI.publish`
+- Agent example: `mammoth agent publish sample`
+
+### `mammoth agent roles`
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.agent_definitions.AgentDefinitionsAPI.roles`
+- Agent example: `mammoth agent roles`
 
 ### `mammoth agent run extend`
 
@@ -169,6 +406,53 @@ Total commands: 663.
 - Backing SDK: `mammoth.api.agents.AgentsAPI.run_units_set`
 - Agent example: `mammoth agent run units set resource-123 --input '{"step": 1, "kind": "sample", "units": [{"sample_key": "Status"}]}'`
 
+### `mammoth agent scratch clear`
+
+**Arguments**
+
+- `AGENT_KEY` (str, required) — Key identifying the agent.
+- `NAME` (str, required) — Name of the working note (from agent scratch list).
+
+- Mutation class: `destructive`
+- Confirmation: `prompt_or_yes`
+- Backing SDK: `mammoth.api.agent_definitions.AgentDefinitionsAPI.notes_delete`
+- Agent example: `mammoth agent scratch clear sample 'Revenue report'`
+
+### `mammoth agent scratch get`
+
+**Arguments**
+
+- `AGENT_KEY` (str, required) — Key identifying the agent.
+- `NAME` (str, required) — Name of the working note (from agent scratch list).
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.agent_definitions.AgentDefinitionsAPI.notes_list`
+- Agent example: `mammoth agent scratch get sample 'Revenue report'`
+
+### `mammoth agent scratch list`
+
+**Arguments**
+
+- `AGENT_KEY` (str, required) — Key identifying the agent.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.agent_definitions.AgentDefinitionsAPI.notes_list`
+- Agent example: `mammoth agent scratch list sample`
+
+### `mammoth agent scratch set`
+
+**Arguments**
+
+- `AGENT_KEY` (str, required) — Key identifying the agent.
+- `NAME` (str, required) — Name of the working note (from agent scratch list).
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.agent_definitions.AgentDefinitionsAPI.notes_upsert`
+- Agent example: `mammoth agent scratch set sample 'Revenue report' --input '{"content": "sample"}'`
+
 ### `mammoth agent session delete`
 
 **Arguments**
@@ -209,6 +493,17 @@ Total commands: 663.
 - Backing SDK: `mammoth.api.agents.AgentsAPI.session_set_visibility`
 - Agent example: `mammoth agent session set-visibility resource-123 --input '{"visibility": "sample"}'`
 
+### `mammoth agent team set`
+
+**Arguments**
+
+- `AGENT_KEY` (str, required) — Key identifying the agent.
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.agent_definitions.AgentDefinitionsAPI.update`
+- Agent example: `mammoth agent team set sample --input '{"team": {"agents": ["margin-watch"], "max_rounds": 4}}'`
+
 ### `mammoth agent turn cancel`
 
 **Arguments**
@@ -219,6 +514,17 @@ Total commands: 663.
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.agents.AgentsAPI.turn_cancel`
 - Agent example: `mammoth agent turn cancel resource-123`
+
+### `mammoth agent update`
+
+**Arguments**
+
+- `AGENT_KEY` (str, required) — Key identifying the agent.
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.agent_definitions.AgentDefinitionsAPI.update`
+- Agent example: `mammoth agent update sample --input '{"name": "Margin watch"}'`
 
 ## ai
 

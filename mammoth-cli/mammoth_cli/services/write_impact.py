@@ -118,13 +118,20 @@ def _rows(result: Mapping[str, Any]) -> list[dict[str, Any]]:
     return [row for row in result.get("data") or [] if isinstance(row, dict)]
 
 
+#: Said wherever a step is refused or skipped for changing no row today.
+STANDING_HINT = "To keep it as a standing rule for future data, add --standing to stage it anyway."
+#: What a staged zero-change step tells the caller.
+STANDING_NOTE = "Staged as a standing rule: it changes no row today and will apply to future rows."
+
+
 def no_op_error(message: str, *, view_id: int) -> CliError:
     """The dry-run failure for a step that would change nothing."""
     return CliError(
         code=CODE_NO_OP,
         message=message,
         exit_status=EXIT_USAGE,
-        hint="Nothing was changed and nothing needs to be; tell the user there is no work.",
+        hint="Nothing was changed and nothing needs to be; tell the user there is no work. "
+        + STANDING_HINT,
         details={"view_id": view_id},
     )
 
