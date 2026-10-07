@@ -3540,30 +3540,6 @@ def view_task_update(invocation: Invocation) -> HandlerResult:
 # ---------------------------------------------------------------------------
 
 
-#: Said of an export added but not started: the pipeline has to run for it to execute.
-_EXPORT_NOT_RUN_HINT = (
-    "The export was added but has not run: auto-run is off or the view has unsubmitted "
-    "changes, so nothing was queued. Run or submit the pipeline to run it."
-)
-
-
-def _with_export_ran(data: Any) -> Any:
-    """An export add's result with ``ran``: whether the add started the export.
-
-    The server answers an add with a ``future_id`` (or a ``job``) when it queued the
-    export, and with the trigger alone when auto-run or a draft held it back; the second
-    has not executed and does not until the pipeline runs, so it says so.
-    """
-    if hasattr(data, "model_dump"):
-        data = data.model_dump(mode="json")
-    if not isinstance(data, dict) or "ran" in data:
-        return data
-    started = data.get("future_id") is not None or "job" in data or "job_id" in data
-    if started:
-        return {**data, "ran": True}
-    return {**data, "ran": False, "hint": _EXPORT_NOT_RUN_HINT}
-
-
 def view_export_create(invocation: Invocation) -> HandlerResult:
     """Create an export for a dataview. ``export_spec`` required. Always ``--yes``."""
     project_id = require_project(invocation)
@@ -3582,7 +3558,7 @@ def view_export_create(invocation: Invocation) -> HandlerResult:
     _forward_optional(document, kwargs, ("dataset_id",))
     with open_service(invocation) as (service, auth):
         _require_exact_parent(service, invocation, dataview_id, kwargs)
-        data = _with_export_ran(service.call(_symbol(invocation), **kwargs))
+        data = service.call(_symbol(invocation), **kwargs)
     return data, _meta(invocation, auth.workspace_id, project_id)
 
 
@@ -4171,8 +4147,6 @@ def view_export_specialized(invocation: Invocation) -> HandlerResult:
             data["row_check"] = row_check
             if pipeline_error is not None:
                 data["pipeline_error"] = pipeline_error
-    if not is_dataset_route:
-        data = _with_export_ran(data)
     if table_note is not None:
         data = _with_recurrence_note(data, table_note)
     return data, _meta(invocation, auth.workspace_id, project_id)

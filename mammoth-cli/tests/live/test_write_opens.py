@@ -1,9 +1,9 @@
-"""Live: a write's envelope names the object it opens, and an export add says if it ran.
+"""Live: a write's envelope names the object it opens.
 
 Real datasets in a scratch project. Run on the box with the test identity (see
 ``conftest.py``)::
 
-    pytest tests/live/test_write_opens_and_export_ran.py -m live -v
+    pytest tests/live/test_write_opens.py -m live -v
 """
 
 from __future__ import annotations
@@ -49,31 +49,3 @@ def test_a_read_has_no_opens(live_cli: LiveCli, sales_data: SalesData) -> None:
     _, meta = live_cli.ok("view", "get", str(sales_data.view), project=sales_data.project)
 
     assert "opens" not in meta
-
-
-def test_an_export_that_queued_nothing_says_it_has_not_run(
-    live_cli: LiveCli, sales_data: SalesData
-) -> None:
-    spec = {
-        "DATAVIEW_ID": sales_data.view,
-        "handler_type": "postgres",
-        "trigger_type": "none",
-        "run_immediately": False,
-        "target_properties": {
-            "host": "localhost",
-            "port": 5432,
-            "database": "nodb",
-            "table": f"t_{int(time.time())}",
-            "username": "u",
-            "password": "p",
-        },
-    }
-    envelope = live_cli.run(
-        *("view", "export", "create", str(sales_data.view), "--yes"),
-        *("--input", json.dumps({"export_spec": spec, "dataset_id": sales_data.dataset})),
-        project=sales_data.project,
-    )
-
-    assert "error" not in envelope, envelope
-    assert envelope["data"]["ran"] is False
-    assert "pipeline" in envelope["data"]["hint"]
