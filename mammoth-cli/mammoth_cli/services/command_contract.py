@@ -16,13 +16,6 @@ from functools import cache
 from types import MappingProxyType
 from typing import Any, Literal, cast
 
-from mammoth.models.batches import (
-    ColumnIdMapping,
-    ColumnNameMapping,
-    NewDsDetails,
-    ProjectedSourceColumn,
-)
-
 from mammoth_cli.manifest.loader import command_by_id, load_commands
 from mammoth_cli.services.argspec import ArgSpec, FieldSpec, arg_spec
 from mammoth_cli.services.input_fields import (
@@ -303,25 +296,37 @@ _LOCAL_CONTRACT_FIELDS: dict[str, tuple[FieldSpec, ...]] = {
     ),
 }
 
-_RELEASE_BATCH_SPEC_FIELDS = (
-    FieldSpec("source_id", required=False, annotation=int | None, default=None),
-    FieldSpec(
-        "mapping",
-        required=False,
-        annotation=list[ColumnNameMapping] | list[ColumnIdMapping] | None,
-        default=None,
-    ),
-    FieldSpec("validate_only", required=False, annotation=bool, default=False),
-    FieldSpec("delete_source_ds", required=False, annotation=bool, default=False),
-    FieldSpec("new_ds_details", required=False, annotation=NewDsDetails | None, default=None),
-    FieldSpec("file_id", required=False, annotation=int | None, default=None),
-    FieldSpec(
-        "projected_source_schema",
-        required=False,
-        annotation=list[ProjectedSourceColumn] | None,
-        default=None,
-    ),
-)
+
+@cache
+def _release_batch_spec_fields() -> tuple[FieldSpec, ...]:
+    """The accepted batch-spec fields; built on first use so the batch models stay unloaded."""
+    from mammoth.models.batches import (
+        ColumnIdMapping,
+        ColumnNameMapping,
+        NewDsDetails,
+        ProjectedSourceColumn,
+    )
+
+    return (
+        FieldSpec("source_id", required=False, annotation=int | None, default=None),
+        FieldSpec(
+            "mapping",
+            required=False,
+            annotation=list[ColumnNameMapping] | list[ColumnIdMapping] | None,
+            default=None,
+        ),
+        FieldSpec("validate_only", required=False, annotation=bool, default=False),
+        FieldSpec("delete_source_ds", required=False, annotation=bool, default=False),
+        FieldSpec("new_ds_details", required=False, annotation=NewDsDetails | None, default=None),
+        FieldSpec("file_id", required=False, annotation=int | None, default=None),
+        FieldSpec(
+            "projected_source_schema",
+            required=False,
+            annotation=list[ProjectedSourceColumn] | None,
+            default=None,
+        ),
+    )
+
 
 # view.data.compare's own handler never calls its manifest sdk_symbol directly
 # -- it runs view.data.aggregate's own handler once per view and joins
@@ -807,7 +812,7 @@ def resolve_command_contract(command_id: str) -> ResolvedCommandContract | None:
     )
     special_fields = _special_export_fields(command_id, spec)
     if command_id == "batch.create-spec":
-        special_fields = _RELEASE_BATCH_SPEC_FIELDS
+        special_fields = _release_batch_spec_fields()
     elif command_id == "view.data.compare":
         special_fields = _VIEW_DATA_COMPARE_FIELDS
     elif command_id == "view.data.profile":

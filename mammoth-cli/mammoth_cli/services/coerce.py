@@ -23,14 +23,13 @@ import typing
 from collections.abc import Callable
 from dataclasses import fields, is_dataclass
 from functools import lru_cache
-from typing import Any, get_args, get_origin, get_type_hints
+from typing import Any, get_args, get_origin
 
 from mammoth import condition as _condition_module
 from mammoth import models as _models_package
-from mammoth import view as _view_module
-from mammoth.models import pipeline as _pipeline_module
 from pydantic import BaseModel
 
+from mammoth_cli.services.argspec import resolve_type_hints
 from mammoth_cli.services.conditions import CONDITION_KWARG, compile_condition
 
 #: The SDK condition types a ``condition``-shaped union field may name. A
@@ -61,6 +60,9 @@ def _sdk_type_namespace() -> dict[str, Any]:
         A mapping of type name to type object, drawn from the SDK's condition
         and view modules and every ``mammoth.models`` submodule.
     """
+    from mammoth import view as _view_module
+    from mammoth.models import pipeline as _pipeline_module
+
     namespace: dict[str, Any] = {}
     modules: list[Any] = [_pipeline_module, _condition_module, _view_module]
     for info in pkgutil.iter_modules(_models_package.__path__):
@@ -92,7 +94,7 @@ def coerce_arguments(method: Callable[..., Any], kwargs: dict[str, Any]) -> dict
             the SDK type namespace supplied, so the failure is visible rather
             than silently skipping coercion.
     """
-    hints = get_type_hints(method, localns=_sdk_type_namespace())
+    hints = resolve_type_hints(method, _sdk_type_namespace)
     coerced: dict[str, Any] = {}
     for name, value in kwargs.items():
         if name == CONDITION_KWARG:
@@ -178,7 +180,7 @@ def _coerce_union(value: Any, args: tuple[Any, ...]) -> Any:
 def _coerce_dataclass(value: dict[str, Any], dataclass_type: Any) -> Any:
     """Build ``dataclass_type`` from a dict, coercing each declared field."""
     try:
-        field_hints = get_type_hints(dataclass_type, localns=_sdk_type_namespace())
+        field_hints = resolve_type_hints(dataclass_type, _sdk_type_namespace)
     except Exception:  # pragma: no cover - defensive
         field_hints = {}
     field_names = {field.name for field in fields(dataclass_type)}

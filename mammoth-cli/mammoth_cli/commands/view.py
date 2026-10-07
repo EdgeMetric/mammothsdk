@@ -29,9 +29,6 @@ from datetime import UTC, datetime
 from decimal import Decimal, InvalidOperation
 from typing import Any
 
-from mammoth.models.exports import ExportStatus
-from mammoth.view import ViewExport
-
 from mammoth_cli.context import profiles
 from mammoth_cli.errors.envelope import (
     CODE_INVALID_ARGUMENT,
@@ -86,6 +83,7 @@ _DATASET_GET_SYMBOL = "mammoth.api.datasets.DatasetsAPI.get"
 # data-read commands can take the view id alone and fill the dataset for the
 # caller. See :data:`mammoth_cli.services.positionals.POSITIONAL_OVERRIDES`.
 _FIND_DATASET_SYMBOL = "mammoth.api.pipeline.PipelineAPI.find_dataset_for_dataview"
+_EXPLORE_PANEL_GET_SYMBOL = "mammoth.api.dataviews.DataviewsAPI.explore_panel"
 _WAIT_FOR_PIPELINE_SYMBOL = "mammoth.api.pipeline.PipelineAPI.wait_for_pipeline"
 _DATASET_ID_FIELD = "dataset_id"
 _DRAFT_OPERATIONS = frozenset({"enter", "exit", "submit", "discard"})
@@ -368,6 +366,9 @@ def _read_meta(
         project_id=project_id,
         fields="__min",
     )
+    # The read just proved this dataset holds the view; keep the pair so the
+    # next command on it (a transform) needs no ``dataset_id`` of its own.
+    parents.remember(_profile_name(invocation), workspace_id, {view_id: dataset_id})
     dataset = service.call(
         _DATASET_GET_SYMBOL, dataset_id=dataset_id, project_id=project_id, fields="id,name"
     )
@@ -1115,6 +1116,15 @@ def view_update(invocation: Invocation) -> HandlerResult:
     return data, _meta(invocation, auth.workspace_id, project_id)
 
 
+def _read_explore_panel(
+    service: Any, symbol: str, dataset_id: int, dataview_id: int, project_id: int
+) -> Any:
+    """The Explore panel the caller saved on a view (``{}`` when none is saved)."""
+    return service.call(
+        symbol, dataset_id=dataset_id, dataview_id=dataview_id, project_id=project_id
+    )
+
+
 def view_explore_panel_get(invocation: Invocation) -> HandlerResult:
     """Read the Explore panel the caller saved on a view (empty when none is saved)."""
     project_id = require_project(invocation)
@@ -1122,17 +1132,14 @@ def view_explore_panel_get(invocation: Invocation) -> HandlerResult:
     document = invocation.load_input() or {}
     with open_service(invocation) as (service, auth):
         dataset_id = _resolve_dataset_id(service, invocation, dataview_id, document)
-        data = service.call(
-            _symbol(invocation),
-            dataset_id=dataset_id,
-            dataview_id=dataview_id,
-            project_id=project_id,
+        data = _read_explore_panel(
+            service, _symbol(invocation), dataset_id, dataview_id, project_id
         )
     return data, _meta(invocation, auth.workspace_id, project_id)
 
 
 def view_explore_panel_set(invocation: Invocation) -> HandlerResult:
-    """Replace the caller's saved Explore panel with the ``panel`` input field."""
+    """Replace the caller's saved Explore panel; the result carries the panel read back after."""
     project_id = require_project(invocation)
     dataview_id = _require_int_positional_at(invocation, 0, "view id")
     document = invocation.load_input() or {}
@@ -1146,7 +1153,10 @@ def view_explore_panel_set(invocation: Invocation) -> HandlerResult:
             panel=panel,
             project_id=project_id,
         )
-    return data, _meta(invocation, auth.workspace_id, project_id)
+        saved = _read_explore_panel(
+            service, _EXPLORE_PANEL_GET_SYMBOL, dataset_id, dataview_id, project_id
+        )
+    return {**data, "panel": saved}, _meta(invocation, auth.workspace_id, project_id)
 
 
 def _untyped_patch_error(invocation: Invocation) -> CliError:
@@ -2204,7 +2214,7 @@ def _explore_range(
 
 
 def view_data_explore(invocation: Invocation) -> HandlerResult:
-    """Explore one column like the web app's Explore card (read-only): DATE counts per ``level`` bucket (AUTO, SECOND to MILLENNIUM), NUMERIC per power-of-10 ``level``, TEXT top values (``limit`` 20), each with ``count`` and ``percentage``; ``metric`` (a column plus SUM/AVG/MIN/MAX/STDDEV/COUNT/DISTINCT_COUNT) adds a per-bucket value, ``percentage_of`` "metric" shares by it, ``sort`` count_/value_/metric_ + asc/desc, ``condition`` filters first (include, exclude, blanks, range, contains; an exclude drops blank rows the card keeps, so or it with IS_EMPTY; drill down = finer ``level`` + ``condition`` on the bucket), ``limit``/``offset`` page, ``range`` true adds the exact earliest and latest value, ``cumulative`` a running total; ``-o csv`` saves the card's values; to put it on a dashboard say it in words to 'dashboard chat edit'.
+    """Read one column's value distribution (read-only; opens and changes no card in the UI, that is ``view explore-panel set``): DATE counts per ``level`` bucket (AUTO, SECOND to MILLENNIUM), NUMERIC per power-of-10 ``level``, TEXT top values (``limit`` 20), each with ``count`` and ``percentage``; ``metric`` (a column plus SUM/AVG/MIN/MAX/STDDEV/COUNT/DISTINCT_COUNT) adds a per-bucket value, ``percentage_of`` "metric" shares by it, ``sort`` count_/value_/metric_ + asc/desc, ``condition`` filters first (include, exclude, blanks, range, contains; an exclude drops blank rows the card keeps, so or it with IS_EMPTY; drill down = finer ``level`` + ``condition`` on the bucket), ``limit``/``offset`` page, ``range`` true adds the exact earliest and latest value, ``cumulative`` a running total; ``-o csv`` saves the values; to put it on a dashboard say it in words to 'dashboard chat edit'.
 
     Read-only: computes and returns the result without adding a task to the
     view's pipeline or otherwise changing it. Buckets by the column's type --
@@ -2759,12 +2769,40 @@ def view_data_check_update(invocation: Invocation) -> HandlerResult:
 # ---------------------------------------------------------------------------
 
 
+_METRIC_CARD_BASE: dict[str, Any] = {
+    "FORMAT_INFO": {"RESULT": {}},
+    "IS_FORMAT_INFO_DIRTY": False,
+    "LOCKED": False,
+    "type": "metric",
+}
+
+
+def _with_metric_card(body: Any) -> Any:
+    """Default a METRIC derivative's ``display_properties`` to its explore-panel card.
+
+    Without it the API stores ``display_properties: null``, which the explore
+    panel reads as "no card". An explicit value (including ``{}``) is kept.
+    """
+    param = body.get("param") if isinstance(body, dict) else None
+    metric = param.get("METRIC") if isinstance(param, dict) else None
+    if not isinstance(metric, dict) or body.get("display_properties") is not None:
+        return body
+    return {
+        **body,
+        "display_properties": {**_METRIC_CARD_BASE, "info": {"title": metric.get("AS")}},
+    }
+
+
 def view_derivative_create(invocation: Invocation) -> HandlerResult:
-    """Create a derivative on a dataview. ``body`` is required."""
+    """Create a derivative on a dataview. ``body`` is required.
+
+    A METRIC with no ``display_properties`` gets the metric card config so it
+    shows in the explore panel; the result's ``card`` says whether a card exists.
+    """
     project_id = require_project(invocation)
     dataview_id = _require_int_positional_at(invocation, 0, "view id")
     document = invocation.load_input()
-    body = _require_field(document, "body")
+    body = _with_metric_card(_require_field(document, "body"))
     assert document is not None
     with open_service(invocation) as (service, auth):
         dataset_id = _resolve_dataset_id(service, invocation, dataview_id, document)
@@ -2775,7 +2813,8 @@ def view_derivative_create(invocation: Invocation) -> HandlerResult:
             body=body,
             project_id=project_id,
         )
-    return data, _meta(invocation, auth.workspace_id, project_id)
+    card = bool(body.get("display_properties")) if isinstance(body, dict) else False
+    return {**data, "card": card}, _meta(invocation, auth.workspace_id, project_id)
 
 
 def view_derivative_data(invocation: Invocation) -> HandlerResult:
@@ -3275,6 +3314,8 @@ def _end_of_pipeline_exports(
         dataset_id=dataset_id,
         end_of_pipeline=True,
     )
+    from mammoth.models.exports import ExportStatus
+
     fired: list[dict[str, Any]] = []
     source_columns: Any = None
     for export in getattr(listing, "exports", None) or []:
@@ -3920,6 +3961,8 @@ def view_export_specialized(invocation: Invocation) -> HandlerResult:
     # reviewed trigger controls may flow through its **kwargs extension point;
     # using a union of every destination's fields would silently accept, for
     # example, email-only fields on a database export.
+    from mammoth.view import ViewExport
+
     signature = inspect.signature(getattr(ViewExport, method))
     explicit_fields = {
         name
@@ -4135,6 +4178,8 @@ def _existing_internal_dataset_export(
     and the list endpoint does not filter on status, so a deleted export
     would otherwise block every later export into that target forever.
     """
+    from mammoth.models.exports import ExportStatus
+
     listing = service.call(
         _EXPORTS_LIST_SYMBOL,
         dataview_id=dataview_id,

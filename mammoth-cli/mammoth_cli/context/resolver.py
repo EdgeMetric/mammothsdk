@@ -15,9 +15,6 @@ from __future__ import annotations
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 
-from mammoth import DEFAULT_TIMEOUT
-from mammoth.client import resolve_token_workspace_id
-
 from mammoth_cli.context import credentials, oauth, profiles
 from mammoth_cli.context.endpoint import resolve_base_url
 from mammoth_cli.context.profiles import ProfileRecord
@@ -134,6 +131,9 @@ def resolve_token_workspace(base_url: str, api_token: str, timeout: float | None
         CliError: The mapped SDK failure (``authentication_failed`` for a
             rejected token).
     """
+    from mammoth import DEFAULT_TIMEOUT
+    from mammoth.client import resolve_token_workspace_id
+
     try:
         return resolve_token_workspace_id(base_url, api_token, timeout or DEFAULT_TIMEOUT)
     except Exception as exc:

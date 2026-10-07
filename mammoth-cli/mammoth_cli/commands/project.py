@@ -134,11 +134,25 @@ def project_list(invocation: Invocation) -> HandlerResult:
     return data, _meta(invocation, auth.workspace_id, resolved_project(invocation))
 
 
+#: What ``project get`` reads: the project's own record, not what it holds.
+_PROJECT_GET_COVERS = (
+    "the project's id and name only; its datasets and views are not counted here "
+    "(mammoth dataset list --project {project_id})"
+)
+#: What ``project resource-status`` reads: only work happening right now.
+_RESOURCE_STATUS_COVERS = (
+    "resources with a task in flight right now; empty in_flight does not mean the project has "
+    "no resources (mammoth dataset list --project {project_id})"
+)
+
+
 def project_get(invocation: Invocation) -> HandlerResult:
     """Get one project by id (positional or active project)."""
     project_id = _project_id(invocation)
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), project=project_id)
+    if isinstance(data, dict):
+        data = {**data, "covers": _PROJECT_GET_COVERS.format(project_id=project_id)}
     return data, _meta(invocation, auth.workspace_id, project_id)
 
 
@@ -185,10 +199,15 @@ def project_memory_remove(invocation: Invocation) -> HandlerResult:
 
 
 def project_resource_status(invocation: Invocation) -> HandlerResult:
-    """Report the status of a project's resources."""
+    """Report the project's in-flight resource tasks, named as such."""
     project_id = _project_id(invocation)
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), project_id=project_id)
+    in_flight = data.get("status") if isinstance(data, dict) else None
+    data = {
+        "in_flight": in_flight if in_flight is not None else {},
+        "covers": _RESOURCE_STATUS_COVERS.format(project_id=project_id),
+    }
     return data, _meta(invocation, auth.workspace_id, project_id)
 
 

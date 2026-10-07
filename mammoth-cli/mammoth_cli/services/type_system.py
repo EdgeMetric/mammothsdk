@@ -3,17 +3,17 @@
 from __future__ import annotations
 
 import enum
+import sys
 import types
 import typing
 from dataclasses import MISSING, fields, is_dataclass
 from pathlib import Path
-from typing import Any, get_args, get_origin, get_type_hints
+from typing import Any, get_args, get_origin
 
 from mammoth import condition as _condition_module
-from mammoth.view import View as _View
 from pydantic import BaseModel, ValidationError
 
-from mammoth_cli.services.argspec import _sdk_type_namespace, render_type_name
+from mammoth_cli.services.argspec import render_type_name, resolve_type_hints
 
 _UNIONS = (typing.Union, types.UnionType)
 _CONDITION_TYPES = (
@@ -21,16 +21,20 @@ _CONDITION_TYPES = (
     _condition_module.CompoundCondition,
     _condition_module.NotCondition,
 )
+
+
 # SDK domain objects that a JSON ``--input`` document can only reference by their
 # positive integer id (a live View instance cannot be expressed as JSON). A
 # field annotated with one of these -- alone or as a union member such as
 # ``int | View`` -- is a resource reference and must be a positive id.
-_RESOURCE_DOMAIN_TYPES = (_View,)
-
-
 def _is_resource_domain(annotation: Any) -> bool:
     """Whether an annotation is an SDK domain object referenced by id."""
-    return isinstance(annotation, type) and issubclass(annotation, _RESOURCE_DOMAIN_TYPES)
+    # ``mammoth.view`` drags in every transform model. A ``View`` annotation can
+    # only exist once that module is loaded, so never import it just to ask.
+    view_module = sys.modules.get("mammoth.view")
+    if view_module is None:
+        return False
+    return isinstance(annotation, type) and issubclass(annotation, view_module.View)
 
 
 def _is_resource_reference(annotation: Any) -> bool:
@@ -216,7 +220,7 @@ def json_schema(annotation: Any, field_name: str | None = None) -> dict[str, Any
         values = [member.value for member in annotation]
         return {"type": "string", "enum": values, "example": values[0]}
     if is_dataclass(annotation):
-        hints = get_type_hints(annotation, localns=_sdk_type_namespace())
+        hints = resolve_type_hints(annotation)
         properties: dict[str, Any] = {}
         required: list[str] = []
         for field in fields(annotation):
@@ -275,7 +279,7 @@ def sample_value(annotation: Any) -> Any:
     if isinstance(annotation, type) and issubclass(annotation, enum.Enum):
         return next(iter(annotation)).value
     if is_dataclass(annotation):
-        hints = get_type_hints(annotation, localns=_sdk_type_namespace())
+        hints = resolve_type_hints(annotation)
         return {
             field.name: sample_value(hints.get(field.name, Any))
             for field in fields(annotation)
@@ -378,7 +382,7 @@ def validate_value(value: Any, annotation: Any, path: str) -> Any:
         unknown = sorted(set(value) - set(declared))
         if unknown:
             raise TypeValidationError(f"{path}.{unknown[0]}", "a declared field", value[unknown[0]])
-        hints = get_type_hints(annotation, localns=_sdk_type_namespace())
+        hints = resolve_type_hints(annotation)
         result: dict[str, Any] = {}
         for name, field in declared.items():
             if name not in value:

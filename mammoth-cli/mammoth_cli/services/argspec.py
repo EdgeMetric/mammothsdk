@@ -25,6 +25,7 @@ import importlib
 import inspect
 import types
 import typing
+from collections.abc import Callable
 from dataclasses import dataclass
 from functools import cache
 from typing import Any, get_args, get_origin
@@ -217,6 +218,30 @@ def _sdk_type_namespace() -> dict[str, Any]:
     return namespace
 
 
+def resolve_type_hints(
+    target: Any, namespace: Callable[[], dict[str, Any]] | None = None
+) -> dict[str, Any]:
+    """Resolve ``target``'s annotations, adding the SDK type namespace only if needed.
+
+    Annotations that already resolve (every CLI-local handler, most SDK
+    methods) must not pay for :func:`_sdk_type_namespace`, which imports every
+    transform model and the generated dashboard models.
+
+    Args:
+        target: The callable or class whose annotations to resolve.
+        namespace: Builds the names to resolve against; defaults to
+            :func:`_sdk_type_namespace`.
+
+    Raises:
+        Exception: Whatever :func:`typing.get_type_hints` raises when the
+            annotations cannot be resolved even with the SDK namespace.
+    """
+    try:
+        return typing.get_type_hints(target)
+    except NameError:
+        return typing.get_type_hints(target, localns=(namespace or _sdk_type_namespace)())
+
+
 @cache
 def _type_hints(sdk_symbol: str) -> dict[str, Any]:
     """Return the resolved type hints for a command's backing method.
@@ -234,7 +259,7 @@ def _type_hints(sdk_symbol: str) -> dict[str, Any]:
     if target is None or not callable(target):
         return {}
     try:
-        return typing.get_type_hints(target, localns=_sdk_type_namespace())
+        return resolve_type_hints(target)
     except Exception:  # noqa: BLE001 - deliberately broad, see docstring
         return {}
 

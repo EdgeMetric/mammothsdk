@@ -119,6 +119,15 @@ def release_status(command_id: str, matrix: dict[str, dict[str, object]]) -> tup
     return "Status on release: untried; no live run recorded.", False
 
 
+#: One-line behaviour notes for commands whose CLI does more than the API contract says.
+_COMMAND_NOTES = {
+    "view.derivative.create": (
+        "A METRIC shows as an explore-panel card via `display_properties`; the CLI defaults it "
+        "to the metric card, and the result's `card` says whether one exists.\n\n"
+    ),
+}
+
+
 def body(record: dict[str, object], matrix: dict[str, dict[str, object]]) -> str:
     command_id = str(record["command_id"])
     path = str(record["command_path"])
@@ -159,6 +168,7 @@ def body(record: dict[str, object], matrix: dict[str, dict[str, object]]) -> str
             f"Result: `{result}`; mutation `{mutation}`, confirmation `{confirmation}`, "
             f"wait policy `{wait}`.\n\n{status_line}\n\n"
         )
+    outcome_block += _COMMAND_NOTES.get(command_id, "")
     return (
         f"### `{command_id}`\n\n"
         f"Run: `mammoth {path}`. Exact input fields: `mammoth schema get {command_id}`.\n\n"

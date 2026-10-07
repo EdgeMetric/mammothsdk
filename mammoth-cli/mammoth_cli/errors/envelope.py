@@ -160,6 +160,7 @@ ERROR_SUMMARIES: dict[str, str] = {
     "not_implemented": _S_UNAVAILABLE,
     "oauth_login_failed": "The browser sign-in didn't complete.",
     "oauth_unavailable": "Browser sign-in isn't available on this server.",
+    "oauth_grant_revoke_failed": "The server did not revoke this sign-in grant.",
     "outcome_unknown": "It isn't clear whether this step went through. Check before trying again.",
     "pipeline_changed": "The pipeline was changed by someone else while this step ran.",
     "pipeline_reference_error": "A step in the pipeline refers to something that no longer exists.",
