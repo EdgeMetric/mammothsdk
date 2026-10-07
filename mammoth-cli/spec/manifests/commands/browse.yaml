@@ -240,7 +240,7 @@ commands:
     required: true
     metavar: RESOURCE_ID
     falls_back_to_field: null
-    help: The folder's resource_id as browse resources returns it (not its object id).
+    help: The folder's id, as folder list and browse return it.
   options: []
   sdk_symbol: mammoth.api.browse.BrowseAPI.resource_ancestors
   sdk_conversion: Call mammoth.api.browse.BrowseAPI.resource_ancestors with validated request fields.
