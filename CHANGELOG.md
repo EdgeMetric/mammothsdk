@@ -6,6 +6,11 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed (mammoth-cli 2.2.65)
+
+- `dataset find` (and the name fallback of `dataset list`) reads one workspace search instead of every holding project's dataset list, which took 20+ s for a project of a few hundred datasets.
+- Data reads on a view carry the row count of the view and of its dataset (ISS-244).
+
 ### Fixed (mammoth-cli 2.2.64)
 
 - `dataset create` raises `job_failed` when a waited create job settled without a dataset; a cloud import deferred to a later start reports `scheduled`, and `datasource_id` counts as the dataset id.
