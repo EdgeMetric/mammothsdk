@@ -91,6 +91,8 @@ def with_verify(data: Any, invocation: Invocation | None = None) -> Any:
     warnings = _warnings(data)
     if row_count_attempted and rows_after is None:
         warnings.append(_UNREADABLE_ROW_COUNT_WARNING)
+    if "card" in data:
+        verify["card"] = data["card"]
     verify["warnings"] = warnings
     verify["reason"] = reason
     verify["needs_user"] = _needs_user(

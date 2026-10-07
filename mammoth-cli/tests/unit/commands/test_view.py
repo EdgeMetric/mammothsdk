@@ -1684,7 +1684,8 @@ def test_derivative_create_passes_body(fake_service: FakeMammothService, tmp_pat
                 "AS": "Total",
                 "EXPRESSION": [{"TYPE": "FUNCTION", "VALUE": {"ARGUMENT": "a", "FUNCTION": "SUM"}}],
             }
-        }
+        },
+        "display_properties": {},
     }
     doc = _doc(tmp_path, {"body": body})
     view_cmd.view_derivative_create(
@@ -1696,6 +1697,52 @@ def test_derivative_create_passes_body(fake_service: FakeMammothService, tmp_pat
             {"dataset_id": 9, "dataview_id": 7, "body": body, "project_id": 180},
         )
     ]
+
+
+_METRIC_BODY = {
+    "param": {
+        "METRIC": {
+            "AS": "Sum of amount",
+            "EXPRESSION": [{"TYPE": "FUNCTION", "VALUE": {"ARGUMENT": "a", "FUNCTION": "SUM"}}],
+        }
+    }
+}
+
+
+def test_metric_derivative_create_without_display_properties_sends_the_card(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    doc = _doc(tmp_path, {"body": _METRIC_BODY})
+    result, _ = view_cmd.view_derivative_create(
+        _inv("view.derivative.create", project=180, extra_args=["7", "9"], input_file=doc)
+    )
+    sent = _without_meta(fake_service.call_log)[0][1]["body"]
+    assert sent["display_properties"]["type"] == "metric"
+    assert sent["display_properties"]["info"] == {"title": "Sum of amount"}
+    assert sent["param"] == _METRIC_BODY["param"]
+    assert result["card"] is True
+
+
+def test_metric_derivative_create_keeps_explicit_display_properties(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    explicit = {"type": "metric", "info": {"title": "Mine"}}
+    doc = _doc(tmp_path, {"body": {**_METRIC_BODY, "display_properties": explicit}})
+    view_cmd.view_derivative_create(
+        _inv("view.derivative.create", project=180, extra_args=["7", "9"], input_file=doc)
+    )
+    assert _without_meta(fake_service.call_log)[0][1]["body"]["display_properties"] == explicit
+
+
+def test_derivative_create_with_empty_display_properties_reports_no_card(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    doc = _doc(tmp_path, {"body": {**_METRIC_BODY, "display_properties": {}}})
+    result, _ = view_cmd.view_derivative_create(
+        _inv("view.derivative.create", project=180, extra_args=["7", "9"], input_file=doc)
+    )
+    assert _without_meta(fake_service.call_log)[0][1]["body"]["display_properties"] == {}
+    assert result["card"] is False
 
 
 def test_derivative_data_requires_body(fake_service: FakeMammothService) -> None:

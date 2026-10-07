@@ -2759,12 +2759,40 @@ def view_data_check_update(invocation: Invocation) -> HandlerResult:
 # ---------------------------------------------------------------------------
 
 
+_METRIC_CARD_BASE: dict[str, Any] = {
+    "FORMAT_INFO": {"RESULT": {}},
+    "IS_FORMAT_INFO_DIRTY": False,
+    "LOCKED": False,
+    "type": "metric",
+}
+
+
+def _with_metric_card(body: Any) -> Any:
+    """Default a METRIC derivative's ``display_properties`` to its explore-panel card.
+
+    Without it the API stores ``display_properties: null``, which the explore
+    panel reads as "no card". An explicit value (including ``{}``) is kept.
+    """
+    param = body.get("param") if isinstance(body, dict) else None
+    metric = param.get("METRIC") if isinstance(param, dict) else None
+    if not isinstance(metric, dict) or body.get("display_properties") is not None:
+        return body
+    return {
+        **body,
+        "display_properties": {**_METRIC_CARD_BASE, "info": {"title": metric.get("AS")}},
+    }
+
+
 def view_derivative_create(invocation: Invocation) -> HandlerResult:
-    """Create a derivative on a dataview. ``body`` is required."""
+    """Create a derivative on a dataview. ``body`` is required.
+
+    A METRIC with no ``display_properties`` gets the metric card config so it
+    shows in the explore panel; the result's ``card`` says whether a card exists.
+    """
     project_id = require_project(invocation)
     dataview_id = _require_int_positional_at(invocation, 0, "view id")
     document = invocation.load_input()
-    body = _require_field(document, "body")
+    body = _with_metric_card(_require_field(document, "body"))
     assert document is not None
     with open_service(invocation) as (service, auth):
         dataset_id = _resolve_dataset_id(service, invocation, dataview_id, document)
@@ -2775,7 +2803,8 @@ def view_derivative_create(invocation: Invocation) -> HandlerResult:
             body=body,
             project_id=project_id,
         )
-    return data, _meta(invocation, auth.workspace_id, project_id)
+    card = bool(body.get("display_properties")) if isinstance(body, dict) else False
+    return {**data, "card": card}, _meta(invocation, auth.workspace_id, project_id)
 
 
 def view_derivative_data(invocation: Invocation) -> HandlerResult:

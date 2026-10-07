@@ -36,6 +36,12 @@ def test_non_dict_data_passes_through_unchanged() -> None:
     assert with_verify(None) is None
 
 
+def test_a_card_field_on_the_result_is_mirrored_into_verify() -> None:
+    assert with_verify({"id": 10, "card": False})["verify"]["card"] is False
+    assert with_verify({"id": 10, "card": True})["verify"]["card"] is True
+    assert "card" not in with_verify({"id": 10})["verify"]
+
+
 def test_a_normal_result_is_verified_with_no_needs_user() -> None:
     result = with_verify({"status": "done"})
     assert result["verify"] == {

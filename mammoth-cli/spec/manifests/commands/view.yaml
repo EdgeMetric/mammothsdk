@@ -1567,7 +1567,10 @@ commands:
   undo_test: null
   known_restrictions: 'ARGUMENT and any column reference in the METRIC expression are internal names (metadata[].internal_name
     from view get, e.g. column_1), not display names; a display name makes the backend fail with HTTP
-    500. The result is {"id": N}; read the value with view derivative data.'
+    500. The result is {"id": N, "card": bool}; read the value with view derivative data. A METRIC
+    shows as an explore-panel card only through display_properties; when it is absent or null the CLI
+    defaults it to the metric card (type metric, info.title = the AS name); pass display_properties
+    to override. card says whether a card exists (verify.card mirrors it).'
   reviewed_by: primary
 - command_id: view.derivative.data
   command_path: view derivative data
