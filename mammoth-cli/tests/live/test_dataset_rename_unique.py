@@ -72,3 +72,15 @@ def test_without_unique_a_taken_name_is_not_applied_as_is(
 
     assert "error" in envelope, envelope
     assert _name_of(live_cli, scratch_project, other) == before
+
+
+def test_without_the_field_a_taken_name_gets_the_free_name_too(
+    live_cli: LiveCli, scratch_project: int, datasets: tuple[int, str]
+) -> None:
+    other, taken_name = datasets
+
+    envelope = _rename(live_cli, scratch_project, other, name=taken_name)
+
+    assert "error" not in envelope, envelope
+    applied = envelope["data"]["name"]
+    assert applied != taken_name and applied.startswith(taken_name)

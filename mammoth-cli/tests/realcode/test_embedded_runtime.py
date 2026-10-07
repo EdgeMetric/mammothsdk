@@ -150,3 +150,18 @@ def test_confirmation_hint_names_no_terminal(
 
     assert error["code"] == "confirmation_required"
     assert "terminal" not in error["hint"]
+
+
+@pytest.mark.parametrize("control", ["stop", "pause", "resume", "extend"])
+def test_run_controls_are_refused_in_an_agent_session(
+    control: str, monkeypatch: pytest.MonkeyPatch, real_service: ServiceFactory
+) -> None:
+    api = _bind(monkeypatch, real_service)
+
+    error = invoke(["agent", "run", control, "run-1"], login=_LOGIN, session_id="chat-1")["error"]
+
+    assert error["code"] == "user_control"
+    assert error["message"] == (
+        "these are the user's run controls; a waiting run resumes by itself"
+    )
+    assert api.requests == []

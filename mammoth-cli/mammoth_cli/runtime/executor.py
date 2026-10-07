@@ -127,6 +127,7 @@ def emit_success(
     update_available: dict[str, Any] | None = None,
     dataset: dict[str, Any] | None = None,
     view: dict[str, Any] | None = None,
+    opens: list[dict[str, Any]] | None = None,
 ) -> None:
     """Render one success envelope to stdout.
 
@@ -142,6 +143,8 @@ def emit_success(
         update_available: The cached newer-release notice, if any.
         dataset: ``{"id", "name"}`` of the dataset a data read came from, if any.
         view: ``{"id", "name"}`` of the view a data read came from, if any.
+        opens: ``{"kind", "id", "url", "created"}`` of each object a write made or
+            changed, if any.
     """
     meta = Meta(
         command=command_id.replace(".", " "),
@@ -152,6 +155,7 @@ def emit_success(
         update_available=update_available,
         dataset=dataset,
         view=view,
+        opens=opens,
     )
     envelope = Result(data=data, meta=meta).to_envelope()
     if embedded.capture(normalize(envelope)):

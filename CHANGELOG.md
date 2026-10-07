@@ -6,6 +6,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed (mammoth-cli 2.2.60)
+
+- A folder has one id in CLI output: the resource id the web app opens it by (QA RS-12: the agent showed a folder under its label id and its receipt under its resource id, two cards and a broken link). `folder create/get/list/update/find` and every folder in `browse project/folder/root/workspace/resources/resource/search/ancestors` print that id as `id`; the separate `resource_id` field, the label id, and the label ids in `parent_id` and `resource_path` are gone. `folder get/update/delete/trash/bulk-delete`, `folder list` `folder_ids`, a `folder move` target, `browse folder`, and `browse resource label` take that id. The old label id is no longer accepted (the feature is unshipped). `folder create --input parent_resource_id` is unchanged.
+
 ### Added (mammoth-io 0.8.31, mammoth-cli 2.2.59)
 
 - Agent definitions: `client.agent_definitions` (SDK) and `mammoth agent create|get|list|update|delete|publish|disable|roles`, `agent charter get|set|versions|restore`, `agent access set`, `agent projects set`, `agent team set`, `agent goldens add|list|remove|run|status`, `agent memory add|list|remove`, `agent scratch set|get|list|clear` and `agent feedback list` build, prove and publish a workspace agent. The set commands take their values from `--input` (for example `agent access set KEY --input '{"role": "member", "propose": true}'`). The CLI requires `mammoth-io>=0.8.31`; the server routes ship with the matching mvc-service release.

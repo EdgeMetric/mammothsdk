@@ -50,6 +50,7 @@ def test_a_normal_result_is_verified_with_no_needs_user() -> None:
         "warnings": [],
         "reason": None,
         "needs_user": None,
+        "outcome": "settled",
     }
 
 
@@ -130,6 +131,7 @@ def test_staged_status_is_verified_with_no_rows_and_a_reason() -> None:
         "warnings": [],
         "reason": "staged in draft; not applied until the draft is submitted",
         "needs_user": None,
+        "outcome": "pending",
     }
 
 
@@ -316,7 +318,10 @@ def test_pipeline_write_with_a_now_broken_export_is_unverified_and_needs_user(
     assert any("revision_rank" in warning for warning in result["verify"]["warnings"])
     assert result["verify"]["needs_user"] is not None
     assert "export 251" in result["verify"]["needs_user"]
-    assert ("mammoth.api.exports.ExportsAPI.list", {"dataview_id": 3388}) in fake_service.call_log
+    assert (
+        "mammoth.api.exports.ExportsAPI.list",
+        {"dataview_id": 3388, "fields": "__full"},
+    ) in fake_service.call_log
 
 
 @pytest.mark.parametrize(

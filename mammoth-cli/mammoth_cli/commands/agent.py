@@ -19,11 +19,13 @@ from mammoth_cli.errors.envelope import (
     CODE_MISSING_FIELD,
     CODE_RESOURCE_NOT_FOUND,
     CODE_SDK_SYMBOL_UNRESOLVED,
+    CODE_USER_CONTROL,
     EXIT_NOT_FOUND,
     EXIT_USAGE,
     CliError,
 )
 from mammoth_cli.manifest.loader import command_by_id
+from mammoth_cli.runtime import embedded
 from mammoth_cli.runtime.confirm import POLICY_PROMPT_OR_YES, enforce_confirmation
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.session import open_service, require_project, resolved_project
@@ -262,7 +264,17 @@ def agent_run_list(invocation: Invocation) -> HandlerResult:
 
 
 def _run_control(invocation: Invocation) -> HandlerResult:
-    """Pause, resume, stop or extend one run; the SDK method is the manifest's."""
+    """Pause, resume, stop or extend one run; the SDK method is the manifest's.
+
+    These are the user's run buttons: an agent session (an embedded call) is refused.
+    """
+    if embedded.active():
+        raise CliError(
+            code=CODE_USER_CONTROL,
+            message="these are the user's run controls; a waiting run resumes by itself",
+            exit_status=EXIT_USAGE,
+            hint="Carry on without it: a run waiting on a job or a time resumes on its own.",
+        )
     return _session_call(invocation, run_id=_require_string_positional(invocation, "run id"))
 
 

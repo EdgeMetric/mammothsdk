@@ -816,7 +816,10 @@ def dataset_interpretation(invocation: Invocation) -> HandlerResult:
 
 
 def dataset_create(invocation: Invocation) -> HandlerResult:
-    """Create a dataset from a spec and creation type (required ``--input`` fields)."""
+    """Create a dataset (web URL, clone, or import from a connection such as SFTP).
+
+    ``--input`` needs ``dataset_spec`` and ``ds_creation_type``.
+    """
     project_id = require_project(invocation)
     document = invocation.load_input()
     dataset_spec = _require_field(document, "dataset_spec")
@@ -1037,15 +1040,16 @@ def dataset_create_from_pdf(invocation: Invocation) -> HandlerResult:
 def dataset_rename(invocation: Invocation) -> HandlerResult:
     """Rename a dataset. Dataset id is positional; new name comes from ``--input``.
 
-    ``{"unique": true}`` makes the server pick a free name when the requested one is
-    taken; the result's ``name`` is the name applied.
+    A name another dataset of the project already has gets a number added (``name 2``)
+    instead of failing; ``{"unique": false}`` asks for the exact name or an error. The
+    result's ``name`` is the name applied.
     """
     project_id = require_project(invocation)
     dataset_id = _require_int_positional(invocation, "dataset id")
     document = invocation.load_input()
     name = _require_field(document, "name")
     kwargs: dict[str, Any] = {"dataset_id": dataset_id, "name": name, "project_id": project_id}
-    if document.get("unique") is True:
+    if document.get("unique") is not False:
         kwargs["unique"] = True
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), **kwargs)

@@ -929,6 +929,7 @@ def _execute(invocation: Invocation) -> None:
     from mammoth_cli.runtime.intent_only import refuse_hand_crafted_write
     from mammoth_cli.runtime.locked_files import with_locked_files
     from mammoth_cli.runtime.new_data import with_new_data_path
+    from mammoth_cli.runtime.opens import with_opens
     from mammoth_cli.runtime.strict import validate_extra_args
 
     if invocation.profile is None:
@@ -961,7 +962,7 @@ def _execute(invocation: Invocation) -> None:
             return _dry_run(handler, invocation)
         data, meta = handler(invocation)
         checked = with_locked_files(with_dataset_health(_apply_verify(invocation, data)))
-        return with_new_data_path(checked), meta
+        return with_new_data_path(checked), with_opens(invocation, checked, meta)
 
     executor.run(
         invocation.command_id,
@@ -1050,6 +1051,14 @@ def _indexed_summary(command_id: str) -> str | None:
     return _summary_index().get(command_id)
 
 
+#: A line of ``--help`` a command needs that its handler's shared docstring cannot carry.
+_HELP_NOTES = {
+    "view.export.dataset": (
+        "Omit dataset_name unless the user gave one; the product default 'Result Dataset' is used."
+    ),
+}
+
+
 def _command_help(command_id: str, record: dict[str, Any] | None) -> str | None:
     """Build a command's user-facing ``--help`` summary.
 
@@ -1070,6 +1079,8 @@ def _command_help(command_id: str, record: dict[str, Any] | None) -> str | None:
         parts.append(summary)
     if record is not None and edits_view_in_place(record):
         parts.append(IN_PLACE_RECIPE)
+    if command_id in _HELP_NOTES:
+        parts.append(_HELP_NOTES[command_id])
     example = (record or {}).get("agent_example")
     if example:
         parts.append(f"Example: {example}")

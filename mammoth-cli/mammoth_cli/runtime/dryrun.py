@@ -39,6 +39,13 @@ DATAVIEW_GET = "mammoth.api.dataviews.DataviewsAPI.get"
 #: only class whose commands the manifest describes as permanent (no undo).
 IRREVERSIBLE_CLASS = "destructive"
 
+#: What a dry run tells the reader about itself: it is a preview, so nothing ran, and
+#: whoever holds it (a person, an approval card) must approve or cancel it first.
+HINT_PENDING = (
+    "Nothing ran: this is a preview. The user must approve it to run it, or cancel it; "
+    "do not report it as done."
+)
+
 NOTE_UNDECLARED = (
     "Stopped before an SDK call the command's manifest does not declare; nothing was sent for it."
 )
@@ -149,6 +156,9 @@ def make_gate(command_id: str) -> Gate:
         raise DryRunStop(
             {
                 "dry_run": True,
+                "ran": False,
+                "pending": True,
+                "hint": HINT_PENDING,
                 "command": command_id.replace(".", " "),
                 "mutation_class": mutation_class,
                 "irreversible": mutation_class == IRREVERSIBLE_CLASS,

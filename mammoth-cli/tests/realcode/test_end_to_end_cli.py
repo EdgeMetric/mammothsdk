@@ -220,6 +220,7 @@ def test_generated_dashboard_async_result_waits_for_job(
         "warnings": [],
         "reason": None,
         "needs_user": None,
+        "outcome": "settled",
     }
     assert data["deliverable_check"]["checked"] is True
     assert data["state"]["kind"] == "object"
@@ -459,12 +460,13 @@ def test_folder_get_forwards_fields_input_full_stack(
     """
     api = _bind_real_service(monkeypatch, real_service)
     api.on("GET", r"/folders/88$", 200, {"folder": {"id": 88, "name": "Reports"}})
+    api.on("GET", r"/folders$", 200, {"folders": [{"id": 88, "resource_id": 1088}]})
 
     result = make_runner().invoke(
         [
             "folder",
             "get",
-            "88",
+            "1088",
             "--project",
             "180",
             "--input",
@@ -492,9 +494,10 @@ def test_folder_delete_positional_id_full_stack(
     """
     api = _bind_real_service(monkeypatch, real_service, project_id=180)
     api.on("DELETE", r"/projects/180/folders$", 200, {"job": {"id": 1}})
+    api.on("GET", r"/projects/180/folders$", 200, {"folders": [{"id": 7, "resource_id": 1007}]})
 
     result = make_runner().invoke(
-        ["folder", "delete", "7", "--project", "180", "--yes", "--output", "json"],
+        ["folder", "delete", "1007", "--project", "180", "--yes", "--output", "json"],
     )
 
     assert result.exit_code == 0, result.output
