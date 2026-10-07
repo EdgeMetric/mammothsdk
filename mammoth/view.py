@@ -1232,6 +1232,50 @@ class ViewExport:
             **kwargs,
         )
 
+    async def to_live_link(
+        self,
+        file_name: str | None = None,
+        file_type: ExportFileType = ExportFileType.CSV,
+        include_hidden: bool = False,
+        timeout: int | None = None,
+        **kwargs: Any,
+    ) -> dict[str, Any]:
+        """Create a live link: a public URL that serves this view's latest data.
+
+        An S3 export (see :meth:`to_s3`) flagged ``liveLink``. The workspace
+        plan must include live links; otherwise the API's error is raised.
+
+        Args:
+            file_name: Output filename (``<prefix>_<token>.<ext>``; the server
+                replaces the token). Auto-generated when omitted.
+            file_type: File format (default CSV).
+            include_hidden: Include hidden columns (default False).
+            timeout: Seconds to wait for the link (default: client job timeout).
+            **kwargs: Additional export options, as for :meth:`to_s3`.
+
+        Returns:
+            Dict with ``url``, the live link.
+
+        Raises:
+            MammothExportError: If the finished export carries no URL.
+        """
+        additional = {**(kwargs.pop("additional_properties", None) or {}), "liveLink": True}
+        created = await self.to_s3(
+            file_name,
+            file_type,
+            include_hidden,
+            additional_properties=additional,
+            **kwargs,
+        )
+        if not isinstance(created, JobResponse):
+            raise MammothExportError("The live-link export did not return a job to wait on.")
+        job = await self._client.jobs.wait_for_job(created.job.id, timeout=timeout)
+        response = job.get("response")
+        url = response.get("url") if isinstance(response, dict) else None
+        if not url:
+            raise MammothExportError(f"The live-link export finished without a URL: {response!r}")
+        return {"url": url}
+
     async def to_dataset(
         self,
         dataset_name: str,

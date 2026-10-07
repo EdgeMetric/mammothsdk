@@ -14,6 +14,9 @@ path = await view.export.to_csv("output.csv")
 # Export to S3
 await view.export.to_s3(file_name="report.csv")
 
+# A public live link to the view (needs a plan with live links)
+link = await view.export.to_live_link()   # {"url": "<the live link>"}
+
 # Export to PostgreSQL
 await view.export.to_postgres(
     host="db.example.com", port=5432,
@@ -41,6 +44,7 @@ await view.export.delete(exports[0]["id"])
       members:
         - to_csv
         - to_s3
+        - to_live_link
         - to_postgres
         - to_mysql
         - to_dataset

@@ -559,6 +559,7 @@ S2_COMMANDS = frozenset(
 _SPECIAL_EXPORT_REQUIRED: dict[str, frozenset[str]] = {
     "view.export.dataset": frozenset({"dataset_name"}),
     "view.export.managed-s3": frozenset(),
+    "view.export.live-link": frozenset(),
     "view.export.azure-blob": frozenset(
         {"storage_account_name", "tenant_id", "client_id", "client_secret", "container_name"}
     ),

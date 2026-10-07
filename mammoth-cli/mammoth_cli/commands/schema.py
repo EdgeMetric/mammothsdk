@@ -131,6 +131,7 @@ _COMMAND_DISCOVERY_PURPOSES = {
     "view.export.email": "email send mail attachment",
     "view.export.ftp": "ftp file transfer protocol server",
     "view.export.managed-s3": "s3 amazon aws bucket managed storage",
+    "view.export.live-link": "live link add create public url share link always latest shareable",
     "view.export.mssql": "sql server mssql microsoft database",
     "view.export.mysql": "mysql database",
     "view.export.onedrive": "one drive onedrive microsoft cloud storage",

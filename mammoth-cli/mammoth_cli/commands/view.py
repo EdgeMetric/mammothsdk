@@ -3712,6 +3712,7 @@ _SPECIAL_EXPORTS: dict[str, tuple[str, tuple[str, ...], tuple[str, ...]]] = {
         (),
     ),
     "view.export.managed-s3": ("to_s3", (), ()),
+    "view.export.live-link": ("to_live_link", (), ()),
     "view.export.azure-blob": (
         "to_azure_blob",
         ("storage_account_name", "tenant_id", "client_id", "client_secret", "container_name"),

@@ -4551,6 +4551,14 @@ sdk_methods:
   openapi_operation_ids: []
   notes: 'Alias `view export s3`. Destination policy is dynamic: start_or_wait/benign_mutation/live_disposable_project
     for download-only, otherwise external_effect/live_dedicated_external_fixture.'
+- sdk_symbol: mammoth.view.ViewExport.to_live_link
+  canonical_command: view.export.live-link
+  alias_of: null
+  mutation_class: external_effect
+  wait_policy: always_wait
+  pagination_policy: null
+  openapi_operation_ids: []
+  notes: Wraps to_s3 with additional_properties liveLink=true, waits for the export job and returns its URL.
 - sdk_symbol: mammoth.view.ViewExport.to_sftp
   canonical_command: view.export.sftp
   alias_of: null
