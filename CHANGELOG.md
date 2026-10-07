@@ -6,6 +6,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added (mammoth-cli 2.2.53)
+
+- A TEXT column with blank cells now carries `fill_template` in its `blank_values` warning: a `view transform set-values` command with a `<value>` placeholder. The agent offers the fill, asks the user for the value and never runs the template as is; `fix` is unchanged.
+
 ### Fixed (mammoth-cli 2.2.52)
 
 - The auth-failed hint now also covers expired or revoked OAuth sign-ins (`mammoth auth login`), not only API tokens.

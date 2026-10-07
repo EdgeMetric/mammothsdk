@@ -175,3 +175,11 @@ def test_unhealthy_dataset_without_a_suggestion_names_the_reading_commands() -> 
 def test_a_healthy_or_unclassified_dataset_names_no_fix(status: str) -> None:
     entry = with_dataset_health({"datasets": [{"id": 1, "status": status}]})["dataset_health"][0]
     assert "fix" not in entry
+
+
+def test_blank_text_fill_template_names_set_values_and_its_fields() -> None:
+    rows = _text_rows("Region", ["North", "", None, "South"])
+    warning = _by_issue(
+        column_warnings(rows, {"Region": "TEXT"}, view_id=7, dataset_id=3), "blank_values"
+    )
+    assert _assert_real_command(warning["fill_template"]) == ["view.transform.set-values"]

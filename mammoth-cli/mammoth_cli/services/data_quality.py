@@ -378,21 +378,36 @@ def _blank_values_warning(
     total: int,
     checked: int,
     remove_fix: str | None,
+    fill_template: str | None = None,
 ) -> dict[str, Any]:
-    """The ``blank_values`` record; *remove_fix* when a blank row holds no figure at all."""
+    """The ``blank_values`` record.
+
+    *remove_fix* when a blank row holds no figure at all; *fill_template* (never a
+    ``fix``) for blank TEXT cells: it holds ``<value>``, which only the user can give.
+    """
     detail = f"{blanks} of {total} rows are blank. "
     if remove_fix is None:
-        detail += (
-            "Decide before you summarise: fill them (view transform set-values with "
-            "IS_EMPTY, or fill-missing), remove the rows (view transform filter), or "
-            "keep them and say so."
-        )
-        return {
+        if fill_template is not None:
+            detail += (
+                "Offer to fill them first: ask the user which value to write, put it in "
+                "fill_template in place of <value> and run that only once they answer. "
+                "Otherwise remove the rows (view transform filter) or keep them and say so."
+            )
+        else:
+            detail += (
+                "Decide before you summarise: fill them (view transform set-values with "
+                "IS_EMPTY, or fill-missing), remove the rows (view transform filter), or "
+                "keep them and say so."
+            )
+        record: dict[str, Any] = {
             "column": column,
             "issue": "blank_values",
             "detail": detail,
             "rows_checked": checked,
         }
+        if fill_template is not None:
+            record["fill_template"] = fill_template
+        return record
     detail += (
         f"{column} is the only number that varies between rows, so these rows hold no "
         "figure: removing them (fix) is the clean-up. Fill them only with a value the "
@@ -405,6 +420,24 @@ def _blank_values_warning(
         "fix": remove_fix,
         "rows_checked": checked,
     }
+
+
+def _fill_blank_text_template(
+    view_id: int, dataset_id: int, column: str, project_id: int | None
+) -> str:
+    """``set-values`` writing ``<value>`` into the column's blank cells: a template, not a fix."""
+    spec = json.dumps(
+        {
+            "existing_column": column,
+            "condition": {"column": column, "operator": "IS_EMPTY"},
+            "values": [{"value": "<value>"}],
+            "dataset_id": dataset_id,
+        }
+    )
+    return (
+        f"mammoth view transform set-values {view_id} --input {shlex.quote(spec)}"
+        f"{_project_flag(project_id)}"
+    )
 
 
 def _remove_blank_rows_hint(
@@ -445,8 +478,9 @@ def column_warnings(
         (``numbers_stored_as_text``, ``dates_stored_as_text``,
         ``variant_spellings``, ``renamed_label``, ``blank_values`` or the table-level
         ``duplicate_rows``), ``detail`` and, where one command fixes it,
-        ``fix``. Counts are over the rows given (``rows_checked`` on each
-        record).
+        ``fix``. A blank TEXT column carries ``fill_template`` instead: a command
+        with a ``<value>`` placeholder the user must supply, never run as is. Counts
+        are over the rows given (``rows_checked`` on each record).
     """
     materialised = [row for row in rows if isinstance(row, Mapping)]
     if not materialised:
@@ -515,5 +549,17 @@ def column_warnings(
             remove_fix = None
             if figures == [column] and view_id is not None and dataset_id is not None:
                 remove_fix = _remove_blank_rows_hint(view_id, dataset_id, column, project_id)
-            warnings.append(_blank_values_warning(column, blanks, len(values), checked, remove_fix))
+            fill_template = None
+            if (
+                remove_fix is None
+                and str(col_type).upper() == "TEXT"
+                and view_id is not None
+                and dataset_id is not None
+            ):
+                fill_template = _fill_blank_text_template(view_id, dataset_id, column, project_id)
+            warnings.append(
+                _blank_values_warning(
+                    column, blanks, len(values), checked, remove_fix, fill_template
+                )
+            )
     return warnings

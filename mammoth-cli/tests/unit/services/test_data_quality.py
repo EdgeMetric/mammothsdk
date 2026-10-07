@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import shlex
 from typing import Any
 
 from mammoth_cli.services.data_quality import column_warnings, duplicate_rows_fact
@@ -110,6 +111,32 @@ def test_a_blank_beside_another_varying_number_keeps_the_open_choice() -> None:
     (warning,) = column_warnings(rows, _BENCHMARK_TYPES, view_id=3428, dataset_id=2791)
     assert warning["detail"].endswith("or keep them and say so.")
     assert "fix" not in warning
+
+
+def test_blank_text_cells_carry_a_fill_template_and_no_fix() -> None:
+    """Blank Region cells: the user's value is needed, so the warning carries a
+    command template with a placeholder, never an auto-runnable ``fix``."""
+    rows = [{"Region": "North"}, {"Region": ""}, {"Region": None}, {"Region": "South"}]
+    (warning,) = column_warnings(rows, {"Region": "TEXT"}, view_id=41, dataset_id=9, project_id=5)
+    assert warning["issue"] == "blank_values"
+    assert "fix" not in warning
+    tokens = shlex.split(warning["fill_template"])
+    assert tokens[:5] == ["mammoth", "view", "transform", "set-values", "41"]
+    assert tokens[-2:] == ["--project", "5"]
+    spec = json.loads(tokens[tokens.index("--input") + 1])
+    assert spec == {
+        "existing_column": "Region",
+        "condition": {"column": "Region", "operator": "IS_EMPTY"},
+        "values": [{"value": "<value>"}],
+        "dataset_id": 9,
+    }
+
+
+def test_blank_numbers_carry_no_fill_template() -> None:
+    rows = _rows([None, "", "5", "6"], column="qty")
+    (warning,) = column_warnings(rows, {"qty": "NUMERIC"}, view_id=41, dataset_id=9)
+    assert "fill_template" not in warning
+    assert warning["fix"].startswith("mammoth view transform filter 41 ")
 
 
 def test_no_rows_no_warnings() -> None:
