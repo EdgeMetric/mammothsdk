@@ -147,6 +147,7 @@ def _run(
     command: str,
     doc: dict[str, Any],
     matching: int,
+    flags: list[str] | None = None,
 ) -> tuple[Any, Any]:
     """Dry-run ``view transform <command>``; every count read answers ``matching``."""
     service, api = real_service(project_id=180)
@@ -173,6 +174,43 @@ def _run(
             "--output",
             "json",
             "--no-input",
+            *(flags or []),
+        ]
+    )
+    return result, api
+
+
+def _run_real(
+    monkeypatch: pytest.MonkeyPatch,
+    real_service: ServiceFactory,
+    doc: dict[str, Any],
+    *flags: str,
+) -> tuple[Any, Any]:
+    """Run (not dry-run) ``view transform filter``; every count read answers 50 of 50."""
+    service, api = real_service(project_id=180)
+    unused = iter([service])
+    monkeypatch.setattr(
+        factory,
+        "build_service",
+        lambda *a, **k: next(unused, None) or real_service(api=api, project_id=180)[0],
+    )
+    api.on("GET", r"/datasets/55/dataviews/3062$", body=_VIEW)
+    api.on("POST", r"/data/query$", body={"data": [{"agg_0": 50}]})
+    result = make_runner().invoke(
+        [
+            "view",
+            "transform",
+            "filter",
+            "3062",
+            "--project",
+            "180",
+            "--input",
+            json.dumps({"dataset_id": 55, **doc}),
+            "--yes",
+            "--output",
+            "json",
+            "--no-input",
+            *flags,
         ]
     )
     return result, api
@@ -376,3 +414,38 @@ def test_a_remove_filter_no_row_matches_names_the_values_in_its_no_op(
     error = json.loads(result.output)["error"]
     assert error["code"] == "no_op"
     assert "Donor holds: Ada (31), Bo (19)" in error["message"]
+
+
+def test_a_filter_that_removes_nothing_names_the_standing_flag_in_its_no_op(
+    monkeypatch: pytest.MonkeyPatch, real_service: ServiceFactory
+) -> None:
+    result, _ = _run(monkeypatch, real_service, "filter", _KEEP_ALL, matching=50)
+    error = json.loads(result.output)["error"]
+    assert error["code"] == "no_op" and "--standing" in error["hint"]
+
+
+def test_standing_stages_a_dry_run_filter_that_removes_nothing(
+    monkeypatch: pytest.MonkeyPatch, real_service: ServiceFactory
+) -> None:
+    # QA R-5: "keep only rows where region is not empty" on a view with no blank region.
+    result, _ = _run(
+        monkeypatch, real_service, "filter", _KEEP_ALL, matching=50, flags=["--standing"]
+    )
+    assert result.exit_code == 0, result.output
+    impact = json.loads(result.output)["data"]["predicted_impact"]
+    assert impact["standing"] is True and impact["rows_removed"] == 0
+    assert "standing rule" in impact["note"]
+
+
+def test_a_real_filter_that_removes_nothing_is_no_change_with_the_standing_hint(
+    monkeypatch: pytest.MonkeyPatch, real_service: ServiceFactory
+) -> None:
+    result, api = _run_real(monkeypatch, real_service, _KEEP_ALL)
+    assert result.exit_code == 0, result.output
+    data = json.loads(result.output)["data"]
+    assert data["status"] == "no_change" and "--standing" in data["hint"]
+    assert not [
+        r
+        for r in api.requests
+        if r.method in ("POST", "PUT", "PATCH") and "/data/query" not in r.path
+    ]

@@ -90,7 +90,8 @@ states `duplicates` (`exact_duplicate_rows` over `rows_checked` of `row_count`;
 on a later page it names the table-wide check). When it is 0, report "none,
 no change needed" and add no step. Only then inspect its optional
 `ignore_columns` field and submit; `--dry-run` reports `predicted_impact` or
-fails `no_op`. For a join, verify both schemas and expected multiplicity:
+fails `no_op`. A rule that removes nothing today but the user wants kept for future data
+("keep only rows where region is not empty") takes `--standing`; ask for it only on that intent. For a join, verify both schemas and expected multiplicity:
 
 ```bash
 mammoth schema get view.transform.discard-duplicates

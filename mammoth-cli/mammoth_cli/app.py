@@ -763,6 +763,18 @@ def _shared_option_params() -> list[inspect.Parameter]:
             ],
         ),
         opt(
+            "standing",
+            False,
+            Annotated[
+                bool,
+                typer.Option(
+                    "--standing",
+                    help="Stage a step that changes no row today, as a rule for future data.",
+                    rich_help_panel="Safety",
+                ),
+            ],
+        ),
+        opt(
             "input_file",
             None,
             Annotated[
