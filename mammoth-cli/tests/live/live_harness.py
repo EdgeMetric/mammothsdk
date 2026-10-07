@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import json
 import time
+from collections.abc import Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -83,3 +85,14 @@ class SalesData:
     project: int
     dataset: int
     view: int
+
+
+@contextmanager
+def open_live_service(project: int | None) -> Iterator[Any]:
+    """The production service the CLI builds for the saved live login, closed on exit."""
+    from mammoth_cli.runtime import session
+    from mammoth_cli.runtime.invocation import Invocation
+
+    invocation = Invocation(command_id="project.list", project=project)
+    with session.open_service(invocation) as (service, _auth):
+        yield service

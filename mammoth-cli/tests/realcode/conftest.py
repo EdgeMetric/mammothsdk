@@ -1,7 +1,7 @@
 """Isolation fixtures for the real-code suite.
 
-Real-code tests drive the genuine CLI stack in-process with only the HTTP
-socket faked. Authentication requires a login (there is no environment
+Real-code tests drive the genuine CLI stack in-process, offline: no network
+is touched. Authentication requires a login (there is no environment
 credential path), so every test runs against a disposable config directory and
 in-memory keyring with a default profile already logged in.
 """
