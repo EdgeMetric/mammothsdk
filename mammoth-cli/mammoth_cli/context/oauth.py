@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import base64
 import contextlib
+import functools
 import hashlib
 import html
 import http.server
@@ -32,15 +33,20 @@ import webbrowser
 from collections.abc import Callable, Iterator
 from dataclasses import dataclass
 
+import httpx
+
 from mammoth_cli.context import credentials
 from mammoth_cli.context.credentials import OAuthSession
-from mammoth_cli.context.endpoint import DEFAULT_SERVER_PREFIX
+from mammoth_cli.context.endpoint import DEFAULT_SERVER_PREFIX, resolve_base_url
 from mammoth_cli.context.profiles import config_dir
 from mammoth_cli.errors.envelope import EXIT_AUTH, EXIT_USAGE, CliError
 
 #: The first-party CLI's OAuth client id, one constant per environment (the
 #: server prefix). The server allow-lists these ids, so they are not
 #: configurable at run time. An environment absent here has no CLI client yet.
+#: This table is the fallback for servers that do not publish
+#: ``mammoth_cli_client_id`` in their OAuth metadata (see
+#: :func:`published_client_id`); it is removed once every server publishes it.
 OAUTH_CLIENT_IDS: dict[str, str] = {
     "challenger": "oc_aea5c2ce829da3f8",
     "koyal": "oc_f2566336e235795c",
@@ -78,11 +84,46 @@ def login_expired_error() -> CliError:
     )
 
 
+#: RFC 8414 metadata path under the API base url.
+METADATA_PATH = "/.well-known/oauth-authorization-server"
+#: The metadata field carrying the CLI's client id on servers that publish it.
+METADATA_CLIENT_ID_FIELD = "mammoth_cli_client_id"
+#: Short, because a slow or dead server must not stall the login menu.
+_METADATA_TIMEOUT_SECONDS = 5.0
+
+
+@functools.cache
+def published_client_id(prefix: str) -> str | None:
+    """The client id the server publishes in its OAuth metadata, or None.
+
+    One GET per environment per process. None when the field is absent, the
+    server cannot be reached, or it answers anything but metadata: the caller
+    then falls back to :data:`OAUTH_CLIENT_IDS`.
+    """
+    try:
+        response = httpx.get(
+            f"{resolve_base_url(prefix)}{METADATA_PATH}",
+            timeout=_METADATA_TIMEOUT_SECONDS,
+            follow_redirects=False,
+        )
+        body = response.json() if response.status_code == 200 else None
+    except (CliError, httpx.HTTPError, ValueError):
+        return None
+    value = body.get(METADATA_CLIENT_ID_FIELD) if isinstance(body, dict) else None
+    return value if isinstance(value, str) and value else None
+
+
+def _resolve_client_id(server_prefix: str | None) -> str | None:
+    prefix = server_prefix if server_prefix is not None else DEFAULT_SERVER_PREFIX
+    return published_client_id(prefix) or OAUTH_CLIENT_IDS.get(prefix)
+
+
 def has_client_id(server_prefix: str | None) -> bool:
-    """Whether the CLI has an OAuth client registered for this environment."""
-    return (
-        server_prefix if server_prefix is not None else DEFAULT_SERVER_PREFIX
-    ) in OAUTH_CLIENT_IDS
+    """Whether the CLI has an OAuth client for this environment.
+
+    Makes a network call (cached per process): call it only on login paths.
+    """
+    return _resolve_client_id(server_prefix) is not None
 
 
 def client_id_for(server_prefix: str | None) -> str:
@@ -91,17 +132,17 @@ def client_id_for(server_prefix: str | None) -> str:
     Raises:
         CliError: ``oauth_unavailable`` when the environment has no CLI client.
     """
+    client_id = _resolve_client_id(server_prefix)
+    if client_id is not None:
+        return client_id
     prefix = server_prefix if server_prefix is not None else DEFAULT_SERVER_PREFIX
-    try:
-        return OAUTH_CLIENT_IDS[prefix]
-    except KeyError:
-        raise CliError(
-            code=CODE_OAUTH_UNAVAILABLE,
-            message=f"Browser sign-in is not available on '{prefix}' yet.",
-            exit_status=EXIT_USAGE,
-            hint="Pick option 3 (paste an API token) or run: mammoth auth login --method token",
-            recovery_commands=["mammoth auth login --method token"],
-        ) from None
+    raise CliError(
+        code=CODE_OAUTH_UNAVAILABLE,
+        message=f"Browser sign-in is not available on '{prefix}' yet.",
+        exit_status=EXIT_USAGE,
+        hint="Pick option 3 (paste an API token) or run: mammoth auth login --method token",
+        recovery_commands=["mammoth auth login --method token"],
+    )
 
 
 # --- PKCE ---------------------------------------------------------------------

@@ -6,6 +6,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed (mammoth-cli 2.2.71)
+
+- Browser and device sign-in read the CLI's OAuth client id from the server's OAuth metadata (`mammoth_cli_client_id`) and fall back to the built-in table when the server does not publish it.
+
 ### Fixed (mammoth-io 0.8.32, mammoth-cli 2.2.70)
 
 - `mammoth doctor` exits 4 when its report says `ok: false` (the report is still printed).
