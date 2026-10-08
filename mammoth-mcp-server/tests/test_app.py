@@ -48,6 +48,30 @@ class TestWhoMayCallTheMcpEndpoint:
         assert refused.status_code == 401
         assert "resource_metadata=" in refused.headers["www-authenticate"]
 
+    def test_a_browser_preflight_is_answered_without_a_token(self, server: TestClient) -> None:
+        preflight = server.options(
+            "/mcp",
+            headers={
+                "Origin": "https://client.example",
+                "Access-Control-Request-Method": "POST",
+                "Access-Control-Request-Headers": "authorization,content-type",
+            },
+        )
+
+        assert preflight.status_code == 204
+        assert preflight.headers["access-control-allow-origin"] == "*"
+        exposed = preflight.headers["access-control-expose-headers"].lower()
+        assert "www-authenticate" in exposed
+        assert "mcp-session-id" in exposed
+
+    def test_the_sign_in_challenge_can_be_read_by_a_browser(self, server: TestClient) -> None:
+        refused = server.post(
+            "/mcp", json=LIST_TOOLS, headers={**JSON, "Origin": "https://client.example"}
+        )
+
+        assert refused.status_code == 401
+        assert "www-authenticate" in refused.headers["access-control-expose-headers"].lower()
+
     def test_the_metadata_names_mammoth_as_where_to_sign_in(self, server: TestClient) -> None:
         resource = server.get("/.well-known/oauth-protected-resource/mcp").json()
 

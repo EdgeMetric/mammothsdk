@@ -835,13 +835,22 @@ not a blanket permission to replay a write.
 
 ## MCP Server
 
-The SDK includes a companion MCP (Model Context Protocol) server that lets AI assistants interact with Mammoth directly. Install it separately:
+Mammoth runs a hosted MCP (Model Context Protocol) server for AI assistants:
+**https://mcp.mammoth.io/mcp**. Add it as a remote MCP server in your client and
+sign in with your Mammoth account (OAuth). There is nothing to install.
+
+To run the server yourself, install
+[`mammoth-mcp-server`](https://github.com/EdgeMetric/mammothsdk/tree/main/mammoth-mcp-server):
 
 ```bash
-pip install mammoth-mcp
+pip install mammoth-mcp-server
 ```
 
-See the [mammoth-mcp](https://github.com/EdgeMetric/mammothsdk/tree/main/mammoth-mcp) directory for configuration and usage details.
+It needs the environment variable `MCP_ENCRYPTION_KEY` set to a Fernet key (and a
+Redis for `MCP_REDIS_URL`). Generate a key with
+`python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"`.
+See the [mammoth-mcp-server README](https://github.com/EdgeMetric/mammothsdk/tree/main/mammoth-mcp-server)
+for every setting. The package name `mammoth-mcp` is not this server.
 
 ## Releasing
 

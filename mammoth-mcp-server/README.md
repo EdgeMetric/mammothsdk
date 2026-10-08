@@ -6,6 +6,16 @@ and export data in Mammoth, as the signed-in user.
 The server depends on one Mammoth package: the SDK (`mammoth-io`). Every tool reaches Mammoth
 through the API, as the SDK does. The server imports no backend code.
 
+## Hosted or local
+
+- **Hosted:** Mammoth runs this server at `https://mcp.mammoth.io/mcp`. Add that URL to your MCP
+  client and sign in with your Mammoth account (OAuth). Nothing to install.
+- **Local:** `pip install mammoth-mcp-server`, then set `MCP_ENCRYPTION_KEY` and start
+  `mammoth-mcp-server` (see **From a virtual environment** below). `MCP_ENCRYPTION_KEY` must be a
+  Fernet key: 32 url-safe base64-encoded bytes. Generate one with
+  `python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"`.
+  The server refuses to start without it, or with a value that is not a Fernet key.
+
 ## Layout
 
 | Path | What it holds |

@@ -17,6 +17,7 @@ from typing import Any
 import typer
 
 from mammoth_cli.errors.envelope import (
+    EXIT_AUTH,
     EXIT_USAGE,
     CliError,
     cancelled_error,
@@ -242,6 +243,7 @@ def run(
     # The update notice is read from the daily cache (no network); the cache
     # itself is refreshed only after the command has produced its output.
     update = updates.available_update(command_id)
+    report_failed = False
     try:
         _validate_output(output)
         _refuse_if_embedded(command_id)
@@ -254,6 +256,10 @@ def run(
         update = updates.available_update(command_id)
         emit_success(command_id, data, output, update_available=update, **meta_extra)
         updates.emit_hint(update, output=output)
+        # doctor prints its report either way; a failed report must not exit 0.
+        report_failed = (
+            command_id == "doctor" and isinstance(data, dict) and data.get("ok") is False
+        )
     except CliError as error:
         running = (
             running_handle(error, command_id)
@@ -292,9 +298,11 @@ def run(
         fail(mapped_error)
         raise typer.Exit(mapped_error.exit_status) from None
     if run_log is not None:
-        run_log.finish(0)
+        run_log.finish(EXIT_AUTH if report_failed else 0)
     updates.refresh_in_background(command_id)
     _sync_skill_installs(command_id, output)
+    if report_failed:
+        raise typer.Exit(EXIT_AUTH)
 
 
 def _sync_skill_installs(command_id: str, output: str) -> None:

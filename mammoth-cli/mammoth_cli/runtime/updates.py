@@ -1,8 +1,8 @@
-"""Once-a-day update check, and the opt-in automatic upgrade.
+"""Hourly update check, and the automatic upgrade (on by default).
 
 The CLI never blocks a command on the network for this. A command reads the
 cached answer (``update-check.json`` in the platform state directory, next to
-the run log's ``logs/``) and, when that answer is older than a day, refreshes
+the run log's ``logs/``) and, when that answer is older than an hour, refreshes
 it *after* its own output has been written, with a short timeout and every
 failure swallowed. The hint therefore appears from the next command on.
 
@@ -12,11 +12,13 @@ What a caller sees:
   ``{"current", "latest", "command"}`` when a newer release is on PyPI.
 * one line on stderr in human output modes (never in ``json``/``ndjson``).
 * ``MAMMOTH_NO_UPDATE_CHECK=1`` disables the check and the hint entirely.
-* ``MAMMOTH_AUTO_UPGRADE=1`` performs the upgrade before the command runs,
-  once per detected release, through the same manager detection as
-  ``mammoth upgrade``; the running command still completes on the version
-  that started it. It is opt-in because pinned environments (locks, CI,
-  shared venvs) must never change underneath a task.
+* The upgrade runs before the command, once per detected release, through the
+  same manager detection as ``mammoth upgrade``; the running command still
+  completes on the version that started it. ``MAMMOTH_AUTO_UPGRADE=0`` (or
+  ``false``/``no``/``off``) turns it off. Unless ``MAMMOTH_AUTO_UPGRADE`` is
+  set to an on value (``1``), it also stays off when stdout is not a terminal
+  or ``CI`` is set, because pinned environments (locks, CI, scripts) must
+  never change underneath a task.
 
 ``MAMMOTH_UPDATE_CACHE`` overrides the cache file path (tests and sandboxes).
 """
@@ -41,7 +43,7 @@ AUTO_UPGRADE_ENV = "MAMMOTH_AUTO_UPGRADE"
 CACHE_ENV = "MAMMOTH_UPDATE_CACHE"
 
 #: How long a cached PyPI answer is trusted.
-CACHE_TTL = _dt.timedelta(hours=24)
+CACHE_TTL = _dt.timedelta(hours=1)
 #: The background refresh must not hold a finished command hostage.
 REFRESH_TIMEOUT_SECONDS = 3.0
 #: Commands that manage the install themselves; no hint, no auto-upgrade.
@@ -55,6 +57,7 @@ _NO_NOTICE = frozenset({"upgrade"})
 UPGRADE_COMMAND = "mammoth upgrade --yes"
 
 _TRUTHY = frozenset({"1", "true", "yes", "on"})
+_FALSY = frozenset({"0", "false", "no", "off"})
 
 
 def _flag(name: str) -> bool:
@@ -66,8 +69,23 @@ def enabled() -> bool:
     return not _flag(DISABLE_ENV) and not embedded.active()
 
 
+def _interactive_session() -> bool:
+    """A terminal on stdout and no ``CI`` variable: a person is running this."""
+    return sys.stdout.isatty() and not (os.environ.get("CI") or "").strip()
+
+
 def auto_upgrade_enabled() -> bool:
-    return enabled() and _flag(AUTO_UPGRADE_ENV)
+    """On by default for interactive sessions; ``MAMMOTH_AUTO_UPGRADE`` overrides.
+
+    ``0``/``false``/``no``/``off`` turns it off; ``1``/``true``/``yes``/``on``
+    forces it on even without a terminal or inside CI.
+    """
+    if not enabled():
+        return False
+    setting = (os.environ.get(AUTO_UPGRADE_ENV) or "").strip().lower()
+    if setting in _FALSY:
+        return False
+    return setting in _TRUTHY or _interactive_session()
 
 
 def cache_path() -> Path:
@@ -153,10 +171,13 @@ def available_update(command_id: str | None = None) -> dict[str, Any] | None:
 
 
 def hint_line(update: dict[str, Any]) -> str:
-    return (
+    line = (
         f"mammoth-cli {update['latest']} is available (you have {update['current']}); "
         f"run: {update['command']}"
     )
+    if auto_upgrade_enabled():
+        line += f" (auto-upgrade is on; turn it off with {AUTO_UPGRADE_ENV}=0)"
+    return line
 
 
 def _fetch_latest() -> str | None:
@@ -206,7 +227,7 @@ def refresh_in_background(command_id: str | None = None) -> None:
     """Refresh a stale cache in a detached process, so the command exits at once.
 
     :func:`refresh_if_stale` asks PyPI with a 3 s timeout; run inline it keeps
-    the finished command alive for up to that long once a day. The cache is
+    the finished command alive for up to that long once an hour. The cache is
     stamped first so concurrent commands do not each spawn a check; the child
     (``python -m mammoth_cli.runtime.updates``) writes the answer.
     """
@@ -241,7 +262,7 @@ def emit_hint(update: dict[str, Any] | None, *, output: str) -> None:
 
 
 def auto_upgrade(command_id: str, run_log: Any = None) -> dict[str, Any] | None:
-    """Upgrade in place when ``MAMMOTH_AUTO_UPGRADE`` is set and a release is cached.
+    """Upgrade in place when auto-upgrade is enabled and a release is cached.
 
     Returns a record of what happened (also written to ``run_log`` when
     given), or ``None`` when nothing was attempted. The current process keeps
