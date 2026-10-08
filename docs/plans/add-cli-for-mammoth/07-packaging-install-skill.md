@@ -122,11 +122,11 @@ made. Never require administrator privileges.
 Convenience paths:
 
 ```bash
-curl -fsSL https://github.com/EdgeMetric/mm-pysdk/releases/latest/download/mammoth-install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/EdgeMetric/mammothsdk/main/mammoth-cli/installers/mammoth-install.sh | sh
 ```
 
 ```powershell
-irm https://github.com/EdgeMetric/mm-pysdk/releases/latest/download/mammoth-install.ps1 | iex
+irm https://raw.githubusercontent.com/EdgeMetric/mammothsdk/main/mammoth-cli/installers/mammoth-install.ps1 | iex
 ```
 
 Label these as convenience paths because the fetched script executes before

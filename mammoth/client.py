@@ -132,7 +132,7 @@ def _log_attempt_start(method: str, endpoint: str, attempt: int, timeout: Any) -
         )
 
 
-_RETRY_STATUSES = frozenset({502, 503, 504})
+_RETRY_STATUSES = frozenset({429, 502, 503, 504})
 _RETRY_METHODS = frozenset({"GET", "HEAD"})
 _MAX_READ_RETRIES = 2
 _RETRY_BACKOFF_S = 0.25
@@ -571,7 +571,7 @@ class MammothClient:
                 refreshed elsewhere is always sent fresh. Use it instead of
                 ``api_token``; ``workspace_id`` is optional and, when absent,
                 is learned from the token the provider returns.
-            retry_gateway_errors: Retry a read that got a 502/503/504, twice.
+            retry_gateway_errors: Retry a read that got a 429/502/503/504, twice.
                 Turn it off when the server answering is the process making
                 the call: a retry then adds load to the very worker that is
                 overloaded. Connection errors are still retried.
@@ -714,10 +714,11 @@ class MammothClient:
     async def _send_with_read_retry(
         self, method: str, endpoint: str, url: str, request_kwargs: dict[str, Any]
     ) -> httpx.Response:
-        """Send once; retry only GET/HEAD on 502/503/504 (unless ``retry_gateway_errors`` is off) or
-        connect errors, at most twice.
+        """Send once; retry only GET/HEAD on 429/502/503/504 (unless ``retry_gateway_errors`` is
+        off) or connect errors, at most twice.
 
-        A draining worker answers a read with one transient gateway error.
+        A draining worker answers a read with one transient gateway error; a 429
+        waits for its Retry-After (capped at 5 seconds).
         Writes are never replayed. When retries run out the last response (or
         connect error) is returned/raised for the normal error mapping.
         """
@@ -975,8 +976,12 @@ class MammothClient:
             candidate = body.get("message", body.get("detail"))
             if isinstance(candidate, str) and candidate:
                 detail = candidate
+            server_code = body.get("error_code") or body.get("code")
+            server_hint = body.get("hint")
             raise MammothAuthError(
                 detail,
+                error_code=server_code if isinstance(server_code, (str, int)) else None,
+                hint=server_hint if isinstance(server_hint, str) else None,
                 response_body=body,
                 details=error_details,
                 method=request_method,

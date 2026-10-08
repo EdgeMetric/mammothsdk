@@ -6,6 +6,15 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed (mammoth-io 0.8.32, mammoth-cli 2.2.70)
+
+- `mammoth doctor` exits 4 when its report says `ok: false` (the report is still printed).
+- mammoth-io retries a read that got HTTP 429, waiting for `Retry-After` (capped at 5 seconds), twice.
+- `MammothAuthError` keeps the server's `error_code` and `hint`, and the CLI shows them instead of the generic sign-in advice.
+- The README names the hosted MCP server (https://mcp.mammoth.io/mcp) and `pip install mammoth-mcp-server` (needs `MCP_ENCRYPTION_KEY`) instead of `mammoth-mcp`.
+- mammoth-mcp-server answers the browser CORS preflight on `/mcp` without a token.
+- Browser and device sign-in are available on the production app (`app`): the CLI now carries its OAuth client id there, and the login menu no longer says "not yet available on app".
+
 ### Fixed (mammoth-cli 2.2.69)
 
 - Unknown flags are named: an unrecognised option is reported as `unknown_option` with the flag in the message (#179).
