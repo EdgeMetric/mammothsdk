@@ -10,6 +10,7 @@ has four regions with 14 rows each (the blank-region rows are 4 of the 60).
 from __future__ import annotations
 
 import json
+import time
 from typing import Any
 
 import pytest
@@ -62,3 +63,27 @@ def test_an_unknown_column_is_refused_before_any_view_is_created(
     assert "No Such Column" in error["message"]
     after, _ = live_cli.ok("view", "list", str(sales_data.dataset), project=sales_data.project)
     assert len(after["dataviews"]) == len(before["dataviews"])
+
+
+def test_aggregate_on_a_filtered_view_says_it_read_the_view_not_the_dataset(
+    live_cli: LiveCli, sales_data: SalesData
+) -> None:
+    """ISS-244: a total read from a filtered view was reported as the dataset's total."""
+    result, _ = live_cli.ok(
+        *("view", "variants", "create", str(sales_data.dataset)),
+        *_input({"from_view": sales_data.view, "column": "Region", "values": ["East"]}),
+        project=sales_data.project,
+    )
+    filtered = result["view_ids"][0]
+    # A view still processing reports its source's row count; wait for its filter to land.
+    for _ in range(12):
+        if _row_count(live_cli, sales_data, filtered) == _ROWS_PER_REGION:
+            break
+        time.sleep(5)
+    _, meta = live_cli.ok(
+        *("view", "data", "aggregate", str(filtered)),
+        *_input({"aggregations": [{"function": "SUM", "column": "Revenue", "as_name": "total"}]}),
+        project=sales_data.project,
+    )
+    assert meta["view"]["row_count"] == _ROWS_PER_REGION, meta
+    assert meta["dataset"]["row_count"] == 60, meta

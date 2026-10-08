@@ -484,8 +484,8 @@ commands:
   - CT-AGENT-DISABLE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: Writes. Takes a published agent out of use; chat no longer finds it. Publish it
-    again to bring it back.
+  known_restrictions: Writes. Takes an agent out of use, draft or published; chat no longer finds it.
+    Publish it again to bring it back.
   reviewed_by: primary
   no_readback: returns the changed definition itself
 - command_id: agent.feedback.list
@@ -983,6 +983,51 @@ commands:
     ids:
       agent_key: positional.0
     kind: object
+- command_id: agent.projects.clear
+  command_path: agent projects clear
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - UpdateAgentDefinition
+  positionals:
+  - name: agent_key
+    type: str
+    required: true
+    metavar: AGENT_KEY
+    falls_back_to_field: null
+    help: Key identifying the agent.
+  options: []
+  sdk_symbol: mammoth.api.agent_definitions.AgentDefinitionsAPI.update
+  sdk_conversion: Call mammoth.api.agent_definitions.AgentDefinitionsAPI.update with validated request
+    fields.
+  request_model: AgentProjectsClearRequest
+  result_model: AgentProjectsClearResult
+  mutation_class: benign_mutation
+  edits_target: true
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: null
+  live_exemption_reason: Live coverage runs on the test server once the backend release carries agent
+    definitions.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth agent projects clear AGENT_KEY --help
+  agent_example: mammoth agent projects clear sample
+  unit_tests:
+  - UT-AGENT-PROJECTS-CLEAR
+  contract_tests:
+  - CT-AGENT-PROJECTS-CLEAR-HUMAN
+  - CT-AGENT-PROJECTS-CLEAR-JSON
+  - CT-AGENT-PROJECTS-CLEAR-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Writes. Removes every project the agent may work in. To set a new list use agent
+    projects set.
+  reviewed_by: primary
+  no_readback: returns the changed definition itself
 - command_id: agent.projects.set
   command_path: agent projects set
   disposition: command

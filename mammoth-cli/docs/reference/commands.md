@@ -1,10 +1,10 @@
 # Command reference
 
-Generated from the reviewed command manifests for mammoth-cli 2.2.59.
+Generated from the reviewed command manifests for mammoth-cli 2.2.68.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
-Total commands: 691.
+Total commands: 692.
 
 ## activity
 
@@ -307,6 +307,17 @@ Total commands: 691.
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.agent_definitions.AgentDefinitionsAPI.notes_delete`
 - Agent example: `mammoth agent memory remove sample 123`
+
+### `mammoth agent projects clear`
+
+**Arguments**
+
+- `AGENT_KEY` (str, required) — Key identifying the agent.
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.agent_definitions.AgentDefinitionsAPI.update`
+- Agent example: `mammoth agent projects clear sample`
 
 ### `mammoth agent projects set`
 
@@ -1014,7 +1025,7 @@ Total commands: 691.
 
 **Arguments**
 
-- `RESOURCE_ID` (int, required) — The folder's resource_id as browse resources returns it (not its object id).
+- `RESOURCE_ID` (int, required) — The folder's id, as folder list and browse return it.
 
 - Mutation class: `read`
 - Confirmation: `none`
@@ -5702,7 +5713,7 @@ Total commands: 691.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.view.ViewExport.to_dataset`
-- Agent example: `mammoth view export dataset 123 123 --input '{"dataset_name": "snapshot"}'`
+- Agent example: `mammoth view export dataset 123 123`
 
 ### `mammoth view export delete`
 

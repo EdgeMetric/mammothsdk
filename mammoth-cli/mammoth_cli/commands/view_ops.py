@@ -64,6 +64,7 @@ from mammoth_cli.runtime.confirm import POLICY_PROMPT_OR_YES, enforce_confirmati
 from mammoth_cli.runtime.dryrun import DryRunStop
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.session import open_service, resolved_project
+from mammoth_cli.runtime.verify import read_export_stamps
 from mammoth_cli.services.command_contract import bind_command_inputs
 from mammoth_cli.services.conditions import CONDITION_KWARG, compile_condition
 from mammoth_cli.services.input_fields import TASK_COUNT_FIELD
@@ -383,6 +384,10 @@ def _dispatch_view(
             # Verify and the state readback reuse it; neither may walk datasets.
             object.__setattr__(invocation, "known_dataset_id", int(dataset_id))
         require_expected_task_count(service, view_id, dataset_id, document)
+        if dataset_id is not None:
+            object.__setattr__(
+                invocation, "exports_before", read_export_stamps(service, view_id, int(dataset_id))
+            )
         if prepare is not None and dataset_id is not None:
             early = prepare(service, int(dataset_id), kwargs)
             if early is not None:
@@ -1208,17 +1213,91 @@ def pipeline_step_errors(service: Any, view_id: int, dataset_id: Any) -> list[di
 
 
 def view_draft_submit(invocation: Invocation) -> HandlerResult:
-    """Submit a view's draft pipeline changes."""
+    """Submit a view's draft pipeline changes.
+
+    ``--dry-run`` lists the pending draft steps the submit would apply (``pending_draft_steps``).
+    """
     view_id = _view_id(invocation)
     project_id = invocation.project
+    pending_steps: list[dict[str, Any]] = []
 
     def before(service: Any, dataset_id: int) -> dict[str, Any]:
-        return _draft_before_submit(service, dataset_id, view_id, project_id)
+        state = _draft_before_submit(service, dataset_id, view_id, project_id)
+        if invocation.dry_run and state["pending"]:
+            pending_steps.extend(_pending_draft_steps(service, dataset_id, view_id, invocation))
+        return state
 
     def after(service: Any, dataset_id: int, state: Any, data: Any) -> Any:
         return _draft_submit_row_check(service, dataset_id, view_id, project_id, state, data)
 
-    return _dispatch_view(invocation, view_id, "submit_draft", before=before, after=after)
+    try:
+        return _dispatch_view(invocation, view_id, "submit_draft", before=before, after=after)
+    except DryRunStop as stop:
+        stop.record["pending_draft_steps"] = pending_steps
+        raise
+
+
+#: Task statuses of a draft change not yet applied: a step added, edited, removed or
+#: suspended in the draft.
+_PENDING_STEP_STATUSES = frozenset({"added", "edited", "deleted", "suspending"})
+_ACTION_LIST_SYMBOL = "mammoth.api.agents.AgentsAPI.action_list"
+_VIEW_KIND = "view"
+
+
+def _pending_draft_steps(
+    service: Any, dataset_id: int, view_id: int, invocation: Invocation
+) -> list[dict[str, Any]]:
+    """The draft steps a submit would apply, in pipeline order, one task listing.
+
+    With the embedding chat's session (``--session``) each step also says whether another
+    session staged it: a step last touched before this session's first write on the view.
+    """
+    first_write = _first_write_on_view(service, invocation.session, view_id)
+    steps = []
+    for task in _tasks(service, dataset_id, view_id):
+        if task.get("status") not in _PENDING_STEP_STATUSES:
+            continue
+        touched = _parse_created_at(task.get("updated_at")) or _parse_created_at(
+            task.get("created_at")
+        )
+        step: dict[str, Any] = {
+            "id": task.get("id"),
+            "sequence": task.get("sequence"),
+            "status": task.get("status"),
+            "name": _step_name(task.get("params")),
+            "created_at": task.get("created_at"),
+            "updated_at": task.get("updated_at"),
+        }
+        if invocation.session:
+            step["staged_by_other"] = first_write is None or (
+                touched is not None and touched < first_write
+            )
+        steps.append(step)
+    return sorted(steps, key=lambda step: step["sequence"] or 0)
+
+
+def _first_write_on_view(service: Any, session_id: str | None, view_id: int) -> datetime | None:
+    """When this session first wrote to the view, from its change record; ``None`` if never."""
+    if not session_id:
+        return None
+    record = service.call(_ACTION_LIST_SYMBOL, session_id=session_id)
+    actions = record.get("actions") if isinstance(record, dict) else None
+    times = [
+        written
+        for action in actions or []
+        if isinstance(action, dict)
+        and action.get("kind") == _VIEW_KIND
+        and action.get("object_id") == view_id
+        and (written := _parse_created_at(action.get("created_at"))) is not None
+    ]
+    return min(times, default=None)
+
+
+def _step_name(params: Any) -> str | None:
+    """``Replace`` for a step whose params start with ``REPLACE``; ``None`` when unknown."""
+    if not isinstance(params, dict) or not params:
+        return None
+    return str(next(iter(params))).replace("_", " ").title()
 
 
 def _draft_before_submit(

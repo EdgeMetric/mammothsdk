@@ -75,7 +75,7 @@ mammoth schema find "join two datasets; remove duplicates; build a dashboard"   
 | Goal | Command |
 |---|---|
 | Combine two datasets on a key | `view transform join`; one value per key: `view transform lookup` |
-| Add rows to an existing dataset, or combine sources | Local file: `file upload FILE --input '{"append_to_ds_id": DATASET_ID}'`. Already in Mammoth: `view export dataset VIEW_ID --input '{"dataset_name": "NAME"}'`, then per further source `view export dataset VIEW_ID --input '{"dataset_name": "NAME", "target_ds_id": DATASET_ID, "save_as_mode": "APPEND_TO_DS"}'` — combine first, clean once; then `discard-duplicates` and diff `row_count` before/after ([about Mammoth](references/about-mammoth.md#view-settings-and-what-has-no-command)) |
+| Add rows to an existing dataset, or combine sources | Local file: `file upload FILE --input '{"append_to_ds_id": DATASET_ID}'`. In Mammoth: `view export dataset VIEW_ID` (dataset_name only if user-named, else "Result Dataset"), then `view export dataset VIEW_ID --input '{"dataset_name": "NAME", "target_ds_id": DATASET_ID, "save_as_mode": "APPEND_TO_DS"}'` — combine first, clean once; then `discard-duplicates` and diff `row_count` before/after ([about Mammoth](references/about-mammoth.md#view-settings-and-what-has-no-command)) |
 | Keep or remove rows | `view transform filter` |
 | Remove duplicate rows | read `duplicates`; 0: stop. Else `view transform discard-duplicates` |
 | Totals, counts, averages per group, to read | `view data aggregate` (read-only: `--input '{"group_by": [...], "aggregations": [{"column": ..., "function": "SUM"}]}'` or `{"metric": {...}}`); never a `pivot` task |

@@ -19,11 +19,13 @@ from mammoth_cli.errors.envelope import (
     CODE_MISSING_FIELD,
     CODE_RESOURCE_NOT_FOUND,
     CODE_SDK_SYMBOL_UNRESOLVED,
+    CODE_USER_CONTROL,
     EXIT_NOT_FOUND,
     EXIT_USAGE,
     CliError,
 )
 from mammoth_cli.manifest.loader import command_by_id
+from mammoth_cli.runtime import embedded
 from mammoth_cli.runtime.confirm import POLICY_PROMPT_OR_YES, enforce_confirmation
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.session import open_service, require_project, resolved_project
@@ -262,7 +264,17 @@ def agent_run_list(invocation: Invocation) -> HandlerResult:
 
 
 def _run_control(invocation: Invocation) -> HandlerResult:
-    """Pause, resume, stop or extend one run; the SDK method is the manifest's."""
+    """Pause, resume, stop or extend one run; the SDK method is the manifest's.
+
+    These are the user's run buttons: an agent session (an embedded call) is refused.
+    """
+    if embedded.active():
+        raise CliError(
+            code=CODE_USER_CONTROL,
+            message="these are the user's run controls; a waiting run resumes by itself",
+            exit_status=EXIT_USAGE,
+            hint="Carry on without it: a run waiting on a job or a time resumes on its own.",
+        )
     return _session_call(invocation, run_id=_require_string_positional(invocation, "run id"))
 
 
@@ -314,11 +326,12 @@ def agent_roles(invocation: Invocation) -> HandlerResult:
 
 def agent_create(invocation: Invocation) -> HandlerResult:
     """Create an agent definition under the KEY positional; ``name`` is required input."""
-    key = _require_string_positional(invocation, "agent key")
+    _require_string_positional(invocation, "agent key")
     document = _bound_document(invocation)
     _require_field(document, "name")
+    # The bound document already carries the KEY positional as ``key``.
     with open_service(invocation) as (service, auth):
-        data = service.call(_symbol(invocation), key=key, **document)
+        data = service.call(_symbol(invocation), **document)
     return data, _meta(invocation, auth.workspace_id, resolved_project(invocation))
 
 
@@ -364,7 +377,8 @@ def agent_feedback_list(invocation: Invocation) -> HandlerResult:
 
 def agent_update(invocation: Invocation) -> HandlerResult:
     """Change an agent definition; only the ``--input`` fields given are sent."""
-    return _definition_call(invocation, **_bound_document(invocation))
+    fields = {k: v for k, v in _bound_document(invocation).items() if k != "agent_key"}
+    return _definition_call(invocation, **fields)
 
 
 def agent_delete(invocation: Invocation) -> HandlerResult:
@@ -402,6 +416,11 @@ def agent_access_set(invocation: Invocation) -> HandlerResult:
 def agent_projects_set(invocation: Invocation) -> HandlerResult:
     """Set the projects the agent may work in (replaces the list)."""
     return _field_call(invocation, "project_ids")
+
+
+def agent_projects_clear(invocation: Invocation) -> HandlerResult:
+    """Clear the projects the agent may work in (sets the list to empty)."""
+    return _definition_call(invocation, project_ids=[])
 
 
 def agent_team_set(invocation: Invocation) -> HandlerResult:

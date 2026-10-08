@@ -33,6 +33,7 @@ _HANDLER_OWNED_FIELDS: dict[str, frozenset[str]] = {
         for command, fields in {
             "charter.set": ("charter",),
             "access.set": ("role", "propose"),
+            "projects.clear": (),
             "projects.set": ("project_ids",),
             "team.set": ("team",),
         }.items()
@@ -148,7 +149,6 @@ _EXAMPLE_INPUT_HINTS: dict[str, dict[str, Any]] = {
         "selected_identity": {},
         "table": "exports",
     },
-    "view.export.dataset": {"dataset_name": "snapshot"},
     "view.export.elasticsearch": {
         "host": "elastic.example",
         "username": "agent",

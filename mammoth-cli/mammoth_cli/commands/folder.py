@@ -24,6 +24,7 @@ from mammoth_cli.manifest.loader import command_by_id
 from mammoth_cli.runtime.confirm import POLICY_PROMPT_OR_YES, enforce_confirmation
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.session import open_service, require_project
+from mammoth_cli.services.folder_ids import FolderIds
 
 HandlerResult = tuple[Any, dict[str, Any]]
 
@@ -125,7 +126,7 @@ def folder_find(invocation: Invocation) -> HandlerResult:
             {
                 "project_id": row["project_id"],
                 "project_name": names[row["project_id"]],
-                "id": row.get("object_id"),
+                "id": row.get("resource_id"),
                 "name": row.get("name"),
             }
             for row in rows
@@ -165,8 +166,19 @@ def folder_list(invocation: Invocation) -> HandlerResult:
         ),
     )
     with open_service(invocation) as (service, auth):
-        data = service.call(_symbol(invocation), **kwargs)
+        folders = FolderIds(service)
+        if "folder_ids" in kwargs:
+            kwargs["folder_ids"] = folders.labels(project_id, kwargs["folder_ids"])
+        page = service.call(_symbol(invocation), **kwargs)
+        data = _open_listed(folders, project_id, page)
     return data, _meta(invocation, auth.workspace_id, project_id)
+
+
+def _open_listed(folders: FolderIds, project_id: int, page: Any) -> Any:
+    """A ``FoldersAPI.list`` page with each folder shown by its open id."""
+    listed = page.model_dump(mode="json") if hasattr(page, "model_dump") else page
+    listed["folders"] = [folders.open_folder(project_id, f) for f in listed.get("folders", [])]
+    return listed
 
 
 def folder_get(invocation: Invocation) -> HandlerResult:
@@ -177,7 +189,9 @@ def folder_get(invocation: Invocation) -> HandlerResult:
     kwargs: dict[str, Any] = {"folder_id": folder_id, "project_id": project_id}
     _forward_optional(document, kwargs, ("fields",))
     with open_service(invocation) as (service, auth):
-        data = service.call(_symbol(invocation), **kwargs)
+        folders = FolderIds(service)
+        kwargs["folder_id"] = folders.label(project_id, folder_id)
+        data = folders.open_folder(project_id, service.call(_symbol(invocation), **kwargs))
     return data, _meta(invocation, auth.workspace_id, project_id)
 
 
@@ -204,7 +218,8 @@ def folder_create(invocation: Invocation) -> HandlerResult:
     kwargs: dict[str, Any] = {"name": name, "project_id": project_id}
     _forward_optional(document, kwargs, ("parent_resource_id",))
     with open_service(invocation) as (service, auth):
-        data = service.call(_symbol(invocation), **kwargs)
+        created = service.call(_symbol(invocation), **kwargs)
+        data = FolderIds(service).open_folder(project_id, created)
     return data, _meta(invocation, auth.workspace_id, project_id)
 
 
@@ -215,9 +230,14 @@ def folder_update(invocation: Invocation) -> HandlerResult:
     document = invocation.load_input()
     name = _require_field(document, "name")
     with open_service(invocation) as (service, auth):
-        data = service.call(
-            _symbol(invocation), folder_id=folder_id, name=name, project_id=project_id
+        folders = FolderIds(service)
+        updated = service.call(
+            _symbol(invocation),
+            folder_id=folders.label(project_id, folder_id),
+            name=name,
+            project_id=project_id,
         )
+        data = folders.open_folder(project_id, updated)
     return data, _meta(invocation, auth.workspace_id, project_id)
 
 
@@ -254,65 +274,29 @@ def folder_move(invocation: Invocation) -> HandlerResult:
             ),
         )
     with open_service(invocation) as (service, auth):
-        _resolve_folder_fields(service, project_id, kwargs)
+        _label_folder_fields(FolderIds(service), project_id, kwargs)
         data = service.call(_symbol(invocation), **kwargs)
     return data, _meta(invocation, auth.workspace_id, project_id)
 
 
-_FOLDER_LIST_SYMBOL = "mammoth.api.folders.FoldersAPI.list"
-_FOLDER_PAGE = 100
-
-
-def _folders_of(page: Any) -> list[dict[str, Any]]:
-    """The folder records of a ``FoldersAPI.list`` page (a model or a dict)."""
-    page = page.model_dump(mode="json") if hasattr(page, "model_dump") else page
-    folders = page.get("folders", []) if isinstance(page, dict) else []
-    return [f for f in folders if isinstance(f, dict)]
-
-
-def _project_folders(service: Any, project_id: int) -> list[dict[str, Any]]:
-    """Every folder of the project (``id`` and ``resource_id`` each), page by page."""
-    folders: list[dict[str, Any]] = []
-    while True:
-        page = service.call(
-            _FOLDER_LIST_SYMBOL, project_id=project_id, limit=_FOLDER_PAGE, offset=len(folders)
-        )
-        batch = _folders_of(page)
-        folders += batch
-        if len(batch) < _FOLDER_PAGE:
-            return folders
-
-
-def _resolve_folder_fields(service: Any, project_id: int, kwargs: dict[str, Any]) -> None:
-    """Turn a folder's ``resource_id`` into the ``id`` the backend wants, in place.
-
-    ``target_folder_resource_id`` is named for a resource id but the backend
-    wants the folder's own ``id``. A value that is a folder's ``id`` is sent
-    as it is; one that is only some folder's ``resource_id`` is replaced by
-    that folder's ``id``; one that is both (two different folders) is refused.
-    """
+def _label_folder_fields(folders: FolderIds, project_id: int, kwargs: dict[str, Any]) -> None:
+    """Turn a move's folder ids (the ids ``folder list`` shows) into the ids the backend wants."""
     for field in ("target_folder_resource_id", "source_folder_resource_id"):
         value = kwargs.get(field)
-        if value in (None, "", "root"):
-            continue
-        folders = _project_folders(service, project_id)
-        by_id = [f for f in folders if str(f.get("id")) == str(value)]
-        by_resource = [f for f in folders if str(f.get("resource_id")) == str(value)]
-        if by_id and by_resource and by_id != by_resource:
-            raise CliError(
-                code=CODE_INVALID_ARGUMENT,
-                message=(
-                    f"'{field}' {value} is the id of folder '{by_id[0].get('name')}' and the "
-                    f"resource_id of folder '{by_resource[0].get('name')}'."
-                ),
-                exit_status=EXIT_USAGE,
-                hint=(
-                    f"Pass the folder's id ({by_id[0].get('id')} or {by_resource[0].get('id')}) "
-                    "as it appears in 'folder list'."
-                ),
-            )
-        if not by_id and by_resource:
-            kwargs[field] = by_resource[0].get("id")
+        if value not in (None, "", "root"):
+            kwargs[field] = folders.label(project_id, _folder_id(value, field))
+
+
+def _folder_id(value: Any, field: str) -> int:
+    try:
+        return int(value)
+    except (TypeError, ValueError) as exc:
+        raise CliError(
+            code=CODE_INVALID_ARGUMENT,
+            message=f"'{field}' {value!r} is not a folder id or 'root'.",
+            exit_status=EXIT_USAGE,
+            hint="Pass the folder's id as 'folder list' shows it.",
+        ) from exc
 
 
 def folder_trash(invocation: Invocation) -> HandlerResult:
@@ -320,7 +304,8 @@ def folder_trash(invocation: Invocation) -> HandlerResult:
     project_id = require_project(invocation)
     folder_id = _require_int_positional(invocation, "folder id")
     with open_service(invocation) as (service, auth):
-        data = service.call(_symbol(invocation), folder_id=folder_id, project_id=project_id)
+        label = FolderIds(service).label(project_id, folder_id)
+        data = service.call(_symbol(invocation), folder_id=label, project_id=project_id)
         # Trashing a folder returns a job handle; wait so the caller sees the
         # settled result (no-op for non-job payloads).
         data = service.wait_if_job(data)
@@ -335,9 +320,10 @@ def folder_delete(invocation: Invocation) -> HandlerResult:
         invocation, policy=POLICY_PROMPT_OR_YES, action=f"delete folder {folder_id}"
     )
     document = invocation.load_input() or {}
-    kwargs: dict[str, Any] = {"folder_ids": [folder_id], "project_id": project_id}
+    kwargs: dict[str, Any] = {"project_id": project_id}
     _forward_optional(document, kwargs, ("check_dependency", "remove_contents"))
     with open_service(invocation) as (service, auth):
+        kwargs["folder_ids"] = FolderIds(service).labels(project_id, [folder_id])
         data = service.call(_symbol(invocation), **kwargs)
     return data, _meta(invocation, auth.workspace_id, project_id)
 
@@ -352,9 +338,10 @@ def folder_bulk_delete(invocation: Invocation) -> HandlerResult:
         policy=POLICY_PROMPT_OR_YES,
         action=f"delete {len(folder_ids)} folders",
     )
-    kwargs: dict[str, Any] = {"folder_ids": folder_ids, "project_id": project_id}
+    kwargs: dict[str, Any] = {"project_id": project_id}
     assert document is not None
     _forward_optional(document, kwargs, ("check_dependency", "remove_contents"))
     with open_service(invocation) as (service, auth):
+        kwargs["folder_ids"] = FolderIds(service).labels(project_id, folder_ids)
         data = service.call(_symbol(invocation), **kwargs)
     return data, _meta(invocation, auth.workspace_id, project_id)

@@ -142,44 +142,40 @@ def connector_get(invocation: Invocation) -> HandlerResult:
     connector_key = _require_string_positional_at(invocation, 0, "connector key")
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), connector_key=connector_key)
-    return data, _meta(invocation, auth.workspace_id, resolved_project(invocation))
+    return (
+        _with_plan_availability(data),
+        _meta(invocation, auth.workspace_id, resolved_project(invocation)),
+    )
 
 
-#: ``availability`` a premium connector gets when it is not yet added to the
-#: workspace -- distinct from an ordinary connector nobody has added yet.
-_PREMIUM_NOT_ENABLED = "premium_not_enabled"
+#: ``availability`` a connector gets when the server says this workspace's plan
+#: does not include it.
+_NOT_IN_PLAN = "not_in_plan"
 
 
-_PREMIUM_NOT_ENABLED_NOTE = (
-    "Premium connector, not enabled in this workspace: Mammoth sales must enable"
-    " it before it can be connected. Tell the user so and offer to contact sales."
-)
+_NOT_IN_PLAN_NOTE = "Not included in this workspace's plan. Mammoth sales can enable it."
 
 
-def _with_premium_availability(data: Any) -> Any:
-    """Mark each premium, not-yet-added connector with why it cannot be connected.
+def _mark_not_in_plan(item: Any) -> Any:
+    """Return ``item`` marked ``not_in_plan`` when the server says it is unavailable."""
+    if isinstance(item, dict) and item.get("is_available") is False:
+        return {**item, "availability": _NOT_IN_PLAN, "availability_note": _NOT_IN_PLAN_NOTE}
+    return item
 
-    ``is_premium``/``is_added`` alone said a connector could not be connected
-    but never why: a premium connector must be enabled by Mammoth sales
-    before this workspace can use it, unlike an ordinary connector nobody has
-    added yet. Without this, an agent that reads ``connector list`` can route
-    a user to sales but never explain why (T2-WPP-W7). ``ConnectorsAPI.list``
-    returns a list, which stays a list.
+
+def _with_plan_availability(data: Any) -> Any:
+    """Mark each connector the server reports unavailable to this workspace.
+
+    The server's ``is_available`` is the same plan check that gates creating a
+    connection. ``is_premium``/``is_added`` cannot stand in for it: ``is_added``
+    only says a legacy integration row exists, so a premium connector the plan
+    does include read as "not enabled". A response without ``is_available`` (an
+    older server) is left unmarked. ``ConnectorsAPI.list`` returns a list, which
+    stays a list; ``ConnectorsAPI.get`` returns one connector dict.
     """
-    if not isinstance(data, list):
-        return data
-    return [
-        (
-            {
-                **item,
-                "availability": _PREMIUM_NOT_ENABLED,
-                "availability_note": _PREMIUM_NOT_ENABLED_NOTE,
-            }
-            if isinstance(item, dict) and item.get("is_premium") and not item.get("is_added")
-            else item
-        )
-        for item in data
-    ]
+    if isinstance(data, list):
+        return [_mark_not_in_plan(item) for item in data]
+    return _mark_not_in_plan(data)
 
 
 def connector_list(invocation: Invocation) -> HandlerResult:
@@ -187,7 +183,7 @@ def connector_list(invocation: Invocation) -> HandlerResult:
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation))
     return (
-        _with_premium_availability(data),
+        _with_plan_availability(data),
         _meta(invocation, auth.workspace_id, resolved_project(invocation)),
     )
 
@@ -311,10 +307,26 @@ def connector_connection_get(invocation: Invocation) -> HandlerResult:
     return data, _meta(invocation, auth.workspace_id, project_id)
 
 
+def _require_connector_key_for_connection_list(invocation: Invocation) -> str:
+    """Return the connector key, or raise a usage error that says how to find one."""
+    connector_key = _string_positional_at(invocation, 0, "connector key")
+    if connector_key:
+        return connector_key
+    raise CliError(
+        code=CODE_MISSING_ARGUMENT,
+        message=(
+            "This command requires a connector key argument. "
+            "Run `mammoth connector active` to list the connectors that have saved connections."
+        ),
+        exit_status=EXIT_USAGE,
+        hint="Pass the connector key as a positional argument.",
+    )
+
+
 def connector_connection_list(invocation: Invocation) -> HandlerResult:
-    """List connections for a connector type. The connector key is positional."""
+    """List connections for a connector type; find its key with `mammoth connector active`."""
     project_id = require_project(invocation)
-    connector_key = _require_string_positional_at(invocation, 0, "connector key")
+    connector_key = _require_connector_key_for_connection_list(invocation)
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), connector_key=connector_key, project_id=project_id)
     return data, _meta(invocation, auth.workspace_id, project_id)

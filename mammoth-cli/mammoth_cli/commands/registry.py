@@ -603,6 +603,7 @@ _TARGETS: dict[str, str] = {
     "agent.memory.add": "mammoth_cli.commands.agent:agent_memory_add",
     "agent.memory.list": "mammoth_cli.commands.agent:agent_memory_list",
     "agent.memory.remove": "mammoth_cli.commands.agent:agent_memory_remove",
+    "agent.projects.clear": "mammoth_cli.commands.agent:agent_projects_clear",
     "agent.projects.set": "mammoth_cli.commands.agent:agent_projects_set",
     "agent.publish": "mammoth_cli.commands.agent:agent_publish",
     "agent.roles": "mammoth_cli.commands.agent:agent_roles",

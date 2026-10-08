@@ -61,6 +61,7 @@ def test_a_mutating_command_gets_a_verify_block(fake_service: FakeMammothService
         "warnings": [],
         "reason": None,
         "needs_user": None,
+        "outcome": "settled",
     }
 
 

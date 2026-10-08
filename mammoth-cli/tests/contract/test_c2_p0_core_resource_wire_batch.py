@@ -54,6 +54,12 @@ def test_core_resource_reads_and_lifecycle_wire(
     api.on("GET", rf"/files/{FILE}$", body={"file": {}})
     api.on("GET", r"/files$", body={"files": [], "next": ""})
     api.on("GET", rf"/folders/{FOLDER}$", body={"folder": {}})
+    # The folder is named by its resource id (1000 + its own id); the CLI lists the project once.
+    api.on(
+        "GET",
+        r"/folders$",
+        body={"folders": [{"id": FOLDER, "resource_id": 1000 + FOLDER}], "next": ""},
+    )
     cases = [
         (
             project,
@@ -96,7 +102,7 @@ def test_core_resource_reads_and_lifecycle_wire(
         (
             folder,
             "folder.get",
-            [str(FOLDER)],
+            [str(1000 + FOLDER)],
             f"/workspaces/4/projects/{PROJECT}/folders/{FOLDER}",
             "GET",
         ),

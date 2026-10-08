@@ -530,6 +530,21 @@ def test_url_import_intent_reaches_dataset_create() -> None:
         assert "dataset.create" in matches, f"{query!r} -> {matches}"
 
 
+def test_sftp_file_import_intent_reaches_the_connector_flow() -> None:
+    """QA ISS-189: 'import import.csv from my SFTP server as a new dataset' found only
+    view.export.sftp (which pushes data OUT), so the agent told the user Mammoth could
+    not import from SFTP. The import is connector connection create, then dataset create
+    with ds_creation_type=cloud.
+    """
+    for query in (
+        "import a file from my sftp server",
+        "import import.csv from my SFTP server as a new dataset",
+    ):
+        matches = [item["command_id"] for item in find_schemas(query)["matches"]]
+        assert "dataset.create" in matches, f"{query!r} -> {matches}"
+        assert "connector.connection.create" in matches, f"{query!r} -> {matches}"
+
+
 def test_alert_on_row_match_reaches_checkpoint_create() -> None:
     """Live-eval evidence (T1-R-02): 'alert me when a row matches a condition' /
     'notify me if a value changes' should surface view.checkpoint.create

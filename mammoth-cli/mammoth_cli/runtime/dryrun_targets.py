@@ -25,6 +25,7 @@ from mammoth_cli.errors.envelope import (
     CliError,
 )
 from mammoth_cli.manifest.loader import command_by_id
+from mammoth_cli.services.folder_ids import FolderIds
 from mammoth_cli.services.protocol import MammothService
 
 CODE_TARGETS_UNRESOLVABLE = "dry_run_targets_unresolvable"
@@ -461,7 +462,15 @@ def _read_name(
             hint=f"Check the id with `mammoth {kind} get {target_id}`; nothing was changed.",
             details={"type": kind, "id": target_id},
         )
-    return {"type": kind, "id": target_id, "name": name}
+    return {"type": kind, "id": _shown_id(FolderIds(service), kind, target_id, scope), "name": name}
+
+
+def _shown_id(folders: FolderIds, kind: str, target_id: int, scope: Mapping[str, Any]) -> int:
+    """The id the report shows: a folder's arrives as the label id its call carries, and is shown
+    by the id the app opens it by."""
+    if kind != "folder":
+        return target_id
+    return folders.to_open(int(scope["project_id"])).get(target_id, target_id)
 
 
 #: Resource kinds one bulk request can name, and the resource type the route calls each.
@@ -482,9 +491,10 @@ def _read_names(
     scope = {"project_id": arguments["project_id"]} if arguments.get("project_id") else {}
     rows = service.call(_BULK_SYMBOL, items=[(BULK_TYPES[kind], item) for item in ids], **scope)
     names = {row.get("object_id"): row.get("name") for row in rows if isinstance(row, Mapping)}
+    folders = FolderIds(service)
     return [
         (
-            {"type": kind, "id": item, "name": names[item]}
+            {"type": kind, "id": _shown_id(folders, kind, item, scope), "name": names[item]}
             if isinstance(names.get(item), str) and names[item]
             else _read_name(service, kind, item, arguments)
         )

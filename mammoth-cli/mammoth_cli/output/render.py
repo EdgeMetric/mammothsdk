@@ -188,6 +188,8 @@ def _render_table(data: Any, stream: TextIO) -> None:
     from rich.table import Table
 
     console = Console(file=stream)
+    if isinstance(data, dict) and list(data) == ["result"] and isinstance(data["result"], list):
+        data = data["result"]  # a list result wrapped as {"result": [...]}: one row per item
     if isinstance(data, list) and any(isinstance(row, dict) for row in data):
         columns: list[str] = []
         for row in data:

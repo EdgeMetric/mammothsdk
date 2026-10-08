@@ -6,6 +6,48 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed (mammoth-cli 2.2.68)
+
+- `connector get` reports plan availability like `connector list`, so an included connector is no longer read as a paid one (ISS-263).
+- `connector connection list` without a key tells the caller to run `mammoth connector active`.
+
+### Fixed (mammoth-cli 2.2.67)
+
+- A view read that goes async (`--return-running`) keeps its dataset and view meta in the running envelope.
+- The error-summary AST scan no longer false-positives on `_backend_message`'s local (renamed to `backend_code`).
+
+### Fixed (mammoth-cli 2.2.66)
+
+- `dataset find` names the in-project exact match instead of telling the caller to ask; the elsewhere note says the in-project match is the answer and other projects matter only when the user names one.
+
+### Fixed (mammoth-cli 2.2.65)
+
+- `dataset find` (and the name fallback of `dataset list`) reads one workspace search instead of every holding project's dataset list, which took 20+ s for a project of a few hundred datasets.
+- Data reads on a view carry the row count of the view and of its dataset (ISS-244).
+
+### Fixed (mammoth-cli 2.2.64)
+
+- `dataset create` raises `job_failed` when a waited create job settled without a dataset; a cloud import deferred to a later start reports `scheduled`, and `datasource_id` counts as the dataset id.
+- A cloud file create with `file_path` and no `data_pull_file` defaults to "Pull same file"; a bad pull mode lists the allowed values.
+
+### Added (mammoth-cli 2.2.61)
+
+- `mammoth agent projects clear AGENT_KEY` empties an agent's project list (`projects set` cannot: `*_ids` lists need one item).
+- Table mode shows the backend's own message (and code) on a 4xx, one line per field for validation errors; `agent roles` prints a table.
+
+### Fixed (mammoth-cli 2.2.63)
+
+- `connector list` uses the server's `is_available` instead of inferring availability from `is_premium` and `is_added`.
+- Under `--project`, `resolve` and `dataset find` return only the project's own rows when one matches the name exactly; `elsewhere` counts the rest, and `--input '{"all_projects": true}'` lists all.
+
+### Fixed (mammoth-cli 2.2.62)
+
+- The agent no longer invents a name for a new dataset (QA ISS-195: "Branch out View 1 of X into a new dataset" produced "X - View 1 branch" instead of "Result Dataset"). The bundled skill's new-dataset examples (`view export dataset`, the cross-project send recipe, the in-place-edit recipe in `schema`) omit `dataset_name`, and SKILL.md states the rule: pass it only when the user named the dataset; omitted it is "Result Dataset", as in the app. Appending to an existing dataset (`target_ds_id`) is unchanged. `view transform crosstab` still requires `dataset_name`.
+
+### Fixed (mammoth-cli 2.2.60)
+
+- A folder has one id in CLI output: the resource id the web app opens it by (QA RS-12: the agent showed a folder under its label id and its receipt under its resource id, two cards and a broken link). `folder create/get/list/update/find` and every folder in `browse project/folder/root/workspace/resources/resource/search/ancestors` print that id as `id`; the separate `resource_id` field, the label id, and the label ids in `parent_id` and `resource_path` are gone. `folder get/update/delete/trash/bulk-delete`, `folder list` `folder_ids`, a `folder move` target, `browse folder`, and `browse resource label` take that id. The old label id is no longer accepted (the feature is unshipped). `folder create --input parent_resource_id` is unchanged.
+
 ### Added (mammoth-io 0.8.31, mammoth-cli 2.2.59)
 
 - Agent definitions: `client.agent_definitions` (SDK) and `mammoth agent create|get|list|update|delete|publish|disable|roles`, `agent charter get|set|versions|restore`, `agent access set`, `agent projects set`, `agent team set`, `agent goldens add|list|remove|run|status`, `agent memory add|list|remove`, `agent scratch set|get|list|clear` and `agent feedback list` build, prove and publish a workspace agent. The set commands take their values from `--input` (for example `agent access set KEY --input '{"role": "member", "propose": true}'`). The CLI requires `mammoth-io>=0.8.31`; the server routes ship with the matching mvc-service release.

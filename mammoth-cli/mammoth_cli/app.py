@@ -103,6 +103,30 @@ _GROUP_DESCRIPTIONS = {
     "workspace": "Manage workspace settings and members.",
 }
 
+# One line per ``agent`` subgroup, so ``mammoth agent --help`` tells them apart.
+_AGENT_SUBGROUP_DESCRIPTIONS = {
+    "access": "Set who may use an agent definition.",
+    "action": "List and delete the changes an agent chat made.",
+    "charter": "Read, change and restore an agent definition's charter.",
+    "feedback": "Read the feedback an agent definition has received.",
+    "goldens": "Manage and run the golden cases an agent definition is proven against.",
+    "memory": "Manage the facts an agent definition has learned, per project.",
+    "projects": "Set or clear the projects an agent definition works in.",
+    "run": "Inspect and control an agent's runs.",
+    "scratch": "Read, write and clear an agent definition's scratchpad notes per project.",
+    "session": "List, read, delete and share agent chat sessions.",
+    "team": "Set the agents this agent may consult while answering.",
+    "turn": "Control one turn of an agent chat session.",
+}
+
+
+def _group_description(tokens: tuple[str, ...]) -> str:
+    """Return the help line for the group at ``tokens``."""
+    if tokens[0] == "agent" and len(tokens) > 1 and tokens[1] in _AGENT_SUBGROUP_DESCRIPTIONS:
+        return _AGENT_SUBGROUP_DESCRIPTIONS[tokens[1]]
+    return _GROUP_DESCRIPTIONS.get(tokens[0], f"Commands for {' '.join(tokens)}.")
+
+
 _ROOT_HELP_PANELS = {
     "auth": "Start here",
     "context": "Start here",
@@ -196,6 +220,25 @@ def _output_mode_from_argv(argv: Sequence[str] | None) -> str:
             mode = token[2:]
         index += 1
     return resolve_output(mode, is_tty=sys.stdout.isatty())
+
+
+def _unknown_flag_in(error: Any, tokens: Sequence[str]) -> str | None:
+    """The first ``--flag`` in ``tokens`` that neither a global option nor the command declares."""
+    known, _valued = _global_option_flags()
+    command = getattr(getattr(error, "ctx", None), "command", None)
+    known = known | {
+        flag
+        for param in getattr(command, "params", [])
+        for flag in (*param.opts, *param.secondary_opts)
+    }
+    return next(
+        (
+            token.split("=", 1)[0]
+            for token in tokens
+            if token.startswith("--") and token.split("=", 1)[0] not in known
+        ),
+        None,
+    )
 
 
 @cache
@@ -321,6 +364,8 @@ class _LeafGroup(TyperGroup):
     """
 
     def parse_args(self, ctx: Any, args: list[str]) -> list[str]:
+        # Click's parser consumes ``args`` in place; keep the tokens for the second parse.
+        tokens = list(args)
         super().parse_args(ctx, args)
         protected = list(getattr(ctx, "_protected_args", ()) or ())
         if protected and protected[0] not in self.commands:
@@ -329,7 +374,7 @@ class _LeafGroup(TyperGroup):
             # plain command with interspersed options, keeping the bare tokens
             # as the callback's positional arguments.
             ctx.allow_interspersed_args = True
-            ctx.args = _ClickCommand.parse_args(self, ctx, list(args))
+            ctx.args = _ClickCommand.parse_args(self, ctx, tokens)
             # Click's own attribute for the pending subcommand token (Click
             # >= 8.2 made it private); not an SDK member.
             setattr(ctx, "_protected_args", [])  # noqa: B010
@@ -460,6 +505,15 @@ class _EnvelopeGroup(TyperGroup):
             or bool(re.match(r"^Missing argument '[^']+'\.", error_message))
         )
         report = None if is_missing_parameter else _usage_error_report(error, tokens)
+        if is_missing_parameter and (option := _unknown_flag_in(error, tokens)):
+            # A misspelt flag is the first thing to fix, ahead of a missing argument.
+            report = CliError(
+                code="unknown_option",
+                message=f"Unknown option '{option}'.",
+                exit_status=EXIT_USAGE,
+                hint="Check the command schema with 'mammoth schema get'.",
+                details={"option": option},
+            )
         if _output_mode_from_argv(argv) in MACHINE_OUTPUTS:
             if report is None:
                 missing = is_missing_parameter
@@ -489,21 +543,7 @@ class _EnvelopeGroup(TyperGroup):
                     # unknown option token as the positional value. Only
                     # classify an argv flag that is not a known global option;
                     # a known option's malformed value remains usage_error.
-                    known, _valued = _global_option_flags()
-                    command = getattr(getattr(error, "ctx", None), "command", None)
-                    known = known | {
-                        flag
-                        for param in getattr(command, "params", [])
-                        for flag in (*param.opts, *param.secondary_opts)
-                    }
-                    option = next(
-                        (
-                            token.split("=", 1)[0]
-                            for token in tokens
-                            if token.startswith("--") and token.split("=", 1)[0] not in known
-                        ),
-                        None,
-                    )
+                    option = _unknown_flag_in(error, tokens)
                     if option:
                         report = CliError(
                             code="unknown_option",
@@ -905,6 +945,7 @@ def _execute(invocation: Invocation) -> None:
     from mammoth_cli.runtime.intent_only import refuse_hand_crafted_write
     from mammoth_cli.runtime.locked_files import with_locked_files
     from mammoth_cli.runtime.new_data import with_new_data_path
+    from mammoth_cli.runtime.opens import with_opens
     from mammoth_cli.runtime.strict import validate_extra_args
 
     if invocation.profile is None:
@@ -937,7 +978,7 @@ def _execute(invocation: Invocation) -> None:
             return _dry_run(handler, invocation)
         data, meta = handler(invocation)
         checked = with_locked_files(with_dataset_health(_apply_verify(invocation, data)))
-        return with_new_data_path(checked), meta
+        return with_new_data_path(checked), with_opens(invocation, checked, meta)
 
     executor.run(
         invocation.command_id,
@@ -1026,6 +1067,14 @@ def _indexed_summary(command_id: str) -> str | None:
     return _summary_index().get(command_id)
 
 
+#: A line of ``--help`` a command needs that its handler's shared docstring cannot carry.
+_HELP_NOTES = {
+    "view.export.dataset": (
+        "Omit dataset_name unless the user gave one; the product default 'Result Dataset' is used."
+    ),
+}
+
+
 def _command_help(command_id: str, record: dict[str, Any] | None) -> str | None:
     """Build a command's user-facing ``--help`` summary.
 
@@ -1046,6 +1095,8 @@ def _command_help(command_id: str, record: dict[str, Any] | None) -> str | None:
         parts.append(summary)
     if record is not None and edits_view_in_place(record):
         parts.append(IN_PLACE_RECIPE)
+    if command_id in _HELP_NOTES:
+        parts.append(_HELP_NOTES[command_id])
     example = (record or {}).get("agent_example")
     if example:
         parts.append(f"Example: {example}")
@@ -1133,7 +1184,7 @@ def _group_typer(tokens: tuple[str, ...], command_id: str | None) -> typer.Typer
         sub.callback()(_build_leaf(command_id, is_group_callback=True))
         return sub
     return typer.Typer(
-        help=_GROUP_DESCRIPTIONS.get(tokens[0], f"Commands for {' '.join(tokens)}."),
+        help=_group_description(tokens),
         no_args_is_help=True,
         context_settings={"allow_extra_args": True, "ignore_unknown_options": True},
     )
@@ -1233,7 +1284,7 @@ def _populate(base: tuple[str, ...], group: typer.Typer) -> None:
         parent.add_typer(
             sub,
             name=tokens[-1],
-            help=_GROUP_DESCRIPTIONS.get(top_level, f"Commands for {' '.join(tokens)}."),
+            help=_group_description(tokens),
             rich_help_panel=_ROOT_HELP_PANELS.get(top_level) if len(tokens) == 1 else None,
         )
         groups[tokens] = sub
@@ -1308,7 +1359,7 @@ _ROOT_LEAF_HELP: dict[str, str] = {
     ),
     "resolve": (
         "Say what NAME refers to: a dataset, a view or a project, with ids and projects."
-        "\n\nExample: mammoth resolve uqa-w29-ren"
+        "\n\nExample: mammoth resolve uqa-w29-ren\n\nInput fields: all_projects (bool)"
     ),
     "upgrade": (
         "Upgrade the mammoth CLI to the latest (or a specified) version from PyPI."

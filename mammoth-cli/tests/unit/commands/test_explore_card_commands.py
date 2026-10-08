@@ -124,3 +124,13 @@ def test_the_command_is_reachable_from_the_cli(words: list[str]) -> None:
     result = make_runner().invoke([*words, "--help"])
     assert result.exit_code == 0
     assert " ".join(words) in " ".join(result.output.split())
+
+
+def test_explore_help_says_it_reads_column_values_not_explore_cards() -> None:
+    from typer.testing import CliRunner
+
+    from mammoth_cli.app import app
+
+    result = CliRunner().invoke(app, ["view", "data", "explore", "--help"])
+
+    assert "not an Explore card" in " ".join(result.output.split())
