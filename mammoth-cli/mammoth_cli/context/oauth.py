@@ -33,8 +33,6 @@ import webbrowser
 from collections.abc import Callable, Iterator
 from dataclasses import dataclass
 
-import httpx
-
 from mammoth_cli.context import credentials
 from mammoth_cli.context.credentials import OAuthSession
 from mammoth_cli.context.endpoint import DEFAULT_SERVER_PREFIX, resolve_base_url
@@ -84,12 +82,8 @@ def login_expired_error() -> CliError:
     )
 
 
-#: RFC 8414 metadata path under the API base url.
-METADATA_PATH = "/.well-known/oauth-authorization-server"
 #: The metadata field carrying the CLI's client id on servers that publish it.
 METADATA_CLIENT_ID_FIELD = "mammoth_cli_client_id"
-#: Short, because a slow or dead server must not stall the login menu.
-_METADATA_TIMEOUT_SECONDS = 5.0
 
 
 @functools.cache
@@ -100,14 +94,15 @@ def published_client_id(prefix: str) -> str | None:
     server cannot be reached, or it answers anything but metadata: the caller
     then falls back to :data:`OAUTH_CLIENT_IDS`.
     """
+    from mammoth import oauth as sdk_oauth
+
     try:
-        response = httpx.get(
-            f"{resolve_base_url(prefix)}{METADATA_PATH}",
-            timeout=_METADATA_TIMEOUT_SECONDS,
-            follow_redirects=False,
-        )
-        body = response.json() if response.status_code == 200 else None
-    except (CliError, httpx.HTTPError, ValueError):
+        status, body = sdk_oauth.metadata_request(resolve_base_url(prefix))
+    except CliError:
+        return None
+    except sdk_oauth.OAuthTransportError:
+        return None
+    if status != 200:
         return None
     value = body.get(METADATA_CLIENT_ID_FIELD) if isinstance(body, dict) else None
     return value if isinstance(value, str) and value else None

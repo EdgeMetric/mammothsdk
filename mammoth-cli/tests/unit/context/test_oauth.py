@@ -212,10 +212,11 @@ def fresh_metadata_cache() -> None:
     oauth.published_client_id.cache_clear()
 
 
-def test_koyal_publishes_no_client_id_so_the_table_answers(fresh_metadata_cache: None) -> None:
-    assert oauth.published_client_id("koyal") is None
+def test_koyal_publishes_its_client_id_and_it_matches_the_table(fresh_metadata_cache: None) -> None:
+    published = oauth.published_client_id("koyal")
+    assert published == oauth.OAUTH_CLIENT_IDS["koyal"]
     assert oauth.has_client_id("koyal")
-    assert oauth.client_id_for("koyal") == oauth.OAUTH_CLIENT_IDS["koyal"]
+    assert oauth.client_id_for("koyal") == published
 
 
 def test_a_server_that_answers_no_metadata_falls_back(fresh_metadata_cache: None) -> None:

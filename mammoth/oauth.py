@@ -12,6 +12,7 @@ from typing import Any
 import httpx
 
 _TIMEOUT_SECONDS = 30.0
+_METADATA_TIMEOUT_SECONDS = 5.0
 
 
 class OAuthTransportError(Exception):
@@ -52,6 +53,29 @@ def device_authorization_request(base_url: str, form: dict[str, str]) -> tuple[i
         OAuthTransportError: when the server cannot be reached.
     """
     return _post_form(base_url, "/oauth/device-authorization", form)
+
+
+def metadata_request(base_url: str) -> tuple[int, Any]:
+    """GET ``/.well-known/oauth-authorization-server`` (RFC 8414).
+
+    Return ``(status_code, json_body_or_None)``. The short timeout keeps a slow
+    or dead server from stalling a sign-in menu.
+
+    Raises:
+        OAuthTransportError: when the server cannot be reached.
+    """
+    try:
+        response = httpx.get(
+            f"{base_url}/.well-known/oauth-authorization-server",
+            timeout=_METADATA_TIMEOUT_SECONDS,
+            follow_redirects=False,
+        )
+    except httpx.HTTPError as exc:
+        raise OAuthTransportError(str(exc)) from exc
+    try:
+        return response.status_code, response.json()
+    except ValueError:
+        return response.status_code, None
 
 
 def revoke_grant(base_url: str, grant_id: int, access_token: str) -> int:

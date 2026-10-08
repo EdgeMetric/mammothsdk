@@ -315,4 +315,11 @@ def test_upgrade_prompt_defaults_to_yes_on_enter(monkeypatch: pytest.MonkeyPatch
     finally:
         os.close(master)
     assert data["action"] == "upgraded"
+    assert data["installed_version"] == upgrade_cmd.installed_version()
     assert ran == [UV_LATEST]
+
+
+def test_installed_version_is_what_a_fresh_interpreter_reports() -> None:
+    from mammoth_cli import __version__
+
+    assert upgrade_cmd.installed_version() == __version__
