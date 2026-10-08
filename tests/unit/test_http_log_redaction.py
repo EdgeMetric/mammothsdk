@@ -42,9 +42,8 @@ class TestThePathALogKeeps:
     def test_a_query_string_is_dropped(self) -> None:
         # No caller embeds one today; a log is the wrong place to find out
         # that one started to.
-        assert safe_log_path("/workspaces/4/files?connection_key=s3cr3t") == (
-            "/workspaces/4/files"
-        )
+        asked = "/workspaces/4/files?connection_key=s3cr3t"
+        assert safe_log_path(asked) == "/workspaces/4/files"
 
     def test_both_are_handled_at_once(self) -> None:
         assert safe_log_path(f"{CLIENT_APP_PATH}?fields=__min") == (

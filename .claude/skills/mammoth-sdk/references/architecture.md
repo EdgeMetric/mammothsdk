@@ -1,4 +1,4 @@
-# SDK Architecture (v0.8.31)
+# SDK Architecture (v0.8.32)
 
 ## File Layout
 

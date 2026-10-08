@@ -6,6 +6,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed (mammoth-io 0.8.32)
+
+- The transport log redacts the path segment after `clientapps`, so an app key no longer reaches the log line or its structured `path` field.
+
 ### Fixed (mammoth-cli 2.2.69)
 
 - Unknown flags are named: an unrecognised option is reported as `unknown_option` with the flag in the message (#179).
