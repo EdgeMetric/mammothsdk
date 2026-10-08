@@ -136,7 +136,7 @@
   "connector.connection.create": "Create a connection for a connector. '--yes' is always required.",
   "connector.connection.delete": "Delete a connection. Prompt or '--yes' required.",
   "connector.connection.get": "Get one connection's details. Connector and connection keys are positional.",
-  "connector.connection.list": "List connections for a connector type. The connector key is positional.",
+  "connector.connection.list": "List connections for a connector type; find its key with `mammoth connector active`.",
   "connector.connection.update": "Update a connection's credentials. '--yes' is always required.",
   "connector.ds-config.create": "Create a data source configuration. '--yes' is always required.",
   "connector.ds-config.delete": "Delete a data source configuration. Prompt or '--yes' required.",

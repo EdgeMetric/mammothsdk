@@ -105,6 +105,14 @@ def test_plan_availability_marks_only_what_the_server_says_is_unavailable() -> N
     assert "availability" not in marked[2]
 
 
+def test_plan_availability_marks_a_single_connector_from_get() -> None:
+    """``connector get`` returns one dict, not a list; it is marked the same way."""
+    out = connector_cmd._with_plan_availability({"name_key": "bigquery", "is_available": False})
+    assert out["availability"] == "not_in_plan"
+    in_plan = connector_cmd._with_plan_availability({"name_key": "sftp", "is_available": True})
+    assert "availability" not in in_plan
+
+
 # --- ai chat ---------------------------------------------------------------------
 
 
@@ -394,6 +402,12 @@ def test_connection_list_requires_connector_key(fake_service: FakeMammothService
     with pytest.raises(CliError) as excinfo:
         connector_cmd.connector_connection_list(_inv("connector.connection.list", project=180))
     assert excinfo.value.code == "missing_argument"
+
+
+def test_connection_list_without_key_points_to_connector_active() -> None:
+    with pytest.raises(CliError) as excinfo:
+        connector_cmd.connector_connection_list(_inv("connector.connection.list", project=180))
+    assert "connector active" in excinfo.value.message
 
 
 def test_connection_list_dispatches(fake_service: FakeMammothService) -> None:

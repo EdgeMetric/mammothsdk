@@ -22,3 +22,10 @@ def test_sftp_is_available_in_a_workspace_whose_plan_includes_it(live_cli: LiveC
     sftp = next(c for c in connectors if c["name_key"] == "sftp")
     assert sftp["is_available"] is True
     assert "availability" not in sftp
+
+
+def test_connector_get_reports_the_same_availability_as_list(live_cli: LiveCli) -> None:
+    """`connector get sftp` must carry the plan check too, not just the premium catalogue flag."""
+    sftp, _ = live_cli.ok("connector", "get", "sftp")
+    assert sftp["is_available"] is True
+    assert "availability" not in sftp
