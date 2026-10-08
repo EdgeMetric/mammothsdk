@@ -17,16 +17,22 @@ from starlette.datastructures import UploadFile
 from starlette.requests import Request
 from starlette.responses import HTMLResponse, JSONResponse, Response
 
+from mammoth.exceptions import MammothAPIError, MammothError
+
 from .config import MCP_UPLOAD_URL
 from .consts import UPLOAD_FIELD, ApiPaths, ErrorFields, UploadFields
 from .jobs import find_job_id
-from .sdk import FileUpload, FileUploads, JsonValue, build_client, request_api
+from .sdk import FileUpload, FileUploads, JsonValue, build_client
 from .store import Record
 from .upload_tickets import as_the_caller, read_caller, read_live_ticket, spend_ticket
 
 UNKNOWN_MEDIA_TYPE = "application/octet-stream"
 EXPIRED = "This upload link has expired. Ask for a new one in your conversation."
 NO_FILE = "Pick at least one file to upload."
+REFUSED = "Mammoth would not take the file."
+# What a refusal that carries no status of its own is reported as: the upload
+# did reach Mammoth, so this server is relaying an answer, not failing.
+RELAYED_STATUS = 502
 # The largest file the page takes, which is the upload route's own limit.
 MAX_UPLOAD_BYTES = 50 * 1024 * 1024
 
@@ -184,7 +190,16 @@ async def take_the_upload(request: Request, ticket_id: str) -> Response:
     if not files:
         return JSONResponse({ErrorFields.MESSAGE: NO_FILE}, status_code=400)
     uploaded_at = datetime.now(UTC).isoformat()
-    started = await send_to_mammoth(ticket, files)
+    try:
+        started = await send_to_mammoth(ticket, files)
+    except MammothError as refused:
+        # Mammoth's own words: "not authorized", a project pin, a size limit.
+        # Unhandled, this leaves as a 500 and the page can only say the upload
+        # was refused, which tells the user nothing to act on.
+        return JSONResponse(
+            {ErrorFields.MESSAGE: str(refused).strip() or REFUSED},
+            status_code=refused_status(refused),
+        )
     await spend_ticket(
         ticket_id,
         ticket,
@@ -193,6 +208,12 @@ async def take_the_upload(request: Request, ticket_id: str) -> Response:
         uploaded_at=uploaded_at,
     )
     return JSONResponse({UploadFields.STATUS: UploadFields.PROCESSING})
+
+
+def refused_status(refused: MammothError) -> int:
+    """The status to answer with: Mammoth's own, or a plain relay failure."""
+    status = getattr(refused, "status_code", None) if isinstance(refused, MammothAPIError) else None
+    return status if isinstance(status, int) and 400 <= status <= 599 else RELAYED_STATUS
 
 
 async def send_to_mammoth(ticket: Record, files: FileUploads) -> dict[str, JsonValue]:
@@ -205,12 +226,15 @@ async def send_to_mammoth(ticket: Record, files: FileUploads) -> dict[str, JsonV
     project_id = int(ticket[UploadFields.PROJECT_ID])
     with as_the_caller(read_caller(ticket)):
         async with build_client(workspace_id, project_id) as client:
-            return await request_api(
-                client,
+            # Not `request_api`: that turns a refusal into the ToolError a
+            # model reads. This answer goes to a browser, which needs what
+            # Mammoth actually said and the status it said it with.
+            payload: dict[str, JsonValue] = await client.request_json(
                 "POST",
                 ApiPaths.FILES.format(workspace_id=workspace_id, project_id=project_id),
-                upload=files,
+                files=[(UPLOAD_FIELD, one) for one in files],
             )
+    return payload
 
 
 async def read_upload(one: UploadFile) -> FileUpload:

@@ -89,12 +89,14 @@ async def build_client(
 
     Raises:
         RuntimeError: If called outside an authenticated MCP request.
-        ToolError: If the call names a workspace the caller's token is not for.
+        ToolError: If the call names a workspace or a project the caller's
+            token is not for.
     """
     access_token = get_access_token()
     if access_token is None:
         raise RuntimeError("no authenticated MCP caller for this tool call")
     own_workspace = int((access_token.claims or {})[TokenClaims.WORKSPACE_ID])
+    check_project(project_id)
     if workspace_id is not None and workspace_id != own_workspace:
         # A token belongs to one workspace, and the API refuses it for any
         # other. Said here, the model learns which workspace to name instead.
@@ -111,6 +113,38 @@ async def build_client(
         client.set_project_id(project_id)
     async with client:
         yield client
+
+
+def own_project() -> int | None:
+    """The one project the caller may act in, or None for every project.
+
+    The user settles this when they connect: picking a project fences the
+    token to it, and Mammoth refuses the token on any other. Read it rather
+    than ask the user again.
+    """
+    access_token = get_access_token()
+    if access_token is None:
+        raise RuntimeError("no authenticated MCP caller for this tool call")
+    pinned = (access_token.claims or {}).get(TokenClaims.PROJECT_ID)
+    return int(pinned) if pinned is not None else None
+
+
+def check_project(project_id: int | None) -> None:
+    """Refuse a project the caller's token is fenced out of.
+
+    Mammoth refuses it too, with an authorization error that reaches the user
+    as a failed call and nothing more. Said here, the model learns which
+    project it may use.
+
+    Raises:
+        ToolError: If the token is pinned to another project.
+    """
+    pinned = own_project()
+    if pinned is not None and project_id is not None and project_id != pinned:
+        raise ToolError(
+            f"This connection is limited to project {pinned}, not {project_id}."
+            " Use that project, or connect again and choose All projects."
+        )
 
 
 def client_with(bearer: str, job_timeout: float = JOB_TIMEOUT_SECONDS) -> MammothClient:

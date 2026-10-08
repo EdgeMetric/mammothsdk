@@ -5,8 +5,8 @@ of transformation tasks over a dataset. These tools walk that hierarchy; every
 one of them calls the same API route the web app calls, as the signed-in user.
 """
 
-from ..consts import LIST_LIMIT_DEFAULT, ApiFields, ApiPaths
-from ..sdk import JsonValue, build_client, read_sdk_errors, request_api
+from ..consts import LIST_LIMIT_DEFAULT, ApiFields, ApiPaths, ListFields
+from ..sdk import JsonValue, build_client, own_project, read_sdk_errors, request_api
 from ..server import mcp_server
 from ..tool_kinds import READS
 
@@ -44,13 +44,16 @@ async def list_projects(
 
     A project groups datasets, views and dashboards that belong together.
 
+    A connection the user limited to one project lists that project alone, and
+    that is the project every other tool must name.
+
     Args:
         workspace_id: Which workspace to look in.
         limit: How many projects to return.
         offset: How many projects to skip, for paging.
     """
     async with build_client(workspace_id) as client:
-        return await read_sdk_errors(
+        found = await read_sdk_errors(
             client.browse.projects(
                 workspace_id=workspace_id,
                 fields=ApiFields.MINIMAL,
@@ -58,6 +61,23 @@ async def list_projects(
                 offset=offset,
             )
         )
+    return _within_the_pin(found)
+
+
+def _within_the_pin(found: dict[str, JsonValue]) -> dict[str, JsonValue]:
+    """Drop the projects this connection may not act in.
+
+    A pinned connection can touch nothing in the others, so offering them only
+    walks the model into a refused call.
+    """
+    pinned = own_project()
+    rows = found.get(ListFields.PROJECTS)
+    if pinned is None or not isinstance(rows, list):
+        return found
+    found[ListFields.PROJECTS] = [
+        row for row in rows if isinstance(row, dict) and row.get(ListFields.ID) == pinned
+    ]
+    return found
 
 
 @mcp_server.tool(annotations=READS)

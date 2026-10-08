@@ -290,6 +290,13 @@ class ErrorFields:
     MESSAGE = "message"
 
 
+class ListFields:
+    """Keys the API's list answers put their rows under, and the row's own id."""
+
+    PROJECTS = "projects"
+    ID = "id"
+
+
 class JobFields:
     """The job an async API route returns, and the statuses it moves through."""
 
@@ -423,6 +430,9 @@ class TokenClaims:
 
     # The one workspace the caller's token belongs to.
     WORKSPACE_ID = "workspace_id"
+    # The one project the user picked when they connected, or None when they
+    # picked "All projects". Mammoth refuses the token on any other project.
+    PROJECT_ID = "project_id"
 
 
 class PipelineFields:
