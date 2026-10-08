@@ -142,7 +142,10 @@ def connector_get(invocation: Invocation) -> HandlerResult:
     connector_key = _require_string_positional_at(invocation, 0, "connector key")
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), connector_key=connector_key)
-    return data, _meta(invocation, auth.workspace_id, resolved_project(invocation))
+    return (
+        _with_plan_availability(data),
+        _meta(invocation, auth.workspace_id, resolved_project(invocation)),
+    )
 
 
 #: ``availability`` a connector gets when the server says this workspace's plan
@@ -153,6 +156,13 @@ _NOT_IN_PLAN = "not_in_plan"
 _NOT_IN_PLAN_NOTE = "Not included in this workspace's plan. Mammoth sales can enable it."
 
 
+def _mark_not_in_plan(item: Any) -> Any:
+    """Return ``item`` marked ``not_in_plan`` when the server says it is unavailable."""
+    if isinstance(item, dict) and item.get("is_available") is False:
+        return {**item, "availability": _NOT_IN_PLAN, "availability_note": _NOT_IN_PLAN_NOTE}
+    return item
+
+
 def _with_plan_availability(data: Any) -> Any:
     """Mark each connector the server reports unavailable to this workspace.
 
@@ -161,22 +171,11 @@ def _with_plan_availability(data: Any) -> Any:
     only says a legacy integration row exists, so a premium connector the plan
     does include read as "not enabled". A response without ``is_available`` (an
     older server) is left unmarked. ``ConnectorsAPI.list`` returns a list, which
-    stays a list.
+    stays a list; ``ConnectorsAPI.get`` returns one connector dict.
     """
-    if not isinstance(data, list):
-        return data
-    return [
-        (
-            {
-                **item,
-                "availability": _NOT_IN_PLAN,
-                "availability_note": _NOT_IN_PLAN_NOTE,
-            }
-            if isinstance(item, dict) and item.get("is_available") is False
-            else item
-        )
-        for item in data
-    ]
+    if isinstance(data, list):
+        return [_mark_not_in_plan(item) for item in data]
+    return _mark_not_in_plan(data)
 
 
 def connector_list(invocation: Invocation) -> HandlerResult:

@@ -105,6 +105,14 @@ def test_plan_availability_marks_only_what_the_server_says_is_unavailable() -> N
     assert "availability" not in marked[2]
 
 
+def test_plan_availability_marks_a_single_connector_from_get() -> None:
+    """``connector get`` returns one dict, not a list; it is marked the same way."""
+    out = connector_cmd._with_plan_availability({"name_key": "bigquery", "is_available": False})
+    assert out["availability"] == "not_in_plan"
+    in_plan = connector_cmd._with_plan_availability({"name_key": "sftp", "is_available": True})
+    assert "availability" not in in_plan
+
+
 # --- ai chat ---------------------------------------------------------------------
 
 
