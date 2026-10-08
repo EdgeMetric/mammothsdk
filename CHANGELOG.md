@@ -6,6 +6,12 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed (mammoth-io 0.8.33, mammoth-cli 2.2.71)
+
+- Browser and device sign-in read the CLI's OAuth client id from the server's OAuth metadata (`mammoth_cli_client_id`) and fall back to the built-in table when the server does not publish it.
+- mammoth-io gains `mammoth.oauth.metadata_request`, the OAuth metadata GET the CLI uses, so the CLI keeps no HTTP client of its own.
+- mammoth-cli upgrades itself by default in a terminal (not when stdout is piped or `CI` is set); `MAMMOTH_AUTO_UPGRADE=0` turns it off and `MAMMOTH_AUTO_UPGRADE=1` forces it on. The update check runs hourly instead of daily, the update hint names the off switch, and `mammoth upgrade` reports `installed_version`, the version a fresh interpreter prints after the upgrade.
+
 ### Fixed (mammoth-io 0.8.32, mammoth-cli 2.2.70)
 
 - `mammoth doctor` exits 4 when its report says `ok: false` (the report is still printed).

@@ -115,9 +115,9 @@ matching `http` record.
 ## Update notice
 
 `meta.update_available` in a success envelope (and one stderr line in human
-modes) means a newer `mammoth-cli` is on PyPI; the check runs once a day after
+modes) means a newer `mammoth-cli` is on PyPI; the check runs once an hour after
 a command, never before it, and `MAMMOTH_NO_UPDATE_CHECK=1` disables it.
-`MAMMOTH_AUTO_UPGRADE=1` upgrades in place instead (opt-in; see
+In a terminal the CLI also upgrades in place; `MAMMOTH_AUTO_UPGRADE=0` stops that (see
 [upgrade](upgrade.md)).
 
 ## First diagnostic
