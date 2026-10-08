@@ -6,6 +6,11 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed (mammoth-cli 2.2.68)
+
+- `connector get` reports plan availability like `connector list`, so an included connector is no longer read as a paid one (ISS-263).
+- `connector connection list` without a key tells the caller to run `mammoth connector active`.
+
 ### Fixed (mammoth-cli 2.2.67)
 
 - A view read that goes async (`--return-running`) keeps its dataset and view meta in the running envelope.
