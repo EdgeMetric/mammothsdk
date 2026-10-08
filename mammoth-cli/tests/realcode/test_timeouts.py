@@ -10,12 +10,10 @@ session wires the invocation values into the factory.
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any
 
 from mammoth_cli.context.resolver import ResolvedAuth
 from mammoth_cli.runtime import session
 from mammoth_cli.runtime.invocation import Invocation
-from mammoth_cli.services import factory
 from mammoth_cli.services.sdk_service import SdkMammothService
 from mammoth_cli.testing import login_default_profile
 
@@ -55,29 +53,15 @@ def test_service_defaults_leave_client_defaults_intact() -> None:
         default.close()
 
 
-def test_open_service_wires_invocation_timeouts(
-    isolated_cli_config: Path, monkeypatch: Any
-) -> None:
-    """open_service passes the invocation's timeout family into the factory."""
-    captured: dict[str, Any] = {}
-
-    class _Probe:
-        def close(self) -> None:
-            pass
-
-    def _fake_build_service(auth: ResolvedAuth, **kwargs: Any) -> _Probe:
-        captured.update(kwargs)
-        return _Probe()
-
-    monkeypatch.setattr(factory, "build_service", _fake_build_service)
+def test_open_service_wires_invocation_timeouts(isolated_cli_config: Path) -> None:
+    """open_service builds the real service with the invocation's timeout family."""
     login_default_profile()
 
     invocation = Invocation(
         command_id="project.list", timeout=5, job_timeout=11, pipeline_timeout=22
     )
-    with session.open_service(invocation):
-        pass
-
-    assert captured["timeout"] == 5
-    assert captured["job_timeout"] == 11
-    assert captured["pipeline_timeout"] == 22
+    with session.open_service(invocation) as (service, _auth):
+        assert isinstance(service, SdkMammothService)
+        assert service._client.timeout == 5
+        assert service._client.job_timeout == 11
+        assert service._client.pipeline_timeout == 22

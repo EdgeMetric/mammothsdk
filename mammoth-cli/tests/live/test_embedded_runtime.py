@@ -1,53 +1,23 @@
-"""The embedded runtime (in-product agent): no profile, no keyring, no terminal.
+"""Live: the embedded runtime (in-product agent): no profile, no keyring, no terminal.
 
-Drives ``mammoth_cli.embed.invoke`` through the real command stack with only the
-HTTP socket faked.
+Replaces the fake-socket realcode ``test_embedded_runtime``. ``mammoth_cli.embed.invoke`` runs
+the real command stack with the live token as the host's login.
 """
 
 from __future__ import annotations
 
-from collections.abc import Callable
-from pathlib import Path
-from typing import Any
-
 import pytest
+from live_harness import LiveCli
 
 from mammoth_cli.commands import config as config_cmd
 from mammoth_cli.commands import context as context_cmd
-from mammoth_cli.context import profiles, resolver
+from mammoth_cli.context import profiles
 from mammoth_cli.context.resolver import ExplicitLogin, not_authenticated_error
 from mammoth_cli.embed import invoke
 from mammoth_cli.errors.envelope import ERROR_SUMMARIES, CliError
 from mammoth_cli.runtime import embedded
-from mammoth_cli.services import factory
 
-ServiceFactory = Callable[..., Any]
-
-_LOGIN = ExplicitLogin(
-    api_key=None,
-    api_secret=None,
-    api_token="jwt-user",
-    server_prefix="box",
-    headers={"Authorization": "Bearer jwt-user"},
-)
-
-
-@pytest.fixture(autouse=True)
-def _server_names_the_workspace(monkeypatch: pytest.MonkeyPatch) -> None:
-    """A token names its workspace and the CLI learns it from the server; no network here."""
-    monkeypatch.setattr(resolver, "resolve_token_workspace", lambda *_args: 4)
-
-
-def _bind(monkeypatch: pytest.MonkeyPatch, real_service: ServiceFactory) -> Any:
-    service, api = real_service()
-    # A fresh service per build, as in production: each command closes its own.
-    unused = iter([service])
-    monkeypatch.setattr(
-        factory,
-        "build_service",
-        lambda *a, **k: next(unused, None) or real_service(api=api)[0],
-    )
-    return api
+pytestmark = pytest.mark.live
 
 
 def _profile_project() -> int | None:
@@ -56,26 +26,22 @@ def _profile_project() -> int | None:
 
 
 def test_project_ensure_never_writes_the_hosts_profile(
-    monkeypatch: pytest.MonkeyPatch, real_service: ServiceFactory
+    live_cli: LiveCli, login: ExplicitLogin, scratch_project: int
 ) -> None:
-    api = _bind(monkeypatch, real_service)
-    api.on("GET", r"/projects", 200, {"projects": [{"id": 9, "name": "Work"}]})
+    name, _ = live_cli.ok("project", "get", str(scratch_project))
     before = _profile_project()
 
-    envelope = invoke(["project", "ensure", "Work"], login=_LOGIN)
+    envelope = invoke(["project", "ensure", name["name"]], login=login)
 
-    assert envelope["data"]["project_id"] == 9
+    assert envelope["data"]["project_id"] == scratch_project
     assert envelope["data"]["active"] is False
     assert _profile_project() == before
 
 
 def test_doctor_is_ok_in_a_healthy_embedded_session(
-    monkeypatch: pytest.MonkeyPatch, real_service: ServiceFactory
+    login: ExplicitLogin, scratch_project: int
 ) -> None:
-    api = _bind(monkeypatch, real_service)
-    api.on("GET", r"/projects", 200, {"projects": [{"id": 9, "name": "Work"}]})
-
-    envelope = invoke(["doctor"], login=_LOGIN, project_id=9)
+    envelope = invoke(["doctor"], login=login, project_id=scratch_project)
 
     data = envelope["data"]
     checks = {c["name"]: c for c in data["checks"]}
@@ -85,13 +51,16 @@ def test_doctor_is_ok_in_a_healthy_embedded_session(
     assert not any("auth login" in r or "context project use" in r for r in data["recommendations"])
 
 
-def test_authentication_failure_hint_is_reload_the_page(
-    monkeypatch: pytest.MonkeyPatch, real_service: ServiceFactory
-) -> None:
-    api = _bind(monkeypatch, real_service)
-    api.on("GET", r"/projects", 401, {"message": "expired"})
+def test_authentication_failure_hint_is_reload_the_page(login: ExplicitLogin) -> None:
+    expired = ExplicitLogin(
+        api_key=None,
+        api_secret=None,
+        server_prefix=login.server_prefix,
+        api_token="mm_" + "x" * 43,
+        headers={"Authorization": "Bearer mm_" + "x" * 43},
+    )
 
-    error = invoke(["project", "list"], login=_LOGIN)["error"]
+    error = invoke(["project", "list"], login=expired)["error"]
 
     assert error["code"] == "authentication_failed"
     assert "reload the page" in error["hint"]
@@ -99,8 +68,8 @@ def test_authentication_failure_hint_is_reload_the_page(
     assert "API key" not in error["hint"]
 
 
-def test_profile_and_login_errors_offer_no_login_command() -> None:
-    token = embedded.enter(embedded.EmbeddedCall(login=_LOGIN))
+def test_profile_and_login_errors_offer_no_login_command(login: ExplicitLogin) -> None:
+    token = embedded.enter(embedded.EmbeddedCall(login=login))
     try:
         errors = [
             not_authenticated_error(),
@@ -133,20 +102,16 @@ def test_profile_and_login_errors_offer_no_login_command() -> None:
         ["completion", "install", "bash"],
     ],
 )
-def test_host_only_commands_are_refused_embedded(args: list[str], tmp_path: Path) -> None:
-    error = invoke(args, login=_LOGIN)["error"]
+def test_host_only_commands_are_refused_embedded(args: list[str], login: ExplicitLogin) -> None:
+    error = invoke(args, login=login)["error"]
 
     assert error["code"] == "not_available_embedded"
     assert error["recovery_commands"] == []
     assert "not_available_embedded" in ERROR_SUMMARIES
 
 
-def test_confirmation_hint_names_no_terminal(
-    monkeypatch: pytest.MonkeyPatch, real_service: ServiceFactory
-) -> None:
-    _bind(monkeypatch, real_service)
-
-    error = invoke(["project", "delete", "9"], login=_LOGIN)["error"]
+def test_confirmation_hint_names_no_terminal(login: ExplicitLogin, scratch_project: int) -> None:
+    error = invoke(["project", "delete", str(scratch_project)], login=login)["error"]
 
     assert error["code"] == "confirmation_required"
     assert "terminal" not in error["hint"]
