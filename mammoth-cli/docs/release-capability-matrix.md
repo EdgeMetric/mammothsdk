@@ -1,7 +1,7 @@
 # Release capability matrix (sanitized)
 
 Source workbook SHA-256: `a48313b564e14a9bf87b2f98f262d218cbae06ddaa2b405f059a4273e8aa693b`.
-Server spec: `origin/master` at `600d78ef6b`, 544 operations / 371 paths (`spec/openapi/master-20261002.json`); 545 rows, 1 removed on the server.
+Server spec: `https://app.mammoth.io/api/v2/docs/openapi.json` at `live-c73f0`, 544 operations / 371 paths (`spec/openapi/master-20261003.json`); 545 rows, 1 removed on the server.
 Statuses: 1 Full, 261 Partial, 2 Not supported, 281 Unassessed.
 Mapping: 2 alias, 516 cli_and_sdk_mapped, 15 internal_only, 11 protocol_only, 1 removed_on_server.
 Mapping fields are derived (`scripts/generate_release_capability_matrix.py`); status and evidence are reviewed. This is the canonical sanitized repository inventory; historical workbooks retain their original evidence context.

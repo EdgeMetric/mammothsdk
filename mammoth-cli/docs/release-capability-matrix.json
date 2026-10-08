@@ -12,10 +12,10 @@
     "manifest": "repo/mammoth-cli/spec/manifests/openapi-operations.yaml"
   },
   "server_spec": {
-    "file": "spec/openapi/master-20261002.json",
-    "source_ref": "origin/master",
-    "source_sha": "600d78ef6b6c379029b3a1e4205658bc8e8e19c4",
-    "sha256": "c27e6aebe71a7ca453570c6cb4dee6a2d9ffac6c6f6a0b0503b9af4488b24e21",
+    "file": "spec/openapi/master-20261003.json",
+    "source_ref": "https://app.mammoth.io/api/v2/docs/openapi.json",
+    "source_sha": "live-c73f011bfe960569427bb0501ab779982030120d",
+    "sha256": "934940e181271c392ce900eb3a636f9d1cad162614aea1a290072e2175c4afa3",
     "operations": 544,
     "paths": 371
   },
