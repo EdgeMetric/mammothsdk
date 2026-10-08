@@ -243,6 +243,7 @@ class ApiPaths:
         "/workspaces/{workspace_id}/projects/{project_id}" "/datasets/{dataset_id}/file_settings"
     )
     RESOURCES = "/workspaces/{workspace_id}/projects/{project_id}/resources"
+    BROWSE = "/workspaces/{workspace_id}/browse"
 
 
 class ResourceTypes:
@@ -297,10 +298,27 @@ class ErrorFields:
 
 
 class ListFields:
-    """Keys the API's list answers put their rows under, and the row's own id."""
+    """Keys the API's list answers put their rows under, and a row's own fields."""
 
     PROJECTS = "projects"
     ID = "id"
+    NAME = "name"
+
+
+class BrowseFields:
+    """The browse route's query parameters and the key its rows come under.
+
+    Browse is the one route that answers for a named resource id, which is how
+    a pinned connection reads its own project without paging for it.
+    """
+
+    RESOURCES = "resources"
+    TYPE = "browse_type"
+    PROJECT = "project"
+    IDS = "ids"
+    LEVEL = "level"
+    # Level 1 is the resources themselves, with none of their children.
+    ITSELF = 1
 
 
 class JobFields:

@@ -5,7 +5,7 @@ of transformation tasks over a dataset. These tools walk that hierarchy; every
 one of them calls the same API route the web app calls, as the signed-in user.
 """
 
-from ..consts import LIST_LIMIT_DEFAULT, ApiFields, ApiPaths, ListFields
+from ..consts import LIST_LIMIT_DEFAULT, ApiFields, ApiPaths, BrowseFields, ListFields
 from ..sdk import JsonValue, build_client, own_project, read_sdk_errors, request_api
 from ..server import mcp_server
 from ..tool_kinds import READS
@@ -52,8 +52,11 @@ async def list_projects(
         limit: How many projects to return.
         offset: How many projects to skip, for paging.
     """
+    pinned = own_project()
+    if pinned is not None:
+        return await _the_pinned_project(workspace_id, pinned)
     async with build_client(workspace_id) as client:
-        found = await read_sdk_errors(
+        return await read_sdk_errors(
             client.browse.projects(
                 workspace_id=workspace_id,
                 fields=ApiFields.MINIMAL,
@@ -61,23 +64,41 @@ async def list_projects(
                 offset=offset,
             )
         )
-    return _within_the_pin(found)
 
 
-def _within_the_pin(found: dict[str, JsonValue]) -> dict[str, JsonValue]:
-    """Drop the projects this connection may not act in.
+async def _the_pinned_project(workspace_id: int, pinned: int) -> dict[str, JsonValue]:
+    """The one project a pinned connection may act in, asked for by its id.
 
-    A pinned connection can touch nothing in the others, so offering them only
-    walks the model into a refused call.
+    Paging is why this is not a filtered list: the pinned project sits on
+    whichever page of the workspace's projects its name sorts to, so filtering
+    one page answers "no projects" to a connection that has exactly one. The
+    browse route is the one route that takes a resource id, and the rows it
+    answers with are reshaped into the list this tool has always returned.
     """
-    pinned = own_project()
-    rows = found.get(ListFields.PROJECTS)
-    if pinned is None or not isinstance(rows, list):
-        return found
-    found[ListFields.PROJECTS] = [
-        row for row in rows if isinstance(row, dict) and row.get(ListFields.ID) == pinned
+    async with build_client(workspace_id) as client:
+        found = await request_api(
+            client,
+            "GET",
+            ApiPaths.BROWSE.format(workspace_id=workspace_id),
+            query={
+                ApiFields.FIELDS: ApiFields.MINIMAL,
+                BrowseFields.TYPE: BrowseFields.PROJECT,
+                BrowseFields.IDS: pinned,
+                BrowseFields.LEVEL: BrowseFields.ITSELF,
+            },
+        )
+    return {ListFields.PROJECTS: _as_projects(found.get(BrowseFields.RESOURCES))}
+
+
+def _as_projects(rows: JsonValue) -> JsonValue:
+    """The id and name of each browsed resource, as a project list's rows."""
+    if not isinstance(rows, list):
+        return []
+    return [
+        {ListFields.ID: row.get(ListFields.ID), ListFields.NAME: row.get(ListFields.NAME)}
+        for row in rows
+        if isinstance(row, dict)
     ]
-    return found
 
 
 @mcp_server.tool(annotations=READS)
