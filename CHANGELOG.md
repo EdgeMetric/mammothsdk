@@ -6,6 +6,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed (mammoth-cli 2.2.69)
+
+- Unknown flags are named: an unrecognised option is reported as `unknown_option` with the flag in the message (#179).
+
 ### Fixed (mammoth-cli 2.2.68)
 
 - `connector get` reports plan availability like `connector list`, so an included connector is no longer read as a paid one (ISS-263).
