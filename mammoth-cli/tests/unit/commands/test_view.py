@@ -111,7 +111,7 @@ def _env_auth(isolated_cli_config: Path) -> None:
 
 
 #: `fields` values the read-meta lookup sends to name the dataset and view a read used.
-_META_LOOKUP_FIELDS = ("__min", "id,name")
+_META_LOOKUP_FIELDS = ("id,name,row_count", "id,name,stats")
 
 
 def _without_meta(

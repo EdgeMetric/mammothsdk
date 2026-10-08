@@ -83,45 +83,34 @@ def test_list_dispatches(fake_service: FakeMammothService) -> None:
     assert fake_service.call_log == [(_LIST, {})]
 
 
-# A premium connector not yet added to the workspace must say why it cannot
-# be connected -- T2-WPP-W7: the agent routed the user to sales but never
-# explained that the connector is premium and not enabled in this workspace.
+# The server's ``is_available`` is the plan check that gates creating a
+# connection; the CLI marks a connector only when the server says it is not
+# available, never from ``is_premium``/``is_added`` (a premium connector the
+# plan includes but nobody added read as "not enabled").
 
 
-def test_list_marks_a_premium_not_added_connector(fake_service: FakeMammothService) -> None:
-    # ConnectorsAPI.list returns a plain list (live koyal connector list)
-    fake_service.responses[_LIST] = [
-        {
-            "api_type": "DB",
-            "disp_name": "Google BigQuery",
-            "is_added": False,
-            "is_premium": True,
-            "name_key": "bigquery",
-        },
-        {
-            "api_type": "DB",
-            "disp_name": "Postgres SQL",
-            "is_added": True,
-            "is_premium": False,
-            "name_key": "postgres",
-        },
-    ]
-    data, _meta = connector_cmd.connector_list(_inv("connector.list"))
-    bigquery, postgres = data
-    assert bigquery["availability"] == "premium_not_enabled"
-    assert "sales" in bigquery["availability_note"].lower()
-    assert "availability" not in postgres
+def test_plan_availability_marks_only_what_the_server_says_is_unavailable() -> None:
+    sftp = {"name_key": "sftp", "is_premium": True, "is_added": False, "is_available": True}
+    bigquery = {
+        "name_key": "bigquery",
+        "is_premium": True,
+        "is_added": False,
+        "is_available": False,
+    }
+    older_server = {"name_key": "mysql", "is_premium": True, "is_added": False}
+    marked = connector_cmd._with_plan_availability([sftp, bigquery, older_server])
+    assert "availability" not in marked[0]
+    assert marked[1]["availability"] == "not_in_plan"
+    assert "sales" in marked[1]["availability_note"].lower()
+    assert "availability" not in marked[2]
 
 
-def test_list_leaves_ordinary_connectors_unmarked(
-    fake_service: FakeMammothService,
-) -> None:
-    fake_service.responses[_LIST] = [
-        {"disp_name": "Postgres SQL", "is_added": True, "is_premium": False},
-        {"disp_name": "MySQL", "is_added": False, "is_premium": False},
-    ]
-    data, _meta = connector_cmd.connector_list(_inv("connector.list"))
-    assert all("availability" not in item for item in data)
+def test_plan_availability_marks_a_single_connector_from_get() -> None:
+    """``connector get`` returns one dict, not a list; it is marked the same way."""
+    out = connector_cmd._with_plan_availability({"name_key": "bigquery", "is_available": False})
+    assert out["availability"] == "not_in_plan"
+    in_plan = connector_cmd._with_plan_availability({"name_key": "sftp", "is_available": True})
+    assert "availability" not in in_plan
 
 
 # --- ai chat ---------------------------------------------------------------------
@@ -413,6 +402,12 @@ def test_connection_list_requires_connector_key(fake_service: FakeMammothService
     with pytest.raises(CliError) as excinfo:
         connector_cmd.connector_connection_list(_inv("connector.connection.list", project=180))
     assert excinfo.value.code == "missing_argument"
+
+
+def test_connection_list_without_key_points_to_connector_active() -> None:
+    with pytest.raises(CliError) as excinfo:
+        connector_cmd.connector_connection_list(_inv("connector.connection.list", project=180))
+    assert "connector active" in excinfo.value.message
 
 
 def test_connection_list_dispatches(fake_service: FakeMammothService) -> None:

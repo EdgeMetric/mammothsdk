@@ -250,6 +250,8 @@ _PILOT_ADAPTER_INPUTS: dict[str, frozenset[str]] = {
 _LOCAL_CONTRACT_FIELDS: dict[str, tuple[FieldSpec, ...]] = {
     "project.ensure": (FieldSpec("name", required=False, annotation=str),),
     "doctor": (FieldSpec("wait", required=False, annotation=int, default=0),),
+    "resolve": (FieldSpec("all_projects", required=False, annotation=bool, default=False),),
+    "dataset.find": (FieldSpec("all_projects", required=False, annotation=bool, default=False),),
     "schema.get": (FieldSpec("full", required=False, annotation=bool, default=False),),
     "schema.list": (
         FieldSpec("family", required=False, annotation=str | None, default=None),

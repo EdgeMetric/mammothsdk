@@ -53,3 +53,19 @@ def test_links_only_to_known_hosts(path: Path) -> None:
     hosts = {m.group(1).lower() for m in _URL.finditer(path.read_text(encoding="utf-8"))}
     unknown = sorted(h for h in hosts if not _ALLOWED_HOSTS.search(h))
     assert unknown == [], f"{path.name}: {unknown}"
+
+
+_EXPORT_DATASET_INPUT = re.compile(r"view export dataset[^`']*?--input '(\{[^']*\})'")
+
+
+def test_new_dataset_examples_do_not_invent_a_dataset_name() -> None:
+    """ISS-195: an example that makes a NEW dataset must omit dataset_name (the app's
+    default is "Result Dataset"); only an append to an existing dataset names it."""
+    offenders = [
+        f"{path.relative_to(SKILL_DIR)}: {body}"
+        for path in FILES
+        if path.suffix == ".md"
+        for body in _EXPORT_DATASET_INPUT.findall(path.read_text(encoding="utf-8"))
+        if '"dataset_name"' in body and "target_ds_id" not in body
+    ]
+    assert not offenders, offenders

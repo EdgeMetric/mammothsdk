@@ -150,7 +150,7 @@ _COMMAND_DISCOVERY_PURPOSES = {
     "view.export.powerbi": "power bi powerbi microsoft dashboard workspace",
     "view.export.publish-db": (
         "publish database live connection odbc bi tool reads table point straight at always latest "
-        "postgres managed mammoth managed"
+        "postgres managed mammoth managed write into our sql database"
     ),
     "view.export.publish-db-update": "publish database update refresh live connection",
     "view.export.redshift": "redshift amazon aws database warehouse",
@@ -400,24 +400,26 @@ _COMMAND_DISCOVERY_PURPOSES = {
     # phrasing missed them and only the unrelated view.export.* commands
     # (which push data OUT to a database) matched.
     "connector.list": (
-        "connectors available sources database SQL Server MSSQL MySQL Postgres Oracle "
-        "connect import pull load table into dataset"
+        "connectors available sources database SQL Server MSSQL MySQL Postgres Oracle SFTP "
+        "file server connect import pull load table file into dataset"
     ),
     "connector.get": (
-        "connector database SQL Server MSSQL MySQL Postgres connection fields host port "
-        "username password required to connect import table dataset"
+        "connector database SQL Server MSSQL MySQL Postgres SFTP file server connection fields "
+        "host port username password required to connect import table file dataset"
     ),
     "connector.connection.list": (
         "which outside external sources connected connections list database SQL Server "
-        "MSSQL MySQL Postgres connector already connected import table dataset"
+        "MSSQL MySQL Postgres SFTP file server connector already connected import table "
+        "file dataset"
     ),
     "connector.connection.get": (
-        "connection database SQL Server MSSQL MySQL Postgres connector connected "
-        "import table dataset"
+        "connection database SQL Server MSSQL MySQL Postgres SFTP file server connector "
+        "connected import table file dataset"
     ),
     "connector.connection.create": (
-        "connect a database such as SQL Server MSSQL MySQL Postgres Oracle host username "
-        "password new connection connector to import a table into a dataset"
+        "connect a database such as SQL Server MSSQL MySQL Postgres Oracle or an SFTP file "
+        "server host port username password new connection connector to import a table or "
+        "file into a dataset"
     ),
     "connector.ds-config.create": (
         "import pull load read retrieve a table or SQL query from a connected database such "
@@ -545,7 +547,8 @@ _COMMAND_DISCOVERY_PURPOSES = {
     # (ds_creation_type=weburl) -- the capability exists and works once found,
     # it just had no discovery-purpose text at all.
     "dataset.create": (
-        "url web link fetch retrieve pull import public website endpoint api json data weburl"
+        "url web link fetch retrieve pull import public website endpoint api json data weburl "
+        "file csv from an SFTP server folder cloud storage connection connector as a new dataset"
     ),
     "dashboard.v3.generate": (
         "create build make new generate dashboard board report from a view description "
@@ -678,7 +681,7 @@ IN_PLACE_RECIPE = (
     "EDITS THE GIVEN VIEW IN PLACE: this adds a step to the view and changes that view "
     "and its dataset's output. To make a NEW dataset and leave the source untouched: "
     "`mammoth view create SOURCE_DATASET_ID` (working view), do the steps on that working "
-    'view, then `mammoth view export dataset WORKING_VIEW_ID --input \'{"dataset_name": "..."}\'`.'
+    'view, then `mammoth view export dataset WORKING_VIEW_ID` (add dataset_name only if the user named it).'
 )
 _IN_PLACE_KEYWORDS = (
     "new dataset create make in place edits given view working view source untouched"

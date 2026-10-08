@@ -263,6 +263,30 @@ def _not_allowed_reason(body: Any, status: int | None) -> str | None:
     return message if isinstance(message, str) and message else name
 
 
+def _backend_message(body: Any, status: int | None) -> str | None:
+    """The backend's own words for a 4xx: its message, one line per field error, then its code."""
+    if status is None or not 400 <= status < 500 or not isinstance(body, dict):
+        return None
+    details = body.get("details")
+    details = details if isinstance(details, dict) else {}
+    text = body.get("message") or details.get("detail")
+    if not isinstance(text, str) or not text:
+        return None
+    extra = details.get("extra")
+    if isinstance(extra, list) and extra:
+        text = "\n".join([text, *(_field_error_line(item) for item in extra)])
+    backend_code = body.get("error_code") or body.get("code")
+    return f"{text} [{backend_code}]" if isinstance(backend_code, str) and backend_code else text
+
+
+def _field_error_line(item: Any) -> str:
+    """One ``extra`` entry as ``key: message``."""
+    if not isinstance(item, dict):
+        return str(item)
+    message = str(item.get("message", ""))
+    return f"{item['key']}: {message}" if item.get("key") else message
+
+
 CODE_CLI_KEYS_NOT_ALLOWED = "cli_keys_not_allowed"
 CODE_CLI_KEYS_NEED_BROWSER_SIGN_IN = "cli_keys_need_browser_sign_in"
 CODE_CLI_KEY_EXPIRED = "cli_key_expired"
@@ -611,7 +635,8 @@ def map_sdk_exception(
         if status == 409:
             return CliError(
                 code=CODE_CONFLICT,
-                message="Mammoth rejected the request because the target is in conflict.",
+                message=_backend_message(exc.response_body, status)
+                or "Mammoth rejected the request because the target is in conflict.",
                 exit_status=EXIT_CONFLICT,
                 hint="Inspect current remote state and resolve the conflict before retrying.",
                 details=details,
@@ -632,7 +657,7 @@ def map_sdk_exception(
             )
         return CliError(
             code=CODE_API_ERROR,
-            message="Mammoth returned an API error.",
+            message=_backend_message(exc.response_body, status) or "Mammoth returned an API error.",
             exit_status=EXIT_API,
             hint="Inspect the structured details and correct the request.",
             details=details,

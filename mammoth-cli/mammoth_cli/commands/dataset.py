@@ -10,14 +10,17 @@ seam to the public SDK method named by the command's reviewed manifest
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from typing import Any, Protocol
 
 from mammoth_cli.errors.envelope import (
     CODE_INVALID_ARGUMENT,
+    CODE_JOB_FAILED,
     CODE_MISSING_ARGUMENT,
     CODE_MISSING_FIELD,
     CODE_SDK_SYMBOL_UNRESOLVED,
     CODE_UNSUPPORTED_CONTRACT,
+    EXIT_API,
     EXIT_USAGE,
     CliError,
 )
@@ -168,52 +171,62 @@ def _tokens_in_order(needle: str, name: str) -> bool:
     return True
 
 
-def _find_in_projects(
-    service: Any,
-    needle: str,
-    projects: list[dict[str, Any]],
-    skipped: list[dict[str, Any]] | None = None,
-) -> list[dict[str, Any]]:
-    """Datasets whose name has every token of ``needle`` in order, in each of ``projects``.
+def _search_term(needle: str) -> str:
+    """The longest word of ``needle``: the server searches a substring, the words are
+    matched in order here."""
+    return max(needle.split(), key=len, default="")
 
-    A project that cannot be read does not end the search: with ``skipped`` it is
-    recorded there (id, name, why) and the rest are still searched.
+
+def _hit_record(hit: dict[str, Any]) -> dict[str, Any]:
+    """A resource-search hit in the shape of a dataset record, for ``name_hit``/``source_of``."""
+    info = hit.get("additional_info")
+    original = info.get("ORIGINAL_FILE_PROPS") if isinstance(info, dict) else None
+    file_name = original.get("FILE_NAME") if isinstance(original, dict) else None
+    return {
+        "id": hit.get("object_id"),
+        "name": hit.get("name"),
+        "status": hit.get("status"),
+        "created_at": hit.get("created_at"),
+        "updated_at": hit.get("last_updated_at"),
+        "stats": {"row_count": hit.get("row_count"), "column_count": hit.get("column_count")},
+        "additional_info": info,
+        "sources": [
+            {
+                "type": hit.get("source_type"),
+                "details": {"file_name": file_name, "connector_key": hit.get("integration_key")},
+            }
+        ],
+    }
+
+
+def _find_by_name(
+    service: Any, needle: str, projects: list[dict[str, Any]]
+) -> tuple[list[dict[str, Any]], bool]:
+    """Datasets in ``projects`` whose name has every token of ``needle`` in order, and whether cut.
+
+    One workspace search returns each hit with its size, times and source, so no
+    project's dataset list is read: that route costs the server a few queries per
+    dataset, and a project of a few hundred datasets took 20+ s to list.
     """
-    matches: list[dict[str, Any]] = []
-    for project in projects:
-        project_id = project.get("id")
-        if project_id is None:
+    names = {p.get("id"): p.get("name") for p in projects}
+    hits, cut = search_hits(service, "datasource", _search_term(needle), fields="standard")
+    matches = []
+    for hit in hits:
+        name = hit.get("name")
+        if hit.get("project_id") not in names or not isinstance(name, str):
             continue
-        try:
-            response = service.call(
-                "mammoth.api.datasets.DatasetsAPI.list_all",
-                project_id=project_id,
-                fields=DATASET_ROW_FIELDS,
-            )
-        except CliError as error:
-            if skipped is None:
-                raise
-            skipped.append(
-                {
-                    "project_id": project_id,
-                    "project_name": project.get("name"),
-                    "error": error.message,
-                }
-            )
+        if not _tokens_in_order(needle, name):
             continue
-        datasets = response.get("datasets", []) if isinstance(response, dict) else []
-        for dataset in datasets:
-            name = dataset.get("name") if isinstance(dataset, dict) else None
-            if isinstance(name, str) and _tokens_in_order(needle, name):
-                matches.append(
-                    {
-                        "project_id": project_id,
-                        "project_name": project.get("name"),
-                        **name_hit(dataset),
-                        "source": source_of(dataset),
-                    }
-                )
-    return matches
+        record = _hit_record(hit)
+        matches.append(
+            {
+                "project_id": hit["project_id"],
+                "project_name": names[hit["project_id"]],
+                **name_hit(record),
+                "source": source_of(record),
+            }
+        )
+    return matches, cut
 
 
 #: Pages of resource search read for one name (100 hits each); past it the result says so.
@@ -266,15 +279,6 @@ def search_cut_note(kind: str) -> str:
         f"The name matched more than {_SEARCH_PAGES * _SEARCH_PAGE_SIZE} {kind}, so only the "
         "first of them were read. Use a longer name, or --project, to narrow it."
     )
-
-
-def _projects_holding(
-    service: Any, needle: str, visible: list[dict[str, Any]]
-) -> tuple[list[dict[str, Any]], bool]:
-    """The visible projects that hold a dataset whose name contains ``needle``."""
-    rows, cut = search_hits(service, "datasource", needle)
-    holding = {r.get("project_id") for r in rows}
-    return [p for p in visible if p.get("id") in holding], cut
 
 
 def _other_projects(visible: list[dict[str, Any]], project_id: int) -> list[dict[str, Any]]:
@@ -358,48 +362,103 @@ def _tag_scope(matches: list[dict[str, Any]], project_id: int) -> list[dict[str,
     return [{**m, "in_project": m.get("project_id") == project_id} for m in matches]
 
 
+def all_projects_requested(invocation: Invocation) -> bool:
+    """Whether ``--input '{"all_projects": true}'`` asks for matches outside the project."""
+    value = (invocation.load_input() or {}).get("all_projects", False)
+    if not isinstance(value, bool):
+        raise CliError(
+            code=CODE_INVALID_ARGUMENT,
+            message="all_projects must be true or false.",
+            exit_status=EXIT_USAGE,
+        )
+    return value
+
+
+def narrow_to_project(
+    rows: list[dict[str, Any]], is_exact: Callable[[dict[str, Any]], bool]
+) -> tuple[list[dict[str, Any]], int]:
+    """``(rows, dropped)``: only the project's own rows when one of them is an exact match.
+
+    The name already is in the project the call runs under, so the same name in
+    every other project is noise that reads as an ambiguity to ask the user about.
+    Rows must carry ``in_project``. With no exact match in the project, all rows
+    stay: the name may live elsewhere. ``dropped`` counts the rows left out.
+    """
+    own = [r for r in rows if r.get("in_project")]
+    if not any(is_exact(r) for r in own):
+        return rows, 0
+    return own, len(rows) - len(own)
+
+
+def elsewhere_note(dropped: int) -> str:
+    """Says how many matches in other projects were left out, and how to list them."""
+    if not dropped:
+        return ""
+    return (
+        f"{dropped} more match(es) in other projects are not listed; the match in the "
+        "current project is the answer. They matter only when the user names another "
+        """project: then --input '{"all_projects": true}' lists them."""
+    )
+
+
+def _find_note(
+    matches: list[dict[str, Any]], is_exact: Callable[[dict[str, Any]], bool], needle: str
+) -> str | None:
+    """The ambiguity note, unless exactly one match in the project is the exact name."""
+    own = [m for m in matches if m.get("in_project") and is_exact(m)]
+    if len(own) != 1 or len(matches) < 2:
+        return ambiguity_note(len(matches), needle)
+    return (
+        f"'{own[0]['name']}' is dataset {own[0]['id']} in the current project; the other "
+        f"{len(matches) - 1} match(es) are other datasets or sit in other projects: use this id."
+    )
+
+
 def _find_scoped(
     service: Any,
     needle: str,
     visible: list[dict[str, Any]],
     project_id: int,
-    skipped: list[dict[str, Any]],
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]], bool]:
     """``(matches, projects searched, cut)``: the project's own matches, then every other one's."""
-    home = named_project(service, project_id, visible)
-    own = _find_in_projects(service, needle, [home], skipped)
-    holding, cut = _projects_holding(service, needle, visible)
-    outside = _find_in_projects(service, needle, _other_projects(holding, project_id), skipped)
-    searched = [home] + _other_projects(visible, project_id)
-    return _tag_scope(own + outside, project_id), searched, cut
+    searched = [named_project(service, project_id, visible), *_other_projects(visible, project_id)]
+    found, cut = _find_by_name(service, needle, searched)
+    matches = sorted(_tag_scope(found, project_id), key=lambda m: not m["in_project"])
+    return matches, searched, cut
 
 
 def dataset_find(invocation: Invocation) -> HandlerResult:
     """Search dataset names for a substring across every visible project.
 
     Read-only local composite: lists the projects the credential can see, then
-    lists datasets in each and keeps a case-insensitive substring match. With
+    reads one workspace search for the name and keeps the datasets whose name has
+    every word of the substring, in order, ignoring case. With
     ``--project`` the project's own matches come first and the matches in every
     other visible project are returned too, each row marked ``in_project`` and
     carrying its ``project_id`` and ``project_name``: the in-product agent runs
     every call under the project the user last opened, which is often not the one
     the named dataset is in, so it states where the name is instead of asking the
-    user to switch. Does not require an active project.
+    user to switch. When the project holds an exact match, only the project's own
+    matches are returned and ``elsewhere`` counts the rest; ``--input
+    '{"all_projects": true}'`` returns them all. Does not require an active project.
     """
     name_substring = _require_string_positional(invocation, "name substring")
     needle = name_substring.lower()
-    skipped: list[dict[str, Any]] = []
+    dropped = 0
+
+    def is_exact(m: dict[str, Any]) -> bool:
+        return str(m.get("name", "")).lower() == needle
+
     with open_service(invocation) as (service, auth):
         visible = _visible_projects(service)
         cut = False
         if invocation.project is not None:
-            matches, projects, cut = _find_scoped(
-                service, needle, visible, invocation.project, skipped
-            )
+            matches, projects, cut = _find_scoped(service, needle, visible, invocation.project)
+            if not all_projects_requested(invocation):
+                matches, dropped = narrow_to_project(matches, is_exact)
         else:
             projects = visible
-            holding, cut = _projects_holding(service, needle, visible)
-            matches = _find_in_projects(service, needle, holding, skipped)
+            matches, cut = _find_by_name(service, needle, visible)
         meta = {
             "profile": invocation.profile,
             "workspace_id": auth.workspace_id,
@@ -407,11 +466,12 @@ def dataset_find(invocation: Invocation) -> HandlerResult:
         }
     result: dict[str, Any] = {
         "matches": matches,
-        "projects_searched": len(projects) - len(skipped),
+        "projects_searched": len(projects),
     }
-    if skipped:
-        result["projects_skipped"] = skipped
-    notes = [ambiguity_note(len(matches), name_substring)]
+    notes = [_find_note(matches, is_exact, name_substring)]
+    if dropped:
+        result["elsewhere"] = dropped
+        notes.append(elsewhere_note(dropped))
     if cut:
         result["truncated"] = True
         notes.append(search_cut_note("datasets"))
@@ -512,10 +572,8 @@ def _dataset_name_search(
         records = data.get("datasets", []) if isinstance(data, dict) else []
         page = search_page(records, name, int(document.get("offset", 0)), document.get("limit"))
         if page["matched"] == 0:
-            holding, cut = _projects_holding(service, name.lower(), _visible_projects(service))
-            elsewhere = _find_in_projects(
-                service, name.lower(), _other_projects(holding, project_id)
-            )
+            found, cut = _find_by_name(service, name.lower(), _visible_projects(service))
+            elsewhere = [m for m in found if m["project_id"] != project_id]
             if elsewhere:
                 page["in_other_projects"] = elsewhere
                 page["note"] = (
@@ -816,7 +874,10 @@ def dataset_interpretation(invocation: Invocation) -> HandlerResult:
 
 
 def dataset_create(invocation: Invocation) -> HandlerResult:
-    """Create a dataset from a spec and creation type (required ``--input`` fields)."""
+    """Create a dataset (web URL, clone, or import from a connection such as SFTP).
+
+    ``--input`` needs ``dataset_spec`` and ``ds_creation_type``.
+    """
     project_id = require_project(invocation)
     document = invocation.load_input()
     dataset_spec = _require_field(document, "dataset_spec")
@@ -825,6 +886,7 @@ def dataset_create(invocation: Invocation) -> HandlerResult:
     # A clone can land in another project (``dataset_spec.target_project_id``): the
     # name check and the result's scope are that project's, not the active one's.
     landing_project_id = _clone_target_project(ds_creation_type, dataset_spec) or project_id
+    _default_data_pull_file(ds_creation_type, dataset_spec)
     kwargs: dict[str, Any] = {
         "dataset_spec": dataset_spec,
         "ds_creation_type": ds_creation_type,
@@ -875,29 +937,92 @@ def _require_clone_views(ds_creation_type: object, dataset_spec: object) -> None
         )
 
 
+#: The server's ``data_pull_file`` values for a cloud file import; the first is the app default.
+_DATA_PULL_FILE_VALUES = ("Pull same file", "Pull next file based on name pattern")
+
+
+def _default_data_pull_file(ds_creation_type: object, dataset_spec: object) -> None:
+    """Default a cloud file import's ``data_pull_file`` to "Pull same file", as the web app does.
+
+    Raises:
+        CliError: ``invalid_argument`` listing the allowed values when it is not one of them.
+    """
+    if ds_creation_type != "cloud" or not isinstance(dataset_spec, dict):
+        return
+    properties = dataset_spec.get("query_properties")
+    if not isinstance(properties, dict) or not properties.get("file_path"):
+        return
+    pull = properties.setdefault("data_pull_file", _DATA_PULL_FILE_VALUES[0])
+    if pull not in _DATA_PULL_FILE_VALUES:
+        raise CliError(
+            code=CODE_INVALID_ARGUMENT,
+            message="query_properties.data_pull_file must be one of "
+            f"{list(_DATA_PULL_FILE_VALUES)}, got {pull!r}.",
+            exit_status=EXIT_USAGE,
+        )
+
+
 def _created_dataset(handle: Any, settled: Any) -> dict[str, Any]:
     """Shape a create job (handle + settled result) into a labeled result.
 
-    ``wait_if_job`` returns the completed job's inner response, where the new
-    dataset id lives under ``ds_id``. Falls back to the raw job handle when the
-    server returned something unrecognized, so no information is lost.
+    What each creation type settles with: weburl, clone and a single cloud file or
+    database import carry the new dataset id (``ds_id``, ``dataset_id`` or
+    ``datasource_id``); a cloud import deferred to a later start carries
+    ``datasource_config_id`` and reports ``scheduled``; a bulk cloud file import
+    carries ``files_found``/``created``/``failed`` and is returned as the server
+    sent it; a sketch is not a job and answers with the dataset itself. A job that
+    settled with none of these made nothing, so it raises with the server's reason
+    rather than report success.
+
+    Raises:
+        CliError: ``job_failed`` when the settled job made no dataset.
     """
-    job_id = handle.get("job_id") if isinstance(handle, dict) else None
+    if not isinstance(handle, dict) or "job_id" not in handle:
+        return settled if isinstance(settled, dict) else {"job_id": None}
+    job_id = handle["job_id"]
     ds_id = None
+    config_id = None
     if isinstance(settled, dict):
-        ds_id = settled.get("ds_id") or settled.get("dataset_id")
-        nested = settled.get("response")
-        if ds_id is None and isinstance(nested, dict):
-            ds_id = nested.get("ds_id") or nested.get("dataset_id")
+        for source in (settled, settled.get("response")):
+            if not isinstance(source, dict):
+                continue
+            ds_id = ds_id or _first_id(source, _DATASET_ID_KEYS)
+            config_id = config_id or source.get("datasource_config_id")
         job_id = settled.get("job_id", job_id)
+    if ds_id is None and config_id is not None:
+        return {"status": "scheduled", "datasource_config_id": config_id, "job_id": job_id}
+    if ds_id is None and isinstance(settled, dict) and "files_found" in settled:
+        return settled
     if ds_id is None:
-        # No recognizable dataset id: surface the settled payload untouched
-        # rather than claim a readiness we cannot confirm.
-        return settled if isinstance(settled, dict) else {"job_id": job_id}
-    result: dict[str, Any] = {"status": "ready", "dataset_id": ds_id}
-    if job_id is not None:
-        result["job_id"] = job_id
-    return result
+        reason = _job_reason(settled)
+        raise CliError(
+            code=CODE_JOB_FAILED,
+            message="The dataset was not created"
+            + (f": {reason}" if reason else f" (job {job_id} finished without a dataset id)."),
+            exit_status=EXIT_API,
+        )
+    return {"status": "ready", "dataset_id": ds_id, "job_id": job_id}
+
+
+#: Keys a settled create job may carry its dataset id under.
+_DATASET_ID_KEYS = ("ds_id", "dataset_id", "datasource_id")
+
+
+def _first_id(source: dict[str, Any], keys: tuple[str, ...]) -> Any:
+    """The first non-empty value of ``keys`` in ``source``, or None."""
+    return next((source[key] for key in keys if source.get(key)), None)
+
+
+def _job_reason(settled: Any) -> str | None:
+    """The failure reason a settled job carries (``failure_reason``, ``message``, ``error``)."""
+    if not isinstance(settled, dict):
+        return None
+    nested = settled.get("response")
+    for source in (settled, nested if isinstance(nested, dict) else {}):
+        for key in ("failure_reason", "message", "error"):
+            if source.get(key):
+                return str(source[key])
+    return None
 
 
 #: Pages (of 100) read to predict a final name; past it the answer is "a suffix may be added".
@@ -1037,15 +1162,16 @@ def dataset_create_from_pdf(invocation: Invocation) -> HandlerResult:
 def dataset_rename(invocation: Invocation) -> HandlerResult:
     """Rename a dataset. Dataset id is positional; new name comes from ``--input``.
 
-    ``{"unique": true}`` makes the server pick a free name when the requested one is
-    taken; the result's ``name`` is the name applied.
+    A name another dataset of the project already has gets a number added (``name 2``)
+    instead of failing; ``{"unique": false}`` asks for the exact name or an error. The
+    result's ``name`` is the name applied.
     """
     project_id = require_project(invocation)
     dataset_id = _require_int_positional(invocation, "dataset id")
     document = invocation.load_input()
     name = _require_field(document, "name")
     kwargs: dict[str, Any] = {"dataset_id": dataset_id, "name": name, "project_id": project_id}
-    if document.get("unique") is True:
+    if document.get("unique") is not False:
         kwargs["unique"] = True
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), **kwargs)

@@ -14,6 +14,8 @@ from mammoth_cli.services.testing import FakeMammothService
 from mammoth_cli.testing import login_default_profile
 
 _FOLDER = "mammoth.api.browse.BrowseAPI.folder_resources"
+_LIST = "mammoth.api.folders.FoldersAPI.list"
+_LISTED = (_LIST, {"project_id": 180, "limit": 100, "offset": 0})
 _PROJECT = "mammoth.api.projects.ProjectsAPI.browse"
 _ROOT = "mammoth.api.browse.BrowseAPI.root"
 _WORKSPACE = "mammoth.api.browse.BrowseAPI.workspace_resources"
@@ -51,18 +53,21 @@ def test_folder_invalid_folder_id(fake_service: FakeMammothService) -> None:
 
 
 def test_folder_passes_folder_and_project(fake_service: FakeMammothService) -> None:
-    browse_cmd.browse_folder(_inv("browse.folder", project=180, extra_args=["7"]))
-    assert fake_service.call_log == [(_FOLDER, {"folder_id": 7, "project_id": 180})]
+    fake_service.responses[_LIST] = {"folders": [{"id": 7, "resource_id": 707}]}
+    browse_cmd.browse_folder(_inv("browse.folder", project=180, extra_args=["707"]))
+    assert fake_service.call_log == [_LISTED, (_FOLDER, {"folder_id": 7, "project_id": 180})]
 
 
 def test_folder_forwards_level_and_fields(fake_service: FakeMammothService, tmp_path: Path) -> None:
     doc = tmp_path / "in.json"
     doc.write_text(json.dumps({"level": 1, "fields": "id,name"}), encoding="utf-8")
+    fake_service.responses[_LIST] = {"folders": [{"id": 7, "resource_id": 707}]}
     browse_cmd.browse_folder(
-        _inv("browse.folder", project=180, extra_args=["7"], input_file=str(doc))
+        _inv("browse.folder", project=180, extra_args=["707"], input_file=str(doc))
     )
     assert fake_service.call_log == [
-        (_FOLDER, {"folder_id": 7, "project_id": 180, "level": 1, "fields": "id,name"})
+        _LISTED,
+        (_FOLDER, {"folder_id": 7, "project_id": 180, "level": 1, "fields": "id,name"}),
     ]
 
 

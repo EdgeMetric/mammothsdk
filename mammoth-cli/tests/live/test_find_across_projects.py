@@ -54,3 +54,28 @@ def test_dataset_find_searches_past_the_project_the_call_runs_under(
 
     matches = {row["id"]: row["project_id"] for row in found["matches"]}
     assert matches[sales_data.dataset] == sales_data.project
+
+
+def _http_paths_of_last_run(live_cli: LiveCli, command_id: str) -> list[str]:
+    """Request paths of the latest run of ``command_id``, from the local run log."""
+    tail, _ = live_cli.ok(
+        "log", "tail", "--input", json.dumps({"command_id": command_id, "limit": 500})
+    )
+    records = tail["records"]
+    last_run = records[-1]["run_id"]
+    return [r["path"] for r in records if r["run_id"] == last_run and r.get("event") == "http"]
+
+
+def test_dataset_find_reads_no_project_dataset_list(
+    live_cli: LiveCli, sales_data: SalesData, other_project: int
+) -> None:
+    """The name search is one workspace search: a project's whole dataset list is not read.
+
+    Reading every holding project's list cost the server a few queries per dataset
+    (23 s for a project of ~300), and the in-product agent waited on it every time.
+    """
+    live_cli.ok("dataset", "find", "SALES_", project=other_project)
+
+    paths = _http_paths_of_last_run(live_cli, "dataset.find")
+    assert paths, "the run log holds no request of the dataset.find run"
+    assert [p for p in paths if p.endswith("/datasets")] == []

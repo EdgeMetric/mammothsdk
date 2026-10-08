@@ -67,6 +67,7 @@ EXTRA_OP_HINTS: dict[str, dict[str, Any]] = {
     "agent.memory.add": {"operation_ids": ["UpsertAgentDefinitionNote"], "method": "POST"},
     "agent.memory.list": {"operation_ids": ["ListAgentDefinitionNotes"], "method": "GET"},
     "agent.memory.remove": {"operation_ids": ["DeleteAgentDefinitionNote"], "method": "DELETE"},
+    "agent.projects.clear": {"operation_ids": ["UpdateAgentDefinition"], "method": "POST"},
     "agent.projects.set": {"operation_ids": ["UpdateAgentDefinition"], "method": "POST"},
     "agent.publish": {"operation_ids": ["PublishAgentDefinition"], "method": "POST"},
     "agent.roles": {"operation_ids": ["ListAgentDefinitionRoles"], "method": "GET"},
