@@ -307,10 +307,26 @@ def connector_connection_get(invocation: Invocation) -> HandlerResult:
     return data, _meta(invocation, auth.workspace_id, project_id)
 
 
+def _require_connector_key_for_connection_list(invocation: Invocation) -> str:
+    """Return the connector key, or raise a usage error that says how to find one."""
+    connector_key = _string_positional_at(invocation, 0, "connector key")
+    if connector_key:
+        return connector_key
+    raise CliError(
+        code=CODE_MISSING_ARGUMENT,
+        message=(
+            "This command requires a connector key argument. "
+            "Run `mammoth connector active` to list the connectors that have saved connections."
+        ),
+        exit_status=EXIT_USAGE,
+        hint="Pass the connector key as a positional argument.",
+    )
+
+
 def connector_connection_list(invocation: Invocation) -> HandlerResult:
-    """List connections for a connector type. The connector key is positional."""
+    """List connections for a connector type; find its key with `mammoth connector active`."""
     project_id = require_project(invocation)
-    connector_key = _require_string_positional_at(invocation, 0, "connector key")
+    connector_key = _require_connector_key_for_connection_list(invocation)
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), connector_key=connector_key, project_id=project_id)
     return data, _meta(invocation, auth.workspace_id, project_id)
