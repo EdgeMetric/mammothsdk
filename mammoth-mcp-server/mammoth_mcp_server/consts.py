@@ -30,6 +30,12 @@ OLDER_ENGINE_ROUTE = "dashboard"
 # How long an upload link is good for: long enough to leave the conversation,
 # find the file and come back, and no longer.
 UPLOAD_SECONDS = 30 * 60
+# How long `check_upload` holds the call while the user is still picking their
+# file. Answering at once ends the model's turn, and a turn that has ended
+# needs the user to start another one just to say the file is in. Short enough
+# to leave `TOOL_CALL_SECONDS` room for the job wait that follows.
+UPLOAD_WAIT_SECONDS = 30.0
+UPLOAD_POLL_SECONDS = 1.0
 # Listing tools page by default, so one call cannot fill the model's context.
 LIST_LIMIT_DEFAULT = 50
 

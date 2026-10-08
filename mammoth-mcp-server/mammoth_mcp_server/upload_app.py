@@ -245,11 +245,10 @@ async def request_upload(workspace_id: int, project_id: int | None = None) -> di
     post carries no header of its own, and the field must be named `data`:
     `curl -F "data=@/path/to/sales.csv" "<upload_url>"`.
 
-    Otherwise, hand the upload to the user. Many clients draw an uploader
-    right under this call. Tell the user to drop the file there, then end your
-    turn: the uploader posts a message in the chat once Mammoth has the files.
-    If no uploader shows, give the user `upload_url` to open, and call
-    `check_upload` with `upload_id` once they say it is done.
+    Otherwise, hand the upload to the user and then call `check_upload`, which
+    waits for the file: do not end your turn asking them to tell you when it is
+    in. Many clients draw an uploader right under this call, so tell the user
+    to drop the file there; if none shows, give them `upload_url` to open.
 
     The link acts as the user, is good for one upload, and expires in half an
     hour. Ask for a new one rather than reusing an old one.
