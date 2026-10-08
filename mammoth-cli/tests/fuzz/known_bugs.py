@@ -42,19 +42,6 @@ KNOWN_BUGS: list[KnownBug] = [
         lambda command, label, problems: label.startswith("pty") and _all(problems, "hang:"),
         None,
     ),
-    KnownBug(
-        "unknown-flag-ignored",
-        "auth status, config list/path and context project clear/status exit 0 on an unknown flag",
-        lambda command, label, problems: any("silently accepted" in p for p in problems),
-        None,
-    ),
-    KnownBug(
-        "unknown-flag-unnamed",
-        "an unknown or misspelled flag is reported as another error that never names the flag",
-        lambda command, label, problems: not label.startswith("pty")
-        and _all(problems, "does not name the bad input"),
-        None,
-    ),
 ]
 
 
