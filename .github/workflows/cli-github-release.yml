@@ -1,0 +1,46 @@
+name: CLI GitHub Release
+
+# Every `cli-v*` tag gets a GitHub Release carrying the installers and SHA256SUMS.
+# This workflow never publishes to PyPI: PyPI is published locally (RELEASING.md),
+# and cli-release.yml stays a manual dispatch.
+on:
+  push:
+    tags:
+      - "cli-v*"
+
+permissions:
+  contents: read
+
+jobs:
+  github-release:
+    name: create the GitHub release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - name: Assemble release assets
+        run: |
+          set -eu
+          mkdir release-assets
+          cp mammoth-cli/installers/mammoth-install.sh mammoth-cli/installers/mammoth-install.ps1 release-assets/
+          # Two spaces between the lowercase digest and the name.
+          ( cd release-assets && sha256sum -- mammoth-install.sh mammoth-install.ps1 > SHA256SUMS )
+          cat release-assets/SHA256SUMS
+
+      # A release cut by hand (RELEASING.md) may already exist: add the assets to it.
+      - name: Create the release, or add the assets to the existing one
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -eu
+          version="${TAG#cli-v}"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" release-assets/* --clobber
+          else
+            gh release create "$TAG" release-assets/* --verify-tag --latest \
+              --title "mammoth-cli ${version}" \
+              --notes "Install: \`curl -fsSL https://github.com/EdgeMetric/mammothsdk/releases/download/${TAG}/mammoth-install.sh | sh\`. Verify the installer against SHA256SUMS first if you prefer."
+          fi

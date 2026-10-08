@@ -5,10 +5,13 @@ from __future__ import annotations
 import datetime as _dt
 import io
 import json
+import os
 import subprocess
+import sys
 from pathlib import Path
 from typing import Any
 
+import pexpect
 import pytest
 
 from mammoth_cli import __version__
@@ -151,12 +154,73 @@ def test_envelope_carries_what_the_command_itself_learned(
     assert envelope["meta"]["update_available"]["latest"] == "99.0.0"
 
 
-def test_auto_upgrade_is_opt_in(check_enabled: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_auto_upgrade_off_switch_stops_the_upgrade(
+    check_enabled: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     _write(check_enabled, "99.0.0")
-    ran: list[list[str]] = []
-    monkeypatch.setattr(upgrade_cmd, "run_upgrade", lambda argv: ran.append(argv))
-    assert updates.auto_upgrade("project.list") is None
-    assert ran == []
+    for off in ("0", "false", "No", "OFF"):
+        monkeypatch.setenv("MAMMOTH_AUTO_UPGRADE", off)
+        assert updates.auto_upgrade_enabled() is False
+        assert updates.auto_upgrade("project.list") is None
+    assert "upgraded_to" not in json.loads(check_enabled.read_text())
+
+
+_DECISION = "from mammoth_cli.runtime import updates; print(updates.auto_upgrade_enabled())"
+
+
+def _decision_env(tmp_path: Path, **extra: str) -> dict[str, str]:
+    env = {k: v for k, v in os.environ.items() if k not in {"CI", "MAMMOTH_AUTO_UPGRADE"}}
+    env["MAMMOTH_UPDATE_CACHE"] = str(tmp_path / "update-check.json")
+    env.pop("MAMMOTH_NO_UPDATE_CHECK", None)
+    env.update(extra)
+    return env
+
+
+def _decide_in_terminal(env: dict[str, str]) -> str:
+    child = pexpect.spawn(sys.executable, ["-c", _DECISION], env=env, encoding="utf-8")
+    child.expect(pexpect.EOF, timeout=60)
+    return child.before.strip()
+
+
+def _decide_piped(env: dict[str, str]) -> str:
+    done = subprocess.run(
+        [sys.executable, "-c", _DECISION], env=env, capture_output=True, text=True, check=True
+    )
+    return done.stdout.strip()
+
+
+def test_auto_upgrade_is_on_by_default_in_a_terminal(tmp_path: Path) -> None:
+    assert _decide_in_terminal(_decision_env(tmp_path)) == "True"
+
+
+def test_auto_upgrade_off_switch_wins_in_a_terminal(tmp_path: Path) -> None:
+    assert _decide_in_terminal(_decision_env(tmp_path, MAMMOTH_AUTO_UPGRADE="0")) == "False"
+
+
+def test_auto_upgrade_stays_off_without_a_terminal_or_in_ci(tmp_path: Path) -> None:
+    assert _decide_piped(_decision_env(tmp_path)) == "False"
+    assert _decide_in_terminal(_decision_env(tmp_path, CI="true")) == "False"
+
+
+def test_explicit_opt_in_forces_auto_upgrade_without_a_terminal(tmp_path: Path) -> None:
+    assert _decide_piped(_decision_env(tmp_path, MAMMOTH_AUTO_UPGRADE="1")) == "True"
+
+
+def test_cache_goes_stale_after_an_hour(check_enabled: Path) -> None:
+    _write(check_enabled, "99.0.0", age=_dt.timedelta(minutes=50))
+    assert updates.cache_is_fresh(updates.read_cache())
+    _write(check_enabled, "99.0.0", age=_dt.timedelta(minutes=70))
+    assert not updates.cache_is_fresh(updates.read_cache())
+
+
+def test_hint_names_the_off_switch_only_when_auto_upgrade_is_on(
+    check_enabled: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    update = {"current": "1.0.0", "latest": "2.0.0", "command": updates.UPGRADE_COMMAND}
+    monkeypatch.setenv("MAMMOTH_AUTO_UPGRADE", "1")
+    assert "MAMMOTH_AUTO_UPGRADE=0" in updates.hint_line(update)
+    monkeypatch.setenv("MAMMOTH_AUTO_UPGRADE", "0")
+    assert "MAMMOTH_AUTO_UPGRADE" not in updates.hint_line(update)
 
 
 def test_auto_upgrade_runs_once_per_release(

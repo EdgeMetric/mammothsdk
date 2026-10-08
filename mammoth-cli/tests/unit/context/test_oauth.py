@@ -201,3 +201,33 @@ def test_a_grant_carries_the_workspace_and_project_the_server_pinned() -> None:
 def test_a_grant_without_scope_has_none(extra: dict[str, object]) -> None:
     grant = oauth._parse_grant({**_GRANT, **extra})
     assert grant.workspace_id is None and grant.project_id is None
+
+
+# Real network, no stand-ins. No test covers a server that publishes
+# ``mammoth_cli_client_id``: none does yet, and a fake server is not allowed.
+
+
+@pytest.fixture(autouse=False)
+def fresh_metadata_cache() -> None:
+    oauth.published_client_id.cache_clear()
+
+
+def test_koyal_publishes_its_client_id_and_it_matches_the_table(fresh_metadata_cache: None) -> None:
+    published = oauth.published_client_id("koyal")
+    assert published == oauth.OAUTH_CLIENT_IDS["koyal"]
+    assert oauth.has_client_id("koyal")
+    assert oauth.client_id_for("koyal") == published
+
+
+def test_a_server_that_answers_no_metadata_falls_back(fresh_metadata_cache: None) -> None:
+    # www.mammoth.io is a real host that has no OAuth metadata (it redirects).
+    assert oauth.published_client_id("www") is None
+    assert not oauth.has_client_id("www")
+    with pytest.raises(CliError) as caught:
+        oauth.client_id_for("www")
+    assert caught.value.code == oauth.CODE_OAUTH_UNAVAILABLE
+
+
+def test_an_unreachable_server_falls_back(fresh_metadata_cache: None) -> None:
+    assert oauth.published_client_id("no-such-env-for-mammoth-cli-test") is None
+    assert not oauth.has_client_id("no-such-env-for-mammoth-cli-test")

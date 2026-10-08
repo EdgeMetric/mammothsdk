@@ -31,5 +31,5 @@ commands:
   - CT-DOCTOR-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: Prints the report either way; exits 4 when the report's ok is false.
   reviewed_by: primary

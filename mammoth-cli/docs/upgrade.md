@@ -32,7 +32,7 @@ mammoth doctor
 
 ## Update notice
 
-Once a day the CLI asks PyPI for the latest release, *after* a command has
+Once an hour the CLI asks PyPI for the latest release, *after* a command has
 written its output (3-second timeout, silent on failure) and caches the answer
 next to the run log (`update-check.json` in the platform state directory).
 From the next command on, while a newer release exists:
@@ -46,15 +46,18 @@ From the next command on, while a newer release exists:
 The check never delays or blocks a command. `MAMMOTH_NO_UPDATE_CHECK=1` turns
 it off; `MAMMOTH_UPDATE_CACHE=/path` moves the cache file.
 
-## Automatic upgrade (opt-in)
+## Automatic upgrade (on by default in a terminal)
 
-`MAMMOTH_AUTO_UPGRADE=1` makes the CLI run the upgrade itself, through the
+The CLI runs the upgrade itself, through the
 detected manager, at the start of the first command that sees a newer cached
 release; the command that triggered it still completes on the version that
 started it, the run log records the attempt (`auto_upgrade`), and the same
-release is not installed twice. It is off by default on purpose: a pinned
+release is not installed twice. It stays off when stdout is not a terminal or `CI` is set, because a pinned
 environment (lock file, CI image, shared virtualenv) must never change
-underneath a task. Agents should prefer the explicit path: read
+underneath a task. `MAMMOTH_AUTO_UPGRADE=0` (or `false`, `no`, `off`) turns it
+off everywhere; `MAMMOTH_AUTO_UPGRADE=1` forces it on even without a terminal.
+`mammoth upgrade --yes` reports `installed_version`, the version a fresh
+interpreter prints after the upgrade. Agents should prefer the explicit path: read
 `meta.update_available` and run its `command` before starting a task.
 
 ## Upgrade the agent skill

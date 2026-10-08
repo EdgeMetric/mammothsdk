@@ -92,3 +92,41 @@ def test_malformed_yaml_input_is_a_clean_envelope() -> None:
     assert "Traceback" not in result.stderr
     payload = json.loads(result.stdout or result.stderr)
     assert payload["error"]["code"] == "invalid_input_document"
+
+
+def _read_login_menu(server_prefix: str) -> str:
+    """Run `auth login` in a real pty, as typed, and return the menu it prints."""
+    import pty
+    import select
+    import time
+
+    master, slave = pty.openpty()
+    proc = subprocess.Popen(
+        [sys.executable, "-m", "mammoth_cli", "auth", "login", "--server-prefix", server_prefix],
+        stdin=slave,
+        stdout=slave,
+        stderr=slave,
+        env=_base_env(),
+    )
+    os.close(slave)
+    seen = ""
+    deadline = time.monotonic() + 30
+    try:
+        while "3) Paste" not in seen and time.monotonic() < deadline:
+            if select.select([master], [], [], 1)[0]:
+                try:
+                    seen += os.read(master, 4096).decode(errors="replace")
+                except OSError:
+                    break
+    finally:
+        proc.kill()
+        proc.wait()
+        os.close(master)
+    return seen
+
+
+def test_login_menu_offers_browser_and_device_on_koyal() -> None:
+    """Koyal publishes no client id yet, so the table answers and the menu offers both."""
+    menu = _read_login_menu("koyal")
+    assert "1) Browser (OAuth)      recommended" in menu
+    assert "2) Device code          no browser on this machine" in menu

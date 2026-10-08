@@ -278,6 +278,22 @@ def run_upgrade(command: list[str]) -> subprocess.CompletedProcess[str]:
         ) from exc
 
 
+def installed_version() -> str | None:
+    """The version a fresh interpreter reports, i.e. what the upgrade really installed."""
+    try:
+        result = subprocess.run(  # noqa: S603 - fixed argv, no shell
+            [sys.executable, "-m", "mammoth_cli", "--version"],
+            capture_output=True,
+            text=True,
+            timeout=30,
+            check=False,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    output = result.stdout.strip().splitlines()
+    return output[-1].strip() if result.returncode == 0 and output else None
+
+
 def _envelope(
     *,
     manager: str,
@@ -379,17 +395,16 @@ def perform(invocation: Invocation, *, check: bool, target_version: str | None) 
             },
             hint=f"Run it manually to see full output: {' '.join(command)}",
         )
-    return (
-        _envelope(
-            manager=manager,
-            current=current,
-            latest=latest,
-            target=target_version,
-            action=ACTION_UPGRADED,
-            command=command,
-        ),
-        {},
+    envelope = _envelope(
+        manager=manager,
+        current=current,
+        latest=latest,
+        target=target_version,
+        action=ACTION_UPGRADED,
+        command=command,
     )
+    envelope["installed_version"] = installed_version()
+    return envelope, {}
 
 
 def upgrade_command(

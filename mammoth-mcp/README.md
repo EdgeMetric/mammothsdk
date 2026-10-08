@@ -34,11 +34,13 @@ The server starts with **~15 core tools** for connection, discovery, views, data
 
 ## Installation
 
-```bash
-pip install mammoth-mcp
-```
+This package is not published to PyPI (the name `mammoth-mcp` on PyPI is a reserved placeholder).
+To use Mammoth from an MCP client, use the hosted server at **https://mcp.mammoth.io/mcp** (sign in
+with your Mammoth account via OAuth) or run
+[`mammoth-mcp-server`](../mammoth-mcp-server) yourself (`pip install mammoth-mcp-server`, with
+`MCP_ENCRYPTION_KEY` set).
 
-Or with Poetry (for development):
+To run this stdio server from a checkout:
 
 ```bash
 cd mammoth-mcp

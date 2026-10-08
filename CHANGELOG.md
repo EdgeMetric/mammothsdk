@@ -6,9 +6,24 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-### Fixed (mammoth-io 0.8.32)
+### Fixed (mammoth-io 0.8.34)
 
 - The transport log redacts the path segment after `clientapps`, so an app key no longer reaches the log line or its structured `path` field.
+
+### Changed (mammoth-io 0.8.33, mammoth-cli 2.2.71)
+
+- Browser and device sign-in read the CLI's OAuth client id from the server's OAuth metadata (`mammoth_cli_client_id`) and fall back to the built-in table when the server does not publish it.
+- mammoth-io gains `mammoth.oauth.metadata_request`, the OAuth metadata GET the CLI uses, so the CLI keeps no HTTP client of its own.
+- mammoth-cli upgrades itself by default in a terminal (not when stdout is piped or `CI` is set); `MAMMOTH_AUTO_UPGRADE=0` turns it off and `MAMMOTH_AUTO_UPGRADE=1` forces it on. The update check runs hourly instead of daily, the update hint names the off switch, and `mammoth upgrade` reports `installed_version`, the version a fresh interpreter prints after the upgrade.
+
+### Fixed (mammoth-io 0.8.32, mammoth-cli 2.2.70)
+
+- `mammoth doctor` exits 4 when its report says `ok: false` (the report is still printed).
+- mammoth-io retries a read that got HTTP 429, waiting for `Retry-After` (capped at 5 seconds), twice.
+- `MammothAuthError` keeps the server's `error_code` and `hint`, and the CLI shows them instead of the generic sign-in advice.
+- The README names the hosted MCP server (https://mcp.mammoth.io/mcp) and `pip install mammoth-mcp-server` (needs `MCP_ENCRYPTION_KEY`) instead of `mammoth-mcp`.
+- mammoth-mcp-server answers the browser CORS preflight on `/mcp` without a token.
+- Browser and device sign-in are available on the production app (`app`): the CLI now carries its OAuth client id there, and the login menu no longer says "not yet available on app".
 
 ### Fixed (mammoth-cli 2.2.69)
 

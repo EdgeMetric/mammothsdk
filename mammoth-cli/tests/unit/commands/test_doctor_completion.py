@@ -336,3 +336,16 @@ def test_doctor_without_wait_reports_the_first_outage(
     data, _ = doctor_cmd.doctor(_inv("doctor"))
     assert calls == [1]
     assert data["ok"] is False
+
+
+def test_auth_rejection_keeps_the_servers_error_code_and_hint() -> None:
+    from mammoth.exceptions import MammothAuthError
+
+    refused = MammothAuthError(
+        "token revoked",
+        error_code="TOKEN_REVOKED",
+        hint="Create a new token in Workspace settings.",
+    )
+    mapped = map_sdk_exception(refused)
+    assert "TOKEN_REVOKED" in mapped.message
+    assert mapped.hint == "Create a new token in Workspace settings."
