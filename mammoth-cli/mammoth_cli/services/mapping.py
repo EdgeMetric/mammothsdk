@@ -358,16 +358,25 @@ def map_sdk_exception(
         if mismatch is not None:
             return mismatch
         in_app = embedded.active()
+        server_hint = getattr(exc, "hint", None)
+        server_code = getattr(exc, "error_code", None)
         return CliError(
             code=CODE_AUTHENTICATION_FAILED,
-            message="Mammoth rejected the provided credentials.",
+            message=(
+                "Mammoth rejected the provided credentials."
+                if server_code is None
+                else f"Mammoth rejected the provided credentials [{server_code}]."
+            ),
             exit_status=EXIT_AUTH,
             hint=(
-                EMBEDDED_AUTH_HINT
-                if in_app
-                else (
-                    "Your sign-in may have expired or been revoked: "
-                    "run `mammoth auth login` again, or check the API token."
+                server_hint
+                or (
+                    EMBEDDED_AUTH_HINT
+                    if in_app
+                    else (
+                        "Your sign-in may have expired or been revoked: "
+                        "run `mammoth auth login` again, or check the API token."
+                    )
                 )
             ),
             details=_metadata(exc),

@@ -44,6 +44,7 @@ from mammoth_cli.errors.envelope import EXIT_AUTH, EXIT_USAGE, CliError
 OAUTH_CLIENT_IDS: dict[str, str] = {
     "challenger": "oc_aea5c2ce829da3f8",
     "koyal": "oc_f2566336e235795c",
+    "app": "oc_b559f85cfb4de34c",
 }
 
 #: Refresh when the access token has less than this long to live.

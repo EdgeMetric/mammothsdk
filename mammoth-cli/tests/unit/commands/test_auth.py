@@ -651,11 +651,11 @@ def _choose_at_real_prompt(server_prefix: str | None, typed: bytes) -> tuple[str
 
 
 def test_menu_on_a_server_without_oauth_marks_browser_unavailable() -> None:
-    # The default "app" prefix genuinely has no OAuth client registered.
-    chosen, shown = _choose_at_real_prompt(None, b"3\n")
+    # An environment with no OAuth client registered.
+    chosen, shown = _choose_at_real_prompt("nosuchenv", b"3\n")
     assert chosen == "token"
-    assert "1) Browser (OAuth)      (not yet available on app)" in shown
-    assert "2) Device code          (not yet available on app)" in shown
+    assert "1) Browser (OAuth)      (not yet available on nosuchenv)" in shown
+    assert "2) Device code          (not yet available on nosuchenv)" in shown
     assert "3) Paste an API token" in shown
 
 
@@ -683,7 +683,7 @@ def test_choosing_the_browser_without_a_client_names_the_token_option() -> None:
     with pytest.raises(CliError) as excinfo:
         auth_cmd._run_oauth_login(
             Invocation(command_id="auth.login", output="table"),
-            server_prefix=None,
+            server_prefix="nosuchenv",
             storage="file",
             open_browser=False,
             interactive=True,

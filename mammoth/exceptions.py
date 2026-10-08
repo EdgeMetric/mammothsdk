@@ -177,15 +177,22 @@ class MammothAuthError(MammothAPIError):
     Attributes:
         message: ``"Authentication failed"`` (default).
         status_code: Always ``401``.
+        error_code: The server's own ``error_code``/``code`` for the refusal, if sent.
+        hint: The server's own ``hint`` for the refusal, if sent.
     """
 
     def __init__(
         self,
         message: str = "Authentication failed",
         response_body: dict[str, Any] | None = None,
+        *,
+        error_code: str | int | None = None,
+        hint: str | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(message, status_code=401, response_body=response_body, **kwargs)
+        self.error_code = error_code
+        self.hint = hint
 
 
 class MammothJobTimeoutError(MammothError):

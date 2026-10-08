@@ -118,7 +118,16 @@ in `mammoth-cli/docs/release-status.md`. A lower score than the previous
 release is a regression in the guide or the CLI's output, even when every
 test passes.
 
+### Release cadence
+
+**At most one PyPI release a day** (per package). Batch fixes into the day's release instead of
+publishing several patch versions in a row.
+
 ### GitHub releases for the installer path (local)
+
+Pushing any `cli-v*` tag runs `.github/workflows/cli-github-release.yml`, which creates the GitHub
+release with `mammoth-install.sh`, `mammoth-install.ps1` and `SHA256SUMS` (or adds them to a
+release already cut by hand). It never publishes to PyPI. The manual steps below add the wheels.
 
 **Every version bump gets a GitHub release, for the CLI and the SDK.** Without
 one, the Releases page and the `releases/download/cli-vX.Y.Z/…` installer URLs
