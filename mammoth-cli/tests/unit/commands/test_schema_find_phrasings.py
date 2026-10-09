@@ -29,6 +29,10 @@ PHRASINGS = [
     ("who opened my dashboard", "dashboard.engagement.get"),
     ("remind people to look at the dashboard", "dashboard.engagement.remind"),
     ("use my own data on a template", "dashboard.own-data.start"),
+    ("make a dataset from each sheet of my excel file", "file.multi-sheet-extract"),
+    ("see how each sheet of my excel workbook reads", "file.multi-sheet-preview"),
+    ("archive this workflow", "workflow.archive"),
+    ("save my workflow changes", "workflow.save"),
 ]
 
 

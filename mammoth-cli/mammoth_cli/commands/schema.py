@@ -525,6 +525,16 @@ _COMMAND_DISCOVERY_PURPOSES = {
     ),
     "collection.activity": "who opened the collection and which dashboards inside get opened",
     "collection.files.upload": "upload a file to refresh the data behind a collection",
+    "file.multi-sheet-preview": (
+        "see how one sheet of a multi-sheet excel file reads before making datasets"
+    ),
+    "file.multi-sheet-extract": (
+        "make a dataset from each accepted sheet of a multi-sheet excel file"
+    ),
+    "workflow.save": "save a workflow's unsaved changes on the canvas",
+    "workflow.archive": "archive a workflow or bring an archived workflow back",
+    "workflow.attach-dataset": "add an existing dataset to a workflow",
+    "workflow.resolve-held": "settle a change that a workflow save held back",
     "dashboard.columns": "columns of the dashboard source data profile samples ranges data panel",
     "dashboard.context.review": "preview what the context change would do to the dashboard dry run",
     "dashboard.context.apply": "apply the reviewed context change to the dashboard",

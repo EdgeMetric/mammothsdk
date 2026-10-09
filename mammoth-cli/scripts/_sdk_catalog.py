@@ -220,6 +220,18 @@ EXTRA_OP_HINTS: dict[str, dict[str, Any]] = {
     "file.extract-sheets": {"operation_ids": ["UpdateFileConfigs"], "method": "PATCH"},
     "file.set-password": {"operation_ids": ["UpdateFileConfigs"], "method": "PATCH"},
     "file.upload-folder": {"operation_ids": ["CreateFileDataset"], "method": "POST"},
+    "file.multi-sheet-preview": {
+        "operation_ids": ["PreviewMultiSheetInterpretation"],
+        "method": "POST",
+    },
+    "file.multi-sheet-extract": {
+        "operation_ids": ["CreateDatasetsFromMultiSheetFile"],
+        "method": "POST",
+    },
+    "workflow.save": {"operation_ids": ["SaveWorkflow"], "method": "POST"},
+    "workflow.archive": {"operation_ids": ["SetArchived"], "method": "PUT"},
+    "workflow.attach-dataset": {"operation_ids": ["AttachDataset"], "method": "POST"},
+    "workflow.resolve-held": {"operation_ids": ["ResolveHeldChange"], "method": "POST"},
     "folder.root": {"operation_ids": ["ListFolders"], "method": "GET"},
     "project.get": {"operation_ids": [], "method": "GET"},
     "user.change-password": {"operation_ids": ["UpdateUser"], "method": "PATCH"},

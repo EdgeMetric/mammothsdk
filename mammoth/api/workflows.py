@@ -503,3 +503,142 @@ class WorkflowsAPI:
             f"/workspaces/{ws}/projects/{proj}/workflows/{workflow_id}/canvas",
             json=body,
         )
+
+    async def save(
+        self,
+        workflow_id: int,
+        keys: _list[str] | None = None,
+        expected_version: int | None = None,
+        project_id: int | None = None,
+    ) -> dict[str, Any]:
+        """Save a workflow's unsaved canvas changes.
+
+        Args:
+            workflow_id: ID of the workflow (must be > 0).
+            keys: Save only these unsaved changes (by key) and what they need; the
+                rest stay unsaved. Omitted: save every change.
+            expected_version: The canvas version the client last read; the server
+                answers 409 if it has moved.
+            project_id: Project ID (uses client default if not provided; must
+                be > 0 if given).
+
+        Returns:
+            Dict with the saved workflow.
+
+        Raises:
+            MammothValidationError: If *workflow_id* <= 0 or *project_id* <= 0.
+        """
+        self._check_workflow_id(workflow_id)
+        self._check_project_id(project_id)
+        ws = self._ws()
+        proj = self._proj(project_id)
+        body = {"keys": keys, "expected_version": expected_version}
+        return await self._client._request_json(
+            "POST",
+            f"/workspaces/{ws}/projects/{proj}/workflows/{workflow_id}/save",
+            json={name: value for name, value in body.items() if value is not None},
+        )
+
+    async def set_archived(
+        self,
+        workflow_id: int,
+        archived: bool,
+        dataset_ids: _list[int] | None = None,
+        project_id: int | None = None,
+    ) -> dict[str, Any]:
+        """Archive a workflow, or bring it back.
+
+        Args:
+            workflow_id: ID of the workflow (must be > 0).
+            archived: True to archive, False to bring the workflow back.
+            dataset_ids: The workflow's datasets now; it reads as active once it
+                has others.
+            project_id: Project ID (uses client default if not provided; must
+                be > 0 if given).
+
+        Returns:
+            Dict with the workflow metadata.
+
+        Raises:
+            MammothValidationError: If *workflow_id* <= 0 or *project_id* <= 0.
+        """
+        self._check_workflow_id(workflow_id)
+        self._check_project_id(project_id)
+        ws = self._ws()
+        proj = self._proj(project_id)
+        body: dict[str, Any] = {"archived": archived}
+        if dataset_ids is not None:
+            body["dataset_ids"] = dataset_ids
+        return await self._client._request_json(
+            "PUT",
+            f"/workspaces/{ws}/projects/{proj}/workflows/{workflow_id}/archived",
+            json=body,
+        )
+
+    async def attach_dataset(
+        self,
+        workflow_id: int,
+        datasource_id: int,
+        project_id: int | None = None,
+    ) -> dict[str, Any]:
+        """Attach a dataset to a workflow.
+
+        Args:
+            workflow_id: ID of the workflow (must be > 0).
+            datasource_id: ID of the dataset to attach.
+            project_id: Project ID (uses client default if not provided; must
+                be > 0 if given).
+
+        Returns:
+            Dict with the workflow metadata and its skeleton blocks.
+
+        Raises:
+            MammothValidationError: If *workflow_id* <= 0 or *project_id* <= 0.
+        """
+        self._check_workflow_id(workflow_id)
+        self._check_project_id(project_id)
+        ws = self._ws()
+        proj = self._proj(project_id)
+        return await self._client._request_json(
+            "POST",
+            f"/workspaces/{ws}/projects/{proj}/workflows/{workflow_id}/datasets",
+            json={"datasource_id": datasource_id},
+        )
+
+    async def resolve_held(
+        self,
+        workflow_id: int,
+        key: str,
+        built: bool,
+        expected_version: int | None = None,
+        project_id: int | None = None,
+    ) -> dict[str, Any]:
+        """Settle a change that a Save held back.
+
+        Args:
+            workflow_id: ID of the workflow (must be > 0).
+            key: The held change's key.
+            built: True when the change is already in Mammoth (it is not built
+                again); False to lift the hold so the next Save builds it.
+            expected_version: The canvas version the client last read.
+            project_id: Project ID (uses client default if not provided; must
+                be > 0 if given).
+
+        Returns:
+            Dict with the workflow metadata and its skeleton blocks.
+
+        Raises:
+            MammothValidationError: If *workflow_id* <= 0 or *project_id* <= 0.
+        """
+        self._check_workflow_id(workflow_id)
+        self._check_project_id(project_id)
+        ws = self._ws()
+        proj = self._proj(project_id)
+        body: dict[str, Any] = {"key": key, "built": built}
+        if expected_version is not None:
+            body["expected_version"] = expected_version
+        return await self._client._request_json(
+            "POST",
+            f"/workspaces/{ws}/projects/{proj}/workflows/{workflow_id}/held/resolve",
+            json=body,
+        )

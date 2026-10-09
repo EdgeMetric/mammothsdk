@@ -205,6 +205,90 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+- command_id: file.multi-sheet-extract
+  command_path: file multi-sheet-extract
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - CreateDatasetsFromMultiSheetFile
+  positionals:
+  - name: file_id
+    type: int
+    required: true
+    metavar: FILE_ID
+    falls_back_to_field: null
+    help: ID of the file.
+  options: []
+  sdk_symbol: mammoth.api.files.FilesAPI.create_datasets_from_multi_sheet
+  sdk_conversion: Call mammoth.api.files.FilesAPI.create_datasets_from_multi_sheet with validated request fields.
+  request_model: FileMultiSheetExtractRequest
+  result_model: FileMultiSheetExtractResult
+  mutation_class: benign_mutation
+  edits_target: true
+  confirmation: none
+  wait_policy: always_wait
+  pagination_policy: none
+  acceptance_evidence: contract_only_no_disposable_fixture
+  no_readback: 'the file is gone after a default extract; read the new datasets with dataset list'
+  live_test: null
+  live_exemption_reason: Write with contract coverage but no automated disposable fixture in tests/live.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth file multi-sheet-extract FILE_ID --help
+  agent_example: "mammoth file multi-sheet-extract 123 --input '{\"tables\": [{\"sample_key\": \"Status\"}]}'"
+  unit_tests:
+  - UT-FILE-MULTI-SHEET-EXTRACT
+  contract_tests:
+  - CT-FILE-MULTI-SHEET-EXTRACT-HUMAN
+  - CT-FILE-MULTI-SHEET-EXTRACT-JSON
+  - CT-FILE-MULTI-SHEET-EXTRACT-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: "Input: {tables: [{sheet_name, dataset_name, structure_map, block_id?, combine_group_id?, source_label?, sheet_block_count?}] (1 to 100 accepted reads from file multi-sheet-preview), delete_file_after_extract?}. The file is deleted after extraction unless delete_file_after_extract is false."
+  reviewed_by: primary
+- command_id: file.multi-sheet-preview
+  command_path: file multi-sheet-preview
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - PreviewMultiSheetInterpretation
+  positionals:
+  - name: file_id
+    type: int
+    required: true
+    metavar: FILE_ID
+    falls_back_to_field: null
+    help: ID of the file.
+  options: []
+  sdk_symbol: mammoth.api.files.FilesAPI.preview_multi_sheet
+  sdk_conversion: Call mammoth.api.files.FilesAPI.preview_multi_sheet with validated request fields.
+  request_model: FileMultiSheetPreviewRequest
+  result_model: FileMultiSheetPreviewResult
+  mutation_class: benign_mutation
+  edits_target: false
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_no_disposable_fixture
+  no_readback: 'preview only; nothing is created until file multi-sheet-extract'
+  live_test: null
+  live_exemption_reason: 'Preview only: creates nothing; a live run needs a multi-sheet file id on the box.'
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth file multi-sheet-preview FILE_ID --help
+  agent_example: "mammoth file multi-sheet-preview 123 --input '{\"sheet_name\": \"Revenue report\"}'"
+  unit_tests:
+  - UT-FILE-MULTI-SHEET-PREVIEW
+  contract_tests:
+  - CT-FILE-MULTI-SHEET-PREVIEW-HUMAN
+  - CT-FILE-MULTI-SHEET-PREVIEW-JSON
+  - CT-FILE-MULTI-SHEET-PREVIEW-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: "Input: {sheet_name (required), block_id?, user_instruction?, structure_map?}. Shows how one sheet reads before any dataset exists; nothing is saved."
+  reviewed_by: primary
 - command_id: file.set-password
   command_path: file set-password
   disposition: command
