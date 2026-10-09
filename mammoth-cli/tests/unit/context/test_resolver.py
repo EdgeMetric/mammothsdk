@@ -108,7 +108,7 @@ def test_resolve_project_none_when_nothing_set() -> None:
 
 
 def test_resolve_auth_uses_the_ci_token_from_the_environment(
-    isolated_cli_config: Path, monkeypatch: pytest.MonkeyPatch
+    isolated_cli_config: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
     """A CI job with only MAMMOTH_API_TOKEN set authenticates without a saved login."""
     monkeypatch.setenv("MAMMOTH_API_TOKEN", "mm_ci_token")
@@ -116,5 +116,33 @@ def test_resolve_auth_uses_the_ci_token_from_the_environment(
     monkeypatch.setattr("mammoth_cli.context.resolver.resolve_token_workspace", lambda *_a, **_k: 9)
     resolved = resolve_auth(_invocation())
     assert resolved.api_token == "mm_ci_token"
+    err = capsys.readouterr().err
+    assert "MAMMOTH_API_TOKEN" in err and "release.mammoth.io" in err and "mm_ci_token" not in err
     assert resolved.workspace_id == 9
     assert resolved.base_url == "https://release.mammoth.io/api/v2"
+
+
+def test_resolve_auth_explicit_profile_beats_the_environment_token(
+    isolated_cli_config: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """A token left exported in the shell must not override the profile the user typed."""
+    profiles.save_profile(
+        profiles.ProfileRecord(name="koyal", workspace_id=4, server_prefix="release")
+    )
+    credentials.store_credentials("koyal", "k", "s", storage="file")
+    monkeypatch.setenv("MAMMOTH_API_TOKEN", "mm_ambient")
+    resolved = resolve_auth(_invocation(profile="koyal"))
+    assert (resolved.api_key, resolved.api_token, resolved.workspace_id) == ("k", None, 4)
+    assert "MAMMOTH_API_TOKEN" not in capsys.readouterr().err
+
+
+def test_resolve_auth_environment_token_beats_the_filled_in_default_profile(
+    isolated_cli_config: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The CLI fills in the saved profile when none was named; that must not hide the CI token."""
+    profiles.save_profile(profiles.ProfileRecord(name="default", workspace_id=4))
+    credentials.store_credentials("default", "k", "s", storage="file")
+    monkeypatch.setenv("MAMMOTH_API_TOKEN", "mm_ci_token")
+    monkeypatch.setattr("mammoth_cli.context.resolver.resolve_token_workspace", lambda *_a, **_k: 9)
+    resolved = resolve_auth(_invocation(profile="default", profile_is_default=True))
+    assert (resolved.api_token, resolved.workspace_id) == ("mm_ci_token", 9)

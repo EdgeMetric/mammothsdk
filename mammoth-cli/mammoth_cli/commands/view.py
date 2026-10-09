@@ -1254,7 +1254,11 @@ def view_data_get(invocation: Invocation) -> HandlerResult:
             service, dataset_id, view_id, project_id, data, whole_view=whole_view
         )
     page_size = _DATA_PAGE_ROWS if whole_view else kwargs["limit"]
-    return _with_paging_total(_trim_rows(data, limit, page_size), meta), meta
+    data = _trim_rows(data, limit, page_size)
+    if document.get("sequence") is None:
+        # The view's row count is its latest step's; a read at an earlier step differs.
+        data = _with_paging_total(data, meta)
+    return data, meta
 
 
 def _with_paging_total(data: Any, meta: dict[str, Any]) -> Any:

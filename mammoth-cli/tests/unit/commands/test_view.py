@@ -2950,3 +2950,23 @@ def test_data_get_offset_page_reports_the_views_row_count_as_paging_total(
         _inv("view.data.get", project=180, extra_args=["7", "9"], input_file=doc)
     )
     assert data["paging"]["total"] == 1316
+
+
+def test_data_get_at_an_earlier_sequence_keeps_the_query_route_total(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    """An earlier step has its own row count; the latest step's must not stand in for it."""
+    fake_service.responses[_DATAVIEW_GET] = {
+        "name": "v",
+        "row_count": 1316,
+        "metadata": [{"internal_name": "column_1", "display_name": "n", "type": "NUMERIC"}],
+    }
+    fake_service.responses[_DATA_QUERY] = {
+        "data": [{"column_1": "1"}],
+        "paging": {"count": 1, "limit": 1, "offset": 1, "total": 0},
+    }
+    doc = _doc(tmp_path, {"offset": 1, "limit": 1, "sequence": 2})
+    data, _ = view_cmd.view_data_get(
+        _inv("view.data.get", project=180, extra_args=["7", "9"], input_file=doc)
+    )
+    assert data["paging"]["total"] == 0

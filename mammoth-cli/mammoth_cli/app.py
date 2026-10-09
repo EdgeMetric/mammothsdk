@@ -949,7 +949,7 @@ def _execute(invocation: Invocation) -> None:
     from mammoth_cli.runtime.strict import validate_extra_args
 
     if invocation.profile is None:
-        invocation = replace(invocation, profile=profiles.get_selected())
+        invocation = replace(invocation, profile=profiles.get_selected(), profile_is_default=True)
 
     def producer() -> tuple[Any, dict[str, Any]]:
         refuse_hand_crafted_write(invocation.command_id)

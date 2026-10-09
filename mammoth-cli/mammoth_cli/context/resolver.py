@@ -13,6 +13,7 @@ overrides no project at all.
 from __future__ import annotations
 
 import os
+import sys
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 
@@ -183,7 +184,8 @@ def resolve_auth(
     document handed to :func:`resolve_auth` by ``auth login``, or the login of
     the current embedded call, :mod:`mammoth_cli.runtime.embedded`), otherwise from
     the selected or ``--profile`` saved profile. A ``MAMMOTH_API_TOKEN`` (and optional
-    ``MAMMOTH_SERVER_PREFIX``) in the environment outranks a saved profile, for CI.
+    ``MAMMOTH_SERVER_PREFIX``) in the environment outranks the selected profile, for CI,
+    but never an explicit ``--profile``; using it prints one stderr line.
 
     Args:
         invocation: The current command's resolved global options.
@@ -199,10 +201,15 @@ def resolve_auth(
     """
     if explicit_login is None and (call := embedded.current()) is not None:
         explicit_login = call.login
-    if explicit_login is None:
+    from_env = False
+    if explicit_login is None and (invocation.profile is None or invocation.profile_is_default):
+        # An explicit ``--profile`` outranks the ambient environment token.
         explicit_login = _env_token_login()
+        from_env = explicit_login is not None
     if explicit_login is not None:
         base_url = _endpoint(explicit_login.server_prefix)
+        if from_env:
+            print(f"Using {API_TOKEN_ENV} for {base_url}", file=sys.stderr)
         return ResolvedAuth(
             api_key=explicit_login.api_key,
             api_secret=explicit_login.api_secret,

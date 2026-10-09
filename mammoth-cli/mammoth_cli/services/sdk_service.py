@@ -191,6 +191,7 @@ class SdkMammothService:
         self._client = MammothClient(
             **credential,
             base_url=auth.base_url,
+            user_agent=f"mammoth-cli/{__version__}",
             **kwargs,
         )
         # One loop for the process, not one per call: the client's connection
@@ -199,12 +200,6 @@ class SdkMammothService:
         # One loop serves every call; threads (view data profile fans out) take turns.
         self._loop_lock = threading.RLock()
         try:
-            # The SDK names itself ``mammoth-io/<v>``; lead with the CLI so
-            # server logs can tell a CLI call from a direct SDK call.
-            sdk_agent = self._client.session.headers.get("User-Agent", "")
-            self._client.session.headers["User-Agent"] = (
-                f"mammoth-cli/{__version__} {sdk_agent}".strip()
-            )
             if auth.headers:
                 # After construction: the client sets its credential headers in
                 # ``__init__``, and a forwarded session must replace them.
