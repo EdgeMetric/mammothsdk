@@ -37,19 +37,12 @@ from mammoth_cli.context import credentials
 from mammoth_cli.context.credentials import OAuthSession
 from mammoth_cli.context.endpoint import DEFAULT_SERVER_PREFIX, resolve_base_url
 from mammoth_cli.context.profiles import config_dir
-from mammoth_cli.errors.envelope import EXIT_AUTH, EXIT_USAGE, CliError
+from mammoth_cli.errors.envelope import EXIT_AUTH, CliError
 
-#: The first-party CLI's OAuth client id, one constant per environment (the
-#: server prefix). The server allow-lists these ids, so they are not
-#: configurable at run time. An environment absent here has no CLI client yet.
-#: This table is the fallback for servers that do not publish
-#: ``mammoth_cli_client_id`` in their OAuth metadata (see
-#: :func:`published_client_id`); it is removed once every server publishes it.
-OAUTH_CLIENT_IDS: dict[str, str] = {
-    "challenger": "oc_aea5c2ce829da3f8",
-    "koyal": "oc_f2566336e235795c",
-    "app": "oc_b559f85cfb4de34c",
-}
+#: The first-party CLI's OAuth client id: the same in every environment. The
+#: server publishes it in its OAuth metadata (see :func:`published_client_id`);
+#: this is the id used when it publishes nothing.
+BUILTIN_CLIENT_ID = "mammoth-cli"
 
 #: Refresh when the access token has less than this long to live.
 REFRESH_MARGIN_SECONDS = 120
@@ -59,7 +52,6 @@ _LOCK_POLL_SECONDS = 0.1
 _LOCK_WAIT_SECONDS = 60.0
 
 CODE_LOGIN_EXPIRED = "login_expired"
-CODE_OAUTH_UNAVAILABLE = "oauth_unavailable"
 CODE_OAUTH_LOGIN_FAILED = "oauth_login_failed"
 CODE_DEVICE_LOGIN_EXPIRED = "device_login_expired"
 
@@ -92,7 +84,7 @@ def published_client_id(prefix: str) -> str | None:
 
     One GET per environment per process. None when the field is absent, the
     server cannot be reached, or it answers anything but metadata: the caller
-    then falls back to :data:`OAUTH_CLIENT_IDS`.
+    then uses :data:`BUILTIN_CLIENT_ID`.
     """
     from mammoth import oauth as sdk_oauth
 
@@ -108,36 +100,10 @@ def published_client_id(prefix: str) -> str | None:
     return value if isinstance(value, str) and value else None
 
 
-def _resolve_client_id(server_prefix: str | None) -> str | None:
-    prefix = server_prefix if server_prefix is not None else DEFAULT_SERVER_PREFIX
-    return published_client_id(prefix) or OAUTH_CLIENT_IDS.get(prefix)
-
-
-def has_client_id(server_prefix: str | None) -> bool:
-    """Whether the CLI has an OAuth client for this environment.
-
-    Makes a network call (cached per process): call it only on login paths.
-    """
-    return _resolve_client_id(server_prefix) is not None
-
-
 def client_id_for(server_prefix: str | None) -> str:
-    """Return the CLI's OAuth client id for one environment.
-
-    Raises:
-        CliError: ``oauth_unavailable`` when the environment has no CLI client.
-    """
-    client_id = _resolve_client_id(server_prefix)
-    if client_id is not None:
-        return client_id
+    """Return the CLI's OAuth client id: the published one, else the built-in one."""
     prefix = server_prefix if server_prefix is not None else DEFAULT_SERVER_PREFIX
-    raise CliError(
-        code=CODE_OAUTH_UNAVAILABLE,
-        message=f"Browser sign-in is not available on '{prefix}' yet.",
-        exit_status=EXIT_USAGE,
-        hint="Pick option 3 (paste an API token) or run: mammoth auth login --method token",
-        recovery_commands=["mammoth auth login --method token"],
-    )
+    return published_client_id(prefix) or BUILTIN_CLIENT_ID
 
 
 # --- PKCE ---------------------------------------------------------------------

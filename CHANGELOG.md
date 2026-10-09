@@ -6,6 +6,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed (mammoth-cli 2.2.72)
+
+- The CLI signs in with the built-in `mammoth-cli` OAuth client when the server publishes none; the per-environment client table is gone, and the login menu always offers Browser and Device.
+
 ### Changed (mammoth-io 0.8.33, mammoth-cli 2.2.71)
 
 - Browser and device sign-in read the CLI's OAuth client id from the server's OAuth metadata (`mammoth_cli_client_id`) and fall back to the built-in table when the server does not publish it.

@@ -627,20 +627,6 @@ def test_device_flag_cannot_be_combined_with_input(
     assert json.loads(result.stderr)["error"]["code"] == "invalid_argument_combination"
 
 
-def test_device_login_on_a_server_without_a_cli_client_says_so(
-    isolated_cli_config: Path,
-) -> None:
-    runner = make_runner()
-    result = runner.invoke(
-        [
-            *("auth", "login", "--device", "--server-prefix", "nosuchenv"),
-            *("--output", "json", "--no-input"),
-        ],
-        env={},
-    )
-    assert json.loads(result.stderr)["error"]["code"] == "oauth_unavailable"
-
-
 def _choose_at_real_prompt(server_prefix: str | None, typed: bytes) -> tuple[str, str]:
     """Run the real menu with ``typed`` on stdin; return the choice and the menu text."""
     invocation = Invocation(command_id="auth.login", output="table", no_input=False)
@@ -650,13 +636,12 @@ def _choose_at_real_prompt(server_prefix: str | None, typed: bytes) -> tuple[str
     return chosen, shown
 
 
-def test_menu_on_a_server_without_oauth_marks_browser_unavailable() -> None:
-    # An environment with no OAuth client registered.
+def test_menu_always_offers_browser_and_device() -> None:
     chosen, shown = _choose_at_real_prompt("nosuchenv", b"3\n")
     assert chosen == "token"
-    assert "1) Browser (OAuth)      (not yet available on nosuchenv)" in shown
-    assert "2) Device code          (not yet available on nosuchenv)" in shown
-    assert "3) Paste an API token" in shown
+    assert "1) Browser (OAuth)      recommended" in shown
+    assert "2) Device code          no browser on this machine" in shown
+    assert "not yet available" not in shown
 
 
 @pytest.mark.parametrize("prefix", [None, "koyal"])
@@ -677,19 +662,6 @@ def test_invalid_choice_at_the_menu_names_the_valid_ones() -> None:
         _choose_at_real_prompt("koyal", b"9\n")
     assert excinfo.value.code == "invalid_login_method"
     assert "'9' is not a valid choice; choose 1, 2 or 3" in excinfo.value.message
-
-
-def test_choosing_the_browser_without_a_client_names_the_token_option() -> None:
-    with pytest.raises(CliError) as excinfo:
-        auth_cmd._run_oauth_login(
-            Invocation(command_id="auth.login", output="table"),
-            server_prefix="nosuchenv",
-            storage="file",
-            open_browser=False,
-            interactive=True,
-        )
-    assert excinfo.value.code == "oauth_unavailable"
-    assert "option 3" in (excinfo.value.hint or "")
 
 
 def test_choose_method_stays_silent_when_not_interactive() -> None:
