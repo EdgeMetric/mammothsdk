@@ -782,11 +782,11 @@ operations:
   request_schema: null
   response_schemas: []
   deprecated: false
-  disposition: unmapped
-  disposition_reason: No reviewed CLI command or SDK symbol recorded.
-  canonical_command: null
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: collection.active-job
   alias_of: null
-  sdk_symbol: null
+  sdk_symbol: mammoth.api.collections.CollectionsAPI.active_job
   reviewed_by: primary
 - identity: GET /collections/{collection_id}/activity
   method: GET
@@ -890,11 +890,11 @@ operations:
   response_schemas:
   - CollectionJobResponse
   deprecated: false
-  disposition: unmapped
-  disposition_reason: No reviewed CLI command or SDK symbol recorded.
-  canonical_command: null
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: collection.job
   alias_of: null
-  sdk_symbol: null
+  sdk_symbol: mammoth.api.collections.CollectionsAPI.job
   reviewed_by: primary
 - identity: DELETE /collections/{collection_id}/members
   method: DELETE
@@ -1650,11 +1650,11 @@ operations:
   response_schemas:
   - AttachmentResponse
   deprecated: false
-  disposition: unmapped
-  disposition_reason: No reviewed CLI command or SDK symbol recorded.
-  canonical_command: null
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: dashboard.attachment-create
   alias_of: null
-  sdk_symbol: null
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.attachment_create
   reviewed_by: primary
 - identity: POST /dashboards/v3/attachments/{attachment_id}/assess
   method: POST
@@ -4010,11 +4010,11 @@ operations:
   request_schema: null
   response_schemas: []
   deprecated: false
-  disposition: unmapped
-  disposition_reason: No reviewed CLI command or SDK symbol recorded.
-  canonical_command: null
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: dashboard.bi-export
   alias_of: null
-  sdk_symbol: null
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.export_powerbi
   reviewed_by: primary
 - identity: POST /dashboards/{dashboard_id}/presence
   method: POST
@@ -4514,11 +4514,11 @@ operations:
   response_schemas:
   - PowerBiPreflightResponse
   deprecated: false
-  disposition: unmapped
-  disposition_reason: No reviewed CLI command or SDK symbol recorded.
-  canonical_command: null
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: dashboard.bi-preflight
   alias_of: null
-  sdk_symbol: null
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.powerbi_preflight
   reviewed_by: primary
 - identity: GET /dashboards/{dashboard_id}/tableau/export
   method: GET
@@ -4535,11 +4535,11 @@ operations:
   request_schema: null
   response_schemas: []
   deprecated: false
-  disposition: unmapped
-  disposition_reason: No reviewed CLI command or SDK symbol recorded.
-  canonical_command: null
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: dashboard.bi-export
   alias_of: null
-  sdk_symbol: null
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.export_powerbi
   reviewed_by: primary
 - identity: PUT /dashboards/{dashboard_id}/tags
   method: PUT

@@ -353,6 +353,15 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
             example_value="sample.pbix",
         ),
     ),
+    "dashboard.attachment-create": (
+        PositionalSpec(
+            name="file",
+            type=str,
+            required=True,
+            help="Path to a local workbook.",
+            example_value="sample.pbix",
+        ),
+    ),
     "dashboard.import-workbook": (
         PositionalSpec(
             name="file",

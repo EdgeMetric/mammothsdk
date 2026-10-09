@@ -131,6 +131,9 @@ EXTRA_OP_HINTS: dict[str, dict[str, Any]] = {
     "collection.activity": {"operation_ids": ["CollectionActivity"], "method": "GET"},
     "collection.pipeline-changes": {"operation_ids": ["PipelineChanges"], "method": "GET"},
     "collection.files.upload": {"operation_ids": ["UploadFile"], "method": "POST"},
+    "collection.active-job": {"operation_ids": ["ActiveJob"], "method": "GET"},
+    "collection.job": {"operation_ids": ["GetRefreshJob"], "method": "GET"},
+    "dashboard.attachment-create": {"operation_ids": ["CreateAttachment"], "method": "POST"},
     "dashboard.engagement.get": {"operation_ids": ["GetDashboardEngagement"], "method": "GET"},
     "dashboard.engagement.person": {
         "operation_ids": ["GetDashboardEngagementPerson"],

@@ -35,6 +35,8 @@ PHRASINGS = [
     ("which objects is the run working on", "agent.run.units.list"),
     ("that answer was the wrong kind of request", "agent.message.set-request-kind"),
     ("rename a step in the plan proposal", "agent.plan.edit-proposal"),
+    ("resume an interrupted collection upload", "collection.active-job"),
+    ("attach a workbook to the chat", "dashboard.attachment-create"),
 ]
 
 

@@ -28,6 +28,9 @@ _IDS = [
     "collection.activity",
     "collection.pipeline-changes",
     "collection.files.upload",
+    "collection.active-job",
+    "collection.job",
+    "dashboard.attachment-create",
     "dashboard.engagement.get",
     "dashboard.engagement.person",
     "dashboard.engagement.remind",
@@ -57,6 +60,8 @@ def test_the_command_is_registered_and_reachable_from_the_cli(command_id: str) -
         ("dashboard.own-data.accept", "confirm_target", "benign_mutation"),
         ("dashboard.own-data.start", "none", "benign_mutation"),
         ("dashboard.engagement.get", "none", "read"),
+        ("collection.job", "none", "read"),
+        ("dashboard.attachment-create", "none", "benign_mutation"),
     ],
 )
 def test_the_manifest_gates_each_command_by_what_it_does(

@@ -410,7 +410,22 @@ class DashboardsAPI:
         except ValidationError as exc:
             raise MammothValidationError(f"Invalid workbook import response: {exc}") from exc
 
-    async def _assess_upload(self, file: str | Path, endpoint: str, model: Any) -> Any:
+    async def attachment_create(self, file: str | Path) -> dict[str, Any]:
+        """Attach a local workbook to the chat so the agent can read it.
+
+        Args:
+            file: Local workbook (``.pbix``, ``.twb`` or ``.twbx``).
+
+        Returns:
+            The created attachment as the server answers it; its id names the attachment
+            in :meth:`attachment_intent` and :meth:`attachment_assess`.
+
+        Raises:
+            MammothValidationError: If *file* is not a readable local file.
+        """
+        return await self._post_workbook(file, "/dashboards/v3/attachments")
+
+    async def _post_workbook(self, file: str | Path, endpoint: str) -> dict[str, Any]:
         try:
             path = Path(file)
         except (TypeError, ValueError) as exc:
@@ -422,13 +437,16 @@ class DashboardsAPI:
         except OSError as exc:
             raise MammothValidationError(f"File cannot be opened: {path}") from exc
         try:
-            response = await self._client._request_json(
+            return await self._client._request_json(
                 "POST",
                 endpoint,
                 files=[("file", (os.path.basename(path), opened, "application/octet-stream"))],
             )
         finally:
             opened.close()
+
+    async def _assess_upload(self, file: str | Path, endpoint: str, model: Any) -> Any:
+        response = await self._post_workbook(file, endpoint)
         try:
             return model.model_validate(response)
         except ValidationError as exc:

@@ -390,3 +390,37 @@ class CollectionsAPI:
         finally:
             for handle in handles:
                 handle.close()
+
+    async def active_job(self, collection_id: int) -> dict[str, Any]:
+        """Get the collection's upload job that is still in flight, if any.
+
+        Args:
+            collection_id: ID of the collection (must be > 0).
+
+        Returns:
+            The in-flight upload job, so an interrupted upload can be resumed.
+
+        Raises:
+            MammothValidationError: If *collection_id* ≤ 0.
+        """
+        _require_id("collection_id", collection_id)
+        return await self._client._request_json("GET", f"/collections/{collection_id}/active-job")
+
+    async def job(self, collection_id: int, job_id: int) -> dict[str, Any]:
+        """Poll one upload job of a collection.
+
+        Args:
+            collection_id: ID of the collection (must be > 0).
+            job_id: ID of the upload job (must be > 0).
+
+        Returns:
+            The upload job and its state.
+
+        Raises:
+            MammothValidationError: If an id is ≤ 0.
+        """
+        _require_id("collection_id", collection_id)
+        _require_id("job_id", job_id)
+        return await self._client._request_json(
+            "GET", f"/collections/{collection_id}/jobs/{job_id}"
+        )

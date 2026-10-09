@@ -1,5 +1,5 @@
 manifest_schema_version: 1
-method_count: 749
+method_count: 752
 generator_version: '1'
 methods:
 - sdk_symbol: mammoth._mixins._advanced_ops.AdvancedOpsMixin.add_sql
@@ -2117,6 +2117,18 @@ methods:
   pagination_policy: none
   secret_fields: []
   reviewed_by: primary
+- sdk_symbol: mammoth.api.collections.CollectionsAPI.active_job
+  implementation_origin: mammoth.api.collections.CollectionsAPI.active_job
+  signature: 'active_job(self, collection_id: ''int'') -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: collection.active-job
+  alias_of: null
+  no_command_reason: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
 - sdk_symbol: mammoth.api.collections.CollectionsAPI.activity
   implementation_origin: mammoth.api.collections.CollectionsAPI.activity
   signature: 'activity(self, collection_id: ''int'') -> ''dict[str, Any]'''
@@ -2197,6 +2209,18 @@ methods:
     ''dict[str, Any]'''
   openapi_operation_ids: []
   canonical_command: collection.get-by-url
+  alias_of: null
+  no_command_reason: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.collections.CollectionsAPI.job
+  implementation_origin: mammoth.api.collections.CollectionsAPI.job
+  signature: 'job(self, collection_id: ''int'', job_id: ''int'') -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: collection.job
   alias_of: null
   no_command_reason: null
   mutation_class: read
@@ -2650,6 +2674,18 @@ methods:
   mutation_class: null
   wait_policy: null
   pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.attachment_create
+  implementation_origin: mammoth.api.dashboards.DashboardsAPI.attachment_create
+  signature: 'attachment_create(self, file: ''str | Path'') -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: dashboard.attachment-create
+  alias_of: null
+  no_command_reason: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
   secret_fields: []
   reviewed_by: primary
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.attachment_intent
