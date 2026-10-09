@@ -13,6 +13,7 @@ from __future__ import annotations
 import time
 from typing import Any
 
+from mammoth_cli.output.normalize import Revealed
 from mammoth_cli.runtime.invocation import Invocation
 
 #: Below this share of matched rows, a join has enough misses to flag before
@@ -113,7 +114,8 @@ def with_verify(data: Any, invocation: Invocation | None = None) -> Any:
     )
     _apply_downstream_export_check(verify, invocation)
     verify["outcome"] = _outcome(data, verify)
-    return {**data, "verify": verify}
+    result = {**data, "verify": verify}
+    return Revealed(result) if isinstance(data, Revealed) else result
 
 
 def _outcome(data: dict[str, Any], verify: dict[str, Any]) -> str:

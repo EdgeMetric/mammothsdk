@@ -572,7 +572,7 @@ commands:
   - test_the_command_is_registered_and_reachable_from_the_cli
   draft_test: null
   undo_test: null
-  known_restrictions: "Registers an OAuth client that can sign users in. A confidential client's client_secret is returned exactly once; it is never printed in reports or logs. Send name and redirect_uris through --input."
+  known_restrictions: "Registers an OAuth client that can sign users in. A confidential client's client_secret is returned exactly once and shown once in this output; store it now, it cannot be fetched again. Send name and redirect_uris through --input."
   reviewed_by: primary
   readback:
     command: workspace.oauth-client.list

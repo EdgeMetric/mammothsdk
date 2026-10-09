@@ -332,7 +332,7 @@ _TARGETS: dict[str, str] = {
     "workspace.invite.update-role": "mammoth_cli.commands.workspace:workspace_invite_update_role",
     "workspace.llm-task": "mammoth_cli.commands.workspace:workspace_llm_task",
     "workspace.oauth-client.list": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "workspace.oauth-client.create": "mammoth_cli.commands.dashboard:generated_dashboard",
+    "workspace.oauth-client.create": "mammoth_cli.commands.workspace:workspace_oauth_client_create",
     "workspace.oauth-client.delete": "mammoth_cli.commands.dashboard:generated_dashboard",
     "workspace.oauth-client.revoke-grant": "mammoth_cli.commands.dashboard:generated_dashboard",
     "workspace.reactivate": "mammoth_cli.commands.workspace:workspace_reactivate",
