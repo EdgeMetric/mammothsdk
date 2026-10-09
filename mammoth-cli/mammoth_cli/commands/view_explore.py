@@ -42,7 +42,6 @@ from mammoth_cli.services.explore_to_figure import card_level, card_to_figure, c
 HandlerResult = tuple[Any, dict[str, Any]]
 
 _EXPLORE_SYMBOL = "mammoth.api.dataviews.DataviewsAPI.explore"
-_SET_PANEL_SYMBOL = "mammoth.api.dataviews.DataviewsAPI.set_explore_panel"
 _SEQUENCE_SYMBOL = "mammoth.api.pipeline.PipelineAPI.latest_task_sequence"
 _SUGGESTIONS_SYMBOL = "mammoth.api.ai.AIAPI.get_suggestions"
 _DASHBOARDS_LIST_SYMBOL = "mammoth.api.dashboards.DashboardsAPI.list"
