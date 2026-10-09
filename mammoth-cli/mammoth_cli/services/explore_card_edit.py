@@ -121,14 +121,18 @@ def _name_of(column: dict[str, Any]) -> str:
     return str(column.get("display_name") or column.get("internal_name"))
 
 
+_COLUMN_NAME_HINT = "Use a column's display name, as view list VIEW_ID shows it."
+
+
 def _column_named(columns: list[dict[str, Any]], name: Any, field: str) -> dict[str, Any]:
     if not isinstance(name, str):
-        raise _refuse(f'"{field}" must be a column display name.')
+        raise _refuse(f'"{field}" must be a column display name.', _COLUMN_NAME_HINT)
     for column in columns:
         if column.get("display_name") == name:
             return column
     raise _refuse(
-        f"{name!r} is not a column of this view. Columns: {_choices(map(_name_of, columns))}."
+        f"{name!r} is not a column of this view. Columns: {_choices(map(_name_of, columns))}.",
+        _COLUMN_NAME_HINT,
     )
 
 

@@ -116,6 +116,7 @@ def test_unknown_columns_and_values_are_refused_with_the_valid_choices() -> None
     with pytest.raises(CliError) as no_column:
         _edit({"op": "remove", "card": "Nope"})
     assert "Columns: Amount, Day, Region" in no_column.value.message
+    assert no_column.value.hint == "Use a column's display name, as view list VIEW_ID shows it."
     with pytest.raises(CliError) as no_value:
         _edit({"op": "filter", "card": "Region", "values": ["South"]})
     assert "'East', 'West', 'North'" in no_value.value.message
