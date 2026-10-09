@@ -63,12 +63,14 @@ def test_the_server_offers_exactly_these_tools() -> None:
     assert {tool.name for tool in run(mcp_server.list_tools())} == TOOLS
 
 
-def test_a_tool_reaches_the_api_as_the_caller_before_a_workspace_is_known() -> None:
+def test_a_tool_that_builds_a_client_without_a_workspace_still_acts_as_the_caller() -> None:
+    # `list_workspaces` is the one tool that builds its client with no workspace,
+    # because its route is absolute. The caller's token still has to ride on it.
     with a_fake_api() as api, as_caller():
-        api.answer("GET", "/workspaces", {"workspaces": [{"id": WORKSPACE, "name": "Home"}]})
+        api.answer("GET", f"/workspaces/{WORKSPACE}", {"id": WORKSPACE, "name": "Home"})
         listed = call_tool("list_workspaces")
 
-    [request] = api.sent("GET", "/workspaces")
+    [request] = api.sent("GET", f"/workspaces/{WORKSPACE}")
     assert listed["workspaces"] == [{"id": WORKSPACE, "name": "Home"}]
     assert request.headers["authorization"].startswith("Bearer mm_")
 
@@ -136,3 +138,25 @@ def test_tools_that_send_data_out_or_publish_say_to_ask_the_user_first() -> None
     tools = offered()
     for name in ("add_export", "publish_dashboard", "create_automation"):
         assert "Ask the user first" in tools[name].description, name  # type: ignore[attr-defined]
+
+
+def test_every_tool_carries_a_title() -> None:
+    """Claude's connector directory shows a title per tool, and falls back to
+    the bare function name without one. A title is what a user reads when they
+    decide whether to allow a call, so every tool owes one."""
+    register_tools()
+
+    missing = sorted(tool.name for tool in run(mcp_server.list_tools()) if not tool.title)
+
+    assert missing == []
+
+
+def test_a_title_reads_as_a_label_not_a_sentence() -> None:
+    """Titles sit in a list in the client's UI: short, capitalised, no full stop."""
+    register_tools()
+
+    for tool in run(mcp_server.list_tools()):
+        assert tool.title is not None
+        assert tool.title[0].isupper(), tool.name
+        assert not tool.title.endswith("."), tool.name
+        assert len(tool.title) <= 40, tool.name

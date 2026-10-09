@@ -57,7 +57,7 @@ converted before any date operation works.
 }
 
 
-@mcp_server.tool(annotations=READS)
+@mcp_server.tool(title="Get help", annotations=READS)
 async def get_help(topic: str) -> dict[str, JsonValue]:
     """Explain how Mammoth works. Read this before a first transformation.
 

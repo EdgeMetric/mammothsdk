@@ -38,6 +38,7 @@ CONDITION_TYPES = ", ".join(sorted(condition.value for condition in AutomationCo
 
 
 @mcp_server.tool(
+    title="Create automation",
     annotations=DESTRUCTIVE,
     description=(
         "Create an automation in a project and return it. Task types:"
@@ -83,7 +84,7 @@ async def create_automation(
         )
 
 
-@mcp_server.tool(annotations=READS)
+@mcp_server.tool(title="Get automation schema", annotations=READS)
 async def get_automation_schema(
     workspace_id: int, project_id: int, task_type: str
 ) -> dict[str, JsonValue]:
@@ -116,7 +117,7 @@ async def get_automation_schema(
     raise ToolError(f"There is no automation task type {task_type!r}. Task types: {names}.")
 
 
-@mcp_server.tool(annotations=READS)
+@mcp_server.tool(title="List automations", annotations=READS)
 async def list_automations(workspace_id: int, project_id: int) -> dict[str, JsonValue]:
     """List a project's automations.
 
@@ -130,7 +131,7 @@ async def list_automations(workspace_id: int, project_id: int) -> dict[str, Json
     return await read_automations(workspace_id, project_id)
 
 
-@mcp_server.tool(annotations=READS)
+@mcp_server.tool(title="Get automation", annotations=READS)
 async def get_automation(
     workspace_id: int, project_id: int, automation_id: int
 ) -> dict[str, JsonValue]:
@@ -148,7 +149,7 @@ async def get_automation(
     return typing.cast(dict[str, JsonValue], found[AutomationFields.AUTOMATION])
 
 
-@mcp_server.tool(annotations=DESTRUCTIVE)
+@mcp_server.tool(title="Update automation", annotations=DESTRUCTIVE)
 async def update_automation(
     workspace_id: int,
     project_id: int,
@@ -179,7 +180,7 @@ async def update_automation(
     return await get_automation(workspace_id, project_id, automation_id)
 
 
-@mcp_server.tool(annotations=DESTRUCTIVE)
+@mcp_server.tool(title="Delete automation", annotations=DESTRUCTIVE)
 async def delete_automation(
     workspace_id: int, project_id: int, automation_id: int
 ) -> dict[str, JsonValue]:

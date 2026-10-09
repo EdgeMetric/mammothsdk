@@ -44,7 +44,7 @@ from ..upload_tickets import read_ticket
 type DateFormat = Literal["US", "UK"]
 
 
-@mcp_server.tool(annotations=CHANGES)
+@mcp_server.tool(title="Upload file", annotations=CHANGES)
 async def upload_file(
     workspace_id: int, project_id: int, file_name: str, content: str
 ) -> dict[str, JsonValue]:
@@ -105,7 +105,7 @@ async def wait_for_the_file(upload_id: str) -> Record:
         await asyncio.sleep(UPLOAD_POLL_SECONDS)
 
 
-@mcp_server.tool(annotations=READS)
+@mcp_server.tool(title="Check upload", annotations=READS)
 async def check_upload(upload_id: str) -> dict[str, JsonValue]:
     """Wait for the user to upload their files, and report what came of them.
 
@@ -151,7 +151,7 @@ async def check_upload(upload_id: str) -> dict[str, JsonValue]:
     return report
 
 
-@mcp_server.tool(annotations=CHANGES)
+@mcp_server.tool(title="Extract sheets", annotations=CHANGES)
 async def extract_sheets(
     workspace_id: int, project_id: int, file_id: int, sheets: list[str]
 ) -> dict[str, JsonValue]:
@@ -177,7 +177,7 @@ async def extract_sheets(
     )
 
 
-@mcp_server.tool(annotations=CHANGES)
+@mcp_server.tool(title="Unlock file", annotations=CHANGES)
 async def unlock_file(
     workspace_id: int, project_id: int, file_id: int, password: str
 ) -> dict[str, JsonValue]:
@@ -239,7 +239,7 @@ async def patch_file(
     return await wait_for_job(workspace_id, started)
 
 
-@mcp_server.tool(annotations=CHANGES)
+@mcp_server.tool(title="Interpret file", annotations=CHANGES)
 async def interpret_file(
     workspace_id: int,
     project_id: int,
@@ -340,7 +340,7 @@ async def apply_interpretation(ids: dict[str, int], instruction: str) -> None:
         )
 
 
-@mcp_server.tool(annotations=DESTRUCTIVE)
+@mcp_server.tool(title="Review unreadable rows", annotations=DESTRUCTIVE)
 async def review_unreadable_rows(
     workspace_id: int,
     project_id: int,
@@ -454,7 +454,7 @@ def read_unreadable_rows(found: dict[str, JsonValue]) -> dict[str, JsonValue]:
     }
 
 
-@mcp_server.tool(annotations=CHANGES)
+@mcp_server.tool(title="Set date format", annotations=CHANGES)
 async def set_date_format(
     workspace_id: int,
     project_id: int,
@@ -630,7 +630,7 @@ def find_media_type(file_name: str) -> str:
     return media_type
 
 
-@mcp_server.tool(annotations=READS)
+@mcp_server.tool(title="List files", annotations=READS)
 async def list_files(
     workspace_id: int,
     project_id: int,
@@ -660,7 +660,7 @@ async def list_files(
         )
 
 
-@mcp_server.tool(annotations=READS)
+@mcp_server.tool(title="Get file", annotations=READS)
 async def get_file(workspace_id: int, project_id: int, file_id: int) -> dict[str, JsonValue]:
     """Get one file, with its status and what Mammoth read from it.
 
@@ -681,7 +681,7 @@ async def get_file(workspace_id: int, project_id: int, file_id: int) -> dict[str
         )
 
 
-@mcp_server.tool(annotations=DESTRUCTIVE)
+@mcp_server.tool(title="Delete file", annotations=DESTRUCTIVE)
 async def delete_file(workspace_id: int, project_id: int, file_id: int) -> dict[str, JsonValue]:
     """Delete a file from a project.
 

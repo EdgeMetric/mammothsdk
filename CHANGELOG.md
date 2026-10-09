@@ -6,9 +6,12 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-### Changed (mammoth-cli 2.2.72)
+### Added (mammoth-mcp-server 0.2.0)
 
-- The CLI signs in with the built-in `mammoth-cli` OAuth client when the server publishes none; the per-environment client table is gone, and the login menu always offers Browser and Device.
+- A connection reads only the workspace its token belongs to. `list_workspaces` listed the whole account, so a connection fenced to one workspace was told the names of all the others.
+- Every tool carries a title, which is what a client shows the user when it asks them to allow a call.
+- One telemetry event per handshake and per tool call (tool, client, duration, outcome), and never the arguments a tool was called with.
+- A read-only connection may run only the tools whose own annotation says they read. No token carries the scope yet, so nothing changes for an existing connection.
 
 ### Fixed (mammoth-io 0.8.36)
 
