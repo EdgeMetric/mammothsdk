@@ -26,7 +26,9 @@ class MammothTokenVerifier:
 
         The answer carries the resource Mammoth issued the token for, as it
         said it. The bearer check then turns away a token whose resource is
-        not this server, and a token with none.
+        not this server, and a token with none. It carries the project the
+        user picked when they connected too, so a tool can act in it rather
+        than ask, and name it when the model reaches for another.
 
         Raises:
             MammothError: If Mammoth cannot be reached. The caller is then told
@@ -42,7 +44,10 @@ class MammothTokenVerifier:
             client_id=TOKEN_CLIENT,
             scopes=[],
             resource=issued.resource,
-            claims={TokenClaims.WORKSPACE_ID: issued.id},
+            claims={
+                TokenClaims.WORKSPACE_ID: issued.id,
+                TokenClaims.PROJECT_ID: issued.project,
+            },
         )
 
 

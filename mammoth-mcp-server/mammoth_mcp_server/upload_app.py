@@ -30,7 +30,7 @@ from .consts import (
     UploadFields,
     UploadReportFields,
 )
-from .sdk import JsonValue
+from .sdk import JsonValue, check_project, own_project
 from .tool_kinds import CHANGES
 from .upload_tickets import mint_ticket
 
@@ -232,25 +232,32 @@ upload_app.add_html_resource(
 
 
 @upload_app.tool(resource_uri=UPLOAD_APP_URI, annotations=CHANGES)
-async def request_upload(workspace_id: int, project_id: int) -> dict[str, JsonValue]:
+async def request_upload(workspace_id: int, project_id: int | None = None) -> dict[str, JsonValue]:
     """Let the user upload files from their own machine.
 
     Use this for any file you do not already hold as text: a spreadsheet, a
     large CSV, anything binary. The browser sends the file straight to
     Mammoth, so its size and format do not matter and nothing is retyped here.
 
-    Many clients draw an uploader right under this call. Tell the user to drop
-    the file there, then end your turn: the uploader posts a message in the
-    chat once Mammoth has the files. If no uploader shows, give the user
-    `upload_url` to open, and call `check_upload` with `upload_id` once they
-    say it is done.
+    If you can run shell commands and the file is already on this machine,
+    send it yourself rather than making the user open anything, then call
+    `check_upload` with `upload_id`. The link is the whole credential, so the
+    post carries no header of its own, and the field must be named `data`:
+    `curl -F "data=@/path/to/sales.csv" "<upload_url>"`.
+
+    Otherwise, hand the upload to the user and then call `check_upload`, which
+    waits for the file: do not end your turn asking them to tell you when it is
+    in. Many clients draw an uploader right under this call, so tell the user
+    to drop the file there; if none shows, give them `upload_url` to open.
 
     The link acts as the user, is good for one upload, and expires in half an
     hour. Ask for a new one rather than reusing an old one.
 
     Args:
         workspace_id: Which workspace the files land in.
-        project_id: Which project the files land in.
+        project_id: Which project the files land in. Leave it out when the
+            user limited this connection to one project: that is the project
+            the files land in, and no other is allowed.
 
     Returns:
         `upload_url`: the link to show the user. `upload_id`: what to call
@@ -259,7 +266,14 @@ async def request_upload(workspace_id: int, project_id: int) -> dict[str, JsonVa
     caller = get_access_token()
     if caller is None:
         raise ToolError("Sign in again: this call carries no Mammoth user.")
-    upload_id = await mint_ticket(caller, workspace_id, project_id)
+    check_project(project_id)
+    landing = project_id if project_id is not None else own_project()
+    if landing is None:
+        raise ToolError(
+            "Name the project the files land in: this connection may use any"
+            " project in the workspace."
+        )
+    upload_id = await mint_ticket(caller, workspace_id, landing)
     return {
         UploadFields.UPLOAD_URL: f"{MCP_UPLOAD_URL}?{UploadFields.TICKET}={upload_id}",
         UploadFields.UPLOAD_ID: upload_id,

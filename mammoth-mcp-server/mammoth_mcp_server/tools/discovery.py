@@ -5,8 +5,8 @@ of transformation tasks over a dataset. These tools walk that hierarchy; every
 one of them calls the same API route the web app calls, as the signed-in user.
 """
 
-from ..consts import LIST_LIMIT_DEFAULT, ApiFields, ApiPaths
-from ..sdk import JsonValue, build_client, read_sdk_errors, request_api
+from ..consts import LIST_LIMIT_DEFAULT, ApiFields, ApiPaths, BrowseFields, ListFields
+from ..sdk import JsonValue, build_client, own_project, read_sdk_errors, request_api
 from ..server import mcp_server
 from ..tool_kinds import READS
 
@@ -44,11 +44,17 @@ async def list_projects(
 
     A project groups datasets, views and dashboards that belong together.
 
+    A connection the user limited to one project lists that project alone, and
+    that is the project every other tool must name.
+
     Args:
         workspace_id: Which workspace to look in.
         limit: How many projects to return.
         offset: How many projects to skip, for paging.
     """
+    pinned = own_project()
+    if pinned is not None:
+        return await _the_pinned_project(workspace_id, pinned)
     async with build_client(workspace_id) as client:
         return await read_sdk_errors(
             client.browse.projects(
@@ -58,6 +64,41 @@ async def list_projects(
                 offset=offset,
             )
         )
+
+
+async def _the_pinned_project(workspace_id: int, pinned: int) -> dict[str, JsonValue]:
+    """The one project a pinned connection may act in, asked for by its id.
+
+    Paging is why this is not a filtered list: the pinned project sits on
+    whichever page of the workspace's projects its name sorts to, so filtering
+    one page answers "no projects" to a connection that has exactly one. The
+    browse route is the one route that takes a resource id, and the rows it
+    answers with are reshaped into the list this tool has always returned.
+    """
+    async with build_client(workspace_id) as client:
+        found = await request_api(
+            client,
+            "GET",
+            ApiPaths.BROWSE.format(workspace_id=workspace_id),
+            query={
+                ApiFields.FIELDS: ApiFields.MINIMAL,
+                BrowseFields.TYPE: BrowseFields.PROJECT,
+                BrowseFields.IDS: pinned,
+                BrowseFields.LEVEL: BrowseFields.ITSELF,
+            },
+        )
+    return {ListFields.PROJECTS: _as_projects(found.get(BrowseFields.RESOURCES))}
+
+
+def _as_projects(rows: JsonValue) -> JsonValue:
+    """The id and name of each browsed resource, as a project list's rows."""
+    if not isinstance(rows, list):
+        return []
+    return [
+        {ListFields.ID: row.get(ListFields.ID), ListFields.NAME: row.get(ListFields.NAME)}
+        for row in rows
+        if isinstance(row, dict)
+    ]
 
 
 @mcp_server.tool(annotations=READS)
