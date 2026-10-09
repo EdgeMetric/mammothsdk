@@ -777,6 +777,16 @@ def command_for(operation_id: str) -> str | None:
     return OVERRIDES.get(operation_id)
 
 
+# Operations a command with its own handler serves (it picks the route at run time). Kept
+# out of OVERRIDES, which also drives gen_dashboard_v3_sdk.py: an entry there would emit a
+# wrapper named after the command, a second one for each extra operation.
+HANDLER_SERVED: dict[str, str] = {
+    "PowerbiExport": "dashboard.bi-export",
+    "TableauExport": "dashboard.bi-export",
+    "TableauPreflightHandler": "dashboard.bi-preflight",
+}
+
+
 def disposition_for(operation_id: str) -> tuple[str, str | None, str | None, str]:
     """Return (disposition, canonical_command, alias_of, reason)."""
     if operation_id in PROTOCOL_ONLY:
@@ -788,7 +798,7 @@ def disposition_for(operation_id: str) -> tuple[str, str | None, str | None, str
         return "internal_only", None, None, INTERNAL_ONLY[operation_id]
     if operation_id in SERVER_UNAVAILABLE:
         return "server_unavailable", None, None, SERVER_UNAVAILABLE[operation_id]
-    command = OVERRIDES.get(operation_id)
+    command = OVERRIDES.get(operation_id) or HANDLER_SERVED.get(operation_id)
     if command:
         return "command", command, None, "User-initiated production operation."
     return "unmapped", None, None, "No reviewed CLI command or SDK symbol recorded."
