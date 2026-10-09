@@ -26,6 +26,7 @@ from typing import Any, NoReturn
 
 from mammoth.exceptions import MammothAPIError, MammothColumnError
 
+from mammoth_cli import __version__
 from mammoth_cli.context.resolver import ResolvedAuth
 from mammoth_cli.errors.envelope import (
     CODE_INVALID_ARGUMENTS,
@@ -198,6 +199,12 @@ class SdkMammothService:
         # One loop serves every call; threads (view data profile fans out) take turns.
         self._loop_lock = threading.RLock()
         try:
+            # The SDK names itself ``mammoth-io/<v>``; lead with the CLI so
+            # server logs can tell a CLI call from a direct SDK call.
+            sdk_agent = self._client.session.headers.get("User-Agent", "")
+            self._client.session.headers["User-Agent"] = (
+                f"mammoth-cli/{__version__} {sdk_agent}".strip()
+            )
             if auth.headers:
                 # After construction: the client sets its credential headers in
                 # ``__init__``, and a forwarded session must replace them.

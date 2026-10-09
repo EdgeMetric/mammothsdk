@@ -1,8 +1,8 @@
 """Authentication and project-context resolution precedence.
 
 Authentication requires a login: credentials resolve from an explicit login
-(handed in by ``auth login``) or from a saved profile. There is no environment
-credential path.
+(handed in by ``auth login``) or from a saved profile. An environment
+token (MAMMOTH_API_TOKEN) outranks both, for CI.
 """
 
 from __future__ import annotations
@@ -105,3 +105,16 @@ def test_resolve_project_falls_back_to_profile() -> None:
 
 def test_resolve_project_none_when_nothing_set() -> None:
     assert resolve_project(_invocation(), None) is None
+
+
+def test_resolve_auth_uses_the_ci_token_from_the_environment(
+    isolated_cli_config: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A CI job with only MAMMOTH_API_TOKEN set authenticates without a saved login."""
+    monkeypatch.setenv("MAMMOTH_API_TOKEN", "mm_ci_token")
+    monkeypatch.setenv("MAMMOTH_SERVER_PREFIX", "release")
+    monkeypatch.setattr("mammoth_cli.context.resolver.resolve_token_workspace", lambda *_a, **_k: 9)
+    resolved = resolve_auth(_invocation())
+    assert resolved.api_token == "mm_ci_token"
+    assert resolved.workspace_id == 9
+    assert resolved.base_url == "https://release.mammoth.io/api/v2"

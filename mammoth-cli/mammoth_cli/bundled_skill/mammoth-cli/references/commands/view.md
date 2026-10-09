@@ -266,7 +266,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth view data get`. Exact input fields: `mammoth schema get view.data.get`.
 
-Example: `mammoth view data get 123 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth view data get 123 456`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ViewDataGetResult`; mutation `read`, confirmation `none`, wait policy `always_wait`.
 

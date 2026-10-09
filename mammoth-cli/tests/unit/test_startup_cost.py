@@ -344,3 +344,10 @@ def test_group_help_does_not_import_the_sdk_models() -> None:
     )
     done = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, check=False)
     assert "LOADED=False" in done.stderr, done.stderr[-300:]
+
+
+def test_agent_group_is_hidden_from_root_help_but_still_runs() -> None:
+    root = make_runner().invoke(["--help"])
+    assert "skill" in root.output
+    assert "Work with Mammoth agent sessions" not in root.output
+    assert "Work with Mammoth agent sessions" in make_runner().invoke(["agent", "--help"]).output

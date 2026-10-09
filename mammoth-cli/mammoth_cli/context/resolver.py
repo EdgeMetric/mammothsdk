@@ -3,8 +3,8 @@
 Authentication requires a login. Credentials come from an explicit secure
 input to the current command (a prompt or a permission-checked ``--input``
 file), or from the selected or ``--profile`` profile's saved credentials.
-There is no environment-variable credential path: ``mammoth auth login`` is the
-only way to establish credentials. The API endpoint falls back to the ``app``
+For CI, an ``mm_...`` token in ``MAMMOTH_API_TOKEN`` (server prefix in
+``MAMMOTH_SERVER_PREFIX``) is used instead of a profile. The API endpoint falls back to the ``app``
 default when a profile supplies no server prefix. Project context resolves
 separately: ``--project`` overrides the saved profile project id, which
 overrides no project at all.
@@ -12,6 +12,7 @@ overrides no project at all.
 
 from __future__ import annotations
 
+import os
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 
@@ -158,6 +159,20 @@ def _endpoint(server_prefix: str | None) -> str:
     return resolve_base_url(server_prefix)
 
 
+#: Environment variables a CI job sets instead of running ``mammoth auth login``.
+API_TOKEN_ENV = "MAMMOTH_API_TOKEN"  # noqa: S105 -- the variable name, not a secret
+SERVER_PREFIX_ENV = "MAMMOTH_SERVER_PREFIX"
+
+
+def _env_token_login() -> ExplicitLogin | None:
+    """The ``mm_...`` token in ``MAMMOTH_API_TOKEN`` as a login, or None when unset."""
+    token = os.environ.get(API_TOKEN_ENV, "").strip()
+    if not token:
+        return None
+    prefix = os.environ.get(SERVER_PREFIX_ENV, "").strip() or None
+    return ExplicitLogin(api_key=None, api_secret=None, server_prefix=prefix, api_token=token)
+
+
 def resolve_auth(
     invocation: Invocation,
     explicit_login: ExplicitLogin | None = None,
@@ -167,8 +182,8 @@ def resolve_auth(
     Credentials come from an explicit login (a secure prompt or ``--input``
     document handed to :func:`resolve_auth` by ``auth login``, or the login of
     the current embedded call, :mod:`mammoth_cli.runtime.embedded`), otherwise from
-    the selected or ``--profile`` saved profile. There is no environment
-    credential path; ``mammoth auth login`` is the only way to authenticate.
+    the selected or ``--profile`` saved profile. A ``MAMMOTH_API_TOKEN`` (and optional
+    ``MAMMOTH_SERVER_PREFIX``) in the environment outranks a saved profile, for CI.
 
     Args:
         invocation: The current command's resolved global options.
@@ -184,6 +199,8 @@ def resolve_auth(
     """
     if explicit_login is None and (call := embedded.current()) is not None:
         explicit_login = call.login
+    if explicit_login is None:
+        explicit_login = _env_token_login()
     if explicit_login is not None:
         base_url = _endpoint(explicit_login.server_prefix)
         return ResolvedAuth(

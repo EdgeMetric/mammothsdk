@@ -20,6 +20,29 @@ PHRASINGS = [
     ("sum revenue by region without editing the view", "view.data.aggregate"),
     ("join two tables", "view.transform.join"),
     ("remove duplicate rows", "view.transform.discard-duplicates"),
+    ("filter rows where region is West", "view.transform.filter"),
+    ("keep only rows from last year", "view.transform.filter"),
+    ("rename a column", "view.transform.rename-columns"),
+    ("sort the table by date newest first", "view.transform.sort"),
+    ("split a full name column into first and last name", "view.transform.split"),
+    ("remove a column i do not need", "view.transform.delete-columns"),
+    ("fill empty cells with zero", "view.transform.fill-missing"),
+    ("pivot months into columns", "view.transform.pivot"),
+    ("upload a csv file", "file.upload"),
+    ("export the view as a csv", "view.export.csv"),
+    ("list my projects", "project.list"),
+    ("delete a dataset", "dataset.delete"),
+    ("schedule a daily refresh", "automation.create"),
+    ("make a dashboard from this data", "dashboard.v3.generate"),
+]
+
+#: Goals the ranking misses today. ``strict`` xfail: the day one starts ranking, this
+#: fails and the goal moves into ``PHRASINGS`` above.
+KNOWN_MISSES = [
+    ("show me the first rows of a view", "view.data.get"),
+    ("check who i am signed in as", "auth.status"),
+    ("undo a transform step", "view.task.delete"),
+    ("count rows per category", "view.data.aggregate"),
 ]
 
 
@@ -31,4 +54,10 @@ def _top_ids(goal: str) -> list[str]:
 
 @pytest.mark.parametrize(("goal", "expected"), PHRASINGS)
 def test_a_user_phrasing_reaches_its_command(goal: str, expected: str) -> None:
+    assert expected in _top_ids(goal)
+
+
+@pytest.mark.xfail(strict=True, reason="schema find does not rank this goal in its top three yet")
+@pytest.mark.parametrize(("goal", "expected"), KNOWN_MISSES)
+def test_a_known_miss_is_tracked(goal: str, expected: str) -> None:
     assert expected in _top_ids(goal)
