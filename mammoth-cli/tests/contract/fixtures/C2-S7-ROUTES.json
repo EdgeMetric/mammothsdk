@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
   "task": "C2/S7 remaining-families",
-  "route_count": 170,
+  "route_count": 177,
   "families": {
     "activity": 2,
-    "agent": 44,
+    "agent": 51,
     "ai": 4,
     "automation": 8,
     "billing": 25,
@@ -1073,6 +1073,103 @@
       }
     },
     {
+      "command_id": "agent.message.set-request-kind",
+      "operation_id": "CorrectAgentRequestKind",
+      "sdk_symbol": "mammoth.api.agents.AgentsAPI.message_set_request_kind",
+      "field_destinations": {
+        "message_id": {
+          "source": "positional",
+          "destination": "message_id"
+        },
+        "request_kind": {
+          "source": "input",
+          "destination": "request_kind",
+          "wire": "sdk_argument"
+        }
+      },
+      "context_destinations": {
+        "session_id": {
+          "source": "session_option",
+          "destination": "session_id"
+        }
+      },
+      "wire": {
+        "method": "PATCH",
+        "path": "/agents/sessions/{session_id}/messages/{message_id}/request-kind",
+        "body": "json:UpdateRequestKindRequest",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "agent.plan.edit-proposal",
+      "operation_id": "EditAgentPlanProposal",
+      "sdk_symbol": "mammoth.api.agents.AgentsAPI.plan_edit_proposal",
+      "field_destinations": {
+        "plan_id": {
+          "source": "input",
+          "destination": "plan_id",
+          "wire": "sdk_argument"
+        },
+        "action": {
+          "source": "input",
+          "destination": "action",
+          "wire": "sdk_argument"
+        },
+        "key": {
+          "source": "input",
+          "destination": "key",
+          "wire": "sdk_argument"
+        },
+        "name": {
+          "source": "input",
+          "destination": "name",
+          "wire": "sdk_argument"
+        }
+      },
+      "context_destinations": {
+        "session_id": {
+          "source": "session_option",
+          "destination": "session_id"
+        }
+      },
+      "wire": {
+        "method": "PATCH",
+        "path": "/agents/sessions/{session_id}/plan/proposal",
+        "body": "json:EditProposalRequest",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
       "command_id": "agent.projects.clear",
       "operation_id": "UpdateAgentDefinition",
       "sdk_symbol": "mammoth.api.agent_definitions.AgentDefinitionsAPI.update",
@@ -1304,6 +1401,128 @@
       }
     },
     {
+      "command_id": "agent.run.instance.list",
+      "operation_id": "ListAgentRunInstances",
+      "sdk_symbol": "mammoth.api.agents.AgentsAPI.run_instances_list",
+      "field_destinations": {
+        "run_id": {
+          "source": "positional",
+          "destination": "run_id"
+        }
+      },
+      "context_destinations": {
+        "session_id": {
+          "source": "session_option",
+          "destination": "session_id"
+        }
+      },
+      "wire": {
+        "method": "GET",
+        "path": "/agents/sessions/{session_id}/runs/{run_id}/instances",
+        "body": "none",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "agent.run.instance.messages",
+      "operation_id": "ListAgentInstanceMessages",
+      "sdk_symbol": "mammoth.api.agents.AgentsAPI.run_instance_messages",
+      "field_destinations": {
+        "run_id": {
+          "source": "positional",
+          "destination": "run_id"
+        },
+        "instance_id": {
+          "source": "positional",
+          "destination": "instance_id"
+        }
+      },
+      "context_destinations": {
+        "session_id": {
+          "source": "session_option",
+          "destination": "session_id"
+        }
+      },
+      "wire": {
+        "method": "GET",
+        "path": "/agents/sessions/{session_id}/runs/{run_id}/instances/{instance_id}/messages",
+        "body": "none",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "agent.run.instance.transcript",
+      "operation_id": "GetAgentInstanceTranscript",
+      "sdk_symbol": "mammoth.api.agents.AgentsAPI.run_instance_transcript",
+      "field_destinations": {
+        "run_id": {
+          "source": "positional",
+          "destination": "run_id"
+        },
+        "instance_id": {
+          "source": "positional",
+          "destination": "instance_id"
+        }
+      },
+      "context_destinations": {
+        "session_id": {
+          "source": "session_option",
+          "destination": "session_id"
+        }
+      },
+      "wire": {
+        "method": "GET",
+        "path": "/agents/sessions/{session_id}/runs/{run_id}/instances/{instance_id}/transcript",
+        "body": "none",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
       "command_id": "agent.run.list",
       "operation_id": "ListAgentSessionRuns",
       "sdk_symbol": "mammoth.api.agents.AgentsAPI.run_list",
@@ -1413,6 +1632,44 @@
       }
     },
     {
+      "command_id": "agent.run.retry",
+      "operation_id": "RetryAgentRun",
+      "sdk_symbol": "mammoth.api.agents.AgentsAPI.run_retry",
+      "field_destinations": {
+        "run_id": {
+          "source": "positional",
+          "destination": "run_id"
+        }
+      },
+      "context_destinations": {
+        "session_id": {
+          "source": "session_option",
+          "destination": "session_id"
+        }
+      },
+      "wire": {
+        "method": "POST",
+        "path": "/agents/sessions/{session_id}/runs/{run_id}/retry",
+        "body": "none",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
       "command_id": "agent.run.status",
       "operation_id": "GetAgentSessionRun",
       "sdk_symbol": "mammoth.api.agents.AgentsAPI.run_status",
@@ -1464,6 +1721,59 @@
       "wire": {
         "method": "POST",
         "path": "/agents/sessions/{session_id}/runs/{run_id}/stop",
+        "body": "none",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "agent.run.units.list",
+      "operation_id": "ListAgentRunUnits",
+      "sdk_symbol": "mammoth.api.agents.AgentsAPI.run_units_list",
+      "field_destinations": {
+        "run_id": {
+          "source": "positional",
+          "destination": "run_id"
+        },
+        "step": {
+          "source": "input",
+          "destination": "step",
+          "wire": "sdk_argument"
+        },
+        "state": {
+          "source": "input",
+          "destination": "state",
+          "wire": "sdk_argument"
+        },
+        "cursor": {
+          "source": "input",
+          "destination": "cursor",
+          "wire": "sdk_argument"
+        }
+      },
+      "context_destinations": {
+        "session_id": {
+          "source": "session_option",
+          "destination": "session_id"
+        }
+      },
+      "wire": {
+        "method": "GET",
+        "path": "/agents/sessions/{session_id}/runs/{run_id}/units",
         "body": "none",
         "checks": [
           "method",

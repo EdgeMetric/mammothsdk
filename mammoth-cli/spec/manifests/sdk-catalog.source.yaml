@@ -523,6 +523,55 @@ sdk_methods:
   wait_policy: not_async
   pagination_policy: none
   openapi_operation_ids: []
+- sdk_symbol: mammoth.api.agents.AgentsAPI.run_units_list
+  canonical_command: agent.run.units.list
+  alias_of: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.agents.AgentsAPI.run_instances_list
+  canonical_command: agent.run.instance.list
+  alias_of: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.agents.AgentsAPI.run_instance_messages
+  canonical_command: agent.run.instance.messages
+  alias_of: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.agents.AgentsAPI.run_instance_transcript
+  canonical_command: agent.run.instance.transcript
+  alias_of: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.agents.AgentsAPI.run_retry
+  canonical_command: agent.run.retry
+  alias_of: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.agents.AgentsAPI.message_set_request_kind
+  canonical_command: agent.message.set-request-kind
+  alias_of: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.agents.AgentsAPI.plan_edit_proposal
+  canonical_command: agent.plan.edit-proposal
+  alias_of: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids: []
 - sdk_symbol: mammoth.api.agents.AgentsAPI.session_delete
   canonical_command: agent.session.delete
   alias_of: null

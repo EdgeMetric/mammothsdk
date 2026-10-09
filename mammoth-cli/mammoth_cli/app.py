@@ -112,6 +112,8 @@ _AGENT_SUBGROUP_DESCRIPTIONS = {
     "feedback": "Read the feedback an agent definition has received.",
     "goldens": "Manage and run the golden cases an agent definition is proven against.",
     "memory": "Manage the facts an agent definition has learned, per project.",
+    "message": "Correct the request kind of a reply in an agent chat.",
+    "plan": "Edit the waiting workflow proposal of an agent chat plan.",
     "projects": "Set or clear the projects an agent definition works in.",
     "run": "Inspect and control an agent's runs.",
     "scratch": "Read, write and clear an agent definition's scratchpad notes per project.",

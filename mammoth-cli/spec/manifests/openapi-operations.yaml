@@ -198,11 +198,11 @@ operations:
   request_schema: UpdateRequestKindRequest
   response_schemas: []
   deprecated: false
-  disposition: unmapped
-  disposition_reason: No reviewed CLI command or SDK symbol recorded.
-  canonical_command: null
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: agent.message.set-request-kind
   alias_of: null
-  sdk_symbol: null
+  sdk_symbol: mammoth.api.agents.AgentsAPI.message_set_request_kind
   reviewed_by: primary
 - identity: POST /agents/sessions/{session_id}/notify-job
   method: POST
@@ -244,11 +244,11 @@ operations:
   response_schemas:
   - EditProposalResponse
   deprecated: false
-  disposition: unmapped
-  disposition_reason: No reviewed CLI command or SDK symbol recorded.
-  canonical_command: null
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: agent.plan.edit-proposal
   alias_of: null
-  sdk_symbol: null
+  sdk_symbol: mammoth.api.agents.AgentsAPI.plan_edit_proposal
   reviewed_by: primary
 - identity: GET /agents/sessions/{session_id}/run
   method: GET
@@ -336,11 +336,11 @@ operations:
   response_schemas:
   - AgentInstancesResponse
   deprecated: false
-  disposition: unmapped
-  disposition_reason: No reviewed CLI command or SDK symbol recorded.
-  canonical_command: null
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: agent.run.instance.list
   alias_of: null
-  sdk_symbol: null
+  sdk_symbol: mammoth.api.agents.AgentsAPI.run_instances_list
   reviewed_by: primary
 - identity: GET /agents/sessions/{session_id}/runs/{run_id}/instances/{instance_id}/messages
   method: GET
@@ -359,11 +359,11 @@ operations:
   response_schemas:
   - AgentMessagesResponse
   deprecated: false
-  disposition: unmapped
-  disposition_reason: No reviewed CLI command or SDK symbol recorded.
-  canonical_command: null
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: agent.run.instance.messages
   alias_of: null
-  sdk_symbol: null
+  sdk_symbol: mammoth.api.agents.AgentsAPI.run_instance_messages
   reviewed_by: primary
 - identity: GET /agents/sessions/{session_id}/runs/{run_id}/instances/{instance_id}/transcript
   method: GET
@@ -382,11 +382,11 @@ operations:
   response_schemas:
   - AgentTranscriptResponse
   deprecated: false
-  disposition: unmapped
-  disposition_reason: No reviewed CLI command or SDK symbol recorded.
-  canonical_command: null
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: agent.run.instance.transcript
   alias_of: null
-  sdk_symbol: null
+  sdk_symbol: mammoth.api.agents.AgentsAPI.run_instance_transcript
   reviewed_by: primary
 - identity: POST /agents/sessions/{session_id}/runs/{run_id}/pause
   method: POST
@@ -451,11 +451,11 @@ operations:
   response_schemas:
   - AgentRunResponse
   deprecated: false
-  disposition: unmapped
-  disposition_reason: No reviewed CLI command or SDK symbol recorded.
-  canonical_command: null
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: agent.run.retry
   alias_of: null
-  sdk_symbol: null
+  sdk_symbol: mammoth.api.agents.AgentsAPI.run_retry
   reviewed_by: primary
 - identity: POST /agents/sessions/{session_id}/runs/{run_id}/stop
   method: POST
@@ -497,11 +497,11 @@ operations:
   response_schemas:
   - AgentRunUnitsResponse
   deprecated: false
-  disposition: unmapped
-  disposition_reason: No reviewed CLI command or SDK symbol recorded.
-  canonical_command: null
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: agent.run.units.list
   alias_of: null
-  sdk_symbol: null
+  sdk_symbol: mammoth.api.agents.AgentsAPI.run_units_list
   reviewed_by: primary
 - identity: POST /agents/sessions/{session_id}/runs/{run_id}/units
   method: POST

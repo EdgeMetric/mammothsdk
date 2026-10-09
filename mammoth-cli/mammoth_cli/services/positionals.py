@@ -267,6 +267,43 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
             help="ID of the turn to stop (from the chat's events or agent session messages).",
         ),
     ),
+    "agent.plan.edit-proposal": (),
+    "agent.message.set-request-kind": (
+        PositionalSpec(
+            name="message_id",
+            type=str,
+            required=True,
+            help="ID of the reply message (from agent session messages).",
+        ),
+    ),
+    **{
+        f"agent.run.{verb}": (
+            PositionalSpec(
+                name="run_id",
+                type=str,
+                required=True,
+                help="ID of the run (from agent run status or agent run list).",
+            ),
+        )
+        for verb in ("retry", "units.list", "instance.list")
+    },
+    **{
+        f"agent.run.instance.{verb}": (
+            PositionalSpec(
+                name="run_id",
+                type=str,
+                required=True,
+                help="ID of the run (from agent run status or agent run list).",
+            ),
+            PositionalSpec(
+                name="instance_id",
+                type=str,
+                required=True,
+                help="ID of the agent (from agent run instance list).",
+            ),
+        )
+        for verb in ("messages", "transcript")
+    },
     "agent.charter.restore": (
         PositionalSpec(
             name="agent_key",

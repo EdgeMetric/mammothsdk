@@ -20,6 +20,13 @@ _HANDLER_OWNED_FIELDS: dict[str, frozenset[str]] = {
             "run.stop",
             "run.extend",
             "run.units.set",
+            "run.units.list",
+            "run.retry",
+            "run.instance.list",
+            "run.instance.messages",
+            "run.instance.transcript",
+            "message.set-request-kind",
+            "plan.edit-proposal",
             "turn.cancel",
         )
     },

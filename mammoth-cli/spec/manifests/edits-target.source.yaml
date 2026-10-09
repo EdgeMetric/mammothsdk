@@ -20,12 +20,15 @@ edits_target_commands:
 - agent.goldens.run
 - agent.memory.add
 - agent.memory.remove
+- agent.message.set-request-kind
+- agent.plan.edit-proposal
 - agent.projects.clear
 - agent.projects.set
 - agent.publish
 - agent.run.extend
 - agent.run.pause
 - agent.run.resume
+- agent.run.retry
 - agent.run.stop
 - agent.scratch.clear
 - agent.scratch.set

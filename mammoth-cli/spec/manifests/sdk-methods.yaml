@@ -1,5 +1,5 @@
 manifest_schema_version: 1
-method_count: 742
+method_count: 749
 generator_version: '1'
 methods:
 - sdk_symbol: mammoth._mixins._advanced_ops.AdvancedOpsMixin.add_sql
@@ -844,6 +844,32 @@ methods:
   pagination_policy: null
   secret_fields: []
   reviewed_by: primary
+- sdk_symbol: mammoth.api.agents.AgentsAPI.message_set_request_kind
+  implementation_origin: mammoth.api.agents.AgentsAPI.message_set_request_kind
+  signature: 'message_set_request_kind(self, session_id: ''str'', message_id: ''str'', request_kind: ''str'')
+    -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: agent.message.set-request-kind
+  alias_of: null
+  no_command_reason: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.agents.AgentsAPI.plan_edit_proposal
+  implementation_origin: mammoth.api.agents.AgentsAPI.plan_edit_proposal
+  signature: 'plan_edit_proposal(self, session_id: ''str'', plan_id: ''str'', action: ''str'', key: ''str'',
+    name: ''str | None'' = None) -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: agent.plan.edit-proposal
+  alias_of: null
+  no_command_reason: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
 - sdk_symbol: mammoth.api.agents.AgentsAPI.run_extend
   implementation_origin: mammoth.api.agents.AgentsAPI.run_extend
   signature: 'run_extend(self, session_id: ''str'', run_id: ''str'') -> ''dict[str, Any]'''
@@ -852,6 +878,44 @@ methods:
   alias_of: null
   no_command_reason: null
   mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.agents.AgentsAPI.run_instance_messages
+  implementation_origin: mammoth.api.agents.AgentsAPI.run_instance_messages
+  signature: 'run_instance_messages(self, session_id: ''str'', run_id: ''str'', instance_id: ''str'')
+    -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: agent.run.instance.messages
+  alias_of: null
+  no_command_reason: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.agents.AgentsAPI.run_instance_transcript
+  implementation_origin: mammoth.api.agents.AgentsAPI.run_instance_transcript
+  signature: 'run_instance_transcript(self, session_id: ''str'', run_id: ''str'', instance_id: ''str'')
+    -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: agent.run.instance.transcript
+  alias_of: null
+  no_command_reason: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.agents.AgentsAPI.run_instances_list
+  implementation_origin: mammoth.api.agents.AgentsAPI.run_instances_list
+  signature: 'run_instances_list(self, session_id: ''str'', run_id: ''str'') -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: agent.run.instance.list
+  alias_of: null
+  no_command_reason: null
+  mutation_class: read
   wait_policy: not_async
   pagination_policy: none
   secret_fields: []
@@ -892,6 +956,18 @@ methods:
   pagination_policy: none
   secret_fields: []
   reviewed_by: primary
+- sdk_symbol: mammoth.api.agents.AgentsAPI.run_retry
+  implementation_origin: mammoth.api.agents.AgentsAPI.run_retry
+  signature: 'run_retry(self, session_id: ''str'', run_id: ''str'') -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: agent.run.retry
+  alias_of: null
+  no_command_reason: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
 - sdk_symbol: mammoth.api.agents.AgentsAPI.run_status
   implementation_origin: mammoth.api.agents.AgentsAPI.run_status
   signature: 'run_status(self, session_id: ''str'') -> ''dict[str, Any]'''
@@ -912,6 +988,19 @@ methods:
   alias_of: null
   no_command_reason: null
   mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.agents.AgentsAPI.run_units_list
+  implementation_origin: mammoth.api.agents.AgentsAPI.run_units_list
+  signature: 'run_units_list(self, session_id: ''str'', run_id: ''str'', step: ''int | None'' = None,
+    state: ''str | None'' = None, cursor: ''int | None'' = None) -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: agent.run.units.list
+  alias_of: null
+  no_command_reason: null
+  mutation_class: read
   wait_policy: not_async
   pagination_policy: none
   secret_fields: []

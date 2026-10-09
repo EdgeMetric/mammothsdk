@@ -708,5 +708,12 @@
   "workspace.user.remove": "Remove a single user from the workspace. Prompt or '--yes' required.",
   "workspace.user.remove-batch": "Remove several users and/or pending invites. Prompt or '--yes' required.",
   "workspace.user.update": "Update a user's role. High-impact: '--yes --confirm USER_ID'.",
-  "workspace.user.update-batch": "Update workspace users via JSON-patch operations. High-impact: '--yes --confirm WS'."
+  "workspace.user.update-batch": "Update workspace users via JSON-patch operations. High-impact: '--yes --confirm WS'.",
+  "agent.run.instance.list": "List the agents of one run: the main agent, its workers and recon helpers.",
+  "agent.run.instance.messages": "List the messages one agent of a run sent or received.",
+  "agent.run.instance.transcript": "Show the model messages of one agent of a run, credentials redacted.",
+  "agent.run.retry": "Retry one failed or stopped run as a new run. Starts paid model work; prompt or '--yes' required.",
+  "agent.run.units.list": "List the units one run's steps do, one page at a time.",
+  "agent.message.set-request-kind": "Correct the request kind a reply answered. Creator only.",
+  "agent.plan.edit-proposal": "Rename or remove one item of a plan's waiting workflow proposal. Creator only."
 }
