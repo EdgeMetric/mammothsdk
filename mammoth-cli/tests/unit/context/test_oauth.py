@@ -212,22 +212,21 @@ def fresh_metadata_cache() -> None:
     oauth.published_client_id.cache_clear()
 
 
-def test_koyal_publishes_its_client_id_and_it_matches_the_table(fresh_metadata_cache: None) -> None:
+def test_koyal_signs_in_with_what_it_publishes_else_the_builtin_client(
+    fresh_metadata_cache: None,
+) -> None:
     published = oauth.published_client_id("koyal")
-    assert published == oauth.OAUTH_CLIENT_IDS["koyal"]
-    assert oauth.has_client_id("koyal")
-    assert oauth.client_id_for("koyal") == published
+    assert oauth.client_id_for("koyal") == (published or oauth.BUILTIN_CLIENT_ID)
 
 
-def test_a_server_that_answers_no_metadata_falls_back(fresh_metadata_cache: None) -> None:
+def test_a_server_that_answers_no_metadata_uses_the_builtin_client(
+    fresh_metadata_cache: None,
+) -> None:
     # www.mammoth.io is a real host that has no OAuth metadata (it redirects).
     assert oauth.published_client_id("www") is None
-    assert not oauth.has_client_id("www")
-    with pytest.raises(CliError) as caught:
-        oauth.client_id_for("www")
-    assert caught.value.code == oauth.CODE_OAUTH_UNAVAILABLE
+    assert oauth.client_id_for("www") == "mammoth-cli"
 
 
-def test_an_unreachable_server_falls_back(fresh_metadata_cache: None) -> None:
+def test_an_unreachable_server_uses_the_builtin_client(fresh_metadata_cache: None) -> None:
     assert oauth.published_client_id("no-such-env-for-mammoth-cli-test") is None
-    assert not oauth.has_client_id("no-such-env-for-mammoth-cli-test")
+    assert oauth.client_id_for("no-such-env-for-mammoth-cli-test") == "mammoth-cli"

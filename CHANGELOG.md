@@ -6,6 +6,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed (mammoth-cli 2.2.72)
+
+- The CLI signs in with the built-in `mammoth-cli` OAuth client when the server publishes none; the per-environment client table is gone, and the login menu always offers Browser and Device.
+
 ### Fixed (mammoth-io 0.8.36)
 
 - The transport log redacts the path segment after `clientapps`, so an app key no longer reaches the log line or its structured `path` field.

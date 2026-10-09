@@ -23,7 +23,7 @@ import typer
 from pydantic import ValidationError
 
 from mammoth_cli.context import credentials, oauth, profiles, resolver
-from mammoth_cli.context.endpoint import DEFAULT_SERVER_PREFIX, resolve_base_url
+from mammoth_cli.context.endpoint import resolve_base_url
 from mammoth_cli.context.resolver import ResolvedAuth, resolve_auth
 from mammoth_cli.contracts.auth import LoginRequest
 from mammoth_cli.errors.envelope import (
@@ -306,13 +306,9 @@ def _choose_method(
         return method
     if invocation.input_file is not None or blockers:
         return "token"
-    available = oauth.has_client_id(server_prefix)
-    prefix = server_prefix if server_prefix is not None else DEFAULT_SERVER_PREFIX
-    browser_note = "recommended" if available else f"(not yet available on {prefix})"
-    device_note = "no browser on this machine" if available else browser_note
     typer.echo("How do you want to sign in?", err=True)
-    typer.echo(f"  1) Browser (OAuth)      {browser_note}", err=True)
-    typer.echo(f"  2) Device code          {device_note}", err=True)
+    typer.echo("  1) Browser (OAuth)      recommended", err=True)
+    typer.echo("  2) Device code          no browser on this machine", err=True)
     typer.echo("  3) Paste an API token   for CI and scripts", err=True)
     if sys.stdin.isatty():
         return _choose_by_keypress()
