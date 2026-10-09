@@ -29,6 +29,9 @@ PHRASINGS = [
     ("who opened my dashboard", "dashboard.engagement.get"),
     ("remind people to look at the dashboard", "dashboard.engagement.remind"),
     ("use my own data on a template", "dashboard.own-data.start"),
+    ("disconnect an app I authorised", "auth.connected-apps.revoke"),
+    ("which workspace is this token for", "workspace.current"),
+    ("register an OAuth client", "workspace.oauth-client.create"),
 ]
 
 

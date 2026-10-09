@@ -37,6 +37,7 @@ edits_target_commands:
 - annotation.comment.add
 - annotation.delete
 - annotation.update
+- auth.connected-apps.revoke
 - automation.delete
 - automation.restore
 - automation.trash
@@ -284,6 +285,8 @@ edits_target_commands:
 - workspace.invite.delete
 - workspace.invite.revoke
 - workspace.invite.update-role
+- workspace.oauth-client.delete
+- workspace.oauth-client.revoke-grant
 - workspace.reactivate
 - workspace.segment.update
 - workspace.update

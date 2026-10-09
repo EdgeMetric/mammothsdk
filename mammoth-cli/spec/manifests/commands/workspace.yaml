@@ -151,6 +151,37 @@ commands:
     ids:
       workspace_id: result.id
     kind: object
+- command_id: workspace.current
+  command_path: workspace current
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetCurrentWorkspace
+  positionals: []
+  sdk_symbol: mammoth.api.workspace.WorkspaceAPI.current
+  sdk_conversion: Call mammoth.api.workspace.WorkspaceAPI.current with validated request fields.
+  request_model: WorkspaceCurrentRequest
+  result_model: WorkspaceCurrentResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Read-only; checked live on the koyal profile, not in the automated live suite.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth workspace current --help
+  agent_example: mammoth workspace current
+  unit_tests:
+  - test_the_manifest_gates_each_command_by_what_it_does
+  contract_tests:
+  - test_the_command_is_registered_and_reachable_from_the_cli
+  draft_test: null
+  undo_test: null
+  known_restrictions: Read-only. The workspace this token acts in, and the server (resource) and project it is fenced to.
+  reviewed_by: primary
 - command_id: workspace.delete
   command_path: workspace delete
   disposition: command
@@ -505,6 +536,182 @@ commands:
     ids:
       job_id: result.job.id
     kind: delivery
+- command_id: workspace.oauth-client.create
+  command_path: workspace oauth-client create
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - CreateOauthClient
+  positionals:
+  - name: workspace_id
+    type: int
+    required: false
+    metavar: WORKSPACE_ID
+    falls_back_to_field: null
+    help: "ID of the workspace to act on; defaults to the client's own workspace."
+  sdk_symbol: mammoth.api.oauth_clients.OAuthClientsAPI.create
+  sdk_conversion: Call mammoth.api.oauth_clients.OAuthClientsAPI.create with validated request fields.
+  request_model: WorkspaceOauthClientCreateRequest
+  result_model: WorkspaceOauthClientCreateResult
+  mutation_class: high_impact
+  edits_target: false
+  confirmation: yes_always
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact access change without a disposable fixture; checked by dry-run only.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth workspace oauth-client create --help
+  agent_example: "mammoth workspace oauth-client create 123 --input '{\"name\": \"Revenue report\", \"redirect_uris\": [\"https://example.com/data.csv\"]}'"
+  unit_tests:
+  - test_oauth_clients_create_sends_only_the_fields_given
+  contract_tests:
+  - test_the_command_is_registered_and_reachable_from_the_cli
+  draft_test: null
+  undo_test: null
+  known_restrictions: "Registers an OAuth client that can sign users in. A confidential client's client_secret is returned exactly once; it is never printed in reports or logs. Send name and redirect_uris through --input."
+  reviewed_by: primary
+  readback:
+    command: workspace.oauth-client.list
+    ids: {}
+    kind: object
+- command_id: workspace.oauth-client.delete
+  command_path: workspace oauth-client delete
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - DeleteOauthClient
+  positionals:
+  - name: oauth_client_id
+    type: int
+    required: true
+    metavar: OAUTH_CLIENT_ID
+    falls_back_to_field: null
+    help: ID of the OAuth client.
+  - name: workspace_id
+    type: int
+    required: false
+    metavar: WORKSPACE_ID
+    falls_back_to_field: null
+    help: "ID of the workspace to act on; defaults to the client's own workspace."
+  sdk_symbol: mammoth.api.oauth_clients.OAuthClientsAPI.delete
+  sdk_conversion: Call mammoth.api.oauth_clients.OAuthClientsAPI.delete with validated request fields.
+  request_model: WorkspaceOauthClientDeleteRequest
+  result_model: WorkspaceOauthClientDeleteResult
+  mutation_class: high_impact
+  edits_target: true
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact access change without a disposable fixture; checked by dry-run only.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth workspace oauth-client delete OAUTH_CLIENT_ID --help
+  agent_example: mammoth workspace oauth-client delete 123 123
+  unit_tests:
+  - test_oauth_clients_delete_names_the_client_in_the_workspace_path
+  contract_tests:
+  - test_the_command_is_registered_and_reachable_from_the_cli
+  draft_test: null
+  undo_test: null
+  known_restrictions: Exact OAuth client ID confirmation (--yes --confirm ID). Deleting the client stops its grants working.
+  reviewed_by: primary
+  readback:
+    command: workspace.oauth-client.list
+    ids: {}
+    kind: object
+- command_id: workspace.oauth-client.list
+  command_path: workspace oauth-client list
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - ListOauthClients
+  positionals:
+  - name: workspace_id
+    type: int
+    required: false
+    metavar: WORKSPACE_ID
+    falls_back_to_field: null
+    help: "ID of the workspace to act on; defaults to the client's own workspace."
+  sdk_symbol: mammoth.api.oauth_clients.OAuthClientsAPI.list
+  sdk_conversion: Call mammoth.api.oauth_clients.OAuthClientsAPI.list with validated request fields.
+  request_model: WorkspaceOauthClientListRequest
+  result_model: AuthOauthClientListResult
+  mutation_class: read
+  edits_target: false
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Read-only; checked live on the koyal profile, not in the automated live suite.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth workspace oauth-client list --help
+  agent_example: mammoth workspace oauth-client list 123
+  unit_tests:
+  - test_oauth_clients_list_uses_the_client_workspace_by_default
+  contract_tests:
+  - test_the_command_is_registered_and_reachable_from_the_cli
+  draft_test: null
+  undo_test: null
+  known_restrictions: "Read-only. The workspace's OAuth clients (id, client_id, name, redirect URIs). No client secret is returned."
+  reviewed_by: primary
+- command_id: workspace.oauth-client.revoke-grant
+  command_path: workspace oauth-client revoke-grant
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - RevokeOauthGrant
+  positionals:
+  - name: oauth_client_id
+    type: int
+    required: true
+    metavar: OAUTH_CLIENT_ID
+    falls_back_to_field: null
+    help: ID of the OAuth client.
+  - name: workspace_id
+    type: int
+    required: false
+    metavar: WORKSPACE_ID
+    falls_back_to_field: null
+    help: "ID of the workspace to act on; defaults to the client's own workspace."
+  sdk_symbol: mammoth.api.oauth_clients.OAuthClientsAPI.revoke_grant
+  sdk_conversion: Call mammoth.api.oauth_clients.OAuthClientsAPI.revoke_grant with validated request fields.
+  request_model: WorkspaceOauthClientRevokeGrantRequest
+  result_model: WorkspaceOauthClientRevokeGrantResult
+  mutation_class: high_impact
+  edits_target: true
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact access change without a disposable fixture; checked by dry-run only.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth workspace oauth-client revoke-grant OAUTH_CLIENT_ID --help
+  agent_example: mammoth workspace oauth-client revoke-grant 123 123
+  unit_tests:
+  - test_oauth_clients_revoke_grant_hits_the_grant_sub_path
+  contract_tests:
+  - test_the_command_is_registered_and_reachable_from_the_cli
+  draft_test: null
+  undo_test: null
+  known_restrictions: Exact OAuth client ID confirmation (--yes --confirm ID). Every user who authorised this client must authorise it again.
+  reviewed_by: primary
+  readback:
+    command: workspace.oauth-client.list
+    ids: {}
+    kind: object
 - command_id: workspace.reactivate
   command_path: workspace reactivate
   disposition: command
