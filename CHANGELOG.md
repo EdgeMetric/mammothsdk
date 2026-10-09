@@ -6,6 +6,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed (mammoth-io 0.8.38)
+
+- `mammoth.__version__` now matches the published version. 0.8.37 shipped with `__version__` still at 0.8.36, so it reports itself as `mammoth-io/0.8.36` in the `User-Agent` header. Use 0.8.38.
+
 ### Added (mammoth-io 0.8.37)
 
 - `MammothClient(user_agent=...)` places a caller's product token (for example `mammoth-cli/2.2.72`) before `mammoth-io/<version>` in the `User-Agent` header, so a tool built on the SDK no longer rewrites `client.session.headers`.
