@@ -6,6 +6,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added (mammoth-cli 2.2.73)
+
+- REST API import recipe (connection, ds-config sample, dataset with scheduled refresh, Elasticsearch notes); `schema find` routes REST/API import phrasings; `ds-config create` help names the query shape; scheduling `start_at` rules and dashboard limits documented.
+
 ### Changed (mammoth-cli 2.2.72)
 
 - The CLI signs in with the built-in `mammoth-cli` OAuth client when the server publishes none; the per-environment client table is gone, and the login menu always offers Browser and Device.
