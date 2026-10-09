@@ -76,8 +76,33 @@ _list = list  # Alias to avoid shadowing by method name
 
 #: Transport log. Silent unless a handler is attached (the CLI attaches one
 #: per invocation). Records carry a ``mammoth`` dict in ``extra``: method,
-#: path, status, duration_ms, request_id, outcome. Never headers or bodies.
+#: path, status, duration_ms, request_id, outcome. Never headers or bodies,
+#: and never a credential a path carries — see ``safe_log_path``.
 _HTTP_LOG = logging.getLogger("mammoth.http")
+
+REDACTED = "***"
+#: Path segments whose NEXT segment is a credential rather than an identifier.
+#: `/workspaces/<id>/clientapps/<app_key>` carries the API token itself: the
+#: server matches that segment against `ClientApp.app_key`, which is the string
+#: a caller authenticates with.
+_SECRET_FOLLOWS = frozenset({"clientapps"})
+
+
+def safe_log_path(endpoint: str) -> str:
+    """The path as a log may keep it: no query string, no credential segment.
+
+    Args:
+        endpoint: The path a request was made to, as the caller wrote it.
+
+    Returns:
+        The same path with any query string dropped and any credential
+        segment replaced by `REDACTED`.
+    """
+    parts = endpoint.split("?", 1)[0].split("/")
+    return "/".join(
+        REDACTED if index and parts[index - 1] in _SECRET_FOLLOWS else part
+        for index, part in enumerate(parts)
+    )
 
 
 def _log_http(
@@ -96,10 +121,11 @@ def _log_http(
     elapsed_ms = round((time.perf_counter() - started) * 1000)
     tried = f" attempt={attempt}/{_MAX_READ_RETRIES + 1}" if attempt else ""
     failed = f" error={error}" if error else ""
+    path = safe_log_path(endpoint)
     _HTTP_LOG.info(
         "http %s %s%s outcome=%s status=%s%s elapsed_ms=%s",
         method,
-        endpoint.split("?", 1)[0],
+        path,
         tried,
         outcome,
         status,
@@ -109,7 +135,7 @@ def _log_http(
             "mammoth": {
                 "event": "http",
                 "method": method,
-                "path": endpoint,
+                "path": path,
                 "status": status,
                 "duration_ms": elapsed_ms,
                 "request_id": request_id,
@@ -125,7 +151,7 @@ def _log_attempt_start(method: str, endpoint: str, attempt: int, timeout: Any) -
         _HTTP_LOG.info(
             "http %s %s attempt=%s/%s start timeout=%s",
             method,
-            endpoint.split("?", 1)[0],
+            safe_log_path(endpoint),
             attempt,
             _MAX_READ_RETRIES + 1,
             timeout,

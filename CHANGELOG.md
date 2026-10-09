@@ -6,6 +6,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed (mammoth-io 0.8.36)
+
+- The transport log redacts the path segment after `clientapps`, so an app key no longer reaches the log line or its structured `path` field.
+
 ### Fixed (mammoth-io 0.8.35, mammoth-mcp-server 0.1.1)
 
 - `CurrentWorkspace.project` carries the one project a credential may act in, so the MCP server reads the connection's pinned project instead of asking the user for one it was already given.
