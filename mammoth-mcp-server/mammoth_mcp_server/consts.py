@@ -3,6 +3,12 @@
 from .config import APP_URL, DASHBOARD_DOMAIN
 
 MCP_SERVER_NAME = "Mammoth Analytics"
+# The name, title and description the registry entry (`server.json`) and the
+# server card both carry; a test holds `server.json` to these.
+REGISTRY_NAME = "io.mammoth/mcp"
+REGISTRY_DESCRIPTION = (
+    "Explore, clean, transform and export your Mammoth Analytics data from an AI client."
+)
 MCP_INSTRUCTIONS = (
     "Mammoth Analytics lets you explore, clean, transform and export data. "
     "Data is organised as workspace > project > dataset > view; a view is a "

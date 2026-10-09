@@ -137,4 +137,4 @@ def read_rows(
         paging[PageFields.TOTAL] = total
     if full and (not isinstance(total, int) or seen < total):
         paging[PageFields.NEXT_OFFSET] = seen + 1
-    return {PageFields.DATA: rows, PageFields.PAGING: paging}
+    return {**answer, PageFields.DATA: rows, PageFields.PAGING: paging}

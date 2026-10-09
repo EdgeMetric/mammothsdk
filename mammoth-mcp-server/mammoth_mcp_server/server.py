@@ -11,7 +11,7 @@ from mcp.server.auth.settings import AuthSettings
 
 from .config import MCP_OAUTH_URL, MCP_RESOURCE_URL, MCP_UPLOAD_PATH
 from .consts import MCP_INSTRUCTIONS, MCP_SERVER_NAME
-from .server_card import SERVER_CARD_PATH, serve_server_card
+from .server_card import SERVER_CARD_MCP_PATH, SERVER_CARD_PATH, serve_server_card
 from .tokens import token_verifier
 from .upload_app import upload_app
 from .upload_routes import upload
@@ -38,7 +38,8 @@ mcp_server = MCPServer(
 # ticket.
 mcp_server.custom_route(MCP_UPLOAD_PATH, methods=["GET", "POST"])(upload)
 # What a client or a crawler reads before it connects: public, no token.
-mcp_server.custom_route(SERVER_CARD_PATH, methods=["GET"])(serve_server_card)
+for card_path in (SERVER_CARD_PATH, SERVER_CARD_MCP_PATH):
+    mcp_server.custom_route(card_path, methods=["GET", "OPTIONS"])(serve_server_card)
 
 
 def register_tools() -> None:

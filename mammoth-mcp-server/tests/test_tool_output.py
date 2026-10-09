@@ -72,6 +72,16 @@ class TestGetData:
             "next_offset": 3,
         }
 
+    def test_a_key_the_api_adds_beside_data_and_paging_is_kept(self) -> None:
+        answer_with_extra = {**rows(2), "warnings": ["column hidden"]}
+        with a_fake_api() as api, as_caller():
+            api.answer("POST", f"{VIEW_PATH}/data", answer_with_extra)
+            api.answer("GET", VIEW_PATH, RECORDED_VIEW)
+            answer = call_tool("get_data", view_id=VIEW, limit=2, **IDS)
+
+        assert answer["warnings"] == ["column hidden"]
+        assert answer["paging"]["total"] == 3
+
     def test_the_last_page_has_the_real_total_and_no_next(self) -> None:
         with a_fake_api() as api, as_caller():
             api.answer("POST", f"{VIEW_PATH}/data", rows(1))

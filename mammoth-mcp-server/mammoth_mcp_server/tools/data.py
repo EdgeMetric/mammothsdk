@@ -28,7 +28,9 @@ async def get_data(
     """Read rows from a view.
 
     Rows come back under the column names the user sees, with numeric columns
-    as numbers. Call `get_view` first for the columns and their types. Ask for
+    as numbers. A numeric column the user has given a display format (currency,
+    percentage, thousands separators) stays text, so do not assume arithmetic
+    is safe. Call `get_view` first for the columns and their types. Ask for
     the columns you need rather than all of them.
 
     Returns:
