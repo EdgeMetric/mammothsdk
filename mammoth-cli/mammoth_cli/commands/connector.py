@@ -360,7 +360,7 @@ def connector_connection_update(invocation: Invocation) -> HandlerResult:
 
 
 def connector_ds_config_create(invocation: Invocation) -> HandlerResult:
-    """Create a data source configuration. ``--yes`` is always required."""
+    """Sample a data source config; REST ``query`` is a JSON string. ``--yes`` is always required."""
     project_id = require_project(invocation)
     connector_key = _require_string_positional_at(invocation, 0, "connector key")
     connection_key = _require_string_positional_at(invocation, 1, "connection key")

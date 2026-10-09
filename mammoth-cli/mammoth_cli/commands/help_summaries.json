@@ -138,7 +138,7 @@
   "connector.connection.get": "Get one connection's details. Connector and connection keys are positional.",
   "connector.connection.list": "List connections for a connector type; find its key with `mammoth connector active`.",
   "connector.connection.update": "Update a connection's credentials. '--yes' is always required.",
-  "connector.ds-config.create": "Create a data source configuration. '--yes' is always required.",
+  "connector.ds-config.create": "Sample a data source config; REST 'query' is a JSON string. '--yes' is always required.",
   "connector.ds-config.delete": "Delete a data source configuration. Prompt or '--yes' required.",
   "connector.ds-config.delete-all": "Bulk-delete data source configurations for a connection. Prompt or '--yes' required.",
   "connector.ds-config.get": "Get one data source configuration by key.",
