@@ -492,6 +492,23 @@ _COMMAND_DISCOVERY_PURPOSES = {
     "browse.resource": "open one resource by type and id properties of a dataset view folder",
     "browse.resources.bulk": "fetch many resources by type and id in one request batch lookup",
     "agent.turn.cancel": "stop the agent now cancel this turn halt what the assistant is doing",
+    "agent.run.retry": (
+        "retry the failed run again try once more run it again after it failed or stopped"
+    ),
+    "agent.run.instance.list": "which agents sub agents helpers workers ran in this run instances",
+    "agent.run.instance.messages": ("what did this agent of the run send and receive messages"),
+    "agent.run.instance.transcript": (
+        "show the full transcript of one agent in the run model messages"
+    ),
+    "agent.run.units.list": (
+        "which objects is the run working on units of work progress queued done failed"
+    ),
+    "agent.message.set-request-kind": (
+        "that answer was the wrong kind of request correct it ask insight build automate fix"
+    ),
+    "agent.plan.edit-proposal": (
+        "rename or remove a step in the plan proposal waiting workflow edit the plan"
+    ),
     "dashboard.swap-fit": "which dataset fits this dashboard before swapping data score candidates",
     "dashboard.audience.get": "who opened my dashboard readers visitors audience over time",
     "dashboard.audience.summary": "how many people opened each dashboard in the library",

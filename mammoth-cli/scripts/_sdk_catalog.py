@@ -72,6 +72,22 @@ EXTRA_OP_HINTS: dict[str, dict[str, Any]] = {
     "agent.publish": {"operation_ids": ["PublishAgentDefinition"], "method": "POST"},
     "agent.roles": {"operation_ids": ["ListAgentDefinitionRoles"], "method": "GET"},
     "agent.run.extend": {"operation_ids": ["ExtendAgentRun"], "method": "POST"},
+    "agent.run.instance.list": {"operation_ids": ["ListAgentRunInstances"], "method": "GET"},
+    "agent.run.instance.messages": {
+        "operation_ids": ["ListAgentInstanceMessages"],
+        "method": "GET",
+    },
+    "agent.run.instance.transcript": {
+        "operation_ids": ["GetAgentInstanceTranscript"],
+        "method": "GET",
+    },
+    "agent.run.retry": {"operation_ids": ["RetryAgentRun"], "method": "POST"},
+    "agent.run.units.list": {"operation_ids": ["ListAgentRunUnits"], "method": "GET"},
+    "agent.message.set-request-kind": {
+        "operation_ids": ["CorrectAgentRequestKind"],
+        "method": "PATCH",
+    },
+    "agent.plan.edit-proposal": {"operation_ids": ["EditAgentPlanProposal"], "method": "PATCH"},
     "agent.run.pause": {"operation_ids": ["PauseAgentRun"], "method": "POST"},
     "agent.run.resume": {"operation_ids": ["ResumeAgentRun"], "method": "POST"},
     "agent.run.stop": {"operation_ids": ["StopAgentRun"], "method": "POST"},

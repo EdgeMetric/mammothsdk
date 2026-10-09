@@ -29,6 +29,12 @@ PHRASINGS = [
     ("who opened my dashboard", "dashboard.engagement.get"),
     ("remind people to look at the dashboard", "dashboard.engagement.remind"),
     ("use my own data on a template", "dashboard.own-data.start"),
+    ("retry the failed agent run", "agent.run.retry"),
+    ("which sub agents ran in this run", "agent.run.instance.list"),
+    ("show the transcript of one agent in the run", "agent.run.instance.transcript"),
+    ("which objects is the run working on", "agent.run.units.list"),
+    ("that answer was the wrong kind of request", "agent.message.set-request-kind"),
+    ("rename a step in the plan proposal", "agent.plan.edit-proposal"),
 ]
 
 

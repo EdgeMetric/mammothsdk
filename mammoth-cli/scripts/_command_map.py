@@ -176,7 +176,14 @@ SERVER_UNAVAILABLE: dict[str, str] = {
 OVERRIDES: dict[str, str] = {
     # Invitations and self / user account.
     "AcceptInvite": "workspace.accept-invite",
+    "CorrectAgentRequestKind": "agent.message.set-request-kind",
+    "EditAgentPlanProposal": "agent.plan.edit-proposal",
+    "GetAgentInstanceTranscript": "agent.run.instance.transcript",
     "GetUserDetails": "user.get",
+    "ListAgentInstanceMessages": "agent.run.instance.messages",
+    "ListAgentRunInstances": "agent.run.instance.list",
+    "ListAgentRunUnits": "agent.run.units.list",
+    "RetryAgentRun": "agent.run.retry",
     "UpdateUser": "user.update",
     "DeleteSelf": "user.delete-account",
     "DeleteAvatar": "user.avatar.delete",
