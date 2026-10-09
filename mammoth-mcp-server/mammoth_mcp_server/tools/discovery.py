@@ -8,6 +8,7 @@ one of them calls the same API route the web app calls, as the signed-in user.
 from ..consts import LIST_LIMIT_DEFAULT, ApiFields, ApiPaths, BrowseFields, ListFields
 from ..sdk import JsonValue, build_client, own_project, read_sdk_errors, request_api
 from ..server import mcp_server
+from ..shape import not_found_message, slim_view, tidy_page
 from ..tool_kinds import READS
 
 
@@ -56,7 +57,7 @@ async def list_projects(
     if pinned is not None:
         return await _the_pinned_project(workspace_id, pinned)
     async with build_client(workspace_id) as client:
-        return await read_sdk_errors(
+        page = await read_sdk_errors(
             client.browse.projects(
                 workspace_id=workspace_id,
                 fields=ApiFields.MINIMAL,
@@ -64,6 +65,7 @@ async def list_projects(
                 offset=offset,
             )
         )
+    return tidy_page(page, ListFields.PROJECTS, limit)
 
 
 async def _the_pinned_project(workspace_id: int, pinned: int) -> dict[str, JsonValue]:
@@ -120,15 +122,17 @@ async def list_datasets(
         offset: How many datasets to skip, for paging.
     """
     async with build_client(workspace_id) as client:
-        return await read_sdk_errors(
+        page = await read_sdk_errors(
             client.browse.datasets(
                 project_id=project_id,
                 workspace_id=workspace_id,
                 fields=ApiFields.MINIMAL,
                 limit=limit,
                 offset=offset,
-            )
+            ),
+            not_found_message(workspace_id, project_id),
         )
+    return tidy_page(page, ListFields.DATASETS, limit)
 
 
 @mcp_server.tool(annotations=READS)
@@ -149,7 +153,8 @@ async def get_dataset(workspace_id: int, project_id: int, dataset_id: int) -> di
                 dataset_id,
                 project_id=project_id,
                 fields=ApiFields.STANDARD,
-            )
+            ),
+            not_found_message(workspace_id, project_id, dataset_id),
         )
 
 
@@ -173,7 +178,7 @@ async def list_views(
         offset: How many views to skip, for paging.
     """
     async with build_client(workspace_id) as client:
-        return await read_sdk_errors(
+        page = await read_sdk_errors(
             client.browse.dataviews(
                 dataset_id,
                 project_id=project_id,
@@ -181,8 +186,10 @@ async def list_views(
                 fields=ApiFields.MINIMAL,
                 limit=limit,
                 offset=offset,
-            )
+            ),
+            not_found_message(workspace_id, project_id, dataset_id),
         )
+    return tidy_page(page, ListFields.VIEWS, limit)
 
 
 @mcp_server.tool(annotations=READS)
@@ -190,6 +197,10 @@ async def get_view(
     workspace_id: int, project_id: int, dataset_id: int, view_id: int
 ) -> dict[str, JsonValue]:
     """Get one view with its columns and their types.
+
+    Returns the view's id, name, status and row count, and `metadata`: each
+    column's `display_name`, `internal_name` and `type`, with its range when
+    it has one.
 
     Read this before writing any transformation, so column names and types are
     exact.
@@ -204,11 +215,13 @@ async def get_view(
     # reported are the ones the transformations left — at the cost of a second
     # request, which the route worked out for itself.
     async with build_client(workspace_id, project_id) as client:
-        return await read_sdk_errors(
+        view = await read_sdk_errors(
             client.dataviews.get(
                 dataset_id,
                 view_id,
                 project_id=project_id,
                 fields=ApiFields.STANDARD,
-            )
+            ),
+            not_found_message(workspace_id, project_id, dataset_id, view_id),
         )
+    return slim_view(view)
