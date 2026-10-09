@@ -454,18 +454,26 @@ def build() -> str:
             for p in document["paths"][path].get("parameters", []) + operation.get("parameters", [])
             if "$ref" not in p
         ]
+        # Required arguments come before optional ones: a required body after an
+        # optional query parameter is a SyntaxError in the emitted module.
         args = ["self: Any"]
+        optional_args: list[str] = []
         for parameter in parameters:
             annotation = schema_annotation(parameter.get("schema", {}))
-            default = "" if parameter.get("required") else " = None"
-            if default and "None" not in annotation.split(" | "):
+            if parameter.get("required"):
+                args.append(f"{parameter['name']}: {annotation}")
+                continue
+            if "None" not in annotation.split(" | "):
                 annotation += " | None"
-            args.append(f"{parameter['name']}: {annotation}{default}")
+            optional_args.append(f"{parameter['name']}: {annotation} = None")
         body_schema = _media_schema(operation.get("requestBody", {}))
         if body_schema:
             annotation = schema_annotation(body_schema)
-            required = bool(operation["requestBody"].get("required"))
-            args.append(f"body: {annotation}" + ("" if required else " | None = None"))
+            if operation["requestBody"].get("required"):
+                args.append(f"body: {annotation}")
+            else:
+                optional_args.append(f"body: {annotation} | None = None")
+        args.extend(optional_args)
         responses = _success_schemas(operation)
         response_types = [schema_annotation(schema) for schema in responses]
         result_annotation = " | ".join(dict.fromkeys(response_types)) or "dict[str, Any]"
@@ -519,7 +527,10 @@ def build() -> str:
         lines.append("")
         exports.append(name)
     lines.append(f"GENERATED_METHODS = {exports!r}")
-    return black.format_str("\n".join(lines) + "\n", mode=black.Mode(line_length=100))
+    source = "\n".join(lines) + "\n"
+    if "Literal[" in source:
+        source = source.replace("from typing import Any\n", "from typing import Any, Literal\n", 1)
+    return black.format_str(source, mode=black.Mode(line_length=100))
 
 
 if __name__ == "__main__":

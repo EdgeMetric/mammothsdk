@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import glob
 import json
+import shutil
 from pathlib import Path
 
 import yaml
@@ -104,3 +105,19 @@ def test_generator_source_matches_committed_edits_target() -> None:
         stamped = generator._with_edits_target(dict(record), source)
         assert stamped.get("edits_target") == record.get("edits_target"), record["command_id"]
         assert list(stamped) == list(record), record["command_id"]
+
+
+def test_build_leaves_hand_maintained_command_records_untouched(tmp_path, monkeypatch) -> None:
+    """A regeneration over the committed manifests succeeds and rewrites no command file."""
+    generator = _generator()
+    manifests = tmp_path / "manifests"
+    shutil.copytree(MANIFESTS, manifests)
+    monkeypatch.setattr(generator, "MANIFESTS", manifests)
+    monkeypatch.setattr(generator, "COMMANDS_DIR", manifests / "commands")
+    monkeypatch.setattr(generator, "EDITS_TARGET_SOURCE", manifests / "edits-target.source.yaml")
+    before = {p.name: p.read_bytes() for p in (manifests / "commands").glob("*.yaml")}
+
+    generator.build()
+
+    after = {p.name: p.read_bytes() for p in (manifests / "commands").glob("*.yaml")}
+    assert after == before

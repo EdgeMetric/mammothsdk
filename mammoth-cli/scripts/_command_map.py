@@ -13,6 +13,8 @@ Dispositions:
 - ``protocol_only``inbound webhook, callback, telemetry, or health probe.
 - ``server_unavailable`` documented but unavailable (requires server evidence).
 - ``deprecated``   deprecated by the OpenAPI document.
+- ``internal_only``  web-app-only route with a reviewed reason; no terminal user.
+- ``unmapped``     user-facing route with no CLI command yet (a real gap).
 """
 
 from __future__ import annotations
@@ -59,6 +61,14 @@ INTERNAL_ONLY: dict[str, str] = {
     "DashboardPublicTemplatesHead": "HEAD twin of the public template catalog.",
     "DashboardPublicTemplateHead": "HEAD twin of one public template read.",
     "DashboardPublicTemplateThumbnail": "Public template picture bytes served to the gallery page.",
+    "MarkAgentSessionSeen": "Web app marks a chat session read when its panel opens.",
+    "AuthorizeRedirect": "OAuth browser redirect into the consent page; the browser follows it.",
+    "Authorize": "Form submit from the browser OAuth consent page.",
+    "GetConsentInfo": "Data the browser OAuth consent page renders before approval.",
+    "Deny": "Deny button on the browser OAuth consent page.",
+    "ApproveDevice": "Browser page that approves a device-code login; the terminal polls instead.",
+    "DenyDevice": "Browser page that denies a device-code login.",
+    "GetDeviceInfo": "Browser page that shows the device-code request before approval.",
 }
 
 # --- Routes the SDK calls that the server on master does not serve yet ------
@@ -97,6 +107,39 @@ PENDING_SERVER_RELEASE.update(
     }
 )
 PENDING_SERVER_RELEASE["POST /dashboards/{}/figures"] = "origin/feat/agent-cli-surface-w8@15c7fe863f"
+PENDING_SERVER_RELEASE["POST /dashboards/v3/render/svg"] = (
+    "origin/fix/dataview-data-total-and-raw@7d0ffc0b67"
+)
+# On server master since the pinned master snapshot (master-20261002) was exported.
+PENDING_SERVER_RELEASE.update(
+    {
+        f"{method} {path}": "origin/master@7a57c1b70f"
+        for method, path in (
+            ("GET", "/collections"),
+            ("POST", "/collections"),
+            ("GET", "/collections/{}"),
+            ("PATCH", "/collections/{}"),
+            ("DELETE", "/collections/{}"),
+            ("GET", "/collections/url/{}"),
+            ("GET", "/collections/for-dashboard/{}"),
+            ("GET", "/collections/{}/activity"),
+            ("GET", "/collections/{}/pipeline-changes"),
+            ("POST", "/collections/{}/dashboards"),
+            ("DELETE", "/collections/{}/dashboards/{}"),
+            ("POST", "/collections/{}/share"),
+            ("DELETE", "/collections/{}/members"),
+            ("POST", "/collections/{}/files"),
+            ("GET", "/dashboards/{}/engagement"),
+            ("GET", "/dashboards/{}/engagement/people/{}"),
+            ("POST", "/dashboards/{}/engagement/remind"),
+            ("GET", "/dashboards/v3/{}/own-data"),
+            ("POST", "/dashboards/v3/{}/own-data"),
+            ("GET", "/dashboards/v3/{}/own-data/preview"),
+            ("POST", "/dashboards/v3/{}/own-data/accept"),
+            ("POST", "/dashboards/v3/{}/own-data/dismiss"),
+        )
+    }
+)
 # The SDK posts every run verb through one helper whose path ends in a variable.
 PENDING_SERVER_RELEASE["POST /agents/sessions/{}/runs/{}/{}"] = PENDING_SERVER_RELEASE[
     "POST /agents/sessions/{}/runs/{}/stop"
@@ -104,8 +147,19 @@ PENDING_SERVER_RELEASE["POST /agents/sessions/{}/runs/{}/{}"] = PENDING_SERVER_R
 
 # --- Operations that alias another command (identical behavior) ------------
 OP_ALIAS: dict[str, str] = {
-    # POST body variant of the GET dataview-data read.
-    "GetDataviewDataPost": "view.data.get",
+    # Chargebee-only invoice reads; the Stripe billing-history endpoint replaces them.
+    "ListInvoices": "billing.stripe.history",
+    "GetInvoice": "billing.stripe.history",
+}
+
+_CHARGEBEE_INVOICE = (
+    "Chargebee-only invoice read that returns nothing for Stripe workspaces; the Stripe "
+    "billing-history endpoint replaces it."
+)
+#: Reviewed reasons for aliases that are not identical behavior.
+ALIAS_REASON: dict[str, str] = {
+    "ListInvoices": _CHARGEBEE_INVOICE,
+    "GetInvoice": _CHARGEBEE_INVOICE,
 }
 
 # --- Operations the pinned spec documents but the server cannot serve --------
@@ -125,7 +179,14 @@ SERVER_UNAVAILABLE: dict[str, str] = {
 OVERRIDES: dict[str, str] = {
     # Invitations and self / user account.
     "AcceptInvite": "workspace.accept-invite",
+    "CorrectAgentRequestKind": "agent.message.set-request-kind",
+    "EditAgentPlanProposal": "agent.plan.edit-proposal",
+    "GetAgentInstanceTranscript": "agent.run.instance.transcript",
     "GetUserDetails": "user.get",
+    "ListAgentInstanceMessages": "agent.run.instance.messages",
+    "ListAgentRunInstances": "agent.run.instance.list",
+    "ListAgentRunUnits": "agent.run.units.list",
+    "RetryAgentRun": "agent.run.retry",
     "UpdateUser": "user.update",
     "DeleteSelf": "user.delete-account",
     "DeleteAvatar": "user.avatar.delete",
@@ -205,8 +266,6 @@ OVERRIDES: dict[str, str] = {
     "GetWkspSubscriptionDetail": "billing.subscription.get",
     "UpdateSubscriptionDetail": "billing.subscription.update",
     "FetchHostedPage": "billing.hosted-page",
-    "ListInvoices": "billing.invoice.list",
-    "GetInvoice": "billing.invoice.get",
     "ChargeWorkspaceInvoices": "billing.invoice.charge",
     "GetWorkspaceSubscription": "billing.stripe.get",
     "CreateWorkspaceSubscription": "billing.stripe.create",
@@ -385,6 +444,7 @@ OVERRIDES: dict[str, str] = {
     "GetFileSettings": "dataset.file-settings.get",
     "UpdateFileSettings": "dataset.file-settings.update",
     "UndoFileSettings": "dataset.file-settings.undo",
+    "SearchDatasetsByContent": "dataset.search",
     # Batches.
     "GetBatches": "batch.list",
     "CreateBatch": "batch.create",
@@ -406,7 +466,8 @@ OVERRIDES: dict[str, str] = {
     "UpdateConditionalFormat": "view.conditional-format.update",
     "DeleteConditionalFormat": "view.conditional-format.delete-all",
     "GetDataviewData": "view.data.get",
-    "ExecuteVolatileQuery": "view.data.query",
+    "GetDataviewDataPost": "view.data.query",
+    "ExecuteVolatileQuery": "view.data.aggregate",
     "GetValidationInfo": "view.ai.generation-info",
     "Preview": "view.ai.generate-data",
     "GenerateProfile": "view.ai.profile",
@@ -465,6 +526,8 @@ OVERRIDES: dict[str, str] = {
     "DeleteFile": "file.delete",
     "GetFileDetails": "file.get",
     "UpdateFileConfigs": "file.update",
+    "PreviewMultiSheetInterpretation": "file.multi-sheet-preview",
+    "CreateDatasetsFromMultiSheetFile": "file.multi-sheet-extract",
     # Folders.
     "ListFolders": "folder.list",
     "CreateFolder": "folder.create",
@@ -498,6 +561,10 @@ OVERRIDES: dict[str, str] = {
     "DeleteWorkflow": "workflow.delete",
     "GetWorkflow": "workflow.get",
     "UpdateWorkflow": "workflow.update",
+    "SaveWorkflow": "workflow.save",
+    "SetArchived": "workflow.archive",
+    "AttachDataset": "workflow.attach-dataset",
+    "ResolveHeldChange": "workflow.resolve-held",
     "AddSkeletonBlock": "workflow.block.add",
     "PatchBlockAuth": "workflow.block.auth",
     "PromoteSkeletonBlock": "workflow.block.config",
@@ -602,6 +669,134 @@ OVERRIDES: dict[str, str] = {
     "DashboardV3SetVisibility": "dashboard.qa.session.set-visibility",
     "DashboardV3SetQaSettings": "dashboard.qa.settings.set",
     "SetRlsAssignments": "dashboard.rls.assignment.set",
+    # Bound 2026-10-09 from the prod snapshot: the route is called by this SDK method,
+    # and the command calls that method (SDK call sites read, not inferred from names).
+    "AcceptOwnData": "dashboard.own-data.accept",
+    # Bound 2026-10-10: the SDK methods added for these routes (connected apps, OAuth clients).
+    "ListConnectedApps": "auth.connected-apps.list",
+    "RevokeConnectedApp": "auth.connected-apps.revoke",
+    "GetCurrentWorkspace": "workspace.current",
+    "ListOauthClients": "workspace.oauth-client.list",
+    "CreateOauthClient": "workspace.oauth-client.create",
+    "DeleteOauthClient": "workspace.oauth-client.delete",
+    "RevokeOauthGrant": "workspace.oauth-client.revoke-grant",
+    "AddDashboards": "collection.dashboards.add",
+    "AddPages": "dashboard.pages.add",
+    "AppendFigure": "dashboard.figure.add",
+    # Not on the pinned prod snapshot yet (mvc-service PR #6906); see PENDING_SERVER_RELEASE.
+    "RenderFigureSvg": "view.explore-panel.export-image",
+    "ApplyContextReview": "dashboard.context.apply",
+    "ApplyExportableConfig": "view.exportable-config.apply",
+    "ArchiveDashboard": "dashboard.archive",
+    "ArchiveStorageOption": "support.plan.storage-option.archive",
+    "AssessPbix": "dashboard.assess-pbix",
+    "AssessTwb": "dashboard.assess-twb",
+    "AttachmentAssess": "dashboard.pbix-assess",
+    "AttachmentIntent": "dashboard.pbix-intent",
+    "CreateAttachment": "dashboard.attachment-create",
+    "AudienceSummary": "dashboard.audience.summary",
+    "BulkGetResources": "browse.resources.bulk",
+    "BulkModify": "project.resource-dependencies.update",
+    "CancelAgentTurn": "agent.turn.cancel",
+    "CollectionActivity": "collection.activity",
+    "ActiveJob": "collection.active-job",
+    "GetRefreshJob": "collection.job",
+    "CollectionsForDashboard": "collection.for-dashboard",
+    "CompareDataviews": "view.compare",
+    "CopyProject": "project.copy",
+    "CreateBlankDashboard": "dashboard.create-blank",
+    "CreateCollection": "collection.create",
+    "CreateStorageOption": "support.plan.storage-option.create",
+    "DashboardPublicTemplate": "dashboard.gallery.get",
+    "DashboardPublicTemplates": "dashboard.gallery.list",
+    "DashboardV3AdminAudit": "support.template.audit",
+    "DashboardV3AdminCatalog": "support.template.list",
+    "DashboardV3AdminDataPreview": "support.template.data-preview",
+    "DashboardV3AdminDeleteThumbnail": "support.template.thumbnail.clear",
+    "DashboardV3AdminDiscardImport": "support.template.discard",
+    "DashboardV3AdminEditRow": "support.template.edit",
+    "DashboardV3AdminExportBundle": "support.template.export",
+    "DashboardV3AdminExportDashboard": "support.template.export-dashboard",
+    "DashboardV3AdminImportBundle": "support.template.import",
+    "DashboardV3AdminInspectBundle": "support.template.inspect",
+    "DashboardV3AdminPublish": "support.template.publish",
+    "DashboardV3AdminPutThumbnail": "support.template.thumbnail.set",
+    "DashboardV3AdminRetire": "support.template.retire",
+    "DashboardV3AdminRowCanvas": "support.template.canvas",
+    "DashboardV3AdminSnapshots": "support.template.snapshots",
+    "DashboardV3AdminUnpublish": "support.template.unpublish",
+    "DashboardV3DeleteTemplateThumbnail": "dashboard.template.thumbnail.clear",
+    "DashboardV3PutTemplateThumbnail": "dashboard.template.thumbnail.set",
+    "DashboardV3QaInsights": "dashboard.qa.insights",
+    "DashboardV3TakePendingTemplate": "dashboard.templates.pending",
+    "DashboardV3TemplateThumbnail": "dashboard.template.thumbnail.get",
+    "DeleteAgentSessionAction": "agent.action.delete",
+    "DeleteCollection": "collection.delete",
+    "DismissOwnData": "dashboard.own-data.dismiss",
+    "EmbedUsageSummary": "dashboard.embed.usage.summary",
+    "ExtendAgentRun": "agent.run.extend",
+    "ExtractContext": "dashboard.context.extract",
+    "ExtractExemplar": "dashboard.exemplar.extract",
+    "FormatPreview": "dashboard.format-preview",
+    "GetAgentSessionRun": "agent.run.status",
+    "GetAnalysis": "view.analyze",
+    "GetAudienceDigest": "dashboard.audience.digest.get",
+    "GetBatchData": "dataset.batch-data",
+    "GetCollection": "collection.get",
+    "GetCollectionByUrl": "collection.get-by-url",
+    "GetColumnRoster": "dashboard.columns",
+    "GetDashboardAudience": "dashboard.audience.get",
+    "GetDashboardEngagement": "dashboard.engagement.get",
+    "GetDashboardEngagementPerson": "dashboard.engagement.person",
+    "GetDataviewDeleteImpact": "view.impact",
+    "GetEmbedConfig": "dashboard.embed.config.get",
+    "GetEmbedUsage": "dashboard.embed.usage.get",
+    "GetExportableConfig": "view.exportable-config.get",
+    "GetHomeSummary": "workspace.home",
+    "GetOwnData": "dashboard.own-data.status",
+    "GetResource": "browse.resource",
+    "GetResourceAncestors": "browse.ancestors",
+    "GetUnstructuredRows": "dataset.broken-rows.list",
+    "ImportWorkbookDataset": "dashboard.import-workbook",
+    "ListAgentSessionActions": "agent.action.list",
+    "ListAgentSessionRuns": "agent.run.list",
+    "ListCollections": "collection.list",
+    "ListResources": "browse.resources",
+    "ListStorageOptions": "support.plan.storage-option.list",
+    "OptimizePipeline": "view.optimize",
+    "PatchUnstructuredRows": "dataset.broken-rows.resolve",
+    "PauseAgentRun": "agent.run.pause",
+    "PipelineChanges": "collection.pipeline-changes",
+    "PostDashboardEngagementRemind": "dashboard.engagement.remind",
+    "PowerbiPreflight": "dashboard.bi-preflight",
+    "PreviewOwnData": "dashboard.own-data.preview",
+    "PreviewToken": "dashboard.embed.preview-token.create",
+    "PutEmbedConfig": "dashboard.embed.config.set",
+    "RecheckWorkspaceLimits": "billing.stripe.recheck-limits",
+    "RegisterAgentRunUnits": "agent.run.units.set",
+    "RemoveDashboard": "collection.dashboards.remove",
+    "RemoveMember": "collection.members.remove",
+    "ResumeAgentRun": "agent.run.resume",
+    "ResumeWorkspaceSubscription": "billing.stripe.resume",
+    "RetentionCondition": "ai.retention.condition",
+    "ReviewContext": "dashboard.context.review",
+    "RevokeOrigin": "dashboard.embed.origin.revoke",
+    "RotateEmbedKey": "dashboard.embed.key.rotate",
+    "RotateEmbedSecret": "dashboard.embed.secret.rotate",
+    "SearchResources": "browse.search",
+    "SetAudienceDigest": "dashboard.audience.digest.set",
+    "SetEmbedLifetime": "dashboard.embed.lifetime.set",
+    "ShareCollection": "collection.share",
+    "StartOwnData": "dashboard.own-data.start",
+    "StopAgentRun": "agent.run.stop",
+    "SwapDashboardData": "dashboard.swap-data",
+    "SwapFit": "dashboard.swap-fit",
+    "UnarchivePlan": "support.plan.unarchive",
+    "UpdateCollection": "collection.update",
+    "UpdateStorageOption": "support.plan.storage-option.update",
+    "UpdateSubscriptionStorage": "billing.stripe.storage.set",
+    "UploadFile": "collection.files.upload",
+    "UseTemplate": "dashboard.templates.use",
 }
 
 
@@ -612,18 +807,31 @@ def command_for(operation_id: str) -> str | None:
     return OVERRIDES.get(operation_id)
 
 
+# Operations a command with its own handler serves (it picks the route at run time). Kept
+# out of OVERRIDES, which also drives gen_dashboard_v3_sdk.py: an entry there would emit a
+# wrapper named after the command, a second one for each extra operation.
+HANDLER_SERVED: dict[str, str] = {
+    "PowerbiExport": "dashboard.bi-export",
+    "TableauExport": "dashboard.bi-export",
+    "TableauPreflightHandler": "dashboard.bi-preflight",
+}
+
+
 def disposition_for(operation_id: str) -> tuple[str, str | None, str | None, str]:
     """Return (disposition, canonical_command, alias_of, reason)."""
     if operation_id in PROTOCOL_ONLY:
         return "protocol_only", None, None, PROTOCOL_ONLY[operation_id]
     if operation_id in OP_ALIAS:
-        return "alias", None, OP_ALIAS[operation_id], "Identical behavior to the aliased command."
+        reason = ALIAS_REASON.get(operation_id, "Identical behavior to the aliased command.")
+        return "alias", None, OP_ALIAS[operation_id], reason
+    if operation_id in INTERNAL_ONLY:
+        return "internal_only", None, None, INTERNAL_ONLY[operation_id]
     if operation_id in SERVER_UNAVAILABLE:
         return "server_unavailable", None, None, SERVER_UNAVAILABLE[operation_id]
-    command = OVERRIDES.get(operation_id)
+    command = OVERRIDES.get(operation_id) or HANDLER_SERVED.get(operation_id)
     if command:
         return "command", command, None, "User-initiated production operation."
-    return "command", None, None, "UNMAPPED"
+    return "unmapped", None, None, "No reviewed CLI command or SDK symbol recorded."
 
 
 _WORD = re.compile(r"[^a-z0-9]+")
@@ -672,6 +880,7 @@ _PLANNED_PREFIX: list[tuple[str, str, str]] = [
     ("snippet", "snippets", "SnippetsAPI"),
     ("data-app", "data_apps", "DataAppsAPI"),
     ("dashboard", "dashboards", "DashboardsAPI"),
+    ("collection", "collections", "CollectionsAPI"),
     ("template", "templates", "TemplatesAPI"),
     ("workflow", "workflows", "WorkflowsAPI"),
     ("trash", "trash", "TrashAPI"),
@@ -697,6 +906,6 @@ def all_operation_ids_covered(operation_ids: list[str]) -> list[str]:
     missing = []
     for oid in operation_ids:
         disp, cmd, alias, reason = disposition_for(oid)
-        if disp == "command" and not cmd:
+        if disp == "unmapped":
             missing.append(oid)
     return missing

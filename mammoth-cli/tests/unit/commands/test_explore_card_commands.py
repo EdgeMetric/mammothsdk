@@ -105,7 +105,14 @@ def test_explore_panel_commands_need_a_project() -> None:
 
 
 @pytest.mark.parametrize(
-    "command_id", ["view.explore-panel.get", "view.explore-panel.set", "dashboard.figure.add"]
+    "command_id",
+    [
+        "view.explore-panel.get",
+        "view.explore-panel.set",
+        "view.explore-panel.edit",
+        "view.explore-panel.add-to-dashboard",
+        "dashboard.figure.add",
+    ],
 )
 def test_the_command_is_registered_and_in_the_manifest(command_id: str) -> None:
     assert command_id in HANDLERS
@@ -117,6 +124,8 @@ def test_the_command_is_registered_and_in_the_manifest(command_id: str) -> None:
     [
         ["view", "explore-panel", "get"],
         ["view", "explore-panel", "set"],
+        ["view", "explore-panel", "edit"],
+        ["view", "explore-panel", "add-to-dashboard"],
         ["dashboard", "figure", "add"],
     ],
 )

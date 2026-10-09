@@ -73,6 +73,7 @@ _GROUP_DESCRIPTIONS = {
         "for scripts and integrations."
     ),
     "token": "Create, list, and revoke long-lived API keys (aliases of client-app).",
+    "collection": "Group dashboards into a collection and share the set as one.",
     "completion": "Install or print shell completion.",
     "config": "Read and update local CLI configuration.",
     "connector": "Manage data connectors and connector profiles.",
@@ -111,6 +112,8 @@ _AGENT_SUBGROUP_DESCRIPTIONS = {
     "feedback": "Read the feedback an agent definition has received.",
     "goldens": "Manage and run the golden cases an agent definition is proven against.",
     "memory": "Manage the facts an agent definition has learned, per project.",
+    "message": "Correct the request kind of a reply in an agent chat.",
+    "plan": "Edit the waiting workflow proposal of an agent chat plan.",
     "projects": "Set or clear the projects an agent definition works in.",
     "run": "Inspect and control an agent's runs.",
     "scratch": "Read, write and clear an agent definition's scratchpad notes per project.",
@@ -120,11 +123,143 @@ _AGENT_SUBGROUP_DESCRIPTIONS = {
 }
 
 
+# One line per nested group below the top level, so ``mammoth view --help`` tells its
+# subgroups apart instead of repeating the top-level description. ``agent`` groups are above.
+_SUBGROUP_DESCRIPTIONS = {
+    "addon connector": "Add or remove the connector add-on.",
+    "addon storage": "Add or remove the storage add-on.",
+    "addon user": "Add or remove the user add-on.",
+    "agent run units": "List and read the units of work inside an agent run.",
+    "ai condition": "Generate a filter condition from a description.",
+    "ai expression": "Generate a column expression from a description.",
+    "ai retention": "Generate a data-retention condition from a description.",
+    "ai sql": "Generate SQL from a description.",
+    "ai suggestion": "List AI suggestions for a view.",
+    "annotation comment": "Add comments to annotations.",
+    "auth connected-apps": "List and revoke the apps you have authorised.",
+    "billing invoice": "List and charge invoices.",
+    "billing stripe": "Manage the Stripe subscription: checkout, trial, payment methods, invoices.",
+    "billing stripe payment-method": "List, delete and default Stripe payment methods.",
+    "billing stripe storage": "Set the Stripe storage tier.",
+    "billing subscription": "Read and update the subscription.",
+    "browse resources": "Browse workspace resources in bulk.",
+    "collection dashboards": "Add dashboards to a collection or remove them.",
+    "collection files": "Upload files to a collection.",
+    "collection members": "Remove members from a collection.",
+    "connector ai": "Chat with the connector assistant to set up a connection.",
+    "connector ai session": "List connector assistant sessions and their messages.",
+    "connector connection": "Create, read, update and delete connector connections.",
+    "connector ds-config": "Create, read, update and delete data-source configs.",
+    "connector query": "Generate connector queries and check their status.",
+    "context project": "Show, select or clear the active project.",
+    "dashboard audience": "Read who views a dashboard and its digest.",
+    "dashboard audience digest": "Read and set the audience digest of a dashboard.",
+    "dashboard canvas": "Read, save and restore a dashboard canvas.",
+    "dashboard chat": "Edit a dashboard by chat and read the chat history.",
+    "dashboard context": "Create, review, apply and manage dashboard contexts.",
+    "dashboard data": "Read the data behind a dashboard, draft or published.",
+    "dashboard embed": "Manage dashboard embedding: keys, origins, tokens and usage.",
+    "dashboard embed config": "Read and set the embed configuration.",
+    "dashboard embed key": "Rotate the embed key.",
+    "dashboard embed lifetime": "Set the embed token lifetime.",
+    "dashboard embed origin": "Revoke an allowed embed origin.",
+    "dashboard embed preview-token": "Create an embed preview token.",
+    "dashboard embed secret": "Rotate the embed secret.",
+    "dashboard embed usage": "Read embed usage and its summary.",
+    "dashboard engagement": "Read a dashboard's engagement and remind its viewers.",
+    "dashboard exemplar": "Extract an exemplar from a dashboard.",
+    "dashboard figure": "Add figures to a dashboard.",
+    "dashboard filter": "Add, list and remove dashboard filters.",
+    "dashboard gallery": "List and read gallery dashboards.",
+    "dashboard own-data": "Start, check and finish a dashboard's own-data setup.",
+    "dashboard page": "Plan dashboard pages.",
+    "dashboard pages": "Add pages to a dashboard.",
+    "dashboard pdf": "Export a dashboard as a PDF.",
+    "dashboard published": "Read and export a published dashboard.",
+    "dashboard published pdf": "Export a published dashboard as a PDF.",
+    "dashboard published video": "Export a published dashboard as a video.",
+    "dashboard qa": "Ask questions of a dashboard and manage the Q&A sessions.",
+    "dashboard qa comment": "Create and delete Q&A comments.",
+    "dashboard qa session": "Create, read, fork, rename and share Q&A sessions.",
+    "dashboard qa settings": "Read and set Q&A settings.",
+    "dashboard rls": "Row-level security for a dashboard.",
+    "dashboard rls assignment": "List and set row-level security assignments.",
+    "dashboard rls column": "List the columns row-level security can use.",
+    "dashboard rls value": "List the values row-level security can use.",
+    "dashboard signature": "Create, list, update and delete dashboard signatures.",
+    "dashboard source": "List the data sources of dashboards.",
+    "dashboard style": "Manage dashboard styles: presets, tokens, custom and default.",
+    "dashboard style custom": "Create, list, update and delete custom styles.",
+    "dashboard style default": "Read and set the default style.",
+    "dashboard style preset": "List style presets.",
+    "dashboard style token": "List style tokens.",
+    "dashboard suggestion": "List dashboard suggestions.",
+    "dashboard tags": "List, set, rename, merge and delete dashboard tags.",
+    "dashboard template": "Create, apply and manage dashboard templates.",
+    "dashboard template thumbnail": "Read, set and clear a template thumbnail.",
+    "dashboard templates": "Use or list pending dashboard templates.",
+    "dashboard v3": "Generate v3 dashboards.",
+    "dashboard video": "Export a dashboard as a video.",
+    "data-app user": "List and remove the users of a data app.",
+    "dataset broken-rows": "List and resolve rows that failed to load.",
+    "dataset file-settings": "Read, update and undo a dataset's file settings.",
+    "dataset interpretation": "Preview and confirm how a file is interpreted.",
+    "parameter group": "Create, list, update, reorder and delete parameter groups.",
+    "project checkpoint": "List project checkpoints.",
+    "project data-check": "List project data checks.",
+    "project memory": "Add, list and remove project memory notes.",
+    "project resource-dependencies": "Update project resource dependencies.",
+    "project user": "Add, update and remove project users.",
+    "skill agents-md": "Install the agent instructions file.",
+    "support connector": "Create, list, update and delete connectors.",
+    "support connector-profile": "Manage connector profiles and their connectors.",
+    "support feature": "Create, list, update and delete features.",
+    "support feature-profile": "Manage feature profiles and their features.",
+    "support ownership": "Transfer ownership.",
+    "support plan": "Manage billing plans.",
+    "support plan storage-option": "Manage a plan's storage options.",
+    "support subscription": "Create, read and update subscriptions.",
+    "support template": "Audit, edit, import, export and publish templates.",
+    "support template thumbnail": "Set and clear a template thumbnail.",
+    "support user": "List, register and update users.",
+    "support workspace": "Manage workspaces: create, suspend, restore and delete.",
+    "support workspace user": "Add, list, remove and transfer workspace users.",
+    "user avatar": "Upload or delete the avatar.",
+    "user preference": "Read and update user preferences.",
+    "view active-user": "List the users active on a view and mark activity.",
+    "view ai": "AI profile and generated data for a view.",
+    "view checkpoint": "Create, list, update and delete view checkpoints.",
+    "view conditional-format": "Create, list, update and delete conditional formats.",
+    "view data": "Read, query, aggregate, compare and profile a view's data.",
+    "view data-check": "Create, list, update and delete data checks on a view.",
+    "view derivative": "Create, list, update and delete derivative views.",
+    "view draft": "Enter, run, submit or discard a view draft.",
+    "view explore-panel": "Read and change the Explore cards of a view.",
+    "view export": "Export a view to a file, database or service.",
+    "view exportable-config": "Read and apply a view's exportable config.",
+    "view pipeline": "Read, edit, rerun and wait on a view's pipeline.",
+    "view task": "Add, list, update and delete pipeline tasks.",
+    "view transform": "Add transformations to a view.",
+    "view variants": "Create view variants.",
+    "view version": "List, read, apply and delete view versions.",
+    "workflow block": "Add and configure workflow blocks.",
+    "workspace invite": "List, resend, revoke and delete workspace invites.",
+    "workspace oauth-client": "Register, list, delete and revoke OAuth client grants.",
+    "workspace segment": "List and update workspace segments.",
+    "workspace user": "Add, list, update and remove workspace users.",
+}
+
+
 def _group_description(tokens: tuple[str, ...]) -> str:
     """Return the help line for the group at ``tokens``."""
+    path = " ".join(tokens)
+    if path in _SUBGROUP_DESCRIPTIONS:
+        return _SUBGROUP_DESCRIPTIONS[path]
     if tokens[0] == "agent" and len(tokens) > 1 and tokens[1] in _AGENT_SUBGROUP_DESCRIPTIONS:
         return _AGENT_SUBGROUP_DESCRIPTIONS[tokens[1]]
-    return _GROUP_DESCRIPTIONS.get(tokens[0], f"Commands for {' '.join(tokens)}.")
+    if len(tokens) > 1:
+        return f"Commands for {path}."
+    return _GROUP_DESCRIPTIONS.get(tokens[0], f"Commands for {path}.")
 
 
 _ROOT_HELP_PANELS = {
@@ -142,6 +277,7 @@ _ROOT_HELP_PANELS = {
     "job": "Work with data",
     "batch": "Work with data",
     "dashboard": "Build and share",
+    "collection": "Build and share",
     "data-app": "Build and share",
     "report": "Build and share",
     "template": "Build and share",
@@ -1068,7 +1204,10 @@ def _indexed_summary(command_id: str) -> str | None:
 
 
 #: A line of ``--help`` a command needs that its handler's shared docstring cannot carry.
+_RAW_NOTE = "Input field raw: true returns DATE values with their time, not the date alone."
 _HELP_NOTES = {
+    "view.data.get": _RAW_NOTE,
+    "view.data.query": _RAW_NOTE,
     "view.export.dataset": (
         "Omit dataset_name unless the user gave one; the product default 'Result Dataset' is used."
     ),

@@ -2,6 +2,26 @@
 
 Every command returns the standard JSON envelope. On nonzero exit, read the error envelope and its `recovery_commands`; do not guess request fields. "Status on release" is joined from `docs/release-capability-matrix.json`: *ran once* means one bounded live run succeeded on the named CLI release, *untried* means nobody has run it (use it normally: confirm writes with the user, check the result afterwards), *not supported* means the backend refuses it. When this file disagrees with [capabilities](../capabilities.md) or a recipe, they win. Envelope shapes: [machine output](../machine-output.md).
 
+### `workflow.archive`
+
+Run: `mammoth workflow archive`. Exact input fields: `mammoth schema get workflow.archive`.
+
+Example: `mammoth workflow archive 123 --input '{"archived": true}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `WorkflowArchiveResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `workflow.attach-dataset`
+
+Run: `mammoth workflow attach-dataset`. Exact input fields: `mammoth schema get workflow.attach-dataset`.
+
+Example: `mammoth workflow attach-dataset 123 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `WorkflowAttachDatasetResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
 ### `workflow.block.add`
 
 Run: `mammoth workflow block add`. Exact input fields: `mammoth schema get workflow.block.add`.
@@ -121,6 +141,26 @@ Example: `mammoth workflow list`. Placeholders are illustrative; resolve IDs and
 Result: `WorkflowListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
 Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Empty result on this fixture. Empty after family 5 cleanup, as expected. Single invocation only.
+
+### `workflow.resolve-held`
+
+Run: `mammoth workflow resolve-held`. Exact input fields: `mammoth schema get workflow.resolve-held`.
+
+Example: `mammoth workflow resolve-held 123 Status --input '{"built": true}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `WorkflowResolveHeldResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `workflow.save`
+
+Run: `mammoth workflow save`. Exact input fields: `mammoth schema get workflow.save`.
+
+Example: `mammoth workflow save 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `WorkflowSaveResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
 
 ### `workflow.update`
 

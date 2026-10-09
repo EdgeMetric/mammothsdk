@@ -16,7 +16,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth data-app create`. Exact input fields: `mammoth schema get data-app.create`.
 
-Example: `mammoth data-app create --input '{"body": {"automation_id": 1, "dashboard_ids": [1], "name": "Revenue report", "project_id": 1}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth schema get data-app.create`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `DataAppCreateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
@@ -76,7 +76,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth data-app share`. Exact input fields: `mammoth schema get data-app.share`.
 
-Example: `mammoth data-app share 123 --input '{"body": {"params": {"auth": {"type_of_auth": "mammoth"}}}}' --yes`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth schema get data-app.share`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `DataAppShareResult`; mutation `external_effect`, confirmation `yes_always`, wait policy `not_async`.
 
@@ -86,7 +86,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth data-app update`. Exact input fields: `mammoth schema get data-app.update`.
 
-Example: `mammoth data-app update 123 --input '{"body": {"params": {"name": "Revenue report"}}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth schema get data-app.update`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `DataAppUpdateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 

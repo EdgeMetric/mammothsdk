@@ -415,3 +415,62 @@ def workflow_block_type(invocation: Invocation) -> HandlerResult:
             project_id=project_id,
         )
     return data, _meta(invocation, auth.workspace_id, project_id)
+
+
+def workflow_save(invocation: Invocation) -> HandlerResult:
+    """Save a workflow's unsaved canvas changes. Workflow id is positional."""
+    project_id = require_project(invocation)
+    workflow_id = _require_int_positional_at(invocation, 0, "workflow id")
+    document = invocation.load_input() or {}
+    kwargs: dict[str, Any] = {"workflow_id": workflow_id, "project_id": project_id}
+    _forward_optional(document, kwargs, ("keys", "expected_version"))
+    with open_service(invocation) as (service, auth):
+        data = service.call(_symbol(invocation), **kwargs)
+    return data, _meta(invocation, auth.workspace_id, project_id)
+
+
+def workflow_archive(invocation: Invocation) -> HandlerResult:
+    """Archive a workflow, or bring it back. Workflow id is positional."""
+    project_id = require_project(invocation)
+    workflow_id = _require_int_positional_at(invocation, 0, "workflow id")
+    document = invocation.load_input() or {}
+    kwargs: dict[str, Any] = {
+        "workflow_id": workflow_id,
+        "archived": _require_field(document, "archived"),
+        "project_id": project_id,
+    }
+    _forward_optional(document, kwargs, ("dataset_ids",))
+    with open_service(invocation) as (service, auth):
+        data = service.call(_symbol(invocation), **kwargs)
+    return data, _meta(invocation, auth.workspace_id, project_id)
+
+
+def workflow_attach_dataset(invocation: Invocation) -> HandlerResult:
+    """Attach a dataset to a workflow. Workflow id and dataset id are positional."""
+    project_id = require_project(invocation)
+    workflow_id = _require_int_positional_at(invocation, 0, "workflow id")
+    with open_service(invocation) as (service, auth):
+        data = service.call(
+            _symbol(invocation),
+            workflow_id=workflow_id,
+            datasource_id=invocation.positional("datasource_id"),
+            project_id=project_id,
+        )
+    return data, _meta(invocation, auth.workspace_id, project_id)
+
+
+def workflow_resolve_held(invocation: Invocation) -> HandlerResult:
+    """Settle a change that a workflow Save held back. Workflow id and change key are positional."""
+    project_id = require_project(invocation)
+    workflow_id = _require_int_positional_at(invocation, 0, "workflow id")
+    document = invocation.load_input() or {}
+    kwargs: dict[str, Any] = {
+        "workflow_id": workflow_id,
+        "key": invocation.positional("key"),
+        "built": _require_field(document, "built"),
+        "project_id": project_id,
+    }
+    _forward_optional(document, kwargs, ("expected_version",))
+    with open_service(invocation) as (service, auth):
+        data = service.call(_symbol(invocation), **kwargs)
+    return data, _meta(invocation, auth.workspace_id, project_id)

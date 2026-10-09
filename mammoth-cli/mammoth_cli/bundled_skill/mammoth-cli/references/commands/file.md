@@ -52,6 +52,26 @@ Result: `FileListResult`; mutation `read`, confirmation `none`, wait policy `not
 
 Status on release: ran once on CLI an earlier release — Bounded release read in project 3 succeeded; empty file list observed. No Full claim: no non-empty fixture.
 
+### `file.multi-sheet-extract`
+
+Run: `mammoth file multi-sheet-extract`. Exact input fields: `mammoth schema get file.multi-sheet-extract`.
+
+Example: `mammoth file multi-sheet-extract 123 --input '{"tables": [{"sample_key": "Status"}]}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `FileMultiSheetExtractResult`; mutation `benign_mutation`, confirmation `none`, wait policy `always_wait`.
+
+Status on release: untried; no live run recorded.
+
+### `file.multi-sheet-preview`
+
+Run: `mammoth file multi-sheet-preview`. Exact input fields: `mammoth schema get file.multi-sheet-preview`.
+
+Example: `mammoth file multi-sheet-preview 123 --input '{"sheet_name": "Revenue report"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `FileMultiSheetPreviewResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
 ### `file.set-password`
 
 Run: `mammoth file set-password`. Exact input fields: `mammoth schema get file.set-password`.

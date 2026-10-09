@@ -185,6 +185,31 @@ def file_extract_sheets(invocation: Invocation) -> HandlerResult:
     return data, _meta(invocation, auth.workspace_id, resolved_project(invocation))
 
 
+def file_multi_sheet_preview(invocation: Invocation) -> HandlerResult:
+    """Preview how one sheet of a multi-sheet file reads. File id is positional."""
+    file_id = _require_int_positional(invocation, "file id")
+    document = invocation.load_input() or {}
+    kwargs: dict[str, Any] = {
+        "file_id": file_id,
+        "sheet_name": _require_field(document, "sheet_name"),
+    }
+    _forward_optional(document, kwargs, ("block_id", "user_instruction", "structure_map"))
+    with open_service(invocation) as (service, auth):
+        data = service.call(_symbol(invocation), **kwargs)
+    return data, _meta(invocation, auth.workspace_id, resolved_project(invocation))
+
+
+def file_multi_sheet_extract(invocation: Invocation) -> HandlerResult:
+    """Create datasets from accepted sheet reads of a multi-sheet file. File id is positional."""
+    file_id = _require_int_positional(invocation, "file id")
+    document = invocation.load_input() or {}
+    kwargs: dict[str, Any] = {"file_id": file_id, "tables": _require_field(document, "tables")}
+    _forward_optional(document, kwargs, ("delete_file_after_extract",))
+    with open_service(invocation) as (service, auth):
+        data = service.call(_symbol(invocation), **kwargs)
+    return data, _meta(invocation, auth.workspace_id, resolved_project(invocation))
+
+
 def file_delete(invocation: Invocation) -> HandlerResult:
     """Permanently delete one file by id. Prompt or ``--yes`` required."""
     file_id = _require_int_positional(invocation, "file id")

@@ -722,6 +722,7 @@ class DataviewsAPI:
         timeout: int | None = None,
         poll_interval: float | None = None,
         sequence: int | None = None,
+        raw: bool = False,
     ) -> dict[str, Any]:
         """Get dataview data (GET method).
 
@@ -738,6 +739,8 @@ class DataviewsAPI:
             poll_interval: Seconds between job polls (default:
                 client.job_poll_seconds).
             sequence: Pipeline step to read data at (default: latest).
+            raw: When true, DATE values carry their time (``2026-10-04 16:00:00``)
+                instead of the date alone. Sent to the backend as ``raw``.
 
         Returns:
             Dict with dataview data.
@@ -746,10 +749,13 @@ class DataviewsAPI:
         proj = project_id or self._proj()
         if sequence is None:
             sequence = await self._client.pipeline.latest_task_sequence(dataview_id, dataset_id)
+        query: dict[str, Any] = {"sequence": sequence}
+        if raw:
+            query["raw"] = "true"
         response = await self._client._request_json(
             "GET",
             f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/dataviews/{dataview_id}/data",
-            params={"sequence": sequence},
+            params=query,
         )
         return await self._client._wait_if_job(
             response, timeout=timeout, poll_interval=poll_interval
@@ -767,6 +773,7 @@ class DataviewsAPI:
         sort: str | None = None,
         workspace_id: int | None = None,
         project_id: int | None = None,
+        raw: bool = False,
     ) -> dict[str, Any]:
         """Get dataview data with filtering options (POST method).
 
@@ -783,6 +790,8 @@ class DataviewsAPI:
             sort: Sort specification string (optional).
             workspace_id: ID of the workspace (uses client default if not provided).
             project_id: ID of the project (uses client default if not provided).
+            raw: When true, DATE values carry their time (``2026-10-04 16:00:00``)
+                instead of the date alone. Sent to the backend as ``raw``.
 
         Returns:
             Dict with filtered dataview data.
@@ -800,6 +809,8 @@ class DataviewsAPI:
             payload["condition"] = condition
         if sort is not None:
             payload["sort"] = sort
+        if raw:
+            payload["raw"] = True
         response = await self._client._request_json(
             "POST",
             f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/dataviews/{dataview_id}/data",

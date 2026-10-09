@@ -59,6 +59,18 @@ _FIXED_EXAMPLES: dict[str, tuple[tuple[str, ...], dict[str, Any]]] = {
         ("123",),
         {"panel": {"columns": "all"}},
     ),
+    "view.explore-panel.edit": (
+        ("123",),
+        {"edits": [{"op": "metric", "card": "Region", "agg": "SUM", "of": "Amount"}]},
+    ),
+    "view.explore-panel.add-to-dashboard": (
+        ("123",),
+        {"card": "Region", "new_dashboard_title": "Regions"},
+    ),
+    "view.explore-panel.export-image": (
+        ("123",),
+        {"card": "Region", "output_path": "card.svg", "style_id": None},
+    ),
     "project.check": (("123", "456"), {}),
     "view.data.profile": (("123",), {"target": "Churn"}),
     "view.variants.create": (
@@ -116,6 +128,17 @@ _COMMAND_DISCOVERY_PURPOSES = {
     "view.update": "rename change name to a new name title relabel",
     "view.explore-panel.get": "explore cards saved panel the data editor explore side panel read",
     "view.explore-panel.set": "open show explore cards for all or some columns, replace the panel",
+    "view.explore-panel.edit": (
+        "change an explore card: metric sum average, sort, list or chart layout, level, filter "
+        "or exclude values, clear, remove, search, scatter, ask a question"
+    ),
+    "view.explore-panel.add-to-dashboard": (
+        "put an explore card on a dashboard like the card menu add to dashboard, new blank board"
+    ),
+    "view.explore-panel.export-image": (
+        "export explore card as image, save explore chart as png or svg, a picture of one card "
+        "with its rows"
+    ),
     "dashboard.figure.add": (
         "append an explore card figure tile to a dashboard from a payload, no chat turn"
     ),
@@ -477,11 +500,88 @@ _COMMAND_DISCOVERY_PURPOSES = {
     "browse.resource": "open one resource by type and id properties of a dataset view folder",
     "browse.resources.bulk": "fetch many resources by type and id in one request batch lookup",
     "agent.turn.cancel": "stop the agent now cancel this turn halt what the assistant is doing",
+    "agent.run.retry": (
+        "retry the failed run again try once more run it again after it failed or stopped"
+    ),
+    "agent.run.instance.list": "which agents sub agents helpers workers ran in this run instances",
+    "agent.run.instance.messages": ("what did this agent of the run send and receive messages"),
+    "agent.run.instance.transcript": (
+        "show the full transcript of one agent in the run model messages"
+    ),
+    "agent.run.units.list": (
+        "which objects is the run working on units of work progress queued done failed"
+    ),
+    "agent.message.set-request-kind": (
+        "that answer was the wrong kind of request correct it ask insight build automate fix"
+    ),
+    "agent.plan.edit-proposal": (
+        "rename or remove a step in the plan proposal waiting workflow edit the plan"
+    ),
     "dashboard.swap-fit": "which dataset fits this dashboard before swapping data score candidates",
     "dashboard.audience.get": "who opened my dashboard readers visitors audience over time",
     "dashboard.audience.summary": "how many people opened each dashboard in the library",
     "dashboard.audience.digest.get": "weekly audience email setting for a dashboard get",
     "dashboard.audience.digest.set": "turn the weekly audience email on or off for a dashboard",
+    "dashboard.engagement.get": (
+        "who opened my dashboard how long they read each page reach engagement people visits"
+    ),
+    "dashboard.engagement.person": (
+        "one person's visits to my dashboard when and how long they read"
+    ),
+    "dashboard.engagement.remind": (
+        "remind people to look at the dashboard nudge email those who have not opened the board"
+    ),
+    "dashboard.own-data.start": (
+        "use my own data on a template board fit the template to my upload or dataset"
+    ),
+    "dashboard.own-data.status": "where the own-data run is, the stage and the proposal to review",
+    "dashboard.own-data.preview": "see the template board on my own data before accepting",
+    "dashboard.own-data.accept": "apply the proposed board on my own data to the dashboard",
+    "dashboard.own-data.dismiss": "drop the pending own-data proposal and keep the template as is",
+    "collection.create": (
+        "group dashboards into a collection a set of dashboards shared together as one"
+    ),
+    "collection.dashboards.add": "add one more board to an existing collection",
+    "collection.dashboards.remove": "take a dashboard out of a collection",
+    "collection.share": "share a set of dashboards with people by email as one collection",
+    "collection.members.remove": "stop sharing a collection with a person",
+    "collection.for-dashboard": (
+        "which collections hold this dashboard groups containing this board"
+    ),
+    "collection.activity": "who opened the collection and which dashboards inside get opened",
+    "collection.files.upload": "upload a file to refresh the data behind a collection",
+    "collection.active-job": "resume the upload to a collection that was interrupted still running",
+    "collection.job": "check the progress of one upload job for a collection by its job id",
+    "dashboard.attachment-create": (
+        "attach a power bi or tableau workbook to the chat so the agent can read it"
+    ),
+    "file.multi-sheet-preview": (
+        "see how one sheet of a multi-sheet excel file reads before making datasets"
+    ),
+    "file.multi-sheet-extract": (
+        "make a dataset from each accepted sheet of a multi-sheet excel file"
+    ),
+    "workflow.save": "save a workflow's unsaved changes on the canvas",
+    "workflow.archive": "archive a workflow or bring an archived workflow back",
+    "workflow.attach-dataset": "add an existing dataset to a workflow",
+    "workflow.resolve-held": "settle a change that a workflow save held back",
+    "auth.connected-apps.list": (
+        "which apps have access to my account the apps I authorised connected apps"
+    ),
+    "auth.connected-apps.revoke": "disconnect an app I authorised cut off its access to my account",
+    "workspace.current": (
+        "which workspace this token acts in the current workspace the server it is fenced to"
+    ),
+    "workspace.oauth-client.list": (
+        "the OAuth clients of this workspace the apps that sign users in"
+    ),
+    "workspace.oauth-client.create": (
+        "register an OAuth client a new app that signs users in with Mammoth"
+    ),
+    "workspace.oauth-client.delete": "delete an OAuth client the app that signs users in",
+    "workspace.oauth-client.revoke-grant": (
+        "revoke every grant of an OAuth client make users authorise again"
+    ),
     "dashboard.columns": "columns of the dashboard source data profile samples ranges data panel",
     "dashboard.context.review": "preview what the context change would do to the dashboard dry run",
     "dashboard.context.apply": "apply the reviewed context change to the dashboard",
@@ -684,7 +784,7 @@ IN_PLACE_RECIPE = (
     "EDITS THE GIVEN VIEW IN PLACE: this adds a step to the view and changes that view "
     "and its dataset's output. To make a NEW dataset and leave the source untouched: "
     "`mammoth view create SOURCE_DATASET_ID` (working view), do the steps on that working "
-    'view, then `mammoth view export dataset WORKING_VIEW_ID` (add dataset_name only if the user named it).'
+    "view, then `mammoth view export dataset WORKING_VIEW_ID` (add dataset_name only if the user named it)."
 )
 _IN_PLACE_KEYWORDS = (
     "new dataset create make in place edits given view working view source untouched"

@@ -10,8 +10,9 @@ Inputs (all offline):
 Outputs:
 - ``spec/manifests/openapi-operations.yaml``  376 operation records.
 - ``spec/manifests/sdk-methods.yaml``         242 SDK method records.
-- ``spec/manifests/commands/<group>.yaml``    one command record per command.
+- ``spec/manifests/commands/<group>.yaml``    a record for each command id not yet on disk.
 
+The command files are hand-maintained, so existing records are never rewritten.
 Regeneration is deterministic: re-running must produce no diff.
 """
 
@@ -20,7 +21,6 @@ from __future__ import annotations
 import shlex
 import sys
 from collections import defaultdict
-from functools import cache
 from pathlib import Path
 from typing import Any
 
@@ -67,22 +67,28 @@ def _with_edits_target(record: dict[str, Any], edits: set[str]) -> dict[str, Any
     return out
 
 
-@cache
-def _existing_group(group: str) -> dict[str, dict[str, Any]]:
-    """The command records already on disk for ``group``, by command id."""
+def _existing_commands() -> dict[str, dict[str, Any]]:
+    """Every command record already on disk, by command id."""
+    import yaml
+
+    records: dict[str, dict[str, Any]] = {}
+    for path in sorted(COMMANDS_DIR.glob("*.yaml")):
+        for record in yaml.safe_load(path.read_text(encoding="utf-8"))["commands"]:
+            records[record["command_id"]] = record
+    return records
+
+
+def _append_command_records(group: str, records: list[dict[str, Any]]) -> None:
+    """Append ``records`` to ``commands/<group>.yaml``, keeping the records already there."""
     import yaml
 
     path = COMMANDS_DIR / f"{group}.yaml"
-    if not path.exists():
-        return {}
-    loaded = yaml.safe_load(path.read_text(encoding="utf-8"))
-    return {record["command_id"]: record for record in loaded.get("commands", [])}
-
-
-def _existing_readback(command_id: str) -> dict[str, Any]:
-    """The ``readback``/``no_readback`` already recorded for ``command_id`` on disk."""
-    record = _existing_group(command_id.split(".", 1)[0]).get(command_id, {})
-    return {key: record[key] for key in ("readback", "no_readback") if key in record}
+    existing = yaml.safe_load(path.read_text(encoding="utf-8"))["commands"] if path.exists() else []
+    added = sorted(records, key=lambda record: record["command_id"])
+    path.write_text(
+        _yaml_dump({"manifest_schema_version": 1, "commands": existing + added}),
+        encoding="utf-8",
+    )
 
 
 def _yaml_dump(data: Any) -> str:
@@ -620,45 +626,33 @@ def build() -> dict[str, int]:
                 contract_tests=[f"mammoth-cli/tests/contract/{test}.py::{test}"],
             )
 
+    # The edits-target guard checks against every command that exists: the ones
+    # generated here and the hand-maintained records already on disk.
+    on_disk = _existing_commands()
+    known_mutation = {cid: rec["mutation_class"] for cid, rec in commands.items()}
+    known_mutation.update({cid: rec["mutation_class"] for cid, rec in on_disk.items()})
     edits = _load_edits_target_commands()
-    unknown = sorted(
-        c for c in edits if c not in commands or commands[c]["mutation_class"] == "read"
-    )
+    unknown = sorted(c for c in edits if c not in known_mutation or known_mutation[c] == "read")
     if unknown:
         raise SystemExit(
             f"edits-target.source.yaml lists non-mutating or unknown commands: {unknown}"
         )
-    commands = {cid: _with_edits_target(rec, edits) for cid, rec in commands.items()}
 
-    # write grouped by top-level group
-    grouped: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    # Only command ids absent from disk are written; their groups get the new
+    # records appended and every existing record is left as it is.
+    added: dict[str, list[dict[str, Any]]] = defaultdict(list)
     for command_id, record in commands.items():
-        grouped[command_id.split(".", 1)[0]].append(record)
-    # Readback declarations are authored by hand (see _add_readback.py); carry
-    # them over from the files about to be replaced instead of wiping them.
-    for group_records in grouped.values():
-        for record in group_records:
-            for key in ("readback", "no_readback"):
-                kept = _existing_readback(record["command_id"]).get(key)
-                if kept is not None and key not in record:
-                    record[key] = kept
-    # clear stale files
-    if COMMANDS_DIR.exists():
-        for stale in COMMANDS_DIR.glob("*.yaml"):
-            stale.unlink()
+        if command_id not in on_disk:
+            added[command_id.split(".", 1)[0]].append(_with_edits_target(record, edits))
     COMMANDS_DIR.mkdir(parents=True, exist_ok=True)
-    for group in sorted(grouped):
-        records = sorted(grouped[group], key=lambda record: record["command_id"])
-        (COMMANDS_DIR / f"{group}.yaml").write_text(
-            _yaml_dump({"manifest_schema_version": 1, "commands": records}),
-            encoding="utf-8",
-        )
+    for group in sorted(added):
+        _append_command_records(group, added[group])
 
     return {
         "operations": len(op_records),
         "sdk_methods": len(sdk_records),
         "commands": len(commands),
-        "command_groups": len(grouped),
+        "commands_added": sum(len(records) for records in added.values()),
     }
 
 

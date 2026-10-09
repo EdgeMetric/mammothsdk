@@ -1786,9 +1786,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view derivative update VIEW_ID DERIVATIVE_ID --help
-  agent_example: 'mammoth view derivative update 123 123 123 --input ''{"body": {"patches": [{"op": "replace",
-    "path": "param", "value": {"METRIC": {"AS": "sample", "EXPRESSION": [{"TYPE": "FUNCTION", "VALUE":
-    {"ARGUMENT": "sample", "FUNCTION": "SUM"}}]}}}]}}'''
+  agent_example: 'mammoth view derivative update 123 123 123 --input ''{"body": {"patches": [{"op": "replace", "path": "param", "value": {"METRIC": {"AS": "sample", "EXPRESSION": [{"TYPE": "FUNCTION", "VALUE": {"FUNCTION": "SUM"}}]}}}]}}'''
   unit_tests:
   - UT-VIEW-DERIVATIVE-UPDATE
   contract_tests:
@@ -6571,6 +6569,150 @@ commands:
   draft_test: null
   undo_test: null
   known_restrictions: 'This is the command that opens Explore cards in the UI. Open a card per column with {"panel": {"columns": "all"}} or {"panel": {"columns": ["Region", "Amount"]}}: each named column that has no card gets one and the saved cards stay. To replace the whole panel, run view explore-panel get first and write back {"panel": {"cards": [...]}}. A panel with no cards list is refused, because the web app shows only cards. The result carries "panel", the panel read back after the write (what get returns): check its cards to see which are open. It is a per-user preference: it does not change the view or what other users see.'
+  reviewed_by: primary
+- command_id: view.explore-panel.edit
+  command_path: view explore-panel edit
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - Patch
+  positionals:
+  - name: view_id
+    type: int
+    required: true
+    metavar: VIEW_ID
+    falls_back_to_field: null
+    help: ID of the view to act on.
+  - name: dataset_id
+    type: int
+    required: false
+    metavar: DATASET_ID
+    falls_back_to_field: dataset_id
+    help: "Optional parent dataset ID. Leave it out and the CLI looks up the view's dataset. A value that is not the view's dataset is refused before the write."
+  options: []
+  sdk_symbol: mammoth.api.dataviews.DataviewsAPI.set_explore_panel
+  sdk_conversion: Call mammoth.api.dataviews.DataviewsAPI.set_explore_panel with validated request fields.
+  request_model: ViewExplorePanelEditRequest
+  result_model: ViewExplorePanelEditResult
+  mutation_class: benign_mutation
+  edits_target: true
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_no_disposable_fixture
+  no_readback: the command reads the saved panel back itself and returns it as "panel" (the same data view explore-panel get returns)
+  live_test: null
+  live_exemption_reason: Needs a disposable project; no live config locally.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view explore-panel edit VIEW_ID --help
+  agent_example: 'mammoth view explore-panel edit 123 --input ''{"edits": [{"op": "metric", "card": "Region", "agg": "SUM", "of": "Amount"}]}'''
+  unit_tests:
+  - UT-VIEW-EXPLORE-PANEL-EDIT
+  contract_tests:
+  - CT-VIEW-EXPLORE-PANEL-EDIT-HUMAN
+  - CT-VIEW-EXPLORE-PANEL-EDIT-JSON
+  - CT-VIEW-EXPLORE-PANEL-EDIT-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Changes the Explore cards the way the card menus do, with display names and no card JSON, and writes the panel once. The card must be open (view explore-panel set). Input {"edits": [...]}, applied in order; each edit is {"op", "card": COLUMN NAME, ...}. metric: {"agg": COUNT} or {"agg": SUM|AVG|MIN|MAX|STDDEV|DISTINCT_COUNT, "of": NUMERIC COLUMN} (DISTINCT_COUNT takes any column). sort: {"by": metric|value, "direction": ASC|DESC}, list views only. view: {"view": list|columns|timeline|donut|treemap}, which depends on the column type. level: {"level": a date level or a number bucket width}. filter / exclude: {"values": [...]} for text, {"from", "to"} for ranges, {"blanks": true} for blanks; clear: the filter off; remove: the card off. Query cards: {"op": "search", "text": "...", "columns": [...]}, {"op": "scatter", "x": NUMERIC, "y": NUMERIC, "box": {...}} and {"op": "ask", "question": "..."} (the question goes to the same suggestions call the web app makes and its condition is kept). An unknown column, a column of the wrong type or a value outside the web app''s options is refused with the valid choices. The result carries "panel", the panel read back. It is a per-user preference: it does not change the view or what other users see.'
+  reviewed_by: primary
+- command_id: view.explore-panel.add-to-dashboard
+  command_path: view explore-panel add-to-dashboard
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - AppendFigure
+  positionals:
+  - name: view_id
+    type: int
+    required: true
+    metavar: VIEW_ID
+    falls_back_to_field: null
+    help: ID of the view to act on.
+  - name: dataset_id
+    type: int
+    required: false
+    metavar: DATASET_ID
+    falls_back_to_field: dataset_id
+    help: "Optional parent dataset ID. Leave it out and the CLI looks up the view's dataset. A value that is not the view's dataset is refused before the write."
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.append_figure
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.append_figure with validated request fields.
+  request_model: ViewExplorePanelAddToDashboardRequest
+  result_model: ViewExplorePanelAddToDashboardResult
+  mutation_class: benign_mutation
+  edits_target: false
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_no_disposable_fixture
+  no_readback: the result carries the added figure, its notes and the board id (dashboard_id); read the board with dashboard canvas get
+  live_test: null
+  live_exemption_reason: Needs a disposable project; no live config locally.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view explore-panel add-to-dashboard VIEW_ID --help
+  agent_example: 'mammoth view explore-panel add-to-dashboard 123 --input ''{"card": "Region", "new_dashboard_title": "Regions"}'''
+  unit_tests:
+  - UT-VIEW-EXPLORE-PANEL-ADD-TO-DASHBOARD
+  contract_tests:
+  - CT-VIEW-EXPLORE-PANEL-ADD-TO-DASHBOARD-HUMAN
+  - CT-VIEW-EXPLORE-PANEL-ADD-TO-DASHBOARD-JSON
+  - CT-VIEW-EXPLORE-PANEL-ADD-TO-DASHBOARD-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Puts one open Explore card on a dashboard as a figure, like the card menu''s Add to dashboard. Input {"card": COLUMN NAME} and either "dashboard_id" (an existing board of this view) or "new_dashboard_title" (a new blank board; a title the project already has is refused); "page": {"id": N} or {"new_title": "..."} goes with dashboard_id. The card becomes the figure the web app makes: a text list a top 10 bar (donut top 7, treemap top 24), a date a bar or line by year or month, a number a bar over fixed ranges. The result carries the figure, "notes" (what does not carry over: top N, date unit, fixed ranges, filters left off), dashboard_id and created_dashboard. A filter card (search, scatter, ask), a card whose column is gone and a card with a value the dashboard cannot show are refused with the web app''s reason. Wait for the bake with job wait.'
+  reviewed_by: primary
+- command_id: view.explore-panel.export-image
+  command_path: view explore-panel export-image
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - RenderFigureSvg
+  positionals:
+  - name: view_id
+    type: int
+    required: true
+    metavar: VIEW_ID
+    falls_back_to_field: null
+    help: ID of the view to act on.
+  - name: dataset_id
+    type: int
+    required: false
+    metavar: DATASET_ID
+    falls_back_to_field: dataset_id
+    help: ID of the dataset the view belongs to; resolved from the view when omitted.
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.render_figure_svg
+  sdk_conversion: Read the view's saved Explore panel and the card's grouped rows, build the engine figure spec from them, call mammoth.api.dashboards.DashboardsAPI.render_figure_svg, and write the returned SVG to output_path.
+  request_model: ViewExplorePanelExportImageRequest
+  result_model: ViewExplorePanelExportImageResult
+  mutation_class: read
+  edits_target: false
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_no_disposable_fixture
+  no_readback: the result carries output_path, the file written; the SVG is not echoed
+  live_test: null
+  live_exemption_reason: The render route is not deployed to koyal yet (mvc-service PR #6906); dry-run only until it is.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view explore-panel export-image VIEW_ID --help
+  agent_example: 'mammoth view explore-panel export-image 123 --input ''{"card": "Region", "output_path": "card.svg", "style_id": null}'''
+  unit_tests:
+  - UT-VIEW-EXPLORE-PANEL-EXPORT-IMAGE
+  contract_tests:
+  - CT-VIEW-EXPLORE-PANEL-EXPORT-IMAGE-HUMAN
+  - CT-VIEW-EXPLORE-PANEL-EXPORT-IMAGE-JSON
+  - CT-VIEW-EXPLORE-PANEL-EXPORT-IMAGE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Writes the open Explore card "card" (its column display name) as an SVG file at "output_path" (default explore-card-VIEW_ID.svg). The backend has no rasterizer, so this writes SVG only; the web app''s PNG is a browser screenshot. A bar card becomes a bar chart (one bar per group, its value the card''s metric); a list card becomes a table of its rows. The rows are read as view data explore reads them, so the list is the top values the backend returns (TEXT: 20). "style_id" optionally renders with a saved style. The card must be open (view explore-panel set). Not available inside the Mammoth app: it writes a file on the host. It is a per-user preference read; it does not change the view or the panel.'
   reviewed_by: primary
 - command_id: view.compare
   command_path: view compare

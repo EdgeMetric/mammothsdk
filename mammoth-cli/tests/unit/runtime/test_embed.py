@@ -192,7 +192,7 @@ def test_help_is_captured_as_a_success_envelope_not_no_output(
     envelope = invoke(["view", "transform", "--help"], login=_login(5))
 
     assert "error" not in envelope
-    assert "Transform" in envelope["data"]["help"]
+    assert "Add transformations to a view" in envelope["data"]["help"]
     assert "date-diff" in envelope["data"]["help"]
     assert envelope["meta"]["command"] == "view transform"
     assert capsys.readouterr() == ("", "")

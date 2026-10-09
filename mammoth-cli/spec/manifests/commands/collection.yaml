@@ -1,0 +1,709 @@
+manifest_schema_version: 1
+commands:
+- command_id: collection.list
+  command_path: collection list
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - ListCollections
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.collections.CollectionsAPI.list
+  sdk_conversion: Call mammoth.api.collections.CollectionsAPI.list with validated request fields.
+  request_model: CollectionListRequest
+  result_model: CollectionListResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Read of a disposable collection or board; not in the automated live suite.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth collection list --help
+  agent_example: mammoth collection list
+  unit_tests:
+  - UT-COLLECTION-LIST
+  contract_tests:
+  - CT-COLLECTION-LIST-HUMAN
+  - CT-COLLECTION-LIST-JSON
+  - CT-COLLECTION-LIST-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Read-only. The collections you manage or were shared, each with its role (manager
+    or member), url, project and dashboard count.
+  reviewed_by: primary
+- command_id: collection.get
+  command_path: collection get
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetCollection
+  positionals:
+  - name: collection_id
+    type: int
+    required: true
+    metavar: COLLECTION_ID
+    falls_back_to_field: null
+    help: ID of the collection.
+  options: []
+  sdk_symbol: mammoth.api.collections.CollectionsAPI.get
+  sdk_conversion: Call mammoth.api.collections.CollectionsAPI.get with validated request fields.
+  request_model: CollectionGetRequest
+  result_model: CollectionGetResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Read of a disposable collection or board; not in the automated live suite.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth collection get COLLECTION_ID --help
+  agent_example: mammoth collection get 123
+  unit_tests:
+  - UT-COLLECTION-GET
+  contract_tests:
+  - CT-COLLECTION-GET-HUMAN
+  - CT-COLLECTION-GET-JSON
+  - CT-COLLECTION-GET-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Read-only. One collection with its dashboards in order, its members (managers only),
+    and its refresh setup.
+  reviewed_by: primary
+- command_id: collection.get-by-url
+  command_path: collection get-by-url
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetCollectionByUrl
+  positionals:
+  - name: url
+    type: str
+    required: true
+    metavar: URL
+    falls_back_to_field: null
+    help: URL slug identifying the resource.
+  options: []
+  sdk_symbol: mammoth.api.collections.CollectionsAPI.get_by_url
+  sdk_conversion: Call mammoth.api.collections.CollectionsAPI.get_by_url with validated request fields.
+  request_model: CollectionGetByUrlRequest
+  result_model: CollectionGetByUrlResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Read of a disposable collection or board; not in the automated live suite.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth collection get-by-url URL --help
+  agent_example: mammoth collection get-by-url https://example.com/data.csv
+  unit_tests:
+  - UT-COLLECTION-GET-BY-URL
+  contract_tests:
+  - CT-COLLECTION-GET-BY-URL-HUMAN
+  - CT-COLLECTION-GET-BY-URL-JSON
+  - CT-COLLECTION-GET-BY-URL-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Read-only. Opens a collection by its share url token, as a viewer does. Input t
+    is the invite token, which the server redeems on the way in; email is the address the invite went
+    to.
+  reviewed_by: primary
+- command_id: collection.create
+  command_path: collection create
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - CreateCollection
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.collections.CollectionsAPI.create
+  sdk_conversion: Call mammoth.api.collections.CollectionsAPI.create with validated request fields.
+  request_model: CollectionCreateRequest
+  result_model: CollectionCreateResult
+  mutation_class: benign_mutation
+  edits_target: false
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_no_disposable_fixture
+  readback:
+    command: collection.get
+    ids:
+      collection_id: result.id
+    kind: object
+  live_test: null
+  live_exemption_reason: Write with contract coverage but no automated disposable fixture in tests/live.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth collection create --help
+  agent_example: 'mammoth collection create --input ''{"name": "Revenue report"}'''
+  unit_tests:
+  - UT-COLLECTION-CREATE
+  contract_tests:
+  - CT-COLLECTION-CREATE-HUMAN
+  - CT-COLLECTION-CREATE-JSON
+  - CT-COLLECTION-CREATE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Creates a collection in the active project (--project, or input project_id). name
+    is 1 to 120 characters; dashboard_ids puts boards in it, in order. Nobody else sees it until collection
+    share.
+  reviewed_by: primary
+- command_id: collection.update
+  command_path: collection update
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - UpdateCollection
+  positionals:
+  - name: collection_id
+    type: int
+    required: true
+    metavar: COLLECTION_ID
+    falls_back_to_field: null
+    help: ID of the collection.
+  options: []
+  sdk_symbol: mammoth.api.collections.CollectionsAPI.update
+  sdk_conversion: Call mammoth.api.collections.CollectionsAPI.update with validated request fields.
+  request_model: CollectionUpdateRequest
+  result_model: CollectionUpdateResult
+  mutation_class: benign_mutation
+  edits_target: true
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_no_disposable_fixture
+  readback:
+    command: collection.get
+    ids:
+      collection_id: positional.0
+    kind: object
+  live_test: null
+  live_exemption_reason: Write with contract coverage but no automated disposable fixture in tests/live.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth collection update COLLECTION_ID --help
+  agent_example: 'mammoth collection update 123 --input ''{"name": "Q3 pack"}'''
+  unit_tests:
+  - UT-COLLECTION-UPDATE
+  contract_tests:
+  - CT-COLLECTION-UPDATE-HUMAN
+  - CT-COLLECTION-UPDATE-JSON
+  - CT-COLLECTION-UPDATE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Changes only the fields given: name, description, order (every dashboard id, in
+    the new order), tab_labels (dashboard id to a short label; empty clears it), automation_id to link
+    the upload-to-refresh automation, or unlink_automation.'
+  reviewed_by: primary
+- command_id: collection.delete
+  command_path: collection delete
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - DeleteCollection
+  positionals:
+  - name: collection_id
+    type: int
+    required: true
+    metavar: COLLECTION_ID
+    falls_back_to_field: null
+    help: ID of the collection.
+  options: []
+  sdk_symbol: mammoth.api.collections.CollectionsAPI.delete
+  sdk_conversion: Call mammoth.api.collections.CollectionsAPI.delete with validated request fields.
+  request_model: CollectionDeleteRequest
+  result_model: CollectionDeleteResult
+  mutation_class: destructive
+  edits_target: true
+  confirmation: prompt_or_yes
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_no_disposable_fixture
+  readback:
+    command: collection.list
+    ids: {}
+    kind: object
+  live_test: null
+  live_exemption_reason: Write with contract coverage but no automated disposable fixture in tests/live.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth collection delete COLLECTION_ID --help
+  agent_example: mammoth collection delete 123
+  unit_tests:
+  - UT-COLLECTION-DELETE
+  contract_tests:
+  - CT-COLLECTION-DELETE-HUMAN
+  - CT-COLLECTION-DELETE-JSON
+  - CT-COLLECTION-DELETE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Deletes the collection and ends every member's access through it. The dashboards
+    in it are kept.
+  reviewed_by: primary
+- command_id: collection.dashboards.add
+  command_path: collection dashboards add
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - AddDashboards
+  positionals:
+  - name: collection_id
+    type: int
+    required: true
+    metavar: COLLECTION_ID
+    falls_back_to_field: null
+    help: ID of the collection.
+  options: []
+  sdk_symbol: mammoth.api.collections.CollectionsAPI.add_dashboards
+  sdk_conversion: Call mammoth.api.collections.CollectionsAPI.add_dashboards with validated request fields.
+  request_model: CollectionDashboardsAddRequest
+  result_model: CollectionDashboardsAddResult
+  mutation_class: external_effect
+  edits_target: true
+  confirmation: yes_always
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_no_disposable_fixture
+  readback:
+    command: collection.get
+    ids:
+      collection_id: positional.0
+    kind: object
+  live_test: null
+  live_exemption_reason: Write with contract coverage but no automated disposable fixture in tests/live.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth collection dashboards add COLLECTION_ID --help
+  agent_example: 'mammoth collection dashboards add 123 --input ''{"dashboard_ids": [1]}'''
+  unit_tests:
+  - UT-COLLECTION-DASHBOARDS-ADD
+  contract_tests:
+  - CT-COLLECTION-DASHBOARDS-ADD-HUMAN
+  - CT-COLLECTION-DASHBOARDS-ADD-JSON
+  - CT-COLLECTION-DASHBOARDS-ADD-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Adds dashboards to the collection, which gives its members access to them. notify
+    true also emails the members. Always needs --yes.
+  reviewed_by: primary
+- command_id: collection.dashboards.remove
+  command_path: collection dashboards remove
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - RemoveDashboard
+  positionals:
+  - name: collection_id
+    type: int
+    required: true
+    metavar: COLLECTION_ID
+    falls_back_to_field: null
+    help: ID of the collection.
+  - name: dashboard_id
+    type: int
+    required: true
+    metavar: DASHBOARD_ID
+    falls_back_to_field: null
+    help: ID of the dashboard.
+  options: []
+  sdk_symbol: mammoth.api.collections.CollectionsAPI.remove_dashboard
+  sdk_conversion: Call mammoth.api.collections.CollectionsAPI.remove_dashboard with validated request
+    fields.
+  request_model: CollectionDashboardsRemoveRequest
+  result_model: CollectionDashboardsRemoveResult
+  mutation_class: destructive
+  edits_target: true
+  confirmation: prompt_or_yes
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_no_disposable_fixture
+  readback:
+    command: collection.get
+    ids:
+      collection_id: positional.0
+    kind: object
+  live_test: null
+  live_exemption_reason: Write with contract coverage but no automated disposable fixture in tests/live.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth collection dashboards remove COLLECTION_ID DASHBOARD_ID --help
+  agent_example: mammoth collection dashboards remove 123 123
+  unit_tests:
+  - UT-COLLECTION-DASHBOARDS-REMOVE
+  contract_tests:
+  - CT-COLLECTION-DASHBOARDS-REMOVE-HUMAN
+  - CT-COLLECTION-DASHBOARDS-REMOVE-JSON
+  - CT-COLLECTION-DASHBOARDS-REMOVE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Takes one dashboard out of the collection. The dashboard is kept.
+  reviewed_by: primary
+- command_id: collection.share
+  command_path: collection share
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - ShareCollection
+  positionals:
+  - name: collection_id
+    type: int
+    required: true
+    metavar: COLLECTION_ID
+    falls_back_to_field: null
+    help: ID of the collection.
+  options: []
+  sdk_symbol: mammoth.api.collections.CollectionsAPI.share
+  sdk_conversion: Call mammoth.api.collections.CollectionsAPI.share with validated request fields.
+  request_model: CollectionShareRequest
+  result_model: CollectionShareResult
+  mutation_class: external_effect
+  edits_target: true
+  confirmation: yes_always
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_no_disposable_fixture
+  readback:
+    command: collection.get
+    ids:
+      collection_id: positional.0
+    kind: object
+  live_test: null
+  live_exemption_reason: Write with contract coverage but no automated disposable fixture in tests/live.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth collection share COLLECTION_ID --help
+  agent_example: 'mammoth collection share 123 --input ''{"emails": ["analyst@example.com"]}'''
+  unit_tests:
+  - UT-COLLECTION-SHARE
+  contract_tests:
+  - CT-COLLECTION-SHARE-HUMAN
+  - CT-COLLECTION-SHARE-JSON
+  - CT-COLLECTION-SHARE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Gives people access to the collection by email and sends them the invite. The result
+    lists added, already (members before) and in_project (skipped: they already edit the project''s boards).
+    Always needs --yes.'
+  reviewed_by: primary
+- command_id: collection.members.remove
+  command_path: collection members remove
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - RemoveMember
+  positionals:
+  - name: collection_id
+    type: int
+    required: true
+    metavar: COLLECTION_ID
+    falls_back_to_field: null
+    help: ID of the collection.
+  options: []
+  sdk_symbol: mammoth.api.collections.CollectionsAPI.remove_member
+  sdk_conversion: Call mammoth.api.collections.CollectionsAPI.remove_member with validated request fields.
+  request_model: CollectionMembersRemoveRequest
+  result_model: CollectionMembersRemoveResult
+  mutation_class: destructive
+  edits_target: true
+  confirmation: prompt_or_yes
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_no_disposable_fixture
+  readback:
+    command: collection.get
+    ids:
+      collection_id: positional.0
+    kind: object
+  live_test: null
+  live_exemption_reason: Write with contract coverage but no automated disposable fixture in tests/live.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth collection members remove COLLECTION_ID --help
+  agent_example: 'mammoth collection members remove 123 --input ''{"email": "analyst@example.com"}'''
+  unit_tests:
+  - UT-COLLECTION-MEMBERS-REMOVE
+  contract_tests:
+  - CT-COLLECTION-MEMBERS-REMOVE-HUMAN
+  - CT-COLLECTION-MEMBERS-REMOVE-JSON
+  - CT-COLLECTION-MEMBERS-REMOVE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Takes one person off the collection by email.
+  reviewed_by: primary
+- command_id: collection.for-dashboard
+  command_path: collection for-dashboard
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - CollectionsForDashboard
+  positionals:
+  - name: dashboard_id
+    type: int
+    required: true
+    metavar: DASHBOARD_ID
+    falls_back_to_field: null
+    help: ID of the dashboard.
+  options: []
+  sdk_symbol: mammoth.api.collections.CollectionsAPI.for_dashboard
+  sdk_conversion: Call mammoth.api.collections.CollectionsAPI.for_dashboard with validated request fields.
+  request_model: CollectionForDashboardRequest
+  result_model: CollectionForDashboardResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Read of a disposable collection or board; not in the automated live suite.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth collection for-dashboard DASHBOARD_ID --help
+  agent_example: mammoth collection for-dashboard 123
+  unit_tests:
+  - UT-COLLECTION-FOR-DASHBOARD
+  contract_tests:
+  - CT-COLLECTION-FOR-DASHBOARD-HUMAN
+  - CT-COLLECTION-FOR-DASHBOARD-JSON
+  - CT-COLLECTION-FOR-DASHBOARD-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Read-only. The collections that hold this dashboard, in the shape collection list
+    returns.
+  reviewed_by: primary
+- command_id: collection.activity
+  command_path: collection activity
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - CollectionActivity
+  positionals:
+  - name: collection_id
+    type: int
+    required: true
+    metavar: COLLECTION_ID
+    falls_back_to_field: null
+    help: ID of the collection.
+  options: []
+  sdk_symbol: mammoth.api.collections.CollectionsAPI.activity
+  sdk_conversion: Call mammoth.api.collections.CollectionsAPI.activity with validated request fields.
+  request_model: CollectionActivityRequest
+  result_model: CollectionActivityResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Read of a disposable collection or board; not in the automated live suite.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth collection activity COLLECTION_ID --help
+  agent_example: mammoth collection activity 123
+  unit_tests:
+  - UT-COLLECTION-ACTIVITY
+  contract_tests:
+  - CT-COLLECTION-ACTIVITY-HUMAN
+  - CT-COLLECTION-ACTIVITY-JSON
+  - CT-COLLECTION-ACTIVITY-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Read-only. Who opened the collection and which of its dashboards get opened: opened,
+    member_count, people (email, status, last_opened_at) and dashboards (views, viewers).'
+  reviewed_by: primary
+- command_id: collection.pipeline-changes
+  command_path: collection pipeline-changes
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - PipelineChanges
+  positionals:
+  - name: collection_id
+    type: int
+    required: true
+    metavar: COLLECTION_ID
+    falls_back_to_field: null
+    help: ID of the collection.
+  options: []
+  sdk_symbol: mammoth.api.collections.CollectionsAPI.pipeline_changes
+  sdk_conversion: Call mammoth.api.collections.CollectionsAPI.pipeline_changes with validated request
+    fields.
+  request_model: CollectionPipelineChangesRequest
+  result_model: CollectionPipelineChangesResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Read of a disposable collection or board; not in the automated live suite.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth collection pipeline-changes COLLECTION_ID --help
+  agent_example: mammoth collection pipeline-changes 123
+  unit_tests:
+  - UT-COLLECTION-PIPELINE-CHANGES
+  contract_tests:
+  - CT-COLLECTION-PIPELINE-CHANGES-HUMAN
+  - CT-COLLECTION-PIPELINE-CHANGES-JSON
+  - CT-COLLECTION-PIPELINE-CHANGES-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Read-only. Progress of the collection's data refresh; empty when no automation is
+    linked.
+  reviewed_by: primary
+- command_id: collection.files.upload
+  command_path: collection files upload
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - UploadFile
+  positionals:
+  - name: collection_id
+    type: int
+    required: true
+    metavar: COLLECTION_ID
+    falls_back_to_field: null
+    help: ID of the collection.
+  options: []
+  sdk_symbol: mammoth.api.collections.CollectionsAPI.upload_files
+  sdk_conversion: Call mammoth.api.collections.CollectionsAPI.upload_files with validated request fields.
+  request_model: CollectionFilesUploadRequest
+  result_model: CollectionFilesUploadResult
+  mutation_class: benign_mutation
+  edits_target: true
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_no_disposable_fixture
+  readback:
+    command: collection.get
+    ids:
+      collection_id: positional.0
+    kind: object
+  live_test: null
+  live_exemption_reason: Write with contract coverage but no automated disposable fixture in tests/live.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth collection files upload COLLECTION_ID --help
+  agent_example: 'mammoth collection files upload 123 --input ''{"files": ["./sales.csv"]}'''
+  unit_tests:
+  - UT-COLLECTION-FILES-UPLOAD
+  contract_tests:
+  - CT-COLLECTION-FILES-UPLOAD-HUMAN
+  - CT-COLLECTION-FILES-UPLOAD-JSON
+  - CT-COLLECTION-FILES-UPLOAD-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Uploads local files to refresh the collection's data. Input files is the list of
+    paths; append_to_ds_id appends to one of the refresh datasets. The server answers with an upload job
+    id and refreshes in the background.
+  reviewed_by: primary
+- command_id: collection.active-job
+  command_path: collection active-job
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - ActiveJob
+  positionals:
+  - name: collection_id
+    type: int
+    required: true
+    metavar: COLLECTION_ID
+    falls_back_to_field: null
+    help: ID of the collection.
+  options: []
+  sdk_symbol: mammoth.api.collections.CollectionsAPI.active_job
+  sdk_conversion: Call mammoth.api.collections.CollectionsAPI.active_job with validated request fields.
+  request_model: CollectionActiveJobRequest
+  result_model: CollectionActiveJobResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Read of a disposable collection; not in the automated live suite.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth collection active-job COLLECTION_ID --help
+  agent_example: mammoth collection active-job 123
+  unit_tests:
+  - UT-COLLECTION-ACTIVE-JOB
+  contract_tests:
+  - CT-COLLECTION-ACTIVE-JOB-HUMAN
+  - CT-COLLECTION-ACTIVE-JOB-JSON
+  - CT-COLLECTION-ACTIVE-JOB-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Read-only. Returns the collection''s upload job that is still in flight, so an
+    interrupted upload can be resumed. Use collection job to poll one job by id.'
+  reviewed_by: primary
+- command_id: collection.job
+  command_path: collection job
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetRefreshJob
+  positionals:
+  - name: collection_id
+    type: int
+    required: true
+    metavar: COLLECTION_ID
+    falls_back_to_field: null
+    help: ID of the collection.
+  - name: job_id
+    type: int
+    required: true
+    metavar: JOB_ID
+    falls_back_to_field: null
+    help: ID of the job.
+  options: []
+  sdk_symbol: mammoth.api.collections.CollectionsAPI.job
+  sdk_conversion: Call mammoth.api.collections.CollectionsAPI.job with validated request fields.
+  request_model: CollectionJobRequest
+  result_model: CollectionJobResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Read of a disposable collection job; not in the automated live suite.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth collection job COLLECTION_ID JOB_ID --help
+  agent_example: mammoth collection job 123 123
+  unit_tests:
+  - UT-COLLECTION-JOB
+  contract_tests:
+  - CT-COLLECTION-JOB-HUMAN
+  - CT-COLLECTION-JOB-JSON
+  - CT-COLLECTION-JOB-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Read-only. Polls one collection upload job by id and returns its state.
+  reviewed_by: primary
