@@ -19,7 +19,21 @@ class TestWhoATokenStandsFor:
         assert caller is not None
         assert caller.token == GOOD_TOKEN
         assert caller.resource == MCP_RESOURCE_URL
-        assert caller.claims == {TokenClaims.WORKSPACE_ID: WORKSPACE}
+        assert caller.claims == {
+            TokenClaims.WORKSPACE_ID: WORKSPACE,
+            TokenClaims.PROJECT_ID: None,
+        }
+
+    def test_the_caller_carries_the_project_they_are_pinned_to(self) -> None:
+        with a_fake_api() as api:
+            knows_the_token(api, workspace_id=WORKSPACE, project=31)
+            caller = run(token_verifier.verify_token(GOOD_TOKEN))
+
+        assert caller is not None
+        assert caller.claims == {
+            TokenClaims.WORKSPACE_ID: WORKSPACE,
+            TokenClaims.PROJECT_ID: 31,
+        }
 
     def test_mammoth_is_asked_with_the_token_itself(self) -> None:
         with a_fake_api() as api:

@@ -6,6 +6,13 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed (mammoth-io 0.8.35, mammoth-mcp-server 0.1.1)
+
+- `CurrentWorkspace.project` carries the one project a credential may act in, so the MCP server reads the connection's pinned project instead of asking the user for one it was already given.
+- `list_projects` asks for a pinned connection's project by id. It used to filter one page of the workspace's projects, which answered "no projects" whenever the pinned one sat on another page.
+- `check_upload` waits for Mammoth to take the file instead of ending the model's turn on the upload link.
+- An upload Mammoth refuses relays Mammoth's own status and words rather than a bare failure.
+
 ### Changed (mammoth-io 0.8.33, mammoth-cli 2.2.71)
 
 - Browser and device sign-in read the CLI's OAuth client id from the server's OAuth metadata (`mammoth_cli_client_id`) and fall back to the built-in table when the server does not publish it.

@@ -32,10 +32,12 @@ class WorkspaceSchema(BaseModel):
 
 
 class CurrentWorkspace(BaseModel):
-    """The workspace a credential acts in, and the server it was issued for."""
+    """What a credential is fenced to: its workspace, the server its token was
+    issued for, and the one project it may act in."""
 
     id: int
     resource: str | None = None
+    project: int | None = None
 
 
 class WorkspacesSchema(BaseModel):

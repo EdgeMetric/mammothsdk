@@ -8,6 +8,8 @@ tokens twice. Anything larger, or binary, goes through `request_upload`
 link, and the browser sends it, so the bytes never enter the conversation.
 """
 
+import asyncio
+import time
 from pathlib import PurePosixPath
 from typing import Literal
 
@@ -19,6 +21,8 @@ from ..consts import (
     LIST_LIMIT_DEFAULT,
     PREVIEW_ROWS_DEFAULT,
     UPLOAD_MEDIA_TYPES,
+    UPLOAD_POLL_SECONDS,
+    UPLOAD_WAIT_SECONDS,
     ApiFields,
     ApiPaths,
     ColumnFields,
@@ -32,6 +36,7 @@ from ..consts import (
 from ..jobs import find_job_id, wait_for_job
 from ..sdk import JsonValue, build_client, read_sdk_errors, request_api
 from ..server import mcp_server
+from ..store import Record
 from ..tool_kinds import CHANGES, DESTRUCTIVE, READS
 from ..upload_report import report_upload
 from ..upload_tickets import read_ticket
@@ -73,14 +78,45 @@ async def upload_file(
     return await wait_for_job(workspace_id, started)
 
 
+async def wait_for_the_file(upload_id: str) -> Record:
+    """The upload's ticket, once the user's file has reached Mammoth.
+
+    Holds the call while they are still choosing, because answering at once
+    ends the model's turn and only the user can start another one. The wait is
+    bounded: a user who never comes back gets a ticket with no job on it, and
+    the tool says `waiting` rather than hanging.
+
+    Args:
+        upload_id: What `request_upload` returned.
+
+    Returns:
+        The ticket, with a job on it if the file arrived in time.
+
+    Raises:
+        ToolError: If the link was never minted, or has expired.
+    """
+    give_up_at = time.monotonic() + UPLOAD_WAIT_SECONDS
+    while True:
+        ticket = await read_ticket(upload_id)
+        if ticket is None:
+            raise ToolError("That upload link has expired. Call request_upload for a new one.")
+        if ticket.get(UploadFields.JOB_ID) is not None or time.monotonic() >= give_up_at:
+            return ticket
+        await asyncio.sleep(UPLOAD_POLL_SECONDS)
+
+
 @mcp_server.tool(annotations=READS)
 async def check_upload(upload_id: str) -> dict[str, JsonValue]:
-    """Find out whether the user has uploaded their files yet.
+    """Wait for the user to upload their files, and report what came of them.
 
-    Call this after `request_upload` once the user says the files are in. The
-    uploader in the chat calls it too, before it tells you. While `status` is
-    `waiting` the user has not picked a file — say so rather than polling in
-    silence.
+    Call this straight after `request_upload`. It waits while they find the
+    file, so do not end your turn asking them to tell you when they are done —
+    they already asked you to get on with it. The uploader in the chat calls it
+    too, before it tells you.
+
+    `waiting` means they had not picked a file by the time the wait ran out.
+    Call again if you have reason to think they are still coming; after a
+    couple of rounds say you are waiting, rather than polling in silence.
 
     Args:
         upload_id: What `request_upload` returned.
@@ -99,9 +135,7 @@ async def check_upload(upload_id: str) -> dict[str, JsonValue]:
         guessing it spoils the data quietly. Several files can wait on
         different things. `rejected`: files Mammoth refused.
     """
-    ticket = await read_ticket(upload_id)
-    if ticket is None:
-        raise ToolError("That upload link has expired. Call request_upload for a new one.")
+    ticket = await wait_for_the_file(upload_id)
     job_id = ticket.get(UploadFields.JOB_ID)
     if job_id is None:
         return {

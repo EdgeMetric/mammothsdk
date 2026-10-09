@@ -30,6 +30,12 @@ OLDER_ENGINE_ROUTE = "dashboard"
 # How long an upload link is good for: long enough to leave the conversation,
 # find the file and come back, and no longer.
 UPLOAD_SECONDS = 30 * 60
+# How long `check_upload` holds the call while the user is still picking their
+# file. Answering at once ends the model's turn, and a turn that has ended
+# needs the user to start another one just to say the file is in. Short enough
+# to leave `TOOL_CALL_SECONDS` room for the job wait that follows.
+UPLOAD_WAIT_SECONDS = 30.0
+UPLOAD_POLL_SECONDS = 1.0
 # Listing tools page by default, so one call cannot fill the model's context.
 LIST_LIMIT_DEFAULT = 50
 
@@ -237,6 +243,7 @@ class ApiPaths:
         "/workspaces/{workspace_id}/projects/{project_id}" "/datasets/{dataset_id}/file_settings"
     )
     RESOURCES = "/workspaces/{workspace_id}/projects/{project_id}/resources"
+    BROWSE = "/workspaces/{workspace_id}/browse"
 
 
 class ResourceTypes:
@@ -288,6 +295,30 @@ class ErrorFields:
 
     NAME = "name"
     MESSAGE = "message"
+
+
+class ListFields:
+    """Keys the API's list answers put their rows under, and a row's own fields."""
+
+    PROJECTS = "projects"
+    ID = "id"
+    NAME = "name"
+
+
+class BrowseFields:
+    """The browse route's query parameters and the key its rows come under.
+
+    Browse is the one route that answers for a named resource id, which is how
+    a pinned connection reads its own project without paging for it.
+    """
+
+    RESOURCES = "resources"
+    TYPE = "browse_type"
+    PROJECT = "project"
+    IDS = "ids"
+    LEVEL = "level"
+    # Level 1 is the resources themselves, with none of their children.
+    ITSELF = 1
 
 
 class JobFields:
@@ -423,6 +454,9 @@ class TokenClaims:
 
     # The one workspace the caller's token belongs to.
     WORKSPACE_ID = "workspace_id"
+    # The one project the user picked when they connected, or None when they
+    # picked "All projects". Mammoth refuses the token on any other project.
+    PROJECT_ID = "project_id"
 
 
 class PipelineFields:

@@ -37,14 +37,25 @@ def run(awaitable: Any) -> Any:
 
 
 @contextmanager
-def as_caller(token: str = TOKEN, workspace_id: int = WORKSPACE) -> Generator[None]:
-    """Run the block as a caller whose token Mammoth issued for this server."""
+def as_caller(
+    token: str = TOKEN,
+    workspace_id: int = WORKSPACE,
+    project_id: int | None = None,
+) -> Generator[None]:
+    """Run the block as a caller whose token Mammoth issued for this server.
+
+    project_id is the one project the caller may act in; None is a caller who
+    picked "All projects" when they connected.
+    """
     access = AccessToken(
         token=token,
         client_id="a-client",
         scopes=[],
         resource=MCP_RESOURCE_URL,
-        claims={TokenClaims.WORKSPACE_ID: workspace_id},
+        claims={
+            TokenClaims.WORKSPACE_ID: workspace_id,
+            TokenClaims.PROJECT_ID: project_id,
+        },
     )
     reset = auth_context_var.set(AuthenticatedUser(access))
     try:
@@ -149,9 +160,12 @@ def knows_the_token(
     api: FakeApi,
     workspace_id: int = WORKSPACE,
     resource: str | None = MCP_RESOURCE_URL,
+    project: int | None = None,
 ) -> None:
     """Have the fake Mammoth say what a bearer token is for."""
     issued: dict[str, Any] = {"id": workspace_id}
     if resource is not None:
         issued["resource"] = resource
+    if project is not None:
+        issued["project"] = project
     api.answer("GET", "/workspaces/current", issued)
