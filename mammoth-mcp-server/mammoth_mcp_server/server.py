@@ -11,6 +11,7 @@ from mcp.server.auth.settings import AuthSettings
 
 from .config import MCP_OAUTH_URL, MCP_RESOURCE_URL, MCP_UPLOAD_PATH
 from .consts import MCP_INSTRUCTIONS, MCP_SERVER_NAME
+from .read_only import ReadOnly
 from .telemetry import Telemetry
 from .tokens import token_verifier
 from .upload_app import upload_app
@@ -22,7 +23,8 @@ mcp_server = MCPServer(
     extensions=[upload_app],
     # One JSON line per call, so the launch can be measured. It records which
     # tool ran and never what it ran on.
-    middleware=[Telemetry()],
+    # The limit runs before the record, so a refused write is recorded as one.
+    middleware=[Telemetry(), ReadOnly()],
     token_verifier=token_verifier,
     # The two URLs are validated from their text, which keeps a URL as it was
     # written. A client compares an issuer letter for letter.
