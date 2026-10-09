@@ -8,7 +8,7 @@ from starlette.testclient import TestClient
 from mammoth_mcp_server import store
 from mammoth_mcp_server.app import check_settings, create_app
 from mammoth_mcp_server.config import MCP_OAUTH_URL, MCP_RESOURCE_URL, SERVER_URL
-from mammoth_mcp_server.consts import UploadFields
+from mammoth_mcp_server.consts import ErrorFields, UploadFields
 from mammoth_mcp_server.upload_tickets import mint_ticket, read_ticket
 
 from .helpers import (
@@ -163,6 +163,21 @@ class TestTheUploadPage:
             caller = get_access_token()
             assert caller is not None
             return run(mint_ticket(caller, WORKSPACE, PROJECT))
+
+    def test_mammoths_own_refusal_reaches_the_page(self, server: TestClient) -> None:
+        # Unhandled this leaves as a 500, and the page can only say the upload
+        # was refused — which tells the user nothing they can act on.
+        ticket = self.a_ticket()
+        with a_fake_api() as api:
+            api.answer("POST", FILES, {"message": "You are not authorized"}, status=403)
+            refused = server.post(
+                "/upload",
+                params={UploadFields.TICKET: ticket},
+                files={"data": ("sales.csv", b"a,b\n1,2\n", "text/csv")},
+            )
+
+        assert refused.status_code == 403
+        assert "not authorized" in refused.json()[ErrorFields.MESSAGE]
 
     def test_a_link_with_no_ticket_says_it_is_no_longer_good(self, server: TestClient) -> None:
         page = server.get("/upload", params={UploadFields.TICKET: "made-up"})
