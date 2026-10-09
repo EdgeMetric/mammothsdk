@@ -5271,11 +5271,11 @@ operations:
   response_schemas:
   - ConnectedAppsList
   deprecated: false
-  disposition: unmapped
-  disposition_reason: No reviewed CLI command or SDK symbol recorded.
-  canonical_command: null
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: auth.connected-apps.list
   alias_of: null
-  sdk_symbol: null
+  sdk_symbol: mammoth.api.user_profile.UserProfileAPI.connected_apps
   reviewed_by: primary
 - identity: DELETE /self/oauth-grants/{oauth_grant_id}
   method: DELETE
@@ -5292,11 +5292,11 @@ operations:
   request_schema: null
   response_schemas: []
   deprecated: false
-  disposition: unmapped
-  disposition_reason: No reviewed CLI command or SDK symbol recorded.
-  canonical_command: null
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: auth.connected-apps.revoke
   alias_of: null
-  sdk_symbol: null
+  sdk_symbol: mammoth.api.user_profile.UserProfileAPI.revoke_connected_app
   reviewed_by: primary
 - identity: GET /settings/users
   method: GET
@@ -6540,11 +6540,11 @@ operations:
   response_schemas:
   - WorkspacesSchema
   deprecated: false
-  disposition: unmapped
-  disposition_reason: No reviewed CLI command or SDK symbol recorded.
-  canonical_command: null
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: workspace.current
   alias_of: null
-  sdk_symbol: null
+  sdk_symbol: mammoth.api.workspace.WorkspaceAPI.current
   reviewed_by: primary
 - identity: DELETE /workspaces/{workspace_id}
   method: DELETE
@@ -7345,11 +7345,11 @@ operations:
   response_schemas:
   - OAuthClientsList
   deprecated: false
-  disposition: unmapped
-  disposition_reason: No reviewed CLI command or SDK symbol recorded.
-  canonical_command: null
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: workspace.oauth-client.list
   alias_of: null
-  sdk_symbol: null
+  sdk_symbol: mammoth.api.oauth_clients.OAuthClientsAPI.list
   reviewed_by: primary
 - identity: POST /workspaces/{workspace_id}/oauth-clients
   method: POST
@@ -7367,11 +7367,11 @@ operations:
   response_schemas:
   - OAuthClientCreateResponse
   deprecated: false
-  disposition: unmapped
-  disposition_reason: No reviewed CLI command or SDK symbol recorded.
-  canonical_command: null
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: workspace.oauth-client.create
   alias_of: null
-  sdk_symbol: null
+  sdk_symbol: mammoth.api.oauth_clients.OAuthClientsAPI.create
   reviewed_by: primary
 - identity: DELETE /workspaces/{workspace_id}/oauth-clients/{oauth_client_id}
   method: DELETE
@@ -7388,11 +7388,11 @@ operations:
   request_schema: null
   response_schemas: []
   deprecated: false
-  disposition: unmapped
-  disposition_reason: No reviewed CLI command or SDK symbol recorded.
-  canonical_command: null
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: workspace.oauth-client.delete
   alias_of: null
-  sdk_symbol: null
+  sdk_symbol: mammoth.api.oauth_clients.OAuthClientsAPI.delete
   reviewed_by: primary
 - identity: DELETE /workspaces/{workspace_id}/oauth-clients/{oauth_client_id}/grant
   method: DELETE
@@ -7409,11 +7409,11 @@ operations:
   request_schema: null
   response_schemas: []
   deprecated: false
-  disposition: unmapped
-  disposition_reason: No reviewed CLI command or SDK symbol recorded.
-  canonical_command: null
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: workspace.oauth-client.revoke-grant
   alias_of: null
-  sdk_symbol: null
+  sdk_symbol: mammoth.api.oauth_clients.OAuthClientsAPI.revoke_grant
   reviewed_by: primary
 - identity: GET /workspaces/{workspace_id}/parameters
   method: GET

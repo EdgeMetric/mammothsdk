@@ -136,6 +136,7 @@ _SUBGROUP_DESCRIPTIONS = {
     "ai sql": "Generate SQL from a description.",
     "ai suggestion": "List AI suggestions for a view.",
     "annotation comment": "Add comments to annotations.",
+    "auth connected-apps": "List and revoke the apps you have authorised.",
     "billing invoice": "List and charge invoices.",
     "billing stripe": "Manage the Stripe subscription: checkout, trial, payment methods, invoices.",
     "billing stripe payment-method": "List, delete and default Stripe payment methods.",
@@ -243,6 +244,7 @@ _SUBGROUP_DESCRIPTIONS = {
     "view version": "List, read, apply and delete view versions.",
     "workflow block": "Add and configure workflow blocks.",
     "workspace invite": "List, resend, revoke and delete workspace invites.",
+    "workspace oauth-client": "Register, list, delete and revoke OAuth client grants.",
     "workspace segment": "List and update workspace segments.",
     "workspace user": "Add, list, update and remove workspace users.",
 }

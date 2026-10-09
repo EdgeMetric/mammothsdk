@@ -415,6 +415,7 @@ if TYPE_CHECKING:
     from mammoth.api.folders import FoldersAPI
     from mammoth.api.jobs import JobsAPI
     from mammoth.api.notifications import NotificationsAPI
+    from mammoth.api.oauth_clients import OAuthClientsAPI
     from mammoth.api.parameters import ParametersAPI
     from mammoth.api.pipeline import PipelineAPI
     from mammoth.api.pipeline_versions import PipelineVersionsAPI
@@ -471,6 +472,7 @@ SUB_CLIENTS: dict[str, tuple[str, str]] = {
     "data_checks": ("mammoth.api.data_checks", "DataChecksAPI"),
     "derivatives": ("mammoth.api.derivatives", "DerivativesAPI"),
     "notifications": ("mammoth.api.notifications", "NotificationsAPI"),
+    "oauth_clients": ("mammoth.api.oauth_clients", "OAuthClientsAPI"),
     "parameters": ("mammoth.api.parameters", "ParametersAPI"),
     "pipeline_versions": ("mammoth.api.pipeline_versions", "PipelineVersionsAPI"),
     "snippets": ("mammoth.api.snippets", "SnippetsAPI"),
@@ -541,6 +543,7 @@ class MammothClient:
         data_checks: DataChecksAPI
         derivatives: DerivativesAPI
         notifications: NotificationsAPI
+        oauth_clients: OAuthClientsAPI
         parameters: ParametersAPI
         pipeline_versions: PipelineVersionsAPI
         snippets: SnippetsAPI

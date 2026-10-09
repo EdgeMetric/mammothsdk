@@ -1,5 +1,5 @@
 manifest_schema_version: 1
-method_count: 758
+method_count: 764
 generator_version: '1'
 methods:
 - sdk_symbol: mammoth._mixins._advanced_ops.AdvancedOpsMixin.add_sql
@@ -6315,6 +6315,59 @@ methods:
   pagination_policy: null
   secret_fields: []
   reviewed_by: primary
+- sdk_symbol: mammoth.api.oauth_clients.OAuthClientsAPI.create
+  implementation_origin: mammoth.api.oauth_clients.OAuthClientsAPI.create
+  signature: 'create(self, name: ''str'', redirect_uris: ''_list[str]'', *, description: ''str | None''
+    = None, logo_url: ''str | None'' = None, tos_url: ''str | None'' = None, privacy_url: ''str | None''
+    = None, token_endpoint_auth_method: ''str'' = ''client_secret_basic'', workspace_id: ''int | None''
+    = None) -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: workspace.oauth-client.create
+  alias_of: null
+  no_command_reason: null
+  mutation_class: high_impact
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.oauth_clients.OAuthClientsAPI.delete
+  implementation_origin: mammoth.api.oauth_clients.OAuthClientsAPI.delete
+  signature: 'delete(self, oauth_client_id: ''int'', workspace_id: ''int | None'' = None) -> ''dict[str,
+    Any]'''
+  openapi_operation_ids: []
+  canonical_command: workspace.oauth-client.delete
+  alias_of: null
+  no_command_reason: null
+  mutation_class: high_impact
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.oauth_clients.OAuthClientsAPI.list
+  implementation_origin: mammoth.api.oauth_clients.OAuthClientsAPI.list
+  signature: 'list(self, workspace_id: ''int | None'' = None) -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: workspace.oauth-client.list
+  alias_of: null
+  no_command_reason: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.oauth_clients.OAuthClientsAPI.revoke_grant
+  implementation_origin: mammoth.api.oauth_clients.OAuthClientsAPI.revoke_grant
+  signature: 'revoke_grant(self, oauth_client_id: ''int'', workspace_id: ''int | None'' = None) -> ''dict[str,
+    Any]'''
+  openapi_operation_ids: []
+  canonical_command: workspace.oauth-client.revoke-grant
+  alias_of: null
+  no_command_reason: null
+  mutation_class: high_impact
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
 - sdk_symbol: mammoth.api.parameters.ParametersAPI.create
   implementation_origin: mammoth.api.parameters.ParametersAPI.create
   signature: 'create(self, name: ''str'', param_type: ''str'', value: ''str | float | int'', description:
@@ -8288,6 +8341,18 @@ methods:
   pagination_policy: none
   secret_fields: []
   reviewed_by: primary
+- sdk_symbol: mammoth.api.user_profile.UserProfileAPI.connected_apps
+  implementation_origin: mammoth.api.user_profile.UserProfileAPI.connected_apps
+  signature: connected_apps(self) -> 'dict[str, Any]'
+  openapi_operation_ids: []
+  canonical_command: auth.connected-apps.list
+  alias_of: null
+  no_command_reason: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
 - sdk_symbol: mammoth.api.user_profile.UserProfileAPI.get
   implementation_origin: mammoth.api.user_profile.UserProfileAPI.get
   signature: get(self) -> 'dict[str, Any]'
@@ -8308,6 +8373,18 @@ methods:
   alias_of: null
   no_command_reason: null
   mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.user_profile.UserProfileAPI.revoke_connected_app
+  implementation_origin: mammoth.api.user_profile.UserProfileAPI.revoke_connected_app
+  signature: 'revoke_connected_app(self, oauth_grant_id: ''int'') -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: auth.connected-apps.revoke
+  alias_of: null
+  no_command_reason: null
+  mutation_class: high_impact
   wait_policy: not_async
   pagination_policy: none
   secret_fields: []
@@ -8720,13 +8797,12 @@ methods:
   implementation_origin: mammoth.api.workspace.WorkspaceAPI.current
   signature: current(self) -> 'CurrentWorkspace'
   openapi_operation_ids: []
-  canonical_command: null
+  canonical_command: workspace.current
   alias_of: null
-  no_command_reason: SDK-only seam for a resource server that checks which server an OAuth token was issued
-    for; the CLI reads the token's workspace through MammothClient.workspace_id.
-  mutation_class: null
-  wait_policy: null
-  pagination_policy: null
+  no_command_reason: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
   secret_fields: []
   reviewed_by: primary
 - sdk_symbol: mammoth.api.workspace.WorkspaceAPI.delete

@@ -41,6 +41,9 @@ PHRASINGS = [
     ("see how each sheet of my excel workbook reads", "file.multi-sheet-preview"),
     ("archive this workflow", "workflow.archive"),
     ("save my workflow changes", "workflow.save"),
+    ("disconnect an app I authorised", "auth.connected-apps.revoke"),
+    ("which workspace is this token for", "workspace.current"),
+    ("register an OAuth client", "workspace.oauth-client.create"),
 ]
 
 

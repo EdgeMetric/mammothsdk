@@ -1036,6 +1036,45 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
             "workspace.update",
         )
     },
+    # OAuth clients belong to a workspace: the id is an optional trailing
+    # positional (defaulting to the client's own workspace) after the client id
+    # where the command takes one, so ``workspace oauth-client delete 5`` works.
+    "workspace.oauth-client.list": (
+        PositionalSpec(
+            name="workspace_id",
+            type=int,
+            required=False,
+            help="ID of the workspace to act on; defaults to the client's own workspace.",
+        ),
+    ),
+    "workspace.oauth-client.create": (
+        PositionalSpec(
+            name="workspace_id",
+            type=int,
+            required=False,
+            help="ID of the workspace to act on; defaults to the client's own workspace.",
+        ),
+    ),
+    **{
+        command: (
+            PositionalSpec(
+                name="oauth_client_id",
+                type=int,
+                required=True,
+                help="ID of the OAuth client.",
+            ),
+            PositionalSpec(
+                name="workspace_id",
+                type=int,
+                required=False,
+                help="ID of the workspace to act on; defaults to the client's own workspace.",
+            ),
+        )
+        for command in (
+            "workspace.oauth-client.delete",
+            "workspace.oauth-client.revoke-grant",
+        )
+    },
     # ``file upload-folder`` takes the local folder path as a positional OR a
     # ``folder_path`` --input field (handler dual-sources). Mirror the
     # ``file.upload`` locator so the documented positional form is registered.

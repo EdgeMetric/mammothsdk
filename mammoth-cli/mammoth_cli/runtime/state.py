@@ -23,6 +23,7 @@ from typing import Any
 
 from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.manifest.loader import command_by_id
+from mammoth_cli.output.normalize import Revealed
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.services.positionals import resolve_positionals
 
@@ -83,7 +84,8 @@ def with_state(invocation: Invocation, data: Any) -> Any:
     else:
         built = unfinished or _build_state(invocation, data, readback)
     state = _enforce_cap(built)
-    return {**_unverified_if_unreadable(data, state), "state": state}
+    result = {**_unverified_if_unreadable(data, state), "state": state}
+    return Revealed(result) if isinstance(data, Revealed) else result
 
 
 def _unverified_if_unreadable(data: dict[str, Any], state: dict[str, Any]) -> dict[str, Any]:

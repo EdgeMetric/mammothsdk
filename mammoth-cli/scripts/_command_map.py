@@ -669,6 +669,14 @@ OVERRIDES: dict[str, str] = {
     # Bound 2026-10-09 from the prod snapshot: the route is called by this SDK method,
     # and the command calls that method (SDK call sites read, not inferred from names).
     "AcceptOwnData": "dashboard.own-data.accept",
+    # Bound 2026-10-10: the SDK methods added for these routes (connected apps, OAuth clients).
+    "ListConnectedApps": "auth.connected-apps.list",
+    "RevokeConnectedApp": "auth.connected-apps.revoke",
+    "GetCurrentWorkspace": "workspace.current",
+    "ListOauthClients": "workspace.oauth-client.list",
+    "CreateOauthClient": "workspace.oauth-client.create",
+    "DeleteOauthClient": "workspace.oauth-client.delete",
+    "RevokeOauthGrant": "workspace.oauth-client.revoke-grant",
     "AddDashboards": "collection.dashboards.add",
     "AddPages": "dashboard.pages.add",
     "AppendFigure": "dashboard.figure.add",

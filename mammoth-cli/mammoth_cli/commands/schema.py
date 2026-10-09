@@ -557,6 +557,23 @@ _COMMAND_DISCOVERY_PURPOSES = {
     "workflow.archive": "archive a workflow or bring an archived workflow back",
     "workflow.attach-dataset": "add an existing dataset to a workflow",
     "workflow.resolve-held": "settle a change that a workflow save held back",
+    "auth.connected-apps.list": (
+        "which apps have access to my account the apps I authorised connected apps"
+    ),
+    "auth.connected-apps.revoke": "disconnect an app I authorised cut off its access to my account",
+    "workspace.current": (
+        "which workspace this token acts in the current workspace the server it is fenced to"
+    ),
+    "workspace.oauth-client.list": (
+        "the OAuth clients of this workspace the apps that sign users in"
+    ),
+    "workspace.oauth-client.create": (
+        "register an OAuth client a new app that signs users in with Mammoth"
+    ),
+    "workspace.oauth-client.delete": "delete an OAuth client the app that signs users in",
+    "workspace.oauth-client.revoke-grant": (
+        "revoke every grant of an OAuth client make users authorise again"
+    ),
     "dashboard.columns": "columns of the dashboard source data profile samples ranges data panel",
     "dashboard.context.review": "preview what the context change would do to the dashboard dry run",
     "dashboard.context.apply": "apply the reviewed context change to the dashboard",
