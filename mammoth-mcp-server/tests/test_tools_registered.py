@@ -138,3 +138,25 @@ def test_tools_that_send_data_out_or_publish_say_to_ask_the_user_first() -> None
     tools = offered()
     for name in ("add_export", "publish_dashboard", "create_automation"):
         assert "Ask the user first" in tools[name].description, name  # type: ignore[attr-defined]
+
+
+def test_every_tool_carries_a_title() -> None:
+    """Claude's connector directory shows a title per tool, and falls back to
+    the bare function name without one. A title is what a user reads when they
+    decide whether to allow a call, so every tool owes one."""
+    register_tools()
+
+    missing = sorted(tool.name for tool in run(mcp_server.list_tools()) if not tool.title)
+
+    assert missing == []
+
+
+def test_a_title_reads_as_a_label_not_a_sentence() -> None:
+    """Titles sit in a list in the client's UI: short, capitalised, no full stop."""
+    register_tools()
+
+    for tool in run(mcp_server.list_tools()):
+        assert tool.title is not None
+        assert tool.title[0].isupper(), tool.name
+        assert not tool.title.endswith("."), tool.name
+        assert len(tool.title) <= 40, tool.name

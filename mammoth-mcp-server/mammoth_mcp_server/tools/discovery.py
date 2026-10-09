@@ -18,7 +18,7 @@ from ..server import mcp_server
 from ..tool_kinds import READS
 
 
-@mcp_server.tool(annotations=READS)
+@mcp_server.tool(title="List workspaces", annotations=READS)
 async def list_workspaces() -> dict[str, JsonValue]:
     """List the workspace this connection belongs to.
 
@@ -37,7 +37,7 @@ async def list_workspaces() -> dict[str, JsonValue]:
     return {ListFields.WORKSPACES: [found]}
 
 
-@mcp_server.tool(annotations=READS)
+@mcp_server.tool(title="List projects", annotations=READS)
 async def list_projects(
     workspace_id: int, limit: int = LIST_LIMIT_DEFAULT, offset: int = 0
 ) -> dict[str, JsonValue]:
@@ -102,7 +102,7 @@ def _as_projects(rows: JsonValue) -> JsonValue:
     ]
 
 
-@mcp_server.tool(annotations=READS)
+@mcp_server.tool(title="List datasets", annotations=READS)
 async def list_datasets(
     workspace_id: int,
     project_id: int,
@@ -132,7 +132,7 @@ async def list_datasets(
         )
 
 
-@mcp_server.tool(annotations=READS)
+@mcp_server.tool(title="Get dataset", annotations=READS)
 async def get_dataset(workspace_id: int, project_id: int, dataset_id: int) -> dict[str, JsonValue]:
     """Get one dataset with its columns, row counts and status.
 
@@ -154,7 +154,7 @@ async def get_dataset(workspace_id: int, project_id: int, dataset_id: int) -> di
         )
 
 
-@mcp_server.tool(annotations=READS)
+@mcp_server.tool(title="List views", annotations=READS)
 async def list_views(
     workspace_id: int,
     project_id: int,
@@ -186,7 +186,7 @@ async def list_views(
         )
 
 
-@mcp_server.tool(annotations=READS)
+@mcp_server.tool(title="Get view", annotations=READS)
 async def get_view(
     workspace_id: int, project_id: int, dataset_id: int, view_id: int
 ) -> dict[str, JsonValue]:

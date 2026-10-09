@@ -42,7 +42,7 @@ from ..tool_kinds import CHANGES, DESTRUCTIVE, READS
 AUDIENCES = ", ".join(audience.value for audience in DashboardAuthType)
 
 
-@mcp_server.tool(annotations=READS)
+@mcp_server.tool(title="List dashboards", annotations=READS)
 async def list_dashboards(workspace_id: int, project_id: int | None = None) -> dict[str, JsonValue]:
     """List the dashboards the signed-in user can open.
 
@@ -60,7 +60,7 @@ async def list_dashboards(workspace_id: int, project_id: int | None = None) -> d
     return {DashboardFields.DASHBOARDS: list[JsonValue](listed)}
 
 
-@mcp_server.tool(annotations=READS)
+@mcp_server.tool(title="List dashboard tags", annotations=READS)
 async def list_dashboard_tags(workspace_id: int) -> dict[str, JsonValue]:
     """List the tags dashboards in a workspace are filed under.
 
@@ -74,7 +74,7 @@ async def list_dashboard_tags(workspace_id: int) -> dict[str, JsonValue]:
         return await read_sdk_errors(client.dashboards.list_tags())
 
 
-@mcp_server.tool(annotations=CHANGES)
+@mcp_server.tool(title="Create dashboard", annotations=CHANGES)
 async def create_dashboard(
     workspace_id: int, view_id: int, title: str = "", style: str = DashboardFields.BOARD
 ) -> dict[str, JsonValue]:
@@ -103,7 +103,7 @@ async def create_dashboard(
         )
 
 
-@mcp_server.tool(annotations=CHANGES)
+@mcp_server.tool(title="Generate dashboard", annotations=CHANGES)
 async def generate_dashboard(
     workspace_id: int,
     view_id: int,
@@ -171,7 +171,7 @@ def describe_unfinished_build(job: dict[str, JsonValue]) -> dict[str, JsonValue]
     }
 
 
-@mcp_server.tool(annotations=READS)
+@mcp_server.tool(title="Get dashboard", annotations=READS)
 async def get_dashboard(workspace_id: int, dashboard_id: int) -> dict[str, JsonValue]:
     """Get one dashboard: its title, its views, and who it is shared with.
 
@@ -183,7 +183,7 @@ async def get_dashboard(workspace_id: int, dashboard_id: int) -> dict[str, JsonV
         return await read_dashboard(client.dashboards, workspace_id, dashboard_id)
 
 
-@mcp_server.tool(annotations=CHANGES)
+@mcp_server.tool(title="Set dashboard tags", annotations=CHANGES)
 async def set_dashboard_tags(
     workspace_id: int, dashboard_id: int, tags: list[str]
 ) -> dict[str, JsonValue]:
@@ -203,7 +203,7 @@ async def set_dashboard_tags(
         return await read_sdk_errors(client.dashboards.set_tags(dashboard_id, tags))
 
 
-@mcp_server.tool(annotations=DESTRUCTIVE)
+@mcp_server.tool(title="Delete dashboard", annotations=DESTRUCTIVE)
 async def delete_dashboard(workspace_id: int, dashboard_id: int) -> dict[str, JsonValue]:
     """Move a dashboard to the trash, where it can still be restored.
 
@@ -220,7 +220,7 @@ async def delete_dashboard(workspace_id: int, dashboard_id: int) -> dict[str, Js
     return await list_dashboards(workspace_id)
 
 
-@mcp_server.tool(annotations=DESTRUCTIVE)
+@mcp_server.tool(title="Publish dashboard", annotations=DESTRUCTIVE)
 async def publish_dashboard(
     workspace_id: int,
     dashboard_id: int,
