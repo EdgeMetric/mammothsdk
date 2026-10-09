@@ -1786,9 +1786,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view derivative update VIEW_ID DERIVATIVE_ID --help
-  agent_example: 'mammoth view derivative update 123 123 123 --input ''{"body": {"patches": [{"op": "replace",
-    "path": "param", "value": {"METRIC": {"AS": "sample", "EXPRESSION": [{"TYPE": "FUNCTION", "VALUE":
-    {"ARGUMENT": "sample", "FUNCTION": "SUM"}}]}}}]}}'''
+  agent_example: 'mammoth view derivative update 123 123 123 --input ''{"body": {"patches": [{"op": "replace", "path": "param", "value": {"METRIC": {"AS": "sample", "EXPRESSION": [{"TYPE": "FUNCTION", "VALUE": {"FUNCTION": "SUM"}}]}}}]}}'''
   unit_tests:
   - UT-VIEW-DERIVATIVE-UPDATE
   contract_tests:

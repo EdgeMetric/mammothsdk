@@ -22,7 +22,15 @@ from mammoth_cli.services.positionals import positionals_for
 
 CLI_ROOT = Path(__file__).resolve().parent.parent.parent
 
-VALID_DISPOSITIONS = {"command", "alias", "protocol_only", "deprecated", "server_unavailable"}
+VALID_DISPOSITIONS = {
+    "command",
+    "alias",
+    "protocol_only",
+    "internal_only",
+    "deprecated",
+    "server_unavailable",
+    "unmapped",
+}
 LIVE_EVIDENCE = {"live_disposable_project", "live_dedicated_external_fixture", "live_read_only"}
 
 # A command whose backing operation(s) are all HTTP GET never mutates

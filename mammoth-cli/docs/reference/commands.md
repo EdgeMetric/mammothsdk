@@ -3106,7 +3106,7 @@ Total commands: 716.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.v3_generate`
-- Agent example: `mammoth dashboard v3 generate --input '{"body": {"params": {"intent": "Summarize revenue by region", "dataview_id": 1}}}'`
+- Agent example: `mammoth dashboard v3 generate --input '{"body": {"params": {"dataview_id": 1}}}'`
 
 ### `mammoth dashboard video export`
 
@@ -3170,7 +3170,7 @@ Total commands: 716.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.data_apps.DataAppsAPI.create`
-- Agent example: `mammoth data-app create --input '{"body": {"automation_id": 1, "dashboard_ids": [1], "name": "Revenue report", "project_id": 1}}'`
+- Agent example: `mammoth data-app create --input '{"body": {"sample_key": "Status"}}'`
 
 ### `mammoth data-app delete`
 
@@ -3233,7 +3233,7 @@ Total commands: 716.
 - Mutation class: `external_effect`
 - Confirmation: `yes_always`
 - Backing SDK: `mammoth.api.data_apps.DataAppsAPI.share`
-- Agent example: `mammoth data-app share 123 --input '{"body": {"params": {"auth": {"type_of_auth": "mammoth"}}}}' --yes`
+- Agent example: `mammoth data-app share 123 --input '{"body": {"sample_key": "Status"}}' --yes`
 
 ### `mammoth data-app update`
 
@@ -3244,7 +3244,7 @@ Total commands: 716.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.data_apps.DataAppsAPI.update`
-- Agent example: `mammoth data-app update 123 --input '{"body": {"params": {"name": "Revenue report"}}}'`
+- Agent example: `mammoth data-app update 123 --input '{"body": {"sample_key": "Status"}}'`
 
 ### `mammoth data-app upload`
 
@@ -5803,7 +5803,7 @@ Total commands: 716.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.derivatives.DerivativesAPI.update`
-- Agent example: `mammoth view derivative update 123 123 123 --input '{"body": {"patches": [{"op": "replace", "path": "param", "value": {"METRIC": {"AS": "sample", "EXPRESSION": [{"TYPE": "FUNCTION", "VALUE": {"ARGUMENT": "sample", "FUNCTION": "SUM"}}]}}}]}}'`
+- Agent example: `mammoth view derivative update 123 123 123 --input '{"body": {"patches": [{"op": "replace", "path": "param", "value": {"METRIC": {"AS": "sample", "EXPRESSION": [{"TYPE": "FUNCTION", "VALUE": {"FUNCTION": "SUM"}}]}}}]}}'`
 
 ### `mammoth view draft auto-run`
 

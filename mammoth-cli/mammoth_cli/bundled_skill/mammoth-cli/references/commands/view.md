@@ -348,7 +348,7 @@ Status on release: ran once on CLI 1.1.11 — Published PyPI CLI 1.1.11 / SDK 0.
 
 Run: `mammoth view derivative update`. Exact input fields: `mammoth schema get view.derivative.update`.
 
-Example: `mammoth view derivative update 123 123 123 --input '{"body": {"patches": [{"op": "replace", "path": "param", "value": {"METRIC": {"AS": "sample", "EXPRESSION": [{"TYPE": "FUNCTION", "VALUE": {"ARGUMENT": "sample", "FUNCTION": "SUM"}}]}}}]}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth view derivative update 123 123 123 --input '{"body": {"patches": [{"op": "replace", "path": "param", "value": {"METRIC": {"AS": "sample", "EXPRESSION": [{"TYPE": "FUNCTION", "VALUE": {"FUNCTION": "SUM"}}]}}}]}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ViewDerivativeUpdateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 

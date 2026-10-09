@@ -69,8 +69,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth data-app create --help
-  agent_example: 'mammoth data-app create --input ''{"body": {"automation_id": 1, "dashboard_ids": [1],
-    "name": "Revenue report", "project_id": 1}}'''
+  agent_example: 'mammoth data-app create --input ''{"body": {"sample_key": "Status"}}'''
   unit_tests:
   - UT-DATA-APP-CREATE
   contract_tests:
@@ -321,8 +320,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth data-app share DATA_APP_ID --help
-  agent_example: 'mammoth data-app share 123 --input ''{"body": {"params": {"auth": {"type_of_auth": "mammoth"}}}}''
-    --yes'
+  agent_example: 'mammoth data-app share 123 --input ''{"body": {"sample_key": "Status"}}'' --yes'
   unit_tests:
   - UT-DATA-APP-SHARE
   contract_tests:
@@ -368,7 +366,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth data-app update DATA_APP_ID --help
-  agent_example: 'mammoth data-app update 123 --input ''{"body": {"params": {"name": "Revenue report"}}}'''
+  agent_example: 'mammoth data-app update 123 --input ''{"body": {"sample_key": "Status"}}'''
   unit_tests:
   - UT-DATA-APP-UPDATE
   contract_tests:

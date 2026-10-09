@@ -674,7 +674,7 @@ Sensitive structured input must come from a private file or pipe; never put secr
 - `mammoth dashboard update` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.update
   example: mammoth dashboard update 123 --input '{"patch": [{"op": "replace", "path": "title", "value": "Renamed dashboard"}]}'
 - `mammoth dashboard v3 generate` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.v3_generate
-  example: mammoth dashboard v3 generate --input '{"body": {"params": {"intent": "Summarize revenue by region", "dataview_id": 1}}}'
+  example: mammoth dashboard v3 generate --input '{"body": {"params": {"dataview_id": 1}}}'
 - `mammoth dashboard video export` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.video_export
   example: mammoth dashboard video export 123
 - `mammoth dashboard video-state` [read/none] -> mammoth.api.dashboards.DashboardsAPI.video_state
@@ -689,7 +689,7 @@ Sensitive structured input must come from a private file or pipe; never put secr
 - `mammoth data-app active-job` [read/none] -> mammoth.api.data_apps.DataAppsAPI.active_job
   example: mammoth data-app active-job 123
 - `mammoth data-app create` [benign_mutation/none] -> mammoth.api.data_apps.DataAppsAPI.create
-  example: mammoth data-app create --input '{"body": {"automation_id": 1, "dashboard_ids": [1], "name": "Revenue report", "project_id": 1}}'
+  example: mammoth data-app create --input '{"body": {"sample_key": "Status"}}'
 - `mammoth data-app delete` [destructive/prompt_or_yes] -> mammoth.api.data_apps.DataAppsAPI.delete
   example: mammoth data-app delete 123
 - `mammoth data-app get` [read/none] -> mammoth.api.data_apps.DataAppsAPI.get
@@ -701,9 +701,9 @@ Sensitive structured input must come from a private file or pipe; never put secr
 - `mammoth data-app pipeline-changes` [read/none] -> mammoth.api.data_apps.DataAppsAPI.pipeline_changes
   example: mammoth data-app pipeline-changes 123
 - `mammoth data-app share` [external_effect/yes_always] -> mammoth.api.data_apps.DataAppsAPI.share
-  example: mammoth data-app share 123 --input '{"body": {"params": {"auth": {"type_of_auth": "mammoth"}}}}' --yes
+  example: mammoth data-app share 123 --input '{"body": {"sample_key": "Status"}}' --yes
 - `mammoth data-app update` [benign_mutation/none] -> mammoth.api.data_apps.DataAppsAPI.update
-  example: mammoth data-app update 123 --input '{"body": {"params": {"name": "Revenue report"}}}'
+  example: mammoth data-app update 123 --input '{"body": {"sample_key": "Status"}}'
 - `mammoth data-app upload` [benign_mutation/none] -> mammoth.api.data_apps.DataAppsAPI.upload
   example: mammoth data-app upload 123 ./sales.csv
 - `mammoth data-app user list` [read/none] -> mammoth.api.data_apps.DataAppsAPI.user_list
@@ -1273,7 +1273,7 @@ Sensitive structured input must come from a private file or pipe; never put secr
 - `mammoth view derivative list` [read/none] -> mammoth.api.derivatives.DerivativesAPI.list
   example: mammoth view derivative list 123 123
 - `mammoth view derivative update` [benign_mutation/none] -> mammoth.api.derivatives.DerivativesAPI.update
-  example: mammoth view derivative update 123 123 123 --input '{"body": {"patches": [{"op": "replace", "path": "param", "value": {"METRIC": {"AS": "sample", "EXPRESSION": [{"TYPE": "FUNCTION", "VALUE": {"ARGUMENT": "sample", "FUNCTION": "SUM"}}]}}}]}}'
+  example: mammoth view derivative update 123 123 123 --input '{"body": {"patches": [{"op": "replace", "path": "param", "value": {"METRIC": {"AS": "sample", "EXPRESSION": [{"TYPE": "FUNCTION", "VALUE": {"FUNCTION": "SUM"}}]}}}]}}'
 - `mammoth view draft auto-run` [reversible_pipeline/none] -> mammoth.view.View.set_auto_run
   example: mammoth view draft auto-run 123 --input '{"enabled": true, "dataset_id": 456}'
 - `mammoth view draft command` [benign_mutation/none] -> mammoth.api.pipeline.PipelineAPI.command

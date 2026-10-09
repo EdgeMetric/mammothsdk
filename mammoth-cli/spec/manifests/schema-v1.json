@@ -13,7 +13,7 @@
       }
     },
     "disposition": {
-      "enum": ["command", "alias", "protocol_only", "deprecated", "server_unavailable"]
+      "enum": ["command", "alias", "protocol_only", "internal_only", "deprecated", "server_unavailable", "unmapped"]
     },
     "mutation_class": {
       "enum": ["read", "benign_mutation", "reversible_pipeline", "destructive", "high_impact", "external_effect"]

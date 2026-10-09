@@ -1024,7 +1024,7 @@ Status on release: ran once on CLI 2.0.12 — Dashboard sweep 2026-09-18: exit 0
 
 Run: `mammoth dashboard v3 generate`. Exact input fields: `mammoth schema get dashboard.v3.generate`.
 
-Example: `mammoth dashboard v3 generate --input '{"body": {"params": {"intent": "Summarize revenue by region", "dataview_id": 1}}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth dashboard v3 generate --input '{"body": {"params": {"dataview_id": 1}}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `DashboardV3GenerateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `always_wait`.
 
