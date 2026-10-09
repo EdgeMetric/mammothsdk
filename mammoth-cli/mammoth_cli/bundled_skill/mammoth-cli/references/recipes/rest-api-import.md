@@ -5,7 +5,7 @@ in a project (`--project PROJECT_ID`). The connector key is `generic_rest_api`.
 Creates and refreshes are writes: get the user's confirmation first.
 
 ```bash
-mammoth connector get generic_rest_api         # spec.connection_config / spec.data_source_config = the two shapes (empty on a backend without the spec change; use the shapes below)
+mammoth connector get generic_rest_api         # spec.connection_config (has base_url) + spec.connection_input_note; spec.data_source_config = JSON schema of the query keys below, plus selected_columns, max_flatten_depth, join_tables, loop_over
 mammoth connector connection list generic_rest_api   # reuse a connection if one fits
 ```
 
@@ -16,7 +16,7 @@ The body goes under `config`, with **flat** auth fields: `auth_type` (`none`,
 `password`, or `token`, or `key_name` + `key_value` + `inject_into`
 (`header|query_param`). Do not send a nested `auth` object: an older backend
 drops it and saves the connection as `auth_type: none` (the target API then
-answers 401 at sample time); a backend with the fix rejects it. The base URL must be
+answers 401 at sample time); a backend with the fix rejects it with 4CONN003 ("Create a connection with auth as flat fields ... not a nested 'auth' object"). The base URL must be
 a public host; localhost and private addresses are refused (SSRF guard).
 
 ```bash
@@ -41,9 +41,13 @@ does not include this connector (or its paid addon is not active).
 mammoth connector ds-config create generic_rest_api CONNECTION_KEY --input sample.json --yes
 ```
 
-Read the column names from `data.data_sample.dataschema`. `ds-config list` and
-`ds-config get` are not usable for this connector; find the result with
-`dataset list`.
+Needs `--yes`; returns real sample rows (50 for a composite-agg
+`data_root_path`). Read the column names from `data.data_sample.dataschema`.
+`ds-config list generic_rest_api CONNECTION_KEY` shows the connection's configs
+(`config_key`, `ds_name`, `on_refresh_action`, `query`, `table`, `profile`);
+`ds-config get generic_rest_api CONNECTION_KEY CONFIG_KEY` returns one under
+`ds_config`. A REST config has `data_start_date: null`. A dataset's config key
+is `dataset get` -> `sources[0].details.id`.
 
 ## 3. Dataset with a refresh schedule
 
@@ -67,10 +71,11 @@ mammoth dataset create --input dataset.json
 ```bash
 # auto.json: {"description": "Refresh My data", "tasks": [{"task_type": "run_data_retrieval", "details": {"ds_details": [{"ds_id": DATASET_ID}]}}],
 #   "conditions": [{"condition_type": "at_specific_time", "details": {"frequency": "daily", "interval": 1, "start_at": "2027-01-01T02:00:00Z"}}]}
-mammoth automation create 'Refresh My data' --input auto.json --yes
+mammoth automation create 'Refresh My data' --input auto.json --yes   # name required; ds_details must be a list
 mammoth automation update AUTOMATION_ID --yes --input '{"patch": [{"op": "command", "path": "run", "value": {}}]}'   # run now
 ```
 
+A `start_at` under 2 minutes ahead is rejected ("too soon"); a past one starts now.
 More on automations: [recurring work](scheduling.md).
 
 ## Elasticsearch
