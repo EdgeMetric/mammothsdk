@@ -400,6 +400,7 @@ if TYPE_CHECKING:
     from mammoth.api.browse import BrowseAPI
     from mammoth.api.checkpoints import CheckpointsAPI
     from mammoth.api.clientapps import ClientAppsAPI
+    from mammoth.api.collections import CollectionsAPI
     from mammoth.api.connector_ai import ConnectorAIAPI
     from mammoth.api.connectors import ConnectorsAPI
     from mammoth.api.dashboards import DashboardsAPI
@@ -464,6 +465,7 @@ SUB_CLIENTS: dict[str, tuple[str, str]] = {
     "annotations": ("mammoth.api.annotations", "AnnotationsAPI"),
     "billing": ("mammoth.api.billing", "BillingAPI"),
     "checkpoints": ("mammoth.api.checkpoints", "CheckpointsAPI"),
+    "collections": ("mammoth.api.collections", "CollectionsAPI"),
     "connector_ai": ("mammoth.api.connector_ai", "ConnectorAIAPI"),
     "data_apps": ("mammoth.api.data_apps", "DataAppsAPI"),
     "data_checks": ("mammoth.api.data_checks", "DataChecksAPI"),
@@ -510,6 +512,7 @@ class MammothClient:
         exports: ExportsAPI
         workspaces: WorkspaceAPI
         client_apps: ClientAppsAPI
+        collections: CollectionsAPI
         projects: ProjectsAPI
         folders: FoldersAPI
         datasets: DatasetsAPI

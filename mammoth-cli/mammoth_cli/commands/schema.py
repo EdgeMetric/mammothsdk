@@ -482,6 +482,34 @@ _COMMAND_DISCOVERY_PURPOSES = {
     "dashboard.audience.summary": "how many people opened each dashboard in the library",
     "dashboard.audience.digest.get": "weekly audience email setting for a dashboard get",
     "dashboard.audience.digest.set": "turn the weekly audience email on or off for a dashboard",
+    "dashboard.engagement.get": (
+        "who opened my dashboard how long they read each page reach engagement people visits"
+    ),
+    "dashboard.engagement.person": (
+        "one person's visits to my dashboard when and how long they read"
+    ),
+    "dashboard.engagement.remind": (
+        "remind people to look at the dashboard nudge email those who have not opened the board"
+    ),
+    "dashboard.own-data.start": (
+        "use my own data on a template board fit the template to my upload or dataset"
+    ),
+    "dashboard.own-data.status": "where the own-data run is, the stage and the proposal to review",
+    "dashboard.own-data.preview": "see the template board on my own data before accepting",
+    "dashboard.own-data.accept": "apply the proposed board on my own data to the dashboard",
+    "dashboard.own-data.dismiss": "drop the pending own-data proposal and keep the template as is",
+    "collection.create": (
+        "group dashboards into a collection a set of dashboards shared together as one"
+    ),
+    "collection.dashboards.add": "add one more board to an existing collection",
+    "collection.dashboards.remove": "take a dashboard out of a collection",
+    "collection.share": "share a set of dashboards with people by email as one collection",
+    "collection.members.remove": "stop sharing a collection with a person",
+    "collection.for-dashboard": (
+        "which collections hold this dashboard groups containing this board"
+    ),
+    "collection.activity": "who opened the collection and which dashboards inside get opened",
+    "collection.files.upload": "upload a file to refresh the data behind a collection",
     "dashboard.columns": "columns of the dashboard source data profile samples ranges data panel",
     "dashboard.context.review": "preview what the context change would do to the dashboard dry run",
     "dashboard.context.apply": "apply the reviewed context change to the dashboard",

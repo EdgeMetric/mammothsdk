@@ -104,6 +104,174 @@
       "commands": []
     },
     {
+      "method": "GET",
+      "path": "/collections",
+      "state": "pending_server_release",
+      "pending_in": "origin/master@7a57c1b70f",
+      "sdk_symbols": [
+        "mammoth.api.collections.CollectionsAPI.list"
+      ],
+      "commands": [
+        "collection.list"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/collections",
+      "state": "pending_server_release",
+      "pending_in": "origin/master@7a57c1b70f",
+      "sdk_symbols": [
+        "mammoth.api.collections.CollectionsAPI.create"
+      ],
+      "commands": [
+        "collection.create"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/collections/for-dashboard/{}",
+      "state": "pending_server_release",
+      "pending_in": "origin/master@7a57c1b70f",
+      "sdk_symbols": [
+        "mammoth.api.collections.CollectionsAPI.for_dashboard"
+      ],
+      "commands": [
+        "collection.for-dashboard"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/collections/url/{}",
+      "state": "pending_server_release",
+      "pending_in": "origin/master@7a57c1b70f",
+      "sdk_symbols": [
+        "mammoth.api.collections.CollectionsAPI.get_by_url"
+      ],
+      "commands": [
+        "collection.get-by-url"
+      ]
+    },
+    {
+      "method": "DELETE",
+      "path": "/collections/{}",
+      "state": "pending_server_release",
+      "pending_in": "origin/master@7a57c1b70f",
+      "sdk_symbols": [
+        "mammoth.api.collections.CollectionsAPI.delete"
+      ],
+      "commands": [
+        "collection.delete"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/collections/{}",
+      "state": "pending_server_release",
+      "pending_in": "origin/master@7a57c1b70f",
+      "sdk_symbols": [
+        "mammoth.api.collections.CollectionsAPI.get"
+      ],
+      "commands": [
+        "collection.get"
+      ]
+    },
+    {
+      "method": "PATCH",
+      "path": "/collections/{}",
+      "state": "pending_server_release",
+      "pending_in": "origin/master@7a57c1b70f",
+      "sdk_symbols": [
+        "mammoth.api.collections.CollectionsAPI.update"
+      ],
+      "commands": [
+        "collection.update"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/collections/{}/activity",
+      "state": "pending_server_release",
+      "pending_in": "origin/master@7a57c1b70f",
+      "sdk_symbols": [
+        "mammoth.api.collections.CollectionsAPI.activity"
+      ],
+      "commands": [
+        "collection.activity"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/collections/{}/dashboards",
+      "state": "pending_server_release",
+      "pending_in": "origin/master@7a57c1b70f",
+      "sdk_symbols": [
+        "mammoth.api.collections.CollectionsAPI.add_dashboards"
+      ],
+      "commands": [
+        "collection.dashboards.add"
+      ]
+    },
+    {
+      "method": "DELETE",
+      "path": "/collections/{}/dashboards/{}",
+      "state": "pending_server_release",
+      "pending_in": "origin/master@7a57c1b70f",
+      "sdk_symbols": [
+        "mammoth.api.collections.CollectionsAPI.remove_dashboard"
+      ],
+      "commands": [
+        "collection.dashboards.remove"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/collections/{}/files",
+      "state": "pending_server_release",
+      "pending_in": "origin/master@7a57c1b70f",
+      "sdk_symbols": [
+        "mammoth.api.collections.CollectionsAPI.upload_files"
+      ],
+      "commands": [
+        "collection.files.upload"
+      ]
+    },
+    {
+      "method": "DELETE",
+      "path": "/collections/{}/members",
+      "state": "pending_server_release",
+      "pending_in": "origin/master@7a57c1b70f",
+      "sdk_symbols": [
+        "mammoth.api.collections.CollectionsAPI.remove_member"
+      ],
+      "commands": [
+        "collection.members.remove"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/collections/{}/pipeline-changes",
+      "state": "pending_server_release",
+      "pending_in": "origin/master@7a57c1b70f",
+      "sdk_symbols": [
+        "mammoth.api.collections.CollectionsAPI.pipeline_changes"
+      ],
+      "commands": [
+        "collection.pipeline-changes"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/collections/{}/share",
+      "state": "pending_server_release",
+      "pending_in": "origin/master@7a57c1b70f",
+      "sdk_symbols": [
+        "mammoth.api.collections.CollectionsAPI.share"
+      ],
+      "commands": [
+        "collection.share"
+      ]
+    },
+    {
       "method": "POST",
       "path": "/dashboards/v3/attachments/{}/assess",
       "state": "pending_server_release",
@@ -125,6 +293,102 @@
       ],
       "commands": [
         "dashboard.pbix-intent"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/dashboards/v3/{}/own-data",
+      "state": "pending_server_release",
+      "pending_in": "origin/master@7a57c1b70f",
+      "sdk_symbols": [
+        "mammoth.api.dashboards.DashboardsAPI.own_data_status"
+      ],
+      "commands": [
+        "dashboard.own-data.status"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/dashboards/v3/{}/own-data",
+      "state": "pending_server_release",
+      "pending_in": "origin/master@7a57c1b70f",
+      "sdk_symbols": [
+        "mammoth.api.dashboards.DashboardsAPI.own_data_start"
+      ],
+      "commands": [
+        "dashboard.own-data.start"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/dashboards/v3/{}/own-data/accept",
+      "state": "pending_server_release",
+      "pending_in": "origin/master@7a57c1b70f",
+      "sdk_symbols": [
+        "mammoth.api.dashboards.DashboardsAPI.own_data_accept"
+      ],
+      "commands": [
+        "dashboard.own-data.accept"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/dashboards/v3/{}/own-data/dismiss",
+      "state": "pending_server_release",
+      "pending_in": "origin/master@7a57c1b70f",
+      "sdk_symbols": [
+        "mammoth.api.dashboards.DashboardsAPI.own_data_dismiss"
+      ],
+      "commands": [
+        "dashboard.own-data.dismiss"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/dashboards/v3/{}/own-data/preview",
+      "state": "pending_server_release",
+      "pending_in": "origin/master@7a57c1b70f",
+      "sdk_symbols": [
+        "mammoth.api.dashboards.DashboardsAPI.own_data_preview"
+      ],
+      "commands": [
+        "dashboard.own-data.preview"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/dashboards/{}/engagement",
+      "state": "pending_server_release",
+      "pending_in": "origin/master@7a57c1b70f",
+      "sdk_symbols": [
+        "mammoth.api.dashboards.DashboardsAPI.engagement"
+      ],
+      "commands": [
+        "dashboard.engagement.get"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/dashboards/{}/engagement/people/{}",
+      "state": "pending_server_release",
+      "pending_in": "origin/master@7a57c1b70f",
+      "sdk_symbols": [
+        "mammoth.api.dashboards.DashboardsAPI.engagement_person"
+      ],
+      "commands": [
+        "dashboard.engagement.person"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/dashboards/{}/engagement/remind",
+      "state": "pending_server_release",
+      "pending_in": "origin/master@7a57c1b70f",
+      "sdk_symbols": [
+        "mammoth.api.dashboards.DashboardsAPI.engagement_remind"
+      ],
+      "commands": [
+        "dashboard.engagement.remind"
       ]
     },
     {

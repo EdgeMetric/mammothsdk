@@ -73,6 +73,7 @@ _GROUP_DESCRIPTIONS = {
         "for scripts and integrations."
     ),
     "token": "Create, list, and revoke long-lived API keys (aliases of client-app).",
+    "collection": "Group dashboards into a collection and share the set as one.",
     "completion": "Install or print shell completion.",
     "config": "Read and update local CLI configuration.",
     "connector": "Manage data connectors and connector profiles.",
@@ -142,6 +143,7 @@ _ROOT_HELP_PANELS = {
     "job": "Work with data",
     "batch": "Work with data",
     "dashboard": "Build and share",
+    "collection": "Build and share",
     "data-app": "Build and share",
     "report": "Build and share",
     "template": "Build and share",

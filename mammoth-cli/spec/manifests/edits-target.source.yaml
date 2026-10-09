@@ -55,6 +55,13 @@ edits_target_commands:
 - billing.subscription.update
 - client-app.delete
 - client-app.update
+- collection.dashboards.add
+- collection.dashboards.remove
+- collection.delete
+- collection.files.upload
+- collection.members.remove
+- collection.share
+- collection.update
 - connector.connection.delete
 - connector.connection.update
 - connector.ds-config.delete
@@ -77,6 +84,7 @@ edits_target_commands:
 - dashboard.figure.add
 - dashboard.filter.add
 - dashboard.filter.remove
+- dashboard.own-data.accept
 - dashboard.pages.add
 - dashboard.qa.comment.delete
 - dashboard.qa.session.delete

@@ -97,6 +97,36 @@ PENDING_SERVER_RELEASE.update(
     }
 )
 PENDING_SERVER_RELEASE["POST /dashboards/{}/figures"] = "origin/feat/agent-cli-surface-w8@15c7fe863f"
+# On server master since the pinned master snapshot (master-20261002) was exported.
+PENDING_SERVER_RELEASE.update(
+    {
+        f"{method} {path}": "origin/master@7a57c1b70f"
+        for method, path in (
+            ("GET", "/collections"),
+            ("POST", "/collections"),
+            ("GET", "/collections/{}"),
+            ("PATCH", "/collections/{}"),
+            ("DELETE", "/collections/{}"),
+            ("GET", "/collections/url/{}"),
+            ("GET", "/collections/for-dashboard/{}"),
+            ("GET", "/collections/{}/activity"),
+            ("GET", "/collections/{}/pipeline-changes"),
+            ("POST", "/collections/{}/dashboards"),
+            ("DELETE", "/collections/{}/dashboards/{}"),
+            ("POST", "/collections/{}/share"),
+            ("DELETE", "/collections/{}/members"),
+            ("POST", "/collections/{}/files"),
+            ("GET", "/dashboards/{}/engagement"),
+            ("GET", "/dashboards/{}/engagement/people/{}"),
+            ("POST", "/dashboards/{}/engagement/remind"),
+            ("GET", "/dashboards/v3/{}/own-data"),
+            ("POST", "/dashboards/v3/{}/own-data"),
+            ("GET", "/dashboards/v3/{}/own-data/preview"),
+            ("POST", "/dashboards/v3/{}/own-data/accept"),
+            ("POST", "/dashboards/v3/{}/own-data/dismiss"),
+        )
+    }
+)
 # The SDK posts every run verb through one helper whose path ends in a variable.
 PENDING_SERVER_RELEASE["POST /agents/sessions/{}/runs/{}/{}"] = PENDING_SERVER_RELEASE[
     "POST /agents/sessions/{}/runs/{}/stop"
@@ -672,6 +702,7 @@ _PLANNED_PREFIX: list[tuple[str, str, str]] = [
     ("snippet", "snippets", "SnippetsAPI"),
     ("data-app", "data_apps", "DataAppsAPI"),
     ("dashboard", "dashboards", "DashboardsAPI"),
+    ("collection", "collections", "CollectionsAPI"),
     ("template", "templates", "TemplatesAPI"),
     ("workflow", "workflows", "WorkflowsAPI"),
     ("trash", "trash", "TrashAPI"),

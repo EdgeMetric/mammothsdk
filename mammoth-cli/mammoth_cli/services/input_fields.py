@@ -114,6 +114,8 @@ _EXAMPLE_INPUT_HINTS: dict[str, dict[str, Any]] = {
             "agg": "sum",
         },
     },
+    "collection.update": {"name": "Q3 pack"},
+    "dashboard.own-data.start": {"dataview_id": 1},
     "view.transform.sort": {"order_by": [["Revenue", "DESC"]]},
     # The backend requires integer resource ids ("resource_ids must be
     # comma-separated integers"); the SDK annotation is a plain list[str].
