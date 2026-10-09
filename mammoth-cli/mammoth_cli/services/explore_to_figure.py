@@ -313,7 +313,6 @@ def _text_figure(
         "agg": agg,
         "dim": _source_name(column),
         "top_n": top_n,
-        "blank_label": BLANK_LABEL,
     }
     if kind != "hbar":
         figure["sort"] = "desc"

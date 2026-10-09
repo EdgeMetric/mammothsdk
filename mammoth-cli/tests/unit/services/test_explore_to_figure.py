@@ -28,7 +28,6 @@ def test_a_text_list_becomes_a_top_ten_bar_titled_by_the_column() -> None:
         "agg": "count",
         "dim": "Region",
         "top_n": 10,
-        "blank_label": "(blank)",
         "sort": "desc",
         "title": "Count by Region",
     }
