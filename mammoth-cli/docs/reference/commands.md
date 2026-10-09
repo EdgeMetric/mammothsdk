@@ -4,7 +4,7 @@ Generated from the reviewed command manifests for mammoth-cli 2.2.73.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
-Total commands: 694.
+Total commands: 716.
 
 ## activity
 
@@ -1194,6 +1194,155 @@ Total commands: 694.
 - Backing SDK: `mammoth.api.clientapps.ClientAppsAPI.update`
 - Agent example: `mammoth client-app update sample --input '{"patch_request": {"patch": [{"op": "replace", "path": "role"}]}}'`
 
+## collection
+
+### `mammoth collection activity`
+
+**Arguments**
+
+- `COLLECTION_ID` (int, required) — ID of the collection.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.collections.CollectionsAPI.activity`
+- Agent example: `mammoth collection activity 123`
+
+### `mammoth collection create`
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.collections.CollectionsAPI.create`
+- Agent example: `mammoth collection create --input '{"name": "Revenue report"}'`
+
+### `mammoth collection dashboards add`
+
+**Arguments**
+
+- `COLLECTION_ID` (int, required) — ID of the collection.
+
+- Mutation class: `external_effect`
+- Confirmation: `yes_always`
+- Backing SDK: `mammoth.api.collections.CollectionsAPI.add_dashboards`
+- Agent example: `mammoth collection dashboards add 123 --input '{"dashboard_ids": [1]}'`
+
+### `mammoth collection dashboards remove`
+
+**Arguments**
+
+- `COLLECTION_ID` (int, required) — ID of the collection.
+- `DASHBOARD_ID` (int, required) — ID of the dashboard.
+
+- Mutation class: `destructive`
+- Confirmation: `prompt_or_yes`
+- Backing SDK: `mammoth.api.collections.CollectionsAPI.remove_dashboard`
+- Agent example: `mammoth collection dashboards remove 123 123`
+
+### `mammoth collection delete`
+
+**Arguments**
+
+- `COLLECTION_ID` (int, required) — ID of the collection.
+
+- Mutation class: `destructive`
+- Confirmation: `prompt_or_yes`
+- Backing SDK: `mammoth.api.collections.CollectionsAPI.delete`
+- Agent example: `mammoth collection delete 123`
+
+### `mammoth collection files upload`
+
+**Arguments**
+
+- `COLLECTION_ID` (int, required) — ID of the collection.
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.collections.CollectionsAPI.upload_files`
+- Agent example: `mammoth collection files upload 123 --input '{"files": ["./sales.csv"]}'`
+
+### `mammoth collection for-dashboard`
+
+**Arguments**
+
+- `DASHBOARD_ID` (int, required) — ID of the dashboard.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.collections.CollectionsAPI.for_dashboard`
+- Agent example: `mammoth collection for-dashboard 123`
+
+### `mammoth collection get`
+
+**Arguments**
+
+- `COLLECTION_ID` (int, required) — ID of the collection.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.collections.CollectionsAPI.get`
+- Agent example: `mammoth collection get 123`
+
+### `mammoth collection get-by-url`
+
+**Arguments**
+
+- `URL` (str, required) — URL slug identifying the resource.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.collections.CollectionsAPI.get_by_url`
+- Agent example: `mammoth collection get-by-url https://example.com/data.csv`
+
+### `mammoth collection list`
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.collections.CollectionsAPI.list`
+- Agent example: `mammoth collection list`
+
+### `mammoth collection members remove`
+
+**Arguments**
+
+- `COLLECTION_ID` (int, required) — ID of the collection.
+
+- Mutation class: `destructive`
+- Confirmation: `prompt_or_yes`
+- Backing SDK: `mammoth.api.collections.CollectionsAPI.remove_member`
+- Agent example: `mammoth collection members remove 123 --input '{"email": "analyst@example.com"}'`
+
+### `mammoth collection pipeline-changes`
+
+**Arguments**
+
+- `COLLECTION_ID` (int, required) — ID of the collection.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.collections.CollectionsAPI.pipeline_changes`
+- Agent example: `mammoth collection pipeline-changes 123`
+
+### `mammoth collection share`
+
+**Arguments**
+
+- `COLLECTION_ID` (int, required) — ID of the collection.
+
+- Mutation class: `external_effect`
+- Confirmation: `yes_always`
+- Backing SDK: `mammoth.api.collections.CollectionsAPI.share`
+- Agent example: `mammoth collection share 123 --input '{"emails": ["analyst@example.com"]}'`
+
+### `mammoth collection update`
+
+**Arguments**
+
+- `COLLECTION_ID` (int, required) — ID of the collection.
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.collections.CollectionsAPI.update`
+- Agent example: `mammoth collection update 123 --input '{"name": "Q3 pack"}'`
+
 ## completion
 
 ### `mammoth completion install`
@@ -1937,6 +2086,40 @@ Total commands: 694.
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.embed_usage_summary`
 - Agent example: `mammoth dashboard embed usage summary --input '{"dashboard_ids": [1]}'`
 
+### `mammoth dashboard engagement get`
+
+**Arguments**
+
+- `DASHBOARD_ID` (int, required) — ID of the dashboard.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.dashboards.DashboardsAPI.engagement`
+- Agent example: `mammoth dashboard engagement get 123`
+
+### `mammoth dashboard engagement person`
+
+**Arguments**
+
+- `DASHBOARD_ID` (int, required) — ID of the dashboard.
+- `USER_ID` (int, required) — ID of the user.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.dashboards.DashboardsAPI.engagement_person`
+- Agent example: `mammoth dashboard engagement person 123 123`
+
+### `mammoth dashboard engagement remind`
+
+**Arguments**
+
+- `DASHBOARD_ID` (int, required) — ID of the dashboard.
+
+- Mutation class: `external_effect`
+- Confirmation: `yes_always`
+- Backing SDK: `mammoth.api.dashboards.DashboardsAPI.engagement_remind`
+- Agent example: `mammoth dashboard engagement remind 123 --input '{"user_ids": [1]}'`
+
 ### `mammoth dashboard exemplar extract`
 
 - Mutation class: `benign_mutation`
@@ -2090,6 +2273,61 @@ Total commands: 694.
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.og_card`
 - Agent example: `mammoth dashboard og-card 123`
+
+### `mammoth dashboard own-data accept`
+
+**Arguments**
+
+- `DASHBOARD_ID` (int, required) — ID of the dashboard.
+
+- Mutation class: `benign_mutation`
+- Confirmation: `confirm_target`
+- Backing SDK: `mammoth.api.dashboards.DashboardsAPI.own_data_accept`
+- Agent example: `mammoth dashboard own-data accept 123`
+
+### `mammoth dashboard own-data dismiss`
+
+**Arguments**
+
+- `DASHBOARD_ID` (int, required) — ID of the dashboard.
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.dashboards.DashboardsAPI.own_data_dismiss`
+- Agent example: `mammoth dashboard own-data dismiss 123`
+
+### `mammoth dashboard own-data preview`
+
+**Arguments**
+
+- `DASHBOARD_ID` (int, required) — ID of the dashboard.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.dashboards.DashboardsAPI.own_data_preview`
+- Agent example: `mammoth dashboard own-data preview 123`
+
+### `mammoth dashboard own-data start`
+
+**Arguments**
+
+- `DASHBOARD_ID` (int, required) — ID of the dashboard.
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.dashboards.DashboardsAPI.own_data_start`
+- Agent example: `mammoth dashboard own-data start 123 --input '{"dataview_id": 1}'`
+
+### `mammoth dashboard own-data status`
+
+**Arguments**
+
+- `DASHBOARD_ID` (int, required) — ID of the dashboard.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.dashboards.DashboardsAPI.own_data_status`
+- Agent example: `mammoth dashboard own-data status 123`
 
 ### `mammoth dashboard page plan`
 

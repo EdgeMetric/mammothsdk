@@ -23,6 +23,12 @@ PHRASINGS = [
     ("pull data from a REST API on a schedule", "dataset.create"),
     ("connect a REST API", "connector.connection.create"),
     ("elasticsearch", "connector.connection.create"),
+    ("group dashboards into a collection", "collection.create"),
+    ("share a set of dashboards", "collection.share"),
+    ("which collections hold my dashboard", "collection.for-dashboard"),
+    ("who opened my dashboard", "dashboard.engagement.get"),
+    ("remind people to look at the dashboard", "dashboard.engagement.remind"),
+    ("use my own data on a template", "dashboard.own-data.start"),
 ]
 
 

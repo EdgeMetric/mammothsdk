@@ -1,6 +1,6 @@
 # Published CLI command catalog
 
-This generated catalog is a lookup table for every command in the published CLI manifest, currently 694; each entry carries its release status line. It is a command-contract index, not an assertion that every backend/OpenAPI operation has a CLI binding. For an exact local CLI contract, run `mammoth schema get COMMAND_ID`; `mammoth capability list` is an API-binding inventory and can omit typed/local CLI routes. For focused workflows, read the [recipes index](recipes/index.md). Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
+This generated catalog is a lookup table for every command in the published CLI manifest, currently 716; each entry carries its release status line. It is a command-contract index, not an assertion that every backend/OpenAPI operation has a CLI binding. For an exact local CLI contract, run `mammoth schema get COMMAND_ID`; `mammoth capability list` is an API-binding inventory and can omit typed/local CLI routes. For focused workflows, read the [recipes index](recipes/index.md). Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
 Load only the applicable domain file:
 
@@ -17,6 +17,7 @@ Load only the applicable domain file:
 - [calc](commands/calc.md) — 1 published commands
 - [capability](commands/capability.md) — 3 published commands
 - [client-app](commands/client-app.md) — 5 published commands
+- [collection](commands/collection.md) — 14 published commands
 - [completion](commands/completion.md) — 2 published commands
 - [config](commands/config.md) — 4 published commands
 - [connector](commands/connector.md) — 22 published commands
@@ -24,7 +25,7 @@ Load only the applicable domain file:
 - [dashboard-qa](commands/dashboard-qa.md) — 14 published commands
 - [dashboard-template](commands/dashboard-template.md) — 12 published commands
 - [dashboard-style](commands/dashboard-style.md) — 10 published commands
-- [dashboard](commands/dashboard.md) — 99 published commands
+- [dashboard](commands/dashboard.md) — 107 published commands
 - [data-app](commands/data-app.md) — 12 published commands
 - [dataset](commands/dataset.md) — 22 published commands
 - [doctor](commands/doctor.md) — 1 published commands

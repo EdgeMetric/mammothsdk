@@ -210,13 +210,17 @@ def _read_invocation(command_id: str, resolved_ids: dict[str, Any], base: Invoca
     order (matching how handlers read ``extra_args``); any id left over is
     offered as a pre-admitted ``--input`` document instead.
     """
-    positional_names = [spec.name for spec in resolve_positionals(command_id)]
+    specs = resolve_positionals(command_id)
     positionals: dict[str, Any] = {}
     extra_args: list[str] = []
-    for name in positional_names:
+    for spec in specs:
+        name = spec.name
         if name not in resolved_ids:
             break
         value = resolved_ids[name]
+        # An id read from the write's own argv is text; the read's SDK method wants an int.
+        if spec.type is int and isinstance(value, str) and value.isdigit():
+            value = int(value)
         positionals[name] = value
         extra_args.append(str(value))
     document = {name: value for name, value in resolved_ids.items() if name not in positionals}
