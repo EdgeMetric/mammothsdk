@@ -4971,68 +4971,6 @@ sdk_methods:
   wait_policy: null
   pagination_policy: null
   openapi_operation_ids: []
-notes_on_dispositions:
-- 'DatasetsAPI.bulk_delete: "the SDK sends collection DELETE without target IDs. The command is forbidden
-  until OpenAPI proves exact targets and a typed SDK request carries them" (BLOCKED[B08], and doc 09 states
-  it "MUST NOT be exposed").'
-- 'ProjectsAPI.bulk_update: "BLOCKED[B02]" — accepts an unconstrained dictionary; reserved but not registered.'
-- 'DatasetsAPI.create: freeform creation variants remain unqualified; retained live evidence supports the
-  documented weburl + dataset_spec.url path, which waits for ready. Do not infer support for other variants.'
-- 'DatasetsAPI.update / DatasetsAPI.bulk_update: "BLOCKED[B07]" — raw patch operations include rename,
-  refresh, column changes, reattach, and deletion; reserved but not registered, and a benign command must
-  not smuggle deletion.'
-- 'DataviewsAPI.update / conditional_format_create / conditional_format_update: "BLOCKED[B09]" — dictionaries
-  are arbitrary; reserved but not registered until strict public request models exist.'
-- 'DataviewsAPI.draft_mode: "BLOCKED[B12]" — "DataviewsAPI docstrings say enter|commit|discard, DraftCommand
-  uses enter|submit|discard|exit, and this API takes free text. Replace it with the shared enum and typed
-  server state."'
-- 'UserProfileAPI.update / update_preferences / ActivityLogsAPI.list: "BLOCKED[B17 VARIADIC_INPUT_UNTYPED]"
-  — fields are **Any; "Generate strict OpenAPI-backed request models; unrecognized fields must fail before
-  transport."'
-- 'UserProfileAPI.change_password: "BLOCKED[B18]" — "absent from the public OpenAPI. It remains reserved
-  and contract-only until a pinned contract and secret/redaction metadata exist."'
-- 'ActivityLogsAPI.export: "BLOCKED[B19 ACTIVITY_EXPORT_UNTYPED_ASYNC]" — format, filters, and download/job
-  response are raw; add typed result union before registering the command.'
-- 'ClientAppsAPI.update: "BLOCKED[B21]" — PatchOperation.op/path/value are arbitrary strings; add enums/path-dependent
-  values before update is exposed.'
-- 'PipelineAPI.draft_mode: "Accept only enter, submit, discard, or exit; never commit. exit is an internal
-  step of submit/discard and is not a public CLI verb."'
-- 'View.draft(): "SDK-only compound alias for view draft enter, followed by transforms, then submit or
-  discard. It has no standalone CLI handler."'
-- 'ViewHost protocol (list_tasks, refresh): "ViewHost has no runtime effect. Its two public protocol declarations
-  still appear in the complete SDK inventory, so they receive explicit alias records."'
-- 'Reserved export CRUD (doc 11): `ExportsAPI.get`, `ExportsAPI.update`, `ExportsAPI.delete` do not yet
-  exist in the SDK inventory (doc 13 lists only 5 ExportsAPI methods: create, list, to_csv, to_dataset,
-  to_s3). Doc 11 states these are "Reserved control commands complete OpenAPI CRUD" and lists the "Required
-  SDK signature" that must be added before `view export get|update VIEW_ID EXPORT_ID` can be registered
-  — they are not present sdk_methods rows here because they are not yet public SDK symbols.'
-- 'csv_file export handler: "reserved `view export csv-file VIEW_ID` ... No public helper or builder contract
-  exists. Do not alias it to the S3-backed local csv command. Block until the production server accepts
-  a reviewed typed fixture." No SDK method backs this handler.'
-- 'email export handler: "Outbound email stays contract-only until a dedicated sink and recipient allowlist
-  exist" (acceptance class contract_only_high_impact).'
-- 'IO-EXPORT-HANDLERS blocker: "csv_file and any server-rejected handler ... never infer support from the
-  enum."'
-- 'B04 SERVER_VARIANCE (doc 09): "project browse and dashboard sources are documented as returning HTTP
-  500 on some servers; schedule list may return 405. A permission or 5xx response is not server_unavailable;
-  retain the live exemption evidence."'
-- 'webhook send-get: "is a mutation despite HTTP GET, and it is never retried" — must not be treated as
-  an idempotent read despite the verb.'
-- 'AIAPI.generate_data: "is a preview operation in the pinned OpenAPI document. It must not claim that
-  it writes generated rows to the view."'
-- 'AIAPI blockers A3/A4: "Do not infer addon availability from an authorization error" and connector query
-  generation must never run live "without that fixture" (dedicated connector fixture required).'
-- 'MammothClient.test_connection: alias to `auth status --check`; "Do not implement the SDK method''s
-  lossy boolean behavior in the CLI."'
-- 'B16 DUPLICATE_SCHEDULE_SURFACE: "AutomationsAPI and SchedulesAPI expose the same project schedule routes
-  with different list envelopes/pagination. SchedulesAPI owns canonical handlers; automation schedule
-  methods are aliases only."'
-- 'B10 VIEW_DATASET_RESOLUTION: ViewsResource.get/delete/bulk_delete call a private pipeline discovery
-  helper; "bulk delete resolves only the first ID and assumes every view shares its dataset" pending a
-  public paginated resolver.'
-- 'B01 FIRST_PAGE_ONLY: workspace/project/dataset/dataview list methods (and ProjectsAPI.get, ViewsResource.list,
-  private dataview discovery) "have no offset/cursor. ... Add a public proven continuation contract before
-  --all or completeness claims."'
 - sdk_symbol: mammoth.api.agents.AgentsAPI.turn_cancel
   canonical_command: agent.turn.cancel
   alias_of: null
@@ -5334,3 +5272,65 @@ notes_on_dispositions:
   wait_policy: not_async
   pagination_policy: none
   openapi_operation_ids: []
+notes_on_dispositions:
+- 'DatasetsAPI.bulk_delete: "the SDK sends collection DELETE without target IDs. The command is forbidden
+  until OpenAPI proves exact targets and a typed SDK request carries them" (BLOCKED[B08], and doc 09 states
+  it "MUST NOT be exposed").'
+- 'ProjectsAPI.bulk_update: "BLOCKED[B02]" — accepts an unconstrained dictionary; reserved but not registered.'
+- 'DatasetsAPI.create: freeform creation variants remain unqualified; retained live evidence supports the
+  documented weburl + dataset_spec.url path, which waits for ready. Do not infer support for other variants.'
+- 'DatasetsAPI.update / DatasetsAPI.bulk_update: "BLOCKED[B07]" — raw patch operations include rename,
+  refresh, column changes, reattach, and deletion; reserved but not registered, and a benign command must
+  not smuggle deletion.'
+- 'DataviewsAPI.update / conditional_format_create / conditional_format_update: "BLOCKED[B09]" — dictionaries
+  are arbitrary; reserved but not registered until strict public request models exist.'
+- 'DataviewsAPI.draft_mode: "BLOCKED[B12]" — "DataviewsAPI docstrings say enter|commit|discard, DraftCommand
+  uses enter|submit|discard|exit, and this API takes free text. Replace it with the shared enum and typed
+  server state."'
+- 'UserProfileAPI.update / update_preferences / ActivityLogsAPI.list: "BLOCKED[B17 VARIADIC_INPUT_UNTYPED]"
+  — fields are **Any; "Generate strict OpenAPI-backed request models; unrecognized fields must fail before
+  transport."'
+- 'UserProfileAPI.change_password: "BLOCKED[B18]" — "absent from the public OpenAPI. It remains reserved
+  and contract-only until a pinned contract and secret/redaction metadata exist."'
+- 'ActivityLogsAPI.export: "BLOCKED[B19 ACTIVITY_EXPORT_UNTYPED_ASYNC]" — format, filters, and download/job
+  response are raw; add typed result union before registering the command.'
+- 'ClientAppsAPI.update: "BLOCKED[B21]" — PatchOperation.op/path/value are arbitrary strings; add enums/path-dependent
+  values before update is exposed.'
+- 'PipelineAPI.draft_mode: "Accept only enter, submit, discard, or exit; never commit. exit is an internal
+  step of submit/discard and is not a public CLI verb."'
+- 'View.draft(): "SDK-only compound alias for view draft enter, followed by transforms, then submit or
+  discard. It has no standalone CLI handler."'
+- 'ViewHost protocol (list_tasks, refresh): "ViewHost has no runtime effect. Its two public protocol declarations
+  still appear in the complete SDK inventory, so they receive explicit alias records."'
+- 'Reserved export CRUD (doc 11): `ExportsAPI.get`, `ExportsAPI.update`, `ExportsAPI.delete` do not yet
+  exist in the SDK inventory (doc 13 lists only 5 ExportsAPI methods: create, list, to_csv, to_dataset,
+  to_s3). Doc 11 states these are "Reserved control commands complete OpenAPI CRUD" and lists the "Required
+  SDK signature" that must be added before `view export get|update VIEW_ID EXPORT_ID` can be registered
+  — they are not present sdk_methods rows here because they are not yet public SDK symbols.'
+- 'csv_file export handler: "reserved `view export csv-file VIEW_ID` ... No public helper or builder contract
+  exists. Do not alias it to the S3-backed local csv command. Block until the production server accepts
+  a reviewed typed fixture." No SDK method backs this handler.'
+- 'email export handler: "Outbound email stays contract-only until a dedicated sink and recipient allowlist
+  exist" (acceptance class contract_only_high_impact).'
+- 'IO-EXPORT-HANDLERS blocker: "csv_file and any server-rejected handler ... never infer support from the
+  enum."'
+- 'B04 SERVER_VARIANCE (doc 09): "project browse and dashboard sources are documented as returning HTTP
+  500 on some servers; schedule list may return 405. A permission or 5xx response is not server_unavailable;
+  retain the live exemption evidence."'
+- 'webhook send-get: "is a mutation despite HTTP GET, and it is never retried" — must not be treated as
+  an idempotent read despite the verb.'
+- 'AIAPI.generate_data: "is a preview operation in the pinned OpenAPI document. It must not claim that
+  it writes generated rows to the view."'
+- 'AIAPI blockers A3/A4: "Do not infer addon availability from an authorization error" and connector query
+  generation must never run live "without that fixture" (dedicated connector fixture required).'
+- 'MammothClient.test_connection: alias to `auth status --check`; "Do not implement the SDK method''s
+  lossy boolean behavior in the CLI."'
+- 'B16 DUPLICATE_SCHEDULE_SURFACE: "AutomationsAPI and SchedulesAPI expose the same project schedule routes
+  with different list envelopes/pagination. SchedulesAPI owns canonical handlers; automation schedule
+  methods are aliases only."'
+- 'B10 VIEW_DATASET_RESOLUTION: ViewsResource.get/delete/bulk_delete call a private pipeline discovery
+  helper; "bulk delete resolves only the first ID and assumes every view shares its dataset" pending a
+  public paginated resolver.'
+- 'B01 FIRST_PAGE_ONLY: workspace/project/dataset/dataview list methods (and ProjectsAPI.get, ViewsResource.list,
+  private dataview discovery) "have no offset/cursor. ... Add a public proven continuation contract before
+  --all or completeness claims."'
