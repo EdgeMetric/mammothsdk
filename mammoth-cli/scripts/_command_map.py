@@ -441,6 +441,7 @@ OVERRIDES: dict[str, str] = {
     "GetFileSettings": "dataset.file-settings.get",
     "UpdateFileSettings": "dataset.file-settings.update",
     "UndoFileSettings": "dataset.file-settings.undo",
+    "SearchDatasetsByContent": "dataset.search",
     # Batches.
     "GetBatches": "batch.list",
     "CreateBatch": "batch.create",
@@ -522,6 +523,8 @@ OVERRIDES: dict[str, str] = {
     "DeleteFile": "file.delete",
     "GetFileDetails": "file.get",
     "UpdateFileConfigs": "file.update",
+    "PreviewMultiSheetInterpretation": "file.multi-sheet-preview",
+    "CreateDatasetsFromMultiSheetFile": "file.multi-sheet-extract",
     # Folders.
     "ListFolders": "folder.list",
     "CreateFolder": "folder.create",
@@ -555,6 +558,10 @@ OVERRIDES: dict[str, str] = {
     "DeleteWorkflow": "workflow.delete",
     "GetWorkflow": "workflow.get",
     "UpdateWorkflow": "workflow.update",
+    "SaveWorkflow": "workflow.save",
+    "SetArchived": "workflow.archive",
+    "AttachDataset": "workflow.attach-dataset",
+    "ResolveHeldChange": "workflow.resolve-held",
     "AddSkeletonBlock": "workflow.block.add",
     "PatchBlockAuth": "workflow.block.auth",
     "PromoteSkeletonBlock": "workflow.block.config",

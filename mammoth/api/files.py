@@ -428,3 +428,68 @@ class FilesAPI:
         )
         patch_request = FilePatchRequest(patch=[patch_data])
         return await self.update(file_id, patch_request)
+
+    async def preview_multi_sheet(
+        self,
+        file_id: int,
+        sheet_name: str,
+        block_id: str | None = None,
+        user_instruction: str | None = None,
+        structure_map: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        """Preview how one sheet of a multi-sheet file reads, before any dataset exists.
+
+        Args:
+            file_id: ID of the file.
+            sheet_name: The sheet to preview, exactly as it is named in the workbook.
+            block_id: Which detected block to resolve, on a multi-table sheet.
+            user_instruction: Plain-English description of how to read the sheet
+                or block. Omitted: the detected header row and its data.
+            structure_map: A structure map already known to be correct; skips the
+                LLM call.
+
+        Returns:
+            Dict with the sheet's read preview.
+        """
+        ws = self._ws()
+        proj = self._proj()
+        body: dict[str, Any] = {
+            "sheet_name": sheet_name,
+            "block_id": block_id,
+            "user_instruction": user_instruction,
+            "structure_map": structure_map,
+        }
+        return await self._client._request_json(
+            "POST",
+            f"/workspaces/{ws}/projects/{proj}/files/{file_id}/sheets/interpretation/preview",
+            json={name: value for name, value in body.items() if value is not None},
+        )
+
+    async def create_datasets_from_multi_sheet(
+        self,
+        file_id: int,
+        tables: _list[dict[str, Any]],
+        delete_file_after_extract: bool = True,
+    ) -> ObjectJobSchema:
+        """Create datasets from accepted sheet and table reads of a multi-sheet file.
+
+        Args:
+            file_id: ID of the file.
+            tables: Every accepted sheet/block read to create datasets from (1 to 100),
+                each with ``sheet_name``, ``dataset_name`` and ``structure_map``.
+            delete_file_after_extract: Delete the file once its datasets are created.
+
+        Returns:
+            ObjectJobSchema with job information, after the job completes.
+        """
+        ws = self._ws()
+        proj = self._proj()
+        body = {"tables": tables, "delete_file_after_extract": delete_file_after_extract}
+        response = await self._client._request_json(
+            "POST",
+            f"/workspaces/{ws}/projects/{proj}/files/{file_id}/multi-sheet-extraction",
+            json=body,
+        )
+        completed = await self._client._wait_if_job(response)
+        merged = {**response, **completed} if isinstance(completed, dict) else response
+        return ObjectJobSchema(**merged)

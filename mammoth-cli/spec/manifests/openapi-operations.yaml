@@ -8803,11 +8803,11 @@ operations:
   request_schema: null
   response_schemas: []
   deprecated: false
-  disposition: unmapped
-  disposition_reason: No reviewed CLI command or SDK symbol recorded.
-  canonical_command: null
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: dataset.search
   alias_of: null
-  sdk_symbol: null
+  sdk_symbol: mammoth.api.datasets.DatasetsAPI.search
   reviewed_by: primary
 - identity: DELETE /workspaces/{workspace_id}/projects/{project_id}/datasets/{dataset_id}
   method: DELETE
@@ -10844,11 +10844,11 @@ operations:
   response_schemas:
   - JobResponse
   deprecated: false
-  disposition: unmapped
-  disposition_reason: No reviewed CLI command or SDK symbol recorded.
-  canonical_command: null
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: file.multi-sheet-extract
   alias_of: null
-  sdk_symbol: null
+  sdk_symbol: mammoth.api.files.FilesAPI.create_datasets_from_multi_sheet
   reviewed_by: primary
 - identity: POST /workspaces/{workspace_id}/projects/{project_id}/files/{file_id}/sheets/interpretation/preview
   method: POST
@@ -10866,11 +10866,11 @@ operations:
   response_schemas:
   - MultiSheetPreviewResponse
   deprecated: false
-  disposition: unmapped
-  disposition_reason: No reviewed CLI command or SDK symbol recorded.
-  canonical_command: null
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: file.multi-sheet-preview
   alias_of: null
-  sdk_symbol: null
+  sdk_symbol: mammoth.api.files.FilesAPI.preview_multi_sheet
   reviewed_by: primary
 - identity: DELETE /workspaces/{workspace_id}/projects/{project_id}/folders
   method: DELETE
@@ -11986,11 +11986,11 @@ operations:
   response_schemas:
   - WorkflowResponse
   deprecated: false
-  disposition: unmapped
-  disposition_reason: No reviewed CLI command or SDK symbol recorded.
-  canonical_command: null
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: workflow.archive
   alias_of: null
-  sdk_symbol: null
+  sdk_symbol: mammoth.api.workflows.WorkflowsAPI.set_archived
   reviewed_by: primary
 - identity: POST /workspaces/{workspace_id}/projects/{project_id}/workflows/{workflow_id}/blocks
   method: POST
@@ -12118,11 +12118,11 @@ operations:
   response_schemas:
   - WorkflowResponse
   deprecated: false
-  disposition: unmapped
-  disposition_reason: No reviewed CLI command or SDK symbol recorded.
-  canonical_command: null
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: workflow.attach-dataset
   alias_of: null
-  sdk_symbol: null
+  sdk_symbol: mammoth.api.workflows.WorkflowsAPI.attach_dataset
   reviewed_by: primary
 - identity: POST /workspaces/{workspace_id}/projects/{project_id}/workflows/{workflow_id}/held/resolve
   method: POST
@@ -12140,11 +12140,11 @@ operations:
   response_schemas:
   - WorkflowResponse
   deprecated: false
-  disposition: unmapped
-  disposition_reason: No reviewed CLI command or SDK symbol recorded.
-  canonical_command: null
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: workflow.resolve-held
   alias_of: null
-  sdk_symbol: null
+  sdk_symbol: mammoth.api.workflows.WorkflowsAPI.resolve_held
   reviewed_by: primary
 - identity: POST /workspaces/{workspace_id}/projects/{project_id}/workflows/{workflow_id}/save
   method: POST
@@ -12162,11 +12162,11 @@ operations:
   response_schemas:
   - WorkflowResponse
   deprecated: false
-  disposition: unmapped
-  disposition_reason: No reviewed CLI command or SDK symbol recorded.
-  canonical_command: null
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: workflow.save
   alias_of: null
-  sdk_symbol: null
+  sdk_symbol: mammoth.api.workflows.WorkflowsAPI.save
   reviewed_by: primary
 - identity: POST /workspaces/{workspace_id}/reactivate
   method: POST

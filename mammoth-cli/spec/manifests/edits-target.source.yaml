@@ -132,6 +132,7 @@ edits_target_commands:
 - external-key.delete
 - file.bulk-delete
 - file.delete
+- file.multi-sheet-extract
 - file.set-password
 - file.update
 - folder.bulk-delete
@@ -276,12 +277,16 @@ edits_target_commands:
 - webhook.send
 - webhook.send-get
 - webhook.update
+- workflow.archive
+- workflow.attach-dataset
 - workflow.block.add
 - workflow.block.auth
 - workflow.block.config
 - workflow.block.type
 - workflow.canvas
 - workflow.delete
+- workflow.resolve-held
+- workflow.save
 - workflow.update
 - workspace.delete
 - workspace.invite.delete

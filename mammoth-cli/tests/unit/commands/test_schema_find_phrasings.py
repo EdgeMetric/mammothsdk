@@ -37,6 +37,10 @@ PHRASINGS = [
     ("rename a step in the plan proposal", "agent.plan.edit-proposal"),
     ("resume an interrupted collection upload", "collection.active-job"),
     ("attach a workbook to the chat", "dashboard.attachment-create"),
+    ("make a dataset from each sheet of my excel file", "file.multi-sheet-extract"),
+    ("see how each sheet of my excel workbook reads", "file.multi-sheet-preview"),
+    ("archive this workflow", "workflow.archive"),
+    ("save my workflow changes", "workflow.save"),
 ]
 
 

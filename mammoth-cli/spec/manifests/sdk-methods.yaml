@@ -1,5 +1,5 @@
 manifest_schema_version: 1
-method_count: 752
+method_count: 758
 generator_version: '1'
 methods:
 - sdk_symbol: mammoth._mixins._advanced_ops.AdvancedOpsMixin.add_sql
@@ -5928,6 +5928,19 @@ methods:
   pagination_policy: none
   secret_fields: []
   reviewed_by: primary
+- sdk_symbol: mammoth.api.files.FilesAPI.create_datasets_from_multi_sheet
+  implementation_origin: mammoth.api.files.FilesAPI.create_datasets_from_multi_sheet
+  signature: 'create_datasets_from_multi_sheet(self, file_id: ''int'', tables: ''_list[dict[str, Any]]'',
+    delete_file_after_extract: ''bool'' = True) -> ''ObjectJobSchema'''
+  openapi_operation_ids: []
+  canonical_command: file.multi-sheet-extract
+  alias_of: null
+  no_command_reason: null
+  mutation_class: benign_mutation
+  wait_policy: always_wait
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
 - sdk_symbol: mammoth.api.files.FilesAPI.delete
   implementation_origin: mammoth.api.files.FilesAPI.delete
   signature: 'delete(self, file_id: ''int'') -> ''None'''
@@ -5978,6 +5991,20 @@ methods:
   mutation_class: read
   wait_policy: not_async
   pagination_policy: offset
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.files.FilesAPI.preview_multi_sheet
+  implementation_origin: mammoth.api.files.FilesAPI.preview_multi_sheet
+  signature: 'preview_multi_sheet(self, file_id: ''int'', sheet_name: ''str'', block_id: ''str | None''
+    = None, user_instruction: ''str | None'' = None, structure_map: ''dict[str, Any] | None'' = None)
+    -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: file.multi-sheet-preview
+  alias_of: null
+  no_command_reason: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
   secret_fields: []
   reviewed_by: primary
 - sdk_symbol: mammoth.api.files.FilesAPI.set_password
@@ -8435,6 +8462,19 @@ methods:
   pagination_policy: none
   secret_fields: []
   reviewed_by: primary
+- sdk_symbol: mammoth.api.workflows.WorkflowsAPI.attach_dataset
+  implementation_origin: mammoth.api.workflows.WorkflowsAPI.attach_dataset
+  signature: 'attach_dataset(self, workflow_id: ''int'', datasource_id: ''int'', project_id: ''int | None''
+    = None) -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: workflow.attach-dataset
+  alias_of: null
+  no_command_reason: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
 - sdk_symbol: mammoth.api.workflows.WorkflowsAPI.block_add
   implementation_origin: mammoth.api.workflows.WorkflowsAPI.block_add
   signature: 'block_add(self, workflow_id: ''int'', block_type: ''str'', display_name: ''str | None''
@@ -8585,6 +8625,45 @@ methods:
   mutation_class: null
   wait_policy: null
   pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.workflows.WorkflowsAPI.resolve_held
+  implementation_origin: mammoth.api.workflows.WorkflowsAPI.resolve_held
+  signature: 'resolve_held(self, workflow_id: ''int'', key: ''str'', built: ''bool'', expected_version:
+    ''int | None'' = None, project_id: ''int | None'' = None) -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: workflow.resolve-held
+  alias_of: null
+  no_command_reason: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.workflows.WorkflowsAPI.save
+  implementation_origin: mammoth.api.workflows.WorkflowsAPI.save
+  signature: 'save(self, workflow_id: ''int'', keys: ''_list[str] | None'' = None, expected_version: ''int
+    | None'' = None, project_id: ''int | None'' = None) -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: workflow.save
+  alias_of: null
+  no_command_reason: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.workflows.WorkflowsAPI.set_archived
+  implementation_origin: mammoth.api.workflows.WorkflowsAPI.set_archived
+  signature: 'set_archived(self, workflow_id: ''int'', archived: ''bool'', dataset_ids: ''_list[int] |
+    None'' = None, project_id: ''int | None'' = None) -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: workflow.archive
+  alias_of: null
+  no_command_reason: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
   secret_fields: []
   reviewed_by: primary
 - sdk_symbol: mammoth.api.workflows.WorkflowsAPI.update
