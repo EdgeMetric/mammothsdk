@@ -78,6 +78,8 @@ _HANDLER_OWNED_FIELDS: dict[str, frozenset[str]] = {
     "view.explore-panel.add-to-dashboard": frozenset(
         {"dashboard_id", "dataview_id", "figure", "banded", "page_id", "page_new_title"}
     ),
+    # The handler builds the engine spec from the card's rows; the SDK's ``spec`` is not an input.
+    "view.explore-panel.export-image": frozenset({"spec"}),
 }
 
 # CLI-only commands whose complete request is carried by positionals/context.

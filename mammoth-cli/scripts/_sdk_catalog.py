@@ -185,6 +185,7 @@ EXTRA_OP_HINTS: dict[str, dict[str, Any]] = {
     "view.exportable-config.apply": {"operation_ids": ["ApplyExportableConfig"], "method": "POST"},
     "view.optimize": {"operation_ids": ["OptimizePipeline"], "method": "POST"},
     "view.explore-panel.set": {"operation_ids": ["Patch"], "method": "POST"},
+    "view.explore-panel.export-image": {"operation_ids": ["RenderFigureSvg"], "method": "POST"},
     "workspace.invite.delete": {"operation_ids": ["UpdateUserToWorkspace"], "method": "DELETE"},
     "workspace.invite.resend": {"operation_ids": ["UpdateUserToWorkspace"], "method": "POST"},
     "workspace.invite.revoke": {"operation_ids": ["UpdateUserToWorkspace"], "method": "DELETE"},

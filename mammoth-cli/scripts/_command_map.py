@@ -107,6 +107,9 @@ PENDING_SERVER_RELEASE.update(
     }
 )
 PENDING_SERVER_RELEASE["POST /dashboards/{}/figures"] = "origin/feat/agent-cli-surface-w8@15c7fe863f"
+PENDING_SERVER_RELEASE["POST /dashboards/v3/render/svg"] = (
+    "mvc-service PR #6906 (not deployed to koyal)"
+)
 # On server master since the pinned master snapshot (master-20261002) was exported.
 PENDING_SERVER_RELEASE.update(
     {
@@ -658,6 +661,8 @@ OVERRIDES: dict[str, str] = {
     "AddDashboards": "collection.dashboards.add",
     "AddPages": "dashboard.pages.add",
     "AppendFigure": "dashboard.figure.add",
+    # Not on the pinned prod snapshot yet (mvc-service PR #6906); see PENDING_SERVER_RELEASE.
+    "RenderFigureSvg": "view.explore-panel.export-image",
     "ApplyContextReview": "dashboard.context.apply",
     "ApplyExportableConfig": "view.exportable-config.apply",
     "ArchiveDashboard": "dashboard.archive",

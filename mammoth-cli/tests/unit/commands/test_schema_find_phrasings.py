@@ -29,6 +29,8 @@ PHRASINGS = [
     ("who opened my dashboard", "dashboard.engagement.get"),
     ("remind people to look at the dashboard", "dashboard.engagement.remind"),
     ("use my own data on a template", "dashboard.own-data.start"),
+    ("export explore card as image", "view.explore-panel.export-image"),
+    ("save explore chart as png", "view.explore-panel.export-image"),
 ]
 
 
