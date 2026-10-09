@@ -772,6 +772,12 @@ _S7_ADDITIONAL_INPUT_FIELDS: dict[str, tuple[FieldSpec, ...]] = {
         FieldSpec("new_dashboard_title", required=False, annotation=str | None, default=None),
         FieldSpec("page", required=False, annotation=dict[str, Any] | None, default=None),
     ),
+    # The card to draw and where the SVG goes; the style is the engine's saved style, or none.
+    "view.explore-panel.export-image": (
+        FieldSpec("card", required=True, annotation=str),
+        FieldSpec("output_path", required=False, annotation=str | None, default=None),
+        FieldSpec("style_id", required=False, annotation=str | None, default=None),
+    ),
     "user.preference.update": (
         # PreferencesPatchRequest: replace ops on dotted paths rooted at
         # GLOBAL or WORKSPACE_PREFERENCES.

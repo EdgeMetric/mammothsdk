@@ -1,5 +1,5 @@
 manifest_schema_version: 1
-method_count: 764
+method_count: 765
 generator_version: '1'
 methods:
 - sdk_symbol: mammoth._mixins._advanced_ops.AdvancedOpsMixin.add_sql
@@ -3975,6 +3975,18 @@ methods:
   alias_of: null
   no_command_reason: null
   mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.render_figure_svg
+  implementation_origin: mammoth.api.dashboards.DashboardsAPI.render_figure_svg
+  signature: 'render_figure_svg(self, spec: ''dict[str, Any]'', style_id: ''str | None'' = None) -> ''str'''
+  openapi_operation_ids: []
+  canonical_command: view.explore-panel.export-image
+  alias_of: null
+  no_command_reason: null
+  mutation_class: read
   wait_policy: not_async
   pagination_policy: none
   secret_fields: []

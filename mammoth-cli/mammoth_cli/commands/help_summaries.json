@@ -576,6 +576,7 @@
   "view.draft.submit": "Submit a view's draft pipeline changes.",
   "view.explore-panel.add-to-dashboard": "Put an Explore card on a dashboard as a figure, like the card menu's Add to dashboard.",
   "view.explore-panel.edit": "Change Explore cards as the card menus do; the result carries the panel read back.",
+  "view.explore-panel.export-image": "Write one open Explore card as an SVG image file: a bar chart for a chart card, a table of its rows for a list card.",
   "view.explore-panel.get": "Read the Explore panel the caller saved on a view (empty when none is saved).",
   "view.explore-panel.set": "Replace the caller's saved Explore panel; the result carries the panel read back after.",
   "view.export.azure-blob": "Run one of the SDK's typed 'View.export' destination helpers.",

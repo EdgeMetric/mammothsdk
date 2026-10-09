@@ -67,6 +67,10 @@ _FIXED_EXAMPLES: dict[str, tuple[tuple[str, ...], dict[str, Any]]] = {
         ("123",),
         {"card": "Region", "new_dashboard_title": "Regions"},
     ),
+    "view.explore-panel.export-image": (
+        ("123",),
+        {"card": "Region", "output_path": "card.svg", "style_id": None},
+    ),
     "project.check": (("123", "456"), {}),
     "view.data.profile": (("123",), {"target": "Churn"}),
     "view.variants.create": (
@@ -130,6 +134,10 @@ _COMMAND_DISCOVERY_PURPOSES = {
     ),
     "view.explore-panel.add-to-dashboard": (
         "put an explore card on a dashboard like the card menu add to dashboard, new blank board"
+    ),
+    "view.explore-panel.export-image": (
+        "export explore card as image, save explore chart as png or svg, a picture of one card "
+        "with its rows"
     ),
     "dashboard.figure.add": (
         "append an explore card figure tile to a dashboard from a payload, no chat turn"
@@ -776,7 +784,7 @@ IN_PLACE_RECIPE = (
     "EDITS THE GIVEN VIEW IN PLACE: this adds a step to the view and changes that view "
     "and its dataset's output. To make a NEW dataset and leave the source untouched: "
     "`mammoth view create SOURCE_DATASET_ID` (working view), do the steps on that working "
-    'view, then `mammoth view export dataset WORKING_VIEW_ID` (add dataset_name only if the user named it).'
+    "view, then `mammoth view export dataset WORKING_VIEW_ID` (add dataset_name only if the user named it)."
 )
 _IN_PLACE_KEYWORDS = (
     "new dataset create make in place edits given view working view source untouched"

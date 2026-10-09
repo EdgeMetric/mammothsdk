@@ -44,6 +44,8 @@ PHRASINGS = [
     ("disconnect an app I authorised", "auth.connected-apps.revoke"),
     ("which workspace is this token for", "workspace.current"),
     ("register an OAuth client", "workspace.oauth-client.create"),
+    ("export explore card as image", "view.explore-panel.export-image"),
+    ("save explore chart as png", "view.explore-panel.export-image"),
 ]
 
 

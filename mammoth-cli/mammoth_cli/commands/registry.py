@@ -842,6 +842,7 @@ _TARGETS: dict[str, str] = {
     "view.explore-panel.add-to-dashboard": (
         "mammoth_cli.commands.view_explore:view_explore_panel_add_to_dashboard"
     ),
+    "view.explore-panel.export-image": "mammoth_cli.commands.view_explore:view_explore_panel_export_image",
     "view.data.get": "mammoth_cli.commands.view:view_data_get",
     "view.data.query": "mammoth_cli.commands.view:view_data_query",
     "view.data.aggregate": "mammoth_cli.commands.view:view_data_aggregate_rounded",

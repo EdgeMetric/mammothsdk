@@ -9,6 +9,7 @@ in :mod:`mammoth_cli.services.explore_card_edit`; this module reads the view for
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any
 
 from mammoth_cli.commands.view import (
@@ -38,6 +39,7 @@ from mammoth_cli.services.explore_card_edit import (
     open_card,
 )
 from mammoth_cli.services.explore_to_figure import card_level, card_to_figure, count_filters
+from mammoth_cli.services.explore_to_image import card_to_render_spec
 
 HandlerResult = tuple[Any, dict[str, Any]]
 
@@ -47,6 +49,7 @@ _SUGGESTIONS_SYMBOL = "mammoth.api.ai.AIAPI.get_suggestions"
 _DASHBOARDS_LIST_SYMBOL = "mammoth.api.dashboards.DashboardsAPI.list"
 _CREATE_BLANK_SYMBOL = "mammoth.api.dashboards.DashboardsAPI.create_blank"
 _APPEND_FIGURE_SYMBOL = "mammoth.api.dashboards.DashboardsAPI.append_figure"
+_RENDER_SVG_SYMBOL = "mammoth.api.dashboards.DashboardsAPI.render_figure_svg"
 #: The suggestions call answers this status when it read a condition out of the question.
 _ASK_UNDERSTOOD = "AC01"
 
@@ -81,6 +84,7 @@ class _View:
         level: Any,
         only: list[Any] | None = None,
         limit: int | None = None,
+        metric: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         """The buckets the card lists for a column (a read-only grouped count)."""
         kwargs: dict[str, Any] = {
@@ -97,8 +101,19 @@ class _View:
             limit = len(only)
         if limit is not None:
             kwargs["limit"] = limit
+        if metric is not None:
+            kwargs["metric"] = metric
         data: dict[str, Any] = self.service.call(_EXPLORE_SYMBOL, **kwargs)
         return data
+
+    def card_rows(self, card: dict[str, Any], column: dict[str, Any]) -> list[dict[str, Any]]:
+        """The grouped rows a card draws, read as ``view data explore`` reads them."""
+        aggregation = card.get("aggregation") or {}
+        kind = str(aggregation.get("type") or "COUNT")
+        metric = (
+            None if kind == "COUNT" else {"column": aggregation["targetColId"], "function": kind}
+        )
+        return list(self.explore(column, card_level(card), metric=metric)["data"])
 
     def buckets(self, column: dict[str, Any], level: Any, only: list[Any] | None) -> list[Any]:
         """Bucket values as the cards store them: text, numbers, or ``YYYY-MM-DD HH:MM:SS``."""
@@ -169,6 +184,34 @@ def view_explore_panel_edit(invocation: Invocation) -> HandlerResult:
 
 def _refuse(message: str, hint: str | None = None) -> CliError:
     return CliError(code=CODE_INVALID_ARGUMENT, message=message, exit_status=EXIT_USAGE, hint=hint)
+
+
+def view_explore_panel_export_image(invocation: Invocation) -> HandlerResult:
+    """Write one open Explore card as an SVG image file (a bar chart or a table of its rows).
+
+    The backend has no rasterizer, so this writes SVG; the web app's PNG is a browser screenshot.
+    ``output_path`` defaults to ``explore-card-<view id>.svg`` in the current directory.
+    """
+    project_id = require_project(invocation)
+    dataview_id = _require_int_positional_at(invocation, 0, "view id")
+    document = invocation.load_input() or {}
+    name = _require_field(document, "card")
+    output_path = document.get("output_path") or f"explore-card-{dataview_id}.svg"
+    if not isinstance(output_path, str):
+        raise _refuse('"output_path" must be a file path.')
+    with open_service(invocation) as (service, auth):
+        dataset_id = _verified_dataset_id(service, invocation, dataview_id, document)
+        view = _View(service, dataset_id, dataview_id, project_id)
+        saved = _read_explore_panel(
+            service, _EXPLORE_PANEL_GET_SYMBOL, dataset_id, dataview_id, project_id
+        )
+        columns = view.columns()
+        card, column = open_card(_saved_cards(saved), columns, name)
+        spec = card_to_render_spec(card, column, columns, view.card_rows(card, column))
+        svg = service.call(_RENDER_SVG_SYMBOL, spec=spec, style_id=document.get("style_id"))
+    path = Path(output_path)
+    path.write_text(svg, encoding="utf-8")
+    return {"output_path": str(path)}, _meta(invocation, auth.workspace_id, project_id)
 
 
 def _destination(document: dict[str, Any]) -> tuple[int | None, str | None, dict[str, Any]]:

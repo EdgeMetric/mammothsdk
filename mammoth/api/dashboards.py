@@ -370,6 +370,33 @@ class DashboardsAPI:
         except ValidationError as exc:
             raise MammothValidationError(f"Invalid use-template response: {exc}") from exc
 
+    async def render_figure_svg(self, spec: dict[str, Any], style_id: str | None = None) -> str:
+        """Render one figure to an SVG document, with no board and no write.
+
+        Args:
+            spec: The engine figure spec: ``chart`` ("bar" or "table"), ``title`` and
+                the data (``data`` of ``label``/``value`` for a bar, ``columns`` and
+                ``rows`` of ``cells`` for a table).
+            style_id: Optional saved style to render with.
+
+        Returns:
+            The SVG document as text.
+
+        Raises:
+            MammothValidationError: If ``spec`` is not a dict, or the response holds no SVG.
+        """
+        if not isinstance(spec, dict) or not spec:
+            raise MammothValidationError("`spec` must be a non-empty dict.")
+        response = await self._client._request_json(
+            "POST",
+            "/dashboards/v3/render/svg",
+            json={"spec": spec, "style_id": style_id},
+        )
+        svg = response.get("svg")
+        if not isinstance(svg, str) or not svg:
+            raise MammothValidationError("Invalid render-svg response: no `svg` string.")
+        return svg
+
     async def assess_twb(self, file: str | Path) -> TwbAssessResponse:
         """Assess a Tableau workbook without importing it."""
         return await self._assess_upload(file, "/dashboards/v3/twb/assess", TwbAssessResponse)

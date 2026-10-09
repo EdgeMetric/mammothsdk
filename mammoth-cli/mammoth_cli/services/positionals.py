@@ -895,6 +895,7 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
             "view.explore-panel.set",
             "view.explore-panel.edit",
             "view.explore-panel.add-to-dashboard",
+            "view.explore-panel.export-image",
             "view.conditional-format.create",
             "view.conditional-format.delete-all",
             "view.conditional-format.list",
