@@ -9371,11 +9371,11 @@ operations:
   response_schemas:
   - JobResponse
   deprecated: false
-  disposition: alias
-  disposition_reason: Identical behavior to the aliased command.
-  canonical_command: null
-  alias_of: view.data.get
-  sdk_symbol: null
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: view.data.query
+  alias_of: null
+  sdk_symbol: mammoth.api.dataviews.DataviewsAPI.query_data
   reviewed_by: primary
 - identity: GET /workspaces/{workspace_id}/projects/{project_id}/datasets/{dataset_id}/dataviews/{dataview_id}/data/generate
   method: GET
@@ -9439,9 +9439,9 @@ operations:
   deprecated: false
   disposition: command
   disposition_reason: User-initiated production operation.
-  canonical_command: view.data.query
+  canonical_command: view.data.aggregate
   alias_of: null
-  sdk_symbol: mammoth.api.dataviews.DataviewsAPI.query_data
+  sdk_symbol: mammoth.api.dataviews.DataviewsAPI.aggregate
   reviewed_by: primary
 - identity: GET /workspaces/{workspace_id}/projects/{project_id}/datasets/{dataset_id}/dataviews/{dataview_id}/derivatives
   method: GET
@@ -12946,7 +12946,8 @@ operations:
   - InvoicesSchema
   deprecated: false
   disposition: alias
-  disposition_reason: Identical behavior to the aliased command.
+  disposition_reason: Chargebee-only invoice read that returns nothing for Stripe workspaces; the Stripe
+    billing-history endpoint replaces it.
   canonical_command: null
   alias_of: billing.stripe.history
   sdk_symbol: null
@@ -12968,7 +12969,8 @@ operations:
   - InvoiceSchema
   deprecated: false
   disposition: alias
-  disposition_reason: Identical behavior to the aliased command.
+  disposition_reason: Chargebee-only invoice read that returns nothing for Stripe workspaces; the Stripe
+    billing-history endpoint replaces it.
   canonical_command: null
   alias_of: billing.stripe.history
   sdk_symbol: null

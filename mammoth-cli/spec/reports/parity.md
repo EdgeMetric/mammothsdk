@@ -15,8 +15,8 @@ Generated from the reviewed manifests. Do not edit by hand.
 
 | Disposition | Count |
 |---|---:|
-| command | 539 |
-| alias | 3 |
+| command | 540 |
+| alias | 2 |
 | protocol_only | 11 |
 | internal_only | 23 |
 | deprecated | 0 |

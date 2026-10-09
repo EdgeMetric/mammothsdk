@@ -72,18 +72,91 @@ INTERNAL_ONLY: dict[str, str] = {
 }
 
 # --- Routes the SDK calls that the server on master does not serve yet ------
-# Empty since the 2026-10-09 prod snapshot: every route the SDK called from this
-# branch is served by spec/openapi/openapi.json. Entries name the unmerged server
-# branch that adds a route; add one back only for a route prod does not serve yet.
-PENDING_SERVER_RELEASE: dict[str, str] = {}
+# Keyed by ``METHOD /normalised/path`` (placeholders as ``{}``); value names the
+# unmerged server branch that adds the route. An entry stops mattering once the
+# route is on master and the SDK call matches a real operation.
+PENDING_SERVER_RELEASE: dict[str, str] = {
+    f"{method} {path}": "origin/feat/agent-cli-surface@7e2bf189c4"
+    for method, path in (
+        ("GET", "/agents/sessions/{}/actions"),
+        ("DELETE", "/agents/sessions/{}/actions/{}"),
+        ("GET", "/agents/sessions/{}/run"),
+        ("GET", "/agents/sessions/{}/runs"),
+        ("GET", "/agents/sessions/{}/runs/{}/units"),
+        ("POST", "/agents/sessions/{}/runs/{}/units"),
+        ("POST", "/agents/sessions/{}/runs/{}/extend"),
+        ("POST", "/agents/sessions/{}/runs/{}/pause"),
+        ("POST", "/agents/sessions/{}/runs/{}/resume"),
+        ("POST", "/agents/sessions/{}/runs/{}/retry"),
+        ("POST", "/agents/sessions/{}/runs/{}/stop"),
+        ("GET", "/workspaces/current"),
+        ("PATCH", "/workspaces/{}/projects/{}/datasets/{}/unstructured_rows"),
+    )
+}
+PENDING_SERVER_RELEASE.update(
+    {
+        f"{method} {path}": "origin/feat/agent-cli-surface-w5@0a52995994"
+        for method, path in (
+            ("POST", "/dashboards/v3/attachments/{}/assess"),
+            ("POST", "/dashboards/v3/attachments/{}/intent"),
+            ("POST", "/workspaces/{}/dataviews/compare"),
+            ("POST", "/workspaces/{}/projects/{}/copy"),
+            ("GET", "/workspaces/{}/projects/{}/datasets/{}/dataviews/{}/analysis"),
+            ("POST", "/workspaces/{}/projects/{}/datasets/{}/dataviews/{}/optimize"),
+        )
+    }
+)
+PENDING_SERVER_RELEASE["POST /dashboards/{}/figures"] = "origin/feat/agent-cli-surface-w8@15c7fe863f"
+# On server master since the pinned master snapshot (master-20261002) was exported.
+PENDING_SERVER_RELEASE.update(
+    {
+        f"{method} {path}": "origin/master@7a57c1b70f"
+        for method, path in (
+            ("GET", "/collections"),
+            ("POST", "/collections"),
+            ("GET", "/collections/{}"),
+            ("PATCH", "/collections/{}"),
+            ("DELETE", "/collections/{}"),
+            ("GET", "/collections/url/{}"),
+            ("GET", "/collections/for-dashboard/{}"),
+            ("GET", "/collections/{}/activity"),
+            ("GET", "/collections/{}/pipeline-changes"),
+            ("POST", "/collections/{}/dashboards"),
+            ("DELETE", "/collections/{}/dashboards/{}"),
+            ("POST", "/collections/{}/share"),
+            ("DELETE", "/collections/{}/members"),
+            ("POST", "/collections/{}/files"),
+            ("GET", "/dashboards/{}/engagement"),
+            ("GET", "/dashboards/{}/engagement/people/{}"),
+            ("POST", "/dashboards/{}/engagement/remind"),
+            ("GET", "/dashboards/v3/{}/own-data"),
+            ("POST", "/dashboards/v3/{}/own-data"),
+            ("GET", "/dashboards/v3/{}/own-data/preview"),
+            ("POST", "/dashboards/v3/{}/own-data/accept"),
+            ("POST", "/dashboards/v3/{}/own-data/dismiss"),
+        )
+    }
+)
+# The SDK posts every run verb through one helper whose path ends in a variable.
+PENDING_SERVER_RELEASE["POST /agents/sessions/{}/runs/{}/{}"] = PENDING_SERVER_RELEASE[
+    "POST /agents/sessions/{}/runs/{}/stop"
+]
 
 # --- Operations that alias another command (identical behavior) ------------
 OP_ALIAS: dict[str, str] = {
-    # POST body variant of the GET dataview-data read.
-    "GetDataviewDataPost": "view.data.get",
     # Chargebee-only invoice reads; the Stripe billing-history endpoint replaces them.
     "ListInvoices": "billing.stripe.history",
     "GetInvoice": "billing.stripe.history",
+}
+
+_CHARGEBEE_INVOICE = (
+    "Chargebee-only invoice read that returns nothing for Stripe workspaces; the Stripe "
+    "billing-history endpoint replaces it."
+)
+#: Reviewed reasons for aliases that are not identical behavior.
+ALIAS_REASON: dict[str, str] = {
+    "ListInvoices": _CHARGEBEE_INVOICE,
+    "GetInvoice": _CHARGEBEE_INVOICE,
 }
 
 # --- Operations the pinned spec documents but the server cannot serve --------
@@ -382,7 +455,8 @@ OVERRIDES: dict[str, str] = {
     "UpdateConditionalFormat": "view.conditional-format.update",
     "DeleteConditionalFormat": "view.conditional-format.delete-all",
     "GetDataviewData": "view.data.get",
-    "ExecuteVolatileQuery": "view.data.query",
+    "GetDataviewDataPost": "view.data.query",
+    "ExecuteVolatileQuery": "view.data.aggregate",
     "GetValidationInfo": "view.ai.generation-info",
     "Preview": "view.ai.generate-data",
     "GenerateProfile": "view.ai.profile",
@@ -708,7 +782,8 @@ def disposition_for(operation_id: str) -> tuple[str, str | None, str | None, str
     if operation_id in PROTOCOL_ONLY:
         return "protocol_only", None, None, PROTOCOL_ONLY[operation_id]
     if operation_id in OP_ALIAS:
-        return "alias", None, OP_ALIAS[operation_id], "Identical behavior to the aliased command."
+        reason = ALIAS_REASON.get(operation_id, "Identical behavior to the aliased command.")
+        return "alias", None, OP_ALIAS[operation_id], reason
     if operation_id in INTERNAL_ONLY:
         return "internal_only", None, None, INTERNAL_ONLY[operation_id]
     if operation_id in SERVER_UNAVAILABLE:

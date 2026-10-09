@@ -3170,7 +3170,7 @@ Total commands: 716.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.data_apps.DataAppsAPI.create`
-- Agent example: `mammoth data-app create --input '{"body": {"sample_key": "Status"}}'`
+- Agent example: `mammoth schema get data-app.create`
 
 ### `mammoth data-app delete`
 
@@ -3233,7 +3233,7 @@ Total commands: 716.
 - Mutation class: `external_effect`
 - Confirmation: `yes_always`
 - Backing SDK: `mammoth.api.data_apps.DataAppsAPI.share`
-- Agent example: `mammoth data-app share 123 --input '{"body": {"sample_key": "Status"}}' --yes`
+- Agent example: `mammoth schema get data-app.share`
 
 ### `mammoth data-app update`
 
@@ -3244,7 +3244,7 @@ Total commands: 716.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.data_apps.DataAppsAPI.update`
-- Agent example: `mammoth data-app update 123 --input '{"body": {"sample_key": "Status"}}'`
+- Agent example: `mammoth schema get data-app.update`
 
 ### `mammoth data-app upload`
 

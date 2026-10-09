@@ -69,7 +69,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth data-app create --help
-  agent_example: 'mammoth data-app create --input ''{"body": {"sample_key": "Status"}}'''
+  agent_example: mammoth schema get data-app.create
   unit_tests:
   - UT-DATA-APP-CREATE
   contract_tests:
@@ -78,7 +78,7 @@ commands:
   - CT-DATA-APP-CREATE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: 'BLOCKED[DATA_APP_REMOVED]: data apps were replaced by collections; the 2026-10-09 prod API no longer serves /data-apps. Use the collection commands.'
   reviewed_by: primary
 - command_id: data-app.delete
   command_path: data-app delete
@@ -320,7 +320,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth data-app share DATA_APP_ID --help
-  agent_example: 'mammoth data-app share 123 --input ''{"body": {"sample_key": "Status"}}'' --yes'
+  agent_example: mammoth schema get data-app.share
   unit_tests:
   - UT-DATA-APP-SHARE
   contract_tests:
@@ -329,7 +329,7 @@ commands:
   - CT-DATA-APP-SHARE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: 'BLOCKED[DATA_APP_REMOVED]: data apps were replaced by collections; the 2026-10-09 prod API no longer serves /data-apps. Use the collection commands.'
   reviewed_by: primary
 - command_id: data-app.update
   command_path: data-app update
@@ -366,7 +366,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth data-app update DATA_APP_ID --help
-  agent_example: 'mammoth data-app update 123 --input ''{"body": {"sample_key": "Status"}}'''
+  agent_example: mammoth schema get data-app.update
   unit_tests:
   - UT-DATA-APP-UPDATE
   contract_tests:
@@ -375,7 +375,7 @@ commands:
   - CT-DATA-APP-UPDATE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: 'BLOCKED[DATA_APP_REMOVED]: data apps were replaced by collections; the 2026-10-09 prod API no longer serves /data-apps. Use the collection commands.'
   reviewed_by: primary
 - command_id: data-app.upload
   command_path: data-app upload

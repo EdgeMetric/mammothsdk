@@ -277,7 +277,9 @@
       "state": "pending_server_release",
       "pending_in": "origin/feat/agent-cli-surface-w5@0a52995994",
       "sdk_symbols": [
-        "mammoth.api.dashboards.DashboardsAPI.attachment_assess"
+        "mammoth.api.dashboard_generated.pbix_assess",
+        "mammoth.api.dashboards.DashboardsAPI.attachment_assess",
+        "mammoth.api.dashboards.DashboardsAPI.pbix_assess"
       ],
       "commands": [
         "dashboard.pbix-assess"
@@ -289,7 +291,9 @@
       "state": "pending_server_release",
       "pending_in": "origin/feat/agent-cli-surface-w5@0a52995994",
       "sdk_symbols": [
-        "mammoth.api.dashboards.DashboardsAPI.attachment_intent"
+        "mammoth.api.dashboard_generated.pbix_intent",
+        "mammoth.api.dashboards.DashboardsAPI.attachment_intent",
+        "mammoth.api.dashboards.DashboardsAPI.pbix_intent"
       ],
       "commands": [
         "dashboard.pbix-intent"
@@ -361,7 +365,9 @@
       "state": "pending_server_release",
       "pending_in": "origin/master@7a57c1b70f",
       "sdk_symbols": [
-        "mammoth.api.dashboards.DashboardsAPI.engagement"
+        "mammoth.api.dashboard_generated.engagement_get",
+        "mammoth.api.dashboards.DashboardsAPI.engagement",
+        "mammoth.api.dashboards.DashboardsAPI.engagement_get"
       ],
       "commands": [
         "dashboard.engagement.get"
@@ -397,7 +403,9 @@
       "state": "pending_server_release",
       "pending_in": "origin/feat/agent-cli-surface-w8@15c7fe863f",
       "sdk_symbols": [
-        "mammoth.api.dashboards.DashboardsAPI.append_figure"
+        "mammoth.api.dashboard_generated.figure_add",
+        "mammoth.api.dashboards.DashboardsAPI.append_figure",
+        "mammoth.api.dashboards.DashboardsAPI.figure_add"
       ],
       "commands": [
         "dashboard.figure.add"
@@ -8503,7 +8511,6 @@
       "schema_id": "dataset.interpretation.confirm",
       "sdk_symbol": "mammoth.api.datasets.DatasetsAPI.interpretation_confirm",
       "bound_commands": [
-        "dataset.interpretation-confirm",
         "dataset.interpretation.confirm"
       ],
       "mapping_state": "cli_and_sdk_mapped",
@@ -12556,7 +12563,6 @@
       "schema_id": "dataset.interpretation.preview",
       "sdk_symbol": "mammoth.api.datasets.DatasetsAPI.interpretation_preview",
       "bound_commands": [
-        "dataset.interpretation-preview",
         "dataset.interpretation.preview"
       ],
       "mapping_state": "cli_and_sdk_mapped",
