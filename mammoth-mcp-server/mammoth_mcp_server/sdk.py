@@ -115,6 +115,23 @@ async def build_client(
         yield client
 
 
+def own_workspace() -> int:
+    """The one workspace the caller's token belongs to.
+
+    Mammoth issues a token for a single workspace and refuses it on every
+    other, so this is not a preference to be overridden: it is the whole
+    account this connection can see.
+
+    Raises:
+        RuntimeError: If no authenticated caller is in context, which is a bug
+            in the server rather than anything the caller did.
+    """
+    access_token = get_access_token()
+    if access_token is None:
+        raise RuntimeError("no authenticated MCP caller for this tool call")
+    return int((access_token.claims or {})[TokenClaims.WORKSPACE_ID])
+
+
 def own_project() -> int | None:
     """The one project the caller may act in, or None for every project.
 

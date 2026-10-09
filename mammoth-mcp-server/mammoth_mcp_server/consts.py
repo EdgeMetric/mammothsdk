@@ -237,6 +237,7 @@ class ApiPaths:
     """The routes a tool calls that the SDK has no method for yet."""
 
     WORKSPACES = "/workspaces"
+    WORKSPACE = WORKSPACES + "/{workspace_id}"
     FILES = "/workspaces/{workspace_id}/projects/{project_id}/files"
     FILE = FILES + "/{file_id}"
     FILE_SETTINGS = (
@@ -300,6 +301,7 @@ class ErrorFields:
 class ListFields:
     """Keys the API's list answers put their rows under, and a row's own fields."""
 
+    WORKSPACES = "workspaces"
     PROJECTS = "projects"
     ID = "id"
     NAME = "name"

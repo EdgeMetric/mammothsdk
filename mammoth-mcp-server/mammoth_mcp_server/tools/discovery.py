@@ -6,34 +6,35 @@ one of them calls the same API route the web app calls, as the signed-in user.
 """
 
 from ..consts import LIST_LIMIT_DEFAULT, ApiFields, ApiPaths, BrowseFields, ListFields
-from ..sdk import JsonValue, build_client, own_project, read_sdk_errors, request_api
+from ..sdk import (
+    JsonValue,
+    build_client,
+    own_project,
+    own_workspace,
+    read_sdk_errors,
+    request_api,
+)
 from ..server import mcp_server
 from ..tool_kinds import READS
 
 
 @mcp_server.tool(annotations=READS)
-async def list_workspaces(limit: int = LIST_LIMIT_DEFAULT, offset: int = 0) -> dict[str, JsonValue]:
-    """List the workspaces the signed-in user can open.
+async def list_workspaces() -> dict[str, JsonValue]:
+    """List the workspace this connection belongs to.
 
-    A workspace is the top level of a Mammoth account. Start here when you do
-    not know which workspace to work in.
-
-    Args:
-        limit: How many workspaces to return.
-        offset: How many workspaces to skip, for paging.
+    A workspace is the top level of a Mammoth account. The connection is
+    fenced to one, settled when the user connected, so this answers with that
+    one workspace and takes no paging: there is nothing else to page through.
     """
-    # The one call made before a workspace is known, so the client is given none.
+    mine = own_workspace()
     async with build_client(None) as client:
-        return await request_api(
+        found = await request_api(
             client,
             "GET",
-            ApiPaths.WORKSPACES,
-            query={
-                ApiFields.FIELDS: ApiFields.MINIMAL,
-                "limit": limit,
-                "offset": offset,
-            },
+            ApiPaths.WORKSPACE.format(workspace_id=mine),
+            query={ApiFields.FIELDS: ApiFields.MINIMAL},
         )
+    return {ListFields.WORKSPACES: [found]}
 
 
 @mcp_server.tool(annotations=READS)

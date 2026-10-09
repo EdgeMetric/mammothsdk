@@ -63,12 +63,14 @@ def test_the_server_offers_exactly_these_tools() -> None:
     assert {tool.name for tool in run(mcp_server.list_tools())} == TOOLS
 
 
-def test_a_tool_reaches_the_api_as_the_caller_before_a_workspace_is_known() -> None:
+def test_a_tool_that_builds_a_client_without_a_workspace_still_acts_as_the_caller() -> None:
+    # `list_workspaces` is the one tool that builds its client with no workspace,
+    # because its route is absolute. The caller's token still has to ride on it.
     with a_fake_api() as api, as_caller():
-        api.answer("GET", "/workspaces", {"workspaces": [{"id": WORKSPACE, "name": "Home"}]})
+        api.answer("GET", f"/workspaces/{WORKSPACE}", {"id": WORKSPACE, "name": "Home"})
         listed = call_tool("list_workspaces")
 
-    [request] = api.sent("GET", "/workspaces")
+    [request] = api.sent("GET", f"/workspaces/{WORKSPACE}")
     assert listed["workspaces"] == [{"id": WORKSPACE, "name": "Home"}]
     assert request.headers["authorization"].startswith("Bearer mm_")
 
