@@ -761,6 +761,17 @@ _S7_ADDITIONAL_INPUT_FIELDS: dict[str, tuple[FieldSpec, ...]] = {
         FieldSpec("banded", required=False, annotation=dict[str, Any] | None, default=None),
         FieldSpec("page", required=False, annotation=dict[str, Any] | None, default=None),
     ),
+    # The edits to the saved cards, in order; the handler applies them and writes the panel.
+    "view.explore-panel.edit": (
+        FieldSpec("edits", required=True, annotation=list[dict[str, Any]]),
+    ),
+    # The card to add and where it goes: an existing board or a new blank one.
+    "view.explore-panel.add-to-dashboard": (
+        FieldSpec("card", required=True, annotation=str),
+        FieldSpec("dashboard_id", required=False, annotation=int | None, default=None),
+        FieldSpec("new_dashboard_title", required=False, annotation=str | None, default=None),
+        FieldSpec("page", required=False, annotation=dict[str, Any] | None, default=None),
+    ),
     "user.preference.update": (
         # PreferencesPatchRequest: replace ops on dotted paths rooted at
         # GLOBAL or WORKSPACE_PREFERENCES.

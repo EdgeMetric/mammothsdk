@@ -1219,7 +1219,8 @@ def view_data_get(invocation: Invocation) -> HandlerResult:
     The dataset is resolved from the view unless given as a trailing positional
     or a ``dataset_id`` --input field. ``offset`` (1-based) reads a later page
     through the query route. The result carries ``column_warnings`` when the
-    rows show a text column of numbers or dates, or blanks.
+    rows show a text column of numbers or dates, or blanks. ``raw: true`` returns DATE
+    values with their time.
     """
     project_id = require_project(invocation)
     view_id = _require_int_positional_at(invocation, 0, "view id")
@@ -1237,10 +1238,10 @@ def view_data_get(invocation: Invocation) -> HandlerResult:
             kwargs["offset"] = _int_field(document["offset"], "offset")
             page_limit = _int_field(limit, "limit")
             kwargs["limit"] = page_limit if page_limit > 0 else 400
-            _forward_optional(document, kwargs, ("sequence",))
+            _forward_optional(document, kwargs, ("sequence", "raw"))
             data = service.call(_QUERY_DATA_SYMBOL, **kwargs)
         else:
-            _forward_optional(document, kwargs, ("timeout", "poll_interval", "sequence"))
+            _forward_optional(document, kwargs, ("timeout", "poll_interval", "sequence", "raw"))
             data = service.call(_symbol(invocation), **kwargs)
         whole_view = document.get("offset") is None
         data = _relabel_and_check(
@@ -1723,7 +1724,7 @@ def view_data_query(invocation: Invocation) -> HandlerResult:
     """Query a dataview's data with optional filtering, sorting, and paging.
 
     The dataset is resolved from the view unless given as a trailing positional
-    or a ``dataset_id`` --input field.
+    or a ``dataset_id`` --input field. ``raw: true`` returns DATE values with their time.
     """
     project_id = require_project(invocation)
     view_id = _require_int_positional_at(invocation, 0, "view id")
@@ -1736,7 +1737,7 @@ def view_data_query(invocation: Invocation) -> HandlerResult:
             "dataview_id": view_id,
             "project_id": project_id,
         }
-        _forward_optional(document, kwargs, ("sequence", "offset", "limit", "sort"))
+        _forward_optional(document, kwargs, ("sequence", "offset", "limit", "sort", "raw"))
         reads = ReadContext(
             service,
             dataset_id,

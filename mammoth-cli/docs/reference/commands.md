@@ -4,7 +4,7 @@ Generated from the reviewed command manifests for mammoth-cli 2.2.73.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
-Total commands: 692.
+Total commands: 694.
 
 ## activity
 
@@ -5632,6 +5632,30 @@ Total commands: 692.
 - Confirmation: `none`
 - Backing SDK: `mammoth.view.View.submit_draft`
 - Agent example: `mammoth view draft submit 123 --input '{"dataset_id": 456}'`
+
+### `mammoth view explore-panel add-to-dashboard`
+
+**Arguments**
+
+- `VIEW_ID` (int, required) — ID of the view to act on.
+- `DATASET_ID` (int, optional) — Optional parent dataset ID. Leave it out and the CLI looks up the view's dataset. A value that is not the view's dataset is refused before the write.
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.dashboards.DashboardsAPI.append_figure`
+- Agent example: `mammoth view explore-panel add-to-dashboard 123 --input '{"card": "Region", "new_dashboard_title": "Regions"}'`
+
+### `mammoth view explore-panel edit`
+
+**Arguments**
+
+- `VIEW_ID` (int, required) — ID of the view to act on.
+- `DATASET_ID` (int, optional) — Optional parent dataset ID. Leave it out and the CLI looks up the view's dataset. A value that is not the view's dataset is refused before the write.
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.dataviews.DataviewsAPI.set_explore_panel`
+- Agent example: `mammoth view explore-panel edit 123 --input '{"edits": [{"op": "metric", "card": "Region", "agg": "SUM", "of": "Amount"}]}'`
 
 ### `mammoth view explore-panel get`
 

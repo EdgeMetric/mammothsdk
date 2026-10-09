@@ -4333,7 +4333,7 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.dataviews.DataviewsAPI.get_data
   implementation_origin: mammoth.api.dataviews.DataviewsAPI.get_data
-  signature: 'get_data(self, dataset_id: ''int'', dataview_id: ''int'', workspace_id: ''int | None'' = None, project_id: ''int | None'' = None, timeout: ''int | None'' = None, poll_interval: ''float | None'' = None, sequence: ''int | None'' = None) -> ''dict[str, Any]'''
+  signature: 'get_data(self, dataset_id: ''int'', dataview_id: ''int'', workspace_id: ''int | None'' = None, project_id: ''int | None'' = None, timeout: ''int | None'' = None, poll_interval: ''float | None'' = None, sequence: ''int | None'' = None, raw: ''bool'' = False) -> ''dict[str, Any]'''
   openapi_operation_ids: []
   canonical_command: view.data.get
   alias_of: null
@@ -4408,7 +4408,7 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.dataviews.DataviewsAPI.query_data
   implementation_origin: mammoth.api.dataviews.DataviewsAPI.query_data
-  signature: 'query_data(self, dataset_id: ''int'', dataview_id: ''int'', sequence: ''int | None'' = None, offset: ''int'' = 1, limit: ''int'' = 400, columns: ''_list[str] | None'' = None, condition: ''dict[str, Any] | None'' = None, sort: ''str | None'' = None, workspace_id: ''int | None'' = None, project_id: ''int | None'' = None) -> ''dict[str, Any]'''
+  signature: 'query_data(self, dataset_id: ''int'', dataview_id: ''int'', sequence: ''int | None'' = None, offset: ''int'' = 1, limit: ''int'' = 400, columns: ''_list[str] | None'' = None, condition: ''dict[str, Any] | None'' = None, sort: ''str | None'' = None, workspace_id: ''int | None'' = None, project_id: ''int | None'' = None, raw: ''bool'' = False) -> ''dict[str, Any]'''
   openapi_operation_ids: []
   canonical_command: view.data.query
   alias_of: null

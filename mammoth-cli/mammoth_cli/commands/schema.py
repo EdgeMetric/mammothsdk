@@ -59,6 +59,14 @@ _FIXED_EXAMPLES: dict[str, tuple[tuple[str, ...], dict[str, Any]]] = {
         ("123",),
         {"panel": {"columns": "all"}},
     ),
+    "view.explore-panel.edit": (
+        ("123",),
+        {"edits": [{"op": "metric", "card": "Region", "agg": "SUM", "of": "Amount"}]},
+    ),
+    "view.explore-panel.add-to-dashboard": (
+        ("123",),
+        {"card": "Region", "new_dashboard_title": "Regions"},
+    ),
     "project.check": (("123", "456"), {}),
     "view.data.profile": (("123",), {"target": "Churn"}),
     "view.variants.create": (
@@ -116,6 +124,13 @@ _COMMAND_DISCOVERY_PURPOSES = {
     "view.update": "rename change name to a new name title relabel",
     "view.explore-panel.get": "explore cards saved panel the data editor explore side panel read",
     "view.explore-panel.set": "open show explore cards for all or some columns, replace the panel",
+    "view.explore-panel.edit": (
+        "change an explore card: metric sum average, sort, list or chart layout, level, filter "
+        "or exclude values, clear, remove, search, scatter, ask a question"
+    ),
+    "view.explore-panel.add-to-dashboard": (
+        "put an explore card on a dashboard like the card menu add to dashboard, new blank board"
+    ),
     "dashboard.figure.add": (
         "append an explore card figure tile to a dashboard from a payload, no chat turn"
     ),

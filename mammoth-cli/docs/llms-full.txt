@@ -1239,6 +1239,10 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth view draft status 123
 - `mammoth view draft submit` [reversible_pipeline/none] -> mammoth.view.View.submit_draft
   example: mammoth view draft submit 123 --input '{"dataset_id": 456}'
+- `mammoth view explore-panel add-to-dashboard` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.append_figure
+  example: mammoth view explore-panel add-to-dashboard 123 --input '{"card": "Region", "new_dashboard_title": "Regions"}'
+- `mammoth view explore-panel edit` [benign_mutation/none] -> mammoth.api.dataviews.DataviewsAPI.set_explore_panel
+  example: mammoth view explore-panel edit 123 --input '{"edits": [{"op": "metric", "card": "Region", "agg": "SUM", "of": "Amount"}]}'
 - `mammoth view explore-panel get` [read/none] -> mammoth.api.dataviews.DataviewsAPI.explore_panel
   example: mammoth view explore-panel get 123
 - `mammoth view explore-panel set` [benign_mutation/none] -> mammoth.api.dataviews.DataviewsAPI.set_explore_panel

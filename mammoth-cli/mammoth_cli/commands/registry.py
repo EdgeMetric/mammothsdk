@@ -799,6 +799,10 @@ _TARGETS: dict[str, str] = {
     "view.update": "mammoth_cli.commands.view:view_update",
     "view.explore-panel.get": "mammoth_cli.commands.view:view_explore_panel_get",
     "view.explore-panel.set": "mammoth_cli.commands.view:view_explore_panel_set",
+    "view.explore-panel.edit": "mammoth_cli.commands.view_explore:view_explore_panel_edit",
+    "view.explore-panel.add-to-dashboard": (
+        "mammoth_cli.commands.view_explore:view_explore_panel_add_to_dashboard"
+    ),
     "view.data.get": "mammoth_cli.commands.view:view_data_get",
     "view.data.query": "mammoth_cli.commands.view:view_data_query",
     "view.data.aggregate": "mammoth_cli.commands.view:view_data_aggregate_rounded",

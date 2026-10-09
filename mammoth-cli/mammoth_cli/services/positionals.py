@@ -847,6 +847,8 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
             "view.update",
             "view.explore-panel.get",
             "view.explore-panel.set",
+            "view.explore-panel.edit",
+            "view.explore-panel.add-to-dashboard",
             "view.conditional-format.create",
             "view.conditional-format.delete-all",
             "view.conditional-format.list",
@@ -1273,6 +1275,14 @@ _EXACT_PARENT_HELP_OVERRIDES: dict[str, str] = {
         "Optional parent dataset ID. Leave it out and the CLI looks up the view's dataset. A value that is not the view's dataset is refused before the write."
     ),
     "view.explore-panel.set": (
+        "Optional parent dataset ID. Leave it out and the CLI looks up the view's dataset. "
+        "A value that is not the view's dataset is refused before the write."
+    ),
+    "view.explore-panel.edit": (
+        "Optional parent dataset ID. Leave it out and the CLI looks up the view's dataset. "
+        "A value that is not the view's dataset is refused before the write."
+    ),
+    "view.explore-panel.add-to-dashboard": (
         "Optional parent dataset ID. Leave it out and the CLI looks up the view's dataset. "
         "A value that is not the view's dataset is refused before the write."
     ),

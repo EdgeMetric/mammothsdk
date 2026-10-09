@@ -502,6 +502,7 @@
     "resolve",
     "skill.agents-md.install",
     "skill.show",
+    "view.explore-panel.add-to-dashboard",
     "view.explore-panel.get",
     "view.pipeline.items-all",
     "workspace.user.get"
@@ -7964,6 +7965,7 @@
       "schema_id": "view.update",
       "sdk_symbol": "mammoth.api.dataviews.DataviewsAPI.update",
       "bound_commands": [
+        "view.explore-panel.edit",
         "view.explore-panel.set",
         "view.transform.rename-columns",
         "view.transform.sort",

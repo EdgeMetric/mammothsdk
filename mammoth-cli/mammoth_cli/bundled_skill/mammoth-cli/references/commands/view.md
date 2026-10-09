@@ -414,6 +414,26 @@ Result: `ViewDraftSubmitResult`; mutation `reversible_pipeline`, confirmation `n
 
 Status on release: untried; no live run recorded.
 
+### `view.explore-panel.add-to-dashboard`
+
+Run: `mammoth view explore-panel add-to-dashboard`. Exact input fields: `mammoth schema get view.explore-panel.add-to-dashboard`.
+
+Example: `mammoth view explore-panel add-to-dashboard 123 --input '{"card": "Region", "new_dashboard_title": "Regions"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `ViewExplorePanelAddToDashboardResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `view.explore-panel.edit`
+
+Run: `mammoth view explore-panel edit`. Exact input fields: `mammoth schema get view.explore-panel.edit`.
+
+Example: `mammoth view explore-panel edit 123 --input '{"edits": [{"op": "metric", "card": "Region", "agg": "SUM", "of": "Amount"}]}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `ViewExplorePanelEditResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
 ### `view.explore-panel.get`
 
 Run: `mammoth view explore-panel get`. Exact input fields: `mammoth schema get view.explore-panel.get`.

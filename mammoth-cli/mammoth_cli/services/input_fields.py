@@ -73,6 +73,11 @@ _HANDLER_OWNED_FIELDS: dict[str, frozenset[str]] = {
     "view.update": frozenset({"patch_data"}),
     # The endpoint names the target page as ``page``; the handler maps it onto these two.
     "dashboard.figure.add": frozenset({"page_id", "page_new_title"}),
+    # The handler builds the panel from ``edits`` and the figure from ``card``.
+    "view.explore-panel.edit": frozenset({"panel"}),
+    "view.explore-panel.add-to-dashboard": frozenset(
+        {"dashboard_id", "dataview_id", "figure", "banded", "page_id", "page_new_title"}
+    ),
 }
 
 # CLI-only commands whose complete request is carried by positionals/context.

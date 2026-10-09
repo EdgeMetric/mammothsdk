@@ -211,6 +211,7 @@ edits_target_commands:
 - view.draft.discard
 - view.draft.enter
 - view.draft.submit
+- view.explore-panel.edit
 - view.explore-panel.set
 - view.export.delete
 - view.export.publish-db-update

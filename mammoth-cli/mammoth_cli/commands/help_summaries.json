@@ -545,6 +545,8 @@
   "view.draft.enter": "Enter draft mode on a view's pipeline.",
   "view.draft.status": "Report whether a view's pipeline is currently in draft mode.",
   "view.draft.submit": "Submit a view's draft pipeline changes.",
+  "view.explore-panel.add-to-dashboard": "Put an Explore card on a dashboard as a figure, like the card menu's Add to dashboard.",
+  "view.explore-panel.edit": "Change Explore cards as the card menus do; the result carries the panel read back.",
   "view.explore-panel.get": "Read the Explore panel the caller saved on a view (empty when none is saved).",
   "view.explore-panel.set": "Replace the caller's saved Explore panel; the result carries the panel read back after.",
   "view.export.azure-blob": "Run one of the SDK's typed 'View.export' destination helpers.",
