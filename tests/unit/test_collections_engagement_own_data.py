@@ -199,3 +199,46 @@ async def test_own_data_accept_and_dismiss_use_their_own_routes(
     assert accept["path"] == "/dashboards/v3/12/own-data/accept"
     assert accept["body"] == {"params": {"choice": "proposal", "exclude": ["Region"]}}
     assert (dismiss["method"], dismiss["path"]) == ("POST", "/dashboards/v3/12/own-data/dismiss")
+
+
+async def test_active_job_reads_the_in_flight_upload_route(
+    server: _RecordingServer, client: MammothClient
+) -> None:
+    await client.collections.active_job(9)
+    sent = server.requests[0]
+    assert (sent["method"], sent["path"]) == ("GET", "/collections/9/active-job")
+
+
+async def test_job_polls_one_upload_job_of_the_collection(
+    server: _RecordingServer, client: MammothClient
+) -> None:
+    await client.collections.job(9, 4)
+    sent = server.requests[0]
+    assert (sent["method"], sent["path"]) == ("GET", "/collections/9/jobs/4")
+
+
+async def test_job_refuses_a_non_positive_job_id_before_any_request(
+    server: _RecordingServer, client: MammothClient
+) -> None:
+    with pytest.raises(MammothValidationError):
+        await client.collections.job(9, 0)
+    assert server.requests == []
+
+
+async def test_attachment_create_posts_the_workbook_as_multipart(
+    server: _RecordingServer, client: MammothClient, tmp_path: Path
+) -> None:
+    workbook = tmp_path / "sales.twb"
+    workbook.write_bytes(b"<workbook>sales-marker</workbook>")
+    await client.dashboards.attachment_create(workbook)
+    sent = server.requests[0]
+    assert (sent["method"], sent["path"]) == ("POST", "/dashboards/v3/attachments")
+    assert b'filename="sales.twb"' in sent["body"] and b"sales-marker" in sent["body"]  # type: ignore[operator]
+
+
+async def test_attachment_create_refuses_a_missing_file_before_any_request(
+    server: _RecordingServer, client: MammothClient, tmp_path: Path
+) -> None:
+    with pytest.raises(MammothValidationError):
+        await client.dashboards.attachment_create(tmp_path / "missing.pbix")
+    assert server.requests == []

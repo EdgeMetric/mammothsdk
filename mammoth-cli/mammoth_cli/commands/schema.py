@@ -525,6 +525,11 @@ _COMMAND_DISCOVERY_PURPOSES = {
     ),
     "collection.activity": "who opened the collection and which dashboards inside get opened",
     "collection.files.upload": "upload a file to refresh the data behind a collection",
+    "collection.active-job": "resume the upload to a collection that was interrupted still running",
+    "collection.job": "check the progress of one upload job for a collection by its job id",
+    "dashboard.attachment-create": (
+        "attach a power bi or tableau workbook to the chat so the agent can read it"
+    ),
     "dashboard.columns": "columns of the dashboard source data profile samples ranges data panel",
     "dashboard.context.review": "preview what the context change would do to the dashboard dry run",
     "dashboard.context.apply": "apply the reviewed context change to the dashboard",

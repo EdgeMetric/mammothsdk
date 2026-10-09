@@ -1650,6 +1650,13 @@ sdk_methods:
   openapi_operation_ids:
   - AssessTwb
   notes: "These take a workbook file from the local disk. Inside the Mammoth app the user's file cannot reach the agent: send the user to the dashboard import page at /workspaces/{workspace_id}/publish/import (Publish → Import), where they upload the .pbix/.twb/.twbx themselves."
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.attachment_create
+  canonical_command: dashboard.attachment-create
+  alias_of: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids: []
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.assess_pbix
   canonical_command: dashboard.assess-pbix
   mutation_class: read
@@ -5204,6 +5211,20 @@ sdk_methods:
   openapi_operation_ids: []
 - sdk_symbol: mammoth.api.collections.CollectionsAPI.pipeline_changes
   canonical_command: collection.pipeline-changes
+  alias_of: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.collections.CollectionsAPI.active_job
+  canonical_command: collection.active-job
+  alias_of: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.collections.CollectionsAPI.job
+  canonical_command: collection.job
   alias_of: null
   mutation_class: read
   wait_policy: not_async

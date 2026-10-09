@@ -29,6 +29,8 @@ PHRASINGS = [
     ("who opened my dashboard", "dashboard.engagement.get"),
     ("remind people to look at the dashboard", "dashboard.engagement.remind"),
     ("use my own data on a template", "dashboard.own-data.start"),
+    ("resume an interrupted collection upload", "collection.active-job"),
+    ("attach a workbook to the chat", "dashboard.attachment-create"),
 ]
 
 

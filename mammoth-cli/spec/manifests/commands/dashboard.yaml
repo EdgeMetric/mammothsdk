@@ -6313,3 +6313,47 @@ commands:
   undo_test: null
   known_restrictions: Drops the pending 'use my data' run. The board is not changed.
   reviewed_by: primary
+- command_id: dashboard.attachment-create
+  command_path: dashboard attachment-create
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - CreateAttachment
+  positionals:
+  - name: file
+    type: str
+    required: true
+    metavar: FILE
+    falls_back_to_field: null
+    help: Path to a local workbook.
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.attachment_create
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.attachment_create with validated request fields.
+  request_model: DashboardAttachmentCreateRequest
+  result_model: DashboardAttachmentCreateResult
+  mutation_class: benign_mutation
+  edits_target: false
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Multipart upload of a workbook; no approved workbook fixture on the dev box.
+  no_readback: 'the upload answers with the new attachment id; no read command lists attachments to read it back.'
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard attachment-create FILE --help
+  agent_example: mammoth dashboard attachment-create sample.pbix
+  unit_tests:
+  - UT-DASHBOARD-ATTACHMENT-CREATE
+  contract_tests:
+  - CT-DASHBOARD-ATTACHMENT-CREATE-HUMAN
+  - CT-DASHBOARD-ATTACHMENT-CREATE-JSON
+  - CT-DASHBOARD-ATTACHMENT-CREATE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Uploads a local workbook as a chat attachment. The attachment id it returns feeds
+    dashboard pbix-intent and dashboard pbix-assess. Inside the Mammoth app the user's file cannot reach
+    the agent, so send the user to the dashboard import page at /workspaces/{workspace_id}/publish/import.
+  reviewed_by: primary
