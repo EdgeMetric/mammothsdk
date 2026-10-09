@@ -12,7 +12,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from mammoth_cli.services.explore_card_edit import CHART
+from mammoth_cli.services.explore_card_edit import CHART, DATE, date_text
 from mammoth_cli.services.explore_to_figure import (
     _AGG_LABEL,
     BLANK_LABEL,
@@ -24,8 +24,13 @@ BAR_WIDTH = 620
 BAR_HEIGHT = 360
 
 
-def _label(group: Any) -> str:
-    return BLANK_LABEL if group is None else str(group)
+def _label(group: Any, column_type: str) -> str:
+    """The group as an axis label; a date bucket reads as its day, or day and time."""
+    if group is None:
+        return BLANK_LABEL
+    if column_type != DATE:
+        return str(group)
+    return date_text(group).removesuffix(" 00:00:00").removesuffix(":00")
 
 
 def card_to_render_spec(
@@ -39,7 +44,8 @@ def card_to_render_spec(
     by = str(column["display_name"])
     title = figure_title(agg, measure_label, by)
     value_key = "agg_0" if agg == "count" else "agg_1"
-    points = [(_label(row.get("group_0")), row.get(value_key)) for row in rows]
+    column_type = str(column.get("type") or "").upper()
+    points = [(_label(row.get("group_0"), column_type), row.get(value_key)) for row in rows]
     if card.get("renderType") == CHART:
         return {
             "chart": "bar",

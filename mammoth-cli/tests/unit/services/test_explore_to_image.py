@@ -41,3 +41,15 @@ def test_a_list_card_becomes_a_table_of_its_rows_with_the_metric_as_a_number() -
         "columns": [{"label": "Region"}, {"label": "Sum of Amount", "num": True}],
         "rows": [{"cells": ["East", 4150.5]}],
     }
+
+
+def test_a_date_card_labels_its_buckets_by_day_or_hour_not_the_raw_timestamp() -> None:
+    hour = {"display_name": "Hour", "internal_name": "column_2", "type": "DATE"}
+    card = {**card_for_column(hour["internal_name"], hour["type"]), "renderType": "chart"}
+    # As the explore read returns them: an offset and a trailing Z.
+    rows = [
+        {"group_0": "2026-10-02T00:00:00+00:00Z", "agg_0": 40},
+        {"group_0": "2026-10-02T19:00:00+00:00Z", "agg_0": 7},
+    ]
+    spec = card_to_render_spec(card, hour, [*COLUMNS, hour], rows)
+    assert [point["label"] for point in spec["data"]] == ["2026-10-02", "2026-10-02 19:00"]
