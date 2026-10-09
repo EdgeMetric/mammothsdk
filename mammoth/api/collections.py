@@ -61,7 +61,8 @@ class CollectionsAPI:
             ``project_id``, ``role`` (``manager`` or ``member``), ``dashboard_count`` and
             ``member_count`` (managers only).
         """
-        return await self._client._request_json("GET", "/collections")
+        headers = {"x-workspace-id": str(self._client.workspace_id)}
+        return await self._client._request_json("GET", "/collections", headers=headers)
 
     async def get(self, collection_id: int) -> dict[str, Any]:
         """Get one collection with its dashboards, members and refresh setup.
