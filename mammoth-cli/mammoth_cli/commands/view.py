@@ -35,6 +35,7 @@ from mammoth_cli.errors.envelope import (
     CODE_INVALID_ARGUMENTS,
     CODE_MISSING_ARGUMENT,
     CODE_MISSING_FIELD,
+    CODE_RESOURCE_NOT_FOUND,
     CODE_SDK_SYMBOL_UNRESOLVED,
     CODE_UNSUPPORTED_CONTRACT,
     EXIT_USAGE,
@@ -1227,7 +1228,13 @@ def view_data_get(invocation: Invocation) -> HandlerResult:
     limit = document.get("limit", _DATA_GET_DEFAULT_LIMIT)
     with open_service(invocation) as (service, auth):
         dataset_id = _resolve_dataset_id(service, invocation, view_id, document)
-        meta = _read_meta(service, invocation, auth.workspace_id, dataset_id, view_id, project_id)
+        try:
+            meta = _read_meta(
+                service, invocation, auth.workspace_id, dataset_id, view_id, project_id
+            )
+        except CliError as exc:
+            _explain_swapped_ids(service, exc, view_id, dataset_id)
+            raise
         kwargs: dict[str, Any] = {
             "dataset_id": dataset_id,
             "dataview_id": view_id,
@@ -1247,7 +1254,51 @@ def view_data_get(invocation: Invocation) -> HandlerResult:
             service, dataset_id, view_id, project_id, data, whole_view=whole_view
         )
     page_size = _DATA_PAGE_ROWS if whole_view else kwargs["limit"]
-    return _trim_rows(data, limit, page_size), meta
+    data = _trim_rows(data, limit, page_size)
+    if document.get("sequence") is None:
+        # The view's row count is its latest step's; a read at an earlier step differs.
+        data = _with_paging_total(data, meta)
+    return data, meta
+
+
+def _with_paging_total(data: Any, meta: dict[str, Any]) -> Any:
+    """Fill ``paging.total`` with the view's row count; the query route reports 0."""
+    paging = data.get("paging") if isinstance(data, dict) else None
+    row_count = meta["view"].get("row_count")
+    if (
+        isinstance(paging, dict)
+        and isinstance(row_count, int)
+        and row_count > paging.get("total", 0)
+    ):
+        return {**data, "paging": {**paging, "total": row_count}}
+    return data
+
+
+def _explain_swapped_ids(service: Any, error: CliError, view_id: int, dataset_id: int) -> None:
+    """Raise a clear refusal when a not-found read was given DATASET_ID then VIEW_ID.
+
+    The arguments are ``VIEW_ID [DATASET_ID]``; passing them the other way round
+    only produces a bare 404. If the first number is really a view of the second,
+    say so. Any other outcome leaves the original error to be re-raised.
+    """
+    if error.code != CODE_RESOURCE_NOT_FOUND:
+        return
+    try:
+        parent = int(service.call(_FIND_DATASET_SYMBOL, dataview_id=dataset_id))
+    except CliError:
+        return
+    if parent != view_id:
+        return
+    raise CliError(
+        code=CODE_INVALID_ARGUMENT,
+        message=(
+            f"{view_id} is a dataset id and {dataset_id} is its view; "
+            "the order is VIEW_ID DATASET_ID"
+        ),
+        exit_status=EXIT_USAGE,
+        hint=f"Run it again as: mammoth view data get {dataset_id} {view_id}",
+        details={"view_id": dataset_id, "dataset_id": view_id},
+    ) from error
 
 
 _QUERY_DATA_SYMBOL = "mammoth.api.dataviews.DataviewsAPI.query_data"

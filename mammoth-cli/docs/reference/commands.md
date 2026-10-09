@@ -5403,7 +5403,7 @@ Total commands: 692.
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dataviews.DataviewsAPI.get_data`
-- Agent example: `mammoth view data get 123 123`
+- Agent example: `mammoth view data get 123 456`
 
 ### `mammoth view data profile`
 

@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Account or data question
+    url: mailto:support@mammoth.io
+    about: For questions about your workspace or data, contact Mammoth support.
+  - name: Report a security vulnerability
+    url: https://github.com/EdgeMetric/mammothsdk/blob/main/SECURITY.md
+    about: Do not open a public issue; follow the security policy.

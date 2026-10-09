@@ -22,7 +22,7 @@
     Do not modify the user PATH; print the manual instruction instead.
 
 .PARAMETER NonInteractive
-    Never prompt.
+    Never prompt; installs the agent skill without asking.
 
 .PARAMETER BootstrapUvOnly
     Ensure the pinned uv executable is available, then exit. Intended for
@@ -71,7 +71,7 @@ function Test-Platform {
     switch -Wildcard ($arch) {
         "AMD64" { return "x86_64" }
         "ARM64" { return "aarch64" }
-        default { Die "unsupported architecture '$arch'. Install manually: uv tool install $CliPackage" }
+        default { Die "unsupported architecture '$arch'. Install manually: uv tool install $CliPackage; uv tool update-shell" }
     }
 }
 
@@ -264,5 +264,11 @@ if ($installCli) {
 } else {
     try { $binDir = (& uv tool dir --bin) 2>$null } catch { $binDir = Join-Path $env:USERPROFILE ".local\bin" }
 }
-if ($installSkills) { Install-Skills $binDir }
+$writeSkills = $installSkills
+if ($installSkills -and $installCli -and -not $NonInteractive) {
+    $answer = Read-Host "mammoth-install: also write the Mammoth agent skill into your Codex, Claude Code and Cursor config folders? [y/N]"
+    $writeSkills = $answer -match '^(y|yes)$'
+    if (-not $writeSkills) { Write-Log "skipped the agent skill; install it later with: mammoth skill install" }
+}
+if ($writeSkills) { Install-Skills $binDir }
 Write-Log "done"

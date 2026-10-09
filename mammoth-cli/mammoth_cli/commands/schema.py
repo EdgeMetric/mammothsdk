@@ -681,7 +681,7 @@ IN_PLACE_RECIPE = (
     "EDITS THE GIVEN VIEW IN PLACE: this adds a step to the view and changes that view "
     "and its dataset's output. To make a NEW dataset and leave the source untouched: "
     "`mammoth view create SOURCE_DATASET_ID` (working view), do the steps on that working "
-    'view, then `mammoth view export dataset WORKING_VIEW_ID` (add dataset_name only if the user named it).'
+    "view, then `mammoth view export dataset WORKING_VIEW_ID` (add dataset_name only if the user named it)."
 )
 _IN_PLACE_KEYWORDS = (
     "new dataset create make in place edits given view working view source untouched"
@@ -1241,6 +1241,10 @@ def runnable_example(
     # the manifest carries the safe ``creds.json`` invocation instead.
     if record["command_id"] == "auth.login":
         return None
+    if record["command_id"] == "view.data.get":
+        # VIEW_ID then DATASET_ID: two different placeholders so a reader can
+        # tell which is which (the generic fallback printed "123 123").
+        return "mammoth view data get 123 456"
     if record["command_id"] == "ai.retention.condition":
         return shlex.join(
             [

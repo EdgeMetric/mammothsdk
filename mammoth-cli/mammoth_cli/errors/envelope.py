@@ -66,19 +66,19 @@ CODE_EMPTIES_VIEW = "empties_view"
 # ``message``/``hint``. Plain language only: no command names, ids, field names
 # or jargon. Exactly one entry per error code the CLI can raise;
 # ``tests/unit/test_error_summaries.py`` fails if a raised code has none.
-_S_BAD_REQUEST = "The assistant's request wasn't valid, so it is trying a different way."
+_S_BAD_REQUEST = "The request wasn't valid."
 _S_BAD_INPUT = "Some of the information provided couldn't be used."
-_S_SIGN_IN = "The assistant isn't signed in to Mammoth."
-_S_INTERNAL = "The assistant hit an internal problem with this step."
-_S_NOT_FOUND = "Something the assistant looked for couldn't be found."
-_S_MISSING_INFO = "The assistant's request was missing some information."
+_S_SIGN_IN = "You aren't signed in to Mammoth."
+_S_INTERNAL = "This step hit an internal problem."
+_S_NOT_FOUND = "Something that was looked for couldn't be found."
+_S_MISSING_INFO = "The request was missing some information."
 _S_SETUP = "A setting needed for this step isn't set up correctly."
 _S_UNAVAILABLE = "This step isn't available right now."
 
 ERROR_SUMMARIES: dict[str, str] = {
     "aborted": "This step was stopped before it finished.",
     "ambiguous_resource_identity": (
-        "More than one item matched, so the assistant needs to be more specific."
+        "More than one item matched, so the request needs to be more specific."
     ),
     "api_error": "Mammoth couldn't complete this step.",
     "append_leaves_columns_blank": (
@@ -90,8 +90,8 @@ ERROR_SUMMARIES: dict[str, str] = {
     "append_schema_unreadable": "The columns of the existing data couldn't be read.",
     "authentication_failed": "Mammoth didn't accept the sign-in for this step.",
     "authorization_required": "You don't have permission to do this.",
-    "capability_not_found": "The assistant tried something Mammoth doesn't support.",
-    "cli_key_expired": "The saved API key has expired, so the assistant needs to sign in again.",
+    "capability_not_found": "That isn't something Mammoth supports.",
+    "cli_key_expired": "The saved API key has expired, so a new sign-in is needed.",
     "cli_keys_need_browser_sign_in": "Managing API keys needs a browser sign-in, not an API token.",
     "cli_keys_not_allowed": "This server doesn't let a browser sign-in create API keys.",
     "confirmation_declined": "This step was not confirmed, so nothing was changed.",
@@ -102,7 +102,7 @@ ERROR_SUMMARIES: dict[str, str] = {
     "conflict": "This conflicts with the current state of your data, so nothing was changed.",
     "device_login_expired": "The sign-in code expired before it was approved.",
     "dry_run_targets_unresolvable": (
-        "The assistant couldn't tell exactly which items this would change, so nothing was changed."
+        "It wasn't clear exactly which items this would change, so nothing was changed."
     ),
     "download_failed": "A download didn't complete.",
     "dry_run_unsupported": "That command can't be previewed, so it was not run.",
@@ -119,7 +119,7 @@ ERROR_SUMMARIES: dict[str, str] = {
     "input_unreadable": _S_BAD_INPUT,
     "insecure_credential_file": _S_SETUP,
     "insecure_input_file": _S_BAD_INPUT,
-    "intent_only_dashboards": "The assistant builds dashboards from your request only.",
+    "intent_only_dashboards": "Dashboards are built from the request only.",
     "internal_column_name": "That column is internal to Mammoth and can't be used.",
     "internal_error": _S_INTERNAL,
     "interrupted": "This step was interrupted before it finished.",
@@ -169,7 +169,7 @@ ERROR_SUMMARIES: dict[str, str] = {
     "no_saved_project": "This step can't save a project here; each step names its own.",
     "not_available_embedded": "This step isn't available inside the Mammoth app.",
     "not_available": _S_UNAVAILABLE,
-    "user_control": "Stopping, pausing or extending a run is left to you, not the assistant.",
+    "user_control": "Stopping, pausing or extending a run is left to you, not done automatically.",
     "profile_write_failed": _S_SETUP,
     "project_required": "No project has been chosen for this step.",
     "pypi_response_invalid": "An update check didn't return a usable answer.",
@@ -177,7 +177,7 @@ ERROR_SUMMARIES: dict[str, str] = {
     "replace_table_not_acknowledged": (
         "This export would drop and recreate a database table, and needs an explicit yes."
     ),
-    "resource_identity_required": "The assistant needs to say which item it means.",
+    "resource_identity_required": "The request needs to say which item it means.",
     "resource_not_found": _S_NOT_FOUND,
     "retryable_error": "Mammoth was temporarily unavailable. Trying again may work.",
     "schema_not_found": _S_NOT_FOUND,
@@ -190,7 +190,7 @@ ERROR_SUMMARIES: dict[str, str] = {
     "too_many_ids": _S_BAD_REQUEST,
     "unexpected_argument": _S_BAD_REQUEST,
     "unknown_agent": _S_SETUP,
-    "unknown_column": "A column the assistant referred to doesn't exist.",
+    "unknown_column": "A column that was referred to doesn't exist.",
     "unknown_config_key": _S_SETUP,
     "unknown_input_field": _S_BAD_REQUEST,
     "unknown_option": _S_BAD_REQUEST,

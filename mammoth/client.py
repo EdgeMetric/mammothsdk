@@ -564,6 +564,7 @@ class MammothClient:
         api_root: str | None = "/api/v2",
         retry_gateway_errors: bool = True,
         token_provider: Callable[[], str] | None = None,
+        user_agent: str | None = None,
     ) -> None:
         """Initialize the Mammoth client.
 
@@ -597,6 +598,10 @@ class MammothClient:
                 refreshed elsewhere is always sent fresh. Use it instead of
                 ``api_token``; ``workspace_id`` is optional and, when absent,
                 is learned from the token the provider returns.
+            user_agent: A product token such as ``my-tool/1.2`` placed before the
+                SDK's own ``mammoth-io/<version>`` in the ``User-Agent`` header,
+                so the server can tell a caller built on the SDK from a direct
+                SDK call.
             retry_gateway_errors: Retry a read that got a 429/502/503/504, twice.
                 Turn it off when the server answering is the process making
                 the call: a retry then adds load to the very worker that is
@@ -689,7 +694,9 @@ class MammothClient:
         self.session.headers.update(
             {
                 **credential_headers,
-                "User-Agent": f"mammoth-io/{_get_version()}",
+                "User-Agent": " ".join(
+                    part for part in (user_agent, f"mammoth-io/{_get_version()}") if part
+                ),
             }
         )
         # Signed export URLs are commonly served from a storage origin rather

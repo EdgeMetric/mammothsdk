@@ -2920,3 +2920,33 @@ def test_view_list_trims_records_unless_full(
     data, _ = view_cmd.view_list(_inv("view.list", project=180, extra_args=["9"], input_file=doc))
     assert data["dataviews"] == [record]
     assert "full" not in _without_meta(fake_service.call_log)[-1][1]
+
+
+def test_data_get_with_swapped_ids_says_which_is_which(fake_service: FakeMammothService) -> None:
+    # `view data get DATASET VIEW`: 7 is really a view of dataset 9.
+    not_found = CliError(code="resource_not_found", message="missing", exit_status=5)
+    fake_service.responses[_DATAVIEW_GET] = not_found
+    fake_service.responses[_FIND_DATASET] = 7
+    with pytest.raises(CliError) as excinfo:
+        view_cmd.view_data_get(_inv("view.data.get", project=180, extra_args=["7", "9"]))
+    assert excinfo.value.code == "invalid_argument"
+    assert "mammoth view data get 9 7" in (excinfo.value.hint or "")
+
+
+def test_data_get_offset_page_reports_the_views_row_count_as_paging_total(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    fake_service.responses[_DATAVIEW_GET] = {
+        "name": "v",
+        "row_count": 1316,
+        "metadata": [{"internal_name": "column_1", "display_name": "n", "type": "NUMERIC"}],
+    }
+    fake_service.responses[_DATA_QUERY] = {
+        "data": [{"column_1": "1"}],
+        "paging": {"count": 1, "limit": 1, "offset": 1, "total": 0},
+    }
+    doc = _doc(tmp_path, {"offset": 1, "limit": 1})
+    data, _ = view_cmd.view_data_get(
+        _inv("view.data.get", project=180, extra_args=["7", "9"], input_file=doc)
+    )
+    assert data["paging"]["total"] == 1316

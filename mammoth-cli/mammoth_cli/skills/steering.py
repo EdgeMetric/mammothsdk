@@ -30,9 +30,10 @@ Transform-menu task is a `mammoth view transform` command (`mammoth view
 transform --help`). Before the first Mammoth command in a session run
 `mammoth doctor` (it must pass), then `mammoth skill show` and follow that
 guide. If `mammoth` is missing, install it with `pip install mammoth-cli`
-(or `uv tool install mammoth-cli`). If `mammoth auth status` shows no
-credentials, tell the operator the exact `mammoth auth login` command to run
-in their own terminal and wait; never ask for, read, or pass a key or secret.
+(or `uv tool install mammoth-cli`, then `uv tool update-shell` so it is on
+PATH). If `mammoth auth status` shows no credentials, tell the operator the
+exact `mammoth auth login` command to run in their own terminal
+and wait; never ask for, read, or pass a key or secret.
 Piped output is compact JSON. Take ids only from reads; run `mammoth schema get
 COMMAND_ID` before a command you have not used (`schema get A,B,C` reads
 several in one call); destructive commands need

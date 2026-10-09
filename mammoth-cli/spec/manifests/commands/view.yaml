@@ -1168,7 +1168,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view data get VIEW_ID --help
-  agent_example: mammoth view data get 123 123
+  agent_example: mammoth view data get 123 456
   unit_tests:
   - UT-VIEW-DATA-GET
   contract_tests:

@@ -10,7 +10,7 @@ or secrets in an argument, prompt, transcript, or checkpoint.
 
    ```bash
    python3 -m venv .mammoth && .mammoth/bin/python -m pip install --no-cache-dir --upgrade mammoth-cli
-   .mammoth/bin/mammoth --version      # or: uv tool install mammoth-cli
+   .mammoth/bin/mammoth --version      # or: uv tool install mammoth-cli && uv tool update-shell
    ```
 
    Pin `mammoth-cli==X.Y.Z` when the task names an approved release, and

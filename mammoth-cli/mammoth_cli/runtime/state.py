@@ -224,6 +224,7 @@ def _read_invocation(command_id: str, resolved_ids: dict[str, Any], base: Invoca
         command_id=command_id,
         output="json",
         profile=base.profile,
+        profile_is_default=base.profile_is_default,
         project=base.project,
         timeout=base.timeout,
         job_timeout=base.job_timeout,

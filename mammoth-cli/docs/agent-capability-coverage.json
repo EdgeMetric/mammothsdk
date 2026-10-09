@@ -45936,7 +45936,7 @@
       "capability_id": "view.data.get",
       "cleanup_and_dependencies": "not_applicable_for_read",
       "cli": {
-        "agent_example": "mammoth view data get 123 123 --output json --no-input",
+        "agent_example": "mammoth view data get 123 456 --output json --no-input",
         "alias_of": null,
         "command_path": "view data get",
         "human_example": "mammoth view data get VIEW_ID --help",
