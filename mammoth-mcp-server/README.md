@@ -27,6 +27,8 @@ through the API, as the SDK does. The server imports no backend code.
 | `mammoth_mcp_server/tokens.py` | The check of a caller's token: Mammoth says whether it is live and which server it is for. |
 | `mammoth_mcp_server/store.py` | Short-lived records in Redis: upload tickets. |
 | `mammoth_mcp_server/upload_routes.py` | The page a user drops a local file on. |
+| `mammoth_mcp_server/server_card.py` | The public server card at `/.well-known/mcp/server-card.json`. |
+| `mammoth_mcp_server/shape.py` | What a read tool hands the model, cut from the API's answer. |
 | `mammoth_mcp_server/app.py` | The ASGI app and `main()`. |
 | `mammoth_mcp_server/config.py` | Every deployment setting, read from the environment. |
 

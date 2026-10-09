@@ -301,6 +301,8 @@ class ListFields:
     """Keys the API's list answers put their rows under, and a row's own fields."""
 
     PROJECTS = "projects"
+    DATASETS = "datasets"
+    VIEWS = "dataviews"
     ID = "id"
     NAME = "name"
 
@@ -474,3 +476,25 @@ class PipelineFields:
     DRAFT_DISCARD = "discard"
     PATCHES = "patches"
     RUN = {"op": "command", "path": "run", "value": None}
+
+
+class PageFields:
+    """A page of rows, as the API answers it and as a tool hands it on."""
+
+    NEXT = "next"
+    LIMIT = "limit"
+    DATA = "data"
+    PAGING = "paging"
+    OFFSET = "offset"
+    COUNT = "count"
+    TOTAL = "total"
+    NEXT_OFFSET = "next_offset"
+
+
+class ViewShape:
+    """The fields of a view that a model reads; the API sends many more."""
+
+    KEPT = ("id", "name", "ds_id", "status", "row_count", "column_count", "updated_at")
+    METADATA = "metadata"
+    COLUMN_KEPT = ("display_name", "internal_name", "type", "format", "min", "max")
+    NUMERIC = "NUMERIC"
