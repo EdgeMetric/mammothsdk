@@ -58,6 +58,30 @@
       ]
     },
     {
+      "method": "PATCH",
+      "path": "/agents/sessions/{}/messages/{}/request-kind",
+      "state": "removed_on_server",
+      "pending_in": null,
+      "sdk_symbols": [
+        "mammoth.api.agents.AgentsAPI.message_set_request_kind"
+      ],
+      "commands": [
+        "agent.message.set-request-kind"
+      ]
+    },
+    {
+      "method": "PATCH",
+      "path": "/agents/sessions/{}/plan/proposal",
+      "state": "removed_on_server",
+      "pending_in": null,
+      "sdk_symbols": [
+        "mammoth.api.agents.AgentsAPI.plan_edit_proposal"
+      ],
+      "commands": [
+        "agent.plan.edit-proposal"
+      ]
+    },
+    {
       "method": "GET",
       "path": "/agents/sessions/{}/run",
       "state": "pending_server_release",
@@ -79,6 +103,66 @@
       ],
       "commands": [
         "agent.run.list"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/agents/sessions/{}/runs/{}/instances",
+      "state": "removed_on_server",
+      "pending_in": null,
+      "sdk_symbols": [
+        "mammoth.api.agents.AgentsAPI.run_instances_list"
+      ],
+      "commands": [
+        "agent.run.instance.list"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/agents/sessions/{}/runs/{}/instances/{}/messages",
+      "state": "removed_on_server",
+      "pending_in": null,
+      "sdk_symbols": [
+        "mammoth.api.agents.AgentsAPI.run_instance_messages"
+      ],
+      "commands": [
+        "agent.run.instance.messages"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/agents/sessions/{}/runs/{}/instances/{}/transcript",
+      "state": "removed_on_server",
+      "pending_in": null,
+      "sdk_symbols": [
+        "mammoth.api.agents.AgentsAPI.run_instance_transcript"
+      ],
+      "commands": [
+        "agent.run.instance.transcript"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/agents/sessions/{}/runs/{}/retry",
+      "state": "pending_server_release",
+      "pending_in": "origin/feat/agent-cli-surface@7e2bf189c4",
+      "sdk_symbols": [
+        "mammoth.api.agents.AgentsAPI.run_retry"
+      ],
+      "commands": [
+        "agent.run.retry"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/agents/sessions/{}/runs/{}/units",
+      "state": "pending_server_release",
+      "pending_in": "origin/feat/agent-cli-surface@7e2bf189c4",
+      "sdk_symbols": [
+        "mammoth.api.agents.AgentsAPI.run_units_list"
+      ],
+      "commands": [
+        "agent.run.units.list"
       ]
     },
     {
@@ -189,6 +273,18 @@
     },
     {
       "method": "GET",
+      "path": "/collections/{}/active-job",
+      "state": "removed_on_server",
+      "pending_in": null,
+      "sdk_symbols": [
+        "mammoth.api.collections.CollectionsAPI.active_job"
+      ],
+      "commands": [
+        "collection.active-job"
+      ]
+    },
+    {
+      "method": "GET",
       "path": "/collections/{}/activity",
       "state": "pending_server_release",
       "pending_in": "origin/master@7a57c1b70f",
@@ -233,6 +329,18 @@
       ],
       "commands": [
         "collection.files.upload"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/collections/{}/jobs/{}",
+      "state": "removed_on_server",
+      "pending_in": null,
+      "sdk_symbols": [
+        "mammoth.api.collections.CollectionsAPI.job"
+      ],
+      "commands": [
+        "collection.job"
       ]
     },
     {
@@ -297,6 +405,18 @@
       ],
       "commands": [
         "dashboard.pbix-intent"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/dashboards/v3/render/svg",
+      "state": "pending_server_release",
+      "pending_in": "origin/fix/dataview-data-total-and-raw@7d0ffc0b67",
+      "sdk_symbols": [
+        "mammoth.api.dashboards.DashboardsAPI.render_figure_svg"
+      ],
+      "commands": [
+        "view.explore-panel.export-image"
       ]
     },
     {
@@ -412,6 +532,30 @@
       ]
     },
     {
+      "method": "GET",
+      "path": "/self/oauth-grants",
+      "state": "removed_on_server",
+      "pending_in": null,
+      "sdk_symbols": [
+        "mammoth.api.user_profile.UserProfileAPI.connected_apps"
+      ],
+      "commands": [
+        "auth.connected-apps.list"
+      ]
+    },
+    {
+      "method": "DELETE",
+      "path": "/self/oauth-grants/{}",
+      "state": "removed_on_server",
+      "pending_in": null,
+      "sdk_symbols": [
+        "mammoth.api.user_profile.UserProfileAPI.revoke_connected_app"
+      ],
+      "commands": [
+        "auth.connected-apps.revoke"
+      ]
+    },
+    {
       "method": "POST",
       "path": "/user/change_password",
       "state": "removed_on_server",
@@ -431,7 +575,9 @@
       "sdk_symbols": [
         "mammoth.api.workspace.WorkspaceAPI.current"
       ],
-      "commands": []
+      "commands": [
+        "workspace.current"
+      ]
     },
     {
       "method": "GET",
@@ -686,6 +832,54 @@
       ]
     },
     {
+      "method": "GET",
+      "path": "/workspaces/{}/oauth-clients",
+      "state": "removed_on_server",
+      "pending_in": null,
+      "sdk_symbols": [
+        "mammoth.api.oauth_clients.OAuthClientsAPI.list"
+      ],
+      "commands": [
+        "workspace.oauth-client.list"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/workspaces/{}/oauth-clients",
+      "state": "removed_on_server",
+      "pending_in": null,
+      "sdk_symbols": [
+        "mammoth.api.oauth_clients.OAuthClientsAPI.create"
+      ],
+      "commands": [
+        "workspace.oauth-client.create"
+      ]
+    },
+    {
+      "method": "DELETE",
+      "path": "/workspaces/{}/oauth-clients/{}",
+      "state": "removed_on_server",
+      "pending_in": null,
+      "sdk_symbols": [
+        "mammoth.api.oauth_clients.OAuthClientsAPI.delete"
+      ],
+      "commands": [
+        "workspace.oauth-client.delete"
+      ]
+    },
+    {
+      "method": "DELETE",
+      "path": "/workspaces/{}/oauth-clients/{}/grant",
+      "state": "removed_on_server",
+      "pending_in": null,
+      "sdk_symbols": [
+        "mammoth.api.oauth_clients.OAuthClientsAPI.revoke_grant"
+      ],
+      "commands": [
+        "workspace.oauth-client.revoke-grant"
+      ]
+    },
+    {
       "method": "POST",
       "path": "/workspaces/{}/projects/{}/copy",
       "state": "pending_server_release",
@@ -742,6 +936,78 @@
       "commands": [
         "dataset.broken-rows.resolve"
       ]
+    },
+    {
+      "method": "POST",
+      "path": "/workspaces/{}/projects/{}/files/{}/multi-sheet-extraction",
+      "state": "removed_on_server",
+      "pending_in": null,
+      "sdk_symbols": [
+        "mammoth.api.files.FilesAPI.create_datasets_from_multi_sheet"
+      ],
+      "commands": [
+        "file.multi-sheet-extract"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/workspaces/{}/projects/{}/files/{}/sheets/interpretation/preview",
+      "state": "removed_on_server",
+      "pending_in": null,
+      "sdk_symbols": [
+        "mammoth.api.files.FilesAPI.preview_multi_sheet"
+      ],
+      "commands": [
+        "file.multi-sheet-preview"
+      ]
+    },
+    {
+      "method": "PUT",
+      "path": "/workspaces/{}/projects/{}/workflows/{}/archived",
+      "state": "removed_on_server",
+      "pending_in": null,
+      "sdk_symbols": [
+        "mammoth.api.workflows.WorkflowsAPI.set_archived"
+      ],
+      "commands": [
+        "workflow.archive"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/workspaces/{}/projects/{}/workflows/{}/datasets",
+      "state": "removed_on_server",
+      "pending_in": null,
+      "sdk_symbols": [
+        "mammoth.api.workflows.WorkflowsAPI.attach_dataset"
+      ],
+      "commands": [
+        "workflow.attach-dataset"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/workspaces/{}/projects/{}/workflows/{}/held/resolve",
+      "state": "removed_on_server",
+      "pending_in": null,
+      "sdk_symbols": [
+        "mammoth.api.workflows.WorkflowsAPI.resolve_held"
+      ],
+      "commands": [
+        "workflow.resolve-held"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/workspaces/{}/projects/{}/workflows/{}/save",
+      "state": "removed_on_server",
+      "pending_in": null,
+      "sdk_symbols": [
+        "mammoth.api.workflows.WorkflowsAPI.save"
+      ],
+      "commands": [
+        "workflow.save"
+      ]
     }
   ],
   "commands_without_route": [
@@ -761,6 +1027,7 @@
     "agent.team.set",
     "billing.invoice.list",
     "calc",
+    "dashboard.attachment-create",
     "dataset.find",
     "dataset.search",
     "folder.find",

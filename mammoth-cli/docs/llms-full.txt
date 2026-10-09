@@ -73,6 +73,10 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth agent memory list sample
 - `mammoth agent memory remove` [destructive/prompt_or_yes] -> mammoth.api.agent_definitions.AgentDefinitionsAPI.notes_delete
   example: mammoth agent memory remove sample 123
+- `mammoth agent message set-request-kind` [benign_mutation/none] -> mammoth.api.agents.AgentsAPI.message_set_request_kind
+  example: mammoth agent message set-request-kind 'Summarize revenue by region' --input '{"request_kind": "sample"}'
+- `mammoth agent plan edit-proposal` [benign_mutation/none] -> mammoth.api.agents.AgentsAPI.plan_edit_proposal
+  example: mammoth agent plan edit-proposal --input '{"plan_id": "resource-123", "action": "sample", "key": "Status"}'
 - `mammoth agent projects clear` [benign_mutation/none] -> mammoth.api.agent_definitions.AgentDefinitionsAPI.update
   example: mammoth agent projects clear sample
 - `mammoth agent projects set` [benign_mutation/none] -> mammoth.api.agent_definitions.AgentDefinitionsAPI.update
@@ -83,16 +87,26 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth agent roles
 - `mammoth agent run extend` [benign_mutation/none] -> mammoth.api.agents.AgentsAPI.run_extend
   example: mammoth agent run extend resource-123
+- `mammoth agent run instance list` [read/none] -> mammoth.api.agents.AgentsAPI.run_instances_list
+  example: mammoth agent run instance list resource-123
+- `mammoth agent run instance messages` [read/none] -> mammoth.api.agents.AgentsAPI.run_instance_messages
+  example: mammoth agent run instance messages resource-123 resource-123
+- `mammoth agent run instance transcript` [read/none] -> mammoth.api.agents.AgentsAPI.run_instance_transcript
+  example: mammoth agent run instance transcript resource-123 resource-123
 - `mammoth agent run list` [read/none] -> mammoth.api.agents.AgentsAPI.run_list
   example: mammoth agent run list
 - `mammoth agent run pause` [benign_mutation/none] -> mammoth.api.agents.AgentsAPI.run_pause
   example: mammoth agent run pause resource-123
 - `mammoth agent run resume` [benign_mutation/none] -> mammoth.api.agents.AgentsAPI.run_resume
   example: mammoth agent run resume resource-123
+- `mammoth agent run retry` [benign_mutation/prompt_or_yes] -> mammoth.api.agents.AgentsAPI.run_retry
+  example: mammoth agent run retry resource-123
 - `mammoth agent run status` [read/none] -> mammoth.api.agents.AgentsAPI.run_status
   example: mammoth agent run status
 - `mammoth agent run stop` [benign_mutation/none] -> mammoth.api.agents.AgentsAPI.run_stop
   example: mammoth agent run stop resource-123
+- `mammoth agent run units list` [read/none] -> mammoth.api.agents.AgentsAPI.run_units_list
+  example: mammoth agent run units list resource-123
 - `mammoth agent run units set` [benign_mutation/none] -> mammoth.api.agents.AgentsAPI.run_units_set
   example: mammoth agent run units set resource-123 --input '{"step": 1, "kind": "sample", "units": [{"sample_key": "Status"}]}'
 - `mammoth agent scratch clear` [destructive/prompt_or_yes] -> mammoth.api.agent_definitions.AgentDefinitionsAPI.notes_delete
@@ -146,6 +160,10 @@ Sensitive structured input must come from a private file or pipe; never put secr
 
 ## auth
 
+- `mammoth auth connected-apps list` [read/none] -> mammoth.api.user_profile.UserProfileAPI.connected_apps
+  example: mammoth auth connected-apps list
+- `mammoth auth connected-apps revoke` [high_impact/confirm_target] -> mammoth.api.user_profile.UserProfileAPI.revoke_connected_app
+  example: mammoth auth connected-apps revoke 123
 - `mammoth auth login` [benign_mutation/none] -> mammoth_cli.context.auth.login
   example: mammoth auth login
 - `mammoth auth logout` [benign_mutation/none] -> mammoth_cli.context.auth.logout
@@ -292,6 +310,8 @@ Sensitive structured input must come from a private file or pipe; never put secr
 
 ## collection
 
+- `mammoth collection active-job` [read/none] -> mammoth.api.collections.CollectionsAPI.active_job
+  example: mammoth collection active-job 123
 - `mammoth collection activity` [read/none] -> mammoth.api.collections.CollectionsAPI.activity
   example: mammoth collection activity 123
 - `mammoth collection create` [benign_mutation/none] -> mammoth.api.collections.CollectionsAPI.create
@@ -310,6 +330,8 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth collection get 123
 - `mammoth collection get-by-url` [read/none] -> mammoth.api.collections.CollectionsAPI.get_by_url
   example: mammoth collection get-by-url https://example.com/data.csv
+- `mammoth collection job` [read/none] -> mammoth.api.collections.CollectionsAPI.job
+  example: mammoth collection job 123 123
 - `mammoth collection list` [read/none] -> mammoth.api.collections.CollectionsAPI.list
   example: mammoth collection list
 - `mammoth collection members remove` [destructive/prompt_or_yes] -> mammoth.api.collections.CollectionsAPI.remove_member
@@ -407,6 +429,8 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth dashboard assess-pbix sample.pbix
 - `mammoth dashboard assess-twb` [read/none] -> mammoth.api.dashboards.DashboardsAPI.assess_twb
   example: mammoth dashboard assess-twb sample.twb
+- `mammoth dashboard attachment-create` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.attachment_create
+  example: mammoth dashboard attachment-create sample.pbix
 - `mammoth dashboard audience digest get` [read/none] -> mammoth.api.dashboards.DashboardsAPI.audience_digest_get
   example: mammoth dashboard audience digest get 123
 - `mammoth dashboard audience digest set` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.audience_digest_set
@@ -787,6 +811,10 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth file get 123
 - `mammoth file list` [read/none] -> mammoth.api.files.FilesAPI.list
   example: mammoth file list
+- `mammoth file multi-sheet-extract` [benign_mutation/none] -> mammoth.api.files.FilesAPI.create_datasets_from_multi_sheet
+  example: mammoth file multi-sheet-extract 123 --input '{"tables": [{"sample_key": "Status"}]}'
+- `mammoth file multi-sheet-preview` [benign_mutation/none] -> mammoth.api.files.FilesAPI.preview_multi_sheet
+  example: mammoth file multi-sheet-preview 123 --input '{"sheet_name": "Revenue report"}'
 - `mammoth file set-password` [high_impact/confirm_target] -> mammoth.api.files.FilesAPI.set_password
   example: mammoth file set-password 123 --input /private/path/request.json
 - `mammoth file update` [benign_mutation/none] -> mammoth.api.files.FilesAPI.update
@@ -1290,6 +1318,8 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth view explore-panel add-to-dashboard 123 --input '{"card": "Region", "new_dashboard_title": "Regions"}'
 - `mammoth view explore-panel edit` [benign_mutation/none] -> mammoth.api.dataviews.DataviewsAPI.set_explore_panel
   example: mammoth view explore-panel edit 123 --input '{"edits": [{"op": "metric", "card": "Region", "agg": "SUM", "of": "Amount"}]}'
+- `mammoth view explore-panel export-image` [read/none] -> mammoth.api.dashboards.DashboardsAPI.render_figure_svg
+  example: mammoth view explore-panel export-image 123 --input '{"card": "Region", "output_path": "card.svg", "style_id": null}'
 - `mammoth view explore-panel get` [read/none] -> mammoth.api.dataviews.DataviewsAPI.explore_panel
   example: mammoth view explore-panel get 123
 - `mammoth view explore-panel set` [benign_mutation/none] -> mammoth.api.dataviews.DataviewsAPI.set_explore_panel
@@ -1495,6 +1525,10 @@ Sensitive structured input must come from a private file or pipe; never put secr
 
 ## workflow
 
+- `mammoth workflow archive` [benign_mutation/none] -> mammoth.api.workflows.WorkflowsAPI.set_archived
+  example: mammoth workflow archive 123 --input '{"archived": true}'
+- `mammoth workflow attach-dataset` [benign_mutation/none] -> mammoth.api.workflows.WorkflowsAPI.attach_dataset
+  example: mammoth workflow attach-dataset 123 123
 - `mammoth workflow block add` [benign_mutation/none] -> mammoth.api.workflows.WorkflowsAPI.block_add
   example: mammoth workflow block add 123 --input '{"block_type": "sample"}'
 - `mammoth workflow block auth` [benign_mutation/confirm_target] -> mammoth.api.workflows.WorkflowsAPI.block_auth
@@ -1519,6 +1553,10 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth workflow graph
 - `mammoth workflow list` [read/none] -> mammoth.api.workflows.WorkflowsAPI.list
   example: mammoth workflow list
+- `mammoth workflow resolve-held` [benign_mutation/none] -> mammoth.api.workflows.WorkflowsAPI.resolve_held
+  example: mammoth workflow resolve-held 123 Status --input '{"built": true}'
+- `mammoth workflow save` [benign_mutation/none] -> mammoth.api.workflows.WorkflowsAPI.save
+  example: mammoth workflow save 123
 - `mammoth workflow update` [benign_mutation/none] -> mammoth.api.workflows.WorkflowsAPI.update
   example: mammoth workflow update 123
 - `mammoth workflow workspace-datasets` [read/none] -> mammoth.api.workflows.WorkflowsAPI.workspace_datasets
@@ -1538,6 +1576,8 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth workspace check-expression --input '{"body": {"intent": "Summarize revenue by region"}}'
 - `mammoth workspace create` [benign_mutation/none] -> mammoth.api.workspaces.WorkspacesAPI.create
   example: mammoth workspace create --input '{"body": {}}'
+- `mammoth workspace current` [read/none] -> mammoth.api.workspace.WorkspaceAPI.current
+  example: mammoth workspace current
 - `mammoth workspace delete` [high_impact/confirm_target] -> mammoth.api.workspace.WorkspaceAPI.delete
   example: mammoth workspace delete 123
 - `mammoth workspace get` [read/none] -> mammoth.api.workspace.WorkspaceAPI.get
@@ -1558,6 +1598,14 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth workspace list
 - `mammoth workspace llm-task` [benign_mutation/none] -> mammoth.api.workspaces.WorkspacesAPI.llm_task
   example: mammoth workspace llm-task --input '{"task_type": "sample", "params": {"sample_key": "Status"}}'
+- `mammoth workspace oauth-client create` [high_impact/yes_always] -> mammoth.api.oauth_clients.OAuthClientsAPI.create
+  example: mammoth workspace oauth-client create 123 --input '{"name": "Revenue report", "redirect_uris": ["https://example.com/data.csv"]}'
+- `mammoth workspace oauth-client delete` [high_impact/confirm_target] -> mammoth.api.oauth_clients.OAuthClientsAPI.delete
+  example: mammoth workspace oauth-client delete 123 123
+- `mammoth workspace oauth-client list` [read/none] -> mammoth.api.oauth_clients.OAuthClientsAPI.list
+  example: mammoth workspace oauth-client list 123
+- `mammoth workspace oauth-client revoke-grant` [high_impact/confirm_target] -> mammoth.api.oauth_clients.OAuthClientsAPI.revoke_grant
+  example: mammoth workspace oauth-client revoke-grant 123 123
 - `mammoth workspace reactivate` [high_impact/confirm_target] -> mammoth.api.workspace.WorkspaceAPI.reactivate
   example: mammoth workspace reactivate 123
 - `mammoth workspace segment list` [read/none] -> mammoth.api.workspaces.WorkspacesAPI.segment_list

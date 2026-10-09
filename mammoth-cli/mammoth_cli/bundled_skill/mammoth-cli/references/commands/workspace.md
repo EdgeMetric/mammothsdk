@@ -44,6 +44,16 @@ Result: `WorkspaceCreateResult`; mutation `benign_mutation`, confirmation `none`
 
 Status on release: untried; no live run recorded.
 
+### `workspace.current`
+
+Run: `mammoth workspace current`. Exact input fields: `mammoth schema get workspace.current`.
+
+Example: `mammoth workspace current`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `WorkspaceCurrentResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
 ### `workspace.delete`
 
 Run: `mammoth workspace delete`. Exact input fields: `mammoth schema get workspace.delete`.
@@ -141,6 +151,46 @@ Run: `mammoth workspace llm-task`. Exact input fields: `mammoth schema get works
 Example: `mammoth workspace llm-task --input '{"task_type": "sample", "params": {"sample_key": "Status"}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `WorkspaceLlmTaskResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `workspace.oauth-client.create`
+
+Run: `mammoth workspace oauth-client create`. Exact input fields: `mammoth schema get workspace.oauth-client.create`.
+
+Example: `mammoth workspace oauth-client create 123 --input '{"name": "Revenue report", "redirect_uris": ["https://example.com/data.csv"]}'`. Illustrative only: append `--yes` after observing an owned target.
+
+Result: `WorkspaceOauthClientCreateResult`; mutation `high_impact`, confirmation `yes_always`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `workspace.oauth-client.delete`
+
+Run: `mammoth workspace oauth-client delete`. Exact input fields: `mammoth schema get workspace.oauth-client.delete`.
+
+Example: `mammoth workspace oauth-client delete 123 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+
+Result: `WorkspaceOauthClientDeleteResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `workspace.oauth-client.list`
+
+Run: `mammoth workspace oauth-client list`. Exact input fields: `mammoth schema get workspace.oauth-client.list`.
+
+Example: `mammoth workspace oauth-client list 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `AuthOauthClientListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `workspace.oauth-client.revoke-grant`
+
+Run: `mammoth workspace oauth-client revoke-grant`. Exact input fields: `mammoth schema get workspace.oauth-client.revoke-grant`.
+
+Example: `mammoth workspace oauth-client revoke-grant 123 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+
+Result: `WorkspaceOauthClientRevokeGrantResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
 
 Status on release: untried; no live run recorded.
 

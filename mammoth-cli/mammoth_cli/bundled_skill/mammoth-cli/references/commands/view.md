@@ -434,6 +434,16 @@ Result: `ViewExplorePanelEditResult`; mutation `benign_mutation`, confirmation `
 
 Status on release: untried; no live run recorded.
 
+### `view.explore-panel.export-image`
+
+Run: `mammoth view explore-panel export-image`. Exact input fields: `mammoth schema get view.explore-panel.export-image`.
+
+Example: `mammoth view explore-panel export-image 123 --input '{"card": "Region", "output_path": "card.svg", "style_id": null}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `ViewExplorePanelExportImageResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
 ### `view.explore-panel.get`
 
 Run: `mammoth view explore-panel get`. Exact input fields: `mammoth schema get view.explore-panel.get`.

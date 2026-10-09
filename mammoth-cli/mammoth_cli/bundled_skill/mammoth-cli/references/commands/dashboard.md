@@ -52,6 +52,16 @@ Result: `TwbAssessResponse`; mutation `read`, confirmation `none`, wait policy `
 
 Status on release: untried; no live run recorded.
 
+### `dashboard.attachment-create`
+
+Run: `mammoth dashboard attachment-create`. Exact input fields: `mammoth schema get dashboard.attachment-create`.
+
+Example: `mammoth dashboard attachment-create sample.pbix`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `DashboardAttachmentCreateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
 ### `dashboard.audience.digest.get`
 
 Run: `mammoth dashboard audience digest get`. Exact input fields: `mammoth schema get dashboard.audience.digest.get`.
