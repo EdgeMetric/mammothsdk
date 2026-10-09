@@ -372,7 +372,11 @@ def test_workflow_canvas_says_it_proposes_structure_for_review_and_shows_the_ops
     preconditions = entry["preconditions"]
 
     assert "review and Save" in preconditions
-    assert "cannot add filters" in preconditions
+    # Steps inside a view are proposed with the structure, never run as view commands.
+    for op in ("add_step", "update_step", "remove_step"):
+        assert f"op: {op}" in preconditions
+    assert "never as view commands run afterwards" in preconditions
+    assert "cannot add filters" not in preconditions
     assert "proposed_changes" in entry["agent_example"]
     # A whole shape in one call: a later change points at an earlier one's ref.
     assert "view_ref" in preconditions and '"view_ref": "urgent"' in entry["agent_example"]

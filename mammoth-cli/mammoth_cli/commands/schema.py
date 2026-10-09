@@ -77,6 +77,19 @@ _FIXED_EXAMPLES: dict[str, tuple[tuple[str, ...], dict[str, Any]]] = {
                         "ref": "urgent",
                     },
                     {
+                        "op": "add_step",
+                        "view_ref": "urgent",
+                        "transform": "filter",
+                        "params": {
+                            "condition": {
+                                "column": "Priority",
+                                "operator": "EQ",
+                                "value": "Urgent",
+                            }
+                        },
+                        "label": "Keep urgent tickets",
+                    },
+                    {
                         "op": "send_to_new_dataset",
                         "dataset_id": 415,
                         "view_ref": "urgent",

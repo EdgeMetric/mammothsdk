@@ -130,16 +130,19 @@ NAME --input '{"seed_datasource_id": ROOT_DATASET_ID}'`, which returns its
 record id. `workflow cleanup` deletes the project's orphaned skeleton
 ("ghost") workflows (destructive; needs `--yes`).
 
-To only *suggest* a workflow's shape for the user to review, use `workflow
+To only *suggest* changes to a workflow for the user to review, use `workflow
 canvas WORKFLOW_ID --input '{"canvas_state": {"proposed_changes": [...]}}'`.
-Nothing is built until the user presses Save on the Workflows canvas; tell
-them the changes are waiting there. Changes are `add_view`, `rename_view`,
-`trash_view`, `rename_dataset`, `trash_dataset`, `send_to_new_dataset`,
-`send_to_dataset`, `join` and `export` (fields per op: `schema get
-workflow.canvas`). A later change in the same call can point at an earlier
-one: give the earlier change a `ref`, then use `view_ref`, `dataset_ref` or
-`target_dataset_ref` instead of an id. It cannot add filters, calculations or
-other tasks; if the request needs those, build it with `view` commands.
+Nothing is built until the user presses Save on the Workflows canvas, which
+builds every change in flow order; tell them the changes are waiting there.
+Changes are `add_view`, `rename_view`, `trash_view`, `rename_dataset`,
+`trash_dataset`, `send_to_new_dataset`, `send_to_dataset`, `join`, `export`,
+and, for the steps inside a view, `add_step`, `update_step` and `remove_step`
+(fields per op: `schema get workflow.canvas`). A later change in the same call
+can point at an earlier one: give the earlier change a `ref`, then use
+`view_ref`, `dataset_ref` or `target_dataset_ref` instead of an id. Propose the
+filters, calculations and other tasks a view needs as `add_step` changes in the
+same call (`transform` is a `view transform` kind, `params` its `--input`),
+never as `view` commands run afterwards.
 
 Draft mode is server-side batching for view pipeline edits. Enter, inspect
 status, submit, and verify pipeline state; discard only with the required
