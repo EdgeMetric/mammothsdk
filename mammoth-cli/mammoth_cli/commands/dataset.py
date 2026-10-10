@@ -581,6 +581,70 @@ def dataset_search(invocation: Invocation) -> HandlerResult:
     return result, _meta(invocation, auth.workspace_id, project_id)
 
 
+#: Columns with blanks kept per dataset in a ``dataset column-stats`` row, worst first.
+_COLUMN_STATS_PER_DATASET = 8
+
+_COLUMN_STATS_NOTE = (
+    "Blank counts per column for every dataset in the project, read from stats stored at "
+    "the last load or pipeline run (not live). Datasets are ordered worst first and each "
+    "lists only its columns that have blanks, highest blank_pct (a percentage, 0-100) "
+    "first; complete_columns "
+    "counts the columns with none. To answer, name the dataset and column with the "
+    "highest blank_pct (or blank_count), then the next few, and say the figures are as "
+    "of the last load or run. Profile one view only to look closer at a column named here."
+)
+
+
+def _blank_pct(column: dict[str, Any]) -> float:
+    value = column.get("blank_pct")
+    return float(value) if isinstance(value, (int, float)) else 0.0
+
+
+def _column_stats_row(dataset: dict[str, Any]) -> dict[str, Any]:
+    """One ``dataset column-stats`` row: the dataset and its columns with blanks, worst first."""
+    columns = [c for c in dataset.get("columns") or [] if isinstance(c, dict)]
+    blank = sorted(
+        (c for c in columns if (c.get("blank_count") or 0) > 0),
+        key=lambda c: (-_blank_pct(c), -(c.get("blank_count") or 0)),
+    )
+    row: dict[str, Any] = {
+        "id": dataset.get("id"),
+        "name": dataset.get("name"),
+        "rows": dataset.get("rows"),
+        "columns": blank[:_COLUMN_STATS_PER_DATASET],
+        "complete_columns": len(columns) - len(blank),
+    }
+    if len(blank) > _COLUMN_STATS_PER_DATASET:
+        row["more_columns_with_blanks"] = len(blank) - _COLUMN_STATS_PER_DATASET
+    return row
+
+
+def _worst_blank_pct(row: dict[str, Any]) -> float:
+    return max((_blank_pct(c) for c in row["columns"]), default=0.0)
+
+
+def dataset_column_stats(invocation: Invocation) -> HandlerResult:
+    """Every column's blanks, type and distinct count for each dataset in the project.
+
+    Read-only: one server call over stats the platform already stored, so a question
+    about missing values across the project needs no per-view profile. Datasets are
+    ordered by their worst column's blank share (newest first among ties), each listing
+    its columns with blanks, worst first, and cut to fit the agent tool output cap.
+    """
+    project_id = require_project(invocation)
+    with open_service(invocation) as (service, auth):
+        data = service.call("mammoth.api.datasets.DatasetsAPI.column_stats", project_id=project_id)
+    datasets = data.get("datasets", []) if isinstance(data, dict) else []
+    rows = [_column_stats_row(d) for d in datasets if isinstance(d, dict)]
+    rows.sort(key=_worst_blank_pct, reverse=True)
+    kept, omitted = fit_budget(rows, overhead=200 + len(_COLUMN_STATS_NOTE))
+    result: dict[str, Any] = {"datasets": kept, "dataset_count": len(rows)}
+    if omitted:
+        result["omitted"] = omitted
+    result["note"] = _COLUMN_STATS_NOTE
+    return result, _meta(invocation, auth.workspace_id, project_id)
+
+
 def dataset_list(invocation: Invocation) -> HandlerResult:
     """List datasets in the active project, newest first, each with what tells them apart.
 

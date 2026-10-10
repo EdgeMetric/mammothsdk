@@ -401,6 +401,14 @@ _COMMAND_DISCOVERY_PURPOSES = {
         "check look at overview summary statistics churn drivers drive driving feature "
         "importance correlation which columns predict affect influence the target outcome"
     ),
+    # "Check every source for missing values" spans datasets: the agent ran
+    # view.data.profile once per view (17 calls, 125 s) where one stored-stats
+    # read answers it (gap eval 10-10 S16).
+    "dataset.column-stats": (
+        "missing values blanks blank empty nulls null incomplete completeness data quality "
+        "across every all dataset datasets source sources tables project which column "
+        "columns worst most check"
+    ),
     # Goals users state in their own words, one entry per command the agent's
     # system prompt used to spell out by hand.
     "dashboard.suggestion.list": "ideas suggest suggestions what to show put on a board chart",

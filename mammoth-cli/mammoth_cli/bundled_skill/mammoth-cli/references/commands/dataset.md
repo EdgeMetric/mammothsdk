@@ -52,6 +52,16 @@ Execution is unavailable for the current contract and returns `unsupported_contr
 
 Known restriction: BLOCKED[B07 DATASET_PATCH_UNTYPED]; reserved, not registered.
 
+### `dataset.column-stats`
+
+Run: `mammoth dataset column-stats`. Exact input fields: `mammoth schema get dataset.column-stats`.
+
+Example: `mammoth dataset column-stats`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `DatasetColumnStatsResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
 ### `dataset.create`
 
 Run: `mammoth dataset create`. Exact input fields: `mammoth schema get dataset.create`.

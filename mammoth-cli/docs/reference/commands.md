@@ -4,7 +4,7 @@ Generated from the reviewed command manifests for mammoth-cli 2.2.74.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
-Total commands: 692.
+Total commands: 693.
 
 ## activity
 
@@ -3092,6 +3092,13 @@ Total commands: 692.
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.datasets.DatasetsAPI.bulk_update`
 - Agent example: `mammoth dataset bulk-update --input '{"patch_data": {"sample_key": "Status"}}'`
+
+### `mammoth dataset column-stats`
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth_cli.commands.dataset.column_stats`
+- Agent example: `mammoth dataset column-stats`
 
 ### `mammoth dataset create`
 
@@ -6833,7 +6840,7 @@ Total commands: 692.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.workflows.WorkflowsAPI.canvas`
-- Agent example: `mammoth workflow canvas 12 --input '{"canvas_state": {"proposed_changes": [{"op": "add_view", "dataset_id": 415, "name": "Urgent tickets", "ref": "urgent"}, {"op": "send_to_new_dataset", "dataset_id": 415, "view_ref": "urgent", "name": "Urgent tickets by team"}]}}'`
+- Agent example: `mammoth workflow canvas 12 --input '{"canvas_state": {"proposed_changes": [{"op": "add_view", "dataset_id": 415, "name": "Urgent tickets", "ref": "urgent"}, {"op": "add_step", "view_ref": "urgent", "transform": "filter", "params": {"condition": {"column": "Priority", "operator": "EQ", "value": "Urgent"}}, "label": "Keep urgent tickets"}, {"op": "send_to_new_dataset", "dataset_id": 415, "view_ref": "urgent", "name": "Urgent tickets by team"}]}}'`
 
 ### `mammoth workflow cleanup`
 

@@ -358,6 +358,32 @@ def test_leaf_help_separates_global_options_by_purpose() -> None:
         assert panel in result.output
 
 
+# Gap eval 10-10 S16: "check every source for missing values" made the agent
+# profile 17 views one by one; the one-call project read must come first.
+@pytest.mark.parametrize(
+    "query",
+    [
+        "missing values across datasets",
+        "check every source for missing values",
+        "data quality across the project",
+        "which columns have the most blanks across the project",
+    ],
+)
+def test_missing_values_across_datasets_finds_column_stats_first(query: str) -> None:
+    assert find_schemas(query)["matches"][0]["command_id"] == "dataset.column-stats"
+
+
+@pytest.mark.parametrize(
+    ("query", "command_id"),
+    [
+        ("fill missing values", "view.transform.fill-missing"),
+        ("profile this view", "view.data.profile"),
+    ],
+)
+def test_one_view_goals_still_reach_their_own_command(query: str, command_id: str) -> None:
+    assert find_schemas(query)["matches"][0]["command_id"] == command_id
+
+
 # Proposing a workflow's shape must never pull in plain view work: "add a view"
 # is a build, not a proposal.
 @pytest.mark.parametrize("query", ["add a view", "rename view", "create view"])

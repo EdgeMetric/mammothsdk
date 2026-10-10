@@ -44,6 +44,10 @@ returns the project's datasets whose name, column names or sampled column
 values contain TERM, each with the matched column and value. `dataset find`
 and `browse` search match names only. A `browse` search hit carries `dataset_id` or `view_id`: use those,
 never the tree `id`.
+To check missing values or blanks across a project's datasets, run
+`dataset column-stats` once instead of profiling each view: it returns every
+dataset's columns with their blank count and share, type and distinct count,
+from stats stored at the last load or pipeline run.
 
 ```bash
 mammoth capability find "transform"

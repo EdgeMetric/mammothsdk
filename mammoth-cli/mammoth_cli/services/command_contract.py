@@ -434,6 +434,7 @@ _LOCAL_COMMANDS = frozenset(
         "context.project.clear",
         "context.project.status",
         "context.project.use",
+        "dataset.column-stats",
         "dataset.find",
         "dataset.search",
         "doctor",

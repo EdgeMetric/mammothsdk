@@ -427,6 +427,16 @@
     },
     {
       "method": "GET",
+      "path": "/workspaces/{}/projects/{}/datasets/column-stats",
+      "state": "removed_on_server",
+      "pending_in": null,
+      "sdk_symbols": [
+        "mammoth.api.datasets.DatasetsAPI.column_stats"
+      ],
+      "commands": []
+    },
+    {
+      "method": "GET",
       "path": "/workspaces/{}/projects/{}/datasets/search",
       "state": "removed_on_server",
       "pending_in": null,
@@ -489,6 +499,7 @@
     "agent.team.set",
     "billing.invoice.list",
     "calc",
+    "dataset.column-stats",
     "dataset.find",
     "dataset.search",
     "folder.find",

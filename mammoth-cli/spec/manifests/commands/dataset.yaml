@@ -815,6 +815,43 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+- command_id: dataset.column-stats
+  command_path: dataset column-stats
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals: []
+  options: []
+  sdk_symbol: mammoth_cli.commands.dataset.column_stats
+  sdk_conversion: Call mammoth_cli.commands.dataset.column_stats with validated request fields.
+  request_model: DatasetColumnStatsRequest
+  result_model: DatasetColumnStatsResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: null
+  live_exemption_reason: Read-only composite over the project's datasets column-stats route.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dataset column-stats --help
+  agent_example: mammoth dataset column-stats
+  unit_tests:
+  - UT-DATASET-COLUMN-STATS
+  contract_tests:
+  - CT-DATASET-COLUMN-STATS-HUMAN
+  - CT-DATASET-COLUMN-STATS-JSON
+  - CT-DATASET-COLUMN-STATS-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Needs a project. Use this instead of profiling each view when the question
+    spans datasets ("missing values", "blanks", "data quality across the project"): one call
+    returns every dataset''s columns with their blank count and share, type and distinct count,
+    from stats stored at the last load or pipeline run. Rank columns by blank_pct (or blank_count)
+    and name the worst dataset and column.'
+  reviewed_by: primary
 - command_id: dataset.search
   command_path: dataset search
   disposition: command

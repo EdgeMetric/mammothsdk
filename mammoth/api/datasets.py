@@ -140,6 +140,31 @@ class DatasetsAPI:
             "GET", f"/workspaces/{ws}/projects/{proj}/datasets/search", params={"q": term}
         )
 
+    async def column_stats(
+        self,
+        workspace_id: int | None = None,
+        project_id: int | None = None,
+    ) -> dict[str, Any]:
+        """Read every column's blank count, type and distinct count for the project's datasets.
+
+        One call for the whole project. The figures come from the stats the platform stored
+        at the last load or pipeline run, so nothing is profiled or run.
+
+        Args:
+            workspace_id: ID of the workspace (uses client default if not provided).
+            project_id: ID of the project (uses client default if not provided).
+
+        Returns:
+            Dict with ``datasets``, newest first: ``{id, name, rows, columns}``, each column
+            ``{name, type, blank_count, blank_pct, distinct}`` (``blank_pct`` is 0-100). ``rows`` and ``distinct`` are
+            ``None`` when the platform has not stored them.
+        """
+        ws = workspace_id or self._ws()
+        proj = self._proj(project_id)
+        return await self._client._request_json(
+            "GET", f"/workspaces/{ws}/projects/{proj}/datasets/column-stats"
+        )
+
     async def get(
         self,
         dataset_id: int,

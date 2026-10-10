@@ -35,6 +35,7 @@ _BULK_DELETE = "mammoth.api.datasets.DatasetsAPI.bulk_delete"
 _BULK_UPDATE = "mammoth.api.datasets.DatasetsAPI.bulk_update"
 _UPDATE = "mammoth.api.datasets.DatasetsAPI.update"
 _TRASH_LIST = "mammoth.api.trash.TrashAPI.list"
+_COLUMN_STATS = "mammoth.api.datasets.DatasetsAPI.column_stats"
 
 
 @pytest.fixture(autouse=True)
@@ -195,6 +196,78 @@ def test_find_without_a_project_never_reads_the_trash(
 
     assert "trashed_matches" not in result
     assert [symbol for symbol, _ in fake_service.call_log] == [_SEARCH]
+
+
+# -- column-stats -----------------------------------------------------------
+
+
+def _col(name: str, blank_count: int, blank_pct: float) -> dict[str, object]:
+    return {
+        "name": name,
+        "type": "TEXT",
+        "blank_count": blank_count,
+        "blank_pct": blank_pct,
+        "distinct": 3,
+    }
+
+
+def test_column_stats_requires_project(fake_service: FakeMammothService) -> None:
+    with pytest.raises(CliError) as excinfo:
+        dataset_cmd.dataset_column_stats(_inv("dataset.column-stats"))
+    assert excinfo.value.code == "project_required"
+    assert fake_service.call_log == []
+
+
+def test_column_stats_reads_the_project_in_one_call(fake_service: FakeMammothService) -> None:
+    fake_service.responses[_COLUMN_STATS] = {
+        "datasets": [
+            {"id": 7, "name": "Orders", "rows": 100, "columns": [_col("Region", 0, 0.0)]},
+            {
+                "id": 5,
+                "name": "Customers",
+                "rows": 40,
+                "columns": [_col("Email", 4, 10.0), _col("Phone", 20, 50.0), _col("Id", 0, 0.0)],
+            },
+        ]
+    }
+    result, meta = dataset_cmd.dataset_column_stats(_inv("dataset.column-stats", project=180))
+
+    assert fake_service.call_log == [(_COLUMN_STATS, {"project_id": 180})]
+    assert meta["project_id"] == 180
+    # The dataset with the worst column comes first; its blank columns worst first.
+    assert result["datasets"] == [
+        {
+            "id": 5,
+            "name": "Customers",
+            "rows": 40,
+            "columns": [_col("Phone", 20, 50.0), _col("Email", 4, 10.0)],
+            "complete_columns": 1,
+        },
+        {"id": 7, "name": "Orders", "rows": 100, "columns": [], "complete_columns": 1},
+    ]
+    assert result["dataset_count"] == 2
+    assert "omitted" not in result
+    note = result["note"]
+    assert "blank_pct" in note and "last load or pipeline run" in note
+
+
+def test_column_stats_cuts_a_wide_project_to_the_output_cap(
+    fake_service: FakeMammothService,
+) -> None:
+    columns = [_col(f"Column {i}", i + 1, float(i + 1)) for i in range(20)]
+    fake_service.responses[_COLUMN_STATS] = {
+        "datasets": [
+            {"id": i, "name": f"Source {i}", "rows": 10, "columns": columns} for i in range(17)
+        ]
+    }
+    result, _ = dataset_cmd.dataset_column_stats(_inv("dataset.column-stats", project=180))
+
+    first = result["datasets"][0]
+    assert first["columns"][0]["name"] == "Column 19"
+    assert len(first["columns"]) == 8 and first["more_columns_with_blanks"] == 12
+    assert result["dataset_count"] == 17
+    assert result["omitted"] == 17 - len(result["datasets"])
+    assert len(json.dumps(result)) < 4000
 
 
 # -- list -----------------------------------------------------------------
