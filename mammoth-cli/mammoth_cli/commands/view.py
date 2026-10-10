@@ -745,10 +745,10 @@ def view_parameter_context(invocation: Invocation) -> HandlerResult:
     return data, _meta(invocation, auth.workspace_id, project_id)
 
 
-def _dataview_metadata(
+def _dataview_info(
     service: Any, dataset_id: int, dataview_id: int, project_id: int | None
-) -> list[dict[str, Any]]:
-    """Return a dataview's column metadata records, or ``[]`` on any failure."""
+) -> dict[str, Any]:
+    """Return a dataview's info (renames applied), or ``{}`` on any failure."""
     try:
         info = service.call(
             _DATAVIEW_GET_SYMBOL,
@@ -757,12 +757,78 @@ def _dataview_metadata(
             project_id=project_id,
         )
     except Exception:  # noqa: BLE001 -- labels are a presentation nicety, never fatal
-        return []
+        return {}
     info = apply_column_renames(info)
-    metadata = info.get(_METADATA_KEY) if isinstance(info, dict) else None
+    return info if isinstance(info, dict) else {}
+
+
+def _metadata_of(info: dict[str, Any]) -> list[dict[str, Any]]:
+    """The column metadata records of a dataview's info."""
+    metadata = info.get(_METADATA_KEY)
     if not isinstance(metadata, list):
         return []
     return [column for column in metadata if isinstance(column, dict)]
+
+
+def _dataview_metadata(
+    service: Any, dataset_id: int, dataview_id: int, project_id: int | None
+) -> list[dict[str, Any]]:
+    """Return a dataview's column metadata records, or ``[]`` on any failure."""
+    return _metadata_of(_dataview_info(service, dataset_id, dataview_id, project_id))
+
+
+def _column_currencies(info: dict[str, Any]) -> dict[str, str]:
+    """Display name -> the currency symbol its column's format sets, for each column
+    that sets one (``display_properties.FORMAT_INFO[internal].currency_symbol``)."""
+    props = info.get("display_properties")
+    formats = props.get("FORMAT_INFO") if isinstance(props, dict) else None
+    if not isinstance(formats, dict):
+        return {}
+    currencies: dict[str, str] = {}
+    for column in _metadata_of(info):
+        fmt = formats.get(column.get(_INTERNAL_NAME_KEY))
+        symbol = fmt.get(_CURRENCY_SYMBOL_KEY) if isinstance(fmt, dict) else None
+        display = column.get(_DISPLAY_NAME_KEY)
+        if isinstance(symbol, str) and symbol and isinstance(display, str):
+            currencies[display] = symbol
+    return currencies
+
+
+#: A measure's currency comes only from its column's format; a count has none.
+_UNITLESS_FUNCTIONS = frozenset({"COUNT", "DISTINCT_COUNT"})
+_CURRENCY_SYMBOL_KEY = "currency_symbol"
+_NO_CURRENCY_NOTE = (
+    "No currency is set on these columns: give the amounts as plain numbers, without a "
+    "currency symbol or code, unless the user named one."
+)
+
+
+def _with_currency(data: Any, measures: list[dict[str, Any]], currencies: dict[str, str]) -> Any:
+    """``data`` with ``currency``: each money measure's symbol, from its column's format,
+    or null where the column sets none, plus ``currency_note`` when none is set at all.
+
+    The in-product agent put "$" on rupee store sales whose columns carry no currency
+    (gap eval 10-10, S03); a figure's unit has to come from the data, not a guess.
+    """
+    money = {
+        str(item["as_name"]): currencies.get(str(item["column"]))
+        for item in measures
+        if item.get("column") and str(item.get("function", "")).upper() not in _UNITLESS_FUNCTIONS
+    }
+    if not money or not isinstance(data, dict):
+        return data
+    marked = {**data, "currency": money}
+    if not any(money.values()):
+        marked["currency_note"] = _NO_CURRENCY_NOTE
+    return marked
+
+
+def _measures(document: dict[str, Any]) -> list[dict[str, Any]]:
+    """The ``{column, function, as_name}`` of each measure a read asks for, by display
+    name (``metric`` and ``aggregations``)."""
+    items = [document["metric"]] if isinstance(document.get("metric"), dict) else []
+    items += [a for a in document.get("aggregations") or [] if isinstance(a, dict)]
+    return [{**_resolved_aggregate_item(item, {}), "column": item.get("column")} for item in items]
 
 
 def _display_name_map(
@@ -1609,15 +1675,27 @@ def _column_profile(
     service: Any, dataset_id: int, dataview_id: int, project_id: int | None
 ) -> tuple[dict[str, str], dict[str, str]]:
     """One metadata read: internal-to-display names, and display name to type."""
+    mapping, types, _currencies = _column_profile_with_currency(
+        service, dataset_id, dataview_id, project_id
+    )
+    return mapping, types
+
+
+def _column_profile_with_currency(
+    service: Any, dataset_id: int, dataview_id: int, project_id: int | None
+) -> tuple[dict[str, str], dict[str, str], dict[str, str]]:
+    """One metadata read: internal-to-display names, display name to type, and display
+    name to the currency its format sets."""
+    info = _dataview_info(service, dataset_id, dataview_id, project_id)
     mapping: dict[str, str] = {}
     types: dict[str, str] = {}
-    for column in _dataview_metadata(service, dataset_id, dataview_id, project_id):
+    for column in _metadata_of(info):
         internal = column.get(_INTERNAL_NAME_KEY)
         display = column.get(_DISPLAY_NAME_KEY)
         if isinstance(internal, str) and isinstance(display, str):
             mapping[internal] = display
             types[display] = str(column.get("type") or "")
-    return mapping, types
+    return mapping, types, _column_currencies(info)
 
 
 def _relabel_and_check(
@@ -2042,7 +2120,7 @@ def view_data_aggregate(invocation: Invocation) -> HandlerResult:
     with open_service(invocation) as (service, auth):
         dataset_id = _resolve_dataset_id(service, invocation, view_id, document)
         meta = _read_meta(service, invocation, auth.workspace_id, dataset_id, view_id, project_id)
-        internal_to_display, column_types = _column_profile(
+        internal_to_display, column_types, currencies = _column_profile_with_currency(
             service, dataset_id, view_id, project_id
         )
         display_to_internal = {
@@ -2076,6 +2154,7 @@ def view_data_aggregate(invocation: Invocation) -> HandlerResult:
             reads, data, _aggregate_range_columns(document, column_types), coverage=True
         )
         data = read_queries.with_assumptions(reads, data)
+        data = _with_currency(data, _measures(document), currencies)
     return data, meta
 
 
@@ -2338,7 +2417,7 @@ def view_data_explore(invocation: Invocation) -> HandlerResult:
     with open_service(invocation) as (service, auth):
         dataset_id = _resolve_dataset_id(service, invocation, view_id, document, 2)
         meta = _read_meta(service, invocation, auth.workspace_id, dataset_id, view_id, project_id)
-        internal_to_display, column_types = _column_profile(
+        internal_to_display, column_types, currencies = _column_profile_with_currency(
             service, dataset_id, view_id, project_id
         )
         display_to_internal = {
@@ -2381,6 +2460,7 @@ def view_data_explore(invocation: Invocation) -> HandlerResult:
         data = read_queries.with_assumptions(reads, data)
         if not bucket_dates:
             data = read_queries.with_variant_hint(reads, data, column_arg)
+        data = _with_currency(data, _measures(document), currencies)
     return read_queries.round_result_rows(data), meta
 
 
