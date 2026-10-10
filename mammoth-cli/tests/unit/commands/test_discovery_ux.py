@@ -376,6 +376,9 @@ def test_workflow_canvas_says_it_proposes_structure_for_review_and_shows_the_ops
     for op in ("add_step", "update_step", "remove_step"):
         assert f"op: {op}" in preconditions
     assert "never as view commands run afterwards" in preconditions
+    # Joins, exports and sources Save builds, and lookups (mvc 10-10).
+    for shape in ("join_type?", "connection_id?", "op: add_source", "op: lookup"):
+        assert shape in preconditions
     assert "cannot add filters" not in preconditions
     assert "proposed_changes" in entry["agent_example"]
     # A whole shape in one call: a later change points at an earlier one's ref.
