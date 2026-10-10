@@ -34,6 +34,7 @@ _DELETE = "mammoth.api.datasets.DatasetsAPI.delete"
 _BULK_DELETE = "mammoth.api.datasets.DatasetsAPI.bulk_delete"
 _BULK_UPDATE = "mammoth.api.datasets.DatasetsAPI.bulk_update"
 _UPDATE = "mammoth.api.datasets.DatasetsAPI.update"
+_TRASH_LIST = "mammoth.api.trash.TrashAPI.list"
 
 
 @pytest.fixture(autouse=True)
@@ -127,6 +128,73 @@ def test_find_with_project_puts_its_own_matches_first_and_marks_them(
     ]
     assert [symbol for symbol, _ in fake_service.call_log] == [_SEARCH]
     assert meta["project_id"] == 42
+
+
+def _trashed(object_id: int, name: str) -> dict[str, object]:
+    return {
+        "id": object_id,
+        "type": "dataset",
+        "name": name,
+        "project_id": 42,
+        "trashed_at": "2026-10-02T14:37:18",
+        "trashed_by": {"id": 13, "name": "Gaurav"},
+        "days_until_purge": 22,
+    }
+
+
+def test_find_with_no_live_match_reads_the_trash_and_offers_restore(
+    fake_service: FakeMammothService,
+) -> None:
+    fake_service.projects = [{"id": 42, "name": "P42"}]
+    fake_service.responses[_SEARCH] = {"resources": [], "has_more": False}
+    fake_service.responses[_TRASH_LIST] = {"items": [_trashed(451, "Late delivery log")]}
+
+    result, _meta = dataset_cmd.dataset_find(
+        _inv("dataset.find", project=42, extra_args=["Late delivery log"])
+    )
+
+    assert result["matches"] == []
+    assert result["trashed_matches"] == [
+        {
+            "id": 451,
+            "name": "Late delivery log",
+            "trashed_at": "2026-10-02T14:37:18",
+            "trashed_by": "Gaurav",
+            "days_until_purge": 22,
+        }
+    ]
+    assert "in this project's trash" in result["note"]
+    assert "mammoth dataset restore 451" in result["note"]
+    trash_calls = [kw for symbol, kw in fake_service.call_log if symbol == _TRASH_LIST]
+    assert trash_calls == [
+        {"project_id": 42, "type": "dataset", "q": "late delivery log", "limit": 5}
+    ]
+
+
+def test_a_trashed_name_that_does_not_match_is_left_out(
+    fake_service: FakeMammothService,
+) -> None:
+    fake_service.projects = [{"id": 42, "name": "P42"}]
+    fake_service.responses[_SEARCH] = {"resources": [], "has_more": False}
+    fake_service.responses[_TRASH_LIST] = {"items": [_trashed(9, "Delivery log late")]}
+
+    result, _meta = dataset_cmd.dataset_find(
+        _inv("dataset.find", project=42, extra_args=["late delivery"])
+    )
+
+    assert "trashed_matches" not in result
+
+
+def test_find_without_a_project_never_reads_the_trash(
+    fake_service: FakeMammothService,
+) -> None:
+    fake_service.projects = [{"id": 1, "name": "P1"}]
+    fake_service.responses[_SEARCH] = {"resources": [], "has_more": False}
+
+    result, _meta = dataset_cmd.dataset_find(_inv("dataset.find", extra_args=["gone"]))
+
+    assert "trashed_matches" not in result
+    assert [symbol for symbol, _ in fake_service.call_log] == [_SEARCH]
 
 
 # -- list -----------------------------------------------------------------

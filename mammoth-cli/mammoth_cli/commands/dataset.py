@@ -427,6 +427,54 @@ def _find_scoped(
     return matches, searched, cut
 
 
+#: Trashed datasets read for one name when nothing live matched it.
+_TRASH_LOOKUP_LIMIT = 5
+
+
+def _trashed_matches(service: Any, needle: str, project_id: int) -> list[dict[str, Any]]:
+    """Datasets in the project's trash whose name has every token of ``needle`` in order.
+
+    A name that matches nothing live is most often a dataset someone deleted: the
+    in-product agent then told the user it did not exist and offered unrelated datasets
+    (gap eval 10-10, "Late delivery log").
+    """
+    data = service.call(
+        "mammoth.api.trash.TrashAPI.list",
+        project_id=project_id,
+        type="dataset",
+        q=needle,
+        limit=_TRASH_LOOKUP_LIMIT,
+    )
+    items = data.get("items", []) if isinstance(data, dict) else []
+    return [
+        {
+            "id": item.get("id"),
+            "name": item.get("name"),
+            "trashed_at": item.get("trashed_at"),
+            "trashed_by": (item.get("trashed_by") or {}).get("name"),
+            "days_until_purge": item.get("days_until_purge"),
+        }
+        for item in items
+        if isinstance(item, dict)
+        and item.get("type") == "dataset"
+        and item.get("trashed_at")
+        and isinstance(item.get("name"), str)
+        and _tokens_in_order(needle, item["name"])
+    ]
+
+
+def _trashed_note(trashed: list[dict[str, Any]], needle: str) -> str:
+    """Says the name is in the trash and how to bring it back."""
+    first = trashed[0]
+    who = f" by {first['trashed_by']}" if first.get("trashed_by") else ""
+    return (
+        f"No live dataset matches '{needle}', but '{first['name']}' (dataset "
+        f"{first['id']}) is in this project's trash, deleted {first['trashed_at']}{who}. "
+        "Tell the user it is in the trash and offer to restore it: "
+        f"mammoth dataset restore {first['id']}. Do not offer other datasets in its place."
+    )
+
+
 def dataset_find(invocation: Invocation) -> HandlerResult:
     """Search dataset names for a substring across every visible project.
 
@@ -440,7 +488,10 @@ def dataset_find(invocation: Invocation) -> HandlerResult:
     the named dataset is in, so it states where the name is instead of asking the
     user to switch. When the project holds an exact match, only the project's own
     matches are returned and ``elsewhere`` counts the rest; ``--input
-    '{"all_projects": true}'`` returns them all. Does not require an active project.
+    '{"all_projects": true}'`` returns them all. When nothing live matches and a
+    project is set, the project's trash is read for the name too: a hit comes back as
+    ``trashed_matches`` with a note to offer ``dataset restore``. Does not require an
+    active project.
     """
     name_substring = _require_string_positional(invocation, "name substring")
     needle = name_substring.lower()
@@ -459,6 +510,11 @@ def dataset_find(invocation: Invocation) -> HandlerResult:
         else:
             projects = visible
             matches, cut = _find_by_name(service, needle, visible)
+        trashed = (
+            _trashed_matches(service, needle, invocation.project)
+            if not matches and invocation.project is not None
+            else []
+        )
         meta = {
             "profile": invocation.profile,
             "workspace_id": auth.workspace_id,
@@ -469,6 +525,9 @@ def dataset_find(invocation: Invocation) -> HandlerResult:
         "projects_searched": len(projects),
     }
     notes = [_find_note(matches, is_exact, name_substring)]
+    if trashed:
+        result["trashed_matches"] = trashed
+        notes = [_trashed_note(trashed, name_substring)]
     if dropped:
         result["elsewhere"] = dropped
         notes.append(elsewhere_note(dropped))
