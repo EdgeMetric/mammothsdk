@@ -645,6 +645,99 @@ def dataset_column_stats(invocation: Invocation) -> HandlerResult:
     return result, _meta(invocation, auth.workspace_id, project_id)
 
 
+#: The server's limits on a dataset definition (``DefinitionSpec`` in mvc-service).
+_DEFINITION_LIMITS = {"term": 60, "definition": 300}
+
+
+def _definitions_result(data: Any, dataset_id: int) -> dict[str, Any]:
+    """``{dataset_id, definitions: [{id, term, definition}]}`` from the server's answer."""
+    body = data if isinstance(data, dict) else {}
+    definitions = [
+        {"id": d.get("id"), "term": d.get("term"), "definition": d.get("definition")}
+        for d in body.get("definitions") or []
+        if isinstance(d, dict)
+    ]
+    return {"dataset_id": body.get("dataset_id", dataset_id), "definitions": definitions}
+
+
+def _definition_text(document: dict[str, Any] | None, field: str) -> str:
+    """A required ``--input`` string, stripped, within the server's length limit."""
+    value = _require_field(document, field)
+    text = value.strip() if isinstance(value, str) else ""
+    limit = _DEFINITION_LIMITS[field]
+    if not text or len(text) > limit:
+        raise CliError(
+            code=CODE_INVALID_ARGUMENT,
+            message=f"The '{field}' input field must be text of 1 to {limit} characters.",
+            exit_status=EXIT_USAGE,
+        )
+    return text
+
+
+def dataset_definition_list(invocation: Invocation) -> HandlerResult:
+    """List what terms mean for one dataset, as its users saved them."""
+    project_id = require_project(invocation)
+    dataset_id = _require_int_positional(invocation, "dataset id")
+    with open_service(invocation) as (service, auth):
+        data = service.call(_symbol(invocation), dataset_id=dataset_id, project_id=project_id)
+    return _definitions_result(data, dataset_id), _meta(invocation, auth.workspace_id, project_id)
+
+
+def dataset_definition_add(invocation: Invocation) -> HandlerResult:
+    """Save what a term means for a dataset (``term`` and ``definition`` from ``--input``).
+
+    Shared by every chat on the dataset, so it always asks: ``--yes --confirm DATASET_ID``.
+    A definition for the same term (any case) is replaced.
+    """
+    project_id = require_project(invocation)
+    dataset_id = _require_int_positional(invocation, "dataset id")
+    document = invocation.load_input()
+    term = _definition_text(document, "term")
+    definition = _definition_text(document, "definition")
+    enforce_confirmation(
+        invocation,
+        policy=POLICY_CONFIRM_TARGET,
+        action=f"save what '{term}' means for everyone using dataset {dataset_id}",
+        target=str(dataset_id),
+    )
+    with open_service(invocation) as (service, auth):
+        data = service.call(
+            _symbol(invocation),
+            dataset_id=dataset_id,
+            term=term,
+            definition=definition,
+            project_id=project_id,
+        )
+    return _definitions_result(data, dataset_id), _meta(invocation, auth.workspace_id, project_id)
+
+
+def dataset_definition_remove(invocation: Invocation) -> HandlerResult:
+    """Remove one definition from a dataset by its id. Prompt or ``--yes`` required."""
+    project_id = require_project(invocation)
+    dataset_id = _require_int_positional(invocation, "dataset id")
+    if len(invocation.extra_args) < 2 or not str(invocation.extra_args[1]).strip():
+        raise CliError(
+            code=CODE_MISSING_ARGUMENT,
+            message="This command requires a definition id argument.",
+            exit_status=EXIT_USAGE,
+            hint="Pass the id from 'dataset definition list DATASET_ID' after the dataset id.",
+        )
+    definition_id = str(invocation.extra_args[1]).strip()
+    enforce_confirmation(
+        invocation,
+        policy=POLICY_PROMPT_OR_YES,
+        action=f"remove definition {definition_id} from dataset {dataset_id}",
+    )
+    with open_service(invocation) as (service, auth):
+        data = service.call(
+            _symbol(invocation),
+            dataset_id=dataset_id,
+            definition_id=definition_id,
+            project_id=project_id,
+        )
+    return _definitions_result(data, dataset_id), _meta(invocation, auth.workspace_id, project_id)
+
+
 def dataset_list(invocation: Invocation) -> HandlerResult:
     """List datasets in the active project, newest first, each with what tells them apart.
 

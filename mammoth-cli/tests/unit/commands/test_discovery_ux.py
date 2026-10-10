@@ -434,6 +434,44 @@ def test_reading_goals_do_not_route_to_period_analysis(query: str, command_id: s
     assert not {"view.data.drivers", "view.data.forecast"} & set(matches[:2])
 
 
+# Gap proposal P13: what a term means for a dataset is said once and saved on the
+# dataset, so the user's own phrasing must reach the definition commands.
+@pytest.mark.parametrize(
+    ("query", "command_id"),
+    [
+        ("save what late means", "dataset.definition.add"),
+        ("define a term for this dataset", "dataset.definition.add"),
+        ("remember that churned means", "dataset.definition.add"),
+        ("list definitions", "dataset.definition.list"),
+        ("remove a definition", "dataset.definition.remove"),
+    ],
+)
+def test_term_meaning_goals_find_the_definition_commands(query: str, command_id: str) -> None:
+    assert find_schemas(query)["matches"][0]["command_id"] == command_id
+
+
+# ...and the definition words must not pull neighbouring goals off their routes.
+@pytest.mark.parametrize(
+    ("query", "command_id"),
+    [
+        ("add a column", "view.transform.add-column"),
+        ("project memory", "project.memory.list"),
+        ("what do you remember", "project.memory.list"),
+        ("remember that I prefer EUR", "project.memory.add"),
+        ("forget a preference", "project.memory.remove"),
+        ("why did revenue drop", "view.data.drivers"),
+    ],
+)
+def test_definition_words_leave_other_goals_on_their_routes(query: str, command_id: str) -> None:
+    assert find_schemas(query)["matches"][0]["command_id"] == command_id
+
+
+def test_rename_dataset_still_offers_the_dataset_rename() -> None:
+    found = [m["command_id"] for m in find_schemas("rename dataset")["matches"]]
+    assert "dataset.rename" in found[:2]
+    assert not any(c.startswith("dataset.definition.") for c in found)
+
+
 # Proposing a workflow's shape must never pull in plain view work: "add a view"
 # is a build, not a proposal.
 @pytest.mark.parametrize("query", ["add a view", "rename view", "create view"])

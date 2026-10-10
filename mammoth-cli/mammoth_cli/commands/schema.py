@@ -61,6 +61,11 @@ _FIXED_EXAMPLES: dict[str, tuple[tuple[str, ...], dict[str, Any]]] = {
     ),
     "project.check": (("123", "456"), {}),
     "view.data.profile": (("123",), {"target": "Churn"}),
+    "dataset.definition.add": (
+        ("123",),
+        {"term": "late", "definition": "delivered more than 5 days after shipped_date"},
+    ),
+    "dataset.definition.remove": (("123", "a1b2c3d4"), {}),
     "view.data.drivers": (
         ("123",),
         {
@@ -445,6 +450,14 @@ _COMMAND_DISCOVERY_PURPOSES = {
         "forecast forecasts forecasting projection projections projected predict prediction "
         "future"
     ),
+    # What a term means for one dataset (gap proposal P13): said once, used by
+    # every chat on it. "remember that churned means" is a definition, not a
+    # preference (project.memory.add) or a board rule (dashboard.context.create).
+    "dataset.definition.add": (
+        "save remember define definition what a word means meaning counts as for this dataset"
+    ),
+    "dataset.definition.list": "definitions meanings glossary saved for a dataset",
+    "dataset.definition.remove": "forget a definition meaning glossary term",
     # Goals users state in their own words, one entry per command the agent's
     # system prompt used to spell out by hand.
     "dashboard.suggestion.list": "ideas suggest suggestions what to show put on a board chart",

@@ -470,6 +470,42 @@
       ]
     },
     {
+      "method": "GET",
+      "path": "/workspaces/{}/projects/{}/datasets/{}/definitions",
+      "state": "pending_server_release",
+      "pending_in": "origin/feat/agent-gap-fixes-5-8@91290dfc2d",
+      "sdk_symbols": [
+        "mammoth.api.datasets.DatasetsAPI.list_definitions"
+      ],
+      "commands": [
+        "dataset.definition.list"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/workspaces/{}/projects/{}/datasets/{}/definitions",
+      "state": "pending_server_release",
+      "pending_in": "origin/feat/agent-gap-fixes-5-8@91290dfc2d",
+      "sdk_symbols": [
+        "mammoth.api.datasets.DatasetsAPI.add_definition"
+      ],
+      "commands": [
+        "dataset.definition.add"
+      ]
+    },
+    {
+      "method": "DELETE",
+      "path": "/workspaces/{}/projects/{}/datasets/{}/definitions/{}",
+      "state": "pending_server_release",
+      "pending_in": "origin/feat/agent-gap-fixes-5-8@91290dfc2d",
+      "sdk_symbols": [
+        "mammoth.api.datasets.DatasetsAPI.remove_definition"
+      ],
+      "commands": [
+        "dataset.definition.remove"
+      ]
+    },
+    {
       "method": "PATCH",
       "path": "/workspaces/{}/projects/{}/datasets/{}/unstructured_rows",
       "state": "pending_server_release",

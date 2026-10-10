@@ -48,6 +48,14 @@ To check missing values or blanks across a project's datasets, run
 `dataset column-stats` once instead of profiling each view: it returns every
 dataset's columns with their blank count and share, type and distinct count,
 from stats stored at the last load or pipeline run.
+When the user states what a term means for a dataset ("late means delivered
+more than 5 days after shipped_date"), save it with
+`dataset definition add DATASET_ID --input '{"term": "...", "definition": "..."}'`,
+written in the dataset's real column names. A definition is shared by
+everyone's chats on that dataset, so the save needs
+`--yes --confirm DATASET_ID`, and a definition for an existing term replaces
+it. Do not save one for a one-off question. `dataset definition list` and
+`dataset definition remove DATASET_ID DEFINITION_ID` read and drop them.
 
 ```bash
 mammoth capability find "transform"

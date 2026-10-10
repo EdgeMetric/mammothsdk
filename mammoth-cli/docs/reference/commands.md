@@ -4,7 +4,7 @@ Generated from the reviewed command manifests for mammoth-cli 2.2.74.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
-Total commands: 695.
+Total commands: 698.
 
 ## activity
 
@@ -3128,6 +3128,40 @@ Total commands: 695.
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.datasets.DatasetsAPI.get_data`
 - Agent example: `mammoth dataset data 123`
+
+### `mammoth dataset definition add`
+
+**Arguments**
+
+- `DATASET_ID` (int, required) — ID of the dataset.
+
+- Mutation class: `benign_mutation`
+- Confirmation: `confirm_target`
+- Backing SDK: `mammoth.api.datasets.DatasetsAPI.add_definition`
+- Agent example: `mammoth dataset definition add 123 --input '{"term": "late", "definition": "delivered more than 5 days after shipped_date"}'`
+
+### `mammoth dataset definition list`
+
+**Arguments**
+
+- `DATASET_ID` (int, required) — ID of the dataset.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.datasets.DatasetsAPI.list_definitions`
+- Agent example: `mammoth dataset definition list 123`
+
+### `mammoth dataset definition remove`
+
+**Arguments**
+
+- `DATASET_ID` (int, required) — ID of the dataset.
+- `DEFINITION_ID` (str, required) — ID of the definition.
+
+- Mutation class: `benign_mutation`
+- Confirmation: `prompt_or_yes`
+- Backing SDK: `mammoth.api.datasets.DatasetsAPI.remove_definition`
+- Agent example: `mammoth dataset definition remove 123 a1b2c3d4`
 
 ### `mammoth dataset delete`
 

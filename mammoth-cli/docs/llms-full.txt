@@ -684,6 +684,12 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth dataset create-from-pdf 123 --input '{"file_name": "./sales.csv"}'
 - `mammoth dataset data` [read/none] -> mammoth.api.datasets.DatasetsAPI.get_data
   example: mammoth dataset data 123
+- `mammoth dataset definition add` [benign_mutation/confirm_target] -> mammoth.api.datasets.DatasetsAPI.add_definition
+  example: mammoth dataset definition add 123 --input '{"term": "late", "definition": "delivered more than 5 days after shipped_date"}'
+- `mammoth dataset definition list` [read/none] -> mammoth.api.datasets.DatasetsAPI.list_definitions
+  example: mammoth dataset definition list 123
+- `mammoth dataset definition remove` [benign_mutation/prompt_or_yes] -> mammoth.api.datasets.DatasetsAPI.remove_definition
+  example: mammoth dataset definition remove 123 a1b2c3d4
 - `mammoth dataset delete` [destructive/prompt_or_yes] -> mammoth.api.datasets.DatasetsAPI.delete
   example: mammoth dataset delete 123
 - `mammoth dataset file-settings get` [read/none] -> mammoth.api.datasets.DatasetsAPI.get_file_settings

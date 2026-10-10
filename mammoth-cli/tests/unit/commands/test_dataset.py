@@ -36,6 +36,9 @@ _BULK_UPDATE = "mammoth.api.datasets.DatasetsAPI.bulk_update"
 _UPDATE = "mammoth.api.datasets.DatasetsAPI.update"
 _TRASH_LIST = "mammoth.api.trash.TrashAPI.list"
 _COLUMN_STATS = "mammoth.api.datasets.DatasetsAPI.column_stats"
+_DEFINITION_LIST = "mammoth.api.datasets.DatasetsAPI.list_definitions"
+_DEFINITION_ADD = "mammoth.api.datasets.DatasetsAPI.add_definition"
+_DEFINITION_REMOVE = "mammoth.api.datasets.DatasetsAPI.remove_definition"
 
 
 @pytest.fixture(autouse=True)
@@ -268,6 +271,179 @@ def test_column_stats_cuts_a_wide_project_to_the_output_cap(
     assert result["dataset_count"] == 17
     assert result["omitted"] == 17 - len(result["datasets"])
     assert len(json.dumps(result)) < 4000
+
+
+# -- definitions ------------------------------------------------------------
+
+
+def _definition(def_id: str, term: str, definition: str) -> dict[str, object]:
+    return {
+        "id": def_id,
+        "term": term,
+        "definition": definition,
+        "created_by": 3,
+        "created_at": "2026-10-11T09:00:00+00:00",
+    }
+
+
+_LATE = _definition("a1b2c3d4", "late", "delivered more than 5 days after shipped_date")
+_CHURNED = _definition("e5f6a7b8", "churned", "no order in the last 90 days")
+
+
+def test_definition_list_reads_the_dataset(fake_service: FakeMammothService) -> None:
+    fake_service.responses[_DEFINITION_LIST] = {"dataset_id": 7, "definitions": [_LATE, _CHURNED]}
+
+    result, meta = dataset_cmd.dataset_definition_list(
+        _inv("dataset.definition.list", project=180, extra_args=["7"])
+    )
+
+    assert fake_service.call_log == [(_DEFINITION_LIST, {"dataset_id": 7, "project_id": 180})]
+    assert meta["project_id"] == 180
+    assert result == {
+        "dataset_id": 7,
+        "definitions": [
+            {
+                "id": "a1b2c3d4",
+                "term": "late",
+                "definition": "delivered more than 5 days after shipped_date",
+            },
+            {"id": "e5f6a7b8", "term": "churned", "definition": "no order in the last 90 days"},
+        ],
+    }
+
+
+def test_definition_add_saves_the_term_after_the_target_is_confirmed(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    fake_service.responses[_DEFINITION_ADD] = {"dataset_id": 7, "definitions": [_CHURNED, _LATE]}
+    doc = _write(
+        tmp_path,
+        {"term": " late ", "definition": "delivered more than 5 days after shipped_date"},
+    )
+
+    result, _ = dataset_cmd.dataset_definition_add(
+        _inv(
+            "dataset.definition.add",
+            project=180,
+            extra_args=["7"],
+            input_file=doc,
+            yes=True,
+            confirm="7",
+        )
+    )
+
+    assert fake_service.call_log == [
+        (
+            _DEFINITION_ADD,
+            {
+                "dataset_id": 7,
+                "term": "late",
+                "definition": "delivered more than 5 days after shipped_date",
+                "project_id": 180,
+            },
+        )
+    ]
+    assert [d["term"] for d in result["definitions"]] == ["churned", "late"]
+    assert set(result["definitions"][1]) == {"id", "term", "definition"}
+
+
+def test_definition_add_asks_before_saving_a_shared_definition(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    doc = _write(tmp_path, {"term": "late", "definition": "delivered after 5 days"})
+
+    with pytest.raises(CliError) as excinfo:
+        dataset_cmd.dataset_definition_add(
+            _inv("dataset.definition.add", project=180, extra_args=["7"], input_file=doc)
+        )
+
+    assert excinfo.value.code == "confirmation_required"
+    # The agent backend reads the target to pass back from this hint.
+    assert "--yes --confirm 7" in (excinfo.value.hint or "")
+    assert fake_service.call_log == []
+
+
+@pytest.mark.parametrize(
+    "document",
+    [
+        {"definition": "delivered after 5 days"},
+        {"term": "  ", "definition": "delivered after 5 days"},
+        {"term": "late", "definition": "x" * 301},
+        {"term": "t" * 61, "definition": "delivered after 5 days"},
+    ],
+)
+def test_definition_add_refuses_a_missing_or_oversized_field(
+    fake_service: FakeMammothService, tmp_path: Path, document: dict[str, object]
+) -> None:
+    with pytest.raises(CliError) as excinfo:
+        dataset_cmd.dataset_definition_add(
+            _inv(
+                "dataset.definition.add",
+                project=180,
+                extra_args=["7"],
+                input_file=_write(tmp_path, document),
+                yes=True,
+                confirm="7",
+            )
+        )
+    assert excinfo.value.code in {"missing_field", "invalid_argument"}
+    assert fake_service.call_log == []
+
+
+def test_definition_remove_deletes_by_id(fake_service: FakeMammothService) -> None:
+    fake_service.responses[_DEFINITION_REMOVE] = {"dataset_id": 7, "definitions": [_CHURNED]}
+
+    result, _ = dataset_cmd.dataset_definition_remove(
+        _inv("dataset.definition.remove", project=180, extra_args=["7", "a1b2c3d4"], yes=True)
+    )
+
+    assert fake_service.call_log == [
+        (_DEFINITION_REMOVE, {"dataset_id": 7, "definition_id": "a1b2c3d4", "project_id": 180})
+    ]
+    assert [d["id"] for d in result["definitions"]] == ["e5f6a7b8"]
+
+
+def test_definition_remove_needs_yes_without_a_terminal(fake_service: FakeMammothService) -> None:
+    with pytest.raises(CliError) as excinfo:
+        dataset_cmd.dataset_definition_remove(
+            _inv(
+                "dataset.definition.remove",
+                project=180,
+                extra_args=["7", "a1b2c3d4"],
+                no_input=True,
+            )
+        )
+    assert excinfo.value.code == "confirmation_required"
+    assert fake_service.call_log == []
+
+
+def test_definition_remove_passes_an_unknown_id_error_through(
+    fake_service: FakeMammothService,
+) -> None:
+    fake_service.responses[_DEFINITION_REMOVE] = CliError(
+        code="api_error",
+        message="Definition not found on this dataset.",
+        details={"backend_code": "4DSET077"},
+    )
+
+    with pytest.raises(CliError) as excinfo:
+        dataset_cmd.dataset_definition_remove(
+            _inv("dataset.definition.remove", project=180, extra_args=["7", "zzzz0000"], yes=True)
+        )
+
+    assert excinfo.value.details["backend_code"] == "4DSET077"
+    assert fake_service.call_log == [
+        (_DEFINITION_REMOVE, {"dataset_id": 7, "definition_id": "zzzz0000", "project_id": 180})
+    ]
+
+
+def test_definition_remove_requires_the_definition_id(fake_service: FakeMammothService) -> None:
+    with pytest.raises(CliError) as excinfo:
+        dataset_cmd.dataset_definition_remove(
+            _inv("dataset.definition.remove", project=180, extra_args=["7"], yes=True)
+        )
+    assert excinfo.value.code == "missing_argument"
+    assert fake_service.call_log == []
 
 
 # -- list -----------------------------------------------------------------

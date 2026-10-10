@@ -252,6 +252,10 @@ _LOCAL_CONTRACT_FIELDS: dict[str, tuple[FieldSpec, ...]] = {
     "doctor": (FieldSpec("wait", required=False, annotation=int, default=0),),
     "resolve": (FieldSpec("all_projects", required=False, annotation=bool, default=False),),
     "dataset.find": (FieldSpec("all_projects", required=False, annotation=bool, default=False),),
+    "dataset.definition.add": (
+        FieldSpec("term", required=True, annotation=str),
+        FieldSpec("definition", required=True, annotation=str),
+    ),
     "schema.get": (FieldSpec("full", required=False, annotation=bool, default=False),),
     "schema.list": (
         FieldSpec("family", required=False, annotation=str | None, default=None),
@@ -454,6 +458,9 @@ _LOCAL_COMMANDS = frozenset(
         "context.project.status",
         "context.project.use",
         "dataset.column-stats",
+        "dataset.definition.add",
+        "dataset.definition.list",
+        "dataset.definition.remove",
         "dataset.find",
         "dataset.search",
         "doctor",

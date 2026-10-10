@@ -92,6 +92,36 @@ Result: `DatasetDataResult`; mutation `read`, confirmation `none`, wait policy `
 
 Status on release: ran once on CLI 1.1.10 — Bounded retained-resource read with published CLI 1.1.10 and explicit timeout=30,poll_interval=1 returned 100 rows and five headers for dataset 28. No Full claim: retained ETL-owned resource and no option/error/lifecycle matrix beyond this read.
 
+### `dataset.definition.add`
+
+Run: `mammoth dataset definition add`. Exact input fields: `mammoth schema get dataset.definition.add`.
+
+Example: `mammoth dataset definition add 123 --input '{"term": "late", "definition": "delivered more than 5 days after shipped_date"}'`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+
+Result: `DatasetDefinitionAddResult`; mutation `benign_mutation`, confirmation `confirm_target`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `dataset.definition.list`
+
+Run: `mammoth dataset definition list`. Exact input fields: `mammoth schema get dataset.definition.list`.
+
+Example: `mammoth dataset definition list 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `DatasetDefinitionListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `dataset.definition.remove`
+
+Run: `mammoth dataset definition remove`. Exact input fields: `mammoth schema get dataset.definition.remove`.
+
+Example: `mammoth dataset definition remove 123 a1b2c3d4`. Illustrative only: append `--yes` after observing an owned target.
+
+Result: `DatasetDefinitionRemoveResult`; mutation `benign_mutation`, confirmation `prompt_or_yes`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
 ### `dataset.delete`
 
 Run: `mammoth dataset delete`. Exact input fields: `mammoth schema get dataset.delete`.
