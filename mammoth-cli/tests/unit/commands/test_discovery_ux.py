@@ -399,6 +399,22 @@ def test_why_did_it_change_finds_drivers_first(query: str) -> None:
     assert find_schemas(query)["matches"][0]["command_id"] == "view.data.drivers"
 
 
+# Gap eval 10-10 S20: "forecast store revenue for October 2026" divided a partial
+# September by its days; forecasting goals must reach the forecast command.
+@pytest.mark.parametrize(
+    "query",
+    [
+        "forecast",
+        "projection",
+        "estimate next month",
+        "what will revenue be in October",
+        "forecast store revenue for October 2026",
+    ],
+)
+def test_forecasting_goals_find_forecast_first(query: str) -> None:
+    assert find_schemas(query)["matches"][0]["command_id"] == "view.data.forecast"
+
+
 @pytest.mark.parametrize(
     ("query", "command_id"),
     [
@@ -407,13 +423,15 @@ def test_why_did_it_change_finds_drivers_first(query: str) -> None:
         ("profile this view", "view.data.profile"),
         ("sales by quarter", "view.data.explore"),
         ("why is my pipeline failing", "project.needs-attention"),
+        ("will this change my data", "view.transform.rename-columns"),
+        ("total revenue by month", "view.data.aggregate"),
     ],
 )
 def test_reading_goals_do_not_route_to_period_analysis(query: str, command_id: str) -> None:
     found = find_schemas(query)
     matches = [m["command_id"] for m in found["matches"] or found.get("suggestions", [])]
     assert command_id in matches[:2]
-    assert "view.data.drivers" not in matches
+    assert not {"view.data.drivers", "view.data.forecast"} & set(matches[:2])
 
 
 # Proposing a workflow's shape must never pull in plain view work: "add a view"

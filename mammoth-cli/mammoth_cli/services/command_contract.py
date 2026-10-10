@@ -296,13 +296,23 @@ _LOCAL_CONTRACT_FIELDS: dict[str, tuple[FieldSpec, ...]] = {
         FieldSpec("scope", required=False, annotation=str, default="user"),
         FieldSpec("force", required=False, annotation=bool, default=False),
     ),
-    # Period-analysis composites over view data aggregate (view_drivers.py); the
+    # Period-analysis composites over view data aggregate (view_drivers.py,
+    # view_forecast.py); the
     # condition takes aggregate's own condition shape.
     "view.data.drivers": (
         FieldSpec("measure", required=True, annotation=dict[str, Any]),
         FieldSpec("date_column", required=True, annotation=str),
         FieldSpec("compare", required=True, annotation=list[Any]),
         FieldSpec("by", required=True, annotation=list[str]),
+        FieldSpec("conditions", required=False, annotation=dict[str, Any] | None, default=None),
+    ),
+    "view.data.forecast": (
+        FieldSpec("measure", required=True, annotation=dict[str, Any]),
+        FieldSpec("date_column", required=True, annotation=str),
+        FieldSpec(
+            "unit", required=False, annotation=Literal["month", "quarter", "week"], default="month"
+        ),
+        FieldSpec("periods", required=False, annotation=int, default=1),
         FieldSpec("conditions", required=False, annotation=dict[str, Any] | None, default=None),
     ),
 }
@@ -467,6 +477,7 @@ _LOCAL_COMMANDS = frozenset(
         "upgrade",
         "version",
         "view.data.drivers",
+        "view.data.forecast",
     }
 )
 

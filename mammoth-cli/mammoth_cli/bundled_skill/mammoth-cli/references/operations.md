@@ -171,6 +171,12 @@ applied.
   or value per row, and per `by` column the groups that moved most with their
   signed `share_of_change`; `partial_period` names a period the data does not
   cover to its end.
+- "Forecast", "what will revenue be in October": `view data forecast
+  VIEW_ID` (a linear trend over the complete months, quarters or weeks, with a
+  95% range; seasonal only with two full cycles). A last period the data does
+  not cover to its end is left out and reported as `excluded_partial`, and it
+  is the first period forecast: for October with data ending mid-September,
+  pass `periods` 2. Never scale a partial period up by its days.
 - "Who changed X": `activity list` (a change list of time, user, action and a
   `path` naming the dataset and view). Filter with `resource_id` in the log's
   typed form, `dataview_<id>` or `datasource_<id>` (a bare number matches

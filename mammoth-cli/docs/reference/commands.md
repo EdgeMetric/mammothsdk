@@ -4,7 +4,7 @@ Generated from the reviewed command manifests for mammoth-cli 2.2.74.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
-Total commands: 694.
+Total commands: 695.
 
 ## activity
 
@@ -5391,7 +5391,7 @@ Total commands: 694.
 
 **Arguments**
 
-- `VIEW_ID` (int, required) — ID of the view whose figures rose or dropped.
+- `VIEW_ID` (int, required) — ID of the view whose figures rose or dropped: the change to explain.
 - `DATASET_ID` (int, optional) — ID of the dataset the view belongs to; resolved from the view when omitted.
 
 - Mutation class: `read`
@@ -5411,6 +5411,18 @@ Total commands: 694.
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dataviews.DataviewsAPI.explore`
 - Agent example: `mammoth view data explore 123 Status 123`
+
+### `mammoth view data forecast`
+
+**Arguments**
+
+- `VIEW_ID` (int, required) — ID of the view to forecast from, e.g. to estimate what revenue will be next month or in October.
+- `DATASET_ID` (int, optional) — ID of the dataset the view belongs to; resolved from the view when omitted.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth_cli.commands.view_forecast.view_data_forecast`
+- Agent example: `mammoth view data forecast 123 --input '{"measure": {"column": "revenue", "function": "SUM"}, "date_column": "sale_date", "unit": "month", "periods": 2}'`
 
 ### `mammoth view data get`
 

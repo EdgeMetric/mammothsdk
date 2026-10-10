@@ -812,16 +812,16 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
             help="ID of the second view to compare.",
         ),
     ),
-    # The period-analysis composites (``view data drivers``) run several
-    # aggregates over one view: VIEW_ID, then an optional DATASET_ID resolved from
-    # the view. Neither fills an SDK parameter; the handler reads both itself.
+    # The period-analysis composites (``view data drivers``, ``forecast``) run
+    # several aggregates over one view: VIEW_ID, then an optional DATASET_ID
+    # resolved from the view. Neither fills an SDK parameter; the handler reads both itself.
     **{
         command: (
             PositionalSpec(
                 name="view_id",
                 type=int,
                 required=True,
-                help="ID of the view whose figures rose or dropped.",
+                help="ID of the view whose figures rose or dropped: the change to explain.",
             ),
             PositionalSpec(
                 name="dataset_id",
@@ -831,6 +831,26 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
             ),
         )
         for command in ("view.data.drivers",)
+    },
+    **{
+        command: (
+            PositionalSpec(
+                name="view_id",
+                type=int,
+                required=True,
+                help=(
+                    "ID of the view to forecast from, e.g. to estimate what revenue will be "
+                    "next month or in October."
+                ),
+            ),
+            PositionalSpec(
+                name="dataset_id",
+                type=int,
+                required=False,
+                help="ID of the dataset the view belongs to; resolved from the view when omitted.",
+            ),
+        )
+        for command in ("view.data.forecast",)
     },
     # The view sub-resource commands take VIEW_ID first, then an OPTIONAL trailing
     # DATASET_ID resolved from the view -- mirroring the view data commands so the

@@ -272,6 +272,16 @@ Result: `ViewDataExploreResult`; mutation `read`, confirmation `none`, wait poli
 
 Status on release: untried; no live run recorded.
 
+### `view.data.forecast`
+
+Run: `mammoth view data forecast`. Exact input fields: `mammoth schema get view.data.forecast`.
+
+Example: `mammoth view data forecast 123 --input '{"measure": {"column": "revenue", "function": "SUM"}, "date_column": "sale_date", "unit": "month", "periods": 2}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `ViewDataForecastResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
 ### `view.data.get`
 
 Run: `mammoth view data get`. Exact input fields: `mammoth schema get view.data.get`.

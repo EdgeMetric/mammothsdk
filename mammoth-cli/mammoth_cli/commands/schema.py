@@ -70,6 +70,15 @@ _FIXED_EXAMPLES: dict[str, tuple[tuple[str, ...], dict[str, Any]]] = {
             "by": ["store", "category"],
         },
     ),
+    "view.data.forecast": (
+        ("123",),
+        {
+            "measure": {"column": "revenue", "function": "SUM"},
+            "date_column": "sale_date",
+            "unit": "month",
+            "periods": 2,
+        },
+    ),
     "view.variants.create": (
         ("123",),
         {"from_view": 456, "column": "Region", "values": ["East", "West"]},
@@ -426,7 +435,15 @@ _COMMAND_DISCOVERY_PURPOSES = {
     # "sales by quarter") need this text to match.
     "view.data.drivers": (
         "drop dropped fall fell fallen decline declined decreased increased rose grew drove "
-        "drivers driver change between contributors contributed"
+        "drivers driver between contributors contributed"
+    ),
+    # "Forecast store revenue for October 2026" made the agent divide a partial
+    # September by its days (gap eval 10-10 S20); forecast fits a trend to the
+    # complete periods and gives a range. Generic words (will, estimate, next,
+    # month) are left out: each would make other goals need this text to match.
+    "view.data.forecast": (
+        "forecast forecasts forecasting projection projections projected predict prediction "
+        "future"
     ),
     # Goals users state in their own words, one entry per command the agent's
     # system prompt used to spell out by hand.
