@@ -2105,7 +2105,7 @@ def view_data_aggregate(invocation: Invocation) -> HandlerResult:
     Never use ``view transform pivot`` just to read a number -- it mutates the
     view's pipeline.
     """
-    project_id = require_project(invocation)
+    require_project(invocation)
     view_id = _require_int_positional_at(invocation, 0, "view id")
     document = invocation.load_input() or {}
     has_pivot = "aggregations" in document or "group_by" in document
@@ -2118,44 +2118,84 @@ def view_data_aggregate(invocation: Invocation) -> HandlerResult:
             exit_status=EXIT_USAGE,
         )
     with open_service(invocation) as (service, auth):
-        dataset_id = _resolve_dataset_id(service, invocation, view_id, document)
-        meta = _read_meta(service, invocation, auth.workspace_id, dataset_id, view_id, project_id)
-        internal_to_display, column_types, currencies = _column_profile_with_currency(
-            service, dataset_id, view_id, project_id
+        source = open_aggregate_source(service, invocation, auth.workspace_id, view_id, document)
+        data = aggregate_on(source, _symbol(invocation), document)
+    return data, source.meta
+
+
+@dataclasses.dataclass
+class AggregateSource:
+    """One view's column names, types and currencies, read once for its aggregates."""
+
+    reads: ReadContext
+    currencies: dict[str, str]
+    meta: dict[str, Any]
+
+
+def open_aggregate_source(
+    service: Any,
+    invocation: Invocation,
+    workspace_id: int,
+    view_id: int,
+    document: dict[str, Any],
+) -> AggregateSource:
+    """Resolve the view's dataset and read its metadata, as ``view data aggregate`` does.
+
+    ``view data drivers`` and ``view data forecast`` run several aggregates over one
+    view through :func:`aggregate_on`; this reads what they share once.
+    """
+    project_id = require_project(invocation)
+    dataset_id = _resolve_dataset_id(service, invocation, view_id, document)
+    meta = _read_meta(service, invocation, workspace_id, dataset_id, view_id, project_id)
+    internal_to_display, column_types, currencies = _column_profile_with_currency(
+        service, dataset_id, view_id, project_id
+    )
+    display_to_internal = {display: internal for internal, display in internal_to_display.items()}
+    reads = ReadContext(
+        service,
+        dataset_id,
+        view_id,
+        project_id,
+        display_to_internal,
+        column_types,
+        document.get("sequence"),
+        document.get("text_date_format"),
+    )
+    return AggregateSource(reads, currencies, meta)
+
+
+def aggregate_on(
+    source: AggregateSource, symbol: str, document: dict[str, Any], coverage: bool = True
+) -> Any:
+    """Run one ``view data aggregate`` document against an opened view, unrounded.
+
+    ``coverage`` False skips the date-coverage read on a non-empty result (a caller
+    that already has it from an earlier aggregate over the same view).
+    """
+    reads = source.reads
+    column_types = reads.column_types
+    display_to_internal = reads.display_to_internal
+    levels: dict[int, str] = {}
+    if "aggregations" in document or "group_by" in document:
+        levels = read_queries.text_date_group_levels(document.get("group_by"), column_types)
+        fields, as_map = _build_pivot_fields(
+            _plain_text_date_groups(document, levels, column_types), display_to_internal
         )
-        display_to_internal = {
-            display: internal for internal, display in internal_to_display.items()
-        }
-        reads = ReadContext(
-            service,
-            dataset_id,
-            view_id,
-            project_id,
-            display_to_internal,
-            column_types,
-            document.get("sequence"),
-            document.get("text_date_format"),
-        )
-        levels: dict[int, str] = {}
-        if has_pivot:
-            levels = read_queries.text_date_group_levels(document.get("group_by"), column_types)
-            fields, as_map = _build_pivot_fields(
-                _plain_text_date_groups(document, levels, column_types), display_to_internal
-            )
-        else:
-            _reject_order_on_metric(document)
-            _require_numeric_metric(document, column_types, view_id)
-            fields, as_map = _build_metric_fields(document, display_to_internal)
-        order = read_queries.parse_order(document, as_map)
-        data = _run_aggregate(reads, _symbol(invocation), document, fields, order, levels)
-        data = _relabel_columns(service, dataset_id, view_id, project_id, data, as_map)
-        data = read_queries.mark_unordered(document, data)
-        data = read_queries.with_observed_range(
-            reads, data, _aggregate_range_columns(document, column_types), coverage=True
-        )
-        data = read_queries.with_assumptions(reads, data)
-        data = _with_currency(data, _measures(document), currencies)
-    return data, meta
+    else:
+        _reject_order_on_metric(document)
+        _require_numeric_metric(document, column_types, reads.view_id)
+        fields, as_map = _build_metric_fields(document, display_to_internal)
+    order = read_queries.parse_order(document, as_map)
+    data = _run_aggregate(reads, symbol, document, fields, order, levels)
+    data = _relabel_columns(
+        reads.service, reads.dataset_id, reads.view_id, reads.project_id, data, as_map
+    )
+    data = read_queries.mark_unordered(document, data)
+    data = read_queries.with_observed_range(
+        reads, data, _aggregate_range_columns(document, column_types), coverage=coverage
+    )
+    data = read_queries.with_assumptions(reads, data)
+    return _with_currency(data, _measures(document), source.currencies)
 
 
 def view_data_aggregate_rounded(invocation: Invocation) -> HandlerResult:

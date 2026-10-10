@@ -812,6 +812,26 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
             help="ID of the second view to compare.",
         ),
     ),
+    # The period-analysis composites (``view data drivers``) run several
+    # aggregates over one view: VIEW_ID, then an optional DATASET_ID resolved from
+    # the view. Neither fills an SDK parameter; the handler reads both itself.
+    **{
+        command: (
+            PositionalSpec(
+                name="view_id",
+                type=int,
+                required=True,
+                help="ID of the view whose figures rose or dropped.",
+            ),
+            PositionalSpec(
+                name="dataset_id",
+                type=int,
+                required=False,
+                help="ID of the dataset the view belongs to; resolved from the view when omitted.",
+            ),
+        )
+        for command in ("view.data.drivers",)
+    },
     # The view sub-resource commands take VIEW_ID first, then an OPTIONAL trailing
     # DATASET_ID resolved from the view -- mirroring the view data commands so the
     # whole view.* surface is uniformly view-first. The SDK signatures lead with a

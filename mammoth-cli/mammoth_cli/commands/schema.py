@@ -61,6 +61,15 @@ _FIXED_EXAMPLES: dict[str, tuple[tuple[str, ...], dict[str, Any]]] = {
     ),
     "project.check": (("123", "456"), {}),
     "view.data.profile": (("123",), {"target": "Churn"}),
+    "view.data.drivers": (
+        ("123",),
+        {
+            "measure": {"column": "revenue", "function": "SUM"},
+            "date_column": "sale_date",
+            "compare": ["2026-07", "2026-08"],
+            "by": ["store", "category"],
+        },
+    ),
     "view.variants.create": (
         ("123",),
         {"from_view": 456, "column": "Region", "values": ["East", "West"]},
@@ -408,6 +417,16 @@ _COMMAND_DISCOVERY_PURPOSES = {
         "missing values blanks blank empty nulls null incomplete completeness data quality "
         "across every all dataset datasets source sources tables project which column "
         "columns worst most check"
+    ),
+    # "Why did store revenue drop from July to August?" took the agent 18
+    # hand-built aggregates and 95 s (gap eval 10-10 S03); one drivers call
+    # answers it with the totals, volume vs value and the top contributors.
+    # Generic words (why, explain, rise, increase, month, quarter, period) are
+    # left out: each would make other goals ("why is my pipeline failing",
+    # "sales by quarter") need this text to match.
+    "view.data.drivers": (
+        "drop dropped fall fell fallen decline declined decreased increased rose grew drove "
+        "drivers driver change between contributors contributed"
     ),
     # Goals users state in their own words, one entry per command the agent's
     # system prompt used to spell out by hand.

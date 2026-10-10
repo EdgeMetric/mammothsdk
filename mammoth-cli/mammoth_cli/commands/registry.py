@@ -806,6 +806,7 @@ _TARGETS: dict[str, str] = {
     "view.data.compare": "mammoth_cli.commands.view:view_data_compare",
     "view.data.explore": "mammoth_cli.commands.view:view_data_explore",
     "view.data.profile": "mammoth_cli.commands.view_profile:view_data_profile",
+    "view.data.drivers": "mammoth_cli.commands.view_drivers:view_data_drivers",
     "view.exportable-config.get": "mammoth_cli.commands.view:view_exportable_config_get",
     "view.exportable-config.apply": "mammoth_cli.commands.view:view_exportable_config_apply",
     "view.conditional-format.create": "mammoth_cli.commands.view:view_conditional_format_create",

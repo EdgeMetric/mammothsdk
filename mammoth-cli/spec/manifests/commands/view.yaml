@@ -1460,6 +1460,67 @@ commands:
     A column with more than 5000 distinct values gets counts and min/max but no value list. Example:
     --input ''{"target": "CHURN", "limit": 20}''.'
   reviewed_by: primary
+- command_id: view.data.drivers
+  command_path: view data drivers
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - name: view_id
+    type: int
+    required: true
+    metavar: VIEW_ID
+    falls_back_to_field: null
+    help: ID of the view whose figures rose or dropped.
+  - name: dataset_id
+    type: int
+    required: false
+    metavar: DATASET_ID
+    falls_back_to_field: null
+    help: ID of the dataset the view belongs to; resolved from the view when omitted.
+  options: []
+  sdk_symbol: mammoth_cli.commands.view_drivers.view_data_drivers
+  sdk_conversion: Runs view data aggregate's own helpers (mammoth.api.dataviews.DataviewsAPI.aggregate)
+    once per 'by' column, grouped by that column and a date bucket over both periods, then splits
+    the buckets into the two periods client-side; the accepted document fields are the
+    view.data.drivers entry of _LOCAL_CONTRACT_FIELDS in command_contract.py.
+  request_model: ViewDataDriversRequest
+  result_model: ViewDataDriversResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: null
+  live_exemption_reason: Read-only composite over view.data.aggregate's live-covered SDK call; the
+    period split and ranking are local and unit-tested.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view data drivers VIEW_ID --help
+  agent_example: 'mammoth view data drivers 123 --input ''{"measure": {"column": "revenue", "function":
+    "SUM"}, "date_column": "sale_date", "compare": ["2026-07", "2026-08"], "by": ["store", "category"]}'''
+  unit_tests:
+  - UT-VIEW-DATA-DRIVERS
+  contract_tests:
+  - CT-VIEW-DATA-DRIVERS-HUMAN
+  - CT-VIEW-DATA-DRIVERS-JSON
+  - CT-VIEW-DATA-DRIVERS-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Read-only. Use this, not a series of view data aggregate reads, for "why did
+    X drop/rise", "what drove the change between July and August", "explain the decline": one
+    call returns the total for each period, the change and its percentage, whether it came from
+    volume (the row count) or value (value per row), and per ''by'' column the groups that moved
+    most with their signed share_of_change. --input: "measure" {"column", "function": SUM or COUNT};
+    "date_column"; "compare" [A, B], each ''YYYY-MM'', ''YYYY-Qn'', ''YYYY'' or {"from": "YYYY-MM-DD",
+    "to": "YYYY-MM-DD"} (the change is read from A to B; any other form is refused); "by" 1 to 3
+    columns; optional "conditions" in view data aggregate''s condition shape. partial_period names a
+    period the data does not cover to its end (or from its start): say it is incomplete, never
+    compare it as a whole period. Answer with the total change first, then the top contributors
+    with their share, then volume vs value. Amounts carry the currency in ''currency''; when it is
+    null give plain numbers and never invent a currency.'
+  reviewed_by: primary
 - command_id: view.delete
   command_path: view delete
   disposition: command

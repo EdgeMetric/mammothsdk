@@ -513,6 +513,7 @@
     "resolve",
     "skill.agents-md.install",
     "skill.show",
+    "view.data.drivers",
     "view.explore-panel.get",
     "view.pipeline.items-all",
     "workspace.user.get"

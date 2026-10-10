@@ -1199,6 +1199,8 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth view data aggregate 123 --input '{"group_by": ["Channel"], "aggregations": [{"column": "Spend", "function": "SUM", "as_name": "Total Spend"}]}'
 - `mammoth view data compare` [read/none] -> mammoth.api.dataviews.DataviewsAPI.aggregate
   example: mammoth view data compare 111 222 --input '{"group_by": ["Campaign"], "aggregations": [{"column": "Spend", "function": "SUM", "as_name": "Spend"}]}'
+- `mammoth view data drivers` [read/none] -> mammoth_cli.commands.view_drivers.view_data_drivers
+  example: mammoth view data drivers 123 --input '{"measure": {"column": "revenue", "function": "SUM"}, "date_column": "sale_date", "compare": ["2026-07", "2026-08"], "by": ["store", "category"]}'
 - `mammoth view data explore` [read/none] -> mammoth.api.dataviews.DataviewsAPI.explore
   example: mammoth view data explore 123 Status 123
 - `mammoth view data get` [read/none] -> mammoth.api.dataviews.DataviewsAPI.get_data

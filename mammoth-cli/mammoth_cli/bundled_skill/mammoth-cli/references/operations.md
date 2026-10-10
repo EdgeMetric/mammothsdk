@@ -165,6 +165,12 @@ applied.
   put a card on a dashboard, say it to `dashboard chat edit`. Figures
   from `explore` and `view data aggregate` are rounded for display (2
   decimals; 4 below 1); `view data compare` keeps full precision.
+- "Why did revenue drop from July to August", "what drove the change": one
+  `view data drivers VIEW_ID` call, not a series of aggregates. It returns
+  each period's total and row count, the change, whether it came from volume
+  or value per row, and per `by` column the groups that moved most with their
+  signed `share_of_change`; `partial_period` names a period the data does not
+  cover to its end.
 - "Who changed X": `activity list` (a change list of time, user, action and a
   `path` naming the dataset and view). Filter with `resource_id` in the log's
   typed form, `dataview_<id>` or `datasource_<id>` (a bare number matches

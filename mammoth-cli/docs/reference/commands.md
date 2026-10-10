@@ -4,7 +4,7 @@ Generated from the reviewed command manifests for mammoth-cli 2.2.74.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
-Total commands: 693.
+Total commands: 694.
 
 ## activity
 
@@ -5386,6 +5386,18 @@ Total commands: 693.
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dataviews.DataviewsAPI.aggregate`
 - Agent example: `mammoth view data compare 111 222 --input '{"group_by": ["Campaign"], "aggregations": [{"column": "Spend", "function": "SUM", "as_name": "Spend"}]}'`
+
+### `mammoth view data drivers`
+
+**Arguments**
+
+- `VIEW_ID` (int, required) — ID of the view whose figures rose or dropped.
+- `DATASET_ID` (int, optional) — ID of the dataset the view belongs to; resolved from the view when omitted.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth_cli.commands.view_drivers.view_data_drivers`
+- Agent example: `mammoth view data drivers 123 --input '{"measure": {"column": "revenue", "function": "SUM"}, "date_column": "sale_date", "compare": ["2026-07", "2026-08"], "by": ["store", "category"]}'`
 
 ### `mammoth view data explore`
 

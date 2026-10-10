@@ -252,6 +252,16 @@ Result: `ViewDataCompareResult`; mutation `read`, confirmation `none`, wait poli
 
 Status on release: untried; no live run recorded.
 
+### `view.data.drivers`
+
+Run: `mammoth view data drivers`. Exact input fields: `mammoth schema get view.data.drivers`.
+
+Example: `mammoth view data drivers 123 --input '{"measure": {"column": "revenue", "function": "SUM"}, "date_column": "sale_date", "compare": ["2026-07", "2026-08"], "by": ["store", "category"]}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `ViewDataDriversResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
 ### `view.data.explore`
 
 Run: `mammoth view data explore`. Exact input fields: `mammoth schema get view.data.explore`.

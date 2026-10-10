@@ -384,6 +384,38 @@ def test_one_view_goals_still_reach_their_own_command(query: str, command_id: st
     assert find_schemas(query)["matches"][0]["command_id"] == command_id
 
 
+# Gap eval 10-10 S03: "why did store revenue drop from July to August?" took 18
+# hand-built aggregates; the one-call drivers read must come first.
+@pytest.mark.parametrize(
+    "query",
+    [
+        "why did revenue drop",
+        "why did store revenue drop from July to August",
+        "what drove the change between July and August",
+        "explain the decline",
+    ],
+)
+def test_why_did_it_change_finds_drivers_first(query: str) -> None:
+    assert find_schemas(query)["matches"][0]["command_id"] == "view.data.drivers"
+
+
+@pytest.mark.parametrize(
+    ("query", "command_id"),
+    [
+        ("aggregate by channel", "view.data.aggregate"),
+        ("group and sum totals by month", "view.data.aggregate"),
+        ("profile this view", "view.data.profile"),
+        ("sales by quarter", "view.data.explore"),
+        ("why is my pipeline failing", "project.needs-attention"),
+    ],
+)
+def test_reading_goals_do_not_route_to_period_analysis(query: str, command_id: str) -> None:
+    found = find_schemas(query)
+    matches = [m["command_id"] for m in found["matches"] or found.get("suggestions", [])]
+    assert command_id in matches[:2]
+    assert "view.data.drivers" not in matches
+
+
 # Proposing a workflow's shape must never pull in plain view work: "add a view"
 # is a build, not a proposal.
 @pytest.mark.parametrize("query", ["add a view", "rename view", "create view"])

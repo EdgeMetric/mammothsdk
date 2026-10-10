@@ -63,6 +63,7 @@ S1_ROUTES = (
     "skill.update",
     "upgrade",
     "version",
+    "view.data.drivers",
 )
 
 EXPECTED_FIELDS: dict[str, tuple[str, ...]] = {
@@ -82,6 +83,7 @@ EXPECTED_FIELDS: dict[str, tuple[str, ...]] = {
     "skill.agents-md.install": ("path",),
     "skill.uninstall": ("agents", "scope"),
     "skill.update": ("agents", "scope", "force"),
+    "view.data.drivers": ("measure", "date_column", "compare", "by", "conditions"),
 }
 
 
