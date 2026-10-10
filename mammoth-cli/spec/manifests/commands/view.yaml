@@ -910,7 +910,13 @@ commands:
   draft_test: null
   undo_test: null
   known_restrictions: 'body needs a placement: pinned_to_end true or a task_sequence (4GENR007 "Either
-    task_sequence or pinned_to_end must be set" otherwise).'
+    task_sequence or pinned_to_end must be set" otherwise). An alert the user asks for ("tell me when
+    late deliveries go above 10") is a data check: pinned_to_end true, fail_behavior "flag_and_continue"
+    (the default "halt" stops the pipeline), and one row_count check with condition "lte" and value
+    10 whose config condition_sql filters the rows to count, e.g. "\"Status\" = ''Late''" (column display
+    names). It is re-tested after every pipeline run and source refresh, and its owner gets an in-app
+    notice when it starts failing (once, not on every failing run). Say it fires when the count goes
+    above the value, not below.'
   reviewed_by: primary
 - command_id: view.data-check.delete
   command_path: view data-check delete
