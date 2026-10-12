@@ -49,6 +49,9 @@ class Invocation:
     command_id: str
     output: str = "table"
     profile: str | None = None
+    # True when ``profile`` is the saved selection filled in for a command that
+    # named none, rather than a ``--profile`` / ``MAMMOTH_PROFILE`` the user gave.
+    profile_is_default: bool = field(default=False, repr=False, compare=False)
     project: int | None = None
     session: str | None = None
     timeout: float | None = None

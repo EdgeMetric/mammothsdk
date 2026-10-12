@@ -265,7 +265,7 @@ commands:
   readback:
     command: project.get
     ids:
-      project_id: result.id
+      project_id: result.project_id
     kind: object
 - command_id: project.data-check.list
   command_path: project data-check list
