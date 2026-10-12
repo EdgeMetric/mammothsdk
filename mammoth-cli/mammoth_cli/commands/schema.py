@@ -73,6 +73,29 @@ _FIXED_EXAMPLES: dict[str, tuple[tuple[str, ...], dict[str, Any]]] = {
     ),
     "project.check": (("123", "456"), {}),
     "view.data.profile": (("123",), {"target": "Churn"}),
+    "dataset.definition.add": (
+        ("123",),
+        {"term": "late", "definition": "delivered more than 5 days after shipped_date"},
+    ),
+    "dataset.definition.remove": (("123", "a1b2c3d4"), {}),
+    "view.data.drivers": (
+        ("123",),
+        {
+            "measure": {"column": "revenue", "function": "SUM"},
+            "date_column": "sale_date",
+            "compare": ["2026-07", "2026-08"],
+            "by": ["store", "category"],
+        },
+    ),
+    "view.data.forecast": (
+        ("123",),
+        {
+            "measure": {"column": "revenue", "function": "SUM"},
+            "date_column": "sale_date",
+            "unit": "month",
+            "periods": 2,
+        },
+    ),
     "view.variants.create": (
         ("123",),
         {"from_view": 456, "column": "Region", "values": ["East", "West"]},
@@ -87,6 +110,19 @@ _FIXED_EXAMPLES: dict[str, tuple[tuple[str, ...], dict[str, Any]]] = {
                         "dataset_id": 415,
                         "name": "Urgent tickets",
                         "ref": "urgent",
+                    },
+                    {
+                        "op": "add_step",
+                        "view_ref": "urgent",
+                        "transform": "filter",
+                        "params": {
+                            "condition": {
+                                "column": "Priority",
+                                "operator": "EQ",
+                                "value": "Urgent",
+                            }
+                        },
+                        "label": "Keep urgent tickets",
                     },
                     {
                         "op": "send_to_new_dataset",
@@ -411,6 +447,40 @@ _COMMAND_DISCOVERY_PURPOSES = {
         "check look at overview summary statistics churn drivers drive driving feature "
         "importance correlation which columns predict affect influence the target outcome"
     ),
+    # "Check every source for missing values" spans datasets: the agent ran
+    # view.data.profile once per view (17 calls, 125 s) where one stored-stats
+    # read answers it (gap eval 10-10 S16).
+    "dataset.column-stats": (
+        "missing values blanks blank empty nulls null incomplete completeness data quality "
+        "across every all dataset datasets source sources tables project which column "
+        "columns worst most check"
+    ),
+    # "Why did store revenue drop from July to August?" took the agent 18
+    # hand-built aggregates and 95 s (gap eval 10-10 S03); one drivers call
+    # answers it with the totals, volume vs value and the top contributors.
+    # Generic words (why, explain, rise, increase, month, quarter, period) are
+    # left out: each would make other goals ("why is my pipeline failing",
+    # "sales by quarter") need this text to match.
+    "view.data.drivers": (
+        "drop dropped fall fell fallen decline declined decreased increased rose grew drove "
+        "drivers driver between contributors contributed"
+    ),
+    # "Forecast store revenue for October 2026" made the agent divide a partial
+    # September by its days (gap eval 10-10 S20); forecast fits a trend to the
+    # complete periods and gives a range. Generic words (will, estimate, next,
+    # month) are left out: each would make other goals need this text to match.
+    "view.data.forecast": (
+        "forecast forecasts forecasting projection projections projected predict prediction "
+        "future"
+    ),
+    # What a term means for one dataset (gap proposal P13): said once, used by
+    # every chat on it. "remember that churned means" is a definition, not a
+    # preference (project.memory.add) or a board rule (dashboard.context.create).
+    "dataset.definition.add": (
+        "save remember define definition what a word means meaning counts as for this dataset"
+    ),
+    "dataset.definition.list": "definitions meanings glossary saved for a dataset",
+    "dataset.definition.remove": "forget a definition meaning glossary term",
     # Goals users state in their own words, one entry per command the agent's
     # system prompt used to spell out by hand.
     "dashboard.suggestion.list": "ideas suggest suggestions what to show put on a board chart",

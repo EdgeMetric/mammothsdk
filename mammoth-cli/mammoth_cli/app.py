@@ -203,6 +203,7 @@ _SUBGROUP_DESCRIPTIONS = {
     "dashboard video": "Export a dashboard as a video.",
     "data-app user": "List and remove the users of a data app.",
     "dataset broken-rows": "List and resolve rows that failed to load.",
+    "dataset definition": "List, save and remove what terms mean for a dataset.",
     "dataset file-settings": "Read, update and undo a dataset's file settings.",
     "dataset interpretation": "Preview and confirm how a file is interpreted.",
     "parameter group": "Create, list, update, reorder and delete parameter groups.",

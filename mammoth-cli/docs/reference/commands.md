@@ -4,7 +4,7 @@ Generated from the reviewed command manifests for mammoth-cli 2.2.75.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
-Total commands: 741.
+Total commands: 746.
 
 ## activity
 
@@ -3458,6 +3458,13 @@ Total commands: 741.
 - Backing SDK: `mammoth.api.datasets.DatasetsAPI.bulk_update`
 - Agent example: `mammoth dataset bulk-update --input '{"patch_data": {"sample_key": "Status"}}'`
 
+### `mammoth dataset column-stats`
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth_cli.commands.dataset.column_stats`
+- Agent example: `mammoth dataset column-stats`
+
 ### `mammoth dataset create`
 
 - Mutation class: `benign_mutation`
@@ -3486,6 +3493,40 @@ Total commands: 741.
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.datasets.DatasetsAPI.get_data`
 - Agent example: `mammoth dataset data 123`
+
+### `mammoth dataset definition add`
+
+**Arguments**
+
+- `DATASET_ID` (int, required) — ID of the dataset.
+
+- Mutation class: `benign_mutation`
+- Confirmation: `confirm_target`
+- Backing SDK: `mammoth.api.datasets.DatasetsAPI.add_definition`
+- Agent example: `mammoth dataset definition add 123 --input '{"term": "late", "definition": "delivered more than 5 days after shipped_date"}'`
+
+### `mammoth dataset definition list`
+
+**Arguments**
+
+- `DATASET_ID` (int, required) — ID of the dataset.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.datasets.DatasetsAPI.list_definitions`
+- Agent example: `mammoth dataset definition list 123`
+
+### `mammoth dataset definition remove`
+
+**Arguments**
+
+- `DATASET_ID` (int, required) — ID of the dataset.
+- `DEFINITION_ID` (str, required) — ID of the definition.
+
+- Mutation class: `benign_mutation`
+- Confirmation: `prompt_or_yes`
+- Backing SDK: `mammoth.api.datasets.DatasetsAPI.remove_definition`
+- Agent example: `mammoth dataset definition remove 123 a1b2c3d4`
 
 ### `mammoth dataset delete`
 
@@ -3603,18 +3644,6 @@ Total commands: 741.
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.datasets.DatasetsAPI.restore`
 - Agent example: `mammoth dataset restore 123`
-
-### `mammoth dataset schema-diff`
-
-**Arguments**
-
-- `DESTINATION_ID` (int, required) — Dataset the rows would be appended into (the DATASET_ID of batch create).
-- `SOURCE_ID` (int, required) — Dataset whose rows would be appended (the SOURCE_ID of batch create).
-
-- Mutation class: `read`
-- Confirmation: `none`
-- Backing SDK: `mammoth_cli.commands.dataset.schema_diff`
-- Agent example: `mammoth dataset schema-diff 10 11`
 
 ### `mammoth dataset search`
 
@@ -5779,6 +5808,18 @@ Total commands: 741.
 - Backing SDK: `mammoth.api.dataviews.DataviewsAPI.aggregate`
 - Agent example: `mammoth view data compare 111 222 --input '{"group_by": ["Campaign"], "aggregations": [{"column": "Spend", "function": "SUM", "as_name": "Spend"}]}'`
 
+### `mammoth view data drivers`
+
+**Arguments**
+
+- `VIEW_ID` (int, required) — ID of the view whose figures rose or dropped: the change to explain.
+- `DATASET_ID` (int, optional) — ID of the dataset the view belongs to; resolved from the view when omitted.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth_cli.commands.view_drivers.view_data_drivers`
+- Agent example: `mammoth view data drivers 123 --input '{"measure": {"column": "revenue", "function": "SUM"}, "date_column": "sale_date", "compare": ["2026-07", "2026-08"], "by": ["store", "category"]}'`
+
 ### `mammoth view data explore`
 
 **Arguments**
@@ -5791,6 +5832,18 @@ Total commands: 741.
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dataviews.DataviewsAPI.explore`
 - Agent example: `mammoth view data explore 123 Status 123`
+
+### `mammoth view data forecast`
+
+**Arguments**
+
+- `VIEW_ID` (int, required) — ID of the view to forecast from, e.g. to estimate what revenue will be next month or in October.
+- `DATASET_ID` (int, optional) — ID of the dataset the view belongs to; resolved from the view when omitted.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth_cli.commands.view_forecast.view_data_forecast`
+- Agent example: `mammoth view data forecast 123 --input '{"measure": {"column": "revenue", "function": "SUM"}, "date_column": "sale_date", "unit": "month", "periods": 2}'`
 
 ### `mammoth view data get`
 
@@ -7291,7 +7344,7 @@ Total commands: 741.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.workflows.WorkflowsAPI.canvas`
-- Agent example: `mammoth workflow canvas 12 --input '{"canvas_state": {"proposed_changes": [{"op": "add_view", "dataset_id": 415, "name": "Urgent tickets", "ref": "urgent"}, {"op": "send_to_new_dataset", "dataset_id": 415, "view_ref": "urgent", "name": "Urgent tickets by team"}]}}'`
+- Agent example: `mammoth workflow canvas 12 --input '{"canvas_state": {"proposed_changes": [{"op": "add_view", "dataset_id": 415, "name": "Urgent tickets", "ref": "urgent"}, {"op": "add_step", "view_ref": "urgent", "transform": "filter", "params": {"condition": {"column": "Priority", "operator": "EQ", "value": "Urgent"}}, "label": "Keep urgent tickets"}, {"op": "send_to_new_dataset", "dataset_id": 415, "view_ref": "urgent", "name": "Urgent tickets by team"}]}}'`
 
 ### `mammoth workflow cleanup`
 

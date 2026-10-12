@@ -2950,3 +2950,83 @@ def test_data_get_offset_page_reports_the_views_row_count_as_paging_total(
         _inv("view.data.get", project=180, extra_args=["7", "9"], input_file=doc)
     )
     assert data["paging"]["total"] == 1316
+
+
+# -- currency: a figure's unit comes from its column's format, never a guess ----------
+
+
+def _money_view(currency: str | None) -> dict[str, object]:
+    formats = {"column_2": {"currency_symbol": currency}} if currency is not None else {}
+    return {
+        "metadata": [
+            {"internal_name": "column_1", "display_name": "store", "type": "TEXT"},
+            {"internal_name": "column_2", "display_name": "revenue", "type": "NUMERIC"},
+        ],
+        "display_properties": {"FORMAT_INFO": formats},
+    }
+
+
+def test_aggregate_with_no_currency_on_the_column_says_plain_numbers(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    fake_service.responses[_DATAVIEW_GET] = _money_view(None)
+    fake_service.responses[_DATA_AGGREGATE] = {"data": [{"agg_0": 301984.11}]}
+    doc = _doc(tmp_path, {"aggregations": [{"column": "revenue", "function": "SUM"}]})
+
+    data = view_cmd.view_data_aggregate(
+        _inv("view.data.aggregate", project=180, extra_args=["7", "9"], input_file=doc)
+    )[0]
+
+    assert data["currency"] == {"SUM_revenue": None}
+    assert "plain numbers" in data["currency_note"]
+    assert [symbol for symbol, _ in _without_meta(fake_service.call_log)] == [
+        _DATAVIEW_GET,
+        _DATA_AGGREGATE,
+    ]
+
+
+def test_aggregate_names_the_currency_its_column_sets(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    fake_service.responses[_DATAVIEW_GET] = _money_view("₹")
+    fake_service.responses[_DATA_AGGREGATE] = {"data": [{"agg_0": 34895.31}]}
+    doc = _doc(tmp_path, {"metric": {"column": "revenue", "function": "SUM", "as_name": "Revenue"}})
+
+    data = view_cmd.view_data_aggregate(
+        _inv("view.data.aggregate", project=180, extra_args=["7", "9"], input_file=doc)
+    )[0]
+
+    assert data["currency"] == {"Revenue": "₹"}
+    assert "currency_note" not in data
+
+
+def test_a_count_carries_no_currency(fake_service: FakeMammothService, tmp_path: Path) -> None:
+    fake_service.responses[_DATAVIEW_GET] = _money_view("₹")
+    fake_service.responses[_DATA_AGGREGATE] = {"data": [{"group_0": "Pune", "agg_0": 3}]}
+    doc = _doc(
+        tmp_path,
+        {"group_by": ["store"], "aggregations": [{"column": "revenue", "function": "COUNT"}]},
+    )
+
+    data = view_cmd.view_data_aggregate(
+        _inv("view.data.aggregate", project=180, extra_args=["7", "9"], input_file=doc)
+    )[0]
+
+    assert "currency" not in data
+
+
+def test_explore_metric_says_plain_numbers_when_no_currency_is_set(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    fake_service.responses[_DATAVIEW_GET] = _money_view(None)
+    fake_service.responses[_DATA_EXPLORE] = {
+        "data": [{"group_0": "Pune", "agg_0": 2, "agg_1": 1756.0, "percentage": 100.0}]
+    }
+    doc = _doc(tmp_path, {"metric": {"column": "revenue", "function": "SUM"}})
+
+    data = view_cmd.view_data_explore(
+        _inv("view.data.explore", project=180, extra_args=["7", "store", "9"], input_file=doc)
+    )[0]
+
+    assert data["currency"] == {"SUM_revenue": None}
+    assert "plain numbers" in data["currency_note"]

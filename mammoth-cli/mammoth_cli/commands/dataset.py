@@ -431,6 +431,54 @@ def _find_scoped(
     return matches, searched, cut
 
 
+#: Trashed datasets read for one name when nothing live matched it.
+_TRASH_LOOKUP_LIMIT = 5
+
+
+def _trashed_matches(service: Any, needle: str, project_id: int) -> list[dict[str, Any]]:
+    """Datasets in the project's trash whose name has every token of ``needle`` in order.
+
+    A name that matches nothing live is most often a dataset someone deleted: the
+    in-product agent then told the user it did not exist and offered unrelated datasets
+    (gap eval 10-10, "Late delivery log").
+    """
+    data = service.call(
+        "mammoth.api.trash.TrashAPI.list",
+        project_id=project_id,
+        type="dataset",
+        q=needle,
+        limit=_TRASH_LOOKUP_LIMIT,
+    )
+    items = data.get("items", []) if isinstance(data, dict) else []
+    return [
+        {
+            "id": item.get("id"),
+            "name": item.get("name"),
+            "trashed_at": item.get("trashed_at"),
+            "trashed_by": (item.get("trashed_by") or {}).get("name"),
+            "days_until_purge": item.get("days_until_purge"),
+        }
+        for item in items
+        if isinstance(item, dict)
+        and item.get("type") == "dataset"
+        and item.get("trashed_at")
+        and isinstance(item.get("name"), str)
+        and _tokens_in_order(needle, item["name"])
+    ]
+
+
+def _trashed_note(trashed: list[dict[str, Any]], needle: str) -> str:
+    """Says the name is in the trash and how to bring it back."""
+    first = trashed[0]
+    who = f" by {first['trashed_by']}" if first.get("trashed_by") else ""
+    return (
+        f"No live dataset matches '{needle}', but '{first['name']}' (dataset "
+        f"{first['id']}) is in this project's trash, deleted {first['trashed_at']}{who}. "
+        "Tell the user it is in the trash and offer to restore it: "
+        f"mammoth dataset restore {first['id']}. Do not offer other datasets in its place."
+    )
+
+
 def dataset_find(invocation: Invocation) -> HandlerResult:
     """Search dataset names for a substring across every visible project.
 
@@ -444,7 +492,10 @@ def dataset_find(invocation: Invocation) -> HandlerResult:
     the named dataset is in, so it states where the name is instead of asking the
     user to switch. When the project holds an exact match, only the project's own
     matches are returned and ``elsewhere`` counts the rest; ``--input
-    '{"all_projects": true}'`` returns them all. Does not require an active project.
+    '{"all_projects": true}'`` returns them all. When nothing live matches and a
+    project is set, the project's trash is read for the name too: a hit comes back as
+    ``trashed_matches`` with a note to offer ``dataset restore``. Does not require an
+    active project.
     """
     name_substring = _require_string_positional(invocation, "name substring")
     needle = name_substring.lower()
@@ -463,6 +514,11 @@ def dataset_find(invocation: Invocation) -> HandlerResult:
         else:
             projects = visible
             matches, cut = _find_by_name(service, needle, visible)
+        trashed = (
+            _trashed_matches(service, needle, invocation.project)
+            if not matches and invocation.project is not None
+            else []
+        )
         meta = {
             "profile": invocation.profile,
             "workspace_id": auth.workspace_id,
@@ -473,6 +529,9 @@ def dataset_find(invocation: Invocation) -> HandlerResult:
         "projects_searched": len(projects),
     }
     notes = [_find_note(matches, is_exact, name_substring)]
+    if trashed:
+        result["trashed_matches"] = trashed
+        notes = [_trashed_note(trashed, name_substring)]
     if dropped:
         result["elsewhere"] = dropped
         notes.append(elsewhere_note(dropped))
@@ -524,6 +583,163 @@ def dataset_search(invocation: Invocation) -> HandlerResult:
     if note := ambiguity_note(len(hits), term):
         result["note"] = note
     return result, _meta(invocation, auth.workspace_id, project_id)
+
+
+#: Columns with blanks kept per dataset in a ``dataset column-stats`` row, worst first.
+_COLUMN_STATS_PER_DATASET = 8
+
+_COLUMN_STATS_NOTE = (
+    "Blank counts per column for every dataset in the project, read from stats stored at "
+    "the last load or pipeline run (not live). Datasets are ordered worst first and each "
+    "lists only its columns that have blanks, highest blank_pct (a percentage, 0-100) "
+    "first; complete_columns "
+    "counts the columns with none. To answer, name the dataset and column with the "
+    "highest blank_pct (or blank_count), then the next few, and say the figures are as "
+    "of the last load or run. Profile one view only to look closer at a column named here."
+)
+
+
+def _blank_pct(column: dict[str, Any]) -> float:
+    value = column.get("blank_pct")
+    return float(value) if isinstance(value, (int, float)) else 0.0
+
+
+def _column_stats_row(dataset: dict[str, Any]) -> dict[str, Any]:
+    """One ``dataset column-stats`` row: the dataset and its columns with blanks, worst first."""
+    columns = [c for c in dataset.get("columns") or [] if isinstance(c, dict)]
+    blank = sorted(
+        (c for c in columns if (c.get("blank_count") or 0) > 0),
+        key=lambda c: (-_blank_pct(c), -(c.get("blank_count") or 0)),
+    )
+    row: dict[str, Any] = {
+        "id": dataset.get("id"),
+        "name": dataset.get("name"),
+        "rows": dataset.get("rows"),
+        "columns": blank[:_COLUMN_STATS_PER_DATASET],
+        "complete_columns": len(columns) - len(blank),
+    }
+    if len(blank) > _COLUMN_STATS_PER_DATASET:
+        row["more_columns_with_blanks"] = len(blank) - _COLUMN_STATS_PER_DATASET
+    return row
+
+
+def _worst_blank_pct(row: dict[str, Any]) -> float:
+    return max((_blank_pct(c) for c in row["columns"]), default=0.0)
+
+
+def dataset_column_stats(invocation: Invocation) -> HandlerResult:
+    """Every column's blanks, type and distinct count for each dataset in the project.
+
+    Read-only: one server call over stats the platform already stored, so a question
+    about missing values across the project needs no per-view profile. Datasets are
+    ordered by their worst column's blank share (newest first among ties), each listing
+    its columns with blanks, worst first, and cut to fit the agent tool output cap.
+    """
+    project_id = require_project(invocation)
+    with open_service(invocation) as (service, auth):
+        data = service.call("mammoth.api.datasets.DatasetsAPI.column_stats", project_id=project_id)
+    datasets = data.get("datasets", []) if isinstance(data, dict) else []
+    rows = [_column_stats_row(d) for d in datasets if isinstance(d, dict)]
+    rows.sort(key=_worst_blank_pct, reverse=True)
+    kept, omitted = fit_budget(rows, overhead=200 + len(_COLUMN_STATS_NOTE))
+    result: dict[str, Any] = {"datasets": kept, "dataset_count": len(rows)}
+    if omitted:
+        result["omitted"] = omitted
+    result["note"] = _COLUMN_STATS_NOTE
+    return result, _meta(invocation, auth.workspace_id, project_id)
+
+
+#: The server's limits on a dataset definition (``DefinitionSpec`` in mvc-service).
+_DEFINITION_LIMITS = {"term": 60, "definition": 300}
+
+
+def _definitions_result(data: Any, dataset_id: int) -> dict[str, Any]:
+    """``{dataset_id, definitions: [{id, term, definition}]}`` from the server's answer."""
+    body = data if isinstance(data, dict) else {}
+    definitions = [
+        {"id": d.get("id"), "term": d.get("term"), "definition": d.get("definition")}
+        for d in body.get("definitions") or []
+        if isinstance(d, dict)
+    ]
+    return {"dataset_id": body.get("dataset_id", dataset_id), "definitions": definitions}
+
+
+def _definition_text(document: dict[str, Any] | None, field: str) -> str:
+    """A required ``--input`` string, stripped, within the server's length limit."""
+    value = _require_field(document, field)
+    text = value.strip() if isinstance(value, str) else ""
+    limit = _DEFINITION_LIMITS[field]
+    if not text or len(text) > limit:
+        raise CliError(
+            code=CODE_INVALID_ARGUMENT,
+            message=f"The '{field}' input field must be text of 1 to {limit} characters.",
+            exit_status=EXIT_USAGE,
+        )
+    return text
+
+
+def dataset_definition_list(invocation: Invocation) -> HandlerResult:
+    """List what terms mean for one dataset, as its users saved them."""
+    project_id = require_project(invocation)
+    dataset_id = _require_int_positional(invocation, "dataset id")
+    with open_service(invocation) as (service, auth):
+        data = service.call(_symbol(invocation), dataset_id=dataset_id, project_id=project_id)
+    return _definitions_result(data, dataset_id), _meta(invocation, auth.workspace_id, project_id)
+
+
+def dataset_definition_add(invocation: Invocation) -> HandlerResult:
+    """Save what a term means for a dataset (``term`` and ``definition`` from ``--input``).
+
+    Shared by every chat on the dataset, so it always asks: ``--yes --confirm DATASET_ID``.
+    A definition for the same term (any case) is replaced.
+    """
+    project_id = require_project(invocation)
+    dataset_id = _require_int_positional(invocation, "dataset id")
+    document = invocation.load_input()
+    term = _definition_text(document, "term")
+    definition = _definition_text(document, "definition")
+    enforce_confirmation(
+        invocation,
+        policy=POLICY_CONFIRM_TARGET,
+        action=f"save what '{term}' means for everyone using dataset {dataset_id}",
+        target=str(dataset_id),
+    )
+    with open_service(invocation) as (service, auth):
+        data = service.call(
+            _symbol(invocation),
+            dataset_id=dataset_id,
+            term=term,
+            definition=definition,
+            project_id=project_id,
+        )
+    return _definitions_result(data, dataset_id), _meta(invocation, auth.workspace_id, project_id)
+
+
+def dataset_definition_remove(invocation: Invocation) -> HandlerResult:
+    """Remove one definition from a dataset by its id. Prompt or ``--yes`` required."""
+    project_id = require_project(invocation)
+    dataset_id = _require_int_positional(invocation, "dataset id")
+    if len(invocation.extra_args) < 2 or not str(invocation.extra_args[1]).strip():
+        raise CliError(
+            code=CODE_MISSING_ARGUMENT,
+            message="This command requires a definition id argument.",
+            exit_status=EXIT_USAGE,
+            hint="Pass the id from 'dataset definition list DATASET_ID' after the dataset id.",
+        )
+    definition_id = str(invocation.extra_args[1]).strip()
+    enforce_confirmation(
+        invocation,
+        policy=POLICY_PROMPT_OR_YES,
+        action=f"remove definition {definition_id} from dataset {dataset_id}",
+    )
+    with open_service(invocation) as (service, auth):
+        data = service.call(
+            _symbol(invocation),
+            dataset_id=dataset_id,
+            definition_id=definition_id,
+            project_id=project_id,
+        )
+    return _definitions_result(data, dataset_id), _meta(invocation, auth.workspace_id, project_id)
 
 
 def dataset_list(invocation: Invocation) -> HandlerResult:

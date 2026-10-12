@@ -439,6 +439,41 @@ class TestDatasetsAPI:
         await client.datasets.get(dataset_id=500)
         assert client._request_json.call_args.kwargs.get("params") is None
 
+    async def test_column_stats_reads_the_project_in_one_call(self, client: MammothClient):
+        await client.datasets.column_stats(project_id=42)
+        client._request_json.assert_awaited_once()
+        assert_called_with_method_and_endpoint(
+            client._request_json, "GET", "/workspaces/1/projects/42/datasets/column-stats"
+        )
+
+    async def test_list_definitions_reads_the_dataset(self, client: MammothClient):
+        await client.datasets.list_definitions(dataset_id=7, project_id=42)
+        assert_called_with_method_and_endpoint(
+            client._request_json, "GET", "/workspaces/1/projects/42/datasets/7/definitions"
+        )
+
+    async def test_add_definition_posts_the_term_and_its_meaning(self, client: MammothClient):
+        await client.datasets.add_definition(
+            dataset_id=7, term="late", definition="delivered > 5 days after shipped", project_id=42
+        )
+        assert_called_with_method_and_endpoint(
+            client._request_json, "POST", "/workspaces/1/projects/42/datasets/7/definitions"
+        )
+        assert_json_body(
+            client._request_json,
+            {"term": "late", "definition": "delivered > 5 days after shipped"},
+        )
+
+    async def test_remove_definition_deletes_by_id(self, client: MammothClient):
+        await client.datasets.remove_definition(
+            dataset_id=7, definition_id="a1b2c3d4", project_id=42
+        )
+        assert_called_with_method_and_endpoint(
+            client._request_json,
+            "DELETE",
+            "/workspaces/1/projects/42/datasets/7/definitions/a1b2c3d4",
+        )
+
     async def test_create(self, client: MammothClient):
         await client.datasets.create(dataset_spec={"name": "ds"}, ds_creation_type="file")
         assert_called_with_method_and_endpoint(client._request_json, "POST", "/datasets")

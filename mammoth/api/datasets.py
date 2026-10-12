@@ -140,6 +140,115 @@ class DatasetsAPI:
             "GET", f"/workspaces/{ws}/projects/{proj}/datasets/search", params={"q": term}
         )
 
+    async def column_stats(
+        self,
+        workspace_id: int | None = None,
+        project_id: int | None = None,
+    ) -> dict[str, Any]:
+        """Read every column's blank count, type and distinct count for the project's datasets.
+
+        One call for the whole project. The figures come from the stats the platform stored
+        at the last load or pipeline run, so nothing is profiled or run.
+
+        Args:
+            workspace_id: ID of the workspace (uses client default if not provided).
+            project_id: ID of the project (uses client default if not provided).
+
+        Returns:
+            Dict with ``datasets``, newest first: ``{id, name, rows, columns}``, each column
+            ``{name, type, blank_count, blank_pct, distinct}`` (``blank_pct`` is 0-100). ``rows`` and ``distinct`` are
+            ``None`` when the platform has not stored them.
+        """
+        ws = workspace_id or self._ws()
+        proj = self._proj(project_id)
+        return await self._client._request_json(
+            "GET", f"/workspaces/{ws}/projects/{proj}/datasets/column-stats"
+        )
+
+    async def list_definitions(
+        self,
+        dataset_id: int,
+        workspace_id: int | None = None,
+        project_id: int | None = None,
+    ) -> dict[str, Any]:
+        """List what terms mean for a dataset, as saved by its users.
+
+        A definition is shared by every chat on the dataset; the in-app agent reads
+        the project's definitions in each turn.
+
+        Args:
+            dataset_id: ID of the dataset.
+            workspace_id: ID of the workspace (uses client default if not provided).
+            project_id: ID of the project (uses client default if not provided).
+
+        Returns:
+            Dict with ``dataset_id`` and ``definitions``: ``{id, term, definition,
+            created_by, created_at}`` each, oldest first.
+        """
+        ws = workspace_id or self._ws()
+        proj = self._proj(project_id)
+        return await self._client._request_json(
+            "GET", f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/definitions"
+        )
+
+    async def add_definition(
+        self,
+        dataset_id: int,
+        term: str,
+        definition: str,
+        workspace_id: int | None = None,
+        project_id: int | None = None,
+    ) -> dict[str, Any]:
+        """Save what *term* means for a dataset; a definition of the same term is replaced.
+
+        The term matches case-insensitively. A dataset holds at most 20 definitions;
+        over that the server answers ``4DSET076``.
+
+        Args:
+            dataset_id: ID of the dataset.
+            term: The term, 1-60 characters (for example ``late``).
+            definition: What it means for this data, 1-300 characters.
+            workspace_id: ID of the workspace (uses client default if not provided).
+            project_id: ID of the project (uses client default if not provided).
+
+        Returns:
+            Dict with ``dataset_id`` and the dataset's ``definitions`` after the save.
+        """
+        ws = workspace_id or self._ws()
+        proj = self._proj(project_id)
+        return await self._client._request_json(
+            "POST",
+            f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/definitions",
+            json={"term": term, "definition": definition},
+        )
+
+    async def remove_definition(
+        self,
+        dataset_id: int,
+        definition_id: str,
+        workspace_id: int | None = None,
+        project_id: int | None = None,
+    ) -> dict[str, Any]:
+        """Remove one definition from a dataset by its id.
+
+        An id the dataset does not hold is answered with ``4DSET077``.
+
+        Args:
+            dataset_id: ID of the dataset.
+            definition_id: The definition's ``id`` from :meth:`list_definitions`.
+            workspace_id: ID of the workspace (uses client default if not provided).
+            project_id: ID of the project (uses client default if not provided).
+
+        Returns:
+            Dict with ``dataset_id`` and the dataset's remaining ``definitions``.
+        """
+        ws = workspace_id or self._ws()
+        proj = self._proj(project_id)
+        return await self._client._request_json(
+            "DELETE",
+            f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/definitions/{definition_id}",
+        )
+
     async def get(
         self,
         dataset_id: int,
