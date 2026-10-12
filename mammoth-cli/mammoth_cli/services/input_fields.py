@@ -20,6 +20,13 @@ _HANDLER_OWNED_FIELDS: dict[str, frozenset[str]] = {
             "run.stop",
             "run.extend",
             "run.units.set",
+            "run.units.list",
+            "run.retry",
+            "run.instance.list",
+            "run.instance.messages",
+            "run.instance.transcript",
+            "message.set-request-kind",
+            "plan.edit-proposal",
             "turn.cancel",
         )
     },
@@ -73,6 +80,13 @@ _HANDLER_OWNED_FIELDS: dict[str, frozenset[str]] = {
     "view.update": frozenset({"patch_data"}),
     # The endpoint names the target page as ``page``; the handler maps it onto these two.
     "dashboard.figure.add": frozenset({"page_id", "page_new_title"}),
+    # The handler builds the panel from ``edits`` and the figure from ``card``.
+    "view.explore-panel.edit": frozenset({"panel"}),
+    "view.explore-panel.add-to-dashboard": frozenset(
+        {"dashboard_id", "dataview_id", "figure", "banded", "page_id", "page_new_title"}
+    ),
+    # The handler builds the engine spec from the card's rows; the SDK's ``spec`` is not an input.
+    "view.explore-panel.export-image": frozenset({"spec"}),
 }
 
 # CLI-only commands whose complete request is carried by positionals/context.
@@ -114,6 +128,8 @@ _EXAMPLE_INPUT_HINTS: dict[str, dict[str, Any]] = {
             "agg": "sum",
         },
     },
+    "collection.update": {"name": "Q3 pack"},
+    "dashboard.own-data.start": {"dataview_id": 1},
     "view.transform.sort": {"order_by": [["Revenue", "DESC"]]},
     # The backend requires integer resource ids ("resource_ids must be
     # comma-separated integers"); the SDK annotation is a plain list[str].

@@ -67,6 +67,38 @@ def test_login_from_input_no_input_succeeds(
     assert _TOKEN not in result.stdout
 
 
+@pytest.fixture
+def real_config_dir(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
+    """Point the real profile store at a tmp dir through XDG_CONFIG_HOME, no patching."""
+    config_home = tmp_path / "xdg-config"
+    monkeypatch.setenv("XDG_CONFIG_HOME", str(config_home))
+    assert profiles.config_dir().is_relative_to(config_home)
+    return config_home
+
+
+def test_login_prefix_without_flag_is_the_stored_profile_prefix(real_config_dir: Path) -> None:
+    profiles.save_profile(
+        profiles.ProfileRecord(name="koyal", workspace_id=4, server_prefix="koyal")
+    )
+    assert auth_cmd._login_server_prefix("koyal", None) == "koyal"
+    stored = profiles.get_profile("koyal")
+    assert stored is not None and stored.server_prefix == "koyal"
+
+
+def test_login_prefix_flag_wins_over_the_stored_profile_prefix(real_config_dir: Path) -> None:
+    profiles.save_profile(
+        profiles.ProfileRecord(name="koyal", workspace_id=4, server_prefix="koyal")
+    )
+    assert auth_cmd._login_server_prefix("koyal", "release") == "release"
+    stored = profiles.get_profile("koyal")
+    assert stored is not None and stored.server_prefix == "koyal"
+
+
+def test_login_prefix_without_profile_or_flag_is_the_default(real_config_dir: Path) -> None:
+    assert profiles.get_profile("fresh") is None
+    assert auth_cmd._login_server_prefix("fresh", None) is None
+
+
 def test_login_noninteractive_without_source_requires_input(
     isolated_cli_config: Path, fake_service: FakeMammothService
 ) -> None:

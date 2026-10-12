@@ -5,6 +5,7 @@ from mammoth.exceptions import MammothError
 
 from mammoth_mcp_server.config import MCP_RESOURCE_URL
 from mammoth_mcp_server.consts import TokenClaims
+from mammoth_mcp_server.read_only import READ_SCOPE
 from mammoth_mcp_server.tokens import token_verifier
 
 from .helpers import GOOD_TOKEN, WORKSPACE, a_fake_api, knows_the_token, run
@@ -34,6 +35,25 @@ class TestWhoATokenStandsFor:
             TokenClaims.WORKSPACE_ID: WORKSPACE,
             TokenClaims.PROJECT_ID: 31,
         }
+
+    def test_a_connection_granted_read_only_carries_the_read_scope(self) -> None:
+        # The scope is what the read-only check refuses every writing tool on.
+        with a_fake_api() as api:
+            knows_the_token(api, read_only=True)
+            caller = run(token_verifier.verify_token(GOOD_TOKEN))
+
+        assert caller is not None
+        assert caller.scopes == [READ_SCOPE]
+
+    @pytest.mark.parametrize("read_only", [False, None])
+    def test_a_connection_with_full_access_carries_no_scope(self, read_only: bool | None) -> None:
+        # None: a Mammoth that predates the choice, whose every token is full access.
+        with a_fake_api() as api:
+            knows_the_token(api, read_only=read_only)
+            caller = run(token_verifier.verify_token(GOOD_TOKEN))
+
+        assert caller is not None
+        assert caller.scopes == []
 
     def test_mammoth_is_asked_with_the_token_itself(self) -> None:
         with a_fake_api() as api:

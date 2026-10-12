@@ -256,24 +256,6 @@ _LOCAL_CONTRACT_FIELDS: dict[str, tuple[FieldSpec, ...]] = {
         FieldSpec("term", required=True, annotation=str),
         FieldSpec("definition", required=True, annotation=str),
     ),
-    "dashboard.collection.list": (
-        FieldSpec("dashboard_id", required=False, annotation=int | None, default=None),
-    ),
-    "dashboard.collection.create": (
-        FieldSpec("name", required=True, annotation=str),
-        FieldSpec("project_id", required=False, annotation=int | None, default=None),
-        FieldSpec("description", required=False, annotation=str | None, default=None),
-        FieldSpec("dashboard_ids", required=False, annotation=list[int] | None, default=None),
-    ),
-    "dashboard.collection.update": (
-        FieldSpec("name", required=False, annotation=str | None, default=None),
-        FieldSpec("description", required=False, annotation=str | None, default=None),
-        FieldSpec("order", required=False, annotation=list[int] | None, default=None),
-        FieldSpec(
-            "tab_labels", required=False, annotation=dict[str, str | None] | None, default=None
-        ),
-    ),
-    "dashboard.collection.add": (FieldSpec("dashboard_ids", required=True, annotation=list[int]),),
     "schema.get": (FieldSpec("full", required=False, annotation=bool, default=False),),
     "schema.list": (
         FieldSpec("family", required=False, annotation=str | None, default=None),
@@ -475,13 +457,6 @@ _LOCAL_COMMANDS = frozenset(
         "context.project.clear",
         "context.project.status",
         "context.project.use",
-        "dashboard.collection.add",
-        "dashboard.collection.create",
-        "dashboard.collection.delete",
-        "dashboard.collection.get",
-        "dashboard.collection.list",
-        "dashboard.collection.remove",
-        "dashboard.collection.update",
         "dataset.column-stats",
         "dataset.definition.add",
         "dataset.definition.list",
@@ -814,6 +789,23 @@ _S7_ADDITIONAL_INPUT_FIELDS: dict[str, tuple[FieldSpec, ...]] = {
         FieldSpec("figure", required=True, annotation=dict[str, Any]),
         FieldSpec("banded", required=False, annotation=dict[str, Any] | None, default=None),
         FieldSpec("page", required=False, annotation=dict[str, Any] | None, default=None),
+    ),
+    # The edits to the saved cards, in order; the handler applies them and writes the panel.
+    "view.explore-panel.edit": (
+        FieldSpec("edits", required=True, annotation=list[dict[str, Any]]),
+    ),
+    # The card to add and where it goes: an existing board or a new blank one.
+    "view.explore-panel.add-to-dashboard": (
+        FieldSpec("card", required=True, annotation=str),
+        FieldSpec("dashboard_id", required=False, annotation=int | None, default=None),
+        FieldSpec("new_dashboard_title", required=False, annotation=str | None, default=None),
+        FieldSpec("page", required=False, annotation=dict[str, Any] | None, default=None),
+    ),
+    # The card to draw and where the SVG goes; the style is the engine's saved style, or none.
+    "view.explore-panel.export-image": (
+        FieldSpec("card", required=True, annotation=str),
+        FieldSpec("output_path", required=False, annotation=str | None, default=None),
+        FieldSpec("style_id", required=False, annotation=str | None, default=None),
     ),
     "user.preference.update": (
         # PreferencesPatchRequest: replace ops on dotted paths rooted at

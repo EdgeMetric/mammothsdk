@@ -15,6 +15,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from mammoth_cli.commands.dashboard import generated_dashboard
 from mammoth_cli.errors.envelope import (
     CODE_INVALID_ARGUMENT,
     CODE_MISSING_ARGUMENT,
@@ -24,6 +25,7 @@ from mammoth_cli.errors.envelope import (
     CliError,
 )
 from mammoth_cli.manifest.loader import command_by_id
+from mammoth_cli.output.normalize import Revealed, normalize
 from mammoth_cli.runtime.confirm import (
     POLICY_CONFIRM_TARGET,
     POLICY_PROMPT_OR_YES,
@@ -214,6 +216,17 @@ def workspace_llm_task(invocation: Invocation) -> HandlerResult:
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), task_type=task_type, params=params)
     return data, _meta(invocation, auth.workspace_id)
+
+
+def workspace_oauth_client_create(invocation: Invocation) -> HandlerResult:
+    """Create an OAuth client through the generated path, revealing its secret.
+
+    The API returns ``client_secret`` exactly once; masking it would make a
+    confidential client unusable, so the result is shown unredacted, the same
+    way ``client-app create`` shows its token.
+    """
+    data, meta = generated_dashboard(invocation)
+    return Revealed(normalize(data, redact_secrets=False)), meta
 
 
 def workspace_reactivate(invocation: Invocation) -> HandlerResult:

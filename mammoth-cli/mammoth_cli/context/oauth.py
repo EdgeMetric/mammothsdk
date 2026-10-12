@@ -24,6 +24,7 @@ import functools
 import hashlib
 import html
 import http.server
+import logging
 import os
 import secrets
 import threading
@@ -38,6 +39,8 @@ from mammoth_cli.context.credentials import OAuthSession
 from mammoth_cli.context.endpoint import DEFAULT_SERVER_PREFIX, resolve_base_url
 from mammoth_cli.context.profiles import config_dir
 from mammoth_cli.errors.envelope import EXIT_AUTH, CliError
+
+_LOG = logging.getLogger("mammoth_cli.oauth")
 
 #: The first-party CLI's OAuth client id: the same in every environment. The
 #: server publishes it in its OAuth metadata (see :func:`published_client_id`);
@@ -531,6 +534,28 @@ def _stored_session(profile: str) -> OAuthSession:
     return credential.oauth
 
 
+def _log_refresh(profile: str, session: OAuthSession, status: int | None, outcome: str) -> None:
+    """One ``oauth.refresh`` run-log record; the family id is the refresh token's
+    leading row id, never a secret. No token value is logged."""
+    family = session.refresh.partition(".")[0]
+    _LOG.info(
+        "oauth.refresh %s outcome=%s status=%s",
+        profile,
+        outcome,
+        status,
+        extra={
+            "mammoth": {
+                "event": "oauth.refresh",
+                "profile": profile,
+                "family_id": int(family) if family.isdecimal() else None,
+                "http_status": status,
+                "outcome": outcome,
+                "pid": os.getpid(),
+            }
+        },
+    )
+
+
 def refresh_session(profile: str, base_url: str) -> OAuthSession:
     """Return a session with a fresh access token, refreshing under the lock.
 
@@ -542,21 +567,34 @@ def refresh_session(profile: str, base_url: str) -> OAuthSession:
         # Another process may have refreshed while this one waited.
         session = _stored_session(profile)
         if is_fresh(session):
+            _log_refresh(profile, session, None, "skipped_fresh")
             return session
-        status, body = _post_token(
-            base_url,
-            {
-                "grant_type": "refresh_token",
-                "refresh_token": session.refresh,
-                "client_id": session.client_id,
-            },
-        )
+        form = {
+            "grant_type": "refresh_token",
+            "refresh_token": session.refresh,
+            "client_id": session.client_id,
+        }
+        try:
+            status, body = _post_token(base_url, form)
+        except CliError:
+            # The server may have rotated the token before the answer was lost; it
+            # honours the previous one for a short grace window, so retry at once.
+            _log_refresh(profile, session, None, "network_retry")
+            try:
+                status, body = _post_token(base_url, form)
+            except CliError:
+                # The server may still have rotated the token; the log is the trail.
+                _log_refresh(profile, session, None, "network_error")
+                raise
         if status in (400, 401):
+            _log_refresh(profile, session, status, "login_expired")
             raise login_expired_error()
         if status != 200:
+            _log_refresh(profile, session, status, "failed")
             raise _login_failed(f"Mammoth refused the refresh (HTTP {status}).")
         renewed = session_from_grant(_parse_grant(body), session.client_id)
         credentials.replace_oauth_session(profile, renewed)
+        _log_refresh(profile, session, status, "renewed")
         return renewed
 
 

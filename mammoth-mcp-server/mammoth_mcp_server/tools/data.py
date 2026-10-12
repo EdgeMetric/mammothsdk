@@ -14,7 +14,7 @@ from ..shape import not_found_message, read_rows
 from ..tool_kinds import READS
 
 
-@mcp_server.tool(annotations=READS)
+@mcp_server.tool(title="Read rows", annotations=READS)
 async def get_data(
     workspace_id: int,
     project_id: int,

@@ -52,6 +52,16 @@ Result: `TwbAssessResponse`; mutation `read`, confirmation `none`, wait policy `
 
 Status on release: untried; no live run recorded.
 
+### `dashboard.attachment-create`
+
+Run: `mammoth dashboard attachment-create`. Exact input fields: `mammoth schema get dashboard.attachment-create`.
+
+Example: `mammoth dashboard attachment-create sample.pbix`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `DashboardAttachmentCreateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
 ### `dashboard.audience.digest.get`
 
 Run: `mammoth dashboard audience digest get`. Exact input fields: `mammoth schema get dashboard.audience.digest.get`.
@@ -171,76 +181,6 @@ Example: `mammoth dashboard chat history 123`. Placeholders are illustrative; re
 Result: `DashboardChatHistoryResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
 Status on release: ran once on CLI 2.0.12 — Published PyPI CLI 1.1.11 chat-history read for retained dashboard48 returned empty history with sequence1; bounded and not Full. Also: Dashboard sweep 2026-09-18: exit 0 on release with CLI 2.0.12; result keys: history_index, messages, sequence. no chat mess…
-
-### `dashboard.collection.add`
-
-Run: `mammoth dashboard collection add`. Exact input fields: `mammoth schema get dashboard.collection.add`.
-
-Example: `mammoth dashboard collection add 123 --input '{"dashboard_ids": [456]}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
-
-Result: `DashboardCollectionAddResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
-
-Status on release: untried; no live run recorded.
-
-### `dashboard.collection.create`
-
-Run: `mammoth dashboard collection create`. Exact input fields: `mammoth schema get dashboard.collection.create`.
-
-Example: `mammoth dashboard collection create --input '{"name": "QA collection", "dashboard_ids": [123]}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
-
-Result: `DashboardCollectionCreateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
-
-Status on release: untried; no live run recorded.
-
-### `dashboard.collection.delete`
-
-Run: `mammoth dashboard collection delete`. Exact input fields: `mammoth schema get dashboard.collection.delete`.
-
-Example: `mammoth dashboard collection delete 123`. Illustrative only: append `--yes` after observing an owned target.
-
-Result: `DashboardCollectionDeleteResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
-
-Status on release: untried; no live run recorded.
-
-### `dashboard.collection.get`
-
-Run: `mammoth dashboard collection get`. Exact input fields: `mammoth schema get dashboard.collection.get`.
-
-Example: `mammoth dashboard collection get 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
-
-Result: `DashboardCollectionGetResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
-
-Status on release: untried; no live run recorded.
-
-### `dashboard.collection.list`
-
-Run: `mammoth dashboard collection list`. Exact input fields: `mammoth schema get dashboard.collection.list`.
-
-Example: `mammoth dashboard collection list`. Placeholders are illustrative; resolve IDs and input from observed reads.
-
-Result: `DashboardCollectionListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
-
-Status on release: untried; no live run recorded.
-
-### `dashboard.collection.remove`
-
-Run: `mammoth dashboard collection remove`. Exact input fields: `mammoth schema get dashboard.collection.remove`.
-
-Example: `mammoth dashboard collection remove 123 456`. Placeholders are illustrative; resolve IDs and input from observed reads.
-
-Result: `DashboardCollectionRemoveResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
-
-Status on release: untried; no live run recorded.
-
-### `dashboard.collection.update`
-
-Run: `mammoth dashboard collection update`. Exact input fields: `mammoth schema get dashboard.collection.update`.
-
-Example: `mammoth dashboard collection update 123 --input '{"name": "Board pack"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
-
-Result: `DashboardCollectionUpdateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
-
-Status on release: untried; no live run recorded.
 
 ### `dashboard.columns`
 
@@ -472,6 +412,36 @@ Result: `DashboardEmbedUsageSummaryResult`; mutation `read`, confirmation `none`
 
 Status on release: untried; no live run recorded.
 
+### `dashboard.engagement.get`
+
+Run: `mammoth dashboard engagement get`. Exact input fields: `mammoth schema get dashboard.engagement.get`.
+
+Example: `mammoth dashboard engagement get 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `DashboardEngagementGetResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `dashboard.engagement.person`
+
+Run: `mammoth dashboard engagement person`. Exact input fields: `mammoth schema get dashboard.engagement.person`.
+
+Example: `mammoth dashboard engagement person 123 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `DashboardEngagementPersonResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `dashboard.engagement.remind`
+
+Run: `mammoth dashboard engagement remind`. Exact input fields: `mammoth schema get dashboard.engagement.remind`.
+
+Example: `mammoth dashboard engagement remind 123 --input '{"user_ids": [1]}'`. Illustrative only: append `--yes` after observing an owned target.
+
+Result: `DashboardEngagementRemindResult`; mutation `external_effect`, confirmation `yes_always`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
 ### `dashboard.exemplar.extract`
 
 Run: `mammoth dashboard exemplar extract`. Exact input fields: `mammoth schema get dashboard.exemplar.extract`.
@@ -621,6 +591,56 @@ Example: `mammoth dashboard og-card 123`. Placeholders are illustrative; resolve
 Result: `DashboardOgCardResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
 Status on release: ran once on CLI 2.0.15 — re-verification 2026-09-18: exit 0 on release with CLI 2.0.15. Fix held: binary PNG body returned as described base64 content ({"data":{"content_base64":"iVBORw0KGgo..."}}) instead of crashing/misreporting. Dashboard 59 was our own dashboard.create-blank on v…
+
+### `dashboard.own-data.accept`
+
+Run: `mammoth dashboard own-data accept`. Exact input fields: `mammoth schema get dashboard.own-data.accept`.
+
+Example: `mammoth dashboard own-data accept 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+
+Result: `DashboardOwnDataAcceptResult`; mutation `benign_mutation`, confirmation `confirm_target`, wait policy `always_wait`.
+
+Status on release: untried; no live run recorded.
+
+### `dashboard.own-data.dismiss`
+
+Run: `mammoth dashboard own-data dismiss`. Exact input fields: `mammoth schema get dashboard.own-data.dismiss`.
+
+Example: `mammoth dashboard own-data dismiss 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `DashboardOwnDataDismissResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `dashboard.own-data.preview`
+
+Run: `mammoth dashboard own-data preview`. Exact input fields: `mammoth schema get dashboard.own-data.preview`.
+
+Example: `mammoth dashboard own-data preview 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `DashboardOwnDataPreviewResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `dashboard.own-data.start`
+
+Run: `mammoth dashboard own-data start`. Exact input fields: `mammoth schema get dashboard.own-data.start`.
+
+Example: `mammoth dashboard own-data start 123 --input '{"dataview_id": 1}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `DashboardOwnDataStartResult`; mutation `benign_mutation`, confirmation `none`, wait policy `always_wait`.
+
+Status on release: untried; no live run recorded.
+
+### `dashboard.own-data.status`
+
+Run: `mammoth dashboard own-data status`. Exact input fields: `mammoth schema get dashboard.own-data.status`.
+
+Example: `mammoth dashboard own-data status 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `DashboardOwnDataStatusResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
 
 ### `dashboard.page.plan`
 
@@ -1014,7 +1034,7 @@ Status on release: ran once on CLI 2.0.12 — Dashboard sweep 2026-09-18: exit 0
 
 Run: `mammoth dashboard v3 generate`. Exact input fields: `mammoth schema get dashboard.v3.generate`.
 
-Example: `mammoth dashboard v3 generate --input '{"body": {"params": {"intent": "Summarize revenue by region", "dataview_id": 1}}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth dashboard v3 generate --input '{"body": {"params": {"dataview_id": 1}}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `DashboardV3GenerateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `always_wait`.
 

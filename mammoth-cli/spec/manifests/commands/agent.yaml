@@ -983,6 +983,87 @@ commands:
     ids:
       agent_key: positional.0
     kind: object
+- command_id: agent.message.set-request-kind
+  command_path: agent message set-request-kind
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - CorrectAgentRequestKind
+  positionals:
+  - name: message_id
+    type: str
+    required: true
+    metavar: MESSAGE_ID
+    falls_back_to_field: null
+    help: ID of the reply message (from agent session messages).
+  options: []
+  sdk_symbol: mammoth.api.agents.AgentsAPI.message_set_request_kind
+  sdk_conversion: Call mammoth.api.agents.AgentsAPI.message_set_request_kind with the session id from --session, the positional message id and request_kind from --input.
+  request_model: AgentMessageSetRequestKindRequest
+  result_model: AgentMessageSetRequestKindResult
+  mutation_class: benign_mutation
+  edits_target: true
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Write with contract coverage only; no disposable chat fixture on koyal.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth agent message set-request-kind MESSAGE_ID --help
+  agent_example: 'mammoth agent message set-request-kind ''Summarize revenue by region'' --input ''{"request_kind": "sample"}'''
+  unit_tests:
+  - UT-AGENT-MESSAGE-SET-REQUEST-KIND
+  contract_tests:
+  - CT-AGENT-MESSAGE-SET-REQUEST-KIND-HUMAN
+  - CT-AGENT-MESSAGE-SET-REQUEST-KIND-JSON
+  - CT-AGENT-MESSAGE-SET-REQUEST-KIND-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Writes. Corrects the request kind a reply answered (ask, insight, build, automate or fix). Creator only. Needs --session SESSION_ID; an embedded chat supplies it.
+  reviewed_by: primary
+  readback:
+    command: agent.session.messages
+    ids: {}
+    kind: object
+- command_id: agent.plan.edit-proposal
+  command_path: agent plan edit-proposal
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - EditAgentPlanProposal
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.agents.AgentsAPI.plan_edit_proposal
+  sdk_conversion: Call mammoth.api.agents.AgentsAPI.plan_edit_proposal with the session id from --session and plan_id, action, key and the optional name from --input.
+  request_model: AgentPlanEditProposalRequest
+  result_model: AgentPlanEditProposalResult
+  mutation_class: benign_mutation
+  edits_target: true
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Write with contract coverage only; no disposable plan fixture on koyal.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth agent plan edit-proposal --help
+  agent_example: 'mammoth agent plan edit-proposal --input ''{"plan_id": "resource-123", "action": "sample", "key": "Status"}'''
+  unit_tests:
+  - UT-AGENT-PLAN-EDIT-PROPOSAL
+  contract_tests:
+  - CT-AGENT-PLAN-EDIT-PROPOSAL-HUMAN
+  - CT-AGENT-PLAN-EDIT-PROPOSAL-JSON
+  - CT-AGENT-PLAN-EDIT-PROPOSAL-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Writes. Renames or removes one item of the plan's waiting workflow proposal (action rename or remove, the item key, and name for a rename). Creator only. Needs --session SESSION_ID; an embedded chat supplies it.
+  reviewed_by: primary
+  no_readback: returns the updated proposal
 - command_id: agent.projects.clear
   command_path: agent projects clear
   disposition: command
@@ -1453,6 +1534,219 @@ commands:
     command: agent.run.status
     ids: {}
     kind: object
+- command_id: agent.run.instance.list
+  command_path: agent run instance list
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - ListAgentRunInstances
+  positionals:
+  - name: run_id
+    type: str
+    required: true
+    metavar: RUN_ID
+    falls_back_to_field: null
+    help: ID of the run (from agent run status or agent run list).
+  options: []
+  sdk_symbol: mammoth.api.agents.AgentsAPI.run_instances_list
+  sdk_conversion: Call mammoth.api.agents.AgentsAPI.run_instances_list with the session id from --session and the positional run id.
+  request_model: AgentRunInstanceListRequest
+  result_model: AgentRunInstanceListResult
+  mutation_class: read
+  edits_target: false
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: null
+  live_exemption_reason: Live coverage runs on koyal with a chat session that has a run.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth agent run instance list RUN_ID --help
+  agent_example: 'mammoth agent run instance list resource-123'
+  unit_tests:
+  - UT-AGENT-RUN-INSTANCE-LIST
+  contract_tests:
+  - CT-AGENT-RUN-INSTANCE-LIST
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Read-only. Lists the agents of the run: the main agent, its workers and recon helpers, with the ids the instance commands take. Needs --session SESSION_ID; an embedded chat supplies it.'
+  reviewed_by: primary
+- command_id: agent.run.instance.messages
+  command_path: agent run instance messages
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - ListAgentInstanceMessages
+  positionals:
+  - name: run_id
+    type: str
+    required: true
+    metavar: RUN_ID
+    falls_back_to_field: null
+    help: ID of the run (from agent run status or agent run list).
+  - name: instance_id
+    type: str
+    required: true
+    metavar: INSTANCE_ID
+    falls_back_to_field: null
+    help: ID of the agent (from agent run instance list).
+  options: []
+  sdk_symbol: mammoth.api.agents.AgentsAPI.run_instance_messages
+  sdk_conversion: Call mammoth.api.agents.AgentsAPI.run_instance_messages with the session id from --session and the positional run and instance ids.
+  request_model: AgentRunInstanceMessagesRequest
+  result_model: AgentRunInstanceMessagesResult
+  mutation_class: read
+  edits_target: false
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: null
+  live_exemption_reason: Live coverage runs on koyal with a chat session that has a run.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth agent run instance messages RUN_ID INSTANCE_ID --help
+  agent_example: 'mammoth agent run instance messages resource-123 resource-123'
+  unit_tests:
+  - UT-AGENT-RUN-INSTANCE-MESSAGES
+  contract_tests:
+  - CT-AGENT-RUN-INSTANCE-MESSAGES
+  draft_test: null
+  undo_test: null
+  known_restrictions: Read-only. The messages one agent of the run sent or received. Needs --session SESSION_ID; an embedded chat supplies it.
+  reviewed_by: primary
+- command_id: agent.run.instance.transcript
+  command_path: agent run instance transcript
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetAgentInstanceTranscript
+  positionals:
+  - name: run_id
+    type: str
+    required: true
+    metavar: RUN_ID
+    falls_back_to_field: null
+    help: ID of the run (from agent run status or agent run list).
+  - name: instance_id
+    type: str
+    required: true
+    metavar: INSTANCE_ID
+    falls_back_to_field: null
+    help: ID of the agent (from agent run instance list).
+  options: []
+  sdk_symbol: mammoth.api.agents.AgentsAPI.run_instance_transcript
+  sdk_conversion: Call mammoth.api.agents.AgentsAPI.run_instance_transcript with the session id from --session and the positional run and instance ids.
+  request_model: AgentRunInstanceTranscriptRequest
+  result_model: AgentRunInstanceTranscriptResult
+  mutation_class: read
+  edits_target: false
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: null
+  live_exemption_reason: Live coverage runs on koyal with a chat session that has a run.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth agent run instance transcript RUN_ID INSTANCE_ID --help
+  agent_example: 'mammoth agent run instance transcript resource-123 resource-123'
+  unit_tests:
+  - UT-AGENT-RUN-INSTANCE-TRANSCRIPT
+  contract_tests:
+  - CT-AGENT-RUN-INSTANCE-TRANSCRIPT
+  draft_test: null
+  undo_test: null
+  known_restrictions: Read-only. The model messages of one agent of the run, credentials redacted. Needs --session SESSION_ID; an embedded chat supplies it.
+  reviewed_by: primary
+- command_id: agent.run.retry
+  command_path: agent run retry
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - RetryAgentRun
+  positionals:
+  - name: run_id
+    type: str
+    required: true
+    metavar: RUN_ID
+    falls_back_to_field: null
+    help: ID of the run (from agent run status or agent run list).
+  options: []
+  sdk_symbol: mammoth.api.agents.AgentsAPI.run_retry
+  sdk_conversion: Call mammoth.api.agents.AgentsAPI.run_retry with the session id from --session and the positional run id.
+  request_model: AgentRunRetryRequest
+  result_model: AgentRunRetryResult
+  mutation_class: benign_mutation
+  edits_target: true
+  confirmation: prompt_or_yes
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Write that starts paid model work; contract coverage only, no live run on koyal.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth agent run retry RUN_ID --help
+  agent_example: 'mammoth agent run retry resource-123'
+  unit_tests:
+  - UT-AGENT-RUN-RETRY
+  contract_tests:
+  - CT-AGENT-RUN-RETRY-HUMAN
+  - CT-AGENT-RUN-RETRY-JSON
+  - CT-AGENT-RUN-RETRY-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Writes. Retries a failed or stopped run as a new run, which starts paid model work. Session owner only. Prompt or --yes. Needs --session SESSION_ID; an embedded chat is refused.
+  reviewed_by: primary
+  readback:
+    command: agent.run.status
+    ids: {}
+    kind: object
+- command_id: agent.run.units.list
+  command_path: agent run units list
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - ListAgentRunUnits
+  positionals:
+  - name: run_id
+    type: str
+    required: true
+    metavar: RUN_ID
+    falls_back_to_field: null
+    help: ID of the run (from agent run status or agent run list).
+  options: []
+  sdk_symbol: mammoth.api.agents.AgentsAPI.run_units_list
+  sdk_conversion: Call mammoth.api.agents.AgentsAPI.run_units_list with the session id from --session, the positional run id and the optional step, state and cursor from --input.
+  request_model: AgentRunUnitsListRequest
+  result_model: AgentRunUnitsListResult
+  mutation_class: read
+  edits_target: false
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: null
+  live_exemption_reason: Live coverage runs on koyal with a chat session that has a run with units.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth agent run units list RUN_ID --help
+  agent_example: 'mammoth agent run units list resource-123'
+  unit_tests:
+  - UT-AGENT-RUN-UNITS-LIST
+  contract_tests:
+  - CT-AGENT-RUN-UNITS-LIST
+  draft_test: null
+  undo_test: null
+  known_restrictions: Read-only. One page of the units the run's steps do, optionally only one step (step), one state (queued, running, done, failed or skipped) or from an offset (cursor). Needs --session SESSION_ID; an embedded chat supplies it.
+  reviewed_by: primary
 - command_id: agent.scratch.clear
   command_path: agent scratch clear
   disposition: command

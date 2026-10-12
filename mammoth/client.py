@@ -400,6 +400,7 @@ if TYPE_CHECKING:
     from mammoth.api.browse import BrowseAPI
     from mammoth.api.checkpoints import CheckpointsAPI
     from mammoth.api.clientapps import ClientAppsAPI
+    from mammoth.api.collections import CollectionsAPI
     from mammoth.api.connector_ai import ConnectorAIAPI
     from mammoth.api.connectors import ConnectorsAPI
     from mammoth.api.dashboards import DashboardsAPI
@@ -414,6 +415,7 @@ if TYPE_CHECKING:
     from mammoth.api.folders import FoldersAPI
     from mammoth.api.jobs import JobsAPI
     from mammoth.api.notifications import NotificationsAPI
+    from mammoth.api.oauth_clients import OAuthClientsAPI
     from mammoth.api.parameters import ParametersAPI
     from mammoth.api.pipeline import PipelineAPI
     from mammoth.api.pipeline_versions import PipelineVersionsAPI
@@ -464,11 +466,13 @@ SUB_CLIENTS: dict[str, tuple[str, str]] = {
     "annotations": ("mammoth.api.annotations", "AnnotationsAPI"),
     "billing": ("mammoth.api.billing", "BillingAPI"),
     "checkpoints": ("mammoth.api.checkpoints", "CheckpointsAPI"),
+    "collections": ("mammoth.api.collections", "CollectionsAPI"),
     "connector_ai": ("mammoth.api.connector_ai", "ConnectorAIAPI"),
     "data_apps": ("mammoth.api.data_apps", "DataAppsAPI"),
     "data_checks": ("mammoth.api.data_checks", "DataChecksAPI"),
     "derivatives": ("mammoth.api.derivatives", "DerivativesAPI"),
     "notifications": ("mammoth.api.notifications", "NotificationsAPI"),
+    "oauth_clients": ("mammoth.api.oauth_clients", "OAuthClientsAPI"),
     "parameters": ("mammoth.api.parameters", "ParametersAPI"),
     "pipeline_versions": ("mammoth.api.pipeline_versions", "PipelineVersionsAPI"),
     "snippets": ("mammoth.api.snippets", "SnippetsAPI"),
@@ -510,6 +514,7 @@ class MammothClient:
         exports: ExportsAPI
         workspaces: WorkspaceAPI
         client_apps: ClientAppsAPI
+        collections: CollectionsAPI
         projects: ProjectsAPI
         folders: FoldersAPI
         datasets: DatasetsAPI
@@ -538,6 +543,7 @@ class MammothClient:
         data_checks: DataChecksAPI
         derivatives: DerivativesAPI
         notifications: NotificationsAPI
+        oauth_clients: OAuthClientsAPI
         parameters: ParametersAPI
         pipeline_versions: PipelineVersionsAPI
         snippets: SnippetsAPI

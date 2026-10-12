@@ -472,50 +472,6 @@ def test_rename_dataset_still_offers_the_dataset_rename() -> None:
     assert not any(c.startswith("dataset.definition.") for c in found)
 
 
-# Dashboard collections (10-12): the agent said dashboards have only tags because
-# no command said "collection"; the user's phrasing must reach these commands.
-@pytest.mark.parametrize(
-    ("query", "command_id"),
-    [
-        ("add dashboard to collection", "dashboard.collection.add"),
-        ("put a dashboard into a collection", "dashboard.collection.add"),
-        ("create a collection", "dashboard.collection.create"),
-        ("new collection", "dashboard.collection.create"),
-        ("list collections", "dashboard.collection.list"),
-        ("remove dashboard from collection", "dashboard.collection.remove"),
-        ("update collection", "dashboard.collection.update"),
-        ("delete collection", "dashboard.collection.delete"),
-    ],
-)
-def test_collection_goals_find_the_collection_commands(query: str, command_id: str) -> None:
-    assert find_schemas(query)["matches"][0]["command_id"] == command_id
-
-
-def test_the_live_collection_request_suggests_add_then_create() -> None:
-    found = find_schemas("put my newest dashboard in a collection called QA collection")
-    ids = [m["command_id"] for m in found["matches"] or found["suggestions"]]
-    assert ids[:2] == ["dashboard.collection.add", "dashboard.collection.create"]
-
-
-# ...and adding them must leave plain dashboard goals where they were.
-@pytest.mark.parametrize(
-    ("query", "command_id"),
-    [
-        ("add a chart to the dashboard", "dashboard.chat.edit"),
-        ("add a filter to the dashboard", "dashboard.filter.add"),
-        ("list dashboards", "dashboard.list"),
-        ("create dashboard", "dashboard.v3.generate"),
-        ("rename dashboard", "dashboard.qa.session.rename"),
-        ("add tag", "view.transform.add-column"),
-        ("add a file", "file.upload"),
-    ],
-)
-def test_collection_words_leave_dashboard_goals_on_their_routes(
-    query: str, command_id: str
-) -> None:
-    assert find_schemas(query)["matches"][0]["command_id"] == command_id
-
-
 # Proposing a workflow's shape must never pull in plain view work: "add a view"
 # is a build, not a proposal.
 @pytest.mark.parametrize("query", ["add a view", "rename view", "create view"])

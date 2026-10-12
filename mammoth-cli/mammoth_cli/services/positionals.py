@@ -267,6 +267,43 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
             help="ID of the turn to stop (from the chat's events or agent session messages).",
         ),
     ),
+    "agent.plan.edit-proposal": (),
+    "agent.message.set-request-kind": (
+        PositionalSpec(
+            name="message_id",
+            type=str,
+            required=True,
+            help="ID of the reply message (from agent session messages).",
+        ),
+    ),
+    **{
+        f"agent.run.{verb}": (
+            PositionalSpec(
+                name="run_id",
+                type=str,
+                required=True,
+                help="ID of the run (from agent run status or agent run list).",
+            ),
+        )
+        for verb in ("retry", "units.list", "instance.list")
+    },
+    **{
+        f"agent.run.instance.{verb}": (
+            PositionalSpec(
+                name="run_id",
+                type=str,
+                required=True,
+                help="ID of the run (from agent run status or agent run list).",
+            ),
+            PositionalSpec(
+                name="instance_id",
+                type=str,
+                required=True,
+                help="ID of the agent (from agent run instance list).",
+            ),
+        )
+        for verb in ("messages", "transcript")
+    },
     "agent.charter.restore": (
         PositionalSpec(
             name="agent_key",
@@ -316,6 +353,15 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
             example_value="sample.pbix",
         ),
     ),
+    "dashboard.attachment-create": (
+        PositionalSpec(
+            name="file",
+            type=str,
+            required=True,
+            help="Path to a local workbook.",
+            example_value="sample.pbix",
+        ),
+    ),
     "dashboard.import-workbook": (
         PositionalSpec(
             name="file",
@@ -338,20 +384,6 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
     ),
     "dashboard.tags.merge": (
         PositionalSpec(name="tag_id", type=int, required=True, help="ID of the source tag."),
-    ),
-    # Collections holding one dashboard (GET /collections/for-dashboard/{id});
-    # omit it to list every collection the caller can see.
-    "dashboard.collection.list": (
-        PositionalSpec(
-            name="dashboard_id",
-            type=int,
-            required=False,
-            falls_back_to_field="dashboard_id",
-            help=(
-                "Only the collections holding this dashboard; or pass it via the "
-                "'dashboard_id' input field. Omit it to list every collection."
-            ),
-        ),
     ),
     # Item G: an agent's first move is often `view list` before it has any
     # dataset id; omitting it now walks every dataset in the active project
@@ -901,6 +933,9 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
             "view.update",
             "view.explore-panel.get",
             "view.explore-panel.set",
+            "view.explore-panel.edit",
+            "view.explore-panel.add-to-dashboard",
+            "view.explore-panel.export-image",
             "view.conditional-format.create",
             "view.conditional-format.delete-all",
             "view.conditional-format.list",
@@ -1040,6 +1075,45 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
             "workspace.delete",
             "workspace.reactivate",
             "workspace.update",
+        )
+    },
+    # OAuth clients belong to a workspace: the id is an optional trailing
+    # positional (defaulting to the client's own workspace) after the client id
+    # where the command takes one, so ``workspace oauth-client delete 5`` works.
+    "workspace.oauth-client.list": (
+        PositionalSpec(
+            name="workspace_id",
+            type=int,
+            required=False,
+            help="ID of the workspace to act on; defaults to the client's own workspace.",
+        ),
+    ),
+    "workspace.oauth-client.create": (
+        PositionalSpec(
+            name="workspace_id",
+            type=int,
+            required=False,
+            help="ID of the workspace to act on; defaults to the client's own workspace.",
+        ),
+    ),
+    **{
+        command: (
+            PositionalSpec(
+                name="oauth_client_id",
+                type=int,
+                required=True,
+                help="ID of the OAuth client.",
+            ),
+            PositionalSpec(
+                name="workspace_id",
+                type=int,
+                required=False,
+                help="ID of the workspace to act on; defaults to the client's own workspace.",
+            ),
+        )
+        for command in (
+            "workspace.oauth-client.delete",
+            "workspace.oauth-client.revoke-grant",
         )
     },
     # ``file upload-folder`` takes the local folder path as a positional OR a
@@ -1327,6 +1401,14 @@ _EXACT_PARENT_HELP_OVERRIDES: dict[str, str] = {
         "Optional parent dataset ID. Leave it out and the CLI looks up the view's dataset. A value that is not the view's dataset is refused before the write."
     ),
     "view.explore-panel.set": (
+        "Optional parent dataset ID. Leave it out and the CLI looks up the view's dataset. "
+        "A value that is not the view's dataset is refused before the write."
+    ),
+    "view.explore-panel.edit": (
+        "Optional parent dataset ID. Leave it out and the CLI looks up the view's dataset. "
+        "A value that is not the view's dataset is refused before the write."
+    ),
+    "view.explore-panel.add-to-dashboard": (
         "Optional parent dataset ID. Leave it out and the CLI looks up the view's dataset. "
         "A value that is not the view's dataset is refused before the write."
     ),

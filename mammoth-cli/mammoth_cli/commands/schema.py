@@ -59,6 +59,18 @@ _FIXED_EXAMPLES: dict[str, tuple[tuple[str, ...], dict[str, Any]]] = {
         ("123",),
         {"panel": {"columns": "all"}},
     ),
+    "view.explore-panel.edit": (
+        ("123",),
+        {"edits": [{"op": "metric", "card": "Region", "agg": "SUM", "of": "Amount"}]},
+    ),
+    "view.explore-panel.add-to-dashboard": (
+        ("123",),
+        {"card": "Region", "new_dashboard_title": "Regions"},
+    ),
+    "view.explore-panel.export-image": (
+        ("123",),
+        {"card": "Region", "output_path": "card.svg", "style_id": None},
+    ),
     "project.check": (("123", "456"), {}),
     "view.data.profile": (("123",), {"target": "Churn"}),
     "dataset.definition.add": (
@@ -66,11 +78,6 @@ _FIXED_EXAMPLES: dict[str, tuple[tuple[str, ...], dict[str, Any]]] = {
         {"term": "late", "definition": "delivered more than 5 days after shipped_date"},
     ),
     "dataset.definition.remove": (("123", "a1b2c3d4"), {}),
-    "dashboard.collection.list": ((), {}),
-    "dashboard.collection.create": ((), {"name": "QA collection", "dashboard_ids": [123]}),
-    "dashboard.collection.add": (("123",), {"dashboard_ids": [456]}),
-    "dashboard.collection.update": (("123",), {"name": "Board pack"}),
-    "dashboard.collection.remove": (("123", "456"), {}),
     "view.data.drivers": (
         ("123",),
         {
@@ -157,6 +164,17 @@ _COMMAND_DISCOVERY_PURPOSES = {
     "view.update": "rename change name to a new name title relabel",
     "view.explore-panel.get": "explore cards saved panel the data editor explore side panel read",
     "view.explore-panel.set": "open show explore cards for all or some columns, replace the panel",
+    "view.explore-panel.edit": (
+        "change an explore card: metric sum average, sort, list or chart layout, level, filter "
+        "or exclude values, clear, drop a card, search, scatter, ask a question"
+    ),
+    "view.explore-panel.add-to-dashboard": (
+        "put an explore card on a dashboard, the card menu add to dashboard, new blank board"
+    ),
+    "view.explore-panel.export-image": (
+        "export explore card as image, save explore chart as png or svg, a picture of one card "
+        "with the rows"
+    ),
     "dashboard.figure.add": (
         "append an explore card figure tile to a dashboard from a payload, no chat turn"
     ),
@@ -463,16 +481,6 @@ _COMMAND_DISCOVERY_PURPOSES = {
     ),
     "dataset.definition.list": "definitions meanings glossary saved for a dataset",
     "dataset.definition.remove": "forget a definition meaning glossary term",
-    # Dashboard collections: the web app's named, ordered sets of dashboards
-    # shared as one link. A live agent turn (10-12) answered "dashboards have
-    # only tags" because no command said "collection".
-    # Only words the command paths lack, and no verb: "dashboard" or a verb such
-    # as "rename" here pulls plain dashboard goals ("rename dashboard", "add
-    # tag") onto these, so "rename collection" finds `update` by its path only.
-    "dashboard.collection.add": "put into",
-    # The plural, so "list collections" is not read as a data word and dropped.
-    "dashboard.collection.list": "collections",
-    "dashboard.collection.create": "new",
     # Goals users state in their own words, one entry per command the agent's
     # system prompt used to spell out by hand.
     "dashboard.suggestion.list": "ideas suggest suggestions what to show put on a board chart",
@@ -562,11 +570,82 @@ _COMMAND_DISCOVERY_PURPOSES = {
     "browse.resource": "open one resource by type and id properties of a dataset view folder",
     "browse.resources.bulk": "fetch many resources by type and id in one request batch lookup",
     "agent.turn.cancel": "stop the agent now cancel this turn halt what the assistant is doing",
+    "agent.run.retry": ("retry the failed run, try a second time, rerun after a failure or a stop"),
+    "agent.run.instance.list": "which agents sub agents helpers workers ran in this run instances",
+    "agent.run.instance.messages": ("which messages this agent of the run sent and received"),
+    "agent.run.instance.transcript": (
+        "show the full transcript of one agent in the run model messages"
+    ),
+    "agent.run.units.list": (
+        "which objects is the run working on units of work progress queued done failed"
+    ),
+    "agent.message.set-request-kind": (
+        "wrong kind of request answered, correct the kind: ask insight build automate fix"
+    ),
+    "agent.plan.edit-proposal": (
+        "rename or remove a step in the plan proposal waiting workflow edit the plan"
+    ),
     "dashboard.swap-fit": "which dataset fits this dashboard before swapping data score candidates",
     "dashboard.audience.get": "who opened my dashboard readers visitors audience over time",
     "dashboard.audience.summary": "how many people opened each dashboard in the library",
     "dashboard.audience.digest.get": "weekly audience email setting for a dashboard get",
     "dashboard.audience.digest.set": "turn the weekly audience email on or off for a dashboard",
+    "dashboard.engagement.get": (
+        "who opened my dashboard, how long readers read each page, reach engagement people visits"
+    ),
+    "dashboard.engagement.person": ("visits by one person to my dashboard, when and how long read"),
+    "dashboard.engagement.remind": (
+        "remind people to look at the dashboard, nudge by email readers who skipped the board"
+    ),
+    "dashboard.own-data.start": (
+        "use my own data on a template board fit the template to my upload or dataset"
+    ),
+    "dashboard.own-data.status": "where the own-data run is, the stage and the proposal to review",
+    "dashboard.own-data.preview": "preview the template board on my own data before accepting",
+    "dashboard.own-data.accept": "apply the proposed board built from my upload",
+    "dashboard.own-data.dismiss": "drop the pending own-data proposal and keep the template as is",
+    "collection.create": (
+        "group dashboards into a collection a set of dashboards shared together as one"
+    ),
+    "collection.dashboards.add": "add one more board to an existing collection",
+    "collection.dashboards.remove": "take a dashboard out of a collection",
+    "collection.share": "share a set of dashboards with people by email as one collection",
+    "collection.members.remove": "stop sharing a collection with a person",
+    "collection.for-dashboard": (
+        "which collections hold this dashboard groups containing this board"
+    ),
+    "collection.activity": "who opened the collection and which dashboards inside get opened",
+    "collection.files.upload": "upload a file to refresh the data behind a collection",
+    "collection.active-job": "resume an interrupted upload to a collection, running now",
+    "collection.job": "check the progress of one upload job for a collection by job id",
+    "dashboard.attachment-create": ("attach a report file to the chat for the agent to read"),
+    "file.multi-sheet-preview": (
+        "preview one sheet of a multi-sheet excel file before making datasets"
+    ),
+    "file.multi-sheet-extract": (
+        "make a dataset from each accepted sheet of a multi-sheet excel file"
+    ),
+    "workflow.save": "save the unsaved changes on the workflow canvas",
+    "workflow.archive": "archive a workflow or bring an archived workflow back",
+    "workflow.attach-dataset": "add an existing dataset to a workflow",
+    "workflow.resolve-held": "settle a change the workflow save held back",
+    "auth.connected-apps.list": (
+        "which apps can access my account, the apps I authorised, connected apps"
+    ),
+    "auth.connected-apps.revoke": "disconnect an app I authorised, cut off the app access to me",
+    "workspace.current": (
+        "which workspace this token acts in, the current workspace, the server fenced to"
+    ),
+    "workspace.oauth-client.list": (
+        "the OAuth clients of this workspace, apps with sign in for users"
+    ),
+    "workspace.oauth-client.create": (
+        "register an OAuth client, a new app for user sign in with Mammoth"
+    ),
+    "workspace.oauth-client.delete": "delete an OAuth client, the app for user sign in",
+    "workspace.oauth-client.revoke-grant": (
+        "revoke every grant of an OAuth client make users authorise anew"
+    ),
     "dashboard.columns": "columns of the dashboard source data profile samples ranges data panel",
     "dashboard.context.review": "preview what the context change would do to the dashboard dry run",
     "dashboard.context.apply": "apply the reviewed context change to the dashboard",
@@ -1196,14 +1275,7 @@ def _compact_contract(record: dict[str, Any]) -> dict[str, Any]:
     family = str(record.get("command_path", "")).split()[0]
     operation_hints = _operation_hints_by_command().get(command_id, "")
     search_text = f"{command_id} {family} {operation_hints}".casefold()
-    if family == "dashboard" and (
-        command_id.startswith("dashboard.tags.")
-        # Collections are read and changed by id; only create names a project.
-        or (
-            command_id.startswith("dashboard.collection.")
-            and command_id != "dashboard.collection.create"
-        )
-    ):
+    if family == "dashboard" and command_id.startswith("dashboard.tags."):
         scope = "workspace"
     elif (
         command_id == "ai.retention.condition"

@@ -57,3 +57,20 @@ def test_validation_error_lists_one_field_per_line() -> None:
         "key: String should match pattern '^[a-z][a-z0-9_-]{1,62}$' [4GENR007]",
     ]
     assert mapped.exit_status == 1
+
+
+def test_a_generic_backend_message_shows_the_reason_beneath_it() -> None:
+    mapped = map_sdk_exception(
+        _api_error(
+            409,
+            {
+                "message": "Invalid arguments passed",
+                "name": "INVALID_ARGUMENTS",
+                "error_code": "4GENR001",
+                "details": {"message": "There is no version of your data waiting here."},
+            },
+        )
+    )
+    assert mapped.message == (
+        "Invalid arguments passed: There is no version of your data waiting here. [4GENR001]"
+    )

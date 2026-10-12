@@ -3,30 +3,65 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, ValidationError
 
 from mammoth.models.dashboard_generated import (
+    AddPagesParams,
+    AddPagesResponse,
+    AddPagesSpec,
     AdhocQueryParams,
     AdhocQueryResponse,
     AdhocQuerySpec,
+    AppendFigureParams,
+    AppendFigureResponse,
+    AppendFigureSpec,
+    ApplyContextReviewParams,
+    ApplyContextReviewSpec,
     ApplyTemplateParams,
     ApplyTemplateSpec,
     AskParams,
     AskSpec,
+    AttachmentIntentForm,
+    AttachmentJob,
+    AttachmentResponse,
+    AudienceAnonymous,
+    AudienceCountries,
+    AudienceCountry,
+    AudienceDailyPoint,
+    AudienceDevices,
+    AudienceNeverOpened,
+    AudiencePage,
+    AudiencePrevTotals,
+    AudienceResponse,
+    AudienceSummaryItem,
+    AudienceSummaryResponse,
+    AudienceTile,
+    AudienceTotals,
+    AudienceViewer,
+    AudienceViewport,
+    BoardStatusModel,
     BulkWidgetDataParams,
     BulkWidgetDataSpec,
     CanvasMeta,
     CanvasResponse,
     ChatEditParams,
     ChatEditSpec,
+    ChatRevision,
+    ColumnRoster,
     CommentParams,
     CommentSpec,
+    ContextExtractParams,
+    ContextExtractResponse,
+    ContextExtractSpec,
     ContextListResponse,
     ContextParams,
     ContextResponse,
     ContextSpec,
+    CreateBlankParams,
+    CreateBlankResponse,
+    CreateBlankSpec,
     CreateSessionParams,
     CreateSessionSpec,
     CreatorDashboardHtmlType,
@@ -36,11 +71,10 @@ from mammoth.models.dashboard_generated import (
     DashboardActionParams,
     DashboardActionSpec,
     DashboardAnalyticsResponse,
+    DashboardArchiveParams,
     DashboardAuth,
     DashboardEditParams,
     DashboardEditSpec,
-    DashboardGenerationParams,
-    DashboardGenerationSpec,
     DashboardListSchema,
     DashboardModelType,
     DashboardShareParams,
@@ -48,8 +82,7 @@ from mammoth.models.dashboard_generated import (
     DashboardSource,
     DashboardSourcesType,
     DashboardStatus,
-    DashboardSuggestion,
-    DashboardSuggestionsResponse,
+    DashboardTagsParams,
     DashboardViewConfigType,
     DefaultStyleParams,
     DefaultStyleResponse,
@@ -59,7 +92,36 @@ from mammoth.models.dashboard_generated import (
     DeriveStyleSpec,
     DescriptorDataParams,
     DescriptorDataSpec,
+    DigestPrefResponse,
+    DigestPrefSpec,
+    DraftHeadResponse,
+    DraftMove,
     DuplicateDashboardResponse,
+    EngagementActionDay,
+    EngagementActions,
+    EngagementAnonymous,
+    EngagementDailyPoint,
+    EngagementDevices,
+    EngagementEvent,
+    EngagementPage,
+    EngagementPerson,
+    EngagementPersonResponse,
+    EngagementPrevTotals,
+    EngagementReach,
+    EngagementReachCounts,
+    EngagementRemindResponse,
+    EngagementRemindSkip,
+    EngagementRemindSpec,
+    EngagementResponse,
+    EngagementRule,
+    EngagementSurface,
+    EngagementTile,
+    EngagementTotals,
+    EngagementVisit,
+    EngagementVisitPage,
+    ExemplarExtractParams,
+    ExemplarExtractResponse,
+    ExemplarExtractSpec,
     ExtractBrandParams,
     ExtractBrandSpec,
     FeedbackParams,
@@ -67,20 +129,42 @@ from mammoth.models.dashboard_generated import (
     FigureIntentParams,
     FigureIntentResponse,
     FigureIntentSpec,
+    FigurePageTarget,
+    FormatFloorApplied,
+    FormatPreviewNotShown,
+    FormatPreviewResponse,
     GenerateDashboardV3Params,
     GenerateDashboardV3Spec,
+    ImportWorkbookForm,
     JobResponse,
     JobSchema,
     ObjectJobSchema,
     OkResponse,
+    OwnDataAcceptParams,
+    OwnDataAcceptSpec,
+    OwnDataStartParams,
+    OwnDataStartSpec,
     PdfExportParams,
     PdfExportSpec,
+    PendingTemplateResponse,
     PlanPageParams,
     PlanPageResponse,
     PlanPageSpec,
+    PowerBiPreflightResponse,
+    PowerBiRefusal,
+    PresenceParams,
+    PresenceResponse,
+    PresenceSpec,
+    PresentEditor,
     PreviewTemplateParams,
     PreviewTemplateResponse,
     PreviewTemplateSpec,
+    PublicTemplateListResponse,
+    PublicTemplateResponse,
+    QaInsightsFeedback,
+    QaInsightsFields,
+    QaInsightsGroup,
+    QaInsightsResponse,
     QaSettingsParams,
     QaSettingsResponse,
     QaSettingsSpec,
@@ -93,6 +177,8 @@ from mammoth.models.dashboard_generated import (
     ResolveTemplateMappingSpec,
     RestoreCanvasParams,
     RestoreCanvasSpec,
+    ReviewContextParams,
+    ReviewContextSpec,
     RlsAssignmentEntry,
     RlsAssignmentView,
     RlsAssignmentsParams,
@@ -100,6 +186,11 @@ from mammoth.models.dashboard_generated import (
     RlsAssignmentsSpec,
     RlsColumnsResponse,
     RlsDistinctValuesResponse,
+    RosterColumn,
+    RosterCorrelation,
+    RosterGeoDim,
+    RosterHierarchy,
+    RosterSignals,
     SaveCanvasParams,
     SaveCanvasResponse,
     SaveCanvasSpec,
@@ -117,11 +208,24 @@ from mammoth.models.dashboard_generated import (
     StylePresetsResponse,
     StyleResponse,
     StyleTokensResponse,
+    SwapDataParams,
+    SwapDataSpec,
+    SwapFitParams,
+    SwapFitResponse,
+    SwapFitSpec,
+    TagMergeParams,
+    TagRenameParams,
     TemplateDetailResponse,
     TemplateFitResponse,
     TemplateListResponse,
+    TextBlockSpec,
+    TrackActionSpec,
     TrackHeartbeatSpec,
     TrackViewResponse,
+    TrackViewSpec,
+    UnpublishedAuthor,
+    UseTemplateParams,
+    UseTemplateSpec,
     V3DashboardMetaType,
     VisibilityParams,
     VisibilitySpec,
@@ -184,6 +288,24 @@ def _typed_response(
     return response
 
 
+async def tags_delete(self: Any, tag_id: int) -> dict[str, Any]:
+    """Delete a tag from the workspace vocabulary."""
+    path = "/dashboards/tags/{tag_id}"
+    path = path.replace("{tag_id}", str(tag_id))
+    params = None
+    response = await self._client._request_json("DELETE", path, params=params)
+    return response
+
+
+async def tags_rename(self: Any, tag_id: int, body: TagRenameParams) -> dict[str, Any]:
+    """Rename a tag."""
+    path = "/dashboards/tags/{tag_id}"
+    path = path.replace("{tag_id}", str(tag_id))
+    params = None
+    response = await self._client._request_json("PATCH", path, params=params, json=_json_body(body))
+    return response
+
+
 async def analytics(self: Any, dashboard_id: int) -> DashboardAnalyticsResponse:
     """Get Dashboard Analytics."""
     path = "/dashboards/{dashboard_id}/analytics"
@@ -191,6 +313,31 @@ async def analytics(self: Any, dashboard_id: int) -> DashboardAnalyticsResponse:
     params = None
     response = await self._client._request_json("GET", path, params=params)
     return _typed_response(response, (DashboardAnalyticsResponse,), allow_untyped=False)
+
+
+async def audience_get(self: Any, dashboard_id: int, days: int | None = None) -> AudienceResponse:
+    """Dashboard audience."""
+    path = "/dashboards/{dashboard_id}/audience"
+    path = path.replace("{dashboard_id}", str(dashboard_id))
+    params = {key: value for key, value in {"days": days}.items() if value is not None}
+    response = await self._client._request_json("GET", path, params=params)
+    return _typed_response(response, (AudienceResponse,), allow_untyped=False)
+
+
+async def engagement_get(
+    self: Any,
+    dashboard_id: int,
+    days: int | None = None,
+    viewers: Literal["all", "named", "anonymous"] | None = None,
+) -> EngagementResponse:
+    """Dashboard engagement report."""
+    path = "/dashboards/{dashboard_id}/engagement"
+    path = path.replace("{dashboard_id}", str(dashboard_id))
+    params = {
+        key: value for key, value in {"days": days, "viewers": viewers}.items() if value is not None
+    }
+    response = await self._client._request_json("GET", path, params=params)
+    return _typed_response(response, (EngagementResponse,), allow_untyped=False)
 
 
 async def source_list(self: Any) -> DashboardSourcesType:
@@ -251,6 +398,14 @@ async def rls_value_list(
     return _typed_response(response, (RlsDistinctValuesResponse,), allow_untyped=False)
 
 
+async def tags_list(self: Any) -> dict[str, Any]:
+    """List the workspace tag vocabulary."""
+    path = "/dashboards/tags"
+    params = None
+    response = await self._client._request_json("GET", path, params=params)
+    return response
+
+
 async def rls_assignment_list(self: Any, dashboard_id: int) -> RlsAssignmentsResponse:
     """List RLS viewer assignments."""
     path = "/dashboards/{dashboard_id}/rls/assignments"
@@ -271,6 +426,33 @@ async def rls_assignment_set(
     return response
 
 
+async def tags_merge(self: Any, tag_id: int, body: TagMergeParams) -> dict[str, Any]:
+    """Merge one tag into another."""
+    path = "/dashboards/tags/{tag_id}/merge"
+    path = path.replace("{tag_id}", str(tag_id))
+    params = None
+    response = await self._client._request_json("POST", path, params=params, json=_json_body(body))
+    return response
+
+
+async def tags_set(self: Any, dashboard_id: int, body: DashboardTagsParams) -> dict[str, Any]:
+    """Set a dashboard's tags."""
+    path = "/dashboards/{dashboard_id}/tags"
+    path = path.replace("{dashboard_id}", str(dashboard_id))
+    params = None
+    response = await self._client._request_json("PUT", path, params=params, json=_json_body(body))
+    return response
+
+
+async def pages_add(self: Any, dashboard_id: int, body: AddPagesSpec) -> AddPagesResponse:
+    """Add pages structurally (no LLM turn)."""
+    path = "/dashboards/{dashboard_id}/pages"
+    path = path.replace("{dashboard_id}", str(dashboard_id))
+    params = None
+    response = await self._client._request_json("POST", path, params=params, json=_json_body(body))
+    return _typed_response(response, (AddPagesResponse,), allow_untyped=False)
+
+
 async def query(self: Any, dashboard_id: int, body: AdhocQuerySpec) -> AdhocQueryResponse:
     """Editor ad-hoc descriptor query."""
     path = "/dashboards/{dashboard_id}/query"
@@ -280,10 +462,21 @@ async def query(self: Any, dashboard_id: int, body: AdhocQuerySpec) -> AdhocQuer
     return _typed_response(response, (AdhocQueryResponse,), allow_untyped=False)
 
 
-async def template_apply(self: Any, body: ApplyTemplateSpec) -> ObjectJobSchema | JobResponse:
+async def figure_add(self: Any, dashboard_id: int, body: AppendFigureSpec) -> AppendFigureResponse:
+    """Append one authored figure (no LLM turn, no canvas round trip)."""
+    path = "/dashboards/{dashboard_id}/figures"
+    path = path.replace("{dashboard_id}", str(dashboard_id))
+    params = None
+    response = await self._client._request_json("POST", path, params=params, json=_json_body(body))
+    return _typed_response(response, (AppendFigureResponse,), allow_untyped=False)
+
+
+async def template_apply(
+    self: Any, body: ApplyTemplateSpec, project_id: int | None = None
+) -> ObjectJobSchema | JobResponse:
     """Apply a template to a target dataset."""
     path = "/dashboards/v3/templates/apply"
-    params = None
+    params = {key: value for key, value in {"project_id": project_id}.items() if value is not None}
     response = await self._client._request_json("POST", path, params=params, json=_json_body(body))
     return _typed_response(response, (ObjectJobSchema, JobResponse), allow_untyped=False)
 
@@ -314,7 +507,7 @@ async def chat_edit(
 
 async def suggestion_list(
     self: Any, dataview_id: int, table_item_id: int | None = None
-) -> DashboardSuggestionsResponse:
+) -> ObjectJobSchema | JobResponse:
     """Data-grounded starting points for the create screen."""
     path = "/dashboards/v3/suggestions"
     params = {
@@ -323,7 +516,7 @@ async def suggestion_list(
         if value is not None
     }
     response = await self._client._request_json("GET", path, params=params)
-    return _typed_response(response, (DashboardSuggestionsResponse,), allow_untyped=False)
+    return _typed_response(response, (ObjectJobSchema, JobResponse), allow_untyped=False)
 
 
 async def descriptor_data(
@@ -399,19 +592,27 @@ async def figure_intent(
     return _typed_response(response, (FigureIntentResponse,), allow_untyped=False)
 
 
-async def v3_generate(self: Any, body: GenerateDashboardV3Spec) -> ObjectJobSchema | JobResponse:
+async def v3_generate(
+    self: Any, body: GenerateDashboardV3Spec, project_id: int | None = None
+) -> ObjectJobSchema | JobResponse:
     """Generate a v3 dashboard."""
     path = "/dashboards/v3/generate"
-    params = None
+    params = {key: value for key, value in {"project_id": project_id}.items() if value is not None}
     response = await self._client._request_json("POST", path, params=params, json=_json_body(body))
     return _typed_response(response, (ObjectJobSchema, JobResponse), allow_untyped=False)
 
 
-async def canvas_get(self: Any, dashboard_id: int, sequence: int | None = None) -> CanvasResponse:
+async def canvas_get(
+    self: Any, dashboard_id: int, sequence: int | None = None, rls_preview_value: str | None = None
+) -> CanvasResponse:
     """Editor canvas (draft)."""
     path = "/dashboards/{dashboard_id}/canvas"
     path = path.replace("{dashboard_id}", str(dashboard_id))
-    params = {key: value for key, value in {"sequence": sequence}.items() if value is not None}
+    params = {
+        key: value
+        for key, value in {"sequence": sequence, "rls_preview_value": rls_preview_value}.items()
+        if value is not None
+    }
     response = await self._client._request_json("GET", path, params=params)
     return _typed_response(response, (CanvasResponse,), allow_untyped=False)
 
@@ -432,6 +633,15 @@ async def published_canvas(self: Any, url: str) -> CanvasResponse:
     params = None
     response = await self._client._request_json("GET", path, params=params)
     return _typed_response(response, (CanvasResponse,), allow_untyped=False)
+
+
+async def columns(self: Any, dashboard_id: int) -> ColumnRoster:
+    """Source columns (Data panel)."""
+    path = "/dashboards/{dashboard_id}/columns"
+    path = path.replace("{dashboard_id}", str(dashboard_id))
+    params = None
+    response = await self._client._request_json("GET", path, params=params)
+    return _typed_response(response, (ColumnRoster,), allow_untyped=False)
 
 
 async def pdf_artifact(self: Any, dashboard_id: int, job_id: int) -> dict[str, Any]:
@@ -490,6 +700,15 @@ async def page_plan(self: Any, dashboard_id: int, body: PlanPageSpec) -> PlanPag
     return _typed_response(response, (PlanPageResponse,), allow_untyped=False)
 
 
+async def bi_preflight(self: Any, dashboard_id: int) -> PowerBiPreflightResponse:
+    """What a Power BI export would carry."""
+    path = "/dashboards/{dashboard_id}/powerbi"
+    path = path.replace("{dashboard_id}", str(dashboard_id))
+    params = None
+    response = await self._client._request_json("GET", path, params=params)
+    return _typed_response(response, (PowerBiPreflightResponse,), allow_untyped=False)
+
+
 async def template_preview(self: Any, body: PreviewTemplateSpec) -> PreviewTemplateResponse:
     """Preview a template mapping applied to a target dataset."""
     path = "/dashboards/v3/templates/preview"
@@ -526,6 +745,17 @@ async def published_share_page(self: Any, url: str) -> dict[str, Any]:
     params = None
     response = await self._client._request_binary("GET", path, params=params)
     return response
+
+
+async def templates_use(
+    self: Any, slug: str, body: UseTemplateSpec
+) -> ObjectJobSchema | JobResponse:
+    """Take a template on its own sample data."""
+    path = "/dashboards/v3/templates/{slug}/use"
+    path = path.replace("{slug}", str(slug))
+    params = None
+    response = await self._client._request_json("POST", path, params=params, json=_json_body(body))
+    return _typed_response(response, (ObjectJobSchema, JobResponse), allow_untyped=False)
 
 
 async def published_video_artifact(self: Any, url: str) -> dict[str, Any]:
@@ -679,6 +909,24 @@ async def qa_session_set_visibility(
     return _typed_response(response, (SessionResponse,), allow_untyped=False)
 
 
+async def pbix_assess(self: Any, attachment_id: int) -> AttachmentJob:
+    """Read an attached workbook before importing it."""
+    path = "/dashboards/v3/attachments/{attachment_id}/assess"
+    path = path.replace("{attachment_id}", str(attachment_id))
+    params = None
+    response = await self._client._request_json("POST", path, params=params)
+    return _typed_response(response, (AttachmentJob,), allow_untyped=False)
+
+
+async def pbix_intent(self: Any, attachment_id: int, body: AttachmentIntentForm) -> AttachmentJob:
+    """Read an attached workbook against one of your views."""
+    path = "/dashboards/v3/attachments/{attachment_id}/intent"
+    path = path.replace("{attachment_id}", str(attachment_id))
+    params = None
+    response = await self._client._request_json("POST", path, params=params, json=_json_body(body))
+    return _typed_response(response, (AttachmentJob,), allow_untyped=False)
+
+
 async def context_list(self: Any) -> ContextListResponse:
     """The workspace's contexts."""
     path = "/dashboards/v3/contexts"
@@ -826,6 +1074,22 @@ async def style_extract_brand(self: Any, body: ExtractBrandSpec) -> ObjectJobSch
     return _typed_response(response, (ObjectJobSchema, JobResponse), allow_untyped=False)
 
 
+async def context_extract(self: Any, body: ContextExtractSpec) -> ContextExtractResponse:
+    """Read a context file into slot suggestions."""
+    path = "/dashboards/v3/contexts/extract"
+    params = None
+    response = await self._client._request_json("POST", path, params=params, json=_json_body(body))
+    return _typed_response(response, (ContextExtractResponse,), allow_untyped=False)
+
+
+async def exemplar_extract(self: Any, body: ExemplarExtractSpec) -> ExemplarExtractResponse:
+    """Read an example report into an editable spec."""
+    path = "/dashboards/v3/exemplar/extract"
+    params = None
+    response = await self._client._request_json("POST", path, params=params, json=_json_body(body))
+    return _typed_response(response, (ExemplarExtractResponse,), allow_untyped=False)
+
+
 async def template_fit(
     self: Any, dataview_id: int, table_item_id: int | None = None
 ) -> TemplateFitResponse:
@@ -888,16 +1152,33 @@ async def template_create(self: Any, body: SaveTemplateSpec) -> TemplateDetailRe
     return _typed_response(response, (TemplateDetailResponse,), allow_untyped=False)
 
 
+async def templates_pending(self: Any) -> PendingTemplateResponse:
+    """Take the template this workspace signed up for."""
+    path = "/dashboards/v3/templates/pending"
+    params = None
+    response = await self._client._request_json("POST", path, params=params)
+    return _typed_response(response, (PendingTemplateResponse,), allow_untyped=False)
+
+
 GENERATED_METHODS = [
+    "tags_delete",
+    "tags_rename",
     "analytics",
+    "audience_get",
+    "engagement_get",
     "source_list",
     "data_draft",
     "data_published",
     "rls_column_list",
     "rls_value_list",
+    "tags_list",
     "rls_assignment_list",
     "rls_assignment_set",
+    "tags_merge",
+    "tags_set",
+    "pages_add",
     "query",
+    "figure_add",
     "template_apply",
     "chat_history",
     "chat_edit",
@@ -913,16 +1194,19 @@ GENERATED_METHODS = [
     "canvas_get",
     "canvas_save",
     "published_canvas",
+    "columns",
     "pdf_artifact",
     "published_pdf_artifact",
     "video_state",
     "og_card",
     "published_og_card",
     "page_plan",
+    "bi_preflight",
     "template_preview",
     "template_resolve_mapping",
     "canvas_restore",
     "published_share_page",
+    "templates_use",
     "published_video_artifact",
     "qa_comment_create",
     "qa_ask",
@@ -937,6 +1221,8 @@ GENERATED_METHODS = [
     "qa_session_rename",
     "qa_feedback",
     "qa_session_set_visibility",
+    "pbix_assess",
+    "pbix_intent",
     "context_list",
     "context_create",
     "style_custom_list",
@@ -954,6 +1240,8 @@ GENERATED_METHODS = [
     "template_rename",
     "style_derive",
     "style_extract_brand",
+    "context_extract",
+    "exemplar_extract",
     "template_fit",
     "style_default_get",
     "style_default_set",
@@ -961,4 +1249,5 @@ GENERATED_METHODS = [
     "style_preset_list",
     "template_list",
     "template_create",
+    "templates_pending",
 ]

@@ -368,6 +368,15 @@ def _iso(epoch: int) -> str:
     return datetime.fromtimestamp(epoch, UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
+def _login_server_prefix(profile_name: str, server_prefix: str | None) -> str | None:
+    """An explicit --server-prefix wins, else the profile's stored prefix, else None."""
+    profiles.validate_profile_name(profile_name)
+    if server_prefix is not None:
+        return server_prefix
+    existing = profiles.get_profile(profile_name)
+    return existing.server_prefix if existing is not None else None
+
+
 def _run_oauth_login(
     invocation: Invocation,
     *,
@@ -378,6 +387,8 @@ def _run_oauth_login(
     device: bool = False,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     """Sign in through the browser (or a device code) and persist the refreshable session."""
+    profile_name = invocation.profile or profiles.DEFAULT_PROFILE_NAME
+    server_prefix = _login_server_prefix(profile_name, server_prefix)
     base_url = resolve_base_url(server_prefix)
     client_id = oauth.client_id_for(server_prefix)
     say = lambda line: typer.echo(line, err=True)  # noqa: E731
@@ -390,8 +401,6 @@ def _run_oauth_login(
     # The server-verified workspace wins over the grant's own workspace_id.
     workspace_id = _verify_login(invocation, base_url=base_url, api_token=session.access)
 
-    profile_name = invocation.profile or profiles.DEFAULT_PROFILE_NAME
-    profiles.validate_profile_name(profile_name)
     existing = profiles.get_profile(profile_name)
     if session.project_id is not None:
         project_id = session.project_id
@@ -457,6 +466,7 @@ def _run_login(
 
     blockers = _prompt_blockers(invocation)
 
+    profile_name = invocation.profile or profiles.DEFAULT_PROFILE_NAME
     chosen = _choose_method(method, invocation, server_prefix=server_prefix, blockers=blockers)
     if chosen in ("oauth", "device"):
         return _run_oauth_login(
@@ -479,13 +489,15 @@ def _run_login(
         request = _validate_login_document(document)
         api_token = request.api_token.strip()
         _check_token_shape(api_token)
-        effective_prefix = server_prefix if server_prefix is not None else request.server_prefix
+        effective_prefix = _login_server_prefix(
+            profile_name, server_prefix if server_prefix is not None else request.server_prefix
+        )
     elif not blockers:
         # Two flows, nothing else: a terminal prompts for the token, and
         # non-interactive uses --input.
         api_token = _prompt_secret("API token")
         _check_token_shape(api_token)
-        effective_prefix = server_prefix
+        effective_prefix = _login_server_prefix(profile_name, server_prefix)
     else:
         raise CliError(
             code="login_input_required",
@@ -502,8 +514,6 @@ def _run_login(
     resolved_base_url = resolve_base_url(effective_prefix)
     effective_workspace = _verify_login(invocation, base_url=resolved_base_url, api_token=api_token)
 
-    profile_name = invocation.profile or profiles.DEFAULT_PROFILE_NAME
-    profiles.validate_profile_name(profile_name)
     existing = profiles.get_profile(profile_name)
     record = profiles.ProfileRecord(
         name=profile_name,

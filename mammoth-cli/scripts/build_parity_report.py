@@ -61,7 +61,15 @@ def build() -> str:
     lines.append("")
     lines.append("| Disposition | Count |")
     lines.append("|---|---:|")
-    for name in ("command", "alias", "protocol_only", "deprecated", "server_unavailable"):
+    for name in (
+        "command",
+        "alias",
+        "protocol_only",
+        "internal_only",
+        "deprecated",
+        "server_unavailable",
+        "unmapped",
+    ):
         lines.append(f"| {name} | {disp.get(name, 0)} |")
     lines.append(f"| **total** | **{sum(disp.values())}** |")
     lines.append("")

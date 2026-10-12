@@ -340,6 +340,185 @@ class AgentsAPI:
             "POST", f"/agents/sessions/{session_id}/turns/{turn_id}/cancel"
         )
 
+    async def run_units_list(
+        self,
+        session_id: str,
+        run_id: str,
+        step: int | None = None,
+        state: str | None = None,
+        cursor: int | None = None,
+    ) -> dict[str, Any]:
+        """List the units of work a run's steps do, one page at a time.
+
+        Args:
+            session_id: ID of the session.
+            run_id: ID of the run.
+            step: Only the units of this plan step.
+            state: Only the units in this state: ``queued``, ``running``, ``done``,
+                ``failed`` or ``skipped``.
+            cursor: Offset of the page to read.
+
+        Returns:
+            Dict with the page of units.
+
+        Raises:
+            MammothValidationError: If *session_id* or *run_id* is empty.
+        """
+        _require_id("session_id", session_id)
+        _require_id("run_id", run_id)
+        params = {
+            key: value
+            for key, value in {"step": step, "state": state, "cursor": cursor}.items()
+            if value is not None
+        }
+        return await self._client._request_json(
+            "GET",
+            f"/agents/sessions/{session_id}/runs/{run_id}/units",
+            params=params or None,
+        )
+
+    async def run_instances_list(self, session_id: str, run_id: str) -> dict[str, Any]:
+        """List the agents of a run: the main agent, its workers and recon helpers.
+
+        Args:
+            session_id: ID of the session.
+            run_id: ID of the run.
+
+        Returns:
+            Dict with the run's agent instances.
+
+        Raises:
+            MammothValidationError: If *session_id* or *run_id* is empty.
+        """
+        _require_id("session_id", session_id)
+        _require_id("run_id", run_id)
+        return await self._client._request_json(
+            "GET", f"/agents/sessions/{session_id}/runs/{run_id}/instances"
+        )
+
+    async def run_instance_messages(
+        self, session_id: str, run_id: str, instance_id: str
+    ) -> dict[str, Any]:
+        """List the messages an agent of a run sent or received.
+
+        Args:
+            session_id: ID of the session.
+            run_id: ID of the run.
+            instance_id: ID of the agent instance (from ``run_instances_list``).
+
+        Returns:
+            Dict with the instance's messages.
+
+        Raises:
+            MammothValidationError: If *session_id*, *run_id* or *instance_id* is empty.
+        """
+        _require_id("session_id", session_id)
+        _require_id("run_id", run_id)
+        _require_id("instance_id", instance_id)
+        return await self._client._request_json(
+            "GET",
+            f"/agents/sessions/{session_id}/runs/{run_id}/instances/{instance_id}/messages",
+        )
+
+    async def run_instance_transcript(
+        self, session_id: str, run_id: str, instance_id: str
+    ) -> dict[str, Any]:
+        """Get the model messages of an agent of a run, with credentials redacted.
+
+        Args:
+            session_id: ID of the session.
+            run_id: ID of the run.
+            instance_id: ID of the agent instance (from ``run_instances_list``).
+
+        Returns:
+            Dict with the instance's model messages.
+
+        Raises:
+            MammothValidationError: If *session_id*, *run_id* or *instance_id* is empty.
+        """
+        _require_id("session_id", session_id)
+        _require_id("run_id", run_id)
+        _require_id("instance_id", instance_id)
+        return await self._client._request_json(
+            "GET",
+            f"/agents/sessions/{session_id}/runs/{run_id}/instances/{instance_id}/transcript",
+        )
+
+    async def run_retry(self, session_id: str, run_id: str) -> dict[str, Any]:
+        """Retry a failed or stopped run as a new run. Starts paid model work.
+
+        Args:
+            session_id: ID of the session.
+            run_id: ID of the run.
+
+        Returns:
+            Dict with the new run.
+
+        Raises:
+            MammothValidationError: If *session_id* or *run_id* is empty.
+        """
+        _require_id("session_id", session_id)
+        _require_id("run_id", run_id)
+        return await self._client._request_json(
+            "POST", f"/agents/sessions/{session_id}/runs/{run_id}/retry"
+        )
+
+    async def message_set_request_kind(
+        self, session_id: str, message_id: str, request_kind: str
+    ) -> dict[str, Any]:
+        """Correct the request kind a reply answered. Only the session's creator may.
+
+        Args:
+            session_id: ID of the session.
+            message_id: ID of the reply message.
+            request_kind: One of ``"ask"``, ``"insight"``, ``"build"``, ``"automate"``
+                or ``"fix"``.
+
+        Returns:
+            Dict with the updated message.
+
+        Raises:
+            MammothValidationError: If *session_id* or *message_id* is empty.
+        """
+        _require_id("session_id", session_id)
+        _require_id("message_id", message_id)
+        return await self._client._request_json(
+            "PATCH",
+            f"/agents/sessions/{session_id}/messages/{message_id}/request-kind",
+            json={"request_kind": request_kind},
+        )
+
+    async def plan_edit_proposal(
+        self,
+        session_id: str,
+        plan_id: str,
+        action: str,
+        key: str,
+        name: str | None = None,
+    ) -> dict[str, Any]:
+        """Rename or remove an item of the plan's waiting workflow proposal. Creator only.
+
+        Args:
+            session_id: ID of the session.
+            plan_id: ID of the plan.
+            action: ``"rename"`` or ``"remove"``.
+            key: Key of the proposal item to change.
+            name: New name; required for ``"rename"``.
+
+        Returns:
+            Dict with the updated proposal.
+
+        Raises:
+            MammothValidationError: If *session_id* is empty.
+        """
+        _require_id("session_id", session_id)
+        body: dict[str, Any] = {"plan_id": plan_id, "action": action, "key": key}
+        if name is not None:
+            body["name"] = name
+        return await self._client._request_json(
+            "PATCH", f"/agents/sessions/{session_id}/plan/proposal", json=body
+        )
+
     async def _run_action(self, session_id: str, run_id: str, action: str) -> dict[str, Any]:
         _require_id("session_id", session_id)
         _require_id("run_id", run_id)
