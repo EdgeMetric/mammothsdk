@@ -1085,7 +1085,7 @@ def _execute(invocation: Invocation) -> None:
     from mammoth_cli.runtime.strict import validate_extra_args
 
     if invocation.profile is None:
-        invocation = replace(invocation, profile=profiles.get_selected())
+        invocation = replace(invocation, profile=profiles.get_selected(), profile_is_default=True)
 
     def producer() -> tuple[Any, dict[str, Any]]:
         refuse_hand_crafted_write(invocation.command_id)
@@ -1460,6 +1460,10 @@ def _top_level_typer(name: str) -> typer.Typer:
     return sub
 
 
+#: Groups kept out of ``mammoth --help`` until their backend is generally available.
+#: They still run when typed; only the listing hides them.
+_HIDDEN_UNTIL_GA = frozenset({"agent"})
+
 # Top-level groups are converted to Click on first use. Building the leaf
 # callbacks and ``--help`` text for all ~550 commands, then letting Typer
 # convert every one of them, used to cost most of the CLI's start-up time on
@@ -1476,6 +1480,7 @@ def _load_top_level_group(name: str) -> Any:
         name=name,
         help=_GROUP_DESCRIPTIONS.get(name, f"Commands for {name}."),
         rich_help_panel=_ROOT_HELP_PANELS.get(name),
+        hidden=name in _HIDDEN_UNTIL_GA,
     )
     return typer.main.get_group_from_info(info, **_LAZY_SETTINGS)
 
@@ -1548,6 +1553,7 @@ def _group_stub(name: str) -> Any:
         help=_GROUP_DESCRIPTIONS.get(name, f"Commands for {name}."),
         rich_help_panel=_ROOT_HELP_PANELS.get(name),
         rich_markup_mode=_LAZY_SETTINGS["rich_markup_mode"],
+        hidden=name in _HIDDEN_UNTIL_GA,
     )
 
 

@@ -1,8 +1,8 @@
 """Authentication and project-context resolution precedence.
 
 Authentication requires a login: credentials resolve from an explicit login
-(handed in by ``auth login``) or from a saved profile. There is no environment
-credential path.
+(handed in by ``auth login``) or from a saved profile. An environment
+token (MAMMOTH_API_TOKEN) outranks both, for CI.
 """
 
 from __future__ import annotations
@@ -105,3 +105,32 @@ def test_resolve_project_falls_back_to_profile() -> None:
 
 def test_resolve_project_none_when_nothing_set() -> None:
     assert resolve_project(_invocation(), None) is None
+
+
+def test_resolve_auth_uses_the_ci_token_from_the_environment(
+    isolated_cli_config: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """A CI job with only MAMMOTH_API_TOKEN set authenticates without a saved login."""
+    monkeypatch.setenv("MAMMOTH_API_TOKEN", "mm_ci_token")
+    monkeypatch.setenv("MAMMOTH_SERVER_PREFIX", "release")
+    monkeypatch.setattr("mammoth_cli.context.resolver.resolve_token_workspace", lambda *_a, **_k: 9)
+    resolved = resolve_auth(_invocation())
+    assert resolved.api_token == "mm_ci_token"
+    err = capsys.readouterr().err
+    assert "MAMMOTH_API_TOKEN" in err and "release.mammoth.io" in err and "mm_ci_token" not in err
+    assert resolved.workspace_id == 9
+    assert resolved.base_url == "https://release.mammoth.io/api/v2"
+
+
+def test_resolve_auth_explicit_profile_beats_the_environment_token(
+    isolated_cli_config: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """A token left exported in the shell must not override the profile the user typed."""
+    profiles.save_profile(
+        profiles.ProfileRecord(name="koyal", workspace_id=4, server_prefix="release")
+    )
+    credentials.store_credentials("koyal", "k", "s", storage="file")
+    monkeypatch.setenv("MAMMOTH_API_TOKEN", "mm_ambient")
+    resolved = resolve_auth(_invocation(profile="koyal"))
+    assert (resolved.api_key, resolved.api_token, resolved.workspace_id) == ("k", None, 4)
+    assert "MAMMOTH_API_TOKEN" not in capsys.readouterr().err

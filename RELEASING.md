@@ -12,7 +12,8 @@ the CLI**. `cli-release.yml` enforces this with a gate that fails unless the
 required `mammoth-io` range already resolves on PyPI.
 
 Each package's version lives in **two files that must stay in sync**:
-`pyproject.toml` and the package's `__init__.py`.
+`pyproject.toml` and the package's `__init__.py`. `mammoth-mcp-server` has a third,
+`mammoth-mcp-server/server.json` (the MCP registry entry); a test fails when it drifts.
 
 The CLI's release metadata is now PEP 621 in `mammoth-cli/pyproject.toml` and
 its build backend is Hatchling. The CI workflow and checked-in lockfile are

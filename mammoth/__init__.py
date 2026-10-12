@@ -282,7 +282,7 @@ def __dir__() -> list[str]:
     return sorted({*globals(), *_LAZY})
 
 
-__version__ = "0.8.36"
+__version__ = "0.8.38"
 __all__ = [
     # Client
     "MammothClient",

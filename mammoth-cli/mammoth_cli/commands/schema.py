@@ -1344,6 +1344,10 @@ def runnable_example(
     # the manifest carries the safe ``creds.json`` invocation instead.
     if record["command_id"] == "auth.login":
         return None
+    if record["command_id"] == "view.data.get":
+        # VIEW_ID then DATASET_ID: two different placeholders so a reader can
+        # tell which is which (the generic fallback printed "123 123").
+        return "mammoth view data get 123 456"
     if record["command_id"] == "ai.retention.condition":
         return shlex.join(
             [

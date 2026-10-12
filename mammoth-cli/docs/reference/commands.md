@@ -1,6 +1,6 @@
 # Command reference
 
-Generated from the reviewed command manifests for mammoth-cli 2.2.73.
+Generated from the reviewed command manifests for mammoth-cli 2.2.74.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
@@ -5790,7 +5790,7 @@ Total commands: 740.
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dataviews.DataviewsAPI.get_data`
-- Agent example: `mammoth view data get 123 123`
+- Agent example: `mammoth view data get 123 456`
 
 ### `mammoth view data profile`
 
