@@ -67,6 +67,39 @@ def test_login_from_input_no_input_succeeds(
     assert _TOKEN not in result.stdout
 
 
+def _relogin_with_stored_koyal_profile(tmp_path: Path, *flags: str) -> dict[str, Any]:
+    """Log in again on a profile saved with prefix koyal; return the envelope data."""
+    profiles.save_profile(
+        profiles.ProfileRecord(name="koyal", workspace_id=4, server_prefix="koyal")
+    )
+    doc = _write_login_doc(tmp_path, api_token=_TOKEN)
+    result = make_runner().invoke(
+        ["auth", "login", "--profile", "koyal", "--input", str(doc), "--storage", "file"]
+        + [*flags, "--output", "json"],
+        env={},
+    )
+    assert result.exit_code == 0, result.stderr
+    return json.loads(result.stdout)["data"]
+
+
+def test_login_again_without_the_flag_keeps_the_profile_server(
+    isolated_cli_config: Path, fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    data = _relogin_with_stored_koyal_profile(tmp_path)
+    assert data["base_url"] == "https://koyal.mammoth.io/api/v2"
+    stored = profiles.get_profile("koyal")
+    assert stored is not None and stored.server_prefix == "koyal"
+
+
+def test_login_server_prefix_flag_overrides_the_profile_server(
+    isolated_cli_config: Path, fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    data = _relogin_with_stored_koyal_profile(tmp_path, "--server-prefix", "release")
+    assert data["base_url"] == "https://release.mammoth.io/api/v2"
+    stored = profiles.get_profile("koyal")
+    assert stored is not None and stored.server_prefix == "release"
+
+
 def test_login_noninteractive_without_source_requires_input(
     isolated_cli_config: Path, fake_service: FakeMammothService
 ) -> None:
