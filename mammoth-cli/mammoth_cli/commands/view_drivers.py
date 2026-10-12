@@ -58,7 +58,8 @@ _NOTE = (
     "larger. For a column of free text, its contributors entry also lists terms: the words "
     "in the most notes in period b against period a (count_a, count_b); name the top term "
     "and its counts as what grew. If partial_period is present, say that period is "
-    "incomplete in the data, so the two periods are not like for like. Give amounts in the currency named in "
+    "incomplete in the data, so the two periods are not like for like. Give amounts in the "
+    "currency named in "
     "'currency'; when it is null, give plain numbers and never invent a currency."
 )
 
