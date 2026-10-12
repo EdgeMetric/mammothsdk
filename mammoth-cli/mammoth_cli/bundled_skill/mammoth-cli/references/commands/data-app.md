@@ -76,7 +76,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth data-app share`. Exact input fields: `mammoth schema get data-app.share`.
 
-Example: `mammoth schema get data-app.share`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth data-app share 123 --input '{"body": {"sample_key": "Status"}}' --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `DataAppShareResult`; mutation `external_effect`, confirmation `yes_always`, wait policy `not_async`.
 

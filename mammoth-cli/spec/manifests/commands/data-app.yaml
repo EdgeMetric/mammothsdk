@@ -320,7 +320,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth data-app share DATA_APP_ID --help
-  agent_example: mammoth schema get data-app.share
+  agent_example: 'mammoth data-app share 123 --input ''{"body": {"sample_key": "Status"}}'' --yes'
   unit_tests:
   - UT-DATA-APP-SHARE
   contract_tests:

@@ -3360,7 +3360,7 @@ Total commands: 740.
 - Mutation class: `external_effect`
 - Confirmation: `yes_always`
 - Backing SDK: `mammoth.api.data_apps.DataAppsAPI.share`
-- Agent example: `mammoth schema get data-app.share`
+- Agent example: `mammoth data-app share 123 --input '{"body": {"sample_key": "Status"}}' --yes`
 
 ### `mammoth data-app update`
 
