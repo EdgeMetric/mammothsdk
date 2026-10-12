@@ -34,6 +34,9 @@ PHRASINGS = [
     ("delete a dataset", "dataset.delete"),
     ("schedule a daily refresh", "automation.create"),
     ("make a dashboard from this data", "dashboard.v3.generate"),
+    ("pull data from a REST API on a schedule", "dataset.create"),
+    ("connect a REST API", "connector.connection.create"),
+    ("elasticsearch", "connector.connection.create"),
 ]
 
 #: Goals the ranking misses today. ``strict`` xfail: the day one starts ranking, this

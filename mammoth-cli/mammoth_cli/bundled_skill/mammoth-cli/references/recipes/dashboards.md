@@ -123,6 +123,15 @@ mammoth dashboard descriptor-data DASHBOARD_ID --input '{"body": {"params": {
 A card that reads the same with and without the filter, or a distinct count
 that equals a row count, is a wrong binding, not a data fact.
 
+## Limits
+
+- `v3 generate` takes one `dataview_id`; `chat edit` cannot add a tile from
+  another view. Join the data into one view first.
+- The smallest date grain is day (day/week/month/quarter/year): hourly data
+  shows as daily points.
+- Currently a view with no numeric column gets no table or bar chart. Add a
+  numeric column such as a count, or build from a view that has a measure.
+
 ## Canvas, widget data and PDF
 
 `dashboard canvas get DASHBOARD_ID` reads the canvas (`data.canvas` incl.

@@ -405,7 +405,8 @@ _COMMAND_DISCOVERY_PURPOSES = {
     ),
     "connector.get": (
         "connector database SQL Server MSSQL MySQL Postgres SFTP file server connection fields "
-        "host port username password required to connect import table file dataset"
+        "host port username password required to connect import table file dataset "
+        "REST API Elasticsearch generic_rest_api config schema"
     ),
     "connector.connection.list": (
         "which outside external sources connected connections list database SQL Server "
@@ -419,11 +420,12 @@ _COMMAND_DISCOVERY_PURPOSES = {
     "connector.connection.create": (
         "connect a database such as SQL Server MSSQL MySQL Postgres Oracle or an SFTP file "
         "server host port username password new connection connector to import a table or "
-        "file into a dataset"
+        "file into a dataset, or a REST API or Elasticsearch generic_rest_api base_url"
     ),
     "connector.ds-config.create": (
         "import pull load read retrieve a table or SQL query from a connected database such "
-        "as SQL Server MSSQL MySQL Postgres connector connection as a new dataset rows data"
+        "as SQL Server MSSQL MySQL Postgres connector connection as a new dataset rows data "
+        "REST API Elasticsearch sample validate"
     ),
     "connector.ds-config.list": (
         "datasets imported from a connected database SQL Server MSSQL MySQL Postgres "
@@ -548,7 +550,8 @@ _COMMAND_DISCOVERY_PURPOSES = {
     # it just had no discovery-purpose text at all.
     "dataset.create": (
         "url web link fetch retrieve pull import public website endpoint api json data weburl "
-        "file csv from an SFTP server folder cloud storage connection connector as a new dataset"
+        "file csv from an SFTP server folder cloud storage connection connector as a new dataset "
+        "REST API Elasticsearch generic_rest_api on a schedule refresh recurring"
     ),
     "dashboard.v3.generate": (
         "create build make new generate dashboard board report from a view description "

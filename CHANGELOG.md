@@ -14,6 +14,14 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - `MammothClient(user_agent=...)` places a caller's product token (for example `mammoth-cli/2.2.72`) before `mammoth-io/<version>` in the `User-Agent` header, so a tool built on the SDK no longer rewrites `client.session.headers`.
 
+### Changed (mammoth-cli 2.2.74)
+
+- An explicit `--profile` now wins over `MAMMOTH_API_TOKEN`; an env token alone prints a stderr note, `view data` reports `paging.total` only when no sequence is given, and the CLI sends `mammoth-cli/<version>` through `MammothClient(user_agent=)` (needs mammoth-io >=0.8.38).
+
+### Added (mammoth-cli 2.2.73)
+
+- REST API import recipe (connection, ds-config sample, dataset with scheduled refresh, Elasticsearch notes); `schema find` routes REST/API import phrasings; `ds-config create` help names the query shape; scheduling `start_at` rules and dashboard limits documented.
+
 ### Changed (mammoth-cli 2.2.72)
 
 - The CLI signs in with the built-in `mammoth-cli` OAuth client when the server publishes none; the per-environment client table is gone, and the login menu always offers Browser and Device.

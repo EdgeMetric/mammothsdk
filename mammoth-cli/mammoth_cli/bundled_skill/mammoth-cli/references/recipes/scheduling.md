@@ -120,7 +120,8 @@ If one exists, change it with `automation update AUTOMATION_ID` (see below)
 instead of creating another. Before a schedule that emails a client, send the
 same email to the user first (or `--dry-run` the create and show the
 recipients, subject and attached views) and get a yes. Give `start_at` a time
-in the future; a past `start_at` may fire straight away or never.
+in the future: under 2 minutes ahead is rejected ("too soon"), a later one is
+stored as sent, a past one starts now.
 
 ## Read it back
 
