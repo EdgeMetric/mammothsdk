@@ -747,12 +747,20 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth dataset bulk-delete --input '{"dataset_ids": [456, 457]}'
 - `mammoth dataset bulk-update` [high_impact/confirm_target] -> mammoth.api.datasets.DatasetsAPI.bulk_update
   example: mammoth dataset bulk-update --input '{"patch_data": {"sample_key": "Status"}}'
+- `mammoth dataset column-stats` [read/none] -> mammoth_cli.commands.dataset.column_stats
+  example: mammoth dataset column-stats
 - `mammoth dataset create` [benign_mutation/none] -> mammoth.api.datasets.DatasetsAPI.create
   example: mammoth dataset create --input '{"dataset_spec": {"url": "https://sampledata.mammoth.io/Multi-Store_Retail_Sales.csv"}, "ds_creation_type": "weburl"}'
 - `mammoth dataset create-from-pdf` [benign_mutation/none] -> mammoth.api.datasets.DatasetsAPI.create_from_pdf
   example: mammoth dataset create-from-pdf 123 --input '{"file_name": "./sales.csv"}'
 - `mammoth dataset data` [read/none] -> mammoth.api.datasets.DatasetsAPI.get_data
   example: mammoth dataset data 123
+- `mammoth dataset definition add` [benign_mutation/confirm_target] -> mammoth.api.datasets.DatasetsAPI.add_definition
+  example: mammoth dataset definition add 123 --input '{"term": "late", "definition": "delivered more than 5 days after shipped_date"}'
+- `mammoth dataset definition list` [read/none] -> mammoth.api.datasets.DatasetsAPI.list_definitions
+  example: mammoth dataset definition list 123
+- `mammoth dataset definition remove` [benign_mutation/prompt_or_yes] -> mammoth.api.datasets.DatasetsAPI.remove_definition
+  example: mammoth dataset definition remove 123 a1b2c3d4
 - `mammoth dataset delete` [destructive/prompt_or_yes] -> mammoth.api.datasets.DatasetsAPI.delete
   example: mammoth dataset delete 123
 - `mammoth dataset file-settings get` [read/none] -> mammoth.api.datasets.DatasetsAPI.get_file_settings
@@ -775,6 +783,8 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth dataset rename 123 --input '{"name": "Revenue report"}'
 - `mammoth dataset restore` [benign_mutation/none] -> mammoth.api.datasets.DatasetsAPI.restore
   example: mammoth dataset restore 123
+- `mammoth dataset schema-diff` [read/none] -> mammoth_cli.commands.dataset.schema_diff
+  example: mammoth dataset schema-diff 10 11
 - `mammoth dataset search` [read/none] -> mammoth_cli.commands.dataset.search
   example: mammoth dataset search 'New Year Sale'
 - `mammoth dataset trash` [benign_mutation/none] -> mammoth.api.datasets.DatasetsAPI.trash
@@ -1272,8 +1282,12 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth view data aggregate 123 --input '{"group_by": ["Channel"], "aggregations": [{"column": "Spend", "function": "SUM", "as_name": "Total Spend"}]}'
 - `mammoth view data compare` [read/none] -> mammoth.api.dataviews.DataviewsAPI.aggregate
   example: mammoth view data compare 111 222 --input '{"group_by": ["Campaign"], "aggregations": [{"column": "Spend", "function": "SUM", "as_name": "Spend"}]}'
+- `mammoth view data drivers` [read/none] -> mammoth_cli.commands.view_drivers.view_data_drivers
+  example: mammoth view data drivers 123 --input '{"measure": {"column": "revenue", "function": "SUM"}, "date_column": "sale_date", "compare": ["2026-07", "2026-08"], "by": ["store", "category"]}'
 - `mammoth view data explore` [read/none] -> mammoth.api.dataviews.DataviewsAPI.explore
   example: mammoth view data explore 123 Status 123
+- `mammoth view data forecast` [read/none] -> mammoth_cli.commands.view_forecast.view_data_forecast
+  example: mammoth view data forecast 123 --input '{"measure": {"column": "revenue", "function": "SUM"}, "date_column": "sale_date", "unit": "month", "periods": 2}'
 - `mammoth view data get` [read/none] -> mammoth.api.dataviews.DataviewsAPI.get_data
   example: mammoth view data get 123 456
 - `mammoth view data profile` [read/none] -> mammoth.api.dataviews.DataviewsAPI.aggregate
@@ -1538,7 +1552,7 @@ Sensitive structured input must come from a private file or pipe; never put secr
 - `mammoth workflow block type` [benign_mutation/none] -> mammoth.api.workflows.WorkflowsAPI.block_type
   example: mammoth workflow block type 123 123 --input '{"connection_type": "sample"}'
 - `mammoth workflow canvas` [benign_mutation/none] -> mammoth.api.workflows.WorkflowsAPI.canvas
-  example: mammoth workflow canvas 12 --input '{"canvas_state": {"proposed_changes": [{"op": "add_view", "dataset_id": 415, "name": "Urgent tickets", "ref": "urgent"}, {"op": "send_to_new_dataset", "dataset_id": 415, "view_ref": "urgent", "name": "Urgent tickets by team"}]}}'
+  example: mammoth workflow canvas 12 --input '{"canvas_state": {"proposed_changes": [{"op": "add_view", "dataset_id": 415, "name": "Urgent tickets", "ref": "urgent"}, {"op": "add_step", "view_ref": "urgent", "transform": "filter", "params": {"condition": {"column": "Priority", "operator": "EQ", "value": "Urgent"}}, "label": "Keep urgent tickets"}, {"op": "send_to_new_dataset", "dataset_id": 415, "view_ref": "urgent", "name": "Urgent tickets by team"}]}}'
 - `mammoth workflow cleanup` [destructive/prompt_or_yes] -> mammoth.api.workflows.WorkflowsAPI.cleanup
   example: mammoth workflow cleanup
 - `mammoth workflow create` [benign_mutation/none] -> mammoth.api.workflows.WorkflowsAPI.create

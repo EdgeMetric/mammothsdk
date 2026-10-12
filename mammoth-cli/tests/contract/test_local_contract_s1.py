@@ -40,7 +40,12 @@ S1_ROUTES = (
     "context.project.clear",
     "context.project.status",
     "context.project.use",
+    "dataset.column-stats",
+    "dataset.definition.add",
+    "dataset.definition.list",
+    "dataset.definition.remove",
     "dataset.find",
+    "dataset.schema-diff",
     "dataset.search",
     "doctor",
     "folder.find",
@@ -62,6 +67,8 @@ S1_ROUTES = (
     "skill.update",
     "upgrade",
     "version",
+    "view.data.drivers",
+    "view.data.forecast",
 )
 
 EXPECTED_FIELDS: dict[str, tuple[str, ...]] = {
@@ -73,6 +80,7 @@ EXPECTED_FIELDS: dict[str, tuple[str, ...]] = {
     "doctor": ("wait",),
     "resolve": ("all_projects",),
     "dataset.find": ("all_projects",),
+    "dataset.definition.add": ("term", "definition"),
     "schema.get": ("full",),
     "schema.list": ("family", "full"),
     "skill.install": ("agents", "scope", "force"),
@@ -81,6 +89,8 @@ EXPECTED_FIELDS: dict[str, tuple[str, ...]] = {
     "skill.agents-md.install": ("path",),
     "skill.uninstall": ("agents", "scope"),
     "skill.update": ("agents", "scope", "force"),
+    "view.data.drivers": ("measure", "date_column", "compare", "by", "conditions"),
+    "view.data.forecast": ("measure", "date_column", "unit", "periods", "conditions"),
 }
 
 

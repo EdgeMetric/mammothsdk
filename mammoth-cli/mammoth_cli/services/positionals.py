@@ -768,6 +768,22 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
             example_value="sales",
         ),
     ),
+    "dataset.schema-diff": (
+        PositionalSpec(
+            name="destination_id",
+            type=int,
+            required=True,
+            help="Dataset the rows would be appended into (the DATASET_ID of batch create).",
+            example_value="10",
+        ),
+        PositionalSpec(
+            name="source_id",
+            type=int,
+            required=True,
+            help="Dataset whose rows would be appended (the SOURCE_ID of batch create).",
+            example_value="11",
+        ),
+    ),
     "dataset.search": (
         PositionalSpec(
             name="term",
@@ -858,6 +874,46 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
             help="ID of the second view to compare.",
         ),
     ),
+    # The period-analysis composites (``view data drivers``, ``forecast``) run
+    # several aggregates over one view: VIEW_ID, then an optional DATASET_ID
+    # resolved from the view. Neither fills an SDK parameter; the handler reads both itself.
+    **{
+        command: (
+            PositionalSpec(
+                name="view_id",
+                type=int,
+                required=True,
+                help="ID of the view whose figures rose or dropped: the change to explain.",
+            ),
+            PositionalSpec(
+                name="dataset_id",
+                type=int,
+                required=False,
+                help="ID of the dataset the view belongs to; resolved from the view when omitted.",
+            ),
+        )
+        for command in ("view.data.drivers",)
+    },
+    **{
+        command: (
+            PositionalSpec(
+                name="view_id",
+                type=int,
+                required=True,
+                help=(
+                    "ID of the view to forecast from, e.g. to estimate what revenue will be "
+                    "next month or in October."
+                ),
+            ),
+            PositionalSpec(
+                name="dataset_id",
+                type=int,
+                required=False,
+                help="ID of the dataset the view belongs to; resolved from the view when omitted.",
+            ),
+        )
+        for command in ("view.data.forecast",)
+    },
     # The view sub-resource commands take VIEW_ID first, then an OPTIONAL trailing
     # DATASET_ID resolved from the view -- mirroring the view data commands so the
     # whole view.* surface is uniformly view-first. The SDK signatures lead with a

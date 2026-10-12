@@ -54,6 +54,7 @@ def figure_bindings(canvas_doc: Mapping[str, Any]) -> list[dict[str, Any]]:
     labels = _labels(canvas_doc)
     axes = _tile_axes(canvas_doc)
     periods = _periods(meta)
+    filters = _tile_filters(meta)
     bindings: list[dict[str, Any]] = []
     for figure, entry in figures.items():
         parts = str(figure).split(":")
@@ -69,6 +70,7 @@ def figure_bindings(canvas_doc: Mapping[str, Any]) -> list[dict[str, Any]]:
                 "descriptors": {str(name): str(did) for name, did in descriptors.items()},
                 "axis": axes.get(str(figure)),
                 "period": periods.get(str(figure)),
+                "filters": filters.get(str(figure)),
             }
         )
     return bindings
@@ -82,6 +84,37 @@ def _periods(meta: Any) -> dict[str, str]:
         return {}
     periods = {str(figure): _period_of(receipt) for figure, receipt in receipts.items()}
     return {figure: period for figure, period in periods.items() if period}
+
+
+_OPERATORS = {"eq": "=", "neq": "!=", "gt": ">", "gte": ">=", "lt": "<", "lte": "<="}
+
+
+def _tile_filters(meta: Any) -> dict[str, list[str]]:
+    """The filters each figure's author set (``["hub = Zaragoza"]``), from its bake receipt.
+
+    The board period is not here: it is the figure's ``period``.
+    """
+    receipts = meta.get("receipts") if isinstance(meta, Mapping) else None
+    if not isinstance(receipts, Mapping):
+        return {}
+    filters = {str(figure): _filters_of(receipt) for figure, receipt in receipts.items()}
+    return {figure: texts for figure, texts in filters.items() if texts}
+
+
+def _filters_of(receipt: Any) -> list[str]:
+    series = receipt.get("series") if isinstance(receipt, Mapping) else None
+    entries = series.values() if isinstance(series, Mapping) else ()
+    texts: list[str] = []
+    for entry in entries:
+        for filter_ in entry.get("filters") or () if isinstance(entry, Mapping) else ():
+            term = filter_.get("term") if isinstance(filter_, Mapping) else None
+            if filter_.get("origin") == "period" or not isinstance(term, Mapping):
+                continue
+            op = str(term.get("op"))
+            text = f"{term.get('field')} {_OPERATORS.get(op, op)} {term.get('value')}"
+            if text not in texts:
+                texts.append(text)
+    return texts
 
 
 def _period_of(receipt: Any) -> str | None:
@@ -210,7 +243,11 @@ def attach_values(
             name: _drawable(_entry_values(results.get(did)), binding["axis"])
             for name, did in binding["descriptors"].items()
         }
-        item = {key: binding[key] for key in ("figure", "kind", "label", "period") if binding[key]}
+        item = {
+            key: binding[key]
+            for key in ("figure", "kind", "label", "period", "filters")
+            if binding[key]
+        }
         if binding["kind"] == "kpi" and set(series) == {"value"}:
             item.update(series["value"])
         else:

@@ -196,6 +196,16 @@ class TestConvertType:
         p = last_payload(mock_view)
         assert p["CONVERT"][0]["FORMAT"] == {"date_format": "MM/DD/YYYY"}
 
+    async def test_with_decimal_separator(self, mock_view):
+        await mock_view.convert_type(
+            [ConversionSpec(column="emp_id", to=ColumnType.NUMERIC, decimal_separator=",")]
+        )
+        p = last_payload(mock_view)
+        assert p["CONVERT"][0]["FORMAT"] == {
+            "decimal_separator": ",",
+            "thousands_separator": ".",
+        }
+
 
 # ── Filter operations ────────────────────────────────────────
 

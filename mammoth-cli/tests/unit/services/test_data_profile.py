@@ -158,3 +158,34 @@ def test_churn_file_rate_is_seven_point_three_four_percent() -> None:
     classes = {1: 3672, -1: 46328}
     positive = dp.choose_positive(classes)
     assert round(classes[positive] / sum(classes.values()), 4) == 0.0734
+
+
+def test_a_text_column_that_mixes_number_notations_is_flagged_with_an_example_of_each() -> None:
+    counts = {"18,48": 3, "1.234,5": 2, "4993": 40, "n/a": 1}
+    found = dp.mixed_number_format(counts)
+    assert found == {"12,5": "18,48", "1.234,5": "1.234,5", "1234": "4993"}
+
+
+@pytest.mark.parametrize(
+    "counts",
+    [
+        {"12.5": 4, "4993": 9, "1,234.5": 1},
+        {"18,48": 3, "7,5": 2},
+        {"Acme": 4, "Beta": 2},
+        {"1,234": 3, "4993": 1},
+    ],
+)
+def test_one_consistent_notation_or_plain_text_is_not_flagged(counts: dict[str, int]) -> None:
+    assert dp.mixed_number_format(counts) == {}
+
+
+def test_the_profile_summary_lists_the_text_column_with_mixed_number_formats() -> None:
+    from mammoth_cli.commands.view_profile import _summary
+
+    details = {
+        "Amount": {"column": "Amount", "type": "TEXT", "distinct": 3, "nulls": 0},
+        "Qty": {"column": "Qty", "type": "NUMERIC", "distinct": 3, "nulls": 0},
+    }
+    tables = {"Amount": {"18,48": 1, "1.234,5": 1, "4993": 1}, "Qty": {"1,5": 1, "7": 1}}
+    summary = _summary(details, 3, tables)
+    assert [m["column"] for m in summary["mixed_number_format"]] == ["Amount"]

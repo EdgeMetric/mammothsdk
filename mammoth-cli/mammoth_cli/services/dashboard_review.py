@@ -39,6 +39,7 @@ _MONEY = re.compile(
 )
 _UNIT = re.compile(r"price|rate|unit|per[_ ]", re.IGNORECASE)
 _QUANTITY = re.compile(r"^(qty|quantity|units?|count|volume|pieces|items?)\b", re.IGNORECASE)
+_RATE_TITLE = re.compile(r"\brate\b|%|on[- ]time|share of", re.IGNORECASE)
 _MEASURE_KEYS = ("measure", "measure2", "measure_x", "measure_y", "measure_size")
 _LIST_MEASURE_KEYS = ("measures", "extra_measures")
 
@@ -95,6 +96,27 @@ def _used(canvas: Mapping[str, Any]) -> tuple[set[str], set[str], list[tuple[str
             if isinstance(figure.get(key), str):
                 dims.add(figure[key])
     return measures, dims, aggs
+
+
+def _counts_titled_as_rates(canvas: Mapping[str, Any]) -> list[dict[str, Any]]:
+    """A KPI or tile that counts rows while its title promises a rate or a share."""
+    warnings: list[dict[str, Any]] = []
+    for _, figure in _charts(canvas):
+        kpis = [k for k in figure.get("kpis") or [] if isinstance(k, Mapping)]
+        for item in kpis or [figure]:
+            title = item.get("label") or item.get("title") or figure.get("title")
+            plain_count = str(item.get("agg") or "").lower() == "count"
+            if isinstance(title, str) and plain_count and _RATE_TITLE.search(title):
+                warnings.append(
+                    {
+                        "issue": "count_titled_as_rate",
+                        "detail": (
+                            f"'{title}' shows a count, title reads as a rate. Show the "
+                            "ratio (numerator over denominator) or retitle it as a count."
+                        ),
+                    }
+                )
+    return warnings
 
 
 def _math_fix(view_id: Any, dataset_id: Any, quantity: str, price: str) -> str:
@@ -160,17 +182,18 @@ def review(
         dataset_id: The view's parent dataset, for the suggested command.
 
     Returns:
-        ``money_not_shown``, ``unit_price_summed`` and ``blank_values``
-        records (``issue``, ``detail``, optional ``fix``); empty when none.
+        ``money_not_shown``, ``unit_price_summed``, ``blank_values`` and
+        ``count_titled_as_rate`` records (``issue``, ``detail``, optional ``fix``); empty when none.
     """
     if not isinstance(canvas_doc, Mapping):
         return []
     canvas = canvas_doc.get("canvas")
     if not isinstance(canvas, Mapping):
         return []
+    rates = _counts_titled_as_rates(canvas)
     profiles = _profiles(canvas_doc) or list(fallback_profiles or [])
     if not profiles:
-        return []
+        return rates
     source = canvas.get("dataset")
     view_id = source.get("dataview_id") if isinstance(source, Mapping) else None
     view_ref = view_id if view_id is not None else "VIEW_ID"
@@ -251,7 +274,7 @@ def review(
                 "detail": "; ".join(parts) + ".",
             }
         )
-    return warnings
+    return warnings + rates
 
 
 def upload_hints(

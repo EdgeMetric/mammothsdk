@@ -145,3 +145,17 @@ def test_plain_arguments_pass_through_unchanged() -> None:
     result = coerce_arguments(ProjectsAPI.create, {"name": "p"})
 
     assert result["name"] == "p"
+
+
+def test_convert_type_decimal_separator_reaches_the_task_format_info() -> None:
+    from mammoth._pure.builders import build_convert_params
+
+    kwargs = coerce_arguments(
+        View.convert_type,
+        {"conversions": [{"column": "Amount", "to": "NUMERIC", "decimal_separator": ","}]},
+    )
+    params = build_convert_params(kwargs["conversions"], {"Amount": "column_1"}, ["column_1"])
+    assert params["CONVERT"][0]["FORMAT"] == {
+        "decimal_separator": ",",
+        "thousands_separator": ".",
+    }

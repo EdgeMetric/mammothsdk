@@ -52,6 +52,16 @@ Execution is unavailable for the current contract and returns `unsupported_contr
 
 Known restriction: BLOCKED[B07 DATASET_PATCH_UNTYPED]; reserved, not registered.
 
+### `dataset.column-stats`
+
+Run: `mammoth dataset column-stats`. Exact input fields: `mammoth schema get dataset.column-stats`.
+
+Example: `mammoth dataset column-stats`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `DatasetColumnStatsResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
 ### `dataset.create`
 
 Run: `mammoth dataset create`. Exact input fields: `mammoth schema get dataset.create`.
@@ -81,6 +91,36 @@ Example: `mammoth dataset data 123`. Placeholders are illustrative; resolve IDs 
 Result: `DatasetDataResult`; mutation `read`, confirmation `none`, wait policy `always_wait`.
 
 Status on release: ran once on CLI 1.1.10 — Bounded retained-resource read with published CLI 1.1.10 and explicit timeout=30,poll_interval=1 returned 100 rows and five headers for dataset 28. No Full claim: retained ETL-owned resource and no option/error/lifecycle matrix beyond this read.
+
+### `dataset.definition.add`
+
+Run: `mammoth dataset definition add`. Exact input fields: `mammoth schema get dataset.definition.add`.
+
+Example: `mammoth dataset definition add 123 --input '{"term": "late", "definition": "delivered more than 5 days after shipped_date"}'`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+
+Result: `DatasetDefinitionAddResult`; mutation `benign_mutation`, confirmation `confirm_target`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `dataset.definition.list`
+
+Run: `mammoth dataset definition list`. Exact input fields: `mammoth schema get dataset.definition.list`.
+
+Example: `mammoth dataset definition list 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `DatasetDefinitionListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `dataset.definition.remove`
+
+Run: `mammoth dataset definition remove`. Exact input fields: `mammoth schema get dataset.definition.remove`.
+
+Example: `mammoth dataset definition remove 123 a1b2c3d4`. Illustrative only: append `--yes` after observing an owned target.
+
+Result: `DatasetDefinitionRemoveResult`; mutation `benign_mutation`, confirmation `prompt_or_yes`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
 
 ### `dataset.delete`
 
@@ -191,6 +231,16 @@ Example: `mammoth dataset restore 123`. Placeholders are illustrative; resolve I
 Result: `DatasetRestoreResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
 Status on release: ran once on CLI 2.0.14 — write sweep 2026-09-18: exit 0 on release with CLI 2.0.14. job 312 restore_datasource -> status success. dataset list --project 21 confirms dataset 49 (name 'stores.csv 2') is back and visible alongside 48. Single invocation only.
+
+### `dataset.schema-diff`
+
+Run: `mammoth dataset schema-diff`. Exact input fields: `mammoth schema get dataset.schema-diff`.
+
+Example: `mammoth dataset schema-diff 10 11`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `DatasetSchemaDiffResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
 
 ### `dataset.search`
 

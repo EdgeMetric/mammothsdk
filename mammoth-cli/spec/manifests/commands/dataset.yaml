@@ -553,6 +553,51 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+- command_id: dataset.schema-diff
+  command_path: dataset schema-diff
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - name: destination_id
+    type: int
+    required: true
+    metavar: DESTINATION_ID
+    falls_back_to_field: null
+    help: Dataset the rows would be appended into (the DATASET_ID of batch create).
+  - name: source_id
+    type: int
+    required: true
+    metavar: SOURCE_ID
+    falls_back_to_field: null
+    help: Dataset whose rows would be appended (the SOURCE_ID of batch create).
+  options: []
+  sdk_symbol: mammoth_cli.commands.dataset.schema_diff
+  sdk_conversion: Call mammoth_cli.commands.dataset.schema_diff with validated request fields.
+  request_model: DatasetSchemaDiffRequest
+  result_model: DatasetSchemaDiffResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: null
+  live_exemption_reason: Local composite over already-covered dataset get and dataset data reads.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dataset schema-diff DESTINATION_ID SOURCE_ID --help
+  agent_example: mammoth dataset schema-diff 10 11
+  unit_tests:
+  - UT-DATASET-SCHEMA-DIFF
+  contract_tests:
+  - CT-DATASET-SCHEMA-DIFF-HUMAN
+  - CT-DATASET-SCHEMA-DIFF-JSON
+  - CT-DATASET-SCHEMA-DIFF-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
 - command_id: dataset.get
   command_path: dataset get
   disposition: command
@@ -815,6 +860,191 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+- command_id: dataset.column-stats
+  command_path: dataset column-stats
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals: []
+  options: []
+  sdk_symbol: mammoth_cli.commands.dataset.column_stats
+  sdk_conversion: Call mammoth_cli.commands.dataset.column_stats with validated request fields.
+  request_model: DatasetColumnStatsRequest
+  result_model: DatasetColumnStatsResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: null
+  live_exemption_reason: Read-only composite over the project's datasets column-stats route.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dataset column-stats --help
+  agent_example: mammoth dataset column-stats
+  unit_tests:
+  - UT-DATASET-COLUMN-STATS
+  contract_tests:
+  - CT-DATASET-COLUMN-STATS-HUMAN
+  - CT-DATASET-COLUMN-STATS-JSON
+  - CT-DATASET-COLUMN-STATS-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Needs a project. Use this instead of profiling each view when the question
+    spans datasets ("missing values", "blanks", "data quality across the project"): one call
+    returns every dataset''s columns with their blank count and share, type and distinct count,
+    from stats stored at the last load or pipeline run. Rank columns by blank_pct (or blank_count)
+    and name the worst dataset and column.'
+  reviewed_by: primary
+- command_id: dataset.definition.list
+  command_path: dataset definition list
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - name: dataset_id
+    type: int
+    required: true
+    metavar: DATASET_ID
+    falls_back_to_field: null
+    help: ID of the dataset.
+  options: []
+  sdk_symbol: mammoth.api.datasets.DatasetsAPI.list_definitions
+  sdk_conversion: Call mammoth.api.datasets.DatasetsAPI.list_definitions with validated request fields.
+  request_model: DatasetDefinitionListRequest
+  result_model: DatasetDefinitionListResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: null
+  live_exemption_reason: Read-only route over the dataset's saved definitions.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dataset definition list DATASET_ID --help
+  agent_example: mammoth dataset definition list 123
+  unit_tests:
+  - UT-DATASET-DEFINITION-LIST
+  contract_tests:
+  - CT-DATASET-DEFINITION-LIST-HUMAN
+  - CT-DATASET-DEFINITION-LIST-JSON
+  - CT-DATASET-DEFINITION-LIST-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Lists what terms mean for this dataset (id, term, definition), shared by
+    everyone''s chats on it. The project''s definitions already appear in every turn''s context,
+    so there is no need to list them before answering; list them to find the id to remove.'
+  reviewed_by: primary
+- command_id: dataset.definition.add
+  command_path: dataset definition add
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - AddDatasetDefinition
+  positionals:
+  - name: dataset_id
+    type: int
+    required: true
+    metavar: DATASET_ID
+    falls_back_to_field: null
+    help: ID of the dataset.
+  options: []
+  sdk_symbol: mammoth.api.datasets.DatasetsAPI.add_definition
+  sdk_conversion: Call mammoth.api.datasets.DatasetsAPI.add_definition with validated request fields.
+  request_model: DatasetDefinitionAddRequest
+  result_model: DatasetDefinitionAddResult
+  mutation_class: benign_mutation
+  edits_target: true
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: No automated disposable-project fixture wired into tests/live yet for this command.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dataset definition add DATASET_ID --help
+  agent_example: 'mammoth dataset definition add 123 --input ''{"term": "late", "definition": "delivered
+    more than 5 days after shipped_date"}'''
+  unit_tests:
+  - UT-DATASET-DEFINITION-ADD
+  contract_tests:
+  - CT-DATASET-DEFINITION-ADD-HUMAN
+  - CT-DATASET-DEFINITION-ADD-JSON
+  - CT-DATASET-DEFINITION-ADD-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Saves what a term means for this dataset: term (1-60 characters) and definition
+    (1-300 characters) from --input. A definition is shared by everyone''s chats on this dataset,
+    so the user confirms each save. Save one only when the user states what a term means for this
+    data, not to answer a one-off question. Write the definition in terms of the dataset''s real
+    column names. A definition for an existing term (any case) replaces it; at most 20 per dataset.
+    The project''s definitions already appear in every turn''s context, so there is no need to
+    list them before answering.'
+  reviewed_by: primary
+  readback:
+    command: dataset.definition.list
+    ids:
+      dataset_id: positional.0
+    kind: object
+- command_id: dataset.definition.remove
+  command_path: dataset definition remove
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - RemoveDatasetDefinition
+  positionals:
+  - name: dataset_id
+    type: int
+    required: true
+    metavar: DATASET_ID
+    falls_back_to_field: null
+    help: ID of the dataset.
+  - name: definition_id
+    type: str
+    required: true
+    metavar: DEFINITION_ID
+    falls_back_to_field: null
+    help: ID of the definition.
+  options: []
+  sdk_symbol: mammoth.api.datasets.DatasetsAPI.remove_definition
+  sdk_conversion: Call mammoth.api.datasets.DatasetsAPI.remove_definition with validated request fields.
+  request_model: DatasetDefinitionRemoveRequest
+  result_model: DatasetDefinitionRemoveResult
+  mutation_class: benign_mutation
+  edits_target: true
+  confirmation: prompt_or_yes
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: No automated disposable-project fixture wired into tests/live yet for this command.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dataset definition remove DATASET_ID DEFINITION_ID --help
+  agent_example: mammoth dataset definition remove 123 a1b2c3d4
+  unit_tests:
+  - UT-DATASET-DEFINITION-REMOVE
+  contract_tests:
+  - CT-DATASET-DEFINITION-REMOVE-HUMAN
+  - CT-DATASET-DEFINITION-REMOVE-JSON
+  - CT-DATASET-DEFINITION-REMOVE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Removes one definition by the id dataset definition list returns; use it
+    when the user asks to drop or forget what a term means for this dataset. Everyone''s chats on
+    the dataset stop using it.'
+  reviewed_by: primary
+  readback:
+    command: dataset.definition.list
+    ids:
+      dataset_id: positional.0
+    kind: object
 - command_id: dataset.search
   command_path: dataset search
   disposition: command

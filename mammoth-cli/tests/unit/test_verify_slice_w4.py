@@ -327,3 +327,18 @@ def test_dashboard_link_is_the_web_address_of_the_board() -> None:
         dashboard_link("https://app.mammoth.io/api/v2", 4, 140)
         == "https://app.mammoth.io/#/workspaces/4/publish/140"
     )
+
+
+def test_a_tile_says_which_filters_its_author_set() -> None:
+    """Run 2: the board read kept only the period, so "hub = Zaragoza" was invisible."""
+    results = {
+        "d-rev": {"status": "success", "value": 10.0},
+        "d-country": {"status": "success", "data": [{"key": "France", "value": 3.0}]},
+        "d-trend": {"status": "success", "data": [{"key": "2011-01", "value": 1.0}]},
+    }
+
+    kpi, country, trend = attach_values(figure_bindings(PERIOD_DOC), results)
+
+    assert country["filters"] == ["Country != UK"]
+    assert "filters" not in kpi
+    assert "filters" not in trend

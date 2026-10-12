@@ -44,6 +44,18 @@ returns the project's datasets whose name, column names or sampled column
 values contain TERM, each with the matched column and value. `dataset find`
 and `browse` search match names only. A `browse` search hit carries `dataset_id` or `view_id`: use those,
 never the tree `id`.
+To check missing values or blanks across a project's datasets, run
+`dataset column-stats` once instead of profiling each view: it returns every
+dataset's columns with their blank count and share, type and distinct count,
+from stats stored at the last load or pipeline run.
+When the user states what a term means for a dataset ("late means delivered
+more than 5 days after shipped_date"), save it with
+`dataset definition add DATASET_ID --input '{"term": "...", "definition": "..."}'`,
+written in the dataset's real column names. A definition is shared by
+everyone's chats on that dataset, so the save needs
+`--yes --confirm DATASET_ID`, and a definition for an existing term replaces
+it. Do not save one for a one-off question. `dataset definition list` and
+`dataset definition remove DATASET_ID DEFINITION_ID` read and drop them.
 
 ```bash
 mammoth capability find "transform"
@@ -130,16 +142,19 @@ NAME --input '{"seed_datasource_id": ROOT_DATASET_ID}'`, which returns its
 record id. `workflow cleanup` deletes the project's orphaned skeleton
 ("ghost") workflows (destructive; needs `--yes`).
 
-To only *suggest* a workflow's shape for the user to review, use `workflow
+To only *suggest* changes to a workflow for the user to review, use `workflow
 canvas WORKFLOW_ID --input '{"canvas_state": {"proposed_changes": [...]}}'`.
-Nothing is built until the user presses Save on the Workflows canvas; tell
-them the changes are waiting there. Changes are `add_view`, `rename_view`,
-`trash_view`, `rename_dataset`, `trash_dataset`, `send_to_new_dataset`,
-`send_to_dataset`, `join` and `export` (fields per op: `schema get
-workflow.canvas`). A later change in the same call can point at an earlier
-one: give the earlier change a `ref`, then use `view_ref`, `dataset_ref` or
-`target_dataset_ref` instead of an id. It cannot add filters, calculations or
-other tasks; if the request needs those, build it with `view` commands.
+Nothing is built until the user presses Save on the Workflows canvas, which
+builds every change in flow order; tell them the changes are waiting there.
+Changes are `add_view`, `rename_view`, `trash_view`, `rename_dataset`,
+`trash_dataset`, `send_to_new_dataset`, `send_to_dataset`, `join`, `export`,
+and, for the steps inside a view, `add_step`, `update_step` and `remove_step`
+(fields per op: `schema get workflow.canvas`). A later change in the same call
+can point at an earlier one: give the earlier change a `ref`, then use
+`view_ref`, `dataset_ref` or `target_dataset_ref` instead of an id. Propose the
+filters, calculations and other tasks a view needs as `add_step` changes in the
+same call (`transform` is a `view transform` kind, `params` its `--input`),
+never as `view` commands run afterwards.
 
 Draft mode is server-side batching for view pipeline edits. Enter, inspect
 status, submit, and verify pipeline state; discard only with the required
@@ -158,6 +173,18 @@ applied.
   put a card on a dashboard, say it to `dashboard chat edit`. Figures
   from `explore` and `view data aggregate` are rounded for display (2
   decimals; 4 below 1); `view data compare` keeps full precision.
+- "Why did revenue drop from July to August", "what drove the change": one
+  `view data drivers VIEW_ID` call, not a series of aggregates. It returns
+  each period's total and row count, the change, whether it came from volume
+  or value per row, and per `by` column the groups that moved most with their
+  signed `share_of_change`; `partial_period` names a period the data does not
+  cover to its end.
+- "Forecast", "what will revenue be in October": `view data forecast
+  VIEW_ID` (a linear trend over the complete months, quarters or weeks, with a
+  95% range; seasonal only with two full cycles). A last period the data does
+  not cover to its end is left out and reported as `excluded_partial`, and it
+  is the first period forecast: for October with data ending mid-September,
+  pass `periods` 2. Never scale a partial period up by its days.
 - "Who changed X": `activity list` (a change list of time, user, action and a
   `path` naming the dataset and view). Filter with `resource_id` in the log's
   typed form, `dataview_<id>` or `datasource_<id>` (a bare number matches

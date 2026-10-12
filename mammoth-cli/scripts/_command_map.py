@@ -142,6 +142,14 @@ PENDING_SERVER_RELEASE.update(
         )
     }
 )
+PENDING_SERVER_RELEASE.update(
+    {
+        f"{method} /workspaces/{{}}/projects/{{}}/datasets/{{}}/definitions{suffix}": (
+            "origin/feat/agent-gap-fixes-5-8@91290dfc2d"
+        )
+        for method, suffix in (("GET", ""), ("POST", ""), ("DELETE", "/{}"))
+    }
+)
 # The SDK posts every run verb through one helper whose path ends in a variable.
 PENDING_SERVER_RELEASE["POST /agents/sessions/{}/runs/{}/{}"] = PENDING_SERVER_RELEASE[
     "POST /agents/sessions/{}/runs/{}/stop"

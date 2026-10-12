@@ -34,6 +34,11 @@ _DELETE = "mammoth.api.datasets.DatasetsAPI.delete"
 _BULK_DELETE = "mammoth.api.datasets.DatasetsAPI.bulk_delete"
 _BULK_UPDATE = "mammoth.api.datasets.DatasetsAPI.bulk_update"
 _UPDATE = "mammoth.api.datasets.DatasetsAPI.update"
+_TRASH_LIST = "mammoth.api.trash.TrashAPI.list"
+_COLUMN_STATS = "mammoth.api.datasets.DatasetsAPI.column_stats"
+_DEFINITION_LIST = "mammoth.api.datasets.DatasetsAPI.list_definitions"
+_DEFINITION_ADD = "mammoth.api.datasets.DatasetsAPI.add_definition"
+_DEFINITION_REMOVE = "mammoth.api.datasets.DatasetsAPI.remove_definition"
 
 
 @pytest.fixture(autouse=True)
@@ -127,6 +132,318 @@ def test_find_with_project_puts_its_own_matches_first_and_marks_them(
     ]
     assert [symbol for symbol, _ in fake_service.call_log] == [_SEARCH]
     assert meta["project_id"] == 42
+
+
+def _trashed(object_id: int, name: str) -> dict[str, object]:
+    return {
+        "id": object_id,
+        "type": "dataset",
+        "name": name,
+        "project_id": 42,
+        "trashed_at": "2026-10-02T14:37:18",
+        "trashed_by": {"id": 13, "name": "Gaurav"},
+        "days_until_purge": 22,
+    }
+
+
+def test_find_with_no_live_match_reads_the_trash_and_offers_restore(
+    fake_service: FakeMammothService,
+) -> None:
+    fake_service.projects = [{"id": 42, "name": "P42"}]
+    fake_service.responses[_SEARCH] = {"resources": [], "has_more": False}
+    fake_service.responses[_TRASH_LIST] = {"items": [_trashed(451, "Late delivery log")]}
+
+    result, _meta = dataset_cmd.dataset_find(
+        _inv("dataset.find", project=42, extra_args=["Late delivery log"])
+    )
+
+    assert result["matches"] == []
+    assert result["trashed_matches"] == [
+        {
+            "id": 451,
+            "name": "Late delivery log",
+            "trashed_at": "2026-10-02T14:37:18",
+            "trashed_by": "Gaurav",
+            "days_until_purge": 22,
+        }
+    ]
+    assert "in this project's trash" in result["note"]
+    assert "mammoth dataset restore 451" in result["note"]
+    trash_calls = [kw for symbol, kw in fake_service.call_log if symbol == _TRASH_LIST]
+    assert trash_calls == [
+        {"project_id": 42, "type": "dataset", "q": "late delivery log", "limit": 5}
+    ]
+
+
+def test_a_trashed_name_that_does_not_match_is_left_out(
+    fake_service: FakeMammothService,
+) -> None:
+    fake_service.projects = [{"id": 42, "name": "P42"}]
+    fake_service.responses[_SEARCH] = {"resources": [], "has_more": False}
+    fake_service.responses[_TRASH_LIST] = {"items": [_trashed(9, "Delivery log late")]}
+
+    result, _meta = dataset_cmd.dataset_find(
+        _inv("dataset.find", project=42, extra_args=["late delivery"])
+    )
+
+    assert "trashed_matches" not in result
+
+
+def test_find_without_a_project_never_reads_the_trash(
+    fake_service: FakeMammothService,
+) -> None:
+    fake_service.projects = [{"id": 1, "name": "P1"}]
+    fake_service.responses[_SEARCH] = {"resources": [], "has_more": False}
+
+    result, _meta = dataset_cmd.dataset_find(_inv("dataset.find", extra_args=["gone"]))
+
+    assert "trashed_matches" not in result
+    assert [symbol for symbol, _ in fake_service.call_log] == [_SEARCH]
+
+
+# -- column-stats -----------------------------------------------------------
+
+
+def _col(name: str, blank_count: int, blank_pct: float) -> dict[str, object]:
+    return {
+        "name": name,
+        "type": "TEXT",
+        "blank_count": blank_count,
+        "blank_pct": blank_pct,
+        "distinct": 3,
+    }
+
+
+def test_column_stats_requires_project(fake_service: FakeMammothService) -> None:
+    with pytest.raises(CliError) as excinfo:
+        dataset_cmd.dataset_column_stats(_inv("dataset.column-stats"))
+    assert excinfo.value.code == "project_required"
+    assert fake_service.call_log == []
+
+
+def test_column_stats_reads_the_project_in_one_call(fake_service: FakeMammothService) -> None:
+    fake_service.responses[_COLUMN_STATS] = {
+        "datasets": [
+            {"id": 7, "name": "Orders", "rows": 100, "columns": [_col("Region", 0, 0.0)]},
+            {
+                "id": 5,
+                "name": "Customers",
+                "rows": 40,
+                "columns": [_col("Email", 4, 10.0), _col("Phone", 20, 50.0), _col("Id", 0, 0.0)],
+            },
+        ]
+    }
+    result, meta = dataset_cmd.dataset_column_stats(_inv("dataset.column-stats", project=180))
+
+    assert fake_service.call_log == [(_COLUMN_STATS, {"project_id": 180})]
+    assert meta["project_id"] == 180
+    # The dataset with the worst column comes first; its blank columns worst first.
+    assert result["datasets"] == [
+        {
+            "id": 5,
+            "name": "Customers",
+            "rows": 40,
+            "columns": [_col("Phone", 20, 50.0), _col("Email", 4, 10.0)],
+            "complete_columns": 1,
+        },
+        {"id": 7, "name": "Orders", "rows": 100, "columns": [], "complete_columns": 1},
+    ]
+    assert result["dataset_count"] == 2
+    assert "omitted" not in result
+    note = result["note"]
+    assert "blank_pct" in note and "last load or pipeline run" in note
+
+
+def test_column_stats_cuts_a_wide_project_to_the_output_cap(
+    fake_service: FakeMammothService,
+) -> None:
+    columns = [_col(f"Column {i}", i + 1, float(i + 1)) for i in range(20)]
+    fake_service.responses[_COLUMN_STATS] = {
+        "datasets": [
+            {"id": i, "name": f"Source {i}", "rows": 10, "columns": columns} for i in range(17)
+        ]
+    }
+    result, _ = dataset_cmd.dataset_column_stats(_inv("dataset.column-stats", project=180))
+
+    first = result["datasets"][0]
+    assert first["columns"][0]["name"] == "Column 19"
+    assert len(first["columns"]) == 8 and first["more_columns_with_blanks"] == 12
+    assert result["dataset_count"] == 17
+    assert result["omitted"] == 17 - len(result["datasets"])
+    assert len(json.dumps(result)) < 4000
+
+
+# -- definitions ------------------------------------------------------------
+
+
+def _definition(def_id: str, term: str, definition: str) -> dict[str, object]:
+    return {
+        "id": def_id,
+        "term": term,
+        "definition": definition,
+        "created_by": 3,
+        "created_at": "2026-10-11T09:00:00+00:00",
+    }
+
+
+_LATE = _definition("a1b2c3d4", "late", "delivered more than 5 days after shipped_date")
+_CHURNED = _definition("e5f6a7b8", "churned", "no order in the last 90 days")
+
+
+def test_definition_list_reads_the_dataset(fake_service: FakeMammothService) -> None:
+    fake_service.responses[_DEFINITION_LIST] = {"dataset_id": 7, "definitions": [_LATE, _CHURNED]}
+
+    result, meta = dataset_cmd.dataset_definition_list(
+        _inv("dataset.definition.list", project=180, extra_args=["7"])
+    )
+
+    assert fake_service.call_log == [(_DEFINITION_LIST, {"dataset_id": 7, "project_id": 180})]
+    assert meta["project_id"] == 180
+    assert result == {
+        "dataset_id": 7,
+        "definitions": [
+            {
+                "id": "a1b2c3d4",
+                "term": "late",
+                "definition": "delivered more than 5 days after shipped_date",
+            },
+            {"id": "e5f6a7b8", "term": "churned", "definition": "no order in the last 90 days"},
+        ],
+    }
+
+
+def test_definition_add_saves_the_term_after_the_target_is_confirmed(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    fake_service.responses[_DEFINITION_ADD] = {"dataset_id": 7, "definitions": [_CHURNED, _LATE]}
+    doc = _write(
+        tmp_path,
+        {"term": " late ", "definition": "delivered more than 5 days after shipped_date"},
+    )
+
+    result, _ = dataset_cmd.dataset_definition_add(
+        _inv(
+            "dataset.definition.add",
+            project=180,
+            extra_args=["7"],
+            input_file=doc,
+            yes=True,
+            confirm="7",
+        )
+    )
+
+    assert fake_service.call_log == [
+        (
+            _DEFINITION_ADD,
+            {
+                "dataset_id": 7,
+                "term": "late",
+                "definition": "delivered more than 5 days after shipped_date",
+                "project_id": 180,
+            },
+        )
+    ]
+    assert [d["term"] for d in result["definitions"]] == ["churned", "late"]
+    assert set(result["definitions"][1]) == {"id", "term", "definition"}
+
+
+def test_definition_add_asks_before_saving_a_shared_definition(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    doc = _write(tmp_path, {"term": "late", "definition": "delivered after 5 days"})
+
+    with pytest.raises(CliError) as excinfo:
+        dataset_cmd.dataset_definition_add(
+            _inv("dataset.definition.add", project=180, extra_args=["7"], input_file=doc)
+        )
+
+    assert excinfo.value.code == "confirmation_required"
+    # The agent backend reads the target to pass back from this hint.
+    assert "--yes --confirm 7" in (excinfo.value.hint or "")
+    assert fake_service.call_log == []
+
+
+@pytest.mark.parametrize(
+    "document",
+    [
+        {"definition": "delivered after 5 days"},
+        {"term": "  ", "definition": "delivered after 5 days"},
+        {"term": "late", "definition": "x" * 301},
+        {"term": "t" * 61, "definition": "delivered after 5 days"},
+    ],
+)
+def test_definition_add_refuses_a_missing_or_oversized_field(
+    fake_service: FakeMammothService, tmp_path: Path, document: dict[str, object]
+) -> None:
+    with pytest.raises(CliError) as excinfo:
+        dataset_cmd.dataset_definition_add(
+            _inv(
+                "dataset.definition.add",
+                project=180,
+                extra_args=["7"],
+                input_file=_write(tmp_path, document),
+                yes=True,
+                confirm="7",
+            )
+        )
+    assert excinfo.value.code in {"missing_field", "invalid_argument"}
+    assert fake_service.call_log == []
+
+
+def test_definition_remove_deletes_by_id(fake_service: FakeMammothService) -> None:
+    fake_service.responses[_DEFINITION_REMOVE] = {"dataset_id": 7, "definitions": [_CHURNED]}
+
+    result, _ = dataset_cmd.dataset_definition_remove(
+        _inv("dataset.definition.remove", project=180, extra_args=["7", "a1b2c3d4"], yes=True)
+    )
+
+    assert fake_service.call_log == [
+        (_DEFINITION_REMOVE, {"dataset_id": 7, "definition_id": "a1b2c3d4", "project_id": 180})
+    ]
+    assert [d["id"] for d in result["definitions"]] == ["e5f6a7b8"]
+
+
+def test_definition_remove_needs_yes_without_a_terminal(fake_service: FakeMammothService) -> None:
+    with pytest.raises(CliError) as excinfo:
+        dataset_cmd.dataset_definition_remove(
+            _inv(
+                "dataset.definition.remove",
+                project=180,
+                extra_args=["7", "a1b2c3d4"],
+                no_input=True,
+            )
+        )
+    assert excinfo.value.code == "confirmation_required"
+    assert fake_service.call_log == []
+
+
+def test_definition_remove_passes_an_unknown_id_error_through(
+    fake_service: FakeMammothService,
+) -> None:
+    fake_service.responses[_DEFINITION_REMOVE] = CliError(
+        code="api_error",
+        message="Definition not found on this dataset.",
+        details={"backend_code": "4DSET077"},
+    )
+
+    with pytest.raises(CliError) as excinfo:
+        dataset_cmd.dataset_definition_remove(
+            _inv("dataset.definition.remove", project=180, extra_args=["7", "zzzz0000"], yes=True)
+        )
+
+    assert excinfo.value.details["backend_code"] == "4DSET077"
+    assert fake_service.call_log == [
+        (_DEFINITION_REMOVE, {"dataset_id": 7, "definition_id": "zzzz0000", "project_id": 180})
+    ]
+
+
+def test_definition_remove_requires_the_definition_id(fake_service: FakeMammothService) -> None:
+    with pytest.raises(CliError) as excinfo:
+        dataset_cmd.dataset_definition_remove(
+            _inv("dataset.definition.remove", project=180, extra_args=["7"], yes=True)
+        )
+    assert excinfo.value.code == "missing_argument"
+    assert fake_service.call_log == []
 
 
 # -- list -----------------------------------------------------------------

@@ -358,6 +358,120 @@ def test_leaf_help_separates_global_options_by_purpose() -> None:
         assert panel in result.output
 
 
+# Gap eval 10-10 S16: "check every source for missing values" made the agent
+# profile 17 views one by one; the one-call project read must come first.
+@pytest.mark.parametrize(
+    "query",
+    [
+        "missing values across datasets",
+        "check every source for missing values",
+        "data quality across the project",
+        "which columns have the most blanks across the project",
+    ],
+)
+def test_missing_values_across_datasets_finds_column_stats_first(query: str) -> None:
+    assert find_schemas(query)["matches"][0]["command_id"] == "dataset.column-stats"
+
+
+@pytest.mark.parametrize(
+    ("query", "command_id"),
+    [
+        ("fill missing values", "view.transform.fill-missing"),
+        ("profile this view", "view.data.profile"),
+    ],
+)
+def test_one_view_goals_still_reach_their_own_command(query: str, command_id: str) -> None:
+    assert find_schemas(query)["matches"][0]["command_id"] == command_id
+
+
+# Gap eval 10-10 S03: "why did store revenue drop from July to August?" took 18
+# hand-built aggregates; the one-call drivers read must come first.
+@pytest.mark.parametrize(
+    "query",
+    [
+        "why did revenue drop",
+        "why did store revenue drop from July to August",
+        "what drove the change between July and August",
+        "explain the decline",
+    ],
+)
+def test_why_did_it_change_finds_drivers_first(query: str) -> None:
+    assert find_schemas(query)["matches"][0]["command_id"] == "view.data.drivers"
+
+
+# Gap eval 10-10 S20: "forecast store revenue for October 2026" divided a partial
+# September by its days; forecasting goals must reach the forecast command.
+@pytest.mark.parametrize(
+    "query",
+    [
+        "forecast",
+        "projection",
+        "estimate next month",
+        "what will revenue be in October",
+        "forecast store revenue for October 2026",
+    ],
+)
+def test_forecasting_goals_find_forecast_first(query: str) -> None:
+    assert find_schemas(query)["matches"][0]["command_id"] == "view.data.forecast"
+
+
+@pytest.mark.parametrize(
+    ("query", "command_id"),
+    [
+        ("aggregate by channel", "view.data.aggregate"),
+        ("group and sum totals by month", "view.data.aggregate"),
+        ("profile this view", "view.data.profile"),
+        ("sales by quarter", "view.data.explore"),
+        ("why is my pipeline failing", "project.needs-attention"),
+        ("will this change my data", "view.transform.rename-columns"),
+        ("total revenue by month", "view.data.aggregate"),
+    ],
+)
+def test_reading_goals_do_not_route_to_period_analysis(query: str, command_id: str) -> None:
+    found = find_schemas(query)
+    matches = [m["command_id"] for m in found["matches"] or found.get("suggestions", [])]
+    assert command_id in matches[:2]
+    assert not {"view.data.drivers", "view.data.forecast"} & set(matches[:2])
+
+
+# Gap proposal P13: what a term means for a dataset is said once and saved on the
+# dataset, so the user's own phrasing must reach the definition commands.
+@pytest.mark.parametrize(
+    ("query", "command_id"),
+    [
+        ("save what late means", "dataset.definition.add"),
+        ("define a term for this dataset", "dataset.definition.add"),
+        ("remember that churned means", "dataset.definition.add"),
+        ("list definitions", "dataset.definition.list"),
+        ("remove a definition", "dataset.definition.remove"),
+    ],
+)
+def test_term_meaning_goals_find_the_definition_commands(query: str, command_id: str) -> None:
+    assert find_schemas(query)["matches"][0]["command_id"] == command_id
+
+
+# ...and the definition words must not pull neighbouring goals off their routes.
+@pytest.mark.parametrize(
+    ("query", "command_id"),
+    [
+        ("add a column", "view.transform.add-column"),
+        ("project memory", "project.memory.list"),
+        ("what do you remember", "project.memory.list"),
+        ("remember that I prefer EUR", "project.memory.add"),
+        ("forget a preference", "project.memory.remove"),
+        ("why did revenue drop", "view.data.drivers"),
+    ],
+)
+def test_definition_words_leave_other_goals_on_their_routes(query: str, command_id: str) -> None:
+    assert find_schemas(query)["matches"][0]["command_id"] == command_id
+
+
+def test_rename_dataset_still_offers_the_dataset_rename() -> None:
+    found = [m["command_id"] for m in find_schemas("rename dataset")["matches"]]
+    assert "dataset.rename" in found[:2]
+    assert not any(c.startswith("dataset.definition.") for c in found)
+
+
 # Proposing a workflow's shape must never pull in plain view work: "add a view"
 # is a build, not a proposal.
 @pytest.mark.parametrize("query", ["add a view", "rename view", "create view"])
@@ -372,7 +486,14 @@ def test_workflow_canvas_says_it_proposes_structure_for_review_and_shows_the_ops
     preconditions = entry["preconditions"]
 
     assert "review and Save" in preconditions
-    assert "cannot add filters" in preconditions
+    # Steps inside a view are proposed with the structure, never run as view commands.
+    for op in ("add_step", "update_step", "remove_step"):
+        assert f"op: {op}" in preconditions
+    assert "never as view commands run afterwards" in preconditions
+    # Joins, exports and sources Save builds, and lookups (mvc 10-10).
+    for shape in ("join_type?", "connection_id?", "op: add_source", "op: lookup"):
+        assert shape in preconditions
+    assert "cannot add filters" not in preconditions
     assert "proposed_changes" in entry["agent_example"]
     # A whole shape in one call: a later change points at an earlier one's ref.
     assert "view_ref" in preconditions and '"view_ref": "urgent"' in entry["agent_example"]

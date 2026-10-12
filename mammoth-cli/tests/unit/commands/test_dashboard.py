@@ -563,29 +563,28 @@ def test_action_blocked_without_confirmation(
             _inv("dashboard.action", extra_args=["7"], input_file=doc, output="json")
         )
     assert excinfo.value.code == "confirmation_required"
-    assert fake_service.call_log == []
+    assert _ACTION not in [symbol for symbol, _ in fake_service.call_log]
 
 
 def test_action_proceeds_with_yes_and_forwards_optional_params(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
+    fake_service.responses[_GET] = {"id": 7, "was_published": True}
     doc = _write_doc(
         tmp_path, {"action": "publish-data", "params_enabled": True, "params_view_id": 3}
     )
     dashboard_cmd.dashboard_action(
         _inv("dashboard.action", extra_args=["7"], input_file=doc, yes=True)
     )
-    assert fake_service.call_log == [
-        (
-            _ACTION,
-            {
-                "dashboard_id": 7,
-                "action": "publish-data",
-                "params_enabled": True,
-                "params_view_id": 3,
-            },
-        )
-    ]
+    assert fake_service.call_log[-1] == (
+        _ACTION,
+        {
+            "dashboard_id": 7,
+            "action": "publish-data",
+            "params_enabled": True,
+            "params_view_id": 3,
+        },
+    )
 
 
 # --- dashboard share ------------------------------------------------------------
@@ -607,7 +606,7 @@ def test_share_blocked_without_confirmation(
             _inv("dashboard.share", extra_args=["7"], input_file=doc, output="json")
         )
     assert excinfo.value.code == "confirmation_required"
-    assert fake_service.call_log == []
+    assert _SHARE not in [symbol for symbol, _ in fake_service.call_log]
 
 
 def test_share_proceeds_with_yes_and_forwards_users(
@@ -617,16 +616,14 @@ def test_share_proceeds_with_yes_and_forwards_users(
     dashboard_cmd.dashboard_share(
         _inv("dashboard.share", extra_args=["7"], input_file=doc, yes=True)
     )
-    assert fake_service.call_log == [
-        (
-            _SHARE,
-            {
-                "dashboard_id": 7,
-                "type_of_auth": "mammoth",
-                "users": [{"email": "a@example.com"}],
-            },
-        )
-    ]
+    assert fake_service.call_log[-1] == (
+        _SHARE,
+        {
+            "dashboard_id": 7,
+            "type_of_auth": "mammoth",
+            "users": [{"email": "a@example.com"}],
+        },
+    )
 
 
 # --- dashboard cancel-generation / restore / trash ------------------------------
