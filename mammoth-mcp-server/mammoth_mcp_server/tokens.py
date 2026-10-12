@@ -16,6 +16,7 @@ from mcp.server.auth.provider import AccessToken
 
 from . import sdk
 from .consts import TOKEN_CLIENT, TokenClaims
+from .read_only import READ_SCOPE
 
 
 class MammothTokenVerifier:
@@ -28,7 +29,9 @@ class MammothTokenVerifier:
         said it. The bearer check then turns away a token whose resource is
         not this server, and a token with none. It carries the project the
         user picked when they connected too, so a tool can act in it rather
-        than ask, and name it when the model reaches for another.
+        than ask, and name it when the model reaches for another. A connection
+        the user granted read-only carries the `read` scope, and only the tools
+        that read run for it.
 
         Raises:
             MammothError: If Mammoth cannot be reached. The caller is then told
@@ -42,7 +45,7 @@ class MammothTokenVerifier:
         return AccessToken(
             token=token,
             client_id=TOKEN_CLIENT,
-            scopes=[],
+            scopes=[READ_SCOPE] if issued.read_only else [],
             resource=issued.resource,
             claims={
                 TokenClaims.WORKSPACE_ID: issued.id,

@@ -1,0 +1,282 @@
+"""What the server records about a call, so the launch can be measured.
+
+Nothing here records what the call was about: no ids, no arguments, no rows,
+no token. The questions these events answer are which tools get used, from
+which client, how long they take and how often they fail.
+"""
+
+import json
+import logging
+
+import pytest
+
+from mammoth_mcp_server.telemetry import EVENT_LOGGER, Events, Telemetry, TelemetryFields
+
+from .helpers import TOKEN, FakeApi, a_fake_api, as_caller
+
+
+class Recorded:
+    """The events the telemetry middleware emitted during a test."""
+
+    def __init__(self, caplog: pytest.LogCaptureFixture) -> None:
+        self.caplog = caplog
+
+    def __iter__(self):
+        for record in self.caplog.records:
+            if record.name == EVENT_LOGGER:
+                yield json.loads(record.getMessage())
+
+    def of(self, event: str) -> list[dict]:
+        return [one for one in self if one[TelemetryFields.EVENT] == event]
+
+
+@pytest.fixture
+def recorded(caplog: pytest.LogCaptureFixture) -> Recorded:
+    caplog.set_level(logging.INFO, logger=EVENT_LOGGER)
+    return Recorded(caplog)
+
+
+def a_context(method: str, params: dict | None = None) -> object:
+    """Enough of a request context for the middleware to read."""
+
+    class Ctx:
+        pass
+
+    ctx = Ctx()
+    ctx.method = method
+    ctx.params = params
+    ctx.session = None
+    return ctx
+
+
+async def answers(_ctx: object) -> str:
+    return "done"
+
+
+async def raises(_ctx: object) -> str:
+    raise ValueError("the tool broke")
+
+
+class TestWhatIsRecordedForAToolCall:
+    async def test_a_tool_call_is_recorded_with_the_tool_it_called(
+        self, recorded: Recorded
+    ) -> None:
+        await Telemetry()(a_context("tools/call", {"name": "get_data"}), answers)
+
+        [called] = recorded.of(Events.TOOL_CALLED)
+        assert called[TelemetryFields.TOOL] == "get_data"
+
+    async def test_a_call_that_worked_is_recorded_as_ok(self, recorded: Recorded) -> None:
+        await Telemetry()(a_context("tools/call", {"name": "get_data"}), answers)
+
+        [called] = recorded.of(Events.TOOL_CALLED)
+        assert called[TelemetryFields.OUTCOME] == Events.OK
+
+    async def test_a_call_that_failed_is_recorded_as_failed_and_still_raises(
+        self, recorded: Recorded
+    ) -> None:
+        """Telemetry must never swallow the error it is measuring."""
+        with pytest.raises(ValueError):
+            await Telemetry()(a_context("tools/call", {"name": "get_data"}), raises)
+
+        [called] = recorded.of(Events.TOOL_CALLED)
+        assert called[TelemetryFields.OUTCOME] == Events.FAILED
+        assert called[TelemetryFields.ERROR] == "ValueError"
+
+    async def test_how_long_the_call_took_is_recorded(self, recorded: Recorded) -> None:
+        await Telemetry()(a_context("tools/call", {"name": "get_data"}), answers)
+
+        [called] = recorded.of(Events.TOOL_CALLED)
+        assert called[TelemetryFields.DURATION_MS] >= 0
+
+    async def test_the_answer_reaches_the_caller_unchanged(self) -> None:
+        assert await Telemetry()(a_context("tools/call", {"name": "x"}), answers) == "done"
+
+
+class TestWhatIsRecordedForAHandshake:
+    async def test_a_handshake_is_recorded_with_the_client_that_connected(
+        self, recorded: Recorded
+    ) -> None:
+        connects = a_context(
+            "initialize", {"clientInfo": {"name": "claude-ai", "version": "1.2.3"}}
+        )
+
+        await Telemetry()(connects, answers)
+
+        [started] = recorded.of(Events.INITIALIZE)
+        assert started[TelemetryFields.CLIENT] == "claude-ai"
+        assert started[TelemetryFields.CLIENT_VERSION] == "1.2.3"
+
+    async def test_a_client_that_names_itself_in_no_way_is_still_recorded(
+        self, recorded: Recorded
+    ) -> None:
+        await Telemetry()(a_context("initialize", {}), answers)
+
+        assert recorded.of(Events.INITIALIZE)
+
+
+class TestWhatIsNeverRecorded:
+    async def test_the_arguments_a_tool_was_called_with_are_not_recorded(
+        self, recorded: Recorded
+    ) -> None:
+        """Arguments carry the user's own data — column names, filter values,
+        file names. The event says which tool ran, never what it ran on."""
+        secret = "a-customers-column-name"
+        called = a_context("tools/call", {"name": "get_data", "arguments": {"columns": [secret]}})
+
+        await Telemetry()(called, answers)
+
+        assert secret not in json.dumps(list(recorded))
+
+    async def test_another_method_is_not_recorded_as_a_tool_call(self, recorded: Recorded) -> None:
+        await Telemetry()(a_context("tools/list"), answers)
+
+        assert recorded.of(Events.TOOL_CALLED) == []
+
+
+class TestTheServerRecordsItsOwnCalls:
+    def test_the_running_server_has_telemetry_on_it(self) -> None:
+        """A middleware that is written but never registered records nothing."""
+        from mammoth_mcp_server.server import mcp_server
+
+        assert any(isinstance(one, Telemetry) for one in mcp_server.middleware)
+
+
+def ours(events: logging.Logger) -> list[logging.StreamHandler]:
+    """The server's handlers: pytest adds its own to a logger that does not propagate."""
+    from mammoth_mcp_server.telemetry import _EventsHandler
+
+    return [one for one in events.handlers if isinstance(one, _EventsHandler)]
+
+
+class TestTheRunningServerWritesItsEvents:
+    """Without caplog: the levels and handlers are what a deployment gets."""
+
+    @pytest.fixture
+    def started(self):
+        """The app as `uvicorn --factory` builds it, then uvicorn's own logging."""
+        import logging.config
+
+        import uvicorn
+
+        from mammoth_mcp_server.app import create_app
+
+        from .helpers import a_fake_store
+
+        events = logging.getLogger(EVENT_LOGGER)
+        before = (events.handlers[:], events.level, events.propagate)
+        # A new process: pytest's own capture handlers are not there.
+        events.handlers[:] = []
+        events.setLevel(logging.NOTSET)
+        with a_fake_store():
+            create_app()
+            logging.config.dictConfig(uvicorn.config.LOGGING_CONFIG)
+            yield events
+        events.handlers[:], events.level, events.propagate = before
+
+    def test_an_event_reaches_a_handler_once_the_server_is_started(self, started) -> None:
+        import io
+
+        from mammoth_mcp_server.telemetry import record
+
+        written = io.StringIO()
+        ours(started)[0].setStream(written)
+
+        record(Events.TOOL_CALLED, tool="get_data")
+
+        assert json.loads(written.getvalue())[TelemetryFields.TOOL] == "get_data"
+
+    def test_starting_twice_does_not_write_each_event_twice(self, started) -> None:
+        from mammoth_mcp_server.app import create_app
+
+        create_app()
+
+        assert len(ours(started)) == 1
+
+
+class TestMammothKeepsTheEventsAsTheCallersOwn:
+    """Each event is also sent to Mammoth's user events, with the caller's token,
+    so Mammoth stores it with the user and can count tool calls per user per day."""
+
+    EVENTS_PATH = "/workspaces/7/mm-ue"
+
+    async def sent_after(self, api, method: str, params: dict | None, handler=None) -> list:
+        from mammoth_mcp_server.telemetry import sending
+
+        with as_caller():
+            try:
+                await Telemetry()(a_context(method, params), handler or answers)
+            finally:
+                await sending()
+        return api.sent("POST", self.EVENTS_PATH)
+
+    @staticmethod
+    def event_in(request) -> dict:
+        import base64
+
+        return json.loads(base64.b64decode(FakeApi.body(request)["encoded_data"]))
+
+    async def test_a_tool_call_reaches_mammoth_as_the_caller(self) -> None:
+        with a_fake_api() as api:
+            api.answer("POST", self.EVENTS_PATH, None)
+            [sent] = await self.sent_after(api, "tools/call", {"name": "get_data"})
+
+        assert sent.headers["Authorization"] == f"Bearer {TOKEN}"
+        event = self.event_in(sent)
+        assert event["event_name"] == Events.TOOL_CALLED
+        assert event["event_origin"] == "mcp"
+        assert event["additional_info"][TelemetryFields.TOOL] == "get_data"
+        assert event["additional_info"][TelemetryFields.OUTCOME] == Events.OK
+
+    async def test_a_handshake_reaches_mammoth_with_the_client_it_named(self) -> None:
+        hello = {"clientInfo": {"name": "claude-ai", "version": "1.0"}}
+        with a_fake_api() as api:
+            api.answer("POST", self.EVENTS_PATH, None)
+            [sent] = await self.sent_after(api, "initialize", hello)
+
+        event = self.event_in(sent)
+        assert event["event_name"] == Events.INITIALIZE
+        assert event["additional_info"][TelemetryFields.CLIENT] == "claude-ai"
+
+    async def test_no_part_of_the_token_or_the_arguments_is_sent(self) -> None:
+        """Mammoth falls back to the token's first characters as the session id.
+        A hash of the token groups a connection's calls without storing the secret."""
+        secret = "a-customers-column-name"
+        called = {"name": "get_data", "arguments": {"columns": [secret]}}
+        with a_fake_api() as api:
+            api.answer("POST", self.EVENTS_PATH, None)
+            [sent] = await self.sent_after(api, "tools/call", called)
+
+        event = self.event_in(sent)
+        assert event["session_identifier"]
+        assert TOKEN[:8] not in json.dumps(event)
+        assert secret not in json.dumps(event)
+
+    async def test_a_call_with_no_caller_sends_nothing(self) -> None:
+        from mammoth_mcp_server.telemetry import sending
+
+        with a_fake_api() as api:
+            await Telemetry()(a_context("tools/call", {"name": "get_data"}), answers)
+            await sending()
+
+        assert api.sent("POST", self.EVENTS_PATH) == []
+
+    async def test_mammoth_refusing_the_event_does_not_fail_the_call(self) -> None:
+        from mammoth_mcp_server.telemetry import sending
+
+        with a_fake_api() as api, as_caller():
+            api.answer("POST", self.EVENTS_PATH, {"message": "down"}, status=500)
+            result = await Telemetry()(a_context("tools/call", {"name": "get_data"}), answers)
+            await sending()
+
+        assert result == "done"
+        assert len(api.sent("POST", self.EVENTS_PATH)) >= 1
+
+    async def test_a_failed_tool_is_sent_as_failed(self) -> None:
+        with a_fake_api() as api:
+            api.answer("POST", self.EVENTS_PATH, None)
+            with pytest.raises(ValueError):
+                await self.sent_after(api, "tools/call", {"name": "get_data"}, raises)
+            [sent] = api.sent("POST", self.EVENTS_PATH)
+
+        assert self.event_in(sent)["additional_info"][TelemetryFields.OUTCOME] == Events.FAILED

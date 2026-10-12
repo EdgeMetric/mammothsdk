@@ -54,7 +54,7 @@ DRAFT_ACTIONS: dict[str, str] = {
 }
 
 
-@mcp_server.tool(annotations=READS)
+@mcp_server.tool(title="Get pipeline", annotations=READS)
 async def get_pipeline(
     workspace_id: int, project_id: int, dataset_id: int, view_id: int
 ) -> dict[str, JsonValue]:
@@ -86,7 +86,7 @@ async def get_pipeline(
     }
 
 
-@mcp_server.tool(annotations=DESTRUCTIVE)
+@mcp_server.tool(title="Delete transformation step", annotations=DESTRUCTIVE)
 async def delete_transformation_step(
     workspace_id: int, project_id: int, dataset_id: int, view_id: int, step_id: int
 ) -> dict[str, JsonValue]:
@@ -110,7 +110,7 @@ async def delete_transformation_step(
         return still_running(running, DELETE_RUNS_ON)
 
 
-@mcp_server.tool(annotations=READS)
+@mcp_server.tool(title="Preview transformation", annotations=READS)
 async def preview_transformation(
     workspace_id: int,
     project_id: int,
@@ -147,7 +147,7 @@ async def preview_transformation(
         )
 
 
-@mcp_server.tool(annotations=DESTRUCTIVE)
+@mcp_server.tool(title="Manage pipeline draft", annotations=DESTRUCTIVE)
 async def manage_draft(
     workspace_id: int,
     project_id: int,
@@ -188,6 +188,7 @@ async def manage_draft(
 
 
 @mcp_server.tool(
+    title="Add transformation steps",
     annotations=CHANGES,
     description=(
         "Add transformations to a view's pipeline and wait for them to run."
@@ -245,7 +246,7 @@ async def add_transformations(
     return await read_pipeline(ids)
 
 
-@mcp_server.tool(annotations=DESTRUCTIVE)
+@mcp_server.tool(title="Run pipeline", annotations=DESTRUCTIVE)
 async def run_pipeline(
     workspace_id: int, project_id: int, dataset_id: int, view_id: int
 ) -> dict[str, JsonValue]:

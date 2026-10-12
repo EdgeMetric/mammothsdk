@@ -13,7 +13,7 @@ from ..server import mcp_server
 from ..tool_kinds import CHANGES, DESTRUCTIVE
 
 
-@mcp_server.tool(annotations=CHANGES)
+@mcp_server.tool(title="Create view", annotations=CHANGES)
 async def create_view(
     workspace_id: int,
     project_id: int,
@@ -51,7 +51,7 @@ async def create_view(
         )
 
 
-@mcp_server.tool(annotations=DESTRUCTIVE)
+@mcp_server.tool(title="Delete views", annotations=DESTRUCTIVE)
 async def delete_views(
     workspace_id: int, project_id: int, dataset_id: int, view_ids: list[int]
 ) -> dict[str, JsonValue]:

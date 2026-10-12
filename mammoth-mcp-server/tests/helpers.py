@@ -161,6 +161,7 @@ def knows_the_token(
     workspace_id: int = WORKSPACE,
     resource: str | None = MCP_RESOURCE_URL,
     project: int | None = None,
+    read_only: bool | None = None,
 ) -> None:
     """Have the fake Mammoth say what a bearer token is for."""
     issued: dict[str, Any] = {"id": workspace_id}
@@ -168,4 +169,6 @@ def knows_the_token(
         issued["resource"] = resource
     if project is not None:
         issued["project"] = project
+    if read_only is not None:
+        issued["read_only"] = read_only
     api.answer("GET", "/workspaces/current", issued)

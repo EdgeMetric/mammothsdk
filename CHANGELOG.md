@@ -6,9 +6,16 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-### Changed (mammoth-io 0.8.39)
+### Added (mammoth-mcp-server 0.2.1, mammoth-io 0.8.39)
 
-- Version bump so mammoth-cli 2.2.75 can require it; no SDK behaviour change.
+- `client.workspaces.current()` says whether the user granted the connection read-only (`CurrentWorkspace.read_only`, false when Mammoth does not say). The MCP server puts the `read` scope on such a token, so the read-only check added in 0.2.0 now applies to the connections Mammoth marks read-only. Needs a Mammoth that reports `read_only` on `/workspaces/current`; with an older one every connection keeps full access.
+
+### Added (mammoth-mcp-server 0.2.0)
+
+- A connection reads only the workspace its token belongs to. `list_workspaces` listed the whole account, so a connection fenced to one workspace was told the names of all the others.
+- Every tool carries a title, which is what a client shows the user when it asks them to allow a call.
+- One telemetry event per handshake and per tool call (tool, client, duration, outcome), and never the arguments a tool was called with. Each event is written to stdout and stored in Mammoth's user events as the caller's own, so Mammoth can count tool calls per user.
+- A read-only connection may run only the tools whose own annotation says they read. No token carries the scope yet, so nothing changes for an existing connection.
 
 ### Changed (mammoth-cli 2.2.75)
 
