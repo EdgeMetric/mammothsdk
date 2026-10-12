@@ -72,6 +72,7 @@ class ReadOnly:
             if not may_run(tool):
                 raise ToolError(
                     f"This connection is read-only, so {tool} cannot run."
-                    " Reconnect without the read-only option to make changes."
+                    " To make changes, disconnect it in Mammoth > Settings > Connected apps,"
+                    " then connect again without read-only."
                 )
         return await call_next(ctx)
