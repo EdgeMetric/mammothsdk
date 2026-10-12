@@ -205,7 +205,9 @@ def build_convert_params(
     """Build a CONVERT (type conversion) task payload.
 
     ``FORMAT`` is emitted as a dict ``{"date_format": <fmt>}`` (backend
-    CONVERT validator requires a dict, not a bare string).
+    CONVERT validator requires a dict, not a bare string). A
+    ``decimal_separator`` adds ``decimal_separator`` and ``thousands_separator``
+    to it; the thousands separator defaults to the other of ``.`` and ``,``.
     """
     convert_items: list[dict[str, Any]] = []
     for c in conversions:
@@ -213,8 +215,18 @@ def build_convert_params(
             "SOURCE": resolve_column(c.column, col_map, internal_names),
             "TO_TYPE": c.to.value,
         }
+        format_info: dict[str, str] = {}
         if c.format is not None:
-            item["FORMAT"] = {"date_format": c.format}
+            format_info["date_format"] = c.format
+        if c.decimal_separator is not None:
+            format_info["decimal_separator"] = c.decimal_separator
+            format_info["thousands_separator"] = c.thousands_separator or (
+                "." if c.decimal_separator == "," else ","
+            )
+        elif c.thousands_separator is not None:
+            format_info["thousands_separator"] = c.thousands_separator
+        if format_info:
+            item["FORMAT"] = format_info
         convert_items.append(item)
     return {"CONVERT": convert_items}
 

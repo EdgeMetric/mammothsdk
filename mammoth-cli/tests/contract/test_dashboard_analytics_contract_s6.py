@@ -206,6 +206,9 @@ def test_distinctive_fields_reach_owned_family_destinations(
         )
     )
     assert fake_family_service.call_log == [
+        # the confirmation text reads the board first (publish state, deliverable check)
+        ("mammoth.api.dashboards.DashboardsAPI.get", {"dashboard_id": 17}),
+        ("mammoth.api.dashboards.DashboardsAPI.canvas_get", {"dashboard_id": 17}),
         (
             "mammoth.api.dashboards.DashboardsAPI.action",
             {

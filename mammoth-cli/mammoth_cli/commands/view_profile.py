@@ -117,7 +117,7 @@ def build_profile(scope: _Scope, document: dict[str, Any], workers: int) -> dict
         "view_id": scope.view_id,
         "dataset_id": scope.dataset_id,
         "row_count": live_rows,
-        "summary": _summary(details, live_rows),
+        "summary": _summary(details, live_rows, tables),
         **_paged_columns(details, int(document.get("limit", _DEFAULT_DETAIL_LIMIT))),
         "spelling_variants": variants,
         "spelling_variants_checked": variants_checked,
@@ -347,7 +347,9 @@ def _top_text(values: list[dict[str, Any]]) -> list[str]:
     return [f"{item['value']} ({item['count']})" for item in values]
 
 
-def _summary(details: dict[str, dict[str, Any]], total_rows: int) -> dict[str, Any]:
+def _summary(
+    details: dict[str, dict[str, Any]], total_rows: int, tables: dict[str, dict[Any, int] | None]
+) -> dict[str, Any]:
     rows = list(details.values())
     return {
         "columns": len(rows),
@@ -357,6 +359,12 @@ def _summary(details: dict[str, dict[str, Any]], total_rows: int) -> dict[str, A
             {"column": d["column"], "nulls": d["nulls"]}
             for d in rows
             if d["distinct"] > 0 and (d.get("nulls") or 0) * 2 >= total_rows
+        ],
+        "mixed_number_format": [
+            {"column": d["column"], "formats": formats}
+            for d in rows
+            if d.get("type") == "TEXT"
+            and (formats := dp.mixed_number_format(tables.get(d["column"]) or {}))
         ],
     }
 

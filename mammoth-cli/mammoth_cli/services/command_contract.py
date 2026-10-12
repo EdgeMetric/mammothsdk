@@ -436,6 +436,7 @@ _LOCAL_COMMANDS = frozenset(
         "context.project.use",
         "dataset.find",
         "dataset.search",
+        "dataset.schema-diff",
         "doctor",
         "project.check",
         "project.ensure",

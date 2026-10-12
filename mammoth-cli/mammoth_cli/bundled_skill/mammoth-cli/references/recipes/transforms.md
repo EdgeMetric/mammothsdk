@@ -81,6 +81,11 @@ mammoth view transform math VIEW_ID --project PROJECT_ID \
   --input '{"dataset_id":DATASET_ID,"expression":"GDP / Population","new_column":"GDP per capita"}'
 ```
 
+A TEXT column that writes numbers with a decimal comma (`1.234,5`) converts with
+`"decimal_separator":","` on its `conversions` entry (`thousands_separator`
+defaults to the other mark). `view data profile` lists such a column under
+`summary.mixed_number_format` when its values mix notations.
+
 In a math `expression`, write a multi-word display name bare (`Quantity * Unit
 Price`) or quoted (`Quantity * \"Unit Price\"` inside the JSON string).
 

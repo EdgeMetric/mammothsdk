@@ -350,6 +350,7 @@ _TARGETS: dict[str, str] = {
     "dataset.find": "mammoth_cli.commands.dataset:dataset_find",
     "dataset.list": "mammoth_cli.commands.dataset:dataset_list",
     "dataset.search": "mammoth_cli.commands.dataset:dataset_search",
+    "dataset.schema-diff": "mammoth_cli.commands.dataset:dataset_schema_diff",
     "dataset.get": "mammoth_cli.commands.dataset:dataset_get",
     "dataset.batch-data": "mammoth_cli.commands.dataset:dataset_batch_data",
     "dataset.data": "mammoth_cli.commands.dataset:dataset_data",

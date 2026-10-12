@@ -43,6 +43,7 @@ from mammoth_cli.services.listing import (
     search_page,
     source_of,
 )
+from mammoth_cli.services.schema_diff import column_samples, schema_diff
 
 HandlerResult = tuple[Any, dict[str, Any]]
 
@@ -52,6 +53,9 @@ _DATASET_GET_SYMBOL = "mammoth.api.datasets.DatasetsAPI.get"
 
 class _SdkCaller(Protocol):
     def call(self, sdk_symbol: str, /, **kwargs: object) -> object: ...
+
+
+_DATA_SYMBOL = "mammoth.api.datasets.DatasetsAPI.get_data"
 
 
 def _symbol(invocation: Invocation) -> str:
@@ -687,6 +691,38 @@ def _strip_file_ingestion_automation_possible(data: Any) -> None:
     params = data.get("additional_info", {}).get("all_data_backup", {}).get("PARAMS", {})
     if isinstance(params, dict):
         params.pop("automation_possible", None)
+
+
+def _sample_read(service: Any, dataset_id: int, project_id: int) -> Any:
+    return service.call(_DATA_SYMBOL, dataset_id=dataset_id, project_id=project_id)
+
+
+def dataset_schema_diff(invocation: Invocation) -> HandlerResult:
+    """Compare two datasets' columns and propose the ``batch create`` mapping.
+
+    ``DESTINATION_ID SOURCE_ID`` are in the order ``batch create`` takes them.
+    """
+    from mammoth_cli.commands.batch import _dataset_columns
+
+    project_id = require_project(invocation)
+    destination_id = _require_int_positional_at(invocation, 0, "destination dataset id")
+    source_id = _require_int_positional_at(invocation, 1, "source dataset id")
+    with open_service(invocation) as (service, auth):
+        destination = _dataset_columns(service, destination_id, "destination")
+        source = _dataset_columns(service, source_id, "source")
+        diff = schema_diff(
+            destination,
+            source,
+            column_samples(_sample_read(service, destination_id, project_id), destination),
+            column_samples(_sample_read(service, source_id, project_id), source),
+        )
+    result = {"destination_dataset_id": destination_id, "source_dataset_id": source_id, **diff}
+    result["next"] = (
+        f"mammoth batch create {destination_id} {source_id} --input "
+        "'{\"mapping\": <mapping>}'; batch create refuses a source column with no destination, "
+        "so map or drop each added column first."
+    )
+    return result, _meta(invocation, auth.workspace_id, project_id)
 
 
 def dataset_data(invocation: Invocation) -> HandlerResult:

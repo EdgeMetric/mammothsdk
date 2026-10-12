@@ -768,6 +768,22 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
             example_value="sales",
         ),
     ),
+    "dataset.schema-diff": (
+        PositionalSpec(
+            name="destination_id",
+            type=int,
+            required=True,
+            help="Dataset the rows would be appended into (the DATASET_ID of batch create).",
+            example_value="10",
+        ),
+        PositionalSpec(
+            name="source_id",
+            type=int,
+            required=True,
+            help="Dataset whose rows would be appended (the SOURCE_ID of batch create).",
+            example_value="11",
+        ),
+    ),
     "dataset.search": (
         PositionalSpec(
             name="term",

@@ -531,11 +531,17 @@ class ConversionSpec:
         await view.convert_type([
             ConversionSpec(column="Date Col", to=ColumnType.DATE, format="MM/DD/YYYY")
         ])
+        # "1.234,5" -> 1234.5 (the thousands separator defaults to the other one)
+        await view.convert_type([
+            ConversionSpec(column="Amount", to=ColumnType.NUMERIC, decimal_separator=",")
+        ])
     """
 
     column: str
     to: ColumnType
     format: str | None = None
+    decimal_separator: str | None = None
+    thousands_separator: str | None = None
 
 
 @dataclass

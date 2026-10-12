@@ -1029,6 +1029,7 @@
     "calc",
     "dashboard.attachment-create",
     "dataset.find",
+    "dataset.schema-diff",
     "dataset.search",
     "folder.find",
     "link",

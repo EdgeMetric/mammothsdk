@@ -576,16 +576,30 @@ def dashboard_action(invocation: Invocation) -> HandlerResult:
     dashboard_id = _require_int_positional(invocation, "dashboard id")
     document = _bound_document(invocation)
     action = _require_field(document, "action")
-    enforce_confirmation(
-        invocation,
-        policy=POLICY_YES_ALWAYS,
-        action=f"apply an action to dashboard {dashboard_id}",
-    )
     kwargs: dict[str, Any] = {"dashboard_id": dashboard_id, "action": action}
     assert document is not None
     _forward_optional(document, kwargs, ("params_enabled", "params_view_id"))
     with open_service(invocation) as (service, auth):
+        published = _was_published(service, dashboard_id)
+        enforce_confirmation(
+            invocation,
+            policy=POLICY_YES_ALWAYS,
+            action=f"apply an action to dashboard {dashboard_id}"
+            + _board_findings(invocation, service, auth, dashboard_id),
+        )
+        first_publish = action == "publish-data" and not published
+        if first_publish:
+            kwargs["action"] = "publish-presentation"
         data = service.call(_symbol(invocation), **kwargs)
+    if first_publish:
+        data = {
+            "action": "publish-presentation",
+            "note": (
+                "The board was never published, so publish-data was refused by the "
+                "server; the presentation was published instead."
+            ),
+            "response": data,
+        }
     return data, _meta(invocation, auth.workspace_id)
 
 
@@ -594,17 +608,43 @@ def dashboard_share(invocation: Invocation) -> HandlerResult:
     dashboard_id = _require_int_positional(invocation, "dashboard id")
     document = _bound_document(invocation)
     type_of_auth = _require_field(document, "type_of_auth")
-    enforce_confirmation(
-        invocation,
-        policy=POLICY_YES_ALWAYS,
-        action=f"share dashboard {dashboard_id}",
-    )
     kwargs: dict[str, Any] = {"dashboard_id": dashboard_id, "type_of_auth": type_of_auth}
     assert document is not None
     _forward_optional(document, kwargs, ("users",))
     with open_service(invocation) as (service, auth):
+        unpublished = (
+            " (not published yet: sharing alone does not publish it; run dashboard action "
+            'with {"action":"publish-presentation"} to publish)'
+            if not _was_published(service, dashboard_id)
+            else ""
+        )
+        enforce_confirmation(
+            invocation,
+            policy=POLICY_YES_ALWAYS,
+            action=f"share dashboard {dashboard_id}{unpublished}"
+            + _board_findings(invocation, service, auth, dashboard_id),
+        )
         data = service.call(_symbol(invocation), **kwargs)
     return data, _meta(invocation, auth.workspace_id)
+
+
+def _was_published(service: Any, dashboard_id: int) -> bool:
+    """Whether the board was ever published; ``dashboard get`` carries ``was_published``."""
+    board = _dump_model(service.call(_DASHBOARD_GET, dashboard_id=dashboard_id))
+    return bool(board.get("was_published")) if isinstance(board, dict) else False
+
+
+def _board_findings(invocation: Invocation, service: Any, auth: Any, dashboard_id: int) -> str:
+    """The deliverable check's findings as confirmation text; empty when clean or unreadable."""
+    try:
+        warnings = _deliverable_warnings(invocation, service, auth, dashboard_id)
+    except Exception:  # noqa: BLE001 -- advice must never block the confirmation
+        return ""
+    if not warnings:
+        return ""
+    return " -- deliverable check: " + "; ".join(
+        f"{warning['issue']}: {warning['detail']}" for warning in warnings
+    )
 
 
 def _figure_page_kwargs(page: Any) -> dict[str, Any]:
@@ -923,6 +963,7 @@ def _deliverable_warnings(
     )
 
 
+_DASHBOARD_GET = "mammoth.api.dashboards.DashboardsAPI.get"
 _CANVAS_SAVE = "mammoth.api.dashboards.DashboardsAPI.canvas_save"
 _FILTER_KEYS = ("field", "control", "label", "default")
 

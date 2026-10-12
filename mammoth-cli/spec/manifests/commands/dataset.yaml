@@ -553,6 +553,51 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+- command_id: dataset.schema-diff
+  command_path: dataset schema-diff
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - name: destination_id
+    type: int
+    required: true
+    metavar: DESTINATION_ID
+    falls_back_to_field: null
+    help: Dataset the rows would be appended into (the DATASET_ID of batch create).
+  - name: source_id
+    type: int
+    required: true
+    metavar: SOURCE_ID
+    falls_back_to_field: null
+    help: Dataset whose rows would be appended (the SOURCE_ID of batch create).
+  options: []
+  sdk_symbol: mammoth_cli.commands.dataset.schema_diff
+  sdk_conversion: Call mammoth_cli.commands.dataset.schema_diff with validated request fields.
+  request_model: DatasetSchemaDiffRequest
+  result_model: DatasetSchemaDiffResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: null
+  live_exemption_reason: Local composite over already-covered dataset get and dataset data reads.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dataset schema-diff DESTINATION_ID SOURCE_ID --help
+  agent_example: mammoth dataset schema-diff 10 11
+  unit_tests:
+  - UT-DATASET-SCHEMA-DIFF
+  contract_tests:
+  - CT-DATASET-SCHEMA-DIFF-HUMAN
+  - CT-DATASET-SCHEMA-DIFF-JSON
+  - CT-DATASET-SCHEMA-DIFF-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
 - command_id: dataset.get
   command_path: dataset get
   disposition: command

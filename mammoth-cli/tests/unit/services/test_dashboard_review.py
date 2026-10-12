@@ -154,3 +154,28 @@ def test_a_board_on_one_month_names_the_month_and_the_edit_that_widens_it() -> N
 def test_a_board_over_all_dates_gets_no_scope_warning() -> None:
     assert reporting_month(_doc([]), 196) == []
     assert reporting_month({"canvas": {"period": None}}, 196) == []
+
+
+def test_a_plain_count_whose_title_reads_as_a_rate_is_flagged_on_a_kpi_and_a_tile() -> None:
+    board = _doc(
+        [
+            {
+                "id": "p1",
+                "focus": {"kpis": [{"label": "On-time rate", "field": "id", "agg": "count"}]},
+                "added": [{"kind": "hbar", "title": "Share of late orders", "agg": "count"}],
+            }
+        ],
+        profiles=[],
+    )
+    warnings = [w for w in review(board) if w["issue"] == "count_titled_as_rate"]
+    assert [w["detail"].split("'")[1] for w in warnings] == ["On-time rate", "Share of late orders"]
+    assert all("shows a count, title reads as a rate" in w["detail"] for w in warnings)
+
+
+def test_a_sum_or_a_count_titled_as_a_count_is_not_flagged() -> None:
+    kpis = [
+        {"label": "Orders", "field": "id", "agg": "count"},
+        {"label": "Delivery rate", "field": "rate", "agg": "avg"},
+    ]
+    board = _doc([{"id": "p1", "focus": {"kpis": kpis}}], profiles=[])
+    assert "count_titled_as_rate" not in _issues(review(board))

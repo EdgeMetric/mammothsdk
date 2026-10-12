@@ -103,8 +103,9 @@ mammoth view transform math VIEW_ID --project PROJECT_ID \
   revenue. Say how many there are in your report.
 - A generate or edit result may carry `deliverable_check`: `money_not_shown`
   (with the `math` command in `fix`), `unit_price_summed`,
-  `columns_not_on_dashboard` (view columns added after the dashboard was made)
-  and one `blank_values` entry for each column on the board that has blanks.
+  `columns_not_on_dashboard` (view columns added after the dashboard was made),
+  `count_titled_as_rate` (a card or tile counts rows, but its title reads as a
+  rate) and one `blank_values` entry for each column on the board that has blanks.
   Fix each warning (add the column, then ask again in words), or say in your
   report why you kept it.
 
@@ -168,6 +169,9 @@ the user to use Download PDF in the app; never retry with `{"data": {}}`.
 not publish: `was_published` stays false until you also run
 `dashboard action DASHBOARD_ID --input '{"action":"publish-presentation"}'`.
 `share` returns `data: null`; read the url slug back with `dashboard get`.
+`dashboard action` with `publish-data` on a board that was never published
+publishes the presentation instead and says so. `share` and `action` print the
+deliverable check in their confirmation text.
 Only then do `dashboard published canvas URL`, `published data URL`,
 `job-by-url URL JOB_ID` and the other `/dashboards/url/...` routes answer;
 before that they return 404 `DASHBOARD_NOT_FOUND`. Legacy widget routes

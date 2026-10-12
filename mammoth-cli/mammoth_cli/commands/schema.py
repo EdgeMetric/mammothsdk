@@ -472,6 +472,10 @@ _COMMAND_DISCOVERY_PURPOSES = {
         "resolve name what is this dataset view project called named which kind "
         "ambiguous same name another project lookup identify"
     ),
+    "dataset.schema-diff": (
+        "compare two datasets columns added removed renamed before append batch mapping "
+        "schema difference same columns different names"
+    ),
     "dataset.broken-rows.list": (
         "unstructured skipped ragged rows lines unparsed mismatched columns monitor "
         "needs review file upload bad rows"

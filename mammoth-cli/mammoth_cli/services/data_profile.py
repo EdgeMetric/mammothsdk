@@ -180,6 +180,49 @@ def summarize_column(counts: Mapping[Any, int], total_rows: int, top: int) -> di
     }
 
 
+_NUMBER_SHAPES: tuple[tuple[str, re.Pattern[str]], ...] = (
+    ("1234", re.compile(r"^[-+]?\d+$")),
+    ("12.5", re.compile(r"^[-+]?\d+\.\d{1,2}$")),
+    ("12,5", re.compile(r"^[-+]?\d+,\d{1,2}$")),
+    ("1,234.5", re.compile(r"^[-+]?\d{1,3}(,\d{3})+\.\d+$")),
+    ("1.234,5", re.compile(r"^[-+]?\d{1,3}(\.\d{3})+,\d+$")),
+)
+
+
+def number_formats(counts: Mapping[Any, int]) -> dict[str, str]:
+    """``{shape: example}`` for the number notations found in a TEXT column's values.
+
+    Only text that is wholly a number counts; a column of names has no shapes.
+    A group-only value such as ``1,234`` is skipped: it reads either way.
+    """
+    found: dict[str, str] = {}
+    for value in counts:
+        if not isinstance(value, str):
+            continue
+        text = value.strip()
+        for shape, pattern in _NUMBER_SHAPES:
+            if pattern.match(text):
+                found.setdefault(shape, text)
+                break
+    return found
+
+
+def mixed_number_format(counts: Mapping[Any, int]) -> dict[str, str]:
+    """The shapes (with an example each) when a column writes numbers in conflicting ways.
+
+    Conflict means a dot-decimal value (``12.5``, ``1,234.5``) next to a
+    comma-decimal one (``12,5``, ``1.234,5``), or a comma-decimal value next to
+    plain integers: ``18,48`` beside ``1.234,5`` beside ``4993``. A dot-decimal
+    value beside integers converts the same way, so it is not flagged.
+    """
+    found = number_formats(counts)
+    comma = found.keys() & {"12,5", "1.234,5"}
+    dot = found.keys() & {"12.5", "1,234.5"}
+    if comma and (dot or "1234" in found):
+        return found
+    return {}
+
+
 def _share(part: int, whole: int) -> float:
     return round(part / whole, 4) if whole else 0.0
 
