@@ -14,9 +14,11 @@ from typing import Any
 import pytest
 
 from mammoth_cli.commands import dashboard as dashboard_cmd
-from mammoth_cli.commands import dataset as dataset_cmd
+from mammoth_cli.commands import view_drivers
 from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.runtime.invocation import Invocation
+from mammoth_cli.services.period_analysis import parse_measure, parse_period
+from mammoth_cli.services.schema_diff import column_samples, schema_diff
 
 _CANVAS = r"/dashboards/7/canvas"
 
@@ -112,10 +114,7 @@ def test_publish_data_on_a_published_board_stays_publish_data(
     assert post.json_body["action"] == "publish-data"
 
 
-def test_schema_diff_proposes_the_mapping_batch_create_takes(
-    real_service: Any, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    service, api = real_service(project_id=3)
+def test_schema_diff_proposes_the_mapping_batch_create_takes() -> None:
     destination = [
         {"c_name": "id", "c_id": "c1", "c_type": "NUMERIC"},
         {"c_name": "hub", "c_id": "c2", "c_type": "TEXT"},
@@ -126,38 +125,26 @@ def test_schema_diff_proposes_the_mapping_batch_create_takes(
         {"c_name": "warehouse", "c_id": "s2", "c_type": "TEXT"},
         {"c_name": "extra", "c_id": "s3", "c_type": "NUMERIC"},
     ]
-    api.on("GET", r"/datasets/10$", body={"dataset": {"data_schema": destination}})
-    api.on("GET", r"/datasets/11$", body={"dataset": {"data_schema": source}})
-    api.on(
-        "GET",
-        r"/datasets/10/data$",
-        body={
-            "data": {"1": ["1", "Zaragoza", "x"], "2": ["2", "Madrid", None]},
-            "headers": ["id", "hub", "legacy"],
-            "limit": 100,
-            "offset": 0,
-        },
+    # The `dataset data` read as koyal returns it (workspace 4, dataset 326): rows keyed by
+    # row number, each a list in `headers` order.
+    destination_read = {
+        "data": {"1": ["1", "Zaragoza", "x"], "2": ["2", "Madrid", None]},
+        "headers": ["id", "hub", "legacy"],
+        "limit": 100,
+        "offset": 0,
+    }
+    source_read = {
+        "data": {"1": ["3", "Zaragoza", "5"]},
+        "headers": ["id", "warehouse", "extra"],
+        "limit": 100,
+        "offset": 0,
+    }
+    data = schema_diff(
+        destination,
+        source,
+        column_samples(destination_read, destination),
+        column_samples(source_read, source),
     )
-    api.on(
-        "GET",
-        r"/datasets/11/data$",
-        body={
-            "data": {"1": ["3", "Zaragoza", "5"]},
-            "headers": ["id", "warehouse", "extra"],
-            "limit": 100,
-            "offset": 0,
-        },
-    )
-    with _bind(monkeypatch, dataset_cmd, service):
-        data, _meta = dataset_cmd.dataset_schema_diff(
-            Invocation(
-                "dataset.schema-diff",
-                output="json",
-                no_input=True,
-                project=3,
-                extra_args=["10", "11"],
-            )
-        )
     assert data["mapping"] == [
         {"source_c_name": "id", "destination_c_name": "id"},
         {"source_c_name": "warehouse", "destination_c_name": "hub"},
@@ -167,57 +154,32 @@ def test_schema_diff_proposes_the_mapping_batch_create_takes(
     assert data["renamed"][0]["shared_values"] == ["Zaragoza"]
 
 
-# C7: notes in a free-text column, counted per quarter (the bucket the CLI asks for).
+# C7: notes counted per quarter, as `view data aggregate` returns them (koyal, view 878):
+# {"STATUS": "READY", "data": [{"<as_name>": 10.0, "<column>": "..."}], "metadata": [...]}.
 # "cutover" is in 156 notes in Q3 against 16 in Q2; every other word grew by less.
 _NOTES = [
-    ("cutover scheduled for friday night", {"2026-04-01": 4, "2026-07-01": 52}),
-    ("cutover rehearsal failed twice", {"2026-04-01": 3, "2026-07-01": 52}),
-    ("waiting on cutover sign off", {"2026-04-01": 9, "2026-07-01": 52}),
-    ("invoice reminder sent again", {"2026-04-01": 55, "2026-07-01": 58}),
+    ("cutover scheduled for friday night", {"2026-04-01": 4.0, "2026-07-01": 52.0}),
+    ("cutover rehearsal failed twice", {"2026-04-01": 3.0, "2026-07-01": 52.0}),
+    ("waiting on cutover sign off", {"2026-04-01": 9.0, "2026-07-01": 52.0}),
+    ("invoice reminder sent again", {"2026-04-01": 55.0, "2026-07-01": 58.0}),
 ]
 
 
-def test_drivers_names_the_term_that_grew_in_a_free_text_column(
-    real_service: Any, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
-) -> None:
-    from mammoth_cli.commands import view_drivers
-
-    service, api = real_service(project_id=3)
-    metadata = [
-        {"internal_name": "column_1", "display_name": "note", "type": "TEXT"},
-        {"internal_name": "column_2", "display_name": "logged", "type": "DATE"},
-    ]
-    api.on("GET", r"/dataviews/9$", body={"metadata": metadata, "dataset_id": 7})
-
-    def aggregate(request: Any) -> tuple[int, Any]:
-        if not request.json_body["param"]["PIVOT"].get("GROUP_BY"):
-            return 200, {"data": [{"agg_0": "2026-04-01", "agg_1": "2026-09-30"}]}
-        return 200, {
-            "data": [
-                {"group_0": note, "group_1": quarter, "agg_0": count}
-                for note, quarters in _NOTES
-                for quarter, count in quarters.items()
-            ]
-        }
-
-    api.on("POST", r"/data/query$", handler=aggregate)
-    document = {
-        "measure": {"function": "COUNT"},
-        "date_column": "logged",
-        "compare": ["2026-Q2", "2026-Q3"],
-        "by": ["note"],
+def test_drivers_names_the_term_that_grew_in_a_free_text_column() -> None:
+    read = {
+        "STATUS": "READY",
+        "data": [
+            {"note": note, "logged": quarter, "__rows": count}
+            for note, quarters in _NOTES
+            for quarter, count in quarters.items()
+        ],
+        "metadata": [],
     }
-    with _bind(monkeypatch, view_drivers, service):
-        result, _meta = view_drivers.view_data_drivers(
-            Invocation(
-                "view.data.drivers",
-                output="json",
-                no_input=True,
-                project=3,
-                extra_args=["9", "7"],
-                input_file=_input(tmp_path, document),
-            )
-        )
-    terms = result["contributors"]["note"]["terms"]
+    measure = parse_measure({"function": "SUM", "column": "revenue"}, ("SUM",))
+    periods = [parse_period("2026-Q2"), parse_period("2026-Q3")]
+
+    assert view_drivers._is_free_text(read, "note")
+    terms = view_drivers._terms(read, measure, "logged", "note", periods)
+
     assert terms[0] == {"term": "cutover", "count_a": 16, "count_b": 156}
     assert "invoice" not in [t["term"] for t in terms]
