@@ -63,6 +63,7 @@ EMBEDDED_UNAVAILABLE = frozenset(
         "file.upload-folder",
         "user.avatar.upload",
         "dashboard.assess-pbix",
+        "view.explore-panel.export-image",
         "dashboard.assess-twb",
         "dashboard.template.thumbnail.set",
         "support.template.inspect",

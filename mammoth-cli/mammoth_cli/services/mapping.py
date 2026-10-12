@@ -264,7 +264,7 @@ def _not_allowed_reason(body: Any, status: int | None) -> str | None:
 
 
 def _backend_message(body: Any, status: int | None) -> str | None:
-    """The backend's own words for a 4xx: its message, one line per field error, then its code."""
+    """The backend's own words for a 4xx: message, reason under it, field errors, then code."""
     if status is None or not 400 <= status < 500 or not isinstance(body, dict):
         return None
     details = body.get("details")
@@ -272,6 +272,11 @@ def _backend_message(body: Any, status: int | None) -> str | None:
     text = body.get("message") or details.get("detail")
     if not isinstance(text, str) or not text:
         return None
+    reason = details.get("message")
+    if isinstance(reason, str) and reason and reason not in text:
+        # A generic backend message ("Invalid arguments passed") carries the real
+        # reason one level down.
+        text = f"{text}: {reason}"
     extra = details.get("extra")
     if isinstance(extra, list) and extra:
         text = "\n".join([text, *(_field_error_line(item) for item in extra)])

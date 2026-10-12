@@ -263,10 +263,11 @@ def agent_run_list(invocation: Invocation) -> HandlerResult:
     return _session_call(invocation)
 
 
-def _run_control(invocation: Invocation) -> HandlerResult:
-    """Pause, resume, stop or extend one run; the SDK method is the manifest's.
+def _refuse_embedded_run_control() -> None:
+    """Refuse a run button pressed from inside an agent session (an embedded call).
 
-    These are the user's run buttons: an agent session (an embedded call) is refused.
+    Raises:
+        CliError: ``user_control`` when the call is embedded.
     """
     if embedded.active():
         raise CliError(
@@ -275,6 +276,14 @@ def _run_control(invocation: Invocation) -> HandlerResult:
             exit_status=EXIT_USAGE,
             hint="Carry on without it: a run waiting on a job or a time resumes on its own.",
         )
+
+
+def _run_control(invocation: Invocation) -> HandlerResult:
+    """Pause, resume, stop or extend one run; the SDK method is the manifest's.
+
+    These are the user's run buttons: an agent session (an embedded call) is refused.
+    """
+    _refuse_embedded_run_control()
     return _session_call(invocation, run_id=_require_string_positional(invocation, "run id"))
 
 
@@ -292,6 +301,66 @@ def agent_run_units_set(invocation: Invocation) -> HandlerResult:
 def agent_turn_cancel(invocation: Invocation) -> HandlerResult:
     """Stop one turn of an agent chat session (the session's owner only)."""
     return _session_call(invocation, turn_id=_require_string_positional(invocation, "turn id"))
+
+
+def agent_run_retry(invocation: Invocation) -> HandlerResult:
+    """Retry one failed or stopped run as a new run; it starts paid model work."""
+    _refuse_embedded_run_control()
+    run_id = _require_string_positional(invocation, "run id")
+    enforce_confirmation(
+        invocation, policy=POLICY_PROMPT_OR_YES, action=f"retry agent run {run_id}"
+    )
+    return _session_call(invocation, run_id=run_id)
+
+
+def agent_run_units_list(invocation: Invocation) -> HandlerResult:
+    """List one page of the units a run's steps do; the filters come from ``--input``."""
+    run_id = _require_string_positional(invocation, "run id")
+    document = _bound_document(invocation)
+    kwargs = {field: document[field] for field in ("step", "state", "cursor") if field in document}
+    return _session_call(invocation, run_id=run_id, **kwargs)
+
+
+def agent_run_instance_list(invocation: Invocation) -> HandlerResult:
+    """List the agents of one run: the main agent, its workers and recon helpers."""
+    return _session_call(invocation, run_id=_require_string_positional(invocation, "run id"))
+
+
+def agent_run_instance_messages(invocation: Invocation) -> HandlerResult:
+    """List the messages one agent of a run sent or received."""
+    return _session_call(
+        invocation,
+        run_id=invocation.positional("run_id"),
+        instance_id=invocation.positional("instance_id"),
+    )
+
+
+def agent_run_instance_transcript(invocation: Invocation) -> HandlerResult:
+    """Show the model messages of one agent of a run, credentials redacted."""
+    return _session_call(
+        invocation,
+        run_id=invocation.positional("run_id"),
+        instance_id=invocation.positional("instance_id"),
+    )
+
+
+def agent_message_set_request_kind(invocation: Invocation) -> HandlerResult:
+    """Correct the request kind a reply answered. ``request_kind`` comes from ``--input``."""
+    document = _bound_document(invocation)
+    return _session_call(
+        invocation,
+        message_id=invocation.positional("message_id"),
+        request_kind=_require_field(document, "request_kind"),
+    )
+
+
+def agent_plan_edit_proposal(invocation: Invocation) -> HandlerResult:
+    """Rename or remove one item of a plan's waiting proposal; the fields come from ``--input``."""
+    document = _bound_document(invocation)
+    kwargs = {field: _require_field(document, field) for field in ("plan_id", "action", "key")}
+    if "name" in document:
+        kwargs["name"] = document["name"]
+    return _session_call(invocation, **kwargs)
 
 
 def _definition_call(invocation: Invocation, **kwargs: Any) -> HandlerResult:

@@ -74,6 +74,17 @@ ERR_WINDOW_DAYS = "`days` must be 7, 30 or 90, got {0!r}."
 ERR_DIGEST_ENABLED = "`enabled` must be true, false or null, got {0!r}."
 ERR_CONTEXT_NOTE_LONG = "`note` must be at most 1000 characters, got {0}."
 ERR_REVIEW_ID_EMPTY = "`review_id` must be a non-empty string."
+ERR_ENGAGEMENT_VIEWERS = "`viewers` must be one of {valid}, got {0!r}."
+ERR_USER_ID_POSITIVE = "`user_id` must be a positive integer, got {0}."
+ERR_REMIND_USER_IDS = "`user_ids` must be 1 to 200 positive integers."
+ERR_OWN_DATA_SOURCE = "Give exactly one of `ingest_job_id`, `dataset_id` or `dataview_id`."
+ERR_OWN_DATA_ID = "`{0}` must be a positive integer, got {1!r}."
+ERR_OWN_DATA_CHOICE = "`choice` must be one of {valid}, got {0!r}."
+ERR_OWN_DATA_EXCLUDE = "`exclude` must be a list of at most 20 change ids (strings)."
+_ENGAGEMENT_VIEWERS = ("all", "named", "anonymous")
+_OWN_DATA_CHOICES = ("proposal", "partial", "reshape")
+_REMIND_MAX_USERS = 200
+_OWN_DATA_MAX_EXCLUDE = 20
 _SWAP_FIT_MAX_TARGETS = 60
 _SWAP_FIT_MAX_SECONDS = 30
 _AUDIENCE_WINDOWS = frozenset({7, 30, 90})
@@ -359,6 +370,33 @@ class DashboardsAPI:
         except ValidationError as exc:
             raise MammothValidationError(f"Invalid use-template response: {exc}") from exc
 
+    async def render_figure_svg(self, spec: dict[str, Any], style_id: str | None = None) -> str:
+        """Render one figure to an SVG document, with no board and no write.
+
+        Args:
+            spec: The engine figure spec: ``chart`` ("bar" or "table"), ``title`` and
+                the data (``data`` of ``label``/``value`` for a bar, ``columns`` and
+                ``rows`` of ``cells`` for a table).
+            style_id: Optional saved style to render with.
+
+        Returns:
+            The SVG document as text.
+
+        Raises:
+            MammothValidationError: If ``spec`` is not a dict, or the response holds no SVG.
+        """
+        if not isinstance(spec, dict) or not spec:
+            raise MammothValidationError("`spec` must be a non-empty dict.")
+        response = await self._client._request_json(
+            "POST",
+            "/dashboards/v3/render/svg",
+            json={"spec": spec, "style_id": style_id},
+        )
+        svg = response.get("svg")
+        if not isinstance(svg, str) or not svg:
+            raise MammothValidationError("Invalid render-svg response: no `svg` string.")
+        return svg
+
     async def assess_twb(self, file: str | Path) -> TwbAssessResponse:
         """Assess a Tableau workbook without importing it."""
         return await self._assess_upload(file, "/dashboards/v3/twb/assess", TwbAssessResponse)
@@ -399,7 +437,22 @@ class DashboardsAPI:
         except ValidationError as exc:
             raise MammothValidationError(f"Invalid workbook import response: {exc}") from exc
 
-    async def _assess_upload(self, file: str | Path, endpoint: str, model: Any) -> Any:
+    async def attachment_create(self, file: str | Path) -> dict[str, Any]:
+        """Attach a local workbook to the chat so the agent can read it.
+
+        Args:
+            file: Local workbook (``.pbix``, ``.twb`` or ``.twbx``).
+
+        Returns:
+            The created attachment as the server answers it; its id names the attachment
+            in :meth:`attachment_intent` and :meth:`attachment_assess`.
+
+        Raises:
+            MammothValidationError: If *file* is not a readable local file.
+        """
+        return await self._post_workbook(file, "/dashboards/v3/attachments")
+
+    async def _post_workbook(self, file: str | Path, endpoint: str) -> dict[str, Any]:
         try:
             path = Path(file)
         except (TypeError, ValueError) as exc:
@@ -411,13 +464,16 @@ class DashboardsAPI:
         except OSError as exc:
             raise MammothValidationError(f"File cannot be opened: {path}") from exc
         try:
-            response = await self._client._request_json(
+            return await self._client._request_json(
                 "POST",
                 endpoint,
                 files=[("file", (os.path.basename(path), opened, "application/octet-stream"))],
             )
         finally:
             opened.close()
+
+    async def _assess_upload(self, file: str | Path, endpoint: str, model: Any) -> Any:
+        response = await self._post_workbook(file, endpoint)
         try:
             return model.model_validate(response)
         except ValidationError as exc:
@@ -1389,6 +1445,234 @@ class DashboardsAPI:
             "GET",
             f"/workspaces/{self._client.workspace_id}/dashboards/audience-summary",
             params={"ids": ",".join(str(i) for i in dashboard_ids)},
+        )
+
+    async def engagement(
+        self, dashboard_id: int, days: int = 30, viewers: str = "all"
+    ) -> dict[str, Any]:
+        """Get the engagement report of a board: reach, depth per page and per person.
+
+        Editors only. Reach is counted against the people the board is shared with.
+
+        Args:
+            dashboard_id: ID of the dashboard (must be > 0).
+            days: Window length: 7, 30 or 90.
+            viewers: ``all``, ``named`` or ``anonymous``; filters every block except
+                reach and people, which are always named-only.
+
+        Returns:
+            Dict with ``reach``, ``totals``, ``daily``, ``pages`` (with tile depth),
+            ``people`` (with ``status`` and ``can_remind``), ``hours`` (UTC),
+            ``surface``, ``devices``, ``actions`` and board ``events``.
+
+        Raises:
+            MammothValidationError: If *dashboard_id* ≤ 0, *days* is not 7, 30 or 90, or
+                *viewers* is not one of the three values.
+        """
+        _require_dashboard_id(dashboard_id)
+        _require_window_days(days)
+        if viewers not in _ENGAGEMENT_VIEWERS:
+            raise MammothValidationError(
+                ERR_ENGAGEMENT_VIEWERS.format(viewers, valid=list(_ENGAGEMENT_VIEWERS))
+            )
+        return await self._client._request_json(
+            "GET",
+            f"/dashboards/{dashboard_id}/engagement",
+            params={"days": days, "viewers": viewers},
+        )
+
+    async def engagement_person(
+        self, dashboard_id: int, user_id: int, days: int = 30
+    ) -> dict[str, Any]:
+        """Get one person's visits to a board, newest first (at most 50).
+
+        Args:
+            dashboard_id: ID of the dashboard (must be > 0).
+            user_id: ID of the person (must be > 0).
+            days: Window length: 7, 30 or 90.
+
+        Returns:
+            Dict with ``user_id``, ``name`` and ``visits``: each has ``started_at``,
+            ``seconds``, ``pages`` (page id, name, seconds), ``device`` and ``surface``.
+
+        Raises:
+            MammothValidationError: If an id is ≤ 0 or *days* is not 7, 30 or 90.
+        """
+        _require_dashboard_id(dashboard_id)
+        if isinstance(user_id, bool) or not isinstance(user_id, int) or user_id <= 0:
+            raise MammothValidationError(ERR_USER_ID_POSITIVE.format(user_id))
+        _require_window_days(days)
+        return await self._client._request_json(
+            "GET",
+            f"/dashboards/{dashboard_id}/engagement/people/{user_id}",
+            params={"days": days},
+        )
+
+    async def engagement_remind(self, dashboard_id: int, user_ids: _list[int]) -> dict[str, Any]:
+        """Email the share link again to people who have not opened a board.
+
+        The server sends at most one reminder per person per board every 7 days.
+
+        Args:
+            dashboard_id: ID of the dashboard (must be > 0).
+            user_ids: 1 to 200 ids of people the board is shared with.
+
+        Returns:
+            Dict with ``sent`` (user ids) and ``skipped`` (user id, ``reason`` and
+            ``next_at``).
+
+        Raises:
+            MammothValidationError: If *dashboard_id* ≤ 0 or *user_ids* is empty, over 200
+                long or holds an id ≤ 0.
+        """
+        _require_dashboard_id(dashboard_id)
+        if (
+            not isinstance(user_ids, list)
+            or not 1 <= len(user_ids) <= _REMIND_MAX_USERS
+            or any(isinstance(i, bool) or not isinstance(i, int) or i <= 0 for i in user_ids)
+        ):
+            raise MammothValidationError(ERR_REMIND_USER_IDS)
+        return await self._client._request_json(
+            "POST",
+            f"/dashboards/{dashboard_id}/engagement/remind",
+            json={"user_ids": user_ids},
+        )
+
+    async def own_data_status(self, dashboard_id: int) -> dict[str, Any]:
+        """Get the pending "use my data" run of a template board.
+
+        Args:
+            dashboard_id: ID of the dashboard (must be > 0).
+
+        Returns:
+            Dict with the run's ``status`` and ``stage``, and once fitted the proposal
+            (fit grade and what changed). ``{"status": None}`` when nothing is pending.
+
+        Raises:
+            MammothValidationError: If *dashboard_id* ≤ 0.
+        """
+        _require_dashboard_id(dashboard_id)
+        return await self._client._request_json("GET", f"/dashboards/v3/{dashboard_id}/own-data")
+
+    async def own_data_start(
+        self,
+        dashboard_id: int,
+        ingest_job_id: int | None = None,
+        dataset_id: int | None = None,
+        dataview_id: int | None = None,
+        file_name: str | None = None,
+    ) -> dict[str, Any]:
+        """Fit a template board to the user's own data. The board is not changed.
+
+        Replaces any pending run. The server leaves a proposal to review with
+        ``own_data_preview`` and ``own_data_accept``.
+
+        Args:
+            dashboard_id: ID of the dashboard (must be > 0).
+            ingest_job_id: Job of a file just uploaded; the server waits for it.
+            dataset_id: A dataset already in the workspace.
+            dataview_id: A view already in the workspace.
+            file_name: Name shown in the progress strip and the notification (≤ 255).
+                Not a source.
+
+        Returns:
+            Dict with ``job_id`` (the preparing job; wait with ``client.wait_if_job``)
+            and the run's state.
+
+        Raises:
+            MammothValidationError: If not exactly one of the three sources is given, an
+                id is ≤ 0 or *dashboard_id* ≤ 0.
+        """
+        _require_dashboard_id(dashboard_id)
+        sources = {
+            "ingest_job_id": ingest_job_id,
+            "dataset_id": dataset_id,
+            "dataview_id": dataview_id,
+        }
+        given = {k: v for k, v in sources.items() if v is not None}
+        if len(given) != 1:
+            raise MammothValidationError(ERR_OWN_DATA_SOURCE)
+        for name, value in given.items():
+            if isinstance(value, bool) or not isinstance(value, int) or value <= 0:
+                raise MammothValidationError(ERR_OWN_DATA_ID.format(name, value))
+        params: dict[str, Any] = dict(given)
+        if file_name is not None:
+            params["file_name"] = file_name[:255]
+        return await self._client._request_json(
+            "POST", f"/dashboards/v3/{dashboard_id}/own-data", json={"params": params}
+        )
+
+    async def own_data_preview(self, dashboard_id: int) -> dict[str, Any]:
+        """Preview the board on the user's data, as proposed (baked, not saved).
+
+        Args:
+            dashboard_id: ID of the dashboard (must be > 0).
+
+        Returns:
+            Dict with the adapted board, in the shape of a template preview.
+
+        Raises:
+            MammothValidationError: If *dashboard_id* ≤ 0.
+        """
+        _require_dashboard_id(dashboard_id)
+        return await self._client._request_json(
+            "GET", f"/dashboards/v3/{dashboard_id}/own-data/preview"
+        )
+
+    async def own_data_accept(
+        self,
+        dashboard_id: int,
+        choice: str = "proposal",
+        exclude: _list[str] | None = None,
+    ) -> ObjectJobSchema:
+        """Apply the proposed version of the board. This changes the board.
+
+        Args:
+            dashboard_id: ID of the dashboard (must be > 0).
+            choice: ``proposal``, ``partial`` or ``reshape``.
+            exclude: Change ids of added items to leave out (at most 20).
+
+        Returns:
+            The applying job; wait with ``client.wait_if_job``.
+
+        Raises:
+            MammothValidationError: If *dashboard_id* ≤ 0, *choice* is not one of the
+                three or *exclude* is not a list of at most 20 strings.
+        """
+        _require_dashboard_id(dashboard_id)
+        if choice not in _OWN_DATA_CHOICES:
+            raise MammothValidationError(
+                ERR_OWN_DATA_CHOICE.format(choice, valid=list(_OWN_DATA_CHOICES))
+            )
+        exclude = [] if exclude is None else exclude
+        if (
+            not isinstance(exclude, list)
+            or len(exclude) > _OWN_DATA_MAX_EXCLUDE
+            or any(not isinstance(i, str) for i in exclude)
+        ):
+            raise MammothValidationError(ERR_OWN_DATA_EXCLUDE)
+        response = await self._client._request_json(
+            "POST",
+            f"/dashboards/v3/{dashboard_id}/own-data/accept",
+            json={"params": {"choice": choice, "exclude": exclude}},
+        )
+        return ObjectJobSchema.model_validate(response)
+
+    async def own_data_dismiss(self, dashboard_id: int) -> dict[str, Any]:
+        """Drop the pending "use my data" run. The board is not changed.
+
+        Args:
+            dashboard_id: ID of the dashboard (must be > 0).
+
+        Returns:
+            The server's acknowledgement.
+
+        Raises:
+            MammothValidationError: If *dashboard_id* ≤ 0.
+        """
+        _require_dashboard_id(dashboard_id)
+        return await self._client._request_json(
+            "POST", f"/dashboards/v3/{dashboard_id}/own-data/dismiss", json={}
         )
 
     async def column_roster(self, dashboard_id: int) -> dict[str, Any]:

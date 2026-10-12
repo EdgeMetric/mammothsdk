@@ -348,7 +348,7 @@ Status on release: ran once on CLI 1.1.11 — Published PyPI CLI 1.1.11 / SDK 0.
 
 Run: `mammoth view derivative update`. Exact input fields: `mammoth schema get view.derivative.update`.
 
-Example: `mammoth view derivative update 123 123 123 --input '{"body": {"patches": [{"op": "replace", "path": "param", "value": {"METRIC": {"AS": "sample", "EXPRESSION": [{"TYPE": "FUNCTION", "VALUE": {"ARGUMENT": "sample", "FUNCTION": "SUM"}}]}}}]}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth view derivative update 123 123 123 --input '{"body": {"patches": [{"op": "replace", "path": "param", "value": {"METRIC": {"AS": "sample", "EXPRESSION": [{"TYPE": "FUNCTION", "VALUE": {"FUNCTION": "SUM"}}]}}}]}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ViewDerivativeUpdateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
@@ -411,6 +411,36 @@ Run: `mammoth view draft submit`. Exact input fields: `mammoth schema get view.d
 Example: `mammoth view draft submit 123 --input '{"dataset_id": 456}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ViewDraftSubmitResult`; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`.
+
+Status on release: untried; no live run recorded.
+
+### `view.explore-panel.add-to-dashboard`
+
+Run: `mammoth view explore-panel add-to-dashboard`. Exact input fields: `mammoth schema get view.explore-panel.add-to-dashboard`.
+
+Example: `mammoth view explore-panel add-to-dashboard 123 --input '{"card": "Region", "new_dashboard_title": "Regions"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `ViewExplorePanelAddToDashboardResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `view.explore-panel.edit`
+
+Run: `mammoth view explore-panel edit`. Exact input fields: `mammoth schema get view.explore-panel.edit`.
+
+Example: `mammoth view explore-panel edit 123 --input '{"edits": [{"op": "metric", "card": "Region", "agg": "SUM", "of": "Amount"}]}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `ViewExplorePanelEditResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `view.explore-panel.export-image`
+
+Run: `mammoth view explore-panel export-image`. Exact input fields: `mammoth schema get view.explore-panel.export-image`.
+
+Example: `mammoth view explore-panel export-image 123 --input '{"card": "Region", "output_path": "card.svg", "style_id": null}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `ViewExplorePanelExportImageResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
 Status on release: untried; no live run recorded.
 

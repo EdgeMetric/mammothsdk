@@ -523,6 +523,55 @@ sdk_methods:
   wait_policy: not_async
   pagination_policy: none
   openapi_operation_ids: []
+- sdk_symbol: mammoth.api.agents.AgentsAPI.run_units_list
+  canonical_command: agent.run.units.list
+  alias_of: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.agents.AgentsAPI.run_instances_list
+  canonical_command: agent.run.instance.list
+  alias_of: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.agents.AgentsAPI.run_instance_messages
+  canonical_command: agent.run.instance.messages
+  alias_of: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.agents.AgentsAPI.run_instance_transcript
+  canonical_command: agent.run.instance.transcript
+  alias_of: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.agents.AgentsAPI.run_retry
+  canonical_command: agent.run.retry
+  alias_of: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.agents.AgentsAPI.message_set_request_kind
+  canonical_command: agent.message.set-request-kind
+  alias_of: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.agents.AgentsAPI.plan_edit_proposal
+  canonical_command: agent.plan.edit-proposal
+  alias_of: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids: []
 - sdk_symbol: mammoth.api.agents.AgentsAPI.session_delete
   canonical_command: agent.session.delete
   alias_of: null
@@ -1650,6 +1699,13 @@ sdk_methods:
   openapi_operation_ids:
   - AssessTwb
   notes: "These take a workbook file from the local disk. Inside the Mammoth app the user's file cannot reach the agent: send the user to the dashboard import page at /workspaces/{workspace_id}/publish/import (Publish → Import), where they upload the .pbix/.twb/.twbx themselves."
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.attachment_create
+  canonical_command: dashboard.attachment-create
+  alias_of: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids: []
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.assess_pbix
   canonical_command: dashboard.assess-pbix
   mutation_class: read
@@ -2950,6 +3006,34 @@ sdk_methods:
   wait_policy: null
   pagination_policy: null
   openapi_operation_ids: []
+- sdk_symbol: mammoth.api.oauth_clients.OAuthClientsAPI.list
+  canonical_command: workspace.oauth-client.list
+  alias_of: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.oauth_clients.OAuthClientsAPI.create
+  canonical_command: workspace.oauth-client.create
+  alias_of: null
+  mutation_class: high_impact
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.oauth_clients.OAuthClientsAPI.delete
+  canonical_command: workspace.oauth-client.delete
+  alias_of: null
+  mutation_class: high_impact
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.oauth_clients.OAuthClientsAPI.revoke_grant
+  canonical_command: workspace.oauth-client.revoke-grant
+  alias_of: null
+  mutation_class: high_impact
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids: []
 - sdk_symbol: mammoth.api.parameters.ParametersAPI.create
   canonical_command: parameter.create
   alias_of: null
@@ -3882,6 +3966,20 @@ sdk_methods:
   wait_policy: not_async
   pagination_policy: none
   openapi_operation_ids: []
+- sdk_symbol: mammoth.api.user_profile.UserProfileAPI.connected_apps
+  canonical_command: auth.connected-apps.list
+  alias_of: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.user_profile.UserProfileAPI.revoke_connected_app
+  canonical_command: auth.connected-apps.revoke
+  alias_of: null
+  mutation_class: high_impact
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids: []
 - sdk_symbol: mammoth.api.user_profile.UserProfileAPI.update
   canonical_command: user.update
   alias_of: null
@@ -4104,14 +4202,13 @@ sdk_methods:
   openapi_operation_ids: []
   notes: Exact immutable workspace-ID confirmation, not --yes alone.
 - sdk_symbol: mammoth.api.workspace.WorkspaceAPI.current
-  canonical_command: null
+  canonical_command: workspace.current
   alias_of: null
-  mutation_class: null
-  wait_policy: null
-  pagination_policy: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
   openapi_operation_ids: []
-  notes: SDK-only seam for a resource server that checks which server an OAuth token was issued for; the
-    CLI reads the token's workspace through MammothClient.workspace_id.
+  notes: The workspace this token acts in, with the server (resource) and project it is fenced to.
 - sdk_symbol: mammoth.api.workspace.WorkspaceAPI.get
   canonical_command: workspace.get
   alias_of: null
@@ -4971,68 +5068,6 @@ sdk_methods:
   wait_policy: null
   pagination_policy: null
   openapi_operation_ids: []
-notes_on_dispositions:
-- 'DatasetsAPI.bulk_delete: "the SDK sends collection DELETE without target IDs. The command is forbidden
-  until OpenAPI proves exact targets and a typed SDK request carries them" (BLOCKED[B08], and doc 09 states
-  it "MUST NOT be exposed").'
-- 'ProjectsAPI.bulk_update: "BLOCKED[B02]" — accepts an unconstrained dictionary; reserved but not registered.'
-- 'DatasetsAPI.create: freeform creation variants remain unqualified; retained live evidence supports the
-  documented weburl + dataset_spec.url path, which waits for ready. Do not infer support for other variants.'
-- 'DatasetsAPI.update / DatasetsAPI.bulk_update: "BLOCKED[B07]" — raw patch operations include rename,
-  refresh, column changes, reattach, and deletion; reserved but not registered, and a benign command must
-  not smuggle deletion.'
-- 'DataviewsAPI.update / conditional_format_create / conditional_format_update: "BLOCKED[B09]" — dictionaries
-  are arbitrary; reserved but not registered until strict public request models exist.'
-- 'DataviewsAPI.draft_mode: "BLOCKED[B12]" — "DataviewsAPI docstrings say enter|commit|discard, DraftCommand
-  uses enter|submit|discard|exit, and this API takes free text. Replace it with the shared enum and typed
-  server state."'
-- 'UserProfileAPI.update / update_preferences / ActivityLogsAPI.list: "BLOCKED[B17 VARIADIC_INPUT_UNTYPED]"
-  — fields are **Any; "Generate strict OpenAPI-backed request models; unrecognized fields must fail before
-  transport."'
-- 'UserProfileAPI.change_password: "BLOCKED[B18]" — "absent from the public OpenAPI. It remains reserved
-  and contract-only until a pinned contract and secret/redaction metadata exist."'
-- 'ActivityLogsAPI.export: "BLOCKED[B19 ACTIVITY_EXPORT_UNTYPED_ASYNC]" — format, filters, and download/job
-  response are raw; add typed result union before registering the command.'
-- 'ClientAppsAPI.update: "BLOCKED[B21]" — PatchOperation.op/path/value are arbitrary strings; add enums/path-dependent
-  values before update is exposed.'
-- 'PipelineAPI.draft_mode: "Accept only enter, submit, discard, or exit; never commit. exit is an internal
-  step of submit/discard and is not a public CLI verb."'
-- 'View.draft(): "SDK-only compound alias for view draft enter, followed by transforms, then submit or
-  discard. It has no standalone CLI handler."'
-- 'ViewHost protocol (list_tasks, refresh): "ViewHost has no runtime effect. Its two public protocol declarations
-  still appear in the complete SDK inventory, so they receive explicit alias records."'
-- 'Reserved export CRUD (doc 11): `ExportsAPI.get`, `ExportsAPI.update`, `ExportsAPI.delete` do not yet
-  exist in the SDK inventory (doc 13 lists only 5 ExportsAPI methods: create, list, to_csv, to_dataset,
-  to_s3). Doc 11 states these are "Reserved control commands complete OpenAPI CRUD" and lists the "Required
-  SDK signature" that must be added before `view export get|update VIEW_ID EXPORT_ID` can be registered
-  — they are not present sdk_methods rows here because they are not yet public SDK symbols.'
-- 'csv_file export handler: "reserved `view export csv-file VIEW_ID` ... No public helper or builder contract
-  exists. Do not alias it to the S3-backed local csv command. Block until the production server accepts
-  a reviewed typed fixture." No SDK method backs this handler.'
-- 'email export handler: "Outbound email stays contract-only until a dedicated sink and recipient allowlist
-  exist" (acceptance class contract_only_high_impact).'
-- 'IO-EXPORT-HANDLERS blocker: "csv_file and any server-rejected handler ... never infer support from the
-  enum."'
-- 'B04 SERVER_VARIANCE (doc 09): "project browse and dashboard sources are documented as returning HTTP
-  500 on some servers; schedule list may return 405. A permission or 5xx response is not server_unavailable;
-  retain the live exemption evidence."'
-- 'webhook send-get: "is a mutation despite HTTP GET, and it is never retried" — must not be treated as
-  an idempotent read despite the verb.'
-- 'AIAPI.generate_data: "is a preview operation in the pinned OpenAPI document. It must not claim that
-  it writes generated rows to the view."'
-- 'AIAPI blockers A3/A4: "Do not infer addon availability from an authorization error" and connector query
-  generation must never run live "without that fixture" (dedicated connector fixture required).'
-- 'MammothClient.test_connection: alias to `auth status --check`; "Do not implement the SDK method''s
-  lossy boolean behavior in the CLI."'
-- 'B16 DUPLICATE_SCHEDULE_SURFACE: "AutomationsAPI and SchedulesAPI expose the same project schedule routes
-  with different list envelopes/pagination. SchedulesAPI owns canonical handlers; automation schedule
-  methods are aliases only."'
-- 'B10 VIEW_DATASET_RESOLUTION: ViewsResource.get/delete/bulk_delete call a private pipeline discovery
-  helper; "bulk delete resolves only the first ID and assumes every view shares its dataset" pending a
-  public paginated resolver.'
-- 'B01 FIRST_PAGE_ONLY: workspace/project/dataset/dataview list methods (and ProjectsAPI.get, ViewsResource.list,
-  private dataview discovery) "have no offset/cursor. ... Add a public proven continuation contract before
-  --all or completeness claims."'
 - sdk_symbol: mammoth.api.agents.AgentsAPI.turn_cancel
   canonical_command: agent.turn.cancel
   alias_of: null
@@ -5180,3 +5215,282 @@ notes_on_dispositions:
   wait_policy: not_async
   pagination_policy: none
   openapi_operation_ids: []
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.render_figure_svg
+  canonical_command: view.explore-panel.export-image
+  alias_of: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.collections.CollectionsAPI.list
+  canonical_command: collection.list
+  alias_of: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.collections.CollectionsAPI.get
+  canonical_command: collection.get
+  alias_of: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.collections.CollectionsAPI.get_by_url
+  canonical_command: collection.get-by-url
+  alias_of: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.collections.CollectionsAPI.create
+  canonical_command: collection.create
+  alias_of: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.collections.CollectionsAPI.update
+  canonical_command: collection.update
+  alias_of: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.collections.CollectionsAPI.delete
+  canonical_command: collection.delete
+  alias_of: null
+  mutation_class: destructive
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.collections.CollectionsAPI.add_dashboards
+  canonical_command: collection.dashboards.add
+  alias_of: null
+  mutation_class: external_effect
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.collections.CollectionsAPI.remove_dashboard
+  canonical_command: collection.dashboards.remove
+  alias_of: null
+  mutation_class: destructive
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.collections.CollectionsAPI.share
+  canonical_command: collection.share
+  alias_of: null
+  mutation_class: external_effect
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.collections.CollectionsAPI.remove_member
+  canonical_command: collection.members.remove
+  alias_of: null
+  mutation_class: destructive
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.collections.CollectionsAPI.for_dashboard
+  canonical_command: collection.for-dashboard
+  alias_of: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.collections.CollectionsAPI.activity
+  canonical_command: collection.activity
+  alias_of: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.collections.CollectionsAPI.pipeline_changes
+  canonical_command: collection.pipeline-changes
+  alias_of: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.collections.CollectionsAPI.active_job
+  canonical_command: collection.active-job
+  alias_of: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.collections.CollectionsAPI.job
+  canonical_command: collection.job
+  alias_of: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.collections.CollectionsAPI.upload_files
+  canonical_command: collection.files.upload
+  alias_of: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.engagement
+  canonical_command: dashboard.engagement.get
+  alias_of: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.engagement_person
+  canonical_command: dashboard.engagement.person
+  alias_of: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.engagement_remind
+  canonical_command: dashboard.engagement.remind
+  alias_of: null
+  mutation_class: external_effect
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.own_data_status
+  canonical_command: dashboard.own-data.status
+  alias_of: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.own_data_start
+  canonical_command: dashboard.own-data.start
+  alias_of: null
+  mutation_class: benign_mutation
+  wait_policy: always_wait
+  pagination_policy: none
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.own_data_preview
+  canonical_command: dashboard.own-data.preview
+  alias_of: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.own_data_accept
+  canonical_command: dashboard.own-data.accept
+  alias_of: null
+  mutation_class: benign_mutation
+  wait_policy: always_wait
+  pagination_policy: none
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.own_data_dismiss
+  canonical_command: dashboard.own-data.dismiss
+  alias_of: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.files.FilesAPI.preview_multi_sheet
+  canonical_command: file.multi-sheet-preview
+  alias_of: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.files.FilesAPI.create_datasets_from_multi_sheet
+  canonical_command: file.multi-sheet-extract
+  alias_of: null
+  mutation_class: benign_mutation
+  wait_policy: always_wait
+  pagination_policy: none
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.workflows.WorkflowsAPI.save
+  canonical_command: workflow.save
+  alias_of: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.workflows.WorkflowsAPI.set_archived
+  canonical_command: workflow.archive
+  alias_of: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.workflows.WorkflowsAPI.attach_dataset
+  canonical_command: workflow.attach-dataset
+  alias_of: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.workflows.WorkflowsAPI.resolve_held
+  canonical_command: workflow.resolve-held
+  alias_of: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids: []
+notes_on_dispositions:
+- 'DatasetsAPI.bulk_delete: "the SDK sends collection DELETE without target IDs. The command is forbidden
+  until OpenAPI proves exact targets and a typed SDK request carries them" (BLOCKED[B08], and doc 09 states
+  it "MUST NOT be exposed").'
+- 'ProjectsAPI.bulk_update: "BLOCKED[B02]" — accepts an unconstrained dictionary; reserved but not registered.'
+- 'DatasetsAPI.create: freeform creation variants remain unqualified; retained live evidence supports the
+  documented weburl + dataset_spec.url path, which waits for ready. Do not infer support for other variants.'
+- 'DatasetsAPI.update / DatasetsAPI.bulk_update: "BLOCKED[B07]" — raw patch operations include rename,
+  refresh, column changes, reattach, and deletion; reserved but not registered, and a benign command must
+  not smuggle deletion.'
+- 'DataviewsAPI.update / conditional_format_create / conditional_format_update: "BLOCKED[B09]" — dictionaries
+  are arbitrary; reserved but not registered until strict public request models exist.'
+- 'DataviewsAPI.draft_mode: "BLOCKED[B12]" — "DataviewsAPI docstrings say enter|commit|discard, DraftCommand
+  uses enter|submit|discard|exit, and this API takes free text. Replace it with the shared enum and typed
+  server state."'
+- 'UserProfileAPI.update / update_preferences / ActivityLogsAPI.list: "BLOCKED[B17 VARIADIC_INPUT_UNTYPED]"
+  — fields are **Any; "Generate strict OpenAPI-backed request models; unrecognized fields must fail before
+  transport."'
+- 'UserProfileAPI.change_password: "BLOCKED[B18]" — "absent from the public OpenAPI. It remains reserved
+  and contract-only until a pinned contract and secret/redaction metadata exist."'
+- 'ActivityLogsAPI.export: "BLOCKED[B19 ACTIVITY_EXPORT_UNTYPED_ASYNC]" — format, filters, and download/job
+  response are raw; add typed result union before registering the command.'
+- 'ClientAppsAPI.update: "BLOCKED[B21]" — PatchOperation.op/path/value are arbitrary strings; add enums/path-dependent
+  values before update is exposed.'
+- 'PipelineAPI.draft_mode: "Accept only enter, submit, discard, or exit; never commit. exit is an internal
+  step of submit/discard and is not a public CLI verb."'
+- 'View.draft(): "SDK-only compound alias for view draft enter, followed by transforms, then submit or
+  discard. It has no standalone CLI handler."'
+- 'ViewHost protocol (list_tasks, refresh): "ViewHost has no runtime effect. Its two public protocol declarations
+  still appear in the complete SDK inventory, so they receive explicit alias records."'
+- 'Reserved export CRUD (doc 11): `ExportsAPI.get`, `ExportsAPI.update`, `ExportsAPI.delete` do not yet
+  exist in the SDK inventory (doc 13 lists only 5 ExportsAPI methods: create, list, to_csv, to_dataset,
+  to_s3). Doc 11 states these are "Reserved control commands complete OpenAPI CRUD" and lists the "Required
+  SDK signature" that must be added before `view export get|update VIEW_ID EXPORT_ID` can be registered
+  — they are not present sdk_methods rows here because they are not yet public SDK symbols.'
+- 'csv_file export handler: "reserved `view export csv-file VIEW_ID` ... No public helper or builder contract
+  exists. Do not alias it to the S3-backed local csv command. Block until the production server accepts
+  a reviewed typed fixture." No SDK method backs this handler.'
+- 'email export handler: "Outbound email stays contract-only until a dedicated sink and recipient allowlist
+  exist" (acceptance class contract_only_high_impact).'
+- 'IO-EXPORT-HANDLERS blocker: "csv_file and any server-rejected handler ... never infer support from the
+  enum."'
+- 'B04 SERVER_VARIANCE (doc 09): "project browse and dashboard sources are documented as returning HTTP
+  500 on some servers; schedule list may return 405. A permission or 5xx response is not server_unavailable;
+  retain the live exemption evidence."'
+- 'webhook send-get: "is a mutation despite HTTP GET, and it is never retried" — must not be treated as
+  an idempotent read despite the verb.'
+- 'AIAPI.generate_data: "is a preview operation in the pinned OpenAPI document. It must not claim that
+  it writes generated rows to the view."'
+- 'AIAPI blockers A3/A4: "Do not infer addon availability from an authorization error" and connector query
+  generation must never run live "without that fixture" (dedicated connector fixture required).'
+- 'MammothClient.test_connection: alias to `auth status --check`; "Do not implement the SDK method''s
+  lossy boolean behavior in the CLI."'
+- 'B16 DUPLICATE_SCHEDULE_SURFACE: "AutomationsAPI and SchedulesAPI expose the same project schedule routes
+  with different list envelopes/pagination. SchedulesAPI owns canonical handlers; automation schedule
+  methods are aliases only."'
+- 'B10 VIEW_DATASET_RESOLUTION: ViewsResource.get/delete/bulk_delete call a private pipeline discovery
+  helper; "bulk delete resolves only the first ID and assumes every view shares its dataset" pending a
+  public paginated resolver.'
+- 'B01 FIRST_PAGE_ONLY: workspace/project/dataset/dataview list methods (and ProjectsAPI.get, ViewsResource.list,
+  private dataview discovery) "have no offset/cursor. ... Add a public proven continuation contract before
+  --all or completeness claims."'

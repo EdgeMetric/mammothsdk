@@ -1,5 +1,78 @@
 manifest_schema_version: 1
 commands:
+- command_id: auth.connected-apps.list
+  command_path: auth connected-apps list
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - ListConnectedApps
+  positionals: []
+  sdk_symbol: mammoth.api.user_profile.UserProfileAPI.connected_apps
+  sdk_conversion: Call mammoth.api.user_profile.UserProfileAPI.connected_apps with validated request fields.
+  request_model: AuthConnectedAppsListRequest
+  result_model: AuthConnectedAppsListResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Read-only; checked live on the koyal profile, not in the automated live suite.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth auth connected-apps list --help
+  agent_example: mammoth auth connected-apps list
+  unit_tests:
+  - test_connected_apps_lists_the_signed_in_users_grants
+  contract_tests:
+  - test_the_command_is_registered_and_reachable_from_the_cli
+  draft_test: null
+  undo_test: null
+  known_restrictions: Read-only. The apps the signed-in user has authorised; each id is the grant id that auth connected-apps revoke takes.
+  reviewed_by: primary
+- command_id: auth.connected-apps.revoke
+  command_path: auth connected-apps revoke
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - RevokeConnectedApp
+  positionals:
+  - name: oauth_grant_id
+    type: int
+    required: true
+    metavar: OAUTH_GRANT_ID
+    falls_back_to_field: null
+    help: ID of the oauth grant.
+  sdk_symbol: mammoth.api.user_profile.UserProfileAPI.revoke_connected_app
+  sdk_conversion: Call mammoth.api.user_profile.UserProfileAPI.revoke_connected_app with validated request fields.
+  request_model: AuthConnectedAppsRevokeRequest
+  result_model: AuthConnectedAppsRevokeResult
+  mutation_class: high_impact
+  edits_target: true
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact access change without a disposable fixture; checked by dry-run only.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth auth connected-apps revoke OAUTH_GRANT_ID --help
+  agent_example: mammoth auth connected-apps revoke 123
+  unit_tests:
+  - test_revoke_connected_app_deletes_that_grant_on_an_empty_204
+  contract_tests:
+  - test_the_command_is_registered_and_reachable_from_the_cli
+  draft_test: null
+  undo_test: null
+  known_restrictions: "Exact grant-ID confirmation (--yes --confirm ID). Disconnects the app: its tokens stop working for this user."
+  reviewed_by: primary
+  readback:
+    command: auth.connected-apps.list
+    ids: {}
+    kind: object
 - command_id: auth.login
   command_path: auth login
   disposition: command

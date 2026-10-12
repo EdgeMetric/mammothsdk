@@ -11,13 +11,17 @@ public SDK method named by the command's reviewed manifest ``sdk_symbol``.
 
 from __future__ import annotations
 
+import time
 from typing import Any
 
 from mammoth_cli.errors.envelope import (
     CODE_INVALID_ARGUMENT,
+    CODE_JOB_FAILED,
     CODE_MISSING_ARGUMENT,
     CODE_MISSING_FIELD,
     CODE_SDK_SYMBOL_UNRESOLVED,
+    EXIT_API,
+    EXIT_RETRYABLE,
     EXIT_USAGE,
     CliError,
 )
@@ -28,7 +32,11 @@ from mammoth_cli.runtime.confirm import (
     enforce_confirmation,
 )
 from mammoth_cli.runtime.invocation import Invocation
-from mammoth_cli.runtime.session import open_service, require_project
+from mammoth_cli.runtime.session import (
+    DEFAULT_MUTATION_JOB_TIMEOUT,
+    open_service,
+    require_project,
+)
 
 HandlerResult = tuple[Any, dict[str, Any]]
 
@@ -414,4 +422,125 @@ def workflow_block_type(invocation: Invocation) -> HandlerResult:
             connection_type=connection_type,
             project_id=project_id,
         )
+    return data, _meta(invocation, auth.workspace_id, project_id)
+
+
+_GET_SYMBOL = "mammoth.api.workflows.WorkflowsAPI.get"
+_SAVE_POLL_SECONDS = 2.0
+
+
+def _save_run(workflow: Any) -> dict[str, Any] | None:
+    """The Save the workflow's record holds, or None when the response carries none."""
+    state = workflow.get("canvas_state") if isinstance(workflow, dict) else None
+    run = state.get("save_run") if isinstance(state, dict) else None
+    return run if isinstance(run, dict) else None
+
+
+def _save_is_running(workflow: Any) -> bool:
+    run = _save_run(workflow)
+    return run is not None and run.get("status") == "running"
+
+
+def _save_failure(workflow: Any) -> CliError | None:
+    """The error for a Save that ended without building every change, else None.
+
+    The route answers 202 and builds in the background, so a finished run is the
+    only proof the changes were saved: ``done`` means all of them were, anything
+    else (``partial``) left some unbuilt, each with the reason it gives.
+    """
+    run = _save_run(workflow)
+    if run is None or run.get("status") in ("running", "done"):
+        return None
+    reasons = [
+        f"{step.get('label') or step.get('kind')}: {step['error']}"
+        for step in run.get("steps") or []
+        if isinstance(step, dict) and step.get("error")
+    ]
+    reasons += [str(why) for why in (run.get("needs_setup") or {}).values()]
+    message = f"The workflow save did not build every change (status: {run.get('status')})."
+    if reasons:
+        message += " " + "; ".join(reasons)
+    return CliError(
+        code=CODE_JOB_FAILED,
+        message=message,
+        exit_status=EXIT_API,
+        hint="Fix what the message names, then run 'workflow save' again.",
+        details={"save_run": run},
+    )
+
+
+def workflow_save(invocation: Invocation) -> HandlerResult:
+    """Save a workflow's unsaved canvas changes and wait for the run. Workflow id is positional.
+
+    Fails, naming the reasons, when the save does not build every change.
+    """
+    project_id = require_project(invocation)
+    workflow_id = _require_int_positional_at(invocation, 0, "workflow id")
+    document = invocation.load_input() or {}
+    kwargs: dict[str, Any] = {"workflow_id": workflow_id, "project_id": project_id}
+    _forward_optional(document, kwargs, ("keys", "expected_version"))
+    budget = invocation.job_timeout or DEFAULT_MUTATION_JOB_TIMEOUT
+    with open_service(invocation) as (service, auth):
+        data = service.call(_symbol(invocation), **kwargs)
+        deadline = time.monotonic() + budget
+        while _save_is_running(data):
+            if time.monotonic() >= deadline:
+                raise CliError(
+                    code="timeout",
+                    message=f"The workflow save was still running after {budget:.0f} seconds.",
+                    exit_status=EXIT_RETRYABLE,
+                    hint=f"Check it with 'mammoth workflow get {workflow_id}'.",
+                    retryable=True,
+                )
+            time.sleep(_SAVE_POLL_SECONDS)
+            data = service.call(_GET_SYMBOL, workflow_id=workflow_id, project_id=project_id)
+    if (failure := _save_failure(data)) is not None:
+        raise failure
+    return data, _meta(invocation, auth.workspace_id, project_id)
+
+
+def workflow_archive(invocation: Invocation) -> HandlerResult:
+    """Archive a workflow, or bring it back. Workflow id is positional."""
+    project_id = require_project(invocation)
+    workflow_id = _require_int_positional_at(invocation, 0, "workflow id")
+    document = invocation.load_input() or {}
+    kwargs: dict[str, Any] = {
+        "workflow_id": workflow_id,
+        "archived": _require_field(document, "archived"),
+        "project_id": project_id,
+    }
+    _forward_optional(document, kwargs, ("dataset_ids",))
+    with open_service(invocation) as (service, auth):
+        data = service.call(_symbol(invocation), **kwargs)
+    return data, _meta(invocation, auth.workspace_id, project_id)
+
+
+def workflow_attach_dataset(invocation: Invocation) -> HandlerResult:
+    """Attach a dataset to a workflow. Workflow id and dataset id are positional."""
+    project_id = require_project(invocation)
+    workflow_id = _require_int_positional_at(invocation, 0, "workflow id")
+    with open_service(invocation) as (service, auth):
+        data = service.call(
+            _symbol(invocation),
+            workflow_id=workflow_id,
+            datasource_id=invocation.positional("datasource_id"),
+            project_id=project_id,
+        )
+    return data, _meta(invocation, auth.workspace_id, project_id)
+
+
+def workflow_resolve_held(invocation: Invocation) -> HandlerResult:
+    """Settle a change that a workflow Save held back. Workflow id and change key are positional."""
+    project_id = require_project(invocation)
+    workflow_id = _require_int_positional_at(invocation, 0, "workflow id")
+    document = invocation.load_input() or {}
+    kwargs: dict[str, Any] = {
+        "workflow_id": workflow_id,
+        "key": invocation.positional("key"),
+        "built": _require_field(document, "built"),
+        "project_id": project_id,
+    }
+    _forward_optional(document, kwargs, ("expected_version",))
+    with open_service(invocation) as (service, auth):
+        data = service.call(_symbol(invocation), **kwargs)
     return data, _meta(invocation, auth.workspace_id, project_id)

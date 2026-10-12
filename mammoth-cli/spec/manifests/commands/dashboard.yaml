@@ -4976,8 +4976,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard v3 generate --help
-  agent_example: 'mammoth dashboard v3 generate --input ''{"body": {"params": {"intent": "Summarize revenue
-    by region", "dataview_id": 1}}}'''
+  agent_example: 'mammoth dashboard v3 generate --input ''{"body": {"params": {"dataview_id": 1}}}'''
   unit_tests:
   - UT-DASHBOARD-V3-GENERATE
   contract_tests:
@@ -5951,4 +5950,410 @@ commands:
   undo_test: null
   known_restrictions: 'Read-only. Assesses a workbook the web app already attached (ATTACHMENT_ID): waits
     for the job and returns its result. Use dashboard assess-pbix for a local file.'
+  reviewed_by: primary
+- command_id: dashboard.engagement.get
+  command_path: dashboard engagement get
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetDashboardEngagement
+  positionals:
+  - name: dashboard_id
+    type: int
+    required: true
+    metavar: DASHBOARD_ID
+    falls_back_to_field: null
+    help: ID of the dashboard.
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.engagement
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.engagement with validated request fields.
+  request_model: DashboardEngagementGetRequest
+  result_model: DashboardEngagementGetResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Read of a disposable collection or board; not in the automated live suite.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard engagement get DASHBOARD_ID --help
+  agent_example: mammoth dashboard engagement get 123
+  unit_tests:
+  - UT-DASHBOARD-ENGAGEMENT-GET
+  contract_tests:
+  - CT-DASHBOARD-ENGAGEMENT-GET-HUMAN
+  - CT-DASHBOARD-ENGAGEMENT-GET-JSON
+  - CT-DASHBOARD-ENGAGEMENT-GET-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Read-only. Editors only. Reach against the people the board is shared with, depth
+    per page and per person, hours (UTC), surface, devices, actions and board events. days is 7, 30 or
+    90 (default 30); viewers is all, named or anonymous.
+  reviewed_by: primary
+- command_id: dashboard.engagement.person
+  command_path: dashboard engagement person
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetDashboardEngagementPerson
+  positionals:
+  - name: dashboard_id
+    type: int
+    required: true
+    metavar: DASHBOARD_ID
+    falls_back_to_field: null
+    help: ID of the dashboard.
+  - name: user_id
+    type: int
+    required: true
+    metavar: USER_ID
+    falls_back_to_field: null
+    help: ID of the user.
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.engagement_person
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.engagement_person with validated request fields.
+  request_model: DashboardEngagementPersonRequest
+  result_model: DashboardEngagementPersonResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Read of a disposable collection or board; not in the automated live suite.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard engagement person DASHBOARD_ID USER_ID --help
+  agent_example: mammoth dashboard engagement person 123 123
+  unit_tests:
+  - UT-DASHBOARD-ENGAGEMENT-PERSON
+  contract_tests:
+  - CT-DASHBOARD-ENGAGEMENT-PERSON-HUMAN
+  - CT-DASHBOARD-ENGAGEMENT-PERSON-JSON
+  - CT-DASHBOARD-ENGAGEMENT-PERSON-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Read-only. One person's visits to the board, newest first, at most 50. Take USER_ID
+    from the people list of dashboard engagement get. days is 7, 30 or 90 (default 30).
+  reviewed_by: primary
+- command_id: dashboard.engagement.remind
+  command_path: dashboard engagement remind
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - PostDashboardEngagementRemind
+  positionals:
+  - name: dashboard_id
+    type: int
+    required: true
+    metavar: DASHBOARD_ID
+    falls_back_to_field: null
+    help: ID of the dashboard.
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.engagement_remind
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.engagement_remind with validated request fields.
+  request_model: DashboardEngagementRemindRequest
+  result_model: DashboardEngagementRemindResult
+  mutation_class: external_effect
+  edits_target: false
+  confirmation: yes_always
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_no_disposable_fixture
+  readback:
+    command: dashboard.engagement.get
+    ids:
+      dashboard_id: positional.0
+    kind: object
+  live_test: null
+  live_exemption_reason: Write with contract coverage but no automated disposable fixture in tests/live.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard engagement remind DASHBOARD_ID --help
+  agent_example: 'mammoth dashboard engagement remind 123 --input ''{"user_ids": [1]}'''
+  unit_tests:
+  - UT-DASHBOARD-ENGAGEMENT-REMIND
+  contract_tests:
+  - CT-DASHBOARD-ENGAGEMENT-REMIND-HUMAN
+  - CT-DASHBOARD-ENGAGEMENT-REMIND-JSON
+  - CT-DASHBOARD-ENGAGEMENT-REMIND-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Emails the share link again to people who have not opened the board. user_ids takes
+    1 to 200 people from dashboard engagement get (people with can_remind true). The server sends one
+    reminder per person per board every 7 days; skipped lists who was left out and why. Always needs --yes;
+    --dry-run sends nothing.
+  reviewed_by: primary
+- command_id: dashboard.own-data.status
+  command_path: dashboard own-data status
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetOwnData
+  positionals:
+  - name: dashboard_id
+    type: int
+    required: true
+    metavar: DASHBOARD_ID
+    falls_back_to_field: null
+    help: ID of the dashboard.
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.own_data_status
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.own_data_status with validated request fields.
+  request_model: DashboardOwnDataStatusRequest
+  result_model: DashboardOwnDataStatusResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Read of a disposable collection or board; not in the automated live suite.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard own-data status DASHBOARD_ID --help
+  agent_example: mammoth dashboard own-data status 123
+  unit_tests:
+  - UT-DASHBOARD-OWN-DATA-STATUS
+  contract_tests:
+  - CT-DASHBOARD-OWN-DATA-STATUS-HUMAN
+  - CT-DASHBOARD-OWN-DATA-STATUS-JSON
+  - CT-DASHBOARD-OWN-DATA-STATUS-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Read-only. The board''s pending ''use my data'' run: status and stage, and once
+    fitted the proposal. status null means nothing is pending.'
+  reviewed_by: primary
+- command_id: dashboard.own-data.start
+  command_path: dashboard own-data start
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - StartOwnData
+  positionals:
+  - name: dashboard_id
+    type: int
+    required: true
+    metavar: DASHBOARD_ID
+    falls_back_to_field: null
+    help: ID of the dashboard.
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.own_data_start
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.own_data_start with validated request fields.
+  request_model: DashboardOwnDataStartRequest
+  result_model: DashboardOwnDataStartResult
+  mutation_class: benign_mutation
+  edits_target: false
+  confirmation: none
+  wait_policy: always_wait
+  pagination_policy: none
+  acceptance_evidence: contract_only_no_disposable_fixture
+  readback:
+    command: dashboard.own-data.status
+    ids:
+      dashboard_id: positional.0
+    kind: object
+  live_test: null
+  live_exemption_reason: Write with contract coverage but no automated disposable fixture in tests/live.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard own-data start DASHBOARD_ID --help
+  agent_example: 'mammoth dashboard own-data start 123 --input ''{"dataview_id": 1}'''
+  unit_tests:
+  - UT-DASHBOARD-OWN-DATA-START
+  contract_tests:
+  - CT-DASHBOARD-OWN-DATA-START-HUMAN
+  - CT-DASHBOARD-OWN-DATA-START-JSON
+  - CT-DASHBOARD-OWN-DATA-START-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Fits a template board to your own data and waits for the proposal. Give exactly
+    one of dataview_id, dataset_id or ingest_job_id. The board is not changed; read the proposal with
+    dashboard own-data status and preview, then accept or dismiss. Replaces any pending run. Uses an AI
+    call.
+  reviewed_by: primary
+- command_id: dashboard.own-data.preview
+  command_path: dashboard own-data preview
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - PreviewOwnData
+  positionals:
+  - name: dashboard_id
+    type: int
+    required: true
+    metavar: DASHBOARD_ID
+    falls_back_to_field: null
+    help: ID of the dashboard.
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.own_data_preview
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.own_data_preview with validated request fields.
+  request_model: DashboardOwnDataPreviewRequest
+  result_model: DashboardOwnDataPreviewResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Read of a disposable collection or board; not in the automated live suite.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard own-data preview DASHBOARD_ID --help
+  agent_example: mammoth dashboard own-data preview 123
+  unit_tests:
+  - UT-DASHBOARD-OWN-DATA-PREVIEW
+  contract_tests:
+  - CT-DASHBOARD-OWN-DATA-PREVIEW-HUMAN
+  - CT-DASHBOARD-OWN-DATA-PREVIEW-JSON
+  - CT-DASHBOARD-OWN-DATA-PREVIEW-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Read-only. The adapted board as proposed, baked but not saved.
+  reviewed_by: primary
+- command_id: dashboard.own-data.accept
+  command_path: dashboard own-data accept
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - AcceptOwnData
+  positionals:
+  - name: dashboard_id
+    type: int
+    required: true
+    metavar: DASHBOARD_ID
+    falls_back_to_field: null
+    help: ID of the dashboard.
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.own_data_accept
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.own_data_accept with validated request fields.
+  request_model: DashboardOwnDataAcceptRequest
+  result_model: DashboardOwnDataAcceptResult
+  mutation_class: benign_mutation
+  edits_target: true
+  confirmation: confirm_target
+  wait_policy: always_wait
+  pagination_policy: none
+  acceptance_evidence: contract_only_no_disposable_fixture
+  readback:
+    command: dashboard.own-data.status
+    ids:
+      dashboard_id: positional.0
+    kind: object
+  live_test: null
+  live_exemption_reason: Write with contract coverage but no automated disposable fixture in tests/live.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard own-data accept DASHBOARD_ID --help
+  agent_example: mammoth dashboard own-data accept 123
+  unit_tests:
+  - UT-DASHBOARD-OWN-DATA-ACCEPT
+  contract_tests:
+  - CT-DASHBOARD-OWN-DATA-ACCEPT-HUMAN
+  - CT-DASHBOARD-OWN-DATA-ACCEPT-JSON
+  - CT-DASHBOARD-OWN-DATA-ACCEPT-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Applies the proposed version to the board, which changes it. choice is proposal
+    (default), partial or reshape; exclude lists change ids of added items to leave out. Waits for the
+    applying job.
+  reviewed_by: primary
+- command_id: dashboard.own-data.dismiss
+  command_path: dashboard own-data dismiss
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - DismissOwnData
+  positionals:
+  - name: dashboard_id
+    type: int
+    required: true
+    metavar: DASHBOARD_ID
+    falls_back_to_field: null
+    help: ID of the dashboard.
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.own_data_dismiss
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.own_data_dismiss with validated request fields.
+  request_model: DashboardOwnDataDismissRequest
+  result_model: DashboardOwnDataDismissResult
+  mutation_class: benign_mutation
+  edits_target: false
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_no_disposable_fixture
+  readback:
+    command: dashboard.own-data.status
+    ids:
+      dashboard_id: positional.0
+    kind: object
+  live_test: null
+  live_exemption_reason: Write with contract coverage but no automated disposable fixture in tests/live.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard own-data dismiss DASHBOARD_ID --help
+  agent_example: mammoth dashboard own-data dismiss 123
+  unit_tests:
+  - UT-DASHBOARD-OWN-DATA-DISMISS
+  contract_tests:
+  - CT-DASHBOARD-OWN-DATA-DISMISS-HUMAN
+  - CT-DASHBOARD-OWN-DATA-DISMISS-JSON
+  - CT-DASHBOARD-OWN-DATA-DISMISS-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Drops the pending 'use my data' run. The board is not changed.
+  reviewed_by: primary
+- command_id: dashboard.attachment-create
+  command_path: dashboard attachment-create
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - CreateAttachment
+  positionals:
+  - name: file
+    type: str
+    required: true
+    metavar: FILE
+    falls_back_to_field: null
+    help: Path to a local workbook.
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.attachment_create
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.attachment_create with validated request fields.
+  request_model: DashboardAttachmentCreateRequest
+  result_model: DashboardAttachmentCreateResult
+  mutation_class: benign_mutation
+  edits_target: false
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Multipart upload of a workbook; no approved workbook fixture on the dev box.
+  no_readback: 'the upload answers with the new attachment id; no read command lists attachments to read it back.'
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard attachment-create FILE --help
+  agent_example: mammoth dashboard attachment-create sample.pbix
+  unit_tests:
+  - UT-DASHBOARD-ATTACHMENT-CREATE
+  contract_tests:
+  - CT-DASHBOARD-ATTACHMENT-CREATE-HUMAN
+  - CT-DASHBOARD-ATTACHMENT-CREATE-JSON
+  - CT-DASHBOARD-ATTACHMENT-CREATE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Uploads a local workbook as a chat attachment. The attachment id it returns feeds
+    dashboard pbix-intent and dashboard pbix-assess. Inside the Mammoth app the user's file cannot reach
+    the agent, so send the user to the dashboard import page at /workspaces/{workspace_id}/publish/import.
   reviewed_by: primary

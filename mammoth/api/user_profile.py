@@ -117,3 +117,24 @@ class UserProfileAPI:
         if not operations:
             raise MammothValidationError("Provide `patch` operations or path=value preferences.")
         return await self._client._request_json("PATCH", "/preferences", json={"patch": operations})
+
+    async def connected_apps(self) -> dict[str, Any]:
+        """List the apps the signed-in user has authorised.
+
+        Returns:
+            Dict ``{"result": [...]}``; each entry has ``id`` (the grant id that
+            :meth:`revoke_connected_app` takes), ``client_name``, ``workspace_id``,
+            ``project_id`` (None means all projects) and ``created_at``.
+        """
+        return await self._client._request_json("GET", "/self/oauth-grants")
+
+    async def revoke_connected_app(self, oauth_grant_id: int) -> dict[str, Any]:
+        """Disconnect one authorised app, so its tokens stop working.
+
+        Args:
+            oauth_grant_id: ID of the grant, as listed by :meth:`connected_apps`.
+
+        Returns:
+            Empty dict on success (the server answers 204).
+        """
+        return await self._client._request_json("DELETE", f"/self/oauth-grants/{oauth_grant_id}")

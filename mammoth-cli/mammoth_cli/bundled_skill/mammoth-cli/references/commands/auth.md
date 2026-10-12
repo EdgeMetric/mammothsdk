@@ -2,6 +2,26 @@
 
 Every command returns the standard JSON envelope. On nonzero exit, read the error envelope and its `recovery_commands`; do not guess request fields. "Status on release" is joined from `docs/release-capability-matrix.json`: *ran once* means one bounded live run succeeded on the named CLI release, *untried* means nobody has run it (use it normally: confirm writes with the user, check the result afterwards), *not supported* means the backend refuses it. When this file disagrees with [capabilities](../capabilities.md) or a recipe, they win. Envelope shapes: [machine output](../machine-output.md).
 
+### `auth.connected-apps.list`
+
+Run: `mammoth auth connected-apps list`. Exact input fields: `mammoth schema get auth.connected-apps.list`.
+
+Example: `mammoth auth connected-apps list`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `AuthConnectedAppsListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `auth.connected-apps.revoke`
+
+Run: `mammoth auth connected-apps revoke`. Exact input fields: `mammoth schema get auth.connected-apps.revoke`.
+
+Example: `mammoth auth connected-apps revoke 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+
+Result: `AuthConnectedAppsRevokeResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
 ### `auth.login`
 
 Run: `mammoth auth login`. Exact input fields: `mammoth schema get auth.login`.

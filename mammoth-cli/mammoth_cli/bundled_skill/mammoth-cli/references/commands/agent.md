@@ -222,6 +222,26 @@ Result: `AgentMemoryRemoveResult`; mutation `destructive`, confirmation `prompt_
 
 Status on release: untried; no live run recorded.
 
+### `agent.message.set-request-kind`
+
+Run: `mammoth agent message set-request-kind`. Exact input fields: `mammoth schema get agent.message.set-request-kind`.
+
+Example: `mammoth agent message set-request-kind 'Summarize revenue by region' --input '{"request_kind": "sample"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `AgentMessageSetRequestKindResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `agent.plan.edit-proposal`
+
+Run: `mammoth agent plan edit-proposal`. Exact input fields: `mammoth schema get agent.plan.edit-proposal`.
+
+Example: `mammoth agent plan edit-proposal --input '{"plan_id": "resource-123", "action": "sample", "key": "Status"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `AgentPlanEditProposalResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
 ### `agent.projects.clear`
 
 Run: `mammoth agent projects clear`. Exact input fields: `mammoth schema get agent.projects.clear`.
@@ -272,6 +292,36 @@ Result: `AgentRunExtendResult`; mutation `benign_mutation`, confirmation `none`,
 
 Status on release: untried; no live run recorded.
 
+### `agent.run.instance.list`
+
+Run: `mammoth agent run instance list`. Exact input fields: `mammoth schema get agent.run.instance.list`.
+
+Example: `mammoth agent run instance list resource-123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `AgentRunInstanceListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `agent.run.instance.messages`
+
+Run: `mammoth agent run instance messages`. Exact input fields: `mammoth schema get agent.run.instance.messages`.
+
+Example: `mammoth agent run instance messages resource-123 resource-123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `AgentRunInstanceMessagesResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `agent.run.instance.transcript`
+
+Run: `mammoth agent run instance transcript`. Exact input fields: `mammoth schema get agent.run.instance.transcript`.
+
+Example: `mammoth agent run instance transcript resource-123 resource-123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `AgentRunInstanceTranscriptResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
 ### `agent.run.list`
 
 Run: `mammoth agent run list`. Exact input fields: `mammoth schema get agent.run.list`.
@@ -302,6 +352,16 @@ Result: `AgentRunResumeResult`; mutation `benign_mutation`, confirmation `none`,
 
 Status on release: untried; no live run recorded.
 
+### `agent.run.retry`
+
+Run: `mammoth agent run retry`. Exact input fields: `mammoth schema get agent.run.retry`.
+
+Example: `mammoth agent run retry resource-123`. Illustrative only: append `--yes` after observing an owned target.
+
+Result: `AgentRunRetryResult`; mutation `benign_mutation`, confirmation `prompt_or_yes`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
 ### `agent.run.status`
 
 Run: `mammoth agent run status`. Exact input fields: `mammoth schema get agent.run.status`.
@@ -319,6 +379,16 @@ Run: `mammoth agent run stop`. Exact input fields: `mammoth schema get agent.run
 Example: `mammoth agent run stop resource-123`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `AgentRunStopResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `agent.run.units.list`
+
+Run: `mammoth agent run units list`. Exact input fields: `mammoth schema get agent.run.units.list`.
+
+Example: `mammoth agent run units list resource-123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `AgentRunUnitsListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
 Status on release: untried; no live run recorded.
 

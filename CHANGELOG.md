@@ -17,6 +17,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - One telemetry event per handshake and per tool call (tool, client, duration, outcome), and never the arguments a tool was called with. Each event is written to stdout and stored in Mammoth's user events as the caller's own, so Mammoth can count tool calls per user.
 - A read-only connection may run only the tools whose own annotation says they read. No token carries the scope yet, so nothing changes for an existing connection.
 
+### Changed (mammoth-cli 2.2.75)
+
+- CLI capability gaps (PR #215): OAuth login uses a login-server prefix and network retry in the device flow, and Ctrl-C/EOF at prompts is handled again. Requires mammoth-io >=0.8.39.
+
 ### Fixed (mammoth-io 0.8.38)
 
 - `mammoth.__version__` now matches the published version. 0.8.37 shipped with `__version__` still at 0.8.36, so it reports itself as `mammoth-io/0.8.36` in the `User-Agent` header. Use 0.8.38.

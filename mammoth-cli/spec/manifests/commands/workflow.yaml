@@ -1,5 +1,103 @@
 manifest_schema_version: 1
 commands:
+- command_id: workflow.archive
+  command_path: workflow archive
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - SetArchived
+  positionals:
+  - name: workflow_id
+    type: int
+    required: true
+    metavar: WORKFLOW_ID
+    falls_back_to_field: null
+    help: ID of the workflow.
+  options: []
+  sdk_symbol: mammoth.api.workflows.WorkflowsAPI.set_archived
+  sdk_conversion: Call mammoth.api.workflows.WorkflowsAPI.set_archived with validated request fields.
+  request_model: WorkflowArchiveRequest
+  result_model: WorkflowArchiveResult
+  mutation_class: benign_mutation
+  edits_target: true
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_no_disposable_fixture
+  readback:
+    command: workflow.get
+    ids:
+      workflow_id: positional.0
+    kind: object
+  live_test: null
+  live_exemption_reason: Write with contract coverage but no automated disposable fixture in tests/live.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth workflow archive WORKFLOW_ID --help
+  agent_example: "mammoth workflow archive 123 --input '{\"archived\": true}'"
+  unit_tests:
+  - UT-WORKFLOW-ARCHIVE
+  contract_tests:
+  - CT-WORKFLOW-ARCHIVE-HUMAN
+  - CT-WORKFLOW-ARCHIVE-JSON
+  - CT-WORKFLOW-ARCHIVE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: "Input: {archived: true|false, dataset_ids?: [int]}. The dataset ids are the workflow's datasets now; it reads as active once it has others."
+  reviewed_by: primary
+- command_id: workflow.attach-dataset
+  command_path: workflow attach-dataset
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - AttachDataset
+  positionals:
+  - name: workflow_id
+    type: int
+    required: true
+    metavar: WORKFLOW_ID
+    falls_back_to_field: null
+    help: ID of the workflow.
+  - name: datasource_id
+    type: int
+    required: true
+    metavar: DATASOURCE_ID
+    falls_back_to_field: null
+    help: ID of the datasource.
+  options: []
+  sdk_symbol: mammoth.api.workflows.WorkflowsAPI.attach_dataset
+  sdk_conversion: Call mammoth.api.workflows.WorkflowsAPI.attach_dataset with validated request fields.
+  request_model: WorkflowAttachDatasetRequest
+  result_model: WorkflowAttachDatasetResult
+  mutation_class: benign_mutation
+  edits_target: true
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_no_disposable_fixture
+  readback:
+    command: workflow.get
+    ids:
+      workflow_id: positional.0
+    kind: object
+  live_test: null
+  live_exemption_reason: Write with contract coverage but no automated disposable fixture in tests/live.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth workflow attach-dataset WORKFLOW_ID DATASOURCE_ID --help
+  agent_example: mammoth workflow attach-dataset 123 123
+  unit_tests:
+  - UT-WORKFLOW-ATTACH-DATASET
+  contract_tests:
+  - CT-WORKFLOW-ATTACH-DATASET-HUMAN
+  - CT-WORKFLOW-ATTACH-DATASET-JSON
+  - CT-WORKFLOW-ATTACH-DATASET-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: "Takes the dataset to attach as the second positional, DATASOURCE_ID. No input document."
+  reviewed_by: primary
 - command_id: workflow.block.add
   command_path: workflow block add
   disposition: command
@@ -532,6 +630,104 @@ commands:
   draft_test: null
   undo_test: null
   known_restrictions: null
+  reviewed_by: primary
+- command_id: workflow.resolve-held
+  command_path: workflow resolve-held
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - ResolveHeldChange
+  positionals:
+  - name: workflow_id
+    type: int
+    required: true
+    metavar: WORKFLOW_ID
+    falls_back_to_field: null
+    help: ID of the workflow.
+  - name: key
+    type: str
+    required: true
+    metavar: KEY
+    falls_back_to_field: null
+    help: Key identifying the resource.
+  options: []
+  sdk_symbol: mammoth.api.workflows.WorkflowsAPI.resolve_held
+  sdk_conversion: Call mammoth.api.workflows.WorkflowsAPI.resolve_held with validated request fields.
+  request_model: WorkflowResolveHeldRequest
+  result_model: WorkflowResolveHeldResult
+  mutation_class: benign_mutation
+  edits_target: true
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_no_disposable_fixture
+  readback:
+    command: workflow.get
+    ids:
+      workflow_id: positional.0
+    kind: object
+  live_test: null
+  live_exemption_reason: Write with contract coverage but no automated disposable fixture in tests/live.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth workflow resolve-held WORKFLOW_ID KEY --help
+  agent_example: "mammoth workflow resolve-held 123 Status --input '{\"built\": true}'"
+  unit_tests:
+  - UT-WORKFLOW-RESOLVE-HELD
+  contract_tests:
+  - CT-WORKFLOW-RESOLVE-HELD-HUMAN
+  - CT-WORKFLOW-RESOLVE-HELD-JSON
+  - CT-WORKFLOW-RESOLVE-HELD-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: "Takes the change's key as the second positional, KEY. Input: {built: true|false (true: already in Mammoth, not built again; false: lift the hold so the next Save builds it), expected_version?: int}."
+  reviewed_by: primary
+- command_id: workflow.save
+  command_path: workflow save
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - SaveWorkflow
+  positionals:
+  - name: workflow_id
+    type: int
+    required: true
+    metavar: WORKFLOW_ID
+    falls_back_to_field: null
+    help: ID of the workflow.
+  options: []
+  sdk_symbol: mammoth.api.workflows.WorkflowsAPI.save
+  sdk_conversion: Call mammoth.api.workflows.WorkflowsAPI.save with validated request fields.
+  request_model: WorkflowSaveRequest
+  result_model: WorkflowSaveResult
+  mutation_class: benign_mutation
+  edits_target: true
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_no_disposable_fixture
+  readback:
+    command: workflow.get
+    ids:
+      workflow_id: positional.0
+    kind: object
+  live_test: null
+  live_exemption_reason: Write with contract coverage but no automated disposable fixture in tests/live.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth workflow save WORKFLOW_ID --help
+  agent_example: mammoth workflow save 123
+  unit_tests:
+  - UT-WORKFLOW-SAVE
+  contract_tests:
+  - CT-WORKFLOW-SAVE-HUMAN
+  - CT-WORKFLOW-SAVE-JSON
+  - CT-WORKFLOW-SAVE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: "Input (optional): {keys?: [change keys to save], expected_version?: int}. Omitted keys save every unsaved change; a stale expected_version fails with 409."
   reviewed_by: primary
 - command_id: workflow.update
   command_path: workflow update
