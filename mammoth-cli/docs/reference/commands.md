@@ -4,7 +4,7 @@ Generated from the reviewed command manifests for mammoth-cli 2.2.75.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
-Total commands: 746.
+Total commands: 747.
 
 ## activity
 
@@ -3644,6 +3644,18 @@ Total commands: 746.
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.datasets.DatasetsAPI.restore`
 - Agent example: `mammoth dataset restore 123`
+
+### `mammoth dataset schema-diff`
+
+**Arguments**
+
+- `DESTINATION_ID` (int, required) — Dataset the rows would be appended into (the DATASET_ID of batch create).
+- `SOURCE_ID` (int, required) — Dataset whose rows would be appended (the SOURCE_ID of batch create).
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth_cli.commands.dataset.schema_diff`
+- Agent example: `mammoth dataset schema-diff 10 11`
 
 ### `mammoth dataset search`
 
