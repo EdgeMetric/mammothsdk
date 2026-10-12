@@ -237,9 +237,10 @@ def test_an_unreachable_server_uses_the_builtin_client(fresh_metadata_cache: Non
 
 
 class _TokenServer(HTTPServer):
-    def __init__(self, status: int) -> None:
+    def __init__(self, status: int, *, silent_first: int = 0) -> None:
         super().__init__(("127.0.0.1", 0), _TokenHandler)
         self.status = status
+        self.silent_first = silent_first  # requests to accept and not answer
 
 
 class _TokenHandler(BaseHTTPRequestHandler):
@@ -247,6 +248,9 @@ class _TokenHandler(BaseHTTPRequestHandler):
 
     def do_POST(self) -> None:
         self.rfile.read(int(self.headers.get("Content-Length") or 0))
+        if self.server.silent_first > 0:
+            self.server.silent_first -= 1
+            return
         if self.server.status == 0:  # accept, then close without answering
             return
         body = (
@@ -269,8 +273,8 @@ class _TokenHandler(BaseHTTPRequestHandler):
         return
 
 
-def _refresh_logged(status: int) -> dict[str, object]:
-    server = _TokenServer(status)
+def _refresh_logged(status: int, *, silent_first: int = 0) -> list[dict[str, object]]:
+    server = _TokenServer(status, silent_first=silent_first)
     threading.Thread(target=server.serve_forever, daemon=True).start()
     credentials.store_credentials("default", storage="file", oauth=_session(-10))
     run = runlog.RunLog.start("test.refresh")
@@ -283,14 +287,13 @@ def _refresh_logged(status: int) -> dict[str, object]:
         run.finish(0)
         server.shutdown()
     lines = runlog.log_file_for(dt.date.today()).read_text("utf-8")
-    (record,) = [r for r in map(json.loads, lines.splitlines()) if r["event"] == "oauth.refresh"]
-    return record
+    return [r for r in map(json.loads, lines.splitlines()) if r["event"] == "oauth.refresh"]
 
 
 def test_a_renewed_refresh_is_written_to_the_run_log(
     isolated_cli_config: Path, isolated_run_log: Path
 ) -> None:
-    record = _refresh_logged(200)
+    (record,) = _refresh_logged(200)
     assert (record["profile"], record["family_id"], record["http_status"]) == ("default", 12, 200)
     assert record["outcome"] == "renewed"
     assert "secret" not in json.dumps(record)
@@ -299,7 +302,7 @@ def test_a_renewed_refresh_is_written_to_the_run_log(
 def test_a_refused_refresh_is_written_to_the_run_log(
     isolated_cli_config: Path, isolated_run_log: Path
 ) -> None:
-    record = _refresh_logged(400)
+    (record,) = _refresh_logged(400)
     assert (record["family_id"], record["http_status"]) == (12, 400)
     assert record["outcome"] == "login_expired"
     assert "secret" not in json.dumps(record)
@@ -308,7 +311,17 @@ def test_a_refused_refresh_is_written_to_the_run_log(
 def test_a_refresh_that_gets_no_answer_is_written_to_the_run_log(
     isolated_cli_config: Path, isolated_run_log: Path
 ) -> None:
-    record = _refresh_logged(0)
+    retry, record = _refresh_logged(0)
+    assert retry["outcome"] == "network_retry"
     assert (record["family_id"], record["http_status"]) == (12, None)
     assert record["outcome"] == "network_error"
     assert "secret" not in json.dumps(record)
+
+
+def test_a_refresh_whose_answer_was_lost_is_retried_once_and_renews_the_sign_in(
+    isolated_cli_config: Path, isolated_run_log: Path
+) -> None:
+    retry, record = _refresh_logged(200, silent_first=1)
+    assert retry["outcome"] == "network_retry"
+    assert (record["outcome"], record["http_status"]) == ("renewed", 200)
+    assert oauth._stored_session("default").refresh == "12.next.mac"
