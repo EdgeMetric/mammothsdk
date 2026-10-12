@@ -10,6 +10,7 @@ from __future__ import annotations
 import re
 from typing import Any
 
+from mammoth_cli.commands.schema import command_scope
 from mammoth_cli.manifest.loader import command_by_id, load_operations
 from mammoth_cli.services.command_contract import resolve_command_contract
 
@@ -85,48 +86,7 @@ def _contract_fields(command: dict[str, Any]) -> dict[str, Any]:
     """
     command_id = str(command.get("command_id", ""))
     resolved = resolve_command_contract(command_id) if command_id else None
-    path = str(command.get("command_path", ""))
-    family = path.split()[0] if path else ""
-    if family in {
-        "project",
-        "dataset",
-        "file",
-        "folder",
-        "view",
-        "batch",
-        "annotation",
-        "dashboard",
-        "automation",
-        "schedule",
-        "snippet",
-        "template",
-        "workflow",
-    }:
-        scope = "project"
-    elif family in {
-        "workspace",
-        "user",
-        "support",
-        "billing",
-        "connector",
-        "client-app",
-        "external-key",
-    }:
-        scope = "workspace"
-    elif family in {
-        "auth",
-        "config",
-        "context",
-        "completion",
-        "doctor",
-        "schema",
-        "capability",
-        "skill",
-        "version",
-    }:
-        scope = "local"
-    else:
-        scope = "profile"
+    scope = command_scope(command)
     # Keep capability discovery aligned with the resolved command contract
     # consumed by runtime admission and binding. The manifest fallback is for
     # genuinely local/bespoke records without a resolvable SDK signature.
