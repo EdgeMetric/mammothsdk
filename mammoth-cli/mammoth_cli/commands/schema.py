@@ -500,9 +500,7 @@ _COMMAND_DISCOVERY_PURPOSES = {
     "browse.resource": "open one resource by type and id properties of a dataset view folder",
     "browse.resources.bulk": "fetch many resources by type and id in one request batch lookup",
     "agent.turn.cancel": "stop the agent now cancel this turn halt what the assistant is doing",
-    "agent.run.retry": (
-        "retry the failed run, try a second time, rerun after a failure or a stop"
-    ),
+    "agent.run.retry": ("retry the failed run, try a second time, rerun after a failure or a stop"),
     "agent.run.instance.list": "which agents sub agents helpers workers ran in this run instances",
     "agent.run.instance.messages": ("which messages this agent of the run sent and received"),
     "agent.run.instance.transcript": (
@@ -525,11 +523,9 @@ _COMMAND_DISCOVERY_PURPOSES = {
     "dashboard.engagement.get": (
         "who opened my dashboard, how long readers read each page, reach engagement people visits"
     ),
-    "dashboard.engagement.person": (
-        "visits by one person to my dashboard, when and how long read"
-    ),
+    "dashboard.engagement.person": ("visits by one person to my dashboard, when and how long read"),
     "dashboard.engagement.remind": (
-        "remind people to look at the dashboard, nudge by email readers who skipped opening the board"
+        "remind people to look at the dashboard, nudge by email readers who skipped the board"
     ),
     "dashboard.own-data.start": (
         "use my own data on a template board fit the template to my upload or dataset"
@@ -552,9 +548,7 @@ _COMMAND_DISCOVERY_PURPOSES = {
     "collection.files.upload": "upload a file to refresh the data behind a collection",
     "collection.active-job": "resume an interrupted upload to a collection, running now",
     "collection.job": "check the progress of one upload job for a collection by job id",
-    "dashboard.attachment-create": (
-        "attach a report file to the chat for the agent to read"
-    ),
+    "dashboard.attachment-create": ("attach a report file to the chat for the agent to read"),
     "file.multi-sheet-preview": (
         "preview one sheet of a multi-sheet excel file before making datasets"
     ),
@@ -568,7 +562,7 @@ _COMMAND_DISCOVERY_PURPOSES = {
     "auth.connected-apps.list": (
         "which apps can access my account, the apps I authorised, connected apps"
     ),
-    "auth.connected-apps.revoke": "disconnect an app I authorised, cut off the app access to my account",
+    "auth.connected-apps.revoke": "disconnect an app I authorised, cut off the app access to me",
     "workspace.current": (
         "which workspace this token acts in, the current workspace, the server fenced to"
     ),
