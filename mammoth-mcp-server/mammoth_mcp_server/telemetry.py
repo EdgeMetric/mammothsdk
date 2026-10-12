@@ -1,7 +1,9 @@
 """What the server records about a call, so the launch can be measured.
 
 One JSON line per event, on its own logger, so a deployment ships these to its
-own analytics without parsing the server's ordinary logs.
+own analytics without parsing the server's ordinary logs. Each event is also
+sent to Mammoth's user events with the caller's own token, so Mammoth stores it
+with the user, as it stores the web app's events.
 
 What is recorded is the shape of the traffic: which tool ran, from which
 client, how long it took and whether it failed. What is never recorded is what
@@ -11,16 +13,29 @@ arguments are dropped on the floor. No token, no id and no row ever reaches an
 event.
 """
 
+import asyncio
+import base64
+import hashlib
 import json
 import logging
 import sys
 import time
 from typing import Any, TextIO
+from urllib.parse import urlsplit
 
+from mammoth.exceptions import MammothError
+from mcp.server.auth.middleware.auth_context import get_access_token
+from mcp.server.auth.provider import AccessToken
 from mcp.server.context import HandlerResult, ServerRequestContext
+
+from . import sdk
+from .config import SERVER_URL
+from .consts import TokenClaims
 
 EVENT_LOGGER = "mammoth_mcp_server.events"
 _log = logging.getLogger(EVENT_LOGGER)
+# Not the events logger: its every line is an event.
+_problems = logging.getLogger(__name__)
 
 
 class Events:
@@ -68,9 +83,64 @@ def write_events() -> None:
     _log.propagate = False
 
 
+# What Mammoth's user events call the part of the product an event came from.
+_ORIGIN = "mcp"
+_USER_EVENTS_PATH = "/workspaces/{workspace_id}/mm-ue"
+# Kept until done: the event loop holds a task only weakly.
+_sending: set[asyncio.Task[None]] = set()
+
+
 def record(event: str, **fields: Any) -> None:
-    """Emit one event, as a single JSON line."""
+    """Emit one event, as a single JSON line, and send it to Mammoth."""
     _log.info(json.dumps({TelemetryFields.EVENT: event, **fields}))
+    caller = get_access_token()
+    if caller is None:
+        return
+    # In the background: the caller waits on the tool, not on its measurement.
+    task = asyncio.get_running_loop().create_task(_send(caller, event, fields))
+    _sending.add(task)
+    task.add_done_callback(_sending.discard)
+
+
+async def sending() -> None:
+    """Wait until every event on its way to Mammoth got there or failed."""
+    await asyncio.gather(*_sending)
+
+
+async def _send(caller: AccessToken, event: str, fields: dict[str, Any]) -> None:
+    """Store one event in Mammoth as the caller's own. A failure is logged, never raised."""
+    path = _USER_EVENTS_PATH.format(workspace_id=(caller.claims or {})[TokenClaims.WORKSPACE_ID])
+    encoded = base64.b64encode(json.dumps(_user_event(caller, event, fields)).encode()).decode()
+    try:
+        async with sdk.client_with(caller.token) as client:
+            # The SDK has no method for this route; one would need a mammoth-io release.
+            await client._request("POST", path, json={"encoded_data": encoded})
+    except MammothError:
+        _problems.warning("Mammoth did not store the %s event", event, exc_info=True)
+
+
+def _user_event(caller: AccessToken, event: str, fields: dict[str, Any]) -> dict[str, Any]:
+    """The event as Mammoth's user events take it. Mammoth adds the user from the token."""
+    return {
+        "event_name": event,
+        "event_origin": _ORIGIN,
+        "event_context": {},
+        "additional_info": fields,
+        # The fields a browser fills in. Here the client stands in for the browser.
+        "browser_name": fields.get(TelemetryFields.CLIENT) or "",
+        "browser_version": fields.get(TelemetryFields.CLIENT_VERSION) or "",
+        "browser_size": {},
+        "device_info": sdk.USER_AGENT,
+        "domain": urlsplit(SERVER_URL).netloc,
+        "os_name": "",
+        # Empty: Mammoth fills in the caller's own email.
+        "email_id": "",
+        "user_name": "",
+        "timestamp": time.time(),
+        # Without it Mammoth keeps the token's first characters. A hash of the
+        # token groups one connection's calls and keeps no part of the secret.
+        "session_identifier": hashlib.sha256(caller.token.encode()).hexdigest()[:32],
+    }
 
 
 class Telemetry:

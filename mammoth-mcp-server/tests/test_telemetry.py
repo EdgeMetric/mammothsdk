@@ -12,6 +12,8 @@ import pytest
 
 from mammoth_mcp_server.telemetry import EVENT_LOGGER, Events, Telemetry, TelemetryFields
 
+from .helpers import TOKEN, FakeApi, a_fake_api, as_caller
+
 
 class Recorded:
     """The events the telemetry middleware emitted during a test."""
@@ -190,3 +192,91 @@ class TestTheRunningServerWritesItsEvents:
         create_app()
 
         assert len(ours(started)) == 1
+
+
+class TestMammothKeepsTheEventsAsTheCallersOwn:
+    """Each event is also sent to Mammoth's user events, with the caller's token,
+    so Mammoth stores it with the user and can count tool calls per user per day."""
+
+    EVENTS_PATH = "/workspaces/7/mm-ue"
+
+    async def sent_after(self, api, method: str, params: dict | None, handler=None) -> list:
+        from mammoth_mcp_server.telemetry import sending
+
+        with as_caller():
+            try:
+                await Telemetry()(a_context(method, params), handler or answers)
+            finally:
+                await sending()
+        return api.sent("POST", self.EVENTS_PATH)
+
+    @staticmethod
+    def event_in(request) -> dict:
+        import base64
+
+        return json.loads(base64.b64decode(FakeApi.body(request)["encoded_data"]))
+
+    async def test_a_tool_call_reaches_mammoth_as_the_caller(self) -> None:
+        with a_fake_api() as api:
+            api.answer("POST", self.EVENTS_PATH, None)
+            [sent] = await self.sent_after(api, "tools/call", {"name": "get_data"})
+
+        assert sent.headers["Authorization"] == f"Bearer {TOKEN}"
+        event = self.event_in(sent)
+        assert event["event_name"] == Events.TOOL_CALLED
+        assert event["event_origin"] == "mcp"
+        assert event["additional_info"][TelemetryFields.TOOL] == "get_data"
+        assert event["additional_info"][TelemetryFields.OUTCOME] == Events.OK
+
+    async def test_a_handshake_reaches_mammoth_with_the_client_it_named(self) -> None:
+        hello = {"clientInfo": {"name": "claude-ai", "version": "1.0"}}
+        with a_fake_api() as api:
+            api.answer("POST", self.EVENTS_PATH, None)
+            [sent] = await self.sent_after(api, "initialize", hello)
+
+        event = self.event_in(sent)
+        assert event["event_name"] == Events.INITIALIZE
+        assert event["additional_info"][TelemetryFields.CLIENT] == "claude-ai"
+
+    async def test_no_part_of_the_token_or_the_arguments_is_sent(self) -> None:
+        """Mammoth falls back to the token's first characters as the session id.
+        A hash of the token groups a connection's calls without storing the secret."""
+        secret = "a-customers-column-name"
+        called = {"name": "get_data", "arguments": {"columns": [secret]}}
+        with a_fake_api() as api:
+            api.answer("POST", self.EVENTS_PATH, None)
+            [sent] = await self.sent_after(api, "tools/call", called)
+
+        event = self.event_in(sent)
+        assert event["session_identifier"]
+        assert TOKEN[:8] not in json.dumps(event)
+        assert secret not in json.dumps(event)
+
+    async def test_a_call_with_no_caller_sends_nothing(self) -> None:
+        from mammoth_mcp_server.telemetry import sending
+
+        with a_fake_api() as api:
+            await Telemetry()(a_context("tools/call", {"name": "get_data"}), answers)
+            await sending()
+
+        assert api.sent("POST", self.EVENTS_PATH) == []
+
+    async def test_mammoth_refusing_the_event_does_not_fail_the_call(self) -> None:
+        from mammoth_mcp_server.telemetry import sending
+
+        with a_fake_api() as api, as_caller():
+            api.answer("POST", self.EVENTS_PATH, {"message": "down"}, status=500)
+            result = await Telemetry()(a_context("tools/call", {"name": "get_data"}), answers)
+            await sending()
+
+        assert result == "done"
+        assert len(api.sent("POST", self.EVENTS_PATH)) >= 1
+
+    async def test_a_failed_tool_is_sent_as_failed(self) -> None:
+        with a_fake_api() as api:
+            api.answer("POST", self.EVENTS_PATH, None)
+            with pytest.raises(ValueError):
+                await self.sent_after(api, "tools/call", {"name": "get_data"}, raises)
+            [sent] = api.sent("POST", self.EVENTS_PATH)
+
+        assert self.event_in(sent)["additional_info"][TelemetryFields.OUTCOME] == Events.FAILED
