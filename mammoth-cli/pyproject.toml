@@ -17,7 +17,7 @@ dependencies = [
     "pydantic (>=2.12.5,<3)",
     "jsonschema (>=4.20)",
 ]
-urls = {homepage = "https://mammoth.io", repository = "https://github.com/EdgeMetric/mammothsdk"}
+urls = {homepage = "https://mammoth.io", repository = "https://github.com/EdgeMetric/mammothsdk", documentation = "https://docs.mammoth.io/build/cli"}
 scripts.mammoth = "mammoth_cli.__main__:main"
 classifiers = [
     "Development Status :: 5 - Production/Stable",
