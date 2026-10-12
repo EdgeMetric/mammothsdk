@@ -231,7 +231,7 @@ upload_app.add_html_resource(
 )
 
 
-@upload_app.tool(resource_uri=UPLOAD_APP_URI, annotations=CHANGES)
+@upload_app.tool(resource_uri=UPLOAD_APP_URI, title="Request upload", annotations=CHANGES)
 async def request_upload(workspace_id: int, project_id: int | None = None) -> dict[str, JsonValue]:
     """Let the user upload files from their own machine.
 

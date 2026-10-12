@@ -8,6 +8,7 @@ from .config import HOST, MCP_PATH, PORT
 from .cors import McpCors
 from .server import mcp_server, register_tools
 from .store import cipher
+from .telemetry import write_events
 
 
 def check_settings() -> None:
@@ -36,6 +37,8 @@ def create_app() -> Starlette:
         ValueError: If it set one that is not a Fernet key.
     """
     check_settings()
+    # Here, not in main(): a deployment runs `uvicorn ...:create_app --factory`.
+    write_events()
     register_tools()
     app = mcp_server.streamable_http_app(
         streamable_http_path=MCP_PATH,

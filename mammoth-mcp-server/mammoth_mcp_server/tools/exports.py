@@ -31,6 +31,7 @@ _UNCHECKED = frozenset(HandlerType) - frozenset(EXPORT_CONTRACTS)
 
 
 @mcp_server.tool(
+    title="Add export",
     annotations=DESTRUCTIVE,
     description=(
         "Add an export to a view's pipeline and wait for it to run, so the"
@@ -79,7 +80,7 @@ async def add_export(
         return await read_exports(client, ids)
 
 
-@mcp_server.tool(annotations=READS)
+@mcp_server.tool(title="Get export schema", annotations=READS)
 async def get_export_schema(destination: str) -> dict[str, JsonValue]:
     """Get the settings one export destination needs.
 
@@ -107,7 +108,7 @@ async def get_export_schema(destination: str) -> dict[str, JsonValue]:
     }
 
 
-@mcp_server.tool(annotations=READS)
+@mcp_server.tool(title="List exports", annotations=READS)
 async def list_exports(
     workspace_id: int, project_id: int, dataset_id: int, view_id: int
 ) -> dict[str, JsonValue]:
@@ -128,7 +129,7 @@ async def list_exports(
         return await read_exports(client, ids)
 
 
-@mcp_server.tool(annotations=READS)
+@mcp_server.tool(title="Get export", annotations=READS)
 async def get_export(
     workspace_id: int, project_id: int, dataset_id: int, view_id: int, export_id: int
 ) -> dict[str, JsonValue]:
@@ -147,7 +148,7 @@ async def get_export(
         )
 
 
-@mcp_server.tool(annotations=DESTRUCTIVE)
+@mcp_server.tool(title="Delete export", annotations=DESTRUCTIVE)
 async def delete_export(
     workspace_id: int, project_id: int, dataset_id: int, view_id: int, export_id: int
 ) -> dict[str, JsonValue]:

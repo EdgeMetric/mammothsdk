@@ -135,7 +135,7 @@ class TestWhoMayCallTheMcpEndpoint:
     ) -> None:
         with a_fake_api() as api:
             knows_the_token(api)
-            api.answer("GET", "/workspaces", {"workspaces": [{"id": WORKSPACE}]})
+            api.answer("GET", f"/workspaces/{WORKSPACE}", {"id": WORKSPACE})
             called = server.post(
                 "/mcp",
                 json={
@@ -147,7 +147,7 @@ class TestWhoMayCallTheMcpEndpoint:
                 headers=AS_THE_USER,
             )
 
-        [request] = api.sent("GET", "/workspaces")
+        [request] = api.sent("GET", f"/workspaces/{WORKSPACE}")
         assert called.json()["result"]["structuredContent"] == {"workspaces": [{"id": WORKSPACE}]}
         assert request.headers["authorization"] == f"Bearer {GOOD_TOKEN}"
         assert request.headers["x-workspace-id"] == str(WORKSPACE)
