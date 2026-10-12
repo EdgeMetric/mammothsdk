@@ -15,6 +15,8 @@ date coverage and the currency of the measure behave exactly as they do there.
 from __future__ import annotations
 
 import math
+import re
+from collections import Counter
 from typing import Any
 
 from mammoth_cli.commands.view import (
@@ -35,6 +37,12 @@ _TOP = 5
 _MAX_BY = 3
 #: Only an additive measure splits into contributions that add up to the change.
 _ADDITIVE = ("SUM", "COUNT")
+#: Words of free text counted per period; shorter ones and the common ones below are noise.
+_WORD = re.compile(r"[a-z][a-z0-9'-]{3,}")
+_COMMON_WORDS = frozenset(
+    "that this with from have been were will would could should their there about which when "
+    "what then than them they your just into over also only some more most very much many".split()
+)
 #: Result label of the row count asked for beside the measure.
 _ROWS = "__rows"
 #: A volume or value move counts as "the" driver when it is at least this many times the other.
@@ -47,8 +55,10 @@ _NOTE = (
     "total have the opposite sign, and others_delta is what the groups not listed add up "
     "to). Say whether the change is volume or value: volume_vs_value compares the change "
     "in the row count (count) with the change in value per row, and driven_by names the "
-    "larger. If partial_period is present, say that period is incomplete in the data, so "
-    "the two periods are not like for like. Give amounts in the currency named in "
+    "larger. For a column of free text, its contributors entry also lists terms: the words "
+    "in the most notes in period b against period a (count_a, count_b); name the top term "
+    "and its counts as what grew. If partial_period is present, say that period is "
+    "incomplete in the data, so the two periods are not like for like. Give amounts in the currency named in "
     "'currency'; when it is null, give plain numbers and never invent a currency."
 )
 
@@ -142,6 +152,36 @@ def _split(
                 slots[index][0] += value
                 slots[index][1] += count
     return groups
+
+
+def _is_free_text(data: Any, column: str) -> bool:
+    """Whether the column holds notes (three words or more), not names or categories."""
+    return any(
+        isinstance(row.get(column), str) and len(row[column].split()) >= 3 for row in pa.rows(data)
+    )
+
+
+def _terms(
+    data: Any, measure: pa.Measure, date_column: str, column: str, periods: list[pa.Period]
+) -> list[dict[str, Any]]:
+    """Words of a free-text column by number of rows per period, biggest growth first."""
+    counts = [Counter[str](), Counter[str]()]
+    for row in pa.rows(data):
+        day, text = pa.as_date(row.get(date_column)), row.get(column)
+        if day is None or not isinstance(text, str):
+            continue
+        rows = pa.number(row.get(measure.label if measure.function == "COUNT" else _ROWS))
+        words = set(_WORD.findall(text.lower())) - _COMMON_WORDS
+        for index, period in enumerate(periods):
+            if period.contains(day):
+                counts[index].update(dict.fromkeys(words, rows))
+    grown = sorted(
+        (word, int(counts[0][word]), int(count_b))
+        for word, count_b in counts[1].items()
+        if count_b > counts[0][word]
+    )
+    grown.sort(key=lambda item: (item[1] - item[2], item[0]))
+    return [{"term": w, "count_a": a, "count_b": b} for w, a, b in grown[:_TOP]]
 
 
 def _pct(new: float, old: float) -> float | None:
@@ -257,7 +297,12 @@ def _result(
             result[key] = reads[0][key]
     result.update(pa.money(reads[0]))
     result["note"] = _note(partial, periods, value_a, value_b, count_a, count_b)
-    return _fit(result, by, splits)
+    terms = {
+        column: _terms(data, measure, date_column, column, periods)
+        for column, data in zip(by, reads, strict=True)
+        if _is_free_text(data, column)
+    }
+    return _fit(result, by, splits, terms)
 
 
 def _note(
@@ -284,13 +329,21 @@ def _note(
     return " ".join([_NOTE, *extra])
 
 
-def _fit(result: dict[str, Any], by: list[str], splits: list[dict[Any, Any]]) -> dict[str, Any]:
+def _fit(
+    result: dict[str, Any],
+    by: list[str],
+    splits: list[dict[Any, Any]],
+    terms: dict[str, list[dict[str, Any]]],
+) -> dict[str, Any]:
     """Add the contributor lists, as many per column as fit the agent tool output cap."""
     note = result.pop("note")
     for top in range(_TOP, 0, -1):
         result["contributors"] = {
             column: _contributors(groups, top) for column, groups in zip(by, splits, strict=True)
         }
+        for column, grown in terms.items():
+            if grown:
+                result["contributors"][column]["terms"] = grown[:top]
         if json_size(result) + len(note) + 12 <= LIST_DATA_BUDGET:
             break
     result["note"] = note

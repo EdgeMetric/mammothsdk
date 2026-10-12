@@ -19,18 +19,30 @@ SAMPLE_ROWS = 50
 def column_samples(rows: Any, columns: Sequence[Mapping[str, Any]]) -> dict[str, set[str]]:
     """``{c_name: distinct non-blank values}`` from a dataset data read.
 
-    Rows may be keyed by column name or column id. A column no row carries has
-    no entry, so it never matches a rename on values.
+    The read is ``{"data": {row_number: [cell, ...]}, "headers": [name, ...]}``:
+    each row is a list in ``headers`` order (``columns`` order when absent). A
+    column no row carries has no entry, so it never matches a rename on values.
     """
-    page = rows.get("data") if isinstance(rows, Mapping) else rows
-    records = [row for row in page or [] if isinstance(row, Mapping)][:SAMPLE_ROWS]
+    page = rows.get("data") if isinstance(rows, Mapping) else None
+    records = [row for row in (page or {}).values() if isinstance(row, Sequence)][:SAMPLE_ROWS]
+    headers = rows.get("headers") if isinstance(rows, Mapping) else None
+    names = list(headers) if headers else [column["c_name"] for column in columns]
     samples: dict[str, set[str]] = {}
     for column in columns:
+        position = next(
+            (
+                names.index(key)
+                for key in (column.get("c_name"), column.get("c_id"))
+                if key in names
+            ),
+            None,
+        )
+        if position is None:
+            continue
         values = {
-            str(cell).strip()
+            str(row[position]).strip()
             for row in records
-            for key in (column.get("c_name"), column.get("c_id"))
-            if (cell := row.get(key)) is not None
+            if position < len(row) and row[position] is not None
         }
         values.discard("")
         if values:
