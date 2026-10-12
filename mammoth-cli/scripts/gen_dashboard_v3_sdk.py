@@ -19,6 +19,31 @@ MODELS_OUTPUT = ROOT / "mammoth/models/dashboard_generated.py"
 METHODS = {"get", "put", "post", "delete", "patch"}
 TAGS = {"Dashboard", "Dashboard v3", "Dashboard v3 Q&A", "Dashboard v3 Surfaces"}
 
+# First docstring line (and so the CLI help) for commands whose OpenAPI summary
+# does not say what the command does. Keyed by command id.
+SUMMARY_OVERRIDES = {
+    "dashboard.canvas.get": "Get a dashboard's draft canvas, as the editor shows it.",
+    "dashboard.canvas.save": "Save the draft canvas as a new version.",
+    "dashboard.canvas.restore": "Undo, redo or revert the draft canvas to a target version.",
+    "dashboard.chat.edit": "Send one chat message that edits the dashboard.",
+    "dashboard.chat.history": "Get a dashboard's editor chat transcript.",
+    "dashboard.context.create": "Create a workspace context that dashboards can apply.",
+    "dashboard.context.update": "Update a workspace context.",
+    "dashboard.context.delete": "Delete a workspace context.",
+    "dashboard.context.list": "List the workspace's contexts.",
+    "dashboard.descriptor-data": "Start an asynchronous fetch of a dashboard's descriptor data.",
+    "dashboard.qa.ask": "Ask one question in a Q&A session; the answer arrives asynchronously.",
+    "dashboard.qa.settings.get": "Get this dashboard's Q&A settings.",
+    "dashboard.query": "Run an ad-hoc descriptor query from the editor.",
+    "dashboard.published.canvas": "Get a published dashboard's viewer canvas.",
+    "dashboard.style.default.get": "Get the workspace's default style id.",
+    "dashboard.style.token.list": "Get a full style bundle by id (stock or custom).",
+    "dashboard.signature.create": "Create a workspace signature.",
+    "dashboard.signature.list": "List the workspace's signatures.",
+    "dashboard.style.custom.create": "Create a workspace custom style.",
+    "dashboard.style.custom.list": "List the workspace's custom styles.",
+}
+
 _SCALAR_ANNOTATIONS = {
     "string": "str",
     "integer": "int",
@@ -477,7 +502,9 @@ def build() -> str:
         responses = _success_schemas(operation)
         response_types = [schema_annotation(schema) for schema in responses]
         result_annotation = " | ".join(dict.fromkeys(response_types)) or "dict[str, Any]"
-        summary = operation.get("summary") or operation["operationId"]
+        summary = (
+            SUMMARY_OVERRIDES.get(command) or operation.get("summary") or operation["operationId"]
+        )
         lines.extend(
             [
                 f"async def {name}({', '.join(args)}) -> {result_annotation}:",
