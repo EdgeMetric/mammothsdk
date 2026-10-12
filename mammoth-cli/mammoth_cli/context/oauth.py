@@ -569,14 +569,19 @@ def refresh_session(profile: str, base_url: str) -> OAuthSession:
         if is_fresh(session):
             _log_refresh(profile, session, None, "skipped_fresh")
             return session
-        status, body = _post_token(
-            base_url,
-            {
-                "grant_type": "refresh_token",
-                "refresh_token": session.refresh,
-                "client_id": session.client_id,
-            },
-        )
+        try:
+            status, body = _post_token(
+                base_url,
+                {
+                    "grant_type": "refresh_token",
+                    "refresh_token": session.refresh,
+                    "client_id": session.client_id,
+                },
+            )
+        except CliError:
+            # The server may still have rotated the token; the log is the trail.
+            _log_refresh(profile, session, None, "network_error")
+            raise
         if status in (400, 401):
             _log_refresh(profile, session, status, "login_expired")
             raise login_expired_error()

@@ -247,6 +247,8 @@ class _TokenHandler(BaseHTTPRequestHandler):
 
     def do_POST(self) -> None:
         self.rfile.read(int(self.headers.get("Content-Length") or 0))
+        if self.server.status == 0:  # accept, then close without answering
+            return
         body = (
             json.dumps(
                 {
@@ -300,4 +302,13 @@ def test_a_refused_refresh_is_written_to_the_run_log(
     record = _refresh_logged(400)
     assert (record["family_id"], record["http_status"]) == (12, 400)
     assert record["outcome"] == "login_expired"
+    assert "secret" not in json.dumps(record)
+
+
+def test_a_refresh_that_gets_no_answer_is_written_to_the_run_log(
+    isolated_cli_config: Path, isolated_run_log: Path
+) -> None:
+    record = _refresh_logged(0)
+    assert (record["family_id"], record["http_status"]) == (12, None)
+    assert record["outcome"] == "network_error"
     assert "secret" not in json.dumps(record)
