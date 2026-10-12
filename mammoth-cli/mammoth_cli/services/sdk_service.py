@@ -26,6 +26,7 @@ from typing import Any, NoReturn
 
 from mammoth.exceptions import MammothAPIError, MammothColumnError
 
+from mammoth_cli import __version__
 from mammoth_cli.context.resolver import ResolvedAuth
 from mammoth_cli.errors.envelope import (
     CODE_INVALID_ARGUMENTS,
@@ -190,6 +191,7 @@ class SdkMammothService:
         self._client = MammothClient(
             **credential,
             base_url=auth.base_url,
+            user_agent=f"mammoth-cli/{__version__}",
             **kwargs,
         )
         # One loop for the process, not one per call: the client's connection

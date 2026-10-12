@@ -29,6 +29,8 @@ API_ROOT: str | None = os.environ.get("MAMMOTH_API_ROOT", "/api/v2") or None
 SERVER_URL = read("MCP_SERVER_URL", "https://mcp.mammoth.io").rstrip("/")
 MCP_PATH = "/mcp"
 MCP_RESOURCE_URL = f"{SERVER_URL}{MCP_PATH}"
+# Where a person reads about Mammoth, for the server card.
+DOCS_URL = "https://docs.mammoth.io"
 # The authorization server that signs users in for this server: Mammoth's own,
 # which the API serves. A client is sent there, and a token it issues for
 # `MCP_RESOURCE_URL` is the one bearer this server takes.

@@ -323,3 +323,12 @@ class TestClientBranchOut:
 
         assert result == 321
         view.branch_out.assert_awaited_once_with("copy", target_ds_id=321, column_mapping=None)
+
+
+def test_user_agent_prefixes_the_sdk_agent() -> None:
+    client = MammothClient(api_token="mm_unit", user_agent="my-tool/1.2")
+    agent = client.session.headers["User-Agent"]
+    assert agent.startswith("my-tool/1.2 mammoth-io/")
+    assert (
+        MammothClient(api_token="mm_unit").session.headers["User-Agent"].startswith("mammoth-io/")
+    )

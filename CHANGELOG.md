@@ -13,6 +13,18 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - One telemetry event per handshake and per tool call (tool, client, duration, outcome), and never the arguments a tool was called with.
 - A read-only connection may run only the tools whose own annotation says they read. No token carries the scope yet, so nothing changes for an existing connection.
 
+### Fixed (mammoth-io 0.8.38)
+
+- `mammoth.__version__` now matches the published version. 0.8.37 shipped with `__version__` still at 0.8.36, so it reports itself as `mammoth-io/0.8.36` in the `User-Agent` header. Use 0.8.38.
+
+### Added (mammoth-io 0.8.37)
+
+- `MammothClient(user_agent=...)` places a caller's product token (for example `mammoth-cli/2.2.72`) before `mammoth-io/<version>` in the `User-Agent` header, so a tool built on the SDK no longer rewrites `client.session.headers`.
+
+### Changed (mammoth-cli 2.2.74)
+
+- An explicit `--profile` now wins over `MAMMOTH_API_TOKEN`; an env token alone prints a stderr note, `view data` reports `paging.total` only when no sequence is given, and the CLI sends `mammoth-cli/<version>` through `MammothClient(user_agent=)` (needs mammoth-io >=0.8.38).
+
 ### Added (mammoth-cli 2.2.73)
 
 - REST API import recipe (connection, ds-config sample, dataset with scheduled refresh, Elasticsearch notes); `schema find` routes REST/API import phrasings; `ds-config create` help names the query shape; scheduling `start_at` rules and dashboard limits documented.

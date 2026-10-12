@@ -8,7 +8,9 @@ report establishes only that a profile and credentials are present; `mammoth
 doctor` validates the endpoint and a live authenticated request. If status
 shows no credentials, complete the secure login flow, then require a successful
 doctor result before operating. Authentication is deliberately explicit: there
-is no environment-variable shortcut and no workspace `-w` login flag.
+is no workspace `-w` login flag. The one environment shortcut is for CI: set
+`MAMMOTH_API_TOKEN` to an `mm_...` token (and `MAMMOTH_SERVER_PREFIX` for a
+non-default server) and the CLI uses it instead of a saved profile.
 
 New here? Install first with the [installation guide](installation.md), then
 follow the [quick start](quickstart.md).

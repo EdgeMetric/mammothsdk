@@ -16,6 +16,10 @@
 # Sigstore-verified flow is documented in the release notes; this script is the
 # convenience path.
 #
+# The agent skill is only written after a y/N prompt (read from the terminal);
+# --yes, --noninteractive or --skills-only skip the prompt, and with no terminal
+# the skill is skipped.
+#
 # --local builds the CLI and its mammoth-io SDK dependency from this source
 # checkout and installs ONLINE: the two monorepo wheels resolve from a local
 # wheelhouse (--find-links) while every other runtime dependency (typer, rich,
@@ -79,12 +83,12 @@ detect_platform() {
             log "Use the PowerShell installer instead: mammoth-install.ps1"
             exit 0
             ;;
-        *) die "unsupported OS '$os'. Install manually: uv tool install $CLI_PACKAGE" ;;
+        *) die "unsupported OS '$os'. Install manually: uv tool install $CLI_PACKAGE && uv tool update-shell" ;;
     esac
     case "$arch" in
         x86_64|amd64) platform_arch="x86_64" ;;
         aarch64|arm64) platform_arch="aarch64" ;;
-        *) die "unsupported architecture '$arch'. Install manually: uv tool install $CLI_PACKAGE" ;;
+        *) die "unsupported architecture '$arch'. Install manually: uv tool install $CLI_PACKAGE && uv tool update-shell" ;;
     esac
     if [ "$platform_os" = "linux" ] && ! ldd --version 2>&1 | grep -qi glibc; then
         log "warning: non-glibc libc detected; continuing, but glibc is the supported target"
@@ -328,6 +332,22 @@ verify_cli() {
     log "installed mammoth-cli $installed"
 }
 
+# The skill writes files into the Codex, Claude Code and Cursor config
+# directories, so ask first. --skills-only, --yes and --noninteractive count as
+# consent; with no terminal to ask on (and none of those flags) skip it.
+confirm_skills() {
+    [ "$INSTALL_CLI" -eq 0 ] && return 0
+    [ "$NONINTERACTIVE" -eq 1 ] && return 0
+    if (: </dev/tty) 2>/dev/null; then
+        printf '%s' "mammoth-install: also write the Mammoth agent skill into your Codex, Claude Code and Cursor config folders? [y/N] " >/dev/tty
+        answer=""
+        read -r answer </dev/tty || answer=""
+        case "$answer" in y|Y|yes|YES) return 0 ;; esac
+    fi
+    log "skipped the agent skill; install it later with: mammoth skill install"
+    return 1
+}
+
 install_skills() {
     exe="$BIN_DIR/mammoth"
     [ -x "$exe" ] || exe="mammoth"
@@ -355,7 +375,7 @@ main() {
     else
         BIN_DIR="$($(command -v uv || echo uv) tool dir --bin 2>/dev/null || echo "$HOME/.local/bin")"
     fi
-    [ "$INSTALL_SKILLS" -eq 1 ] && install_skills
+    if [ "$INSTALL_SKILLS" -eq 1 ] && confirm_skills; then install_skills; fi
     log "done"
 }
 
