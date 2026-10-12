@@ -138,3 +138,55 @@ class TestTheServerRecordsItsOwnCalls:
         from mammoth_mcp_server.server import mcp_server
 
         assert any(isinstance(one, Telemetry) for one in mcp_server.middleware)
+
+
+def ours(events: logging.Logger) -> list[logging.StreamHandler]:
+    """The server's handlers: pytest adds its own to a logger that does not propagate."""
+    from mammoth_mcp_server.telemetry import _EventsHandler
+
+    return [one for one in events.handlers if isinstance(one, _EventsHandler)]
+
+
+class TestTheRunningServerWritesItsEvents:
+    """Without caplog: the levels and handlers are what a deployment gets."""
+
+    @pytest.fixture
+    def started(self):
+        """The app as `uvicorn --factory` builds it, then uvicorn's own logging."""
+        import logging.config
+
+        import uvicorn
+
+        from mammoth_mcp_server.app import create_app
+
+        from .helpers import a_fake_store
+
+        events = logging.getLogger(EVENT_LOGGER)
+        before = (events.handlers[:], events.level, events.propagate)
+        # A new process: pytest's own capture handlers are not there.
+        events.handlers[:] = []
+        events.setLevel(logging.NOTSET)
+        with a_fake_store():
+            create_app()
+            logging.config.dictConfig(uvicorn.config.LOGGING_CONFIG)
+            yield events
+        events.handlers[:], events.level, events.propagate = before
+
+    def test_an_event_reaches_a_handler_once_the_server_is_started(self, started) -> None:
+        import io
+
+        from mammoth_mcp_server.telemetry import record
+
+        written = io.StringIO()
+        ours(started)[0].setStream(written)
+
+        record(Events.TOOL_CALLED, tool="get_data")
+
+        assert json.loads(written.getvalue())[TelemetryFields.TOOL] == "get_data"
+
+    def test_starting_twice_does_not_write_each_event_twice(self, started) -> None:
+        from mammoth_mcp_server.app import create_app
+
+        create_app()
+
+        assert len(ours(started)) == 1
