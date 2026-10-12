@@ -14,7 +14,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - A connection reads only the workspace its token belongs to. `list_workspaces` listed the whole account, so a connection fenced to one workspace was told the names of all the others.
 - Every tool carries a title, which is what a client shows the user when it asks them to allow a call.
-- One telemetry event per handshake and per tool call (tool, client, duration, outcome), and never the arguments a tool was called with.
+- One telemetry event per handshake and per tool call (tool, client, duration, outcome), and never the arguments a tool was called with. Each event is written to stdout and stored in Mammoth's user events as the caller's own, so Mammoth can count tool calls per user.
 - A read-only connection may run only the tools whose own annotation says they read. No token carries the scope yet, so nothing changes for an existing connection.
 
 ### Fixed (mammoth-io 0.8.38)
