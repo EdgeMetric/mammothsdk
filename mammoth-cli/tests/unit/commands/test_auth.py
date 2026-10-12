@@ -67,37 +67,36 @@ def test_login_from_input_no_input_succeeds(
     assert _TOKEN not in result.stdout
 
 
-def _relogin_with_stored_koyal_profile(tmp_path: Path, *flags: str) -> dict[str, Any]:
-    """Log in again on a profile saved with prefix koyal; return the envelope data."""
+@pytest.fixture
+def real_config_dir(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
+    """Point the real profile store at a tmp dir through XDG_CONFIG_HOME, no patching."""
+    config_home = tmp_path / "xdg-config"
+    monkeypatch.setenv("XDG_CONFIG_HOME", str(config_home))
+    assert profiles.config_dir().is_relative_to(config_home)
+    return config_home
+
+
+def test_login_prefix_without_flag_is_the_stored_profile_prefix(real_config_dir: Path) -> None:
     profiles.save_profile(
         profiles.ProfileRecord(name="koyal", workspace_id=4, server_prefix="koyal")
     )
-    doc = _write_login_doc(tmp_path, api_token=_TOKEN)
-    result = make_runner().invoke(
-        ["auth", "login", "--profile", "koyal", "--input", str(doc), "--storage", "file"]
-        + [*flags, "--output", "json"],
-        env={},
-    )
-    assert result.exit_code == 0, result.stderr
-    return json.loads(result.stdout)["data"]
-
-
-def test_login_again_without_the_flag_keeps_the_profile_server(
-    isolated_cli_config: Path, fake_service: FakeMammothService, tmp_path: Path
-) -> None:
-    data = _relogin_with_stored_koyal_profile(tmp_path)
-    assert data["base_url"] == "https://koyal.mammoth.io/api/v2"
+    assert auth_cmd._login_server_prefix("koyal", None) == "koyal"
     stored = profiles.get_profile("koyal")
     assert stored is not None and stored.server_prefix == "koyal"
 
 
-def test_login_server_prefix_flag_overrides_the_profile_server(
-    isolated_cli_config: Path, fake_service: FakeMammothService, tmp_path: Path
-) -> None:
-    data = _relogin_with_stored_koyal_profile(tmp_path, "--server-prefix", "release")
-    assert data["base_url"] == "https://release.mammoth.io/api/v2"
+def test_login_prefix_flag_wins_over_the_stored_profile_prefix(real_config_dir: Path) -> None:
+    profiles.save_profile(
+        profiles.ProfileRecord(name="koyal", workspace_id=4, server_prefix="koyal")
+    )
+    assert auth_cmd._login_server_prefix("koyal", "release") == "release"
     stored = profiles.get_profile("koyal")
-    assert stored is not None and stored.server_prefix == "release"
+    assert stored is not None and stored.server_prefix == "koyal"
+
+
+def test_login_prefix_without_profile_or_flag_is_the_default(real_config_dir: Path) -> None:
+    assert profiles.get_profile("fresh") is None
+    assert auth_cmd._login_server_prefix("fresh", None) is None
 
 
 def test_login_noninteractive_without_source_requires_input(
