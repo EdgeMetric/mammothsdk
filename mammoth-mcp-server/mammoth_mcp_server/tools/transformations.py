@@ -35,7 +35,7 @@ _OPERATIONS: dict[str, type[BaseModel]] = {
 OPERATION_NAMES = ", ".join(sorted(_OPERATIONS))
 
 
-@mcp_server.tool(annotations=READS)
+@mcp_server.tool(title="Get transformation schema", annotations=READS)
 async def get_transformation_schema(operation: str) -> dict[str, JsonValue]:
     """Get the arguments one transformation takes, as a JSON schema.
 

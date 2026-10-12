@@ -33,11 +33,13 @@ class WorkspaceSchema(BaseModel):
 
 class CurrentWorkspace(BaseModel):
     """What a credential is fenced to: its workspace, the server its token was
-    issued for, and the one project it may act in."""
+    issued for, the one project it may act in, and whether the user granted it
+    read-only."""
 
     id: int
     resource: str | None = None
     project: int | None = None
+    read_only: bool = False
 
 
 class WorkspacesSchema(BaseModel):
