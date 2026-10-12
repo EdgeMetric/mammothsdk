@@ -1,0 +1,19 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.mammoth/mcp",
+  "title": "Mammoth Analytics",
+  "description": "Explore, clean, transform and export your Mammoth Analytics data from an AI client.",
+  "version": "0.1.1",
+  "websiteUrl": "https://mammoth.io",
+  "repository": {
+    "url": "https://github.com/EdgeMetric/mammothsdk",
+    "source": "github",
+    "subfolder": "mammoth-mcp-server"
+  },
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://mcp.mammoth.io/mcp"
+    }
+  ]
+}

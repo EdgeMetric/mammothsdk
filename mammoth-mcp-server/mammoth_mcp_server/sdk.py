@@ -21,6 +21,7 @@ from mammoth.exceptions import MammothError
 from mcp.server.auth.middleware.auth_context import get_access_token
 from mcp.server.mcpserver.exceptions import ToolError
 
+from . import __version__
 from .config import API_ROOT, API_URL
 from .consts import (
     JOB_POLL_SECONDS,
@@ -37,6 +38,10 @@ type JsonValue = (dict[str, "JsonValue"] | list["JsonValue"] | str | int | float
 type FileUpload = tuple[str, bytes, str]
 type FileUploads = list[FileUpload]
 
+# What Mammoth sees as the caller of every request, so MCP traffic can be told
+# apart from the SDK's own.
+USER_AGENT = f"mammoth-mcp-server/{__version__}"
+NOT_FOUND = 404
 API_ERROR_PREFIX = "Mammoth API error"
 UNREADABLE_API_ERROR = "the API returned an error with no message"
 
@@ -154,7 +159,7 @@ def client_with(bearer: str, job_timeout: float = JOB_TIMEOUT_SECONDS) -> Mammot
         bearer: The caller's token.
         job_timeout: How long the SDK's own waits on a job may take.
     """
-    return MammothClient(
+    client = MammothClient(
         api_token=bearer,
         base_url=_api_url,
         api_root=_api_root,
@@ -167,12 +172,14 @@ def client_with(bearer: str, job_timeout: float = JOB_TIMEOUT_SECONDS) -> Mammot
         # script that started a long build and would add whole seconds here.
         job_poll_seconds=JOB_POLL_SECONDS,
     )
+    client.session.headers["User-Agent"] = USER_AGENT
+    return client
 
 
 T = TypeVar("T")
 
 
-async def read_sdk_errors(work: Awaitable[T]) -> T:
+async def read_sdk_errors(work: Awaitable[T], not_found: str | None = None) -> T:
     """Await an SDK call, and turn a refusal into words the model can use.
 
     An exception raised inside a tool reaches the client as "Error executing
@@ -181,6 +188,8 @@ async def read_sdk_errors(work: Awaitable[T]) -> T:
 
     Args:
         work: The SDK call to run.
+        not_found: What to say when the API answers 404, which names no id: the
+            ids the call used and the `list_*` tool that shows the right ones.
 
     Raises:
         ToolError: Carrying whatever the API said, for the model to relay.
@@ -188,6 +197,8 @@ async def read_sdk_errors(work: Awaitable[T]) -> T:
     try:
         return await work
     except MammothError as refused:
+        if not_found is not None and getattr(refused, "status_code", None) == NOT_FOUND:
+            raise ToolError(f"{API_ERROR_PREFIX}: {not_found}") from refused
         raise ToolError(
             f"{API_ERROR_PREFIX}: {str(refused).strip() or UNREADABLE_API_ERROR}"
         ) from refused
