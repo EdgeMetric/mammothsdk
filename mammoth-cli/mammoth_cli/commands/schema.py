@@ -66,6 +66,11 @@ _FIXED_EXAMPLES: dict[str, tuple[tuple[str, ...], dict[str, Any]]] = {
         {"term": "late", "definition": "delivered more than 5 days after shipped_date"},
     ),
     "dataset.definition.remove": (("123", "a1b2c3d4"), {}),
+    "dashboard.collection.list": ((), {}),
+    "dashboard.collection.create": ((), {"name": "QA collection", "dashboard_ids": [123]}),
+    "dashboard.collection.add": (("123",), {"dashboard_ids": [456]}),
+    "dashboard.collection.update": (("123",), {"name": "Board pack"}),
+    "dashboard.collection.remove": (("123", "456"), {}),
     "view.data.drivers": (
         ("123",),
         {
@@ -458,6 +463,16 @@ _COMMAND_DISCOVERY_PURPOSES = {
     ),
     "dataset.definition.list": "definitions meanings glossary saved for a dataset",
     "dataset.definition.remove": "forget a definition meaning glossary term",
+    # Dashboard collections: the web app's named, ordered sets of dashboards
+    # shared as one link. A live agent turn (10-12) answered "dashboards have
+    # only tags" because no command said "collection".
+    # Only words the command paths lack, and no verb: "dashboard" or a verb such
+    # as "rename" here pulls plain dashboard goals ("rename dashboard", "add
+    # tag") onto these, so "rename collection" finds `update` by its path only.
+    "dashboard.collection.add": "put into",
+    # The plural, so "list collections" is not read as a data word and dropped.
+    "dashboard.collection.list": "collections",
+    "dashboard.collection.create": "new",
     # Goals users state in their own words, one entry per command the agent's
     # system prompt used to spell out by hand.
     "dashboard.suggestion.list": "ideas suggest suggestions what to show put on a board chart",
@@ -1181,7 +1196,14 @@ def _compact_contract(record: dict[str, Any]) -> dict[str, Any]:
     family = str(record.get("command_path", "")).split()[0]
     operation_hints = _operation_hints_by_command().get(command_id, "")
     search_text = f"{command_id} {family} {operation_hints}".casefold()
-    if family == "dashboard" and command_id.startswith("dashboard.tags."):
+    if family == "dashboard" and (
+        command_id.startswith("dashboard.tags.")
+        # Collections are read and changed by id; only create names a project.
+        or (
+            command_id.startswith("dashboard.collection.")
+            and command_id != "dashboard.collection.create"
+        )
+    ):
         scope = "workspace"
     elif (
         command_id == "ai.retention.condition"

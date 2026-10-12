@@ -592,6 +592,351 @@ commands:
     from --output json. It is the version list for dashboard canvas restore''s target_sequence: to undo/revert
     the board, find the sequence to go back to here and pass it there.'
   reviewed_by: primary
+- command_id: dashboard.collection.add
+  command_path: dashboard collection add
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - AddDashboards
+  positionals:
+  - name: collection_id
+    type: int
+    required: true
+    metavar: COLLECTION_ID
+    falls_back_to_field: null
+    help: ID of the collection.
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.add_to_collection
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.add_to_collection with validated request
+    fields.
+  request_model: DashboardCollectionAddRequest
+  result_model: DashboardCollectionAddResult
+  mutation_class: benign_mutation
+  edits_target: true
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_no_disposable_fixture
+  readback:
+    command: dashboard.collection.get
+    ids:
+      collection_id: positional.0
+    kind: object
+  live_test: null
+  live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
+    fixture in tests/live.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard collection add COLLECTION_ID --help
+  agent_example: 'mammoth dashboard collection add 123 --input ''{"dashboard_ids": [456]}'''
+  unit_tests:
+  - UT-DASHBOARD-COLLECTION-ADD
+  contract_tests:
+  - CT-DASHBOARD-COLLECTION-ADD-HUMAN
+  - CT-DASHBOARD-COLLECTION-ADD-JSON
+  - CT-DASHBOARD-COLLECTION-ADD-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Puts dashboards (dashboard_ids from --input) at the end of an existing
+    collection; ones already in it are skipped and reported in already_in. A collection holds
+    only dashboards of its own project (the server answers 4COLL002 otherwise). Find the
+    collection id with dashboard collection list; when no collection has the name the user gave,
+    make one with dashboard collection create and its dashboard_ids instead. Members are not
+    emailed about the new dashboards.'
+  reviewed_by: primary
+- command_id: dashboard.collection.create
+  command_path: dashboard collection create
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - CreateCollection
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.create_collection
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.create_collection with validated request
+    fields.
+  request_model: DashboardCollectionCreateRequest
+  result_model: DashboardCollectionCreateResult
+  mutation_class: benign_mutation
+  edits_target: false
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_no_disposable_fixture
+  readback:
+    command: dashboard.collection.list
+    ids: {}
+    kind: object
+  live_test: null
+  live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
+    fixture in tests/live.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard collection create --help
+  agent_example: 'mammoth dashboard collection create --input ''{"name": "QA collection", "dashboard_ids":
+    [123]}'''
+  unit_tests:
+  - UT-DASHBOARD-COLLECTION-CREATE
+  contract_tests:
+  - CT-DASHBOARD-COLLECTION-CREATE-HUMAN
+  - CT-DASHBOARD-COLLECTION-CREATE-JSON
+  - CT-DASHBOARD-COLLECTION-CREATE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Makes a collection: a named, ordered set of dashboards shared as one link
+    (the web app''s Collections). It belongs to one project: project_id from --input, else the
+    active project; every dashboard in dashboard_ids must belong to that project (4COLL002), so
+    take project_id from the dashboard''s row in dashboard list. Name 1-120 characters,
+    description up to 2000. Check dashboard collection list first: if a collection with that name
+    exists, add to it with dashboard collection add instead of making a second one. Sharing it
+    with people is done in the web app.'
+  reviewed_by: primary
+- command_id: dashboard.collection.delete
+  command_path: dashboard collection delete
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - DeleteCollection
+  positionals:
+  - name: collection_id
+    type: int
+    required: true
+    metavar: COLLECTION_ID
+    falls_back_to_field: null
+    help: ID of the collection.
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.delete_collection
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.delete_collection with validated request
+    fields.
+  request_model: DashboardCollectionDeleteRequest
+  result_model: DashboardCollectionDeleteResult
+  mutation_class: destructive
+  edits_target: true
+  confirmation: prompt_or_yes
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_no_disposable_fixture
+  readback:
+    command: dashboard.collection.list
+    ids: {}
+    kind: object
+  live_test: null
+  live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
+    fixture in tests/live.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard collection delete COLLECTION_ID --help
+  agent_example: mammoth dashboard collection delete 123
+  unit_tests:
+  - UT-DASHBOARD-COLLECTION-DELETE
+  contract_tests:
+  - CT-DASHBOARD-COLLECTION-DELETE-HUMAN
+  - CT-DASHBOARD-COLLECTION-DELETE-JSON
+  - CT-DASHBOARD-COLLECTION-DELETE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Deletes the collection itself, with no trash to restore it from. Its
+    dashboards are kept, but the people it was shared with lose the access that came through it
+    and its link stops working. To take one dashboard out, use dashboard collection remove.'
+  reviewed_by: primary
+- command_id: dashboard.collection.get
+  command_path: dashboard collection get
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetCollection
+  positionals:
+  - name: collection_id
+    type: int
+    required: true
+    metavar: COLLECTION_ID
+    falls_back_to_field: null
+    help: ID of the collection.
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.get_collection
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.get_collection with validated request
+    fields.
+  request_model: DashboardCollectionGetRequest
+  result_model: DashboardCollectionGetResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: null
+  live_exemption_reason: Read-only route over one collection.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard collection get COLLECTION_ID --help
+  agent_example: mammoth dashboard collection get 123
+  unit_tests:
+  - UT-DASHBOARD-COLLECTION-GET
+  contract_tests:
+  - CT-DASHBOARD-COLLECTION-GET-HUMAN
+  - CT-DASHBOARD-COLLECTION-GET-JSON
+  - CT-DASHBOARD-COLLECTION-GET-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Returns the collection with its dashboards in order (dashboard_id, title,
+    position, tab_label, is_published) and, for its managers, the people it is shared with. A
+    collection the caller cannot see reads as not found (4COLL001).'
+  reviewed_by: primary
+- command_id: dashboard.collection.list
+  command_path: dashboard collection list
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - ListCollections
+  - CollectionsForDashboard
+  positionals:
+  - name: dashboard_id
+    type: int
+    required: false
+    metavar: DASHBOARD_ID
+    falls_back_to_field: dashboard_id
+    help: Only the collections holding this dashboard; or pass it via the 'dashboard_id' input field.
+      Omit it to list every collection.
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.list_collections
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.list_collections with validated request
+    fields.
+  request_model: DashboardCollectionListRequest
+  result_model: DashboardCollectionListResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: null
+  live_exemption_reason: Read-only route over the caller's collections.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard collection list --help
+  agent_example: mammoth dashboard collection list
+  unit_tests:
+  - UT-DASHBOARD-COLLECTION-LIST
+  contract_tests:
+  - CT-DASHBOARD-COLLECTION-LIST-HUMAN
+  - CT-DASHBOARD-COLLECTION-LIST-JSON
+  - CT-DASHBOARD-COLLECTION-LIST-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Dashboards are grouped into collections (named, ordered sets shared as one
+    link) as well as tags. Lists the collections in the projects the caller edits in this
+    workspace plus those shared with them: {collections: [{id, name, project_id, role,
+    dashboard_count, ...}]}. With DASHBOARD_ID, only the collections holding that dashboard
+    (editors of the dashboard only). dashboard list rows also carry collection_ids.'
+  reviewed_by: primary
+- command_id: dashboard.collection.remove
+  command_path: dashboard collection remove
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - RemoveDashboard
+  positionals:
+  - name: collection_id
+    type: int
+    required: true
+    metavar: COLLECTION_ID
+    falls_back_to_field: null
+    help: ID of the collection.
+  - name: dashboard_id
+    type: int
+    required: true
+    metavar: DASHBOARD_ID
+    falls_back_to_field: null
+    help: ID of the dashboard.
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.remove_from_collection
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.remove_from_collection with validated
+    request fields.
+  request_model: DashboardCollectionRemoveRequest
+  result_model: DashboardCollectionRemoveResult
+  mutation_class: benign_mutation
+  edits_target: true
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_no_disposable_fixture
+  readback:
+    command: dashboard.collection.get
+    ids:
+      collection_id: positional.0
+    kind: object
+  live_test: null
+  live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
+    fixture in tests/live.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard collection remove COLLECTION_ID DASHBOARD_ID --help
+  agent_example: mammoth dashboard collection remove 123 456
+  unit_tests:
+  - UT-DASHBOARD-COLLECTION-REMOVE
+  contract_tests:
+  - CT-DASHBOARD-COLLECTION-REMOVE-HUMAN
+  - CT-DASHBOARD-COLLECTION-REMOVE-JSON
+  - CT-DASHBOARD-COLLECTION-REMOVE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Takes one dashboard out of a collection; the dashboard itself is kept and
+    can be added back with dashboard collection add.'
+  reviewed_by: primary
+- command_id: dashboard.collection.update
+  command_path: dashboard collection update
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - UpdateCollection
+  positionals:
+  - name: collection_id
+    type: int
+    required: true
+    metavar: COLLECTION_ID
+    falls_back_to_field: null
+    help: ID of the collection.
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.update_collection
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.update_collection with validated request
+    fields.
+  request_model: DashboardCollectionUpdateRequest
+  result_model: DashboardCollectionUpdateResult
+  mutation_class: benign_mutation
+  edits_target: true
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_no_disposable_fixture
+  readback:
+    command: dashboard.collection.get
+    ids:
+      collection_id: positional.0
+    kind: object
+  live_test: null
+  live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
+    fixture in tests/live.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard collection update COLLECTION_ID --help
+  agent_example: 'mammoth dashboard collection update 123 --input ''{"name": "Board pack"}'''
+  unit_tests:
+  - UT-DASHBOARD-COLLECTION-UPDATE
+  contract_tests:
+  - CT-DASHBOARD-COLLECTION-UPDATE-HUMAN
+  - CT-DASHBOARD-COLLECTION-UPDATE-JSON
+  - CT-DASHBOARD-COLLECTION-UPDATE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Renames (name), describes (description; empty clears it), reorders (order:
+    every dashboard id the collection holds, in the new order) or relabels its tabs (tab_labels:
+    {"DASHBOARD_ID": "label"}, empty label clears it). Only the fields given change.'
+  reviewed_by: primary
 - command_id: dashboard.context.create
   command_path: dashboard context create
   disposition: command

@@ -172,6 +172,76 @@ Result: `DashboardChatHistoryResult`; mutation `read`, confirmation `none`, wait
 
 Status on release: ran once on CLI 2.0.12 — Published PyPI CLI 1.1.11 chat-history read for retained dashboard48 returned empty history with sequence1; bounded and not Full. Also: Dashboard sweep 2026-09-18: exit 0 on release with CLI 2.0.12; result keys: history_index, messages, sequence. no chat mess…
 
+### `dashboard.collection.add`
+
+Run: `mammoth dashboard collection add`. Exact input fields: `mammoth schema get dashboard.collection.add`.
+
+Example: `mammoth dashboard collection add 123 --input '{"dashboard_ids": [456]}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `DashboardCollectionAddResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `dashboard.collection.create`
+
+Run: `mammoth dashboard collection create`. Exact input fields: `mammoth schema get dashboard.collection.create`.
+
+Example: `mammoth dashboard collection create --input '{"name": "QA collection", "dashboard_ids": [123]}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `DashboardCollectionCreateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `dashboard.collection.delete`
+
+Run: `mammoth dashboard collection delete`. Exact input fields: `mammoth schema get dashboard.collection.delete`.
+
+Example: `mammoth dashboard collection delete 123`. Illustrative only: append `--yes` after observing an owned target.
+
+Result: `DashboardCollectionDeleteResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `dashboard.collection.get`
+
+Run: `mammoth dashboard collection get`. Exact input fields: `mammoth schema get dashboard.collection.get`.
+
+Example: `mammoth dashboard collection get 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `DashboardCollectionGetResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `dashboard.collection.list`
+
+Run: `mammoth dashboard collection list`. Exact input fields: `mammoth schema get dashboard.collection.list`.
+
+Example: `mammoth dashboard collection list`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `DashboardCollectionListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `dashboard.collection.remove`
+
+Run: `mammoth dashboard collection remove`. Exact input fields: `mammoth schema get dashboard.collection.remove`.
+
+Example: `mammoth dashboard collection remove 123 456`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `DashboardCollectionRemoveResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `dashboard.collection.update`
+
+Run: `mammoth dashboard collection update`. Exact input fields: `mammoth schema get dashboard.collection.update`.
+
+Example: `mammoth dashboard collection update 123 --input '{"name": "Board pack"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `DashboardCollectionUpdateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
 ### `dashboard.columns`
 
 Run: `mammoth dashboard columns`. Exact input fields: `mammoth schema get dashboard.columns`.

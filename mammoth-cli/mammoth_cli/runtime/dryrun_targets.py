@@ -65,7 +65,7 @@ class Reader:
 #: ``DatasetDetails``/``BatchDetails``/``FileDetails``/``FolderDetails``/
 #: ``WebhookDetails``/``AutomationDetails`` wrap; ``DataviewInfo``,
 #: ``ParameterDetailResponse``, ``SnippetDetailResponse``, ``WorkflowResponse``,
-#: ``DataAppDetails``, ``ScheduleSchemaFields`` and the dashboard meta types
+#: ``DataAppDetails``, ``ScheduleSchemaFields``, ``CollectionDetail`` and the dashboard meta types
 #: are flat (a dashboard's name is ``title``, a schedule's ``task_name``, an
 #: external key's ``key_name`` inside ``external_key``).
 READERS: dict[str, Reader] = {
@@ -83,6 +83,7 @@ READERS: dict[str, Reader] = {
     "workflow": Reader("workflow.get", "workflow_id", ("project_id",)),
     "data-app": Reader("data-app.get", "data_app_id"),
     "dashboard": Reader("dashboard.get", "dashboard_id", name_key="title"),
+    "collection": Reader("dashboard.collection.get", "collection_id"),
     "project": Reader("project.get", "project"),
     # ``WorkspaceAPI.get_user`` reads the member list (``__full``) and returns the
     # entry: flat, with ``first_name``/``last_name``/``email`` and no ``name``.
@@ -389,6 +390,7 @@ COMMAND_TARGETS: dict[str, tuple[str, str]] = {
     "workflow.delete": ("workflow", "workflow_id"),
     "data-app.delete": ("data-app", "data_app_id"),
     "dashboard.delete": ("dashboard", "dashboard_id"),
+    "dashboard.collection.delete": ("collection", "collection_id"),
     "project.delete": ("project", "project_id"),
     "project.bulk-delete": ("project", "project_ids"),
     "workspace.user.remove": ("user", "user_id"),

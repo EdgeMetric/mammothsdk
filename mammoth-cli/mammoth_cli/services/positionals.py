@@ -339,6 +339,20 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
     "dashboard.tags.merge": (
         PositionalSpec(name="tag_id", type=int, required=True, help="ID of the source tag."),
     ),
+    # Collections holding one dashboard (GET /collections/for-dashboard/{id});
+    # omit it to list every collection the caller can see.
+    "dashboard.collection.list": (
+        PositionalSpec(
+            name="dashboard_id",
+            type=int,
+            required=False,
+            falls_back_to_field="dashboard_id",
+            help=(
+                "Only the collections holding this dashboard; or pass it via the "
+                "'dashboard_id' input field. Omit it to list every collection."
+            ),
+        ),
+    ),
     # Item G: an agent's first move is often `view list` before it has any
     # dataset id; omitting it now walks every dataset in the active project
     # (paged) instead of failing with missing_argument.

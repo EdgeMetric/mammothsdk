@@ -104,6 +104,102 @@
       "commands": []
     },
     {
+      "method": "GET",
+      "path": "/collections",
+      "state": "pending_server_release",
+      "pending_in": "origin/master@dfcfe92ef0 (after the master-20261002 spec)",
+      "sdk_symbols": [
+        "mammoth.api.dashboards.DashboardsAPI.list_collections"
+      ],
+      "commands": [
+        "dashboard.collection.list"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/collections",
+      "state": "pending_server_release",
+      "pending_in": "origin/master@dfcfe92ef0 (after the master-20261002 spec)",
+      "sdk_symbols": [
+        "mammoth.api.dashboards.DashboardsAPI.create_collection"
+      ],
+      "commands": [
+        "dashboard.collection.create"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/collections/for-dashboard/{}",
+      "state": "pending_server_release",
+      "pending_in": "origin/master@dfcfe92ef0 (after the master-20261002 spec)",
+      "sdk_symbols": [
+        "mammoth.api.dashboards.DashboardsAPI.list_collections"
+      ],
+      "commands": [
+        "dashboard.collection.list"
+      ]
+    },
+    {
+      "method": "DELETE",
+      "path": "/collections/{}",
+      "state": "pending_server_release",
+      "pending_in": "origin/master@dfcfe92ef0 (after the master-20261002 spec)",
+      "sdk_symbols": [
+        "mammoth.api.dashboards.DashboardsAPI.delete_collection"
+      ],
+      "commands": [
+        "dashboard.collection.delete"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/collections/{}",
+      "state": "pending_server_release",
+      "pending_in": "origin/master@dfcfe92ef0 (after the master-20261002 spec)",
+      "sdk_symbols": [
+        "mammoth.api.dashboards.DashboardsAPI.get_collection"
+      ],
+      "commands": [
+        "dashboard.collection.get"
+      ]
+    },
+    {
+      "method": "PATCH",
+      "path": "/collections/{}",
+      "state": "pending_server_release",
+      "pending_in": "origin/master@dfcfe92ef0 (after the master-20261002 spec)",
+      "sdk_symbols": [
+        "mammoth.api.dashboards.DashboardsAPI.update_collection"
+      ],
+      "commands": [
+        "dashboard.collection.update"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/collections/{}/dashboards",
+      "state": "pending_server_release",
+      "pending_in": "origin/master@dfcfe92ef0 (after the master-20261002 spec)",
+      "sdk_symbols": [
+        "mammoth.api.dashboards.DashboardsAPI.add_to_collection"
+      ],
+      "commands": [
+        "dashboard.collection.add"
+      ]
+    },
+    {
+      "method": "DELETE",
+      "path": "/collections/{}/dashboards/{}",
+      "state": "pending_server_release",
+      "pending_in": "origin/master@dfcfe92ef0 (after the master-20261002 spec)",
+      "sdk_symbols": [
+        "mammoth.api.dashboards.DashboardsAPI.remove_from_collection"
+      ],
+      "commands": [
+        "dashboard.collection.remove"
+      ]
+    },
+    {
       "method": "POST",
       "path": "/dashboards/v3/attachments/{}/assess",
       "state": "pending_server_release",

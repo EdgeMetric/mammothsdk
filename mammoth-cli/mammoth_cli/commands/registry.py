@@ -456,6 +456,13 @@ _TARGETS: dict[str, str] = {
     "dashboard.tags.set": "mammoth_cli.commands.dashboard:dashboard_tags_set",
     "dashboard.tags.delete": "mammoth_cli.commands.dashboard:dashboard_tags_delete",
     "dashboard.tags.merge": "mammoth_cli.commands.dashboard:dashboard_tags_merge",
+    "dashboard.collection.list": "mammoth_cli.commands.dashboard:dashboard_collection_list",
+    "dashboard.collection.get": "mammoth_cli.commands.dashboard:dashboard_collection_get",
+    "dashboard.collection.create": "mammoth_cli.commands.dashboard:dashboard_collection_create",
+    "dashboard.collection.update": "mammoth_cli.commands.dashboard:dashboard_collection_update",
+    "dashboard.collection.delete": "mammoth_cli.commands.dashboard:dashboard_collection_delete",
+    "dashboard.collection.add": "mammoth_cli.commands.dashboard:dashboard_collection_add",
+    "dashboard.collection.remove": "mammoth_cli.commands.dashboard:dashboard_collection_remove",
     "dashboard.published-data-by-url": (
         "mammoth_cli.commands.dashboard:dashboard_published_data_by_url"
     ),

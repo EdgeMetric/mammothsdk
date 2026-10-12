@@ -219,3 +219,18 @@ appended as a string: `user preference update --input
 (unpin = write it without the id). Dashboards live in no folder, so
 `folder move` cannot file one; the library groups by tags: `dashboard tags set
 DASHBOARD_ID --input '{"tags":["Finance"]}' --yes --confirm DASHBOARD_ID`.
+
+## Put dashboards in a collection
+
+A collection is a named, ordered set of one project's dashboards shared as one
+link (the web app's Collections). To put a dashboard in a collection by name,
+run `dashboard collection list` first. When a collection has that name, run
+`dashboard collection add COLLECTION_ID --input '{"dashboard_ids":[123]}'`.
+When none has it, run `dashboard collection create --input
+'{"name":"QA collection","dashboard_ids":[123],"project_id":180}'`. The dashboards must belong to the
+collection's project; `dashboard list` rows carry `project_id` and the
+`collection_ids` that hold each dashboard. `dashboard collection remove
+COLLECTION_ID DASHBOARD_ID` takes one out and keeps the dashboard. `dashboard
+collection update` renames, describes or reorders a collection. `dashboard
+collection delete` asks first: the people it was shared with lose that access.
+Sharing a collection with people is done in the web app.

@@ -105,6 +105,24 @@ PENDING_SERVER_RELEASE.update(
         for method, suffix in (("GET", ""), ("POST", ""), ("DELETE", "/{}"))
     }
 )
+# Dashboard collections are on server master (mvc-service dfcfe92ef0, 2026-10-05)
+# but newer than the pinned master-20261002 spec; drop these once the spec is
+# re-pinned and the routes match real operations.
+PENDING_SERVER_RELEASE.update(
+    {
+        f"{method} {path}": "origin/master@dfcfe92ef0 (after the master-20261002 spec)"
+        for method, path in (
+            ("GET", "/collections"),
+            ("POST", "/collections"),
+            ("GET", "/collections/for-dashboard/{}"),
+            ("GET", "/collections/{}"),
+            ("PATCH", "/collections/{}"),
+            ("DELETE", "/collections/{}"),
+            ("POST", "/collections/{}/dashboards"),
+            ("DELETE", "/collections/{}/dashboards/{}"),
+        )
+    }
+)
 # The SDK posts every run verb through one helper whose path ends in a variable.
 PENDING_SERVER_RELEASE["POST /agents/sessions/{}/runs/{}/{}"] = PENDING_SERVER_RELEASE[
     "POST /agents/sessions/{}/runs/{}/stop"

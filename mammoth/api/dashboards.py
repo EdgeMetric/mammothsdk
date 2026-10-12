@@ -186,6 +186,147 @@ class DashboardsAPI:
             "POST", f"/dashboards/tags/{tag_id}/merge", json=typed.model_dump(mode="json")
         )
 
+    # ── Collections: a named, ordered set of dashboards shared as one thing ──
+    # Routes are top-level (``/collections``), like ``/dashboards``; the list is
+    # scoped by the client's ``X-WORKSPACE-ID`` header. A collection belongs to
+    # one project and holds only that project's dashboards (``4COLL002``).
+
+    async def list_collections(self, dashboard_id: int | None = None) -> dict[str, Any]:
+        """List collections, or the collections holding one dashboard.
+
+        Without ``dashboard_id``: every collection in the projects the caller
+        edits (in the client's workspace) plus every collection shared with
+        them (``GET /collections``). With it: the collections that hold that
+        dashboard (``GET /collections/for-dashboard/{dashboard_id}``, editors
+        of the dashboard only).
+
+        Returns:
+            ``{"collections": [{id, name, description, url, project_id,
+            workspace_id, role, dashboard_count, member_count, ...}]}``.
+        """
+        if dashboard_id is None:
+            return await self._client._request_json("GET", "/collections")
+        _require_positive_id("dashboard_id", dashboard_id)
+        return await self._client._request_json("GET", f"/collections/for-dashboard/{dashboard_id}")
+
+    async def get_collection(self, collection_id: int) -> dict[str, Any]:
+        """Get one collection with its dashboards in order (``GET /collections/{id}``).
+
+        A collection the caller cannot see reads as not found (``4COLL001``).
+        """
+        _require_positive_id("collection_id", collection_id)
+        return await self._client._request_json("GET", f"/collections/{collection_id}")
+
+    async def create_collection(
+        self,
+        name: str,
+        project_id: int,
+        description: str | None = None,
+        dashboard_ids: builtins.list[int] | None = None,
+    ) -> dict[str, Any]:
+        """Create a collection in a project (``POST /collections``).
+
+        Args:
+            name: The collection's name, 1-120 characters.
+            project_id: The project it belongs to; the caller must edit it.
+            description: Optional description, up to 2000 characters.
+            dashboard_ids: Dashboards to put in it, in order. Each must belong
+                to ``project_id`` or the server answers ``4COLL002``.
+
+        Returns:
+            The new collection's detail, as :meth:`get_collection` returns it.
+        """
+        if not isinstance(name, str) or not name.strip():
+            raise MammothValidationError("`name` must be non-blank.")
+        _require_positive_id("project_id", project_id)
+        ids = _dashboard_id_list(dashboard_ids or [], allow_empty=True)
+        return await self._client._request_json(
+            "POST",
+            "/collections",
+            json={
+                "project_id": project_id,
+                "name": name.strip(),
+                "description": description,
+                "dashboard_ids": ids,
+            },
+        )
+
+    async def update_collection(
+        self,
+        collection_id: int,
+        name: str | None = None,
+        description: str | None = None,
+        order: builtins.list[int] | None = None,
+        tab_labels: dict[str, str | None] | None = None,
+    ) -> dict[str, Any]:
+        """Rename, describe, reorder or relabel a collection (``PATCH /collections/{id}``).
+
+        Only the fields given are sent. ``order`` must list every dashboard id
+        the collection holds, in the new order; ``tab_labels`` maps a dashboard
+        id (as a string) to its short tab label, an empty label clearing it.
+
+        Returns:
+            The collection's detail after the change.
+        """
+        _require_positive_id("collection_id", collection_id)
+        body: dict[str, Any] = {}
+        if name is not None:
+            if not isinstance(name, str) or not name.strip():
+                raise MammothValidationError("`name` must be non-blank.")
+            body["name"] = name.strip()
+        if description is not None:
+            body["description"] = description
+        if order is not None:
+            body["order"] = _dashboard_id_list(order, allow_empty=False)
+        if tab_labels is not None:
+            body["tab_labels"] = tab_labels
+        if not body:
+            raise MammothValidationError(
+                "Give at least one of `name`, `description`, `order` or `tab_labels`."
+            )
+        return await self._client._request_json("PATCH", f"/collections/{collection_id}", json=body)
+
+    async def delete_collection(self, collection_id: int) -> dict[str, Any] | None:
+        """Delete a collection (``DELETE /collections/{id}``).
+
+        The dashboards are kept; the people it was shared with lose the access
+        that came through it. There is no trash for collections.
+        """
+        _require_positive_id("collection_id", collection_id)
+        return await self._client._request_json("DELETE", f"/collections/{collection_id}")
+
+    async def add_to_collection(
+        self, collection_id: int, dashboard_ids: builtins.list[int]
+    ) -> dict[str, Any]:
+        """Add dashboards to the end of a collection (``POST /collections/{id}/dashboards``).
+
+        Dashboards already in it are skipped. Members are not emailed
+        (``notify`` is always false here).
+
+        Returns:
+            ``{"added": [dashboard ids actually added], "notified": 0}``.
+        """
+        _require_positive_id("collection_id", collection_id)
+        ids = _dashboard_id_list(dashboard_ids, allow_empty=False)
+        return await self._client._request_json(
+            "POST",
+            f"/collections/{collection_id}/dashboards",
+            json={"dashboard_ids": ids, "notify": False},
+        )
+
+    async def remove_from_collection(
+        self, collection_id: int, dashboard_id: int
+    ) -> dict[str, Any] | None:
+        """Take one dashboard out of a collection; the dashboard itself is kept.
+
+        ``DELETE /collections/{id}/dashboards/{dashboard_id}``.
+        """
+        _require_positive_id("collection_id", collection_id)
+        _require_positive_id("dashboard_id", dashboard_id)
+        return await self._client._request_json(
+            "DELETE", f"/collections/{collection_id}/dashboards/{dashboard_id}"
+        )
+
     async def create_blank(self, params: CreateBlankParams) -> dict[str, Any]:
         """Create an empty v3 dashboard bound to a dataview.
 
@@ -1728,6 +1869,27 @@ def _require_dashboard_id(dashboard_id: int) -> None:
     """Reject a dashboard id that is not a positive integer."""
     if isinstance(dashboard_id, bool) or not isinstance(dashboard_id, int) or dashboard_id <= 0:
         raise MammothValidationError(ERR_DASHBOARD_ID_POSITIVE.format(dashboard_id))
+
+
+def _require_positive_id(name: str, value: object) -> None:
+    """Reject an id that is not a positive integer, naming the argument."""
+    if isinstance(value, bool) or not isinstance(value, int) or value <= 0:
+        raise MammothValidationError(f"`{name}` must be a positive integer, got {value}.")
+
+
+def _dashboard_id_list(values: object, *, allow_empty: bool) -> builtins.list[int]:
+    """Return a list of positive dashboard ids, or raise ``MammothValidationError``."""
+    if (
+        not isinstance(values, list)
+        or (not values and not allow_empty)
+        or any(isinstance(v, bool) or not isinstance(v, int) or v <= 0 for v in values)
+    ):
+        raise MammothValidationError(
+            ERR_DASHBOARD_IDS_EMPTY
+            if not allow_empty
+            else "`dashboard_ids` must be a list of positive dashboard ids."
+        )
+    return list(values)
 
 
 def _require_attachment_id(attachment_id: int) -> None:

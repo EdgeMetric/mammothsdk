@@ -400,6 +400,20 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth dashboard chat edit 123 --input '{"body": {"params": {"prompt": "Summarize revenue by region"}}}'
 - `mammoth dashboard chat history` [read/none] -> mammoth.api.dashboards.DashboardsAPI.chat_history
   example: mammoth dashboard chat history 123
+- `mammoth dashboard collection add` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.add_to_collection
+  example: mammoth dashboard collection add 123 --input '{"dashboard_ids": [456]}'
+- `mammoth dashboard collection create` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.create_collection
+  example: mammoth dashboard collection create --input '{"name": "QA collection", "dashboard_ids": [123]}'
+- `mammoth dashboard collection delete` [destructive/prompt_or_yes] -> mammoth.api.dashboards.DashboardsAPI.delete_collection
+  example: mammoth dashboard collection delete 123
+- `mammoth dashboard collection get` [read/none] -> mammoth.api.dashboards.DashboardsAPI.get_collection
+  example: mammoth dashboard collection get 123
+- `mammoth dashboard collection list` [read/none] -> mammoth.api.dashboards.DashboardsAPI.list_collections
+  example: mammoth dashboard collection list
+- `mammoth dashboard collection remove` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.remove_from_collection
+  example: mammoth dashboard collection remove 123 456
+- `mammoth dashboard collection update` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.update_collection
+  example: mammoth dashboard collection update 123 --input '{"name": "Board pack"}'
 - `mammoth dashboard columns` [read/none] -> mammoth.api.dashboards.DashboardsAPI.column_roster
   example: mammoth dashboard columns 123
 - `mammoth dashboard context apply` [benign_mutation/confirm_target] -> mammoth.api.dashboards.DashboardsAPI.context_apply

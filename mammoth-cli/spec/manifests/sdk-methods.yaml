@@ -2666,6 +2666,90 @@ methods:
   pagination_policy: none
   secret_fields: []
   reviewed_by: primary
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.list_collections
+  implementation_origin: mammoth.api.dashboards.DashboardsAPI.list_collections
+  signature: 'list_collections(self, dashboard_id: ''int | None'' = None) -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: dashboard.collection.list
+  alias_of: null
+  no_command_reason: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.get_collection
+  implementation_origin: mammoth.api.dashboards.DashboardsAPI.get_collection
+  signature: 'get_collection(self, collection_id: ''int'') -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: dashboard.collection.get
+  alias_of: null
+  no_command_reason: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.create_collection
+  implementation_origin: mammoth.api.dashboards.DashboardsAPI.create_collection
+  signature: 'create_collection(self, name: ''str'', project_id: ''int'', description: ''str | None'' = None, dashboard_ids: ''builtins.list[int] | None'' = None) -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: dashboard.collection.create
+  alias_of: null
+  no_command_reason: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.update_collection
+  implementation_origin: mammoth.api.dashboards.DashboardsAPI.update_collection
+  signature: 'update_collection(self, collection_id: ''int'', name: ''str | None'' = None, description: ''str | None'' = None, order: ''builtins.list[int] | None'' = None, tab_labels: ''dict[str, str | None] | None'' = None) -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: dashboard.collection.update
+  alias_of: null
+  no_command_reason: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.delete_collection
+  implementation_origin: mammoth.api.dashboards.DashboardsAPI.delete_collection
+  signature: 'delete_collection(self, collection_id: ''int'') -> ''dict[str, Any] | None'''
+  openapi_operation_ids: []
+  canonical_command: dashboard.collection.delete
+  alias_of: null
+  no_command_reason: null
+  mutation_class: destructive
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.add_to_collection
+  implementation_origin: mammoth.api.dashboards.DashboardsAPI.add_to_collection
+  signature: 'add_to_collection(self, collection_id: ''int'', dashboard_ids: ''builtins.list[int]'') -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: dashboard.collection.add
+  alias_of: null
+  no_command_reason: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.remove_from_collection
+  implementation_origin: mammoth.api.dashboards.DashboardsAPI.remove_from_collection
+  signature: 'remove_from_collection(self, collection_id: ''int'', dashboard_id: ''int'') -> ''dict[str, Any] | None'''
+  openapi_operation_ids: []
+  canonical_command: dashboard.collection.remove
+  alias_of: null
+  no_command_reason: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.og_card
   implementation_origin: mammoth.api.dashboards.DashboardsAPI.og_card
   signature: 'og_card(self: ''Any'', dashboard_id: ''int'') -> ''dict[str, Any]'''

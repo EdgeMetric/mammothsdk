@@ -65,6 +65,10 @@ edits_target_commands:
 - dashboard.canvas.restore
 - dashboard.canvas.save
 - dashboard.chat.edit
+- dashboard.collection.add
+- dashboard.collection.delete
+- dashboard.collection.remove
+- dashboard.collection.update
 - dashboard.context.apply
 - dashboard.context.delete
 - dashboard.context.update
