@@ -75,3 +75,11 @@ def test_oauth_client_delete_and_revoke_grant_each_describe_themselves() -> None
     assert "Revoke every grant to an OAuth client" in _help(
         "workspace", "oauth-client", "revoke-grant"
     )
+
+
+def test_no_command_in_the_tree_shows_the_dispatcher_placeholder_as_its_help() -> None:
+    placeholder = "Dispatch a generated dashboard command"
+    commands = [str(r["command_path"]).split() for r in load_commands()]
+    assert commands
+    offenders = [" ".join(words) for words in commands if placeholder in _help(*words)]
+    assert offenders == []
