@@ -106,7 +106,9 @@ PENDING_SERVER_RELEASE.update(
         )
     }
 )
-PENDING_SERVER_RELEASE["POST /dashboards/{}/figures"] = "origin/feat/agent-cli-surface-w8@15c7fe863f"
+PENDING_SERVER_RELEASE["POST /dashboards/{}/figures"] = (
+    "origin/feat/agent-cli-surface-w8@15c7fe863f"
+)
 PENDING_SERVER_RELEASE["POST /dashboards/v3/render/svg"] = (
     "origin/fix/dataview-data-total-and-raw@7d0ffc0b67"
 )

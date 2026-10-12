@@ -344,7 +344,7 @@ def _choose_by_keypress() -> str:
         typer.echo("Choose: ", nl=False, err=True)
         try:
             key = typer.getchar()
-        except KeyboardInterrupt, EOFError:
+        except (KeyboardInterrupt, EOFError):
             typer.echo("", err=True)
             raise (_bad_choice(key) if key.strip() else _no_choice()) from None
         if key in _METHOD_KEYS:
