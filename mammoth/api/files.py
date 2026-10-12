@@ -470,7 +470,7 @@ class FilesAPI:
         file_id: int,
         tables: _list[dict[str, Any]],
         delete_file_after_extract: bool = True,
-    ) -> ObjectJobSchema:
+    ) -> dict[str, Any]:
         """Create datasets from accepted sheet and table reads of a multi-sheet file.
 
         Args:
@@ -480,7 +480,9 @@ class FilesAPI:
             delete_file_after_extract: Delete the file once its datasets are created.
 
         Returns:
-            ObjectJobSchema with job information, after the job completes.
+            Dict with the finished ``job_id`` and ``status``, and ``resource_ids``: the
+            resource ids of the files the job created, one per new dataset (not the
+            dataset ids; each dataset starts processing and becomes ready on its own).
         """
         ws = self._ws()
         proj = self._proj()
@@ -490,6 +492,11 @@ class FilesAPI:
             f"/workspaces/{ws}/projects/{proj}/files/{file_id}/multi-sheet-extraction",
             json=body,
         )
-        completed = await self._client._wait_if_job(response)
-        merged = {**response, **completed} if isinstance(completed, dict) else response
-        return ObjectJobSchema(**merged)
+        # A failed job raises here, so a return is a finished one; the wait hands back
+        # the job's own result, which names the files it created.
+        outcome = await self._client._wait_if_job(response)
+        return {
+            "job_id": (response.get("job") or {}).get("id"),
+            "status": "success",
+            "resource_ids": list(outcome.get("resource_ids") or []),
+        }

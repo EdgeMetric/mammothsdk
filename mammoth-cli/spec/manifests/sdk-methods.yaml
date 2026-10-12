@@ -5943,7 +5943,7 @@ methods:
 - sdk_symbol: mammoth.api.files.FilesAPI.create_datasets_from_multi_sheet
   implementation_origin: mammoth.api.files.FilesAPI.create_datasets_from_multi_sheet
   signature: 'create_datasets_from_multi_sheet(self, file_id: ''int'', tables: ''_list[dict[str, Any]]'',
-    delete_file_after_extract: ''bool'' = True) -> ''ObjectJobSchema'''
+    delete_file_after_extract: ''bool'' = True) -> ''dict[str, Any]'''
   openapi_operation_ids: []
   canonical_command: file.multi-sheet-extract
   alias_of: null

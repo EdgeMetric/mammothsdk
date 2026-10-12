@@ -1259,6 +1259,7 @@ def view_data_get(invocation: Invocation) -> HandlerResult:
     if document.get("sequence") is None:
         # The view's row count is its latest step's; a read at an earlier step differs.
         data = _with_paging_total(data, meta)
+        data = _close_last_page(data, kwargs.get("offset"))
     return data, meta
 
 
@@ -1273,6 +1274,29 @@ def _with_paging_total(data: Any, meta: dict[str, Any]) -> Any:
     ):
         return {**data, "paging": {**paging, "total": row_count}}
     return data
+
+
+def _close_last_page(data: Any, offset: Any) -> Any:
+    """Clear ``truncated`` when the rows read reach the view's last row.
+
+    A page that came back full is only a guess that more rows exist; the view's
+    row count (``paging.total``) settles it. ``offset`` is 1-based, so a page
+    holding rows ``offset`` .. ``offset + rows_returned - 1`` is the last one when
+    that reaches the total.
+    """
+    if not isinstance(data, dict) or not data.get("truncated"):
+        return data
+    paging = data.get("paging")
+    total = paging.get("total") if isinstance(paging, dict) else None
+    returned = data.get("rows_returned")
+    if not isinstance(total, int) or not isinstance(returned, int) or total <= 0:
+        return data
+    first_row = offset if isinstance(offset, int) else 1
+    if first_row - 1 + returned < total:
+        return data
+    closed = {**data, "truncated": False}
+    closed.pop("more_rows_may_exist", None)
+    return closed
 
 
 def _explain_swapped_ids(service: Any, error: CliError, view_id: int, dataset_id: int) -> None:

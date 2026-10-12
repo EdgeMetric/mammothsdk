@@ -1177,12 +1177,83 @@ def _dry_run(handler: Handler, invocation: Invocation) -> tuple[Any, dict[str, A
         return report, {"profile": invocation.profile, "project_id": resolved_project(invocation)}
 
 
+#: One-line help for commands that share the generic ``generated_dashboard`` handler, whose
+#: docstring describes the dispatch, not the command.
+_GENERATED_SUMMARIES = {
+    "auth.connected-apps.list": "List the apps connected to your account; each id is a grant id.",
+    "auth.connected-apps.revoke": (
+        "Disconnect one connected app from your account. Grant id is positional."
+    ),
+    "collection.active-job": (
+        "Show the collection's upload job still in flight. Collection id is positional."
+    ),
+    "collection.activity": "Show who opened a collection and which of its dashboards get opened.",
+    "collection.create": "Create a collection in the active project. Name comes from '--input'.",
+    "collection.dashboards.add": (
+        "Add dashboards to a collection, which gives its members access to them."
+    ),
+    "collection.dashboards.remove": (
+        "Take one dashboard out of a collection; the dashboard is kept."
+    ),
+    "collection.delete": "Delete a collection and end its members' access through it.",
+    "collection.files.upload": (
+        "Upload local files to refresh a collection's data. Paths come from '--input'."
+    ),
+    "collection.for-dashboard": (
+        "List the collections that hold a dashboard. Dashboard id is positional."
+    ),
+    "collection.get": "Get one collection with its dashboards, members and refresh setup.",
+    "collection.get-by-url": "Open a collection by its share url token, as a viewer does.",
+    "collection.job": "Poll one collection upload job. Collection id and job id are positional.",
+    "collection.list": "List the collections you manage or were shared.",
+    "collection.members.remove": "Take one person off a collection by email.",
+    "collection.pipeline-changes": "Show the progress of a collection's data refresh.",
+    "collection.share": "Give people access to a collection by email and send them the invite.",
+    "collection.update": "Change a collection's name, description, dashboard order or tab labels.",
+    "dashboard.attachment-create": (
+        "Upload a local workbook as a chat attachment. File path is positional."
+    ),
+    "dashboard.engagement.get": (
+        "Show who has opened a dashboard: reach, depth, devices and actions."
+    ),
+    "dashboard.engagement.person": (
+        "Show one person's recent visits to a dashboard. Dashboard id and user id are positional."
+    ),
+    "dashboard.engagement.remind": (
+        "Email the share link again to people who have not opened a dashboard."
+    ),
+    "dashboard.own-data.accept": (
+        "Apply the proposed 'use my data' version to a board; this changes it."
+    ),
+    "dashboard.own-data.dismiss": (
+        "Drop a board's pending 'use my data' run; the board is not changed."
+    ),
+    "dashboard.own-data.preview": (
+        "Preview a board on your own data as proposed, without saving it."
+    ),
+    "dashboard.own-data.start": "Fit a template board to your own data and wait for the proposal.",
+    "dashboard.own-data.status": (
+        "Show a board's pending 'use my data' run; status null means none."
+    ),
+    "workspace.current": "Show the workspace this token acts in, and the project it is fenced to.",
+    "workspace.oauth-client.delete": (
+        "Delete an OAuth client registration; its grants stop working."
+    ),
+    "workspace.oauth-client.list": "List the workspace's registered OAuth clients (no secrets).",
+    "workspace.oauth-client.revoke-grant": (
+        "Revoke every grant to an OAuth client; users must authorise it again."
+    ),
+}
+
+
 def live_command_summary(command_id: str) -> str | None:
     """The backing handler's docstring first line, the lead of a command's help.
 
     Reading it imports the handler's module, so a group listing takes it from
     the generated index (:func:`_indexed_summary`) instead.
     """
+    if command_id in _GENERATED_SUMMARIES:
+        return _GENERATED_SUMMARIES[command_id]
     handler = HANDLERS.get(command_id) or BESPOKE.get(command_id)
     doc = inspect.getdoc(handler) if handler is not None else None
     if not doc:

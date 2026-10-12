@@ -20,6 +20,7 @@ class _RecordingServer(HTTPServer):
     def __init__(self) -> None:
         super().__init__(("127.0.0.1", 0), _Handler)
         self.requests: list[dict[str, object]] = []
+        self.answers: dict[str, object] = {}  # path -> body, for routes a test scripts
 
 
 class _Handler(BaseHTTPRequestHandler):
@@ -40,7 +41,11 @@ class _Handler(BaseHTTPRequestHandler):
         self.send_response(200)
         self.send_header("Content-Type", "application/json")
         self.end_headers()
-        self.wfile.write(b'{"ok": true}')
+        self.wfile.write(
+            json.dumps(
+                self.server.answers.get(parts.path.removeprefix("/api/v2"), {"ok": True})
+            ).encode()
+        )
 
     do_GET = do_POST = do_PUT = do_PATCH = do_DELETE = _answer  # noqa: N815
 
@@ -147,3 +152,17 @@ async def test_multi_sheet_extract_posts_the_tables_and_the_delete_flag(
         "query": {},
         "body": {"tables": [table], "delete_file_after_extract": False},
     }
+
+
+async def test_multi_sheet_extract_returns_the_ids_the_finished_job_created(
+    server: _RecordingServer, client: MammothClient
+) -> None:
+    table = {"sheet_name": "Sales 2", "dataset_name": "Sales 2", "structure_map": {"h": 1}}
+    server.answers["/workspaces/1/projects/25654/files/9/multi-sheet-extraction"] = {
+        "job": {"id": 7, "status": "processing", "response": {}}
+    }
+    server.answers["/jobs/7"] = {
+        "job": {"id": 7, "status": "success", "response": {"resource_ids": [101, 102]}}
+    }
+    result = await client.files.create_datasets_from_multi_sheet(9, [table])
+    assert result == {"job_id": 7, "status": "success", "resource_ids": [101, 102]}
