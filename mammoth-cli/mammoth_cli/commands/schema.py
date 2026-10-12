@@ -1267,15 +1267,9 @@ def _command_vocabulary_tokens() -> frozenset[str]:
     return frozenset(vocabulary)
 
 
-def _compact_contract(record: dict[str, Any]) -> dict[str, Any]:
-    """Return the bounded, honest contract used by discovery clients.
-
-    The manifest is authoritative for these values.  ``None`` is retained for
-    fields the manifest does not prove; discovery must not turn a missing proof
-    into a promise about backend behavior.
-    """
+def command_scope(record: dict[str, Any]) -> str:
+    """The one scope classifier; ``capability list`` and ``schema list`` both use it."""
     command_id = str(record["command_id"])
-    resolved = resolve_command_contract(command_id)
     family = str(record.get("command_path", "")).split()[0]
     operation_hints = _operation_hints_by_command().get(command_id, "")
     search_text = f"{command_id} {family} {operation_hints}".casefold()
@@ -1326,6 +1320,19 @@ def _compact_contract(record: dict[str, Any]) -> dict[str, Any]:
         scope = "local"
     else:
         scope = "profile"
+    return scope
+
+
+def _compact_contract(record: dict[str, Any]) -> dict[str, Any]:
+    """Return the bounded, honest contract used by discovery clients.
+
+    The manifest is authoritative for these values.  ``None`` is retained for
+    fields the manifest does not prove; discovery must not turn a missing proof
+    into a promise about backend behavior.
+    """
+    command_id = str(record["command_id"])
+    resolved = resolve_command_contract(command_id)
+    scope = command_scope(record)
 
     # Policy values exposed by discovery come from the same resolved contract
     # consumed by admission/binding.  The manifest fallback only applies to
