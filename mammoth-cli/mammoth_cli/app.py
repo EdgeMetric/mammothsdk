@@ -14,6 +14,7 @@ positionals and options are added per family as each handler is implemented.
 
 from __future__ import annotations
 
+import importlib
 import inspect
 import json
 import re
@@ -1178,7 +1179,8 @@ def _dry_run(handler: Handler, invocation: Invocation) -> tuple[Any, dict[str, A
 
 
 #: One-line help for commands that share the generic ``generated_dashboard`` handler, whose
-#: docstring describes the dispatch, not the command.
+#: docstring describes the dispatch, not the command. A command listed here overrides
+#: the SDK method summary :func:`_sdk_method_summary` gives every other generated command.
 _GENERATED_SUMMARIES = {
     "auth.connected-apps.list": "List the apps connected to your account; each id is a grant id.",
     "auth.connected-apps.revoke": (
@@ -1246,6 +1248,24 @@ _GENERATED_SUMMARIES = {
 }
 
 
+def _sdk_method_summary(command_id: str) -> str:
+    """First docstring line of the SDK method a generated command calls.
+
+    The generic ``generated_dashboard`` handler's own docstring describes the
+    dispatch, so these commands take their help from the SDK method instead.
+    Raises when the manifest has no such method or it has no docstring.
+    """
+    record = command_by_id(command_id)
+    if record is None:
+        raise LookupError(f"{command_id}: no manifest record")
+    module_name, class_name, method_name = str(record["sdk_symbol"]).rsplit(".", 2)
+    method = getattr(getattr(importlib.import_module(module_name), class_name), method_name)
+    doc = inspect.getdoc(method)
+    if not doc:
+        raise LookupError(f"{command_id}: {record['sdk_symbol']} has no docstring")
+    return doc.splitlines()[0].strip().replace("``", "'")
+
+
 def live_command_summary(command_id: str) -> str | None:
     """The backing handler's docstring first line, the lead of a command's help.
 
@@ -1255,6 +1275,8 @@ def live_command_summary(command_id: str) -> str | None:
     if command_id in _GENERATED_SUMMARIES:
         return _GENERATED_SUMMARIES[command_id]
     handler = HANDLERS.get(command_id) or BESPOKE.get(command_id)
+    if getattr(handler, "__name__", None) == "generated_dashboard":
+        return _sdk_method_summary(command_id)
     doc = inspect.getdoc(handler) if handler is not None else None
     if not doc:
         return None

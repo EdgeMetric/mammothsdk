@@ -454,7 +454,7 @@ async def pages_add(self: Any, dashboard_id: int, body: AddPagesSpec) -> AddPage
 
 
 async def query(self: Any, dashboard_id: int, body: AdhocQuerySpec) -> AdhocQueryResponse:
-    """Editor ad-hoc descriptor query."""
+    """Run an ad-hoc descriptor query from the editor."""
     path = "/dashboards/{dashboard_id}/query"
     path = path.replace("{dashboard_id}", str(dashboard_id))
     params = None
@@ -484,7 +484,7 @@ async def template_apply(
 async def chat_history(
     self: Any, dashboard_id: int, sequence: int | None = None
 ) -> mmai_dashboards_v3_schema_ChatHistoryResponse:
-    """Editor chat transcript."""
+    """Get a dashboard's editor chat transcript."""
     path = "/dashboards/{dashboard_id}/chat"
     path = path.replace("{dashboard_id}", str(dashboard_id))
     params = {key: value for key, value in {"sequence": sequence}.items() if value is not None}
@@ -497,7 +497,7 @@ async def chat_history(
 async def chat_edit(
     self: Any, dashboard_id: int, body: ChatEditSpec
 ) -> ObjectJobSchema | JobResponse:
-    """One chat-edit turn."""
+    """Send one chat message that edits the dashboard."""
     path = "/dashboards/{dashboard_id}/chat"
     path = path.replace("{dashboard_id}", str(dashboard_id))
     params = None
@@ -522,7 +522,7 @@ async def suggestion_list(
 async def descriptor_data(
     self: Any, dashboard_id: int, body: DescriptorDataSpec
 ) -> ObjectJobSchema | JobResponse:
-    """Descriptor data — future-request."""
+    """Start an asynchronous fetch of a dashboard's descriptor data."""
     path = "/dashboards/{dashboard_id}/data"
     path = path.replace("{dashboard_id}", str(dashboard_id))
     params = None
@@ -605,7 +605,7 @@ async def v3_generate(
 async def canvas_get(
     self: Any, dashboard_id: int, sequence: int | None = None, rls_preview_value: str | None = None
 ) -> CanvasResponse:
-    """Editor canvas (draft)."""
+    """Get a dashboard's draft canvas, as the editor shows it."""
     path = "/dashboards/{dashboard_id}/canvas"
     path = path.replace("{dashboard_id}", str(dashboard_id))
     params = {
@@ -618,7 +618,7 @@ async def canvas_get(
 
 
 async def canvas_save(self: Any, dashboard_id: int, body: SaveCanvasSpec) -> SaveCanvasResponse:
-    """Save the canvas (append a draft version)."""
+    """Save the draft canvas as a new version."""
     path = "/dashboards/{dashboard_id}/canvas"
     path = path.replace("{dashboard_id}", str(dashboard_id))
     params = None
@@ -627,7 +627,7 @@ async def canvas_save(self: Any, dashboard_id: int, body: SaveCanvasSpec) -> Sav
 
 
 async def published_canvas(self: Any, url: str) -> CanvasResponse:
-    """Published viewer canvas."""
+    """Get a published dashboard's viewer canvas."""
     path = "/dashboards/url/{url}/canvas"
     path = path.replace("{url}", str(url))
     params = None
@@ -730,7 +730,7 @@ async def template_resolve_mapping(
 async def canvas_restore(
     self: Any, dashboard_id: int, body: RestoreCanvasSpec
 ) -> ObjectJobSchema | JobResponse:
-    """Undo / redo / revert the canvas to a target version."""
+    """Undo, redo or revert the draft canvas to a target version."""
     path = "/dashboards/{dashboard_id}/canvas/restore"
     path = path.replace("{dashboard_id}", str(dashboard_id))
     params = None
@@ -782,7 +782,7 @@ async def qa_comment_create(
 async def qa_ask(
     self: Any, dashboard_id: int, session_id: int, body: AskSpec
 ) -> ObjectJobSchema | JobResponse:
-    """One Q&A ask turn (async)."""
+    """Ask one question in a Q&A session; the answer arrives asynchronously."""
     path = "/dashboards/{dashboard_id}/qa/sessions/{session_id}/ask"
     path = path.replace("{dashboard_id}", str(dashboard_id))
     path = path.replace("{session_id}", str(session_id))
@@ -855,7 +855,7 @@ async def qa_session_fork(self: Any, dashboard_id: int, session_id: int) -> Sess
 
 
 async def qa_settings_get(self: Any, dashboard_id: int) -> QaSettingsResponse:
-    """This dashboard's Q&A settings."""
+    """Get this dashboard's Q&A settings."""
     path = "/dashboards/{dashboard_id}/qa/settings"
     path = path.replace("{dashboard_id}", str(dashboard_id))
     params = None
@@ -928,7 +928,7 @@ async def pbix_intent(self: Any, attachment_id: int, body: AttachmentIntentForm)
 
 
 async def context_list(self: Any) -> ContextListResponse:
-    """The workspace's contexts."""
+    """List the workspace's contexts."""
     path = "/dashboards/v3/contexts"
     params = None
     response = await self._client._request_json("GET", path, params=params)
@@ -936,7 +936,7 @@ async def context_list(self: Any) -> ContextListResponse:
 
 
 async def context_create(self: Any, body: ContextSpec) -> ContextResponse:
-    """Create a context."""
+    """Create a workspace context that dashboards can apply."""
     path = "/dashboards/v3/contexts"
     params = None
     response = await self._client._request_json("POST", path, params=params, json=_json_body(body))
@@ -944,7 +944,7 @@ async def context_create(self: Any, body: ContextSpec) -> ContextResponse:
 
 
 async def style_custom_list(self: Any) -> StyleListResponse:
-    """The workspace's custom styles."""
+    """List the workspace's custom styles."""
     path = "/dashboards/v3/styles/custom"
     params = None
     response = await self._client._request_json("GET", path, params=params)
@@ -952,7 +952,7 @@ async def style_custom_list(self: Any) -> StyleListResponse:
 
 
 async def style_custom_create(self: Any, body: CustomStyleSpec) -> StyleResponse:
-    """Create a custom style."""
+    """Create a workspace custom style."""
     path = "/dashboards/v3/styles/custom"
     params = None
     response = await self._client._request_json("POST", path, params=params, json=_json_body(body))
@@ -960,7 +960,7 @@ async def style_custom_create(self: Any, body: CustomStyleSpec) -> StyleResponse
 
 
 async def signature_list(self: Any) -> SignatureListResponse:
-    """The workspace's signatures."""
+    """List the workspace's signatures."""
     path = "/dashboards/v3/signatures"
     params = None
     response = await self._client._request_json("GET", path, params=params)
@@ -968,7 +968,7 @@ async def signature_list(self: Any) -> SignatureListResponse:
 
 
 async def signature_create(self: Any, body: SignatureSpec) -> SignatureResponse:
-    """Create a signature."""
+    """Create a workspace signature."""
     path = "/dashboards/v3/signatures"
     params = None
     response = await self._client._request_json("POST", path, params=params, json=_json_body(body))
@@ -976,7 +976,7 @@ async def signature_create(self: Any, body: SignatureSpec) -> SignatureResponse:
 
 
 async def context_update(self: Any, context_id: str, body: ContextSpec) -> ContextResponse:
-    """Update a context."""
+    """Update a workspace context."""
     path = "/dashboards/v3/contexts/{context_id}"
     path = path.replace("{context_id}", str(context_id))
     params = None
@@ -985,7 +985,7 @@ async def context_update(self: Any, context_id: str, body: ContextSpec) -> Conte
 
 
 async def context_delete(self: Any, context_id: str) -> OkResponse:
-    """Delete a context."""
+    """Delete a workspace context."""
     path = "/dashboards/v3/contexts/{context_id}"
     path = path.replace("{context_id}", str(context_id))
     params = None
@@ -1105,7 +1105,7 @@ async def template_fit(
 
 
 async def style_default_get(self: Any) -> DefaultStyleResponse:
-    """The workspace default style id."""
+    """Get the workspace's default style id."""
     path = "/dashboards/v3/styles/default"
     params = None
     response = await self._client._request_json("GET", path, params=params)
@@ -1121,7 +1121,7 @@ async def style_default_set(self: Any, body: DefaultStyleSpec) -> DefaultStyleRe
 
 
 async def style_token_list(self: Any, id: str) -> StyleTokensResponse:
-    """Full Style bundle by id (stock or custom)."""
+    """Get a full style bundle by id (stock or custom)."""
     path = "/dashboards/v3/styles/tokens"
     params = {key: value for key, value in {"id": id}.items() if value is not None}
     response = await self._client._request_json("GET", path, params=params)
