@@ -9,6 +9,10 @@ permissions:
 on:
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 defaults:
   run:
     working-directory: mammoth-cli
@@ -122,16 +126,18 @@ jobs:
         run: pytest tests -m "not live" -q -p no:cacheprovider
 
   behavior-cross-os:
-    # Keep a small but real behavioral check on the two non-Linux platforms.
-    # The installer jobs prove installation; this one proves the module entry
-    # point, offline discovery data, and invalid-flag contract after editable
-    # installation without duplicating the entire Linux suite.
+    # Keep a small but real behavioral check on Windows. The installer jobs
+    # prove installation; this one proves the module entry point, offline
+    # discovery data, and invalid-flag contract after editable installation
+    # without duplicating the entire Linux suite. macOS is not repeated here:
+    # test-macos already runs the whole suite, including the subprocess tests
+    # of the same entry point and invalid-flag contract, on macos-latest/py3.13.
     name: behavior (${{ matrix.os }}, py3.13)
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        os: [windows-latest, macos-latest]
+        os: [windows-latest]
     env:
       # Keep redirected JSON UTF-8 on Windows, whose legacy console encoding
       # would otherwise encode punctuation as cp1252.
