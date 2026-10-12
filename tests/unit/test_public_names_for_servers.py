@@ -51,6 +51,20 @@ async def test_current_says_none_for_a_token_issued_for_no_resource() -> None:
     assert current.resource is None
 
 
+async def test_current_says_whether_the_token_was_granted_read_only() -> None:
+    answers = iter([{"id": 7, "read_only": True}, {"id": 7}])
+
+    def serve(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json=next(answers))
+
+    async with client_answering(serve) as client:
+        granted = await client.workspaces.current()
+        # A Mammoth that predates the choice says nothing: full access, as before.
+        older = await client.workspaces.current()
+
+    assert (granted.read_only, older.read_only) == (True, False)
+
+
 async def test_a_workspace_set_on_the_client_is_used_without_asking_the_api() -> None:
     seen: list[httpx.Request] = []
 
