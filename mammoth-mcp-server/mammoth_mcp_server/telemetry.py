@@ -13,8 +13,9 @@ event.
 
 import json
 import logging
+import sys
 import time
-from typing import Any
+from typing import Any, TextIO
 
 from mcp.server.context import HandlerResult, ServerRequestContext
 
@@ -46,6 +47,25 @@ class TelemetryFields:
 # The JSON-RPC methods worth an event of their own.
 _INITIALIZE = "initialize"
 _TOOL_CALL = "tools/call"
+
+
+class _EventsHandler(logging.StreamHandler[TextIO]):
+    """The handler `write_events` adds, so a second call can find it."""
+
+
+def write_events() -> None:
+    """Send the events to stdout, one JSON line each.
+
+    Nothing else configures this logger: uvicorn configures only its own, so
+    without this the level stays WARNING and every event is dropped. Calling it
+    again changes nothing.
+    """
+    if any(isinstance(one, _EventsHandler) for one in _log.handlers):
+        return
+    _log.addHandler(_EventsHandler(sys.stdout))
+    _log.setLevel(logging.INFO)
+    # The line is already the whole event; the root logger would add a second copy.
+    _log.propagate = False
 
 
 def record(event: str, **fields: Any) -> None:
