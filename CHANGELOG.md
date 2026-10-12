@@ -13,6 +13,14 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - One telemetry event per handshake and per tool call (tool, client, duration, outcome), and never the arguments a tool was called with.
 - A read-only connection may run only the tools whose own annotation says they read. No token carries the scope yet, so nothing changes for an existing connection.
 
+### Added (mammoth-cli 2.2.73)
+
+- REST API import recipe (connection, ds-config sample, dataset with scheduled refresh, Elasticsearch notes); `schema find` routes REST/API import phrasings; `ds-config create` help names the query shape; scheduling `start_at` rules and dashboard limits documented.
+
+### Changed (mammoth-cli 2.2.72)
+
+- The CLI signs in with the built-in `mammoth-cli` OAuth client when the server publishes none; the per-environment client table is gone, and the login menu always offers Browser and Device.
+
 ### Fixed (mammoth-io 0.8.36)
 
 - The transport log redacts the path segment after `clientapps`, so an app key no longer reaches the log line or its structured `path` field.

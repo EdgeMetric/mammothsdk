@@ -20,6 +20,9 @@ PHRASINGS = [
     ("sum revenue by region without editing the view", "view.data.aggregate"),
     ("join two tables", "view.transform.join"),
     ("remove duplicate rows", "view.transform.discard-duplicates"),
+    ("pull data from a REST API on a schedule", "dataset.create"),
+    ("connect a REST API", "connector.connection.create"),
+    ("elasticsearch", "connector.connection.create"),
 ]
 
 
