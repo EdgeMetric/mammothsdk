@@ -6,6 +6,14 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed (mammoth-io 0.8.39)
+
+- Version bump so mammoth-cli 2.2.75 can require it; no SDK behaviour change.
+
+### Changed (mammoth-cli 2.2.75)
+
+- CLI capability gaps (PR #215): OAuth login uses a login-server prefix and network retry in the device flow, and Ctrl-C/EOF at prompts is handled again. Requires mammoth-io >=0.8.39.
+
 ### Fixed (mammoth-io 0.8.38)
 
 - `mammoth.__version__` now matches the published version. 0.8.37 shipped with `__version__` still at 0.8.36, so it reports itself as `mammoth-io/0.8.36` in the `User-Agent` header. Use 0.8.38.
