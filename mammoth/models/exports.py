@@ -84,6 +84,7 @@ class ExportStatus(str, Enum):
     DELETED = "deleted"
     EXECUTED = "executed"
     EXECUTING = "executing"
+    QUEUED = "queued"
     EDITED = "edited"
     ADDED = "added"
     SUSPENDED = "suspended"

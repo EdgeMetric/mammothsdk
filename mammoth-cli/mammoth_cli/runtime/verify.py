@@ -51,7 +51,8 @@ EXPORT_RAN_OK = "ok"
 EXPORT_RAN_FAILED = "failed"
 EXPORT_SCHEDULED = "scheduled"
 EXPORT_RUNNING = "running"
-_EXPORT_RUNNING_STATUS = "executing"
+#: Statuses of an export that is running, or queued for the run the backend sets up.
+_EXPORT_RUNNING_STATUSES = frozenset({"executing", "queued"})
 _EXPORT_EXECUTED_STATUS = "executed"
 #: ``code`` of the error for an export whose run ended in error.
 CODE_EXPORT_FAILED = "export_failed"
@@ -527,6 +528,22 @@ def export_stamps(listing: Any) -> dict[int, str]:
     }
 
 
+def read_export_ids(service: Any, view_id: int, dataset_id: int) -> set[int]:
+    """The ids of the view's exports; raises when the read fails (see ``wait_export_run``).
+
+    Unlike :func:`read_export_stamps`, a failed read must not look like "no exports": the
+    wait would then take the view's newest, possibly old, export for the one just added.
+    """
+    listing = service.call(
+        _EXPORTS_LIST_SYMBOL,
+        dataview_id=view_id,
+        dataset_id=dataset_id,
+        fields="__min",
+        limit=_EXPORT_LIST_LIMIT,
+    )
+    return set(export_stamps(listing))
+
+
 def read_export_stamps(service: Any, view_id: int, dataset_id: int) -> dict[int, str] | None:
     """The view's exports' stamps, read before a pipeline write (see ``exports_before``).
 
@@ -594,15 +611,15 @@ def export_outcome(item: dict[str, Any]) -> dict[str, Any]:
     """The ``export`` block of a saved export read at ``__full``.
 
     ``status`` is ``ok`` for a run that ended well, ``failed`` for one that ended in
-    error (``error`` then names it), ``running`` while it runs, and ``scheduled`` when no
-    run has started.
+    error (``error`` then names it), ``running`` while it runs or is queued, and
+    ``scheduled`` when no run has started.
     """
     failed = bool(item.get("error_info"))
     if failed:
         status = EXPORT_RAN_FAILED
     elif item.get("status") == _EXPORT_EXECUTED_STATUS:
         status = EXPORT_RAN_OK
-    elif item.get("status") == _EXPORT_RUNNING_STATUS:
+    elif item.get("status") in _EXPORT_RUNNING_STATUSES:
         status = EXPORT_RUNNING
     else:
         status = EXPORT_SCHEDULED

@@ -54,7 +54,7 @@ from mammoth_cli.runtime.confirm import (
 from mammoth_cli.runtime.dryrun import DryRunStop
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.session import open_service, require_project
-from mammoth_cli.runtime.verify import export_wait_budget, read_export_stamps, wait_export_run
+from mammoth_cli.runtime.verify import export_wait_budget, read_export_ids, wait_export_run
 from mammoth_cli.services import conditional_format as cf_rules
 from mammoth_cli.services import read_queries, text_dates, view_analysis
 from mammoth_cli.services.append_blank_columns import (
@@ -4354,9 +4354,7 @@ def view_export_specialized(invocation: Invocation) -> HandlerResult:
             )
         waits_for_run = _waits_for_export_run(invocation.command_id, kwargs)
         known_exports = (
-            set(read_export_stamps(service, dataview_id, dataset_id) or {})
-            if waits_for_run
-            else set()
+            read_export_ids(service, dataview_id, dataset_id) if waits_for_run else set()
         )
         try:
             data = service.call_view(dataview_id, method, dataset_id=dataset_id, **kwargs)
