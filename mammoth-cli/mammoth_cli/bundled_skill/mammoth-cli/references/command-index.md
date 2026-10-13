@@ -1,12 +1,12 @@
 # Published CLI command catalog
 
-This generated catalog is a lookup table for every command in the published CLI manifest, currently 747; each entry carries its release status line. It is a command-contract index, not an assertion that every backend/OpenAPI operation has a CLI binding. For an exact local CLI contract, run `mammoth schema get COMMAND_ID`; `mammoth capability list` is an API-binding inventory and can omit typed/local CLI routes. For focused workflows, read the [recipes index](recipes/index.md). Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
+This generated catalog is a lookup table for every command in the published CLI manifest, currently 752; each entry carries its release status line. It is a command-contract index, not an assertion that every backend/OpenAPI operation has a CLI binding. For an exact local CLI contract, run `mammoth schema get COMMAND_ID`; `mammoth capability list` is an API-binding inventory and can omit typed/local CLI routes. For focused workflows, read the [recipes index](recipes/index.md). Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
 Load only the applicable domain file:
 
 - [activity](commands/activity.md) — 2 published commands
 - [addon](commands/addon.md) — 7 published commands
-- [agent](commands/agent.md) — 51 published commands
+- [agent](commands/agent.md) — 54 published commands
 - [ai](commands/ai.md) — 5 published commands
 - [annotation](commands/annotation.md) — 5 published commands
 - [auth](commands/auth.md) — 5 published commands
@@ -20,8 +20,8 @@ Load only the applicable domain file:
 - [collection](commands/collection.md) — 16 published commands
 - [completion](commands/completion.md) — 2 published commands
 - [config](commands/config.md) — 4 published commands
-- [connector](commands/connector.md) — 22 published commands
-- [context](commands/context.md) — 3 published commands
+- [connector](commands/connector.md) — 23 published commands
+- [context](commands/context.md) — 4 published commands
 - [dashboard-qa](commands/dashboard-qa.md) — 14 published commands
 - [dashboard-template](commands/dashboard-template.md) — 12 published commands
 - [dashboard-style](commands/dashboard-style.md) — 10 published commands

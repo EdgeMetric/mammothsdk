@@ -76,7 +76,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth agent chat`. Exact input fields: `mammoth schema get agent.chat`.
 
-Example: `mammoth agent chat --input '{"message": "Summarize revenue by region", "scope": {"sample_key": "Status"}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth agent chat --input '{"message": "Summarize revenue by region", "scope": {"type": "workspace", "workspace_id": 123}, "client_context": {"project_id": 456}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `AgentChatResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
@@ -232,6 +232,26 @@ Result: `AgentMessageSetRequestKindResult`; mutation `benign_mutation`, confirma
 
 Status on release: untried; no live run recorded.
 
+### `agent.plan.approve`
+
+Run: `mammoth agent plan approve`. Exact input fields: `mammoth schema get agent.plan.approve`.
+
+Example: `mammoth agent plan approve resource-123`. Illustrative only: append `--yes` after observing an owned target.
+
+Result: `AgentPlanApproveResult`; mutation `benign_mutation`, confirmation `prompt_or_yes`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `agent.plan.discard`
+
+Run: `mammoth agent plan discard`. Exact input fields: `mammoth schema get agent.plan.discard`.
+
+Example: `mammoth agent plan discard resource-123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `AgentPlanDiscardResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
 ### `agent.plan.edit-proposal`
 
 Run: `mammoth agent plan edit-proposal`. Exact input fields: `mammoth schema get agent.plan.edit-proposal`.
@@ -239,6 +259,16 @@ Run: `mammoth agent plan edit-proposal`. Exact input fields: `mammoth schema get
 Example: `mammoth agent plan edit-proposal --input '{"plan_id": "resource-123", "action": "sample", "key": "Status"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `AgentPlanEditProposalResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `agent.plan.skip`
+
+Run: `mammoth agent plan skip`. Exact input fields: `mammoth schema get agent.plan.skip`.
+
+Example: `mammoth agent plan skip resource-123 1`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `AgentPlanSkipResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
 Status on release: untried; no live run recorded.
 

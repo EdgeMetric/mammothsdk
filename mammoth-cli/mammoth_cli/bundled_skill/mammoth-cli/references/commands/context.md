@@ -31,3 +31,13 @@ Example: `mammoth context project use 123`. Placeholders are illustrative; resol
 Result: `ContextProjectUseResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
 Status on release: untried; no live run recorded.
+
+### `context.show`
+
+Run: `mammoth context show`. Exact input fields: `mammoth schema get context.show`.
+
+Example: `mammoth context show`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `ContextShowResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.

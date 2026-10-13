@@ -114,6 +114,16 @@ Result: `ConnectorConnectionListResult`; mutation `read`, confirmation `none`, w
 
 Status on release: observed blocker — server_error: see sweep report. Re-check before relying on it.
 
+### `connector.connection.query`
+
+Run: `mammoth connector connection query`. Exact input fields: `mammoth schema get connector.connection.query`.
+
+Example: `mammoth connector connection query sample sample --input '{"query": "SELECT region, SUM(revenue) FROM data GROUP BY region"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `ConnectorConnectionQueryResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
 ### `connector.connection.update`
 
 Run: `mammoth connector connection update`. Exact input fields: `mammoth schema get connector.connection.update`.
