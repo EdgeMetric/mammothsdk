@@ -1,15 +1,20 @@
 name: CLI GitHub Release
 
-# Every `cli-v*` tag gets a GitHub Release carrying the installers and SHA256SUMS.
+# Manual only (never runs on a PR or a push): after the PyPI upload, run
+#   gh workflow run cli-github-release.yml -f tag=cli-vX.Y.Z
+# It gives that tag a GitHub Release carrying the installers and SHA256SUMS.
 # This workflow never publishes to PyPI: PyPI is published locally (RELEASING.md),
 # and cli-release.yml stays a manual dispatch.
 on:
-  push:
-    tags:
-      - "cli-v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "CLI tag to release, e.g. cli-v2.2.78"
+        required: true
+        type: string
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   github-release:
@@ -19,6 +24,8 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: ${{ inputs.tag }}
 
       - name: Assemble release assets
         run: |
@@ -33,7 +40,7 @@ jobs:
       - name: Create the release, or add the assets to the existing one
         env:
           GH_TOKEN: ${{ github.token }}
-          TAG: ${{ github.ref_name }}
+          TAG: ${{ inputs.tag }}
         run: |
           set -eu
           version="${TAG#cli-v}"
