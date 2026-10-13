@@ -2129,6 +2129,7 @@ _BATCH_OPS = (
 #: A sort is the view's row order (a display setting), not a pipeline task.
 _BATCH_SORT_OP = "sort"
 _ADD_TASKS_METHOD = "add_tasks"
+_BATCH_LIMIT_OP = "limit-rows"
 _SORT_METHOD = "sort_rows"
 _TASK_DELETE_SYMBOL = "mammoth.api.pipeline.PipelineAPI.delete_task"
 CODE_BATCH_STEP_FAILED = "batch_step_failed"
@@ -2205,6 +2206,9 @@ def _build_batch(
             if spec.required:
                 _require_field(step["input"], spec.name)
         kwargs = _bind_transform_inputs(invocation, step["input"], command_id)
+        if op == _BATCH_LIMIT_OP and plan.sorts and not kwargs.get("order_by"):
+            # A sort is only a display order; carry it so the limit keeps the rows it implies.
+            kwargs["order_by"] = plan.sorts[-1]["order_by"]
         method = str((command_by_id(command_id) or {})["sdk_symbol"]).rsplit(".", 1)[-1]
         try:
             built = service.call_view(
