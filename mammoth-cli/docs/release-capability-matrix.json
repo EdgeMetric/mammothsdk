@@ -1073,6 +1073,7 @@
     "agent.team.set",
     "billing.invoice.list",
     "calc",
+    "connector.connection.query",
     "dashboard.attachment-create",
     "dataset.column-stats",
     "dataset.find",
@@ -9316,7 +9317,10 @@
       "schema_id": "agent.chat",
       "sdk_symbol": "mammoth.api.agents.AgentsAPI.chat",
       "bound_commands": [
-        "agent.chat"
+        "agent.chat",
+        "agent.plan.approve",
+        "agent.plan.discard",
+        "agent.plan.skip"
       ],
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
@@ -12625,6 +12629,7 @@
         "view.transform.add-column",
         "view.transform.add-sql",
         "view.transform.ai",
+        "view.transform.batch",
         "view.transform.bulk-replace",
         "view.transform.combine-columns",
         "view.transform.convert-type",

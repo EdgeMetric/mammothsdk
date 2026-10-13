@@ -46,6 +46,20 @@ _PROTECTED_INPUT_PATH = "/private/path/request.json"
 # second id, an optional-but-central input field, or two views to compare.
 _FIXED_EXAMPLES: dict[str, tuple[tuple[str, ...], dict[str, Any]]] = {
     "view.optimize": (("123",), {}),
+    "view.transform.batch": (
+        ("123",),
+        {
+            "steps": [
+                {
+                    "op": "filter",
+                    "input": {"condition": {"column": "Cost", "operator": "GTE", "value": 20}},
+                },
+                {"op": "sort", "input": {"order_by": [["Cost", "DESC"]]}},
+                {"op": "limit-rows", "input": {"n": 2}},
+            ],
+            "dataset_id": 456,
+        },
+    ),
     "view.transform.first-name": (
         ("123",),
         {"column": "Name", "new_column": "First name", "dataset_id": 456},
@@ -72,6 +86,14 @@ _FIXED_EXAMPLES: dict[str, tuple[tuple[str, ...], dict[str, Any]]] = {
         {"card": "Region", "output_path": "card.svg", "style_id": None},
     ),
     "project.check": (("123", "456"), {}),
+    "agent.chat": (
+        (),
+        {
+            "message": "Summarize revenue by region",
+            "scope": {"type": "workspace", "workspace_id": 123},
+            "client_context": {"project_id": 456},
+        },
+    ),
     "view.data.profile": (("123",), {"target": "Churn"}),
     "dataset.definition.add": (
         ("123",),
@@ -186,7 +208,8 @@ _COMMAND_DISCOVERY_PURPOSES = {
     "view.export.csv": "export download local CSV file artifact",
     "view.export.dataset": (
         "send copy branch out create save the result rows into a new project from an "
-        "existing append appending union stack monthly rows across datasets views"
+        "existing append appending union stack monthly rows across datasets views "
+        "vertically vertical below on top of stacked union all"
     ),
     # One entry per typed export destination, in the way users name the
     # destination rather than Mammoth's route spelling (which a two-word
@@ -322,6 +345,9 @@ _COMMAND_DISCOVERY_PURPOSES = {
     "view.transform.ai": (
         "ai llm prompt generative classify categorize categorise sentiment enrich "
         "summarize summarise rows into a new column"
+    ),
+    "view.transform.batch": (
+        "batch several transforms together in one call one pipeline run chain steps at once"
     ),
     "view.transform.bulk-replace": (
         "find replace strip characters text values mapping standardize standardise "
@@ -574,9 +600,9 @@ _COMMAND_DISCOVERY_PURPOSES = {
     "browse.resource": "open one resource by type and id properties of a dataset view folder",
     "browse.resources.bulk": "fetch many resources by type and id in one request batch lookup",
     "agent.turn.cancel": "stop the agent now cancel this turn halt what the assistant is doing",
-    "agent.run.retry": ("retry the failed run, try a second time, rerun after a failure or a stop"),
+    "agent.run.retry": "retry the failed run, try a second time, rerun after a failure or a stop",
     "agent.run.instance.list": "which agents sub agents helpers workers ran in this run instances",
-    "agent.run.instance.messages": ("which messages this agent of the run sent and received"),
+    "agent.run.instance.messages": "which messages this agent of the run sent and received",
     "agent.run.instance.transcript": (
         "show the full transcript of one agent in the run model messages"
     ),
@@ -586,6 +612,9 @@ _COMMAND_DISCOVERY_PURPOSES = {
     "agent.message.set-request-kind": (
         "wrong kind of request answered, correct the kind: ask insight build automate fix"
     ),
+    "agent.plan.approve": ("approve the agent plan go ahead and run the plan the agent proposed"),
+    "agent.plan.skip": "skip one step of the agent plan do not run that proposed step",
+    "agent.plan.discard": "discard the agent plan reject everything the agent proposed",
     "agent.plan.edit-proposal": (
         "rename or remove a step in the plan proposal waiting workflow edit the plan"
     ),
@@ -597,7 +626,7 @@ _COMMAND_DISCOVERY_PURPOSES = {
     "dashboard.engagement.get": (
         "who opened my dashboard, how long readers read each page, reach engagement people visits"
     ),
-    "dashboard.engagement.person": ("visits by one person to my dashboard, when and how long read"),
+    "dashboard.engagement.person": "visits by one person to my dashboard, when and how long read",
     "dashboard.engagement.remind": (
         "remind people to look at the dashboard, nudge by email readers who skipped the board"
     ),
@@ -622,7 +651,7 @@ _COMMAND_DISCOVERY_PURPOSES = {
     "collection.files.upload": "upload a file to refresh the data behind a collection",
     "collection.active-job": "resume an interrupted upload to a collection, running now",
     "collection.job": "check the progress of one upload job for a collection by job id",
-    "dashboard.attachment-create": ("attach a report file to the chat for the agent to read"),
+    "dashboard.attachment-create": "attach a report file to the chat for the agent to read",
     "file.multi-sheet-preview": (
         "preview one sheet of a multi-sheet excel file before making datasets"
     ),
@@ -719,7 +748,8 @@ _COMMAND_DISCOVERY_PURPOSES = {
     "dataset.create": (
         "url web link fetch retrieve pull import public website endpoint api json data weburl "
         "file csv from an SFTP server folder cloud storage connection connector as a new dataset "
-        "REST API Elasticsearch generic_rest_api on a schedule refresh recurring"
+        "REST API Elasticsearch generic_rest_api on a schedule refresh recurring "
+        "database query SQL select table Postgres MySQL SQL Server rest api connector"
     ),
     "dashboard.v3.generate": (
         "create build make new generate dashboard board report from a view description "
@@ -1991,7 +2021,7 @@ def brief_schema(entry: dict[str, Any]) -> dict[str, Any]:
             for field in accepted
             if isinstance(field, dict)
         ]
-    brief["full"] = f"mammoth schema get {entry['command_id']} --input '{{\"full\": true}}'"
+    brief["full"] = f"mammoth schema get {entry['command_id']} --full"
     return brief
 
 

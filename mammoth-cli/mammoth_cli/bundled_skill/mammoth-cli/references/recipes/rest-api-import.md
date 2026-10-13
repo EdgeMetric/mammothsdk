@@ -31,6 +31,9 @@ does not include this connector (or its paid addon is not active).
 
 ## 2. Try the data-source config (creates no dataset)
 
+`mammoth connector connection query generic_rest_api CONNECTION_KEY --input
+sample.json` runs the same sample read-only (no `--yes`, nothing saved).
+
 `query` is a **JSON string** (not an object) of the data-source config:
 `endpoint_path`, `http_method` (`GET|POST`), `request_body`, `query_params`,
 `data_root_path` (JSONPath to the records; `[*]` is supported), `pagination`,

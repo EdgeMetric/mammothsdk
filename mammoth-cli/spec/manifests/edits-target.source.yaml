@@ -21,7 +21,10 @@ edits_target_commands:
 - agent.memory.add
 - agent.memory.remove
 - agent.message.set-request-kind
+- agent.plan.approve
+- agent.plan.discard
 - agent.plan.edit-proposal
+- agent.plan.skip
 - agent.projects.clear
 - agent.projects.set
 - agent.publish
@@ -241,6 +244,7 @@ edits_target_commands:
 - view.transform.add-column
 - view.transform.add-sql
 - view.transform.ai
+- view.transform.batch
 - view.transform.bulk-replace
 - view.transform.combine-columns
 - view.transform.convert-type

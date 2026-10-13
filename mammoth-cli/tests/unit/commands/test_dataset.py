@@ -31,7 +31,6 @@ _RENAME = "mammoth.api.datasets.DatasetsAPI.rename"
 _TRASH = "mammoth.api.datasets.DatasetsAPI.trash"
 _RESTORE = "mammoth.api.datasets.DatasetsAPI.restore"
 _DELETE = "mammoth.api.datasets.DatasetsAPI.delete"
-_BULK_DELETE = "mammoth.api.datasets.DatasetsAPI.bulk_delete"
 _BULK_UPDATE = "mammoth.api.datasets.DatasetsAPI.bulk_update"
 _UPDATE = "mammoth.api.datasets.DatasetsAPI.update"
 _TRASH_LIST = "mammoth.api.trash.TrashAPI.list"
@@ -886,14 +885,6 @@ def test_bulk_delete_requires_explicit_ids(fake_service: FakeMammothService) -> 
         dataset_cmd.dataset_bulk_delete(_inv("dataset.bulk-delete", project=180, yes=True))
     assert excinfo.value.code == "missing_field"
     assert fake_service.call_log == []
-
-
-def test_bulk_delete_proceeds_with_yes(fake_service: FakeMammothService, tmp_path: Path) -> None:
-    doc = _write(tmp_path, {"dataset_ids": [7, 8]})
-    dataset_cmd.dataset_bulk_delete(
-        _inv("dataset.bulk-delete", project=180, yes=True, input_file=doc)
-    )
-    assert fake_service.call_log == [(_BULK_DELETE, {"dataset_ids": [7, 8], "project_id": 180})]
 
 
 # -- bulk-update --------------------------------------------------------

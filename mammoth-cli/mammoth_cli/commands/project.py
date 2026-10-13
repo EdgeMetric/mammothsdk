@@ -19,6 +19,7 @@ from typing import Any
 
 from mammoth_cli.context import profiles
 from mammoth_cli.errors.envelope import (
+    CODE_AUTHORIZATION_REQUIRED,
     CODE_INVALID_ARGUMENT,
     CODE_MISSING_ARGUMENT,
     CODE_MISSING_FIELD,
@@ -292,7 +293,44 @@ def project_create(invocation: Invocation) -> HandlerResult:
             kwargs[field] = document[field]
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), **kwargs)
+        _require_project_access(service, data)
     return data, _meta(invocation, auth.workspace_id, resolved_project(invocation))
+
+
+#: A cheap read inside a project, used to see whether the caller can open it.
+_PROJECT_PROBE_SYMBOL = "mammoth.api.datasets.DatasetsAPI.list"
+
+
+def _require_project_access(service: Any, created: Any) -> None:
+    """Fail loudly when the token that made a project cannot open it.
+
+    A token limited to one project can create another but is refused in it, so
+    the new project would sit empty and unusable. Say so, with the new id, so
+    the caller does not create it again.
+    """
+    project_id = created.get("id") if isinstance(created, dict) else None
+    if not isinstance(project_id, int):
+        return
+    try:
+        service.call(_PROJECT_PROBE_SYMBOL, project_id=project_id, limit=1)
+    except CliError as error:
+        if not error.authorization_required:
+            raise
+        raise CliError(
+            code=CODE_AUTHORIZATION_REQUIRED,
+            message=(
+                f"Project {project_id} was created, but this token cannot open it: "
+                "a token limited to one project is refused in every other project."
+            ),
+            exit_status=error.exit_status,
+            hint=(
+                "Do not create it again. Ask an administrator to delete the empty project "
+                f"{project_id}, and create projects with a token that is not limited to one "
+                "project."
+            ),
+            details={"project_id": project_id},
+            authorization_required=True,
+        ) from error
 
 
 def project_copy(invocation: Invocation) -> HandlerResult:

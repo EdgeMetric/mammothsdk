@@ -363,7 +363,7 @@ commands:
   - CT-CONNECTOR-CONNECTION-DELETE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: Resolve immutable key before confirmation; fixture required.
+  known_restrictions: Resolve immutable key before confirmation.
   reviewed_by: primary
   readback:
     command: connector.connection.list
@@ -414,7 +414,7 @@ commands:
   - CT-CONNECTOR-CONNECTION-GET-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: Redact returned config; fixture required.
+  known_restrictions: Secrets in the returned config are redacted.
   reviewed_by: primary
 - command_id: connector.connection.list
   command_path: connector connection list
@@ -425,10 +425,10 @@ commands:
   positionals:
   - name: connector_key
     type: str
-    required: true
+    required: false
     metavar: CONNECTOR_KEY
     falls_back_to_field: null
-    help: Key identifying the connector.
+    help: Key identifying the connector. Leave it out to list the connections of every connector that has one.
   options: []
   sdk_symbol: mammoth.api.connectors.ConnectorsAPI.list_connections
   sdk_conversion: Call mammoth.api.connectors.ConnectorsAPI.list_connections with validated request fields.
@@ -444,7 +444,7 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth connector connection list CONNECTOR_KEY --help
+  human_example: mammoth connector connection list --help
   agent_example: mammoth connector connection list sample
   unit_tests:
   - UT-CONNECTOR-CONNECTION-LIST
@@ -454,7 +454,59 @@ commands:
   - CT-CONNECTOR-CONNECTION-LIST-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: Dedicated connector fixture required for live acceptance.
+  known_restrictions: Without a connector key the result lists the connections of every connector in
+    'connector active', each row with its connector_key. Secrets in a connection's config are redacted.
+  reviewed_by: primary
+- command_id: connector.connection.query
+  command_path: connector connection query
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - name: connector_key
+    type: str
+    required: true
+    metavar: CONNECTOR_KEY
+    falls_back_to_field: null
+    help: Key identifying the connector.
+  - name: connection_key
+    type: str
+    required: true
+    metavar: CONNECTION_KEY
+    falls_back_to_field: null
+    help: Key identifying the connection.
+  options: []
+  sdk_symbol: mammoth.api.connectors.ConnectorsAPI.query_connection
+  sdk_conversion: Call mammoth.api.connectors.ConnectorsAPI.query_connection with validated request fields.
+  request_model: ConnectorConnectionQueryRequest
+  result_model: ConnectorConnectionQueryResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: single_page
+  acceptance_evidence: live_read_only
+  live_test: LT-CONNECTOR-CONNECTION-QUERY
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth connector connection query CONNECTOR_KEY CONNECTION_KEY --help
+  agent_example: 'mammoth connector connection query sample sample --input ''{"query": "SELECT
+    region, SUM(revenue) FROM data GROUP BY region"}'''
+  unit_tests:
+  - UT-CONNECTOR-CONNECTION-QUERY
+  contract_tests:
+  - CT-CONNECTOR-CONNECTION-QUERY-HUMAN
+  - CT-CONNECTOR-CONNECTION-QUERY-JSON
+  - CT-CONNECTOR-CONNECTION-QUERY-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Runs one SELECT on the connected database and returns a sample of its rows in
+    data_sample (dataschema and rows). It saves no data source configuration and creates no dataset,
+    so it needs no --yes; Mammoth keeps only the short-lived job that carried the request. The CLI
+    refuses anything but a single SELECT or WITH ... SELECT, and the connection's database user decides
+    what the database allows. The sample is limited to the first rows of the result, so add your own
+    LIMIT or aggregate for a large table. To turn a query into a dataset use dataset create.
   reviewed_by: primary
 - command_id: connector.connection.update
   command_path: connector connection update
@@ -502,7 +554,7 @@ commands:
   - CT-CONNECTOR-CONNECTION-UPDATE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: Require --yes if validation contacts the destination; fixture required.
+  known_restrictions: Needs --yes if validation contacts the destination.
   reviewed_by: primary
   readback:
     command: connector.connection.get
@@ -555,7 +607,7 @@ commands:
   - CT-CONNECTOR-DS-CONFIG-CREATE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: Require exactly one source and reject validate && data_sample; fixture required.
+  known_restrictions: Needs exactly one source; validate and data_sample cannot be combined.
   reviewed_by: primary
   readback:
     command: connector.ds-config.list
@@ -614,7 +666,7 @@ commands:
   - CT-CONNECTOR-DS-CONFIG-DELETE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: Resolve immutable key before confirmation; fixture required.
+  known_restrictions: Resolve immutable key before confirmation.
   reviewed_by: primary
   readback:
     command: connector.ds-config.list
@@ -772,7 +824,7 @@ commands:
   - CT-CONNECTOR-DS-CONFIG-LIST-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: Redact nested configuration; fixture required.
+  known_restrictions: Secrets in nested configuration are redacted.
   reviewed_by: primary
 - command_id: connector.ds-config.update
   command_path: connector ds-config update
@@ -954,8 +1006,7 @@ commands:
   - CT-CONNECTOR-QUERY-GENERATE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: Keys are nonempty and cannot contain '/'. Requires a dedicated connector fixture
-    (live_dedicated_external_fixture); never send a live connector query without that fixture.
+  known_restrictions: Keys are nonempty and cannot contain '/'.
   reviewed_by: primary
 - command_id: connector.query.status
   command_path: connector query status

@@ -58,6 +58,7 @@ def test_every_remote_command_has_a_runtime_handler() -> None:
         "context.project.clear",
         "context.project.status",
         "context.project.use",
+        "context.show",
         # Bespoke CLI-local command (typed --check/--version flags); backed by a
         # bespoke Typer callback, not a manifest-leaf HANDLERS entry.
         "upgrade",

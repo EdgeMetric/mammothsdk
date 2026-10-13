@@ -72,8 +72,7 @@ commands:
   - CT-BROWSE-PROJECT-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: 'B04 SERVER_VARIANCE: documented as returning HTTP 500 on some servers; a 5xx response
-    is not server_unavailable.'
+  known_restrictions: Some servers answer this with HTTP 500; that is a server error, not server_unavailable.
   reviewed_by: primary
 - command_id: browse.root
   command_path: browse root

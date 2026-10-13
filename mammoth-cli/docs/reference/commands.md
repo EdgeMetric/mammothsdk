@@ -1,10 +1,10 @@
 # Command reference
 
-Generated from the reviewed command manifests for mammoth-cli 2.2.75.
+Generated from the reviewed command manifests for mammoth-cli 2.2.77.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
-Total commands: 747.
+Total commands: 753.
 
 ## activity
 
@@ -154,7 +154,7 @@ Total commands: 747.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.agents.AgentsAPI.chat`
-- Agent example: `mammoth agent chat --input '{"message": "Summarize revenue by region", "scope": {"sample_key": "Status"}}'`
+- Agent example: `mammoth agent chat --input '{"message": "Summarize revenue by region", "scope": {"type": "workspace", "workspace_id": 123}, "client_context": {"project_id": 456}}'`
 
 ### `mammoth agent create`
 
@@ -319,12 +319,46 @@ Total commands: 747.
 - Backing SDK: `mammoth.api.agents.AgentsAPI.message_set_request_kind`
 - Agent example: `mammoth agent message set-request-kind 'Summarize revenue by region' --input '{"request_kind": "sample"}'`
 
+### `mammoth agent plan approve`
+
+**Arguments**
+
+- `SESSION_ID` (str, required) — ID of the chat session (from agent session list).
+
+- Mutation class: `benign_mutation`
+- Confirmation: `prompt_or_yes`
+- Backing SDK: `mammoth.api.agents.AgentsAPI.plan_approve`
+- Agent example: `mammoth agent plan approve resource-123`
+
+### `mammoth agent plan discard`
+
+**Arguments**
+
+- `SESSION_ID` (str, required) — ID of the chat session (from agent session list).
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.agents.AgentsAPI.plan_discard`
+- Agent example: `mammoth agent plan discard resource-123`
+
 ### `mammoth agent plan edit-proposal`
 
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.agents.AgentsAPI.plan_edit_proposal`
 - Agent example: `mammoth agent plan edit-proposal --input '{"plan_id": "resource-123", "action": "sample", "key": "Status"}'`
+
+### `mammoth agent plan skip`
+
+**Arguments**
+
+- `SESSION_ID` (str, required) — ID of the chat session (from agent session list).
+- `N` (int, required) — Number of the proposed plan step to skip (from agent session messages).
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.agents.AgentsAPI.plan_skip`
+- Agent example: `mammoth agent plan skip resource-123 123`
 
 ### `mammoth agent projects clear`
 
@@ -917,7 +951,7 @@ Total commands: 747.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.batches.BatchesAPI.update`
-- Agent example: `mammoth batch update 123 --input '{"patch": [{"sample_key": "Status"}]}'`
+- Agent example: `mammoth batch update 123 --input '{"patch": {"sample_key": "Status"}}'`
 
 ## billing
 
@@ -1620,12 +1654,24 @@ Total commands: 747.
 
 **Arguments**
 
-- `CONNECTOR_KEY` (str, required) — Key identifying the connector.
+- `CONNECTOR_KEY` (str, optional) — Key identifying the connector. Leave it out to list the connections of every connector that has one.
 
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.connectors.ConnectorsAPI.list_connections`
 - Agent example: `mammoth connector connection list sample`
+
+### `mammoth connector connection query`
+
+**Arguments**
+
+- `CONNECTOR_KEY` (str, required) — Key identifying the connector.
+- `CONNECTION_KEY` (str, required) — Key identifying the connection.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.connectors.ConnectorsAPI.query_connection`
+- Agent example: `mammoth connector connection query sample sample --input '{"query": "SELECT region, SUM(revenue) FROM data GROUP BY region"}'`
 
 ### `mammoth connector connection update`
 
@@ -1782,6 +1828,13 @@ Total commands: 747.
 - Confirmation: `none`
 - Backing SDK: `mammoth_cli.context.project.use`
 - Agent example: `mammoth context project use 123`
+
+### `mammoth context show`
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth_cli.context.show`
+- Agent example: `mammoth context show`
 
 ## dashboard
 
@@ -6767,6 +6820,17 @@ Total commands: 747.
 - Confirmation: `none`
 - Backing SDK: `mammoth.View.gen_ai`
 - Agent example: `mammoth view transform ai 123 --input '{"prompt": "Summarize revenue by region", "context_columns": ["Status"], "dataset_id": 456}'`
+
+### `mammoth view transform batch`
+
+**Arguments**
+
+- `VIEW_ID` (int, required) — ID of the view to act on.
+
+- Mutation class: `reversible_pipeline`
+- Confirmation: `none`
+- Backing SDK: `mammoth.view.View.add_tasks`
+- Agent example: `mammoth view transform batch 123 --input '{"steps": [{"op": "filter", "input": {"condition": {"column": "Cost", "operator": "GTE", "value": 20}}}, {"op": "sort", "input": {"order_by": [["Cost", "DESC"]]}}, {"op": "limit-rows", "input": {"n": 2}}], "dataset_id": 456}'`
 
 ### `mammoth view transform bulk-replace`
 

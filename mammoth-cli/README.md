@@ -214,11 +214,14 @@ mammoth skill install --input '{"agents": ["codex"], "scope": "project"}'
 Use `mammoth skill update` after a CLI upgrade. It refreshes copies owned by the
 installer and reports modified copies instead of silently replacing them.
 
-The CLI checks PyPI for a newer release at most once an hour, after a command
-has finished: every JSON envelope carries `meta.update_available` and human
-output adds one stderr line. In a terminal it also upgrades itself before the
-next command; set `MAMMOTH_AUTO_UPGRADE=0` to stop that, or
-`MAMMOTH_NO_UPDATE_CHECK=1` to turn the check off (see
+The CLI keeps itself up to date. At most once a day, after a command has
+finished and written its output, a detached process asks PyPI and installs a
+newer release through the same package manager as `mammoth upgrade`. It never
+delays or fails a command, prints nothing, and writes any failure to the run
+log. `meta.update_available` (and the stderr line in human output) appears only
+when a newer release exists and will not be installed by itself. Set
+`MAMMOTH_NO_AUTO_UPDATE=1` to keep the check but never install (CI, containers,
+pinned environments), or `MAMMOTH_NO_UPDATE_CHECK=1` to turn the check off (see
 [Upgrade](https://github.com/EdgeMetric/mammothsdk/blob/main/mammoth-cli/docs/upgrade.md)).
 
 ## What you can do

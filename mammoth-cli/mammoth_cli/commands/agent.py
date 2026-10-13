@@ -15,6 +15,7 @@ from dataclasses import replace
 from typing import Any
 
 from mammoth_cli.errors.envelope import (
+    CODE_INVALID_ARGUMENT,
     CODE_MISSING_ARGUMENT,
     CODE_MISSING_FIELD,
     CODE_RESOURCE_NOT_FOUND,
@@ -156,14 +157,25 @@ def _meta(invocation: Invocation, workspace_id: int, project_id: int | None) -> 
     }
 
 
+#: Seconds ``agent chat`` waits for the reply when the input gives no ``wait``.
+CHAT_WAIT_SECONDS = 120
+
+
 def agent_chat(invocation: Invocation) -> HandlerResult:
-    """Send a chat message to an agent. ``message``/``scope`` are required."""
+    """Send a chat message to an agent and wait for its reply.
+
+    ``message``/``scope`` are required. The request key the server needs is made
+    here, never asked of the user. ``wait`` (seconds, default 120) bounds how long
+    the command waits for the reply; ``0`` returns as soon as the turn starts.
+    """
     document = _bound_document(invocation)
     message = _require_field(document, "message")
     scope = _require_field(document, "scope")
     assert document is not None
     kwargs: dict[str, Any] = {"message": message, "scope": scope}
     _forward_optional(document, kwargs, ("agent_key", "session_id", "client_context", "selection"))
+    wait = document.get("wait", CHAT_WAIT_SECONDS)
+    kwargs["wait"] = wait or None
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), **kwargs)
     return data, _meta(invocation, auth.workspace_id, resolved_project(invocation))
@@ -199,7 +211,29 @@ def agent_session_messages(invocation: Invocation) -> HandlerResult:
     session_id = _require_string_positional(invocation, "session id")
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), session_id=session_id)
+    waiting = _awaiting_plan_approval(session_id, data.get("plan"))
+    if waiting is not None:
+        data = {**data, "awaiting_plan_approval": waiting}
     return data, _meta(invocation, auth.workspace_id, resolved_project(invocation))
+
+
+def _awaiting_plan_approval(session_id: str, plan: dict[str, Any] | None) -> dict[str, Any] | None:
+    """The proposed steps and the commands that decide them, or None when none wait."""
+    proposed = [
+        {"n": step["n"], "title": step.get("title")}
+        for step in (plan or {}).get("steps", [])
+        if step.get("status") == "proposed"
+    ]
+    if not proposed:
+        return None
+    return {
+        "plan_id": plan["plan_id"] if plan else None,
+        "proposed_steps": proposed,
+        "approve": f"mammoth agent plan approve {session_id} --yes",
+        "skip": f"mammoth agent plan skip {session_id} N",
+        "discard": f"mammoth agent plan discard {session_id}",
+        "note": "Typing 'Run it' as a chat message does not approve the plan.",
+    }
 
 
 def agent_session_set_visibility(invocation: Invocation) -> HandlerResult:
@@ -361,6 +395,64 @@ def agent_plan_edit_proposal(invocation: Invocation) -> HandlerResult:
     if "name" in document:
         kwargs["name"] = document["name"]
     return _session_call(invocation, **kwargs)
+
+
+def _plan_decision(invocation: Invocation, **extra: Any) -> HandlerResult:
+    """Run an approve, skip or discard on the chat named by the positional session id.
+
+    The chat's agent, scope and project are read from the session; ``--input`` may give
+    ``scope`` to override it and ``wait`` (seconds to wait for the turn, default 120, ``0``
+    returns at once).
+    """
+    _refuse_embedded_run_control()
+    session_id = _require_string_positional(invocation, "session id")
+    document = _bound_document(invocation)
+    with open_service(invocation) as (service, auth):
+        wait = document.get("wait", CHAT_WAIT_SECONDS) or None
+        data = service.call(
+            _symbol(invocation),
+            session_id=session_id,
+            scope=document.get("scope"),
+            wait=wait,
+            **extra,
+        )
+    return data, _meta(invocation, auth.workspace_id, resolved_project(invocation))
+
+
+def agent_plan_approve(invocation: Invocation) -> HandlerResult:
+    """Approve (Run it) the chat's current plan. Prompt or ``--yes`` required."""
+    session_id = _require_string_positional(invocation, "session id")
+    enforce_confirmation(
+        invocation,
+        policy=POLICY_PROMPT_OR_YES,
+        action=f"approve the plan of agent session {session_id} and start the work",
+    )
+    return _plan_decision(invocation)
+
+
+def agent_plan_skip(invocation: Invocation) -> HandlerResult:
+    """Skip one proposed step of the chat's current plan."""
+    if len(invocation.extra_args) < 2:
+        raise CliError(
+            code=CODE_MISSING_ARGUMENT,
+            message="This command requires a step number argument.",
+            exit_status=EXIT_USAGE,
+            hint="Pass the plan step number after the session id.",
+        )
+    raw = str(invocation.extra_args[1])
+    if not raw.isdigit() or int(raw) < 1:
+        raise CliError(
+            code=CODE_INVALID_ARGUMENT,
+            message=f"The step number must be a positive whole number, got {raw!r}.",
+            exit_status=EXIT_USAGE,
+            hint="Use the n of a proposed step shown by 'mammoth agent session messages'.",
+        )
+    return _plan_decision(invocation, n=int(raw))
+
+
+def agent_plan_discard(invocation: Invocation) -> HandlerResult:
+    """Skip every proposed step of the chat's current plan."""
+    return _plan_decision(invocation)
 
 
 def _definition_call(invocation: Invocation, **kwargs: Any) -> HandlerResult:

@@ -169,7 +169,7 @@ commands:
   - mammoth-cli/tests/contract/test_rel341_schema_preserves_release_overlay.py::test_rel341_schema_preserves_release_overlay
   draft_test: null
   undo_test: null
-  known_restrictions: 'Release snapshot provenance only; unverified against release. These take a workbook
+  known_restrictions: 'These take a workbook
     file from the local disk. Inside the Mammoth app the user''s file cannot reach the agent: send the
     user to the dashboard import page at /workspaces/{workspace_id}/publish/import (Publish → Import),
     where they upload the .pbix/.twb/.twbx themselves.'
@@ -210,7 +210,7 @@ commands:
   - mammoth-cli/tests/contract/test_rel357_schema_preserves_release_overlay.py::test_rel357_schema_preserves_release_overlay
   draft_test: null
   undo_test: null
-  known_restrictions: 'Release snapshot provenance only; unverified against release. These take a workbook
+  known_restrictions: 'These take a workbook
     file from the local disk. Inside the Mammoth app the user''s file cannot reach the agent: send the
     user to the dashboard import page at /workspaces/{workspace_id}/publish/import (Publish → Import),
     where they upload the .pbix/.twb/.twbx themselves.'
@@ -255,7 +255,7 @@ commands:
   - mammoth-cli/tests/contract/test_rel360_bi_export.py::test_rel360_schema_preserves_release_overlay
   draft_test: null
   undo_test: null
-  known_restrictions: Release snapshot provenance only; unverified against release. Author-only, like
+  known_restrictions: Author-only, like
     the release routes it calls -- a non-author caller is refused, unlike `dashboard pdf export` (which
     any viewer can run).
   reviewed_by: primary
@@ -298,7 +298,7 @@ commands:
   - mammoth-cli/tests/contract/test_rel361_bi_export.py::test_rel361_schema_preserves_release_overlay
   draft_test: null
   undo_test: null
-  known_restrictions: 'Release snapshot provenance only; unverified against release. Author-only, like
+  known_restrictions: 'Author-only, like
     bi-preflight. Terminal mode writes `output_path` to local disk. Inside the Mammoth app the download
     cannot reach the user: run `dashboard bi-preflight` to tell them what will convert, then send them
     to the dashboard''s Publish menu (the arrow next to Publish) -> Export to Power BI / Export to Tableau,
@@ -712,7 +712,7 @@ commands:
   - mammoth-cli/tests/contract/test_rel337_context_extract.py::test_rel337_schema_preserves_release_overlay
   draft_test: null
   undo_test: null
-  known_restrictions: Release snapshot provenance only; unverified against release.
+  known_restrictions: null
   reviewed_by: primary
 - command_id: dashboard.context.list
   command_path: dashboard context list
@@ -1452,7 +1452,7 @@ commands:
   - mammoth-cli/tests/contract/test_rel338_exemplar_extract.py::test_rel338_schema_preserves_release_overlay
   draft_test: null
   undo_test: null
-  known_restrictions: Release snapshot provenance only; unverified against release.
+  known_restrictions: null
   reviewed_by: primary
 - command_id: dashboard.figure-intent
   command_path: dashboard figure-intent
@@ -1748,7 +1748,7 @@ commands:
   - mammoth-cli/tests/contract/test_rel340_schema_preserves_release_overlay.py::test_rel340_schema_preserves_release_overlay
   draft_test: null
   undo_test: null
-  known_restrictions: 'Release snapshot provenance only; unverified against release. These take a workbook
+  known_restrictions: 'These take a workbook
     file from the local disk. Inside the Mammoth app the user''s file cannot reach the agent: send the
     user to the dashboard import page at /workspaces/{workspace_id}/publish/import (Publish → Import),
     where they upload the .pbix/.twb/.twbx themselves.'
@@ -3697,7 +3697,7 @@ commands:
   - CT-DASHBOARD-SOURCE-LIST-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: 'B04 SERVER_VARIANCE: documented as returning HTTP 500 on some servers.'
+  known_restrictions: Some servers answer this with HTTP 500.
   reviewed_by: primary
 - command_id: dashboard.style.custom.create
   command_path: dashboard style custom create
@@ -4177,7 +4177,7 @@ commands:
   - mammoth-cli/tests/contract/test_rel359_swap_data.py::test_rel359_schema_preserves_release_overlay
   draft_test: null
   undo_test: null
-  known_restrictions: Release snapshot provenance only; unverified against release.
+  known_restrictions: null
   reviewed_by: primary
 - command_id: dashboard.tags.delete
   command_path: dashboard tags delete
@@ -4805,7 +4805,7 @@ commands:
   - mammoth-cli/tests/contract/test_rel353_templates.py::test_rel353_schema_preserves_release_overlay
   draft_test: null
   undo_test: null
-  known_restrictions: Release snapshot provenance only; unverified against release.
+  known_restrictions: null
   reviewed_by: primary
 - command_id: dashboard.templates.use
   command_path: dashboard templates use
@@ -4850,7 +4850,7 @@ commands:
   - mammoth-cli/tests/contract/test_rel356_templates.py::test_rel356_schema_preserves_release_overlay
   draft_test: null
   undo_test: null
-  known_restrictions: Release snapshot provenance only; unverified against release.
+  known_restrictions: null
   reviewed_by: primary
 - command_id: dashboard.trash
   command_path: dashboard trash

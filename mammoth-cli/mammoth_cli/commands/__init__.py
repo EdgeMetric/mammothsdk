@@ -21,6 +21,7 @@ _TARGETS: dict[str, str] = {
     "config.set": "mammoth_cli.commands.config:config_set",
     "config.list": "mammoth_cli.commands.config:config_list",
     "config.path": "mammoth_cli.commands.config:config_path",
+    "context.show": "mammoth_cli.commands.context:context_show",
     "context.project.status": "mammoth_cli.commands.context:context_project_status",
     "context.project.use": "mammoth_cli.commands.context:context_project_use",
     "context.project.clear": "mammoth_cli.commands.context:context_project_clear",

@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "task": "C2/S5 exports-connectors",
-  "route_count": 61,
+  "route_count": 62,
   "families": {
     "view_export": 27,
     "connector": 22,
@@ -390,6 +390,52 @@
         "method": "GET",
         "path": "/workspaces/{workspace}/projects/{project}/connectors/{connector_key}/connections",
         "body": "none",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s5_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "connector.connection.query",
+      "sdk_symbol": "mammoth.api.connectors.ConnectorsAPI.query_connection",
+      "field_destinations": {
+        "connector_key": {
+          "source": "positional",
+          "destination": "connector_key",
+          "wire": "path_or_context"
+        },
+        "connection_key": {
+          "source": "positional",
+          "destination": "connection_key",
+          "wire": "path_or_context"
+        },
+        "query": {
+          "source": "input",
+          "destination": "query",
+          "wire": "body"
+        }
+      },
+      "context_destinations": {
+        "project_id": "resolved project where applicable",
+        "workspace_id": "resolved auth workspace"
+      },
+      "wire": {
+        "method": "POST",
+        "path": "/workspaces/{workspace}/projects/{project}/connectors/{connector_key}/connections/{connection_key}/ds_configs",
+        "body": "ds_config with data_sample; nothing is saved",
         "checks": [
           "method",
           "path",

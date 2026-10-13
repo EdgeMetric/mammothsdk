@@ -314,6 +314,11 @@ CLI_ONLY_COMMANDS: dict[str, dict[str, Any]] = {
         "mutation_class": "read",
         "live_exemption_reason": "Local configuration path.",
     },
+    "context.show": {
+        "sdk_symbol": "mammoth_cli.context.show",
+        "mutation_class": "read",
+        "live_exemption_reason": "Local context read.",
+    },
     "context.project.status": {
         "sdk_symbol": "mammoth_cli.context.project.status",
         "mutation_class": "read",

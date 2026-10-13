@@ -32,33 +32,43 @@ mammoth doctor
 
 ## Update notice
 
-Once an hour the CLI asks PyPI for the latest release, *after* a command has
-written its output (3-second timeout, silent on failure) and caches the answer
-next to the run log (`update-check.json` in the platform state directory).
-From the next command on, while a newer release exists:
+At most once a day the CLI asks PyPI for the latest release, *after* a command
+has written its output (3-second timeout, silent on failure), and caches the
+answer next to the run log (`update-check.json` in the platform state
+directory).
 
-- every JSON envelope carries `meta.update_available` =
-  `{"current": "...", "latest": "...", "command": "mammoth upgrade --yes"}`
-  (otherwise `null`);
-- human output modes print one line on stderr;
 - `mammoth doctor` shows `cli_version` with the installed and latest versions.
+- When a newer release exists and the CLI will not install it by itself
+  (auto-update off, or the install failed), every JSON envelope carries
+  `meta.update_available` = `{"current": "...", "latest": "...", "command":
+  "mammoth upgrade --yes"}` (otherwise `null`) and human output prints one line
+  on stderr.
 
 The check never delays or blocks a command. `MAMMOTH_NO_UPDATE_CHECK=1` turns
 it off; `MAMMOTH_UPDATE_CACHE=/path` moves the cache file.
 
-## Automatic upgrade (on by default in a terminal)
+## Automatic upgrade (on by default)
 
-The CLI runs the upgrade itself, through the
-detected manager, at the start of the first command that sees a newer cached
-release; the command that triggered it still completes on the version that
-started it, the run log records the attempt (`auto_upgrade`), and the same
-release is not installed twice. It stays off when stdout is not a terminal or `CI` is set, because a pinned
-environment (lock file, CI image, shared virtualenv) must never change
-underneath a task. `MAMMOTH_AUTO_UPGRADE=0` (or `false`, `no`, `off`) turns it
-off everywhere; `MAMMOTH_AUTO_UPGRADE=1` forces it on even without a terminal.
+When the cached answer is older than a day, the command that finishes starts a
+detached process that asks PyPI and, if a newer release exists, installs it
+through the same manager detection as `mammoth upgrade`. There is no prompt.
+
+- It runs **after** the command, not before. Replacing the installed files under
+  a running command breaks its lazy imports, and a failed install must not touch
+  the command that started it. The command completes on the version it started
+  with; the next one runs the new version.
+- It never blocks or fails a command and prints nothing. The attempt and any
+  failure are written to the run log (`auto_upgrade` records); after a failed
+  install `meta.update_available` returns so you can run `mammoth upgrade --yes`.
+- It never runs during `mammoth upgrade` or `mammoth doctor`, inside an embedded
+  agent session, or with `MAMMOTH_NO_UPDATE_CHECK=1`.
+- Opt out with `MAMMOTH_NO_AUTO_UPDATE=1` (or `MAMMOTH_AUTO_UPGRADE=0`). The check
+  and the `meta.update_available` hint stay; nothing is installed. Do this in CI
+  images, lock-file environments and shared virtualenvs whose version must not
+  change underneath a task.
+
 `mammoth upgrade --yes` reports `installed_version`, the version a fresh
-interpreter prints after the upgrade. Agents should prefer the explicit path: read
-`meta.update_available` and run its `command` before starting a task.
+interpreter prints after the upgrade.
 
 ## Upgrade the agent skill
 

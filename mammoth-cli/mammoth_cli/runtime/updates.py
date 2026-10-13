@@ -1,24 +1,29 @@
-"""Hourly update check, and the automatic upgrade (on by default).
+"""Daily update check, and the automatic update (on by default).
 
 The CLI never blocks a command on the network for this. A command reads the
 cached answer (``update-check.json`` in the platform state directory, next to
-the run log's ``logs/``) and, when that answer is older than an hour, refreshes
-it *after* its own output has been written, with a short timeout and every
-failure swallowed. The hint therefore appears from the next command on.
+the run log's ``logs/``) and, when that answer is older than a day, starts a
+detached process *after* its own output has been written. That process asks
+PyPI and, when a newer release exists, installs it through the same manager
+detection as ``mammoth upgrade``. The install runs after the command and
+outside it on purpose: replacing the installed files under a running command
+would break its lazy imports, and a failed install must not touch the command
+that started it. The attempt, and any failure, is written to the run log
+(``auto_upgrade`` records); nothing is printed and the exit status is never
+changed.
 
 What a caller sees:
 
 * ``meta.update_available`` in every success envelope: ``null``, or
-  ``{"current", "latest", "command"}`` when a newer release is on PyPI.
-* one line on stderr in human output modes (never in ``json``/``ndjson``).
-* ``MAMMOTH_NO_UPDATE_CHECK=1`` disables the check and the hint entirely.
-* The upgrade runs before the command, once per detected release, through the
-  same manager detection as ``mammoth upgrade``; the running command still
-  completes on the version that started it. ``MAMMOTH_AUTO_UPGRADE=0`` (or
-  ``false``/``no``/``off``) turns it off. Unless ``MAMMOTH_AUTO_UPGRADE`` is
-  set to an on value (``1``), it also stays off when stdout is not a terminal
-  or ``CI`` is set, because pinned environments (locks, CI, scripts) must
-  never change underneath a task.
+  ``{"current", "latest", "command"}`` when a newer release is on PyPI and
+  will not be installed by itself (auto-update off, or the install failed).
+* one line on stderr in human output modes (never in ``json``/``ndjson``) in
+  that same case.
+* ``MAMMOTH_NO_AUTO_UPDATE=1`` (or ``MAMMOTH_AUTO_UPGRADE=0``) keeps the check
+  and the hint but never installs: set it in CI, containers and agent
+  sandboxes whose installed version must not change.
+* ``MAMMOTH_NO_UPDATE_CHECK=1`` disables the check, the hint and the update.
+* ``upgrade`` and ``doctor`` never start an update.
 
 ``MAMMOTH_UPDATE_CACHE`` overrides the cache file path (tests and sandboxes).
 """
@@ -40,10 +45,11 @@ from mammoth_cli.runtime import embedded
 
 DISABLE_ENV = "MAMMOTH_NO_UPDATE_CHECK"
 AUTO_UPGRADE_ENV = "MAMMOTH_AUTO_UPGRADE"
+NO_AUTO_UPDATE_ENV = "MAMMOTH_NO_AUTO_UPDATE"
 CACHE_ENV = "MAMMOTH_UPDATE_CACHE"
 
-#: How long a cached PyPI answer is trusted.
-CACHE_TTL = _dt.timedelta(hours=1)
+#: How long a cached PyPI answer is trusted: PyPI is asked at most once a day.
+CACHE_TTL = _dt.timedelta(days=1)
 #: The background refresh must not hold a finished command hostage.
 REFRESH_TIMEOUT_SECONDS = 3.0
 #: Commands that manage the install themselves; no hint, no auto-upgrade.
@@ -69,23 +75,11 @@ def enabled() -> bool:
     return not _flag(DISABLE_ENV) and not embedded.active()
 
 
-def _interactive_session() -> bool:
-    """A terminal on stdout and no ``CI`` variable: a person is running this."""
-    return sys.stdout.isatty() and not (os.environ.get("CI") or "").strip()
-
-
 def auto_upgrade_enabled() -> bool:
-    """On by default for interactive sessions; ``MAMMOTH_AUTO_UPGRADE`` overrides.
-
-    ``0``/``false``/``no``/``off`` turns it off; ``1``/``true``/``yes``/``on``
-    forces it on even without a terminal or inside CI.
-    """
-    if not enabled():
+    """On by default; ``MAMMOTH_NO_AUTO_UPDATE=1`` or ``MAMMOTH_AUTO_UPGRADE=0`` turns it off."""
+    if not enabled() or _flag(NO_AUTO_UPDATE_ENV):
         return False
-    setting = (os.environ.get(AUTO_UPGRADE_ENV) or "").strip().lower()
-    if setting in _FALSY:
-        return False
-    return setting in _TRUTHY or _interactive_session()
+    return (os.environ.get(AUTO_UPGRADE_ENV) or "").strip().lower() not in _FALSY
 
 
 def cache_path() -> Path:
@@ -127,7 +121,9 @@ def read_cache() -> dict[str, Any] | None:
     return document if isinstance(document, dict) else None
 
 
-def write_cache(latest: str | None, *, upgraded_to: str | None = None) -> None:
+def write_cache(
+    latest: str | None, *, upgraded_to: str | None = None, upgrade_failed: str | None = None
+) -> None:
     path = cache_path()
     document = {
         "checked_at": _dt.datetime.now(_dt.UTC).isoformat(timespec="seconds"),
@@ -138,6 +134,10 @@ def write_cache(latest: str | None, *, upgraded_to: str | None = None) -> None:
         # Set by a successful automatic upgrade so the same release is not
         # installed again by every command until the cache turns over.
         document["upgraded_to"] = upgraded_to
+    if upgrade_failed:
+        # The release the automatic install could not put in place: the hint
+        # comes back so the user can run the upgrade by hand.
+        document["upgrade_failed"] = upgrade_failed
     try:
         path.parent.mkdir(parents=True, exist_ok=True)
         tmp = path.with_suffix(".tmp")
@@ -164,20 +164,22 @@ def available_update(command_id: str | None = None) -> dict[str, Any] | None:
     if not enabled() or (command_id or "").split(".")[0] in _NO_NOTICE:
         return None
     document = read_cache()
-    latest = document.get("latest") if document else None
+    if not document:
+        return None
+    latest = document.get("latest")
     if not isinstance(latest, str) or not is_newer(latest):
+        return None
+    if auto_upgrade_enabled() and document.get("upgrade_failed") != latest:
+        # The next daily check installs it; a notice would only repeat itself.
         return None
     return {"current": __version__, "latest": latest, "command": UPGRADE_COMMAND}
 
 
 def hint_line(update: dict[str, Any]) -> str:
-    line = (
+    return (
         f"mammoth-cli {update['latest']} is available (you have {update['current']}); "
         f"run: {update['command']}"
     )
-    if auto_upgrade_enabled():
-        line += f" (auto-upgrade is on; turn it off with {AUTO_UPGRADE_ENV}=0)"
-    return line
 
 
 def _fetch_latest() -> str | None:
@@ -227,9 +229,10 @@ def refresh_in_background(command_id: str | None = None) -> None:
     """Refresh a stale cache in a detached process, so the command exits at once.
 
     :func:`refresh_if_stale` asks PyPI with a 3 s timeout; run inline it keeps
-    the finished command alive for up to that long once an hour. The cache is
+    the finished command alive for up to that long once a day. The cache is
     stamped first so concurrent commands do not each spawn a check; the child
-    (``python -m mammoth_cli.runtime.updates``) writes the answer.
+    (``python -m mammoth_cli.runtime.updates``) writes the answer and, with
+    auto-update on, installs a newer release.
     """
     if not enabled() or (command_id or "").split(".")[0] in _SELF_MANAGING:
         return
@@ -261,33 +264,28 @@ def emit_hint(update: dict[str, Any] | None, *, output: str) -> None:
         return
 
 
-def auto_upgrade(command_id: str, run_log: Any = None) -> dict[str, Any] | None:
-    """Upgrade in place when auto-upgrade is enabled and a release is cached.
+def auto_upgrade(latest: str, run_log: Any = None) -> dict[str, Any] | None:
+    """Install release ``latest`` through the manager that owns this install.
 
     Returns a record of what happened (also written to ``run_log`` when
-    given), or ``None`` when nothing was attempted. The current process keeps
-    running on the version that started it.
+    given), or ``None`` when nothing was attempted: auto-update is off,
+    ``latest`` is not newer, or it was already installed. Never raises.
     """
-    if not auto_upgrade_enabled():
+    if not auto_upgrade_enabled() or not is_newer(latest):
         return None
-    update = available_update(command_id)
-    if update is None:
+    if (read_cache() or {}).get("upgraded_to") == latest:
         return None
-    cached = read_cache() or {}
-    if cached.get("upgraded_to") == update["latest"]:
-        return None
-    from mammoth_cli.commands import upgrade as upgrade_cmd
-
-    manager = upgrade_cmd.detect_manager()
-    argv = upgrade_cmd.build_upgrade_command(manager, None)
     record: dict[str, Any] = {
         "event": "auto_upgrade",
-        "manager": manager,
-        "argv": argv,
-        "from_version": update["current"],
-        "to_version": update["latest"],
+        "from_version": __version__,
+        "to_version": latest,
     }
     try:
+        from mammoth_cli.commands import upgrade as upgrade_cmd
+
+        manager = upgrade_cmd.detect_manager()
+        argv = upgrade_cmd.build_upgrade_command(manager, None)
+        record.update(manager=manager, argv=argv)
         completed = upgrade_cmd.run_upgrade(argv)
         record["returncode"] = completed.returncode
         record["ok"] = completed.returncode == 0
@@ -296,22 +294,11 @@ def auto_upgrade(command_id: str, run_log: Any = None) -> dict[str, Any] | None:
     except Exception as exc:  # noqa: BLE001 -- never fail the user's command
         record["ok"] = False
         record["error"] = str(exc)[:200]
-    if record.get("ok"):
-        # The cached answer is now the installed version; stop re-upgrading.
-        write_cache(update["latest"], upgraded_to=update["latest"])
-        message = (
-            f"mammoth-cli upgraded {update['current']} -> {update['latest']} "
-            f"({AUTO_UPGRADE_ENV}); this command still runs on {update['current']}."
-        )
+    if record["ok"]:
+        # The installed release is the cached one: stop trying it again.
+        write_cache(latest, upgraded_to=latest)
     else:
-        message = (
-            f"mammoth-cli auto-upgrade to {update['latest']} failed ({AUTO_UPGRADE_ENV}); "
-            f"run: {update['command']}"
-        )
-    try:
-        sys.stderr.write(message + "\n")
-    except OSError:
-        pass
+        write_cache(latest, upgrade_failed=latest)
     if run_log is not None:
         try:
             run_log.write(record)
@@ -320,9 +307,25 @@ def auto_upgrade(command_id: str, run_log: Any = None) -> dict[str, Any] | None:
     return record
 
 
+def _check_and_upgrade() -> None:  # pragma: no cover - the detached process
+    """Ask PyPI, refresh the cache and install a newer release; log, never print."""
+    from mammoth_cli.runtime.runlog import RunLog
+
+    latest = _fetch_latest()
+    if latest is None:
+        # PyPI did not answer: keep the earlier answer for the hint and install nothing.
+        previous = (read_cache() or {}).get("latest")
+        write_cache(previous if isinstance(previous, str) else None)
+        return
+    write_cache(latest)
+    if not auto_upgrade_enabled() or not is_newer(latest):
+        return
+    run_log = RunLog.start("auto-update", argv=[])
+    try:
+        auto_upgrade(latest, run_log)
+    finally:
+        run_log.finish(0)
+
+
 if __name__ == "__main__":  # pragma: no cover - the detached refresh process
-    _latest = _fetch_latest()
-    if _latest is None:
-        _previous = (read_cache() or {}).get("latest")
-        _latest = _previous if isinstance(_previous, str) else None
-    write_cache(_latest)
+    _check_and_upgrade()

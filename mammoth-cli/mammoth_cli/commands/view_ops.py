@@ -24,6 +24,8 @@ import re
 import shlex
 import time
 from collections.abc import Callable
+from dataclasses import dataclass
+from dataclasses import field as dataclass_field
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
@@ -41,6 +43,7 @@ from mammoth_cli.commands.view import (
     join_dry_run_preview,
     join_snapshot,
     reject_dataset_export_conflicts,
+    sdk_saw_pipeline_ready,
     wait_for_followon_job,
     wait_for_pipeline_to_settle,
     wait_for_refreshed_view,
@@ -65,7 +68,7 @@ from mammoth_cli.runtime.dryrun import DryRunStop
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.session import open_service, resolved_project
 from mammoth_cli.runtime.verify import read_export_stamps
-from mammoth_cli.services.command_contract import bind_command_inputs
+from mammoth_cli.services.command_contract import bind_command_inputs, resolve_command_contract
 from mammoth_cli.services.conditions import CONDITION_KWARG, compile_condition
 from mammoth_cli.services.input_fields import TASK_COUNT_FIELD
 from mammoth_cli.services.sql_check import check_sql_binds
@@ -438,8 +441,9 @@ def _dispatch_view(
                 else (None, None)
             )
             reject_unrun_task_with_reference_errors(service, view_id, dataset_id, run_error)
+            sdk_ready = sdk_saw_pipeline_ready(data)
             data = after(service, int(dataset_id), state, data)
-            _flag_unsettled_pipeline(service, int(dataset_id), view_id, data)
+            _flag_unsettled_pipeline(service, int(dataset_id), view_id, data, sdk_ready)
             if isinstance(data, dict) and run is not None:
                 data["run"] = run
                 if run_error is not None:
@@ -489,6 +493,7 @@ def with_in_place_note(data: Any, view_id: int) -> Any:
 #: A task's own ``transform_status`` once its run is over; ``DONE`` is the only success.
 _RUN_DONE_STATUS = "DONE"
 _RUN_OVER_STATUSES = frozenset({_RUN_DONE_STATUS, "ERROR", "REFERROR", "EXCEPTION"})
+_RUN_FAILED_STATUSES = _RUN_OVER_STATUSES - {_RUN_DONE_STATUS}
 #: Bounded wait for the run of a task just added: it starts after the add returns.
 _RUN_ATTEMPTS = 40
 _RUN_RETRY_S = 0.5
@@ -581,15 +586,18 @@ def _mark_staged_in_draft(service: Any, dataset_id: int, view_id: int, data: Any
     }
 
 
-def _flag_unsettled_pipeline(service: Any, dataset_id: int, view_id: int, data: Any) -> None:
+def _flag_unsettled_pipeline(
+    service: Any, dataset_id: int, view_id: int, data: Any, sdk_ready: bool = False
+) -> None:
     """Wait for the pipeline after a write with no row check, and record what it finds.
 
     A ``pipeline_error`` (an execution error, or a wait that ended unfinished)
     keeps the write from reading ``done`` and verified. A staged draft ran nothing.
+    ``sdk_ready`` skips the poll when the write's own SDK call already saw it ready.
     """
     if not isinstance(data, dict) or data.get("status") == "staged":
         return
-    error = wait_for_pipeline_to_settle(service, dataset_id, view_id)
+    error = wait_for_pipeline_to_settle(service, dataset_id, view_id, already_ready=sdk_ready)
     if error is not None:
         data["pipeline_error"] = error
 
@@ -942,8 +950,26 @@ def view_create(invocation: Invocation) -> HandlerResult:
         if clone_from is not None:
             _require_clone_from_same_dataset(service, int(clone_from), dataset_id)
         data = service.call(_symbol(invocation), **kwargs)
-    # The SDK returns a rich ``View``; emit its dataview record like ``view get``.
-    return _view_payload(data), _meta(invocation, auth.workspace_id)
+    return _created_view(_view_payload(data)), _meta(invocation, auth.workspace_id)
+
+
+def _created_view(record: Any) -> Any:
+    """What ``view create`` reports: the new ids and a short summary (the columns are in ``state``).
+
+    The full dataview record (pipeline metadata, dependency graph) is some 30 KB with
+    the id buried in it; ``view get VIEW_ID`` returns it.
+    """
+    if not isinstance(record, dict):
+        return record
+    summary = {
+        "view_id": record.get("id"),
+        "dataset_id": record.get("dataset_id") or record.get("ds_id"),
+        "id": record.get("id"),
+        "name": record.get("name"),
+        "row_count": record.get("row_count"),
+        "column_count": record.get("column_count"),
+    }
+    return {key: value for key, value in summary.items() if value is not None}
 
 
 def _require_clone_from_same_dataset(service: Any, clone_from: int, dataset_id: int) -> None:
@@ -1418,7 +1444,32 @@ def view_transform_ai(invocation: Invocation) -> HandlerResult:
     _require_field(document, "context_columns")
     assert document is not None
     kwargs = _bind_transform_inputs(invocation, document)
-    return _dispatch_view(invocation, view_id, "gen_ai", **kwargs)
+    data, meta = _dispatch_view(invocation, view_id, "gen_ai", **kwargs)
+    _reject_failed_ai_run(view_id, data)
+    return data, meta
+
+
+def _reject_failed_ai_run(view_id: int, data: Any) -> None:
+    """Fail an AI step that was added but errored when it ran (an empty new column)."""
+    error = data.get("pipeline_error") if isinstance(data, dict) else None
+    if not isinstance(error, dict) or error.get("execution_state") != "runtime_error":
+        return
+    task_id = error.get("task_id")
+    raise CliError(
+        code=CODE_TASK_RUNTIME_ERROR,
+        message=(
+            f"The AI step (task {task_id}) was added to view {view_id} but failed when it ran "
+            f"(error {error.get('error_code')}); its new column is empty."
+        ),
+        exit_status=EXIT_API,
+        hint=(
+            "Likely causes: the workspace's AI quota, or a prompt the step cannot run. "
+            f"Remove the task with `mammoth view task delete {view_id} {task_id} --yes` "
+            "and try again."
+        ),
+        details={"view_id": view_id, "task_id": task_id, "pipeline_error": error},
+        recovery_commands=[f"mammoth view task delete {view_id} {task_id} --yes"],
+    )
 
 
 def view_transform_bulk_replace(invocation: Invocation) -> HandlerResult:
@@ -2053,3 +2104,317 @@ def view_transform_window(invocation: Invocation) -> HandlerResult:
     _require_one_destination(document, invocation.command_id)
     kwargs = _bind_transform_inputs(invocation, document)
     return _dispatch_view(invocation, view_id, "window", **kwargs)
+
+
+# --- view transform batch --------------------------------------------------
+
+#: The ``view transform`` ops a batch takes: each one's handler only binds its input and
+#: calls one View method, so the batch binds and builds exactly as the single command does.
+#: The rest need their own checks (an impact read, a draft apply, a new dataset) or name
+#: a column an earlier step creates.
+_BATCH_OPS = (
+    "filter",
+    "sort",
+    "limit-rows",
+    "discard-duplicates",
+    "fill-missing",
+    "bulk-replace",
+    "replace",
+    "text",
+    "substring",
+    "extract-date",
+    "increment-date",
+    "copy-columns",
+)
+#: A sort is the view's row order (a display setting), not a pipeline task.
+_BATCH_SORT_OP = "sort"
+_ADD_TASKS_METHOD = "add_tasks"
+_SORT_METHOD = "sort_rows"
+_TASK_DELETE_SYMBOL = "mammoth.api.pipeline.PipelineAPI.delete_task"
+CODE_BATCH_STEP_FAILED = "batch_step_failed"
+CODE_UNKNOWN_COLUMN = "unknown_column"
+_BATCH_COLUMN_HINT = (
+    "A batch is built against the view's columns as they are now, so a step cannot use a "
+    "column an earlier step of the same batch creates. Run the steps that create columns "
+    "first (their own `view transform` command or a batch), then batch the rest."
+)
+
+
+@dataclass
+class _BatchPlan:
+    """What a batch will do, built before anything is sent."""
+
+    specs: list[dict[str, Any]] = dataclass_field(default_factory=list)
+    #: ``(step index, op)`` of each spec, in order.
+    task_steps: list[tuple[int, str]] = dataclass_field(default_factory=list)
+    #: The bound ``sort`` inputs, applied after the tasks have run.
+    sorts: list[dict[str, Any]] = dataclass_field(default_factory=list)
+
+
+def _batch_steps(document: dict[str, Any] | None) -> list[dict[str, Any]]:
+    """The ``steps`` of the input document, each checked to be ``{"op", "input"}``."""
+    steps = _require_field(document, "steps")
+    if not isinstance(steps, list) or not steps:
+        raise CliError(
+            code=CODE_INVALID_ARGUMENT,
+            message='\'steps\' must be a non-empty list of {"op": ..., "input": {...}}.',
+            exit_status=EXIT_USAGE,
+        )
+    for index, step in enumerate(steps):
+        if not (
+            isinstance(step, dict)
+            and step.get("op") in _BATCH_OPS
+            and isinstance(step.get("input"), dict)
+        ):
+            raise CliError(
+                code=CODE_INVALID_ARGUMENT,
+                message=(
+                    f"steps[{index}] must be {{\"op\": one of {', '.join(_BATCH_OPS)}, "
+                    '"input": {...the same input as that `view transform` command}}.'
+                ),
+                exit_status=EXIT_USAGE,
+            )
+    return steps
+
+
+def _step_error(index: int, op: str, error: CliError) -> CliError:
+    """``error`` from building step ``index``, naming the step."""
+    hint = error.hint
+    if error.code == CODE_UNKNOWN_COLUMN:
+        hint = f"{hint} {_BATCH_COLUMN_HINT}" if hint else _BATCH_COLUMN_HINT
+    return CliError(
+        code=error.code,
+        message=f"steps[{index}] ({op}): {error.message}",
+        exit_status=error.exit_status,
+        hint=hint,
+        details={**error.details, "step_index": index, "op": op},
+    )
+
+
+def _build_batch(
+    invocation: Invocation, service: Any, view_id: int, dataset_id: int, steps: list[dict[str, Any]]
+) -> _BatchPlan:
+    """Bind and build every step against the view's current columns; send nothing."""
+    plan = _BatchPlan()
+    for index, step in enumerate(steps):
+        op = step["op"]
+        command_id = f"view.transform.{op}"
+        contract = resolve_command_contract(command_id)
+        assert contract is not None
+        for spec in contract.fields:
+            if spec.required:
+                _require_field(step["input"], spec.name)
+        kwargs = _bind_transform_inputs(invocation, step["input"], command_id)
+        method = str((command_by_id(command_id) or {})["sdk_symbol"]).rsplit(".", 1)[-1]
+        try:
+            built = service.call_view(
+                view_id, method, dataset_id=dataset_id, build_only=True, **kwargs
+            )
+        except CliError as exc:
+            raise _step_error(index, op, exc) from exc
+        if op == _BATCH_SORT_OP:
+            plan.sorts.append(kwargs)
+        else:
+            plan.specs.append(built["task_spec"])
+            plan.task_steps.append((index, op))
+    return plan
+
+
+def wait_for_added_tasks_run(
+    service: Any, dataset_id: int, view_id: int, task_ids_before: set[Any], count: int
+) -> list[dict[str, Any]]:
+    """The runs of the ``count`` tasks a write added, oldest first, once they are over.
+
+    Each run is ``{task_id, transform_status}``. Returns as soon as every task's
+    ``transform_status`` is over, or one of them errored (the rest then never run).
+    After the bound, the runs read so far: some may not be over, or fewer than
+    ``count`` may be listed.
+    """
+    runs: list[dict[str, Any]] = []
+    for _ in range(_RUN_ATTEMPTS):
+        added = sorted(
+            (t for t in _tasks(service, dataset_id, view_id) if t.get("id") not in task_ids_before),
+            key=lambda task: task.get("id") or 0,
+        )
+        runs = [
+            {"task_id": task.get("id"), "transform_status": task.get("transform_status")}
+            for task in added
+        ]
+        statuses = [run["transform_status"] for run in runs]
+        if any(status in _RUN_FAILED_STATUSES for status in statuses):
+            return runs
+        if len(runs) >= count and all(status == _RUN_DONE_STATUS for status in statuses):
+            return runs
+        time.sleep(_RUN_RETRY_S)
+    return runs
+
+
+def _failed_batch_step(
+    plan: _BatchPlan, added: list[dict[str, Any]]
+) -> tuple[int, str, dict[str, Any]] | None:
+    """The step whose task errored or could not bind, with that task; ``None`` if none did."""
+    for (index, op), task in zip(plan.task_steps, added, strict=False):
+        if task.get("transform_status") in _RUN_FAILED_STATUSES or task.get("reference_errors"):
+            return index, op, task
+    return None
+
+
+def _batch_failure(
+    service: Any,
+    dataset_id: int,
+    view_id: int,
+    task_ids_before: set[Any],
+    plan: _BatchPlan,
+    cause: CliError | None,
+) -> CliError:
+    """Remove the tasks the batch added and report which step failed.
+
+    The server adds a list of tasks one by one and does not undo the ones before a
+    failure, so the tasks the batch left are deleted (newest first): the view ends
+    as it was before. With no task added, ``cause`` is returned as it is.
+    """
+    added = sorted(
+        (t for t in _tasks(service, dataset_id, view_id) if t.get("id") not in task_ids_before),
+        key=lambda task: task.get("id") or 0,
+    )
+    if cause is not None and not added:
+        return cause
+    failed = _failed_batch_step(plan, added)
+    not_removed = []
+    for task in reversed(added):
+        try:
+            service.call(
+                _TASK_DELETE_SYMBOL, dataview_id=view_id, dataset_id=dataset_id, task_id=task["id"]
+            )
+        except CliError:
+            not_removed.append(task["id"])
+    wait_for_pipeline_to_settle(service, dataset_id, view_id)
+    details: dict[str, Any] = {
+        "view_id": view_id,
+        "removed_task_ids": [t["id"] for t in added if t["id"] not in not_removed],
+        "not_removed_task_ids": not_removed,
+    }
+    if failed is not None:
+        index, op, task = failed
+        details.update(
+            step_index=index,
+            op=op,
+            task_id=task.get("id"),
+            transform_status=task.get("transform_status"),
+        )
+        which = (
+            f"steps[{index}] ({op}) failed (task {task.get('id')}, {task.get('transform_status')})"
+        )
+    else:
+        which = "A step of the batch failed"
+    if cause is not None:
+        details["cause"] = {"code": cause.code, "message": cause.message}
+    outcome = (
+        "none of the batch's tasks were kept."
+        if not not_removed
+        else f"tasks {not_removed} could not be removed."
+    )
+    return CliError(
+        code=CODE_BATCH_STEP_FAILED,
+        message=f"{which}; {outcome}",
+        exit_status=EXIT_API,
+        hint="Fix that step's input and send the batch again.",
+        details=details,
+        recovery_commands=[
+            f"mammoth view task delete {view_id} {task_id} --yes" for task_id in not_removed
+        ],
+    )
+
+
+def _apply_batch(
+    invocation: Invocation, service: Any, view_id: int, dataset_id: int, plan: _BatchPlan
+) -> dict[str, Any]:
+    """Send the batch as one request, wait for every new task's run, then set the sort.
+
+    A failure after the send removes the batch's tasks (see :func:`_batch_failure`).
+    """
+    rows_before = _view_row_count(service, dataset_id, view_id, invocation.project)
+    task_ids_before = _task_ids(service, dataset_id, view_id)
+    data: dict[str, Any] = {}
+    runs: list[dict[str, Any]] = []
+    try:
+        if plan.specs:
+            data = dict(
+                service.call_view(
+                    view_id, _ADD_TASKS_METHOD, dataset_id=dataset_id, task_specs=plan.specs
+                )
+            )
+            if not _is_staged(data):
+                runs = wait_for_added_tasks_run(
+                    service, dataset_id, view_id, task_ids_before, len(plan.specs)
+                )
+    except CliError as exc:
+        raise _batch_failure(service, dataset_id, view_id, task_ids_before, plan, exc) from exc
+    if any(run["transform_status"] in _RUN_FAILED_STATUSES for run in runs):
+        raise _batch_failure(service, dataset_id, view_id, task_ids_before, plan, None)
+    try:
+        for kwargs in plan.sorts:
+            data["sort"] = service.call_view(
+                view_id, _SORT_METHOD, dataset_id=dataset_id, **kwargs
+            )["sort"]
+    except CliError as exc:
+        raise _batch_failure(service, dataset_id, view_id, task_ids_before, plan, exc) from exc
+    if runs:
+        data["tasks"] = [
+            {"step_index": index, "op": op, **run}
+            for (index, op), run in zip(plan.task_steps, runs, strict=False)
+        ]
+    if plan.specs and not _is_staged(data):
+        rows_after, pipeline_error = wait_for_view_row_count(
+            service, dataset_id, view_id, invocation.project, write_result=data
+        )
+        data["row_check"] = {"rows_before": rows_before, "rows_after": rows_after}
+        if pipeline_error is not None:
+            data["pipeline_error"] = pipeline_error
+        elif len(runs) < len(plan.specs) or any(
+            run["transform_status"] != _RUN_DONE_STATUS for run in runs
+        ):
+            data["pipeline_error"] = {
+                "execution_state": UNFINISHED_STATE,
+                "wait_error": (
+                    f"{len(plan.specs)} tasks were sent; {len(runs)} were listed and "
+                    "not all had finished running"
+                ),
+            }
+    return data
+
+
+def view_transform_batch(invocation: Invocation) -> HandlerResult:
+    """Add several transforms in one request. ``steps`` is required.
+
+    Each step is ``{"op": <a view transform command>, "input": <that command's input>}``.
+    Every step is bound and built against the view's current columns before anything is
+    sent; the tasks go as one request, so the pipeline runs once. If a task fails, the
+    batch's tasks are removed and the failing step is named.
+    """
+    view_id = _view_id(invocation)
+    document = invocation.load_input()
+    steps = _batch_steps(document)
+    assert document is not None
+    dataset_id = _resolve_exact_dataset_id(
+        invocation, view_id, document, required=False, allow_missing=True
+    )
+    with open_service(invocation) as (service, auth):
+        if dataset_id is None:
+            dataset_id = parents.lookup(_profile_name(invocation), auth.workspace_id, view_id)
+        if dataset_id is None:
+            raise CliError(
+                code="resource_identity_required",
+                message="This operation requires the exact parent dataset id.",
+                exit_status=EXIT_USAGE,
+                hint="Pass DATASET_ID or include dataset_id in --input.",
+            )
+        object.__setattr__(invocation, "known_dataset_id", int(dataset_id))
+        require_expected_task_count(service, view_id, dataset_id, document)
+        object.__setattr__(
+            invocation, "exports_before", read_export_stamps(service, view_id, int(dataset_id))
+        )
+        plan = _build_batch(invocation, service, view_id, int(dataset_id), steps)
+        data = _apply_batch(invocation, service, view_id, int(dataset_id), plan)
+        parents.remember(_profile_name(invocation), auth.workspace_id, {view_id: int(dataset_id)})
+    return data, _meta(invocation, auth.workspace_id)

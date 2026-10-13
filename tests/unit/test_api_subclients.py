@@ -2854,15 +2854,15 @@ class TestBatchesAPI:
         client._request_json.assert_not_called()
 
     async def test_update_wraps_patch_envelope(self, client: MammothClient):
-        """PROD BUG FIX: SDK must wrap patch ops in {"patch": [...]} envelope."""
-        patch_ops = [{"op": "replace", "value": {"approve": [101, 102]}}]
+        """The server takes {"patch": <one op>} with the path filled in."""
+        patch_ops = [{"op": "replace", "value": {"suspend": [101, 102]}}]
         await client.batches.update(dataset_id=500, patch=patch_ops)
         assert_called_with_method_and_endpoint(
             client._request_json, "PATCH", "/datasets/500/batches"
         )
         assert_json_body(
             client._request_json,
-            {"patch": [{"op": "replace", "value": {"approve": [101, 102]}}]},
+            {"patch": {"op": "replace", "path": "batches", "value": {"suspend": [101, 102]}}},
         )
 
     async def test_update_remove_op(self, client: MammothClient):
@@ -2870,7 +2870,7 @@ class TestBatchesAPI:
         await client.batches.update(dataset_id=500, patch=patch_ops)
         assert_json_body(
             client._request_json,
-            {"patch": [{"op": "remove", "value": [101, 102]}]},
+            {"patch": {"op": "remove", "path": "batches", "value": [101, 102]}},
         )
 
     async def test_update_rejects_empty_patch(self, client: MammothClient):

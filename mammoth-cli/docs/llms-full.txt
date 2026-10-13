@@ -44,7 +44,7 @@ Sensitive structured input must come from a private file or pipe; never put secr
 - `mammoth agent charter versions` [read/none] -> mammoth.api.agent_definitions.AgentDefinitionsAPI.charter_versions
   example: mammoth agent charter versions sample
 - `mammoth agent chat` [benign_mutation/none] -> mammoth.api.agents.AgentsAPI.chat
-  example: mammoth agent chat --input '{"message": "Summarize revenue by region", "scope": {"sample_key": "Status"}}'
+  example: mammoth agent chat --input '{"message": "Summarize revenue by region", "scope": {"type": "workspace", "workspace_id": 123}, "client_context": {"project_id": 456}}'
 - `mammoth agent create` [benign_mutation/none] -> mammoth.api.agent_definitions.AgentDefinitionsAPI.create
   example: mammoth agent create Status --input '{"name": "Revenue report"}'
 - `mammoth agent delete` [destructive/prompt_or_yes] -> mammoth.api.agent_definitions.AgentDefinitionsAPI.delete
@@ -75,8 +75,14 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth agent memory remove sample 123
 - `mammoth agent message set-request-kind` [benign_mutation/none] -> mammoth.api.agents.AgentsAPI.message_set_request_kind
   example: mammoth agent message set-request-kind 'Summarize revenue by region' --input '{"request_kind": "sample"}'
+- `mammoth agent plan approve` [benign_mutation/prompt_or_yes] -> mammoth.api.agents.AgentsAPI.plan_approve
+  example: mammoth agent plan approve resource-123
+- `mammoth agent plan discard` [benign_mutation/none] -> mammoth.api.agents.AgentsAPI.plan_discard
+  example: mammoth agent plan discard resource-123
 - `mammoth agent plan edit-proposal` [benign_mutation/none] -> mammoth.api.agents.AgentsAPI.plan_edit_proposal
   example: mammoth agent plan edit-proposal --input '{"plan_id": "resource-123", "action": "sample", "key": "Status"}'
+- `mammoth agent plan skip` [benign_mutation/none] -> mammoth.api.agents.AgentsAPI.plan_skip
+  example: mammoth agent plan skip resource-123 123
 - `mammoth agent projects clear` [benign_mutation/none] -> mammoth.api.agent_definitions.AgentDefinitionsAPI.update
   example: mammoth agent projects clear sample
 - `mammoth agent projects set` [benign_mutation/none] -> mammoth.api.agent_definitions.AgentDefinitionsAPI.update
@@ -205,7 +211,7 @@ Sensitive structured input must come from a private file or pipe; never put secr
 - `mammoth batch list` [read/none] -> mammoth.api.batches.BatchesAPI.list
   example: mammoth batch list 123
 - `mammoth batch update` [benign_mutation/none] -> mammoth.api.batches.BatchesAPI.update
-  example: mammoth batch update 123 --input '{"patch": [{"sample_key": "Status"}]}'
+  example: mammoth batch update 123 --input '{"patch": {"sample_key": "Status"}}'
 
 ## billing
 
@@ -385,6 +391,8 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth connector connection get sample sample
 - `mammoth connector connection list` [read/none] -> mammoth.api.connectors.ConnectorsAPI.list_connections
   example: mammoth connector connection list sample
+- `mammoth connector connection query` [read/none] -> mammoth.api.connectors.ConnectorsAPI.query_connection
+  example: mammoth connector connection query sample sample --input '{"query": "SELECT region, SUM(revenue) FROM data GROUP BY region"}'
 - `mammoth connector connection update` [external_effect/yes_always] -> mammoth.api.connectors.ConnectorsAPI.update_connection
   example: mammoth connector connection update sample sample --input /private/path/request.json
 - `mammoth connector ds-config create` [external_effect/yes_always] -> mammoth.api.connectors.ConnectorsAPI.create_ds_config
@@ -416,6 +424,8 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth context project status
 - `mammoth context project use` [benign_mutation/none] -> mammoth_cli.context.project.use
   example: mammoth context project use 123
+- `mammoth context show` [read/none] -> mammoth_cli.context.show
+  example: mammoth context show
 
 ## dashboard
 
@@ -1441,6 +1451,8 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth view transform add-sql 123 --input '{"query": "SELECT region, SUM(revenue) AS revenue FROM \"view:123\" GROUP BY region", "dataset_id": 456}'
 - `mammoth view transform ai` [reversible_pipeline/none] -> mammoth.View.gen_ai
   example: mammoth view transform ai 123 --input '{"prompt": "Summarize revenue by region", "context_columns": ["Status"], "dataset_id": 456}'
+- `mammoth view transform batch` [reversible_pipeline/none] -> mammoth.view.View.add_tasks
+  example: mammoth view transform batch 123 --input '{"steps": [{"op": "filter", "input": {"condition": {"column": "Cost", "operator": "GTE", "value": 20}}}, {"op": "sort", "input": {"order_by": [["Cost", "DESC"]]}}, {"op": "limit-rows", "input": {"n": 2}}], "dataset_id": 456}'
 - `mammoth view transform bulk-replace` [reversible_pipeline/none] -> mammoth.View.bulk_replace
   example: mammoth view transform bulk-replace 123 --input '{"columns": ["Status"], "mapping": [{"search": ["sample"], "replace": "sample"}], "dataset_id": 456}'
 - `mammoth view transform combine-columns` [reversible_pipeline/none] -> mammoth.View.combine_columns

@@ -219,20 +219,30 @@ class PipelineAPI:
         )
 
     async def add_task(
-        self, dataview_id: int, task_spec: dict[str, Any], dataset_id: int | None = None
+        self,
+        dataview_id: int,
+        task_spec: dict[str, Any] | list[dict[str, Any]],
+        dataset_id: int | None = None,
     ) -> dict[str, Any]:
-        """Add a new transformation task to the pipeline.
+        """Add a new transformation task, or a list of them, to the pipeline.
+
+        A list is sent as one request: the server adds every task with auto-run
+        paused and runs the pipeline once, after the last.
 
         Args:
             dataview_id: ID of the dataview.
-            task_spec: Task specification dict (varies by task type).
+            task_spec: Task specification dict (varies by task type), or a list of them.
             dataset_id: Dataset ID (auto-detected if not provided).
 
         Returns:
             Dict with created task info or job info.
         """
         ws, proj, ds, dv = await self._resolve_ids(dataview_id, dataset_id)
-        payload = {"DATAVIEW_ID": dv, **task_spec}
+        payload: dict[str, Any] | list[dict[str, Any]] = (
+            [{"DATAVIEW_ID": dv, **spec} for spec in task_spec]
+            if isinstance(task_spec, list)
+            else {"DATAVIEW_ID": dv, **task_spec}
+        )
         response = await self._client._request_json(
             "POST", f"{self._base_url(ws, proj, ds, dv)}/tasks", json=payload
         )
@@ -508,7 +518,7 @@ class PipelineAPI:
         dataview_id: int,
         dataset_id: int | None = None,
         timeout: float | None = None,
-        poll_interval: float = 3,
+        poll_interval: float = 0.5,
     ) -> dict[str, Any]:
         """Poll pipeline state until it reaches a terminal state.
 
@@ -523,7 +533,7 @@ class PipelineAPI:
             dataview_id: ID of the dataview.
             dataset_id: Dataset ID (auto-detected if not provided).
             timeout: Max wait time in seconds (default: client.pipeline_timeout).
-            poll_interval: Seconds before the second poll (default: 3); each wait
+            poll_interval: Seconds before the second poll (default: 0.5); each wait
                 is then 1.5 times the last, up to 15 seconds.
 
         Returns:

@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
   "task": "C2/S7 remaining-families",
-  "route_count": 177,
+  "route_count": 180,
   "families": {
     "activity": 2,
-    "agent": 51,
+    "agent": 54,
     "ai": 4,
     "automation": 8,
     "billing": 25,
@@ -1097,6 +1097,138 @@
         "method": "PATCH",
         "path": "/agents/sessions/{session_id}/messages/{message_id}/request-kind",
         "body": "json:UpdateRequestKindRequest",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "agent.plan.approve",
+      "operation_id": "AgentChat",
+      "sdk_symbol": "mammoth.api.agents.AgentsAPI.plan_approve",
+      "field_destinations": {
+        "scope": {
+          "source": "input",
+          "destination": "scope",
+          "wire": "sdk_argument"
+        },
+        "wait": {
+          "source": "input",
+          "destination": "wait",
+          "wire": "sdk_argument"
+        }
+      },
+      "context_destinations": {
+        "session_id": {
+          "source": "positional",
+          "destination": "session_id"
+        }
+      },
+      "wire": {
+        "method": "POST",
+        "path": "/agents/chat",
+        "body": "json:AgentChatRequest with plan_ref",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "agent.plan.discard",
+      "operation_id": "AgentChat",
+      "sdk_symbol": "mammoth.api.agents.AgentsAPI.plan_discard",
+      "field_destinations": {
+        "scope": {
+          "source": "input",
+          "destination": "scope",
+          "wire": "sdk_argument"
+        },
+        "wait": {
+          "source": "input",
+          "destination": "wait",
+          "wire": "sdk_argument"
+        }
+      },
+      "context_destinations": {
+        "session_id": {
+          "source": "positional",
+          "destination": "session_id"
+        }
+      },
+      "wire": {
+        "method": "POST",
+        "path": "/agents/chat",
+        "body": "json:AgentChatRequest with plan_ref",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "agent.plan.skip",
+      "operation_id": "AgentChat",
+      "sdk_symbol": "mammoth.api.agents.AgentsAPI.plan_skip",
+      "field_destinations": {
+        "scope": {
+          "source": "input",
+          "destination": "scope",
+          "wire": "sdk_argument"
+        },
+        "wait": {
+          "source": "input",
+          "destination": "wait",
+          "wire": "sdk_argument"
+        }
+      },
+      "context_destinations": {
+        "session_id": {
+          "source": "positional",
+          "destination": "session_id"
+        }
+      },
+      "wire": {
+        "method": "POST",
+        "path": "/agents/chat",
+        "body": "json:AgentChatRequest with plan_ref",
         "checks": [
           "method",
           "path",

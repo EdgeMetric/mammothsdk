@@ -66,7 +66,7 @@ Status on release: ran once on CLI 2.0.21 — ergonomics sweep 2026-09-19: exit 
 
 Run: `mammoth batch update`. Exact input fields: `mammoth schema get batch.update`.
 
-Example: `mammoth batch update 123 --input '{"patch": [{"sample_key": "Status"}]}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth batch update 123 --input '{"patch": {"sample_key": "Status"}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `BatchUpdateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `returns_job`.
 

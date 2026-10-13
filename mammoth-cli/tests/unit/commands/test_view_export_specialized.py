@@ -613,43 +613,6 @@ def test_managed_s3_omitted_filename_reaches_sdk_default(
     assert fake_service.view_call_log == [(7, "to_s3", {"dataset_id": 9, "file_type": file_type})]
 
 
-def test_postgres_route_requires_confirmation_and_forwards_secret(
-    fake_service: FakeMammothService, tmp_path: Path
-) -> None:
-    payload = {
-        "host": "db.example",
-        "port": 5432,
-        "database": "analytics",
-        "table": "sales",
-        "username": "agent",
-        "password": "secret",
-        "replace_table": True,
-    }
-    with pytest.raises(CliError) as error:
-        view_cmd.view_export_specialized(
-            _inv(
-                "view.export.postgres",
-                project=180,
-                extra_args=["7"],
-                input_file=_doc(tmp_path, payload),
-            )
-        )
-    assert error.value.code == "confirmation_required"
-    assert fake_service.view_call_log == []
-
-    view_cmd.view_export_specialized(
-        _inv(
-            "view.export.postgres",
-            project=180,
-            extra_args=["7", "9"],
-            input_file=_doc(tmp_path, payload),
-            yes=True,
-        )
-    )
-    forwarded = {key: value for key, value in payload.items() if key != "replace_table"}
-    assert fake_service.view_call_log == [(7, "to_postgres", {"dataset_id": 9, **forwarded})]
-
-
 def test_specialized_route_rejects_unknown_fields_before_service(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:

@@ -344,14 +344,31 @@ class View(
         finally:
             self._build_only = previous
 
-    async def _add_task(self, task_spec: dict[str, Any]) -> dict[str, Any]:
-        """Add a task to the pipeline, wait for completion, and refresh metadata.
+    async def add_tasks(self, task_specs: list[dict[str, Any]]) -> dict[str, Any]:
+        """Add several tasks in one request; the pipeline runs once, after the last.
+
+        Each spec is what a transform method builds under :meth:`build_only`
+        (its ``task_spec``). The tasks are added in list order. The result is
+        the one :meth:`_add_task` gives a single task: outside draft mode the
+        pipeline has finished when this returns, and the response names no task
+        (list the pipeline's tasks to see them).
+
+        Args:
+            task_specs: Task specification dicts, in the order to add them.
+
+        Returns:
+            The add-task response, as for a single task.
+        """
+        return await self._add_task(task_specs)
+
+    async def _add_task(self, task_spec: dict[str, Any] | list[dict[str, Any]]) -> dict[str, Any]:
+        """Add a task (or a list) to the pipeline, wait for completion, and refresh metadata.
 
         In draft mode, skips waiting and metadata refresh — tasks are queued
         and executed when ``submit_draft()`` is called.
 
         Args:
-            task_spec: Task specification dict.
+            task_spec: Task specification dict, or a list of them (one request).
 
         Returns:
             The add-task response. Outside draft mode the pipeline has finished
@@ -383,7 +400,11 @@ class View(
             raise MammothTransformError(
                 "The task was added but cannot bind to the view's columns "
                 "(reference error); remove it with delete_task and fix the input.",
-                task_key=str(task_spec.get("TASK_KEY") or "") or None,
+                task_key=(
+                    str(task_spec.get("TASK_KEY") or "") or None
+                    if isinstance(task_spec, dict)
+                    else None
+                ),
                 details={
                     "dataview_id": self.id,
                     "dataset_id": self.dataset_id,

@@ -333,8 +333,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth agent chat --help
-  agent_example: 'mammoth agent chat --input ''{"message": "Summarize revenue by region", "scope": {"sample_key":
-    "Status"}}'''
+  agent_example: 'mammoth agent chat --input ''{"message": "Summarize revenue by region", "scope": {"type":
+    "workspace", "workspace_id": 123}, "client_context": {"project_id": 456}}'''
   unit_tests:
   - UT-AGENT-CHAT
   contract_tests:
@@ -343,7 +343,13 @@ commands:
   - CT-AGENT-CHAT-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: 'Scope is {"type": "workspace", "workspace_id": N}, {"type": "user", "user_id":
+    N} or {"type": "account"}. Put the project the question is about in client_context as {"project_id":
+    N}. The command starts the turn and waits for the reply, up to 120 seconds: pass "wait": 0 to
+    return at once with the turn id, or a larger "wait" for a long turn. If the wait ends first the
+    result has working: true; read the finished reply with agent session messages SESSION_ID. The
+    CLI sends one idempotency key per message and repeats it on a gateway error, so a retry never
+    starts a second turn.'
   reviewed_by: primary
   readback:
     command: agent.session.list
@@ -1064,6 +1070,138 @@ commands:
   known_restrictions: Writes. Renames or removes one item of the plan's waiting workflow proposal (action rename or remove, the item key, and name for a rename). Creator only. Needs --session SESSION_ID; an embedded chat supplies it.
   reviewed_by: primary
   no_readback: returns the updated proposal
+- command_id: agent.plan.approve
+  command_path: agent plan approve
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - AgentChat
+  positionals:
+  - name: session_id
+    type: str
+    required: true
+    metavar: SESSION_ID
+    falls_back_to_field: null
+    help: ID of the chat session (from agent session list).
+  options: []
+  sdk_symbol: mammoth.api.agents.AgentsAPI.plan_approve
+  sdk_conversion: Call mammoth.api.agents.AgentsAPI.plan_approve with the session id; the plan reference is built from the session's current plan.
+  request_model: AgentPlanApproveRequest
+  result_model: AgentPlanApproveResult
+  mutation_class: benign_mutation
+  edits_target: true
+  confirmation: prompt_or_yes
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Write that needs a chat with a proposed plan; contract coverage only.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth agent plan approve SESSION_ID --help
+  agent_example: mammoth agent plan approve resource-123
+  unit_tests:
+  - UT-AGENT-PLAN-APPROVE
+  contract_tests:
+  - CT-AGENT-PLAN-APPROVE-HUMAN
+  - CT-AGENT-PLAN-APPROVE-JSON
+  - CT-AGENT-PLAN-APPROVE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: "Writes. This is the web app's Run it: it approves every proposed step of the chat's current plan and starts the work (paid model work). Typing 'Run it' as a chat message does not approve. The plan_id is read from the session; the request key is made by the CLI. Prompt or --yes. Waits up to wait seconds (default 120; wait 0 returns at once) for the turn. A user control: an embedded chat is refused. agent session messages shows when a chat waits for approval."
+  reviewed_by: primary
+  no_readback: returns the started turn
+- command_id: agent.plan.skip
+  command_path: agent plan skip
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - AgentChat
+  positionals:
+  - name: session_id
+    type: str
+    required: true
+    metavar: SESSION_ID
+    falls_back_to_field: null
+    help: ID of the chat session (from agent session list).
+  - name: n
+    type: int
+    required: true
+    metavar: N
+    falls_back_to_field: null
+    help: Number of the proposed plan step to skip (from agent session messages).
+  options: []
+  sdk_symbol: mammoth.api.agents.AgentsAPI.plan_skip
+  sdk_conversion: Call mammoth.api.agents.AgentsAPI.plan_skip with the session id; the plan reference is built from the session's current plan.
+  request_model: AgentPlanSkipRequest
+  result_model: AgentPlanSkipResult
+  mutation_class: benign_mutation
+  edits_target: true
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Write that needs a chat with a proposed plan; contract coverage only.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth agent plan skip SESSION_ID N --help
+  agent_example: mammoth agent plan skip resource-123 123
+  unit_tests:
+  - UT-AGENT-PLAN-SKIP
+  contract_tests:
+  - CT-AGENT-PLAN-SKIP-HUMAN
+  - CT-AGENT-PLAN-SKIP-JSON
+  - CT-AGENT-PLAN-SKIP-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: "Writes. Marks the proposed plan step N skipped; it needs no model turn. Only a proposed step can be skipped. The plan_id is read from the session. A user control: an embedded chat is refused."
+  reviewed_by: primary
+  no_readback: returns the started turn
+- command_id: agent.plan.discard
+  command_path: agent plan discard
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - AgentChat
+  positionals:
+  - name: session_id
+    type: str
+    required: true
+    metavar: SESSION_ID
+    falls_back_to_field: null
+    help: ID of the chat session (from agent session list).
+  options: []
+  sdk_symbol: mammoth.api.agents.AgentsAPI.plan_discard
+  sdk_conversion: Call mammoth.api.agents.AgentsAPI.plan_discard with the session id; the plan reference is built from the session's current plan.
+  request_model: AgentPlanDiscardRequest
+  result_model: AgentPlanDiscardResult
+  mutation_class: benign_mutation
+  edits_target: true
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Write that needs a chat with a proposed plan; contract coverage only.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth agent plan discard SESSION_ID --help
+  agent_example: mammoth agent plan discard resource-123
+  unit_tests:
+  - UT-AGENT-PLAN-DISCARD
+  contract_tests:
+  - CT-AGENT-PLAN-DISCARD-HUMAN
+  - CT-AGENT-PLAN-DISCARD-JSON
+  - CT-AGENT-PLAN-DISCARD-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: "Writes. Marks every proposed step of the chat's current plan skipped; it needs no model turn. The plan_id is read from the session. A user control: an embedded chat is refused."
+  reviewed_by: primary
+  no_readback: returns the started turn
 - command_id: agent.projects.clear
   command_path: agent projects clear
   disposition: command

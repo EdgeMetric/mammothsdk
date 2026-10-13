@@ -262,7 +262,10 @@ def doctor(invocation: Invocation) -> HandlerResult:
         except CliError as error:
             keyring_error = error.code
         if legacy_credential:
-            creds_detail = "legacy API key + secret stored; log in again with an API token"
+            creds_detail = (
+                "legacy API key + secret stored; log in again with an API token: "
+                f"mammoth auth login --profile {shlex.quote(profile_name)}"
+            )
         else:
             creds_detail = "api token present" if creds_present else "none stored"
         checks.append(_check("credentials", creds_present, keyring_error or creds_detail))

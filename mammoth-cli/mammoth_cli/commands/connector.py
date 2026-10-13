@@ -24,6 +24,7 @@ SDK method named by the command's reviewed manifest ``sdk_symbol``.
 
 from __future__ import annotations
 
+import re
 from typing import Any
 
 from mammoth_cli.errors.envelope import (
@@ -46,6 +47,17 @@ from mammoth_cli.runtime.session import open_service, require_project, resolved_
 HandlerResult = tuple[Any, dict[str, Any]]
 
 _DS_CONFIG_CREATE_OPTIONAL = ("query", "file_source", "table", "profile", "validate", "data_sample")
+_QUERY_OPTIONAL = ("table", "profile")
+
+_SQL_STRING = re.compile(r"'(?:[^']|'')*'|\"(?:[^\"]|\"\")*\"|--[^\n]*|/\*.*?\*/", re.DOTALL)
+_SQL_READ_START = re.compile(r"^\s*\(*\s*(select|with|show|values)\b", re.IGNORECASE)
+_SQL_WRITE_WORD = re.compile(
+    r"\b(insert|update|delete|merge|drop|alter|truncate|create|grant|revoke|call|copy|" r"into)\b",
+    re.IGNORECASE,
+)
+
+
+_ACTIVE_CONNECTORS_SYMBOL = "mammoth.api.connectors.ConnectorsAPI.active_connectors"
 
 
 def _symbol(invocation: Invocation) -> str:
@@ -307,29 +319,29 @@ def connector_connection_get(invocation: Invocation) -> HandlerResult:
     return data, _meta(invocation, auth.workspace_id, project_id)
 
 
-def _require_connector_key_for_connection_list(invocation: Invocation) -> str:
-    """Return the connector key, or raise a usage error that says how to find one."""
-    connector_key = _string_positional_at(invocation, 0, "connector key")
-    if connector_key:
-        return connector_key
-    raise CliError(
-        code=CODE_MISSING_ARGUMENT,
-        message=(
-            "This command requires a connector key argument. "
-            "Run `mammoth connector active` to list the connectors that have saved connections."
-        ),
-        exit_status=EXIT_USAGE,
-        hint="Pass the connector key as a positional argument.",
-    )
-
-
 def connector_connection_list(invocation: Invocation) -> HandlerResult:
-    """List connections for a connector type; find its key with `mammoth connector active`."""
+    """List connections for one connector type, or for every connector with a saved one."""
     project_id = require_project(invocation)
-    connector_key = _require_connector_key_for_connection_list(invocation)
+    connector_key = _string_positional_at(invocation, 0, "connector key")
     with open_service(invocation) as (service, auth):
-        data = service.call(_symbol(invocation), connector_key=connector_key, project_id=project_id)
+        if connector_key:
+            data = service.call(
+                _symbol(invocation), connector_key=connector_key, project_id=project_id
+            )
+        else:
+            data = _connections_of_every_connector(service, invocation, project_id)
     return data, _meta(invocation, auth.workspace_id, project_id)
+
+
+def _connections_of_every_connector(
+    service: Any, invocation: Invocation, project_id: int
+) -> list[dict[str, Any]]:
+    """Each active connector's connections, every row carrying its ``connector_key``."""
+    rows: list[dict[str, Any]] = []
+    for key in service.call(_ACTIVE_CONNECTORS_SYMBOL):
+        listed = service.call(_symbol(invocation), connector_key=key, project_id=project_id)
+        rows.extend({"connector_key": key, **connection} for connection in listed)
+    return rows
 
 
 def connector_connection_update(invocation: Invocation) -> HandlerResult:
@@ -356,6 +368,51 @@ def connector_connection_update(invocation: Invocation) -> HandlerResult:
             credentials=credentials,
             project_id=project_id,
         )
+    return data, _meta(invocation, auth.workspace_id, project_id)
+
+
+def _require_read_only_sql(query: Any) -> str:
+    """Return ``query`` when it is one SELECT-style statement, or raise usage.
+
+    A first line of defence only: Mammoth runs the SQL as the connection's
+    database user, so that user's grants are what finally stop a write.
+    """
+    if not isinstance(query, str) or not query.strip():
+        raise CliError(
+            code=CODE_INVALID_ARGUMENT,
+            message="The 'query' input field must be a non-empty SQL string.",
+            exit_status=EXIT_USAGE,
+        )
+    bare = _SQL_STRING.sub(" ", query).strip().rstrip(";").strip()
+    if ";" in bare or not _SQL_READ_START.match(bare) or _SQL_WRITE_WORD.search(bare):
+        raise CliError(
+            code=CODE_INVALID_ARGUMENT,
+            message="connector connection query runs one read-only SELECT statement.",
+            exit_status=EXIT_USAGE,
+            hint=(
+                "Send a single SELECT (or WITH ... SELECT) without INSERT, UPDATE, DELETE or "
+                "DDL. To import rows as a dataset use 'dataset create'."
+            ),
+        )
+    return query
+
+
+def connector_connection_query(invocation: Invocation) -> HandlerResult:
+    """Run one SELECT on a connection and return sample rows; saves nothing, no ``--yes``."""
+    project_id = require_project(invocation)
+    connector_key = _require_string_positional_at(invocation, 0, "connector key")
+    connection_key = _require_string_positional_at(invocation, 1, "connection key")
+    document = invocation.load_input()
+    kwargs: dict[str, Any] = {
+        "connector_key": connector_key,
+        "connection_key": connection_key,
+        "query": _require_read_only_sql(_require_field(document, "query")),
+        "project_id": project_id,
+    }
+    assert document is not None
+    _forward_optional(document, kwargs, _QUERY_OPTIONAL)
+    with open_service(invocation) as (service, auth):
+        data = service.call(_symbol(invocation), **kwargs)
     return data, _meta(invocation, auth.workspace_id, project_id)
 
 

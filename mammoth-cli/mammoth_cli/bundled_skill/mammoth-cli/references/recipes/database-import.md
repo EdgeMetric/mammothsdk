@@ -25,8 +25,19 @@ mammoth connector connection get mssql CONNECTION_KEY     # read it back; config
 ```
 
 There is no table-browse command. Ask the user for the table (and schema), or
-draft the SQL with `connector query generate`. Then import it as a dataset
-(a write: confirm first). `query` is required; `validate` is on by default:
+draft the SQL with `connector query generate`. Try the SELECT first: it shows
+sample rows and saves nothing (no dataset, no data source), so it needs no
+`--yes`. The CLI accepts only one SELECT (or WITH ... SELECT); the connection's
+database user decides what the database allows, and the sample is limited to
+the first rows, so add your own LIMIT for a large table:
+
+```bash
+mammoth connector connection query mssql CONNECTION_KEY \
+  --input '{"query": "SELECT TOP 5 * FROM dbo.Orders"}'
+```
+
+Then import it as a dataset (a write: confirm first). `query` is required;
+`validate` is on by default:
 
 ```bash
 mammoth connector ds-config create mssql CONNECTION_KEY \

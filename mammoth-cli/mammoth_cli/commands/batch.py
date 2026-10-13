@@ -381,8 +381,9 @@ def batch_update(invocation: Invocation) -> HandlerResult:
     patch = _require_field(document, "patch")
     # A ``remove`` op deletes batches, so gate any patch containing one behind a
     # prompt/``--yes``; pure ``replace``/``add`` patches stay unconfirmed.
-    if isinstance(patch, list) and any(
-        isinstance(op, dict) and op.get("op") == "remove" for op in patch
+    operations = [patch] if isinstance(patch, dict) else patch
+    if isinstance(operations, list) and any(
+        isinstance(op, dict) and op.get("op") == "remove" for op in operations
     ):
         enforce_confirmation(
             invocation,

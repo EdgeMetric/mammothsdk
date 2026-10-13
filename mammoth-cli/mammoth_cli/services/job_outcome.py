@@ -33,6 +33,9 @@ VIEW_JOB_OPERATIONS = frozenset(
     }
 )
 COPY_PROJECT_OPERATION = "copy_project"
+#: The job a POST to ``.../pipeline/exports`` starts; it ends before the export runs.
+ADD_EXPORT_OPERATION = "add_action"
+_EXPORTS_PATH = "/pipeline/exports"
 
 _PATH_IDS = re.compile(
     r"/projects/(?P<project>\d+)(?:/datasets/(?P<dataset>\d+)(?:/dataviews/(?P<view>\d+))?)?"
@@ -73,6 +76,19 @@ def view_target(data: dict[str, Any]) -> ViewTarget | None:
     )
     if project is None or dataset is None or view is None:
         return None
+    return ViewTarget(project, dataset, view)
+
+
+def export_target(data: dict[str, Any]) -> ViewTarget | None:
+    """The view a finished add-export job added its export to, or ``None`` for any other job."""
+    path = str(data.get("path") or "")
+    if data.get("operation") != ADD_EXPORT_OPERATION or _EXPORTS_PATH not in path:
+        return None
+    match = _PATH_IDS.search(path)
+    ids = [match.group(name) if match else None for name in ("project", "dataset", "view")]
+    if not all(ids):
+        return None
+    project, dataset, view = (int(value) for value in ids if value)
     return ViewTarget(project, dataset, view)
 
 

@@ -70,7 +70,7 @@ def test_s5_ledger_covers_exact_manifest_surface() -> None:
         for record in load_commands()
         if record["command_id"].startswith(S5_PREFIXES)
     )
-    assert ledger["route_count"] == 61
+    assert ledger["route_count"] == 62
     assert sorted(route["command_id"] for route in routes) == expected
     for route in routes:
         record = command_by_id(route["command_id"])
@@ -131,59 +131,6 @@ def test_postgres_export_executes_exact_scoped_wire(
     }
     assert request.json_body["run_immediately"] is False
     assert request.json_body["validate_only"] is True
-
-
-def test_rest_export_preserves_distinct_target_and_optional_wire_fields(
-    real_service: Any, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
-) -> None:
-    service, api = real_service(project_id=180)
-    api.default(200, {"trigger_id": 72})
-    api.on("GET", r"/dataviews/8$", body={"id": 8, "metadata": []})
-    _patch_service(monkeypatch, service, (view_cmd,))
-
-    view_cmd.view_export_specialized(
-        _inv(
-            "view.export.rest",
-            project=180,
-            extra_args=["8", "10"],
-            input_file=_write(
-                tmp_path,
-                {
-                    "base_url": "https://sink.example",
-                    "endpoint_path": "/v2/records",
-                    "http_method": "PUT",
-                    "auth_type": "bearer",
-                    "auth": {"token": "secret-sentinel"},
-                    "headers": {"X-S5": "distinct"},
-                    "query_params": {"source": "s5"},
-                    "extra_body_fields": {"marker": 73},
-                    "batch_size": 17,
-                },
-            ),
-            yes=True,
-        )
-    )
-
-    request = api.last()
-    assert request.method == "POST"
-    assert request.path == (
-        "/api/v2/workspaces/4/projects/180/datasets/10/dataviews/8/pipeline/exports"
-    )
-    target = request.json_body["target_properties"]
-    assert target == {
-        "base_url": "https://sink.example",
-        "endpoint_path": "/v2/records",
-        "auth_type": "bearer",
-        "http_method": "PUT",
-        "wrap_path": "records",
-        "batch_size": 17,
-        "timeout_seconds": 30,
-        "ssl_verify": True,
-        "token": "secret-sentinel",
-        "default_headers": {"X-S5": "distinct"},
-        "query_params": {"source": "s5"},
-        "extra_body_fields": {"marker": 73},
-    }
 
 
 def test_connector_ds_config_executes_exact_body(

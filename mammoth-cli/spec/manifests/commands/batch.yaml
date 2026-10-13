@@ -313,7 +313,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth batch update DATASET_ID --help
-  agent_example: 'mammoth batch update 123 --input ''{"patch": [{"sample_key": "Status"}]}'''
+  agent_example: 'mammoth batch update 123 --input ''{"patch": {"sample_key": "Status"}}'''
   unit_tests:
   - UT-BATCH-UPDATE
   contract_tests:
@@ -322,7 +322,7 @@ commands:
   - CT-BATCH-UPDATE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: Any remove operation in the discriminated patch changes the mutation class to destructive.
+  known_restrictions: 'The server takes one patch operation per call: {"patch": {"op": "replace", "path": "batches", "value": {"suspend": [BATCH_ID], "restore": [BATCH_ID]}}} (a list holding that one operation is also accepted; "path" defaults to batches). Any remove operation in the patch changes the mutation class to destructive.'
   reviewed_by: primary
   readback:
     command: batch.list

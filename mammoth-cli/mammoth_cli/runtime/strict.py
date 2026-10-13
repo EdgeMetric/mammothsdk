@@ -48,6 +48,9 @@ from mammoth_cli.services.type_system import TypeValidationError, is_opaque_mapp
 
 _OPTION_PREFIX = "-"
 
+#: Flags a few commands take in place of the ``--input`` field of the same name.
+COMMAND_FLAGS: dict[str, frozenset[str]] = {"schema.get": frozenset({"--full"})}
+
 CODE_UNKNOWN_OPTION = "unknown_option"
 CODE_UNEXPECTED_ARGUMENT = "unexpected_argument"
 CODE_UNKNOWN_INPUT_FIELD = "unknown_input_field"
@@ -107,7 +110,8 @@ def validate_extra_args(command_id: str, extra_args: Iterable[str]) -> None:
             :func:`mammoth_cli.services.positionals.resolve_positionals`), so a
             surplus id is refused instead of silently ignored.
     """
-    tokens = list(extra_args)
+    flags = COMMAND_FLAGS.get(command_id, frozenset())
+    tokens = [token for token in extra_args if token not in flags]
     for token in tokens:
         if token.startswith(_OPTION_PREFIX) and token != _OPTION_PREFIX:
             hint, hint_details = _unknown_option_hint(command_id, token)

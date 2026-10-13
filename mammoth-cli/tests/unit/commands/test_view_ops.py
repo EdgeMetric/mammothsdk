@@ -117,15 +117,10 @@ def test_get_via_discovery_returns_the_dataview_record(
 
 def test_create_returns_the_dataview_record(fake_service: FakeMammothService) -> None:
     # ``ViewsResource.create`` also hands back a rich View; the envelope must
-    # carry the new view's record so callers can read its id.
+    # carry the new view's ids at the top (``view get`` has the full record).
     fake_service.responses[_CREATE] = _RichView()
     data, _ = view_ops_cmd.view_create(_inv("view.create", extra_args=["63"]))
-    assert data == {
-        "id": 7,
-        "name": "View 1",
-        "metadata": [{"display_name": "amount"}],
-        "dataset_id": 63,
-    }
+    assert data == {"view_id": 7, "dataset_id": 63, "id": 7, "name": "View 1"}
 
 
 def test_delete_blocked_without_confirmation(fake_service: FakeMammothService) -> None:
@@ -317,6 +312,21 @@ def test_transform_ai_requires_prompt(fake_service: FakeMammothService) -> None:
     with pytest.raises(CliError) as excinfo:
         view_ops_cmd.view_transform_ai(_inv("view.transform.ai", extra_args=["3"], input_file=None))
     assert excinfo.value.code == "missing_field"
+
+
+def test_transform_ai_fails_when_the_step_errors_as_it_runs() -> None:
+    # The step is accepted, then the pipeline ends in runtime_error: an empty column.
+    data = {
+        "pipeline_error": {"error_code": 7000, "execution_state": "runtime_error", "task_id": 9}
+    }
+    with pytest.raises(CliError) as excinfo:
+        view_ops_cmd._reject_failed_ai_run(3, data)
+    assert excinfo.value.code == "task_runtime_error"
+    assert excinfo.value.recovery_commands == ["mammoth view task delete 3 9 --yes"]
+
+
+def test_transform_ai_passes_a_clean_run() -> None:
+    view_ops_cmd._reject_failed_ai_run(3, {"status": "done", "row_check": {"rows_after": 5}})
 
 
 def test_transform_ai_forwards_optional(fake_service: FakeMammothService, tmp_path: Path) -> None:
