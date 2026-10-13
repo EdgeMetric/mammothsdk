@@ -243,6 +243,72 @@ def test_first_name_needs_exactly_one_destination(items: Table) -> None:
     assert items.steps() == before
 
 
+# -- batch ---------------------------------------------------------------------
+
+_KEEP_FROM_20 = {"condition": {"column": "Cost", "operator": "GTE", "value": 20}}
+
+
+def test_a_batch_of_filter_sort_and_limit_gives_one_verified_outcome(items: Table) -> None:
+    data = items.ok(
+        "batch",
+        steps=[
+            {"op": "filter", "input": _KEEP_FROM_20},
+            {"op": "sort", "input": {"order_by": [["Cost", "DESC"]]}},
+            {"op": "limit-rows", "input": {"n": 2}},
+        ],
+    )
+
+    assert data["status"] == "done"
+    assert [(t["step_index"], t["op"], t["transform_status"]) for t in data["tasks"]] == [
+        (0, "filter", "DONE"),
+        (2, "limit-rows", "DONE"),
+    ]
+    assert data["row_check"] == {"rows_before": 4, "rows_after": 2}
+    assert data["sort"] == [["Cost", "DESC"]]
+    assert items.steps() == 2
+
+
+def test_a_batch_whose_second_task_fails_names_the_step_and_keeps_no_task(items: Table) -> None:
+    """A find/replace on the numeric Cost column builds client-side, then fails in the pipeline."""
+    before = items.steps()
+
+    error = items.err(
+        "batch",
+        steps=[
+            {"op": "limit-rows", "input": {"n": 3}},
+            {"op": "replace", "input": {"columns": ["Cost"], "find": "1", "replace": "2"}},
+        ],
+    )
+
+    assert error["code"] == "batch_step_failed"
+    assert error["details"]["step_index"] == 1 and error["details"]["op"] == "replace"
+    assert error["details"]["not_removed_task_ids"] == []
+    assert items.steps() == before
+    assert items.total("Cost") == 100
+
+
+def test_a_batch_step_using_a_column_an_earlier_step_creates_is_refused_before_any_send(
+    items: Table,
+) -> None:
+    before = items.steps()
+
+    error = items.err(
+        "batch",
+        steps=[
+            {"op": "copy-columns", "input": {"copies": [{"source": "Cost", "as_name": "Cost 2"}]}},
+            {
+                "op": "filter",
+                "input": {"condition": {"column": "Cost 2", "operator": "GTE", "value": 20}},
+            },
+        ],
+    )
+
+    assert error["code"] == "unknown_column"
+    assert "steps[1] (filter)" in error["message"]
+    assert "earlier step" in json.dumps(error)
+    assert items.steps() == before
+
+
 # -- write read-back -------------------------------------------------------
 
 

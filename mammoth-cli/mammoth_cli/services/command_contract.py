@@ -396,6 +396,9 @@ _VIEW_UPDATE_COLUMN_FIELDS = (
     FieldSpec("column", required=True, annotation=str),
     FieldSpec("expression", required=True, annotation=str),
 )
+# view.transform.batch: each step is {"op", "input"}; ``input`` is that op's own document, bound
+# by the op's contract, so it is not repeated here.
+_VIEW_TRANSFORM_BATCH_FIELDS = (FieldSpec("steps", required=True, annotation=list[dict[str, Any]]),)
 _VIEW_FIRST_NAME_FIELDS = (
     FieldSpec("column", required=True, annotation=str),
     FieldSpec("new_column", required=False, annotation=str | None, default=None),
@@ -887,6 +890,8 @@ def resolve_command_contract(command_id: str) -> ResolvedCommandContract | None:
         special_fields = _VIEW_UPDATE_COLUMN_FIELDS
     elif command_id == "view.transform.first-name":
         special_fields = _VIEW_FIRST_NAME_FIELDS
+    elif command_id == "view.transform.batch":
+        special_fields = _VIEW_TRANSFORM_BATCH_FIELDS
     elif command_id == "dashboard.filter.add":
         special_fields = _DASHBOARD_FILTER_ADD_FIELDS
     elif command_id == "dashboard.filter.remove":

@@ -46,6 +46,20 @@ _PROTECTED_INPUT_PATH = "/private/path/request.json"
 # second id, an optional-but-central input field, or two views to compare.
 _FIXED_EXAMPLES: dict[str, tuple[tuple[str, ...], dict[str, Any]]] = {
     "view.optimize": (("123",), {}),
+    "view.transform.batch": (
+        ("123",),
+        {
+            "steps": [
+                {
+                    "op": "filter",
+                    "input": {"condition": {"column": "Cost", "operator": "GTE", "value": 20}},
+                },
+                {"op": "sort", "input": {"order_by": [["Cost", "DESC"]]}},
+                {"op": "limit-rows", "input": {"n": 2}},
+            ],
+            "dataset_id": 456,
+        },
+    ),
     "view.transform.first-name": (
         ("123",),
         {"column": "Name", "new_column": "First name", "dataset_id": 456},
@@ -331,6 +345,9 @@ _COMMAND_DISCOVERY_PURPOSES = {
     "view.transform.ai": (
         "ai llm prompt generative classify categorize categorise sentiment enrich "
         "summarize summarise rows into a new column"
+    ),
+    "view.transform.batch": (
+        "batch several transforms together in one call one pipeline run chain steps at once"
     ),
     "view.transform.bulk-replace": (
         "find replace strip characters text values mapping standardize standardise "

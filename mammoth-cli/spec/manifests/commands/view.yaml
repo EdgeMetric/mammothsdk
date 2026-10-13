@@ -4570,6 +4570,52 @@ commands:
   known_restrictions: Standard transformation policy; record addon and data-processing notice in help
     (data can be processed by an AI feature).
   reviewed_by: primary
+- command_id: view.transform.batch
+  command_path: view transform batch
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - AddTask
+  positionals:
+  - name: view_id
+    type: int
+    required: true
+    metavar: VIEW_ID
+    falls_back_to_field: null
+    help: ID of the view to act on.
+  options: []
+  sdk_symbol: mammoth.view.View.add_tasks
+  sdk_conversion: 'CLI one-call op: each step is built as its own view transform command builds it (View.<method> under build_only), then View.add_tasks sends them as one request; from mammoth_cli.commands.view_ops. The accepted document fields are in command_contract.py.'
+  request_model: ViewTransformBatchRequest
+  result_model: ViewTransformBatchResult
+  mutation_class: reversible_pipeline
+  edits_target: true
+  confirmation: none
+  wait_policy: always_wait
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  readback:
+    command: view.data.get
+    ids:
+      view_id: positional.0
+    kind: data
+  live_test: LT-VIEW-TRANSFORM-BATCH
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view transform batch VIEW_ID --help
+  agent_example: 'mammoth view transform batch 123 --input ''{"steps": [{"op": "filter", "input": {"condition": {"column": "Cost", "operator": "GTE", "value": 20}}}, {"op": "sort", "input": {"order_by": [["Cost", "DESC"]]}}, {"op": "limit-rows", "input": {"n": 2}}], "dataset_id": 456}'''
+  unit_tests:
+  - UT-VIEW-TRANSFORM-BATCH
+  contract_tests:
+  - CT-VIEW-TRANSFORM-BATCH-HUMAN
+  - CT-VIEW-TRANSFORM-BATCH-JSON
+  - CT-VIEW-TRANSFORM-BATCH-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Use when several transforms go on one view in a row (filter, then limit, then a sort): one call, one pipeline run, one verified outcome (row_check, and tasks with each new task''s transform_status) instead of one call and one run per step. --input: "steps", a list of {"op", "input"}; op is filter, sort, limit-rows, discard-duplicates, fill-missing, bulk-replace, replace, text, substring, extract-date, increment-date or copy-columns, and input is exactly what that view transform command takes (display names). Every step is checked against the view''s columns as they are NOW before anything is sent, so a step cannot use a column an earlier step of the same batch creates: add those columns first, then batch the rest. A sort is the view''s row order, not a task: it is set after the tasks have run. A batch skips the per-op no-op check (a filter that matches every row still adds its task). If a task fails the batch''s tasks are removed, the view is as before, and the error names steps[i] (batch_step_failed). In draft mode the tasks are staged, not run.'
+  reviewed_by: primary
 - command_id: view.transform.bulk-replace
   command_path: view transform bulk-replace
   disposition: command

@@ -948,6 +948,7 @@ _TARGETS: dict[str, str] = {
     "view.transform.add-column": "mammoth_cli.commands.view_ops:view_transform_add_column",
     "view.transform.add-sql": "mammoth_cli.commands.view_ops:view_transform_add_sql",
     "view.transform.ai": "mammoth_cli.commands.view_ops:view_transform_ai",
+    "view.transform.batch": "mammoth_cli.commands.view_ops:view_transform_batch",
     "view.transform.bulk-replace": "mammoth_cli.commands.view_ops:view_transform_bulk_replace",
     "view.transform.combine-columns": (
         "mammoth_cli.commands.view_ops:view_transform_combine_columns"

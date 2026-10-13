@@ -94,6 +94,14 @@ task submission does not prove that the task removed duplicates.
 For deduplication, discover and use `view.transform.discard-duplicates`; see
 recipes/transforms.md for the full procedure.
 
+When several transforms go on the same view in a row (for example filter, sort, then
+limit-rows), send them in one `view transform batch VIEW_ID --input '{"steps": [{"op":
+"filter", "input": {...}}, ...]}'` instead of one command each: the pipeline runs once and
+one verified outcome comes back (`row_check`, and `tasks` with each new task's status).
+Each `input` is what that `view transform` command takes. A step cannot use a column an
+earlier step of the batch creates: run those steps first. If a task fails, the batch's tasks
+are removed and the error names `steps[i]`.
+
 Prefer a typed `view transform <operation>` command. Its schema is the
 discoverable request contract. A job status or pipeline/task definition only
 proves that the task ran. For a value-changing step, the proof is the

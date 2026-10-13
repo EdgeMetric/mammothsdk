@@ -491,6 +491,7 @@ class SdkMammothService:
         method: str,
         /,
         dataset_id: int | None = None,
+        build_only: bool = False,
         **kwargs: Any,
     ) -> Any:
         """Resolve a View and invoke one of its public methods (or a property).
@@ -501,6 +502,10 @@ class SdkMammothService:
             dataset_id: Optional verified parent dataset for the target view.
                 When supplied, metadata is fetched from that exact parent
                 endpoint rather than using a workspace-wide parent search.
+            build_only: Run the method's validation and build the task without
+                sending it (``View.build_only``): a transform answers
+                ``{"status": "validated", "task_spec": ...}``. Nothing is
+                written, so the dry-run gate is not consulted.
             **kwargs: Keyword arguments forwarded to the method; a ``condition``
                 spec is compiled to an SDK condition object first.
 
@@ -587,7 +592,7 @@ class SdkMammothService:
             ) from exc
         if kwargs.get(CONDITION_KWARG) is not None:
             kwargs[CONDITION_KWARG] = compile_condition(kwargs[CONDITION_KWARG])
-        gate = self.gate
+        gate = None if build_only else self.gate
         if gate is not None:
             scope = {"view_id": view_id, "dataset_id": getattr(view, "dataset_id", None)}
             if method != "math":
@@ -602,6 +607,9 @@ class SdkMammothService:
                     self._run(attribute(**kwargs))
                 gate(method, kwargs, **scope)
             with spinner(self._progress):
+                if build_only:
+                    with view.build_only():
+                        return self._run(attribute(**kwargs))
                 return self._run(attribute(**kwargs))
         except DryRunStop:
             raise

@@ -90,6 +90,7 @@ ERROR_SUMMARIES: dict[str, str] = {
     "append_schema_unreadable": "The columns of the existing data couldn't be read.",
     "authentication_failed": "Mammoth didn't accept the sign-in for this step.",
     "authorization_required": "You don't have permission to do this.",
+    "batch_step_failed": "One step of the batch failed, so none of its steps were kept.",
     "capability_not_found": "That isn't something Mammoth supports.",
     "cli_key_expired": "The saved API key has expired, so a new sign-in is needed.",
     "cli_keys_need_browser_sign_in": "Managing API keys needs a browser sign-in, not an API token.",
