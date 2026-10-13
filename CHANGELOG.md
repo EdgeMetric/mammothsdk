@@ -6,8 +6,11 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-### Added (mammoth-io, mammoth-cli)
+### Added (mammoth-io 0.8.42, mammoth-cli 2.2.78)
 
+- `mammoth view transform batch VIEW --input '{"steps": [{"op": "filter", "input": {...}}, ...], "dataset_id": N}'` adds several transforms in one request, so the pipeline runs once after the last step instead of once per step. Ops: filter, sort, limit-rows, discard-duplicates, fill-missing, bulk-replace, replace, text, substring, extract-date, increment-date, copy-columns. `sort` is applied after the run as a view setting. If a step fails, the batch's tasks are removed and the command fails with `batch_step_failed`, naming the step.
+- SDK: `View.add_tasks(task_specs)` and `PipelineAPI.add_task` take a list of task specs and send them as one POST.
+- SDK: `ExportStatus.QUEUED`.
 - `mammoth agent chat` no longer fails with 400 `4GENR007` ("request_key: Field required"). The SDK makes the `request_key` for each submit and repeats it on its own retries after a gateway error; it is never part of `--input`. `agent chat` waits (default 120 seconds, `"wait": 0` to return at once) and returns the reply, or `working: true` with the `session_id` to follow with `agent session messages`. The `scope` shape (`{"type": "workspace", "workspace_id": N}`) and `client_context.project_id` are documented.
 - `mammoth agent plan approve SESSION_ID`, `agent plan skip SESSION_ID N` and `agent plan discard SESSION_ID` do what the web app's Run it, Skip and Discard buttons do (typing "Run it" as a chat message approves nothing). The plan id is read from the session. `agent session messages` reports `awaiting_plan_approval` with the exact commands when a plan waits.
 - `mammoth connector connection query CONNECTOR CONNECTION --input '{"query": "SELECT ..."}'` runs one SELECT and returns sample rows. It is read-only on the Mammoth side: no data source is saved and no dataset is made (only the short-lived job that carries the request), so it needs no `--yes`. The CLI refuses anything but a single SELECT; the connection's database user decides what the database allows.
@@ -16,8 +19,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `mammoth schema get COMMAND --full` (the `--input '{"full": true}'` form still works).
 - The recipes and `dataset create` preconditions cover importing from a REST API and from a database query; `schema find` ("rest api connector", "create dataset from a database query") now reaches `dataset create`. Stacking two datasets is documented as `view export dataset` with `save_as_mode` `APPEND_TO_DS`, including the refresh caveat; a real union step needs backend work.
 
-### Changed (mammoth-cli)
+### Changed (mammoth-io 0.8.42, mammoth-cli 2.2.78)
 
+- A database export (`view export postgres` and the other database targets) returns after the export has run, with its status, error and run time, instead of when the export was added. A failed run fails the command with `export_failed`. `mammoth job wait` on the job that added such an export reports the same outcome. An export that is still queued counts as running; one that has not started after the wait is reported as scheduled.
+- Pipeline waits ask first after 0.5 s instead of 3 s (`PipelineAPI.wait_for_pipeline` `poll_interval` default), and the CLI no longer polls the pipeline again after the SDK already saw it ready. Short transforms return several seconds sooner.
 - `mammoth batch update` works again: the server takes one patch operation (`{"op": "replace", "path": "batches", "value": {"suspend": [ids], "restore": [ids]}}`), which the SDK and CLI now send as such (a list holding one operation is still accepted).
 - `mammoth dataset bulk-delete` checks that every dataset is gone and fails, naming the ones still present, instead of exiting 0 after a partial delete.
 - `mammoth view transform ai` fails with `task_runtime_error` (and the command that removes the task) when the AI step errors as it runs, instead of exiting 0 with an empty column.
