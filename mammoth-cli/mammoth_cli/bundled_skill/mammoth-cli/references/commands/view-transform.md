@@ -32,6 +32,16 @@ Result: `ViewTransformAiResult`; mutation `reversible_pipeline`, confirmation `n
 
 Status on release: ran once on CLI 2.0.40 through `view.task.add` and was read back with `view data get`; other inputs for this transform are untried.
 
+### `view.transform.batch`
+
+Run: `mammoth view transform batch`. Exact input fields: `mammoth schema get view.transform.batch`.
+
+Example: `mammoth view transform batch 123 --input '{"steps": [{"op": "filter", "input": {"condition": {"column": "Cost", "operator": "GTE", "value": 20}}}, {"op": "sort", "input": {"order_by": [["Cost", "DESC"]]}}, {"op": "limit-rows", "input": {"n": 2}}], "dataset_id": 456}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `ViewTransformBatchResult`; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`.
+
+Status on release: untried; it submits through `view.task.add`, but this transform was not among those run.
+
 ### `view.transform.bulk-replace`
 
 Run: `mammoth view transform bulk-replace`. Exact input fields: `mammoth schema get view.transform.bulk-replace`.

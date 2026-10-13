@@ -4,7 +4,7 @@ Generated from the reviewed command manifests for mammoth-cli 2.2.77.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
-Total commands: 752.
+Total commands: 753.
 
 ## activity
 
@@ -6820,6 +6820,17 @@ Total commands: 752.
 - Confirmation: `none`
 - Backing SDK: `mammoth.View.gen_ai`
 - Agent example: `mammoth view transform ai 123 --input '{"prompt": "Summarize revenue by region", "context_columns": ["Status"], "dataset_id": 456}'`
+
+### `mammoth view transform batch`
+
+**Arguments**
+
+- `VIEW_ID` (int, required) — ID of the view to act on.
+
+- Mutation class: `reversible_pipeline`
+- Confirmation: `none`
+- Backing SDK: `mammoth.view.View.add_tasks`
+- Agent example: `mammoth view transform batch 123 --input '{"steps": [{"op": "filter", "input": {"condition": {"column": "Cost", "operator": "GTE", "value": 20}}}, {"op": "sort", "input": {"order_by": [["Cost", "DESC"]]}}, {"op": "limit-rows", "input": {"n": 2}}], "dataset_id": 456}'`
 
 ### `mammoth view transform bulk-replace`
 

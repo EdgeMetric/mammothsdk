@@ -1451,6 +1451,8 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth view transform add-sql 123 --input '{"query": "SELECT region, SUM(revenue) AS revenue FROM \"view:123\" GROUP BY region", "dataset_id": 456}'
 - `mammoth view transform ai` [reversible_pipeline/none] -> mammoth.View.gen_ai
   example: mammoth view transform ai 123 --input '{"prompt": "Summarize revenue by region", "context_columns": ["Status"], "dataset_id": 456}'
+- `mammoth view transform batch` [reversible_pipeline/none] -> mammoth.view.View.add_tasks
+  example: mammoth view transform batch 123 --input '{"steps": [{"op": "filter", "input": {"condition": {"column": "Cost", "operator": "GTE", "value": 20}}}, {"op": "sort", "input": {"order_by": [["Cost", "DESC"]]}}, {"op": "limit-rows", "input": {"n": 2}}], "dataset_id": 456}'
 - `mammoth view transform bulk-replace` [reversible_pipeline/none] -> mammoth.View.bulk_replace
   example: mammoth view transform bulk-replace 123 --input '{"columns": ["Status"], "mapping": [{"search": ["sample"], "replace": "sample"}], "dataset_id": 456}'
 - `mammoth view transform combine-columns` [reversible_pipeline/none] -> mammoth.View.combine_columns

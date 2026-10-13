@@ -12629,6 +12629,7 @@
         "view.transform.add-column",
         "view.transform.add-sql",
         "view.transform.ai",
+        "view.transform.batch",
         "view.transform.bulk-replace",
         "view.transform.combine-columns",
         "view.transform.convert-type",

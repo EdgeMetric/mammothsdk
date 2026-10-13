@@ -648,6 +648,7 @@
   "view.transform.add-column": "Add a new column. 'name' is required; 'column_type' is optional.",
   "view.transform.add-sql": "Add a column via a raw SQL expression. 'query' is required.",
   "view.transform.ai": "Generate a column with an AI prompt. 'prompt'/'context_columns' required.",
+  "view.transform.batch": "Add several transforms in one request. 'steps' is required.",
   "view.transform.bulk-replace": "Bulk-replace values. 'columns'/'mapping' required.",
   "view.transform.combine-columns": "Combine columns into one. 'sources' is required.",
   "view.transform.convert-type": "Convert column types. 'conversions' is required.",
