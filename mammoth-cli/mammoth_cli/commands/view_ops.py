@@ -24,7 +24,8 @@ import re
 import shlex
 import time
 from collections.abc import Callable
-from dataclasses import dataclass, field
+from dataclasses import dataclass
+from dataclasses import field as dataclass_field
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
@@ -2143,11 +2144,11 @@ _BATCH_COLUMN_HINT = (
 class _BatchPlan:
     """What a batch will do, built before anything is sent."""
 
-    specs: list[dict[str, Any]] = field(default_factory=list)
+    specs: list[dict[str, Any]] = dataclass_field(default_factory=list)
     #: ``(step index, op)`` of each spec, in order.
-    task_steps: list[tuple[int, str]] = field(default_factory=list)
+    task_steps: list[tuple[int, str]] = dataclass_field(default_factory=list)
     #: The bound ``sort`` inputs, applied after the tasks have run.
-    sorts: list[dict[str, Any]] = field(default_factory=list)
+    sorts: list[dict[str, Any]] = dataclass_field(default_factory=list)
 
 
 def _batch_steps(document: dict[str, Any] | None) -> list[dict[str, Any]]:
