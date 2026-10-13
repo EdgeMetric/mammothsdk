@@ -17,7 +17,7 @@ from typing import Any
 
 from mcp.server.auth.middleware.auth_context import get_access_token
 from mcp.server.context import HandlerResult, ServerRequestContext
-from mcp.server.mcpserver.exceptions import ToolError
+from mcp_types import CallToolResult, TextContent
 
 # What Mammoth puts on a token the user limited to reading.
 READ_SCOPE = "read"
@@ -64,15 +64,25 @@ class ReadOnly:
     Refused here rather than at Mammoth: Mammoth would refuse it too, but the
     model would read a failed call instead of the reason, and the write would
     have been attempted.
+
+    The refusal is a tool result marked as an error, as a tool's own failure is.
+    Raised here, outside the tool, it would reach the client as a protocol
+    error, which a client shows as "Internal server error".
     """
 
     async def __call__(self, ctx: ServerRequestContext[Any, Any], call_next: Any) -> HandlerResult:
         if ctx.method == _TOOL_CALL:
             tool = str((ctx.params or {}).get("name"))
             if not may_run(tool):
-                raise ToolError(
-                    f"This connection is read-only, so {tool} cannot run."
-                    " To make changes, disconnect it in Mammoth > Settings > Connected apps,"
-                    " then connect again without read-only."
-                )
+                return refusal(tool)
         return await call_next(ctx)
+
+
+def refusal(tool: str) -> CallToolResult:
+    """What a read-only caller gets back for a tool that would change something."""
+    text = (
+        f"This connection is read-only, so {tool} cannot run."
+        " To make changes, disconnect it in Mammoth > Settings > Connected apps,"
+        " then connect again without read-only."
+    )
+    return CallToolResult(content=[TextContent(type="text", text=text)], is_error=True)

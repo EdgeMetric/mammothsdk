@@ -7,11 +7,9 @@ says it does, so a new tool is covered the day it is added rather than when
 somebody remembers to add it to a list.
 """
 
-import pytest
 from mcp.server.auth.middleware.auth_context import auth_context_var
 from mcp.server.auth.middleware.bearer_auth import AuthenticatedUser
 from mcp.server.auth.provider import AccessToken
-from mcp.server.mcpserver.exceptions import ToolError
 
 from mammoth_mcp_server.config import MCP_RESOURCE_URL
 from mammoth_mcp_server.read_only import READ_SCOPE, ReadOnly, may_run
@@ -99,18 +97,17 @@ class TestTheRefusal:
     async def test_a_write_is_refused_before_it_reaches_mammoth(self) -> None:
         as_a_caller_who(READ_SCOPE)
 
-        with pytest.raises(ToolError) as refused:
-            await ReadOnly()(a_context("delete_views"), answers)
+        refused = await ReadOnly()(a_context("delete_views"), answers)
 
-        assert "read-only" in str(refused.value).lower()
+        assert refused.is_error
+        assert "read-only" in refused.content[0].text.lower()
 
     async def test_the_refusal_names_the_tool_that_was_refused(self) -> None:
         as_a_caller_who(READ_SCOPE)
 
-        with pytest.raises(ToolError) as refused:
-            await ReadOnly()(a_context("delete_views"), answers)
+        refused = await ReadOnly()(a_context("delete_views"), answers)
 
-        assert "delete_views" in str(refused.value)
+        assert "delete_views" in refused.content[0].text
 
     async def test_a_read_goes_through_untouched(self) -> None:
         as_a_caller_who(READ_SCOPE)
