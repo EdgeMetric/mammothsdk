@@ -268,6 +268,19 @@ def test_a_batch_of_filter_sort_and_limit_gives_one_verified_outcome(items: Tabl
     assert items.steps() == 2
 
 
+def test_a_batch_limit_after_a_sort_keeps_the_rows_that_sort_puts_first(items: Table) -> None:
+    items.ok(
+        "batch",
+        steps=[
+            {"op": "filter", "input": _KEEP_FROM_20},
+            {"op": "sort", "input": {"order_by": [["Cost", "DESC"]]}},
+            {"op": "limit-rows", "input": {"n": 2}},
+        ],
+    )
+
+    assert items.values("Cost") == [30, 40]
+
+
 def test_a_batch_whose_second_task_fails_names_the_step_and_keeps_no_task(items: Table) -> None:
     """A find/replace on the numeric Cost column builds client-side, then fails in the pipeline."""
     before = items.steps()
