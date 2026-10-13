@@ -158,6 +158,8 @@ def test_rest_export_preserves_distinct_target_and_optional_wire_fields(
                     "query_params": {"source": "s5"},
                     "extra_body_fields": {"marker": 73},
                     "batch_size": 17,
+                    # no saved trigger, so nothing for the command to wait on
+                    "trigger_type": "none",
                 },
             ),
             yes=True,

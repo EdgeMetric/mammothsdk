@@ -26,6 +26,7 @@ from mammoth_cli.errors.envelope import (
 from mammoth_cli.manifest.loader import command_by_id
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.session import open_service
+from mammoth_cli.runtime.verify import export_wait_budget, wait_export_run
 from mammoth_cli.services import job_outcome
 from mammoth_cli.services.board_values import board_values, dashboard_link
 
@@ -163,6 +164,8 @@ def job_wait(invocation: Invocation) -> HandlerResult:
     failed job is a ``job_failed`` error with its reason; a wait that runs out is
     a ``timeout`` error, or with ``--return-running`` ``{status: running, job_id,
     resume}``.
+    A finished add-export job also carries ``export``, the run of the export it added
+    (``export_failed`` when that run failed).
     """
     job_id = _require_int_positional(invocation, "job id")
     document = invocation.load_input() or {}
@@ -173,6 +176,7 @@ def job_wait(invocation: Invocation) -> HandlerResult:
         with open_service(invocation) as (service, auth):
             data = _with_board(service, auth, _wait_result(job_id, service.call(symbol, **kwargs)))
             data = _with_outcome(service, data)
+            data = _with_export_run(service, data, invocation, document.get("timeout"))
     except KeyboardInterrupt as exc:
         # Keep the explicit handle even when the polling implementation raises
         # a bare SIGINT.  A caller can inspect/resume it without replaying the
@@ -187,6 +191,28 @@ def job_wait(invocation: Invocation) -> HandlerResult:
             invocation.profile,
         ) from exc
     return data, _meta(invocation, auth.workspace_id)
+
+
+def _with_export_run(
+    service: Any, data: dict[str, Any], invocation: Invocation, timeout: float | None
+) -> dict[str, Any]:
+    """Add ``export`` to a finished add-export job: the run of the export it added.
+
+    The add job resolves before the backend runs a database export, so its own success
+    says nothing of the run. The export is the view's newest one.
+    """
+    target = job_outcome.export_target(data)
+    if target is None:
+        return data
+    export = wait_export_run(
+        service,
+        target.view_id,
+        target.dataset_id,
+        known_ids=set(),
+        budget=export_wait_budget(invocation, timeout),
+        job_id=data["job_id"],
+    )
+    return {**data, "export": export}
 
 
 _DATAVIEW_GET_SYMBOL = "mammoth.api.dataviews.DataviewsAPI.get"

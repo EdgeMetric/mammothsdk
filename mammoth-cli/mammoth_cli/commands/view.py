@@ -54,6 +54,7 @@ from mammoth_cli.runtime.confirm import (
 from mammoth_cli.runtime.dryrun import DryRunStop
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.session import open_service, require_project
+from mammoth_cli.runtime.verify import export_wait_budget, read_export_stamps, wait_export_run
 from mammoth_cli.services import conditional_format as cf_rules
 from mammoth_cli.services import read_queries, text_dates, view_analysis
 from mammoth_cli.services.append_blank_columns import (
@@ -4180,6 +4181,56 @@ def _with_recurrence_note(data: Any, note: str) -> dict[str, Any]:
     return record
 
 
+_PIPELINE_TRIGGER = "pipeline"
+_JOB_WAIT_SYMBOL = "mammoth.api.jobs.JobsAPI.wait_for_job"
+#: Exports whose add job already waits for the run: the S3 ones resolve it with the file's URL.
+_EXPORT_JOB_WAITS_FOR_RUN = frozenset(
+    {"view.export.dataset", "view.export.managed-s3", "view.export.live-link"}
+)
+
+
+def _waits_for_export_run(command_id: str, kwargs: dict[str, Any]) -> bool:
+    """Whether this export saves a pipeline trigger whose run the command should wait for."""
+    return (
+        command_id not in _EXPORT_JOB_WAITS_FOR_RUN
+        and not kwargs.get("validate_only")
+        and kwargs.get("trigger_type", _PIPELINE_TRIGGER) == _PIPELINE_TRIGGER
+    )
+
+
+def _with_export_run(
+    service: Any,
+    data: Any,
+    view: tuple[int, int, set[int]],
+    kwargs: dict[str, Any],
+    invocation: Invocation,
+) -> dict[str, Any]:
+    """The export result with ``export``: the saved export's run, waited for.
+
+    The add job resolves before the backend runs a database export, so the result
+    the SDK hands back says nothing of whether rows landed. The add job is waited for
+    first: when it fails (the destination was refused) no export was saved, and its
+    own error is the answer.
+    """
+    record = data.model_dump(mode="json") if hasattr(data, "model_dump") else data
+    result = dict(record) if isinstance(record, dict) else {"result": record}
+    job = result.get("job")
+    view_id, dataset_id, known_exports = view
+    job_id = job.get("id") if isinstance(job, dict) else None
+    if job_id is not None:
+        service.call(_JOB_WAIT_SYMBOL, job_id=job_id)
+    result["export"] = wait_export_run(
+        service,
+        view_id,
+        dataset_id,
+        known_ids=known_exports,
+        budget=export_wait_budget(invocation),
+        job_id=job_id,
+        run_now=kwargs.get("run_immediately", True) is not False,
+    )
+    return result
+
+
 def view_export_specialized(invocation: Invocation) -> HandlerResult:
     """Run one of the SDK's typed ``View.export`` destination helpers."""
     route = _SPECIAL_EXPORTS.get(invocation.command_id)
@@ -4301,6 +4352,12 @@ def view_export_specialized(invocation: Invocation) -> HandlerResult:
             blank_warnings = acknowledged_blank_columns(
                 int(target_ds_id), target_only_columns, blank_columns
             )
+        waits_for_run = _waits_for_export_run(invocation.command_id, kwargs)
+        known_exports = (
+            set(read_export_stamps(service, dataview_id, dataset_id) or {})
+            if waits_for_run
+            else set()
+        )
         try:
             data = service.call_view(dataview_id, method, dataset_id=dataset_id, **kwargs)
         except DryRunStop as stop:
@@ -4372,6 +4429,10 @@ def view_export_specialized(invocation: Invocation) -> HandlerResult:
             data["row_check"] = row_check
             if pipeline_error is not None:
                 data["pipeline_error"] = pipeline_error
+        if waits_for_run:
+            data = _with_export_run(
+                service, data, (dataview_id, dataset_id, known_exports), kwargs, invocation
+            )
     if table_note is not None:
         data = _with_recurrence_note(data, table_note)
     return data, _meta(invocation, auth.workspace_id, project_id)

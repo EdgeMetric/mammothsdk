@@ -624,6 +624,8 @@ def test_postgres_route_requires_confirmation_and_forwards_secret(
         "username": "agent",
         "password": "secret",
         "replace_table": True,
+        # no saved trigger, so nothing for the command to wait on (the fake has no exports)
+        "trigger_type": "none",
     }
     with pytest.raises(CliError) as error:
         view_cmd.view_export_specialized(

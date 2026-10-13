@@ -108,6 +108,14 @@ mammoth view export postgres VIEW_ID DATASET_ID --project PROJECT_ID \
 mammoth view export list VIEW_ID DATASET_ID --project PROJECT_ID
 ```
 
+The command returns after the export has run. The result carries
+`export: {id, status, error, ran_at, result}`: `status` `ok` means the run
+finished, so there is nothing to poll or read back to confirm it. A run that
+failed is an `export_failed` error naming the destination's error. With
+`"run_immediately": false` nothing runs now and `export.status` is `scheduled`.
+`mammoth job wait JOB_ID` on the add job (`add_action`) returns the same
+`export` block.
+
 If the operator has not supplied such a file, stop and ask for it; do not
 compose the body yourself from values seen in chat.
 

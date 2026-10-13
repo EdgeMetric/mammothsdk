@@ -13,6 +13,7 @@ from __future__ import annotations
 import time
 from typing import Any
 
+from mammoth_cli.errors.envelope import CliError, timeout_error
 from mammoth_cli.output.normalize import Revealed
 from mammoth_cli.runtime.invocation import Invocation
 
@@ -38,6 +39,23 @@ _EXPORT_FIELDS_FULL = "__full"
 #: seconds later; wait up to this long for that to show before reading them as clean.
 _EXPORT_SETTLE_S = 25.0
 _EXPORT_SETTLE_POLL_S = 1.0
+_EXPORTS_GET_SYMBOL = "mammoth.api.exports.ExportsAPI.get"
+#: A saved export's own run is polled faster than the backend's re-validation: the run
+#: itself takes a few seconds, and every poll interval is added to the caller's wait.
+_EXPORT_RUN_POLL_S = 0.5
+#: The export list's page maximum (``ExportsAPI.list`` ``limit``).
+_EXPORT_LIST_LIMIT = 100
+#: ``export.status`` of a run that ended well, one that ended in error, and a saved
+#: export that no run has started for.
+EXPORT_RAN_OK = "ok"
+EXPORT_RAN_FAILED = "failed"
+EXPORT_SCHEDULED = "scheduled"
+EXPORT_RUNNING = "running"
+_EXPORT_RUNNING_STATUS = "executing"
+_EXPORT_EXECUTED_STATUS = "executed"
+#: ``code`` of the error for an export whose run ended in error.
+CODE_EXPORT_FAILED = "export_failed"
+CODE_EXPORT_NOT_FOUND = "export_not_found"
 
 OUTCOME_SETTLED = "settled"
 OUTCOME_PENDING = "pending"
@@ -562,3 +580,157 @@ def _export_error_columns(error_info: dict[str, Any]) -> list[str]:
         if isinstance(name, str):
             names.append(name)
     return names
+
+
+# ---------------------------------------------------------------------------
+# An export's own run. Adding a database export resolves the add job BEFORE the
+# backend runs the export (``RUN_EXPORT_ACTION`` has no future), so the outcome
+# lives only on the saved export itself: ``status``, ``error_info``,
+# ``last_run_result``.
+# ---------------------------------------------------------------------------
+
+
+def export_outcome(item: dict[str, Any]) -> dict[str, Any]:
+    """The ``export`` block of a saved export read at ``__full``.
+
+    ``status`` is ``ok`` for a run that ended well, ``failed`` for one that ended in
+    error (``error`` then names it), ``running`` while it runs, and ``scheduled`` when no
+    run has started.
+    """
+    failed = bool(item.get("error_info"))
+    if failed:
+        status = EXPORT_RAN_FAILED
+    elif item.get("status") == _EXPORT_EXECUTED_STATUS:
+        status = EXPORT_RAN_OK
+    elif item.get("status") == _EXPORT_RUNNING_STATUS:
+        status = EXPORT_RUNNING
+    else:
+        status = EXPORT_SCHEDULED
+    ended = item.get("execution_end_time")
+    return {
+        "id": item.get("id"),
+        "status": status,
+        "error": _export_error_detail(item) if failed else None,
+        "ran_at": ended if status in (EXPORT_RAN_OK, EXPORT_RAN_FAILED) else None,
+        "result": item.get("last_run_result"),
+    }
+
+
+def failed_export_error(export: dict[str, Any]) -> CliError:
+    """The ``export_failed`` error for an ``export`` block whose run ended in error."""
+    return CliError(
+        code=CODE_EXPORT_FAILED,
+        message=f"The export ran and failed: {export['error']}",
+        hint=(
+            "Fix the destination (host, credentials, table) and add the export again; "
+            f"mammoth view export get shows the saved export {export['id']}."
+        ),
+        details={"export": export},
+    )
+
+
+def _read_export(
+    service: Any,
+    view_id: int,
+    dataset_id: int,
+    export_id: int | None,
+    known_ids: set[int],
+) -> dict[str, Any] | None:
+    """The saved export being waited on (``__full``), or ``None`` while it is not listed yet.
+
+    With no id yet, the newest export on the view that is not in ``known_ids``.
+    """
+    if export_id is not None:
+        return dict(
+            service.call(
+                _EXPORTS_GET_SYMBOL,
+                dataview_id=view_id,
+                export_id=export_id,
+                dataset_id=dataset_id,
+                fields=_EXPORT_FIELDS_FULL,
+            )
+        )
+    listing = service.call(
+        _EXPORTS_LIST_SYMBOL,
+        dataview_id=view_id,
+        dataset_id=dataset_id,
+        fields=_EXPORT_FIELDS_FULL,
+        limit=_EXPORT_LIST_LIMIT,
+    )
+    fresh = [
+        item
+        for item in _listing_exports(listing)
+        if isinstance(item, dict) and item.get("id") is not None and item["id"] not in known_ids
+    ]
+    return max(fresh, key=lambda item: int(item["id"])) if fresh else None
+
+
+def wait_export_run(
+    service: Any,
+    view_id: int,
+    dataset_id: int,
+    *,
+    known_ids: set[int],
+    budget: float,
+    job_id: int | None,
+    run_now: bool = True,
+) -> dict[str, Any]:
+    """Wait for the export just added to ``view_id`` to run; return its ``export`` block.
+
+    The export is the newest one not in ``known_ids`` (``set()`` picks the newest). A
+    run that ended in error raises ``export_failed``. An export no run starts for within
+    the backend's settle window (none at all with ``run_now`` false: the export was added
+    not to run yet) is reported as ``scheduled`` instead of waited on; a run
+    that outlasts ``budget`` raises ``timeout`` with ``mammoth job wait <job_id>`` to resume.
+    """
+    started = time.monotonic()
+    export_id: int | None = None
+    running = False
+    while True:
+        item = _read_export(service, view_id, dataset_id, export_id, known_ids)
+        if item is not None:
+            export_id = int(item["id"])
+            export = export_outcome(item)
+            if export["status"] == EXPORT_RAN_FAILED:
+                raise failed_export_error(export)
+            if export["status"] == EXPORT_RAN_OK:
+                return export
+            if not run_now:
+                return export
+            running = running or export["status"] == EXPORT_RUNNING
+        elapsed = time.monotonic() - started
+        if not running and elapsed >= _EXPORT_SETTLE_S:
+            if item is None:
+                raise CliError(
+                    code=CODE_EXPORT_NOT_FOUND,
+                    message=f"No new export appeared on view {view_id}.",
+                    hint=f"mammoth view export list {view_id} shows the view's exports.",
+                )
+            return export
+        if elapsed >= budget:
+            raise _export_timeout(job_id, elapsed)
+        time.sleep(_EXPORT_RUN_POLL_S)
+
+
+def export_wait_budget(invocation: Invocation, explicit: float | None = None) -> float:
+    """Seconds an export-run wait may take: the caller's, ``--job-timeout``, then the command's."""
+    # Imported here: the session pulls in the command layer.
+    from mammoth_cli.runtime.session import DEFAULT_MUTATION_JOB_TIMEOUT, default_job_timeout
+
+    for candidate in (
+        explicit,
+        invocation.job_timeout,
+        default_job_timeout(invocation.command_id),
+    ):
+        if candidate is not None:
+            return float(candidate)
+    return DEFAULT_MUTATION_JOB_TIMEOUT
+
+
+def _export_timeout(job_id: int | None, waited: float) -> CliError:
+    """``timeout`` for an export run still going, resumable through its add job."""
+    error = timeout_error(job_id=None if job_id is None else str(job_id))
+    if job_id is not None:
+        error.details.update(job_id=job_id, waited_seconds=round(waited, 1))
+        error.details["resume"] = f"mammoth job wait {job_id}"
+    return error
