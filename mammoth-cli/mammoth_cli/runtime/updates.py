@@ -116,7 +116,7 @@ def is_newer(latest: str | None, current: str | None = None) -> bool:
 def read_cache() -> dict[str, Any] | None:
     try:
         document = json.loads(cache_path().read_text(encoding="utf-8"))
-    except OSError, ValueError:
+    except (OSError, ValueError):
         return None
     return document if isinstance(document, dict) else None
 
@@ -152,7 +152,7 @@ def cache_is_fresh(document: dict[str, Any] | None) -> bool:
         return False
     try:
         checked = _dt.datetime.fromisoformat(str(document.get("checked_at")))
-    except TypeError, ValueError:
+    except (TypeError, ValueError):
         return False
     if checked.tzinfo is None:
         checked = checked.replace(tzinfo=_dt.UTC)
@@ -164,7 +164,9 @@ def available_update(command_id: str | None = None) -> dict[str, Any] | None:
     if not enabled() or (command_id or "").split(".")[0] in _NO_NOTICE:
         return None
     document = read_cache()
-    latest = document.get("latest") if document else None
+    if not document:
+        return None
+    latest = document.get("latest")
     if not isinstance(latest, str) or not is_newer(latest):
         return None
     if auto_upgrade_enabled() and document.get("upgrade_failed") != latest:

@@ -158,7 +158,7 @@ def _wait_seconds(invocation: Invocation) -> float:
     document = invocation.load_input() or {}
     try:
         value = float(document.get("wait") or 0)
-    except TypeError, ValueError:
+    except (TypeError, ValueError):
         raise CliError(
             code="invalid_argument",
             message="wait must be a number of seconds.",

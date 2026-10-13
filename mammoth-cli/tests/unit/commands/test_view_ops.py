@@ -319,6 +319,19 @@ def test_transform_ai_requires_prompt(fake_service: FakeMammothService) -> None:
     assert excinfo.value.code == "missing_field"
 
 
+def test_transform_ai_fails_when_the_step_errors_as_it_runs() -> None:
+    # The step is accepted, then the pipeline ends in runtime_error: an empty column.
+    data = {"pipeline_error": {"error_code": 7000, "execution_state": "runtime_error", "task_id": 9}}
+    with pytest.raises(CliError) as excinfo:
+        view_ops_cmd._reject_failed_ai_run(3, data)
+    assert excinfo.value.code == "task_runtime_error"
+    assert excinfo.value.recovery_commands == ["mammoth view task delete 3 9 --yes"]
+
+
+def test_transform_ai_passes_a_clean_run() -> None:
+    view_ops_cmd._reject_failed_ai_run(3, {"status": "done", "row_check": {"rows_after": 5}})
+
+
 def test_transform_ai_forwards_optional(fake_service: FakeMammothService, tmp_path: Path) -> None:
     doc = _write(
         tmp_path,

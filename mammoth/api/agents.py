@@ -183,7 +183,7 @@ class AgentsAPI:
     async def _current_plan(self, session_id: str) -> dict[str, Any]:
         """The plan in force in the session; raises when the chat has none."""
         _require_id("session_id", session_id)
-        plan = (await self.session_messages(session_id)).get("plan")
+        plan: dict[str, Any] | None = (await self.session_messages(session_id)).get("plan")
         if not plan:
             raise MammothValidationError(ERR_NO_PLAN.format(session_id))
         return plan

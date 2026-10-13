@@ -57,6 +57,9 @@ _SQL_WRITE_WORD = re.compile(
 )
 
 
+_ACTIVE_CONNECTORS_SYMBOL = "mammoth.api.connectors.ConnectorsAPI.active_connectors"
+
+
 def _symbol(invocation: Invocation) -> str:
     """Return the reviewed backing SDK symbol for this command."""
     record = command_by_id(invocation.command_id)
@@ -334,9 +337,8 @@ def _connections_of_every_connector(
     service: Any, invocation: Invocation, project_id: int
 ) -> list[dict[str, Any]]:
     """Each active connector's connections, every row carrying its ``connector_key``."""
-    active_symbol = str(command_by_id("connector.active")["sdk_symbol"])
     rows: list[dict[str, Any]] = []
-    for key in service.call(active_symbol):
+    for key in service.call(_ACTIVE_CONNECTORS_SYMBOL):
         listed = service.call(_symbol(invocation), connector_key=key, project_id=project_id)
         rows.extend({"connector_key": key, **connection} for connection in listed)
     return rows

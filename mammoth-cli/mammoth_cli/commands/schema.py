@@ -1293,7 +1293,8 @@ def command_scope(record: dict[str, Any]) -> str:
     elif (
         command_id == "ai.retention.condition"
         or "{project_id}" in search_text
-        or family in {
+        or family
+        in {
             "project",
             "dataset",
             "file",
