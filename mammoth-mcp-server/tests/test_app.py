@@ -152,6 +152,30 @@ class TestWhoMayCallTheMcpEndpoint:
         assert request.headers["authorization"] == f"Bearer {GOOD_TOKEN}"
         assert request.headers["x-workspace-id"] == str(WORKSPACE)
 
+    def test_a_read_only_connection_is_told_why_a_write_was_refused(
+        self, server: TestClient
+    ) -> None:
+        """Through the whole server, as a client sees it: a tool result the model
+        can read, not a protocol error that says only "Internal server error"."""
+        with a_fake_api() as api:
+            knows_the_token(api, read_only=True)
+            called = server.post(
+                "/mcp",
+                json={
+                    "jsonrpc": "2.0",
+                    "id": 2,
+                    "method": "tools/call",
+                    "params": {"name": "delete_views", "arguments": {}},
+                },
+                headers=AS_THE_USER,
+            )
+
+        assert "error" not in called.json(), called.text
+        result = called.json()["result"]
+        assert result["isError"] is True
+        assert "read-only, so delete_views cannot run" in result["content"][0]["text"]
+        assert api.sent("POST", f"/workspaces/{WORKSPACE}/mm-ue")  # still measured
+
 
 class TestTheUploadPage:
     @staticmethod
