@@ -6,6 +6,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed (mammoth-mcp-server 0.2.2)
+
+- A read-only connection that calls a change tool now gets the refusal as a tool result the model can read ("This connection is read-only, so <tool> cannot run…"). Before, the refusal reached the client as a protocol error, and Claude Code showed it as "Internal server error". The write was refused either way.
+
 ### Added (mammoth-mcp-server 0.2.1, mammoth-io 0.8.39)
 
 - `client.workspaces.current()` says whether the user granted the connection read-only (`CurrentWorkspace.read_only`, false when Mammoth does not say). The MCP server puts the `read` scope on such a token, so the read-only check added in 0.2.0 now applies to the connections Mammoth marks read-only. Needs a Mammoth that reports `read_only` on `/workspaces/current`; with an older one every connection keeps full access.
