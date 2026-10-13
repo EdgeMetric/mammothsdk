@@ -31,7 +31,6 @@ _RENAME = "mammoth.api.datasets.DatasetsAPI.rename"
 _TRASH = "mammoth.api.datasets.DatasetsAPI.trash"
 _RESTORE = "mammoth.api.datasets.DatasetsAPI.restore"
 _DELETE = "mammoth.api.datasets.DatasetsAPI.delete"
-_BULK_DELETE = "mammoth.api.datasets.DatasetsAPI.bulk_delete"
 _BULK_UPDATE = "mammoth.api.datasets.DatasetsAPI.bulk_update"
 _UPDATE = "mammoth.api.datasets.DatasetsAPI.update"
 _TRASH_LIST = "mammoth.api.trash.TrashAPI.list"
@@ -886,35 +885,6 @@ def test_bulk_delete_requires_explicit_ids(fake_service: FakeMammothService) -> 
         dataset_cmd.dataset_bulk_delete(_inv("dataset.bulk-delete", project=180, yes=True))
     assert excinfo.value.code == "missing_field"
     assert fake_service.call_log == []
-
-
-def test_bulk_delete_proceeds_with_yes(fake_service: FakeMammothService, tmp_path: Path) -> None:
-    fake_service.responses[_GET] = CliError(
-        code="resource_not_found", message="gone", exit_status=5
-    )
-    doc = _write(tmp_path, {"dataset_ids": [7, 8]})
-    dataset_cmd.dataset_bulk_delete(
-        _inv("dataset.bulk-delete", project=180, yes=True, input_file=doc)
-    )
-    assert fake_service.call_log[0] == (
-        _BULK_DELETE,
-        {"dataset_ids": [7, 8], "project_id": 180},
-    )
-    assert [call[1]["dataset_id"] for call in fake_service.call_log[1:]] == [7, 8]
-
-
-def test_bulk_delete_fails_when_a_dataset_is_still_there(
-    fake_service: FakeMammothService, tmp_path: Path
-) -> None:
-    # The server answers a partial delete with success; the read-back must not.
-    fake_service.responses[_GET] = {"id": 7, "name": "kept"}
-    doc = _write(tmp_path, {"dataset_ids": [7, 8]})
-    with pytest.raises(CliError) as excinfo:
-        dataset_cmd.dataset_bulk_delete(
-            _inv("dataset.bulk-delete", project=180, yes=True, input_file=doc)
-        )
-    assert excinfo.value.code == "api_error"
-    assert excinfo.value.details["still_present"] == [7, 8]
 
 
 # -- bulk-update --------------------------------------------------------

@@ -82,7 +82,7 @@ Sensitive structured input must come from a private file or pipe; never put secr
 - `mammoth agent plan edit-proposal` [benign_mutation/none] -> mammoth.api.agents.AgentsAPI.plan_edit_proposal
   example: mammoth agent plan edit-proposal --input '{"plan_id": "resource-123", "action": "sample", "key": "Status"}'
 - `mammoth agent plan skip` [benign_mutation/none] -> mammoth.api.agents.AgentsAPI.plan_skip
-  example: mammoth agent plan skip resource-123 1
+  example: mammoth agent plan skip resource-123 123
 - `mammoth agent projects clear` [benign_mutation/none] -> mammoth.api.agent_definitions.AgentDefinitionsAPI.update
   example: mammoth agent projects clear sample
 - `mammoth agent projects set` [benign_mutation/none] -> mammoth.api.agent_definitions.AgentDefinitionsAPI.update
@@ -211,7 +211,7 @@ Sensitive structured input must come from a private file or pipe; never put secr
 - `mammoth batch list` [read/none] -> mammoth.api.batches.BatchesAPI.list
   example: mammoth batch list 123
 - `mammoth batch update` [benign_mutation/none] -> mammoth.api.batches.BatchesAPI.update
-  example: mammoth batch update 123 --input '{"patch": {"op": "replace", "path": "batches", "value": {"suspend": [1, 2]}}}'
+  example: mammoth batch update 123 --input '{"patch": {"sample_key": "Status"}}'
 
 ## billing
 

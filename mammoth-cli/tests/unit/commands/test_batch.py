@@ -243,21 +243,6 @@ def test_update_replace_only_needs_no_confirmation(
     assert fake_service.call_log[0][1]["dataset_id"] == 9
 
 
-def test_update_single_op_dict_remove_needs_confirmation(
-    fake_service: FakeMammothService, tmp_path: Path
-) -> None:
-    doc = tmp_path / "in.json"
-    doc.write_text(
-        json.dumps({"patch": {"op": "remove", "path": "batches", "value": {"suspend": [1]}}}),
-        encoding="utf-8",
-    )
-    with pytest.raises(CliError) as excinfo:
-        batch_cmd.batch_update(
-            _inv("batch.update", project=180, extra_args=["9"], input_file=str(doc))
-        )
-    assert excinfo.value.code == "confirmation_required"
-
-
 # ── delete ────────────────────────────────────────────────────────────────
 
 

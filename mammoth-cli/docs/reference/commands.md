@@ -358,7 +358,7 @@ Total commands: 753.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.agents.AgentsAPI.plan_skip`
-- Agent example: `mammoth agent plan skip resource-123 1`
+- Agent example: `mammoth agent plan skip resource-123 123`
 
 ### `mammoth agent projects clear`
 
@@ -951,7 +951,7 @@ Total commands: 753.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.batches.BatchesAPI.update`
-- Agent example: `mammoth batch update 123 --input '{"patch": {"op": "replace", "path": "batches", "value": {"suspend": [1, 2]}}}'`
+- Agent example: `mammoth batch update 123 --input '{"patch": {"sample_key": "Status"}}'`
 
 ## billing
 

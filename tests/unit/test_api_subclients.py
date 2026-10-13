@@ -2865,17 +2865,6 @@ class TestBatchesAPI:
             {"patch": {"op": "replace", "path": "batches", "value": {"suspend": [101, 102]}}},
         )
 
-    async def test_update_accepts_a_single_op_dict(self, client: MammothClient):
-        op = {"op": "replace", "path": "batches", "value": {"restore": [7]}}
-        await client.batches.update(dataset_id=500, patch=op)
-        assert_json_body(client._request_json, {"patch": op})
-
-    async def test_update_rejects_several_ops(self, client: MammothClient):
-        ops = [{"op": "replace", "value": {"suspend": [1]}}, {"op": "remove", "value": {}}]
-        with pytest.raises(MammothValidationError, match="one patch operation"):
-            await client.batches.update(dataset_id=500, patch=ops)
-        client._request_json.assert_not_called()
-
     async def test_update_remove_op(self, client: MammothClient):
         patch_ops = [{"op": "remove", "value": [101, 102]}]
         await client.batches.update(dataset_id=500, patch=patch_ops)

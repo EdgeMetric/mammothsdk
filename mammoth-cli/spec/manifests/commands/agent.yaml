@@ -1148,7 +1148,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth agent plan skip SESSION_ID N --help
-  agent_example: mammoth agent plan skip resource-123 1
+  agent_example: mammoth agent plan skip resource-123 123
   unit_tests:
   - UT-AGENT-PLAN-SKIP
   contract_tests:

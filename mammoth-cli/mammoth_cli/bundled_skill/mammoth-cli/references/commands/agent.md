@@ -266,7 +266,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth agent plan skip`. Exact input fields: `mammoth schema get agent.plan.skip`.
 
-Example: `mammoth agent plan skip resource-123 1`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth agent plan skip resource-123 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `AgentPlanSkipResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 

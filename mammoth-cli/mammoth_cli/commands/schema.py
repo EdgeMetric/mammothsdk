@@ -612,9 +612,7 @@ _COMMAND_DISCOVERY_PURPOSES = {
     "agent.message.set-request-kind": (
         "wrong kind of request answered, correct the kind: ask insight build automate fix"
     ),
-    "agent.plan.approve": (
-        "approve the agent plan run it go ahead and run the plan the agent proposed"
-    ),
+    "agent.plan.approve": ("approve the agent plan go ahead and run the plan the agent proposed"),
     "agent.plan.skip": "skip one step of the agent plan do not run that proposed step",
     "agent.plan.discard": "discard the agent plan reject everything the agent proposed",
     "agent.plan.edit-proposal": (
