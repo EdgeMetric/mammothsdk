@@ -223,11 +223,6 @@
           "source": "input",
           "destination": "project_ids",
           "wire": "sdk_argument"
-        },
-        "team": {
-          "source": "input",
-          "destination": "team",
-          "wire": "sdk_argument"
         }
       },
       "context_destinations": {},
@@ -428,11 +423,6 @@
           "source": "input",
           "destination": "project_ids",
           "wire": "sdk_argument"
-        },
-        "team": {
-          "source": "input",
-          "destination": "team",
-          "wire": "sdk_argument"
         }
       },
       "context_destinations": {},
@@ -585,11 +575,6 @@
         "project_ids": {
           "source": "input",
           "destination": "project_ids",
-          "wire": "sdk_argument"
-        },
-        "team": {
-          "source": "input",
-          "destination": "team",
           "wire": "sdk_argument"
         }
       },
@@ -1339,11 +1324,6 @@
           "source": "input",
           "destination": "project_ids",
           "wire": "sdk_argument"
-        },
-        "team": {
-          "source": "input",
-          "destination": "team",
-          "wire": "sdk_argument"
         }
       },
       "context_destinations": {},
@@ -1407,11 +1387,6 @@
           "source": "input",
           "destination": "project_ids",
           "wire": "sdk_argument"
-        },
-        "team": {
-          "source": "input",
-          "destination": "team",
-          "wire": "sdk_argument"
         }
       },
       "context_destinations": {},
@@ -1451,32 +1426,6 @@
       "wire": {
         "method": "POST",
         "path": "/workspaces/{workspace_id}/agent-definitions/{agent_key}/publish",
-        "checks": [
-          "method",
-          "path"
-        ]
-      },
-      "dropped_field_sentinel": "__s7_dropped_field__",
-      "wire_verification": {
-        "status": "unverified",
-        "executed_controls": [],
-        "planned_controls": [
-          "exact_sdk_symbol",
-          "field_consumption",
-          "wire_method_path_body",
-          "reject_dropped_field"
-        ]
-      }
-    },
-    {
-      "command_id": "agent.roles",
-      "operation_id": "ListAgentDefinitionRoles",
-      "sdk_symbol": "mammoth.api.agent_definitions.AgentDefinitionsAPI.roles",
-      "field_destinations": {},
-      "context_destinations": {},
-      "wire": {
-        "method": "GET",
-        "path": "/workspaces/{workspace_id}/agent-definitions/roles",
         "checks": [
           "method",
           "path"
@@ -2302,74 +2251,6 @@
       }
     },
     {
-      "command_id": "agent.team.set",
-      "operation_id": "UpdateAgentDefinition",
-      "sdk_symbol": "mammoth.api.agent_definitions.AgentDefinitionsAPI.update",
-      "field_destinations": {
-        "agent_key": {
-          "source": "positional",
-          "destination": "agent_key"
-        },
-        "name": {
-          "source": "input",
-          "destination": "name",
-          "wire": "sdk_argument"
-        },
-        "description": {
-          "source": "input",
-          "destination": "description",
-          "wire": "sdk_argument"
-        },
-        "charter": {
-          "source": "input",
-          "destination": "charter",
-          "wire": "sdk_argument"
-        },
-        "role": {
-          "source": "input",
-          "destination": "role",
-          "wire": "sdk_argument"
-        },
-        "propose": {
-          "source": "input",
-          "destination": "propose",
-          "wire": "sdk_argument"
-        },
-        "project_ids": {
-          "source": "input",
-          "destination": "project_ids",
-          "wire": "sdk_argument"
-        },
-        "team": {
-          "source": "input",
-          "destination": "team",
-          "wire": "sdk_argument"
-        }
-      },
-      "context_destinations": {},
-      "wire": {
-        "method": "PATCH",
-        "path": "/workspaces/{workspace_id}/agent-definitions/{agent_key}",
-        "body": "json:update",
-        "checks": [
-          "method",
-          "path",
-          "body"
-        ]
-      },
-      "dropped_field_sentinel": "__s7_dropped_field__",
-      "wire_verification": {
-        "status": "unverified",
-        "executed_controls": [],
-        "planned_controls": [
-          "exact_sdk_symbol",
-          "field_consumption",
-          "wire_method_path_body",
-          "reject_dropped_field"
-        ]
-      }
-    },
-    {
       "command_id": "agent.turn.cancel",
       "operation_id": "CancelAgentTurn",
       "sdk_symbol": "mammoth.api.agents.AgentsAPI.turn_cancel",
@@ -2444,11 +2325,6 @@
         "project_ids": {
           "source": "input",
           "destination": "project_ids",
-          "wire": "sdk_argument"
-        },
-        "team": {
-          "source": "input",
-          "destination": "team",
           "wire": "sdk_argument"
         }
       },

@@ -70,7 +70,6 @@ EXTRA_OP_HINTS: dict[str, dict[str, Any]] = {
     "agent.projects.clear": {"operation_ids": ["UpdateAgentDefinition"], "method": "POST"},
     "agent.projects.set": {"operation_ids": ["UpdateAgentDefinition"], "method": "POST"},
     "agent.publish": {"operation_ids": ["PublishAgentDefinition"], "method": "POST"},
-    "agent.roles": {"operation_ids": ["ListAgentDefinitionRoles"], "method": "GET"},
     "agent.run.extend": {"operation_ids": ["ExtendAgentRun"], "method": "POST"},
     "agent.run.instance.list": {"operation_ids": ["ListAgentRunInstances"], "method": "GET"},
     "agent.run.instance.messages": {
@@ -99,7 +98,6 @@ EXTRA_OP_HINTS: dict[str, dict[str, Any]] = {
     "agent.scratch.get": {"operation_ids": ["ListAgentDefinitionNotes"], "method": "GET"},
     "agent.scratch.list": {"operation_ids": ["ListAgentDefinitionNotes"], "method": "GET"},
     "agent.scratch.set": {"operation_ids": ["UpsertAgentDefinitionNote"], "method": "POST"},
-    "agent.team.set": {"operation_ids": ["UpdateAgentDefinition"], "method": "POST"},
     "agent.turn.cancel": {"operation_ids": ["CancelAgentTurn"], "method": "POST"},
     "agent.update": {"operation_ids": ["UpdateAgentDefinition"], "method": "POST"},
     "ai.retention.condition": {"operation_ids": ["RetentionCondition"], "method": "POST"},

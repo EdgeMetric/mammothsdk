@@ -478,13 +478,6 @@ def agent_list(invocation: Invocation) -> HandlerResult:
     return data, _meta(invocation, auth.workspace_id, resolved_project(invocation))
 
 
-def agent_roles(invocation: Invocation) -> HandlerResult:
-    """List the built-in roles an agent definition can take."""
-    with open_service(invocation) as (service, auth):
-        data = service.call(_symbol(invocation))
-    return data, _meta(invocation, auth.workspace_id, resolved_project(invocation))
-
-
 def agent_create(invocation: Invocation) -> HandlerResult:
     """Create an agent definition under the KEY positional; ``name`` is required input."""
     _require_string_positional(invocation, "agent key")
@@ -582,11 +575,6 @@ def agent_projects_set(invocation: Invocation) -> HandlerResult:
 def agent_projects_clear(invocation: Invocation) -> HandlerResult:
     """Clear the projects the agent may work in (sets the list to empty)."""
     return _definition_call(invocation, project_ids=[])
-
-
-def agent_team_set(invocation: Invocation) -> HandlerResult:
-    """Replace the team: the agents this agent may ask, and the rounds of asking."""
-    return _field_call(invocation, "team")
 
 
 def agent_goldens_add(invocation: Invocation) -> HandlerResult:

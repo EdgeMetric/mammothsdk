@@ -15,7 +15,6 @@ _GROUPS = (
     "run",
     "scratch",
     "session",
-    "team",
     "turn",
 )
 

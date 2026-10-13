@@ -61,7 +61,6 @@ class AgentDefinitionsAPI:
         role: str | None = None,
         propose: bool | None = None,
         project_ids: _list[int] | None = None,
-        team: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         """Create an agent definition (it starts as a draft).
 
@@ -71,10 +70,9 @@ class AgentDefinitionsAPI:
             name: Display name (1 to 120 characters).
             description: Short description (500 characters at most).
             charter: The agent's method (20000 characters at most).
-            role: A built-in role, see :meth:`roles`. The server defaults to the member role.
+            role: ``"read"`` or ``"write"``. The server picks the default.
             propose: Whether the agent proposes changes for approval. The server defaults to true.
             project_ids: Projects the agent may work in.
-            team: ``{"agents": [keys], "max_rounds": 1..6}``.
 
         Returns:
             The created definition.
@@ -86,18 +84,9 @@ class AgentDefinitionsAPI:
             "role": role,
             "propose": propose,
             "project_ids": project_ids,
-            "team": team,
         }
         body.update({name: value for name, value in optional.items() if value is not None})
         return await self._client._request_json("POST", self._base(), json=body)
-
-    async def roles(self) -> dict[str, Any]:
-        """List the built-in roles an agent definition can take.
-
-        Returns:
-            Dict with ``result``: ``{role, read_only, permissions}`` rows.
-        """
-        return await self._client._request_json("GET", f"{self._base()}/roles")
 
     async def get(self, agent_key: str) -> dict[str, Any]:
         """Get one agent definition.
@@ -122,7 +111,6 @@ class AgentDefinitionsAPI:
         role: str | None = None,
         propose: bool | None = None,
         project_ids: _list[int] | None = None,
-        team: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         """Change an agent definition; only the fields given are sent.
 
@@ -133,10 +121,9 @@ class AgentDefinitionsAPI:
             name: Display name.
             description: Short description.
             charter: The agent's method.
-            role: A built-in role, see :meth:`roles`.
+            role: ``"read"`` or ``"write"``.
             propose: Whether the agent proposes changes for approval.
             project_ids: Projects the agent may work in (replaces the list).
-            team: ``{"agents": [keys], "max_rounds": 1..6}`` (replaces the team).
 
         Returns:
             The updated definition.
@@ -151,7 +138,6 @@ class AgentDefinitionsAPI:
             "role": role,
             "propose": propose,
             "project_ids": project_ids,
-            "team": team,
         }
         body = {key: value for key, value in fields.items() if value is not None}
         return await self._client._request_json("PATCH", self._path(agent_key), json=body)

@@ -34,7 +34,7 @@ _HANDLER_OWNED_FIELDS: dict[str, frozenset[str]] = {
     # the other update fields belong to ``agent update``.
     **{
         f"agent.{command}": (
-            frozenset({"name", "description", "charter", "role", "propose", "project_ids", "team"})
+            frozenset({"name", "description", "charter", "role", "propose", "project_ids"})
             - frozenset(fields)
         )
         for command, fields in {
@@ -42,7 +42,6 @@ _HANDLER_OWNED_FIELDS: dict[str, frozenset[str]] = {
             "access.set": ("role", "propose"),
             "projects.clear": (),
             "projects.set": ("project_ids",),
-            "team.set": ("team",),
         }.items()
     },
     # The server's per-submit idempotency key is made by the SDK, never asked of the user.
@@ -144,9 +143,8 @@ _EXAMPLE_INPUT_HINTS: dict[str, dict[str, Any]] = {
     },
     # ``agent update`` fields are all optional; each focused ``set`` command needs its own.
     "agent.charter.set": {"charter": "Watch weekly margin and report the three biggest drops."},
-    "agent.access.set": {"role": "member", "propose": True},
+    "agent.access.set": {"role": "write", "propose": True},
     "agent.projects.set": {"project_ids": [12, 15]},
-    "agent.team.set": {"team": {"agents": ["margin-watch"], "max_rounds": 4}},
     "agent.update": {"name": "Margin watch"},
     # The server accepts only the formats it knows: dashboard, presentation, document, qa.
     "dashboard.format-preview": {"style": "presentation"},

@@ -6,7 +6,7 @@ Every command returns the standard JSON envelope. On nonzero exit, read the erro
 
 Run: `mammoth agent access set`. Exact input fields: `mammoth schema get agent.access.set`.
 
-Example: `mammoth agent access set sample --input '{"role": "member", "propose": true}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth agent access set sample --input '{"role": "write", "propose": true}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `AgentAccessSetResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
@@ -302,16 +302,6 @@ Result: `AgentPublishResult`; mutation `benign_mutation`, confirmation `none`, w
 
 Status on release: untried; no live run recorded.
 
-### `agent.roles`
-
-Run: `mammoth agent roles`. Exact input fields: `mammoth schema get agent.roles`.
-
-Example: `mammoth agent roles`. Placeholders are illustrative; resolve IDs and input from observed reads.
-
-Result: `AgentRolesResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
-
-Status on release: untried; no live run recorded.
-
 ### `agent.run.extend`
 
 Run: `mammoth agent run extend`. Exact input fields: `mammoth schema get agent.run.extend`.
@@ -509,16 +499,6 @@ Run: `mammoth agent session set-visibility`. Exact input fields: `mammoth schema
 Example: `mammoth agent session set-visibility resource-123 --input '{"visibility": "sample"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `AgentSessionSetVisibilityResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
-
-Status on release: untried; no live run recorded.
-
-### `agent.team.set`
-
-Run: `mammoth agent team set`. Exact input fields: `mammoth schema get agent.team.set`.
-
-Example: `mammoth agent team set sample --input '{"team": {"agents": ["margin-watch"], "max_rounds": 4}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
-
-Result: `AgentTeamSetResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
 Status on release: untried; no live run recorded.
 

@@ -32,7 +32,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth agent access set AGENT_KEY --help
-  agent_example: 'mammoth agent access set sample --input ''{"role": "member", "propose": true}'''
+  agent_example: 'mammoth agent access set sample --input ''{"role": "write", "propose": true}'''
   unit_tests:
   - UT-AGENT-ACCESS-SET
   contract_tests:
@@ -41,7 +41,7 @@ commands:
   - CT-AGENT-ACCESS-SET-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: 'Writes. Sets the built-in role (see agent roles) and, when given, propose (the
+  known_restrictions: 'Writes. Sets the role (read or write) and, when given, propose (the
     agent proposes changes for approval instead of making them). Admin or owner only. Input: role (required),
     propose.'
   reviewed_by: primary
@@ -398,7 +398,7 @@ commands:
   undo_test: null
   known_restrictions: 'Writes. Creates a draft agent. KEY is a slug (lowercase letters, digits, - and
     _, 2 to 63 characters) that is unique in the workspace; built-in agent names are reserved. Input:
-    name (required), description, charter, role, propose, project_ids, team. Add goldens, run the proof
+    name (required), description, charter, role, propose, project_ids. Add goldens, run the proof
     (agent goldens run), then agent publish.'
   reviewed_by: primary
   no_readback: returns the changed definition itself
@@ -576,7 +576,7 @@ commands:
   - CT-AGENT-GET-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: 'Read-only. One agent definition: status, charter version, role, projects, team
+  known_restrictions: 'Read-only. One agent definition: status, charter version, role, projects
     and proof result.'
   reviewed_by: primary
 - command_id: agent.goldens.add
@@ -1338,42 +1338,6 @@ commands:
     status.'
   reviewed_by: primary
   no_readback: returns the changed definition itself
-- command_id: agent.roles
-  command_path: agent roles
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - ListAgentDefinitionRoles
-  positionals: []
-  options: []
-  sdk_symbol: mammoth.api.agent_definitions.AgentDefinitionsAPI.roles
-  sdk_conversion: Call mammoth.api.agent_definitions.AgentDefinitionsAPI.roles with validated request
-    fields.
-  request_model: AgentRolesRequest
-  result_model: AgentRolesResult
-  mutation_class: read
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_read_only
-  live_test: null
-  live_exemption_reason: Live coverage runs on the test server once the backend release carries agent
-    definitions.
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth agent roles --help
-  agent_example: mammoth agent roles
-  unit_tests:
-  - UT-AGENT-ROLES
-  contract_tests:
-  - CT-AGENT-ROLES-HUMAN
-  - CT-AGENT-ROLES-JSON
-  - CT-AGENT-ROLES-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: Read-only. The built-in roles an agent can take, with their permissions.
-  reviewed_by: primary
 - command_id: agent.run.extend
   command_path: agent run extend
   disposition: command
@@ -2247,53 +2211,6 @@ commands:
     command: agent.session.list
     ids: {}
     kind: object
-- command_id: agent.team.set
-  command_path: agent team set
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - UpdateAgentDefinition
-  positionals:
-  - name: agent_key
-    type: str
-    required: true
-    metavar: AGENT_KEY
-    falls_back_to_field: null
-    help: Key identifying the agent.
-  options: []
-  sdk_symbol: mammoth.api.agent_definitions.AgentDefinitionsAPI.update
-  sdk_conversion: Call mammoth.api.agent_definitions.AgentDefinitionsAPI.update with validated request
-    fields.
-  request_model: AgentTeamSetRequest
-  result_model: AgentTeamSetResult
-  mutation_class: benign_mutation
-  edits_target: true
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_disposable_project
-  live_test: null
-  live_exemption_reason: Live coverage runs on the test server once the backend release carries agent
-    definitions.
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth agent team set AGENT_KEY --help
-  agent_example: 'mammoth agent team set sample --input ''{"team": {"agents": ["margin-watch"], "max_rounds":
-    4}}'''
-  unit_tests:
-  - UT-AGENT-TEAM-SET
-  contract_tests:
-  - CT-AGENT-TEAM-SET-HUMAN
-  - CT-AGENT-TEAM-SET-JSON
-  - CT-AGENT-TEAM-SET-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: Writes. Replaces the team, up to 5 published agents of this workspace this agent
-    may ask, and max_rounds (1 to 6) of asking. Input team (required) is an object with the fields agents
-    (a list of keys) and max_rounds.
-  reviewed_by: primary
-  no_readback: returns the changed definition itself
 - command_id: agent.turn.cancel
   command_path: agent turn cancel
   disposition: command
@@ -2380,7 +2297,7 @@ commands:
   - CT-AGENT-UPDATE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: 'Writes. Changes the fields given: name, description, charter, role, propose, project_ids,
-    team. A new charter becomes a new charter version.'
+  known_restrictions: 'Writes. Changes the fields given: name, description, charter, role, propose, project_ids.
+    A new charter becomes a new charter version.'
   reviewed_by: primary
   no_readback: returns the changed definition itself

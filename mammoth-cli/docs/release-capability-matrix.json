@@ -616,18 +616,6 @@
       ]
     },
     {
-      "method": "GET",
-      "path": "/workspaces/{}/agent-definitions/roles",
-      "state": "removed_on_server",
-      "pending_in": null,
-      "sdk_symbols": [
-        "mammoth.api.agent_definitions.AgentDefinitionsAPI.roles"
-      ],
-      "commands": [
-        "agent.roles"
-      ]
-    },
-    {
       "method": "DELETE",
       "path": "/workspaces/{}/agent-definitions/{}",
       "state": "removed_on_server",
@@ -1070,7 +1058,6 @@
     "agent.scratch.get",
     "agent.scratch.list",
     "agent.scratch.set",
-    "agent.team.set",
     "billing.invoice.list",
     "calc",
     "connector.connection.query",

@@ -1,4 +1,4 @@
-"""``mammoth agent roles`` in table mode shows one row per role."""
+"""A wrapped list result in table mode shows one row per item."""
 
 from __future__ import annotations
 

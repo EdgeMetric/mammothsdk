@@ -6,6 +6,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Removed
+
+- Agent definitions: `AgentDefinitionsAPI.roles()` and `mammoth agent roles`, and the `team` field (`mammoth agent team set`, `team` on `create` and `update`). The backend dropped both. `role` is now `"read"` or `"write"`, with `propose` as before.
+
 ### Added (mammoth-io 0.8.42, mammoth-cli 2.2.78)
 
 - `mammoth view transform batch VIEW --input '{"steps": [{"op": "filter", "input": {...}}, ...], "dataset_id": N}'` adds several transforms in one request, so the pipeline runs once after the last step instead of once per step. Ops: filter, sort, limit-rows, discard-duplicates, fill-missing, bulk-replace, replace, text, substring, extract-date, increment-date, copy-columns. `sort` is applied after the run as a view setting. If a step fails, the batch's tasks are removed and the command fails with `batch_step_failed`, naming the step.

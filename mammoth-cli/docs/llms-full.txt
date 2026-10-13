@@ -30,7 +30,7 @@ Sensitive structured input must come from a private file or pipe; never put secr
 ## agent
 
 - `mammoth agent access set` [benign_mutation/none] -> mammoth.api.agent_definitions.AgentDefinitionsAPI.update
-  example: mammoth agent access set sample --input '{"role": "member", "propose": true}'
+  example: mammoth agent access set sample --input '{"role": "write", "propose": true}'
 - `mammoth agent action delete` [destructive/prompt_or_yes] -> mammoth.api.agents.AgentsAPI.action_delete
   example: mammoth agent action delete resource-123
 - `mammoth agent action list` [read/none] -> mammoth.api.agents.AgentsAPI.action_list
@@ -89,8 +89,6 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth agent projects set sample --input '{"project_ids": [12, 15]}'
 - `mammoth agent publish` [benign_mutation/none] -> mammoth.api.agent_definitions.AgentDefinitionsAPI.publish
   example: mammoth agent publish sample
-- `mammoth agent roles` [read/none] -> mammoth.api.agent_definitions.AgentDefinitionsAPI.roles
-  example: mammoth agent roles
 - `mammoth agent run extend` [benign_mutation/none] -> mammoth.api.agents.AgentsAPI.run_extend
   example: mammoth agent run extend resource-123
 - `mammoth agent run instance list` [read/none] -> mammoth.api.agents.AgentsAPI.run_instances_list
@@ -131,8 +129,6 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth agent session messages resource-123
 - `mammoth agent session set-visibility` [benign_mutation/none] -> mammoth.api.agents.AgentsAPI.session_set_visibility
   example: mammoth agent session set-visibility resource-123 --input '{"visibility": "sample"}'
-- `mammoth agent team set` [benign_mutation/none] -> mammoth.api.agent_definitions.AgentDefinitionsAPI.update
-  example: mammoth agent team set sample --input '{"team": {"agents": ["margin-watch"], "max_rounds": 4}}'
 - `mammoth agent turn cancel` [benign_mutation/none] -> mammoth.api.agents.AgentsAPI.turn_cancel
   example: mammoth agent turn cancel resource-123
 - `mammoth agent update` [benign_mutation/none] -> mammoth.api.agent_definitions.AgentDefinitionsAPI.update

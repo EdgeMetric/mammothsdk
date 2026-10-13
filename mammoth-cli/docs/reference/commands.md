@@ -1,10 +1,10 @@
 # Command reference
 
-Generated from the reviewed command manifests for mammoth-cli 2.2.77.
+Generated from the reviewed command manifests for mammoth-cli 2.2.78.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
-Total commands: 753.
+Total commands: 751.
 
 ## activity
 
@@ -84,7 +84,7 @@ Total commands: 753.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.agent_definitions.AgentDefinitionsAPI.update`
-- Agent example: `mammoth agent access set sample --input '{"role": "member", "propose": true}'`
+- Agent example: `mammoth agent access set sample --input '{"role": "write", "propose": true}'`
 
 ### `mammoth agent action delete`
 
@@ -393,13 +393,6 @@ Total commands: 753.
 - Backing SDK: `mammoth.api.agent_definitions.AgentDefinitionsAPI.publish`
 - Agent example: `mammoth agent publish sample`
 
-### `mammoth agent roles`
-
-- Mutation class: `read`
-- Confirmation: `none`
-- Backing SDK: `mammoth.api.agent_definitions.AgentDefinitionsAPI.roles`
-- Agent example: `mammoth agent roles`
-
 ### `mammoth agent run extend`
 
 **Arguments**
@@ -612,17 +605,6 @@ Total commands: 753.
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.agents.AgentsAPI.session_set_visibility`
 - Agent example: `mammoth agent session set-visibility resource-123 --input '{"visibility": "sample"}'`
-
-### `mammoth agent team set`
-
-**Arguments**
-
-- `AGENT_KEY` (str, required) — Key identifying the agent.
-
-- Mutation class: `benign_mutation`
-- Confirmation: `none`
-- Backing SDK: `mammoth.api.agent_definitions.AgentDefinitionsAPI.update`
-- Agent example: `mammoth agent team set sample --input '{"team": {"agents": ["margin-watch"], "max_rounds": 4}}'`
 
 ### `mammoth agent turn cancel`
 

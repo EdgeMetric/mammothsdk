@@ -37,7 +37,6 @@ edits_target_commands:
 - agent.scratch.set
 - agent.session.delete
 - agent.session.set-visibility
-- agent.team.set
 - agent.turn.cancel
 - agent.update
 - annotation.comment.add
