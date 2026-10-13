@@ -126,7 +126,8 @@ publishing several patch versions in a row.
 
 ### GitHub releases for the installer path (local)
 
-Pushing any `cli-v*` tag runs `.github/workflows/cli-github-release.yml`, which creates the GitHub
+After the PyPI upload, run `gh workflow run cli-github-release.yml -f tag=cli-vX.Y.Z`. That runs
+`.github/workflows/cli-github-release.yml` (manual only, never on a PR or push), which creates the GitHub
 release with `mammoth-install.sh`, `mammoth-install.ps1` and `SHA256SUMS` (or adds them to a
 release already cut by hand). It never publishes to PyPI. The manual steps below add the wheels.
 
