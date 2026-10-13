@@ -2333,7 +2333,13 @@ def _apply_batch(
 
     A failure after the send removes the batch's tasks (see :func:`_batch_failure`).
     """
-    rows_before = _view_row_count(service, dataset_id, view_id, invocation.project)
+    info_before = service.call(
+        _DATAVIEW_GET_SYMBOL,
+        dataset_id=dataset_id,
+        dataview_id=view_id,
+        project_id=invocation.project,
+    )
+    rows_before = info_before.get("row_count")
     task_ids_before = _task_ids(service, dataset_id, view_id)
     data: dict[str, Any] = {}
     runs: list[dict[str, Any]] = []
@@ -2365,10 +2371,20 @@ def _apply_batch(
             for (index, op), run in zip(plan.task_steps, runs, strict=False)
         ]
     if plan.specs and not _is_staged(data):
+        # The add returns with the pipeline ``ready`` and the tasks listed ``DONE`` before
+        # the run has started, so a count read now is the old one (as for a draft submit).
+        refreshed = wait_for_refreshed_view(
+            service, dataset_id, view_id, invocation.project, info_before.get("data_updated_at")
+        )
         rows_after, pipeline_error = wait_for_view_row_count(
             service, dataset_id, view_id, invocation.project, write_result=data
         )
         data["row_check"] = {"rows_before": rows_before, "rows_after": rows_after}
+        if pipeline_error is None and refreshed is None:
+            pipeline_error = {
+                "execution_state": UNFINISHED_STATE,
+                "wait_error": "the view's data was not refreshed after the batch; read it again",
+            }
         if pipeline_error is not None:
             data["pipeline_error"] = pipeline_error
         elif len(runs) < len(plan.specs) or any(
