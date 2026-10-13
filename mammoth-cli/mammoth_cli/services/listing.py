@@ -394,7 +394,7 @@ def compact_view_list(
         groups[ds_id] = [
             (v, view_summary(v, datasets.get(ds_id), ds_id, every_column)) for v in group
         ]
-    chosen, dropped_dataset, omitted = _choose_views(groups)
+    chosen, _dropped, _omitted = _choose_views(groups)
     payloads = read_stats([view for view, _summary in chosen])
     stats = [
         _view_stats(view, payload)
@@ -404,10 +404,57 @@ def compact_view_list(
         {**summary, "sample_values": found, **({"date_range": dates} if dates else {})}
         for (_v, summary), (found, dates) in zip(chosen, stats, strict=True)
     ]
-    kept, cut = fit_budget(items)
-    result: dict[str, Any] = {"dataviews": kept, "shown": len(kept)}
+    kept, _cut = fit_budget(items)
+    # Views that did not fit in full are still listed, by id and name, while that fits.
+    left_out = items[len(kept) :] + [
+        summary for _view, summary in _pairs_after(groups, len(chosen))
+    ]
+    brief, dropped_dataset, omitted = _brief_views(kept, left_out)
+    result: dict[str, Any] = {"dataviews": kept + brief, "shown": len(kept) + len(brief)}
+    if brief:
+        result["note"] = (
+            f"{len(brief)} views are listed by id and name only to fit the output cap; "
+            "list one dataset with 'view list DATASET_ID' for their columns and samples."
+        )
     if dropped_dataset is not None:
         result["first_dropped_dataset"] = dropped_dataset
-    if omitted or cut:
-        result["views_omitted"] = omitted + cut
+    if omitted:
+        result["views_omitted"] = omitted
     return result
+
+
+def _pairs_after(
+    groups: dict[Any, list[tuple[dict[str, Any], dict[str, Any]]]], count: int
+) -> list[tuple[dict[str, Any], dict[str, Any]]]:
+    """Every (view, summary) pair after the first ``count``, in listing order."""
+    return [pair for pairs in groups.values() for pair in pairs][count:]
+
+
+#: What a view that did not fit in full still shows.
+_BRIEF_KEYS = ("id", "name", "dataset_id", "dataset_name")
+
+
+def _brief_views(
+    shown: list[dict[str, Any]], left_out: list[dict[str, Any]]
+) -> tuple[list[dict[str, Any]], Any, int]:
+    """Id-and-name entries for ``left_out`` views while they fit the budget.
+
+    Returns the entries, the dataset id the listing stopped at when it ran out of
+    room at a dataset boundary (else ``None``), and how many views of a dataset
+    it stopped inside were not listed.
+    """
+    used = 200 + sum(json_size(item) + 1 for item in shown)
+    brief: list[dict[str, Any]] = []
+    for position, summary in enumerate(left_out):
+        entry = {key: summary[key] for key in _BRIEF_KEYS if key in summary}
+        used += json_size(entry) + 1
+        if used > LIST_DATA_BUDGET:
+            last = (brief or shown)[-1].get("dataset_id") if (brief or shown) else None
+            first = summary.get("dataset_id")
+            return (
+                brief,
+                (first if first != last else None),
+                (0 if first != last else len(left_out) - position),
+            )
+        brief.append(entry)
+    return brief, None, 0

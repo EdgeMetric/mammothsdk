@@ -18,8 +18,9 @@ ERR_BATCH_SOURCE_ID_POSITIVE = "`source_id` must be a positive integer, got {0}.
 ERR_BATCH_MAPPING_EMPTY = (
     "`mapping` must be a non-empty dict mapping source columns to destination columns."
 )
-ERR_BATCH_PATCH_EMPTY = "`patch` must be a non-empty list of patch operations."
+ERR_BATCH_PATCH_EMPTY = "`patch` must be a patch operation (or a list holding one)."
 ERR_BATCH_PATCH_OP = "Each patch op must have op='replace' or op='remove', got {0!r}."
+ERR_BATCH_PATCH_ONE_OP = "The server takes one patch operation per call; got {0}."
 
 
 class BatchesAPI:
@@ -247,20 +248,20 @@ class BatchesAPI:
     async def update(
         self,
         dataset_id: int,
-        patch: _list[dict[str, Any]],
+        patch: dict[str, Any] | _list[dict[str, Any]],
         project_id: int | None = None,
     ) -> dict[str, Any]:
-        """Update batches for a dataset via patch operations.
+        """Update batches for a dataset via a patch operation.
 
-        The backend expects ``{"patch": [<ops>]}``. Each op has:
+        The backend expects ``{"patch": <op>}`` with exactly one operation:
 
         - ``op``: ``"replace"`` or ``"remove"``
-        - ``value``: for ``replace`` — a dict mapping operation name to list of
-          batch IDs; for ``remove`` — a list of batch IDs.
+        - ``path``: ``"batches"`` (filled in when left out)
+        - ``value``: ``{"suspend": [batch ids], "restore": [batch ids]}``
 
         Args:
             dataset_id: ID of the dataset.
-            patch: Non-empty list of patch operation dicts.  Each dict must
+            patch: The operation dict, or a list holding that one dict.  It must
                 include ``"op"`` (``"replace"`` or ``"remove"``) and ``"value"``.
             project_id: Project ID (uses client default if not provided).
 
@@ -273,16 +274,18 @@ class BatchesAPI:
         """
         if not patch:
             raise MammothValidationError(ERR_BATCH_PATCH_EMPTY)
-        valid_ops: set[str] = {"replace", "remove"}
-        for op in patch:
-            if op.get("op") not in valid_ops:
-                raise MammothValidationError(ERR_BATCH_PATCH_OP.format(op.get("op")))
+        operations = [patch] if isinstance(patch, dict) else patch
+        if len(operations) != 1:
+            raise MammothValidationError(ERR_BATCH_PATCH_ONE_OP.format(len(operations)))
+        operation = {"path": "batches", **operations[0]}
+        if operation.get("op") not in {"replace", "remove"}:
+            raise MammothValidationError(ERR_BATCH_PATCH_OP.format(operation.get("op")))
         ws = self._ws()
         proj = self._proj(project_id)
         return await self._client._request_json(
             "PATCH",
             f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/batches",
-            json={"patch": patch},
+            json={"patch": operation},
         )
 
     async def delete(

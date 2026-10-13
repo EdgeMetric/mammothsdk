@@ -942,8 +942,26 @@ def view_create(invocation: Invocation) -> HandlerResult:
         if clone_from is not None:
             _require_clone_from_same_dataset(service, int(clone_from), dataset_id)
         data = service.call(_symbol(invocation), **kwargs)
-    # The SDK returns a rich ``View``; emit its dataview record like ``view get``.
-    return _view_payload(data), _meta(invocation, auth.workspace_id)
+    return _created_view(_view_payload(data)), _meta(invocation, auth.workspace_id)
+
+
+def _created_view(record: Any) -> Any:
+    """What ``view create`` reports: the new ids and a short summary (the columns are in ``state``).
+
+    The full dataview record (pipeline metadata, dependency graph) is some 30 KB with
+    the id buried in it; ``view get VIEW_ID`` returns it.
+    """
+    if not isinstance(record, dict):
+        return record
+    summary = {
+        "view_id": record.get("id"),
+        "dataset_id": record.get("dataset_id") or record.get("ds_id"),
+        "id": record.get("id"),
+        "name": record.get("name"),
+        "row_count": record.get("row_count"),
+        "column_count": record.get("column_count"),
+    }
+    return {key: value for key, value in summary.items() if value is not None}
 
 
 def _require_clone_from_same_dataset(service: Any, clone_from: int, dataset_id: int) -> None:
@@ -1418,7 +1436,32 @@ def view_transform_ai(invocation: Invocation) -> HandlerResult:
     _require_field(document, "context_columns")
     assert document is not None
     kwargs = _bind_transform_inputs(invocation, document)
-    return _dispatch_view(invocation, view_id, "gen_ai", **kwargs)
+    data, meta = _dispatch_view(invocation, view_id, "gen_ai", **kwargs)
+    _reject_failed_ai_run(view_id, data)
+    return data, meta
+
+
+def _reject_failed_ai_run(view_id: int, data: Any) -> None:
+    """Fail an AI step that was added but errored when it ran (an empty new column)."""
+    error = data.get("pipeline_error") if isinstance(data, dict) else None
+    if not isinstance(error, dict) or error.get("execution_state") != "runtime_error":
+        return
+    task_id = error.get("task_id")
+    raise CliError(
+        code=CODE_TASK_RUNTIME_ERROR,
+        message=(
+            f"The AI step (task {task_id}) was added to view {view_id} but failed when it ran "
+            f"(error {error.get('error_code')}); its new column is empty."
+        ),
+        exit_status=EXIT_API,
+        hint=(
+            "Likely causes: the workspace's AI quota, or a prompt the step cannot run. "
+            f"Remove the task with `mammoth view task delete {view_id} {task_id} --yes` "
+            "and try again."
+        ),
+        details={"view_id": view_id, "task_id": task_id, "pipeline_error": error},
+        recovery_commands=[f"mammoth view task delete {view_id} {task_id} --yes"],
+    )
 
 
 def view_transform_bulk_replace(invocation: Invocation) -> HandlerResult:

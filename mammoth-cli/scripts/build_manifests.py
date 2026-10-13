@@ -508,7 +508,7 @@ def build() -> dict[str, int]:
             result_model="ContextExtractResponse",
             acceptance_evidence="contract_only_no_disposable_fixture",
             live_exemption_reason="Release-only supplemental binding; no disposable fixture.",
-            known_restrictions="Release snapshot provenance only; unverified against release.",
+            known_restrictions=None,
             unit_tests=[
                 "tests/unit/test_context_extract.py::test_context_extract_posts_literal_release_route_and_body",
                 "mammoth-cli/tests/unit/commands/test_dashboard.py::test_context_extract_requires_body_wrapper_and_dispatches_exact_symbol",
@@ -525,7 +525,7 @@ def build() -> dict[str, int]:
             result_model="ExemplarExtractResponse",
             acceptance_evidence="contract_only_no_disposable_fixture",
             live_exemption_reason="Release-only supplemental binding; no disposable fixture.",
-            known_restrictions="Release snapshot provenance only; unverified against release.",
+            known_restrictions=None,
             unit_tests=[
                 "tests/unit/test_exemplar_extract.py::test_exemplar_extract_posts_literal_release_route_and_body",
                 "mammoth-cli/tests/unit/commands/test_dashboard.py::test_exemplar_extract_requires_body_wrapper_and_dispatches_exact_symbol",
@@ -543,7 +543,7 @@ def build() -> dict[str, int]:
             acceptance_evidence="contract_only_no_disposable_fixture",
             wait_policy="always_wait",
             live_exemption_reason="Release-only supplemental binding; no disposable fixture.",
-            known_restrictions="Release snapshot provenance only; unverified against release.",
+            known_restrictions=None,
             unit_tests=[
                 "tests/unit/test_swap_data.py::test_swap_data_posts_literal_release_route_and_body",
                 "mammoth-cli/tests/unit/commands/test_dashboard.py::test_swap_data_dispatches_exact_symbol",
@@ -560,7 +560,7 @@ def build() -> dict[str, int]:
             result_model="PendingTemplateResponse",
             acceptance_evidence="contract_only_no_disposable_fixture",
             live_exemption_reason="Release-only supplemental binding; no disposable fixture.",
-            known_restrictions="Release snapshot provenance only; unverified against release.",
+            known_restrictions=None,
             unit_tests=[
                 "tests/unit/test_template_bindings.py::test_take_pending_template_posts_exact_route"
             ],
@@ -575,7 +575,7 @@ def build() -> dict[str, int]:
             result_model="ObjectJobSchema | JobResponse",
             acceptance_evidence="contract_only_no_disposable_fixture",
             live_exemption_reason="Release-only supplemental binding; no disposable fixture.",
-            known_restrictions="Release snapshot provenance only; unverified against release.",
+            known_restrictions=None,
             agent_example=(
                 "mammoth dashboard templates use sample --input "
                 '\'{"body": {"params": {"project_id": 1}}}\' '
@@ -617,7 +617,6 @@ def build() -> dict[str, int]:
                     "Release-only multipart binding; no approved workbook fixture."
                 ),
                 known_restrictions=(
-                    "Release snapshot provenance only; unverified against release. "
                     "These take a workbook file from the local disk. Inside the Mammoth app the "
                     "user's file cannot reach the agent: send the user to the dashboard import "
                     "page at /workspaces/{workspace_id}/publish/import (Publish → Import), where "

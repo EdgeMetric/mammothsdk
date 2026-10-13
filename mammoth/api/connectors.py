@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import base64
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 from mammoth.exceptions import MammothValidationError
 from mammoth.models.connectors import DsConfigPatchOp, DsConfigPatchPath
@@ -327,6 +327,55 @@ class ConnectorsAPI:
             f"/workspaces/{ws}/projects/{proj}/connectors/{_encode_connector_key(connector_key)}/connections/{connection_key}/ds_configs",
             json=body,
         )
+
+    async def query_connection(
+        self,
+        connector_key: str,
+        connection_key: str,
+        query: str,
+        *,
+        table: str | None = None,
+        profile: str | None = None,
+        project_id: int | None = None,
+        timeout: float = 60.0,
+    ) -> dict[str, Any]:
+        """Run a query on a connection and return a sample of its rows.
+
+        This is ``create_ds_config`` with ``data_sample=True``: Mammoth sends the
+        query to the connected database with a row limit and hands the rows back.
+        It saves no data source configuration and creates no dataset; the only
+        record Mammoth keeps is the short-lived job that carried the request.
+        Mammoth does not make the query read-only: the database account of the
+        connection is what stops a write.
+
+        Args:
+            connector_key: Key identifying the connector type (e.g. ``"postgres"``).
+            connection_key: Key identifying the connection.
+            query: The SQL to run.
+            table: Optional table name hint.
+            profile: Optional connector-specific profile (e.g. schema name).
+            project_id: Project ID (uses client default if not provided).
+            timeout: Seconds to wait for the database to answer.
+
+        Returns:
+            Dict with ``data_sample`` (``dataschema`` and ``rows``).
+
+        Raises:
+            MammothJobFailedError: If the database refuses the query.
+            MammothJobTimeoutError: If it does not answer within *timeout*.
+        """
+        submitted = await self.create_ds_config(
+            connector_key,
+            connection_key,
+            query=query,
+            table=table,
+            profile=profile,
+            validate=False,
+            data_sample=True,
+            project_id=project_id,
+        )
+        job = await self._client.jobs.wait_for_job(submitted["job_id"], timeout=timeout)
+        return cast(dict[str, Any], job.get("response", job))
 
     async def get_ds_config(
         self,

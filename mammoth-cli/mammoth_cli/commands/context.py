@@ -12,6 +12,7 @@ from typing import Any
 import typer
 
 from mammoth_cli.context import profiles
+from mammoth_cli.context.endpoint import resolve_base_url
 from mammoth_cli.errors.envelope import (
     CODE_PROFILE_NOT_FOUND,
     EMBEDDED_NO_PROFILE_HINT,
@@ -232,6 +233,65 @@ def context_project_clear(
 
     def producer() -> tuple[Any, dict[str, Any]]:
         return _run_clear(invocation)
+
+    executor.run(
+        invocation.command_id,
+        invocation.output,
+        producer,
+        agent_mode=invocation.no_input,
+        invocation=invocation,
+    )
+
+
+def _run_show(invocation: Invocation) -> tuple[dict[str, Any], dict[str, Any]]:
+    profile_name = _profile_name(invocation)
+    record = profiles.get_profile(profile_name)
+    project_id = invocation.project
+    if project_id is None and record is not None:
+        project_id = record.project_id
+    data = {
+        "profile": profile_name,
+        "endpoint": resolve_base_url(record.server_prefix if record is not None else None),
+        "workspace_id": record.workspace_id if record is not None else None,
+        "project_id": project_id,
+        "project_source": _project_source(invocation, record),
+    }
+    return data, {"profile": profile_name, "project_id": project_id}
+
+
+def context_show(
+    output: str = go.output_option(),
+    profile: str | None = go.profile_option(),
+    project: int | None = go.project_option(),
+    timeout: float | None = go.timeout_option(),
+    job_timeout: float | None = go.job_timeout_option(),
+    pipeline_timeout: float | None = go.pipeline_timeout_option(),
+    color: str = go.color_option(),
+    no_input: bool = go.no_input_option(),
+    no_progress: bool = go.no_progress_option(),
+    debug: bool = go.debug_option(),
+    input_file: str | None = go.input_file_option(),
+    input_format: str | None = go.input_format_option(),
+) -> None:
+    """Show the profile, endpoint, workspace and project the next command would use."""
+    invocation = go.make_invocation(
+        "context.show",
+        output=output,
+        profile=profile,
+        project=project,
+        timeout=timeout,
+        job_timeout=job_timeout,
+        pipeline_timeout=pipeline_timeout,
+        color=color,
+        no_input=no_input,
+        no_progress=no_progress,
+        debug=debug,
+        input_file=input_file,
+        input_format=input_format,
+    )
+
+    def producer() -> tuple[Any, dict[str, Any]]:
+        return _run_show(invocation)
 
     executor.run(
         invocation.command_id,

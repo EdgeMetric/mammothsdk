@@ -161,9 +161,13 @@ def _schema_get_many(ids: list[str], full: bool) -> dict[str, Any]:
 
 def _schema_get(invocation: Invocation) -> HandlerResult:
     from mammoth_cli.commands import schema as schema_cmd
+    from mammoth_cli.runtime.strict import COMMAND_FLAGS
 
     command_id = _require_arg(invocation, "command id")
-    full = bool(invocation.bound_input().get("full"))
+    flags = COMMAND_FLAGS["schema.get"]
+    full = bool(invocation.bound_input().get("full")) or any(
+        str(arg) in flags for arg in invocation.extra_args
+    )
     # 'schema get A,B,C' (or 'A;B;C'): several ids in one call, like the
     # ';'-separated goals of 'schema find'. Command ids never contain either.
     ids = list(
@@ -171,7 +175,7 @@ def _schema_get(invocation: Invocation) -> HandlerResult:
     )
     if len(ids) > 1:
         return _schema_get_many(ids, full), {}
-    rest = [str(arg) for arg in invocation.extra_args or []]
+    rest = [str(arg) for arg in invocation.extra_args or [] if str(arg) not in flags]
     command_id, entry = _resolve_schema(ids[0] if ids else command_id, rest)
     if entry is None:
         raise _schema_not_found(command_id)
@@ -433,6 +437,7 @@ _TARGETS: dict[str, str] = {
     "connector.connection.delete": "mammoth_cli.commands.connector:connector_connection_delete",
     "connector.connection.get": "mammoth_cli.commands.connector:connector_connection_get",
     "connector.connection.list": "mammoth_cli.commands.connector:connector_connection_list",
+    "connector.connection.query": "mammoth_cli.commands.connector:connector_connection_query",
     "connector.connection.update": "mammoth_cli.commands.connector:connector_connection_update",
     "connector.ds-config.create": "mammoth_cli.commands.connector:connector_ds_config_create",
     "connector.ds-config.delete": "mammoth_cli.commands.connector:connector_ds_config_delete",
@@ -667,6 +672,9 @@ _TARGETS: dict[str, str] = {
     "agent.run.retry": "mammoth_cli.commands.agent:agent_run_retry",
     "agent.turn.cancel": "mammoth_cli.commands.agent:agent_turn_cancel",
     "agent.message.set-request-kind": "mammoth_cli.commands.agent:agent_message_set_request_kind",
+    "agent.plan.approve": "mammoth_cli.commands.agent:agent_plan_approve",
+    "agent.plan.discard": "mammoth_cli.commands.agent:agent_plan_discard",
+    "agent.plan.skip": "mammoth_cli.commands.agent:agent_plan_skip",
     "agent.plan.edit-proposal": "mammoth_cli.commands.agent:agent_plan_edit_proposal",
     "agent.session.delete": "mammoth_cli.commands.agent:agent_session_delete",
     "agent.session.list": "mammoth_cli.commands.agent:agent_session_list",
@@ -847,7 +855,9 @@ _TARGETS: dict[str, str] = {
     "view.explore-panel.add-to-dashboard": (
         "mammoth_cli.commands.view_explore:view_explore_panel_add_to_dashboard"
     ),
-    "view.explore-panel.export-image": "mammoth_cli.commands.view_explore:view_explore_panel_export_image",
+    "view.explore-panel.export-image": (
+        "mammoth_cli.commands.view_explore:view_explore_panel_export_image"
+    ),
     "view.data.get": "mammoth_cli.commands.view:view_data_get",
     "view.data.query": "mammoth_cli.commands.view:view_data_query",
     "view.data.aggregate": "mammoth_cli.commands.view:view_data_aggregate_rounded",

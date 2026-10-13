@@ -250,7 +250,6 @@ def run(
         _refuse_if_embedded(command_id)
         if invocation is not None and invocation.dry_run:
             refuse_unsupported_dry_run(command_id)
-        updates.auto_upgrade(command_id, run_log)
         data, meta_extra = producer()
         # Re-read: a command that asked PyPI itself (doctor) refreshed the
         # cache, and its envelope must not carry the older answer.

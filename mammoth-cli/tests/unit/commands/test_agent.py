@@ -58,7 +58,9 @@ def test_chat_requires_scope(fake_service: FakeMammothService, tmp_path: Path) -
 def test_chat_passes_required_fields(fake_service: FakeMammothService, tmp_path: Path) -> None:
     doc = _write(tmp_path, {"message": "hello", "scope": {"type": "workspace"}})
     agent_cmd.agent_chat(_inv("agent.chat", input_file=doc))
-    assert fake_service.call_log == [(_CHAT, {"message": "hello", "scope": {"type": "workspace"}})]
+    assert fake_service.call_log == [
+        (_CHAT, {"message": "hello", "scope": {"type": "workspace"}, "wait": 120})
+    ]
 
 
 def test_chat_forwards_optional_fields(fake_service: FakeMammothService, tmp_path: Path) -> None:
@@ -84,6 +86,7 @@ def test_chat_forwards_optional_fields(fake_service: FakeMammothService, tmp_pat
                 "session_id": "s-1",
                 "client_context": {"page": "home"},
                 "selection": {"rows": [1, 2]},
+                "wait": 120,
             },
         )
     ]

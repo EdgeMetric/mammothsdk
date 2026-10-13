@@ -71,6 +71,39 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+- command_id: context.show
+  command_path: context show
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals: []
+  options: []
+  sdk_symbol: mammoth_cli.context.show
+  sdk_conversion: Call mammoth_cli.context.show with validated request fields.
+  request_model: ContextShowRequest
+  result_model: ContextShowResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: null
+  live_exemption_reason: Local context read.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth context show --help
+  agent_example: mammoth context show
+  unit_tests:
+  - UT-CONTEXT-SHOW
+  contract_tests:
+  - CT-CONTEXT-SHOW-HUMAN
+  - CT-CONTEXT-SHOW-JSON
+  - CT-CONTEXT-SHOW-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Local read, no network call. Shows which profile, endpoint, workspace and project the next command would use; it never prints credentials.
+  reviewed_by: primary
 - command_id: context.project.use
   command_path: context project use
   disposition: command

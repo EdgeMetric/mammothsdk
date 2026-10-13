@@ -268,6 +268,32 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
         ),
     ),
     "agent.plan.edit-proposal": (),
+    **{
+        f"agent.plan.{verb}": (
+            PositionalSpec(
+                name="session_id",
+                type=str,
+                required=True,
+                help="ID of the chat session (from agent session list).",
+            ),
+            *(
+                (
+                    PositionalSpec(
+                        name="n",
+                        type=int,
+                        required=True,
+                        help=(
+                            "Number of the proposed plan step to skip "
+                            "(from agent session messages)."
+                        ),
+                    ),
+                )
+                if verb == "skip"
+                else ()
+            ),
+        )
+        for verb in ("approve", "skip", "discard")
+    },
     "agent.message.set-request-kind": (
         PositionalSpec(
             name="message_id",
@@ -476,6 +502,18 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
     # active project). The SDK signature marks it required or omits it, so the
     # dual-sourced optional locator is authored here.
     "project.get": _optional_project_id(),
+    # Without a key the command lists the connections of every connector that has one.
+    "connector.connection.list": (
+        PositionalSpec(
+            name="connector_key",
+            type=str,
+            required=False,
+            help=(
+                "Key identifying the connector. Leave it out to list the connections of "
+                "every connector that has one."
+            ),
+        ),
+    ),
     # ``project check PROJECT_ID DATASET_ID [VIEW_ID]`` narrows the check to one dataset,
     # and to one of its views (its first, most recent one when VIEW_ID is omitted).
     "project.check": (

@@ -463,9 +463,18 @@ def changed_column_values(names: list[str], rows: list[Any], known: list[str]) -
 
 
 def _discover_view_id(dataset_id: int, base: Invocation) -> int:
-    listing = _call_read(_VIEW_LIST_COMMAND, {"dataset_id": dataset_id}, base)
-    views = listing.get("dataviews") if isinstance(listing, dict) else None
-    if not isinstance(views, list) or not views or not isinstance(views[0], dict):
+    """The id of the dataset's first view, waiting (bounded) for the default view to appear.
+
+    A dataset just created has no view for a moment; polling beats reporting it unreadable.
+    """
+    for attempt in range(_DATA_READ_ATTEMPTS):
+        listing = _call_read(_VIEW_LIST_COMMAND, {"dataset_id": dataset_id}, base)
+        views = listing.get("dataviews") if isinstance(listing, dict) else None
+        if isinstance(views, list) and views and isinstance(views[0], dict):
+            break
+        if attempt < _DATA_READ_ATTEMPTS - 1:
+            time.sleep(_DATA_READ_RETRY_S)
+    else:
         raise ValueError(f"dataset {dataset_id} has no view to read its new state from")
     view_id = views[0].get("id")
     if not isinstance(view_id, int):

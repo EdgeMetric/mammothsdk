@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import dataclasses
 import inspect
+import re
 import shlex
 import time
 from collections.abc import Callable
@@ -803,9 +804,18 @@ _NO_CURRENCY_NOTE = (
 )
 
 
+#: Measure names that read as money; the note about a missing currency is only for these.
+_MONEY_COLUMN = re.compile(
+    r"revenue|sales|amount|price|cost|profit|income|spend|margin|fee|salary|payment|"
+    r"balance|budget|discount|tax|total|value",
+    re.IGNORECASE,
+)
+
+
 def _with_currency(data: Any, measures: list[dict[str, Any]], currencies: dict[str, str]) -> Any:
     """``data`` with ``currency``: each money measure's symbol, from its column's format,
-    or null where the column sets none, plus ``currency_note`` when none is set at all.
+    or null where the column sets none, plus ``currency_note`` when none is set at all and a
+    measure reads as money.
 
     The in-product agent put "$" on rupee store sales whose columns carry no currency
     (gap eval 10-10, S03); a figure's unit has to come from the data, not a guess.
@@ -818,7 +828,9 @@ def _with_currency(data: Any, measures: list[dict[str, Any]], currencies: dict[s
     if not money or not isinstance(data, dict):
         return data
     marked = {**data, "currency": money}
-    if not any(money.values()):
+    if not any(money.values()) and any(
+        _MONEY_COLUMN.search(str(item.get("column"))) for item in measures
+    ):
         marked["currency_note"] = _NO_CURRENCY_NOTE
     return marked
 

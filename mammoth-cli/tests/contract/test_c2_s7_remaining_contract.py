@@ -56,7 +56,10 @@ S7_ROUTE_INVENTORY = frozenset(
         "agent.memory.list",
         "agent.memory.remove",
         "agent.message.set-request-kind",
+        "agent.plan.approve",
+        "agent.plan.discard",
         "agent.plan.edit-proposal",
+        "agent.plan.skip",
         "agent.projects.clear",
         "agent.projects.set",
         "agent.publish",
@@ -257,10 +260,10 @@ def fake_family_service(monkeypatch: pytest.MonkeyPatch) -> FakeMammothService:
 def test_s7_inventory_and_ledger_are_exact() -> None:
     ledger = json.loads(LEDGER.read_text(encoding="utf-8"))
     assert S7_COMMANDS == S7_ROUTE_INVENTORY
-    assert ledger["route_count"] == 177
+    assert ledger["route_count"] == 180
     assert ledger["families"] == {
         "activity": 2,
-        "agent": 51,
+        "agent": 54,
         "ai": 4,
         "automation": 8,
         "billing": 25,
@@ -393,6 +396,7 @@ def test_unknown_s7_field_is_rejected_before_service_dispatch(
                 "session_id": "S7-SESSION",
                 "client_context": {"marker": "S7-CONTEXT"},
                 "selection": {"marker": "S7-SELECTION"},
+                "wait": 120,
             },
             [],
             {},

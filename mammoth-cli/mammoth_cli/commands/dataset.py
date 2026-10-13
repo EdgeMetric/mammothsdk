@@ -14,10 +14,12 @@ from collections.abc import Callable
 from typing import Any, Protocol
 
 from mammoth_cli.errors.envelope import (
+    CODE_API_ERROR,
     CODE_INVALID_ARGUMENT,
     CODE_JOB_FAILED,
     CODE_MISSING_ARGUMENT,
     CODE_MISSING_FIELD,
+    CODE_RESOURCE_NOT_FOUND,
     CODE_SDK_SYMBOL_UNRESOLVED,
     CODE_UNSUPPORTED_CONTRACT,
     EXIT_API,
@@ -1513,7 +1515,49 @@ def dataset_bulk_delete(invocation: Invocation) -> HandlerResult:
     )
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), dataset_ids=dataset_ids, project_id=project_id)
+        remaining = _datasets_still_present(service, dataset_ids, project_id)
+    if remaining:
+        raise CliError(
+            code=CODE_API_ERROR,
+            message=(
+                f"Only {len(dataset_ids) - len(remaining)} of {len(dataset_ids)} datasets were "
+                f"deleted; still present: {', '.join(str(item) for item in remaining)}."
+            ),
+            exit_status=EXIT_API,
+            hint=(
+                "A dataset that another view uses as a lookup or join source is kept. "
+                "Delete the view that uses it first, then run the delete again for the "
+                "datasets listed as still present."
+            ),
+            details={
+                "deleted": [item for item in dataset_ids if item not in remaining],
+                "still_present": remaining,
+            },
+        )
     return data, _meta(invocation, auth.workspace_id, project_id)
+
+
+#: Backend code for a dataset id that does not exist (the get route answers 400, not 404).
+_INVALID_DATASET_ID = "4DSET001"
+
+
+def _datasets_still_present(service: Any, dataset_ids: list[int], project_id: int) -> list[int]:
+    """The ids of ``dataset_ids`` the server still returns after a bulk delete."""
+    present: list[int] = []
+    for dataset_id in dataset_ids:
+        try:
+            service.call(
+                "mammoth.api.datasets.DatasetsAPI.get", dataset_id=dataset_id, project_id=project_id
+            )
+        except CliError as error:
+            if (
+                error.code != CODE_RESOURCE_NOT_FOUND
+                and error.details.get("backend_code") != _INVALID_DATASET_ID
+            ):
+                raise
+            continue
+        present.append(dataset_id)
+    return present
 
 
 def dataset_bulk_update(invocation: Invocation) -> HandlerResult:

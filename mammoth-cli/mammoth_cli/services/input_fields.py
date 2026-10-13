@@ -45,6 +45,8 @@ _HANDLER_OWNED_FIELDS: dict[str, frozenset[str]] = {
             "team.set": ("team",),
         }.items()
     },
+    # The server's per-submit idempotency key is made by the SDK, never asked of the user.
+    "agent.chat": frozenset({"request_key"}),
     # The note kind comes from the command (``memory`` is facts, ``scratch`` is working notes).
     **{
         f"agent.{command}": frozenset({"kind"})

@@ -6,6 +6,30 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added (mammoth-io, mammoth-cli)
+
+- `mammoth agent chat` no longer fails with 400 `4GENR007` ("request_key: Field required"). The SDK makes the `request_key` for each submit and repeats it on its own retries after a gateway error; it is never part of `--input`. `agent chat` waits (default 120 seconds, `"wait": 0` to return at once) and returns the reply, or `working: true` with the `session_id` to follow with `agent session messages`. The `scope` shape (`{"type": "workspace", "workspace_id": N}`) and `client_context.project_id` are documented.
+- `mammoth agent plan approve SESSION_ID`, `agent plan skip SESSION_ID N` and `agent plan discard SESSION_ID` do what the web app's Run it, Skip and Discard buttons do (typing "Run it" as a chat message approves nothing). The plan id is read from the session. `agent session messages` reports `awaiting_plan_approval` with the exact commands when a plan waits.
+- `mammoth connector connection query CONNECTOR CONNECTION --input '{"query": "SELECT ..."}'` runs one SELECT and returns sample rows. It is read-only on the Mammoth side: no data source is saved and no dataset is made (only the short-lived job that carries the request), so it needs no `--yes`. The CLI refuses anything but a single SELECT; the connection's database user decides what the database allows.
+- `mammoth connector connection list` works without a connector key and lists the connections of every active connector, each row with its `connector_key` (secrets stay redacted).
+- `mammoth context show` prints the profile, endpoint, workspace and project the next command would use (never credentials).
+- `mammoth schema get COMMAND --full` (the `--input '{"full": true}'` form still works).
+- The recipes and `dataset create` preconditions cover importing from a REST API and from a database query; `schema find` ("rest api connector", "create dataset from a database query") now reaches `dataset create`. Stacking two datasets is documented as `view export dataset` with `save_as_mode` `APPEND_TO_DS`, including the refresh caveat; a real union step needs backend work.
+
+### Changed (mammoth-cli)
+
+- `mammoth batch update` works again: the server takes one patch operation (`{"op": "replace", "path": "batches", "value": {"suspend": [ids], "restore": [ids]}}`), which the SDK and CLI now send as such (a list holding one operation is still accepted).
+- `mammoth dataset bulk-delete` checks that every dataset is gone and fails, naming the ones still present, instead of exiting 0 after a partial delete.
+- `mammoth view transform ai` fails with `task_runtime_error` (and the command that removes the task) when the AI step errors as it runs, instead of exiting 0 with an empty column.
+- `mammoth project create` fails loudly, with the new project id, when the token that made the project cannot open it (a token limited to one project).
+- The CLI updates itself with no prompt, at most once a day. After a command has written its output, a detached process asks PyPI and installs a newer release through the `mammoth upgrade` path. It never blocks or fails a command, logs failures to the run log, and never runs during `upgrade`. `MAMMOTH_NO_AUTO_UPDATE=1` keeps the check but never installs. It runs after the command because replacing files under a running command breaks its lazy imports. `meta.update_available` now appears only when a newer release exists and will not be installed by itself.
+- `view create` reports `view_id` and `dataset_id` with a short summary instead of the full dataview record (`view get` has it).
+- `view list` lists views that do not fit in full by id and name, so the output cap hides far fewer of them; the more/offset hint stays when views are really cut.
+- `dataset create` waits briefly for the new dataset's default view when it reads the result back, instead of reporting `unreadable`.
+- `view data aggregate` adds `currency_note` only when a measure reads as money.
+- `mammoth doctor` prints the exact `mammoth auth login --profile NAME` command for a legacy API key + secret profile.
+- Preconditions shown by `schema get` no longer carry internal test-harness text (fixture requirements, evidence provenance, variance codes).
+
 ### Added (mammoth-mcp-server 0.2.1, mammoth-io 0.8.39)
 
 - `client.workspaces.current()` says whether the user granted the connection read-only (`CurrentWorkspace.read_only`, false when Mammoth does not say). The MCP server puts the `read` scope on such a token, so the read-only check added in 0.2.0 now applies to the connections Mammoth marks read-only. Needs a Mammoth that reports `read_only` on `/workspaces/current`; with an older one every connection keeps full access.

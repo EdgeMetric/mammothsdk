@@ -1,4 +1,4 @@
-"""Unit tests for the daily update check and the opt-in automatic upgrade."""
+"""Unit tests for the daily update check and the automatic update."""
 
 from __future__ import annotations
 
@@ -23,6 +23,8 @@ from mammoth_cli.runtime import executor, updates
 def check_enabled(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> Path:
     monkeypatch.delenv("MAMMOTH_NO_UPDATE_CHECK", raising=False)
     monkeypatch.delenv("MAMMOTH_AUTO_UPGRADE", raising=False)
+    # The hint tests need the notice; a detached refresh must never install anything.
+    monkeypatch.setenv("MAMMOTH_NO_AUTO_UPDATE", "1")
     cache = tmp_path / "update-check.json"
     monkeypatch.setenv("MAMMOTH_UPDATE_CACHE", str(cache))
     # A refresh runs in a detached child; it must fail fast instead of reaching PyPI.
@@ -161,7 +163,7 @@ def test_auto_upgrade_off_switch_stops_the_upgrade(
     for off in ("0", "false", "No", "OFF"):
         monkeypatch.setenv("MAMMOTH_AUTO_UPGRADE", off)
         assert updates.auto_upgrade_enabled() is False
-        assert updates.auto_upgrade("project.list") is None
+        assert updates.auto_upgrade("99.0.0") is None
     assert "upgraded_to" not in json.loads(check_enabled.read_text())
 
 
@@ -169,64 +171,53 @@ _DECISION = "from mammoth_cli.runtime import updates; print(updates.auto_upgrade
 
 
 def _decision_env(tmp_path: Path, **extra: str) -> dict[str, str]:
-    env = {k: v for k, v in os.environ.items() if k not in {"CI", "MAMMOTH_AUTO_UPGRADE"}}
+    drop = {"CI", "MAMMOTH_AUTO_UPGRADE", "MAMMOTH_NO_AUTO_UPDATE", "MAMMOTH_NO_UPDATE_CHECK"}
+    env = {k: v for k, v in os.environ.items() if k not in drop}
     env["MAMMOTH_UPDATE_CACHE"] = str(tmp_path / "update-check.json")
-    env.pop("MAMMOTH_NO_UPDATE_CHECK", None)
     env.update(extra)
     return env
 
 
-def _decide_in_terminal(env: dict[str, str]) -> str:
-    child = pexpect.spawn(sys.executable, ["-c", _DECISION], env=env, encoding="utf-8")
-    child.expect(pexpect.EOF, timeout=60)
-    return child.before.strip()
-
-
-def _decide_piped(env: dict[str, str]) -> str:
+def _decide(env: dict[str, str]) -> str:
     done = subprocess.run(
         [sys.executable, "-c", _DECISION], env=env, capture_output=True, text=True, check=True
     )
     return done.stdout.strip()
 
 
-def test_auto_upgrade_is_on_by_default_in_a_terminal(tmp_path: Path) -> None:
-    assert _decide_in_terminal(_decision_env(tmp_path)) == "True"
+def test_auto_update_is_on_by_default_with_or_without_a_terminal_or_ci(tmp_path: Path) -> None:
+    assert _decide(_decision_env(tmp_path)) == "True"
+    assert _decide(_decision_env(tmp_path, CI="true")) == "True"
 
 
-def test_auto_upgrade_off_switch_wins_in_a_terminal(tmp_path: Path) -> None:
-    assert _decide_in_terminal(_decision_env(tmp_path, MAMMOTH_AUTO_UPGRADE="0")) == "False"
+def test_auto_update_opt_outs(tmp_path: Path) -> None:
+    assert _decide(_decision_env(tmp_path, MAMMOTH_NO_AUTO_UPDATE="1")) == "False"
+    assert _decide(_decision_env(tmp_path, MAMMOTH_AUTO_UPGRADE="0")) == "False"
+    assert _decide(_decision_env(tmp_path, MAMMOTH_NO_UPDATE_CHECK="1")) == "False"
 
 
-def test_auto_upgrade_stays_off_without_a_terminal_or_in_ci(tmp_path: Path) -> None:
-    assert _decide_piped(_decision_env(tmp_path)) == "False"
-    assert _decide_in_terminal(_decision_env(tmp_path, CI="true")) == "False"
-
-
-def test_explicit_opt_in_forces_auto_upgrade_without_a_terminal(tmp_path: Path) -> None:
-    assert _decide_piped(_decision_env(tmp_path, MAMMOTH_AUTO_UPGRADE="1")) == "True"
-
-
-def test_cache_goes_stale_after_an_hour(check_enabled: Path) -> None:
-    _write(check_enabled, "99.0.0", age=_dt.timedelta(minutes=50))
+def test_cache_goes_stale_after_a_day(check_enabled: Path) -> None:
+    _write(check_enabled, "99.0.0", age=_dt.timedelta(hours=23))
     assert updates.cache_is_fresh(updates.read_cache())
-    _write(check_enabled, "99.0.0", age=_dt.timedelta(minutes=70))
+    _write(check_enabled, "99.0.0", age=_dt.timedelta(hours=25))
     assert not updates.cache_is_fresh(updates.read_cache())
 
 
-def test_hint_names_the_off_switch_only_when_auto_upgrade_is_on(
+def test_notice_is_hidden_while_auto_update_will_install_it(
     check_enabled: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    update = {"current": "1.0.0", "latest": "2.0.0", "command": updates.UPGRADE_COMMAND}
-    monkeypatch.setenv("MAMMOTH_AUTO_UPGRADE", "1")
-    assert "MAMMOTH_AUTO_UPGRADE=0" in updates.hint_line(update)
-    monkeypatch.setenv("MAMMOTH_AUTO_UPGRADE", "0")
-    assert "MAMMOTH_AUTO_UPGRADE" not in updates.hint_line(update)
+    _write(check_enabled, "99.0.0")
+    monkeypatch.delenv("MAMMOTH_NO_AUTO_UPDATE")
+    assert updates.available_update("project.list") is None
+    # A failed install brings the notice back, so the user can run it by hand.
+    updates.write_cache("99.0.0", upgrade_failed="99.0.0")
+    assert updates.available_update("project.list") is not None
 
 
 def test_auto_upgrade_runs_once_per_release(
     check_enabled: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    monkeypatch.setenv("MAMMOTH_AUTO_UPGRADE", "1")
+    monkeypatch.delenv("MAMMOTH_NO_AUTO_UPDATE")
     _write(check_enabled, "99.0.0")
     ran: list[list[str]] = []
 
@@ -243,21 +234,21 @@ def test_auto_upgrade_runs_once_per_release(
         def write(self, body: dict[str, Any]) -> None:
             written.append(body)
 
-    record = updates.auto_upgrade("project.list", Log())
+    record = updates.auto_upgrade("99.0.0", Log())
     assert record is not None and record["ok"] is True
     assert ran and ran[0][-2:] == ["--upgrade", "mammoth-cli"]
     assert written[0]["event"] == "auto_upgrade"
     # The cache records the release it installed: no second attempt from the
     # (still old) process, and none from the next command either.
     assert json.loads(check_enabled.read_text())["upgraded_to"] == "99.0.0"
-    assert updates.auto_upgrade("project.list", Log()) is None
+    assert updates.auto_upgrade("99.0.0", Log()) is None
     assert len(ran) == 1
 
 
 def test_auto_upgrade_failure_never_breaks_the_command(
     check_enabled: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    monkeypatch.setenv("MAMMOTH_AUTO_UPGRADE", "1")
+    monkeypatch.delenv("MAMMOTH_NO_AUTO_UPDATE")
     _write(check_enabled, "99.0.0")
 
     def boom(argv: list[str]) -> subprocess.CompletedProcess[str]:
@@ -267,9 +258,9 @@ def test_auto_upgrade_failure_never_breaks_the_command(
     monkeypatch.setattr(upgrade_cmd, "detect_manager", lambda: upgrade_cmd.MANAGER_PIP)
     stream = io.StringIO()
     monkeypatch.setattr("sys.stderr", stream)
-    record = updates.auto_upgrade("project.list")
+    record = updates.auto_upgrade("99.0.0")
     assert record is not None and record["ok"] is False
-    assert "failed" in stream.getvalue()
+    assert json.loads(check_enabled.read_text())["upgrade_failed"] == "99.0.0"
 
 
 def test_background_refresh_stamps_the_cache_and_returns(check_enabled: Path) -> None:

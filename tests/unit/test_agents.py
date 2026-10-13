@@ -20,15 +20,15 @@ def _make_api() -> tuple[AgentsAPI, MagicMock]:
 class TestAgentsAPIChat:
     async def test_chat_minimal(self):
         api, mock_client = _make_api()
-        mock_client._request_json = AsyncMock(return_value={"reply": "hi"})
+        mock_client._request_json = AsyncMock(return_value={"session_id": "s", "turn_id": "t"})
         scope = {"type": "workspace", "workspace_id": 2}
         result = await api.chat(message="hello", scope=scope)
-        mock_client._request_json.assert_called_once_with(
-            "POST",
-            "/agents/chat",
-            json={"message": "hello", "scope": scope},
-        )
-        assert result == {"reply": "hi"}
+        (method, path), kwargs = mock_client._request_json.call_args
+        assert (method, path) == ("POST", "/agents/chat")
+        key = kwargs["json"]["request_key"]
+        assert 1 <= len(key) <= 128
+        assert kwargs["json"] == {"request_key": key, "message": "hello", "scope": scope}
+        assert result == {"session_id": "s", "turn_id": "t", "request_key": key}
 
     async def test_chat_all_fields(self):
         api, mock_client = _make_api()

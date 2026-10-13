@@ -1,5 +1,5 @@
 manifest_schema_version: 1
-method_count: 765
+method_count: 769
 generator_version: '1'
 methods:
 - sdk_symbol: mammoth._mixins._advanced_ops.AdvancedOpsMixin.add_sql
@@ -834,6 +834,7 @@ methods:
   implementation_origin: mammoth.api.agents.AgentsAPI.chat
   signature: 'chat(self, message: ''str'', scope: ''dict[str, Any]'', agent_key: ''str | None'' = None,
     session_id: ''str | None'' = None, client_context: ''dict[str, Any] | None'' = None, selection: ''dict[str,
+    Any] | None'' = None, request_key: ''str | None'' = None, wait: ''float | None'' = None, plan_ref: ''dict[str,
     Any] | None'' = None) -> ''dict[str, Any]'''
   openapi_operation_ids: []
   canonical_command: agent.chat
@@ -850,6 +851,45 @@ methods:
     -> ''dict[str, Any]'''
   openapi_operation_ids: []
   canonical_command: agent.message.set-request-kind
+  alias_of: null
+  no_command_reason: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.agents.AgentsAPI.plan_approve
+  implementation_origin: mammoth.api.agents.AgentsAPI.plan_approve
+  signature: 'plan_approve(self, session_id: ''str'', scope: ''dict[str, Any] | None'' = None, wait: ''float | None'' = None)
+    -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: agent.plan.approve
+  alias_of: null
+  no_command_reason: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.agents.AgentsAPI.plan_skip
+  implementation_origin: mammoth.api.agents.AgentsAPI.plan_skip
+  signature: 'plan_skip(self, session_id: ''str'', n: ''int'', scope: ''dict[str, Any] | None'' = None, wait: ''float
+    | None'' = None) -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: agent.plan.skip
+  alias_of: null
+  no_command_reason: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.agents.AgentsAPI.plan_discard
+  implementation_origin: mammoth.api.agents.AgentsAPI.plan_discard
+  signature: 'plan_discard(self, session_id: ''str'', scope: ''dict[str, Any] | None'' = None, wait: ''float | None''
+    = None) -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: agent.plan.discard
   alias_of: null
   no_command_reason: null
   mutation_class: benign_mutation
@@ -1509,8 +1549,8 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.batches.BatchesAPI.update
   implementation_origin: mammoth.api.batches.BatchesAPI.update
-  signature: 'update(self, dataset_id: ''int'', patch: ''_list[dict[str, Any]]'', project_id: ''int |
-    None'' = None) -> ''dict[str, Any]'''
+  signature: 'update(self, dataset_id: ''int'', patch: ''dict[str, Any] | _list[dict[str, Any]]'', project_id:
+    ''int | None'' = None) -> ''dict[str, Any]'''
   openapi_operation_ids: []
   canonical_command: batch.update
   alias_of: null
@@ -2488,6 +2528,20 @@ methods:
     | None'' = None) -> ''dict[str, Any]'''
   openapi_operation_ids: []
   canonical_command: connector.connection.get
+  alias_of: null
+  no_command_reason: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.connectors.ConnectorsAPI.query_connection
+  implementation_origin: mammoth.api.connectors.ConnectorsAPI.query_connection
+  signature: 'query_connection(self, connector_key: ''str'', connection_key: ''str'', query: ''str'',
+    *, table: ''str | None'' = None, profile: ''str | None'' = None, project_id: ''int | None'' = None,
+    timeout: ''float'' = 60.0) -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: connector.connection.query
   alias_of: null
   no_command_reason: null
   mutation_class: read

@@ -40,6 +40,7 @@ S1_ROUTES = (
     "context.project.clear",
     "context.project.status",
     "context.project.use",
+    "context.show",
     "dataset.column-stats",
     "dataset.definition.add",
     "dataset.definition.list",

@@ -398,16 +398,18 @@ def test_connection_get_dispatches(fake_service: FakeMammothService) -> None:
 # --- connection list -------------------------------------------------------------------
 
 
-def test_connection_list_requires_connector_key(fake_service: FakeMammothService) -> None:
-    with pytest.raises(CliError) as excinfo:
-        connector_cmd.connector_connection_list(_inv("connector.connection.list", project=180))
-    assert excinfo.value.code == "missing_argument"
-
-
-def test_connection_list_without_key_points_to_connector_active() -> None:
-    with pytest.raises(CliError) as excinfo:
-        connector_cmd.connector_connection_list(_inv("connector.connection.list", project=180))
-    assert "connector active" in excinfo.value.message
+def test_connection_list_without_key_lists_every_connector(
+    fake_service: FakeMammothService,
+) -> None:
+    fake_service.responses[_ACTIVE] = ["postgres", "mysql"]
+    fake_service.responses[_CONNECTION_LIST] = [{"key": "c1"}]
+    data, _ = connector_cmd.connector_connection_list(
+        _inv("connector.connection.list", project=180)
+    )
+    assert data == [
+        {"connector_key": "postgres", "key": "c1"},
+        {"connector_key": "mysql", "key": "c1"},
+    ]
 
 
 def test_connection_list_dispatches(fake_service: FakeMammothService) -> None:

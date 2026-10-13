@@ -313,7 +313,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth batch update DATASET_ID --help
-  agent_example: 'mammoth batch update 123 --input ''{"patch": [{"sample_key": "Status"}]}'''
+  agent_example: 'mammoth batch update 123 --input ''{"patch": {"op": "replace", "path": "batches", "value": {"suspend": [1, 2]}}}'''
   unit_tests:
   - UT-BATCH-UPDATE
   contract_tests:
