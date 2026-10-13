@@ -4782,7 +4782,11 @@ _PIPELINE_ERROR_EXECUTION_STATES = frozenset({"runtime_error", "ref_error"})
 
 
 def wait_for_pipeline_to_settle(
-    service: Any, dataset_id: int, view_id: int, settle_timeout: float = _ROW_CHECK_SETTLE_TIMEOUT
+    service: Any,
+    dataset_id: int,
+    view_id: int,
+    settle_timeout: float = _ROW_CHECK_SETTLE_TIMEOUT,
+    already_ready: bool = False,
 ) -> dict[str, Any] | None:
     """Bounded wait for a view's pipeline to reach a terminal state.
 
@@ -4800,15 +4804,19 @@ def wait_for_pipeline_to_settle(
     itself failed (a timeout, a failed read) and the pipeline is not known to
     have settled, ``execution_state: "unfinished"`` with the wait's error --
     never a silent success on a count read mid-run.
+
+    ``already_ready`` says the write's own SDK call already waited for this
+    pipeline to be ready, so the poll is skipped; the execution error is still read.
     """
     wait_error: str | None = None
     try:
-        service.call(
-            _WAIT_FOR_PIPELINE_SYMBOL,
-            dataview_id=view_id,
-            dataset_id=dataset_id,
-            timeout=settle_timeout,
-        )
+        if not already_ready:
+            service.call(
+                _WAIT_FOR_PIPELINE_SYMBOL,
+                dataview_id=view_id,
+                dataset_id=dataset_id,
+                timeout=settle_timeout,
+            )
     except CliError as exc:
         wait_error = exc.message
     error = _pipeline_execution_error(service, dataset_id, view_id)
@@ -4897,6 +4905,11 @@ def _pipeline_execution_error(service: Any, dataset_id: int, view_id: int) -> di
     return error
 
 
+def sdk_saw_pipeline_ready(write_result: Any) -> bool:
+    """Whether the SDK's own wait for this write already saw the pipeline ``ready``."""
+    return isinstance(write_result, dict) and write_result.get("pipeline_state") == "ready"
+
+
 def wait_for_view_row_count(
     service: Any,
     dataset_id: int,
@@ -4914,7 +4927,13 @@ def wait_for_view_row_count(
     execution error (see :func:`_pipeline_execution_error`), if any.
     """
     job_error = wait_for_followon_job(service, write_result)
-    pipeline_error = wait_for_pipeline_to_settle(service, dataset_id, view_id, settle_timeout)
+    pipeline_error = wait_for_pipeline_to_settle(
+        service,
+        dataset_id,
+        view_id,
+        settle_timeout,
+        already_ready=sdk_saw_pipeline_ready(write_result),
+    )
     pipeline_error = job_error or pipeline_error
     try:
         info = service.call(

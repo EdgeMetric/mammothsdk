@@ -26,7 +26,7 @@ class _FakeService:
 
 
 def test_a_task_delete_is_read_back_after_its_job(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(view, "wait_for_pipeline_to_settle", lambda *args: None)
+    monkeypatch.setattr(view, "wait_for_pipeline_to_settle", lambda *args, **kwargs: None)
     service = _FakeService()
     response = {"status": "processing", "type_of_modification": "discard_rule", "future_id": 9}
 

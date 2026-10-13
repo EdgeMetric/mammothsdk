@@ -508,7 +508,7 @@ class PipelineAPI:
         dataview_id: int,
         dataset_id: int | None = None,
         timeout: float | None = None,
-        poll_interval: float = 3,
+        poll_interval: float = 0.5,
     ) -> dict[str, Any]:
         """Poll pipeline state until it reaches a terminal state.
 
@@ -523,7 +523,7 @@ class PipelineAPI:
             dataview_id: ID of the dataview.
             dataset_id: Dataset ID (auto-detected if not provided).
             timeout: Max wait time in seconds (default: client.pipeline_timeout).
-            poll_interval: Seconds before the second poll (default: 3); each wait
+            poll_interval: Seconds before the second poll (default: 0.5); each wait
                 is then 1.5 times the last, up to 15 seconds.
 
         Returns:

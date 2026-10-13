@@ -41,6 +41,7 @@ from mammoth_cli.commands.view import (
     join_dry_run_preview,
     join_snapshot,
     reject_dataset_export_conflicts,
+    sdk_saw_pipeline_ready,
     wait_for_followon_job,
     wait_for_pipeline_to_settle,
     wait_for_refreshed_view,
@@ -438,8 +439,9 @@ def _dispatch_view(
                 else (None, None)
             )
             reject_unrun_task_with_reference_errors(service, view_id, dataset_id, run_error)
+            sdk_ready = sdk_saw_pipeline_ready(data)
             data = after(service, int(dataset_id), state, data)
-            _flag_unsettled_pipeline(service, int(dataset_id), view_id, data)
+            _flag_unsettled_pipeline(service, int(dataset_id), view_id, data, sdk_ready)
             if isinstance(data, dict) and run is not None:
                 data["run"] = run
                 if run_error is not None:
@@ -581,15 +583,18 @@ def _mark_staged_in_draft(service: Any, dataset_id: int, view_id: int, data: Any
     }
 
 
-def _flag_unsettled_pipeline(service: Any, dataset_id: int, view_id: int, data: Any) -> None:
+def _flag_unsettled_pipeline(
+    service: Any, dataset_id: int, view_id: int, data: Any, sdk_ready: bool = False
+) -> None:
     """Wait for the pipeline after a write with no row check, and record what it finds.
 
     A ``pipeline_error`` (an execution error, or a wait that ended unfinished)
     keeps the write from reading ``done`` and verified. A staged draft ran nothing.
+    ``sdk_ready`` skips the poll when the write's own SDK call already saw it ready.
     """
     if not isinstance(data, dict) or data.get("status") == "staged":
         return
-    error = wait_for_pipeline_to_settle(service, dataset_id, view_id)
+    error = wait_for_pipeline_to_settle(service, dataset_id, view_id, already_ready=sdk_ready)
     if error is not None:
         data["pipeline_error"] = error
 
