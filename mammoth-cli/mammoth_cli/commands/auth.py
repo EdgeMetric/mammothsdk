@@ -382,6 +382,24 @@ def _login_server_prefix(profile_name: str, server_prefix: str | None) -> str | 
     return existing.server_prefix if existing is not None else None
 
 
+def _warn_signed_out_profiles(
+    profile_name: str, base_url: str, session: credentials.OAuthSession
+) -> None:
+    """Warn about other profiles whose session this login just replaced on the server."""
+    others: dict[str, tuple[str, credentials.OAuthSession | None]] = {}
+    for name in profiles.list_profile_names():
+        record = profiles.get_profile(name)
+        credential = credentials.load_credential(name)
+        if name != profile_name and record is not None and credential is not None:
+            others[name] = (resolve_base_url(record.server_prefix), credential.oauth)
+    for name in oauth.signed_out_profiles(base_url, session, others):
+        typer.echo(
+            f'Warning: Profile "{name}" used the same Mammoth sign-in and is now signed out; '
+            f"sign it in again or remove it with mammoth auth logout --profile {name}.",
+            err=True,
+        )
+
+
 def _run_oauth_login(
     invocation: Invocation,
     *,
@@ -426,6 +444,7 @@ def _run_oauth_login(
         interactive=interactive,
         oauth=session,
     )
+    _warn_signed_out_profiles(profile_name, base_url, session)
     typer.echo(
         f"Signed in to workspace {workspace_id}. Credential stored in {storage_used} "
         f'(profile "{profile_name}"). The token refreshes automatically.',
@@ -752,8 +771,13 @@ def _revoke_oauth_connection(profile_name: str, warnings: list[str]) -> None:
             session = oauth.refresh_session(profile_name, base_url)
         problem = oauth.revoke_grant(base_url, session)
     except CliError as exc:
-        problem = f"Could not revoke the connection on the server: {exc.message}"
-    if problem is not None:
+        if exc.code == oauth.CODE_LOGIN_EXPIRED:
+            problem = oauth.GRANT_ALREADY_ENDED
+        else:
+            problem = f"Could not revoke the connection on the server: {exc.message}"
+    if problem == oauth.GRANT_ALREADY_ENDED:
+        typer.echo(f"{problem} Local credentials are still removed.", err=True)
+    elif problem is not None:
         warnings.append(problem)
         typer.echo(f"Warning: {problem} Local credentials are still removed.", err=True)
 

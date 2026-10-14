@@ -643,9 +643,41 @@ def revoke_grant(base_url: str, session: OAuthSession) -> str | None:
         status = sdk_oauth.revoke_grant(base_url, session.grant_id, session.access)
     except sdk_oauth.OAuthTransportError:
         return "Could not reach Mammoth to revoke the connection on the server."
+    return revoke_status_note(status)
+
+
+#: Said when the server no longer knows this sign-in (another login rotated it, or it was removed).
+GRANT_ALREADY_ENDED = "This sign-in was already ended on the server; nothing to revoke."
+
+
+def revoke_status_note(status: int) -> str | None:
+    """Map a revoke response status to None (revoked), the already-ended note, or a warning."""
     if status in (200, 204):
         return None
+    if status in (401, 404):
+        return GRANT_ALREADY_ENDED
     return (
         f"Mammoth did not revoke the connection on the server (HTTP {status}). "
         "Remove it under Settings -> Connected apps."
+    )
+
+
+def signed_out_profiles(
+    new_base_url: str,
+    new_session: OAuthSession,
+    others: dict[str, tuple[str, OAuthSession | None]],
+) -> list[str]:
+    """Names of other profiles on the same server that share the new session's grant.
+
+    The server keeps one connection per user and client, so a new login rotates the
+    tokens those profiles hold. ``others`` maps profile name to (base_url, session).
+    """
+    if new_session.grant_id is None:
+        return []
+    return sorted(
+        name
+        for name, (base_url, session) in others.items()
+        if base_url == new_base_url
+        and session is not None
+        and session.grant_id == new_session.grant_id
     )
