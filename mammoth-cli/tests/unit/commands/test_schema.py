@@ -101,7 +101,7 @@ def test_bulk_replace_runnable_example_includes_the_positional_and_input() -> No
     assert "--output json" not in example
     tokens = shlex.split(example)
     document = json.loads(tokens[tokens.index("--input") + 1])
-    assert document["mapping"] == [{"search": ["sample"], "replace": "sample"}]
+    assert document["mapping"] == [{"search": ["N/A"], "replace": "Unknown"}]
 
 
 def test_optional_positional_command_has_no_required_positional_in_example() -> None:

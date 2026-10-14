@@ -1173,10 +1173,26 @@ def _sample_field_value(field: FieldSpec) -> Any:
 def _representative_string(field_name: str) -> str:
     """Return a realistic, non-secret sample for a named string field."""
     name = field_name.casefold().replace("-", "_")
+    # Exact names whose value has one obvious, valid shape.
+    exact = {
+        "delimiter": ",",
+        "quotechar": '"',
+        "quote_char": '"',
+        "find": "N/A",
+        "search": "N/A",
+        "replace": "Unknown",
+        "sheets": "Sheet1",
+        "version": "1",
+        "as": "Total revenue",
+    }
+    if name in exact:
+        return exact[name]
     if any(part in name for part in ("password", "secret", "token", "credential")):
         return "replace-with-secret"
     if "email" in name:
         return "analyst@example.com"
+    if "origin" in name:
+        return "https://example.com"
     if any(part in name for part in ("url", "uri", "webhook")):
         return "https://example.com/data.csv"
     if any(part in name for part in ("file", "path")):
@@ -1189,11 +1205,35 @@ def _representative_string(field_name: str) -> str:
         return "Summarize revenue by region"
     if any(part in name for part in ("new_column", "as_name", "name", "title", "label")):
         return "Revenue report"
-    if "column" in name or name in {"source", "key"}:
+    if "column" in name or name in {
+        "source",
+        "key",
+        "field",
+        "group_by",
+        "rows",
+        "left",
+        "right",
+        "select",
+        "on",
+    }:
         return "Status"
+    if name in {"start", "end"}:
+        return "Order Date" if name == "start" else "Ship Date"
+    if name in {
+        "description",
+        "body",
+        "content",
+        "text",
+        "note",
+        "comment",
+        "expected",
+        "code",
+    }:
+        return "Quarterly revenue summary"
     if name.endswith("_id") or name in {"id", "identifier"}:
         return "resource-123"
-    return "sample"
+    # No safe guess: a visible placeholder, never a literal that looks like data.
+    return f"<{field_name}>"
 
 
 def _humanize_sample(value: Any, field_name: str) -> Any:

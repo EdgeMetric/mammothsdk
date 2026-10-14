@@ -128,7 +128,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth workflow block add WORKFLOW_ID --help
-  agent_example: 'mammoth workflow block add 123 --input ''{"block_type": "sample"}'''
+  agent_example: 'mammoth workflow block add 123 --input ''{"block_type": "<block_type>"}'''
   unit_tests:
   - UT-WORKFLOW-BLOCK-ADD
   contract_tests:
@@ -284,7 +284,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth workflow block type WORKFLOW_ID BLOCK_ID --help
-  agent_example: 'mammoth workflow block type 123 123 --input ''{"connection_type": "sample"}'''
+  agent_example: 'mammoth workflow block type 123 123 --input ''{"connection_type": "<connection_type>"}'''
   unit_tests:
   - UT-WORKFLOW-BLOCK-TYPE
   contract_tests:

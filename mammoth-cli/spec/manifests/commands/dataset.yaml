@@ -500,8 +500,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dataset file-settings update DATASET_ID --help
-  agent_example: 'mammoth dataset file-settings update 123 --input ''{"delimiter": "sample", "has_header":
-    true, "initial_skip_count": 1, "quotechar": "sample"}'''
+  agent_example: 'mammoth dataset file-settings update 123 --input ''{"delimiter": ",", "has_header": true, "initial_skip_count": 1, "quotechar": "\""}'''
   unit_tests:
   - UT-DATASET-FILE-SETTINGS-UPDATE
   contract_tests:

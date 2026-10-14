@@ -77,7 +77,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth client-app delete CLIENT_KEY --help
-  agent_example: mammoth client-app delete sample
+  agent_example: mammoth client-app delete '<client_key>'
   unit_tests:
   - UT-CLIENT-APP-DELETE
   contract_tests:
@@ -121,7 +121,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth client-app get CLIENT_KEY --help
-  agent_example: mammoth client-app get sample
+  agent_example: mammoth client-app get '<client_key>'
   unit_tests:
   - UT-CLIENT-APP-GET
   contract_tests:
@@ -196,8 +196,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth client-app update CLIENT_KEY --help
-  agent_example: 'mammoth client-app update sample --input ''{"patch_request": {"patch": [{"op": "replace",
-    "path": "role"}]}}'''
+  agent_example: 'mammoth client-app update ''<client_key>'' --input ''{"patch_request": {"patch": [{"op": "replace", "path": "role"}]}}'''
   unit_tests:
   - UT-CLIENT-APP-UPDATE
   contract_tests:

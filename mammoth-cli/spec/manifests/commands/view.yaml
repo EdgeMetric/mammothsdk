@@ -1916,7 +1916,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view derivative update VIEW_ID DERIVATIVE_ID --help
-  agent_example: 'mammoth view derivative update 123 123 123 --input ''{"body": {"patches": [{"op": "replace", "path": "param", "value": {"METRIC": {"AS": "sample", "EXPRESSION": [{"TYPE": "FUNCTION", "VALUE": {"FUNCTION": "SUM"}}]}}}]}}'''
+  agent_example: 'mammoth view derivative update 123 123 123 --input ''{"body": {"patches": [{"op": "replace", "path": "param", "value": {"METRIC": {"AS": "Total revenue", "EXPRESSION": [{"TYPE": "FUNCTION", "VALUE": {"FUNCTION": "SUM"}}]}}}]}}'''
   unit_tests:
   - UT-VIEW-DERIVATIVE-UPDATE
   contract_tests:
@@ -2005,7 +2005,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view draft command DATAVIEW_ID --help
-  agent_example: 'mammoth view draft command 123 --input ''{"command": "sample", "dataset_id": 456}'''
+  agent_example: 'mammoth view draft command 123 --input ''{"command": "<command>", "dataset_id": 456}'''
   unit_tests:
   - UT-VIEW-DRAFT-COMMAND
   contract_tests:
@@ -4651,8 +4651,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view transform bulk-replace VIEW_ID --help
-  agent_example: 'mammoth view transform bulk-replace 123 --input ''{"columns": ["Status"], "mapping":
-    [{"search": ["sample"], "replace": "sample"}], "dataset_id": 456}'''
+  agent_example: 'mammoth view transform bulk-replace 123 --input ''{"columns": ["Status"], "mapping": [{"search": ["N/A"], "replace": "Unknown"}], "dataset_id": 456}'''
   unit_tests:
   - UT-VIEW-TRANSFORM-BULK-REPLACE
   contract_tests:
@@ -4848,8 +4847,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view transform crosstab VIEW_ID --help
-  agent_example: 'mammoth view transform crosstab 123 --input ''{"rows": ["sample"], "pivot_column": "Status",
-    "select": {"function": "SUM"}, "dataset_name": "Revenue report", "dataset_id": 456}'''
+  agent_example: 'mammoth view transform crosstab 123 --input ''{"rows": ["Region"], "pivot_column": "Product", "select": {"column": "Revenue", "function": "SUM"}, "dataset_name": "Revenue by region", "dataset_id": 456}'''
   unit_tests:
   - UT-VIEW-TRANSFORM-CROSSTAB
   contract_tests:
@@ -4899,8 +4897,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view transform date-diff VIEW_ID --help
-  agent_example: 'mammoth view transform date-diff 123 --input ''{"component": "YEAR", "start": "sample",
-    "end": "sample", "dataset_id": 456}'''
+  agent_example: 'mammoth view transform date-diff 123 --input ''{"component": "YEAR", "start": "Order Date", "end": "Ship Date", "dataset_id": 456}'''
   unit_tests:
   - UT-VIEW-TRANSFORM-DATE-DIFF
   contract_tests:
@@ -5334,9 +5331,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view transform join VIEW_ID --help
-  agent_example: 'mammoth view transform join 123 --input ''{"foreign_view": 1, "join_type": "INNER",
-    "on": [{"left": "sample", "right": "sample"}], "select": ["sample"], "dataset_id": 456, "foreign_dataset_id":
-    457}'''
+  agent_example: 'mammoth view transform join 123 --input ''{"foreign_view": 1, "join_type": "INNER", "on": [{"left": "Customer ID", "right": "Customer ID"}], "select": ["Region"], "dataset_id": 456, "foreign_dataset_id": 457}'''
   unit_tests:
   - UT-VIEW-TRANSFORM-JOIN
   contract_tests:
@@ -5479,8 +5474,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view transform lookup VIEW_ID --help
-  agent_example: 'mammoth view transform lookup 123 --input ''{"source": "Status", "lookup_view_id": 1,
-    "key": "Status", "value": "sample", "dataset_id": 456, "lookup_dataset_id": 457}'''
+  agent_example: 'mammoth view transform lookup 123 --input ''{"source": "Customer ID", "lookup_view_id": 1, "key": "Customer ID", "value": "Region", "new_column": "Region", "dataset_id": 456, "lookup_dataset_id": 457}'''
   unit_tests:
   - UT-VIEW-TRANSFORM-LOOKUP
   contract_tests:
@@ -5573,8 +5567,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view transform pivot VIEW_ID --help
-  agent_example: 'mammoth view transform pivot 123 --input ''{"group_by": ["sample"], "aggregations":
-    [{"column": "Status", "function": "SUM"}], "dataset_id": 456}'''
+  agent_example: 'mammoth view transform pivot 123 --input ''{"group_by": ["Region"], "aggregations": [{"column": "Revenue", "function": "SUM"}], "dataset_id": 456}'''
   unit_tests:
   - UT-VIEW-TRANSFORM-PIVOT
   contract_tests:
@@ -5671,8 +5664,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view transform replace VIEW_ID --help
-  agent_example: 'mammoth view transform replace 123 --input ''{"columns": ["Status"], "find": "sample",
-    "replace": "sample", "dataset_id": 456}'''
+  agent_example: 'mammoth view transform replace 123 --input ''{"columns": ["Status"], "find": "N/A", "replace": "Unknown", "dataset_id": 456}'''
   unit_tests:
   - UT-VIEW-TRANSFORM-REPLACE
   contract_tests:
@@ -5720,8 +5712,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view transform set-values VIEW_ID --help
-  agent_example: 'mammoth view transform set-values 123 --input ''{"values": [{"value": "sample"}], "existing_column":
-    "Status", "condition": {"column": "Status", "operator": "IS_EMPTY"}, "dataset_id": 456}'''
+  agent_example: 'mammoth view transform set-values 123 --input ''{"values": [{"value": "Unknown"}], "existing_column": "Status", "condition": {"column": "Status", "operator": "IS_EMPTY"}, "dataset_id": 456}'''
   unit_tests:
   - UT-VIEW-TRANSFORM-SET-VALUES
   contract_tests:
@@ -5862,8 +5853,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view transform split VIEW_ID --help
-  agent_example: 'mammoth view transform split 123 --input ''{"column": "Status", "delimiter": "sample",
-    "new_columns": [{"name": "Revenue report"}], "dataset_id": 456}'''
+  agent_example: 'mammoth view transform split 123 --input ''{"column": "Status", "delimiter": ",", "new_columns": [{"name": "Revenue report"}], "dataset_id": 456}'''
   unit_tests:
   - UT-VIEW-TRANSFORM-SPLIT
   contract_tests:

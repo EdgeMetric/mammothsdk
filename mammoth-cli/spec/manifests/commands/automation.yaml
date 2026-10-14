@@ -68,8 +68,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth automation create --help
-  agent_example: 'mammoth automation create ''Revenue report'' --input ''{"description": "sample", "tasks":
-    [{"task_type": "run_data_retrieval"}]}'''
+  agent_example: 'mammoth automation create ''Revenue report'' --input ''{"description": "Quarterly revenue summary", "tasks": [{"task_type": "run_data_retrieval"}]}'''
   unit_tests:
   - UT-AUTOMATION-CREATE
   contract_tests:
@@ -336,8 +335,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth automation update AUTOMATION_ID --help
-  agent_example: 'mammoth automation update 123 --input ''{"patch": [{"op": "replace", "path": "details",
-    "value": "sample"}]}'''
+  agent_example: 'mammoth automation update 123 --input ''{"patch": [{"op": "replace", "path": "details", "value": "<value>"}]}'''
   unit_tests:
   - UT-AUTOMATION-UPDATE
   contract_tests:

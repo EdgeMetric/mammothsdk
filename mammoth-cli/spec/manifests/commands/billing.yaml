@@ -64,7 +64,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth billing hosted-page --help
-  agent_example: mammoth billing hosted-page sample
+  agent_example: mammoth billing hosted-page '<object_type>'
   unit_tests:
   - UT-BILLING-HOSTED-PAGE
   contract_tests:

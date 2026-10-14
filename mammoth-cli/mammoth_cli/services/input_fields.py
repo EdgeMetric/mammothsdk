@@ -114,8 +114,31 @@ _EXAMPLE_INPUT_HINTS: dict[str, dict[str, Any]] = {
     # SET with neither ``existing_column`` nor ``new_column`` has no target and
     # an unconditional SET rewrites every row; show the verified conditional form.
     "view.transform.set-values": {
+        "values": [{"value": "Unknown"}],
         "existing_column": "Status",
         "condition": {"column": "Status", "operator": "IS_EMPTY"},
+    },
+    # Real column names, and the "one of new_column / existing_column" the lookup needs: the
+    # generated placeholders grouped by a column called "sample" and ran no lookup at all.
+    "view.transform.lookup": {
+        "source": "Customer ID",
+        "key": "Customer ID",
+        "value": "Region",
+        "new_column": "Region",
+    },
+    "view.transform.pivot": {
+        "group_by": ["Region"],
+        "aggregations": [{"column": "Revenue", "function": "SUM"}],
+    },
+    "view.transform.crosstab": {
+        "rows": ["Region"],
+        "pivot_column": "Product",
+        "select": {"column": "Revenue", "function": "SUM"},
+        "dataset_name": "Revenue by region",
+    },
+    "view.transform.join": {
+        "on": [{"left": "Customer ID", "right": "Customer ID"}],
+        "select": ["Region"],
     },
     # View display settings: real column names read better than sample keys.
     "view.transform.rename-columns": {"renames": {"cust_id": "Customer ID"}},
