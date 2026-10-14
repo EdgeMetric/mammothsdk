@@ -6,6 +6,15 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed (mammoth-cli, unreleased)
+
+- A pinned install is no longer replaced by the daily auto-update. `mammoth upgrade --version X.Y.Z` and `mammoth-install.sh` / `mammoth-install.ps1 --version X.Y.Z` record the pin (`pin.json` next to `update-check.json`; the installers call the hidden `mammoth upgrade --record-pin`, and a failure to record only warns); a plain `mammoth upgrade` or an installer run without `--version` clears it. While pinned, `meta.update_available` still shows the newer release but nothing is installed.
+- `mammoth doctor` recommends `mammoth auth login` (with `--profile NAME`) when stored credentials exist but the login expired (`login_expired`, `not_authenticated`), instead of an empty `recommendations`.
+- `mammoth doctor` reports `oauth sign-in present` for a browser login instead of `api token present`.
+- Recovery commands and hints for `not_authenticated`, `login_expired`, a failed sign-in, `profile_not_found`, and the auth errors mapped from the API now carry `--profile NAME` for a non-default profile, so the suggested command signs in the profile that failed instead of `default`. Output for the default profile is unchanged.
+- `mammoth --output xml project list` (a global option before the command, with a value the command rejects) returns the same JSON `usage_error` envelope as `--profile` when piped, instead of plain `Error:` text.
+- Dashboard review and the upload `before_dashboard` hint no longer suggest `revenue = Unit Price * Unit Price`: a unit price or money column is never taken as the quantity. When the only quantity-like column is not NUMERIC (for example a `Quantity` with an `N/A` value), the hint says to convert it to NUMERIC first and offers no math fix.
+
 ### Fixed (mammoth-cli 2.2.81)
 
 - `mammoth auth logout` treats a 401/404 from the server as the sign-in already being ended and signs out locally instead of failing.
