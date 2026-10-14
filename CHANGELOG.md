@@ -39,6 +39,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `mammoth doctor` prints the exact `mammoth auth login --profile NAME` command for a legacy API key + secret profile.
 - Preconditions shown by `schema get` no longer carry internal test-harness text (fixture requirements, evidence provenance, variance codes).
 
+### Added (mammoth-mcp-server 0.2.4)
+
+- The user can bring data in from a database or an app over MCP. `list_connectors` lists the sources Mammoth connects to, and which the workspace's plan includes. `connect_source` gives the user the page in Mammoth that opens "Add data" on that connector in the project; they sign in to the source and pick the data there, so no credential passes through the model. `find_new_datasets` then reports the datasets the project gained, with each one's view and link, as `check_upload` does for a file. All three are read-only: the change is the user's own, in Mammoth.
+
 ### Added (mammoth-mcp-server 0.2.3)
 
 - `aggregate_data` has Mammoth work out totals, counts, averages, lows and highs over a view, for the whole view or by group (a date grouped by day, week, month, quarter or year). It is read-only: it adds nothing to the view's pipeline, and a read-only connection may run it. Columns are named as the user sees them.

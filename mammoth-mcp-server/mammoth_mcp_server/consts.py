@@ -27,6 +27,8 @@ MAMMOTH_PROJECT_URL = f"{APP_URL}/#/workspaces/{{workspace_id}}/projects/{{proje
 # The pages a view and a dataset open on, as the web app routes them.
 MAMMOTH_VIEW_URL = f"{MAMMOTH_PROJECT_URL}/views/{{view_id}}"
 MAMMOTH_DATASET_URL = f"{MAMMOTH_PROJECT_URL}/datasets/{{dataset_id}}"
+# The project's data page, where the web app opens "Add data" when a link asks.
+MAMMOTH_DATA_URL = f"{MAMMOTH_PROJECT_URL}/data/datasets"
 # A dashboard's two links, built as the share emails build them
 # (`api.email.transactional`). The one to give the user is the viewer link: it
 # opens the published board, on the host that serves it. The editor link is the
@@ -266,6 +268,8 @@ class ApiPaths:
     )
     RESOURCES = "/workspaces/{workspace_id}/projects/{project_id}/resources"
     BROWSE = "/workspaces/{workspace_id}/browse"
+    # The SDK's list sends no paging or filter, and the route pages by ten.
+    CONNECTORS = "/workspaces/{workspace_id}/connectors"
 
 
 class ResourceTypes:
@@ -466,6 +470,33 @@ class DashboardFields:
     # What each card and chart shows, or why a read could not say.
     VALUES = "values"
     VALUES_UNAVAILABLE = "values_unavailable"
+
+
+class ConnectorFields:
+    """A connector as the connectors route lists it, and how a link opens one.
+
+    The web app's data page reads `action` and `connector` from its link and
+    opens "Add data" on that connector, as Mammoth's own agent links do.
+    """
+
+    CONNECTORS = "connectors"
+    KEY = "name_key"
+    NAME = "disp_name"
+    AVAILABLE = "is_available"
+    LISTED = "name_key,disp_name,is_available"
+    FIELDS = "fields"
+    LIMIT = "limit"
+    OFFSET = "offset"
+    PROJECT_ID = "project_id"
+    HAS_CONNECTIONS = "has_connections"
+    ACTION = "action"
+    ADD_CONNECTOR = "addConnector"
+    CONNECTOR = "connector"
+    # What `connect_source` reports.
+    SHOWN_KEY = "key"
+    SHOWN_NAME = "name"
+    SINCE = "since"
+    NEXT_STEP = "next_step"
 
 
 class BoardFields:

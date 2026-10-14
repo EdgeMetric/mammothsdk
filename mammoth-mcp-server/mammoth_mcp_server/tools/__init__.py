@@ -9,6 +9,7 @@ from . import (
     files,
     help_topics,
     pipeline,
+    sources,
     transformations,
     views,
 )
@@ -22,6 +23,7 @@ __all__ = [
     "files",
     "help_topics",
     "pipeline",
+    "sources",
     "transformations",
     "views",
 ]

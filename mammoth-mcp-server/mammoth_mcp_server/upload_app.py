@@ -238,6 +238,7 @@ async def request_upload(workspace_id: int, project_id: int | None = None) -> di
     Use this for any file you do not already hold as text: a spreadsheet, a
     large CSV, anything binary. The browser sends the file straight to
     Mammoth, so its size and format do not matter and nothing is retyped here.
+    For data in a database or an app, use `connect_source` instead.
 
     If you can run shell commands and the file is already on this machine,
     send it yourself rather than making the user open anything, then call
