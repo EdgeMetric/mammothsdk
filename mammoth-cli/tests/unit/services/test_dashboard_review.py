@@ -179,3 +179,21 @@ def test_a_sum_or_a_count_titled_as_a_count_is_not_flagged() -> None:
     ]
     board = _doc([{"id": "p1", "focus": {"kpis": kpis}}], profiles=[])
     assert "count_titled_as_rate" not in _issues(review(board))
+
+
+def test_summed_unit_price_points_at_the_revenue_column_the_view_already_has() -> None:
+    """B5: no new revenue column and no math command when `revenue` already exists."""
+    profiles = [*_PROFILES, {"name": "revenue", "type": "measure"}]
+    board = _doc(
+        [
+            {
+                "id": "p1",
+                "added": [{"kind": "hbar", "dim": "segment", "measure": "price", "agg": "sum"}],
+            }
+        ],
+        profiles,
+    )
+    finding = next(w for w in review(board, dataset_id=84) if w["issue"] == "unit_price_summed")
+    assert "chart the sum of revenue instead" in finding["detail"]
+    assert "qty * price" not in finding["detail"]
+    assert "fix" not in finding

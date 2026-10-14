@@ -37,6 +37,7 @@ from mammoth_cli.runtime.confirm import (
 )
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.session import open_service, resolved_project
+from mammoth_cli.runtime.token_scope import require_unpinned_token
 from mammoth_cli.services import job_outcome
 
 HandlerResult = tuple[Any, dict[str, Any]]
@@ -292,6 +293,7 @@ def project_create(invocation: Invocation) -> HandlerResult:
         if field in document:
             kwargs[field] = document[field]
     with open_service(invocation) as (service, auth):
+        require_unpinned_token(service, "create a project")
         data = service.call(_symbol(invocation), **kwargs)
         _require_project_access(service, data)
     return data, _meta(invocation, auth.workspace_id, resolved_project(invocation))
@@ -404,6 +406,7 @@ def project_ensure(invocation: Invocation) -> HandlerResult:
             }
             data["active"] = _make_active_project(invocation, data["project_id"])
             return data, _meta(invocation, auth.workspace_id, chosen.get("id"))
+        require_unpinned_token(service, f"create the project {name!r}")
         created = service.call(_ENSURE_CREATE_SYMBOL, name=name)
     record = created.get("project", created) if isinstance(created, dict) else {}
     project_id = record.get("id") if isinstance(record, dict) else None

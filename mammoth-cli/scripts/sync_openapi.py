@@ -24,6 +24,7 @@ Usage::
     python scripts/sync_openapi.py --check    # re-project committed snapshot only
     python scripts/sync_openapi.py --scrub    # redact the committed snapshot in place
     python scripts/sync_openapi.py --check-live  # opt-in semantic contract drift check
+    python scripts/sync_openapi.py --check-served  # release gate: every called route is served
     python scripts/sync_openapi.py --from-file master.json --name master-20261002 \\
         --source-ref origin/master --source-sha <git sha> --method "<how it was generated>"
 
@@ -164,8 +165,7 @@ def _strip_documentation(node: Any) -> Any:
         return {
             key: _strip_documentation(value)
             for key, value in sorted(node.items())
-            if key
-            not in {
+            if key not in {
                 "default",
                 "description",
                 "example",
@@ -326,6 +326,45 @@ def check_live() -> int:
     return 1
 
 
+#: Manifest dispositions the CLI and SDK send requests for (the rest are browser pages,
+#: provider webhooks and telemetry that a terminal never calls).
+CALLED_DISPOSITIONS = ("command", "alias")
+OPERATIONS_MANIFEST_PATH = SPEC_DIR.parent / "manifests" / "openapi-operations.yaml"
+
+
+def unserved_operations(live: dict[str, Any], manifest_identities: set[str]) -> list[str]:
+    """The operations the CLI and SDK call that the live document does not serve."""
+    return sorted(manifest_identities - operation_inventory(live))
+
+
+def check_served() -> int:
+    """Fail when a route the CLI or SDK calls is not served by production.
+
+    Unlike ``--check-live``, a route production serves that this release does not
+    use is fine: only a missing route fails, so a release that calls a route
+    production lacks cannot ship. Needs no credentials.
+    """
+    import yaml
+
+    manifest = yaml.safe_load(OPERATIONS_MANIFEST_PATH.read_text(encoding="utf-8"))
+    identities = {
+        str(op["identity"])
+        for op in manifest["operations"]
+        if op["disposition"] in CALLED_DISPOSITIONS
+    }
+    _, live = fetch_document()
+    missing = unserved_operations(live, identities)
+    if not missing:
+        print(f"production serves all {len(identities)} operations this release calls")
+        return 0
+    print(
+        f"production does not serve {len(missing)} operation(s) this release calls", file=sys.stderr
+    )
+    for identity in missing:
+        print(f"- {identity}", file=sys.stderr)
+    return 1
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     modes = parser.add_mutually_exclusive_group()
@@ -335,6 +374,11 @@ def main() -> int:
         "--check-live",
         action="store_true",
         help="opt-in comparison of the live and pinned semantic contracts",
+    )
+    modes.add_argument(
+        "--check-served",
+        action="store_true",
+        help="fail when an operation this release calls is not served by production",
     )
     parser.add_argument("--from-file", type=Path, help="pin this offline-generated spec")
     parser.add_argument("--name", help="snapshot name for --from-file, e.g. master-20261002")
@@ -361,6 +405,8 @@ def main() -> int:
         return scrub()
     if args.check_live:
         return check_live()
+    if args.check_served:
+        return check_served()
     fetch()
     return 0
 

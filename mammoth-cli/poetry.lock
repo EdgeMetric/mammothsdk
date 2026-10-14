@@ -402,8 +402,8 @@ inflect = ">=4.1,<8"
 isort = {version = ">=4.3.21,<9", markers = "sys_platform != \"emscripten\""}
 jinja2 = ">=2.10.1,<4"
 pydantic = [
-    {version = ">=2,<3", markers = "python_version < \"3.14\""},
     {version = ">=2.12,<3", markers = "python_version >= \"3.14\""},
+    {version = ">=2,<3", markers = "python_version < \"3.14\""},
 ]
 pyyaml = ">=6.0.1"
 
@@ -824,14 +824,14 @@ files = [
 
 [[package]]
 name = "mammoth-io"
-version = "0.8.32"
+version = "0.8.42"
 description = "Python SDK for Mammoth Analytics platform"
 optional = false
 python-versions = "<3.15,>=3.12"
 groups = ["main"]
 files = [
-    {file = "mammoth_io-0.8.32-py3-none-any.whl", hash = "sha256:3b6b4b986ec7dfddf3d667ec668fa502d4ce16f7e704f7872ca9a43084c85c9b"},
-    {file = "mammoth_io-0.8.32.tar.gz", hash = "sha256:b7ee6817e15214cf939fb0cdb93b9aabdb80f24563a1280d0ef93e0e404f517e"},
+    {file = "mammoth_io-0.8.42-py3-none-any.whl", hash = "sha256:2e93c969f0ab616b9143ed147e725c42f51bd9739b0028882cc607fdfb5d0eaa"},
+    {file = "mammoth_io-0.8.42.tar.gz", hash = "sha256:1cbe86eb0d2c9ffbc8ba9d636abd98d2d45c85505990dbbfe450ebf1be263de1"},
 ]
 
 [package.dependencies]
@@ -1815,4 +1815,4 @@ typing-extensions = ">=4.12.0"
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12,<3.15"
-content-hash = "afebaddf4737257f0a716ec161d0f15edab294bff18735e891e31743d2c7e6bf"
+content-hash = "3d0e370c911b676dad1e90ecc43d76f0209cff0b1f647f508c7b5c417184dedf"
