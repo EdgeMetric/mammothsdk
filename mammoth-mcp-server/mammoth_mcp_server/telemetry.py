@@ -45,6 +45,7 @@ class Events:
     INITIALIZE = "mcp_initialize"
     TOOL_CALLED = "mcp_tool_called"
     SOURCE_LINKED = "mcp_source_linked"
+    SOURCE_CONNECTED = "mcp_source_connected"
     NEW_DATASETS = "mcp_new_datasets"
     OK = "ok"
     FAILED = "failed"

@@ -19,7 +19,7 @@ from mammoth_mcp_server.server import mcp_server, register_tools
 from mammoth_mcp_server.telemetry import EVENT_LOGGER
 from mammoth_mcp_server.tools import sources
 
-from .helpers import WORKSPACE, a_fake_api, as_caller, call_tool, run
+from .helpers import WORKSPACE, FakeRedis, a_fake_api, a_fake_store, as_caller, call_tool, run
 
 PROJECT = 3
 CONNECTORS = f"/workspaces/{WORKSPACE}/connectors"
@@ -36,6 +36,22 @@ ANALYST = {"user_roles": {"projects": {str(PROJECT): "project_analyst"}, "worksp
 def connector_path(key: str) -> str:
     """The route of one connector: the SDK sends its key base64-encoded, as the route reads it."""
     return f"{CONNECTORS}/{base64.b64encode(key.encode()).decode()}"
+
+
+def connections_path(key: str) -> str:
+    """The project's connections to one connector, under its base64-encoded key."""
+    encoded = base64.b64encode(key.encode()).decode()
+    return f"/workspaces/{WORKSPACE}/projects/{PROJECT}/connectors/{encoded}/connections"
+
+
+OLD = {"connection_key": "old-1", "connection_config": {"name": "Sales team"}}
+NEW = {"connection_key": "new-1", "connection_config": {"name": "Marketing"}}
+
+
+@pytest.fixture(autouse=True)
+def store() -> FakeRedis:
+    with a_fake_store() as fake:
+        yield fake
 
 
 def a_dataset(status: str, created_at: str = "2026-10-14T09:05:00Z") -> dict[str, Any]:
@@ -81,6 +97,7 @@ class TestConnectSource:
         with a_fake_api() as api, as_caller():
             api.answer("GET", SELF, ADMIN)
             api.answer("GET", connector_path("hubspot"), HUBSPOT)
+            api.answer("GET", connections_path("hubspot"), {"connections": [OLD]})
             handed = call_tool("connect_source", connector_key="hubspot", **IDS)
 
         url = handed["mammoth_url"]
@@ -117,6 +134,7 @@ class TestConnectSource:
         with a_fake_api() as api, as_caller():
             api.answer("GET", SELF, ADMIN)
             api.answer("GET", connector_path("hubspot"), {**HUBSPOT, "is_available": False})
+            api.answer("GET", connections_path("hubspot"), {"connections": [OLD]})
             handed = call_tool("connect_source", connector_key="hubspot", **IDS)
 
         assert "plan" in handed["next_step"]
@@ -136,6 +154,67 @@ def brief_wait(monkeypatch: pytest.MonkeyPatch) -> None:
     """Keep the tests quick; the waiting itself is what some of them test."""
     monkeypatch.setattr(sources, "CONNECT_WAIT_SECONDS", 0.2)
     monkeypatch.setattr(sources, "CONNECT_POLL_SECONDS", 0.02)
+
+
+class TestWatchingForTheNewConnection:
+    """Connecting a source makes a connection. It takes the user two or three minutes in
+    Mammoth, so the watch runs for five, ten seconds apart, over as many calls as it needs."""
+
+    def a_watch(self) -> str:
+        with a_fake_api() as api, as_caller():
+            api.answer("GET", SELF, ADMIN)
+            api.answer("GET", connector_path("hubspot"), HUBSPOT)
+            api.answer("GET", connections_path("hubspot"), {"connections": [OLD]})
+            return str(call_tool("connect_source", connector_key="hubspot", **IDS)["watch_id"])
+
+    def test_the_connection_the_user_makes_ends_the_wait(self) -> None:
+        watch = self.a_watch()
+        with a_fake_api() as api, as_caller():
+            api.answer("GET", connections_path("hubspot"), {"connections": [OLD]})
+            api.answer("GET", connections_path("hubspot"), {"connections": [OLD, NEW]})
+            found = call_tool("find_new_connection", watch_id=watch)
+
+        assert found["status"] == "connected"
+        assert found["connections"] == [NEW]
+        assert found["connector"] == "hubspot"
+        assert len(api.sent("GET", connections_path("hubspot"))) == 2
+
+    def test_a_connection_that_was_there_before_is_not_new(self) -> None:
+        watch = self.a_watch()
+        with a_fake_api() as api, as_caller():
+            api.answer("GET", connections_path("hubspot"), {"connections": [OLD]})
+            found = call_tool("find_new_connection", watch_id=watch)
+
+        assert found["status"] == "waiting"
+        assert "find_new_connection" in found["next_step"]
+
+    def test_after_five_minutes_it_stops_and_says_so(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        watch = self.a_watch()
+        monkeypatch.setattr(sources, "CONNECT_WATCH_SECONDS", 0)
+        with a_fake_api() as api, as_caller():
+            api.answer("GET", connections_path("hubspot"), {"connections": [OLD]})
+            found = call_tool("find_new_connection", watch_id=watch)
+
+        assert found["status"] == "gave_up"
+
+    def test_the_watch_lasts_five_minutes(self, store: FakeRedis) -> None:
+        self.a_watch()
+
+        assert max(store.seconds.values()) >= 5 * 60
+
+    def test_a_watch_it_never_started_is_refused(self) -> None:
+        with a_fake_api(), as_caller(), pytest.raises(ToolError) as refused:
+            call_tool("find_new_connection", watch_id="never-started")
+
+        assert "connect_source" in str(refused.value)
+
+    def test_without_a_connector_there_is_nothing_to_watch(self) -> None:
+        with a_fake_api() as api, as_caller():
+            api.answer("GET", SELF, ADMIN)
+            handed = call_tool("connect_source", **IDS)
+
+        assert "watch_id" not in handed
+        assert "find_new_datasets" in handed["next_step"]
 
 
 class TestOnlyAProjectAdminGetsTheLink:
@@ -220,6 +299,7 @@ class TestWhatIsMeasured:
         with a_fake_api() as api, as_caller():
             api.answer("GET", SELF, ADMIN)
             api.answer("GET", connector_path("hubspot"), HUBSPOT)
+            api.answer("GET", connections_path("hubspot"), {"connections": [OLD]})
             call_tool("connect_source", connector_key="hubspot", **IDS)
 
         assert events(caplog, "mcp_source_linked") == [

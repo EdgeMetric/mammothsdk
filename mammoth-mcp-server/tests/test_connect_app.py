@@ -34,6 +34,14 @@ class TestConnectApp:
         assert "ui/open-link" in page
         assert "<a " in page
 
+    def test_the_page_watches_for_the_connection_and_tells_the_chat(self) -> None:
+        # The card keeps calling `find_new_connection` for the whole watch, and puts a
+        # turn in the chat when the connection is made, so nobody types "done".
+        page, _, _ = read_app(self.app_uri())
+
+        assert '"find_new_connection"' in page
+        assert "ui/message" in page
+
     def test_the_page_reaches_nothing(self) -> None:
         # It only hands the host a link, so its sandbox needs no domain.
         _, _, meta = read_app(self.app_uri())

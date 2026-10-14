@@ -51,10 +51,13 @@ UPLOAD_SECONDS = 30 * 60
 # to leave `TOOL_CALL_SECONDS` room for the job wait that follows.
 UPLOAD_WAIT_SECONDS = 30.0
 UPLOAD_POLL_SECONDS = 1.0
-# How long `find_new_datasets` holds the call while the user connects a source
-# in Mammoth, for the same reason. Each look lists the project, so it looks less often.
-CONNECT_WAIT_SECONDS = 30.0
-CONNECT_POLL_SECONDS = 3.0
+# Connecting a source takes the user two or three minutes in Mammoth, so the
+# watch for the new connection runs for five. One tool call cannot hold that
+# long, so each call holds what `TOOL_CALL_SECONDS` leaves room for, looking
+# every ten seconds, and the model or the card calls again until the watch ends.
+CONNECT_WATCH_SECONDS = 5 * 60
+CONNECT_WAIT_SECONDS = 40.0
+CONNECT_POLL_SECONDS = 10.0
 # Listing tools page by default, so one call cannot fill the model's context.
 LIST_LIMIT_DEFAULT = 50
 
@@ -501,6 +504,17 @@ class ConnectorFields:
     # Tells the page the link came from an AI chat, so it says to go back there.
     FROM = "from"
     ASSISTANT = "assistant"
+    # The watch `connect_source` starts and `find_new_connection` reads.
+    WATCH = "connect_watch"
+    WATCH_ID = "watch_id"
+    WORKSPACE_ID = "workspace_id"
+    PROJECT_ID_KEY = "project_id"
+    KNOWN = "known"
+    STARTED = "started"
+    STATUS = "status"
+    WAITING = "waiting"
+    CONNECTED = "connected"
+    GAVE_UP = "gave_up"
     # What `connect_source` reports.
     SHOWN_KEY = "key"
     SHOWN_NAME = "name"

@@ -4,6 +4,8 @@
 the call: one button that opens the connector in Mammoth, where the user signs
 in to the source. A sandboxed frame may not open a window itself, so it asks
 the host to (`ui/open-link`), and shows the link to copy when the host will not.
+It then keeps calling `find_new_connection` for the whole watch, and puts a turn
+in the chat (`ui/message`) once the connection is made, so nobody types "done".
 
 A client without MCP Apps ignores the page and shows `mammoth_url` instead.
 
@@ -19,6 +21,7 @@ from urllib.parse import urlencode
 from mcp.server.mcpserver.exceptions import ToolError
 
 from .chat_apps import chat_apps
+from .connection_watch import start_watch
 from .consts import CONNECT_APP_URI, MAMMOTH_DATA_URL, ApiPaths, ConnectorFields, ListFields
 from .sdk import JsonValue, build_client, read_sdk_errors, request_api
 from .telemetry import Events, TelemetryFields, record
@@ -107,6 +110,42 @@ function takeLink(result) {
   go.textContent = name ? "Connect " + name + " in Mammoth" : "Connect a source in Mammoth";
   go.disabled = false;
   resize();
+  if (found[FIELDS.watchId]) watch(found[FIELDS.watchId], name || "the source");
+}
+
+// Each call holds up to 40 seconds; the watch itself ends five minutes after the link.
+async function watch(watchId, name) {
+  while (true) {
+    let result;
+    try {
+      result = await ask("tools/call", {
+        name: "find_new_connection",
+        arguments: { [FIELDS.watchId]: watchId },
+      });
+    } catch (failed) {
+      return;
+    }
+    if (!result || result.isError) return;
+    const status = (result.structuredContent || {})[FIELDS.status];
+    if (status === FIELDS.connected) return carryOn(name);
+    if (status !== FIELDS.waiting) {
+      say("Not connected yet. Tell the assistant when it is.", false);
+      return;
+    }
+  }
+}
+
+async function carryOn(name) {
+  go.disabled = true;
+  try {
+    await ask("ui/message", {
+      role: "user",
+      content: [{ type: "text", text: "I connected " + name + " in Mammoth. Carry on with it." }],
+    });
+    say("Connected. The conversation carries on.", false);
+  } catch (refused) {
+    say("Connected. Tell the assistant it is done.", false);
+  }
 }
 
 go.addEventListener("click", async () => {
@@ -138,6 +177,10 @@ def render_app() -> str:
         "url": ListFields.MAMMOTH_URL,
         "connector": ConnectorFields.CONNECTOR,
         "name": ConnectorFields.SHOWN_NAME,
+        "watchId": ConnectorFields.WATCH_ID,
+        "status": ConnectorFields.STATUS,
+        "connected": ConnectorFields.CONNECTED,
+        "waiting": ConnectorFields.WAITING,
     }
     return CONNECT_APP.substitute(fields=json.dumps(fields))
 
@@ -155,6 +198,12 @@ IN_MAMMOTH = (
     " they sign in to the source, pick the data to bring in and, if they like,"
     " how often to refresh it. Then"
     " call `find_new_datasets` with `since` at once: it waits while they work."
+)
+WATCHED = (
+    "Tell the user to press the button, or give them `mammoth_url`. In Mammoth"
+    " they sign in to the source, which makes a connection; it takes them two or"
+    " three minutes. Call `find_new_connection` with `watch_id` at once: it waits"
+    " while they work, and reports the connection as soon as it is made."
 )
 OFF_THE_PLAN = (
     " This connector is not on the workspace's plan: Mammoth offers the upgrade"
@@ -191,7 +240,8 @@ async def connect_source(
     Returns:
         `mammoth_url`: the page to give the user. `since`: the time to pass to
         `find_new_datasets` once they are done. `next_step`: what to do now.
-        `connector`: its `key` and `name`, when one was named. A user who is
+        `connector`: its `key` and `name`, and `watch_id`, for
+        `find_new_connection`, when one was named. A user who is
         not a project admin gets no link: `next_step` says what they can do.
     """
     if not await may_connect(workspace_id, project_id):
@@ -216,8 +266,12 @@ async def link_to(
             ConnectorFields.SHOWN_KEY: connector_key,
             ConnectorFields.SHOWN_NAME: connector.get(ConnectorFields.NAME),
         }
+        handed[ConnectorFields.WATCH_ID] = await start_watch(
+            workspace_id, project_id, connector_key
+        )
+        handed[ConnectorFields.NEXT_STEP] = WATCHED
         if connector.get(ConnectorFields.AVAILABLE) is False:
-            handed[ConnectorFields.NEXT_STEP] = IN_MAMMOTH + OFF_THE_PLAN
+            handed[ConnectorFields.NEXT_STEP] = WATCHED + OFF_THE_PLAN
     link[ConnectorFields.FROM] = ConnectorFields.ASSISTANT
     page = MAMMOTH_DATA_URL.format(workspace_id=workspace_id, project_id=project_id)
     handed[ListFields.MAMMOTH_URL] = f"{page}?{urlencode(link)}"
