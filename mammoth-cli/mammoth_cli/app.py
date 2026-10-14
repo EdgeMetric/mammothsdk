@@ -1083,12 +1083,12 @@ def _execute(invocation: Invocation) -> None:
     # resolving the mutable selected-profile pointer after an interrupt.
     from mammoth_cli.context import profiles
     from mammoth_cli.runtime import executor, validate
+    from mammoth_cli.runtime.confirm import refuse_mismatched_confirm
     from mammoth_cli.runtime.dataset_health import with_dataset_health
     from mammoth_cli.runtime.intent_only import refuse_hand_crafted_write
     from mammoth_cli.runtime.locked_files import with_locked_files
     from mammoth_cli.runtime.new_data import with_new_data_path
     from mammoth_cli.runtime.opens import with_opens
-    from mammoth_cli.runtime.confirm import refuse_mismatched_confirm
     from mammoth_cli.runtime.strict import validate_extra_args
 
     if invocation.profile is None:
