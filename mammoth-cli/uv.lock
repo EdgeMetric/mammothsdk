@@ -537,7 +537,7 @@ wheels = [
 
 [[package]]
 name = "mammoth-cli"
-version = "2.2.48"
+version = "2.2.80"
 source = { editable = "." }
 dependencies = [
     { name = "jsonschema" },
@@ -556,6 +556,7 @@ dev = [
     { name = "black" },
     { name = "datamodel-code-generator" },
     { name = "mypy" },
+    { name = "pexpect" },
     { name = "pytest" },
     { name = "ruff" },
     { name = "types-pyyaml" },
@@ -565,7 +566,7 @@ dev = [
 requires-dist = [
     { name = "jsonschema", specifier = ">=4.20" },
     { name = "keyring", specifier = ">=25.7,<26" },
-    { name = "mammoth-io", specifier = ">=0.8.26,<0.9" },
+    { name = "mammoth-io", specifier = ">=0.8.42,<0.9" },
     { name = "platformdirs", specifier = ">=4.10,<5" },
     { name = "pydantic", specifier = ">=2.12.5,<3" },
     { name = "pyyaml", specifier = ">=6,<7" },
@@ -579,6 +580,7 @@ dev = [
     { name = "black", specifier = ">=24" },
     { name = "datamodel-code-generator", specifier = ">=0.69,<0.70" },
     { name = "mypy", specifier = ">=1.11" },
+    { name = "pexpect", specifier = ">=4.9,<5" },
     { name = "pytest", specifier = ">=8,<10" },
     { name = "ruff", specifier = ">=0.6" },
     { name = "types-pyyaml" },
@@ -586,15 +588,15 @@ dev = [
 
 [[package]]
 name = "mammoth-io"
-version = "0.8.26"
+version = "0.8.42"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "httpx" },
     { name = "pydantic" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/cb/3a/ffda339590fe1acc114d15bfc8560744ad1c9712f4ce33df7ac42379cce7/mammoth_io-0.8.26.tar.gz", hash = "sha256:c65b4ea8156305fed263afd9a983ea7bd97f105ce8f071bde8aae7ba389f0e60", size = 576957, upload-time = "2026-10-06T18:26:18.112Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/5e/1e/4270fb49cf287af461708750e93a0eb4de12573774ceaf9f04780b9c0c41/mammoth_io-0.8.42.tar.gz", hash = "sha256:1cbe86eb0d2c9ffbc8ba9d636abd98d2d45c85505990dbbfe450ebf1be263de1", size = 611423, upload-time = "2026-10-13T10:41:19.243Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/9c/37/04a9a31c2cbb21e3ed694b72018ca461fdf2dfbf3b4f63894861903fd2a7/mammoth_io-0.8.26-py3-none-any.whl", hash = "sha256:f8f95c18a169c384c15a43b5e571f4951de4f65c1ce8ed187b80384d941b45d5", size = 299084, upload-time = "2026-10-06T18:26:15.456Z" },
+    { url = "https://files.pythonhosted.org/packages/59/6d/9c5edce53cd66f90f8690716d6be640a02931f2bd51bb8e2cadde80c1de0/mammoth_io-0.8.42-py3-none-any.whl", hash = "sha256:2e93c969f0ab616b9143ed147e725c42f51bd9739b0028882cc607fdfb5d0eaa", size = 328601, upload-time = "2026-10-13T10:41:17.03Z" },
 ]
 
 [[package]]
@@ -759,6 +761,18 @@ wheels = [
 ]
 
 [[package]]
+name = "pexpect"
+version = "4.9.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "ptyprocess" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/42/92/cc564bf6381ff43ce1f4d06852fc19a2f11d180f23dc32d9588bee2f149d/pexpect-4.9.0.tar.gz", hash = "sha256:ee7d41123f3c9911050ea2c2dac107568dc43b2d3b0c7557a33212c398ead30f", size = 166450, upload-time = "2023-11-25T09:07:26.339Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/9e/c3/059298687310d527a58bb01f3b1965787ee3b40dce76752eda8b44e9a2c5/pexpect-4.9.0-py2.py3-none-any.whl", hash = "sha256:7236d1e080e4936be2dc3e326cec0af72acf9212a7e1d060210e70a47e253523", size = 63772, upload-time = "2023-11-25T06:56:14.81Z" },
+]
+
+[[package]]
 name = "platformdirs"
 version = "4.11.9"
 source = { registry = "https://pypi.org/simple" }
@@ -774,6 +788,15 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/f9/e2/3e91f31a7d2b083fe6ef3fa267035b518369d9511ffab804f839851d2779/pluggy-1.6.0.tar.gz", hash = "sha256:7dcc130b76258d33b90f61b658791dede3486c3e6bfb003ee5c9bfb396dd22f3", size = 69412, upload-time = "2025-05-15T12:30:07.975Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/54/20/4d324d65cc6d9205fabedc306948156824eb9f0ee1633355a8f7ec5c66bf/pluggy-1.6.0-py3-none-any.whl", hash = "sha256:e920276dd6813095e9377c0bc5566d94c932c33b27a3e3945d8389c374dd4746", size = 20538, upload-time = "2025-05-15T12:30:06.134Z" },
+]
+
+[[package]]
+name = "ptyprocess"
+version = "0.7.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/20/e5/16ff212c1e452235a90aeb09066144d0c5a6a8c0834397e03f5224495c4e/ptyprocess-0.7.0.tar.gz", hash = "sha256:5c5d0a3b48ceee0b48485e0c26037c0acd7d29765ca3fbb5cb3831d347423220", size = 70762, upload-time = "2020-12-28T15:15:30.155Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/22/a6/858897256d0deac81a172289110f31629fc4cee19b6f01283303e18c8db3/ptyprocess-0.7.0-py2.py3-none-any.whl", hash = "sha256:4b41f3967fce3af57cc7e94b888626c18bf37a083e3651ca8feeb66d492fef35", size = 13993, upload-time = "2020-12-28T15:15:28.35Z" },
 ]
 
 [[package]]
