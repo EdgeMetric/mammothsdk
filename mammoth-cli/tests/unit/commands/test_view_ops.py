@@ -141,7 +141,9 @@ def test_delete_refuses_parent_discovery(fake_service: FakeMammothService) -> No
 
 def test_delete_forwards_exact_parent_positional(fake_service: FakeMammothService) -> None:
     view_ops_cmd.view_delete(_inv("view.delete", extra_args=["7", "122"], yes=True))
-    assert fake_service.call_log == [(_DELETE, {"view_id": 7, "dataset_id": 122})]
+    # The delete, then the read that confirms the view is gone.
+    assert [symbol for symbol, _ in fake_service.call_log][0] == _DELETE
+    assert fake_service.call_log[0][1] == {"view_id": 7, "dataset_id": 122}
 
 
 def test_delete_forwards_exact_parent_input(
@@ -149,7 +151,9 @@ def test_delete_forwards_exact_parent_input(
 ) -> None:
     doc = _write(tmp_path, {"dataset_id": 122})
     view_ops_cmd.view_delete(_inv("view.delete", extra_args=["7"], input_file=doc, yes=True))
-    assert fake_service.call_log == [(_DELETE, {"view_id": 7, "dataset_id": 122})]
+    # The delete, then the read that confirms the view is gone.
+    assert [symbol for symbol, _ in fake_service.call_log][0] == _DELETE
+    assert fake_service.call_log[0][1] == {"view_id": 7, "dataset_id": 122}
 
 
 def test_delete_uses_typed_resource_parent_without_probe(
@@ -163,7 +167,9 @@ def test_delete_uses_typed_resource_parent_without_probe(
             yes=True,
         )
     )
-    assert fake_service.call_log == [(_DELETE, {"view_id": 7, "dataset_id": 122})]
+    # The delete, then the read that confirms the view is gone.
+    assert [symbol for symbol, _ in fake_service.call_log][0] == _DELETE
+    assert fake_service.call_log[0][1] == {"view_id": 7, "dataset_id": 122}
 
 
 def test_get_rejects_conflicting_explicit_parent_identities(
@@ -1591,3 +1597,13 @@ def test_get_names_the_dashboards_built_on_the_view(fake_service: FakeMammothSer
     data, _ = view_ops_cmd.view_get(_inv("view.get", extra_args=["7"]))
 
     assert data["dashboards"] == [{"id": 132, "title": "Sales board"}]
+
+
+def test_view_delete_that_leaves_the_view_is_not_a_success(
+    fake_service: FakeMammothService, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr("mammoth_cli.services.delete_check.time.sleep", lambda _s: None)
+    fake_service.responses["mammoth.api.dataviews.DataviewsAPI.get"] = {"id": 7}
+    with pytest.raises(CliError) as excinfo:
+        view_ops_cmd.view_delete(_inv("view.delete", yes=True, extra_args=["7", "9"], project=180))
+    assert excinfo.value.code == "delete_not_applied"

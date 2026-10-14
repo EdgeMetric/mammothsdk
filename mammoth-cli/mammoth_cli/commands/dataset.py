@@ -35,6 +35,7 @@ from mammoth_cli.runtime.confirm import (
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.new_data import with_file_upload_path
 from mammoth_cli.runtime.session import open_service, require_project
+from mammoth_cli.services.delete_check import ensure_deleted, find_dependents
 from mammoth_cli.services.listing import (
     DATASET_ROW_FIELDS,
     ambiguity_note,
@@ -1469,10 +1470,31 @@ def dataset_delete(invocation: Invocation) -> HandlerResult:
         ack = service.call(_symbol(invocation), dataset_id=dataset_id, project_id=project_id)
         # The server acknowledges a delete with a job handle. Settle it here so
         # the handle's id is kept as ``job.id`` (the shape ``view delete`` has).
-        data = _with_job(ack, service.wait_if_job(ack))
+        settled = service.wait_if_job(ack)
+        data = _with_job(ack, settled)
+        # A delete the server accepts but does not carry out (a view's join still reads
+        # the dataset) is a failure, not a verified success.
+        ensure_deleted(
+            service,
+            noun="dataset",
+            resource_id=dataset_id,
+            read_symbol="mammoth.api.datasets.DatasetsAPI.get",
+            read_kwargs={"dataset_id": dataset_id, "project_id": project_id},
+            responses=(ack, settled),
+            recovery_commands=_dependent_view_recovery(ack, settled, dataset_id),
+        )
     if hint is not None and isinstance(data, dict):
         data = {**data, "hint": hint}
     return data, _meta(invocation, auth.workspace_id, project_id)
+
+
+def _dependent_view_recovery(ack: Any, settled: Any, dataset_id: int) -> list[str]:
+    """``view task list`` for each view the server named as depending on the dataset."""
+    for response in (ack, settled):
+        found = find_dependents(response, dataset_id)
+        if isinstance(found, dict):
+            return [f"mammoth view task list {view_id}" for view_id in sorted(found)]
+    return []
 
 
 def _with_job(handle: Any, settled: Any) -> Any:
