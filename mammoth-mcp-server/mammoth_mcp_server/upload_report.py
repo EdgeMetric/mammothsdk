@@ -31,6 +31,7 @@ from .consts import (
     UserActions,
 )
 from .sdk import JsonValue, build_client, read_sdk_errors, request_api
+from .shape import view_url
 from .store import Record
 
 type Item = dict[str, JsonValue]
@@ -143,7 +144,7 @@ async def report_upload(ticket: Record) -> dict[str, JsonValue]:
     """Say whether Mammoth has finished reading an upload, and what it made.
 
     A dataset that is ready also names its view, which every later step reads
-    through: left out, the model guesses one.
+    through: left out, the model guesses one. It links to that view, too.
     """
     since = read_time(ticket[UploadFields.UPLOADED_AT])
     workspace_id = int(ticket[UploadFields.WORKSPACE_ID])
@@ -152,9 +153,10 @@ async def report_upload(ticket: Record) -> dict[str, JsonValue]:
     described = [describe(item, ticket) for item in made]
     for item, entry in zip(made, described, strict=True):
         if is_ready_dataset(item):
-            entry[UploadReportFields.VIEW_ID] = await read_first_view(
-                workspace_id, project_id, int(str(item["object_id"]))
-            )
+            view_id = await read_first_view(workspace_id, project_id, int(str(item["object_id"])))
+            entry[UploadReportFields.VIEW_ID] = view_id
+            if view_id is not None:
+                entry[UploadReportFields.MAMMOTH_URL] = view_url(workspace_id, project_id, view_id)
     return {UploadFields.STATUS: upload_status(made), UploadFields.FILES: list(described)}
 
 

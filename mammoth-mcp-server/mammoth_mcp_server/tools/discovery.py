@@ -15,7 +15,7 @@ from ..sdk import (
     request_api,
 )
 from ..server import mcp_server
-from ..shape import not_found_message, slim_view, tidy_page
+from ..shape import dataset_url, link_each, not_found_message, slim_view, tidy_page, view_url
 from ..tool_kinds import READS
 
 
@@ -114,7 +114,8 @@ async def list_datasets(
     """List the datasets in a project.
 
     A dataset is data brought into Mammoth, for example an uploaded file or a
-    connector import. Its views are where the data is shaped.
+    connector import. Its views are where the data is shaped. Each dataset
+    carries `mammoth_url`, the page in Mammoth it opens on.
 
     Args:
         workspace_id: Which workspace the project is in.
@@ -133,7 +134,11 @@ async def list_datasets(
             ),
             not_found_message(workspace_id, project_id),
         )
-    return tidy_page(page, ListFields.DATASETS, limit)
+    return link_each(
+        tidy_page(page, ListFields.DATASETS, limit),
+        ListFields.DATASETS,
+        lambda dataset_id: dataset_url(workspace_id, project_id, dataset_id),
+    )
 
 
 @mcp_server.tool(title="Get dataset", annotations=READS)
@@ -146,10 +151,11 @@ async def get_dataset(workspace_id: int, project_id: int, dataset_id: int) -> di
         dataset_id: Which dataset to read.
 
     Returns:
-        The dataset, under the key `dataset`.
+        The dataset, under the key `dataset`, with the page in Mammoth it opens
+        on as `mammoth_url`.
     """
     async with build_client(workspace_id) as client:
-        return await read_sdk_errors(
+        read = await read_sdk_errors(
             client.datasets.get(
                 dataset_id,
                 project_id=project_id,
@@ -157,6 +163,11 @@ async def get_dataset(workspace_id: int, project_id: int, dataset_id: int) -> di
             ),
             not_found_message(workspace_id, project_id, dataset_id),
         )
+    link = {ListFields.MAMMOTH_URL: dataset_url(workspace_id, project_id, dataset_id)}
+    dataset = read.get(ListFields.DATASET)
+    if isinstance(dataset, dict):
+        return {**read, ListFields.DATASET: {**dataset, **link}}
+    return {**read, **link}
 
 
 @mcp_server.tool(title="List views", annotations=READS)
@@ -170,6 +181,7 @@ async def list_views(
     """List the views of a dataset.
 
     Read data and run transformations against a view, not the dataset itself.
+    Each view carries `mammoth_url`, the page in Mammoth it opens on.
 
     Args:
         workspace_id: Which workspace the dataset is in.
@@ -190,7 +202,11 @@ async def list_views(
             ),
             not_found_message(workspace_id, project_id, dataset_id),
         )
-    return tidy_page(page, ListFields.VIEWS, limit)
+    return link_each(
+        tidy_page(page, ListFields.VIEWS, limit),
+        ListFields.VIEWS,
+        lambda view_id: view_url(workspace_id, project_id, view_id),
+    )
 
 
 @mcp_server.tool(title="Get view", annotations=READS)
@@ -199,9 +215,9 @@ async def get_view(
 ) -> dict[str, JsonValue]:
     """Get one view with its columns and their types.
 
-    Returns the view's id, name, status and row count, and `metadata`: each
-    column's `display_name`, `internal_name` and `type`, with its range when
-    it has one.
+    Returns the view's id, name, status and row count, `mammoth_url` (the
+    page in Mammoth it opens on), and `metadata`: each column's
+    `display_name`, `internal_name` and `type`, with its range when it has one.
 
     Read this before writing any transformation, so column names and types are
     exact.
@@ -225,4 +241,7 @@ async def get_view(
             ),
             not_found_message(workspace_id, project_id, dataset_id, view_id),
         )
-    return slim_view(view)
+    return {
+        **slim_view(view),
+        ListFields.MAMMOTH_URL: view_url(workspace_id, project_id, view_id),
+    }

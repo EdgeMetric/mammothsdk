@@ -39,6 +39,17 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `mammoth doctor` prints the exact `mammoth auth login --profile NAME` command for a legacy API key + secret profile.
 - Preconditions shown by `schema get` no longer carry internal test-harness text (fixture requirements, evidence provenance, variance codes).
 
+### Added (mammoth-mcp-server 0.2.3)
+
+- `aggregate_data` has Mammoth work out totals, counts, averages, lows and highs over a view, for the whole view or by group (a date grouped by day, week, month, quarter or year). It is read-only: it adds nothing to the view's pipeline, and a read-only connection may run it. Columns are named as the user sees them.
+- `get_dashboard` reports `values`: each KPI card's number and each chart's first rows, with the period and filters it counts under, as Mammoth evaluated them. A dashboard on the older engine, or one Mammoth cannot evaluate, reports `values_unavailable` with the reason instead; the read itself does not fail.
+- Views, datasets, pipeline results and a ready uploaded dataset carry `mammoth_url`, the page in Mammoth they open on. The server tells the client to give the user that link.
+
+### Changed (mammoth-mcp-server 0.2.3)
+
+- `get_data` no longer returns the `hash` row identity Mammoth adds to every row. It is no column of the user's, and Claude read its values as duplicate rows.
+- The server and `get_data` tell the client to take every number from `aggregate_data` or a dashboard's `values`, and never to add up rows itself.
+
 ### Fixed (mammoth-mcp-server 0.2.2)
 
 - A read-only connection that calls a change tool now gets the refusal as a tool result the model can read ("This connection is read-only, so <tool> cannot run…"). Before, the refusal reached the client as a protocol error, and Claude Code showed it as "Internal server error". The write was refused either way.

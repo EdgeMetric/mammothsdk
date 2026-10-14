@@ -6,10 +6,11 @@ experiment: copy the view, change the copy, delete the copy.
 
 from mcp.server.mcpserver.exceptions import ToolError
 
-from ..consts import ViewFields
+from ..consts import ListFields, ViewFields
 from ..jobs import wait_for_job
 from ..sdk import JsonValue, build_client, read_sdk_errors
 from ..server import mcp_server
+from ..shape import view_url
 from ..tool_kinds import CHANGES, DESTRUCTIVE
 
 
@@ -36,12 +37,13 @@ async def create_view(
             new view starts with. Omit for a view with no transformations.
 
     Returns:
-        The new view's id, under the key `dataview_id`.
+        The new view's id, under the key `dataview_id`, and `mammoth_url`, the
+        page in Mammoth it opens on.
     """
     # The SDK waits for the creation job itself, so the new view's id is
     # what comes back.
     async with build_client(workspace_id) as client:
-        return await read_sdk_errors(
+        created = await read_sdk_errors(
             client.dataviews.create(
                 dataset_id,
                 name=name,
@@ -49,6 +51,8 @@ async def create_view(
                 project_id=project_id,
             )
         )
+    view_id = created.get(ListFields.VIEW_ID)
+    return {**created, ListFields.MAMMOTH_URL: view_url(workspace_id, project_id, view_id)}
 
 
 @mcp_server.tool(title="Delete views", annotations=DESTRUCTIVE)

@@ -385,6 +385,18 @@ class TestTheViewAFinishedDatasetIsReadThrough:
         assert described[UploadReportFields.DATASET_ID] == 21
         assert described[UploadReportFields.VIEW_ID] == 8161
 
+    def test_a_finished_dataset_links_to_its_view(self) -> None:
+        described = self.report(a_dataset(DatasetStatus.PROCESSED), [{"id": 8161}])
+
+        assert described[UploadReportFields.MAMMOTH_URL].endswith(
+            "/#/workspaces/7/projects/9/views/8161"
+        )
+
+    def test_a_finished_dataset_with_no_view_yet_has_no_link(self) -> None:
+        described = self.report(a_dataset(DatasetStatus.PROCESSED), [])
+
+        assert UploadReportFields.MAMMOTH_URL not in described
+
     def test_the_first_view_is_named_when_there_are_more(self) -> None:
         described = self.report(a_dataset(DatasetStatus.PROCESSED), [{"id": 8170}, {"id": 8161}])
 

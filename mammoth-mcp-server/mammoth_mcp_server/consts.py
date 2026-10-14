@@ -13,7 +13,10 @@ MCP_INSTRUCTIONS = (
     "Mammoth Analytics lets you explore, clean, transform and export data. "
     "Data is organised as workspace > project > dataset > view; a view is a "
     "pipeline of transformation tasks over a dataset. Every tool acts as the "
-    "signed-in user, with that user's permissions."
+    "signed-in user, with that user's permissions. "
+    "Mammoth works out the numbers: answer with `aggregate_data`, or with the "
+    "`values` `get_dashboard` reports, and never by adding up rows yourself. "
+    "When a result carries `mammoth_url` or `share_url`, give the user that link."
 )
 
 # The same upload, drawn in the chat by a client that speaks MCP Apps. The host
@@ -21,6 +24,9 @@ MCP_INSTRUCTIONS = (
 UPLOAD_APP_URI = "ui://mammoth/upload.html"
 # Where the user settles, in the web app, what an upload waits on and no tool can.
 MAMMOTH_PROJECT_URL = f"{APP_URL}/#/workspaces/{{workspace_id}}/projects/{{project_id}}"
+# The pages a view and a dataset open on, as the web app routes them.
+MAMMOTH_VIEW_URL = f"{MAMMOTH_PROJECT_URL}/views/{{view_id}}"
+MAMMOTH_DATASET_URL = f"{MAMMOTH_PROJECT_URL}/datasets/{{dataset_id}}"
 # A dashboard's two links, built as the share emails build them
 # (`api.email.transactional`). The one to give the user is the viewer link: it
 # opens the published board, on the host that serves it. The editor link is the
@@ -49,6 +55,15 @@ LIST_LIMIT_DEFAULT = 50
 # next; it does not read the table. The cap is the API's page limit.
 DATA_LIMIT_DEFAULT = 50
 DATA_LIMIT_MAX = 400
+# Groups one `aggregate_data` call returns. A total or a ranking needs a few;
+# a model that wants every group of a big column should narrow it instead.
+GROUPS_LIMIT_DEFAULT = 100
+GROUPS_LIMIT_MAX = 1000
+# A chart's rows a dashboard read reports; `row_count` says how many there are.
+CHART_ROWS_SHOWN = 10
+# Descriptors one descriptor-data call evaluates, as the route caps them. A
+# board's cards and charts past the cap report no number rather than fail.
+DESCRIPTORS_PER_READ = 200
 
 # Async API routes answer with a job, so a tool polls until the job finishes.
 # A tool call has to return inside the client's own request timeout.
@@ -310,9 +325,13 @@ class ListFields:
     WORKSPACES = "workspaces"
     PROJECTS = "projects"
     DATASETS = "datasets"
+    DATASET = "dataset"
     VIEWS = "dataviews"
+    VIEW_ID = "dataview_id"
     ID = "id"
     NAME = "name"
+    # The page in Mammoth where the user opens it, as upload results name it too.
+    MAMMOTH_URL = "mammoth_url"
 
 
 class BrowseFields:
@@ -444,6 +463,85 @@ class DashboardFields:
     # and the messages that built it. A model can act on neither, and together
     # they dwarf every other field.
     TOO_LARGE_TO_READ = frozenset({"html", "messages"})
+    # What each card and chart shows, or why a read could not say.
+    VALUES = "values"
+    VALUES_UNAVAILABLE = "values_unavailable"
+
+
+class BoardFields:
+    """A current-engine board's canvas, and what its numbers are read from.
+
+    The bake binds each KPI card (`<page>:kpi:<n>`) and each added chart
+    (`<page>:add:<key>`) to descriptors in `meta.figures`, and records the
+    filters each one counts under in `meta.receipts`. One descriptor-data call
+    evaluates the descriptors: Mammoth's own numbers, not worked out here.
+    """
+
+    CANVAS = "canvas"
+    META = "meta"
+    FIGURES = "figures"
+    RECEIPTS = "receipts"
+    DESCRIPTORS = "descriptors"
+    RESULTS = "results"
+    PAGES = "pages"
+    FIRST_PAGE = "p1"
+    FOCUS = "focus"
+    KPIS = "kpis"
+    ADDED = "added"
+    SERIES = "series"
+    FILTERS = "filters"
+    ORIGIN = "origin"
+    PERIOD = "period"
+    LABEL = "label"
+    MONTH = "month"
+    TITLE = "title"
+    TERM = "term"
+    FIELD = "field"
+    OP = "op"
+    ID = "id"
+    # Figure kinds as the figure id names them, and as a read reports them.
+    KINDS = {"kpi": "kpi", "add": "chart"}
+    KPI = "kpi"
+    # What one evaluated descriptor reports.
+    STATUS = "status"
+    SUCCESS = "success"
+    VALUE = "value"
+    DATA = "data"
+    ERROR = "error"
+    ROWS = "rows"
+    ROW_COUNT = "row_count"
+    FIGURE = "figure"
+    KIND = "kind"
+    OPERATORS = {"eq": "=", "neq": "!=", "gt": ">", "gte": ">=", "lt": "<", "lte": "<="}
+
+
+class AggregateFields:
+    """What `aggregate_data` takes, and the result names the query route uses.
+
+    The SDK names the n-th aggregation `agg_<n>` and the n-th group `group_<n>`
+    in the rows it returns; a tool hands them on under the names asked for.
+    """
+
+    COLUMN = "column"
+    FUNCTION = "function"
+    AS_NAME = "as_name"
+    TRUNCATE = "truncate"
+    AGG = "agg_"
+    GROUP = "group_"
+    DATA = "data"
+    NOTE = "note"
+    DESCENDING = "DESC"
+    ASCENDING = "ASC"
+    # How a result reads when no name was given for it: "Sum of Revenue".
+    NAMES = {
+        "SUM": "Sum",
+        "COUNT": "Count",
+        "AVG": "Average",
+        "MIN": "Min",
+        "MAX": "Max",
+        "STDDEV": "Standard deviation",
+        "DISTINCT_COUNT": "Distinct count",
+    }
 
 
 class ApiFields:
@@ -506,3 +604,5 @@ class ViewShape:
     METADATA = "metadata"
     COLUMN_KEPT = ("display_name", "internal_name", "type", "format", "min", "max")
     NUMERIC = "NUMERIC"
+    # The row identity Mammoth adds to every data page; the web app never shows it.
+    SYSTEM_COLUMNS = frozenset({"hash"})
