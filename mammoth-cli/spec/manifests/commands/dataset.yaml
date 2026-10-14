@@ -34,7 +34,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dataset batch-data DATASET_ID BATCH_ID --help
-  agent_example: mammoth dataset batch-data 123 123
+  agent_example: mammoth dataset batch-data 123 456
   unit_tests:
   - UT-DATASET-BATCH-DATA
   contract_tests:
@@ -197,7 +197,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dataset bulk-update --help
-  agent_example: 'mammoth dataset bulk-update --input ''{"patch_data": {"sample_key": "Status"}}'''
+  agent_example: 'mammoth dataset bulk-update --input ''{"patch_data": {"name": "Status"}}'''
   unit_tests:
   - UT-DATASET-BULK-UPDATE
   contract_tests:
@@ -1156,7 +1156,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dataset update --help
-  agent_example: 'mammoth dataset update --input ''{"patch_data": [{"sample_key": "Status"}]}'''
+  agent_example: 'mammoth dataset update --input ''{"patch_data": [{"name": "Status"}]}'''
   unit_tests:
   - UT-DATASET-UPDATE
   contract_tests:

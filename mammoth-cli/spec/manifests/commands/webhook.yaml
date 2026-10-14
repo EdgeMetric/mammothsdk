@@ -189,8 +189,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth webhook send --help
-  agent_example: 'mammoth webhook send --input ''{"webhook_uri": "https://example.com/data.csv", "data":
-    {"sample_key": "Status"}}'''
+  agent_example: 'mammoth webhook send --input ''{"webhook_uri": "https://example.com/data.csv", "data": {"name": "Status"}}'''
   unit_tests:
   - UT-WEBHOOK-SEND
   contract_tests:

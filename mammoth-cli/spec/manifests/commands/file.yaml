@@ -120,7 +120,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth file extract-sheets FILE_ID --help
-  agent_example: 'mammoth file extract-sheets 123 --input ''{"sheets": ["<sheet>"]}'''
+  agent_example: 'mammoth file extract-sheets 123 --input ''{"sheets": ["Sheet1"]}'''
   unit_tests:
   - UT-FILE-EXTRACT-SHEETS
   contract_tests:
@@ -236,7 +236,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth file multi-sheet-extract FILE_ID --help
-  agent_example: "mammoth file multi-sheet-extract 123 --input '{\"tables\": [{\"sample_key\": \"Status\"}]}'"
+  agent_example: 'mammoth file multi-sheet-extract 123 --input ''{"tables": [{"name": "Status"}]}'''
   unit_tests:
   - UT-FILE-MULTI-SHEET-EXTRACT
   contract_tests:
@@ -371,7 +371,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth file update FILE_ID --help
-  agent_example: 'mammoth file update 123 --input ''{"patch_request": {"patch": [{"op": "replace", "path": "extract_sheets", "value": "<value>"}]}}'''
+  agent_example: 'mammoth file update 123 --input ''{"patch_request": {"patch": [{"op": "replace", "path": "extract_sheets", "value": "Sheet1"}]}}'''
   unit_tests:
   - UT-FILE-UPDATE
   contract_tests:

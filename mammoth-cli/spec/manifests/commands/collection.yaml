@@ -343,7 +343,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth collection dashboards remove COLLECTION_ID DASHBOARD_ID --help
-  agent_example: mammoth collection dashboards remove 123 123
+  agent_example: mammoth collection dashboards remove 123 456
   unit_tests:
   - UT-COLLECTION-DASHBOARDS-REMOVE
   contract_tests:
@@ -696,7 +696,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth collection job COLLECTION_ID JOB_ID --help
-  agent_example: mammoth collection job 123 123
+  agent_example: mammoth collection job 123 456
   unit_tests:
   - UT-COLLECTION-JOB
   contract_tests:

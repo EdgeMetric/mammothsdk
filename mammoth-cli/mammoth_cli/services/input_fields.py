@@ -104,6 +104,55 @@ _CLOSED_ZERO_INPUT_COMMANDS = frozenset({"config.get"})
 #: value here is a genuine, accepted --input field so the documented example both
 #: validates against the input schema and works when run.
 _EXAMPLE_INPUT_HINTS: dict[str, dict[str, Any]] = {
+    # Fixed-vocabulary and free-form fields whose generated placeholder would be a
+    # bare ``<field>``: the values are the ones the API documents (OpenAPI enums, or
+    # the SDK method's own docstring/validator), so each example is a call that works.
+    "agent.message.set-request-kind": {"request_kind": "ask"},
+    "agent.plan.edit-proposal": {"plan_id": "resource-123", "action": "rename", "key": "Status"},
+    "agent.run.units.set": {
+        "step": 1,
+        "kind": "dataset",
+        "units": [{"id": 12, "name": "Sales", "project_id": 3}],
+    },
+    "agent.session.set-visibility": {"visibility": "shared"},
+    "ai.expression.generate": {"intent": "Summarize revenue by region", "mode": "math"},
+    "annotation.create": {
+        "target_type": "dataview",
+        "target_id": 1,
+        "body": "Quarterly revenue summary",
+    },
+    "annotation.update": {"status": "resolved"},
+    "automation.update": {
+        "patch": [{"op": "replace", "path": "details", "value": "Daily revenue export"}]
+    },
+    "connector.ds-config.update": {
+        "patch": [{"op": "replace", "path": "query", "value": "SELECT * FROM orders"}]
+    },
+    "dashboard.qa.session.set-visibility": {"body": {"params": {"visibility": "shared"}}},
+    "dashboard.style.default.set": {"body": {"params": {"styleId": "default"}}},
+    "file.extract-sheets": {"sheets": ["Sheet1"]},
+    "file.update": {
+        "patch_request": {"patch": [{"op": "replace", "path": "extract_sheets", "value": "Sheet1"}]}
+    },
+    "snippet.create": {"code": "SELECT * FROM orders", "language": "sql"},
+    "support.template.export-dashboard": {"slug": "revenue-overview"},
+    "support.workspace.create": {
+        "user_email": "analyst@example.com",
+        "payment_frequency": "monthly",
+    },
+    "support.workspace.update": {
+        "name": "Revenue report",
+        "payment_frequency": "monthly",
+        "plan_id": 1,
+    },
+    "support.workspace.user.add": {"email": "analyst@example.com", "role": "workspace_member"},
+    "support.workspace.user.transfer": {"role": "workspace_admin"},
+    "view.draft.command": {"command": "enter"},
+    "workflow.block.add": {"block_type": "source"},
+    "workflow.block.type": {"connection_type": "postgres"},
+    "workspace.invite.update-role": {"invite_id": 1, "role": "workspace_member"},
+    "workspace.llm-task": {"task_type": "run_data_retrieval", "params": {"name": "Status"}},
+    "workspace.update": {"patches": [{"op": "replace", "path": "name", "value": "Revenue team"}]},
     # Every field is optional; the useful call narrows to failures.
     "log.tail": {"errors_only": True, "limit": 20},
     # first_name/last_name are each individually optional (either one alone is

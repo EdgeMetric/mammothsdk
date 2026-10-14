@@ -69,7 +69,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth ai expression generate DATASET_ID --help
-  agent_example: 'mammoth ai expression generate 123 --input ''{"intent": "Summarize revenue by region", "mode": "<mode>"}'''
+  agent_example: 'mammoth ai expression generate 123 --input ''{"intent": "Summarize revenue by region", "mode": "math"}'''
   unit_tests:
   - UT-AI-EXPRESSION-GENERATE
   contract_tests:

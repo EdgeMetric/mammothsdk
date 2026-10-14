@@ -32,7 +32,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth agent access set AGENT_KEY --help
-  agent_example: 'mammoth agent access set ''<agent_key>'' --input ''{"role": "member", "propose": true}'''
+  agent_example: 'mammoth agent access set revenue-assistant --input ''{"role": "member", "propose": true}'''
   unit_tests:
   - UT-AGENT-ACCESS-SET
   contract_tests:
@@ -158,7 +158,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth agent charter get AGENT_KEY --help
-  agent_example: mammoth agent charter get '<agent_key>'
+  agent_example: mammoth agent charter get revenue-assistant
   unit_tests:
   - UT-AGENT-CHARTER-GET
   contract_tests:
@@ -207,7 +207,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth agent charter restore AGENT_KEY VERSION --help
-  agent_example: mammoth agent charter restore '<agent_key>' 123
+  agent_example: mammoth agent charter restore revenue-assistant 123
   unit_tests:
   - UT-AGENT-CHARTER-RESTORE
   contract_tests:
@@ -252,7 +252,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth agent charter set AGENT_KEY --help
-  agent_example: 'mammoth agent charter set ''<agent_key>'' --input ''{"charter": "Watch weekly margin and report the three biggest drops."}'''
+  agent_example: 'mammoth agent charter set revenue-assistant --input ''{"charter": "Watch weekly margin and report the three biggest drops."}'''
   unit_tests:
   - UT-AGENT-CHARTER-SET
   contract_tests:
@@ -297,7 +297,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth agent charter versions AGENT_KEY --help
-  agent_example: mammoth agent charter versions '<agent_key>'
+  agent_example: mammoth agent charter versions revenue-assistant
   unit_tests:
   - UT-AGENT-CHARTER-VERSIONS
   contract_tests:
@@ -433,7 +433,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth agent delete AGENT_KEY --help
-  agent_example: mammoth agent delete '<agent_key>'
+  agent_example: mammoth agent delete revenue-assistant
   unit_tests:
   - UT-AGENT-DELETE
   contract_tests:
@@ -480,7 +480,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth agent disable AGENT_KEY --help
-  agent_example: mammoth agent disable '<agent_key>'
+  agent_example: mammoth agent disable revenue-assistant
   unit_tests:
   - UT-AGENT-DISABLE
   contract_tests:
@@ -524,7 +524,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth agent feedback list AGENT_KEY --help
-  agent_example: mammoth agent feedback list '<agent_key>'
+  agent_example: mammoth agent feedback list revenue-assistant
   unit_tests:
   - UT-AGENT-FEEDBACK-LIST
   contract_tests:
@@ -566,7 +566,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth agent get AGENT_KEY --help
-  agent_example: mammoth agent get '<agent_key>'
+  agent_example: mammoth agent get revenue-assistant
   unit_tests:
   - UT-AGENT-GET
   contract_tests:
@@ -610,7 +610,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth agent goldens add AGENT_KEY --help
-  agent_example: 'mammoth agent goldens add ''<agent_key>'' --input ''{"question": "Summarize revenue by region", "expected": "Quarterly revenue summary"}'''
+  agent_example: 'mammoth agent goldens add revenue-assistant --input ''{"question": "Summarize revenue by region", "expected": "Quarterly revenue summary"}'''
   unit_tests:
   - UT-AGENT-GOLDENS-ADD
   contract_tests:
@@ -654,7 +654,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth agent goldens list AGENT_KEY --help
-  agent_example: mammoth agent goldens list '<agent_key>'
+  agent_example: mammoth agent goldens list revenue-assistant
   unit_tests:
   - UT-AGENT-GOLDENS-LIST
   contract_tests:
@@ -703,7 +703,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth agent goldens remove AGENT_KEY GOLDEN_ID --help
-  agent_example: mammoth agent goldens remove '<agent_key>' 123
+  agent_example: mammoth agent goldens remove revenue-assistant 123
   unit_tests:
   - UT-AGENT-GOLDENS-REMOVE
   contract_tests:
@@ -751,7 +751,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth agent goldens run AGENT_KEY --help
-  agent_example: mammoth agent goldens run '<agent_key>'
+  agent_example: mammoth agent goldens run revenue-assistant
   unit_tests:
   - UT-AGENT-GOLDENS-RUN
   contract_tests:
@@ -796,7 +796,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth agent goldens status AGENT_KEY --help
-  agent_example: mammoth agent goldens status '<agent_key>'
+  agent_example: mammoth agent goldens status revenue-assistant
   unit_tests:
   - UT-AGENT-GOLDENS-STATUS
   contract_tests:
@@ -877,7 +877,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth agent memory add AGENT_KEY --help
-  agent_example: 'mammoth agent memory add ''<agent_key>'' --input ''{"name": "Revenue report", "content": "Quarterly revenue summary"}'''
+  agent_example: 'mammoth agent memory add revenue-assistant --input ''{"name": "Revenue report", "content": "Quarterly revenue summary"}'''
   unit_tests:
   - UT-AGENT-MEMORY-ADD
   contract_tests:
@@ -922,7 +922,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth agent memory list AGENT_KEY --help
-  agent_example: mammoth agent memory list '<agent_key>'
+  agent_example: mammoth agent memory list revenue-assistant
   unit_tests:
   - UT-AGENT-MEMORY-LIST
   contract_tests:
@@ -971,7 +971,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth agent memory remove AGENT_KEY NOTE_ID --help
-  agent_example: mammoth agent memory remove '<agent_key>' 123
+  agent_example: mammoth agent memory remove revenue-assistant 123
   unit_tests:
   - UT-AGENT-MEMORY-REMOVE
   contract_tests:
@@ -1017,7 +1017,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth agent message set-request-kind MESSAGE_ID --help
-  agent_example: 'mammoth agent message set-request-kind ''Summarize revenue by region'' --input ''{"request_kind": "<request_kind>"}'''
+  agent_example: 'mammoth agent message set-request-kind ''Summarize revenue by region'' --input ''{"request_kind": "ask"}'''
   unit_tests:
   - UT-AGENT-MESSAGE-SET-REQUEST-KIND
   contract_tests:
@@ -1056,7 +1056,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth agent plan edit-proposal --help
-  agent_example: 'mammoth agent plan edit-proposal --input ''{"plan_id": "resource-123", "action": "<action>", "key": "Status"}'''
+  agent_example: 'mammoth agent plan edit-proposal --input ''{"plan_id": "resource-123", "action": "rename", "key": "Status"}'''
   unit_tests:
   - UT-AGENT-PLAN-EDIT-PROPOSAL
   contract_tests:
@@ -1232,7 +1232,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth agent projects clear AGENT_KEY --help
-  agent_example: mammoth agent projects clear '<agent_key>'
+  agent_example: mammoth agent projects clear revenue-assistant
   unit_tests:
   - UT-AGENT-PROJECTS-CLEAR
   contract_tests:
@@ -1277,7 +1277,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth agent projects set AGENT_KEY --help
-  agent_example: 'mammoth agent projects set ''<agent_key>'' --input ''{"project_ids": [12, 15]}'''
+  agent_example: 'mammoth agent projects set revenue-assistant --input ''{"project_ids": [12, 15]}'''
   unit_tests:
   - UT-AGENT-PROJECTS-SET
   contract_tests:
@@ -1322,7 +1322,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth agent publish AGENT_KEY --help
-  agent_example: mammoth agent publish '<agent_key>'
+  agent_example: mammoth agent publish revenue-assistant
   unit_tests:
   - UT-AGENT-PUBLISH
   contract_tests:
@@ -1654,7 +1654,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth agent run units set RUN_ID --help
-  agent_example: 'mammoth agent run units set resource-123 --input ''{"step": 1, "kind": "<kind>", "units": [{"sample_key": "Status"}]}'''
+  agent_example: 'mammoth agent run units set resource-123 --input ''{"step": 1, "kind": "dataset", "units": [{"id": 12, "name": "Sales", "project_id": 3}]}'''
   unit_tests:
   - UT-AGENTRUNUNITSSET
   contract_tests:
@@ -1922,7 +1922,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth agent scratch clear AGENT_KEY NAME --help
-  agent_example: mammoth agent scratch clear '<agent_key>' 'Revenue report'
+  agent_example: mammoth agent scratch clear revenue-assistant 'Revenue report'
   unit_tests:
   - UT-AGENT-SCRATCH-CLEAR
   contract_tests:
@@ -1975,7 +1975,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth agent scratch get AGENT_KEY NAME --help
-  agent_example: mammoth agent scratch get '<agent_key>' 'Revenue report'
+  agent_example: mammoth agent scratch get revenue-assistant 'Revenue report'
   unit_tests:
   - UT-AGENT-SCRATCH-GET
   contract_tests:
@@ -2018,7 +2018,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth agent scratch list AGENT_KEY --help
-  agent_example: mammoth agent scratch list '<agent_key>'
+  agent_example: mammoth agent scratch list revenue-assistant
   unit_tests:
   - UT-AGENT-SCRATCH-LIST
   contract_tests:
@@ -2067,7 +2067,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth agent scratch set AGENT_KEY NAME --help
-  agent_example: 'mammoth agent scratch set ''<agent_key>'' ''Revenue report'' --input ''{"content": "Quarterly revenue summary"}'''
+  agent_example: 'mammoth agent scratch set revenue-assistant ''Revenue report'' --input ''{"content": "Quarterly revenue summary"}'''
   unit_tests:
   - UT-AGENT-SCRATCH-SET
   contract_tests:
@@ -2230,7 +2230,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth agent session set-visibility SESSION_ID --help
-  agent_example: 'mammoth agent session set-visibility resource-123 --input ''{"visibility": "<visibility>"}'''
+  agent_example: 'mammoth agent session set-visibility resource-123 --input ''{"visibility": "shared"}'''
   unit_tests:
   - UT-AGENT-SESSION-SET-VISIBILITY
   contract_tests:
@@ -2277,7 +2277,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth agent team set AGENT_KEY --help
-  agent_example: 'mammoth agent team set ''<agent_key>'' --input ''{"team": {"agents": ["margin-watch"], "max_rounds": 4}}'''
+  agent_example: 'mammoth agent team set revenue-assistant --input ''{"team": {"agents": ["margin-watch"], "max_rounds": 4}}'''
   unit_tests:
   - UT-AGENT-TEAM-SET
   contract_tests:
@@ -2368,7 +2368,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth agent update AGENT_KEY --help
-  agent_example: 'mammoth agent update ''<agent_key>'' --input ''{"name": "Margin watch"}'''
+  agent_example: 'mammoth agent update revenue-assistant --input ''{"name": "Margin watch"}'''
   unit_tests:
   - UT-AGENT-UPDATE
   contract_tests:

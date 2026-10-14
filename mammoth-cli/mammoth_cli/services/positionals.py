@@ -367,7 +367,7 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
             type=str,
             required=True,
             help="Path to a local workbook.",
-            example_value="sample.twb",
+            example_value="Sales.twb",
         ),
     ),
     "dashboard.assess-pbix": (
@@ -376,7 +376,7 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
             type=str,
             required=True,
             help="Path to a local workbook.",
-            example_value="sample.pbix",
+            example_value="Sales.pbix",
         ),
     ),
     "dashboard.attachment-create": (
@@ -385,7 +385,7 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
             type=str,
             required=True,
             help="Path to a local workbook.",
-            example_value="sample.pbix",
+            example_value="Sales.pbix",
         ),
     ),
     "dashboard.import-workbook": (
@@ -394,7 +394,7 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
             type=str,
             required=True,
             help="Path to a local workbook.",
-            example_value="sample.twbx",
+            example_value="Sales.twbx",
         ),
     ),
     "dashboard.templates.use": (

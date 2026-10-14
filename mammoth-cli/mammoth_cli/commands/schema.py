@@ -46,6 +46,10 @@ _PROTECTED_INPUT_PATH = "/private/path/request.json"
 # second id, an optional-but-central input field, or two views to compare.
 _FIXED_EXAMPLES: dict[str, tuple[tuple[str, ...], dict[str, Any]]] = {
     "view.optimize": (("123",), {}),
+    # Data apps were replaced by collections and the API is blocked, but the request shape
+    # is still the one required ``body``: show it rather than a handoff to ``schema get``.
+    "data-app.create": ((), {"body": {"name": "Revenue app"}}),
+    "data-app.update": (("123",), {"body": {"name": "Revenue app"}}),
     "view.transform.batch": (
         ("123",),
         {
@@ -1180,6 +1184,14 @@ def _representative_string(field_name: str) -> str:
     name = field_name.casefold().replace("-", "_")
     # Exact names whose value has one obvious, valid shape.
     exact = {
+        "slug": "revenue-overview",
+        "object_type": "change_plan",
+        "agent_key": "revenue-assistant",
+        "connector_key": "postgres",
+        "connection_key": "prod-warehouse",
+        "client_key": "web-client",
+        "ds_config_key": "orders-config",
+        "sheet": "Sheet1",
         "delimiter": ",",
         "quotechar": '"',
         "quote_char": '"',
@@ -1250,7 +1262,7 @@ def _humanize_sample(value: Any, field_name: str) -> Any:
         return [_humanize_sample(item, singular) for item in value]
     if isinstance(value, dict):
         return {
-            ("sample_key" if key == "example" else key): _humanize_sample(
+            ("name" if key == "example" else key): _humanize_sample(
                 item, "key" if key == "example" else key
             )
             for key, item in value.items()
@@ -1471,7 +1483,49 @@ def _scope_requirements(command_id: str, scope: str) -> dict[str, Any]:
 compact_contract = _compact_contract
 
 
+_DISTINCT_IDS = ("123", "456", "789", "1011")
+
+
 def runnable_example(
+    record: dict[str, Any],
+    symbol: str | None,
+    positionals: tuple[PositionalSpec, ...] | None = None,
+) -> str | None:
+    """Build one complete, copy-pasteable command line for this command.
+
+    The line from :func:`_runnable_example` with its positional ids made distinct
+    (``VIEW_ID DATASET_ID`` is ``123 456``, never ``123 123``) and a dataset id
+    added when the SDK requires one but the command only takes it as an optional
+    trailing positional, so the example names everything it needs without a lookup.
+    """
+    line = _runnable_example(record, symbol, positionals)
+    if line is None:
+        return None
+    command_id = str(record["command_id"])
+    specs = positionals if positionals is not None else resolve_positionals(command_id)
+    tokens = shlex.split(line)
+    start = 1 + len(str(record["command_path"]).split())
+    end = start
+    while end < len(tokens) and not tokens[end].startswith("-"):
+        end += 1
+    given = tokens[start:end]
+    contract = resolve_command_contract(command_id)
+    needs_dataset = contract is not None and any(
+        field.name == "dataset_id" and field.required for field in contract.accepted_fields
+    )
+    for index, spec in enumerate(specs):
+        if spec.name == "dataset_id" and len(given) == index and needs_dataset:
+            given.append("456")
+    seen: set[str] = set()
+    for index, value in enumerate(given):
+        if value.isdigit() and value in seen:
+            value = next(item for item in _DISTINCT_IDS if item not in seen)
+            given[index] = value
+        seen.add(value)
+    return shlex.join([*tokens[:start], *given, *tokens[end:]])
+
+
+def _runnable_example(
     record: dict[str, Any],
     symbol: str | None,
     positionals: tuple[PositionalSpec, ...] | None = None,
@@ -1519,7 +1573,7 @@ def runnable_example(
             [
                 "mammoth",
                 *record["command_path"].split(),
-                "sample.twbx",
+                "Sales.twbx",
                 "--project",
                 "456",
                 "--yes",

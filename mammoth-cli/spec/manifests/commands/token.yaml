@@ -111,7 +111,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth token revoke CLIENT_KEY --help
-  agent_example: mammoth token revoke '<client_key>'
+  agent_example: mammoth token revoke web-client
   unit_tests:
   - UT-CLIENT-APP-DELETE
   contract_tests:

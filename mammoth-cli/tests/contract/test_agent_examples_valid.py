@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import copy
 import json
+import re
 import shlex
 from typing import Any
 
@@ -23,8 +24,17 @@ from mammoth_cli.runtime.strict import validate_input_fields
 from mammoth_cli.services.command_contract import resolve_command_contract
 from mammoth_cli.services.positionals import resolve_positionals
 
-#: ``mammoth schema get ID``: a blocked raw request shape hands over to the schema lookup.
+#: ``schema get`` documents itself; no other command's example may be a pointer to it.
+_SCHEMA_GET = "schema.get"
 _HANDOFF = "mammoth schema get "
+#: A placeholder, not data: the word ``sample`` as a whole word or segment (``sample_key``,
+#: ``sample.csv``), or an angle-bracket template such as ``<role>``. A real host such as
+#: ``sampledata.mammoth.io`` does not match.
+_PLACEHOLDER = re.compile(r"(?<![A-Za-z])sample(?![A-Za-z])|<[A-Za-z_]+>", re.IGNORECASE)
+#: ``--input FILE`` is allowed only where the request carries a secret (a password, a key):
+#: a credential must never be put in argv, so the example points at a protected file.
+_PROTECTED_FILE = re.compile(r"^/private/path/")
+_NUMBER = re.compile(r"^\d+$")
 #: Never synthesized: a credential document.
 _NOT_SYNTHESIZED = {"auth.login"}
 #: Resolved from the active dataset/project, not typed by the caller.
@@ -45,29 +55,49 @@ def example_problems(record: dict[str, Any]) -> list[str]:
     """What is wrong with one record's ``agent_example`` (empty when it is runnable)."""
     command_id = record["command_id"]
     example = record["agent_example"]
-    if command_id in _NOT_SYNTHESIZED or example.startswith(_HANDOFF):
+    if command_id in _NOT_SYNTHESIZED or command_id == _SCHEMA_GET:
         return []
-    tokens = shlex.split(example)
     problems: list[str] = []
-    if any(token.lower() == "sample" for token in tokens):
-        problems.append("positional placeholder is the literal 'sample'")
+    if example.startswith(_HANDOFF):
+        return ["the example is a pointer to 'schema get', not a runnable command"]
+    tokens = shlex.split(example)
+    # The command's own words are not data (``project sample-flow`` is a real command).
+    if any(
+        _PLACEHOLDER.search(token) for token in tokens[1 + len(record["command_path"].split()) :]
+    ):
+        problems.append("a placeholder string ('sample' or <name>) is in the command line")
+    # Distinct ids in the documented positional order: ``123 123`` hides which is which.
+    command_tokens = 1 + len(record["command_path"].split())
+    end = command_tokens
+    while end < len(tokens) and not tokens[end].startswith("-"):
+        end += 1
+    numbers = [t for t in tokens[command_tokens:end] if _NUMBER.match(t)]
+    if len(numbers) != len(set(numbers)):
+        problems.append(f"positional ids repeat: {' '.join(numbers)}")
     document: dict[str, Any] | None = None
     if "--input" in tokens:
         raw = tokens[tokens.index("--input") + 1]
-        if not raw.startswith("{"):
-            # A protected ``--input FILE`` carries the (secret) fields; nothing to check here.
+        if _PROTECTED_FILE.match(raw):
+            if not record.get("secret_fields"):
+                problems.append("--input points at a file but the request carries no secret")
             return problems
+        if not raw.startswith("{"):
+            return [*problems, "--input is neither inline JSON nor a protected secret file"]
         try:
             document = json.loads(raw)
         except ValueError:
             return [*problems, "--input is not valid JSON"]
-    if document is not None and any(s.lower() == "sample" for s in _strings(document)):
-        problems.append("an --input string is the literal 'sample'")
     contract = resolve_command_contract(command_id)
     if contract is None:
         return problems
     given = set(document or {})
-    covered = {p.name for p in resolve_positionals(command_id)} | _RESOLVED_FIELDS
+    positional_names = [p.name for p in resolve_positionals(command_id)]
+    covered = set(positional_names)
+    if (
+        "dataset_id" in positional_names
+        and len(numbers) >= positional_names.index("dataset_id") + 1
+    ):
+        covered.add("dataset_id")
     for field in contract.accepted_fields:
         if field.required and field.name not in given and field.name not in covered:
             problems.append(f"required field '{field.name}' is missing")
@@ -115,10 +145,11 @@ def test_file_settings_example_uses_single_character_delimiters() -> None:
 
 
 def test_the_checker_flags_the_old_broken_examples() -> None:
-    base = {"disposition": "command", "agent_example": ""}
+    base = {"disposition": "command", "agent_example": "", "command_path": "view transform pivot"}
     lookup = {
         **base,
         "command_id": "view.transform.lookup",
+        "command_path": "view transform lookup",
         "agent_example": "mammoth view transform lookup 123 --input "
         + shlex.quote(
             json.dumps({"source": "A", "lookup_view_id": 1, "key": "A", "value": "sample"})
@@ -131,4 +162,32 @@ def test_the_checker_flags_the_old_broken_examples() -> None:
         "agent_example": "mammoth view transform pivot 123 --input "
         + shlex.quote(json.dumps({"group_by": ["sample"], "aggregations": []})),
     }
-    assert "an --input string is the literal 'sample'" in example_problems(pivot)
+    assert any("placeholder" in problem for problem in example_problems(pivot))
+    twice = {
+        **base,
+        "command_id": "batch.get",
+        "command_path": "batch get",
+        "agent_example": "mammoth batch get 123 123",
+    }
+    assert any("repeat" in problem for problem in example_problems(twice))
+    pointer = {**base, "command_id": "data-app.create", "agent_example": "mammoth schema get x"}
+    assert any("pointer" in problem for problem in example_problems(pointer))
+
+
+def test_the_walk_covers_every_command_in_the_registry() -> None:
+    records = [r for r in load_commands() if r.get("disposition") != "alias"]
+    assert len(records) > 700
+    assert all(r.get("agent_example") for r in records)
+
+
+def test_the_same_checks_flag_the_published_sweep_findings() -> None:
+    """The counts the offline sweep found, as properties that must now be zero."""
+    records = [r for r in load_commands() if r.get("disposition") != "alias"]
+    examples = [(r["command_id"], r["agent_example"]) for r in records]
+    assert [c for c, e in examples if _PLACEHOLDER.search(e) and "sample-flow" not in e] == []
+    assert [c for c, e in examples if "/private/path" in e and c not in _secret_commands()] == []
+    assert [c for c, e in examples if e.startswith(_HANDOFF) and c != _SCHEMA_GET] == []
+
+
+def _secret_commands() -> set[str]:
+    return {r["command_id"] for r in load_commands() if r.get("secret_fields")}

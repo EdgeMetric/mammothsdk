@@ -64,7 +64,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth billing hosted-page --help
-  agent_example: mammoth billing hosted-page '<object_type>'
+  agent_example: mammoth billing hosted-page change_plan
   unit_tests:
   - UT-BILLING-HOSTED-PAGE
   contract_tests:
@@ -811,7 +811,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth billing subscription update --help
-  agent_example: 'mammoth billing subscription update --input ''{"patch": [{"sample_key": "Status"}]}'''
+  agent_example: 'mammoth billing subscription update --input ''{"patch": [{"name": "Status"}]}'''
   unit_tests:
   - UT-BILLING-SUBSCRIPTION-UPDATE
   contract_tests:

@@ -37,7 +37,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth support connector-profile add-connector PROFILE_ID CONNECTOR_ID --help
-  agent_example: mammoth support connector-profile add-connector 123 123
+  agent_example: mammoth support connector-profile add-connector 123 456
   unit_tests:
   - UT-SUPPORT-CONNECTOR-PROFILE-ADD-CONNECTOR
   contract_tests:
@@ -430,7 +430,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth support feature-profile add-feature PROFILE_ID FEATURE_ID --help
-  agent_example: mammoth support feature-profile add-feature 123 123
+  agent_example: mammoth support feature-profile add-feature 123 456
   unit_tests:
   - UT-SUPPORT-FEATURE-PROFILE-ADD-FEATURE
   contract_tests:
@@ -819,7 +819,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth support ownership transfer WORKSPACE_ID USER_ID --help
-  agent_example: mammoth support ownership transfer 123 123
+  agent_example: mammoth support ownership transfer 123 456
   unit_tests:
   - UT-SUPPORT-OWNERSHIP-TRANSFER
   contract_tests:
@@ -1192,8 +1192,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth support plan update-storage-tiers PLAN_ID --help
-  agent_example: 'mammoth support plan update-storage-tiers 123 --input ''{"storage_tiers": [{"sample_key":
-    "Status"}]}'''
+  agent_example: 'mammoth support plan update-storage-tiers 123 --input ''{"storage_tiers": [{"name": "Status"}]}'''
   unit_tests:
   - UT-SUPPORT-PLAN-UPDATE-STORAGE-TIERS
   contract_tests:
@@ -1508,7 +1507,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth support workspace create --help
-  agent_example: 'mammoth support workspace create ''Revenue report'' --input ''{"user_email": "analyst@example.com", "payment_frequency": "<payment_frequency>"}'''
+  agent_example: 'mammoth support workspace create ''Revenue report'' --input ''{"user_email": "analyst@example.com", "payment_frequency": "monthly"}'''
   unit_tests:
   - UT-SUPPORT-WORKSPACE-CREATE
   contract_tests:
@@ -1767,7 +1766,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth support workspace update WORKSPACE_ID --help
-  agent_example: 'mammoth support workspace update 123 --input ''{"name": "Revenue report", "payment_frequency": "<payment_frequency>", "plan_id": 1}'''
+  agent_example: 'mammoth support workspace update 123 --input ''{"name": "Revenue report", "payment_frequency": "monthly", "plan_id": 1}'''
   unit_tests:
   - UT-SUPPORT-WORKSPACE-UPDATE
   contract_tests:
@@ -1813,7 +1812,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth support workspace user add WORKSPACE_ID --help
-  agent_example: 'mammoth support workspace user add 123 --input ''{"email": "analyst@example.com", "role": "<role>"}'''
+  agent_example: 'mammoth support workspace user add 123 --input ''{"email": "analyst@example.com", "role": "workspace_member"}'''
   unit_tests:
   - UT-SUPPORT-WORKSPACE-USER-ADD
   contract_tests:
@@ -1905,7 +1904,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth support workspace user remove WORKSPACE_ID USER_ID --help
-  agent_example: mammoth support workspace user remove 123 123
+  agent_example: mammoth support workspace user remove 123 456
   unit_tests:
   - UT-SUPPORT-WORKSPACE-USER-REMOVE
   contract_tests:
@@ -1957,7 +1956,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth support workspace user transfer WORKSPACE_ID USER_ID --help
-  agent_example: 'mammoth support workspace user transfer 123 123 --input ''{"role": "<role>"}'''
+  agent_example: 'mammoth support workspace user transfer 123 456 --input ''{"role": "workspace_admin"}'''
   unit_tests:
   - UT-SUPPORT-WORKSPACE-USER-TRANSFER
   contract_tests:
@@ -2142,7 +2141,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth support plan storage-option update PLAN_ID OPTION_ID --help
-  agent_example: mammoth support plan storage-option update 123 123
+  agent_example: mammoth support plan storage-option update 123 456
   unit_tests:
   - UT-SUPPORT-PLAN-STORAGE-OPTION-UPDATE
   contract_tests:
@@ -2188,7 +2187,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth support plan storage-option archive PLAN_ID OPTION_ID --help
-  agent_example: mammoth support plan storage-option archive 123 123
+  agent_example: mammoth support plan storage-option archive 123 456
   unit_tests:
   - UT-SUPPORT-PLAN-STORAGE-OPTION-ARCHIVE
   contract_tests:
@@ -2278,7 +2277,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth support template edit SLUG --help
-  agent_example: 'mammoth support template edit ''<slug>'' --input ''{"changes": {"sample_key": "Status"}}'''
+  agent_example: 'mammoth support template edit revenue-overview --input ''{"changes": {"name": "Status"}}'''
   unit_tests:
   - UT-SUPPORT-TEMPLATE-EDIT
   contract_tests:
@@ -2320,7 +2319,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth support template data-preview SLUG --help
-  agent_example: mammoth support template data-preview '<slug>'
+  agent_example: mammoth support template data-preview revenue-overview
   unit_tests:
   - UT-SUPPORT-TEMPLATE-DATA-PREVIEW
   contract_tests:
@@ -2360,7 +2359,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth support template canvas SLUG --help
-  agent_example: mammoth support template canvas '<slug>'
+  agent_example: mammoth support template canvas revenue-overview
   unit_tests:
   - UT-SUPPORT-TEMPLATE-CANVAS
   contract_tests:
@@ -2402,7 +2401,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth support template publish SLUG --help
-  agent_example: mammoth support template publish '<slug>'
+  agent_example: mammoth support template publish revenue-overview
   unit_tests:
   - UT-SUPPORT-TEMPLATE-PUBLISH
   contract_tests:
@@ -2445,7 +2444,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth support template unpublish SLUG --help
-  agent_example: mammoth support template unpublish '<slug>'
+  agent_example: mammoth support template unpublish revenue-overview
   unit_tests:
   - UT-SUPPORT-TEMPLATE-UNPUBLISH
   contract_tests:
@@ -2487,7 +2486,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth support template retire SLUG --help
-  agent_example: mammoth support template retire '<slug>'
+  agent_example: mammoth support template retire revenue-overview
   unit_tests:
   - UT-SUPPORT-TEMPLATE-RETIRE
   contract_tests:
@@ -2625,7 +2624,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth support template thumbnail set SLUG FILE --help
-  agent_example: mammoth support template thumbnail set '<slug>' card.png
+  agent_example: mammoth support template thumbnail set revenue-overview card.png
   unit_tests:
   - UT-SUPPORT-TEMPLATE-THUMBNAIL-SET
   contract_tests:
@@ -2668,7 +2667,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth support template thumbnail clear SLUG --help
-  agent_example: mammoth support template thumbnail clear '<slug>'
+  agent_example: mammoth support template thumbnail clear revenue-overview
   unit_tests:
   - UT-SUPPORT-TEMPLATE-THUMBNAIL-CLEAR
   contract_tests:
@@ -2710,7 +2709,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth support template discard SLUG --help
-  agent_example: mammoth support template discard '<slug>'
+  agent_example: mammoth support template discard revenue-overview
   unit_tests:
   - UT-SUPPORT-TEMPLATE-DISCARD
   contract_tests:
@@ -2830,7 +2829,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth support template export SLUG --help
-  agent_example: mammoth support template export '<slug>'
+  agent_example: mammoth support template export revenue-overview
   unit_tests:
   - UT-SUPPORT-TEMPLATE-EXPORT
   contract_tests:
@@ -2877,7 +2876,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth support template export-dashboard DASHBOARD_ID --help
-  agent_example: 'mammoth support template export-dashboard 123 --input ''{"slug": "<slug>"}'''
+  agent_example: 'mammoth support template export-dashboard 123 --input ''{"slug": "revenue-overview"}'''
   unit_tests:
   - UT-SUPPORT-TEMPLATE-EXPORT-DASHBOARD
   contract_tests:

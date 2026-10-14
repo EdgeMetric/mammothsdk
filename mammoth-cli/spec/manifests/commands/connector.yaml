@@ -102,7 +102,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth connector ai history CONNECTION_KEY --help
-  agent_example: mammoth connector ai history '<connection_key>'
+  agent_example: mammoth connector ai history prod-warehouse
   unit_tests:
   - UT-CONNECTOR-AI-HISTORY
   contract_tests:
@@ -301,7 +301,7 @@ commands:
   secret_fields:
   - config
   human_example: mammoth connector connection create CONNECTOR_KEY --help
-  agent_example: mammoth connector connection create '<connector_key>' --input /private/path/request.json
+  agent_example: mammoth connector connection create postgres --input /private/path/request.json
   unit_tests:
   - UT-CONNECTOR-CONNECTION-CREATE
   contract_tests:
@@ -353,7 +353,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth connector connection delete CONNECTOR_KEY CONNECTION_KEY --help
-  agent_example: mammoth connector connection delete '<connector_key>' '<connection_key>'
+  agent_example: mammoth connector connection delete postgres prod-warehouse
   unit_tests:
   - UT-CONNECTOR-CONNECTION-DELETE
   contract_tests:
@@ -404,7 +404,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth connector connection get CONNECTOR_KEY CONNECTION_KEY --help
-  agent_example: mammoth connector connection get '<connector_key>' '<connection_key>'
+  agent_example: mammoth connector connection get postgres prod-warehouse
   unit_tests:
   - UT-CONNECTOR-CONNECTION-GET
   contract_tests:
@@ -444,7 +444,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth connector connection list --help
-  agent_example: mammoth connector connection list '<connector_key>'
+  agent_example: mammoth connector connection list postgres
   unit_tests:
   - UT-CONNECTOR-CONNECTION-LIST
   contract_tests:
@@ -490,7 +490,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth connector connection query CONNECTOR_KEY CONNECTION_KEY --help
-  agent_example: 'mammoth connector connection query ''<connector_key>'' ''<connection_key>'' --input ''{"query": "SELECT region, SUM(revenue) FROM data GROUP BY region"}'''
+  agent_example: 'mammoth connector connection query postgres prod-warehouse --input ''{"query": "SELECT region, SUM(revenue) FROM data GROUP BY region"}'''
   unit_tests:
   - UT-CONNECTOR-CONNECTION-QUERY
   contract_tests:
@@ -543,7 +543,7 @@ commands:
   secret_fields:
   - credentials
   human_example: mammoth connector connection update CONNECTOR_KEY CONNECTION_KEY --help
-  agent_example: mammoth connector connection update '<connector_key>' '<connection_key>' --input /private/path/request.json
+  agent_example: mammoth connector connection update postgres prod-warehouse --input /private/path/request.json
   unit_tests:
   - UT-CONNECTOR-CONNECTION-UPDATE
   contract_tests:
@@ -596,7 +596,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth connector ds-config create CONNECTOR_KEY CONNECTION_KEY --help
-  agent_example: mammoth connector ds-config create '<connector_key>' '<connection_key>'
+  agent_example: mammoth connector ds-config create postgres prod-warehouse
   unit_tests:
   - UT-CONNECTOR-DS-CONFIG-CREATE
   contract_tests:
@@ -655,7 +655,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth connector ds-config delete CONNECTOR_KEY CONNECTION_KEY DS_CONFIG_KEY --help
-  agent_example: mammoth connector ds-config delete '<connector_key>' '<connection_key>' '<ds_config_key>'
+  agent_example: mammoth connector ds-config delete postgres prod-warehouse orders-config
   unit_tests:
   - UT-CONNECTOR-DS-CONFIG-DELETE
   contract_tests:
@@ -709,7 +709,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth connector ds-config delete-all CONNECTOR_KEY CONNECTION_KEY --help
-  agent_example: 'mammoth connector ds-config delete-all ''<connector_key>'' ''<connection_key>'' --input ''{"config_ids": ["resource-123"]}'''
+  agent_example: 'mammoth connector ds-config delete-all postgres prod-warehouse --input ''{"config_ids": ["resource-123"]}'''
   unit_tests:
   - UT-CONNECTOR-DS-CONFIG-DELETE-ALL
   contract_tests:
@@ -767,7 +767,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth connector ds-config get CONNECTOR_KEY CONNECTION_KEY DS_CONFIG_KEY --help
-  agent_example: mammoth connector ds-config get '<connector_key>' '<connection_key>' '<ds_config_key>'
+  agent_example: mammoth connector ds-config get postgres prod-warehouse orders-config
   unit_tests:
   - UT-CONNECTOR-DS-CONFIG-GET
   contract_tests:
@@ -813,7 +813,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth connector ds-config list CONNECTOR_KEY CONNECTION_KEY --help
-  agent_example: mammoth connector ds-config list '<connector_key>' '<connection_key>'
+  agent_example: mammoth connector ds-config list postgres prod-warehouse
   unit_tests:
   - UT-CONNECTOR-DS-CONFIG-LIST
   contract_tests:
@@ -866,7 +866,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth connector ds-config update CONNECTOR_KEY CONNECTION_KEY DS_CONFIG_KEY --help
-  agent_example: 'mammoth connector ds-config update ''<connector_key>'' ''<connection_key>'' ''<ds_config_key>'' --input ''{"patch": [{"op": "replace", "path": "query", "value": "<value>"}]}'''
+  agent_example: 'mammoth connector ds-config update postgres prod-warehouse orders-config --input ''{"patch": [{"op": "replace", "path": "query", "value": "SELECT * FROM orders"}]}'''
   unit_tests:
   - UT-CONNECTOR-DS-CONFIG-UPDATE
   contract_tests:
@@ -914,7 +914,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth connector get CONNECTOR_KEY --help
-  agent_example: mammoth connector get '<connector_key>'
+  agent_example: mammoth connector get postgres
   unit_tests:
   - UT-CONNECTOR-GET
   contract_tests:
@@ -994,7 +994,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth connector query generate CONNECTOR_KEY CONNECTION_KEY --help
-  agent_example: 'mammoth connector query generate ''<connector_key>'' ''<connection_key>'' --input ''{"query": "Total sales for January"}'''
+  agent_example: 'mammoth connector query generate postgres prod-warehouse --input ''{"query": "Total sales for January"}'''
   unit_tests:
   - UT-CONNECTOR-QUERY-GENERATE
   contract_tests:
@@ -1040,7 +1040,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth connector query status CONNECTOR_KEY CONNECTION_KEY --help
-  agent_example: mammoth connector query status '<connector_key>' '<connection_key>'
+  agent_example: mammoth connector query status postgres prod-warehouse
   unit_tests:
   - UT-CONNECTOR-QUERY-STATUS
   contract_tests:

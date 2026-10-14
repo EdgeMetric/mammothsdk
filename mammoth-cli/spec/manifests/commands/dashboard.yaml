@@ -162,7 +162,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard assess-pbix FILE --help
-  agent_example: mammoth dashboard assess-pbix sample.pbix
+  agent_example: mammoth dashboard assess-pbix Sales.pbix
   unit_tests:
   - UT-DASHBOARD-ASSESS-PBIX
   contract_tests:
@@ -203,7 +203,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard assess-twb FILE --help
-  agent_example: mammoth dashboard assess-twb sample.twb
+  agent_example: mammoth dashboard assess-twb Sales.twb
   unit_tests:
   - UT-DASHBOARD-ASSESS-TWB
   contract_tests:
@@ -1740,7 +1740,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard import-workbook FILE --help
-  agent_example: mammoth dashboard import-workbook sample.twbx --project 456 --yes --confirm 456
+  agent_example: mammoth dashboard import-workbook Sales.twbx --project 456 --yes --confirm 456
   unit_tests:
   - UT-DASHBOARD-IMPORT-WORKBOOK
   contract_tests:
@@ -2006,7 +2006,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard pdf-artifact DASHBOARD_ID JOB_ID --help
-  agent_example: mammoth dashboard pdf-artifact 123 123
+  agent_example: mammoth dashboard pdf-artifact 123 456
   unit_tests:
   - UT-DASHBOARD-PDF-ARTIFACT
   contract_tests:
@@ -2508,8 +2508,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard qa ask DASHBOARD_ID SESSION_ID --help
-  agent_example: 'mammoth dashboard qa ask 123 123 --input ''{"body": {"params": {"question": "Summarize
-    revenue by region"}}}'''
+  agent_example: 'mammoth dashboard qa ask 123 456 --input ''{"body": {"params": {"question": "Summarize revenue by region"}}}'''
   unit_tests:
   - UT-DASHBOARD-QA-ASK
   contract_tests:
@@ -2563,7 +2562,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard qa comment create DASHBOARD_ID SESSION_ID --help
-  agent_example: 'mammoth dashboard qa comment create 123 123 --input ''{"body": {"params": {"body": "Quarterly revenue summary"}}}'''
+  agent_example: 'mammoth dashboard qa comment create 123 456 --input ''{"body": {"params": {"body": "Quarterly revenue summary"}}}'''
   unit_tests:
   - UT-DASHBOARD-QA-COMMENT-CREATE
   contract_tests:
@@ -2623,7 +2622,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard qa comment delete DASHBOARD_ID SESSION_ID COMMENT_ID --help
-  agent_example: mammoth dashboard qa comment delete 123 123 123
+  agent_example: mammoth dashboard qa comment delete 123 456 789
   unit_tests:
   - UT-DASHBOARD-QA-COMMENT-DELETE
   contract_tests:
@@ -2683,7 +2682,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard qa feedback DASHBOARD_ID SESSION_ID MESSAGE_ID --help
-  agent_example: 'mammoth dashboard qa feedback 123 123 123 --input ''{"body": {"params": {"rating": "up"}}}'''
+  agent_example: 'mammoth dashboard qa feedback 123 456 789 --input ''{"body": {"params": {"rating": "up"}}}'''
   unit_tests:
   - UT-DASHBOARD-QA-FEEDBACK
   contract_tests:
@@ -2785,7 +2784,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard qa session delete DASHBOARD_ID SESSION_ID --help
-  agent_example: mammoth dashboard qa session delete 123 123
+  agent_example: mammoth dashboard qa session delete 123 456
   unit_tests:
   - UT-DASHBOARD-QA-SESSION-DELETE
   contract_tests:
@@ -2839,7 +2838,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard qa session fork DASHBOARD_ID SESSION_ID --help
-  agent_example: mammoth dashboard qa session fork 123 123
+  agent_example: mammoth dashboard qa session fork 123 456
   unit_tests:
   - UT-DASHBOARD-QA-SESSION-FORK
   contract_tests:
@@ -2885,7 +2884,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard qa session get DASHBOARD_ID SESSION_ID --help
-  agent_example: mammoth dashboard qa session get 123 123
+  agent_example: mammoth dashboard qa session get 123 456
   unit_tests:
   - UT-DASHBOARD-QA-SESSION-GET
   contract_tests:
@@ -2979,8 +2978,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard qa session rename DASHBOARD_ID SESSION_ID --help
-  agent_example: 'mammoth dashboard qa session rename 123 123 --input ''{"body": {"params": {"title":
-    "Revenue report"}}}'''
+  agent_example: 'mammoth dashboard qa session rename 123 456 --input ''{"body": {"params": {"title": "Revenue report"}}}'''
   unit_tests:
   - UT-DASHBOARD-QA-SESSION-RENAME
   contract_tests:
@@ -3035,7 +3033,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard qa session set-visibility DASHBOARD_ID SESSION_ID --help
-  agent_example: 'mammoth dashboard qa session set-visibility 123 123 --input ''{"body": {"params": {"visibility": "<visibility>"}}}'''
+  agent_example: 'mammoth dashboard qa session set-visibility 123 456 --input ''{"body": {"params": {"visibility": "shared"}}}'''
   unit_tests:
   - UT-DASHBOARD-QA-SESSION-SET-VISIBILITY
   contract_tests:
@@ -3930,7 +3928,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard style default set --help
-  agent_example: 'mammoth dashboard style default set --input ''{"body": {"params": {"styleId": "<styleId>"}}}'''
+  agent_example: 'mammoth dashboard style default set --input ''{"body": {"params": {"styleId": "default"}}}'''
   unit_tests:
   - UT-DASHBOARD-STYLE-DEFAULT-SET
   contract_tests:
@@ -4840,7 +4838,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard templates use SLUG --help
-  agent_example: 'mammoth dashboard templates use ''<slug>'' --input ''{"body": {"params": {"project_id": 1}}}'''
+  agent_example: 'mammoth dashboard templates use revenue-overview --input ''{"body": {"params": {"project_id": 1}}}'''
   unit_tests:
   - tests/unit/test_template_bindings.py::test_use_template_posts_exact_route
   contract_tests:
@@ -5454,7 +5452,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard gallery get SLUG --help
-  agent_example: mammoth dashboard gallery get '<slug>'
+  agent_example: mammoth dashboard gallery get revenue-overview
   unit_tests:
   - UT-DASHBOARD-GALLERY-GET
   contract_tests:
@@ -5894,7 +5892,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard pbix-intent ATTACHMENT_ID TARGET_DATAVIEW_ID --help
-  agent_example: mammoth dashboard pbix-intent 123 123
+  agent_example: mammoth dashboard pbix-intent 123 456
   unit_tests:
   - UT-DASHBOARD-PBIX-INTENT
   contract_tests:
@@ -6025,7 +6023,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard engagement person DASHBOARD_ID USER_ID --help
-  agent_example: mammoth dashboard engagement person 123 123
+  agent_example: mammoth dashboard engagement person 123 456
   unit_tests:
   - UT-DASHBOARD-ENGAGEMENT-PERSON
   contract_tests:
@@ -6341,7 +6339,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard attachment-create FILE --help
-  agent_example: mammoth dashboard attachment-create sample.pbix
+  agent_example: mammoth dashboard attachment-create Sales.pbix
   unit_tests:
   - UT-DASHBOARD-ATTACHMENT-CREATE
   contract_tests:
