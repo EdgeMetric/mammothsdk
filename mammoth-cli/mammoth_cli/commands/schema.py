@@ -461,6 +461,11 @@ _COMMAND_DISCOVERY_PURPOSES = {
     # value -- and neither can be dropped as a data word anyway, since
     # view.data.explore's own purpose text already uses both for its trend
     # feature.
+    # The basic read: the first thing anyone asks of a view.
+    "view.data.get": (
+        "read show the rows of the table see data records preview browse fetch look at first rows "
+        "page limit offset, read only"
+    ),
     "view.data.aggregate": (
         "group and sum totals by month week without changing the pipeline "
         "sum total figure answer a question, read only"
