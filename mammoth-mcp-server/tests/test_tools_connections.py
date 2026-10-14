@@ -11,6 +11,7 @@ from typing import Any
 import pytest
 from mcp.server.mcpserver.exceptions import ToolError
 
+from mammoth_mcp_server.consts import ConnectionFields
 from mammoth_mcp_server.server import mcp_server, register_tools
 
 from .helpers import WORKSPACE, a_fake_api, as_caller, call_tool, run
@@ -21,6 +22,12 @@ IDS = {"workspace_id": WORKSPACE, "project_id": PROJECT}
 ON_POSTGRES = {**IDS, "connector_key": "postgres", "connection_key": KEY}
 DATASETS = f"/workspaces/{WORKSPACE}/projects/{PROJECT}/datasets"
 JOB = 41
+
+
+@pytest.fixture(autouse=True)
+def brief_check(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Keep the tests quick: the check waits on a job that may still be pulling."""
+    monkeypatch.setattr(ConnectionFields, "CHECK_SECONDS", 0.05)
 
 
 def connections_path(connector: str) -> str:
@@ -73,6 +80,7 @@ class TestPreviewQuery:
 
 def add_dataset(**arguments: Any) -> dict[str, Any]:
     # `call_tool` takes the tool's name as `name`, which this tool takes too.
+    register_tools()
     called = run(mcp_server.call_tool("add_dataset_from_connection", arguments))
     return dict(called.structured_content)
 
@@ -81,6 +89,7 @@ class TestAddDatasetFromConnection:
     def test_it_asks_mammoth_for_the_dataset_and_says_how_to_find_it(self) -> None:
         with a_fake_api() as api, as_caller():
             api.answer("POST", DATASETS, {"job_id": JOB})
+            api.answer("GET", f"/jobs/{JOB}", {"job": {"id": JOB, "status": "processing"}})
             added = add_dataset(
                 name="Sales by region",
                 table="sales",
@@ -99,10 +108,32 @@ class TestAddDatasetFromConnection:
                     "table_name": "sales",
                     "query": "select region, revenue from sales",
                 },
+                # Mammoth refuses a dataset with no schedule: this is one pull, now.
+                "schedule_properties": {
+                    "schedule_type": "moment",
+                    "first_pull_at": "now",
+                    "on_refresh_action": "replace",
+                },
             },
         }
         assert "find_new_datasets" in added["next_step"]
         assert added["since"]
+
+    def test_a_dataset_mammoth_could_not_make_is_reported_at_once(self) -> None:
+        # Left to `find_new_datasets`, a failed job reads as "nothing yet", forever.
+        failed = {
+            "job": {
+                "id": JOB,
+                "status": "failure",
+                "response": {"message": "relation sales does not exist"},
+            }
+        }
+        with a_fake_api() as api, as_caller(), pytest.raises(ToolError) as refused:
+            api.answer("POST", DATASETS, {"job_id": JOB})
+            api.answer("GET", f"/jobs/{JOB}", failed)
+            add_dataset(name="Sales", table="sales", query="select * from sales", **ON_POSTGRES)
+
+        assert "relation sales does not exist" in str(refused.value)
 
     def test_a_source_that_is_not_a_database_goes_to_connect_source(self) -> None:
         with a_fake_api() as api, as_caller(), pytest.raises(ToolError) as refused:

@@ -156,7 +156,7 @@ async def wait_for_new_datasets(ticket: dict[str, JsonValue]) -> dict[str, JsonV
 async def find_new_connection(watch_id: str) -> dict[str, JsonValue]:
     """Wait for the connection the user makes in Mammoth after `connect_source`.
 
-    Call it straight after giving the user the link. Each call waits up to 40
+    Call it straight after giving the user the link. Each call waits up to 20
     seconds; `waiting` means call again. The watch ends five minutes after
     `connect_source`, with `gave_up`.
 

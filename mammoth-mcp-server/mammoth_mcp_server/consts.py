@@ -53,10 +53,11 @@ UPLOAD_WAIT_SECONDS = 30.0
 UPLOAD_POLL_SECONDS = 1.0
 # Connecting a source takes the user two or three minutes in Mammoth, so the
 # watch for the new connection runs for five. One tool call cannot hold that
-# long, so each call holds what `TOOL_CALL_SECONDS` leaves room for, looking
-# every ten seconds, and the model or the card calls again until the watch ends.
+# long: Claude gives up on a call well inside a minute (a 40-second hold was cut
+# off), so each call holds 20 seconds, looking every ten, and the model or the
+# card calls again until the watch ends.
 CONNECT_WATCH_SECONDS = 5 * 60
-CONNECT_WAIT_SECONDS = 40.0
+CONNECT_WAIT_SECONDS = 20.0
 CONNECT_POLL_SECONDS = 10.0
 # Listing tools page by default, so one call cannot fill the model's context.
 LIST_LIMIT_DEFAULT = 50
@@ -555,6 +556,16 @@ class ConnectionFields:
     QUERY = "query"
     PROFILE = "profile"
     JOB_ID = "job_id"
+    # A dataset is one pull, now: Mammoth refuses one with no schedule. The user
+    # sets a refresh schedule in Mammoth.
+    SCHEDULE_PROPERTIES = "schedule_properties"
+    ONE_PULL_NOW = {
+        "schedule_type": "moment",
+        "first_pull_at": "now",
+        "on_refresh_action": "replace",
+    }
+    # Long enough for Mammoth to refuse the dataset; the pull itself runs on.
+    CHECK_SECONDS = 15.0
 
 
 class BoardFields:

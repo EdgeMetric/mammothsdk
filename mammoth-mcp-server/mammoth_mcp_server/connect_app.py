@@ -113,7 +113,7 @@ function takeLink(result) {
   if (found[FIELDS.watchId]) watch(found[FIELDS.watchId], name || "the source");
 }
 
-// Each call holds up to 40 seconds; the watch itself ends five minutes after the link.
+// Each call holds up to 20 seconds; the watch itself ends five minutes after the link.
 async function watch(watchId, name) {
   while (true) {
     let result;

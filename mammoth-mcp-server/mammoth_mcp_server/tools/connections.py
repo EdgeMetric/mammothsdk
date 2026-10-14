@@ -11,6 +11,7 @@ from datetime import UTC, datetime
 from mcp.server.mcpserver.exceptions import ToolError
 
 from ..consts import ConnectionFields, ConnectorFields
+from ..jobs import JobStillRunning, wait_for_job
 from ..sdk import JsonValue, build_client, read_sdk_errors
 from ..server import mcp_server
 from ..tool_kinds import DESTRUCTIVE, READS
@@ -128,12 +129,26 @@ async def add_dataset_from_connection(
             ConnectionFields.TABLE_NAME: table,
             ConnectionFields.QUERY: query,
         },
+        ConnectionFields.SCHEDULE_PROPERTIES: dict[str, JsonValue](ConnectionFields.ONE_PULL_NOW),
     }
     async with build_client(workspace_id, project_id) as client:
-        await read_sdk_errors(
+        started = await read_sdk_errors(
             client.datasets.create(spec, ConnectionFields.CREATION_TYPE, project_id=project_id)
         )
+    await check_it_started(workspace_id, started)
     return {ConnectorFields.SINCE: since, ConnectorFields.NEXT_STEP: ADDED}
+
+
+async def check_it_started(workspace_id: int, started: dict[str, JsonValue]) -> None:
+    """Wait briefly on the job, so a dataset Mammoth refuses is reported now.
+
+    Left to `find_new_datasets`, a failed job would read as "nothing yet" until
+    its watch ran out. A pull still running when the check ends is fine.
+    """
+    try:
+        await wait_for_job(workspace_id, started, ConnectionFields.CHECK_SECONDS)
+    except JobStillRunning:
+        return
 
 
 def check_query(connector_key: str, query: str) -> None:
