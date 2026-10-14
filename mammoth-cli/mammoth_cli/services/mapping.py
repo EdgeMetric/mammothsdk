@@ -347,15 +347,16 @@ def map_sdk_exception(
             details=getattr(exc, "details", None),
         )
 
+    login = profiles.login_command(profile)
     if isinstance(exc, MammothAuthError) and _is_token_expired(exc):
         return CliError(
             code=CODE_CLI_KEY_EXPIRED,
-            message="This API key has expired; run `mammoth auth login` to sign in again.",
+            message=f"This API key has expired; run `{login}` to sign in again.",
             exit_status=EXIT_AUTH,
             hint="Sign in again to get a new key.",
             details=_metadata(exc),
             request_id=exc.request_id,
-            recovery_commands=["mammoth auth login"],
+            recovery_commands=[login],
         )
 
     if isinstance(exc, MammothAuthError):
@@ -380,13 +381,13 @@ def map_sdk_exception(
                     if in_app
                     else (
                         "Your sign-in may have expired or been revoked: "
-                        "run `mammoth auth login` again, or check the API token."
+                        f"run `{login}` again, or check the API token."
                     )
                 )
             ),
             details=_metadata(exc),
             request_id=exc.request_id,
-            recovery_commands=[] if in_app else ["mammoth auth login"],
+            recovery_commands=[] if in_app else [login],
         )
 
     if isinstance(exc, MammothPipelineTimeoutError):
@@ -578,27 +579,28 @@ def map_sdk_exception(
                 code=CODE_CLI_KEYS_NEED_BROWSER_SIGN_IN,
                 message=(
                     "This call used an API token, and the server refuses API tokens when "
-                    "creating or listing API keys; run `mammoth auth login` (browser "
+                    f"creating or listing API keys; run `{login}` (browser "
                     "sign-in) and try again."
                 ),
                 exit_status=EXIT_AUTH,
                 hint="Sign in with the browser, not an API token, to manage API keys.",
                 details=details,
                 request_id=request_id,
-                recovery_commands=["mammoth auth login"],
+                recovery_commands=[login],
             )
         if status == 403 and _is_cli_keys_refused(exc):
+            token_login = profiles.login_command(profile, " --method token")
             return CliError(
                 code=CODE_CLI_KEYS_NOT_ALLOWED,
                 message=(
                     "This server doesn't allow CLI-created keys yet; create one in "
-                    "Settings → API keys, then `mammoth auth login --method token`."
+                    f"Settings → API keys, then `{token_login}`."
                 ),
                 exit_status=EXIT_AUTH,
                 hint="A browser sign-in cannot create API keys on this server.",
                 details=details,
                 request_id=request_id,
-                recovery_commands=["mammoth auth login --method token"],
+                recovery_commands=[token_login],
             )
         if status == 403:
             return CliError(
