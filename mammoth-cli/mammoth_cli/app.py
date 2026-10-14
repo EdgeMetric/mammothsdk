@@ -1307,6 +1307,11 @@ _HELP_NOTES = {
     ),
 }
 
+#: Commands whose ``--input`` fields apply to one path only; the label says which.
+_INPUT_FIELDS_LABEL = {
+    "auth.login": "Input fields (--method token only; --device and --method oauth take none)",
+}
+
 
 def _command_help(command_id: str, record: dict[str, Any] | None) -> str | None:
     """Build a command's user-facing ``--help`` summary.
@@ -1335,7 +1340,8 @@ def _command_help(command_id: str, record: dict[str, Any] | None) -> str | None:
         parts.append(f"Example: {example}")
     fields = _help_input_fields(command_id)
     if fields:
-        parts.append(f"Input fields: {fields}")
+        label = _INPUT_FIELDS_LABEL.get(command_id, "Input fields")
+        parts.append(f"{label}: {fields}")
     return "\n\n".join(parts) or None
 
 

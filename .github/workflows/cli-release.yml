@@ -118,6 +118,12 @@ jobs:
       - name: Install in-repo SDK (editable)
         run: poetry run pip install -e ..
 
+      # A release that calls a route production does not serve fails here. It reads
+      # the public OpenAPI document (no credentials) and ignores routes production
+      # serves that this release does not use.
+      - name: Gate — every route the CLI calls is served by production
+        run: poetry run python scripts/sync_openapi.py --check-served
+
       - name: Full gate (lint, type, tests, packaging)
         run: |
           set -eu

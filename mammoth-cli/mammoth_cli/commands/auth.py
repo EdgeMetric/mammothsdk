@@ -38,6 +38,7 @@ from mammoth_cli.runtime import executor
 from mammoth_cli.runtime import options as go
 from mammoth_cli.runtime.input_loader import load_input_document
 from mammoth_cli.runtime.invocation import Invocation
+from mammoth_cli.runtime.token_scope import pinned_project
 from mammoth_cli.services import factory as service_factory
 
 _STORAGE_MODES = ("auto", "keyring", "file")
@@ -344,7 +345,7 @@ def _choose_by_keypress() -> str:
         typer.echo("Choose: ", nl=False, err=True)
         try:
             key = typer.getchar()
-        except (KeyboardInterrupt, EOFError):
+        except KeyboardInterrupt, EOFError:
             typer.echo("", err=True)
             raise (_bad_choice(key) if key.strip() else _no_choice()) from None
         if key in _METHOD_KEYS:
@@ -360,7 +361,11 @@ def _no_choice(label: str = "choice") -> CliError:
         code="login_input_required",
         message=f"No {label} was entered.",
         exit_status=EXIT_USAGE,
-        hint="Pass --method oauth|device|token, or --input FILE for a non-interactive login.",
+        hint=(
+            "Pass --device (a code approved on another device), --method oauth --no-browser "
+            "(a sign-in URL), or --input FILE for a non-interactive login."
+        ),
+        recovery_commands=["mammoth auth login --device"],
     )
 
 
@@ -501,14 +506,17 @@ def _run_login(
     else:
         raise CliError(
             code="login_input_required",
-            message="Non-interactive login requires --input.",
+            message="Non-interactive login needs --device, --method oauth --no-browser or --input.",
             exit_status=EXIT_USAGE,
             hint=(
                 "Interactive prompting is off because "
                 + "; ".join(blockers)
-                + ". Pass --input FILE|- (with --input-format for stdin), "
+                + ". Pass --device to get a link and code the user approves on any other device, "
+                "or --method oauth --no-browser to get a sign-in URL, "
+                "or --input FILE|- (with --input-format for stdin) with an API token, "
                 "or run in an interactive terminal."
             ),
+            recovery_commands=["mammoth auth login --device"],
         )
 
     resolved_base_url = resolve_base_url(effective_prefix)
@@ -671,6 +679,7 @@ def _run_status(invocation: Invocation, *, check: bool) -> tuple[dict[str, Any],
         try:
             service.check_connection()
             data["connected"] = True
+            data["token_project"] = pinned_project(service)
         finally:
             service.close()
         data["checked"] = True
@@ -695,7 +704,8 @@ def auth_status(
 ) -> None:
     """Report local authentication state for one profile.
 
-    Makes no network call unless `--check` is given.
+    Makes no network call unless `--check` is given. With `--check` it also reports
+    `token_project`: the project id the token is limited to, or null when it is not limited.
     """
     invocation = go.make_invocation(
         "auth.status",

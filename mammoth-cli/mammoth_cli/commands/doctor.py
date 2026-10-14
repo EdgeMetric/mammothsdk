@@ -25,6 +25,8 @@ from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.runtime import embedded, runlog, updates
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.session import open_service, resolved_project
+from mammoth_cli.runtime.token_scope import pinned_project
+from mammoth_cli.services.protocol import MammothService
 
 HandlerResult = tuple[Any, dict[str, Any]]
 
@@ -137,6 +139,38 @@ def _visible_projects(service: Any) -> list[dict[str, Any]]:
     return [p for p in service.list_all_projects() if isinstance(p, dict)]
 
 
+def _token_scope(service: MammothService) -> CliError | int | None:
+    """The project the token is limited to, or the error that kept doctor from learning it."""
+    try:
+        return pinned_project(service)
+    except CliError as error:
+        return error
+
+
+def _scope_check(scope: CliError | int | None, selected_project: int | None) -> dict[str, Any]:
+    """Report the project the token is limited to; a limited token must work in that project."""
+    if isinstance(scope, CliError):
+        return {
+            **_check(
+                "token_scope", False, f"could not read the token's project scope: {scope.message}"
+            ),
+            "pinned_project_id": None,
+        }
+    if scope is None:
+        return {
+            **_check("token_scope", True, "token is not limited to a project"),
+            "pinned_project_id": None,
+        }
+    if selected_project not in (None, scope):
+        detail = (
+            f"token is limited to project {scope} but project {selected_project} is selected; "
+            f"use --project {scope}"
+        )
+        return {**_check("token_scope", False, detail), "pinned_project_id": scope}
+    detail = f"token is limited to project {scope}; it cannot create or open other projects"
+    return {**_check("token_scope", True, detail), "pinned_project_id": scope}
+
+
 def _nearest_existing(path: Path) -> Path:
     """Return ``path`` or its closest existing ancestor.
 
@@ -158,7 +192,7 @@ def _wait_seconds(invocation: Invocation) -> float:
     document = invocation.load_input() or {}
     try:
         value = float(document.get("wait") or 0)
-    except (TypeError, ValueError):
+    except TypeError, ValueError:
         raise CliError(
             code="invalid_argument",
             message="wait must be a number of seconds.",
@@ -283,6 +317,7 @@ def doctor(invocation: Invocation) -> HandlerResult:
     connection_ok = False
     connection_detail = "not attempted"
     projects: list[dict[str, Any]] | None = None
+    scope: CliError | int | None = None
     wait_seconds = _wait_seconds(invocation)
     if auth_ok:
         started = time.monotonic()
@@ -293,6 +328,7 @@ def doctor(invocation: Invocation) -> HandlerResult:
                     with open_service(invocation) as (service, _auth):
                         service.check_connection()
                         projects = _visible_projects(service)
+                        scope = _token_scope(service)
                     break
                 except CliError as error:
                     # A 502/504 or timeout during an outage: with ``wait``,
@@ -324,6 +360,7 @@ def doctor(invocation: Invocation) -> HandlerResult:
     # access is claimed by nobody here: the first write reports it.
     selected_project = resolved_project(invocation)
     if projects is not None:
+        checks.append(_scope_check(scope, selected_project))
         visible_ids = [p.get("id") for p in projects]
         checks.append(
             {

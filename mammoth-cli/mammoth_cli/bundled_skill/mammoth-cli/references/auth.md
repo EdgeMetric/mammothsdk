@@ -19,8 +19,10 @@ created without a project.
 reports `credential: oauth` and `expires_at`. A refresh that fails exits 4 with `login_expired`:
 tell the operator to run `mammoth auth login` again. `--no-browser` prints the URL. `--device` is the sign-in for a
 machine with no browser: it prints a short code and a URL for the operator to approve on another
-device, then polls. Browser and device sign-in are for the operator's own terminal; an agent never
-runs them. A key made with `token create` expires after 30 days: `cli_key_expired` means run
+device, then polls. An agent may run `mammoth auth login --device` (and only that): it prints the
+link and code on stderr, the agent shows both to the user, and the command exits once the user has
+approved on their device. Browser sign-in (`--method oauth`) and token login are for the operator's
+own terminal; an agent never runs them. A key made with `token create` expires after 30 days: `cli_key_expired` means run
 `mammoth auth login` again. `auth logout` also revokes the
 connection on the server, and warns (still clearing local state) if it cannot.
 
@@ -66,9 +68,12 @@ human operator:
 2. Wait for the operator to confirm, then re-run
    `mammoth auth status --profile PROFILE` and
    `mammoth doctor --profile PROFILE`.
-3. Do not ask the operator to paste the token into chat. Do not run
-   `auth login` yourself, with or without `--input`, unless the operator has
-   explicitly given you a protected `0600` credential file path to use.
+3. Do not ask the operator to paste the token into chat. The one login an agent
+   may run itself is `mammoth auth login --device`: it prints a link and a short
+   code on stderr; show both to the operator, wait for the command to exit, then
+   re-run `auth status`. Do not run any other `auth login` (browser, `--method token`,
+   `--input`), unless the operator has explicitly given you a protected `0600`
+   credential file path to use.
 
 The only supported configuration is the API token and an optional one-label server prefix (default `app`). There is no base-url
 override.

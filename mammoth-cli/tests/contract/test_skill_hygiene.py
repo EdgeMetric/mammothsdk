@@ -69,3 +69,19 @@ def test_new_dataset_examples_do_not_invent_a_dataset_name() -> None:
         if '"dataset_name"' in body and "target_ds_id" not in body
     ]
     assert not offenders, offenders
+
+
+def test_agents_are_told_they_may_run_the_device_login_and_nothing_else() -> None:
+    """I1: every agent-facing text allows `auth login --device` and keeps the ban on the rest."""
+    from mammoth_cli.skills.steering import STEERING_BODY
+
+    docs = (SKILL_DIR.parents[2] / "docs" / "agent-prompt.md").read_text(encoding="utf-8")
+    texts = {
+        "steering": STEERING_BODY,
+        "SKILL.md": (SKILL_DIR / "SKILL.md").read_text(encoding="utf-8"),
+        "auth.md": (SKILL_DIR / "references" / "auth.md").read_text(encoding="utf-8"),
+        "agent-prompt.md": docs,
+    }
+    for name, text in texts.items():
+        assert "mammoth auth login --device" in text, name
+        assert "never run `auth login` yourself" not in text, name

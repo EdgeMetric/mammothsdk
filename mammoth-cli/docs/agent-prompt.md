@@ -52,8 +52,10 @@ ONBOARDING (run in bash, in this order; stop at the first failure and report it)
    server other than app, and `--profile NAME` (plus
    `export MAMMOTH_PROFILE=NAME` for yourself) only when it names a profile.
    Never ask for the token in chat, never read one from a file or
-   environment variable, never run `auth login` yourself. Re-run
-   `mammoth auth status` after they confirm.
+   environment variable. If the operator would rather not handle a token, run
+   `mammoth auth login --device` yourself: it prints a link and a short code; show
+   both to the operator, wait for the command to exit, and never run any other
+   `auth login` method. Re-run `mammoth auth status` after they confirm or it exits.
 3. mammoth doctor
    Every check must be ok. If `meta.update_available` is set on any envelope,
    run the `command` it names before continuing.
@@ -104,7 +106,8 @@ FINISH
   leaves the machine and returns one stable envelope; the agent branches on
   `error.code`, not on stack traces.
 - Nothing secret passes through the agent: credentials live in the operator's
-  keyring or a `0600` profile file, and `auth login` is the operator's step.
+  keyring or a `0600` profile file, and `auth login` is the operator's step (an agent
+  may only start the device flow, `auth login --device`, and show the operator its link and code).
 - The skill on disk is versioned with the binary (`mammoth skill path`), so
   the agent reads the guidance that matches the commands it has.
 - Files stream from local disk, so uploads cost no context and no
