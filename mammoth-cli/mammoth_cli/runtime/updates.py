@@ -24,6 +24,11 @@ What a caller sees:
   sandboxes whose installed version must not change.
 * ``MAMMOTH_NO_UPDATE_CHECK=1`` disables the check, the hint and the update.
 * ``upgrade`` and ``doctor`` never start an update.
+* a pinned install is never updated by itself. ``mammoth upgrade --version X``
+  and ``mammoth-install.sh --version X`` record the pin (``pin.json`` next to
+  the cache); a plain ``mammoth upgrade`` (the latest) clears it. While it is
+  set the daily check still runs and ``meta.update_available`` still shows, so
+  the newer release is visible but only an explicit ``mammoth upgrade`` installs it.
 
 ``MAMMOTH_UPDATE_CACHE`` overrides the cache file path (tests and sandboxes).
 """
@@ -87,6 +92,40 @@ def cache_path() -> Path:
     if override:
         return Path(override).expanduser()
     return Path(platformdirs.user_state_dir("mammoth-cli", "Mammoth")) / "update-check.json"
+
+
+def pin_path() -> Path:
+    return cache_path().with_name("pin.json")
+
+
+def read_pin() -> str | None:
+    """The release this install is pinned to, or None when it follows the latest."""
+    try:
+        document = json.loads(pin_path().read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+    version = document.get("version") if isinstance(document, dict) else None
+    return version if isinstance(version, str) and version else None
+
+
+def write_pin(version: str) -> bool:
+    """Record that this install is pinned to ``version``; False when it cannot be written."""
+    path = pin_path()
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        tmp = path.with_suffix(".tmp")
+        tmp.write_text(json.dumps({"version": version}) + "\n", encoding="utf-8")
+        os.replace(tmp, path)
+    except OSError:
+        return False
+    return True
+
+
+def clear_pin() -> None:
+    try:
+        pin_path().unlink()
+    except OSError:
+        return
 
 
 def _version_key(version: str) -> tuple[int, ...]:
@@ -169,7 +208,7 @@ def available_update(command_id: str | None = None) -> dict[str, Any] | None:
     latest = document.get("latest")
     if not isinstance(latest, str) or not is_newer(latest):
         return None
-    if auto_upgrade_enabled() and document.get("upgrade_failed") != latest:
+    if auto_upgrade_enabled() and read_pin() is None and document.get("upgrade_failed") != latest:
         # The next daily check installs it; a notice would only repeat itself.
         return None
     return {"current": __version__, "latest": latest, "command": UPGRADE_COMMAND}
@@ -269,9 +308,13 @@ def auto_upgrade(latest: str, run_log: Any = None) -> dict[str, Any] | None:
 
     Returns a record of what happened (also written to ``run_log`` when
     given), or ``None`` when nothing was attempted: auto-update is off,
-    ``latest`` is not newer, or it was already installed. Never raises.
+    ``latest`` is not newer, the install is pinned, or it was already
+    installed. Never raises.
     """
     if not auto_upgrade_enabled() or not is_newer(latest):
+        return None
+    if read_pin() is not None:
+        # A pinned install stays on its release; ``available_update`` still shows the hint.
         return None
     if (read_cache() or {}).get("upgraded_to") == latest:
         return None

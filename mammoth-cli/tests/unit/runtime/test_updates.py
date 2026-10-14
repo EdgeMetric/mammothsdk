@@ -283,3 +283,116 @@ def test_background_refresh_skips_commands_that_check_pypi_themselves(
 ) -> None:
     updates.refresh_in_background("doctor")
     assert not check_enabled.exists()
+
+
+# --- a pinned install is never auto-updated --------------------------------
+
+
+def _fake_installs(monkeypatch: pytest.MonkeyPatch) -> list[list[str]]:
+    ran: list[list[str]] = []
+
+    def fake_run(argv: list[str]) -> subprocess.CompletedProcess[str]:
+        ran.append(argv)
+        return subprocess.CompletedProcess(argv, 0, "", "")
+
+    monkeypatch.setattr(upgrade_cmd, "run_upgrade", fake_run)
+    monkeypatch.setattr(upgrade_cmd, "detect_manager", lambda: upgrade_cmd.MANAGER_PIP)
+    monkeypatch.setattr(upgrade_cmd, "installed_version", lambda: None)
+    return ran
+
+
+def _invocation() -> Any:
+    from mammoth_cli.runtime.invocation import Invocation
+
+    return Invocation(command_id="upgrade", yes=True, no_input=True)
+
+
+def test_a_pinned_install_is_not_auto_upgraded(
+    check_enabled: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.delenv("MAMMOTH_NO_AUTO_UPDATE")
+    _write(check_enabled, "99.0.0")
+    ran = _fake_installs(monkeypatch)
+    assert updates.write_pin("1.2.3")
+    assert updates.auto_upgrade("99.0.0") is None
+    assert ran == []
+    assert "upgraded_to" not in json.loads(check_enabled.read_text())
+
+
+def test_the_update_hint_still_shows_for_a_pinned_install(
+    check_enabled: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.delenv("MAMMOTH_NO_AUTO_UPDATE")
+    _write(check_enabled, "99.0.0")
+    # Auto-update would install it: no hint. Pinned, it will not: the hint shows.
+    assert updates.available_update("project.list") is None
+    updates.write_pin("1.2.3")
+    update = updates.available_update("project.list")
+    assert update is not None and update["latest"] == "99.0.0"
+
+
+def test_upgrade_with_a_version_writes_the_pin(
+    check_enabled: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    ran = _fake_installs(monkeypatch)
+    upgrade_cmd.perform(_invocation(), check=False, target_version="2.0.5")
+    assert ran and ran[0][-1] == "mammoth-cli==2.0.5"
+    assert updates.read_pin() == "2.0.5"
+
+
+def test_a_plain_upgrade_clears_the_pin(
+    check_enabled: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _fake_installs(monkeypatch)
+    monkeypatch.setattr(upgrade_cmd, "latest_version", lambda: "999.0.0")
+    updates.write_pin("2.0.5")
+    upgrade_cmd.perform(_invocation(), check=False, target_version=None)
+    assert updates.read_pin() is None
+
+
+def test_a_failed_pinned_install_leaves_the_pin_alone(
+    check_enabled: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from mammoth_cli.errors.envelope import CliError
+
+    monkeypatch.setattr(upgrade_cmd, "detect_manager", lambda: upgrade_cmd.MANAGER_PIP)
+    monkeypatch.setattr(
+        upgrade_cmd,
+        "run_upgrade",
+        lambda argv: subprocess.CompletedProcess(argv, 1, "", "boom"),
+    )
+    with pytest.raises(CliError):
+        upgrade_cmd.perform(_invocation(), check=False, target_version="2.0.5")
+    assert updates.read_pin() is None
+
+
+def test_the_installer_records_a_pin_without_installing(
+    check_enabled: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    ran = _fake_installs(monkeypatch)
+    data, _meta = upgrade_cmd.perform(
+        _invocation(), check=False, target_version=None, record_pin="2.0.5"
+    )
+    assert data["action"] == "pinned" and ran == []
+    assert updates.read_pin() == "2.0.5"
+
+
+def test_the_installer_without_a_version_drops_the_pin(
+    check_enabled: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _fake_installs(monkeypatch)
+    updates.write_pin("2.0.5")
+    data, _meta = upgrade_cmd.perform(
+        _invocation(), check=False, target_version=None, record_pin="none"
+    )
+    assert data["action"] == "unpinned"
+    assert updates.read_pin() is None
+
+
+def test_a_malformed_pin_is_refused(check_enabled: Path) -> None:
+    from mammoth_cli.errors.envelope import CliError
+
+    with pytest.raises(CliError) as refused:
+        upgrade_cmd.perform(_invocation(), check=False, target_version=None, record_pin="x;rm")
+    assert refused.value.code == "pin_not_recorded"
+    assert updates.read_pin() is None

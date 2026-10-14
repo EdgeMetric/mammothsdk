@@ -40,7 +40,7 @@ mammoth --version
 
 The installer bootstraps its own `uv` tool environment when needed and installs
 the bundled agent skill. For an exact, reproducible release use `--version
-X.Y.Z`; the installer has no normal prompts. See
+X.Y.Z` (a pinned install is not auto-updated); the installer has no normal prompts. See
 [Installation](https://github.com/EdgeMetric/mammothsdk/blob/main/mammoth-cli/docs/installation.md) for that option and the SDK-only pip
 installation path.
 
@@ -221,7 +221,8 @@ finished and written its output, a detached process asks PyPI and installs a
 newer release through the same package manager as `mammoth upgrade`. It never
 delays or fails a command, prints nothing, and writes any failure to the run
 log. `meta.update_available` (and the stderr line in human output) appears only
-when a newer release exists and will not be installed by itself. Set
+when a newer release exists and will not be installed by itself (auto-update off,
+a pinned install, or a failed install). Set
 `MAMMOTH_NO_AUTO_UPDATE=1` to keep the check but never install (CI, containers,
 pinned environments), or `MAMMOTH_NO_UPDATE_CHECK=1` to turn the check off (see
 [Upgrade](https://github.com/EdgeMetric/mammothsdk/blob/main/mammoth-cli/docs/upgrade.md)).

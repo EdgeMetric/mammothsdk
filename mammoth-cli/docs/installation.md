@@ -45,7 +45,8 @@ sequence is in [Agent and CI operation](agents.md).
 
 The bare command always installs the newest release on PyPI, and upgrades an
 existing install to it. Use `--version X.Y.Z` only when a release record, test, or deployment
-requires an exact artifact. The installer has no normal prompts, so
+requires an exact artifact; a pinned install is not updated automatically until
+`mammoth upgrade --yes` (or an installer run without `--version`) moves it. The installer has no normal prompts, so
 `--noninteractive` is not needed.
 
 ```bash
