@@ -2,6 +2,7 @@
 
 from . import (
     automations,
+    connections,
     dashboards,
     data,
     discovery,
@@ -16,6 +17,7 @@ from . import (
 
 __all__ = [
     "automations",
+    "connections",
     "dashboards",
     "data",
     "discovery",

@@ -42,6 +42,11 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Added (mammoth-mcp-server 0.2.4)
 
 - The user can bring data in from a database or an app over MCP. `list_connectors` lists the sources Mammoth connects to, and which the workspace's plan includes. `connect_source` gives the user the page in Mammoth that opens "Add data" on that connector in the project; they sign in to the source and pick the data there, so no credential passes through the model. `find_new_datasets` then reports the datasets the project gained, with each one's view and link, as `check_upload` does for a file. All three are read-only: the change is the user's own, in Mammoth.
+- Only a project admin may connect a source, so `connect_source` checks the user's role on the project first. Anyone else gets no link, and `next_step` says who can connect it.
+- A client with MCP Apps draws a "Connect <source> in Mammoth" button under `connect_source`, which opens the page through the host. A client without MCP Apps shows `mammoth_url` as before. The link carries `from=assistant`, so Mammoth's data page can tell the user to go back to the chat once the data is added.
+- `find_new_datasets` waits up to 30 seconds for the dataset to come in, as `check_upload` waits for a file, so the user does not have to say they are done.
+- Once a project has a database connection, data comes in through it without leaving the chat. `list_connections` lists the project's connections to a source. `preview_query` runs a query on one and returns the first rows, and `add_dataset_from_connection` makes a dataset from that query. Both send SQL to the user's own database, which Mammoth does not make read-only, so they are marked destructive and refuse a query that does not start with SELECT or WITH. Postgres, MySQL, SQL Server, Redshift, Snowflake, Databricks, SAP HANA and BigQuery are supported.
+- `connect_source` and `find_new_datasets` record the connector key and how many datasets came in, so we can see which connectors people use. The key is a name from Mammoth's own list of connectors, and no other argument is recorded.
 
 ### Added (mammoth-mcp-server 0.2.3)
 

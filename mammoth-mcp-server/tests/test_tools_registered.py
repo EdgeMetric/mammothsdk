@@ -5,6 +5,7 @@ from mammoth_mcp_server.server import mcp_server, register_tools
 from .helpers import WORKSPACE, a_fake_api, as_caller, call_tool, run
 
 TOOLS = {
+    "add_dataset_from_connection",
     "add_export",
     "aggregate_data",
     "add_transformations",
@@ -36,6 +37,7 @@ TOOLS = {
     "get_view",
     "interpret_file",
     "list_automations",
+    "list_connections",
     "list_connectors",
     "list_dashboard_tags",
     "list_dashboards",
@@ -46,6 +48,7 @@ TOOLS = {
     "list_views",
     "list_workspaces",
     "manage_draft",
+    "preview_query",
     "preview_transformation",
     "publish_dashboard",
     "request_upload",
@@ -97,6 +100,7 @@ READ_ONLY = {
     "get_transformation_schema",
     "get_view",
     "list_automations",
+    "list_connections",
     "list_connectors",
     "list_dashboard_tags",
     "list_dashboards",
@@ -110,6 +114,7 @@ READ_ONLY = {
 }
 # Deletes, sends rows out, publishes, sets something to run, or throws data away.
 DESTRUCTIVE = {
+    "add_dataset_from_connection",
     "add_export",
     "create_automation",
     "delete_automation",
@@ -119,6 +124,7 @@ DESTRUCTIVE = {
     "delete_transformation_step",
     "delete_views",
     "manage_draft",
+    "preview_query",
     "publish_dashboard",
     "review_unreadable_rows",
     "run_pipeline",
@@ -144,7 +150,13 @@ def test_every_tool_says_whether_it_changes_anything() -> None:
 
 def test_tools_that_send_data_out_or_publish_say_to_ask_the_user_first() -> None:
     tools = offered()
-    for name in ("add_export", "publish_dashboard", "create_automation"):
+    for name in (
+        "add_export",
+        "publish_dashboard",
+        "create_automation",
+        "preview_query",
+        "add_dataset_from_connection",
+    ):
         assert "Ask the user first" in tools[name].description, name  # type: ignore[attr-defined]
 
 

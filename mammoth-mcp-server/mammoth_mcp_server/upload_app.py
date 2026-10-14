@@ -18,10 +18,11 @@ when it is built, so this tool has to be bound before the server exists.
 import json
 from string import Template
 
-from mcp.server.apps import Apps, ResourceCsp
+from mcp.server.apps import ResourceCsp
 from mcp.server.auth.middleware.auth_context import get_access_token
 from mcp.server.mcpserver.exceptions import ToolError
 
+from .chat_apps import chat_apps
 from .config import MCP_UPLOAD_URL, UPLOAD_ORIGIN
 from .consts import (
     UPLOAD_APP_URI,
@@ -33,8 +34,6 @@ from .consts import (
 from .sdk import JsonValue, check_project, own_project
 from .tool_kinds import CHANGES
 from .upload_tickets import mint_ticket
-
-upload_app = Apps()
 
 # `$names` are filled by `render_app`; the script uses no `$` of its own.
 UPLOAD_APP = Template("""\
@@ -222,7 +221,7 @@ def render_app() -> str:
     return UPLOAD_APP.substitute(fields=json.dumps(fields))
 
 
-upload_app.add_html_resource(
+chat_apps.add_html_resource(
     UPLOAD_APP_URI,
     render_app(),
     name="Mammoth upload",
@@ -231,7 +230,7 @@ upload_app.add_html_resource(
 )
 
 
-@upload_app.tool(resource_uri=UPLOAD_APP_URI, title="Request upload", annotations=CHANGES)
+@chat_apps.tool(resource_uri=UPLOAD_APP_URI, title="Request upload", annotations=CHANGES)
 async def request_upload(workspace_id: int, project_id: int | None = None) -> dict[str, JsonValue]:
     """Let the user upload files from their own machine.
 

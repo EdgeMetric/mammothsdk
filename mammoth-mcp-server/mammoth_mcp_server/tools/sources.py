@@ -2,41 +2,32 @@
 
 Connecting a source means signing in to it, and that stays with the user, in
 Mammoth: no password or token passes through a model. So `connect_source`
-hands the user the page that opens the connector in their project, and
-`find_new_datasets` finds what the project gained once they are done. From
+(in `connect_app`) hands the user the page that opens the connector in their
+project, and `find_new_datasets` finds what the project gained once they are done. From
 there a dataset is read, transformed and built on like an uploaded one, and
 Mammoth refreshes it on the schedule the user set when they brought it in.
 """
 
-from datetime import UTC, datetime
-from urllib.parse import urlencode
+import asyncio
+import time
 
 from mcp.server.mcpserver.exceptions import ToolError
 
 from ..consts import (
+    CONNECT_POLL_SECONDS,
+    CONNECT_WAIT_SECONDS,
     LIST_LIMIT_DEFAULT,
-    MAMMOTH_DATA_URL,
     ApiPaths,
     ConnectorFields,
-    ListFields,
     UploadFields,
 )
-from ..sdk import JsonValue, build_client, read_sdk_errors, request_api
+from ..sdk import JsonValue, build_client, request_api
 from ..server import mcp_server
 from ..shape import tidy_page
+from ..telemetry import Events, TelemetryFields, record
 from ..tool_kinds import READS
 from ..upload_report import read_time, report_upload
 
-CHECK_THE_KEY = "Check the key with `list_connectors`."
-IN_MAMMOTH = (
-    "Give the user `mammoth_url`. In Mammoth they sign in to the source, pick"
-    " the data to bring in and, if they like, how often to refresh it. When"
-    " they say it is done, call `find_new_datasets` with `since`."
-)
-OFF_THE_PLAN = (
-    " This connector is not on the workspace's plan: Mammoth offers the upgrade"
-    " on that page. Tell the user before they open it."
-)
 NOT_A_TIME = (
     "`since` must be the time `connect_source` returned, such as 2026-10-14T09:00:00+00:00."
 )
@@ -80,59 +71,14 @@ async def list_connectors(
     return tidy_page(page, ConnectorFields.CONNECTORS, limit)
 
 
-@mcp_server.tool(title="Connect a data source", annotations=READS)
-async def connect_source(
-    workspace_id: int, project_id: int, connector_key: str | None = None
-) -> dict[str, JsonValue]:
-    """Give the user the page in Mammoth where they connect a source and bring its data in.
-
-    Nothing is connected here: the user signs in to the source themselves, in
-    Mammoth. Use this when the user wants data from a database or an app
-    rather than a file; for a file, use `request_upload`.
-
-    Args:
-        workspace_id: Which workspace to act in.
-        project_id: Which project the data goes into.
-        connector_key: The connector's `name_key`, as `list_connectors` lists
-            it, such as "postgres" or "hubspot". Omit to let the user pick one.
-
-    Returns:
-        `mammoth_url`: the page to give the user. `since`: the time to pass to
-        `find_new_datasets` once they are done. `next_step`: what to do now.
-        `connector`: its `key` and `name`, when one was named.
-    """
-    handed: dict[str, JsonValue] = {ConnectorFields.SINCE: datetime.now(UTC).isoformat()}
-    link: dict[str, str] = {ConnectorFields.ACTION: ConnectorFields.ADD_CONNECTOR}
-    next_step = IN_MAMMOTH
-    if connector_key is not None:
-        connector = await read_connector(workspace_id, connector_key)
-        link[ConnectorFields.CONNECTOR] = connector_key
-        handed[ConnectorFields.CONNECTOR] = {
-            ConnectorFields.SHOWN_KEY: connector_key,
-            ConnectorFields.SHOWN_NAME: connector.get(ConnectorFields.NAME),
-        }
-        if connector.get(ConnectorFields.AVAILABLE) is False:
-            next_step += OFF_THE_PLAN
-    page = MAMMOTH_DATA_URL.format(workspace_id=workspace_id, project_id=project_id)
-    handed[ListFields.MAMMOTH_URL] = f"{page}?{urlencode(link)}"
-    handed[ConnectorFields.NEXT_STEP] = next_step
-    return handed
-
-
-async def read_connector(workspace_id: int, connector_key: str) -> dict[str, JsonValue]:
-    """The connector Mammoth has under this key, or a refusal that says where to look."""
-    async with build_client(workspace_id) as client:
-        try:
-            return await read_sdk_errors(client.connectors.get(connector_key))
-        except ToolError as refused:
-            raise ToolError(f"{refused}. {CHECK_THE_KEY}") from refused
-
-
 @mcp_server.tool(title="Find new datasets", annotations=READS)
 async def find_new_datasets(workspace_id: int, project_id: int, since: str) -> dict[str, JsonValue]:
     """Find the datasets a project gained since a time: what the user brought in from a source.
 
-    Call this when the user says they have connected the source in Mammoth.
+    Call this straight after giving the user the link. It waits while they
+    connect the source, so do not end your turn asking them to say when they
+    are done. `waiting` means nothing came in before the wait ran out: call
+    again if they are still at it; after a couple of rounds say you are waiting.
 
     Args:
         workspace_id: Which workspace the project is in.
@@ -150,13 +96,35 @@ async def find_new_datasets(workspace_id: int, project_id: int, since: str) -> d
         read_time(since)
     except ValueError as unread:
         raise ToolError(NOT_A_TIME) from unread
-    report = await report_upload(
+    report = await wait_for_new_datasets(
         {
             UploadFields.UPLOADED_AT: since,
             UploadFields.WORKSPACE_ID: workspace_id,
             UploadFields.PROJECT_ID: project_id,
         }
     )
-    if not report[UploadFields.FILES]:
-        report[UploadFields.STATUS] = UploadFields.WAITING
+    found = report[UploadFields.FILES]
+    record(
+        Events.NEW_DATASETS,
+        **{
+            TelemetryFields.STATUS: report[UploadFields.STATUS],
+            TelemetryFields.DATASETS: len(found) if isinstance(found, list) else 0,
+        },
+    )
     return report
+
+
+async def wait_for_new_datasets(ticket: dict[str, JsonValue]) -> dict[str, JsonValue]:
+    """What the project gained, once it is all in or the wait runs out.
+
+    Answering at once ends the model's turn, and the user would then have to
+    start another one just to say they are done.
+    """
+    give_up_at = time.monotonic() + CONNECT_WAIT_SECONDS
+    while True:
+        report = await report_upload(ticket)
+        if not report[UploadFields.FILES]:
+            report[UploadFields.STATUS] = UploadFields.WAITING
+        if report[UploadFields.STATUS] == UploadFields.DONE or time.monotonic() >= give_up_at:
+            return report
+        await asyncio.sleep(CONNECT_POLL_SECONDS)

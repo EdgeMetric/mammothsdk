@@ -22,6 +22,7 @@ MCP_INSTRUCTIONS = (
 # The same upload, drawn in the chat by a client that speaks MCP Apps. The host
 # lets the page's frame fetch only from the origins its resource names.
 UPLOAD_APP_URI = "ui://mammoth/upload.html"
+CONNECT_APP_URI = "ui://mammoth/connect.html"
 # Where the user settles, in the web app, what an upload waits on and no tool can.
 MAMMOTH_PROJECT_URL = f"{APP_URL}/#/workspaces/{{workspace_id}}/projects/{{project_id}}"
 # The pages a view and a dataset open on, as the web app routes them.
@@ -50,6 +51,10 @@ UPLOAD_SECONDS = 30 * 60
 # to leave `TOOL_CALL_SECONDS` room for the job wait that follows.
 UPLOAD_WAIT_SECONDS = 30.0
 UPLOAD_POLL_SECONDS = 1.0
+# How long `find_new_datasets` holds the call while the user connects a source
+# in Mammoth, for the same reason. Each look lists the project, so it looks less often.
+CONNECT_WAIT_SECONDS = 30.0
+CONNECT_POLL_SECONDS = 3.0
 # Listing tools page by default, so one call cannot fill the model's context.
 LIST_LIMIT_DEFAULT = 50
 
@@ -270,6 +275,7 @@ class ApiPaths:
     BROWSE = "/workspaces/{workspace_id}/browse"
     # The SDK's list sends no paging or filter, and the route pages by ten.
     CONNECTORS = "/workspaces/{workspace_id}/connectors"
+    SELF = "/self"
 
 
 class ResourceTypes:
@@ -492,11 +498,49 @@ class ConnectorFields:
     ACTION = "action"
     ADD_CONNECTOR = "addConnector"
     CONNECTOR = "connector"
+    # Tells the page the link came from an AI chat, so it says to go back there.
+    FROM = "from"
+    ASSISTANT = "assistant"
     # What `connect_source` reports.
     SHOWN_KEY = "key"
     SHOWN_NAME = "name"
     SINCE = "since"
     NEXT_STEP = "next_step"
+    # The caller's own roles, as `/self` reports them. Only this project role
+    # may connect a source: Mammoth checks the role on the project itself.
+    USER_ROLES = "user_roles"
+    PROJECTS = "projects"
+    CONNECTS = "project_admin"
+
+
+class ConnectionFields:
+    """A connection the project already has, and the dataset made through one."""
+
+    CONNECTIONS = "connections"
+    # The SQL databases: their data is chosen with a query, which a model writes well.
+    DATABASES = frozenset(
+        {"postgres", "mysql", "mssql", "redshift", "snowflake", "databricks", "hana", "bigquery"}
+    )
+    # A query that reads, and only reads, starts with one of these.
+    READING = ("select", "with")
+    SAMPLE = "data_sample"
+    SCHEMA = "dataschema"
+    ROWS = "rows"
+    NAME = "name"
+    COLUMNS = "columns"
+    ROWS_SHOWN = 20
+    # Seconds the database has to answer a preview, inside one tool call.
+    PREVIEW_SECONDS = 30.0
+    # How `datasets.create` takes a dataset from a connection.
+    CREATION_TYPE = "cloud"
+    CONNECTOR_KEY = "connector_key"
+    CONNECTION_KEY = "connection_key"
+    QUERY_PROPERTIES = "query_properties"
+    DS_NAME = "ds_name"
+    TABLE_NAME = "table_name"
+    QUERY = "query"
+    PROFILE = "profile"
+    JOB_ID = "job_id"
 
 
 class BoardFields:

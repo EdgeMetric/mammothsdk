@@ -6,6 +6,8 @@ the connector, and another finds the datasets the project gained afterwards.
 """
 
 import base64
+import json
+import logging
 from datetime import UTC, datetime
 from typing import Any
 from urllib.parse import parse_qs, urlsplit
@@ -14,6 +16,8 @@ import pytest
 from mcp.server.mcpserver.exceptions import ToolError
 
 from mammoth_mcp_server.server import mcp_server, register_tools
+from mammoth_mcp_server.telemetry import EVENT_LOGGER
+from mammoth_mcp_server.tools import sources
 
 from .helpers import WORKSPACE, a_fake_api, as_caller, call_tool, run
 
@@ -24,6 +28,9 @@ VIEWS = f"/workspaces/{WORKSPACE}/projects/{PROJECT}/datasets/21/dataviews"
 IDS = {"workspace_id": WORKSPACE, "project_id": PROJECT}
 HUBSPOT = {"name_key": "hubspot", "disp_name": "HubSpot", "is_available": True}
 SINCE = "2026-10-14T09:00:00+00:00"
+SELF = "/self"
+ADMIN = {"user_roles": {"projects": {str(PROJECT): "project_admin"}, "workspaces": {}}}
+ANALYST = {"user_roles": {"projects": {str(PROJECT): "project_analyst"}, "workspaces": {}}}
 
 
 def connector_path(key: str) -> str:
@@ -72,25 +79,35 @@ class TestListConnectors:
 class TestConnectSource:
     def test_the_link_opens_that_connector_in_the_project(self) -> None:
         with a_fake_api() as api, as_caller():
+            api.answer("GET", SELF, ADMIN)
             api.answer("GET", connector_path("hubspot"), HUBSPOT)
             handed = call_tool("connect_source", connector_key="hubspot", **IDS)
 
         url = handed["mammoth_url"]
         assert f"/#/workspaces/{WORKSPACE}/projects/{PROJECT}/data/datasets?" in url
-        assert query_of(url) == {"action": ["addConnector"], "connector": ["hubspot"]}
+        assert query_of(url) == {
+            "action": ["addConnector"],
+            "connector": ["hubspot"],
+            "from": ["assistant"],
+        }
         assert handed["connector"] == {"key": "hubspot", "name": "HubSpot"}
 
     def test_without_a_connector_the_link_opens_the_list_to_pick_from(self) -> None:
         with a_fake_api() as api, as_caller():
+            api.answer("GET", SELF, ADMIN)
             handed = call_tool("connect_source", **IDS)
 
-        assert query_of(handed["mammoth_url"]) == {"action": ["addConnector"]}
+        assert query_of(handed["mammoth_url"]) == {
+            "action": ["addConnector"],
+            "from": ["assistant"],
+        }
         assert "connector" not in handed
-        assert not api.requests
+        assert not [r for r in api.requests if r.url.path.startswith(CONNECTORS)]
 
     def test_it_says_when_to_look_for_the_new_data_from(self) -> None:
         before = datetime.now(UTC)
-        with a_fake_api(), as_caller():
+        with a_fake_api() as api, as_caller():
+            api.answer("GET", SELF, ADMIN)
             handed = call_tool("connect_source", **IDS)
 
         assert datetime.fromisoformat(handed["since"]) >= before.replace(microsecond=0)
@@ -98,6 +115,7 @@ class TestConnectSource:
 
     def test_a_connector_off_the_plan_says_mammoth_will_offer_the_upgrade(self) -> None:
         with a_fake_api() as api, as_caller():
+            api.answer("GET", SELF, ADMIN)
             api.answer("GET", connector_path("hubspot"), {**HUBSPOT, "is_available": False})
             handed = call_tool("connect_source", connector_key="hubspot", **IDS)
 
@@ -105,6 +123,7 @@ class TestConnectSource:
 
     def test_a_connector_mammoth_does_not_have_is_refused_with_where_to_look(self) -> None:
         with a_fake_api() as api, as_caller():
+            api.answer("GET", SELF, ADMIN)
             api.answer("GET", connector_path("hubspots"), {"message": "Not found"}, status=404)
             with pytest.raises(ToolError) as refused:
                 call_tool("connect_source", connector_key="hubspots", **IDS)
@@ -112,7 +131,48 @@ class TestConnectSource:
         assert "list_connectors" in str(refused.value)
 
 
+@pytest.fixture(autouse=True)
+def brief_wait(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Keep the tests quick; the waiting itself is what some of them test."""
+    monkeypatch.setattr(sources, "CONNECT_WAIT_SECONDS", 0.2)
+    monkeypatch.setattr(sources, "CONNECT_POLL_SECONDS", 0.02)
+
+
+class TestOnlyAProjectAdminGetsTheLink:
+    """Mammoth lets only a project admin connect a source, so nobody leaves the chat for nothing."""
+
+    def test_an_analyst_is_told_who_can_connect_it_and_gets_no_link(self) -> None:
+        with a_fake_api() as api, as_caller():
+            api.answer("GET", SELF, ANALYST)
+            handed = call_tool("connect_source", connector_key="hubspot", **IDS)
+
+        assert "mammoth_url" not in handed
+        assert "project admin" in handed["next_step"]
+        assert not api.sent("GET", connector_path("hubspot"))
+        (sent,) = api.sent("GET", SELF)
+        assert sent.url.params["fields"] == "user_roles"
+
+    def test_a_workspace_role_alone_is_not_enough(self) -> None:
+        # Mammoth checks the role on the project itself, not on the workspace.
+        owner = {"user_roles": {"projects": {}, "workspaces": {str(WORKSPACE): "workspace_owner"}}}
+        with a_fake_api() as api, as_caller():
+            api.answer("GET", SELF, owner)
+            handed = call_tool("connect_source", **IDS)
+
+        assert "mammoth_url" not in handed
+
+
 class TestFindNewDatasets:
+    def test_it_looks_again_until_the_dataset_comes_in(self) -> None:
+        with a_fake_api() as api, as_caller():
+            api.answer("GET", RESOURCES, {"resources": []})
+            api.answer("GET", RESOURCES, {"resources": [a_dataset("processed")]})
+            api.answer("GET", VIEWS, {"dataviews": [{"id": 8161}]})
+            found = call_tool("find_new_datasets", since=SINCE, **IDS)
+
+        assert found["status"] == "done"
+        assert len(api.sent("GET", RESOURCES)) == 2
+
     def test_a_dataset_made_since_then_is_reported_with_its_view_and_page(self) -> None:
         with a_fake_api() as api, as_caller():
             api.answer("GET", RESOURCES, {"resources": [a_dataset("processed")]})
@@ -145,6 +205,38 @@ class TestFindNewDatasets:
             call_tool("find_new_datasets", since="yesterday", **IDS)
 
         assert "connect_source" in str(refused.value)
+
+
+def events(caplog: pytest.LogCaptureFixture, name: str) -> list[dict[str, Any]]:
+    logged = [json.loads(one.getMessage()) for one in caplog.records if one.name == EVENT_LOGGER]
+    return [one for one in logged if one["event"] == name]
+
+
+class TestWhatIsMeasured:
+    """Which connectors people link to, and how many of those links bring data in."""
+
+    def test_the_link_records_the_connector(self, caplog: pytest.LogCaptureFixture) -> None:
+        caplog.set_level(logging.INFO, logger=EVENT_LOGGER)
+        with a_fake_api() as api, as_caller():
+            api.answer("GET", SELF, ADMIN)
+            api.answer("GET", connector_path("hubspot"), HUBSPOT)
+            call_tool("connect_source", connector_key="hubspot", **IDS)
+
+        assert events(caplog, "mcp_source_linked") == [
+            {"event": "mcp_source_linked", "connector": "hubspot"}
+        ]
+
+    def test_a_find_records_what_came_in_but_not_what_it_is(
+        self, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        caplog.set_level(logging.INFO, logger=EVENT_LOGGER)
+        with a_fake_api() as api, as_caller():
+            api.answer("GET", RESOURCES, {"resources": [a_dataset("processed")]})
+            api.answer("GET", VIEWS, {"dataviews": [{"id": 8161}]})
+            call_tool("find_new_datasets", since=SINCE, **IDS)
+
+        [found] = events(caplog, "mcp_new_datasets")
+        assert found == {"event": "mcp_new_datasets", "status": "done", "datasets": 1}
 
 
 def test_none_of_them_changes_anything() -> None:
