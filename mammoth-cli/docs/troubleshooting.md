@@ -116,11 +116,11 @@ matching `http` record.
 
 `meta.update_available` in a success envelope (and one stderr line in human
 modes) means a newer `mammoth-cli` is on PyPI and the CLI will not install it by
-itself: auto-update is off (`MAMMOTH_NO_AUTO_UPDATE=1`), the install is pinned to an exact
+itself: auto-update is off (`MAMMOTH_NO_AUTO_UPDATE=1`, or the session is CI or has no TTY), the install is pinned to an exact
 release (`--version`), or the install failed (see
 the `auto_upgrade` records in the run log). The check runs once a day after a
-command, never before it, and `MAMMOTH_NO_UPDATE_CHECK=1` disables it. By default
-the CLI installs the new release itself, after a command, with no prompt (see
+command, never before it, and `MAMMOTH_NO_UPDATE_CHECK=1` disables it. In an interactive
+terminal the CLI installs the new release itself, after a command, with no prompt (see
 [upgrade](upgrade.md)).
 
 ## First diagnostic

@@ -42,7 +42,8 @@ directory).
 
 - `mammoth doctor` shows `cli_version` with the installed and latest versions.
 - When a newer release exists and the CLI will not install it by itself
-  (auto-update off, the install is pinned, or the install failed), every JSON envelope carries
+  (auto-update off, the session is not interactive, the install is pinned, or the install
+  failed), every JSON envelope carries
   `meta.update_available` = `{"current": "...", "latest": "...", "command":
   "mammoth upgrade --yes"}` (otherwise `null`) and human output prints one line
   on stderr.
@@ -69,7 +70,13 @@ through the same manager detection as `mammoth upgrade`. There is no prompt.
   `--version`) is never updated by itself: the check and the
   `meta.update_available` hint stay, nothing is installed. `mammoth upgrade --yes`
   moves to the latest and clears the pin.
-- Opt out with `MAMMOTH_NO_AUTO_UPDATE=1` (or `MAMMOTH_AUTO_UPGRADE=0`). The check
+- Auto-install happens only in an interactive session: stdin and stdout are terminals
+  and no CI variable is set (`CI`, `GITHUB_ACTIONS`, `GITLAB_CI`, `BUILDKITE`,
+  `JENKINS_URL`, `CIRCLECI`, `TF_BUILD`, and similar). In CI, in a pipe and under an
+  agent the check and the `meta.update_available` hint still run and nothing is
+  installed. `MAMMOTH_AUTO_UPGRADE=1` forces the install on, even there. The command
+  decides, because the detached updater has no terminal.
+- Opt out everywhere with `MAMMOTH_NO_AUTO_UPDATE=1` (or `MAMMOTH_AUTO_UPGRADE=0`). The check
   and the `meta.update_available` hint stay; nothing is installed. Do this in CI
   images, lock-file environments and shared virtualenvs whose version must not
   change underneath a task.

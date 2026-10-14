@@ -32,7 +32,7 @@ Read the `SKILL.md` it prints (`mammoth skill path` shows where it lives). Its c
 instructions are part of the local command contract; do not substitute a
 repository copy or start discovery first.
 
-For an exact release in a controlled evaluation, append `--version X.Y.Z` (a pinned install is not auto-updated);
+For an exact release in a controlled evaluation, append `--version X.Y.Z` (a pinned install is not auto-updated; an agent's non-TTY session never auto-updates and gets `meta.update_available` instead);
 ordinary host installation needs neither option. See [Installation](installation.md).
 
 Give the agent a task, acceptance criteria, and an explicitly authorized

@@ -34,7 +34,7 @@ On a 502, 504 or timeout, `mammoth doctor --input '{"wait": 300}'`
 re-probes that long; continue once it passes. Production is the `app` endpoint; use `release` only
 when named, and check `meta.profile`/`auth status` `endpoint` match. If no profile has credentials, run `mammoth auth login --device` (`--profile NAME`), show the user its
 link and code and wait for it to exit ([auth](references/auth.md)). Run no other login
-method, and never ask for the token in chat or read one from a file/env var. If an envelope carries `meta.update_available`, run its `command` first, unless the user pinned an exact release (`--version`): a pinned install is never auto-updated, and that command would unpin it.
+method, and never ask for the token in chat or read one from a file/env var. If an envelope carries `meta.update_available` (the CLI does not auto-install in agent, CI or non-TTY sessions, so this is how you learn of a release), run its `command` first, unless the user pinned an exact release (`--version`): a pinned install is never auto-updated, and that command would unpin it.
 
 Piped stdout is compact JSON with prompts off; if not piped, `export
 MAMMOTH_OUTPUT=json MAMMOTH_NO_INPUT=1` once.
