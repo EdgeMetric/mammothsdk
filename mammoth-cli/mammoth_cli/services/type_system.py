@@ -13,6 +13,7 @@ from typing import Any, get_args, get_origin
 from mammoth import condition as _condition_module
 from pydantic import BaseModel, ValidationError
 
+from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.services.argspec import render_type_name, resolve_type_hints
 
 _UNIONS = (typing.Union, types.UnionType)
@@ -119,11 +120,13 @@ _PARAMETER_BINDING_SCHEMA = {
 
 
 def _condition_schema() -> dict[str, Any]:
+    from mammoth_cli.services.conditions import OPERATOR_NAMES
+
     leaf = {
         "type": "object",
         "properties": {
             "column": {"type": "string", "example": "Status"},
-            "operator": {"type": "string", "example": "EQ"},
+            "operator": {"type": "string", "enum": list(OPERATOR_NAMES), "example": "EQ"},
             "value": {"anyOf": [{"example": "Active"}, _PARAMETER_BINDING_SCHEMA]},
             "case_sensitive": {"type": "boolean"},
             "value_is_column": {"type": "boolean"},
@@ -311,6 +314,13 @@ def validate_value(value: Any, annotation: Any, path: str) -> Any:
 
         try:
             compile_condition(value)
+        except CliError as error:
+            # A bad operator is the one condition mistake worth its own message:
+            # it names the operator, lists the valid ones and suggests the closest.
+            if error.details and "accepted" in error.details:
+                error.details = {**error.details, "path": path}
+                raise
+            raise TypeValidationError(path, "a valid condition object", value) from error
         except Exception as error:  # noqa: BLE001 - normalized to type-system error
             raise TypeValidationError(path, "a valid condition object", value) from error
         return value

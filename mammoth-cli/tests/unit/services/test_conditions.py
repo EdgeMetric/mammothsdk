@@ -41,7 +41,11 @@ def test_unknown_operator_is_a_usage_error_naming_the_accepted_set() -> None:
         compile_condition({"column": "Age", "operator": "GREATER", "value": 1})
     assert excinfo.value.code == "invalid_condition"
     assert excinfo.value.exit_status == 2
-    assert excinfo.value.details == {"operator": "GREATER", "accepted": list(OPERATOR_NAMES)}
+    assert excinfo.value.details == {
+        "operator": "GREATER",
+        "accepted": list(OPERATOR_NAMES),
+        "did_you_mean": "GT",
+    }
     assert "IS_EMPTY / IS_NOT_EMPTY take no value" in (excinfo.value.hint or "")
 
 
@@ -75,3 +79,32 @@ def test_a_compound_condition_with_a_second_key_is_refused(spec: dict[str, objec
     with pytest.raises(CliError) as excinfo:
         compile_condition(spec)
     assert excinfo.value.code == "invalid_condition"
+
+
+@pytest.mark.parametrize(
+    ("guess", "expected"),
+    [("NOT_EQUALS", "NE"), ("EQUALS", "EQ"), ("CONTAIN", "CONTAINS"), ("GREATER_THAN", "GT")],
+)
+def test_unknown_operator_suggests_the_closest_valid_one(guess: str, expected: str) -> None:
+    from mammoth.condition import Condition
+
+    from mammoth_cli.services.type_system import TypeValidationError, validate_value
+
+    spec = {"column": "Status", "operator": guess, "value": "x"}
+    with pytest.raises(CliError) as caught:
+        validate_value(spec, Condition, "condition")
+    error = caught.value
+    assert guess in error.message and f"Did you mean {expected}?" in error.message
+    assert error.details["did_you_mean"] == expected
+    assert error.details["accepted"] == list(OPERATOR_NAMES)
+    assert error.details["path"] == "condition"
+    assert TypeValidationError  # other malformed conditions still use the type error
+
+
+def test_condition_schema_enumerates_the_valid_operators() -> None:
+    from mammoth.condition import Condition
+
+    from mammoth_cli.services.type_system import json_schema
+
+    schema = json_schema(Condition)
+    assert schema["oneOf"][0]["properties"]["operator"]["enum"] == list(OPERATOR_NAMES)

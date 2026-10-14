@@ -67,6 +67,7 @@ from mammoth_cli.runtime.confirm import POLICY_PROMPT_OR_YES, enforce_confirmati
 from mammoth_cli.runtime.dryrun import DryRunStop
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.session import open_service, resolved_project
+from mammoth_cli.runtime.strict import validate_input_fields
 from mammoth_cli.runtime.verify import read_export_stamps
 from mammoth_cli.services.command_contract import bind_command_inputs, resolve_command_contract
 from mammoth_cli.services.conditions import CONDITION_KWARG, compile_condition
@@ -2202,10 +2203,16 @@ def _build_batch(
         command_id = f"view.transform.{op}"
         contract = resolve_command_contract(command_id)
         assert contract is not None
-        for spec in contract.fields:
-            if spec.required:
-                _require_field(step["input"], spec.name)
-        kwargs = _bind_transform_inputs(invocation, step["input"], command_id)
+        try:
+            for spec in contract.fields:
+                if spec.required:
+                    _require_field(step["input"], spec.name)
+            # The batch's own --input was admitted whole; check each step's input as
+            # its own command would (types, conditions) so the error names the step.
+            validate_input_fields(command_id, _without_resource_context(step["input"]))
+            kwargs = _bind_transform_inputs(invocation, step["input"], command_id)
+        except CliError as exc:
+            raise _step_error(index, op, exc) from exc
         if op == _BATCH_LIMIT_OP and plan.sorts and not kwargs.get("order_by"):
             # A sort is only a display order; carry it so the limit keeps the rows it implies.
             kwargs["order_by"] = plan.sorts[-1]["order_by"]
