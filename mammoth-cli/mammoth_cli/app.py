@@ -1088,6 +1088,7 @@ def _execute(invocation: Invocation) -> None:
     from mammoth_cli.runtime.locked_files import with_locked_files
     from mammoth_cli.runtime.new_data import with_new_data_path
     from mammoth_cli.runtime.opens import with_opens
+    from mammoth_cli.runtime.confirm import refuse_mismatched_confirm
     from mammoth_cli.runtime.strict import validate_extra_args
 
     if invocation.profile is None:
@@ -1098,6 +1099,7 @@ def _execute(invocation: Invocation) -> None:
         validate.validate_invocation(invocation)
         validate_extra_args(invocation.command_id, invocation.extra_args)
         validate.validate_positional_ids(invocation.command_id, invocation.extra_args)
+        refuse_mismatched_confirm(invocation)
         # Admit structured input before resolving a handler or opening a
         # service.  Handlers retain ``load_input`` for compatibility, but it
         # now returns this invocation-local prepared value.

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
+
 import pytest
 from typer.testing import CliRunner
 
@@ -119,3 +121,52 @@ def test_enter_at_prompt_declines_by_default() -> None:
 
 def test_enter_at_prompt_proceeds_when_default_is_yes() -> None:
     _enter_at_real_prompt(default=True)
+
+
+def _guarded_commands() -> list[tuple[str, str]]:
+    from mammoth_cli.manifest.loader import load_commands
+
+    return [
+        (record["command_id"], record["confirmation"])
+        for record in load_commands()
+        if record.get("confirmation") not in (None, "none")
+    ]
+
+
+def test_destructive_commands_exist_to_parametrize_over() -> None:
+    assert len(_guarded_commands()) > 150
+
+
+@pytest.mark.parametrize("command_id", [cid for cid, _policy in _guarded_commands()])
+def test_a_mismatched_confirm_is_refused_for_every_destructive_command(command_id: str) -> None:
+    from mammoth_cli.runtime.confirm import refuse_mismatched_confirm
+
+    invocation = Invocation(
+        command_id=command_id, yes=True, confirm="999999", extra_args=["313432"]
+    )
+    with pytest.raises(CliError) as excinfo:
+        refuse_mismatched_confirm(invocation)
+    assert excinfo.value.code == "confirmation_target_mismatch"
+    assert excinfo.value.exit_status == EXIT_USAGE
+    # A matching (or absent) --confirm is let through.
+    refuse_mismatched_confirm(replace(invocation, confirm="313432"))
+    refuse_mismatched_confirm(replace(invocation, confirm=None))
+
+
+def test_dataset_delete_with_wrong_confirm_makes_no_api_call(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from mammoth_cli import app
+
+    called: list[str] = []
+    monkeypatch.setattr(
+        "mammoth_cli.runtime.session.open_service",
+        lambda *a, **k: called.append("open") or (_ for _ in ()).throw(AssertionError("api")),
+    )
+    result = CliRunner().invoke(
+        app.app,
+        ["dataset", "delete", "313432", "--project", "1", "--yes", "--confirm", "1", "-o", "json"],
+    )
+    assert result.exit_code == EXIT_USAGE
+    assert "confirmation_target_mismatch" in result.output
+    assert called == []

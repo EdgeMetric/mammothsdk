@@ -57,6 +57,32 @@ def _required_error(action: str, *, target: str | None, need_target: bool) -> Cl
     )
 
 
+def refuse_mismatched_confirm(invocation: Invocation) -> None:
+    """Refuse a ``--confirm`` that names none of the command's positional targets.
+
+    Runs before the handler (so before any API call) for every command. ``--confirm``
+    only means something if it equals the id being acted on; one that does not is a
+    typo or a stale value, and is never silently ignored. A command with no
+    positional target has nothing to compare with here; ``confirm_target`` commands
+    are compared against their own target in :func:`enforce_confirmation`.
+    """
+    confirm = invocation.confirm
+    targets = [
+        str(token).strip() for token in invocation.extra_args if not str(token).startswith("-")
+    ]
+    if confirm is None or not targets or str(confirm).strip() in targets:
+        return
+    raise CliError(
+        code="confirmation_target_mismatch",
+        message=(
+            f"--confirm {confirm} does not match the target ({', '.join(targets)}), "
+            "so nothing was changed."
+        ),
+        exit_status=EXIT_USAGE,
+        hint=f"Pass --confirm {targets[0]}, or drop --confirm if --yes is enough.",
+    )
+
+
 def enforce_confirmation(
     invocation: Invocation,
     *,
@@ -116,6 +142,19 @@ def enforce_confirmation(
                 hint=f"Pass --confirm {target}." if target is not None else None,
             )
         return
+
+    if (
+        policy in (POLICY_YES_ALWAYS, POLICY_PROMPT_OR_YES)
+        and target is not None
+        and invocation.confirm is not None
+        and invocation.confirm != target
+    ):
+        raise CliError(
+            code="confirmation_target_mismatch",
+            message=f"--confirm must exactly equal the target to {action}.",
+            exit_status=EXIT_USAGE,
+            hint=f"Pass --confirm {target}.",
+        )
 
     if policy == POLICY_YES_ALWAYS:
         if invocation.yes:
