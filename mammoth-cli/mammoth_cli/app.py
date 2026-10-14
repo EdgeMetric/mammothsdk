@@ -357,6 +357,10 @@ def _output_mode_from_argv(argv: Sequence[str] | None) -> str:
         elif token.startswith("-o") and len(token) > 2:
             mode = token[2:]
         index += 1
+    if mode not in SELECTABLE_OUTPUTS:
+        # A value the command would reject (``--output xml``) must not turn the
+        # error into prose: judge it by where stdout goes, like the default.
+        mode = OUTPUT_AUTO
     return resolve_output(mode, is_tty=sys.stdout.isatty())
 
 
