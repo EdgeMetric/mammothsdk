@@ -291,3 +291,34 @@ def test_pdf_export_params_accept_carousel_without_data() -> None:
     spec = PdfExportSpec.model_validate({"params": {"carousel": True}})
     assert spec.params.carousel is True
     assert spec.params.data is None
+
+
+def test_unserved_operations_names_a_route_production_does_not_serve() -> None:
+    """I2a: the release gate fails on a called route missing from production, not on extras."""
+    import yaml
+
+    scripts = CLI_ROOT / "scripts"
+    sys.path.insert(0, str(scripts))
+    try:
+        import sync_openapi
+
+        live = _load_snapshot()
+        manifest = yaml.safe_load(sync_openapi.OPERATIONS_MANIFEST_PATH.read_text(encoding="utf-8"))
+        called = {
+            op["identity"]
+            for op in manifest["operations"]
+            if op["disposition"] in sync_openapi.CALLED_DISPOSITIONS
+        }
+        assert sync_openapi.unserved_operations(live, called) == []
+
+        without_current = json.loads(json.dumps(live))
+        del without_current["paths"]["/workspaces/current"]
+        assert sync_openapi.unserved_operations(without_current, called) == [
+            "GET /workspaces/current"
+        ]
+
+        with_extra = json.loads(json.dumps(live))
+        with_extra["paths"]["/__new_route__"] = {"get": {"operationId": "New"}}
+        assert sync_openapi.unserved_operations(with_extra, called) == []
+    finally:
+        sys.path.remove(str(scripts))

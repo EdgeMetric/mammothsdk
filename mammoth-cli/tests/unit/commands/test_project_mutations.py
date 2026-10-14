@@ -14,6 +14,7 @@ from mammoth_cli.services.testing import FakeMammothService
 from mammoth_cli.testing import login_default_profile
 
 _CREATE = "mammoth.api.projects.ProjectsAPI.create"
+_CURRENT = "mammoth.api.workspace.WorkspaceAPI.current"
 _UPDATE = "mammoth.api.projects.ProjectsAPI.update"
 _DELETE = "mammoth.api.projects.ProjectsAPI.delete_and_verify"
 _BULK_DELETE = "mammoth.api.projects.ProjectsAPI.bulk_delete_and_verify"
@@ -32,7 +33,7 @@ def _inv(command_id: str, **overrides: object) -> Invocation:
 
 def test_create_uses_positional_name(fake_service: FakeMammothService) -> None:
     project_cmd.project_create(_inv("project.create", extra_args=["Sales"]))
-    assert fake_service.call_log == [(_CREATE, {"name": "Sales"})]
+    assert fake_service.call_log == [(_CURRENT, {}), (_CREATE, {"name": "Sales"})]
 
 
 def test_create_uses_input_name_and_options(
@@ -41,7 +42,10 @@ def test_create_uses_input_name_and_options(
     doc = tmp_path / "in.json"
     doc.write_text(json.dumps({"name": "X", "color": "#fff"}), encoding="utf-8")
     project_cmd.project_create(_inv("project.create", input_file=str(doc)))
-    assert fake_service.call_log == [(_CREATE, {"name": "X", "color": "#fff"})]
+    assert fake_service.call_log == [
+        (_CURRENT, {}),
+        (_CREATE, {"name": "X", "color": "#fff"}),
+    ]
 
 
 def test_create_without_name_is_usage_error(fake_service: FakeMammothService) -> None:
@@ -203,7 +207,7 @@ def test_ensure_creates_when_absent(fake_service: FakeMammothService, tmp_path: 
     doc = tmp_path / "in.json"
     doc.write_text(json.dumps({"name": "From Claude"}), encoding="utf-8")
     data, meta = project_cmd.project_ensure(_inv("project.ensure", input_file=str(doc)))
-    assert fake_service.call_log == [(_ENSURE_CREATE, {"name": "From Claude"})]
+    assert fake_service.call_log == [(_CURRENT, {}), (_ENSURE_CREATE, {"name": "From Claude"})]
     assert data["created"] is True
     assert data["project_id"] == 41
     assert data["project"] == {"id": 41, "name": "From Claude"}

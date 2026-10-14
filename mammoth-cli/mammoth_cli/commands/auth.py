@@ -38,6 +38,7 @@ from mammoth_cli.runtime import executor
 from mammoth_cli.runtime import options as go
 from mammoth_cli.runtime.input_loader import load_input_document
 from mammoth_cli.runtime.invocation import Invocation
+from mammoth_cli.runtime.token_scope import pinned_project
 from mammoth_cli.services import factory as service_factory
 
 _STORAGE_MODES = ("auto", "keyring", "file")
@@ -360,7 +361,11 @@ def _no_choice(label: str = "choice") -> CliError:
         code="login_input_required",
         message=f"No {label} was entered.",
         exit_status=EXIT_USAGE,
-        hint="Pass --method oauth|device|token, or --input FILE for a non-interactive login.",
+        hint=(
+            "Pass --device (a code approved on another device), --method oauth --no-browser "
+            "(a sign-in URL), or --input FILE for a non-interactive login."
+        ),
+        recovery_commands=["mammoth auth login --device"],
     )
 
 
@@ -375,6 +380,24 @@ def _login_server_prefix(profile_name: str, server_prefix: str | None) -> str | 
         return server_prefix
     existing = profiles.get_profile(profile_name)
     return existing.server_prefix if existing is not None else None
+
+
+def _warn_signed_out_profiles(
+    profile_name: str, base_url: str, session: credentials.OAuthSession
+) -> None:
+    """Warn about other profiles whose session this login just replaced on the server."""
+    others: dict[str, tuple[str, credentials.OAuthSession | None]] = {}
+    for name in profiles.list_profile_names():
+        record = profiles.get_profile(name)
+        credential = credentials.load_credential(name)
+        if name != profile_name and record is not None and credential is not None:
+            others[name] = (resolve_base_url(record.server_prefix), credential.oauth)
+    for name in oauth.signed_out_profiles(base_url, session, others):
+        typer.echo(
+            f'Warning: Profile "{name}" used the same Mammoth sign-in and is now signed out; '
+            f"sign it in again or remove it with mammoth auth logout --profile {name}.",
+            err=True,
+        )
 
 
 def _run_oauth_login(
@@ -421,6 +444,7 @@ def _run_oauth_login(
         interactive=interactive,
         oauth=session,
     )
+    _warn_signed_out_profiles(profile_name, base_url, session)
     typer.echo(
         f"Signed in to workspace {workspace_id}. Credential stored in {storage_used} "
         f'(profile "{profile_name}"). The token refreshes automatically.',
@@ -501,14 +525,17 @@ def _run_login(
     else:
         raise CliError(
             code="login_input_required",
-            message="Non-interactive login requires --input.",
+            message="Non-interactive login needs --device, --method oauth --no-browser or --input.",
             exit_status=EXIT_USAGE,
             hint=(
                 "Interactive prompting is off because "
                 + "; ".join(blockers)
-                + ". Pass --input FILE|- (with --input-format for stdin), "
+                + ". Pass --device to get a link and code the user approves on any other device, "
+                "or --method oauth --no-browser to get a sign-in URL, "
+                "or --input FILE|- (with --input-format for stdin) with an API token, "
                 "or run in an interactive terminal."
             ),
+            recovery_commands=["mammoth auth login --device"],
         )
 
     resolved_base_url = resolve_base_url(effective_prefix)
@@ -671,6 +698,7 @@ def _run_status(invocation: Invocation, *, check: bool) -> tuple[dict[str, Any],
         try:
             service.check_connection()
             data["connected"] = True
+            data["token_project"] = pinned_project(service)
         finally:
             service.close()
         data["checked"] = True
@@ -695,7 +723,8 @@ def auth_status(
 ) -> None:
     """Report local authentication state for one profile.
 
-    Makes no network call unless `--check` is given.
+    Makes no network call unless `--check` is given. With `--check` it also reports
+    `token_project`: the project id the token is limited to, or null when it is not limited.
     """
     invocation = go.make_invocation(
         "auth.status",
@@ -742,8 +771,13 @@ def _revoke_oauth_connection(profile_name: str, warnings: list[str]) -> None:
             session = oauth.refresh_session(profile_name, base_url)
         problem = oauth.revoke_grant(base_url, session)
     except CliError as exc:
-        problem = f"Could not revoke the connection on the server: {exc.message}"
-    if problem is not None:
+        if exc.code == oauth.CODE_LOGIN_EXPIRED:
+            problem = oauth.GRANT_ALREADY_ENDED
+        else:
+            problem = f"Could not revoke the connection on the server: {exc.message}"
+    if problem == oauth.GRANT_ALREADY_ENDED:
+        typer.echo(f"{problem} Local credentials are still removed.", err=True)
+    elif problem is not None:
         warnings.append(problem)
         typer.echo(f"Warning: {problem} Local credentials are still removed.", err=True)
 

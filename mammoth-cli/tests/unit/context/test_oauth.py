@@ -325,3 +325,33 @@ def test_a_refresh_whose_answer_was_lost_is_retried_once_and_renews_the_sign_in(
     assert retry["outcome"] == "network_retry"
     assert (record["outcome"], record["http_status"]) == ("renewed", 200)
     assert oauth._stored_session("default").refresh == "12.next.mac"
+
+
+@pytest.mark.parametrize(
+    ("status", "expected"),
+    [(200, None), (204, None), (401, oauth.GRANT_ALREADY_ENDED), (404, oauth.GRANT_ALREADY_ENDED)],
+)
+def test_revoke_status_note_treats_dead_sign_in_as_already_ended(
+    status: int, expected: str | None
+) -> None:
+    assert oauth.revoke_status_note(status) == expected
+
+
+def test_revoke_status_note_keeps_the_connected_apps_hint_for_other_statuses() -> None:
+    note = oauth.revoke_status_note(403)
+    assert note is not None
+    assert "HTTP 403" in note
+    assert "Connected apps" in note
+
+
+def test_signed_out_profiles_names_same_server_same_grant_only() -> None:
+    new = _session(3600)
+    same = _session(3600)
+    other_grant = OAuthSession(access="x", refresh="r", expires_at=0, client_id="c", grant_id=99)
+    others = {
+        "stale": ("https://app.mammoth.io", same),
+        "other-server": ("https://eu.mammoth.io", same),
+        "other-grant": ("https://app.mammoth.io", other_grant),
+        "api-token": ("https://app.mammoth.io", None),
+    }
+    assert oauth.signed_out_profiles("https://app.mammoth.io", new, others) == ["stale"]

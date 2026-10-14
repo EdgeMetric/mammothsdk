@@ -65,6 +65,14 @@ jobs:
       - name: Install dependencies
         run: poetry install --no-interaction
 
+      # A release that calls a route production does not serve fails here. It reads
+      # the public OpenAPI document (no credentials) and ignores routes production
+      # serves that this release does not use.
+      - name: Gate — every route the SDK calls is served by production
+        run: |
+          poetry run pip install "PyYAML>=6,<7"
+          poetry run python mammoth-cli/scripts/sync_openapi.py --check-served
+
       - name: Lint and type-check
         run: |
           set -eu

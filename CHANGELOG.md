@@ -6,6 +6,20 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed (mammoth-cli 2.2.81)
+
+- `mammoth auth logout` treats a 401/404 from the server as the sign-in already being ended and signs out locally instead of failing.
+- `mammoth auth login` warns when it replaced another profile's sign-in that shared the same Mammoth sign-in.
+
+### Fixed (mammoth-cli 2.2.80)
+
+- `mammoth auth login` with no terminal (`--no-input`, a pipe, `--output json`): the `login_input_required` error now names `--device` and `--method oauth --no-browser` as well as `--input`, and carries `recovery_commands: ["mammoth auth login --device"]`.
+- `mammoth auth login --help` no longer prints `api_token*` as if every login needs it: the line reads `Input fields (--method token only; --device and --method oauth take none)`.
+- Agents may run `mammoth auth login --device` themselves and show the user the link and code it prints (steering block, bundled skill, `docs/agent-prompt.md`, README). Browser and token logins stay with the operator.
+- `mammoth project create` and `project ensure` ask `GET /workspaces/current` first and refuse with `authorization_required` before creating anything when the token is limited to one project, naming that project. `mammoth doctor` reports it as the `token_scope` check (`pinned_project_id`); `mammoth auth status --check` reports `token_project`.
+- Dashboard review: the `unit_price_summed` finding points at the revenue/amount/sales column the view already has instead of suggesting a new `revenue` column.
+- Release workflows (`cli-release.yml`, `sdk-release.yml`) run `python scripts/sync_openapi.py --check-served`, which fails when an operation the CLI or SDK calls is not served by production (extra production routes do not fail it; `--check-live` still does and stays manual).
+
 ### Fixed (mammoth-cli 2.2.79)
 
 - `mammoth view transform batch`: a `limit-rows` step after a `sort` step now carries that sort's `order_by`, so the rows kept are the first N in the sort order instead of the first N in the table's own order.
