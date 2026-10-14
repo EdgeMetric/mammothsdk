@@ -15,6 +15,7 @@ from pydantic import BaseModel, ValidationError
 
 from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.services.argspec import render_type_name, resolve_type_hints
+from mammoth_cli.services.field_enums import match_choice
 
 _UNIONS = (typing.Union, types.UnionType)
 _CONDITION_TYPES = (
@@ -70,10 +71,20 @@ def _coerce_positive_id(value: Any, path: str) -> int:
 class TypeValidationError(ValueError):
     """A JSON value does not conform to its SDK annotation."""
 
-    def __init__(self, path: str, expected: str, value: Any) -> None:
+    def __init__(
+        self,
+        path: str,
+        expected: str,
+        value: Any,
+        *,
+        accepted: list[Any] | None = None,
+        did_you_mean: str | None = None,
+    ) -> None:
         self.path = path
         self.expected = expected
         self.value = value
+        self.accepted = accepted
+        self.did_you_mean = did_you_mean
         super().__init__(f"{path} must be {expected}, got {value!r}")
 
 
@@ -369,9 +380,12 @@ def validate_value(value: Any, annotation: Any, path: str) -> Any:
             for key, item in value.items()
         }
     if origin is typing.Literal:
-        if value not in args:
-            raise TypeValidationError(path, f"one of {list(args)!r}", value)
-        return value
+        canonical, suggestion = match_choice(value, args)
+        if canonical is None and value not in args:
+            raise TypeValidationError(
+                path, f"one of {list(args)!r}", value, accepted=list(args), did_you_mean=suggestion
+            )
+        return canonical if canonical is not None else value
     if annotation is type(None):
         if value is not None:
             raise TypeValidationError(path, "null", value)
@@ -382,8 +396,12 @@ def validate_value(value: Any, annotation: Any, path: str) -> Any:
         try:
             return annotation(value).value
         except (ValueError, TypeError):
+            values = [m.value for m in annotation]
+            canonical, suggestion = match_choice(value, values)
+            if canonical is not None:
+                return canonical
             raise TypeValidationError(
-                path, f"one of {[m.value for m in annotation]!r}", value
+                path, f"one of {values!r}", value, accepted=values, did_you_mean=suggestion
             ) from None
     if is_dataclass(annotation):
         if not isinstance(value, dict):

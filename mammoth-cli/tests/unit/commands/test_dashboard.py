@@ -914,7 +914,7 @@ def test_bi_preflight_rejects_missing_target_without_a_request(
     assert fake_service.call_log == []
 
 
-@pytest.mark.parametrize("bad_input", [{"target": "csv"}, {"target": "PowerBI"}])
+@pytest.mark.parametrize("bad_input", [{"target": "csv"}, {"target": "powerpoint"}])
 def test_bi_preflight_rejects_unknown_target_value_without_a_request(
     fake_service: FakeMammothService, tmp_path: Path, bad_input: dict[str, object]
 ) -> None:

@@ -23,6 +23,7 @@ from typing import Any, cast
 
 from mammoth_cli.manifest.loader import command_by_id, load_commands, load_operations
 from mammoth_cli.output.normalize import trusted_json_schema
+from mammoth_cli.services.field_enums import field_enum, with_enum
 from mammoth_cli.services.argspec import FieldSpec
 from mammoth_cli.services.command_contract import LOCAL_COMMANDS, resolve_command_contract
 from mammoth_cli.services.input_fields import (
@@ -1876,6 +1877,9 @@ def _schema_common(record: dict[str, Any]) -> dict[str, Any]:
                     return [hoist_definitions(item) for item in value]
                 return value
 
+            registered = field_enum(record["command_id"], field["name"])
+            if registered is not None:
+                field_schema = with_enum(field_schema, registered)
             properties[field["name"]] = hoist_definitions(namespace_refs(field_schema))
         # A field a positional falls back to (the dual-sourced "positional OR
         # --input field" pattern) is satisfiable from the command line, so it is

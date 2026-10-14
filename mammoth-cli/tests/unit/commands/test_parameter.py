@@ -59,12 +59,12 @@ def test_create_uses_positional_name_and_input_fields(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
     doc = tmp_path / "in.json"
-    doc.write_text(json.dumps({"param_type": "number", "value": 5}), encoding="utf-8")
+    doc.write_text(json.dumps({"param_type": "NUMERIC", "value": 5}), encoding="utf-8")
     parameter_cmd.parameter_create(
         _inv("parameter.create", extra_args=["Rate"], input_file=str(doc))
     )
     assert fake_service.call_log == [
-        (_CREATE, {"name": "Rate", "param_type": "number", "value": 5})
+        (_CREATE, {"name": "Rate", "param_type": "NUMERIC", "value": 5})
     ]
 
 
@@ -76,7 +76,7 @@ def test_create_forwards_optional_and_project(
         json.dumps(
             {
                 "name": "Rate",
-                "param_type": "number",
+                "param_type": "NUMERIC",
                 "value": 5,
                 "description": "desc",
                 "group_id": 3,
@@ -91,7 +91,7 @@ def test_create_forwards_optional_and_project(
             _CREATE,
             {
                 "name": "Rate",
-                "param_type": "number",
+                "param_type": "NUMERIC",
                 "value": 5,
                 "description": "desc",
                 "group_id": 3,
@@ -106,12 +106,12 @@ def test_create_without_project_omits_project_id(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
     doc = tmp_path / "in.json"
-    doc.write_text(json.dumps({"param_type": "number", "value": 5}), encoding="utf-8")
+    doc.write_text(json.dumps({"param_type": "NUMERIC", "value": 5}), encoding="utf-8")
     parameter_cmd.parameter_create(
         _inv("parameter.create", extra_args=["Rate"], input_file=str(doc))
     )
     assert fake_service.call_log == [
-        (_CREATE, {"name": "Rate", "param_type": "number", "value": 5})
+        (_CREATE, {"name": "Rate", "param_type": "NUMERIC", "value": 5})
     ]
 
 
