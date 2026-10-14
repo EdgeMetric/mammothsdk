@@ -32,11 +32,9 @@ mammoth project ensure 'PROJECT NAME'   # active project
 Never proceed if `doctor` fails.
 On a 502, 504 or timeout, `mammoth doctor --input '{"wait": 300}'`
 re-probes that long; continue once it passes. Production is the `app` endpoint; use `release` only
-when named, and check `meta.profile`/`auth status` `endpoint` match. If no profile has credentials, tell the operator to run
-`mammoth auth login` in their own terminal (`--profile NAME` unless
-`default`; [auth](references/auth.md) says where the token comes from) and
-wait; never ask for the token in chat, read one from a file/env var, or run
-`auth login` yourself. If an envelope carries `meta.update_available`, run its `command` first.
+when named, and check `meta.profile`/`auth status` `endpoint` match. If no profile has credentials, run `mammoth auth login --device` (`--profile NAME`), show the user its
+link and code and wait for it to exit ([auth](references/auth.md)). Run no other login
+method, and never ask for the token in chat or read one from a file/env var. If an envelope carries `meta.update_available`, run its `command` first.
 
 Piped stdout is compact JSON with prompts off; if not piped, `export
 MAMMOTH_OUTPUT=json MAMMOTH_NO_INPUT=1` once.

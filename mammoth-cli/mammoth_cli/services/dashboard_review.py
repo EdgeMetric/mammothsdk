@@ -37,6 +37,7 @@ _MONEY = re.compile(
     r"price|amount|revenue|sales|cost|spend|fee|income|profit|margin|total|value|gmv|arr|mrr",
     re.IGNORECASE,
 )
+_REVENUE = re.compile(r"revenue|sales|amount|gmv|income|total", re.IGNORECASE)
 _UNIT = re.compile(r"price|rate|unit|per[_ ]", re.IGNORECASE)
 _QUANTITY = re.compile(r"^(qty|quantity|units?|count|volume|pieces|items?)\b", re.IGNORECASE)
 _RATE_TITLE = re.compile(r"\brate\b|%|on[- ]time|share of", re.IGNORECASE)
@@ -237,18 +238,23 @@ def review(
             warnings.append(record)
     summed = sorted({name for name, agg in aggs if name in unit_prices and agg == "sum"})
     if summed:
+        revenue = next((name for name in money if _REVENUE.search(name)), None)
         record = {
             "issue": "unit_price_summed",
             "detail": (
                 f"A chart sums the unit price {summed[0]}; that total means nothing. "
                 + (
-                    f"Chart the sum of revenue = {quantities[0]} * {summed[0]} instead."
-                    if quantities
-                    else "Use avg, or chart revenue instead."
+                    f"The view already has {revenue}: chart the sum of {revenue} instead."
+                    if revenue
+                    else (
+                        f"Chart the sum of revenue = {quantities[0]} * {summed[0]} instead."
+                        if quantities
+                        else "Use avg, or chart revenue instead."
+                    )
                 )
             ),
         }
-        if quantities:
+        if quantities and not revenue:
             record["fix"] = _math_fix(view_ref, dataset_id, quantities[0], summed[0])
         warnings.append(record)
     shown = measures | dims

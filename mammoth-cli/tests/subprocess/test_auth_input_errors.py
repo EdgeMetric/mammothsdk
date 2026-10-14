@@ -130,3 +130,25 @@ def test_login_menu_offers_browser_and_device_on_koyal() -> None:
     menu = _read_login_menu("koyal")
     assert "1) Browser (OAuth)      recommended" in menu
     assert "2) Device code          no browser on this machine" in menu
+
+
+def test_headless_login_names_the_device_flow() -> None:
+    """B3: with no terminal, the error says how to log in without one, not only --input."""
+    result = _run(["auth", "login", "--output", "json", "--no-input"], env=_base_env())
+
+    assert result.returncode == _EXIT_USAGE, result.stderr
+    error = json.loads(result.stdout or result.stderr)["error"]
+    assert error["code"] == "login_input_required"
+    assert "--device" in error["hint"]
+    assert "--method oauth --no-browser" in error["hint"]
+    assert error["recovery_commands"] == ["mammoth auth login --device"]
+
+
+def test_login_help_does_not_mark_api_token_required_for_every_method() -> None:
+    """B4: api_token is required for --method token only; the help line says so."""
+    env = {**_base_env(), "COLUMNS": "300", "NO_COLOR": "1"}
+    result = _run(["auth", "login", "--help"], env=env)
+
+    assert result.returncode == 0, result.stderr
+    assert "Input fields (--method token only" in result.stdout
+    assert "Input fields: api_token*" not in result.stdout

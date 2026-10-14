@@ -1097,6 +1097,9 @@ def test_cli_to_recording_transport_uses_independent_wire(
         return
     method, path, kwargs = case["wire"]
     _on_folder_routes(api, case)
+    if case["route"] == "project.create":
+        # Creating a project first asks which project, if any, the token is limited to.
+        _drive(api.on("GET", "/api/v2/workspaces/current", body={"id": 4}))
     _drive(api.on(method, "/api/v2" + path, body=case["response"]))
     result = make_runner().invoke(_argv(case))
     assert result.exit_code == 0, result.output
