@@ -6,6 +6,11 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed (mammoth-cli 2.2.81)
+
+- `mammoth auth logout` treats a 401/404 from the server as the sign-in already being ended and signs out locally instead of failing.
+- `mammoth auth login` warns when it replaced another profile's sign-in that shared the same Mammoth sign-in.
+
 ### Fixed (mammoth-cli 2.2.80)
 
 - `mammoth auth login` with no terminal (`--no-input`, a pipe, `--output json`): the `login_input_required` error now names `--device` and `--method oauth --no-browser` as well as `--input`, and carries `recovery_commands: ["mammoth auth login --device"]`.
