@@ -8,6 +8,7 @@ from mammoth_cli.commands.schema import find_schemas
 
 #: (what a user says, the command that must be among the first three matches)
 PHRASINGS = [
+    ("check who i am signed in as", "auth.status"),
     ("put my view in a managed postgres database", "view.export.publish-db"),
     ("send this view to a postgres table", "view.export.publish-db"),
     ("write this view into our sql database", "view.export.publish-db"),
@@ -73,8 +74,6 @@ PHRASINGS = [
 #: Goals the ranking misses today. ``strict`` xfail: the day one starts ranking, this
 #: fails and the goal moves into ``PHRASINGS`` above.
 KNOWN_MISSES = [
-    ("check who i am signed in as", "auth.status"),
-    ("undo a transform step", "view.task.delete"),
     ("count rows per category", "view.data.aggregate"),
 ]
 

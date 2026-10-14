@@ -86,9 +86,9 @@ def test_generated_task_docs_do_not_present_opaque_examples_as_usable_tasks() ->
         assert "`mammoth view transform ...`" not in block
 
 
-def test_view_optimize_takes_one_id_and_lists_the_dataset_second() -> None:
-    """An agent passed the wrong dataset beside the right view: the example gives one id."""
+def test_view_optimize_example_names_the_view_then_a_distinct_dataset() -> None:
+    """The SDK needs the dataset, so the example names it: VIEW_ID first, DATASET_ID second."""
     record = next(r for r in load_commands() if r["command_id"] == "view.optimize")
     assert [p["metavar"] for p in record["positionals"]] == ["VIEW_ID", "DATASET_ID"]
     assert record["positionals"][1]["required"] is False
-    assert shlex.split(record["agent_example"])[3:] == ["123"]
+    assert shlex.split(record["agent_example"])[3:] == ["123", "456"]

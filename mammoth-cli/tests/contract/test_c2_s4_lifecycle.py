@@ -122,7 +122,8 @@ def test_batch_wire_oracles_cover_query_body_and_distinct_lifecycle_paths() -> N
     assert client.calls[-1] == (
         "PATCH",
         "/workspaces/17/projects/41/datasets/731/batches",
-        {"json": {"patch": [{"op": "replace", "value": {"S4_BATCH": [733]}}]}},
+        # The backend takes exactly one operation, not a list; ``path`` is filled in.
+        {"json": {"patch": {"path": "batches", "op": "replace", "value": {"S4_BATCH": [733]}}}},
     )
 
     _drive(api.bulk_delete(731, ids=[733, 734], project_id=41))

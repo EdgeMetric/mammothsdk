@@ -1054,7 +1054,9 @@ def _argv(case: dict[str, Any]) -> list[str]:
     if case.get("project") is not None:
         out += ["--project", str(case["project"])]
     if case.get("yes"):
-        out += ["--yes", "--confirm", str(case.get("confirm", "4"))]
+        # --confirm must equal the target the command acts on: its first id, when it has one.
+        target = next((token for token in case["argv"] if token.isdigit()), "4")
+        out += ["--yes", "--confirm", str(case.get("confirm", target))]
     if case.get("input") is not None:
         out += ["--input", json.dumps(case["input"]), "--input-format", "json"]
     out += ["--output", "json", "--no-input"]

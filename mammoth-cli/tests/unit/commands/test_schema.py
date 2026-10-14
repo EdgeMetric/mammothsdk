@@ -896,7 +896,12 @@ def test_find_with_no_full_match_inlines_how_to_call_the_top_suggestions() -> No
     """A long goal rarely matches every word; the top suggestions still carry the
     input fields and an example, so one find is enough to act (no schema get)."""
     result = find_schemas("aggregate rows by date year month and count by result")
-    assert result["matches"] == []
+    # No command carries every word: ``matches`` holds the best partial ones, marked.
+    assert result["total_matches"] == 0
+    assert [m["command_id"] for m in result["matches"]] == [
+        s["command_id"] for s in result["suggestions"]
+    ]
+    assert all(m["partial"] for m in result["matches"]) and result["partial_matches"] is True
     top = result["suggestions"][:3]
     assert "view.data.explore" in [entry["command_id"] for entry in top]
     for entry in top:

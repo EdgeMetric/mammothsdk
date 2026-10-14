@@ -411,7 +411,7 @@ _COMMAND_DISCOVERY_PURPOSES = {
         "conditional threshold greater than if text times"
     ),
     "view.transform.pivot": (
-        "pivot group by aggregate aggregation sum count average summary summarize "
+        "pivot table group by aggregate aggregation sum count average summary summarize "
         "summarise per region total"
     ),
     "view.transform.rename-columns": (
@@ -520,7 +520,22 @@ _COMMAND_DISCOVERY_PURPOSES = {
     # system prompt used to spell out by hand.
     "dashboard.suggestion.list": "ideas suggest suggestions what to show put on a board chart",
     "dashboard.analytics": "who viewed seen opened views visitors usage of a board",
-    "dashboard.share": "share make live publish board for the team link access",
+    "dashboard.share": (
+        "share make live publish board for the team link access with a user person "
+        "colleague invite grant"
+    ),
+    "dashboard.delete": "delete remove permanently dashboard board",
+    "view.delete": "delete remove permanently",
+    "dataset.delete": "delete remove permanently dataset",
+    "view.list": "list all views",
+    "view.task.delete": (
+        "undo remove the last step task from the pipeline revert a transformation"
+    ),
+    "view.data.query": "query rows with a filter condition sort columns and get rows back",
+    "batch.create": "append add new data to an existing dataset",
+    "auth.login": "log in sign in login authenticate token workspace",
+    "auth.status": "who am i signed in logged in as current user session status check",
+    "doctor": "check my setup health diagnose environment install doctor",
     # "Import a table from SQL Server / MySQL / Postgres into a dataset" is a
     # connector flow -- list connectors, create a connection, then a ds-config
     # (a table or query pulled in as a new dataset) -- but none of these
@@ -2344,6 +2359,11 @@ def find_schemas(
         # A goal phrased in the user's words rarely carries every term; the
         # best near misses still say how to call them, so one find suffices.
         _inline_call_detail(result["suggestions"][:_INLINE_DETAIL_COUNT])
+        # A script that reads only ``matches`` must not be left with nothing: the best
+        # partial matches go there too, marked so they are not mistaken for full ones
+        # (``total_matches`` stays 0 and each carries the ``matched_terms`` it has).
+        result["matches"] = [{**entry, "partial": True} for entry in result["suggestions"]]
+        result["partial_matches"] = bool(result["matches"])
         result["hint"] = (
             _NO_MATCH_HINT_WITH_SUGGESTIONS
             if result["suggestions"]
