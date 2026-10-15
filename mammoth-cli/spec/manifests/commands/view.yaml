@@ -7246,7 +7246,7 @@ commands:
     required: false
     metavar: DATASET_ID
     falls_back_to_field: dataset_id
-    help: Exact parent dataset ID; or pass it via the 'dataset_id' input field.
+    help: 'Exact parent dataset ID. Required for this command: pass it here or as the ''dataset_id'' input field; only read commands may omit it and discover the parent.'
   options: []
   sdk_symbol: mammoth.api.exports.ExportsAPI.rest_fill
   sdk_conversion: Call mammoth.api.exports.ExportsAPI.rest_fill with validated request fields.

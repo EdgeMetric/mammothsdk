@@ -1300,7 +1300,7 @@ commands:
   result_model: WorkspaceExportHostsSetResult
   mutation_class: "high_impact"
   edits_target: false
-  confirmation: "confirm_target"
+  confirmation: "yes_always"
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: "contract_only_high_impact"
@@ -1323,5 +1323,5 @@ commands:
   - CT-WORKSPACE-EXPORT-HOSTS-SET-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: "Sets which hosts exports may send data to for the whole workspace. Admins only. Confirms the workspace id."
+  known_restrictions: "Sets which hosts exports may send data to for the whole workspace. Admins only. Needs --yes."
   reviewed_by: primary

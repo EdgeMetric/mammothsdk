@@ -78,9 +78,9 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth workspace export-hosts set`. Exact input fields: `mammoth schema get workspace.export-hosts.set`.
 
-Example: `mammoth workspace export-hosts set --input '{"restricted": true}' --yes`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth workspace export-hosts set --input '{"restricted": true}' --yes`. Illustrative only: append `--yes` after observing an owned target.
 
-Result: `WorkspaceExportHostsSetResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+Result: `WorkspaceExportHostsSetResult`; mutation `high_impact`, confirmation `yes_always`, wait policy `not_async`.
 
 Status on release: untried; no live run recorded.
 

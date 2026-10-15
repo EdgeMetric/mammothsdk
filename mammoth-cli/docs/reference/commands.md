@@ -6661,7 +6661,7 @@ Total commands: 779.
 **Arguments**
 
 - `DATAVIEW_ID` (int, required) — ID of the dataview.
-- `DATASET_ID` (int, optional) — Exact parent dataset ID; or pass it via the 'dataset_id' input field.
+- `DATASET_ID` (int, optional) — Exact parent dataset ID. Required for this command: pass it here or as the 'dataset_id' input field; only read commands may omit it and discover the parent.
 
 - Mutation class: `external_effect`
 - Confirmation: `yes_always`
@@ -7859,7 +7859,7 @@ Total commands: 779.
 ### `mammoth workspace export-hosts set`
 
 - Mutation class: `high_impact`
-- Confirmation: `confirm_target`
+- Confirmation: `yes_always`
 - Backing SDK: `mammoth.api.exports.ExportsAPI.set_export_hosts`
 - Agent example: `mammoth workspace export-hosts set --input '{"restricted": true}' --yes`
 
