@@ -582,6 +582,40 @@ class DataviewsAPI:
             params=params,
         )
 
+    async def summary(
+        self,
+        dataset_id: int,
+        dataview_id: int,
+        workspace_id: int | None = None,
+        project_id: int | None = None,
+    ) -> dict[str, Any]:
+        """Summarise what a view has had done to it and where it goes.
+
+        Read only, from the database alone (no model call): the Summary panel of a view.
+
+        Args:
+            dataset_id: ID of the dataset.
+            dataview_id: ID of the dataview (must be > 0).
+            workspace_id: ID of the workspace (uses client default if not provided).
+            project_id: ID of the project (uses client default if not provided).
+
+        Returns:
+            Dict with ``transformations``, ``actions``, ``data_out`` (exports and sends),
+            ``dashboards`` (lists of dicts) and ``result`` (dict or None).
+
+        Raises:
+            MammothValidationError: If *dataview_id* <= 0.
+        """
+        if dataview_id <= 0:
+            raise MammothValidationError(ERR_DATAVIEW_ID_POSITIVE.format(dataview_id))
+        ws = workspace_id or self._ws()
+        proj = project_id or self._proj()
+        return await self._client._request_json(
+            "GET",
+            f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/dataviews/{dataview_id}"
+            "/summary",
+        )
+
     async def analysis(
         self,
         dataset_id: int,

@@ -19,6 +19,9 @@ if TYPE_CHECKING:
 from ..exceptions import MammothAPIError, MammothValidationError
 from ..models.exports import (
     AddExportSpec,
+    ExportHostPolicy,
+    ExportHostPolicyRead,
+    ExportRuns,
     ExportStatus,
     HandlerType,
     OdbcType,
@@ -32,6 +35,14 @@ from .jobs import JobsAPI
 ERR_DATAVIEW_ID_POSITIVE = "`dataview_id` must be a positive integer, got {0}."
 ERR_EXPORT_ID_POSITIVE = "`export_id` must be a positive integer, got {0}."
 ERR_DATASET_ID_POSITIVE = "`dataset_id` must be a positive integer, got {0}."
+ERR_RUNS_LIMIT = "`limit` must be between 1 and 50, got {0}."
+ERR_DOCS_URL = "`docs_url` must be a non-empty string."
+ERR_NOTES_LENGTH = "`notes` must be at most 2000 characters, got {0}."
+ERR_HOSTS_COUNT = "`hosts` must hold at most 100 hosts, got {0}."
+ERR_HOSTS_ENTRY = "`hosts` entries must be non-empty strings."
+_RUNS_LIMIT_MAX = 50
+_NOTES_MAX = 2000
+_HOSTS_MAX = 100
 
 _list = list  # Alias to avoid shadowing by method name
 
@@ -218,6 +229,161 @@ class ExportsAPI:
             f"/dataviews/{dataview_id}/pipeline/exports/{export_id}",
             params=params or None,
         )
+
+    async def runs(
+        self,
+        dataview_id: int,
+        export_id: int,
+        limit: int = 20,
+        dataset_id: int | None = None,
+        project_id: int | None = None,
+    ) -> ExportRuns:
+        """Get the run history of a saved export, newest first.
+
+        Each run says when it started, how long it took, how many rows it sent, where
+        they went, what triggered it and, if it failed, the error.
+
+        Args:
+            dataview_id: ID of the dataview (must be > 0).
+            export_id: ID of the export (must be > 0).
+            limit: Number of most recent runs to return (1-50, default 20).
+            dataset_id: ID of the dataset (auto-detected if not provided).
+            project_id: ID of the project (uses client default if not provided).
+
+        Returns:
+            ExportRuns with ``export_id`` and ``runs``.
+
+        Raises:
+            MammothValidationError: If *dataview_id* or *export_id* <= 0, or *limit*
+                is outside 1-50.
+        """
+        if dataview_id <= 0:
+            raise MammothValidationError(ERR_DATAVIEW_ID_POSITIVE.format(dataview_id))
+        if export_id <= 0:
+            raise MammothValidationError(ERR_EXPORT_ID_POSITIVE.format(export_id))
+        if not 1 <= limit <= _RUNS_LIMIT_MAX:
+            raise MammothValidationError(ERR_RUNS_LIMIT.format(limit))
+
+        workspace_id = self._client.workspace_id
+        if project_id is None:
+            project_id = getattr(self._client, "project_id", None)
+            if project_id is None:
+                raise ValueError(
+                    "project_id must be provided either to the method or set on the client"
+                )
+        if dataset_id is None:
+            dataset_id = await self._find_dataset_for_dataview(dataview_id)
+
+        response = await self._client._request_json(
+            "GET",
+            f"/workspaces/{workspace_id}/projects/{project_id}/datasets/{dataset_id}"
+            f"/dataviews/{dataview_id}/pipeline/exports/{export_id}/runs",
+            params={"limit": limit},
+        )
+        return ExportRuns(**response)
+
+    async def rest_fill(
+        self,
+        dataview_id: int,
+        docs_url: str,
+        notes: str = "",
+        wait: bool = True,
+        timeout: float | None = None,
+        dataset_id: int | None = None,
+        project_id: int | None = None,
+    ) -> dict[str, Any]:
+        """Propose REST API export settings from an API documentation page.
+
+        The server reads *docs_url* and proposes form values for a REST API export
+        (never credentials). Nothing is configured or sent: review the suggestion, then
+        create the export yourself. The server fetches *docs_url*, so pass only a
+        documentation page you are happy for Mammoth to read.
+
+        Args:
+            dataview_id: ID of the dataview (must be > 0).
+            docs_url: URL of the API documentation to read.
+            notes: Extra guidance for the suggestion (at most 2000 characters).
+            wait: Wait for the job to finish (default True). False returns the queued job.
+            timeout: Seconds to wait (uses ``client.job_timeout`` if not provided).
+            dataset_id: ID of the dataset (auto-detected if not provided).
+            project_id: ID of the project (uses client default if not provided).
+
+        Returns:
+            The job dict. When finished, ``response["suggestion"]`` holds the proposal.
+
+        Raises:
+            MammothValidationError: If *dataview_id* <= 0, *docs_url* is empty or *notes*
+                is longer than 2000 characters.
+            MammothJobFailedError: If the job fails (when *wait* is True).
+            MammothJobTimeoutError: If the job does not finish in time (when *wait* is True).
+        """
+        if dataview_id <= 0:
+            raise MammothValidationError(ERR_DATAVIEW_ID_POSITIVE.format(dataview_id))
+        if not isinstance(docs_url, str) or not docs_url.strip():
+            raise MammothValidationError(ERR_DOCS_URL)
+        if len(notes) > _NOTES_MAX:
+            raise MammothValidationError(ERR_NOTES_LENGTH.format(len(notes)))
+
+        workspace_id = self._client.workspace_id
+        if project_id is None:
+            project_id = getattr(self._client, "project_id", None)
+            if project_id is None:
+                raise ValueError(
+                    "project_id must be provided either to the method or set on the client"
+                )
+        if dataset_id is None:
+            dataset_id = await self._find_dataset_for_dataview(dataview_id)
+
+        job = await self._client._request_json(
+            "POST",
+            f"/workspaces/{workspace_id}/projects/{project_id}/datasets/{dataset_id}"
+            f"/dataviews/{dataview_id}/pipeline/exports/rest-fill",
+            json={"docs_url": docs_url, "notes": notes},
+        )
+        if not wait:
+            return job
+        return await self._jobs_api.wait_for_job(job["id"], timeout=timeout)
+
+    async def export_hosts(self) -> ExportHostPolicyRead:
+        """Get the hosts this workspace's custom export destinations may send to.
+
+        Returns:
+            ExportHostPolicyRead: ``restricted`` (True: only ``hosts`` are allowed),
+            ``hosts`` and ``in_use`` (hosts saved exports already send to).
+        """
+        response = await self._client._request_json(
+            "GET", f"/workspaces/{self._client.workspace_id}/export-hosts"
+        )
+        return ExportHostPolicyRead(**response)
+
+    async def set_export_hosts(
+        self, restricted: bool, hosts: _list[str] | None = None
+    ) -> ExportHostPolicy:
+        """Set the hosts this workspace's custom export destinations may send to.
+
+        Replaces the whole policy. Workspace admins only.
+
+        Args:
+            restricted: True to allow only *hosts*; False to allow any host.
+            hosts: Allowed hosts (at most 100, none empty).
+
+        Returns:
+            ExportHostPolicy as saved.
+
+        Raises:
+            MammothValidationError: If *hosts* holds more than 100 entries or an empty one.
+        """
+        hosts = list(hosts or [])
+        if len(hosts) > _HOSTS_MAX:
+            raise MammothValidationError(ERR_HOSTS_COUNT.format(len(hosts)))
+        if any(not isinstance(host, str) or not host.strip() for host in hosts):
+            raise MammothValidationError(ERR_HOSTS_ENTRY)
+        response = await self._client._request_json(
+            "PUT",
+            f"/workspaces/{self._client.workspace_id}/export-hosts",
+            json={"restricted": restricted, "hosts": hosts},
+        )
+        return ExportHostPolicy(**response)
 
     async def update(
         self,
