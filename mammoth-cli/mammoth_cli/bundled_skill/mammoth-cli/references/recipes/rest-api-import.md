@@ -31,8 +31,10 @@ does not include this connector (or its paid addon is not active).
 
 ## 2. Try the data-source config (creates no dataset)
 
-`mammoth connector connection query generic_rest_api CONNECTION_KEY --input
-sample.json` runs the same sample read-only (no `--yes`, nothing saved).
+Sample a REST source with `connector ds-config create` and `"data_sample":
+true`, as below. It creates no dataset. Do not use `connector connection query`
+for a REST source: it runs only one read-only SQL `SELECT` and refuses the
+endpoint config.
 
 `query` is a **JSON string** (not an object) of the data-source config:
 `endpoint_path`, `http_method` (`GET|POST`), `request_body`, `query_params`,
