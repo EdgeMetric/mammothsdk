@@ -2378,7 +2378,8 @@ commands:
   draft_test: null
   undo_test: null
   known_restrictions: SDK target for view export csv VIEW_ID; uses partial file, fsync, atomic rename,
-    and explicit --overwrite.
+    and explicit --overwrite; an existing
+    output file is refused with file_exists unless --overwrite is given.
   reviewed_by: primary
 - command_id: view.export.dataset
   command_path: view export dataset

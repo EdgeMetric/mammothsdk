@@ -3118,3 +3118,29 @@ def test_data_get_offset_is_zero_based_and_pages_chain_exactly(
         offset = data["paging"]["next_offset"]
     assert seen == list(range(7))
     assert data["paging"]["previous_offset"] == 3
+
+
+def test_export_csv_refuses_an_existing_file_and_names_overwrite(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    existing = tmp_path / "out.csv"
+    existing.write_text("keep me", encoding="utf-8")
+    doc = _doc(tmp_path, {"output_path": str(existing), "dataset_id": 9})
+    with pytest.raises(CliError) as excinfo:
+        view_cmd.view_export_csv(_inv("view.export.csv", extra_args=["7"], input_file=doc))
+    assert excinfo.value.code == "file_exists"
+    assert excinfo.value.recovery_commands[0].endswith("--overwrite")
+    assert fake_service.call_log == []
+    assert existing.read_text(encoding="utf-8") == "keep me"
+
+
+def test_export_csv_replaces_an_existing_file_with_overwrite(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    existing = tmp_path / "out.csv"
+    existing.write_text("old", encoding="utf-8")
+    doc = _doc(tmp_path, {"output_path": str(existing), "dataset_id": 9})
+    view_cmd.view_export_csv(
+        _inv("view.export.csv", extra_args=["7"], input_file=doc, overwrite=True)
+    )
+    assert _without_meta(fake_service.call_log)[0][0] == _EXPORT_CSV

@@ -40,6 +40,7 @@ from mammoth_cli.services.explore_card_edit import (
 )
 from mammoth_cli.services.explore_to_figure import card_level, card_to_figure, count_filters
 from mammoth_cli.services.explore_to_image import card_to_render_spec
+from mammoth_cli.services.local_files import refuse_existing_file
 
 HandlerResult = tuple[Any, dict[str, Any]]
 
@@ -161,6 +162,7 @@ def view_explore_panel_edit(invocation: Invocation) -> HandlerResult:
     dataview_id = _require_int_positional_at(invocation, 0, "view id")
     document = invocation.load_input() or {}
     edits = _require_field(document, "edits")
+    refuse_existing_file(invocation, output_path)
     with open_service(invocation) as (service, auth):
         dataset_id = _verified_dataset_id(service, invocation, dataview_id, document)
         view = _View(service, dataset_id, dataview_id, project_id)

@@ -66,6 +66,7 @@ from mammoth_cli.services.dashboard_review import UPLOAD_NOTE, upload_hints
 from mammoth_cli.services.data_quality import column_warnings, duplicate_rows_fact
 from mammoth_cli.services.explore_cards import resolve_panel as resolve_explore_panel
 from mammoth_cli.services.listing import DATASET_LIST_FIELDS, compact_view_list
+from mammoth_cli.services.local_files import refuse_existing_file
 from mammoth_cli.services.local_time import local_time
 from mammoth_cli.services.paging import paging_block
 from mammoth_cli.services.read_queries import ReadContext
@@ -3868,7 +3869,8 @@ def view_export_csv(invocation: Invocation) -> HandlerResult:
 
     With no --input the file is written to the current directory under an
     auto-generated name; the dataset is resolved from the view. Override with
-    ``--input '{"output_path": "path.csv"}'``.
+    ``--input '{"output_path": "path.csv"}'``. An existing file is not replaced
+    (``file_exists``) unless ``--overwrite`` is given.
 
     Embedded (see ``mammoth_cli.runtime.embedded``), no file is written: the
     signed download URL is returned instead so the host can hand it to its
@@ -3882,6 +3884,12 @@ def view_export_csv(invocation: Invocation) -> HandlerResult:
     _forward_optional(document, kwargs, ("output_path", "timeout", "dataset_id"))
     with open_service(invocation) as (service, auth):
         _require_exact_parent(service, invocation, dataview_id, kwargs)
+        # The SDK's own default name needs the parent dataset, which is known here.
+        target = kwargs.get("output_path")
+        if target is None and kwargs.get(_DATASET_ID_FIELD) is not None:
+            target = f"dataview_{kwargs[_DATASET_ID_FIELD]}_{dataview_id}_export.csv"
+        if target is not None:
+            refuse_existing_file(invocation, target)
         data = service.call(_symbol(invocation), **kwargs)
     # The SDK returns a Path; render it as a string so the written location is
     # visible in every output mode and serializes cleanly to JSON.
