@@ -29,6 +29,7 @@ from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.session import open_service, require_project
 from mammoth_cli.services.delete_check import CODE_DELETE_NOT_APPLIED
 from mammoth_cli.services.folder_ids import FolderIds
+from mammoth_cli.services.paging import listing_with_paging
 
 HandlerResult = tuple[Any, dict[str, Any]]
 
@@ -175,6 +176,13 @@ def folder_list(invocation: Invocation) -> HandlerResult:
             kwargs["folder_ids"] = folders.labels(project_id, kwargs["folder_ids"])
         page = service.call(_symbol(invocation), **kwargs)
         data = _open_listed(folders, project_id, page)
+    data = listing_with_paging(
+        data,
+        key="folders",
+        command="mammoth folder list",
+        project=project_id,
+        requested=kwargs,
+    )
     return data, _meta(invocation, auth.workspace_id, project_id)
 
 

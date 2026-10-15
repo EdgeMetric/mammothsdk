@@ -51,6 +51,31 @@ def test_list_with_no_input_passes_no_kwargs(fake_service: FakeMammothService) -
     assert fake_service.call_log == [(_LIST, {})]
 
 
+def test_list_drops_the_raw_next_url_and_adds_paging(fake_service: FakeMammothService) -> None:
+    fake_service.responses[_LIST] = {
+        "files": [{"id": 1}, {"id": 2}],
+        "next": "http://api.example/files?offset=2",
+        "total": None,
+    }
+    data, _ = file_cmd.file_list(_inv("file.list"))
+    assert "next" not in data
+    assert "total" not in data
+    assert data["paging"]["offset"] == 0
+    assert data["paging"]["next_command"] is None
+
+
+def test_list_full_page_names_the_next_page_as_a_command(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    fake_service.responses[_LIST] = {"files": [{"id": 1}, {"id": 2}], "next": "http://x/y"}
+    doc = tmp_path / "in.json"
+    doc.write_text(json.dumps({"limit": 2}), encoding="utf-8")
+    data, _ = file_cmd.file_list(_inv("file.list", input_file=str(doc)))
+    assert data["paging"]["next_offset"] == 2
+    assert data["paging"]["next_command"].startswith("mammoth file list")
+    assert "http" not in json.dumps(data)
+
+
 def test_list_forwards_optional_fields(fake_service: FakeMammothService, tmp_path: Path) -> None:
     doc = tmp_path / "in.json"
     doc.write_text(

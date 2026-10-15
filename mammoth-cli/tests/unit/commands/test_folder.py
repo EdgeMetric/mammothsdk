@@ -309,3 +309,14 @@ def test_bulk_delete_of_only_unknown_folders_is_resource_not_found(
         )
     assert excinfo.value.code == "resource_not_found"
     assert not [1 for symbol, _ in fake_service.call_log if symbol == _BULK_DELETE]
+
+
+def test_list_drops_the_raw_next_url_and_adds_paging(fake_service: FakeMammothService) -> None:
+    fake_service.responses[_LIST] = {
+        "folders": [{"id": 1, "resource_id": 701}],
+        "next": "http://api.example/folders?offset=1",
+        "total": None,
+    }
+    data, _ = folder_cmd.folder_list(_inv("folder.list", project=180))
+    assert "next" not in data
+    assert data["paging"]["next_command"] is None

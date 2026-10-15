@@ -34,6 +34,7 @@ from mammoth_cli.runtime.confirm import (
     enforce_confirmation,
 )
 from mammoth_cli.runtime.invocation import Invocation
+from mammoth_cli.services.paging import listing_with_paging
 from mammoth_cli.runtime.session import open_service, resolved_project
 from mammoth_cli.services.command_contract import bind_command_inputs
 
@@ -132,6 +133,13 @@ def file_list(invocation: Invocation) -> HandlerResult:
     )
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), **kwargs)
+    data = listing_with_paging(
+        data,
+        key="files",
+        command="mammoth file list",
+        project=invocation.project,
+        requested=kwargs,
+    )
     return data, _meta(invocation, auth.workspace_id, resolved_project(invocation))
 
 
