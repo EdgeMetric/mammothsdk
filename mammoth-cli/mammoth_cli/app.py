@@ -1414,6 +1414,11 @@ def _command_help(command_id: str, record: dict[str, Any] | None) -> str | None:
     if fields:
         label = _INPUT_FIELDS_LABEL.get(command_id, "Input fields")
         parts.append(f"{label}: {fields}")
+    from mammoth_cli.services.field_enums import nested_choices_help
+
+    nested = nested_choices_help(command_id)
+    if nested:
+        parts.append(nested)
     return "\n\n".join(parts) or None
 
 
@@ -1437,7 +1442,8 @@ def _help_input_fields(command_id: str) -> str | None:
     for field in fields:
         label = f"{field.name}*" if field.required else field.name
         enum = field.enum_values
-        kind = "|".join(str(item) for item in enum[:6]) if enum else _short_type(field.type_name)
+        # Every value: a fixed list cut short is a guess the caller cannot check.
+        kind = " | ".join(str(item) for item in enum) if enum else _short_type(field.type_name)
         rendered.append(f"{label} ({kind})" if kind else label)
         if len(rendered) == 12 and len(fields) > 12:
             rendered.append(f"... {len(fields) - 12} more (schema get {command_id})")

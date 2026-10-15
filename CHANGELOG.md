@@ -9,6 +9,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Added (mammoth-cli 2.2.86, command and capability discovery)
 
 - Did you mean: an unknown command names the nearest commands, including a nested group (`mammoth pipeline` -> `mammoth view pipeline`), and points to `mammoth how` / `mammoth schema find` instead of `schema get`; `details.did_you_mean` lists them and `recovery_commands` are ready to run. An unknown option names the nearest valid one (`--profle` -> `--profile`), and an option passed with its value as one argument (`"--project 3633"`, `--project3633`) says to pass the value separately. An unknown or wrong-case column (`Day` for `day`) names the closest column in the message, hint and `details.did_you_mean`.
+- Allowed values in `--help` and in the error hint: an enum input field lists every value (it was cut at six, so `extract-date`'s `component` and `window`'s `function` hid most of theirs), and a fixed list inside a field gets an "Allowed values" line: `view transform batch` names its `steps[].op` list, and `dataset create` its `query_properties.data_pull_file` values. A refused batch op lists the allowed ops in `hint` (it was null) with `details.allowed` and `details.did_you_mean`. The help line, the hint and the check read the same tuple, so they cannot drift.
 
 ### Fixed (mammoth-cli 2.2.86, team bug bash 2026-10-15)
 

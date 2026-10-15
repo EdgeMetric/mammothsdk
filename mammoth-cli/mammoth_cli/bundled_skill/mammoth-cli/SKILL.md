@@ -141,7 +141,8 @@ your report. If no column links the files, ask before you combine them.
 
 - Ids are positionals; request fields are one `--input '{...}'` document;
   no per-field flags (`project create NAME`, not `--name`).
-- `COMMAND --help` lists input fields; `schema find WORDS` inlines
+- `COMMAND --help` lists input fields with every allowed value (and
+  "Allowed values" for fixed lists inside a field, such as batch `steps[].op`); `schema find WORDS` inlines
   `accepted_fields`/`agent_example` for top matches, else `schema get
   ID,ID` (one call; `--input '{"full": true}'` for all
   fields); `schema list`/`schema list view` list families.

@@ -80,8 +80,10 @@ from mammoth_cli.services.column_type_guard import (
 from mammoth_cli.services.command_contract import bind_command_inputs, resolve_command_contract
 from mammoth_cli.services.conditions import CONDITION_KWARG, compile_condition
 from mammoth_cli.services.delete_check import ensure_deleted
+from mammoth_cli.services.field_enums import BATCH_OPS, allowed_values_text
 from mammoth_cli.services.input_fields import TASK_COUNT_FIELD
 from mammoth_cli.services.sql_check import check_sql_binds
+from mammoth_cli.services.suggest import nearest_one
 from mammoth_cli.services.view_variants import (
     VariantPlan,
     created_entry,
@@ -2290,24 +2292,8 @@ def view_transform_window(invocation: Invocation) -> HandlerResult:
 
 # --- view transform batch --------------------------------------------------
 
-#: The ``view transform`` ops a batch takes: each one's handler only binds its input and
-#: calls one View method, so the batch binds and builds exactly as the single command does.
-#: The rest need their own checks (an impact read, a draft apply, a new dataset) or name
-#: a column an earlier step creates.
-_BATCH_OPS = (
-    "filter",
-    "sort",
-    "limit-rows",
-    "discard-duplicates",
-    "fill-missing",
-    "bulk-replace",
-    "replace",
-    "text",
-    "substring",
-    "extract-date",
-    "increment-date",
-    "copy-columns",
-)
+#: The ops a batch takes; one list for the check, the error hint and ``--help``.
+_BATCH_OPS = BATCH_OPS
 #: A sort is the view's row order (a display setting), not a pipeline task.
 _BATCH_SORT_OP = "sort"
 _ADD_TASKS_METHOD = "add_tasks"
@@ -2349,13 +2335,26 @@ def _batch_steps(document: dict[str, Any] | None) -> list[dict[str, Any]]:
             and step.get("op") in _BATCH_OPS
             and isinstance(step.get("input"), dict)
         ):
+            op = step.get("op") if isinstance(step, dict) else None
+            near = nearest_one(op, _BATCH_OPS) if isinstance(op, str) else None
             raise CliError(
                 code=CODE_INVALID_ARGUMENT,
                 message=(
                     f"steps[{index}] must be {{\"op\": one of {', '.join(_BATCH_OPS)}, "
                     '"input": {...the same input as that `view transform` command}}.'
+                    + (f" Did you mean '{near}'?" if near else "")
                 ),
                 exit_status=EXIT_USAGE,
+                hint=(
+                    f"Allowed ops: {allowed_values_text(_BATCH_OPS)}. Run any other "
+                    "transform (pivot, join, math, ...) as its own `view transform` command."
+                ),
+                details={
+                    "step": index,
+                    "got": op,
+                    "allowed": list(_BATCH_OPS),
+                    "did_you_mean": near,
+                },
             )
     return steps
 

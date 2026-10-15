@@ -85,6 +85,53 @@ FIELD_ENUMS: dict[str, dict[str, tuple[str, ...]]] = {
     },
 }
 
+#: The ``view transform`` ops ``view transform batch`` takes: each one's handler only binds its
+#: input and calls one View method, so the batch binds and builds exactly as the single command
+#: does. The rest need their own checks (an impact read, a draft apply, a new dataset) or name a
+#: column an earlier step creates.
+BATCH_OPS: tuple[str, ...] = (
+    "filter",
+    "sort",
+    "limit-rows",
+    "discard-duplicates",
+    "fill-missing",
+    "bulk-replace",
+    "replace",
+    "text",
+    "substring",
+    "extract-date",
+    "increment-date",
+    "copy-columns",
+)
+
+#: The server's ``data_pull_file`` values for a cloud file import; the first is the app default.
+DATA_PULL_FILE_VALUES: tuple[str, ...] = ("Pull same file", "Pull next file based on name pattern")
+
+#: Fixed lists inside an ``--input`` field (a list item's key, a nested key), which a JSON
+#: Schema ``enum`` on the top-level field cannot carry. ``--help`` prints each as an
+#: "Allowed values" line, and the validator that checks the path imports the same tuple, so
+#: the help, the error hint and the check cannot drift apart.
+NESTED_CHOICES: dict[str, dict[str, tuple[str, ...]]] = {
+    "view.transform.batch": {"steps[].op": BATCH_OPS},
+    "dataset.create": {"dataset_spec.query_properties.data_pull_file": DATA_PULL_FILE_VALUES},
+}
+
+
+def allowed_values_text(values: tuple[str, ...] | list[str]) -> str:
+    """``a, b, c`` with each value quoted when it has a space."""
+    return ", ".join(f"'{value}'" if " " in str(value) else str(value) for value in values)
+
+
+def nested_choices_help(command_id: str) -> str | None:
+    """The ``--help`` line naming each nested fixed list of ``command_id``."""
+    paths = NESTED_CHOICES.get(command_id)
+    if not paths:
+        return None
+    return "Allowed values: " + "; ".join(
+        f"{path}: {allowed_values_text(values)}" for path, values in paths.items()
+    )
+
+
 #: Field names that look like a fixed vocabulary.  A string field with one of these names must be
 #: in :data:`FIELD_ENUMS`, carry an ``enum`` already, or be listed in the allow-list below.
 ENUM_LIKE_FIELD_NAMES = frozenset(

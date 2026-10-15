@@ -36,6 +36,7 @@ from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.new_data import with_file_upload_path
 from mammoth_cli.runtime.session import open_service, require_project
 from mammoth_cli.services.delete_check import ensure_deleted, find_dependents
+from mammoth_cli.services.field_enums import DATA_PULL_FILE_VALUES, allowed_values_text
 from mammoth_cli.services.listing import (
     DATASET_ROW_FIELDS,
     ambiguity_note,
@@ -1212,8 +1213,8 @@ def _require_clone_views(ds_creation_type: object, dataset_spec: object) -> None
         )
 
 
-#: The server's ``data_pull_file`` values for a cloud file import; the first is the app default.
-_DATA_PULL_FILE_VALUES = ("Pull same file", "Pull next file based on name pattern")
+#: The server's ``data_pull_file`` values (one list for the check, its hint and ``--help``).
+_DATA_PULL_FILE_VALUES = DATA_PULL_FILE_VALUES
 
 
 def _default_data_pull_file(ds_creation_type: object, dataset_spec: object) -> None:
@@ -1234,6 +1235,8 @@ def _default_data_pull_file(ds_creation_type: object, dataset_spec: object) -> N
             message="query_properties.data_pull_file must be one of "
             f"{list(_DATA_PULL_FILE_VALUES)}, got {pull!r}.",
             exit_status=EXIT_USAGE,
+            hint=f"Use one of: {allowed_values_text(_DATA_PULL_FILE_VALUES)}.",
+            details={"got": pull, "allowed": list(_DATA_PULL_FILE_VALUES)},
         )
 
 
