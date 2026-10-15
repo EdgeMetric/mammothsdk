@@ -599,6 +599,10 @@ _COMMAND_DISCOVERY_PURPOSES = {
         "link url pasted address app page open file dataset view folder project "
         "workspace ids selected resource parse"
     ),
+    "capabilities": (
+        "cannot can't unsupported not supported limitation limitations gap gaps workaround "
+        "instead missing feature what the cli cannot do yet"
+    ),
     "how": (
         "how goal recipe steps order sequence of commands guide accomplish walkthrough "
         "plain language"

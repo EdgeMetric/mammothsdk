@@ -292,6 +292,11 @@ Sensitive structured input must come from a private file or pipe; never put secr
 - `mammoth calc` [read/none] -> mammoth_cli.commands.calc.calc
   example: mammoth calc '2063664 - 1917815'
 
+## capabilities
+
+- `mammoth capabilities` [read/none] -> mammoth_cli.commands.capabilities.capabilities
+  example: mammoth capabilities
+
 ## capability
 
 - `mammoth capability find` [read/none] -> mammoth_cli.commands.capability.find_capabilities

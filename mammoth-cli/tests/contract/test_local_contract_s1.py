@@ -28,6 +28,7 @@ S1_ROUTES = (
     "auth.logout",
     "auth.status",
     "calc",
+    "capabilities",
     "capability.find",
     "capability.get",
     "capability.list",

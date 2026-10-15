@@ -96,7 +96,9 @@ mammoth schema find "join two datasets; remove duplicates; build a dashboard"   
 
 Call a find result (or `suggestions` entry) from its `accepted_fields` and
 `agent_example`. Before concluding the CLI cannot do something the web app
-does, check `view transform --help` and "View settings, and what has no
+does, run `mammoth capabilities` (the known gaps, each with the commands to
+use instead; `schema find --unsupported WORDS` narrows it), and check
+`view transform --help` and "View settings, and what has no
 command" in [about Mammoth](references/about-mammoth.md). Do not switch to
 the browser, or compute locally, for work the CLI covers; report a real gap
 with the command tried.

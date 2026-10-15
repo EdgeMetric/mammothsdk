@@ -4,7 +4,7 @@ Generated from the reviewed command manifests for mammoth-cli 2.2.86.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
-Total commands: 754.
+Total commands: 755.
 
 ## activity
 
@@ -1236,6 +1236,15 @@ Total commands: 754.
 - Confirmation: `none`
 - Backing SDK: `mammoth_cli.commands.calc.calc`
 - Agent example: `mammoth calc '2063664 - 1917815'`
+
+## capabilities
+
+### `mammoth capabilities`
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth_cli.commands.capabilities.capabilities`
+- Agent example: `mammoth capabilities`
 
 ## capability
 

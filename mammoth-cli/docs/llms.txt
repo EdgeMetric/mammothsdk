@@ -34,6 +34,7 @@
 - `billing` (25 commands)
 - `browse` (9 commands)
 - `calc` (1 commands)
+- `capabilities` (1 commands)
 - `capability` (3 commands)
 - `client-app` (5 commands)
 - `collection` (16 commands)

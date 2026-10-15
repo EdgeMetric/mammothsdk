@@ -1073,6 +1073,7 @@
     "agent.team.set",
     "billing.invoice.list",
     "calc",
+    "capabilities",
     "connector.connection.query",
     "dashboard.attachment-create",
     "dataset.column-stats",

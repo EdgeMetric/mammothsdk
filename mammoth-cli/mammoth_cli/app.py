@@ -277,6 +277,7 @@ _ROOT_HELP_PANELS = {
     "doctor": "Start here",
     "project": "Start here",
     "how": "Discover commands",
+    "capabilities": "Discover commands",
     "schema": "Discover commands",
     "capability": "Discover commands",
     "browse": "Discover commands",
@@ -1669,6 +1670,10 @@ def _load_top_level_group(name: str) -> Any:
 # would import the handler's module (and its SDK dependencies). A test pins this
 # table to :func:`_command_help` so it cannot drift.
 _ROOT_LEAF_HELP: dict[str, str] = {
+    "capabilities": (
+        "List what the CLI cannot do yet, and what to do instead."
+        "\n\nExample: mammoth capabilities"
+    ),
     "calc": (
         "Evaluate one arithmetic expression exactly."
         "\n\nExample: mammoth calc '2063664 - 1917815'"

@@ -50,7 +50,10 @@ from mammoth_cli.services.type_system import TypeValidationError, is_opaque_mapp
 _OPTION_PREFIX = "-"
 
 #: Flags a few commands take in place of the ``--input`` field of the same name.
-COMMAND_FLAGS: dict[str, frozenset[str]] = {"schema.get": frozenset({"--full"})}
+COMMAND_FLAGS: dict[str, frozenset[str]] = {
+    "schema.get": frozenset({"--full"}),
+    "schema.find": frozenset({"--unsupported"}),
+}
 
 CODE_UNKNOWN_OPTION = "unknown_option"
 CODE_UNEXPECTED_ARGUMENT = "unexpected_argument"

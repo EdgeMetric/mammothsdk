@@ -127,6 +127,7 @@
   "browse.search": "Search resources across every project of the workspace (resources v2).",
   "browse.workspace": "Browse all resources in the active workspace (projects, datasets, folders).",
   "calc": "Evaluate one arithmetic expression exactly.",
+  "capabilities": "List what the CLI cannot do yet, and what to do instead.",
   "client-app.create": "Create a client app. Name comes from a positional or the 'app_name' field.",
   "client-app.delete": "Permanently delete one client app by its client key. Prompt or '--yes' required.",
   "client-app.get": "Get one API key (client app) by its client key.",

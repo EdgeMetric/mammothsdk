@@ -206,7 +206,16 @@ def _cap_inline_detail(result: dict[str, Any], keep: int) -> None:
 
 def _schema_find(invocation: Invocation) -> HandlerResult:
     from mammoth_cli.commands import schema as schema_cmd
+    from mammoth_cli.runtime.strict import COMMAND_FLAGS
 
+    flags = COMMAND_FLAGS["schema.find"]
+    words = [str(invocation.bound_input().get("query") or ""), *map(str, invocation.extra_args)]
+    if any(word in flags for word in words):
+        # 'schema find --unsupported [WORDS]': what the CLI cannot do yet.
+        from mammoth_cli.commands.capabilities import unsupported
+
+        rest = dict.fromkeys(word for word in words if word and word not in flags)
+        return unsupported(" ".join(rest)), {}
     query = _require_arg(invocation, "search query")
     if not query.strip():
         raise _EMPTY_QUERY_ERROR
@@ -269,6 +278,7 @@ _TARGETS: dict[str, str] = {
     "link": "mammoth_cli.commands.link:link",
     "resolve": "mammoth_cli.commands.resolve:resolve",
     "how": "mammoth_cli.commands.how:how",
+    "capabilities": "mammoth_cli.commands.capabilities:capabilities",
     "completion.show": "mammoth_cli.commands.completion:completion_show",
     "completion.install": "mammoth_cli.commands.completion:completion_install",
     "skill.agents-md.install": "mammoth_cli.commands.skill:skill_agents_md_install",
