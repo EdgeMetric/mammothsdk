@@ -16,7 +16,10 @@ from mammoth_cli.errors.envelope import (
     CODE_INVALID_ARGUMENT,
     CODE_MISSING_ARGUMENT,
     CODE_MISSING_FIELD,
+    CODE_RESOURCE_NOT_FOUND,
     CODE_SDK_SYMBOL_UNRESOLVED,
+    EXIT_API,
+    EXIT_NOT_FOUND,
     EXIT_USAGE,
     CliError,
 )
@@ -24,6 +27,7 @@ from mammoth_cli.manifest.loader import command_by_id
 from mammoth_cli.runtime.confirm import POLICY_PROMPT_OR_YES, enforce_confirmation
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.session import open_service, require_project
+from mammoth_cli.services.delete_check import CODE_DELETE_NOT_APPLIED
 from mammoth_cli.services.folder_ids import FolderIds
 
 HandlerResult = tuple[Any, dict[str, Any]]
@@ -325,7 +329,30 @@ def folder_delete(invocation: Invocation) -> HandlerResult:
     with open_service(invocation) as (service, auth):
         kwargs["folder_ids"] = FolderIds(service).labels(project_id, [folder_id])
         data = service.call(_symbol(invocation), **kwargs)
-    return data, _meta(invocation, auth.workspace_id, project_id)
+        survivors = _folders_still_present(service, project_id, [folder_id])
+    if survivors:
+        raise _folder_not_deleted(survivors, project_id)
+    out: dict[str, Any] = {"folder_id": folder_id, "status": "deleted"}
+    if data:
+        out["response"] = data
+    return out, _meta(invocation, auth.workspace_id, project_id)
+
+
+def _folders_still_present(service: Any, project_id: int, open_ids: list[int]) -> list[int]:
+    """The ``open_ids`` a fresh folder listing still shows (the delete route returns nothing)."""
+    present = set(FolderIds(service).to_open(project_id).values())
+    return [item for item in open_ids if item in present]
+
+
+def _folder_not_deleted(open_ids: list[int], project_id: int) -> CliError:
+    which = ", ".join(str(item) for item in open_ids)
+    return CliError(
+        code=CODE_DELETE_NOT_APPLIED,
+        message=f"Folder {which} was not deleted: it is still listed in project {project_id}.",
+        exit_status=EXIT_API,
+        hint="Check 'mammoth folder list'; a folder with contents needs remove_contents true.",
+        details={"folder_ids": open_ids},
+    )
 
 
 def folder_bulk_delete(invocation: Invocation) -> HandlerResult:
@@ -342,6 +369,43 @@ def folder_bulk_delete(invocation: Invocation) -> HandlerResult:
     assert document is not None
     _forward_optional(document, kwargs, ("check_dependency", "remove_contents"))
     with open_service(invocation) as (service, auth):
-        kwargs["folder_ids"] = FolderIds(service).labels(project_id, folder_ids)
-        data = service.call(_symbol(invocation), **kwargs)
-    return data, _meta(invocation, auth.workspace_id, project_id)
+        by_open = {v: k for k, v in FolderIds(service).to_open(project_id).items()}
+        existing = [item for item in folder_ids if item in by_open]
+        data: Any = None
+        survivors: list[int] = []
+        if existing:
+            kwargs["folder_ids"] = [by_open[item] for item in existing]
+            data = service.call(_symbol(invocation), **kwargs)
+            survivors = _folders_still_present(service, project_id, existing)
+    results = [
+        {"folder_id": item, "status": "not_found"}
+        if item not in by_open
+        else {"folder_id": item, "status": "failed" if item in survivors else "deleted"}
+        for item in folder_ids
+    ]
+    deleted = [r["folder_id"] for r in results if r["status"] == "deleted"]
+    meta = _meta(invocation, auth.workspace_id, project_id)
+    if not deleted:
+        if not existing:
+            raise CliError(
+                code=CODE_RESOURCE_NOT_FOUND,
+                message=(
+                    f"No folder with id {', '.join(str(i) for i in folder_ids)} in project "
+                    f"{project_id}."
+                ),
+                exit_status=EXIT_NOT_FOUND,
+                hint="Use folder ids as 'folder list' shows them.",
+                details={"results": results},
+            )
+        error = _folder_not_deleted(survivors, project_id)
+        error.details["results"] = results
+        raise error
+    out: dict[str, Any] = {"results": results, "deleted": deleted, "requested": len(folder_ids)}
+    if data:
+        out["response"] = data
+    if len(deleted) < len(folder_ids):
+        out["partial"] = True
+        out["warnings"] = [
+            f"Folder {r['folder_id']}: {r['status']}" for r in results if r["status"] != "deleted"
+        ]
+    return out, meta
