@@ -368,6 +368,8 @@ def _verify_and_reason(
         return False, "the pipeline reported an error"
     if data.get("bake_ok") is False:
         return False, "the dashboard did not bake"
+    if data.get("synthetic_data") is True:
+        return False, "the imported data is synthetic, not the source's own; see warnings"
     if data.get("partial") is True:
         return False, "part of the request was swapped or dropped; see warnings"
     if row_count_attempted:
@@ -404,6 +406,8 @@ def _state(data: dict[str, Any]) -> str:
 
 def _warnings(data: dict[str, Any]) -> list[str]:
     notes: list[str] = []
+    if data.get("synthetic_data") is True and isinstance(data.get("warnings"), list):
+        notes.extend(str(item) for item in data["warnings"])
     for key, value in data.items():
         if not key.endswith("_check") or not isinstance(value, dict):
             continue

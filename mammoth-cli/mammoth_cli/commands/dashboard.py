@@ -1241,8 +1241,61 @@ def dashboard_import_workbook(invocation: Invocation) -> HandlerResult:
         )
     _refuse_rejected_workbook(data)
     if isinstance(data, dict) and data.get("data_source") == "fitted_sample":
-        data = {**data, "synthetic_data": True, "data_note": _SYNTHETIC_ROWS_NOTE}
+        data = _flag_synthetic_import(data, file_path)
     return data, _meta(invocation, auth.workspace_id)
+
+
+def _packaged_row_count(file_path: str) -> int | None:
+    """Data rows in the CSV a ``.twbx`` packages (largest one), or None when it has none."""
+    import zipfile
+
+    try:
+        with zipfile.ZipFile(file_path) as bundle:
+            sizes = [
+                sum(1 for _ in bundle.open(info)) - 1
+                for info in bundle.infolist()
+                if info.filename.lower().endswith(".csv")
+            ]
+    except (zipfile.BadZipFile, OSError):
+        return None
+    return max(sizes) if sizes and max(sizes) >= 0 else None
+
+
+def _flag_synthetic_import(data: dict[str, Any], file_path: str) -> dict[str, Any]:
+    """Make a fitted-sample import ``partial``: its numbers are not the workbook's.
+
+    The backend importer substitutes generated rows for the workbook's data. That must
+    not read ``settled`` with no warning, so the result is partial (exit 3) and says how
+    many rows were expected and received and how to load the real data.
+    """
+    expected = _packaged_row_count(file_path)
+    received = next(
+        (data[k] for k in ("row_count", "rows", "rows_imported") if isinstance(data.get(k), int)),
+        None,
+    )
+    warning = (
+        "The imported data is synthetic: the backend replaced the workbook's data with "
+        f"generated rows. Expected {expected if expected is not None else 'the workbook'}"
+        f"{' rows' if expected is not None else chr(39) + 's own rows'}, received "
+        f"{received if received is not None else 'a generated sample'}"
+        f"{' rows' if received is not None else ''}. Do not trust any number on this dataset."
+    )
+    dataview_id = data.get("dataview_id")
+    steps = [
+        "Upload the real data as a CSV: mammoth file upload REAL.csv --project PROJECT_ID "
+        "(or add it to this dataset with --input '{\"append_to_ds_id\": DATASET_ID}').",
+        "Point the imported dashboard at the real dataset (dashboard figure add or "
+        "dashboard chat edit), then delete the synthetic one"
+        + (f" (view {dataview_id})." if dataview_id is not None else "."),
+    ]
+    return {
+        **data,
+        "synthetic_data": True,
+        "data_note": _SYNTHETIC_ROWS_NOTE,
+        "partial": True,
+        "warnings": [warning],
+        "next_steps": steps,
+    }
 
 
 # ── BI export (Power BI / Tableau) ───────────────────────────────────────────
