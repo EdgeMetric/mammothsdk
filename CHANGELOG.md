@@ -6,6 +6,14 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed (mammoth-cli 2.2.86, team bug bash 2026-10-15)
+
+- `dataset list` (and the name search) report a real `dataset_health` for every dataset. The list route already returns `status`; the compact summary dropped it for a ready dataset, so every row read `unknown` with a "run mammoth dataset get" hint. Each row now carries `status` (about 18 characters a row); no extra request is made, so big projects list as fast as before.
+- `file upload`: the `dataset_health` entry carries the dataset's `name` (it was `null`), and each uploaded dataset in `datasets` has a `name`.
+- Workspaces and projects are named beside their ids: `auth login` says "Signed in to workspace Filipe Silva (519), project Sales (4460)" and adds `workspace_name` / `project_name`; `auth status --check` adds `workspace_name` and `token_project_name`; the "token is limited to project" errors and the `project list` / `project get` notes name the pinned project. A failed name lookup falls back to the id and never fails the command.
+- `auth status` (and `auth login`): `expires_at` is the access token's expiry, not the login's. It is kept, and `access_token_expires_at`, `refreshes_automatically: true` and `expires_at_note` say what it means. Documented in the bundled skill (`machine-output`, `auth`) and `docs/authentication.md`.
+- Discovery: `schema find` ranks `folder.*` for "folder", "create/make/rename a folder" and "move a dataset into a folder", `file upload-folder` for "upload a folder of files", and `dataset delete` beside `file delete` for "delete an uploaded file". `mammoth --help` now says what `file` and `folder` are for (a folder is a project folder; an uploaded file becomes a dataset).
+
 ### Fixed (mammoth-cli 2.2.85)
 
 - `file_exists` (exit 6, the global `--overwrite` from 2.2.82): the suggested recovery command keeps the `--project` and `--profile` you ran the command with (a profile that only the saved selection supplied is not pinned), and quotes `--input`. Before, it dropped them, so the re-run could land in another project or profile.
