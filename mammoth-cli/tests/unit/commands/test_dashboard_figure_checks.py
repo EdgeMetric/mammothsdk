@@ -332,3 +332,16 @@ def test_packaged_row_count_counts_records_not_lines(tmp_path: Path) -> None:
     with zipfile.ZipFile(book, "w") as bundle:
         bundle.writestr("Data/data.csv", 'day,note\n2026-10-01,"two\nlines"\n2026-10-02,one\n')
     assert _packaged_row_count(str(book)) == 2
+
+
+def test_v3_generate_reads_the_canvas_once_for_the_check_and_the_numbers(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    """The deliverable check and the board's values need the same canvas: one read."""
+    fake_service.responses[_GENERATE] = {"id": 7, "message": "done"}
+    fake_service.responses[_CANVAS_GET] = _canvas([{"id": "p1", "added": []}])
+    body = {"body": {"params": {"dataview_id": 42, "intent": "region mix"}}}
+    dashboard_cmd.generated_dashboard(
+        _inv("dashboard.v3.generate", input_file=_doc(tmp_path, body), yes=True)
+    )
+    assert fake_service.calls.count(_CANVAS_GET) == 1

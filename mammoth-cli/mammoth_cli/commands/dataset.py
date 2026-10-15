@@ -1531,8 +1531,12 @@ def dataset_delete(invocation: Invocation) -> HandlerResult:
             responses=(ack, settled),
             recovery_commands=_dependent_view_recovery(ack, settled, dataset_id),
         )
-    if hint is not None and isinstance(data, dict):
-        data = {**data, "hint": hint}
+    if isinstance(data, dict):
+        # ``ensure_deleted`` read the dataset and found it gone; say so rather than
+        # listing the project's remaining datasets to show the same thing.
+        data = {**data, "deleted": [dataset_id]}
+        if hint is not None:
+            data["hint"] = hint
     return data, _meta(invocation, auth.workspace_id, project_id)
 
 

@@ -91,6 +91,10 @@ _UNSETTLED_REASON = (
 )
 
 
+#: A write the CLI skipped because it would change nothing (see ``view transform``).
+_NO_CHANGE_STATUS = "no_change"
+
+
 def with_verify(data: Any, invocation: Invocation | None = None) -> Any:
     """Return ``data`` with a ``verify`` read-back block added.
 
@@ -132,7 +136,9 @@ def with_verify(data: Any, invocation: Invocation | None = None) -> Any:
     verify["needs_user"] = _needs_user(
         data, verified=verified, rows_before=rows_before, rows_after=rows_after
     )
-    _apply_downstream_export_check(verify, invocation)
+    if data.get("status") != _NO_CHANGE_STATUS:
+        # A step that was not applied cannot have broken an export.
+        _apply_downstream_export_check(verify, invocation)
     verify["outcome"] = _outcome(data, verify)
     _automation_wording(verify, data, invocation)
     result = {**data, "verify": verify}
@@ -611,16 +617,24 @@ def read_export_ids(service: Any, view_id: int, dataset_id: int) -> set[int]:
     return set(export_stamps(listing))
 
 
+def export_stamps_read(view_id: int, dataset_id: int) -> tuple[str, dict[str, Any]]:
+    """The exports listing read whose stamps :func:`read_export_stamps` compares."""
+    return _EXPORTS_LIST_SYMBOL, {
+        "dataview_id": view_id,
+        "dataset_id": dataset_id,
+        "fields": "__standard",
+    }
+
+
 def read_export_stamps(service: Any, view_id: int, dataset_id: int) -> dict[int, str] | None:
     """The view's exports' stamps, read before a pipeline write (see ``exports_before``).
 
     ``None`` when the read fails: the check after the write reads the exports again and
     reports a failure there, so this one only loses the wait for the backend's re-validation.
     """
+    symbol, kwargs = export_stamps_read(view_id, dataset_id)
     try:
-        listing = service.call(
-            _EXPORTS_LIST_SYMBOL, dataview_id=view_id, dataset_id=dataset_id, fields="__standard"
-        )
+        listing = service.call(symbol, **kwargs)
     except Exception:  # noqa: BLE001 -- see the docstring
         return None
     return export_stamps(listing)

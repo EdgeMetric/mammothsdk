@@ -462,3 +462,70 @@ def test_a_delete_read_back_that_fails_otherwise_is_not_verified(
     result = _delete_readback(monkeypatch, CliError(code="api_error", message="boom"))
     assert result["state"]["kind"] == "unreadable"
     assert result["verify"]["verified"] is False
+
+
+# -- one read per fact: the state block does not fetch the same view twice --------------
+
+
+def _data_readback(monkeypatch: pytest.MonkeyPatch) -> None:
+    _patch_record(
+        monkeypatch,
+        {
+            "readback": {
+                "command": "view.data.get",
+                "ids": {"view_id": "positional.0"},
+                "kind": "data",
+            }
+        },
+    )
+
+
+def test_kind_data_takes_the_view_record_from_the_data_read(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _data_readback(monkeypatch)
+    reads: list[str] = []
+
+    def fake_view_data_get(invocation: Invocation) -> tuple[dict[str, Any], dict[str, Any]]:
+        reads.append("view.data.get")
+        object.__setattr__(
+            invocation,
+            "read_info",
+            {
+                "row_count": 7,
+                "metadata": [{"display_name": "a", "type": "TEXT"}],
+            },
+        )
+        return {"data": [{"a": "x"}]}, {}
+
+    def fake_view_get(invocation: Invocation) -> tuple[dict[str, Any], dict[str, Any]]:
+        reads.append("view.get")  # also lists every dashboard of the workspace
+        return {}, {}
+
+    _patch_handlers(monkeypatch, {"view.get": fake_view_get, "view.data.get": fake_view_data_get})
+    result = with_state(_invocation(), {"status": "done"})
+    assert reads == ["view.data.get"]
+    assert result["state"]["columns"] == [{"name": "a", "type": "TEXT"}]
+    assert result["state"]["row_count"] == 7
+
+
+def test_a_delete_whose_handler_saw_the_resource_gone_does_not_list_the_rest(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _patch_record(
+        monkeypatch,
+        {"readback": {"command": "dataset.list", "ids": {}, "kind": "object"}},
+    )
+
+    def fail(invocation: Invocation) -> tuple[Any, Any]:
+        raise AssertionError("the dataset list must not be read")
+
+    _patch_handlers(monkeypatch, {"dataset.list": fail})
+    inv = _invocation("dataset.delete", positionals={"dataset_id": 9}, extra_args=["9"])
+    result = with_state(inv, {"deleted": [9]})
+    assert result["state"] == {
+        "kind": "object",
+        "read_by": "dataset get 9",
+        "object": None,
+        "absent": True,
+    }

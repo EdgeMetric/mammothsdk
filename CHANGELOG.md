@@ -23,6 +23,15 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `--help` lists every value of an enum input field, joined with " | " (it was "a|b" and cut at six values).
 - The unknown-command message now names the nearest commands ("Did you mean: ...?") and its recovery commands point to `mammoth how` and `mammoth schema find`, not `schema get`. The `unknown_option` and unknown-column hints changed to name the nearest option or column; `details.did_you_mean` is new.
 
+### Changed (mammoth-cli, performance pass 2026-10-15)
+
+- One service per command run: the handler, its verify step and its `state` read-back share one client and connection (each new client cost a new TLS handshake and token lookup, about 0.5 s). Job and pipeline waits are rebound per opener.
+- Reads before a write are made together and once: the view record and the exports listing are fetched in one round trip and handed to the impact check, row count and type check, which each fetched the view again. The row count and the pipeline state after the write are read together.
+- The `state` block of a view write takes its columns and row count from the data read instead of a separate `view get` (which also listed every dashboard in the workspace).
+- A no-op `convert-type` (every column already has the type) no longer re-reads exports or samples rows: it decides from the view record it already has, and its `state` is the columns and row count with `unchanged: true`.
+- `dataset delete` verifies with the one targeted read it already makes and returns `deleted: [id]`; it no longer lists the project's remaining datasets.
+- `dashboard v3 generate` / `chat edit` read the canvas once for the check and the board's numbers.
+
 ### Fixed (mammoth-cli 2.2.86, team bug bash 2026-10-15)
 
 - `dataset list` (and the name search) report a real `dataset_health` for every dataset. The list route already returns `status`; the compact summary dropped it for a ready dataset, so every row read `unknown` with a "run mammoth dataset get" hint. Each row now carries `status` (about 18 characters a row); no extra request is made, so big projects list as fast as before.

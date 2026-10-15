@@ -57,3 +57,36 @@ def test_a_timed_out_transform_reads_pending_with_the_way_to_wait(
     assert result["verify"]["outcome"] == "pending"
     assert result["status"] == "pending"
     assert result["verify"]["next_command"] == "mammoth job wait 9001"
+
+
+def test_the_row_count_and_the_pipeline_state_are_read_together(
+    fake_service: FakeMammothService,
+) -> None:
+    """Two independent reads after the write take one round trip, not two."""
+    fake_service.responses["mammoth.api.dataviews.DataviewsAPI.get"] = {"row_count": 12}
+    fake_service.responses["mammoth.api.pipeline.PipelineAPI.get_pipeline"] = {
+        "execution_state": "ready"
+    }
+    batches: list[int] = []
+    real = fake_service.call_many
+
+    def spy(calls: Any) -> Any:
+        batches.append(len(calls))
+        return real(calls)
+
+    fake_service.call_many = spy  # type: ignore[method-assign]
+    rows, error = wait_for_view_row_count(
+        fake_service, 1, 2, 3, write_result={"status": "done", "pipeline_state": "ready"}
+    )
+    assert (rows, error) == (12, None)
+    assert batches == [2]
+    # Each was read once: the answers of the batch were used, not fetched again.
+    assert len(fake_service.call_log) == 2
+    # And nothing read here outlives the settle.
+    fake_service.responses["mammoth.api.dataviews.DataviewsAPI.get"] = {"row_count": 3}
+    assert (
+        fake_service.call("mammoth.api.dataviews.DataviewsAPI.get", dataset_id=1, dataview_id=2)[
+            "row_count"
+        ]
+        == 3
+    )
