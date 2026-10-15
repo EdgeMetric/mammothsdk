@@ -1068,15 +1068,23 @@ def _create_variants(
 _DASHBOARDS_LIST_SYMBOL = "mammoth.api.dashboards.DashboardsAPI.list"
 
 
-def _with_dashboards(service: Any, view_id: int, record: Any) -> Any:
+def _read_with_boards(service: Any, symbol: str, kwargs: dict[str, Any]) -> tuple[Any, Any]:
+    """Run the view read and the dashboards list together; return ``(view, boards)``.
+
+    The two are independent, so their round trips overlap instead of adding up.
+    The view read's failure is raised as before; a failed dashboards read is
+    dropped (``None``), because a decoration must not fail the read it decorates.
+    """
+    view, boards = service.call_many([(symbol, kwargs), (_DASHBOARDS_LIST_SYMBOL, {})])
+    if isinstance(view, CliError):
+        raise view
+    return view, None if isinstance(boards, CliError) else boards
+
+
+def _with_dashboards(view_id: int, record: Any, boards: Any) -> Any:
     """Add the dashboards built on this view, so a user on the view's page who
     says "this board" is understood (eval T1-D-22); unchanged when none."""
     if not isinstance(record, dict):
-        return record
-    try:
-        boards = service.call(_DASHBOARDS_LIST_SYMBOL)
-    except CliError:
-        # A decoration must not fail the read it decorates.
         return record
     built_on = [
         {"id": board.get("id"), "title": board.get("title")}
@@ -1109,10 +1117,12 @@ def view_get(invocation: Invocation) -> HandlerResult:
             ),
         }
         with open_service(invocation) as (service, auth):
-            data = service.call("mammoth.api.dataviews.DataviewsAPI.get", **kwargs)
+            data, boards = _read_with_boards(
+                service, "mammoth.api.dataviews.DataviewsAPI.get", kwargs
+            )
             parents.remember(_profile_name(invocation), auth.workspace_id, {view_id: dataset_id})
             data = apply_column_renames(data) if document.get("fields") else brief_view_record(data)
-            data = _with_dashboards(service, view_id, data)
+            data = _with_dashboards(view_id, data, boards)
         return data, _meta(invocation, auth.workspace_id)
     context: dict[str, Any] = {"view_id": view_id}
     if dataset_id is not None:
@@ -1128,7 +1138,7 @@ def view_get(invocation: Invocation) -> HandlerResult:
     if dataset_id is not None:
         kwargs["dataset_id"] = dataset_id
     with open_service(invocation) as (service, auth):
-        data = service.call(_symbol(invocation), **kwargs)
+        data, boards = _read_with_boards(service, _symbol(invocation), kwargs)
         payload = _view_payload(data)
         parents.remember_records(_profile_name(invocation), auth.workspace_id, payload)
         if not document.get("fields"):
@@ -1137,7 +1147,7 @@ def view_get(invocation: Invocation) -> HandlerResult:
             payload = brief_view_record(payload)
         else:
             payload = apply_column_renames(payload)
-        payload = _with_dashboards(service, view_id, payload)
+        payload = _with_dashboards(view_id, payload, boards)
     return payload, _meta(invocation, auth.workspace_id)
 
 
