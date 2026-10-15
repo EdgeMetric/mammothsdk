@@ -285,6 +285,7 @@ def file_upload(invocation: Invocation) -> HandlerResult:
         if refused:
             result["warnings"] = [_upload_refused_message(outcome["errors"], refused)]
             result["refused_files"] = refused
+        _mark_partial_upload(result, bool(refused))
         project_id = resolved_project(invocation)
         previewed = 0
         for entry in result["datasets"]:
@@ -309,6 +310,34 @@ def file_upload(invocation: Invocation) -> HandlerResult:
                     {preview["view_id"]: int(entry["id"])},
                 )
     return result, _meta(invocation, auth.workspace_id, resolved_project(invocation))
+
+
+_UPLOAD_FAILED_STATUSES = frozenset({"error", "failed", "failure"})
+
+
+def _mark_partial_upload(result: dict[str, Any], has_refused: bool) -> None:
+    """Make a mixed upload ``partial``: some files became datasets and some did not.
+
+    A dataset the backend marked ``error`` (an empty file, say) carries its own reason in
+    ``status_info``; that reason goes into ``warnings`` so each file's outcome is readable.
+    """
+    datasets = result["datasets"]
+    failed = [d for d in datasets if str(d.get("status")).lower() in _UPLOAD_FAILED_STATUSES]
+    if not failed and not has_refused:
+        return
+    if len(failed) == len(datasets) and not has_refused:
+        return  # nothing worked: keep the plain failure
+    warnings = list(result.get("warnings", []))
+    for entry in failed:
+        info = entry.get("status_info")
+        said = " ".join(str(v) for v in info.values()) if isinstance(info, dict) else ""
+        label = entry.get("name") or f"dataset {entry['id']}"
+        warnings.append(f"{label} failed to load: {said or 'the backend gave no reason'}.")
+    if not any(d.get("status") == "ready" for d in datasets):
+        return
+    result["partial"] = True
+    result["status"] = "partial"
+    result["warnings"] = warnings
 
 
 #: Uploaded datasets one ``file upload`` previews (several requests each).

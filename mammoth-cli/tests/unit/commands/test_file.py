@@ -352,6 +352,45 @@ def test_upload_reports_multiple_dataset_ids(fake_service: FakeMammothService) -
     assert all("preview_error" in d for d in data["datasets"])
 
 
+def _mixed_get(log: list[tuple[str, dict[str, Any]]]) -> dict[str, Any]:
+    dataset_id = log[-1][1]["dataset_id"]
+    if dataset_id == 11:
+        return {"dataset": {"id": 11, "name": "good.csv", "status": "ready"}}
+    return {
+        "dataset": {
+            "id": 22,
+            "name": "empty.csv",
+            "status": "error",
+            "status_info": {"error": "The file is empty"},
+        }
+    }
+
+
+def test_upload_of_one_good_and_one_empty_file_is_partial_with_the_reason(
+    fake_service: FakeMammothService,
+) -> None:
+    fake_service.responses[_UPLOAD_RESULT] = {"dataset_ids": [11, 22], "errors": {}}
+    fake_service.responses[_DATASET_GET] = _mixed_get
+    data, _ = file_cmd.file_upload(_inv("file.upload", extra_args=["a.csv", "b.csv"]))
+    assert data["partial"] is True
+    assert data["status"] == "partial"
+    assert [(d["id"], d["status"]) for d in data["datasets"]] == [(11, "ready"), (22, "error")]
+    assert "The file is empty" in " ".join(data["warnings"])
+
+
+def test_upload_with_a_refused_file_and_a_ready_one_is_partial(
+    fake_service: FakeMammothService,
+) -> None:
+    fake_service.responses[_UPLOAD_RESULT] = {
+        "dataset_ids": [11],
+        "errors": {"unsupported": ["x.pbix"]},
+    }
+    fake_service.responses[_DATASET_GET] = _mixed_get
+    data, _ = file_cmd.file_upload(_inv("file.upload", extra_args=["a.csv", "b.csv"]))
+    assert data["partial"] is True
+    assert data["refused_files"] == ["x.pbix"]
+
+
 def test_upload_status_is_unknown_when_the_read_back_fails(
     fake_service: FakeMammothService,
 ) -> None:

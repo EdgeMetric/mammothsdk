@@ -178,3 +178,22 @@ def test_health_name_falls_back_to_dataset_name() -> None:
     data = {"id": 3, "dataset_name": "wb.csv", "status": "need_action"}
 
     assert with_dataset_health(data)["dataset_health"][0]["name"] == "wb.csv"
+
+
+def test_an_error_status_is_failed_with_the_backends_reason() -> None:
+    data = {
+        "datasets": [
+            {
+                "id": 22,
+                "name": "empty.csv",
+                "status": "error",
+                "status_info": {"error": "The file is empty"},
+            }
+        ]
+    }
+
+    entry = with_dataset_health(data)["dataset_health"][0]
+
+    assert entry["health"] == "failed"
+    assert "The file is empty" in entry["detail"]
+    assert "health_reason" not in entry

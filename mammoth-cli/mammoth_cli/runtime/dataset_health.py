@@ -35,6 +35,7 @@ _SETTINGS_EXAMPLE = json.dumps(
 #: Keys under which a result carries dataset records; every record there gets a health entry.
 _DATASET_KEYS = frozenset({"datasets", "dataset"})
 _HEALTHY_STATUS = "ready"
+_FAILED_STATUSES = frozenset({"error", "failed"})
 
 
 def with_dataset_health(data: Any) -> Any:
@@ -158,6 +159,12 @@ def _clean_entry(record: dict[str, Any], status: Any) -> dict[str, Any]:
     }
     if status == _HEALTHY_STATUS:
         entry.update(health="healthy", detail="Loaded and readable.")
+    elif status in _FAILED_STATUSES:
+        said = _status_info_text(record)
+        entry.update(
+            health="failed",
+            detail=f"The backend could not load this file: {said or 'no reason was given'}.",
+        )
     elif status is None:
         size = _loaded_size(record)
         if size is not None:
