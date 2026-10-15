@@ -17,6 +17,12 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - An unexpected CLI fault is reported as `internal_error` (not `api_error`); `--debug` prints the traceback and the run log keeps the exception.
 - Auto-update runs only in an interactive session (not in CI, not without a terminal).
 
+### Changed (mammoth-cli 2.2.82, speed)
+
+- `schema find` is about 30% faster: the operations manifest is cached and pydantic is imported only when a type is validated.
+- `view get` makes one round trip instead of two.
+- `view data get` makes 5 requests instead of 6; the dataview and the dataset are read concurrently.
+
 ### Added (mammoth-cli 2.2.82)
 
 - `schema find` answers new-user phrasings with the right command, and marks partial matches instead of returning nothing.
