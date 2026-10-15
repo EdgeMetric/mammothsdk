@@ -118,6 +118,41 @@ def _write_commands_cache(path: Path, records: list[dict[str, Any]]) -> bool:
     return True
 
 
+def _read_yaml_cached(path: Path, root_key: str) -> list[dict[str, Any]]:
+    """Return ``path``'s top-level ``root_key`` list, via a JSON cache keyed by size and mtime.
+
+    The big single-file manifests (operations, SDK methods) used to be re-parsed
+    from YAML on every run that touched them, ~0.17 s for the operations file.
+    """
+    if not path.exists():
+        return []
+    cache_path: Path | None = None
+    prefix = f"{path.stem}-{_install_id()}-"
+    if _cache_enabled():
+        try:
+            stat = path.stat()
+            key = hashlib.sha256(
+                f"{MANIFEST_SCHEMA_VERSION}\0{stat.st_size}\0{stat.st_mtime_ns}".encode()
+            ).hexdigest()[:24]
+            cache_path = cache_dir() / f"{prefix}{key}.json"
+        except OSError:
+            cache_path = None
+        if cache_path is not None:
+            cached = _read_commands_cache(cache_path)
+            if cached is not None:
+                return cached
+    data = _read_yaml(path)
+    records = list(data.get(root_key, [])) if data else []
+    if cache_path is not None and _write_commands_cache(cache_path, records):
+        for old in cache_path.parent.glob(f"{prefix}*.json"):
+            if old != cache_path:
+                try:
+                    old.unlink()
+                except OSError:
+                    continue
+    return records
+
+
 @functools.lru_cache(maxsize=1)
 def load_schema() -> dict[str, Any]:
     schema: dict[str, Any] = json.loads(SCHEMA_PATH.read_text(encoding="utf-8"))
@@ -126,18 +161,12 @@ def load_schema() -> dict[str, Any]:
 
 @functools.lru_cache(maxsize=1)
 def load_operations() -> list[dict[str, Any]]:
-    data = _read_yaml(OPENAPI_OPERATIONS_PATH)
-    if not data:
-        return []
-    return list(data.get("operations", []))
+    return _read_yaml_cached(OPENAPI_OPERATIONS_PATH, "operations")
 
 
 @functools.lru_cache(maxsize=1)
 def load_sdk_methods() -> list[dict[str, Any]]:
-    data = _read_yaml(SDK_METHODS_PATH)
-    if not data:
-        return []
-    return list(data.get("methods", []))
+    return _read_yaml_cached(SDK_METHODS_PATH, "methods")
 
 
 @functools.lru_cache(maxsize=1)
