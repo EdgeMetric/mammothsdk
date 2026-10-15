@@ -497,6 +497,10 @@ def _unknown_option_report(error: Any, option: str) -> CliError:
         for flag in (*param.opts, *param.secondary_opts)
     }
     suggestion = option_suggestion(option, sorted(known))
+    close = sorted(getattr(error, "possibilities", None) or [])
+    if suggestion is None and close:
+        # Click's own guess also catches a prefix ('--server' for '--server-prefix').
+        suggestion = {"flag": close[0], "hint": f"Did you mean {' or '.join(close)}?"}
     details: dict[str, Any] = {"option": option}
     if suggestion is not None:
         details["did_you_mean"] = suggestion["flag"]
