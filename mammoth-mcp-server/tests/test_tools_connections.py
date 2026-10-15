@@ -95,6 +95,8 @@ class TestTheReadCheck:
             "SELECT * INTO orders_copy FROM orders",
             "with u as (update orders set paid = true returning id) select * from u",
             "SELECT 1 /* a note */; insert into audit values (1)",
+            # Postgres reads brackets as an array index, not as a quoted name.
+            "SELECT (ARRAY[1,2,3])[1:(SELECT length(']'))]; DROP TABLE t; SELECT '1'",
         ],
     )
     def test_a_query_that_writes_is_refused(self, query: str) -> None:
@@ -111,6 +113,11 @@ class TestTheReadCheck:
             # MySQL runs what a /*! */ comment holds.
             "SELECT 1 /*! ; DROP TABLE orders */",
             "SELECT * FROM orders /*! INTO OUTFILE '/tmp/o.csv' */",
+            # Postgres and Snowflake read $$'$$ as a string, so the rest runs.
+            "SELECT $$'$$; DROP TABLE orders; SELECT $$'$$",
+            "SELECT $q$'$q$; DROP TABLE orders; SELECT $q$'$q$",
+            # MySQL ends the line at #, so the quote after it opens nothing.
+            "SELECT 1 # '\n; DROP TABLE orders; -- '",
         ],
     )
     def test_a_query_that_hides_text_from_the_check_is_refused(self, query: str) -> None:
@@ -127,7 +134,7 @@ class TestTheReadCheck:
             "SELECT region -- drop the old ones later\nFROM sales",
             "SELECT replace(region, 'a', 'b'), created_at, updated_by FROM sales",
             "select `insert` from sales",
-            "select [delete] from sales",
+            "SELECT tags[1], '#1' AS ref, 'cost $5' AS note FROM sales",
         ],
     )
     def test_a_read_that_only_names_a_write_word_passes(self, query: str) -> None:

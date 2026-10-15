@@ -556,11 +556,17 @@ class ConnectionFields:
         "truncate", "grant", "revoke", "call", "exec", "execute",
     })  # fmt: skip
     # The quoting below cannot follow a backslash escape (Postgres E'' strings,
-    # MySQL strings) or a MySQL /*! */ comment, whose body MySQL runs. A query
-    # with either is refused before it is stripped.
+    # MySQL strings), a dollar quote (Postgres and Snowflake $$ strings) or a
+    # MySQL /*! */ comment, whose body MySQL runs. A query with any of them is
+    # refused before it is stripped.
     RUN_COMMENT = "/*!"
-    # Strings, comments and quoted names, which may hold any word.
-    QUOTED = r"'(?:[^']|'')*'|\"[^\"]*\"|`[^`]*`|\[[^\]]*\]|--[^\n]*|/\*.*?\*/"
+    DOLLAR_QUOTE = r"\$\w*\$"
+    # MySQL ends a line at #, which Postgres reads as an operator, so a #
+    # left after stripping is refused.
+    LINE_COMMENT = "#"
+    # Strings, comments and quoted names, which may hold any word. A [name]
+    # is not stripped: Postgres reads brackets as an array index.
+    QUOTED = r"'(?:[^']|'')*'|\"[^\"]*\"|`[^`]*`|--[^\n]*|/\*.*?\*/"
     SAMPLE = "data_sample"
     SCHEMA = "dataschema"
     ROWS = "rows"

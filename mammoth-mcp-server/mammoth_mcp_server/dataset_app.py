@@ -35,8 +35,8 @@ NOT_A_READ = (
     ' word that writes. A column with such a name can be quoted, as "merge".'
 )
 UNREADABLE = (
-    "Send the query without backslashes and without /*! */ comments: some"
-    " databases run what they hide, so it cannot be checked."
+    "Send the query without backslashes, $$ quotes, # comments and /*! */"
+    " comments: some databases read them in a way the check cannot follow."
 )
 
 # `$fields` is filled by `render_app`; the script uses no `$` of its own.
@@ -310,7 +310,11 @@ def check_query(connector_key: str, query: str) -> None:
         raise ToolError(NOT_A_DATABASE)
     if "\\" in query or ConnectionFields.RUN_COMMENT in query:
         raise ToolError(UNREADABLE)
+    if re.search(ConnectionFields.DOLLAR_QUOTE, query):
+        raise ToolError(UNREADABLE)
     bare = re.sub(ConnectionFields.QUOTED, " ", query, flags=re.DOTALL).strip().rstrip(";")
+    if ConnectionFields.LINE_COMMENT in bare:
+        raise ToolError(UNREADABLE)
     words = re.findall(r"\w+", bare.lower())
     if not words or words[0] not in ConnectionFields.READING:
         raise ToolError(NOT_A_READ)
