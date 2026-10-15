@@ -147,6 +147,23 @@ class TestTheReadCheck:
     def test_a_read_that_only_names_a_write_word_passes(self, query: str) -> None:
         check_query("postgres", query)
 
+    @pytest.mark.parametrize(
+        "query",
+        [
+            # SQL Server reads [a'] as a name, so the quote opens no string.
+            "SELECT 1 AS [a'], 2; DELETE FROM t; SELECT 3 AS [']",
+            "SELECT [region] FROM sales",
+        ],
+    )
+    def test_a_bracket_name_on_sql_server_is_refused(self, query: str) -> None:
+        with pytest.raises(ToolError) as refused:
+            check_query("mssql", query)
+
+        assert '"name"' in str(refused.value)
+
+    def test_a_bracket_inside_a_string_on_sql_server_passes(self) -> None:
+        check_query("mssql", "SELECT \"region\", '[draft]' AS note FROM sales")
+
     def test_a_column_named_like_a_write_word_is_told_to_quote_it(self) -> None:
         with pytest.raises(ToolError) as refused:
             check_query("postgres", "SELECT call, merge FROM phone_log")

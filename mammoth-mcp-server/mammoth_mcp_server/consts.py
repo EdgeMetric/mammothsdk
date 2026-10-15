@@ -564,7 +564,10 @@ class ConnectionFields:
     # //. So a comment is not stripped, and one left outside a string is refused.
     COMMENTS = ("--", "/*", "#", "//")
     # Strings and quoted names, which may hold any word. A [name] is not
-    # stripped: Postgres reads brackets as an array index.
+    # stripped: Postgres reads brackets as an array index. SQL Server reads
+    # them as a name that may hold a quote, so there a bracket is refused.
+    BRACKETED = "mssql"
+    BRACKETS = ("[", "]")
     QUOTED = r"'(?:[^']|'')*'|\"[^\"]*\"|`[^`]*`"
     SAMPLE = "data_sample"
     SCHEMA = "dataschema"

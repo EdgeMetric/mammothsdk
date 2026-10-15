@@ -38,6 +38,10 @@ UNREADABLE = (
     "Send the query without comments, backslashes and $$ quotes: some"
     " databases read them in a way the check cannot follow."
 )
+BRACKET_NAME = (
+    'On SQL Server, write a name as "name", not [name]: a bracket name can'
+    " hold a quote, so the check cannot follow it."
+)
 
 # `$fields` is filled by `render_app`; the script uses no `$` of its own.
 DATASET_APP = Template("""\
@@ -313,6 +317,10 @@ def check_query(connector_key: str, query: str) -> None:
     bare = re.sub(ConnectionFields.QUOTED, " ", query, flags=re.DOTALL).strip().rstrip(";")
     if any(comment in bare for comment in ConnectionFields.COMMENTS):
         raise ToolError(UNREADABLE)
+    if connector_key == ConnectionFields.BRACKETED and any(
+        bracket in bare for bracket in ConnectionFields.BRACKETS
+    ):
+        raise ToolError(BRACKET_NAME)
     words = re.findall(r"\w+", bare.lower())
     if not words or words[0] not in ConnectionFields.READING:
         raise ToolError(NOT_A_READ)
