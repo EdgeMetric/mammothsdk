@@ -31,6 +31,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - A no-op `convert-type` (every column already has the type) no longer re-reads exports or samples rows: it decides from the view record it already has, and its `state` is the columns and row count with `unchanged: true`.
 - `dataset delete` verifies with the one targeted read it already makes and returns `deleted: [id]`; it no longer lists the project's remaining datasets.
 - `dashboard v3 generate` / `chat edit` read the canvas once for the check and the board's numbers.
+- Startup: the `mammoth` entry point turns off pydantic's plugin discovery (`PYDANTIC_DISABLE_PLUGINS=__all__`, unless already set). pydantic looked up every installed plugin the first time it built a model and imported each one; with logfire installed beside the CLI that was about 0.4 s on every command that loads the SDK (`auth status` 0.87 s -> 0.44 s, `view transform filter --help` 1.01 s -> 0.62 s).
 
 ### Changed (mammoth-io, speed)
 
