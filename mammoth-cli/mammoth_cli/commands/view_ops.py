@@ -1601,6 +1601,11 @@ def view_transform_convert_type(invocation: Invocation) -> HandlerResult:
         for entry in conversions:
             name = entry.get("column") if isinstance(entry, dict) else None
             target = str(entry.get("to") or "").upper() if isinstance(entry, dict) else ""
+            if current.get(name) == "TEXT" and target in ("NUMERIC", "DATE"):
+                lossy.append(f"{name} (TEXT to {target})")
+        for entry in conversions:
+            name = entry.get("column") if isinstance(entry, dict) else None
+            target = str(entry.get("to") or "").upper() if isinstance(entry, dict) else ""
             if name is not None and target and current.get(name) == target:
                 skipped.append({"column": name, "type": target})
             else:
@@ -1618,10 +1623,21 @@ def view_transform_convert_type(invocation: Invocation) -> HandlerResult:
         return None
 
     skipped_record: list[dict[str, Any]] = []
+    lossy: list[str] = []
 
     def note_skipped(service: Any, dataset_id: int, state: Any, data: Any) -> Any:
         if skipped_record and isinstance(data, dict):
             data = {**data, "skipped": skipped_record}
+        if lossy and isinstance(data, dict):
+            data = {
+                **data,
+                "warnings": [
+                    *(data.get("warnings") or []),
+                    f"Converted {', '.join(lossy)}: values that do not parse (such as N/A or "
+                    "text) become empty. Check the column with 'mammoth view data explore' "
+                    "before relying on totals or averages.",
+                ],
+            }
         return data
 
     return _dispatch_view(

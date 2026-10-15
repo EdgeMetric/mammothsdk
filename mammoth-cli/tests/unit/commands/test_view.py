@@ -2516,6 +2516,19 @@ def test_task_get_passes_ids(fake_service: FakeMammothService) -> None:
     assert _without_meta(fake_service.call_log) == [(_TASK_GET, {"dataview_id": 7, "task_id": 3})]
 
 
+def test_task_list_first_page_says_offset_zero(fake_service: FakeMammothService) -> None:
+    """Bug bash 2026-10-15: the first page echoed ``offset: 50`` (the server's value)."""
+    fake_service.responses["mammoth.api.pipeline.PipelineAPI.list_tasks"] = {
+        "tasks": [{"id": 1}],
+        "limit": 50,
+        "offset": 50,
+        "next": "",
+    }
+    data, _ = view_cmd.view_task_list(_inv("view.task.list", extra_args=["7"]))
+    assert data["offset"] == 0
+    assert data["limit"] == 50 and data["tasks"] == [{"id": 1}]
+
+
 def test_task_list_passes_dataview_id(fake_service: FakeMammothService) -> None:
     view_cmd.view_task_list(_inv("view.task.list", extra_args=["7"]))
     assert _without_meta(fake_service.call_log) == [(_TASK_LIST, {"dataview_id": 7})]

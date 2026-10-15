@@ -231,7 +231,7 @@ def emit_error(error: CliError, *, machine: bool, output: str = "json") -> None:
     if machine:
         render(
             error.to_envelope(),
-            output="ndjson" if output == "ndjson" else "json",
+            output=output if output in ("ndjson", "yaml") else "json",
             stream=sys.stderr,
         )
         return
@@ -279,7 +279,7 @@ def run(
     # execution, or when the caller explicitly selected agent mode, keep the
     # error contract machine-readable. A human TTY still receives the concise
     # diagnostic intended for interactive troubleshooting.
-    machine_error = output in MACHINE_OUTPUTS or (
+    machine_error = output in MACHINE_OUTPUTS or output == "yaml" or (
         output not in VALID_OUTPUTS and (agent_mode or not sys.stdout.isatty())
     )
     run_log = _open_run_log(command_id, invocation)

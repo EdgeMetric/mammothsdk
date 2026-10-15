@@ -1456,7 +1456,8 @@ def _short_type(type_name: str) -> str:
     text = str(type_name or "")
     if "condition." in text:
         return "condition"
-    return " | ".join(part.strip().rsplit(".", 1)[-1] for part in text.split("|"))[:40]
+    # Drop each dotted module path but keep the brackets around it (``list[a.b.C]``).
+    return re.sub(r"(?:\w+\.)+(\w+)", r"\1", " | ".join(p.strip() for p in text.split("|")))[:60]
 
 
 def _command_records() -> list[dict[str, Any]]:

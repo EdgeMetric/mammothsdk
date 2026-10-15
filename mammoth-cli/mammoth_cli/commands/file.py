@@ -34,6 +34,7 @@ from mammoth_cli.runtime.confirm import (
     enforce_confirmation,
 )
 from mammoth_cli.runtime.invocation import Invocation
+from mammoth_cli.services.paging import listing_with_paging
 from mammoth_cli.runtime.session import open_service, resolved_project
 from mammoth_cli.services.command_contract import bind_command_inputs
 
@@ -132,6 +133,13 @@ def file_list(invocation: Invocation) -> HandlerResult:
     )
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), **kwargs)
+    data = listing_with_paging(
+        data,
+        key="files",
+        command="mammoth file list",
+        project=invocation.project,
+        requested=kwargs,
+    )
     return data, _meta(invocation, auth.workspace_id, resolved_project(invocation))
 
 
@@ -234,7 +242,7 @@ def file_bulk_delete(invocation: Invocation) -> HandlerResult:
 
 
 def file_upload(invocation: Invocation) -> HandlerResult:
-    """Upload one or more local files. Paths come from positionals or ``files``."""
+    """Upload local files: one path as the argument, several via the ``files`` input field."""
     document = invocation.load_input() or {}
     # ``files`` is intentionally dual-sourced: explicit paths are expanded to
     # the SDK's list form and take precedence over the same input field.
@@ -244,12 +252,20 @@ def file_upload(invocation: Invocation) -> HandlerResult:
         **({"files": list(invocation.extra_args)} if invocation.extra_args else {}),
     )
     _require_local_files(kwargs.get("files"))
-    if kwargs.get("append_to_ds_id") is not None and not kwargs.get("files"):
+    if not kwargs.get("files"):
+        appending = kwargs.get("append_to_ds_id") is not None
         raise CliError(
             code=CODE_MISSING_ARGUMENT,
-            message="This command requires 'files' when append_to_ds_id is set.",
+            message=(
+                "This command requires 'files' when append_to_ds_id is set."
+                if appending
+                else "A file path is required."
+            ),
             exit_status=EXIT_USAGE,
-            hint="Pass the file(s) as positional arguments or a 'files' input field.",
+            hint=(
+                "Pass one path as the argument (mammoth file upload ./data.csv), or several "
+                "with --input '{\"files\": [\"a.csv\", \"b.csv\"]}'."
+            ),
         )
     with open_service(invocation) as (service, auth):
         # When the caller opts out of waiting (``wait_for_completion: false``)
@@ -285,6 +301,7 @@ def file_upload(invocation: Invocation) -> HandlerResult:
         if refused:
             result["warnings"] = [_upload_refused_message(outcome["errors"], refused)]
             result["refused_files"] = refused
+        _mark_partial_upload(result, bool(refused))
         project_id = resolved_project(invocation)
         previewed = 0
         for entry in result["datasets"]:
@@ -311,6 +328,34 @@ def file_upload(invocation: Invocation) -> HandlerResult:
     return result, _meta(invocation, auth.workspace_id, resolved_project(invocation))
 
 
+_UPLOAD_FAILED_STATUSES = frozenset({"error", "failed", "failure"})
+
+
+def _mark_partial_upload(result: dict[str, Any], has_refused: bool) -> None:
+    """Make a mixed upload ``partial``: some files became datasets and some did not.
+
+    A dataset the backend marked ``error`` (an empty file, say) carries its own reason in
+    ``status_info``; that reason goes into ``warnings`` so each file's outcome is readable.
+    """
+    datasets = result["datasets"]
+    failed = [d for d in datasets if str(d.get("status")).lower() in _UPLOAD_FAILED_STATUSES]
+    if not failed and not has_refused:
+        return
+    if len(failed) == len(datasets) and not has_refused:
+        return  # nothing worked: keep the plain failure
+    warnings = list(result.get("warnings", []))
+    for entry in failed:
+        info = entry.get("status_info")
+        said = " ".join(str(v) for v in info.values()) if isinstance(info, dict) else ""
+        label = entry.get("name") or f"dataset {entry['id']}"
+        warnings.append(f"{label} failed to load: {said or 'the backend gave no reason'}.")
+    if not any(d.get("status") == "ready" for d in datasets):
+        return
+    result["partial"] = True
+    result["status"] = "partial"
+    result["warnings"] = warnings
+
+
 #: Uploaded datasets one ``file upload`` previews (several requests each).
 _UPLOAD_PREVIEW_LIMIT = 5
 
@@ -327,6 +372,14 @@ def _require_local_files(files: Any) -> None:
         if not isinstance(candidate, str):
             continue
         path = Path(candidate).expanduser()
+        if path.is_dir():
+            raise CliError(
+                code=CODE_INVALID_ARGUMENT,
+                message=f"{candidate} is a directory, not a file.",
+                exit_status=EXIT_USAGE,
+                hint=f"Use 'mammoth file upload-folder {candidate}' to upload every file in it.",
+                details={"path": candidate},
+            )
         if not path.is_file():
             raise CliError(
                 code=CODE_INVALID_ARGUMENT,

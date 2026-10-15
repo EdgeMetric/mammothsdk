@@ -301,3 +301,11 @@ def test_a_wrong_condition_operator_is_named_with_the_valid_ones(
     assert error.exit_status == EXIT_USAGE
     assert "NOT_EQUALS" in error.message and "Did you mean NE?" in error.message
     assert "NE" in error.details["accepted"]
+
+
+def test_surplus_file_paths_name_the_files_input_field() -> None:
+    with pytest.raises(CliError) as excinfo:
+        validate_extra_args("file.upload", ["a.csv", "b.csv"])
+    assert excinfo.value.code == "unexpected_argument"
+    assert '"files"' in (excinfo.value.hint or "")
+    assert "--input" in (excinfo.value.hint or "")

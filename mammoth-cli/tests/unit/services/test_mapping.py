@@ -621,3 +621,19 @@ def test_a_file_dataset_in_a_retrieval_automation_gets_its_own_code_and_a_way_fo
     assert "append_to_ds_id" in (mapped.hint or "")
     assert "cloud" in (mapped.hint or "")
     assert any("file upload" in c and "append_to_ds_id" in c for c in mapped.recovery_commands)
+
+
+def test_an_unknown_dataset_or_file_id_is_resource_not_found_like_a_view() -> None:
+    """Bug bash 2026-10-15: 4DSET001 / 4FILE001 came back as a generic api_error."""
+    for code, noun in (("4DSET001", "dataset"), ("4FILE001", "file")):
+        error = MammothAPIError(
+            "bad request",
+            status_code=400,
+            method="GET",
+            operation_state="failed",
+            response_body={"message": f"Invalid {noun} id [{code}]"},
+        )
+        mapped = map_sdk_exception(error)
+        assert mapped.code == "resource_not_found", code
+        assert mapped.exit_status == 5
+        assert noun in (mapped.hint or "")

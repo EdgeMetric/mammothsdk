@@ -51,6 +51,31 @@ def test_list_with_no_input_passes_no_kwargs(fake_service: FakeMammothService) -
     assert fake_service.call_log == [(_LIST, {})]
 
 
+def test_list_drops_the_raw_next_url_and_adds_paging(fake_service: FakeMammothService) -> None:
+    fake_service.responses[_LIST] = {
+        "files": [{"id": 1}, {"id": 2}],
+        "next": "http://api.example/files?offset=2",
+        "total": None,
+    }
+    data, _ = file_cmd.file_list(_inv("file.list"))
+    assert "next" not in data
+    assert "total" not in data
+    assert data["paging"]["offset"] == 0
+    assert data["paging"]["next_command"] is None
+
+
+def test_list_full_page_names_the_next_page_as_a_command(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    fake_service.responses[_LIST] = {"files": [{"id": 1}, {"id": 2}], "next": "http://x/y"}
+    doc = tmp_path / "in.json"
+    doc.write_text(json.dumps({"limit": 2}), encoding="utf-8")
+    data, _ = file_cmd.file_list(_inv("file.list", input_file=str(doc)))
+    assert data["paging"]["next_offset"] == 2
+    assert data["paging"]["next_command"].startswith("mammoth file list")
+    assert "http" not in json.dumps(data)
+
+
 def test_list_forwards_optional_fields(fake_service: FakeMammothService, tmp_path: Path) -> None:
     doc = tmp_path / "in.json"
     doc.write_text(
@@ -259,10 +284,23 @@ def test_upload_uses_files_input_field_when_no_positional(
     ]
 
 
-def test_upload_with_no_files_omits_files_kwarg(fake_service: FakeMammothService) -> None:
-    fake_service.responses[_UPLOAD_RESULT] = {"dataset_ids": [], "errors": {}}
-    file_cmd.file_upload(_inv("file.upload"))
-    assert fake_service.call_log == [(_UPLOAD_RESULT, {})]
+def test_upload_with_no_files_is_a_usage_error(fake_service: FakeMammothService) -> None:
+    with pytest.raises(CliError) as excinfo:
+        file_cmd.file_upload(_inv("file.upload"))
+    assert excinfo.value.code == "missing_argument"
+    assert excinfo.value.exit_status == 2
+    assert fake_service.call_log == []
+
+
+def test_upload_of_a_directory_points_at_upload_folder(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    (tmp_path / "docs").mkdir()
+    with pytest.raises(CliError) as excinfo:
+        file_cmd.file_upload(_inv("file.upload", extra_args=[str(tmp_path / "docs")]))
+    assert "is a directory" in excinfo.value.message
+    assert "file upload-folder" in (excinfo.value.hint or "")
+    assert fake_service.call_log == []
 
 
 def test_upload_with_append_to_ds_id_and_no_files_is_missing_argument(
@@ -350,6 +388,45 @@ def test_upload_reports_multiple_dataset_ids(fake_service: FakeMammothService) -
     assert data["dataset_ids"] == [11, 22]
     assert [(d["id"], d["status"]) for d in data["datasets"]] == [(11, "ready"), (22, "ready")]
     assert all("preview_error" in d for d in data["datasets"])
+
+
+def _mixed_get(log: list[tuple[str, dict[str, Any]]]) -> dict[str, Any]:
+    dataset_id = log[-1][1]["dataset_id"]
+    if dataset_id == 11:
+        return {"dataset": {"id": 11, "name": "good.csv", "status": "ready"}}
+    return {
+        "dataset": {
+            "id": 22,
+            "name": "empty.csv",
+            "status": "error",
+            "status_info": {"error": "The file is empty"},
+        }
+    }
+
+
+def test_upload_of_one_good_and_one_empty_file_is_partial_with_the_reason(
+    fake_service: FakeMammothService,
+) -> None:
+    fake_service.responses[_UPLOAD_RESULT] = {"dataset_ids": [11, 22], "errors": {}}
+    fake_service.responses[_DATASET_GET] = _mixed_get
+    data, _ = file_cmd.file_upload(_inv("file.upload", extra_args=["a.csv", "b.csv"]))
+    assert data["partial"] is True
+    assert data["status"] == "partial"
+    assert [(d["id"], d["status"]) for d in data["datasets"]] == [(11, "ready"), (22, "error")]
+    assert "The file is empty" in " ".join(data["warnings"])
+
+
+def test_upload_with_a_refused_file_and_a_ready_one_is_partial(
+    fake_service: FakeMammothService,
+) -> None:
+    fake_service.responses[_UPLOAD_RESULT] = {
+        "dataset_ids": [11],
+        "errors": {"unsupported": ["x.pbix"]},
+    }
+    fake_service.responses[_DATASET_GET] = _mixed_get
+    data, _ = file_cmd.file_upload(_inv("file.upload", extra_args=["a.csv", "b.csv"]))
+    assert data["partial"] is True
+    assert data["refused_files"] == ["x.pbix"]
 
 
 def test_upload_status_is_unknown_when_the_read_back_fails(
