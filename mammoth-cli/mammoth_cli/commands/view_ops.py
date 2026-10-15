@@ -69,6 +69,13 @@ from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.session import open_service, resolved_project
 from mammoth_cli.runtime.strict import validate_input_fields
 from mammoth_cli.runtime.verify import read_export_stamps
+from mammoth_cli.services.column_type_guard import (
+    DATE,
+    NUMERIC,
+    TypeCheck,
+    check_column_types,
+    math_columns,
+)
 from mammoth_cli.services.command_contract import bind_command_inputs, resolve_command_contract
 from mammoth_cli.services.conditions import CONDITION_KWARG, compile_condition
 from mammoth_cli.services.delete_check import ensure_deleted
@@ -1614,6 +1621,62 @@ def view_transform_crosstab(invocation: Invocation) -> HandlerResult:
     )
 
 
+def _type_guard(
+    invocation: Invocation,
+    view_id: int,
+    checks_for: Callable[[dict[str, Any], dict[str, str]], list[TypeCheck]],
+) -> Callable[[Any, int, dict[str, Any]], Any]:
+    """A ``prepare`` hook: refuse the step when a column it reads has the wrong type.
+
+    ``checks_for(document, types)`` lists the columns to check from the input document and the
+    view's ``{display name: type}`` map. A read that cannot run never blocks the write.
+    """
+
+    def check(service: Any, dataset_id: int, kwargs: dict[str, Any]) -> Any:
+        types = _view_column_types(service, dataset_id, view_id, resolved_project(invocation))
+        if types:
+            check_column_types(view_id, types, checks_for(invocation.load_input() or {}, types))
+        return None
+
+    return check
+
+
+def _view_column_types(
+    service: Any, dataset_id: int, view_id: int, project_id: int | None
+) -> dict[str, str]:
+    """``{display name: type}`` of the view's columns; empty when the view cannot be read."""
+    try:
+        info = service.call(
+            _DATAVIEW_GET_SYMBOL, dataset_id=dataset_id, dataview_id=view_id, project_id=project_id
+        )
+    except CliError:
+        return {}
+    return ImpactRead(
+        service, dataset_id, view_id, project_id, apply_column_renames(info)
+    ).column_types()
+
+
+_DATE_ONLY = frozenset({DATE})
+
+
+def _date_column_checks(*fields: str, operation: str) -> Callable[..., list[TypeCheck]]:
+    def checks(document: dict[str, Any], types: dict[str, str]) -> list[TypeCheck]:
+        return [
+            TypeCheck(str(document[name]), _DATE_ONLY, operation)
+            for name in fields
+            if isinstance(document.get(name), str) and document[name] in types
+        ]
+
+    return checks
+
+
+def _math_type_checks(document: dict[str, Any], types: dict[str, str]) -> list[TypeCheck]:
+    return [
+        TypeCheck(name, frozenset({NUMERIC, DATE}), "math")
+        for name in math_columns(document.get("expression", ""), types)
+    ]
+
+
 def view_transform_date_diff(invocation: Invocation) -> HandlerResult:
     """Compute the difference between two dates. ``component``/``start``/``end`` required."""
     view_id = _view_id(invocation)
@@ -1623,7 +1686,10 @@ def view_transform_date_diff(invocation: Invocation) -> HandlerResult:
     _require_field(document, "end")
     assert document is not None
     kwargs = _bind_transform_inputs(invocation, document)
-    return _dispatch_view(invocation, view_id, "date_diff", **kwargs)
+    guard = _type_guard(
+        invocation, view_id, _date_column_checks("start", "end", operation="date-diff")
+    )
+    return _dispatch_view(invocation, view_id, "date_diff", prepare=guard, **kwargs)
 
 
 def view_transform_delete_columns(invocation: Invocation) -> HandlerResult:
@@ -1726,7 +1792,10 @@ def view_transform_extract_date(invocation: Invocation) -> HandlerResult:
     _require_field(document, "component")
     assert document is not None
     kwargs = _bind_transform_inputs(invocation, document)
-    return _dispatch_view(invocation, view_id, "extract_date", **kwargs)
+    guard = _type_guard(
+        invocation, view_id, _date_column_checks("column", operation="extract-date")
+    )
+    return _dispatch_view(invocation, view_id, "extract_date", prepare=guard, **kwargs)
 
 
 def view_transform_fill_missing(invocation: Invocation) -> HandlerResult:
@@ -1787,7 +1856,10 @@ def view_transform_increment_date(invocation: Invocation) -> HandlerResult:
     _require_field(document, "delta")
     assert document is not None
     kwargs = _bind_transform_inputs(invocation, document)
-    return _dispatch_view(invocation, view_id, "increment_date", **kwargs)
+    guard = _type_guard(
+        invocation, view_id, _date_column_checks("column", operation="increment-date")
+    )
+    return _dispatch_view(invocation, view_id, "increment_date", prepare=guard, **kwargs)
 
 
 def view_transform_join(invocation: Invocation) -> HandlerResult:
@@ -1915,7 +1987,10 @@ def _math_into_column(
     kwargs = _bind_transform_inputs(invocation, document, "view.transform.math")
     blanks: dict[str, int] = {}
 
+    guard = _type_guard(invocation, view_id, _math_type_checks)
+
     def count_blank_inputs(service: Any, dataset_id: int, _kwargs: dict[str, Any]) -> None:
+        guard(service, dataset_id, _kwargs)
         blanks.update(
             _blank_math_inputs(
                 service, dataset_id, view_id, resolved_project(invocation), document["expression"]
