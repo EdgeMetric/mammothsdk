@@ -8,6 +8,7 @@ command can refuse before it creates something the token cannot open.
 
 from __future__ import annotations
 
+import re
 from collections.abc import Callable
 
 from mammoth_cli.errors.envelope import CODE_AUTHORIZATION_REQUIRED, EXIT_AUTH, CliError
@@ -62,6 +63,17 @@ def refuse_pinned_project(
     )
 
 
+_NOT_A_MEMBER = re.compile(r"You are not a member of project (\d+)\.?$")
+
+
+def _pin_label(pin: int, name_lookup: Callable[[int], str | None] | None) -> str:
+    try:
+        name = name_lookup(pin) if name_lookup is not None else None
+    except Exception:  # noqa: BLE001 -- a name is a courtesy; keep the id
+        name = None
+    return label("project", pin, name)
+
+
 def qualify_pin_hint(
     error: CliError,
     pin_lookup: Callable[[], int | None],
@@ -74,11 +86,26 @@ def qualify_pin_hint(
     is not limited the sentence is dropped; when it is, it names the project, with its name
     when ``name_lookup`` finds one (a failed lookup leaves the bare id).
     """
-    if error.code != CODE_AUTHORIZATION_REQUIRED or PINNED_PROJECT_HINT not in (error.hint or ""):
+    if error.code != CODE_AUTHORIZATION_REQUIRED:
+        return error
+    membership = _NOT_A_MEMBER.match(error.message or "")
+    if membership is None and PINNED_PROJECT_HINT not in (error.hint or ""):
         return error
     try:
         pin = pin_lookup()
     except Exception:  # noqa: BLE001 -- keep the original error when the lookup fails
+        return error
+    if membership is not None:
+        # A token limited to one project is refused elsewhere; "ask an admin to add you"
+        # is the wrong fix for that.
+        if pin is None:
+            return error
+        error.message = (
+            f"This token is limited to {_pin_label(pin, name_lookup)}, so it cannot open "
+            f"project {membership.group(1)}."
+        )
+        error.hint = f"Pass --project {pin}, or log in with a token created without a project."
+        error.details = {**(error.details or {}), "pinned_project_id": pin}
         return error
     assert error.hint is not None
     if pin is None:
