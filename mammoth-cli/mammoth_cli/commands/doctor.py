@@ -186,6 +186,8 @@ def _nearest_existing(path: Path) -> Path:
 #: seconds (capped), probing every ``_WAIT_INTERVAL`` seconds.
 _WAIT_INTERVAL = 15
 _WAIT_MAX = 900
+#: Auth failures that only a fresh sign-in fixes.
+_LOGIN_ERROR_CODES = frozenset({"login_expired", "not_authenticated"})
 
 
 def _wait_seconds(invocation: Invocation) -> float:
@@ -279,6 +281,7 @@ def doctor(invocation: Invocation) -> HandlerResult:
     keyring_error: str | None = None
     legacy_credential = False
     creds_present = False
+    credential_kind: str | None = None
     if in_app:
         checks.extend(_check_not_applicable(name) for name in ("profile", "credentials"))
     else:
@@ -292,6 +295,7 @@ def doctor(invocation: Invocation) -> HandlerResult:
         try:
             stored = credentials.load_credential(profile_name)
             creds_present = stored is not None
+            credential_kind = stored.kind if stored is not None else None
             legacy_credential = stored is not None and stored.kind == "key_secret"
         except CliError as error:
             keyring_error = error.code
@@ -300,18 +304,22 @@ def doctor(invocation: Invocation) -> HandlerResult:
                 "legacy API key + secret stored; log in again with an API token: "
                 f"mammoth auth login --profile {shlex.quote(profile_name)}"
             )
+        elif credential_kind == "oauth":
+            creds_detail = "oauth sign-in present"
         else:
             creds_detail = "api token present" if creds_present else "none stored"
         checks.append(_check("credentials", creds_present, keyring_error or creds_detail))
 
     endpoint_detail = "unresolved"
     auth_ok = False
+    auth_error_code: str | None = None
     try:
         auth = resolve_auth(invocation)
         endpoint_detail = auth.base_url
         auth_ok = True
     except CliError as error:
         endpoint_detail = error.code
+        auth_error_code = error.code
     checks.append(_check("endpoint", auth_ok, endpoint_detail))
 
     connection_ok = False
@@ -402,7 +410,12 @@ def doctor(invocation: Invocation) -> HandlerResult:
     recommendations: list[str] = []
     if in_app:
         pass  # the host owns the login and the project; nothing here is the agent's to fix
-    elif record is None or not creds_present or legacy_credential:
+    elif (
+        record is None
+        or not creds_present
+        or legacy_credential
+        or auth_error_code in _LOGIN_ERROR_CODES
+    ):
         login_profile = f" --profile {shlex.quote(profile_name)}" if profile_name else ""
         login_storage = " --storage file" if keyring_error else ""
         recommendations.append(f"mammoth auth login{login_profile}{login_storage}")

@@ -451,7 +451,13 @@ def agent_plan_skip(invocation: Invocation) -> HandlerResult:
 
 
 def agent_plan_discard(invocation: Invocation) -> HandlerResult:
-    """Skip every proposed step of the chat's current plan."""
+    """Discard every proposed step of the chat's current plan. Prompt or ``--yes`` required."""
+    session_id = _require_string_positional(invocation, "session id")
+    enforce_confirmation(
+        invocation,
+        policy=POLICY_PROMPT_OR_YES,
+        action=f"discard the plan of agent session {session_id}",
+    )
     return _plan_decision(invocation)
 
 
@@ -580,7 +586,13 @@ def agent_projects_set(invocation: Invocation) -> HandlerResult:
 
 
 def agent_projects_clear(invocation: Invocation) -> HandlerResult:
-    """Clear the projects the agent may work in (sets the list to empty)."""
+    """Clear the projects the agent may work in (sets the list to empty). Prompt or ``--yes``."""
+    agent_key = _require_string_positional(invocation, "agent key")
+    enforce_confirmation(
+        invocation,
+        policy=POLICY_PROMPT_OR_YES,
+        action=f"clear the projects agent {agent_key} may work in",
+    )
     return _definition_call(invocation, project_ids=[])
 
 

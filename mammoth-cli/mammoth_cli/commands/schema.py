@@ -21,10 +21,12 @@ from collections import defaultdict
 from functools import cache
 from typing import Any, cast
 
+from mammoth_cli.errors.envelope import is_feature_unavailable
 from mammoth_cli.manifest.loader import command_by_id, load_commands, load_operations
 from mammoth_cli.output.normalize import trusted_json_schema
 from mammoth_cli.services.argspec import FieldSpec
 from mammoth_cli.services.command_contract import LOCAL_COMMANDS, resolve_command_contract
+from mammoth_cli.services.field_enums import field_enum, with_enum
 from mammoth_cli.services.input_fields import (
     example_input_hints,
     excluded_input_fields,
@@ -46,6 +48,10 @@ _PROTECTED_INPUT_PATH = "/private/path/request.json"
 # second id, an optional-but-central input field, or two views to compare.
 _FIXED_EXAMPLES: dict[str, tuple[tuple[str, ...], dict[str, Any]]] = {
     "view.optimize": (("123",), {}),
+    # Data apps were replaced by collections and the API is blocked, but the request shape
+    # is still the one required ``body``: show it rather than a handoff to ``schema get``.
+    "data-app.create": ((), {"body": {"name": "Revenue app"}}),
+    "data-app.update": (("123",), {"body": {"name": "Revenue app"}}),
     "view.transform.batch": (
         ("123",),
         {
@@ -407,7 +413,7 @@ _COMMAND_DISCOVERY_PURPOSES = {
         "conditional threshold greater than if text times"
     ),
     "view.transform.pivot": (
-        "pivot group by aggregate aggregation sum count average summary summarize "
+        "pivot table group by aggregate aggregation sum count average summary summarize "
         "summarise per region total"
     ),
     "view.transform.rename-columns": (
@@ -461,6 +467,11 @@ _COMMAND_DISCOVERY_PURPOSES = {
     # value -- and neither can be dropped as a data word anyway, since
     # view.data.explore's own purpose text already uses both for its trend
     # feature.
+    # The basic read: the first thing anyone asks of a view.
+    "view.data.get": (
+        "read show the rows of the table see data records preview browse fetch look at first rows "
+        "page limit offset, read only"
+    ),
     "view.data.aggregate": (
         "group and sum totals by month week without changing the pipeline "
         "sum total figure answer a question, read only"
@@ -511,7 +522,20 @@ _COMMAND_DISCOVERY_PURPOSES = {
     # system prompt used to spell out by hand.
     "dashboard.suggestion.list": "ideas suggest suggestions what to show put on a board chart",
     "dashboard.analytics": "who viewed seen opened views visitors usage of a board",
-    "dashboard.share": "share make live publish board for the team link access",
+    "dashboard.share": (
+        "share make live publish board for the team link access with a user person "
+        "colleague invite grant"
+    ),
+    "dashboard.delete": "delete remove permanently dashboard board",
+    "view.delete": "delete remove permanently",
+    "dataset.delete": "delete remove permanently dataset",
+    "view.list": "list all views",
+    "view.task.delete": "undo remove the last step task from the pipeline revert a transformation",
+    "view.data.query": "query rows with a filter condition sort columns and get rows back",
+    "batch.create": "append add new data to an existing dataset",
+    "auth.login": "log in sign in login authenticate token workspace",
+    "auth.status": "who am i signed in logged in as current user session status check",
+    "doctor": "check my setup health diagnose environment install doctor",
     # "Import a table from SQL Server / MySQL / Postgres into a dataset" is a
     # connector flow -- list connectors, create a connection, then a ds-config
     # (a table or query pulled in as a new dataset) -- but none of these
@@ -612,7 +636,7 @@ _COMMAND_DISCOVERY_PURPOSES = {
     "agent.message.set-request-kind": (
         "wrong kind of request answered, correct the kind: ask insight build automate fix"
     ),
-    "agent.plan.approve": ("approve the agent plan go ahead and run the plan the agent proposed"),
+    "agent.plan.approve": "approve the agent plan go ahead and run the plan the agent proposed",
     "agent.plan.skip": "skip one step of the agent plan do not run that proposed step",
     "agent.plan.discard": "discard the agent plan reject everything the agent proposed",
     "agent.plan.edit-proposal": (
@@ -1173,10 +1197,34 @@ def _sample_field_value(field: FieldSpec) -> Any:
 def _representative_string(field_name: str) -> str:
     """Return a realistic, non-secret sample for a named string field."""
     name = field_name.casefold().replace("-", "_")
+    # Exact names whose value has one obvious, valid shape.
+    exact = {
+        "slug": "revenue-overview",
+        "object_type": "change_plan",
+        "agent_key": "revenue-assistant",
+        "connector_key": "postgres",
+        "connection_key": "prod-warehouse",
+        "client_key": "web-client",
+        "ds_config_key": "orders-config",
+        "sheet": "Sheet1",
+        "delimiter": ",",
+        "quotechar": '"',
+        "quote_char": '"',
+        "find": "N/A",
+        "search": "N/A",
+        "replace": "Unknown",
+        "sheets": "Sheet1",
+        "version": "1",
+        "as": "Total revenue",
+    }
+    if name in exact:
+        return exact[name]
     if any(part in name for part in ("password", "secret", "token", "credential")):
         return "replace-with-secret"
     if "email" in name:
         return "analyst@example.com"
+    if "origin" in name:
+        return "https://example.com"
     if any(part in name for part in ("url", "uri", "webhook")):
         return "https://example.com/data.csv"
     if any(part in name for part in ("file", "path")):
@@ -1189,11 +1237,35 @@ def _representative_string(field_name: str) -> str:
         return "Summarize revenue by region"
     if any(part in name for part in ("new_column", "as_name", "name", "title", "label")):
         return "Revenue report"
-    if "column" in name or name in {"source", "key"}:
+    if "column" in name or name in {
+        "source",
+        "key",
+        "field",
+        "group_by",
+        "rows",
+        "left",
+        "right",
+        "select",
+        "on",
+    }:
         return "Status"
+    if name in {"start", "end"}:
+        return "Order Date" if name == "start" else "Ship Date"
+    if name in {
+        "description",
+        "body",
+        "content",
+        "text",
+        "note",
+        "comment",
+        "expected",
+        "code",
+    }:
+        return "Quarterly revenue summary"
     if name.endswith("_id") or name in {"id", "identifier"}:
         return "resource-123"
-    return "sample"
+    # No safe guess: a visible placeholder, never a literal that looks like data.
+    return f"<{field_name}>"
 
 
 def _humanize_sample(value: Any, field_name: str) -> Any:
@@ -1205,7 +1277,7 @@ def _humanize_sample(value: Any, field_name: str) -> Any:
         return [_humanize_sample(item, singular) for item in value]
     if isinstance(value, dict):
         return {
-            ("sample_key" if key == "example" else key): _humanize_sample(
+            ("name" if key == "example" else key): _humanize_sample(
                 item, "key" if key == "example" else key
             )
             for key, item in value.items()
@@ -1426,7 +1498,62 @@ def _scope_requirements(command_id: str, scope: str) -> dict[str, Any]:
 compact_contract = _compact_contract
 
 
+_DISTINCT_IDS = ("123", "456", "789", "1011")
+
+
 def runnable_example(
+    record: dict[str, Any],
+    symbol: str | None,
+    positionals: tuple[PositionalSpec, ...] | None = None,
+) -> str | None:
+    """Build one complete, copy-pasteable command line for this command.
+
+    The line from :func:`_runnable_example` with its positional ids made distinct
+    (``VIEW_ID DATASET_ID`` is ``123 456``, never ``123 123``) and a dataset id
+    added when the SDK requires one but the command only takes it as an optional
+    trailing positional, so the example names everything it needs without a lookup.
+    """
+    line = _runnable_example(record, symbol, positionals)
+    if line is None:
+        return None
+    command_id = str(record["command_id"])
+    if command_id == "parameter.create":
+        # A parameter name is an identifier (letters, digits, underscore): no spaces.
+        line = line.replace("'Revenue report'", "revenue_report", 1)
+    specs = positionals if positionals is not None else resolve_positionals(command_id)
+    tokens = shlex.split(line)
+    start = 1 + len(str(record["command_path"]).split())
+    end = start
+    while end < len(tokens) and not tokens[end].startswith("-"):
+        end += 1
+    given = tokens[start:end]
+    contract = resolve_command_contract(command_id)
+    needs_dataset = contract is not None and any(
+        field.name == "dataset_id" and field.required for field in contract.accepted_fields
+    )
+    for index, spec in enumerate(specs):
+        if spec.name == "dataset_id" and len(given) == index and needs_dataset:
+            given.append("456")
+    seen: set[str] = set()
+    for index, value in enumerate(given):
+        if value.isdigit() and value in seen:
+            value = next(item for item in _DISTINCT_IDS if item not in seen)
+            given[index] = value
+        seen.add(value)
+    rest = tokens[end:]
+    # Whatever a command's manifest policy asks, its example must already answer, so a copied
+    # example runs unattended instead of stopping at ``confirmation_required``. A
+    # ``confirm_target`` command whose target is no positional (the workspace, say) keeps
+    # only ``--yes``; its refusal names the exact ``--confirm`` value.
+    policy = record.get("confirmation")
+    if policy in {"prompt_or_yes", "confirm_target", "yes_always"} and "--yes" not in rest:
+        rest.append("--yes")
+    if policy == "confirm_target" and "--confirm" not in rest and given:
+        rest.extend(["--confirm", given[0]])
+    return shlex.join([*tokens[:start], *given, *rest])
+
+
+def _runnable_example(
     record: dict[str, Any],
     symbol: str | None,
     positionals: tuple[PositionalSpec, ...] | None = None,
@@ -1474,7 +1601,7 @@ def runnable_example(
             [
                 "mammoth",
                 *record["command_path"].split(),
-                "sample.twbx",
+                "Sales.twbx",
                 "--project",
                 "456",
                 "--yes",
@@ -1591,9 +1718,6 @@ def runnable_example(
                 "--input",
                 json.dumps({"name": "Revenue"}),
                 *_OUTPUT_JSON_NO_INPUT,
-                "--yes",
-                "--confirm",
-                "123",
             ]
         )
     if record["command_id"] == "dashboard.tags.set":
@@ -1762,6 +1886,11 @@ def _schema_common(record: dict[str, Any]) -> dict[str, Any]:
                     return [hoist_definitions(item) for item in value]
                 return value
 
+            registered = field_enum(record["command_id"], field["name"])
+            if registered is not None:
+                field_schema = with_enum(field_schema, registered)
+            if record["command_id"] == "parameter.create" and field["name"] == "name":
+                field_schema = {**field_schema, "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"}
             properties[field["name"]] = hoist_definitions(namespace_refs(field_schema))
         # A field a positional falls back to (the dual-sourced "positional OR
         # --input field" pattern) is satisfiable from the command line, so it is
@@ -2111,6 +2240,8 @@ def find_schemas(
     for record in load_commands():
         if record.get("disposition") == "alias":
             continue
+        if is_feature_unavailable(str(record["command_id"])):
+            continue
         command_id = str(record["command_id"])
         command_path = str(record["command_path"])
         positional_help = " ".join(
@@ -2245,6 +2376,11 @@ def find_schemas(
         # A goal phrased in the user's words rarely carries every term; the
         # best near misses still say how to call them, so one find suffices.
         _inline_call_detail(result["suggestions"][:_INLINE_DETAIL_COUNT])
+        # A script that reads only ``matches`` must not be left with nothing: the best
+        # partial matches go there too, marked so they are not mistaken for full ones
+        # (``total_matches`` stays 0 and each carries the ``matched_terms`` it has).
+        result["matches"] = [{**entry, "partial": True} for entry in result["suggestions"]]
+        result["partial_matches"] = bool(result["matches"])
         result["hint"] = (
             _NO_MATCH_HINT_WITH_SUGGESTIONS
             if result["suggestions"]
@@ -2287,9 +2423,10 @@ def get_schema(command_id: str) -> dict[str, Any] | None:
         "human_example": record["human_example"],
         "agent_example": record["agent_example"],
         "exit_codes": {
-            "0": "success",
-            "1": "API or operation failure",
+            "0": "success (a pending write exits 0 with status pending; see verify.next_command)",
+            "1": "API or operation failure (including a write with verify.outcome failed)",
             "2": "usage, input, or confirmation failure",
+            "3": "write partly applied (verify.outcome partial)",
             "4": "authentication or authorization failure",
             "5": "resource not found",
             "6": "conflict or failed precondition",

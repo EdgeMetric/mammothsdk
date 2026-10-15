@@ -60,6 +60,13 @@ def _path(api: Any) -> str:
     return api.last().path.removeprefix("/api/v2")
 
 
+def _deletion(api: Any) -> Any:
+    """The DELETE request, followed by the read that confirms the resource is gone."""
+    assert api.requests[-1].method == "GET"
+    assert api.requests[-1].path == api.requests[-2].path
+    return api.requests[-2]
+
+
 def test_p0_upload_view_create_and_task_add_wires(
     real_service: Any, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
@@ -159,17 +166,25 @@ def test_p0_export_wire_and_delete_confirmation_controls(
                 _inv("view.delete", [str(VIEW), str(DATASET)], yes=True, input_file=None)
             )
         )
-    assert api.last().method == "DELETE"
-    assert _path(api) == f"/workspaces/4/projects/{PROJECT}/datasets/{DATASET}/dataviews/{VIEW}"
+    deletion = _deletion(api)
+    assert deletion.method == "DELETE"
+    assert deletion.path.removeprefix("/api/v2") == (
+        f"/workspaces/4/projects/{PROJECT}/datasets/{DATASET}/dataviews/{VIEW}"
+    )
 
     with _bind(monkeypatch, dataset_cmd, service):
         _drive(dataset_cmd.dataset_delete(_inv("dataset.delete", [str(DATASET)], yes=True)))
-    assert api.last().method == "DELETE"
-    assert _path(api) == f"/workspaces/4/projects/{PROJECT}/datasets/{DATASET}"
+    deletion = _deletion(api)
+    assert deletion.method == "DELETE"
+    assert deletion.path.removeprefix("/api/v2") == (
+        f"/workspaces/4/projects/{PROJECT}/datasets/{DATASET}"
+    )
 
     # A wrong parent is a literal wire mismatch, not an authorized fallback.
     wrong_parent = tmp_path / "wrong-parent.json"
     _drive(wrong_parent.write_text(json.dumps({"dataset_id": 999}), encoding="utf-8"))
     with _bind(monkeypatch, view_ops, service):
         _drive(view_ops.view_delete(_inv("view.delete", [str(VIEW)], str(wrong_parent), yes=True)))
-    assert _path(api) == f"/workspaces/4/projects/{PROJECT}/datasets/999/dataviews/{VIEW}"
+    assert _deletion(api).path.removeprefix("/api/v2") == (
+        f"/workspaces/4/projects/{PROJECT}/datasets/999/dataviews/{VIEW}"
+    )

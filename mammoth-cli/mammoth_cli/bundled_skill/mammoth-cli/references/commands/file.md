@@ -6,7 +6,7 @@ Every command returns the standard JSON envelope. On nonzero exit, read the erro
 
 Run: `mammoth file bulk-delete`. Exact input fields: `mammoth schema get file.bulk-delete`.
 
-Example: `mammoth file bulk-delete --input '{"file_ids": [1]}'`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth file bulk-delete --input '{"file_ids": [1]}' --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `FileBulkDeleteResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
 
@@ -16,7 +16,7 @@ Status on release: ran once on CLI 2.0.14 — write sweep 2026-09-18: exit 0 on 
 
 Run: `mammoth file delete`. Exact input fields: `mammoth schema get file.delete`.
 
-Example: `mammoth file delete 123`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth file delete 123 --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `FileDeleteResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
 
@@ -26,7 +26,7 @@ Status on release: ran once on CLI 2.0.14 — write sweep 2026-09-18: exit 0 on 
 
 Run: `mammoth file extract-sheets`. Exact input fields: `mammoth schema get file.extract-sheets`.
 
-Example: `mammoth file extract-sheets 123 --input '{"sheets": ["sample"]}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth file extract-sheets 123 --input '{"sheets": ["Sheet1"]}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `FileExtractSheetsResult`; mutation `benign_mutation`, confirmation `none`, wait policy `always_wait`.
 
@@ -56,7 +56,7 @@ Status on release: ran once on CLI an earlier release — Bounded release read i
 
 Run: `mammoth file multi-sheet-extract`. Exact input fields: `mammoth schema get file.multi-sheet-extract`.
 
-Example: `mammoth file multi-sheet-extract 123 --input '{"tables": [{"sample_key": "Status"}]}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth file multi-sheet-extract 123 --input '{"tables": [{"name": "Status"}]}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `FileMultiSheetExtractResult`; mutation `benign_mutation`, confirmation `none`, wait policy `always_wait`.
 
@@ -76,7 +76,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth file set-password`. Exact input fields: `mammoth schema get file.set-password`.
 
-Example: `mammoth file set-password 123 --input /private/path/request.json`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth file set-password 123 --input /private/path/request.json --yes --confirm 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Secret fields: pass the body as `--input FILE` (mode 0600); never inline.
 
@@ -88,7 +88,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth file update`. Exact input fields: `mammoth schema get file.update`.
 
-Example: `mammoth file update 123 --input '{"patch_request": {"patch": [{"op": "replace", "path": "extract_sheets", "value": "sample"}]}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth file update 123 --input '{"patch_request": {"patch": [{"op": "replace", "path": "extract_sheets", "value": "Sheet1"}]}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `FileUpdateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `always_wait`.
 

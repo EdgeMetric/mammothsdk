@@ -60,7 +60,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth auth connected-apps revoke OAUTH_GRANT_ID --help
-  agent_example: mammoth auth connected-apps revoke 123
+  agent_example: mammoth auth connected-apps revoke 123 --yes --confirm 123
   unit_tests:
   - test_revoke_connected_app_deletes_that_grant_on_an_empty_204
   contract_tests:

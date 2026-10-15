@@ -16,7 +16,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth data-app create`. Exact input fields: `mammoth schema get data-app.create`.
 
-Example: `mammoth schema get data-app.create`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth data-app create --input '{"body": {"name": "Revenue app"}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `DataAppCreateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
@@ -26,7 +26,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth data-app delete`. Exact input fields: `mammoth schema get data-app.delete`.
 
-Example: `mammoth data-app delete 123`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth data-app delete 123 --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `DataAppDeleteResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
 
@@ -46,7 +46,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth data-app job`. Exact input fields: `mammoth schema get data-app.job`.
 
-Example: `mammoth data-app job 123 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth data-app job 123 456`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `DataAppJobResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
@@ -76,7 +76,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth data-app share`. Exact input fields: `mammoth schema get data-app.share`.
 
-Example: `mammoth data-app share 123 --input '{"body": {"sample_key": "Status"}}' --yes`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth data-app share 123 --input '{"body": {"name": "Status"}}' --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `DataAppShareResult`; mutation `external_effect`, confirmation `yes_always`, wait policy `not_async`.
 
@@ -86,7 +86,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth data-app update`. Exact input fields: `mammoth schema get data-app.update`.
 
-Example: `mammoth schema get data-app.update`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth data-app update 123 --input '{"body": {"name": "Revenue app"}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `DataAppUpdateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
@@ -116,7 +116,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth data-app user remove`. Exact input fields: `mammoth schema get data-app.user.remove`.
 
-Example: `mammoth data-app user remove 123 analyst@example.com`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth data-app user remove 123 analyst@example.com --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `DataAppUserRemoveResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
 

@@ -14,10 +14,13 @@ mammoth upgrade --yes      # upgrade to the latest release
 mammoth upgrade --version X.Y.Z --yes               # pin an exact version
 ```
 
-`mammoth upgrade --yes` always moves to the newest release, also from an
-install that was pinned with `--version`. It finds the uv that the one-line
+A pin is remembered: `--version X.Y.Z` (here or in the installer) records it in
+`pin.json` next to `update-check.json`, and the automatic upgrade below then
+installs nothing. `mammoth upgrade --yes` always moves to the newest release,
+also from an install that was pinned with `--version`, and clears the pin. It finds the uv that the one-line
 installer keeps off PATH, so it works on a fresh macOS or Linux host with no
-uv of its own. Running the one-line installer again has the same effect.
+uv of its own. Running the one-line installer again has the same effect
+(with `--version` it re-pins).
 
 `--check` is read-only. The upgrade itself is a mutation with an external
 effect, so at a terminal it prompts for confirmation and in non-interactive
@@ -39,7 +42,8 @@ directory).
 
 - `mammoth doctor` shows `cli_version` with the installed and latest versions.
 - When a newer release exists and the CLI will not install it by itself
-  (auto-update off, or the install failed), every JSON envelope carries
+  (auto-update off, the session is not interactive, the install is pinned, or the install
+  failed), every JSON envelope carries
   `meta.update_available` = `{"current": "...", "latest": "...", "command":
   "mammoth upgrade --yes"}` (otherwise `null`) and human output prints one line
   on stderr.
@@ -62,7 +66,17 @@ through the same manager detection as `mammoth upgrade`. There is no prompt.
   install `meta.update_available` returns so you can run `mammoth upgrade --yes`.
 - It never runs during `mammoth upgrade` or `mammoth doctor`, inside an embedded
   agent session, or with `MAMMOTH_NO_UPDATE_CHECK=1`.
-- Opt out with `MAMMOTH_NO_AUTO_UPDATE=1` (or `MAMMOTH_AUTO_UPGRADE=0`). The check
+- A pinned install (`mammoth upgrade --version X.Y.Z`, or the installer's
+  `--version`) is never updated by itself: the check and the
+  `meta.update_available` hint stay, nothing is installed. `mammoth upgrade --yes`
+  moves to the latest and clears the pin.
+- Auto-install happens only in an interactive session: stdin and stdout are terminals
+  and no CI variable is set (`CI`, `GITHUB_ACTIONS`, `GITLAB_CI`, `BUILDKITE`,
+  `JENKINS_URL`, `CIRCLECI`, `TF_BUILD`, and similar). In CI, in a pipe and under an
+  agent the check and the `meta.update_available` hint still run and nothing is
+  installed. `MAMMOTH_AUTO_UPGRADE=1` forces the install on, even there. The command
+  decides, because the detached updater has no terminal.
+- Opt out everywhere with `MAMMOTH_NO_AUTO_UPDATE=1` (or `MAMMOTH_AUTO_UPGRADE=0`). The check
   and the `meta.update_available` hint stay; nothing is installed. Do this in CI
   images, lock-file environments and shared virtualenvs whose version must not
   change underneath a task.

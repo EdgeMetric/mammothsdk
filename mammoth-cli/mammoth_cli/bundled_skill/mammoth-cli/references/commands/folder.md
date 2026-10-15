@@ -6,7 +6,7 @@ Every command returns the standard JSON envelope. On nonzero exit, read the erro
 
 Run: `mammoth folder bulk-delete`. Exact input fields: `mammoth schema get folder.bulk-delete`.
 
-Example: `mammoth folder bulk-delete`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth folder bulk-delete --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `FolderBulkDeleteResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
 
@@ -26,7 +26,7 @@ Status on release: ran once on CLI 1.1.5 — Partial bounded release evidence: o
 
 Run: `mammoth folder delete`. Exact input fields: `mammoth schema get folder.delete`.
 
-Example: `mammoth folder delete 123`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth folder delete 123 --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `FolderDeleteResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
 

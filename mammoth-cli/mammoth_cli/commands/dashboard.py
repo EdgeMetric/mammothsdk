@@ -41,13 +41,22 @@ from mammoth_cli.runtime.session import open_service, require_project, resolved_
 from mammoth_cli.services.argspec import arg_spec
 from mammoth_cli.services.board_values import board_values, dashboard_link
 from mammoth_cli.services.command_contract import bind_command_inputs
+from mammoth_cli.services.dashboard_figures import (
+    bake_error_problem,
+    canvas_figure_problems,
+    figure_problems,
+)
 from mammoth_cli.services.dashboard_filters import (
     check_filter,
     declared,
     with_filter,
     without_filter,
 )
-from mammoth_cli.services.dashboard_pages import check_added_pages
+from mammoth_cli.services.dashboard_pages import (
+    check_added_pages,
+    generate_substitutions,
+    page_substitutions,
+)
 from mammoth_cli.services.dashboard_review import (
     CANVAS_GET,
     NEW_COLUMN_NOTE,
@@ -56,6 +65,8 @@ from mammoth_cli.services.dashboard_review import (
     reporting_month,
     review,
 )
+from mammoth_cli.services.dashboard_review import _profiles as _review_profiles
+from mammoth_cli.services.local_files import refuse_existing_file
 from mammoth_cli.services.positionals import resolve_positionals
 
 HandlerResult = tuple[Any, dict[str, Any]]
@@ -260,7 +271,7 @@ def dashboard_tags_list(invocation: Invocation) -> HandlerResult:
 
 
 def dashboard_tags_rename(invocation: Invocation) -> HandlerResult:
-    """Rename a dashboard tag after exact-target confirmation."""
+    """Rename a dashboard tag. A rename is undone by renaming back, so it asks nothing."""
     tag_id = _require_int_positional(invocation, "tag id")
     if tag_id <= 0:
         raise CliError(
@@ -276,12 +287,6 @@ def dashboard_tags_rename(invocation: Invocation) -> HandlerResult:
             message="name must be a non-blank string.",
             exit_status=EXIT_USAGE,
         )
-    enforce_confirmation(
-        invocation,
-        policy=POLICY_CONFIRM_TARGET,
-        action=f"rename dashboard tag {tag_id}",
-        target=str(tag_id),
-    )
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), tag_id=tag_id, name=name)
     return data, _meta(invocation, auth.workspace_id)
@@ -677,8 +682,48 @@ def dashboard_figure_add(invocation: Invocation) -> HandlerResult:
     if document.get("page") is not None:
         kwargs.update(_figure_page_kwargs(document["page"]))
     with open_service(invocation) as (service, auth):
+        _refuse_bad_figure(service, dashboard_id, kwargs)
         data = service.call(_symbol(invocation), **kwargs)
     return data, _meta(invocation, auth.workspace_id)
+
+
+def _refuse_bad_figure(service: Any, dashboard_id: int, kwargs: dict[str, Any]) -> None:
+    """Fail before the call when the figure names a missing column or sums text.
+
+    Reads the board's column profile (one canvas read); an unreadable canvas or
+    a board with no profile yet skips the check, as the server still validates.
+    """
+    figure = kwargs.get("figure")
+    if not isinstance(figure, dict):
+        return
+    try:
+        canvas_doc = _dump_model(service.call(CANVAS_GET, dashboard_id=dashboard_id))
+    except Exception:  # noqa: BLE001 -- the check is advice; the server still validates
+        return
+    profiles = _review_profiles(canvas_doc) if isinstance(canvas_doc, dict) else []
+    canvas = canvas_doc.get("canvas") if isinstance(canvas_doc, dict) else None
+    derived = [
+        str(d.get("id"))
+        for d in (canvas.get("derived") or [] if isinstance(canvas, dict) else [])
+        if isinstance(d, dict)
+    ]
+    problems = figure_problems(figure, profiles, derived=derived, view_id=kwargs.get("dataview_id"))
+    if not problems:
+        return
+    first = problems[0]
+    raise CliError(
+        code=CODE_INVALID_ARGUMENT,
+        message=f"The figure cannot be drawn: {first['detail']}",
+        exit_status=EXIT_USAGE,
+        hint=(
+            "Fix the figure and run the command again."
+            if "fix" not in first
+            else "Convert the column, then add the figure."
+        ),
+        recovery_commands=[p["fix"] for p in problems if "fix" in p]
+        or [f"mammoth dashboard canvas get {dashboard_id}"],
+        details={"problems": problems},
+    )
 
 
 def dashboard_cancel_generation(invocation: Invocation) -> HandlerResult:
@@ -815,7 +860,7 @@ def generated_dashboard(invocation: Invocation) -> HandlerResult:
             requested = kwargs["body"].get("params", {}).get("pages", [])
             data = check_added_pages(service, positionals["dashboard_id"], requested, data)
         if invocation.command_id in _REVIEWED_COMMANDS:
-            data = _with_deliverable_check(invocation, service, auth, positionals, data)
+            data = _with_deliverable_check(invocation, service, auth, positionals, data, kwargs)
         if invocation.command_id in _VALUED_COMMANDS:
             data = _with_board_values(service, auth, positionals, data)
     return data, _meta(invocation, auth.workspace_id)
@@ -891,11 +936,19 @@ _REVIEWED_COMMANDS = frozenset(
 
 
 def _with_deliverable_check(
-    invocation: Invocation, service: Any, auth: Any, positionals: dict[str, Any], data: Any
+    invocation: Invocation,
+    service: Any,
+    auth: Any,
+    positionals: dict[str, Any],
+    data: Any,
+    kwargs: dict[str, Any] | None = None,
 ) -> Any:
     """Add ``deliverable_check`` (money shown? blanks decided?) to an authoring result.
 
     One canvas read; advice only, so a failed read leaves the result as it was.
+    The same read also catches a figure the board cannot draw (an unknown column,
+    a sum over text, a bake error) and any chart the server swapped or dropped; those
+    set ``bake_ok``/``partial`` so ``verify`` reports the write as not clean.
     """
     if hasattr(data, "model_dump"):
         data = data.model_dump(mode="json")
@@ -912,7 +965,8 @@ def _with_deliverable_check(
             },
         }
     try:
-        warnings = _deliverable_warnings(invocation, service, auth, dashboard_id)
+        canvas_doc = _dump_model(service.call(CANVAS_GET, dashboard_id=dashboard_id))
+        warnings = _deliverable_warnings(invocation, service, auth, dashboard_id, canvas_doc)
     except Exception as exc:  # noqa: BLE001 -- advice must never fail the authoring step
         error = f"{type(exc).__name__}: {exc}"
         return {
@@ -926,16 +980,78 @@ def _with_deliverable_check(
             "report why not."
             + (" " + NEW_COLUMN_NOTE if any("fix" in warning for warning in warnings) else "")
         )
-    return {**data, "deliverable_check": check}
+    return {
+        **data,
+        "deliverable_check": check,
+        **_authoring_problems(invocation, data, canvas_doc, kwargs or {}),
+    }
+
+
+def _authoring_problems(
+    invocation: Invocation, data: dict[str, Any], canvas_doc: Any, kwargs: dict[str, Any]
+) -> dict[str, Any]:
+    """Fields that make ``verify`` report a figure that failed or was swapped as not clean."""
+    command_id = invocation.command_id
+    params = (kwargs.get("body") or {}).get("params") or {}
+    broken: list[dict[str, Any]] = []
+    partial: list[dict[str, Any]] = []
+    if command_id in {"dashboard.canvas.save", "dashboard.pages.add"}:
+        broken = canvas_figure_problems(canvas_doc)
+        bake = bake_error_problem(canvas_doc)
+        if bake is not None:
+            broken.append(bake)
+    if command_id == "dashboard.pages.add":
+        profiles = [p["name"] for p in _canvas_profiles(canvas_doc)]
+        refused = (data.get("chart_check") or {}).get("refused") or []
+        partial = page_substitutions(
+            params.get("pages") or [], data.get("added_page_ids"), canvas_doc, refused, profiles
+        )
+        partial += [
+            {
+                "issue": "page_dropped",
+                "requested": {"page": removed.get("title")},
+                "used": None,
+                "detail": f"page '{removed.get('title')}' got no charts and was removed.",
+            }
+            for removed in (data.get("chart_check") or {}).get("removed_pages") or []
+        ]
+    elif command_id == "dashboard.v3.generate":
+        partial = generate_substitutions(params.get("intent"), canvas_doc, data.get("message"))
+    elif command_id == "dashboard.chat.edit":
+        partial = generate_substitutions(None, canvas_doc, data.get("message"))
+    extra: dict[str, Any] = {}
+    if broken:
+        extra["bake_ok"] = False
+        extra["figure_check"] = {
+            "problems": broken,
+            "notes": [str(problem["detail"]) for problem in broken],
+        }
+    if partial:
+        extra["partial"] = True
+        extra["substitution_check"] = {
+            "problems": partial,
+            "notes": [str(problem["detail"]) for problem in partial],
+        }
+    if broken or partial:
+        previous = data.get("warnings")
+        extra["warnings"] = [*(previous if isinstance(previous, list) else []), *broken, *partial]
+    return extra
+
+
+def _canvas_profiles(canvas_doc: Any) -> list[dict[str, Any]]:
+    return _review_profiles(canvas_doc) if isinstance(canvas_doc, dict) else []
 
 
 def _deliverable_warnings(
-    invocation: Invocation, service: Any, auth: Any, dashboard_id: int
+    invocation: Invocation,
+    service: Any,
+    auth: Any,
+    dashboard_id: int,
+    canvas_doc: Any = None,
 ) -> list[dict[str, Any]]:
     """Read the canvas (and its view) once and return the review's warnings."""
-    canvas_doc = service.call(CANVAS_GET, dashboard_id=dashboard_id)
-    if hasattr(canvas_doc, "model_dump"):
-        canvas_doc = canvas_doc.model_dump(mode="json")
+    if canvas_doc is None:
+        canvas_doc = _dump_model(service.call(CANVAS_GET, dashboard_id=dashboard_id))
     source = (canvas_doc.get("canvas") or {}).get("dataset") or {}
     view_id = source.get("dataview_id")
     profile = invocation.profile or profiles.get_selected()
@@ -1020,6 +1136,43 @@ def dashboard_filter_list(invocation: Invocation) -> HandlerResult:
     return result, _meta(invocation, auth.workspace_id)
 
 
+def _wait_workbook_job(service: Any, data: Any) -> Any:
+    """Wait for the workbook job the upload started and return its finished result.
+
+    The upload routes answer with a job handle; ``wait_if_job`` honors
+    ``--job-timeout`` and is a no-op when the answer is already the result.
+    """
+    data = _dump_model(data)
+    if isinstance(data, dict):
+        data = _dump_model(service.wait_if_job(data))
+    return data
+
+
+def _refuse_rejected_workbook(data: Any) -> None:
+    """Raise when the server rejected the upload (a junk file, an unreadable workbook)."""
+    rejected = data.get("rejected") if isinstance(data, dict) else None
+    if not rejected:
+        return
+    detail = rejected if isinstance(rejected, dict) else {"reason": str(rejected)}
+    reason = str(detail.get("code") or detail.get("reason") or "not_a_workbook")
+    text = detail.get("message") or detail.get("detail") or detail.get("error")
+    raise CliError(
+        code=reason,
+        message=str(text) if text else f"The file was rejected: {reason}.",
+        exit_status=EXIT_USAGE,
+        hint="Pass a Tableau workbook (.twb or .twbx) or a Power BI file (.pbix).",
+        details={"rejected": detail},
+    )
+
+
+#: Said plainly on an import result: the rows are made up to fit the workbook's fields.
+_SYNTHETIC_ROWS_NOTE = (
+    "The dataset holds generated sample rows (data_source fitted_sample), made up to fit "
+    "the workbook's fields. They are synthetic, not the workbook's own data: load the real "
+    "data into this dataset before you trust any number."
+)
+
+
 def dashboard_assess_twb(invocation: Invocation) -> HandlerResult:
     """Assess a local Tableau workbook through the SDK multipart seam."""
     file_path = _require_str_positional(invocation, "file")
@@ -1030,7 +1183,8 @@ def dashboard_assess_twb(invocation: Invocation) -> HandlerResult:
             exit_status=EXIT_USAGE,
         )
     with open_service(invocation) as (service, auth):
-        data = service.call(_symbol(invocation), file=file_path)
+        data = _wait_workbook_job(service, service.call(_symbol(invocation), file=file_path))
+    _refuse_rejected_workbook(data)
     return data, _meta(invocation, auth.workspace_id)
 
 
@@ -1044,7 +1198,8 @@ def dashboard_assess_pbix(invocation: Invocation) -> HandlerResult:
             exit_status=EXIT_USAGE,
         )
     with open_service(invocation) as (service, auth):
-        data = service.call(_symbol(invocation), file=file_path)
+        data = _wait_workbook_job(service, service.call(_symbol(invocation), file=file_path))
+    _refuse_rejected_workbook(data)
     return data, _meta(invocation, auth.workspace_id)
 
 
@@ -1081,7 +1236,12 @@ def dashboard_import_workbook(invocation: Invocation) -> HandlerResult:
         target=str(project_id),
     )
     with open_service(invocation) as (service, auth):
-        data = service.call(_symbol(invocation), file=file_path, project_id=project_id)
+        data = _wait_workbook_job(
+            service, service.call(_symbol(invocation), file=file_path, project_id=project_id)
+        )
+    _refuse_rejected_workbook(data)
+    if isinstance(data, dict) and data.get("data_source") == "fitted_sample":
+        data = {**data, "synthetic_data": True, "data_note": _SYNTHETIC_ROWS_NOTE}
     return data, _meta(invocation, auth.workspace_id)
 
 
@@ -1147,8 +1307,62 @@ def dashboard_bi_export(invocation: Invocation) -> HandlerResult:
     symbol = f"mammoth.api.dashboards.DashboardsAPI.export_{target}"
     kwargs: dict[str, Any] = {"dashboard_id": dashboard_id}
     _forward_optional(document, kwargs, ("output_path",))
+    extension = "zip" if target == "powerbi" else "twbx"
+    refuse_existing_file(
+        invocation, kwargs.get("output_path") or f"dashboard_{dashboard_id}_{target}.{extension}"
+    )
     with open_service(invocation) as (service, auth):
+        preflight = _bi_preflight_or_none(service, target, dashboard_id)
         data = service.call(symbol, **kwargs)
     # The SDK returns a Path; render it as a string so the written location is
     # visible in every output mode and serializes cleanly to JSON.
-    return {"output_path": str(data)}, _meta(invocation, auth.workspace_id)
+    result: dict[str, Any] = {"output_path": str(data)}
+    result.update(_bi_drops(preflight, target))
+    return result, _meta(invocation, auth.workspace_id)
+
+
+def _bi_preflight_or_none(service: Any, target: str, dashboard_id: int) -> Any:
+    """The pre-flight for this export; ``None`` when it cannot be read (the export still runs)."""
+    try:
+        return _dump_model(
+            service.call(
+                f"mammoth.api.dashboards.DashboardsAPI.{target}_preflight",
+                dashboard_id=dashboard_id,
+            )
+        )
+    except Exception:  # noqa: BLE001 -- advice; the export is the command
+        return None
+
+
+def _bi_drops(preflight: Any, target: str) -> dict[str, Any]:
+    """Name the figures the export leaves out, as a structured warning.
+
+    The export writes a file whatever it dropped, so the result must say so:
+    ``partial`` makes ``verify`` report it as not clean.
+    """
+    if not isinstance(preflight, dict):
+        return {}
+    refusals = [r for r in preflight.get("refusals") or [] if isinstance(r, dict)]
+    if not refusals:
+        return {}
+    dropped = [{"title": r.get("title"), "reason": r.get("reason")} for r in refusals]
+    total = preflight.get("figures_total")
+    exported = preflight.get("figures_exported")
+    return {
+        "figures_total": total,
+        "figures_exported": exported,
+        "dropped_figures": dropped,
+        "partial": True,
+        "warnings": [
+            {
+                "issue": "figures_dropped",
+                "target": target,
+                "detail": (
+                    f"{len(dropped)} of {total} figures are not in the file "
+                    f"({exported} exported): "
+                    + "; ".join(f"{d['title']} ({d['reason']})" for d in dropped)
+                ),
+                "dropped": dropped,
+            }
+        ],
+    }

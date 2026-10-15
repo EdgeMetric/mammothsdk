@@ -35,6 +35,7 @@ from mammoth_cli.runtime.confirm import (
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.new_data import with_file_upload_path
 from mammoth_cli.runtime.session import open_service, require_project
+from mammoth_cli.services.delete_check import ensure_deleted, find_dependents
 from mammoth_cli.services.listing import (
     DATASET_ROW_FIELDS,
     ambiguity_note,
@@ -1075,7 +1076,27 @@ def dataset_file_settings_update(invocation: Invocation) -> HandlerResult:
     )
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), **kwargs)
-    return data, _meta(invocation, auth.workspace_id, project_id)
+        # The route answers with a reprocess job handle. Block on it (honoring
+        # ``--job-timeout``) so the command returns when the dataset has been re-read
+        # with the new settings; a response that is not a job passes through.
+        settled = service.wait_if_job(data)
+        if isinstance(settled, dict) and isinstance(data, dict) and settled is not data:
+            settled = {**data, **settled}
+        if isinstance(settled, dict) and not settled.get("name"):
+            settled = _with_dataset_name(service, settled, dataset_id, project_id)
+    return settled, _meta(invocation, auth.workspace_id, project_id)
+
+
+def _with_dataset_name(
+    service: Any, result: dict[str, Any], dataset_id: int, project_id: int
+) -> dict[str, Any]:
+    """Add ``dataset_name`` to a result that names its dataset by id only (best effort)."""
+    try:
+        record = service.call(_DATASET_GET_SYMBOL, dataset_id=dataset_id, project_id=project_id)
+    except CliError:
+        return result
+    name = record.get("name") if isinstance(record, dict) else None
+    return {**result, "dataset_name": name} if isinstance(name, str) and name else result
 
 
 def dataset_file_settings_undo(invocation: Invocation) -> HandlerResult:
@@ -1469,10 +1490,31 @@ def dataset_delete(invocation: Invocation) -> HandlerResult:
         ack = service.call(_symbol(invocation), dataset_id=dataset_id, project_id=project_id)
         # The server acknowledges a delete with a job handle. Settle it here so
         # the handle's id is kept as ``job.id`` (the shape ``view delete`` has).
-        data = _with_job(ack, service.wait_if_job(ack))
+        settled = service.wait_if_job(ack)
+        data = _with_job(ack, settled)
+        # A delete the server accepts but does not carry out (a view's join still reads
+        # the dataset) is a failure, not a verified success.
+        ensure_deleted(
+            service,
+            noun="dataset",
+            resource_id=dataset_id,
+            read_symbol="mammoth.api.datasets.DatasetsAPI.get",
+            read_kwargs={"dataset_id": dataset_id, "project_id": project_id},
+            responses=(ack, settled),
+            recovery_commands=_dependent_view_recovery(ack, settled, dataset_id),
+        )
     if hint is not None and isinstance(data, dict):
         data = {**data, "hint": hint}
     return data, _meta(invocation, auth.workspace_id, project_id)
+
+
+def _dependent_view_recovery(ack: Any, settled: Any, dataset_id: int) -> list[str]:
+    """``view task list`` for each view the server named as depending on the dataset."""
+    for response in (ack, settled):
+        found = find_dependents(response, dataset_id)
+        if isinstance(found, dict):
+            return [f"mammoth view task list {view_id}" for view_id in sorted(found)]
+    return []
 
 
 def _with_job(handle: Any, settled: Any) -> Any:

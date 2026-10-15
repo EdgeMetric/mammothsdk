@@ -31,6 +31,7 @@ from mammoth_cli.runtime.confirm import (
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.session import open_service
 from mammoth_cli.services.command_contract import bind_command_inputs
+from mammoth_cli.services.local_files import refuse_existing_file
 
 HandlerResult = tuple[Any, dict[str, Any]]
 
@@ -1014,6 +1015,7 @@ def support_template_export(invocation: Invocation) -> HandlerResult:
     document = _bound_document(invocation)
     kwargs: dict[str, Any] = {"slug": slug}
     _forward_optional(document, kwargs, ("output_path", "with_data"))
+    refuse_existing_file(invocation, kwargs.get("output_path") or f"{kwargs['slug']}.zip")
     with open_service(invocation) as (service, auth):
         path = service.call(_symbol(invocation), **kwargs)
     return {"output_path": str(path)}, _meta(invocation, auth.workspace_id)
@@ -1028,6 +1030,7 @@ def support_template_export_dashboard(invocation: Invocation) -> HandlerResult:
         "slug": _require_field(document, "slug"),
     }
     _forward_optional(document, kwargs, ("output_path", "with_data"))
+    refuse_existing_file(invocation, kwargs.get("output_path") or f"{kwargs['slug']}.zip")
     with open_service(invocation) as (service, auth):
         path = service.call(_symbol(invocation), **kwargs)
     return {"output_path": str(path)}, _meta(invocation, auth.workspace_id)

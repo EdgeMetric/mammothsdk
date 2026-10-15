@@ -6,7 +6,7 @@ Every command returns the standard JSON envelope. On nonzero exit, read the erro
 
 Run: `mammoth client-app create`. Exact input fields: `mammoth schema get client-app.create`.
 
-Example: `mammoth client-app create 'Revenue report'`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth client-app create 'Revenue report' --yes --confirm 'Revenue report'`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `ClientAppCreateResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
 
@@ -16,7 +16,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth client-app delete`. Exact input fields: `mammoth schema get client-app.delete`.
 
-Example: `mammoth client-app delete sample`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth client-app delete web-client --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `ClientAppDeleteResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
 
@@ -26,7 +26,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth client-app get`. Exact input fields: `mammoth schema get client-app.get`.
 
-Example: `mammoth client-app get sample`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth client-app get web-client`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ClientAppGetResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
@@ -46,7 +46,7 @@ Status on release: observed blocker — forbidden: backend_code=4GENR012 INVALID
 
 Run: `mammoth client-app update`. Exact input fields: `mammoth schema get client-app.update`.
 
-Example: `mammoth client-app update sample --input '{"patch_request": {"patch": [{"op": "replace", "path": "role"}]}}'`. Discovery only: this command is fail-closed and must not dispatch a request.
+Example: `mammoth client-app update web-client --input '{"patch_request": {"patch": [{"op": "replace", "path": "role"}]}}' --yes --confirm web-client`. Discovery only: this command is fail-closed and must not dispatch a request.
 
 Execution is unavailable for the current contract and returns `unsupported_contract`. Do not infer request fields or retry it; use only a separately typed alternative.
 

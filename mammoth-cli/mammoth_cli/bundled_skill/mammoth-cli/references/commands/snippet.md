@@ -6,7 +6,7 @@ Every command returns the standard JSON envelope. On nonzero exit, read the erro
 
 Run: `mammoth snippet create`. Exact input fields: `mammoth schema get snippet.create`.
 
-Example: `mammoth snippet create 'Revenue report' --input '{"code": "sample", "language": "sample"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth snippet create 'Revenue report' --input '{"code": "SELECT * FROM orders", "language": "sql"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `SnippetCreateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
@@ -16,7 +16,7 @@ Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19
 
 Run: `mammoth snippet delete`. Exact input fields: `mammoth schema get snippet.delete`.
 
-Example: `mammoth snippet delete 123`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth snippet delete 123 --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `SnippetDeleteResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
 

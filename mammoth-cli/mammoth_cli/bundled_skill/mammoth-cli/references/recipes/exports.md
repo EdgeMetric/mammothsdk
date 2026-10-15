@@ -8,7 +8,10 @@ mammoth view export list VIEW_ID DATASET_ID --project PROJECT_ID
 ```
 
 `view export csv` takes one positional (the view); `dataset_id` and
-`output_path` go in `--input`. It is a download, not a pipeline step. When
+`output_path` go in `--input`. It is a download, not a pipeline step. A file
+that already exists is never replaced: the command stops with `file_exists` (exit 6)
+and the same command with `--overwrite` replaces it. `dashboard bi-export` and
+`view explore-panel export-image` follow the same rule. When
 embedded (see `mammoth_cli.embed.invoke`), it writes no local file and returns
 `download_url` instead, for the host to hand to its user; `output_path` is
 refused in that case.

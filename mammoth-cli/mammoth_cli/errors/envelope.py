@@ -8,6 +8,7 @@ terminal control code, or secret ever appears in the envelope.
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -18,6 +19,7 @@ from mammoth_cli.runtime import embedded
 EXIT_OK = 0
 EXIT_API = 1
 EXIT_USAGE = 2
+EXIT_PARTIAL = 3
 EXIT_AUTH = 4
 EXIT_NOT_FOUND = 5
 EXIT_CONFLICT = 6
@@ -41,11 +43,13 @@ CODE_INVALID_WORKSPACE_ID = "invalid_workspace_id"
 CODE_INCOMPLETE_ENVIRONMENT_AUTH = "incomplete_environment_auth"
 CODE_INPUT_FORMAT_REQUIRED = "input_format_required"
 CODE_API_ERROR = "api_error"
+CODE_INTERNAL_ERROR = "internal_error"
 CODE_RESOURCE_NOT_FOUND = "resource_not_found"
 CODE_PROFILE_NOT_FOUND = "profile_not_found"
 CODE_NO_SAVED_PROJECT = "no_saved_project"
 CODE_NOT_AVAILABLE_EMBEDDED = "not_available_embedded"
 CODE_NOT_AVAILABLE = "not_available"
+CODE_FEATURE_UNAVAILABLE = "feature_unavailable"
 CODE_USER_CONTROL = "user_control"
 CODE_CONFIRMATION_REQUIRED = "confirmation_required"
 CODE_CONFIRMATION_DECLINED = "confirmation_declined"
@@ -100,6 +104,13 @@ ERROR_SUMMARIES: dict[str, str] = {
     "confirmation_target_mismatch": (
         "The confirmation was for a different item, so nothing was changed."
     ),
+    "feature_unavailable": "Mammoth no longer offers this feature.",
+    "export_failed": "The export ran but ended in an error.",
+    "export_not_found": "No export run was found for that request.",
+    "pin_not_recorded": "The version pin could not be saved, so nothing was changed.",
+    "has_dependents": "Other items still depend on this, so it was not deleted.",
+    "delete_not_applied": "The delete was accepted but the item is still there.",
+    "column_type_mismatch": "A column has the wrong type for this step, so nothing was changed.",
     "conflict": "This conflicts with the current state of your data, so nothing was changed.",
     "device_login_expired": "The sign-in code expired before it was approved.",
     "dry_run_targets_unresolvable": (
@@ -111,6 +122,7 @@ ERROR_SUMMARIES: dict[str, str] = {
     "empties_view": "No row matches, so this step would leave the view empty.",
     "empty_search_query": "The search was empty.",
     "export_already_exists": "An export with that name already exists.",
+    "file_exists": "A file is already at that path, so nothing was written.",
     "incomplete_environment_auth": _S_SIGN_IN,
     "input_file_not_found": _S_NOT_FOUND,
     "input_format_required": _S_BAD_INPUT,
@@ -251,7 +263,24 @@ class CliError(Exception):
         }
         if self.log_ref is not None:
             error["log_ref"] = dict(self.log_ref)
-        return {"schema_version": SCHEMA_VERSION, "error": error}
+        return {"schema_version": SCHEMA_VERSION, "error": strip_ansi(error)}
+
+
+_ANSI_ESCAPE = re.compile(r"\x1b\[[0-9;?]*[ -/]*[@-~]|\x1b[@-Z\\-_]")
+
+
+def strip_ansi(value: Any) -> Any:
+    """``value`` with terminal escape sequences removed from every string in it.
+
+    A server's SQL error text can arrive coloured; in a JSON error it is noise.
+    """
+    if isinstance(value, str):
+        return _ANSI_ESCAPE.sub("", value)
+    if isinstance(value, dict):
+        return {key: strip_ansi(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [strip_ansi(item) for item in value]
+    return value
 
 
 # --- Common typed errors ---------------------------------------------------
@@ -315,6 +344,52 @@ def not_available_error(command: str, *, web_path: str, instead: str | None = No
         message=f"'{command}' is not available: the server no longer offers it.",
         exit_status=EXIT_USAGE,
         hint=hint,
+    )
+
+
+# Features the backend removed or never shipped. Matched by exact command id or
+# by ``prefix.`` so a whole family can be listed once. The command fails before
+# any API call, and ``schema``/``capability`` discovery hides these commands.
+FEATURE_UNAVAILABLE_FAMILIES: dict[str, tuple[str, str, list[str]]] = {
+    "data-app.": (
+        "Data apps were removed from Mammoth.",
+        "Build the same view of your data as a dashboard instead.",
+        ["mammoth dashboard find SUBSTRING", "mammoth schema find dashboard"],
+    ),
+}
+FEATURE_UNAVAILABLE_COMMANDS: dict[str, tuple[str, str, list[str]]] = {
+    "schedule.create": (
+        "Creating a schedule is not implemented by the Mammoth backend (5GENR011 NOT_IMPLEMENTED).",
+        "Use an automation to run work on a schedule.",
+        ["mammoth automation create --help", "mammoth schema get automation.create"],
+    ),
+}
+
+
+def feature_unavailable_entry(command_id: str) -> tuple[str, str, list[str]] | None:
+    """Return (message, hint, recovery) when the whole command is unavailable, else None."""
+    if command_id in FEATURE_UNAVAILABLE_COMMANDS:
+        return FEATURE_UNAVAILABLE_COMMANDS[command_id]
+    for prefix, entry in FEATURE_UNAVAILABLE_FAMILIES.items():
+        if command_id.startswith(prefix):
+            return entry
+    return None
+
+
+def is_feature_unavailable(command_id: str | None) -> bool:
+    return bool(command_id) and feature_unavailable_entry(str(command_id)) is not None
+
+
+def feature_unavailable_error(command_id: str) -> CliError:
+    """A command whose feature the backend removed: fail before any API call."""
+    entry = feature_unavailable_entry(command_id)
+    message, hint, recovery = entry if entry else ("This feature is unavailable.", "", [])
+    return CliError(
+        code=CODE_FEATURE_UNAVAILABLE,
+        message=message,
+        exit_status=EXIT_USAGE,
+        hint=hint,
+        recovery_commands=list(recovery),
     )
 
 

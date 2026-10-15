@@ -54,12 +54,13 @@ def _profile_not_found_error(profile_name: str) -> CliError:
             exit_status=EXIT_USAGE,
             hint=EMBEDDED_NO_PROFILE_HINT,
         )
+    login = profiles.login_command(profile_name)
     return CliError(
         code=CODE_PROFILE_NOT_FOUND,
         message=f"No profile named '{profile_name}' exists yet.",
         exit_status=EXIT_USAGE,
-        hint="Run 'mammoth auth login' first.",
-        recovery_commands=["mammoth auth login"],
+        hint=f"Run '{login}' first.",
+        recovery_commands=[login],
     )
 
 

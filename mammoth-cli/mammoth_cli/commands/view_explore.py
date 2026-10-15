@@ -40,6 +40,7 @@ from mammoth_cli.services.explore_card_edit import (
 )
 from mammoth_cli.services.explore_to_figure import card_level, card_to_figure, count_filters
 from mammoth_cli.services.explore_to_image import card_to_render_spec
+from mammoth_cli.services.local_files import refuse_existing_file
 
 HandlerResult = tuple[Any, dict[str, Any]]
 
@@ -199,6 +200,7 @@ def view_explore_panel_export_image(invocation: Invocation) -> HandlerResult:
     output_path = document.get("output_path") or f"explore-card-{dataview_id}.svg"
     if not isinstance(output_path, str):
         raise _refuse('"output_path" must be a file path.')
+    refuse_existing_file(invocation, output_path)
     with open_service(invocation) as (service, auth):
         dataset_id = _verified_dataset_id(service, invocation, dataview_id, document)
         view = _View(service, dataset_id, dataview_id, project_id)

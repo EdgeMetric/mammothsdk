@@ -57,6 +57,51 @@ def _required_error(action: str, *, target: str | None, need_target: bool) -> Cl
     )
 
 
+#: Commands whose handler confirm-targets something that is NOT a positional argument although
+#: their manifest does not say ``confirm_target``. The pre-check below would wrongly refuse their
+#: real ``--confirm`` value, so they are compared only by :func:`enforce_confirmation`.
+_CONFIRMS_NON_POSITIONAL = {
+    "batch.create-spec": "only when delete_source_ds is set: confirms input.source_id",
+    "user.delete": "confirms the workspace id, not a positional",
+}
+
+
+def refuse_mismatched_confirm(invocation: Invocation) -> None:
+    """Refuse a ``--confirm`` that names none of the command's positional targets.
+
+    Runs before the handler (so before any API call) for every command except those that
+    confirm a target which is not a positional (see :data:`_CONFIRMS_NON_POSITIONAL`). ``--confirm``
+    only means something if it equals the id being acted on; one that does not is a
+    typo or a stale value, and is never silently ignored. A command with no
+    positional target has nothing to compare with here; ``confirm_target`` commands
+    are compared against their own target in :func:`enforce_confirmation`.
+    """
+    from mammoth_cli.manifest.loader import command_by_id
+
+    confirm = invocation.confirm
+    record = command_by_id(invocation.command_id) or {}
+    if record.get("confirmation") == POLICY_CONFIRM_TARGET or (
+        invocation.command_id in _CONFIRMS_NON_POSITIONAL
+    ):
+        # Compared against the real target (a project, workspace or input id that need not be
+        # a positional) by enforce_confirmation, still before any API call.
+        return
+    targets = [
+        str(token).strip() for token in invocation.extra_args if not str(token).startswith("-")
+    ]
+    if confirm is None or not targets or str(confirm).strip() in targets:
+        return
+    raise CliError(
+        code="confirmation_target_mismatch",
+        message=(
+            f"--confirm {confirm} does not match the target ({', '.join(targets)}), "
+            "so nothing was changed."
+        ),
+        exit_status=EXIT_USAGE,
+        hint=f"Pass --confirm {targets[0]}, or drop --confirm if --yes is enough.",
+    )
+
+
 def enforce_confirmation(
     invocation: Invocation,
     *,
@@ -116,6 +161,19 @@ def enforce_confirmation(
                 hint=f"Pass --confirm {target}." if target is not None else None,
             )
         return
+
+    if (
+        policy in (POLICY_YES_ALWAYS, POLICY_PROMPT_OR_YES)
+        and target is not None
+        and invocation.confirm is not None
+        and invocation.confirm != target
+    ):
+        raise CliError(
+            code="confirmation_target_mismatch",
+            message=f"--confirm must exactly equal the target to {action}.",
+            exit_status=EXIT_USAGE,
+            hint=f"Pass --confirm {target}.",
+        )
 
     if policy == POLICY_YES_ALWAYS:
         if invocation.yes:

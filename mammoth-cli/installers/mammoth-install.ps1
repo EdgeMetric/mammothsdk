@@ -222,6 +222,26 @@ function Install-CliLocal($uvBin) {
     return $binDir.Trim()
 }
 
+# A pinned install must stay on its release: the CLI updates itself daily, and
+# only a recorded pin stops that. The installed CLI writes the pin in its own
+# state directory; a plain install drops any earlier pin. A failure here only
+# warns: the install itself worked.
+function Set-InstallPin($binDir) {
+    $exe = Join-Path $binDir "mammoth.exe"
+    if (-not (Test-Path $exe)) { $exe = "mammoth" }
+    $pin = if ($Version) { $Version } else { "none" }
+    try { & $exe upgrade --record-pin $pin --output json --no-input | Out-Null } catch { $global:LASTEXITCODE = 1 }
+    if ($LASTEXITCODE -ne 0) {
+        if ($Version) {
+            Write-Log "warning: could not record the pin; set MAMMOTH_NO_AUTO_UPDATE=1 to keep $Version, or run: mammoth upgrade --version $Version --yes"
+        } else {
+            Write-Log "warning: could not clear an earlier version pin; run: mammoth upgrade --yes"
+        }
+    } elseif ($Version) {
+        Write-Log "pinned mammoth-cli $Version (automatic updates will skip it)"
+    }
+}
+
 function Set-UserPath($binDir) {
     if ($NoModifyPath) { Write-Log "PATH unchanged (-NoModifyPath). Add $binDir to PATH."; return }
     $userPath = [Environment]::GetEnvironmentVariable("Path", "User")
@@ -259,6 +279,7 @@ if ($installCli) {
         $binDir = Install-CliLocal $uvBin
     } else {
         $binDir = Install-Cli $uvBin
+        Set-InstallPin $binDir
     }
     Set-UserPath $binDir
 } else {

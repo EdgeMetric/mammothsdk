@@ -914,7 +914,7 @@ def test_bi_preflight_rejects_missing_target_without_a_request(
     assert fake_service.call_log == []
 
 
-@pytest.mark.parametrize("bad_input", [{"target": "csv"}, {"target": "PowerBI"}])
+@pytest.mark.parametrize("bad_input", [{"target": "csv"}, {"target": "powerpoint"}])
 def test_bi_preflight_rejects_unknown_target_value_without_a_request(
     fake_service: FakeMammothService, tmp_path: Path, bad_input: dict[str, object]
 ) -> None:
@@ -941,10 +941,33 @@ def test_bi_export_writes_file_in_terminal_mode(
     data, _ = dashboard_cmd.dashboard_bi_export(
         _inv("dashboard.bi-export", extra_args=["42"], input_file=doc)
     )
-    assert fake_service.call_log == [
-        (_EXPORT_POWERBI, {"dashboard_id": 42, "output_path": str(destination)})
-    ]
+    assert fake_service.call_log[-1] == (
+        _EXPORT_POWERBI,
+        {"dashboard_id": 42, "output_path": str(destination)},
+    )
     assert data == {"output_path": str(destination)}
+
+
+def test_bi_export_names_the_figures_it_dropped(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    destination = tmp_path / "board.zip"
+    doc = _bi_doc(tmp_path, {"target": "powerbi", "output_path": str(destination)})
+    fake_service.responses[_EXPORT_POWERBI] = destination
+    fake_service.responses[_POWERBI_PREFLIGHT] = {
+        "exportable": True,
+        "figures_total": 8,
+        "figures_exported": 4,
+        "refusals": [{"title": "Map", "reason": "no geo support"}],
+    }
+    data, _ = dashboard_cmd.dashboard_bi_export(
+        _inv("dashboard.bi-export", extra_args=["42"], input_file=doc)
+    )
+    assert data["output_path"] == str(destination)
+    assert data["dropped_figures"] == [{"title": "Map", "reason": "no geo support"}]
+    assert data["partial"] is True
+    assert data["warnings"][0]["issue"] == "figures_dropped"
+    assert "1 of 8" in data["warnings"][0]["detail"]
 
 
 def test_bi_export_dispatches_tableau_in_terminal_mode(
@@ -955,7 +978,7 @@ def test_bi_export_dispatches_tableau_in_terminal_mode(
     data, _ = dashboard_cmd.dashboard_bi_export(
         _inv("dashboard.bi-export", extra_args=["42"], input_file=doc)
     )
-    assert fake_service.call_log == [(_EXPORT_TABLEAU, {"dashboard_id": 42})]
+    assert fake_service.call_log[-1] == (_EXPORT_TABLEAU, {"dashboard_id": 42})
     assert data == {"output_path": "dashboard_42_tableau.twbx"}
 
 
@@ -1029,3 +1052,22 @@ def test_chat_history_hint_documents_revisions_field() -> None:
     assert "revisions" in restrictions
     assert "sequence" in restrictions
     assert "canvas restore" in restrictions
+
+
+def test_bi_export_refuses_an_existing_file_unless_overwrite(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    destination = tmp_path / "board.zip"
+    destination.write_bytes(b"old")
+    doc = _bi_doc(tmp_path, {"target": "powerbi", "output_path": str(destination)})
+    with pytest.raises(CliError) as excinfo:
+        dashboard_cmd.dashboard_bi_export(
+            _inv("dashboard.bi-export", extra_args=["42"], input_file=doc)
+        )
+    assert excinfo.value.code == "file_exists"
+    assert fake_service.call_log == []
+    fake_service.responses[_EXPORT_POWERBI] = destination
+    data, _ = dashboard_cmd.dashboard_bi_export(
+        _inv("dashboard.bi-export", extra_args=["42"], input_file=doc, overwrite=True)
+    )
+    assert data["output_path"] == str(destination)

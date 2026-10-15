@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import os
 import re
+import shlex
 import stat
 import tempfile
 from dataclasses import dataclass
@@ -312,6 +313,19 @@ def delete_profile(name: str) -> bool:
             del document["selected"]
     _write_document(document)
     return removed
+
+
+def login_command(profile: str | None, flags: str = "") -> str:
+    """The ``mammoth auth login`` line that signs in ``profile``.
+
+    A bare ``mammoth auth login`` signs in the default profile, so a recovery
+    command for any other profile has to name it. The default profile (and an
+    unknown one) keeps the bare form.
+    """
+    named = (
+        f" --profile {shlex.quote(profile)}" if profile and profile != DEFAULT_PROFILE_NAME else ""
+    )
+    return f"mammoth auth login{named}{flags}"
 
 
 def get_selected() -> str:

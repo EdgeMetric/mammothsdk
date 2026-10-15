@@ -6,7 +6,7 @@ Every command returns the standard JSON envelope. On nonzero exit, read the erro
 
 Run: `mammoth dashboard action`. Exact input fields: `mammoth schema get dashboard.action`.
 
-Example: `mammoth dashboard action 123 --input '{"action": "sync"}'`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth dashboard action 123 --input '{"action": "sync"}' --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `DashboardActionResult`; mutation `external_effect`, confirmation `yes_always`, wait policy `returns_job`.
 
@@ -36,9 +36,9 @@ Status on release: ran once on CLI 2.0.14 — dashboard re-verification 2026-09-
 
 Run: `mammoth dashboard assess-pbix`. Exact input fields: `mammoth schema get dashboard.assess-pbix`.
 
-Example: `mammoth dashboard assess-pbix sample.pbix`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth dashboard assess-pbix Sales.pbix`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
-Result: `PbixAssessResponse`; mutation `read`, confirmation `none`, wait policy `not_async`.
+Result: `PbixAssessResponse`; mutation `read`, confirmation `none`, wait policy `always_wait`.
 
 Status on release: untried; no live run recorded.
 
@@ -46,9 +46,9 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth dashboard assess-twb`. Exact input fields: `mammoth schema get dashboard.assess-twb`.
 
-Example: `mammoth dashboard assess-twb sample.twb`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth dashboard assess-twb Sales.twb`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
-Result: `TwbAssessResponse`; mutation `read`, confirmation `none`, wait policy `not_async`.
+Result: `TwbAssessResponse`; mutation `read`, confirmation `none`, wait policy `always_wait`.
 
 Status on release: untried; no live run recorded.
 
@@ -56,7 +56,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth dashboard attachment-create`. Exact input fields: `mammoth schema get dashboard.attachment-create`.
 
-Example: `mammoth dashboard attachment-create sample.pbix`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth dashboard attachment-create Sales.pbix`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `DashboardAttachmentCreateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
@@ -216,7 +216,7 @@ Status on release: ran once on CLI 2.0.12 — Dashboard sweep 2026-09-18: exit 0
 
 Run: `mammoth dashboard context delete`. Exact input fields: `mammoth schema get dashboard.context.delete`.
 
-Example: `mammoth dashboard context delete resource-123`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth dashboard context delete resource-123 --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `DashboardContextDeleteResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
 
@@ -296,7 +296,7 @@ Status on release: observed blocker — blocked_missing_fixture: Same as dashboa
 
 Run: `mammoth dashboard delete`. Exact input fields: `mammoth schema get dashboard.delete`.
 
-Example: `mammoth dashboard delete 123`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth dashboard delete 123 --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `DashboardDeleteResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
 
@@ -366,7 +366,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth dashboard embed origin revoke`. Exact input fields: `mammoth schema get dashboard.embed.origin.revoke`.
 
-Example: `mammoth dashboard embed origin revoke 123 --input '{"origin": "sample"}' --yes --confirm 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth dashboard embed origin revoke 123 --input '{"origin": "https://example.com"}' --yes --confirm 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `DashboardEmbedOriginRevokeResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
 
@@ -426,7 +426,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth dashboard engagement person`. Exact input fields: `mammoth schema get dashboard.engagement.person`.
 
-Example: `mammoth dashboard engagement person 123 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth dashboard engagement person 123 456`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `DashboardEngagementPersonResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
@@ -436,7 +436,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth dashboard engagement remind`. Exact input fields: `mammoth schema get dashboard.engagement.remind`.
 
-Example: `mammoth dashboard engagement remind 123 --input '{"user_ids": [1]}'`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth dashboard engagement remind 123 --input '{"user_ids": [1]}' --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `DashboardEngagementRemindResult`; mutation `external_effect`, confirmation `yes_always`, wait policy `not_async`.
 
@@ -476,7 +476,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth dashboard filter add`. Exact input fields: `mammoth schema get dashboard.filter.add`.
 
-Example: `mammoth dashboard filter add 123 --input '{"field": "sample"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth dashboard filter add 123 --input '{"field": "Status"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `DashboardFilterResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
@@ -496,7 +496,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth dashboard filter remove`. Exact input fields: `mammoth schema get dashboard.filter.remove`.
 
-Example: `mammoth dashboard filter remove 123 --input '{"field": "sample"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth dashboard filter remove 123 --input '{"field": "Status"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `DashboardFilterResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
@@ -516,7 +516,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth dashboard gallery get`. Exact input fields: `mammoth schema get dashboard.gallery.get`.
 
-Example: `mammoth dashboard gallery get sample`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth dashboard gallery get revenue-overview`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `DashboardGalleryGetResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
@@ -556,9 +556,9 @@ Status on release: ran once on CLI 2.0.12 — Published PyPI CLI 1.1.11 exact ob
 
 Run: `mammoth dashboard import-workbook`. Exact input fields: `mammoth schema get dashboard.import-workbook`.
 
-Example: `mammoth dashboard import-workbook sample.twbx --project 456 --yes --confirm 456`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth dashboard import-workbook Sales.twbx --project 456 --yes --confirm 456`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
-Result: `ImportDatasetResponse`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+Result: `ImportDatasetResponse`; mutation `high_impact`, confirmation `confirm_target`, wait policy `always_wait`.
 
 Status on release: untried; no live run recorded.
 
@@ -596,7 +596,7 @@ Status on release: ran once on CLI 2.0.15 — re-verification 2026-09-18: exit 0
 
 Run: `mammoth dashboard own-data accept`. Exact input fields: `mammoth schema get dashboard.own-data.accept`.
 
-Example: `mammoth dashboard own-data accept 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth dashboard own-data accept 123 --yes --confirm 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `DashboardOwnDataAcceptResult`; mutation `benign_mutation`, confirmation `confirm_target`, wait policy `always_wait`.
 
@@ -656,7 +656,7 @@ Status on release: ran once on CLI 2.0.12 — Dashboard sweep 2026-09-18: exit 0
 
 Run: `mammoth dashboard pages add`. Exact input fields: `mammoth schema get dashboard.pages.add`.
 
-Example: `mammoth dashboard pages add 123 --input '{"body": {"params": {"pages": [{"title": "By region", "focus": {"measure": "Revenue", "dim": "Region", "kpis": [{"field": "Revenue", "agg": "sum", "label": "Revenue"}]}, "charts": [{"kind": "hbar", "title": "Revenue by region", "dim": "Region", "measure": "Revenue", "agg": "sum"}]}]}}}'`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth dashboard pages add 123 --input '{"body": {"params": {"pages": [{"title": "By region", "focus": {"measure": "Revenue", "dim": "Region", "kpis": [{"field": "Revenue", "agg": "sum", "label": "Revenue"}]}, "charts": [{"kind": "hbar", "title": "Revenue by region", "dim": "Region", "measure": "Revenue", "agg": "sum"}]}]}}}' --yes --confirm 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `DashboardPagesAddResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `returns_job`.
 
@@ -676,7 +676,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth dashboard pbix-intent`. Exact input fields: `mammoth schema get dashboard.pbix-intent`.
 
-Example: `mammoth dashboard pbix-intent 123 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth dashboard pbix-intent 123 456`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `DashboardPbixIntentResult`; mutation `read`, confirmation `none`, wait policy `always_wait`.
 
@@ -686,7 +686,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth dashboard pdf-artifact`. Exact input fields: `mammoth schema get dashboard.pdf-artifact`.
 
-Example: `mammoth dashboard pdf-artifact 123 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth dashboard pdf-artifact 123 456`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `DashboardPdfArtifactResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
@@ -854,7 +854,7 @@ Status on release: ran once on CLI 2.0.12 — Published PyPI CLI 1.1.11 RLS valu
 
 Run: `mammoth dashboard share`. Exact input fields: `mammoth schema get dashboard.share`.
 
-Example: `mammoth dashboard share 123 --input '{"type_of_auth": "mammoth"}'`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth dashboard share 123 --input '{"type_of_auth": "mammoth"}' --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `DashboardShareResult`; mutation `external_effect`, confirmation `yes_always`, wait policy `not_async`.
 
@@ -874,7 +874,7 @@ Status on release: ran once on CLI 2.0.12 — Dashboard sweep 2026-09-18: exit 0
 
 Run: `mammoth dashboard signature delete`. Exact input fields: `mammoth schema get dashboard.signature.delete`.
 
-Example: `mammoth dashboard signature delete resource-123`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth dashboard signature delete resource-123 --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `DashboardSignatureDeleteResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
 
@@ -924,7 +924,7 @@ Status on release: ran once on CLI 2.0.12 — Published PyPI CLI 1.1.11 job-back
 
 Run: `mammoth dashboard swap-data`. Exact input fields: `mammoth schema get dashboard.swap-data`.
 
-Example: `mammoth dashboard swap-data 123 --input '{"body": {"params": {"dataview_id": 1}}}'`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth dashboard swap-data 123 --input '{"body": {"params": {"dataview_id": 1}}}' --yes --confirm 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `ObjectJobSchema`; mutation `benign_mutation`, confirmation `confirm_target`, wait policy `always_wait`.
 
@@ -974,9 +974,9 @@ Status on release: ran once on CLI 2.0.12 — Dashboard sweep 2026-09-18: exit 0
 
 Run: `mammoth dashboard tags rename`. Exact input fields: `mammoth schema get dashboard.tags.rename`.
 
-Example: `mammoth dashboard tags rename 123 --input '{"name": "Revenue"}' --yes --confirm 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth dashboard tags rename 123 --input '{"name": "Revenue"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
-Result: `DashboardTagsRenameResult`; mutation `benign_mutation`, confirmation `confirm_target`, wait policy `not_async`.
+Result: `DashboardTagsRenameResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
 Status on release: ran once on CLI 2.0.12 — Dashboard sweep 2026-09-18: exit 0 on release with CLI 2.0.12; result keys: id, merged_into, name. renamed tag 13 (created by this run's dashboard.tags.set) successfully Single invocation only; no error-path or variant coverage. Current checkout binding is co…
 
@@ -1004,7 +1004,7 @@ Status on release: ran once on CLI 2.0.12 — Dashboard sweep 2026-09-18: exit 0
 
 Run: `mammoth dashboard templates use`. Exact input fields: `mammoth schema get dashboard.templates.use`.
 
-Example: `mammoth dashboard templates use sample --input '{"body": {"params": {"project_id": 1}}}'`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth dashboard templates use revenue-overview --input '{"body": {"params": {"project_id": 1}}}' --yes --confirm revenue-overview`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `ObjectJobSchema | JobResponse`; mutation `high_impact`, confirmation `confirm_target`, wait policy `always_wait`.
 

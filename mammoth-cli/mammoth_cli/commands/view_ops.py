@@ -56,6 +56,7 @@ from mammoth_cli.errors.envelope import (
     CODE_INVALID_ARGUMENTS,
     CODE_MISSING_ARGUMENT,
     CODE_MISSING_FIELD,
+    CODE_OUTCOME_UNKNOWN,
     CODE_SDK_SYMBOL_UNRESOLVED,
     EXIT_API,
     EXIT_USAGE,
@@ -67,9 +68,18 @@ from mammoth_cli.runtime.confirm import POLICY_PROMPT_OR_YES, enforce_confirmati
 from mammoth_cli.runtime.dryrun import DryRunStop
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.session import open_service, resolved_project
+from mammoth_cli.runtime.strict import validate_input_fields
 from mammoth_cli.runtime.verify import read_export_stamps
+from mammoth_cli.services.column_type_guard import (
+    DATE,
+    NUMERIC,
+    TypeCheck,
+    check_column_types,
+    math_columns,
+)
 from mammoth_cli.services.command_contract import bind_command_inputs, resolve_command_contract
 from mammoth_cli.services.conditions import CONDITION_KWARG, compile_condition
+from mammoth_cli.services.delete_check import ensure_deleted
 from mammoth_cli.services.input_fields import TASK_COUNT_FIELD
 from mammoth_cli.services.sql_check import check_sql_binds
 from mammoth_cli.services.view_variants import (
@@ -411,6 +421,15 @@ def _dispatch_view(
             if auto_row_check and dataset_id is not None
             else None
         )
+        guard_ids = (
+            task_ids_before
+            if task_ids_before is not None
+            else (
+                _task_ids(service, int(dataset_id), view_id)
+                if method == "add_sql" and dataset_id is not None
+                else None
+            )
+        )
         try:
             if dataset_id is None:
                 _require_discovery_allowed(invocation, view_id)
@@ -421,7 +440,14 @@ def _dispatch_view(
             # SDK >= 0.7.12 raises on the same job result; enrich it the same way.
             response = exc.details.get("response") if isinstance(exc.details, dict) else None
             reject_pipeline_reference_errors(service, view_id, dataset_id, response)
-            raise
+            applied = (
+                _applied_despite_unreadable(service, view_id, dataset_id, guard_ids)
+                if exc.code == CODE_OUTCOME_UNKNOWN and method == "add_sql"
+                else None
+            )
+            if applied is None:
+                raise
+            data = applied
         reject_pipeline_reference_errors(service, view_id, dataset_id, data)
         if dataset_id is not None:
             data = _mark_staged_in_draft(service, dataset_id, view_id, data)
@@ -503,6 +529,35 @@ def _tasks(service: Any, dataset_id: int, view_id: int) -> list[dict[str, Any]]:
     listing = service.call(_TASK_LIST_SYMBOL, dataview_id=view_id, dataset_id=dataset_id)
     tasks = listing.get("tasks") if isinstance(listing, dict) else None
     return [task for task in tasks or [] if isinstance(task, dict)]
+
+
+def _applied_despite_unreadable(
+    service: Any, view_id: int, dataset_id: Any, task_ids_before: set[Any] | None
+) -> dict[str, Any] | None:
+    """The result for a write whose own read-back failed after the task was stored.
+
+    ``add-sql`` can finish its job and then fail reading the view back (the new
+    query's response is not valid yet). The task list says whether the step was
+    stored: a task that was not there before means it was, so the write is
+    reported as applied with a warning instead of "outcome unknown".
+    """
+    if task_ids_before is None or dataset_id is None:
+        return None
+    try:
+        added = sorted(_task_ids(service, int(dataset_id), view_id) - task_ids_before, key=str)
+    except Exception:  # noqa: BLE001 -- an unreadable task list leaves the outcome unknown
+        return None
+    if not added:
+        return None
+    return {
+        "status": "done",
+        "task_ids": added,
+        "warnings": [
+            "the step was stored (confirmed in the task list) but reading the view back "
+            "failed right after; run `mammoth view pipeline wait VIEW_ID`, then read the view "
+            "before building on it"
+        ],
+    }
 
 
 def _task_ids(service: Any, dataset_id: int, view_id: int) -> set[Any]:
@@ -1059,15 +1114,23 @@ def _create_variants(
 _DASHBOARDS_LIST_SYMBOL = "mammoth.api.dashboards.DashboardsAPI.list"
 
 
-def _with_dashboards(service: Any, view_id: int, record: Any) -> Any:
+def _read_with_boards(service: Any, symbol: str, kwargs: dict[str, Any]) -> tuple[Any, Any]:
+    """Run the view read and the dashboards list together; return ``(view, boards)``.
+
+    The two are independent, so their round trips overlap instead of adding up.
+    The view read's failure is raised as before; a failed dashboards read is
+    dropped (``None``), because a decoration must not fail the read it decorates.
+    """
+    view, boards = service.call_many([(symbol, kwargs), (_DASHBOARDS_LIST_SYMBOL, {})])
+    if isinstance(view, CliError):
+        raise view
+    return view, None if isinstance(boards, CliError) else boards
+
+
+def _with_dashboards(view_id: int, record: Any, boards: Any) -> Any:
     """Add the dashboards built on this view, so a user on the view's page who
     says "this board" is understood (eval T1-D-22); unchanged when none."""
     if not isinstance(record, dict):
-        return record
-    try:
-        boards = service.call(_DASHBOARDS_LIST_SYMBOL)
-    except CliError:
-        # A decoration must not fail the read it decorates.
         return record
     built_on = [
         {"id": board.get("id"), "title": board.get("title")}
@@ -1100,10 +1163,12 @@ def view_get(invocation: Invocation) -> HandlerResult:
             ),
         }
         with open_service(invocation) as (service, auth):
-            data = service.call("mammoth.api.dataviews.DataviewsAPI.get", **kwargs)
+            data, boards = _read_with_boards(
+                service, "mammoth.api.dataviews.DataviewsAPI.get", kwargs
+            )
             parents.remember(_profile_name(invocation), auth.workspace_id, {view_id: dataset_id})
             data = apply_column_renames(data) if document.get("fields") else brief_view_record(data)
-            data = _with_dashboards(service, view_id, data)
+            data = _with_dashboards(view_id, data, boards)
         return data, _meta(invocation, auth.workspace_id)
     context: dict[str, Any] = {"view_id": view_id}
     if dataset_id is not None:
@@ -1119,7 +1184,7 @@ def view_get(invocation: Invocation) -> HandlerResult:
     if dataset_id is not None:
         kwargs["dataset_id"] = dataset_id
     with open_service(invocation) as (service, auth):
-        data = service.call(_symbol(invocation), **kwargs)
+        data, boards = _read_with_boards(service, _symbol(invocation), kwargs)
         payload = _view_payload(data)
         parents.remember_records(_profile_name(invocation), auth.workspace_id, payload)
         if not document.get("fields"):
@@ -1128,7 +1193,7 @@ def view_get(invocation: Invocation) -> HandlerResult:
             payload = brief_view_record(payload)
         else:
             payload = apply_column_renames(payload)
-        payload = _with_dashboards(service, view_id, payload)
+        payload = _with_dashboards(view_id, payload, boards)
     return payload, _meta(invocation, auth.workspace_id)
 
 
@@ -1172,6 +1237,19 @@ def view_delete(invocation: Invocation) -> HandlerResult:
     kwargs = bind_command_inputs(invocation.command_id, document, **context)
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), **kwargs)
+        ensure_deleted(
+            service,
+            noun="view",
+            resource_id=view_id,
+            read_symbol=_DATAVIEW_GET_SYMBOL,
+            read_kwargs={
+                "dataset_id": dataset_id,
+                "dataview_id": view_id,
+                "project_id": invocation.project,
+            },
+            responses=(data,),
+            recovery_commands=[f"mammoth view task list {view_id}"],
+        )
     return data, _meta(invocation, auth.workspace_id)
 
 
@@ -1579,8 +1657,13 @@ def view_transform_crosstab(invocation: Invocation) -> HandlerResult:
 
     def guard_target(service: Any, dataset_id: int, call_kwargs: dict[str, Any]) -> None:
         target = call_kwargs.get("target_ds_id")
+        mode = call_kwargs.get("save_as_mode")
         reject_dataset_export_conflicts(
-            service, view_id, dataset_id, int(target) if target is not None else None
+            service,
+            view_id,
+            dataset_id,
+            int(target) if target is not None else None,
+            save_as_mode=mode if isinstance(mode, str) else None,
         )
 
     def name_persistence(_service: Any, _dataset_id: int, _state: Any, data: Any) -> Any:
@@ -1599,6 +1682,62 @@ def view_transform_crosstab(invocation: Invocation) -> HandlerResult:
     )
 
 
+def _type_guard(
+    invocation: Invocation,
+    view_id: int,
+    checks_for: Callable[[dict[str, Any], dict[str, str]], list[TypeCheck]],
+) -> Callable[[Any, int, dict[str, Any]], Any]:
+    """A ``prepare`` hook: refuse the step when a column it reads has the wrong type.
+
+    ``checks_for(document, types)`` lists the columns to check from the input document and the
+    view's ``{display name: type}`` map. A read that cannot run never blocks the write.
+    """
+
+    def check(service: Any, dataset_id: int, kwargs: dict[str, Any]) -> Any:
+        types = _view_column_types(service, dataset_id, view_id, resolved_project(invocation))
+        if types:
+            check_column_types(view_id, types, checks_for(invocation.load_input() or {}, types))
+        return None
+
+    return check
+
+
+def _view_column_types(
+    service: Any, dataset_id: int, view_id: int, project_id: int | None
+) -> dict[str, str]:
+    """``{display name: type}`` of the view's columns; empty when the view cannot be read."""
+    try:
+        info = service.call(
+            _DATAVIEW_GET_SYMBOL, dataset_id=dataset_id, dataview_id=view_id, project_id=project_id
+        )
+    except CliError:
+        return {}
+    return ImpactRead(
+        service, dataset_id, view_id, project_id, apply_column_renames(info)
+    ).column_types()
+
+
+_DATE_ONLY = frozenset({DATE})
+
+
+def _date_column_checks(*fields: str, operation: str) -> Callable[..., list[TypeCheck]]:
+    def checks(document: dict[str, Any], types: dict[str, str]) -> list[TypeCheck]:
+        return [
+            TypeCheck(str(document[name]), _DATE_ONLY, operation)
+            for name in fields
+            if isinstance(document.get(name), str) and document[name] in types
+        ]
+
+    return checks
+
+
+def _math_type_checks(document: dict[str, Any], types: dict[str, str]) -> list[TypeCheck]:
+    return [
+        TypeCheck(name, frozenset({NUMERIC, DATE}), "math")
+        for name in math_columns(document.get("expression", ""), types)
+    ]
+
+
 def view_transform_date_diff(invocation: Invocation) -> HandlerResult:
     """Compute the difference between two dates. ``component``/``start``/``end`` required."""
     view_id = _view_id(invocation)
@@ -1608,7 +1747,10 @@ def view_transform_date_diff(invocation: Invocation) -> HandlerResult:
     _require_field(document, "end")
     assert document is not None
     kwargs = _bind_transform_inputs(invocation, document)
-    return _dispatch_view(invocation, view_id, "date_diff", **kwargs)
+    guard = _type_guard(
+        invocation, view_id, _date_column_checks("start", "end", operation="date-diff")
+    )
+    return _dispatch_view(invocation, view_id, "date_diff", prepare=guard, **kwargs)
 
 
 def view_transform_delete_columns(invocation: Invocation) -> HandlerResult:
@@ -1711,7 +1853,10 @@ def view_transform_extract_date(invocation: Invocation) -> HandlerResult:
     _require_field(document, "component")
     assert document is not None
     kwargs = _bind_transform_inputs(invocation, document)
-    return _dispatch_view(invocation, view_id, "extract_date", **kwargs)
+    guard = _type_guard(
+        invocation, view_id, _date_column_checks("column", operation="extract-date")
+    )
+    return _dispatch_view(invocation, view_id, "extract_date", prepare=guard, **kwargs)
 
 
 def view_transform_fill_missing(invocation: Invocation) -> HandlerResult:
@@ -1739,6 +1884,31 @@ def view_transform_filter(invocation: Invocation) -> HandlerResult:
     )
 
 
+def _bind_view_table(
+    service: Any, dataset_id: int, view_id: int, query: str, invocation: Invocation
+) -> str:
+    """The query with the view's own name as its table rewritten to ``"view:<id>"``.
+
+    ``generate-sql`` names the table by the view's name; ``add-sql`` binds
+    ``"view:<id>"`` (see ``schema get view.transform.add-sql``). A name that cannot be
+    read leaves the query as generated.
+    """
+    try:
+        info = service.call(
+            _DATAVIEW_GET_SYMBOL,
+            dataset_id=dataset_id,
+            dataview_id=view_id,
+            project_id=resolved_project(invocation),
+        )
+        name = info.get("name") if isinstance(info, dict) else getattr(info, "name", None)
+    except Exception:  # noqa: BLE001 -- the generated query is still returned
+        return query
+    if not isinstance(name, str) or not name:
+        return query
+    pattern = re.compile(r'(\b(?:FROM|JOIN)\s+)"' + re.escape(name) + '"', re.IGNORECASE)
+    return pattern.sub(lambda m: f'{m.group(1)}"view:{view_id}"', query)
+
+
 def view_transform_generate_sql(invocation: Invocation) -> HandlerResult:
     """Generate a SQL query from a natural-language intent. ``intent`` is required."""
     view_id = _view_id(invocation)
@@ -1753,13 +1923,19 @@ def view_transform_generate_sql(invocation: Invocation) -> HandlerResult:
         # the view to change. Say so, and give the command that applies it.
         if not isinstance(data, str):
             return data
-        spec = json.dumps({"dataset_id": dataset_id, "query": data})
-        return {
+        query = _bind_view_table(service, dataset_id, view_id, data, invocation)
+        spec = json.dumps({"dataset_id": dataset_id, "query": query})
+        project_id = resolved_project(invocation)
+        scope = f" --project {project_id}" if project_id is not None else ""
+        result = {
             "sql": data,
             "applied": False,
             "note": "The view is unchanged. Run 'apply' to add the query as a SQL task.",
-            "apply": f"mammoth view transform add-sql {view_id} --input {shlex.quote(spec)}",
+            "apply": f"mammoth view transform add-sql {view_id} --input {shlex.quote(spec)}{scope}",
         }
+        if query != data:
+            result["apply_sql"] = query
+        return result
 
     return _dispatch_view(invocation, view_id, "generate_sql", after=describe, **kwargs)
 
@@ -1772,7 +1948,10 @@ def view_transform_increment_date(invocation: Invocation) -> HandlerResult:
     _require_field(document, "delta")
     assert document is not None
     kwargs = _bind_transform_inputs(invocation, document)
-    return _dispatch_view(invocation, view_id, "increment_date", **kwargs)
+    guard = _type_guard(
+        invocation, view_id, _date_column_checks("column", operation="increment-date")
+    )
+    return _dispatch_view(invocation, view_id, "increment_date", prepare=guard, **kwargs)
 
 
 def view_transform_join(invocation: Invocation) -> HandlerResult:
@@ -1900,7 +2079,10 @@ def _math_into_column(
     kwargs = _bind_transform_inputs(invocation, document, "view.transform.math")
     blanks: dict[str, int] = {}
 
+    guard = _type_guard(invocation, view_id, _math_type_checks)
+
     def count_blank_inputs(service: Any, dataset_id: int, _kwargs: dict[str, Any]) -> None:
+        guard(service, dataset_id, _kwargs)
         blanks.update(
             _blank_math_inputs(
                 service, dataset_id, view_id, resolved_project(invocation), document["expression"]
@@ -2202,10 +2384,16 @@ def _build_batch(
         command_id = f"view.transform.{op}"
         contract = resolve_command_contract(command_id)
         assert contract is not None
-        for spec in contract.fields:
-            if spec.required:
-                _require_field(step["input"], spec.name)
-        kwargs = _bind_transform_inputs(invocation, step["input"], command_id)
+        try:
+            for spec in contract.fields:
+                if spec.required:
+                    _require_field(step["input"], spec.name)
+            # The batch's own --input was admitted whole; check each step's input as
+            # its own command would (types, conditions) so the error names the step.
+            validate_input_fields(command_id, _without_resource_context(step["input"]))
+            kwargs = _bind_transform_inputs(invocation, step["input"], command_id)
+        except CliError as exc:
+            raise _step_error(index, op, exc) from exc
         if op == _BATCH_LIMIT_OP and plan.sorts and not kwargs.get("order_by"):
             # A sort is only a display order; carry it so the limit keeps the rows it implies.
             kwargs["order_by"] = plan.sorts[-1]["order_by"]

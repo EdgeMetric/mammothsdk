@@ -28,7 +28,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth file bulk-delete --help
-  agent_example: 'mammoth file bulk-delete --input ''{"file_ids": [1]}'''
+  agent_example: 'mammoth file bulk-delete --input ''{"file_ids": [1]}'' --yes'
   unit_tests:
   - UT-FILE-BULK-DELETE
   contract_tests:
@@ -37,7 +37,7 @@ commands:
   - CT-FILE-BULK-DELETE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: Deletes every listed uploaded file for good and cannot be undone. List them first (`file list`). Needs a prompt or --yes.
   reviewed_by: primary
 - command_id: file.delete
   command_path: file delete
@@ -73,7 +73,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth file delete FILE_ID --help
-  agent_example: mammoth file delete 123
+  agent_example: mammoth file delete 123 --yes
   unit_tests:
   - UT-FILE-DELETE
   contract_tests:
@@ -120,7 +120,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth file extract-sheets FILE_ID --help
-  agent_example: 'mammoth file extract-sheets 123 --input ''{"sheets": ["sample"]}'''
+  agent_example: 'mammoth file extract-sheets 123 --input ''{"sheets": ["Sheet1"]}'''
   unit_tests:
   - UT-FILE-EXTRACT-SHEETS
   contract_tests:
@@ -236,7 +236,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth file multi-sheet-extract FILE_ID --help
-  agent_example: "mammoth file multi-sheet-extract 123 --input '{\"tables\": [{\"sample_key\": \"Status\"}]}'"
+  agent_example: 'mammoth file multi-sheet-extract 123 --input ''{"tables": [{"name": "Status"}]}'''
   unit_tests:
   - UT-FILE-MULTI-SHEET-EXTRACT
   contract_tests:
@@ -325,7 +325,7 @@ commands:
   secret_fields:
   - password
   human_example: mammoth file set-password FILE_ID --help
-  agent_example: mammoth file set-password 123 --input /private/path/request.json
+  agent_example: mammoth file set-password 123 --input /private/path/request.json --yes --confirm 123
   unit_tests:
   - UT-FILE-SET-PASSWORD
   contract_tests:
@@ -371,8 +371,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth file update FILE_ID --help
-  agent_example: 'mammoth file update 123 --input ''{"patch_request": {"patch": [{"op": "replace", "path":
-    "extract_sheets", "value": "sample"}]}}'''
+  agent_example: 'mammoth file update 123 --input ''{"patch_request": {"patch": [{"op": "replace", "path": "extract_sheets", "value": "Sheet1"}]}}'''
   unit_tests:
   - UT-FILE-UPDATE
   contract_tests:

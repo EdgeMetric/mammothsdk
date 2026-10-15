@@ -416,10 +416,14 @@ def _run_oauth_login(
     client_id = oauth.client_id_for(server_prefix)
     say = lambda line: typer.echo(line, err=True)  # noqa: E731
     if device:
-        session = oauth.device_login(base_url, client_id=client_id, say=say)
+        session = oauth.device_login(base_url, client_id=client_id, say=say, profile=profile_name)
     else:
         session = oauth.browser_login(
-            base_url, client_id=client_id, open_browser=open_browser, say=say
+            base_url,
+            client_id=client_id,
+            open_browser=open_browser,
+            say=say,
+            profile=profile_name,
         )
     # The server-verified workspace wins over the grant's own workspace_id.
     workspace_id = _verify_login(invocation, base_url=base_url, api_token=session.access)

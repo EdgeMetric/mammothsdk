@@ -6,6 +6,51 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed (mammoth-cli 2.2.82, behavior changes)
+
+- Exit code 3 is now used: a write whose read-back says only part of it took effect (`verify.outcome` `partial`) prints its envelope with top-level `status: partial` and exits 3. A write that did not verify (`verify.outcome` `failed`) now prints `status: failed` (the earlier word is kept in `verify.reported_status`) and exits 1, where it used to say `done` and exit 0 (for example `dashboard chat edit`). A write still running when the wait ends reports `status: pending` with `verify.next_command` (`mammoth view pipeline wait VIEW_ID`, or `mammoth job wait ID` for an automation) and keeps exit 0: it was accepted and must not be replayed.
+- `view data get`, `view export list` and `view pipeline items` page with one 0-based block: `offset` is the number of rows to skip (`offset: 0` is the first page, and it is accepted), the response reports the `limit` and `offset` that were actually used, and `next` / `previous` are ready-to-run commands (null when there is no such page). Scripts that passed 1 for the first page must pass 0.
+- Commands that write a local file (`view export csv`, `dashboard bi-export`, `explore-panel export-image`, `support template export`) refuse an existing file with `file_exists` (exit 6) unless `--overwrite` is passed.
+- One confirmation rule: a delete, remove, clear or discard of something that cannot be undone asks for `--yes` (or a prompt in a terminal); `--confirm TARGET` is checked before any API call. `project memory remove`, `agent projects clear` and `agent plan discard` now ask; `dashboard tags rename` no longer does. Every runnable example from `schema get` carries the `--yes` / `--confirm` its policy requires.
+- Data-app commands and `schedule create` fail at once with `feature_unavailable` (and no request) because the server does not offer them yet; they are hidden from `schema find`.
+- String fields with a fixed vocabulary (snippet language, parameter type, annotation target type, project access, roles, and others) publish an `enum` in `schema get`, accept any letter case, and fail locally with the accepted list and a did-you-mean.
+- An unexpected CLI fault is reported as `internal_error` (not `api_error`); `--debug` prints the traceback and the run log keeps the exception.
+- Auto-update runs only in an interactive session (not in CI, not without a terminal).
+
+### Changed (mammoth-cli 2.2.82, speed)
+
+- `schema find` is about 30% faster: the operations manifest is cached and pydantic is imported only when a type is validated.
+- `view get` makes one round trip instead of two.
+- `view data get` makes 5 requests instead of 6; the dataview and the dataset are read concurrently.
+
+### Added (mammoth-cli 2.2.82)
+
+- `schema find` answers new-user phrasings with the right command, and marks partial matches instead of returning nothing.
+- `schema get` examples are runnable for every command: distinct ids, real enum values, no `sample` placeholders, a lookup that names its target column, and a `--yes` where required.
+- Preconditions (`known_restrictions`) for the 36 destructive and high-impact commands that had none; `schema get` no longer shows internal stub text.
+- `view transform extract-date`, `date-diff`, `increment-date` and `math` check column types locally: a TEXT column is refused with `column_type_mismatch` and the `convert-type` command to run first.
+- `dataset list` / `dataset health` report health from the fields the server sent, with a `health_reason`, instead of `unknown`; the name is filled after a file upload; `dataset file-settings update` waits for the reprocess job.
+- A token limited to one project: `project list` shows only that project (with a note) and `project get OTHER_ID` is refused locally with `authorization_required`; a 403 hint blames a project-limited token only when the token is limited.
+- `view transform generate-sql` returns an `apply` command that is runnable as printed (the view bound as `"view:ID"`, `--project` included).
+- `parameter create` checks the name locally (`[A-Za-z_][A-Za-z0-9_]*`) and `schema get` publishes the pattern.
+- `dashboard import-workbook` and `assess-twb` / `assess-pbix` wait for their job and surface rejected files; `dashboard bi-export` lists dropped figures.
+
+### Fixed (mammoth-cli 2.2.82)
+
+- `--output yaml` no longer crashes on data rows, schema documents or revealed secrets.
+- `dashboard canvas save`, `figure add`, `pages add` and v3 generate no longer report a failed or swapped chart as verified.
+- A delete the server accepts but does not carry out is an error, not a verified success; `automation delete` is verified by reading the automation (not found means gone), not by an empty list.
+- `view transform add-sql` whose read-back fails after the step was stored is confirmed from the task list and reported done with a warning; an export that is no longer runnable after a pipeline change is flagged as stale.
+- A bad condition operator and the failing step of a batch input are named in the error.
+- An error message no longer carries terminal escape sequences; the duplicate-export refusal names the `save_as_mode` you asked for; a running automation is waited on with `job wait`, not "read the view".
+
+- A pinned install is no longer replaced by the daily auto-update. `mammoth upgrade --version X.Y.Z` and `mammoth-install.sh` / `mammoth-install.ps1 --version X.Y.Z` record the pin (`pin.json` next to `update-check.json`; the installers call the hidden `mammoth upgrade --record-pin`, and a failure to record only warns); a plain `mammoth upgrade` or an installer run without `--version` clears it. While pinned, `meta.update_available` still shows the newer release but nothing is installed.
+- `mammoth doctor` recommends `mammoth auth login` (with `--profile NAME`) when stored credentials exist but the login expired (`login_expired`, `not_authenticated`), instead of an empty `recommendations`.
+- `mammoth doctor` reports `oauth sign-in present` for a browser login instead of `api token present`.
+- Recovery commands and hints for `not_authenticated`, `login_expired`, a failed sign-in, `profile_not_found`, and the auth errors mapped from the API now carry `--profile NAME` for a non-default profile, so the suggested command signs in the profile that failed instead of `default`. Output for the default profile is unchanged.
+- `mammoth --output xml project list` (a global option before the command, with a value the command rejects) returns the same JSON `usage_error` envelope as `--profile` when piped, instead of plain `Error:` text.
+- Dashboard review and the upload `before_dashboard` hint no longer suggest `revenue = Unit Price * Unit Price`: a unit price or money column is never taken as the quantity. When the only quantity-like column is not NUMERIC (for example a `Quantity` with an `N/A` value), the hint says to convert it to NUMERIC first and offers no math fix.
+
 ### Fixed (mammoth-cli 2.2.81)
 
 - `mammoth auth logout` treats a 401/404 from the server as the sign-in already being ended and signs out locally instead of failing.

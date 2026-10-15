@@ -351,3 +351,29 @@ def test_agent_group_is_hidden_from_root_help_but_still_runs() -> None:
     assert "skill" in root.output
     assert "Work with Mammoth agent sessions" not in root.output
     assert "Work with Mammoth agent sessions" in make_runner().invoke(["agent", "--help"]).output
+
+
+def test_operations_manifest_is_cached_like_the_commands(cache_dir: Path) -> None:
+    first = loader.load_operations()
+    (path,) = cache_dir.glob("openapi-operations-*.json")
+    assert json.loads(path.read_text()) == first
+
+    marker = [{"operation_id": "zzz.marker"}]
+    path.write_text(json.dumps(marker))
+    loader.clear_cache()
+    assert loader.load_operations() == marker  # a hit, not a YAML parse
+
+
+@pytest.mark.subprocess
+def test_type_system_does_not_import_pydantic() -> None:
+    """Describing types needs no pydantic (~20 ms); it is looked up only if already loaded."""
+    import subprocess
+    import sys
+
+    code = (
+        "import sys; import mammoth_cli.services.type_system as t;"
+        "assert 'pydantic' not in sys.modules;"
+        "assert t._is_model(int) is False; assert 'pydantic' not in sys.modules"
+    )
+    done = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, check=False)
+    assert done.returncode == 0, done.stderr[-300:]

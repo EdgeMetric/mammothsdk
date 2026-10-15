@@ -134,3 +134,32 @@ def test_resolve_auth_explicit_profile_beats_the_environment_token(
     resolved = resolve_auth(_invocation(profile="koyal"))
     assert (resolved.api_key, resolved.api_token, resolved.workspace_id) == ("k", None, 4)
     assert "MAMMOTH_API_TOKEN" not in capsys.readouterr().err
+
+
+def test_not_authenticated_for_a_named_profile_logs_that_profile_in(
+    isolated_cli_config: Path,
+) -> None:
+    with pytest.raises(CliError) as excinfo:
+        resolve_auth(_invocation(profile="nope"))
+    error = excinfo.value
+    assert error.recovery_commands == ["mammoth auth login --profile nope"]
+    assert "'mammoth auth login --profile nope'" in (error.hint or "")
+    assert "--input creds.json" in (error.hint or "")
+
+
+def test_not_authenticated_for_the_default_profile_keeps_the_bare_command(
+    isolated_cli_config: Path,
+) -> None:
+    with pytest.raises(CliError) as excinfo:
+        resolve_auth(_invocation())
+    assert excinfo.value.recovery_commands == ["mammoth auth login"]
+    assert excinfo.value.hint is not None
+    assert "--profile" not in excinfo.value.hint
+
+
+def test_the_profile_name_in_a_recovery_command_is_shell_quoted(
+    isolated_cli_config: Path,
+) -> None:
+    with pytest.raises(CliError) as excinfo:
+        resolve_auth(_invocation(profile="my work"))
+    assert excinfo.value.recovery_commands == ["mammoth auth login --profile 'my work'"]

@@ -25,7 +25,7 @@ commands:
   secret_fields:
   - secure_key
   human_example: mammoth external-key create --help
-  agent_example: mammoth external-key create --input /private/path/request.json
+  agent_example: mammoth external-key create --input /private/path/request.json --yes
   unit_tests:
   - UT-EXTERNAL-KEY-CREATE
   contract_tests:
@@ -73,7 +73,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth external-key delete KEY_ID --help
-  agent_example: mammoth external-key delete 123
+  agent_example: mammoth external-key delete 123 --yes
   unit_tests:
   - UT-EXTERNAL-KEY-DELETE
   contract_tests:

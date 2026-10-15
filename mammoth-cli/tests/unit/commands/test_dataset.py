@@ -670,7 +670,7 @@ def test_file_settings_update_forwards_required_and_optional(
             input_file=input_file,
         )
     )
-    assert fake_service.call_log == [
+    assert fake_service.call_log[:1] == [
         (
             _FILE_SETTINGS_UPDATE,
             {
@@ -858,9 +858,11 @@ def test_delete_blocked_without_confirmation_names_the_writing_export(
 
 def test_delete_proceeds_with_yes(fake_service: FakeMammothService) -> None:
     dataset_cmd.dataset_delete(_inv("dataset.delete", project=180, extra_args=["7"], yes=True))
+    # Preview read, the delete, then the read that confirms the dataset is gone.
     assert fake_service.call_log == [
         (_GET, {"dataset_id": 7, "project_id": 180}),
         (_DELETE, {"dataset_id": 7, "project_id": 180}),
+        (_GET, {"dataset_id": 7, "project_id": 180}),
     ]
 
 
@@ -1019,3 +1021,75 @@ def test_created_dataset_raises_when_the_job_made_nothing() -> None:
 def test_created_dataset_passes_a_sketch_through() -> None:
     sketch = {"id": 12, "name": "n", "status": "ready"}
     assert dataset_cmd._created_dataset(sketch, sketch) == sketch
+
+
+# -- delete that the server accepts but does not carry out ----------------------
+
+
+def test_delete_blocked_by_a_dependent_view_is_not_a_success(
+    fake_service: FakeMammothService, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # The server acknowledges the delete with a dependency map keyed by the dataset id
+    # (view -> column -> tasks) and the dataset is still readable afterwards.
+    monkeypatch.setattr("mammoth_cli.services.delete_check.time.sleep", lambda _s: None)
+    fake_service.responses[_GET] = {"id": 313432, "name": "orders"}
+    fake_service.responses[_DELETE] = {
+        "job_id": 9,
+        "313432": {"311853": {"column_1": [{"task_id": 5}]}},
+    }
+    with pytest.raises(CliError) as excinfo:
+        dataset_cmd.dataset_delete(
+            _inv("dataset.delete", project=180, extra_args=["313432"], yes=True)
+        )
+    error = excinfo.value
+    assert error.code == "has_dependents"
+    assert error.details["deleted"] is False
+    assert "311853" in error.details["dependents"]
+    assert error.recovery_commands == ["mammoth view task list 311853"]
+    assert "311853" in error.message
+
+
+def test_delete_that_leaves_the_dataset_without_a_reason_is_not_applied(
+    fake_service: FakeMammothService, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr("mammoth_cli.services.delete_check.time.sleep", lambda _s: None)
+    fake_service.responses[_GET] = {"id": 7}
+    with pytest.raises(CliError) as excinfo:
+        dataset_cmd.dataset_delete(_inv("dataset.delete", project=180, extra_args=["7"], yes=True))
+    assert excinfo.value.code == "delete_not_applied"
+
+
+def test_delete_succeeds_when_the_dataset_is_gone_afterwards(
+    fake_service: FakeMammothService,
+) -> None:
+    from mammoth_cli.errors.envelope import CODE_RESOURCE_NOT_FOUND, EXIT_NOT_FOUND
+
+    def get(log: list[tuple[str, dict[str, object]]]) -> dict[str, object]:
+        if any(symbol == _DELETE for symbol, _ in log):
+            raise CliError(code=CODE_RESOURCE_NOT_FOUND, message="gone", exit_status=EXIT_NOT_FOUND)
+        return {"id": 7}
+
+    fake_service.responses[_GET] = get  # type: ignore[assignment]
+    data, _meta = dataset_cmd.dataset_delete(
+        _inv("dataset.delete", project=180, extra_args=["7"], yes=True)
+    )
+    assert isinstance(data, dict)
+
+
+def test_file_settings_update_waits_for_the_reprocess_job_and_names_the_dataset(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    fake_service.responses[_FILE_SETTINGS_UPDATE] = {"job_id": 55}
+    fake_service.job_result = {"ds_id": 7, "status": "ready"}
+    fake_service.responses["mammoth.api.datasets.DatasetsAPI.get"] = {"id": 7, "name": "wb.csv"}
+    doc = tmp_path / "in.json"
+    doc.write_text(
+        '{"delimiter": ",", "has_header": true, "initial_skip_count": 0, "quotechar": "\\""}',
+        encoding="utf-8",
+    )
+    data, _ = dataset_cmd.dataset_file_settings_update(
+        _inv("dataset.file-settings.update", project=180, extra_args=["7"], input_file=str(doc))
+    )
+    assert fake_service.wait_log == [{"job_id": 55}]
+    assert data["status"] == "ready"
+    assert data["dataset_name"] == "wb.csv"

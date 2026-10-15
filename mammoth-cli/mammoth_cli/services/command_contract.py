@@ -728,7 +728,7 @@ _S7_ADDITIONAL_INPUT_FIELDS: dict[str, tuple[FieldSpec, ...]] = {
     # list so a read-back costs a screen of tokens, not the whole view.
     "view.data.get": (
         FieldSpec("limit", required=False, annotation=int, default=50),
-        FieldSpec("offset", required=False, annotation=int, default=1),
+        FieldSpec("offset", required=False, annotation=int, default=0),
     ),
     # The dataview GET takes a server-side projection: "__min", "__standard",
     # "__full" or a comma-separated field list.

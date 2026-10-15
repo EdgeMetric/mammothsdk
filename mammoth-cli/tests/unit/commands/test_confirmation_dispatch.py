@@ -29,6 +29,7 @@ _STOPS = frozenset(
         "invalid_argument",
         "unsupported_contract",
         "not_available",
+        "feature_unavailable",
     }
 )
 

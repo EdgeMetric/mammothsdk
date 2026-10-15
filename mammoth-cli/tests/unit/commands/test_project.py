@@ -30,11 +30,59 @@ def _invocation(command_id: str, **overrides: object) -> Invocation:
     return Invocation(command_id=command_id, **overrides)  # type: ignore[arg-type]
 
 
+_CURRENT_SYMBOL = "mammoth.api.workspace.WorkspaceAPI.current"
+
+
+def _without_scope(fake_service: FakeMammothService) -> list[tuple[str, dict]]:
+    """The call log minus the token-scope lookup the project commands make."""
+    return [call for call in fake_service.call_log if call[0] != _CURRENT_SYMBOL]
+
+
+def test_project_list_of_a_pinned_token_shows_only_that_project(
+    fake_service: FakeMammothService,
+) -> None:
+    fake_service.responses[_CURRENT_SYMBOL] = {"project": 7}
+    fake_service.responses[_LIST_SYMBOL] = {"projects": [{"id": 7}, {"id": 8}]}
+    data, _ = project_cmd.project_list(_invocation("project.list"))
+    assert [row["id"] for row in data["projects"]] == [7]
+    assert "limited to project 7" in data["note"]
+
+
+def test_project_list_of_an_unpinned_token_is_unchanged(
+    fake_service: FakeMammothService,
+) -> None:
+    fake_service.responses[_CURRENT_SYMBOL] = {"project": None}
+    fake_service.responses[_LIST_SYMBOL] = {"projects": [{"id": 7}, {"id": 8}]}
+    data, _ = project_cmd.project_list(_invocation("project.list"))
+    assert data == {"projects": [{"id": 7}, {"id": 8}]}
+
+
+def test_project_get_of_another_project_is_refused_locally(
+    fake_service: FakeMammothService,
+) -> None:
+    fake_service.responses[_CURRENT_SYMBOL] = {"project": 7}
+    with pytest.raises(CliError) as caught:
+        project_cmd.project_get(_invocation("project.get", extra_args=["8"]))
+    assert caught.value.code == "authorization_required"
+    assert caught.value.authorization_required is True
+    assert "--project 7" in (caught.value.hint or "")
+    assert _GET_SYMBOL not in fake_service.calls
+
+
+def test_project_get_of_the_pinned_project_goes_through(
+    fake_service: FakeMammothService,
+) -> None:
+    fake_service.responses[_CURRENT_SYMBOL] = {"project": 7}
+    fake_service.responses[_GET_SYMBOL] = {"id": 7}
+    data, _ = project_cmd.project_get(_invocation("project.get", extra_args=["7"]))
+    assert data["id"] == 7
+
+
 def test_project_list_passes_default_limit(fake_service: FakeMammothService) -> None:
     fake_service.responses[_LIST_SYMBOL] = {"projects": [{"id": 1}]}
     data, meta = project_cmd.project_list(_invocation("project.list"))
     assert data == {"projects": [{"id": 1}]}
-    assert fake_service.call_log == [(_LIST_SYMBOL, {"limit": 100})]
+    assert _without_scope(fake_service) == [(_LIST_SYMBOL, {"limit": 100})]
     assert meta["workspace_id"] == 4
     assert "close" in fake_service.calls
 
@@ -45,7 +93,7 @@ def test_project_list_reads_limit_from_input(
     doc = tmp_path / "in.json"
     doc.write_text(json.dumps({"limit": 5}), encoding="utf-8")
     project_cmd.project_list(_invocation("project.list", input_file=str(doc)))
-    assert fake_service.call_log[0] == (_LIST_SYMBOL, {"limit": 5})
+    assert _without_scope(fake_service)[0] == (_LIST_SYMBOL, {"limit": 5})
 
 
 def test_project_list_forwards_offset_for_pagination(
@@ -64,7 +112,7 @@ def test_project_list_forwards_offset_for_pagination(
     doc = tmp_path / "in.json"
     doc.write_text(json.dumps({"limit": 100, "offset": 100}), encoding="utf-8")
     data, _ = project_cmd.project_list(_invocation("project.list", input_file=str(doc)))
-    assert fake_service.call_log == [(_LIST_SYMBOL, {"limit": 100, "offset": 100})]
+    assert _without_scope(fake_service) == [(_LIST_SYMBOL, {"limit": 100, "offset": 100})]
     assert data["next"] == ""
 
 
@@ -72,7 +120,7 @@ def test_project_get_uses_positional_id(fake_service: FakeMammothService) -> Non
     fake_service.responses[_GET_SYMBOL] = {"id": 180}
     data, meta = project_cmd.project_get(_invocation("project.get", extra_args=["180"]))
     assert data["id"] == 180
-    assert fake_service.call_log == [(_GET_SYMBOL, {"project": 180})]
+    assert _without_scope(fake_service) == [(_GET_SYMBOL, {"project": 180})]
     assert meta["project_id"] == 180
 
 
@@ -80,7 +128,7 @@ def test_project_get_uses_project_flag_when_no_positional(
     fake_service: FakeMammothService,
 ) -> None:
     project_cmd.project_get(_invocation("project.get", project=42))
-    assert fake_service.call_log == [(_GET_SYMBOL, {"project": 42})]
+    assert _without_scope(fake_service) == [(_GET_SYMBOL, {"project": 42})]
 
 
 def test_project_get_without_id_is_usage_error(fake_service: FakeMammothService) -> None:
