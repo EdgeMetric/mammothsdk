@@ -71,6 +71,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Changed (mammoth-mcp-server 0.2.3)
 
 - `aggregate_data` refuses a `limit` below 1.
+- `aggregate_data` leaves out the `hash` row identity, returns a date group as a valid ISO time (Mammoth sends `+00:00Z`), and, when ranked, says the rows are the top groups by that result.
 - `get_data` no longer returns the `hash` row identity Mammoth adds to every row. It is no column of the user's, and Claude read its values as duplicate rows.
 - The server and `get_data` tell the client to take every number from `aggregate_data` or a dashboard's `values`, and never to add up rows itself.
 

@@ -163,4 +163,4 @@ async def aggregate_data(
             ),
             missing,
         )
-    return query.read(answer, page_size)
+    return query.read(answer, page_size, order_by)
