@@ -46,6 +46,53 @@ def test_list_passes_no_kwargs(fake_service: FakeMammothService) -> None:
     assert fake_service.call_log == [(_LIST, {})]
 
 
+def _listed(fake_service: FakeMammothService, rows: object) -> list[dict[str, object]]:
+    fake_service.responses[_LIST] = rows
+    data, _meta = automation_cmd.automation_list(_inv("automation.list"))
+    return data  # type: ignore[return-value]
+
+
+def test_list_after_delete_does_not_show_the_deleted_automation(
+    fake_service: FakeMammothService,
+) -> None:
+    # Backend: a permanent delete removes the row (api/api/automations/service.py:322),
+    # so the real list never has it. A server (or proxy) that still returned the
+    # record must not make a deleted automation look alive.
+    rows = [
+        {"id": 1, "name": "keep", "status": "active"},
+        {"id": 2, "name": "gone", "status": "deleted"},
+    ]
+    assert [r["id"] for r in _listed(fake_service, rows)] == [1]
+
+
+def test_list_hides_a_trashed_automation(fake_service: FakeMammothService) -> None:
+    # Backend: the trash hook filters trashed_at IS NULL out of every list
+    # (common/common/db/trash_filter.py:44-72, registered at automations/models.py:684).
+    rows = [
+        {"id": 1, "name": "keep", "status": "active", "trashed_at": None},
+        {"id": 3, "name": "binned", "status": "active", "trashed_at": "2026-10-14T10:00:00Z"},
+        {"id": 4, "name": "binned too", "status": "trashed"},
+    ]
+    assert [r["id"] for r in _listed(fake_service, rows)] == [1]
+
+
+def test_list_keeps_suspended_and_every_live_automation(
+    fake_service: FakeMammothService,
+) -> None:
+    rows = [
+        {"id": 1, "status": "active"},
+        {"id": 2, "status": "suspended"},
+        {"id": 3},
+    ]
+    assert _listed(fake_service, rows) == rows
+
+
+def test_list_of_an_unexpected_shape_is_passed_through(
+    fake_service: FakeMammothService,
+) -> None:
+    assert _listed(fake_service, {"automations": []}) == {"automations": []}  # type: ignore[comparison-overlap]
+
+
 # --- automation get -------------------------------------------------------
 
 

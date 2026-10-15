@@ -165,10 +165,31 @@ def _meta(invocation: Invocation, workspace_id: int, project_id: int | None) -> 
     }
 
 
+#: ``status`` values that mean the automation is gone, whatever else the row says.
+_GONE_STATUSES = frozenset({"deleted", "trashed"})
+
+
+def _is_gone(record: Any) -> bool:
+    """True for a listed automation that was deleted or trashed.
+
+    The server never lists these (a permanent delete removes the row, and the trash
+    hook filters ``trashed_at`` out of every list), so this only guards against a
+    record that still carries the marker, which would make a deleted automation look
+    alive in ``automation list``.
+    """
+    if not isinstance(record, dict):
+        return False
+    return record.get("trashed_at") is not None or (
+        str(record.get("status", "")).lower() in _GONE_STATUSES
+    )
+
+
 def automation_list(invocation: Invocation) -> HandlerResult:
-    """List all automations in the active workspace/project."""
+    """List the live automations in the active workspace/project (not deleted or trashed)."""
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation))
+    if isinstance(data, list):
+        data = [record for record in data if not _is_gone(record)]
     return data, _meta(invocation, auth.workspace_id, resolved_project(invocation))
 
 
