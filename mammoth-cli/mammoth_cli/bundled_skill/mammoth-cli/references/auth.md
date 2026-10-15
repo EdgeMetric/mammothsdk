@@ -16,7 +16,10 @@ created without a project.
 
 `mammoth auth login --method oauth` signs the operator in through the browser (PKCE, loopback
 `127.0.0.1`). The CLI keeps a 1 h `mm_` token and refreshes it under a file lock. `auth status`
-reports `credential: oauth` and `expires_at`. A refresh that fails exits 4 with `login_expired`:
+reports `credential: oauth` and `access_token_expires_at` (`expires_at` is the same value, kept for
+compatibility). That is when the 1 h access token ends, not when the login does: `refreshes_automatically: true`.
+Only a failed refresh needs a new login. `auth status --check` also adds `workspace_name` and, for a
+project-limited token, `token_project_name`. A refresh that fails exits 4 with `login_expired`:
 tell the operator to run `mammoth auth login` again. `--no-browser` prints the URL. `--device` is the sign-in for a
 machine with no browser: it prints a short code and a URL for the operator to approve on another
 device, then polls. An agent may run `mammoth auth login --device` (and only that): it prints the

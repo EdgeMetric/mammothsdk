@@ -19,6 +19,15 @@ task, not in the middle of one.
 
 `log_ref` points at the local run log: `mammoth log tail --input '{"run_id": "RUN_ID"}'` lists every request that invocation made, with HTTP status and backend `request_id`. Quote both when reporting a backend fault.
 
+## `auth status` and token expiry
+
+`data.expires_at` is the OAuth access token's expiry (about one hour ahead), not the login's.
+`data.access_token_expires_at` is the same value under a clearer name, `data.refreshes_automatically`
+is `true` and `data.expires_at_note` says so; the CLI renews the token itself, and only a failed
+refresh (`login_expired`, exit 4) needs a new `mammoth auth login`. `auth status --check` and
+`auth login` add `workspace_name` (and `project_name` / `token_project_name` for a project-limited
+token); a name is left out when its lookup fails, and the ids are always present.
+
 ## Representative result keys
 
 These are compact shapes, not substitutes for `schema get`. IDs and field
