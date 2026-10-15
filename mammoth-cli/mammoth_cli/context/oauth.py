@@ -258,6 +258,8 @@ class TokenGrant:
     expires_in: int
     workspace_id: int | None = None
     project_id: int | None = None
+    #: Every project of a grant limited to several (sorted); None for one project or All.
+    project_ids: tuple[int, ...] | None = None
 
 
 def _post_token(base_url: str, form: dict[str, str]) -> tuple[int, dict[str, object]]:
@@ -279,6 +281,16 @@ def _optional_id(value: object) -> int | None:
     return None if value is None else int(str(value))
 
 
+def _project_set(value: object) -> tuple[int, ...] | None:
+    """A grant's ``project_ids`` when it names several projects; None otherwise."""
+    if value is None:
+        return None
+    if not isinstance(value, list):
+        raise TypeError("project_ids is not a list")
+    ids = tuple(sorted({int(str(item)) for item in value}))
+    return ids if len(ids) > 1 else None
+
+
 def _parse_grant(body: dict[str, object]) -> TokenGrant:
     try:
         return TokenGrant(
@@ -287,6 +299,7 @@ def _parse_grant(body: dict[str, object]) -> TokenGrant:
             expires_in=int(str(body["expires_in"])),
             workspace_id=_optional_id(body.get("workspace_id")),
             project_id=_optional_id(body.get("project_id")),
+            project_ids=_project_set(body.get("project_ids")),
         )
     except (ValueError, KeyError, TypeError) as exc:
         raise _login_failed("Mammoth's sign-in service returned an unreadable answer.") from exc
@@ -327,6 +340,7 @@ def session_from_grant(grant: TokenGrant, client_id: str, now: float | None = No
         grant_id=grant_id_from_refresh_token(grant.refresh),
         workspace_id=grant.workspace_id,
         project_id=grant.project_id,
+        project_ids=grant.project_ids,
     )
 
 

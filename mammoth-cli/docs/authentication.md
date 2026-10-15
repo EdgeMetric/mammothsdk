@@ -29,7 +29,10 @@ only in that project: any other project answers HTTP 403, even a project that
 the token created. If an agent should create its own projects, create the
 token without a project. If you keep a project-limited token, give the agent
 that project's id and have it pass `--project ID` (or run
-`mammoth context project use ID` once).
+`mammoth context project use ID` once). A browser or device sign-in
+(`mammoth auth login --method oauth`) can be limited to several projects:
+check them on the sign-in page. `mammoth auth status --check` lists them in
+`token_projects`.
 
 One more input is optional. The server prefix names your Mammoth region and
 defaults to `app`. Most users leave it alone. See

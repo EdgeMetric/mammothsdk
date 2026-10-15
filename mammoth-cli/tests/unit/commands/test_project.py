@@ -79,6 +79,35 @@ def test_project_get_of_the_pinned_project_goes_through(
     assert data["id"] == 7
 
 
+def test_project_list_of_a_token_limited_to_several_projects_shows_them_all(
+    fake_service: FakeMammothService,
+) -> None:
+    fake_service.responses[_CURRENT_SYMBOL] = {"project": 3, "projects": [3, 7]}
+    fake_service.responses[_LIST_SYMBOL] = {"projects": [{"id": 3}, {"id": 7}, {"id": 8}]}
+    data, _ = project_cmd.project_list(_invocation("project.list"))
+    assert [row["id"] for row in data["projects"]] == [3, 7]
+    assert "limited to projects 3, 7" in data["note"]
+
+
+def test_project_get_of_any_pinned_project_goes_through(
+    fake_service: FakeMammothService,
+) -> None:
+    fake_service.responses[_CURRENT_SYMBOL] = {"project": 3, "projects": [3, 7]}
+    fake_service.responses[_GET_SYMBOL] = {"id": 7}
+    data, _ = project_cmd.project_get(_invocation("project.get", extra_args=["7"]))
+    assert data["id"] == 7
+
+
+def test_project_get_outside_several_pinned_projects_is_refused_locally(
+    fake_service: FakeMammothService,
+) -> None:
+    fake_service.responses[_CURRENT_SYMBOL] = {"project": 3, "projects": [3, 7]}
+    with pytest.raises(CliError) as caught:
+        project_cmd.project_get(_invocation("project.get", extra_args=["8"]))
+    assert "limited to projects" in caught.value.message
+    assert caught.value.details["pinned_project_ids"] == [3, 7]
+
+
 def test_project_list_passes_default_limit(fake_service: FakeMammothService) -> None:
     fake_service.responses[_LIST_SYMBOL] = {"projects": [{"id": 1}]}
     data, meta = project_cmd.project_list(_invocation("project.list"))

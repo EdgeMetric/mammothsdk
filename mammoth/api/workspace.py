@@ -56,7 +56,9 @@ class WorkspaceAPI:
             token was issued for: the URI of the one server the user let it
             reach. ``resource`` is None for a token made by hand, and for a
             token issued for no server. ``read_only`` is True when the user
-            granted the connection read-only access.
+            granted the connection read-only access. ``projects`` lists the
+            projects a sign-in is limited to and ``project`` is the lowest of
+            them; both are None when it is not limited.
         """
         answer = await self._client._request_json("GET", "/workspaces/current")
         return CurrentWorkspace.model_validate(answer)

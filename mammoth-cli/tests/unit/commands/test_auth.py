@@ -910,6 +910,55 @@ def test_status_check_names_the_workspace_and_the_pinned_project(
     assert data["token_project_name"] == "Sales 2026"
 
 
+def test_status_check_lists_every_project_of_a_token_limited_to_several(
+    isolated_cli_config: Path, fake_service: FakeMammothService
+) -> None:
+    _saved_login()
+    fake_service.responses["mammoth.api.workspace.WorkspaceAPI.current"] = {
+        "id": 4,
+        "project": 3,
+        "projects": [3, 7],
+    }
+    fake_service.responses[_WORKSPACE_GET] = {"id": 4, "name": "Filipe Silva"}
+    result = make_runner().invoke(["auth", "status", "--check", "--output", "json"], env={})
+    data = json.loads(result.stdout)["data"]
+    assert data["token_project"] == 3
+    assert data["token_projects"] == [3, 7]
+
+
+def test_oauth_login_names_every_project_of_a_grant_limited_to_several(
+    isolated_cli_config: Path,
+    fake_service: FakeMammothService,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from dataclasses import replace
+
+    from mammoth_cli.context import oauth
+
+    several = replace(_oauth_session(project_id=3), project_ids=(3, 7))
+    monkeypatch.setattr(oauth, "browser_login", lambda *a, **k: several)
+    fake_service.responses[_WORKSPACE_GET] = {"id": 4, "name": "Filipe Silva"}
+    result = make_runner().invoke(
+        [
+            "auth",
+            "login",
+            "--method",
+            "oauth",
+            "--no-browser",
+            "--storage",
+            "file",
+            "--output",
+            "json",
+            "--no-input",
+        ],
+        env={},
+    )
+    assert result.exit_code == 0, result.stderr
+    assert "projects 3, 7" in result.stderr
+    data = json.loads(result.stdout)["data"]
+    assert data["project_ids"] == [3, 7]
+
+
 def test_status_of_a_profile_that_does_not_exist_exits_4_with_a_login_hint(
     isolated_cli_config: Path,
 ) -> None:
