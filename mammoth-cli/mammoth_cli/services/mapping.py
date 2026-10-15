@@ -22,6 +22,7 @@ from mammoth.exceptions import (
 from mammoth_cli.context import credentials, profiles
 from mammoth_cli.errors.envelope import (
     CODE_API_ERROR,
+    CODE_INTERNAL_ERROR,
     CODE_AUTHENTICATION_FAILED,
     CODE_AUTHORIZATION_REQUIRED,
     CODE_CONFLICT,
@@ -736,9 +737,15 @@ def map_sdk_exception(
             },
         )
 
+    # Not an SDK, transport or validation failure: the CLI itself broke (a rendering fault, a
+    # malformed response, a bug). Say so; "api_error" would send the caller to retry the API.
     return CliError(
-        code=CODE_API_ERROR,
-        message="The Mammoth operation failed unexpectedly.",
+        code=CODE_INTERNAL_ERROR,
+        message=f"The CLI hit an unexpected internal error ({type(exc).__name__}).",
         exit_status=EXIT_API,
-        details={"exception_type": type(exc).__name__},
+        hint=(
+            "This is a bug in the CLI, not in your request or the API. Re-run with --debug to "
+            "print the traceback, and report it with the run log named in log_ref."
+        ),
+        details={"exception_type": type(exc).__name__, "exception_message": str(exc)[:500]},
     )

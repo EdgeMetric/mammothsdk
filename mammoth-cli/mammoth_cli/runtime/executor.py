@@ -11,6 +11,7 @@ identically for machine output, error shape, and exit code.
 from __future__ import annotations
 
 import sys
+import traceback
 from collections.abc import Callable
 from typing import Any
 
@@ -235,10 +236,14 @@ def run(
     )
     run_log = _open_run_log(command_id, invocation)
 
-    def fail(error: CliError) -> None:
+    def fail(error: CliError, cause: BaseException | None = None) -> None:
         if run_log is not None:
             error.log_ref = run_log.ref
-            run_log.finish(error.exit_status, error_code=error.code)
+            run_log.finish(error.exit_status, error_code=error.code, exception=cause)
+        if cause is not None and invocation is not None and invocation.debug:
+            sys.stderr.write(
+                "".join(traceback.format_exception(type(cause), cause, cause.__traceback__))
+            )
         emit_error(error, machine=machine_error, output=output)
 
     # The update notice is read from the daily cache (no network); the cache
@@ -295,7 +300,7 @@ def run(
         # malformed response or filesystem fault must still obey the same
         # machine envelope rather than leaking an implementation traceback.
         mapped_error = _profile_scope_recovery(map_sdk_exception(exc), profile)
-        fail(mapped_error)
+        fail(mapped_error, exc)
         raise typer.Exit(mapped_error.exit_status) from None
     if run_log is not None:
         run_log.finish(EXIT_AUTH if report_failed else 0)

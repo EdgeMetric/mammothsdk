@@ -32,6 +32,7 @@ import os
 import sys
 import threading
 import time
+import traceback
 import uuid
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -175,7 +176,29 @@ class RunLog:
         )
         return run
 
-    def finish(self, exit_status: int, *, error_code: str | None = None) -> None:
+    def finish(
+        self,
+        exit_status: int,
+        *,
+        error_code: str | None = None,
+        exception: BaseException | None = None,
+    ) -> None:
+        if exception is not None:
+            # The type, message and traceback of an unexpected failure belong in the log: the
+            # envelope names only the code, and a bug report needs what actually broke.
+            self.write(
+                {
+                    "event": "command.exception",
+                    "exception_type": type(exception).__name__,
+                    "exception_message": str(exception)[:2000],
+                    "traceback": "".join(
+                        traceback.format_exception(
+                            type(exception), exception, exception.__traceback__
+                        )
+                    )[-8000:],
+                },
+                level="error",
+            )
         self.write(
             {
                 "event": "command.end",
