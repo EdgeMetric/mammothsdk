@@ -351,3 +351,14 @@ def test_agent_group_is_hidden_from_root_help_but_still_runs() -> None:
     assert "skill" in root.output
     assert "Work with Mammoth agent sessions" not in root.output
     assert "Work with Mammoth agent sessions" in make_runner().invoke(["agent", "--help"]).output
+
+
+def test_operations_manifest_is_cached_like_the_commands(cache_dir: Path) -> None:
+    first = loader.load_operations()
+    (path,) = cache_dir.glob("openapi-operations-*.json")
+    assert json.loads(path.read_text()) == first
+
+    marker = [{"operation_id": "zzz.marker"}]
+    path.write_text(json.dumps(marker))
+    loader.clear_cache()
+    assert loader.load_operations() == marker  # a hit, not a YAML parse
