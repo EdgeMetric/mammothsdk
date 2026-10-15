@@ -658,8 +658,8 @@ commands:
   - CT-COLLECTION-ACTIVE-JOB-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: 'Read-only. Returns the collection''s upload job that is still in flight, so an
-    interrupted upload can be resumed. Use collection job to poll one job by id.'
+  known_restrictions: Read-only. Returns the collection's upload job that is still in flight, so an interrupted
+    upload can be resumed. Use collection job to poll one job by id.
   reviewed_by: primary
 - command_id: collection.job
   command_path: collection job
@@ -706,4 +706,211 @@ commands:
   draft_test: null
   undo_test: null
   known_restrictions: Read-only. Polls one collection upload job by id and returns its state.
+  reviewed_by: primary
+- command_id: collection.email-updates.get
+  command_path: collection email-updates get
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetCollectionEmailUpdates
+  positionals:
+  - name: collection_id
+    type: int
+    required: true
+    metavar: COLLECTION_ID
+    falls_back_to_field: null
+    help: ID of the collection.
+  options: []
+  sdk_symbol: mammoth.api.collections.CollectionsAPI.email_updates
+  sdk_conversion: Call mammoth.api.collections.CollectionsAPI.email_updates with validated request fields.
+  request_model: CollectionEmailUpdatesGetRequest
+  result_model: CollectionEmailUpdatesGetResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-COLLECTION-EMAIL-UPDATES-GET
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth collection email-updates get COLLECTION_ID --help
+  agent_example: mammoth collection email-updates get 123 --output json --no-input
+  unit_tests:
+  - UT-COLLECTION-EMAIL-UPDATES-GET
+  contract_tests:
+  - CT-COLLECTION-EMAIL-UPDATES-GET-HUMAN
+  - CT-COLLECTION-EMAIL-UPDATES-GET-JSON
+  - CT-COLLECTION-EMAIL-UPDATES-GET-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: collection.email-updates.me.get
+  command_path: collection email-updates me get
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetMyCollectionEmailUpdates
+  positionals:
+  - name: collection_id
+    type: int
+    required: true
+    metavar: COLLECTION_ID
+    falls_back_to_field: null
+    help: ID of the collection.
+  options: []
+  sdk_symbol: mammoth.api.collections.CollectionsAPI.my_email_updates
+  sdk_conversion: Call mammoth.api.collections.CollectionsAPI.my_email_updates with validated request
+    fields.
+  request_model: CollectionEmailUpdatesMeGetRequest
+  result_model: CollectionEmailUpdatesMeGetResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-COLLECTION-EMAIL-UPDATES-ME-GET
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth collection email-updates me get COLLECTION_ID --help
+  agent_example: mammoth collection email-updates me get 123 --output json --no-input
+  unit_tests:
+  - UT-COLLECTION-EMAIL-UPDATES-ME-GET
+  contract_tests:
+  - CT-COLLECTION-EMAIL-UPDATES-ME-GET-HUMAN
+  - CT-COLLECTION-EMAIL-UPDATES-ME-GET-JSON
+  - CT-COLLECTION-EMAIL-UPDATES-ME-GET-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: collection.email-updates.me.set
+  command_path: collection email-updates me set
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - SetMyCollectionEmailUpdates
+  positionals:
+  - name: collection_id
+    type: int
+    required: true
+    metavar: COLLECTION_ID
+    falls_back_to_field: null
+    help: ID of the collection.
+  options: []
+  sdk_symbol: mammoth.api.collections.CollectionsAPI.set_my_email_updates
+  sdk_conversion: Call mammoth.api.collections.CollectionsAPI.set_my_email_updates with validated request
+    fields.
+  request_model: CollectionEmailUpdatesMeSetRequest
+  result_model: CollectionEmailUpdatesMeSetResult
+  mutation_class: benign_mutation
+  edits_target: false
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-COLLECTION-EMAIL-UPDATES-ME-SET
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth collection email-updates me set COLLECTION_ID --help
+  agent_example: mammoth collection email-updates me set 123 --output json --no-input
+  unit_tests:
+  - UT-COLLECTION-EMAIL-UPDATES-ME-SET
+  contract_tests:
+  - CT-COLLECTION-EMAIL-UPDATES-ME-SET-HUMAN
+  - CT-COLLECTION-EMAIL-UPDATES-ME-SET-JSON
+  - CT-COLLECTION-EMAIL-UPDATES-ME-SET-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: collection.email-updates.set
+  command_path: collection email-updates set
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - SaveCollectionEmailUpdates
+  positionals:
+  - name: collection_id
+    type: int
+    required: true
+    metavar: COLLECTION_ID
+    falls_back_to_field: null
+    help: ID of the collection.
+  options: []
+  sdk_symbol: mammoth.api.collections.CollectionsAPI.set_email_updates
+  sdk_conversion: Call mammoth.api.collections.CollectionsAPI.set_email_updates with validated request
+    fields.
+  request_model: CollectionEmailUpdatesSetRequest
+  result_model: CollectionEmailUpdatesSetResult
+  mutation_class: benign_mutation
+  edits_target: false
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-COLLECTION-EMAIL-UPDATES-SET
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth collection email-updates set COLLECTION_ID --help
+  agent_example: mammoth collection email-updates set 123 --output json --no-input
+  unit_tests:
+  - UT-COLLECTION-EMAIL-UPDATES-SET
+  contract_tests:
+  - CT-COLLECTION-EMAIL-UPDATES-SET-HUMAN
+  - CT-COLLECTION-EMAIL-UPDATES-SET-JSON
+  - CT-COLLECTION-EMAIL-UPDATES-SET-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: collection.email-updates.test
+  command_path: collection email-updates test
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - TestCollectionEmailUpdate
+  positionals:
+  - name: collection_id
+    type: int
+    required: true
+    metavar: COLLECTION_ID
+    falls_back_to_field: null
+    help: ID of the collection.
+  options: []
+  sdk_symbol: mammoth.api.collections.CollectionsAPI.send_test_email_update
+  sdk_conversion: Call mammoth.api.collections.CollectionsAPI.send_test_email_update with validated request
+    fields.
+  request_model: CollectionEmailUpdatesTestRequest
+  result_model: CollectionEmailUpdatesTestResult
+  mutation_class: benign_mutation
+  edits_target: false
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-COLLECTION-EMAIL-UPDATES-TEST
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth collection email-updates test COLLECTION_ID --help
+  agent_example: mammoth collection email-updates test 123 --output json --no-input
+  unit_tests:
+  - UT-COLLECTION-EMAIL-UPDATES-TEST
+  contract_tests:
+  - CT-COLLECTION-EMAIL-UPDATES-TEST-HUMAN
+  - CT-COLLECTION-EMAIL-UPDATES-TEST-JSON
+  - CT-COLLECTION-EMAIL-UPDATES-TEST-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
   reviewed_by: primary

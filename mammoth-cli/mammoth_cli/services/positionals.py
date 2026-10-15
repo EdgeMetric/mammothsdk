@@ -488,6 +488,30 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
             help="Optional parent dataset ID; avoids parent discovery when supplied.",
         ),
     ),
+    "view.export.runs": (
+        PositionalSpec(name="dataview_id", type=int, required=True, help="ID of the dataview."),
+        PositionalSpec(name="export_id", type=int, required=True, help="ID of the export."),
+        PositionalSpec(
+            name="dataset_id",
+            type=int,
+            required=False,
+            falls_back_to_field="dataset_id",
+            help="Optional parent dataset ID; avoids parent discovery when supplied.",
+        ),
+    ),
+    "view.export.rest-fill": (
+        PositionalSpec(name="dataview_id", type=int, required=True, help="ID of the dataview."),
+    ),
+    "view.summary": (
+        PositionalSpec(name="view_id", type=int, required=True, help="ID of the dataview."),
+        PositionalSpec(
+            name="dataset_id",
+            type=int,
+            required=False,
+            falls_back_to_field="dataset_id",
+            help="Optional parent dataset ID; resolved from the view when omitted.",
+        ),
+    ),
     "view.pipeline.items-all": (
         PositionalSpec(name="dataview_id", type=int, required=True, help="ID of the dataview."),
         PositionalSpec(

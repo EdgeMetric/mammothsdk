@@ -1,5 +1,5 @@
 manifest_schema_version: 1
-operation_count: 603
+operation_count: 651
 operations:
 - identity: POST /accept-invite
   method: POST
@@ -21,6 +21,29 @@ operations:
   canonical_command: workspace.accept-invite
   alias_of: null
   sdk_symbol: mammoth.api.workspaces.WorkspacesAPI.accept_invite
+  reviewed_by: primary
+- identity: GET /agents/briefing
+  method: GET
+  path: /agents/briefing
+  operation_id: GetAgentBriefing
+  tags:
+  - AI
+  - Agents
+  summary: What changed in the user's data since their last visit to the agent home
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: null
+  response_schemas:
+  - AgentBriefingResponse
+  deprecated: false
+  disposition: unmapped
+  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  canonical_command: null
+  alias_of: null
+  sdk_symbol: null
   reviewed_by: primary
 - identity: POST /agents/chat
   method: POST
@@ -44,6 +67,142 @@ operations:
   canonical_command: agent.chat
   alias_of: null
   sdk_symbol: mammoth.api.agents.AgentsAPI.chat
+  reviewed_by: primary
+- identity: POST /agents/documents
+  method: POST
+  path: /agents/documents
+  operation_id: UploadAgentChatDocument
+  tags:
+  - AI
+  - Agents
+  summary: Keep a PDF, Word or PowerPoint file the user shares in a chat
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: null
+  response_schemas:
+  - ChatDocumentResponse
+  deprecated: false
+  disposition: unmapped
+  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  canonical_command: null
+  alias_of: null
+  sdk_symbol: null
+  reviewed_by: primary
+- identity: GET /agents/documents/{sha}
+  method: GET
+  path: /agents/documents/{sha}
+  operation_id: GetAgentChatDocument
+  tags:
+  - AI
+  - Agents
+  summary: What a document shared in this workspace's chats is
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: null
+  response_schemas:
+  - ChatDocumentResponse
+  deprecated: false
+  disposition: unmapped
+  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  canonical_command: null
+  alias_of: null
+  sdk_symbol: null
+  reviewed_by: primary
+- identity: GET /agents/documents/{sha}/pages/{page}
+  method: GET
+  path: /agents/documents/{sha}/pages/{page}
+  operation_id: GetAgentChatDocumentPage
+  tags:
+  - AI
+  - Agents
+  summary: One page of a shared document, as a PNG
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: null
+  response_schemas: []
+  deprecated: false
+  disposition: unmapped
+  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  canonical_command: null
+  alias_of: null
+  sdk_symbol: null
+  reviewed_by: primary
+- identity: POST /agents/images
+  method: POST
+  path: /agents/images
+  operation_id: UploadAgentChatImage
+  tags:
+  - AI
+  - Agents
+  summary: Keep a picture the user shares in a chat
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: null
+  response_schemas:
+  - ChatImageResponse
+  deprecated: false
+  disposition: unmapped
+  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  canonical_command: null
+  alias_of: null
+  sdk_symbol: null
+  reviewed_by: primary
+- identity: GET /agents/images/{sha}
+  method: GET
+  path: /agents/images/{sha}
+  operation_id: GetAgentChatImage
+  tags:
+  - AI
+  - Agents
+  summary: A picture shared in this workspace's chats
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: null
+  response_schemas: []
+  deprecated: false
+  disposition: unmapped
+  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  canonical_command: null
+  alias_of: null
+  sdk_symbol: null
+  reviewed_by: primary
+- identity: GET /agents/needs-you
+  method: GET
+  path: /agents/needs-you
+  operation_id: ListAgentNeedsYou
+  tags:
+  - AI
+  - Agents
+  summary: The caller's chats that wait on them, in every project
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: null
+  response_schemas:
+  - AgentNeedsYouResponse
+  deprecated: false
+  disposition: unmapped
+  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  canonical_command: null
+  alias_of: null
+  sdk_symbol: null
   reviewed_by: primary
 - identity: GET /agents/sessions
   method: GET
@@ -97,7 +256,7 @@ operations:
   tags:
   - AI
   - Agents
-  summary: Rename a chat session or set its private/shared visibility (creator only)
+  summary: Rename, share or move a chat (creator only), or pin it for yourself (anyone who can read it)
   security:
   - bearerAuth
   - apiKey
@@ -159,6 +318,74 @@ operations:
   alias_of: null
   sdk_symbol: mammoth.api.agents.AgentsAPI.action_delete
   reviewed_by: primary
+- identity: POST /agents/sessions/{session_id}/chart-placements
+  method: POST
+  path: /agents/sessions/{session_id}/chart-placements
+  operation_id: RecordAgentChartPlacement
+  tags:
+  - AI
+  - Agents
+  summary: Record a chat chart the owner put on a dashboard (creator only)
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: ChartPlacementRequest
+  response_schemas:
+  - ChartPlacementReceipt
+  deprecated: false
+  disposition: unmapped
+  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  canonical_command: null
+  alias_of: null
+  sdk_symbol: null
+  reviewed_by: primary
+- identity: POST /agents/sessions/{session_id}/chip-feedback
+  method: POST
+  path: /agents/sessions/{session_id}/chip-feedback
+  operation_id: RecordAgentChipFeedback
+  tags:
+  - AI
+  - Agents
+  summary: Remember a click or dismiss of a follow-up chip (creator only)
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: ChipFeedbackRequest
+  response_schemas: []
+  deprecated: false
+  disposition: unmapped
+  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  canonical_command: null
+  alias_of: null
+  sdk_symbol: null
+  reviewed_by: primary
+- identity: POST /agents/sessions/{session_id}/credential-test
+  method: POST
+  path: /agents/sessions/{session_id}/credential-test
+  operation_id: TestAgentCredentialCard
+  tags:
+  - AI
+  - Agents
+  summary: Test what a chat's credential card typed, before saving (owner only)
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: CredentialTestRequest
+  response_schemas:
+  - CredentialTestResponse
+  deprecated: false
+  disposition: unmapped
+  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  canonical_command: null
+  alias_of: null
+  sdk_symbol: null
+  reviewed_by: primary
 - identity: GET /agents/sessions/{session_id}/messages
   method: GET
   path: /agents/sessions/{session_id}/messages
@@ -203,6 +430,28 @@ operations:
   canonical_command: agent.message.set-request-kind
   alias_of: null
   sdk_symbol: mammoth.api.agents.AgentsAPI.message_set_request_kind
+  reviewed_by: primary
+- identity: POST /agents/sessions/{session_id}/needs-you/dismiss
+  method: POST
+  path: /agents/sessions/{session_id}/needs-you/dismiss
+  operation_id: DismissAgentNeed
+  tags:
+  - AI
+  - Agents
+  summary: Dismiss what a chat waits on its owner for (creator only)
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: DismissNeedRequest
+  response_schemas: []
+  deprecated: false
+  disposition: unmapped
+  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  canonical_command: null
+  alias_of: null
+  sdk_symbol: null
   reviewed_by: primary
 - identity: POST /agents/sessions/{session_id}/notify-job
   method: POST
@@ -680,6 +929,28 @@ operations:
   alias_of: null
   sdk_symbol: mammoth.api.collections.CollectionsAPI.for_dashboard
   reviewed_by: primary
+- identity: GET /collections/reach
+  method: GET
+  path: /collections/reach
+  operation_id: CollectionsReach
+  tags:
+  - Collections
+  summary: Who each dashboard is shared with, for the library
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: null
+  response_schemas:
+  - ReachList
+  deprecated: false
+  disposition: unmapped
+  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  canonical_command: null
+  alias_of: null
+  sdk_symbol: null
+  reviewed_by: primary
 - identity: GET /collections/url/{url}
   method: GET
   path: /collections/url/{url}
@@ -853,6 +1124,116 @@ operations:
   alias_of: null
   sdk_symbol: mammoth.api.collections.CollectionsAPI.remove_dashboard
   reviewed_by: primary
+- identity: GET /collections/{collection_id}/email-updates
+  method: GET
+  path: /collections/{collection_id}/email-updates
+  operation_id: GetCollectionEmailUpdates
+  tags:
+  - Collections
+  summary: A collection's email updates
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: null
+  response_schemas:
+  - EmailUpdatesOut
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: collection.email-updates.get
+  alias_of: null
+  sdk_symbol: mammoth.api.collections.CollectionsAPI.email_updates
+  reviewed_by: primary
+- identity: PUT /collections/{collection_id}/email-updates
+  method: PUT
+  path: /collections/{collection_id}/email-updates
+  operation_id: SaveCollectionEmailUpdates
+  tags:
+  - Collections
+  summary: Turn a collection's email updates on, off, or change them
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: EmailUpdateSettingsBody
+  response_schemas:
+  - EmailUpdatesOut
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: collection.email-updates.set
+  alias_of: null
+  sdk_symbol: mammoth.api.collections.CollectionsAPI.set_email_updates
+  reviewed_by: primary
+- identity: GET /collections/{collection_id}/email-updates/me
+  method: GET
+  path: /collections/{collection_id}/email-updates/me
+  operation_id: GetMyCollectionEmailUpdates
+  tags:
+  - Collections
+  summary: Whether I get this collection's email updates
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: null
+  response_schemas:
+  - EmailUpdateSubscriptionOut
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: collection.email-updates.me.get
+  alias_of: null
+  sdk_symbol: mammoth.api.collections.CollectionsAPI.my_email_updates
+  reviewed_by: primary
+- identity: PUT /collections/{collection_id}/email-updates/me
+  method: PUT
+  path: /collections/{collection_id}/email-updates/me
+  operation_id: SetMyCollectionEmailUpdates
+  tags:
+  - Collections
+  summary: Turn my email updates for this collection back on, or off
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: EmailUpdateSubscriptionBody
+  response_schemas:
+  - EmailUpdateSubscriptionOut
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: collection.email-updates.me.set
+  alias_of: null
+  sdk_symbol: mammoth.api.collections.CollectionsAPI.set_my_email_updates
+  reviewed_by: primary
+- identity: POST /collections/{collection_id}/email-updates/test
+  method: POST
+  path: /collections/{collection_id}/email-updates/test
+  operation_id: TestCollectionEmailUpdate
+  tags:
+  - Collections
+  summary: Send me a test email update
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: null
+  response_schemas:
+  - EmailUpdateTestOut
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: collection.email-updates.test
+  alias_of: null
+  sdk_symbol: mammoth.api.collections.CollectionsAPI.send_test_email_update
+  reviewed_by: primary
 - identity: POST /collections/{collection_id}/files
   method: POST
   path: /collections/{collection_id}/files
@@ -981,6 +1362,49 @@ operations:
   canonical_command: dashboard.list
   alias_of: null
   sdk_symbol: mammoth.api.dashboards.DashboardsAPI.list
+  reviewed_by: primary
+- identity: GET /dashboards/email-updates
+  method: GET
+  path: /dashboards/email-updates
+  operation_id: ListWorkspaceEmailUpdates
+  tags:
+  - Dashboard
+  summary: Email updates in this workspace
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: null
+  response_schemas:
+  - EmailUpdateSummaryList
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: dashboard.email-updates.list
+  alias_of: null
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.email_updates_list
+  reviewed_by: primary
+- identity: GET /dashboards/oembed
+  method: GET
+  path: /dashboards/oembed
+  operation_id: Oembed
+  tags:
+  - Dashboard v3
+  summary: oEmbed provider — a pasted board link, as a live embed
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: null
+  response_schemas: []
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: dashboard.oembed
+  alias_of: null
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.oembed
   reviewed_by: primary
 - identity: GET /dashboards/public/gallery
   method: GET
@@ -1900,6 +2324,137 @@ operations:
   alias_of: null
   sdk_symbol: mammoth.api.dashboards.DashboardsAPI.import_workbook
   reviewed_by: primary
+- identity: GET /dashboards/v3/live-charts
+  method: GET
+  path: /dashboards/v3/live-charts
+  operation_id: ListLiveCharts
+  tags:
+  - Dashboards v3 · live charts
+  summary: The charts one chat made live
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: null
+  response_schemas:
+  - LiveChartListResponse
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: dashboard.live-chart.list
+  alias_of: null
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.live_chart_list
+  reviewed_by: primary
+- identity: POST /dashboards/v3/live-charts
+  method: POST
+  path: /dashboards/v3/live-charts
+  operation_id: CreateLiveChart
+  tags:
+  - Dashboards v3 · live charts
+  summary: Make a chat chart live
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: CreateLiveChartSpec
+  response_schemas:
+  - CreateLiveChartResponse
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: dashboard.live-chart.create
+  alias_of: null
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.live_chart_create
+  reviewed_by: primary
+- identity: GET /dashboards/v3/live-charts/{dashboard_id}
+  method: GET
+  path: /dashboards/v3/live-charts/{dashboard_id}
+  operation_id: GetLiveChart
+  tags:
+  - Dashboards v3 · live charts
+  summary: Read a live chart
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: null
+  response_schemas:
+  - LiveChartResponse
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: dashboard.live-chart.get
+  alias_of: null
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.live_chart_get
+  reviewed_by: primary
+- identity: PATCH /dashboards/v3/live-charts/{dashboard_id}
+  method: PATCH
+  path: /dashboards/v3/live-charts/{dashboard_id}
+  operation_id: ChangeAudience
+  tags:
+  - Dashboards v3 · live charts
+  summary: Change who can see a live chart
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: ChangeAudienceSpec
+  response_schemas:
+  - LiveChartResponse
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: dashboard.live-chart.audience
+  alias_of: null
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.live_chart_audience
+  reviewed_by: primary
+- identity: POST /dashboards/v3/live-charts/{dashboard_id}/placements
+  method: POST
+  path: /dashboards/v3/live-charts/{dashboard_id}/placements
+  operation_id: RecordPlacement
+  tags:
+  - Dashboards v3 · live charts
+  summary: Record a dashboard the chart was added to
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: RecordPlacementSpec
+  response_schemas: []
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: dashboard.live-chart.placement
+  alias_of: null
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.live_chart_placement
+  reviewed_by: primary
+- identity: GET /dashboards/v3/live-charts/{dashboard_id}/usage
+  method: GET
+  path: /dashboards/v3/live-charts/{dashboard_id}/usage
+  operation_id: GetUsage
+  tags:
+  - Dashboards v3 · live charts
+  summary: Where a live chart is used
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: null
+  response_schemas:
+  - LiveChartUsageResponse
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: dashboard.live-chart.usage
+  alias_of: null
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.live_chart_usage
+  reviewed_by: primary
 - identity: POST /dashboards/v3/pbix/assess
   method: POST
   path: /dashboards/v3/pbix/assess
@@ -1922,6 +2477,28 @@ operations:
   canonical_command: dashboard.assess-pbix
   alias_of: null
   sdk_symbol: mammoth.api.dashboards.DashboardsAPI.assess_pbix
+  reviewed_by: primary
+- identity: POST /dashboards/v3/render/svg
+  method: POST
+  path: /dashboards/v3/render/svg
+  operation_id: RenderFigureSvg
+  tags:
+  - Dashboard v3
+  summary: Render one figure to SVG
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: RenderFigureSvgSpec
+  response_schemas:
+  - RenderFigureSvgResponse
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: view.explore-panel.export-image
+  alias_of: null
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.render_figure_svg
   reviewed_by: primary
 - identity: GET /dashboards/v3/signatures
   method: GET
@@ -3529,6 +4106,116 @@ operations:
   canonical_command: dashboard.descriptor-data
   alias_of: null
   sdk_symbol: mammoth.api.dashboards.DashboardsAPI.descriptor_data
+  reviewed_by: primary
+- identity: GET /dashboards/{dashboard_id}/email-updates
+  method: GET
+  path: /dashboards/{dashboard_id}/email-updates
+  operation_id: GetDashboardEmailUpdates
+  tags:
+  - Dashboard
+  summary: A dashboard's email updates
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: null
+  response_schemas:
+  - EmailUpdatesOut
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: dashboard.email-updates.get
+  alias_of: null
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.email_updates_get
+  reviewed_by: primary
+- identity: PUT /dashboards/{dashboard_id}/email-updates
+  method: PUT
+  path: /dashboards/{dashboard_id}/email-updates
+  operation_id: SaveDashboardEmailUpdates
+  tags:
+  - Dashboard
+  summary: Turn a dashboard's email updates on, off, or change them
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: EmailUpdateSettingsBody
+  response_schemas:
+  - EmailUpdatesOut
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: dashboard.email-updates.set
+  alias_of: null
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.email_updates_set
+  reviewed_by: primary
+- identity: GET /dashboards/{dashboard_id}/email-updates/me
+  method: GET
+  path: /dashboards/{dashboard_id}/email-updates/me
+  operation_id: GetMyDashboardEmailUpdates
+  tags:
+  - Dashboard
+  summary: Whether I get this dashboard's email updates
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: null
+  response_schemas:
+  - EmailUpdateSubscriptionOut
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: dashboard.email-updates.me.get
+  alias_of: null
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.email_updates_me_get
+  reviewed_by: primary
+- identity: PUT /dashboards/{dashboard_id}/email-updates/me
+  method: PUT
+  path: /dashboards/{dashboard_id}/email-updates/me
+  operation_id: SetMyDashboardEmailUpdates
+  tags:
+  - Dashboard
+  summary: Turn my email updates for this dashboard back on, or off
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: EmailUpdateSubscriptionBody
+  response_schemas:
+  - EmailUpdateSubscriptionOut
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: dashboard.email-updates.me.set
+  alias_of: null
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.email_updates_me_set
+  reviewed_by: primary
+- identity: POST /dashboards/{dashboard_id}/email-updates/test
+  method: POST
+  path: /dashboards/{dashboard_id}/email-updates/test
+  operation_id: TestDashboardEmailUpdate
+  tags:
+  - Dashboard
+  summary: Send me a test email update
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: null
+  response_schemas:
+  - EmailUpdateTestOut
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: dashboard.email-updates.test
+  alias_of: null
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.email_updates_test
   reviewed_by: primary
 - identity: GET /dashboards/{dashboard_id}/embed/config
   method: GET
@@ -6044,6 +6731,50 @@ operations:
   alias_of: null
   sdk_symbol: null
   reviewed_by: primary
+- identity: GET /support/project-moves/{move_id}
+  method: GET
+  path: /support/project-moves/{move_id}
+  operation_id: GetProjectMove
+  tags:
+  - Workspaces Support
+  summary: Get a project move
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: null
+  response_schemas:
+  - MoveResponse
+  deprecated: false
+  disposition: unmapped
+  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  canonical_command: null
+  alias_of: null
+  sdk_symbol: null
+  reviewed_by: primary
+- identity: POST /support/project-moves/{move_id}/purge
+  method: POST
+  path: /support/project-moves/{move_id}/purge
+  operation_id: PurgeProjectMove
+  tags:
+  - Workspaces Support
+  summary: Purge the source copies of a finished project move
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: null
+  response_schemas:
+  - MoveResponse
+  deprecated: false
+  disposition: unmapped
+  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  canonical_command: null
+  alias_of: null
+  sdk_symbol: null
+  reviewed_by: primary
 - identity: GET /support/sms
   method: GET
   path: /support/sms
@@ -6222,6 +6953,72 @@ operations:
   canonical_command: support.workspace.update
   alias_of: null
   sdk_symbol: mammoth.api.support.SupportAPI.workspace_update
+  reviewed_by: primary
+- identity: GET /support/workspaces/{workspace_id}/projects
+  method: GET
+  path: /support/workspaces/{workspace_id}/projects
+  operation_id: ListProjects
+  tags:
+  - Workspaces Support
+  summary: List the projects of a workspace
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: null
+  response_schemas:
+  - WorkspaceProjectsResponse
+  deprecated: false
+  disposition: unmapped
+  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  canonical_command: null
+  alias_of: null
+  sdk_symbol: null
+  reviewed_by: primary
+- identity: GET /support/workspaces/{workspace_id}/projects/{project_id}/move
+  method: GET
+  path: /support/workspaces/{workspace_id}/projects/{project_id}/move
+  operation_id: CheckProjectMove
+  tags:
+  - Workspaces Support
+  summary: Check a project move
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: null
+  response_schemas:
+  - MoveCheckResponse
+  deprecated: false
+  disposition: unmapped
+  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  canonical_command: null
+  alias_of: null
+  sdk_symbol: null
+  reviewed_by: primary
+- identity: POST /support/workspaces/{workspace_id}/projects/{project_id}/move
+  method: POST
+  path: /support/workspaces/{workspace_id}/projects/{project_id}/move
+  operation_id: StartProjectMove
+  tags:
+  - Workspaces Support
+  summary: Start or resume a project move
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: StartMoveRequest
+  response_schemas:
+  - MoveResponse
+  deprecated: false
+  disposition: unmapped
+  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  canonical_command: null
+  alias_of: null
+  sdk_symbol: null
   reviewed_by: primary
 - identity: POST /support/workspaces/{workspace_id}/restore-access
   method: POST
@@ -7154,6 +7951,50 @@ operations:
   canonical_command: dashboard.embed.secret.rotate
   alias_of: null
   sdk_symbol: mammoth.api.dashboards.DashboardsAPI.embed_secret_rotate
+  reviewed_by: primary
+- identity: GET /workspaces/{workspace_id}/export-hosts
+  method: GET
+  path: /workspaces/{workspace_id}/export-hosts
+  operation_id: Read
+  tags:
+  - Exports
+  summary: Hosts custom destinations may send to
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: null
+  response_schemas:
+  - ExportHostPolicyRead
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: workspace.export-hosts.get
+  alias_of: null
+  sdk_symbol: mammoth.api.exports.ExportsAPI.export_hosts
+  reviewed_by: primary
+- identity: PUT /workspaces/{workspace_id}/export-hosts
+  method: PUT
+  path: /workspaces/{workspace_id}/export-hosts
+  operation_id: Update
+  tags:
+  - Exports
+  summary: Set the hosts custom destinations may send to
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: ExportHostPolicy
+  response_schemas:
+  - ExportHostPolicy
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: workspace.export-hosts.set
+  alias_of: null
+  sdk_symbol: mammoth.api.exports.ExportsAPI.set_export_hosts
   reviewed_by: primary
 - identity: GET /workspaces/{workspace_id}/external_keys
   method: GET
@@ -8788,6 +9629,28 @@ operations:
   alias_of: null
   sdk_symbol: mammoth.api.datasets.DatasetsAPI.create_from_pdf
   reviewed_by: primary
+- identity: GET /workspaces/{workspace_id}/projects/{project_id}/datasets/column-stats
+  method: GET
+  path: /workspaces/{workspace_id}/projects/{project_id}/datasets/column-stats
+  operation_id: GetProjectColumnStats
+  tags:
+  - Datasets
+  summary: Blanks, type and distinct count of every column, per dataset
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: null
+  response_schemas:
+  - ProjectColumnStats
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: dataset.column-stats
+  alias_of: null
+  sdk_symbol: mammoth.api.datasets.DatasetsAPI.column_stats
+  reviewed_by: primary
 - identity: GET /workspaces/{workspace_id}/projects/{project_id}/datasets/search
   method: GET
   path: /workspaces/{workspace_id}/projects/{project_id}/datasets/search
@@ -9990,6 +10853,29 @@ operations:
   alias_of: null
   sdk_symbol: mammoth.api.exports.ExportsAPI.create
   reviewed_by: primary
+- identity: POST /workspaces/{workspace_id}/projects/{project_id}/datasets/{dataset_id}/dataviews/{dataview_id}/pipeline/exports/rest-fill
+  method: POST
+  path: /workspaces/{workspace_id}/projects/{project_id}/datasets/{dataset_id}/dataviews/{dataview_id}/pipeline/exports/rest-fill
+  operation_id: Suggest
+  tags:
+  - Dataviews
+  - Exports
+  summary: Propose REST API export settings from API docs
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: RestFillRequest
+  response_schemas:
+  - ResponseJobSchema
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: view.export.rest-fill
+  alias_of: null
+  sdk_symbol: mammoth.api.exports.ExportsAPI.rest_fill
+  reviewed_by: primary
 - identity: DELETE /workspaces/{workspace_id}/projects/{project_id}/datasets/{dataset_id}/dataviews/{dataview_id}/pipeline/exports/{export_id}
   method: DELETE
   path: /workspaces/{workspace_id}/projects/{project_id}/datasets/{dataset_id}/dataviews/{dataview_id}/pipeline/exports/{export_id}
@@ -10057,6 +10943,28 @@ operations:
   canonical_command: view.export.update
   alias_of: null
   sdk_symbol: mammoth.api.exports.ExportsAPI.update
+  reviewed_by: primary
+- identity: GET /workspaces/{workspace_id}/projects/{project_id}/datasets/{dataset_id}/dataviews/{dataview_id}/pipeline/exports/{export_id}/runs
+  method: GET
+  path: /workspaces/{workspace_id}/projects/{project_id}/datasets/{dataset_id}/dataviews/{dataview_id}/pipeline/exports/{export_id}/runs
+  operation_id: ListExportRuns
+  tags:
+  - Dataview pipeline Export
+  summary: Get the run history of a dataview pipeline export
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: null
+  response_schemas:
+  - ExportRuns
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: view.export.runs
+  alias_of: null
+  sdk_symbol: mammoth.api.exports.ExportsAPI.runs
   reviewed_by: primary
 - identity: GET /workspaces/{workspace_id}/projects/{project_id}/datasets/{dataset_id}/dataviews/{dataview_id}/pipeline/items
   method: GET
@@ -10459,6 +11367,28 @@ operations:
   alias_of: null
   sdk_symbol: mammoth.api.dataviews.DataviewsAPI.restore
   reviewed_by: primary
+- identity: GET /workspaces/{workspace_id}/projects/{project_id}/datasets/{dataset_id}/dataviews/{dataview_id}/summary
+  method: GET
+  path: /workspaces/{workspace_id}/projects/{project_id}/datasets/{dataset_id}/dataviews/{dataview_id}/summary
+  operation_id: GetPanelSummary
+  tags:
+  - Dataviews
+  summary: What the view has had done to it, and where it goes
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: null
+  response_schemas:
+  - DataviewPanelSummary
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: view.summary
+  alias_of: null
+  sdk_symbol: mammoth.api.dataviews.DataviewsAPI.summary
+  reviewed_by: primary
 - identity: POST /workspaces/{workspace_id}/projects/{project_id}/datasets/{dataset_id}/dataviews/{dataview_id}/trash
   method: POST
   path: /workspaces/{workspace_id}/projects/{project_id}/datasets/{dataset_id}/dataviews/{dataview_id}/trash
@@ -10480,6 +11410,72 @@ operations:
   canonical_command: view.trash
   alias_of: null
   sdk_symbol: mammoth.api.dataviews.DataviewsAPI.trash
+  reviewed_by: primary
+- identity: GET /workspaces/{workspace_id}/projects/{project_id}/datasets/{dataset_id}/definitions
+  method: GET
+  path: /workspaces/{workspace_id}/projects/{project_id}/datasets/{dataset_id}/definitions
+  operation_id: GetDatasetDefinitions
+  tags:
+  - Datasets
+  summary: What terms mean for this dataset
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: null
+  response_schemas:
+  - DatasetDefinitions
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: dataset.definition.list
+  alias_of: null
+  sdk_symbol: mammoth.api.datasets.DatasetsAPI.definition_list
+  reviewed_by: primary
+- identity: POST /workspaces/{workspace_id}/projects/{project_id}/datasets/{dataset_id}/definitions
+  method: POST
+  path: /workspaces/{workspace_id}/projects/{project_id}/datasets/{dataset_id}/definitions
+  operation_id: AddDatasetDefinition
+  tags:
+  - Datasets
+  summary: Save what a term means for this dataset
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: DefinitionSpec
+  response_schemas:
+  - DatasetDefinitions
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: dataset.definition.add
+  alias_of: null
+  sdk_symbol: mammoth.api.datasets.DatasetsAPI.definition_add
+  reviewed_by: primary
+- identity: DELETE /workspaces/{workspace_id}/projects/{project_id}/datasets/{dataset_id}/definitions/{definition_id}
+  method: DELETE
+  path: /workspaces/{workspace_id}/projects/{project_id}/datasets/{dataset_id}/definitions/{definition_id}
+  operation_id: RemoveDatasetDefinition
+  tags:
+  - Datasets
+  summary: Remove a definition from this dataset
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: null
+  response_schemas:
+  - DatasetDefinitions
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: dataset.definition.remove
+  alias_of: null
+  sdk_symbol: mammoth.api.datasets.DatasetsAPI.definition_remove
   reviewed_by: primary
 - identity: DELETE /workspaces/{workspace_id}/projects/{project_id}/datasets/{dataset_id}/file_settings
   method: DELETE
@@ -11798,6 +12794,28 @@ operations:
   alias_of: null
   sdk_symbol: mammoth.api.workflows.WorkflowsAPI.cleanup
   reviewed_by: primary
+- identity: POST /workspaces/{workspace_id}/projects/{project_id}/workflows/duplicate
+  method: POST
+  path: /workspaces/{workspace_id}/projects/{project_id}/workflows/duplicate
+  operation_id: DuplicateWorkflow
+  tags:
+  - Workflows
+  summary: Duplicate a workflow
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: DuplicateWorkflowRequest
+  response_schemas:
+  - ObjectJobSchema
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: workflow.duplicate
+  alias_of: null
+  sdk_symbol: mammoth.api.workflows.WorkflowsAPI.duplicate
+  reviewed_by: primary
 - identity: POST /workspaces/{workspace_id}/projects/{project_id}/workflows/from-template
   method: POST
   path: /workspaces/{workspace_id}/projects/{project_id}/workflows/from-template
@@ -12167,6 +13185,50 @@ operations:
   canonical_command: workflow.save
   alias_of: null
   sdk_symbol: mammoth.api.workflows.WorkflowsAPI.save
+  reviewed_by: primary
+- identity: POST /workspaces/{workspace_id}/projects/{project_id}/workflows/{workflow_id}/save/{run_id}/steps/{step}/cancel
+  method: POST
+  path: /workspaces/{workspace_id}/projects/{project_id}/workflows/{workflow_id}/save/{run_id}/steps/{step}/cancel
+  operation_id: CancelWorkflowSaveStep
+  tags:
+  - Workflows
+  summary: Cancel a step of a running Save
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: null
+  response_schemas:
+  - WorkflowResponse
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: workflow.save-cancel-step
+  alias_of: null
+  sdk_symbol: mammoth.api.workflows.WorkflowsAPI.cancel_save_step
+  reviewed_by: primary
+- identity: POST /workspaces/{workspace_id}/projects/{project_id}/workflows/{workflow_id}/save/{run_id}/undo
+  method: POST
+  path: /workspaces/{workspace_id}/projects/{project_id}/workflows/{workflow_id}/save/{run_id}/undo
+  operation_id: UndoWorkflowSave
+  tags:
+  - Workflows
+  summary: Undo a Save
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: null
+  response_schemas:
+  - WorkflowResponse
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: workflow.save-undo
+  alias_of: null
+  sdk_symbol: mammoth.api.workflows.WorkflowsAPI.undo_save
   reviewed_by: primary
 - identity: POST /workspaces/{workspace_id}/reactivate
   method: POST
