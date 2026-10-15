@@ -6,6 +6,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed (mammoth-io 0.8.43)
+
+- `mammoth.__version__` matches the published version again: mammoth-io 0.8.40 to 0.8.42 reported `0.8.39`.
+
 ### Fixed (mammoth-cli 2.2.83)
 
 - `dataset delete` no longer reports `api_error` (exit 1) after a delete that worked: the dataset get route answers `400 4DSET001` for a deleted dataset, and the post-delete check now reads that as gone.
