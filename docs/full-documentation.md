@@ -10469,7 +10469,9 @@ Returns:
     token was issued for: the URI of the one server the user let it
     reach. ``resource`` is None for a token made by hand, and for a
     token issued for no server. ``read_only`` is True when the user
-    granted the connection read-only access.
+    granted the connection read-only access. ``projects`` lists the
+    projects a sign-in is limited to and ``project`` is the lowest of
+    them; both are None when it is not limited.
 
 #### `delete(self, workspace_id: 'int | None' = None) -> 'dict[str, Any]'`
 

@@ -6,7 +6,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-### Added (mammoth-io, new backend endpoints; CLI commands for each)
+### Added (mammoth-io 0.8.44, mammoth-cli 2.2.86: new backend endpoints; CLI commands for each)
 
 - Exports: `ExportsAPI.runs(dataview_id, export_id)` lists an export's runs (`ExportRuns`, `ExportRun`); `ExportsAPI.rest_fill(dataview_id, docs_url)` asks the server to propose REST export settings from an API docs page and waits for the job; `ExportsAPI.export_hosts()` and `set_export_hosts(restricted, hosts)` read and replace the workspace's allowed export hosts (`ExportHostPolicy`, `ExportHostPolicyRead`). CLI: `view export runs`, `view export rest-fill`, `workspace export-hosts get/set`.
 - `DataviewsAPI.summary(dataset_id, dataview_id)`: what a view has had done to it and where it goes. CLI: `view summary`.
@@ -16,7 +16,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - CLI: `dataset column-stats` and `dataset definition list/add/remove` are mapped to their backend operations in the manifests.
 - The pinned OpenAPI spec is the live prod spec (651 operations); the release capability matrix keeps `master-20261002` as its baseline and lists the new routes as pending server release.
 
-### Added (mammoth-cli, command and capability discovery)
+### Added (mammoth-cli 2.2.86, command and capability discovery)
 
 - Did you mean: an unknown command names the nearest commands, including a nested group (`mammoth pipeline` -> `mammoth view pipeline`), and points to `mammoth how` / `mammoth schema find` instead of `schema get`; `details.did_you_mean` lists them and `recovery_commands` are ready to run. An unknown option names the nearest valid one (`--profle` -> `--profile`), and an option passed with its value as one argument (`"--project 3633"`, `--project3633`) says to pass the value separately. An unknown or wrong-case column (`Day` for `day`) names the closest column in the message, hint and `details.did_you_mean`.
 - Allowed values in `--help` and in the error hint: an enum input field lists every value (it was cut at six, so `extract-date`'s `component` and `window`'s `function` hid most of theirs), and a fixed list inside a field gets an "Allowed values" line: `view transform batch` names its `steps[].op` list, and `dataset create` its `query_properties.data_pull_file` values. A refused batch op lists the allowed ops in `hint` (it was null) with `details.allowed` and `details.did_you_mean`. The help line, the hint and the check read the same tuple, so they cannot drift.
@@ -26,14 +26,14 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `meta.next_commands`: after a main-flow command succeeds, one to three ready-to-run commands filled in with the result's ids: `file upload` -> `view data get VIEW_ID DATASET_ID` (or the dataset's own recovery command when it needs input), `view create` and every `view transform` -> `view data get`, `dataset file-settings update` -> `job wait`, `dashboard v3 generate` -> `dashboard get` and `dashboard figure add`, `dashboard figure add` / `figure-intent` / `chat edit` -> `dashboard get`, `automation create` -> `automation get`. Human output prints them as one `Next:` line on stderr. A write whose `verify` failed or is partial gets none. The map is `mammoth_cli/discovery/next_commands.json`. Each suggestion carries the `--project` and the explicit `--profile` the run was given, so running it as it is reaches the same project and workspace.
 - `dashboard figure add` accepts `{"intent": "..."}` (optional `kind`), as the bundled skill says: it goes through the figure-intent route, where the server picks and draws the chart, and the result carries `route: "figure-intent"`. An exact `figure` with `dataview_id` works as before. Passing both, or neither, is a usage error whose hint shows both shapes and names `dashboard figure-intent`.
 
-### Changed (mammoth-cli, command and capability discovery: behaviour changes)
+### Changed (mammoth-cli 2.2.86, command and capability discovery: behaviour changes)
 
 - Lean success payloads. These commands now return a compact result by default: `dashboard figure add`, `dashboard figure-intent`, `dashboard v3 generate`, `dashboard chat edit`, `dashboard filter add`, `dashboard canvas save`, `dashboard canvas restore`. Each `canvas` becomes `canvas_summary` (`pages`, and each figure's `id`, `kind`, `title`, `page`); `plan` and `specs` are left out; null-only fields are dropped. Ids, checks (`figure_check`, `deliverable_check`, ...), `values`, `warnings` and `verify` stay, and `verify` is never trimmed. `compact.omitted` names what was left out and `compact.read_with` is the read that returns it. `--full` returns the old payload. (Not measured live: in the unit test a 12-figure canvas of about 15 KB, mostly nulls, comes back under 2 KB.)
 - Envelope `meta` has a new optional field, `next_commands`, after a main-flow command succeeds; human output prints it as one `Next:` line on stderr.
 - `--help` lists every value of an enum input field, joined with " | " (it was "a|b" and cut at six values).
 - The unknown-command message now names the nearest commands ("Did you mean: ...?") and its recovery commands point to `mammoth how` and `mammoth schema find`, not `schema get`. The `unknown_option` and unknown-column hints changed to name the nearest option or column; `details.did_you_mean` is new.
 
-### Changed (mammoth-cli, performance pass 2026-10-15)
+### Changed (mammoth-cli 2.2.86, speed)
 
 - One service per command run: the handler, its verify step and its `state` read-back share one client and connection (each new client cost a new TLS handshake and token lookup, about 0.5 s). Job and pipeline waits are rebound per opener.
 - Reads before a write are made together and once: the view record and the exports listing are fetched in one round trip and handed to the impact check, row count and type check, which each fetched the view again. The row count and the pipeline state after the write are read together.
@@ -43,7 +43,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `dashboard v3 generate` / `chat edit` read the canvas once for the check and the board's numbers.
 - Startup: the `mammoth` entry point turns off pydantic's plugin discovery (`PYDANTIC_DISABLE_PLUGINS=__all__`, unless already set). pydantic looked up every installed plugin the first time it built a model and imported each one; with logfire installed beside the CLI that was about 0.4 s on every command that loads the SDK (`auth status` 0.87 s -> 0.44 s, `view transform filter --help` 1.01 s -> 0.62 s).
 
-### Changed (mammoth-io, speed)
+### Changed (mammoth-io 0.8.44, speed)
 
 - `jobs.wait_for_job` / `wait_for_jobs` keep polling at `poll_interval` (2 s by default) for the first 60 seconds of a wait, not 10, before the gap rises to 5 s. A typical upload or transform job finishes in 15-30 s, and the 5 s gap added up to about 3 s to each one (an upload of 30 rows went from 25.0 s to 21.8 s in the CLI's measurement).
 
