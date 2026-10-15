@@ -158,6 +158,10 @@ def _mark_pending(result: dict[str, Any], verify: dict[str, Any], invocation: An
     if not (isinstance(status, str) and status.lower() in _PENDING_STATUS_WORDS):
         verify["reported_status"] = status
         result["status"] = OUTCOME_PENDING
+    pipeline_error = result.get("pipeline_error")
+    if isinstance(pipeline_error, dict) and "next_command" not in verify:
+        if pipeline_error.get("job_id") is not None:
+            verify["next_command"] = f"mammoth job wait {pipeline_error['job_id']}"
     if "next_command" not in verify and invocation is not None:
         view_id = _pipeline_view_id(invocation)
         if view_id is not None:
