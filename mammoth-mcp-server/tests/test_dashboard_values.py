@@ -13,6 +13,8 @@ BOARD_PATH = f"/dashboards/{BOARD}"
 DESCRIPTOR_DATA = f"{BOARD_PATH}/data"
 JOB = 31
 CURRENT_BOARD = {"id": BOARD, "title": "Q1 2026 Sales Revenue", "engine": "v3", "url": "abc123"}
+PUBLISHED_BOARD = {**CURRENT_BOARD, "was_published": True}
+PUBLISHED_PATH = "/dashboards/url/abc123"
 PERIOD = {"origin": "period", "label": "Q1 2026"}
 CANVAS = {
     "canvas": {
@@ -62,8 +64,8 @@ def a_board_that_evaluates(api: FakeApi, results: dict[str, Any] = RESULTS) -> N
     )
 
 
-def get_dashboard() -> dict[str, Any]:
-    return dict(call_tool("get_dashboard", workspace_id=WORKSPACE, dashboard_id=BOARD))
+def get_dashboard(**arguments: Any) -> dict[str, Any]:
+    return dict(call_tool("get_dashboard", workspace_id=WORKSPACE, dashboard_id=BOARD, **arguments))
 
 
 class TestTheNumbersOnABoard:
@@ -106,6 +108,47 @@ class TestTheNumbersOnABoard:
 
         assert values[0]["error"] == "column Revenue is gone"
         assert values[1]["series"]["main"]["row_count"] == 12
+
+    def test_an_unpublished_board_reports_its_draft_and_says_so(self) -> None:
+        with a_fake_api() as api, as_caller():
+            a_board_that_evaluates(api)
+            board = get_dashboard()
+
+        assert board["values_from"] == "draft"
+
+
+class TestAPublishedBoard:
+    """Its share link opens the published version, so the numbers are that version's."""
+
+    def test_the_numbers_are_the_published_versions_not_the_drafts(self) -> None:
+        with a_fake_api() as api, as_caller():
+            api.answer("GET", BOARD_PATH, PUBLISHED_BOARD)
+            api.answer("GET", PUBLISHED_PATH + "/canvas", CANVAS)
+            api.answer("POST", PUBLISHED_PATH + "/data", {"job_id": JOB})
+            api.answer(
+                "GET",
+                f"/jobs/{JOB}",
+                {"job": {"id": JOB, "status": "success", "response": {"results": RESULTS}}},
+            )
+            board = get_dashboard()
+
+        assert board["values_from"] == "published"
+        assert board["values"][0]["value"] == 10998.05
+        assert not api.sent("GET", f"{BOARD_PATH}/canvas")
+        assert not api.sent("POST", DESCRIPTOR_DATA)
+
+
+class TestReadingWithoutTheNumbers:
+    def test_a_read_that_does_not_want_them_starts_no_job(self) -> None:
+        with a_fake_api() as api, as_caller():
+            api.answer("GET", BOARD_PATH, CURRENT_BOARD)
+            board = get_dashboard(include_values=False)
+
+        assert board["title"] == "Q1 2026 Sales Revenue"
+        assert "values" not in board
+        assert "values_unavailable" not in board
+        assert not api.sent("GET", f"{BOARD_PATH}/canvas")
+        assert not api.sent("POST", DESCRIPTOR_DATA)
 
 
 class TestABoardWithoutNumbers:

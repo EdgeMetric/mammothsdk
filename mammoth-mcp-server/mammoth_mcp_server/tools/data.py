@@ -7,6 +7,8 @@ from one call and never has to poll for itself.
 
 import asyncio
 
+from mcp.server.mcpserver.exceptions import ToolError
+
 from ..aggregate import Aggregation, DateGroup, build_query
 from ..consts import (
     DATA_LIMIT_DEFAULT,
@@ -19,6 +21,8 @@ from ..sdk import JsonValue, build_client, read_sdk_errors
 from ..server import mcp_server
 from ..shape import not_found_message, read_rows
 from ..tool_kinds import READS
+
+LIMIT_TOO_LOW = "`limit` must be at least 1."
 
 
 @mcp_server.tool(title="Read rows", annotations=READS)
@@ -132,8 +136,10 @@ async def aggregate_data(
         order_by: Rank the groups by this result's name, before `limit` cuts
             them. Without it, which groups come back is not defined.
         ascending: Rank from lowest to highest. Default: highest first.
-        limit: How many groups to return. At most 1000.
+        limit: How many groups to return. At least 1, at most 1000.
     """
+    if limit < 1:
+        raise ToolError(LIMIT_TOO_LOW)
     missing = not_found_message(workspace_id, project_id, dataset_id, view_id)
     page_size = min(limit, GROUPS_LIMIT_MAX)
     async with build_client(workspace_id) as client:
