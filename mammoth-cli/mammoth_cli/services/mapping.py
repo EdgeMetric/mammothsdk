@@ -39,6 +39,7 @@ from mammoth_cli.errors.envelope import (
     EXIT_NOT_FOUND,
     EXIT_RETRYABLE,
     EXIT_USAGE,
+    REFRESH_FILE_DATASET_HINT,
     CliError,
     interrupted_error,
 )
@@ -677,9 +678,23 @@ def map_sdk_exception(
                 request_id=request_id,
                 retryable=True,
             )
+        message = _backend_message(exc.response_body, status)
+        if message and "4AUTO006" in message:
+            return CliError(
+                code="dataset_not_refreshable",
+                message=message,
+                exit_status=EXIT_USAGE,
+                hint=REFRESH_FILE_DATASET_HINT,
+                details=details,
+                request_id=request_id,
+                recovery_commands=[
+                    "mammoth file upload FILE --input " "'{\"append_to_ds_id\": DATASET_ID}'",
+                    "mammoth connector connection list",
+                ],
+            )
         return CliError(
             code=CODE_API_ERROR,
-            message=_backend_message(exc.response_body, status) or "Mammoth returned an API error.",
+            message=message or "Mammoth returned an API error.",
             exit_status=EXIT_API,
             hint="Inspect the structured details and correct the request.",
             details=details,

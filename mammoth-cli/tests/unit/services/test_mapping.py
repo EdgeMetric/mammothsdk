@@ -599,3 +599,25 @@ def test_a_rejected_credential_names_the_failing_non_default_profile_in_recovery
     assert "mammoth auth login --profile work" in (mapped.hint or "")
     default = map_sdk_exception(error, workspace_id=4, profile="default")
     assert default.recovery_commands == ["mammoth auth login"]
+
+
+def test_a_file_dataset_in_a_retrieval_automation_gets_its_own_code_and_a_way_forward() -> None:
+    """Bug bash 2026-10-15: 4AUTO006 was a generic api_error with no recovery."""
+    error = MammothAPIError(
+        "bad request",
+        status_code=400,
+        method="POST",
+        operation_state="failed",
+        response_body={
+            "message": (
+                "Invalid datasets for data retrieval, dataset ids should be a list of "
+                "cloud datasets under the given project [4AUTO006]"
+            )
+        },
+    )
+    mapped = map_sdk_exception(error)
+    assert mapped.code == "dataset_not_refreshable"
+    assert mapped.exit_status == EXIT_USAGE
+    assert "append_to_ds_id" in (mapped.hint or "")
+    assert "cloud" in (mapped.hint or "")
+    assert any("file upload" in c and "append_to_ds_id" in c for c in mapped.recovery_commands)

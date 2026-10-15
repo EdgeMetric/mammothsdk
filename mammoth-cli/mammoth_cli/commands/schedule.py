@@ -180,6 +180,10 @@ def schedule_get(invocation: Invocation) -> HandlerResult:
 def schedule_create(invocation: Invocation) -> HandlerResult:
     """Create a schedule. The required ``spec`` field comes from ``--input``.
 
+    Not available: the backend does not implement it (5GENR011). Refresh a file dataset
+    with ``file upload --input '{"append_to_ds_id": ID}'`` on your own scheduler, or
+    automate a cloud dataset with ``automation create``.
+
     Always requires ``--yes``.
     """
     project_id = require_project(invocation)
