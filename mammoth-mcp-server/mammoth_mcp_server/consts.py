@@ -607,5 +607,6 @@ class ViewShape:
     METADATA = "metadata"
     COLUMN_KEPT = ("display_name", "internal_name", "type", "format", "min", "max")
     NUMERIC = "NUMERIC"
+    DATE = "DATE"
     # The row identity Mammoth adds to every data page; the web app never shows it.
     SYSTEM_COLUMNS = frozenset({"hash"})

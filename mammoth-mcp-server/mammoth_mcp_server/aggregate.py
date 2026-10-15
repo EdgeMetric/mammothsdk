@@ -62,15 +62,18 @@ class Query:
         known = ", ".join(name for name, _ in self.names.values())
         raise ToolError(f"There is no result called {order_by!r} to rank by. Results: {known}.")
 
-    def read(self, answer: dict[str, JsonValue], limit: int) -> dict[str, JsonValue]:
+    def read(
+        self, answer: dict[str, JsonValue], limit: int, ranked_by: str | None
+    ) -> dict[str, JsonValue]:
         """The answer's rows under the names asked for, and a note when more groups may follow."""
         rows = answer.get(AggregateFields.DATA)
         named: list[JsonValue] = [
             {
-                self.names.get(key, (key, None))[0]: typed(
+                self.names.get(key, (key, None))[0]: _value(
                     value, self.names.get(key, (key, None))[1]
                 )
                 for key, value in row.items()
+                if key not in ViewShape.SYSTEM_COLUMNS
             }
             for row in (rows if isinstance(rows, list) else [])
             if isinstance(row, dict)
@@ -78,10 +81,19 @@ class Query:
         read: dict[str, JsonValue] = {AggregateFields.DATA: named}
         if self.group_by and len(named) >= limit:
             read[AggregateFields.NOTE] = (
-                f"Only the first {limit} groups came back, and there may be more groups."
+                f"These are the top {limit} groups by {ranked_by}. There may be more."
+                if ranked_by
+                else f"Only the first {limit} groups came back, and there may be more groups."
                 " Rank them with order_by, or narrow them with a condition."
             )
         return read
+
+
+def _value(value: JsonValue, value_type: str | None) -> JsonValue:
+    """A value as its type reads it. Mammoth ends a date with both an offset and a `Z`."""
+    if value_type == ViewShape.DATE and isinstance(value, str) and "+" in value:
+        return value.removesuffix("Z")
+    return typed(value, value_type)
 
 
 def build_query(
@@ -134,7 +146,7 @@ def _group(
         AggregateFields.COLUMN: internal,
         AggregateFields.TRUNCATE: group.truncate.upper(),
     }
-    return sent, group.column, None
+    return sent, group.column, ViewShape.DATE
 
 
 def _columns(view: dict[str, JsonValue]) -> dict[str, tuple[str, str | None]]:

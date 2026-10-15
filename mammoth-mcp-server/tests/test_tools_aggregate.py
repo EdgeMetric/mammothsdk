@@ -91,6 +91,35 @@ class TestWhatComesBack:
 
         assert "more groups" in answer["note"]
 
+    def test_a_ranked_full_page_says_these_are_the_top_groups(self) -> None:
+        with a_fake_api() as api, as_caller():
+            answers(api, [{"group_0": "Cardiff", "agg_0": 2}, {"group_0": "Bath", "agg_0": 1}])
+            answer = aggregate(
+                aggregations=REVENUE_BY_SITE, group_by=["Site"], order_by="Revenue", limit=2
+            )
+
+        assert "top 2" in answer["note"]
+        assert "order_by" not in answer["note"]
+
+    def test_the_row_identity_mammoth_adds_is_left_out(self) -> None:
+        # The query route adds `hash` to every row, as the data route does.
+        with a_fake_api() as api, as_caller():
+            answers(api, [{"group_0": "Cardiff", "agg_0": "2327.75", "hash": "991279133"}])
+            answer = aggregate(aggregations=REVENUE_BY_SITE, group_by=["Site"])
+
+        assert answer["data"] == [{"Site": "Cardiff", "Revenue": 2327.75}]
+
+    def test_a_date_group_comes_back_as_a_valid_iso_time(self) -> None:
+        # Mammoth writes the offset and then a `Z` as well, which no ISO reader takes.
+        with a_fake_api() as api, as_caller():
+            answers(api, [{"group_0": "2026-11-01T00:00:00+00:00Z", "agg_0": 1}])
+            answer = aggregate(
+                aggregations=REVENUE_BY_SITE,
+                group_by=[{"column": "Order Date", "truncate": "MONTH"}],
+            )
+
+        assert answer["data"][0]["Order Date"] == "2026-11-01T00:00:00+00:00"
+
 
 class TestWhatIsRefused:
     def test_a_column_the_view_does_not_have_is_named_with_the_ones_it_has(self) -> None:
