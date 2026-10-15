@@ -566,7 +566,7 @@ dev = [
 requires-dist = [
     { name = "jsonschema", specifier = ">=4.20" },
     { name = "keyring", specifier = ">=25.7,<26" },
-    { name = "mammoth-io", specifier = ">=0.8.43,<0.9" },
+    { name = "mammoth-io", specifier = ">=0.8.44,<0.9" },
     { name = "platformdirs", specifier = ">=4.10,<5" },
     { name = "pydantic", specifier = ">=2.12.5,<3" },
     { name = "pyyaml", specifier = ">=6,<7" },
@@ -588,15 +588,15 @@ dev = [
 
 [[package]]
 name = "mammoth-io"
-version = "0.8.43"
+version = "0.8.44"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "httpx" },
     { name = "pydantic" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/dd/d3/49b151f97583079ff5675f573a673bd89dbf47d1d3f5e258eff6c121cf9c/mammoth_io-0.8.43.tar.gz", hash = "sha256:e40ed998b1f0f5f693da331f70b3f98ff9928e5d86d0f0ab0568068d5975cfa5", size = 614776, upload-time = "2026-10-15T07:53:35.945Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/33/50/97fff2488ab5be94bca92dd3f0361446d289467838ccffa36e923508c4b0/mammoth_io-0.8.44.tar.gz", hash = "sha256:3094b262677733c28545097cb25ae2839f9e06f887d02e29a9cc84ef0c24c78c", size = 683863, upload-time = "2026-10-15T17:55:18.105Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/d2/fe/270c8675b10eb1bdd3114d134dc2c50c7bacca3dd8e4a7b0fa3f3ab9568d/mammoth_io-0.8.43-py3-none-any.whl", hash = "sha256:e7f7be8f08029362fe28ed78c4fb49fa97dfe3f5c9f98ae4b395dbb849280a43", size = 328652, upload-time = "2026-10-15T07:53:33.644Z" },
+    { url = "https://files.pythonhosted.org/packages/0a/6f/f6463fab5cb1b6c58af5fde8d01a78889cff1bf0b9f879fc60bcf401a455/mammoth_io-0.8.44-py3-none-any.whl", hash = "sha256:100a512a0440aa6899e4a6f2f224dfb104bf69d1c015471082663ac885c006ed", size = 335895, upload-time = "2026-10-15T17:55:15.641Z" },
 ]
 
 [[package]]

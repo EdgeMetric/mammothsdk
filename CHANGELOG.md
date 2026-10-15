@@ -45,6 +45,8 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `view list` without a dataset id reads the views of 5 datasets at a time instead of one after another (folded in from #177). The result, its order, `datasets_visited` and `next_dataset_offset` are unchanged; a walk that stops early still never reads the waves after it.
 - The keyring backend cache loads `importlib.metadata` only when it reads or writes its record, not at import (folded in from #177).
 
+- Requires mammoth-io 0.8.44 (the new endpoints' SDK methods and the 60 s fast job poll).
+
 ### Changed (mammoth-io 0.8.44, speed)
 
 - `jobs.wait_for_job` / `wait_for_jobs` keep polling at `poll_interval` (2 s by default) for the first 60 seconds of a wait, not 10, before the gap rises to 5 s. A typical upload or transform job finishes in 15-30 s, and the 5 s gap added up to about 3 s to each one (an upload of 30 rows went from 25.0 s to 21.8 s in the CLI's measurement).
