@@ -46,6 +46,7 @@ CODE_PROFILE_NOT_FOUND = "profile_not_found"
 CODE_NO_SAVED_PROJECT = "no_saved_project"
 CODE_NOT_AVAILABLE_EMBEDDED = "not_available_embedded"
 CODE_NOT_AVAILABLE = "not_available"
+CODE_FEATURE_UNAVAILABLE = "feature_unavailable"
 CODE_USER_CONTROL = "user_control"
 CODE_CONFIRMATION_REQUIRED = "confirmation_required"
 CODE_CONFIRMATION_DECLINED = "confirmation_declined"
@@ -100,6 +101,7 @@ ERROR_SUMMARIES: dict[str, str] = {
     "confirmation_target_mismatch": (
         "The confirmation was for a different item, so nothing was changed."
     ),
+    "feature_unavailable": "Mammoth no longer offers this feature.",
     "export_failed": "The export ran but ended in an error.",
     "export_not_found": "No export run was found for that request.",
     "pin_not_recorded": "The version pin could not be saved, so nothing was changed.",
@@ -320,6 +322,52 @@ def not_available_error(command: str, *, web_path: str, instead: str | None = No
         message=f"'{command}' is not available: the server no longer offers it.",
         exit_status=EXIT_USAGE,
         hint=hint,
+    )
+
+
+# Features the backend removed or never shipped. Matched by exact command id or
+# by ``prefix.`` so a whole family can be listed once. The command fails before
+# any API call, and ``schema``/``capability`` discovery hides these commands.
+FEATURE_UNAVAILABLE_FAMILIES: dict[str, tuple[str, str, list[str]]] = {
+    "data-app.": (
+        "Data apps were removed from Mammoth.",
+        "Build the same view of your data as a dashboard instead.",
+        ["mammoth dashboard find SUBSTRING", "mammoth schema find dashboard"],
+    ),
+}
+FEATURE_UNAVAILABLE_COMMANDS: dict[str, tuple[str, str, list[str]]] = {
+    "schedule.create": (
+        "Creating a schedule is not implemented by the Mammoth backend (5GENR011 NOT_IMPLEMENTED).",
+        "Use an automation to run work on a schedule.",
+        ["mammoth automation create --help", "mammoth schema get automation.create"],
+    ),
+}
+
+
+def feature_unavailable_entry(command_id: str) -> tuple[str, str, list[str]] | None:
+    """Return (message, hint, recovery) when the whole command is unavailable, else None."""
+    if command_id in FEATURE_UNAVAILABLE_COMMANDS:
+        return FEATURE_UNAVAILABLE_COMMANDS[command_id]
+    for prefix, entry in FEATURE_UNAVAILABLE_FAMILIES.items():
+        if command_id.startswith(prefix):
+            return entry
+    return None
+
+
+def is_feature_unavailable(command_id: str | None) -> bool:
+    return bool(command_id) and feature_unavailable_entry(str(command_id)) is not None
+
+
+def feature_unavailable_error(command_id: str) -> CliError:
+    """A command whose feature the backend removed: fail before any API call."""
+    entry = feature_unavailable_entry(command_id)
+    message, hint, recovery = entry if entry else ("This feature is unavailable.", "", [])
+    return CliError(
+        code=CODE_FEATURE_UNAVAILABLE,
+        message=message,
+        exit_status=EXIT_USAGE,
+        hint=hint,
+        recovery_commands=list(recovery),
     )
 
 

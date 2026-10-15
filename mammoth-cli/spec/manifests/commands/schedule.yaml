@@ -34,7 +34,7 @@ commands:
   - CT-SCHEDULE-CREATE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: 'BLOCKED[SCHEDULE_CREATE_NOT_IMPLEMENTED]: the backend answers 5GENR011 NOT_IMPLEMENTED; the command fails with feature_unavailable and makes no API call. Use `mammoth automation create` instead.'
   reviewed_by: primary
   readback:
     command: schedule.get

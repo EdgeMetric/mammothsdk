@@ -21,6 +21,7 @@ from collections import defaultdict
 from functools import cache
 from typing import Any, cast
 
+from mammoth_cli.errors.envelope import is_feature_unavailable
 from mammoth_cli.manifest.loader import command_by_id, load_commands, load_operations
 from mammoth_cli.output.normalize import trusted_json_schema
 from mammoth_cli.services.field_enums import field_enum, with_enum
@@ -2228,6 +2229,8 @@ def find_schemas(
     near_misses: list[tuple[int, int, dict[str, Any], list[str]]] = []
     for record in load_commands():
         if record.get("disposition") == "alias":
+            continue
+        if is_feature_unavailable(str(record["command_id"])):
             continue
         command_id = str(record["command_id"])
         command_path = str(record["command_path"])

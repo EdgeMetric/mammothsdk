@@ -38,7 +38,7 @@ commands:
   - CT-DATA-APP-ACTIVE-JOB-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: 'BLOCKED[DATA_APP_REMOVED]: data apps were removed from Mammoth; every data-app command fails with feature_unavailable and makes no API call. Use dashboards instead.'
   reviewed_by: primary
 - command_id: data-app.create
   command_path: data-app create
@@ -78,7 +78,7 @@ commands:
   - CT-DATA-APP-CREATE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: 'BLOCKED[DATA_APP_REMOVED]: data apps were replaced by collections; the 2026-10-09 prod API no longer serves /data-apps. Use the collection commands.'
+  known_restrictions: 'BLOCKED[DATA_APP_REMOVED]: data apps were removed from Mammoth; every data-app command fails with feature_unavailable and makes no API call. Use dashboards instead.'
   reviewed_by: primary
 - command_id: data-app.delete
   command_path: data-app delete
@@ -123,7 +123,7 @@ commands:
   - CT-DATA-APP-DELETE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: 'BLOCKED[DATA_APP_REMOVED]: data apps were removed from Mammoth; every data-app command fails with feature_unavailable and makes no API call. Use dashboards instead.'
   reviewed_by: primary
 - command_id: data-app.get
   command_path: data-app get
@@ -163,7 +163,7 @@ commands:
   - CT-DATA-APP-GET-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: 'BLOCKED[DATA_APP_REMOVED]: data apps were removed from Mammoth; every data-app command fails with feature_unavailable and makes no API call. Use dashboards instead.'
   reviewed_by: primary
 - command_id: data-app.job
   command_path: data-app job
@@ -209,7 +209,7 @@ commands:
   - CT-DATA-APP-JOB-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: 'BLOCKED[DATA_APP_REMOVED]: data apps were removed from Mammoth; every data-app command fails with feature_unavailable and makes no API call. Use dashboards instead.'
   reviewed_by: primary
 - command_id: data-app.list
   command_path: data-app list
@@ -243,7 +243,7 @@ commands:
   - CT-DATA-APP-LIST-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: 'BLOCKED[DATA_APP_REMOVED]: data apps were removed from Mammoth; every data-app command fails with feature_unavailable and makes no API call. Use dashboards instead.'
   reviewed_by: primary
 - command_id: data-app.pipeline-changes
   command_path: data-app pipeline-changes
@@ -283,7 +283,7 @@ commands:
   - CT-DATA-APP-PIPELINE-CHANGES-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: 'BLOCKED[DATA_APP_REMOVED]: data apps were removed from Mammoth; every data-app command fails with feature_unavailable and makes no API call. Use dashboards instead.'
   reviewed_by: primary
 - command_id: data-app.share
   command_path: data-app share
@@ -329,7 +329,7 @@ commands:
   - CT-DATA-APP-SHARE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: 'BLOCKED[DATA_APP_REMOVED]: data apps were replaced by collections; the 2026-10-09 prod API no longer serves /data-apps. Use the collection commands.'
+  known_restrictions: 'BLOCKED[DATA_APP_REMOVED]: data apps were removed from Mammoth; every data-app command fails with feature_unavailable and makes no API call. Use dashboards instead.'
   reviewed_by: primary
 - command_id: data-app.update
   command_path: data-app update
@@ -375,7 +375,7 @@ commands:
   - CT-DATA-APP-UPDATE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: 'BLOCKED[DATA_APP_REMOVED]: data apps were replaced by collections; the 2026-10-09 prod API no longer serves /data-apps. Use the collection commands.'
+  known_restrictions: 'BLOCKED[DATA_APP_REMOVED]: data apps were removed from Mammoth; every data-app command fails with feature_unavailable and makes no API call. Use dashboards instead.'
   reviewed_by: primary
 - command_id: data-app.upload
   command_path: data-app upload
@@ -427,7 +427,7 @@ commands:
   - CT-DATA-APP-UPLOAD-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: 'BLOCKED[DATA_APP_REMOVED]: data apps were removed from Mammoth; every data-app command fails with feature_unavailable and makes no API call. Use dashboards instead.'
   reviewed_by: primary
 - command_id: data-app.user.list
   command_path: data-app user list
@@ -467,7 +467,7 @@ commands:
   - CT-DATA-APP-USER-LIST-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: 'BLOCKED[DATA_APP_REMOVED]: data apps were removed from Mammoth; every data-app command fails with feature_unavailable and makes no API call. Use dashboards instead.'
   reviewed_by: primary
 - command_id: data-app.user.remove
   command_path: data-app user remove
@@ -519,5 +519,5 @@ commands:
   - CT-DATA-APP-USER-REMOVE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: 'BLOCKED[DATA_APP_REMOVED]: data apps were removed from Mammoth; every data-app command fails with feature_unavailable and makes no API call. Use dashboards instead.'
   reviewed_by: primary
