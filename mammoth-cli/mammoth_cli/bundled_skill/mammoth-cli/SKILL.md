@@ -171,7 +171,7 @@ your report. If no column links the files, ask before you combine them.
   unmatched) means the previous step went wrong; stop and re-inspect it.
 - `column_warnings` on a data read and `join_check` on a join are findings,
   not decoration: fix each the deliverable depends on, or say why kept.
-  `view data get` pages with `{"offset": 51, "limit": 50}`.
+  `view data get` pages with `{"offset": 50, "limit": 50}` (0-based rows to skip; follow `paging.next_command`).
 - A timeout, exit 7 or interruption does not prove failure; reconcile an
   `outcome_unknown` (`job get`, `view task list`) before replaying.
 - Check an answer with no write against the question (a trend: time
