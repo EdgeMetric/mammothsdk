@@ -94,7 +94,6 @@ class TestTheReadCheck:
             "WITH d AS (DELETE FROM orders RETURNING *) SELECT * FROM d",
             "SELECT * INTO orders_copy FROM orders",
             "with u as (update orders set paid = true returning id) select * from u",
-            "SELECT 1 /* a note */; insert into audit values (1)",
             # Postgres reads brackets as an array index, not as a quoted name.
             "SELECT (ARRAY[1,2,3])[1:(SELECT length(']'))]; DROP TABLE t; SELECT '1'",
         ],
@@ -118,6 +117,14 @@ class TestTheReadCheck:
             "SELECT $q$'$q$; DROP TABLE orders; SELECT $q$'$q$",
             # MySQL ends the line at #, so the quote after it opens nothing.
             "SELECT 1 # '\n; DROP TABLE orders; -- '",
+            # Postgres nests /* */, so the quote is inside the comment.
+            "SELECT 1 /* /* */ ' */; DELETE FROM t; -- '",
+            # MySQL reads 1--1 as 1 - -1, not as a comment.
+            "SELECT 1--1;DELETE FROM t",
+            # Snowflake ends the line at //.
+            "SELECT 1 // '\n; DROP TABLE t // '",
+            "SELECT 1 /* a note */; insert into audit values (1)",
+            "SELECT region -- drop the old ones later\nFROM sales",
         ],
     )
     def test_a_query_that_hides_text_from_the_check_is_refused(self, query: str) -> None:
@@ -131,7 +138,7 @@ class TestTheReadCheck:
         [
             "select * from sales;",
             "SELECT 'delete me' AS note, \"update\" FROM sales",
-            "SELECT region -- drop the old ones later\nFROM sales",
+            "SELECT '-- not a note' AS a, '/* nor this */' AS b, '//' AS c FROM sales",
             "SELECT replace(region, 'a', 'b'), created_at, updated_by FROM sales",
             "select `insert` from sales",
             "SELECT tags[1], '#1' AS ref, 'cost $5' AS note FROM sales",
