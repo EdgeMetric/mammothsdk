@@ -15,6 +15,7 @@ from __future__ import annotations
 import os
 from concurrent.futures import ThreadPoolExecutor
 from functools import lru_cache
+from pathlib import Path
 
 import pytest
 
@@ -44,6 +45,7 @@ def _leaves() -> list[harness.Node]:
     return [n for n in _tree() if not n.is_group]
 
 
+_THIS_FILE = Path(__file__)
 CASES = _cases()
 LEAVES = _leaves()
 _DONE: dict[object, object] = {}
@@ -54,6 +56,10 @@ def _prefetch(request: pytest.FixtureRequest) -> None:
     """Run every selected case in a thread pool up front; tests only judge."""
     jobs: list[tuple[object, object]] = []
     for item in request.session.items:
+        # Only this module's tests: other modules parametrize a "case" of their own,
+        # and in a full run they share this session.
+        if Path(str(item.path)) != _THIS_FILE:
+            continue
         callspec = getattr(item, "callspec", None)
         if callspec is None:
             continue
