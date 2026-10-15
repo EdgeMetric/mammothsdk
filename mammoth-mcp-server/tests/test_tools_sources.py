@@ -25,6 +25,7 @@ PROJECT = 3
 CONNECTORS = f"/workspaces/{WORKSPACE}/connectors"
 RESOURCES = f"/workspaces/{WORKSPACE}/projects/{PROJECT}/resources"
 VIEWS = f"/workspaces/{WORKSPACE}/projects/{PROJECT}/datasets/21/dataviews"
+DATASET_21 = f"/workspaces/{WORKSPACE}/projects/{PROJECT}/datasets/21"
 IDS = {"workspace_id": WORKSPACE, "project_id": PROJECT}
 HUBSPOT = {"name_key": "hubspot", "disp_name": "HubSpot", "is_available": True}
 SINCE = "2026-10-14T09:00:00+00:00"
@@ -278,6 +279,26 @@ class TestFindNewDatasets:
             found = call_tool("find_new_datasets", since=SINCE, **IDS)
 
         assert found["status"] == "processing"
+
+    def test_a_dataset_a_teammate_added_meanwhile_is_not_reported(self) -> None:
+        with a_fake_api() as api, as_caller():
+            api.answer("GET", RESOURCES, {"resources": [a_dataset("processed")]})
+            api.answer("GET", SELF, {"name": "Asha Rao"})
+            api.answer("GET", DATASET_21, {"dataset": {"id": 21, "created_by": "Lee Chen"}})
+            found = call_tool("find_new_datasets", since=SINCE, **IDS)
+
+        assert found == {"status": "waiting", "files": []}
+
+    def test_a_dataset_the_caller_added_is_reported(self) -> None:
+        with a_fake_api() as api, as_caller():
+            api.answer("GET", RESOURCES, {"resources": [a_dataset("processed")]})
+            api.answer("GET", SELF, {"name": "Asha Rao"})
+            api.answer("GET", DATASET_21, {"dataset": {"id": 21, "created_by": "Asha Rao"}})
+            api.answer("GET", VIEWS, {"dataviews": [{"id": 8161}]})
+            found = call_tool("find_new_datasets", since=SINCE, **IDS)
+
+        (dataset,) = found["files"]
+        assert dataset["dataset_id"] == 21
 
     def test_a_time_that_is_not_one_is_refused(self) -> None:
         with a_fake_api(), as_caller(), pytest.raises(ToolError) as refused:

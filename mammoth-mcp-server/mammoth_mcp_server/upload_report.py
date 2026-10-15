@@ -18,6 +18,9 @@ is the difference between a user who knows and one who finds out later.
 
 from datetime import UTC, datetime
 
+from mammoth.client import MammothClient
+from mcp.server.mcpserver.exceptions import ToolError
+
 from .consts import (
     MAMMOTH_PROJECT_URL,
     ApiFields,
@@ -25,6 +28,7 @@ from .consts import (
     DatasetStatus,
     FileStatus,
     InterpretationFields,
+    ListFields,
     ResourceTypes,
     UploadFields,
     UploadReportFields,
@@ -140,16 +144,19 @@ STOPPED = (
 NEWEST_ITEMS = 50
 
 
-async def report_upload(ticket: Record) -> dict[str, JsonValue]:
+async def report_upload(ticket: Record, only_mine: bool = False) -> dict[str, JsonValue]:
     """Say whether Mammoth has finished reading an upload, and what it made.
 
     A dataset that is ready also names its view, which every later step reads
     through: left out, the model guesses one. It links to that view, too.
+    With `only_mine`, a dataset someone else made in that time is left out.
     """
     since = read_time(ticket[UploadFields.UPLOADED_AT])
     workspace_id = int(ticket[UploadFields.WORKSPACE_ID])
     project_id = int(ticket[UploadFields.PROJECT_ID])
     made = find_made_since(await list_newest(workspace_id, project_id), since)
+    if only_mine and made:
+        made = await made_by_the_caller(workspace_id, project_id, made)
     described = [describe(item, ticket) for item in made]
     for item, entry in zip(made, described, strict=True):
         if is_ready_dataset(item):
@@ -158,6 +165,45 @@ async def report_upload(ticket: Record) -> dict[str, JsonValue]:
             if view_id is not None:
                 entry[UploadReportFields.MAMMOTH_URL] = view_url(workspace_id, project_id, view_id)
     return {UploadFields.STATUS: upload_status(made), UploadFields.FILES: list(described)}
+
+
+async def made_by_the_caller(workspace_id: int, project_id: int, items: list[Item]) -> list[Item]:
+    """The items the caller made. Mammoth names a dataset's maker, not a file's, so files stay.
+
+    Mammoth records the maker by name, so an item whose maker cannot be read
+    is kept: one more dataset to ask about beats one the user never hears of.
+    """
+    async with build_client(workspace_id, project_id) as client:
+        try:
+            me = await request_api(
+                client, "GET", ApiPaths.SELF, query={UploadFields.FIELDS: UploadFields.NAME}
+            )
+        except ToolError:
+            return items
+        makers = [await _maker_of(client, workspace_id, project_id, item) for item in items]
+    mine = me.get(UploadFields.NAME)
+    return [item for item, maker in zip(items, makers, strict=True) if maker in (None, mine)]
+
+
+async def _maker_of(
+    client: MammothClient, workspace_id: int, project_id: int, item: Item
+) -> JsonValue:
+    """Who made a dataset, by name; None for a file, or when Mammoth does not say."""
+    if item["resource_type"] != ResourceTypes.DATASET:
+        return None
+    try:
+        read = await read_sdk_errors(
+            client.datasets.get(
+                int(str(item["object_id"])),
+                workspace_id=workspace_id,
+                project_id=project_id,
+                fields=UploadFields.CREATED_BY,
+            )
+        )
+    except ToolError:
+        return None
+    dataset = read.get(ListFields.DATASET)
+    return dataset.get(UploadFields.CREATED_BY) if isinstance(dataset, dict) else None
 
 
 def is_ready_dataset(item: Item) -> bool:
