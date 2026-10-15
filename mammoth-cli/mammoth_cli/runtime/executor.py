@@ -22,6 +22,8 @@ from mammoth_cli.errors.envelope import (
     EXIT_USAGE,
     CliError,
     cancelled_error,
+    feature_unavailable_error,
+    is_feature_unavailable,
     not_available_embedded_error,
 )
 from mammoth_cli.output.envelope import Meta, Result
@@ -74,6 +76,11 @@ EMBEDDED_UNAVAILABLE = frozenset(
         "support.template.export-dashboard",
     }
 )
+
+
+def _refuse_if_removed(command_id: str) -> None:
+    if is_feature_unavailable(command_id):
+        raise feature_unavailable_error(command_id)
 
 
 def _refuse_if_embedded(command_id: str) -> None:
@@ -252,6 +259,7 @@ def run(
     report_failed = False
     try:
         _validate_output(output)
+        _refuse_if_removed(command_id)
         _refuse_if_embedded(command_id)
         if invocation is not None and invocation.dry_run:
             refuse_unsupported_dry_run(command_id)

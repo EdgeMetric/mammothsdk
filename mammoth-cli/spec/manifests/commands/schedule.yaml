@@ -33,7 +33,7 @@ commands:
   - CT-SCHEDULE-CREATE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: 'Creates a recurring scheduled job that runs on its own and may send data out. Retired on some servers: use `automation create` for new work. Needs --yes.'
+  known_restrictions: 'BLOCKED[SCHEDULE_CREATE_NOT_IMPLEMENTED]: the backend answers 5GENR011 NOT_IMPLEMENTED; the command fails with feature_unavailable and makes no API call. Use `mammoth automation create` instead.'
   reviewed_by: primary
   readback:
     command: schedule.get
