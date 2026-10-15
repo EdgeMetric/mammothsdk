@@ -44,3 +44,27 @@ def test_settled_write_still_exits_0(capsys: pytest.CaptureFixture[str]) -> None
     code, envelope = _run({"status": "done"}, capsys)
     assert code == 0
     assert envelope["data"]["status"] == "done"
+
+
+def test_a_step_still_pending_after_the_wait_never_reads_done(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """Fix 30: a parameter-bound filter that has not run is pending, not done."""
+    data = {"status": "done", "pipeline_error": {"execution_state": "unfinished"}}
+    invocation = Invocation(command_id="view.transform.filter", output="json", extra_args=["3388"])
+    code = 0
+    try:
+        run(
+            "view.transform.filter",
+            "json",
+            lambda: (with_verify(data, invocation), {}),
+            invocation=invocation,
+        )
+    except typer.Exit as exit_:
+        code = exit_.exit_code
+    envelope = json.loads(capsys.readouterr().out.strip().splitlines()[-1])
+    assert envelope["data"]["status"] == "pending"
+    assert envelope["data"]["verify"]["outcome"] == "pending"
+    assert envelope["data"]["verify"]["reported_status"] == "done"
+    assert envelope["data"]["verify"]["next_command"] == "mammoth view pipeline wait 3388"
+    assert code == 0

@@ -142,7 +142,7 @@ The process exit code mirrors the error class. A write whose read-back does not 
 
 | Code | Meaning |
 |---|---|
-| 0 | Success. |
+| 0 | Success. A write still running when the wait ended also exits 0, with `status: pending` and `verify.next_command`; it was accepted and must not be replayed. |
 | 1 | API error. |
 | 2 | Usage, input, or confirmation failure. |
 | 3 | Write partly applied (`verify.outcome` `partial`). |

@@ -140,7 +140,28 @@ def with_verify(data: Any, invocation: Invocation | None = None) -> Any:
         # A write that did not verify must not read "done" at the top level.
         verify["reported_status"] = data["status"]
         result["status"] = verify["outcome"]
+    elif verify["outcome"] == OUTCOME_PENDING and "status" in data:
+        _mark_pending(result, verify, invocation)
     return Revealed(result) if isinstance(data, Revealed) else result
+
+
+_PENDING_STATUS_WORDS = frozenset({"staged", "processing", "pending"})
+
+
+def _mark_pending(result: dict[str, Any], verify: dict[str, Any], invocation: Any) -> None:
+    """A write still pending after the wait never shows a finished top-level ``status``.
+
+    The exit code stays 0: the change was accepted and must not be replayed. ``status``
+    becomes ``pending`` and ``next_command`` says how to wait for it.
+    """
+    status = result.get("status")
+    if not (isinstance(status, str) and status.lower() in _PENDING_STATUS_WORDS):
+        verify["reported_status"] = status
+        result["status"] = OUTCOME_PENDING
+    if "next_command" not in verify and invocation is not None:
+        view_id = _pipeline_view_id(invocation)
+        if view_id is not None:
+            verify["next_command"] = f"mammoth view pipeline wait {view_id}"
 
 
 def _automation_wording(
