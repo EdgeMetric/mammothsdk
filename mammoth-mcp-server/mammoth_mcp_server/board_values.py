@@ -6,6 +6,8 @@ it wrong. The numbers come from the board's own baked descriptors, evaluated in
 one descriptor-data call, the same way the CLI's `dashboard get` reads them.
 """
 
+from dataclasses import dataclass
+
 from mammoth.api import dashboard_generated
 from mammoth.api.dashboards import DashboardsAPI
 from mammoth.models.dashboard_generated import DescriptorDataParams, DescriptorDataSpec
@@ -24,30 +26,64 @@ OLDER_ENGINE = (
 type Json = dict[str, JsonValue]
 
 
-async def board_values(dashboards: DashboardsAPI, workspace_id: int, dashboard_id: int) -> Json:
+async def board_values(dashboards: DashboardsAPI, workspace_id: int, dashboard: Json) -> Json:
     """Each card's and chart's numbers under `values`, or why under `values_unavailable`.
 
-    Never raises: the dashboard itself is still worth reading without them.
+    A published board's share link opens its published version, so its numbers
+    are that version's; an unpublished board's are the draft's. `values_from`
+    says which. Never raises: the dashboard itself is still worth reading
+    without them.
     """
-    # The SDK attaches its generated routes to DashboardsAPI when it loads, so
-    # they are called as the typed functions they are.
+    url = dashboard.get(DashboardFields.URL)
+    published = isinstance(url, str) and bool(dashboard.get(DashboardFields.PUBLISHED))
+    version = BoardSource(dashboards, int(str(dashboard[DashboardFields.ID])), url, published)
     try:
-        canvas_read = dashboard_generated.canvas_get(dashboards, dashboard_id)
-        canvas = (await read_sdk_errors(canvas_read)).model_dump()
-        figures = figure_bindings(canvas)
+        figures = figure_bindings(await version.canvas())
         if not figures:
             return {DashboardFields.VALUES_UNAVAILABLE: NO_FIGURES}
         ids = sorted({did for figure in figures for did in _descriptors(figure).values()})
-        ids = ids[:DESCRIPTORS_PER_READ]
-        spec = DescriptorDataSpec(params=DescriptorDataParams(descriptor_ids=ids))
-        started = await read_sdk_errors(
-            dashboard_generated.descriptor_data(dashboards, dashboard_id, spec)
+        spec = DescriptorDataSpec(
+            params=DescriptorDataParams(descriptor_ids=ids[:DESCRIPTORS_PER_READ])
         )
-        evaluated = await wait_for_job(workspace_id, started.model_dump(mode="json"))
+        evaluated = await wait_for_job(workspace_id, await version.evaluate(spec))
     except ToolError as unread:
         return {DashboardFields.VALUES_UNAVAILABLE: str(unread)}
-    results = evaluated.get(BoardFields.RESULTS)
-    return {DashboardFields.VALUES: attach_values(figures, _object(results))}
+    return {
+        DashboardFields.VALUES: attach_values(figures, _object(evaluated.get(BoardFields.RESULTS))),
+        DashboardFields.VALUES_FROM: version.name,
+    }
+
+
+@dataclass(frozen=True)
+class BoardSource:
+    """The version of a board its numbers are read from: the published one, or the draft."""
+
+    dashboards: DashboardsAPI
+    dashboard_id: int
+    url: JsonValue
+    published: bool
+
+    @property
+    def name(self) -> str:
+        return DashboardFields.PUBLISHED if self.published else DashboardFields.DRAFT
+
+    # The SDK attaches its generated routes to DashboardsAPI when it loads, so
+    # they are called as the typed functions they are.
+    async def canvas(self) -> Json:
+        read = (
+            dashboard_generated.published_canvas(self.dashboards, str(self.url))
+            if self.published
+            else dashboard_generated.canvas_get(self.dashboards, self.dashboard_id)
+        )
+        return (await read_sdk_errors(read)).model_dump()
+
+    async def evaluate(self, spec: DescriptorDataSpec) -> Json:
+        start = (
+            dashboard_generated.published_data(self.dashboards, str(self.url), spec)
+            if self.published
+            else dashboard_generated.descriptor_data(self.dashboards, self.dashboard_id, spec)
+        )
+        return (await read_sdk_errors(start)).model_dump(mode="json")
 
 
 def figure_bindings(canvas: Json) -> list[Json]:

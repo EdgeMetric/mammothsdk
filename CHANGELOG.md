@@ -56,11 +56,12 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Added (mammoth-mcp-server 0.2.3)
 
 - `aggregate_data` has Mammoth work out totals, counts, averages, lows and highs over a view, for the whole view or by group (a date grouped by day, week, month, quarter or year). It is read-only: it adds nothing to the view's pipeline, and a read-only connection may run it. Columns are named as the user sees them.
-- `get_dashboard` reports `values`: each KPI card's number and each chart's first rows, with the period and filters it counts under, as Mammoth evaluated them. A dashboard on the older engine, or one Mammoth cannot evaluate, reports `values_unavailable` with the reason instead; the read itself does not fail.
+- `get_dashboard` reports `values`: each KPI card's number and each chart's first rows, with the period and filters it counts under, as Mammoth evaluated them. A published board's numbers are its published version's, the one its share link opens; an unpublished board's are the draft's. `values_from` says which. `include_values=false` skips them for a quicker read. A dashboard on the older engine, or one Mammoth cannot evaluate, reports `values_unavailable` with the reason instead; the read itself does not fail.
 - Views, datasets, pipeline results and a ready uploaded dataset carry `mammoth_url`, the page in Mammoth they open on. The server tells the client to give the user that link.
 
 ### Changed (mammoth-mcp-server 0.2.3)
 
+- `aggregate_data` refuses a `limit` below 1.
 - `get_data` no longer returns the `hash` row identity Mammoth adds to every row. It is no column of the user's, and Claude read its values as duplicate rows.
 - The server and `get_data` tell the client to take every number from `aggregate_data` or a dashboard's `values`, and never to add up rows itself.
 

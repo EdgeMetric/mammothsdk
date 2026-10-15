@@ -466,6 +466,9 @@ class DashboardFields:
     # What each card and chart shows, or why a read could not say.
     VALUES = "values"
     VALUES_UNAVAILABLE = "values_unavailable"
+    # Which version the numbers are from: "published" or "draft".
+    VALUES_FROM = "values_from"
+    DRAFT = "draft"
 
 
 class BoardFields:

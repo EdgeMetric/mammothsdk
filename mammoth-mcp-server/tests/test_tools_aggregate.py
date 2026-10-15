@@ -111,6 +111,16 @@ class TestWhatIsRefused:
 
         assert "Revenue, Site" in str(refused.value)
 
+    @pytest.mark.parametrize("limit", [0, -5])
+    def test_a_limit_below_one_is_refused_before_the_query_is_sent(self, limit: int) -> None:
+        with a_fake_api() as api, as_caller():
+            answers(api, [])
+            with pytest.raises(ToolError) as refused:
+                aggregate(aggregations=REVENUE_BY_SITE, group_by=["Site"], limit=limit)
+
+        assert "at least 1" in str(refused.value)
+        assert not api.sent("POST", QUERY)
+
 
 def test_it_reads_and_changes_nothing() -> None:
     # A read-only connection may run it, and a client runs it without asking.
