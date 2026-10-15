@@ -158,7 +158,7 @@ Run: `mammoth dataset file-settings update`. Exact input fields: `mammoth schema
 
 Example: `mammoth dataset file-settings update 123 --input '{"delimiter": "sample", "has_header": true, "initial_skip_count": 1, "quotechar": "sample"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
-Result: `DatasetFileSettingsUpdateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+Result: `DatasetFileSettingsUpdateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `always_wait`.
 
 Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Confirmed settings for dataset 87; reached status=ready. Single invocation only.
 

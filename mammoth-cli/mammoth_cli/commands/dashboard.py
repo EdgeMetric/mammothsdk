@@ -41,16 +41,16 @@ from mammoth_cli.runtime.session import open_service, require_project, resolved_
 from mammoth_cli.services.argspec import arg_spec
 from mammoth_cli.services.board_values import board_values, dashboard_link
 from mammoth_cli.services.command_contract import bind_command_inputs
+from mammoth_cli.services.dashboard_figures import (
+    bake_error_problem,
+    canvas_figure_problems,
+    figure_problems,
+)
 from mammoth_cli.services.dashboard_filters import (
     check_filter,
     declared,
     with_filter,
     without_filter,
-)
-from mammoth_cli.services.dashboard_figures import (
-    bake_error_problem,
-    canvas_figure_problems,
-    figure_problems,
 )
 from mammoth_cli.services.dashboard_pages import (
     check_added_pages,
@@ -66,6 +66,7 @@ from mammoth_cli.services.dashboard_review import (
     review,
 )
 from mammoth_cli.services.dashboard_review import _profiles as _review_profiles
+from mammoth_cli.services.local_files import refuse_existing_file
 from mammoth_cli.services.positionals import resolve_positionals
 
 HandlerResult = tuple[Any, dict[str, Any]]
@@ -1306,6 +1307,10 @@ def dashboard_bi_export(invocation: Invocation) -> HandlerResult:
     symbol = f"mammoth.api.dashboards.DashboardsAPI.export_{target}"
     kwargs: dict[str, Any] = {"dashboard_id": dashboard_id}
     _forward_optional(document, kwargs, ("output_path",))
+    extension = "zip" if target == "powerbi" else "twbx"
+    refuse_existing_file(
+        invocation, kwargs.get("output_path") or f"dashboard_{dashboard_id}_{target}.{extension}"
+    )
     with open_service(invocation) as (service, auth):
         preflight = _bi_preflight_or_none(service, target, dashboard_id)
         data = service.call(symbol, **kwargs)

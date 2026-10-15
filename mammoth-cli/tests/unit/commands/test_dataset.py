@@ -670,7 +670,7 @@ def test_file_settings_update_forwards_required_and_optional(
             input_file=input_file,
         )
     )
-    assert fake_service.call_log == [
+    assert fake_service.call_log[:1] == [
         (
             _FILE_SETTINGS_UPDATE,
             {
@@ -1074,3 +1074,22 @@ def test_delete_succeeds_when_the_dataset_is_gone_afterwards(
         _inv("dataset.delete", project=180, extra_args=["7"], yes=True)
     )
     assert isinstance(data, dict)
+
+
+def test_file_settings_update_waits_for_the_reprocess_job_and_names_the_dataset(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    fake_service.responses[_FILE_SETTINGS_UPDATE] = {"job_id": 55}
+    fake_service.job_result = {"ds_id": 7, "status": "ready"}
+    fake_service.responses["mammoth.api.datasets.DatasetsAPI.get"] = {"id": 7, "name": "wb.csv"}
+    doc = tmp_path / "in.json"
+    doc.write_text(
+        '{"delimiter": ",", "has_header": true, "initial_skip_count": 0, "quotechar": "\\""}',
+        encoding="utf-8",
+    )
+    data, _ = dataset_cmd.dataset_file_settings_update(
+        _inv("dataset.file-settings.update", project=180, extra_args=["7"], input_file=str(doc))
+    )
+    assert fake_service.wait_log == [{"job_id": 55}]
+    assert data["status"] == "ready"
+    assert data["dataset_name"] == "wb.csv"

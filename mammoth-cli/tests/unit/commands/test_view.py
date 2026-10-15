@@ -473,6 +473,15 @@ def test_data_get_relabels_and_drops_system_columns(
         },
         "rows_returned": 1,
         "rows_total_in_page": 1,
+        "paging": {
+            "offset": 0,
+            "limit": 50,
+            "count": 1,
+            "next_offset": None,
+            "next_command": None,
+            "previous_offset": None,
+            "previous_command": None,
+        },
         "truncated": False,
     }
 
@@ -502,7 +511,7 @@ def test_data_get_offset_reads_a_later_page_through_the_query_route(
         "data": [{"column_1": 36}, {"column_1": 37}]
     }
     doc = tmp_path / "in.json"
-    doc.write_text('{"offset": 36, "limit": 2}', encoding="utf-8")
+    doc.write_text('{"offset": 35, "limit": 2}', encoding="utf-8")
     data, _ = view_cmd.view_data_get(
         _inv("view.data.get", project=180, extra_args=["7", "9"], input_file=str(doc))
     )
@@ -3030,3 +3039,108 @@ def test_explore_metric_says_plain_numbers_when_no_currency_is_set(
 
     assert data["currency"] == {"SUM_revenue": None}
     assert "plain numbers" in data["currency_note"]
+
+
+# -- paging: 0-based offset, no gaps or overlaps across pages ------------------------
+
+
+def test_export_list_pages_without_gaps_or_overlaps(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    rows = [{"id": i} for i in range(8)]
+
+    def respond(log: list[Any]) -> dict[str, Any]:
+        kw = log[-1][1]
+        # The route echoes the NEXT offset and leaves next empty.
+        return {
+            "exports": rows[kw["offset"] : kw["offset"] + kw["limit"]],
+            "offset": 99,
+            "next": "",
+        }
+
+    fake_service.responses[_EXPORT_LIST] = respond
+    seen: list[Any] = []
+    offset: int | None = 0
+    while offset is not None:
+        doc = _doc(tmp_path, {"offset": offset, "limit": 3})
+        data, _ = view_cmd.view_export_list(
+            _inv("view.export.list", extra_args=["7"], input_file=doc)
+        )
+        seen += data["exports"]
+        assert data["paging"]["offset"] == offset
+        offset = data["paging"]["next_offset"]
+    assert seen == rows
+
+
+def test_export_list_last_page_has_null_next_and_previous_is_exact(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    fake_service.responses[_EXPORT_LIST] = {"exports": [{"id": 1}], "offset": 99, "next": ""}
+    doc = _doc(tmp_path, {"offset": 4, "limit": 3})
+    data, _ = view_cmd.view_export_list(_inv("view.export.list", extra_args=["7"], input_file=doc))
+    assert data["paging"]["next_command"] is None
+    assert data["paging"]["previous_offset"] == 1
+    assert '"offset": 1' in data["paging"]["previous_command"]
+    assert "offset" not in {k for k in data if k != "paging"}
+
+
+def test_export_list_refuses_a_negative_offset(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    doc = _doc(tmp_path, {"offset": -1})
+    with pytest.raises(CliError) as excinfo:
+        view_cmd.view_export_list(_inv("view.export.list", extra_args=["7"], input_file=doc))
+    assert excinfo.value.code == "invalid_argument"
+
+
+def test_data_get_offset_is_zero_based_and_pages_chain_exactly(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    rows = [{"column_1": i} for i in range(7)]
+    fake_service.responses[_DATAVIEW_GET] = {
+        "row_count": 7,
+        "metadata": [{"internal_name": "column_1", "display_name": "n", "type": "NUMERIC"}],
+    }
+    seen: list[Any] = []
+    offset: int | None = 0
+    while offset is not None:
+
+        def respond(log: list[Any]) -> dict[str, Any]:
+            kw = log[-1][1]
+            return {"data": rows[kw["offset"] - 1 : kw["offset"] - 1 + kw["limit"]]}
+
+        fake_service.responses[_DATA_QUERY] = respond
+        doc = _doc(tmp_path, {"offset": offset, "limit": 3})
+        data, _ = view_cmd.view_data_get(
+            _inv("view.data.get", project=180, extra_args=["7", "9"], input_file=doc)
+        )
+        seen += [r["n"] for r in data["data"]]
+        offset = data["paging"]["next_offset"]
+    assert seen == list(range(7))
+    assert data["paging"]["previous_offset"] == 3
+
+
+def test_export_csv_refuses_an_existing_file_and_names_overwrite(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    existing = tmp_path / "out.csv"
+    existing.write_text("keep me", encoding="utf-8")
+    doc = _doc(tmp_path, {"output_path": str(existing), "dataset_id": 9})
+    with pytest.raises(CliError) as excinfo:
+        view_cmd.view_export_csv(_inv("view.export.csv", extra_args=["7"], input_file=doc))
+    assert excinfo.value.code == "file_exists"
+    assert excinfo.value.recovery_commands[0].endswith("--overwrite")
+    assert fake_service.call_log == []
+    assert existing.read_text(encoding="utf-8") == "keep me"
+
+
+def test_export_csv_replaces_an_existing_file_with_overwrite(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    existing = tmp_path / "out.csv"
+    existing.write_text("old", encoding="utf-8")
+    doc = _doc(tmp_path, {"output_path": str(existing), "dataset_id": 9})
+    view_cmd.view_export_csv(
+        _inv("view.export.csv", extra_args=["7"], input_file=doc, overwrite=True)
+    )
+    assert _without_meta(fake_service.call_log)[0][0] == _EXPORT_CSV

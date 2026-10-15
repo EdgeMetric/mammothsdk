@@ -1076,7 +1076,27 @@ def dataset_file_settings_update(invocation: Invocation) -> HandlerResult:
     )
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), **kwargs)
-    return data, _meta(invocation, auth.workspace_id, project_id)
+        # The route answers with a reprocess job handle. Block on it (honoring
+        # ``--job-timeout``) so the command returns when the dataset has been re-read
+        # with the new settings; a response that is not a job passes through.
+        settled = service.wait_if_job(data)
+        if isinstance(settled, dict) and isinstance(data, dict) and settled is not data:
+            settled = {**data, **settled}
+        if isinstance(settled, dict) and not settled.get("name"):
+            settled = _with_dataset_name(service, settled, dataset_id, project_id)
+    return settled, _meta(invocation, auth.workspace_id, project_id)
+
+
+def _with_dataset_name(
+    service: Any, result: dict[str, Any], dataset_id: int, project_id: int
+) -> dict[str, Any]:
+    """Add ``dataset_name`` to a result that names its dataset by id only (best effort)."""
+    try:
+        record = service.call(_DATASET_GET_SYMBOL, dataset_id=dataset_id, project_id=project_id)
+    except CliError:
+        return result
+    name = record.get("name") if isinstance(record, dict) else None
+    return {**result, "dataset_name": name} if isinstance(name, str) and name else result
 
 
 def dataset_file_settings_undo(invocation: Invocation) -> HandlerResult:
