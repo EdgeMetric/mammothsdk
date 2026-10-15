@@ -1,4 +1,4 @@
-"""Risky commands say what they do and what to check first; no command shows a bare internal code."""
+"""Risky commands say what they do and what to check first; none shows a bare internal code."""
 
 from __future__ import annotations
 

@@ -162,7 +162,6 @@ def view_explore_panel_edit(invocation: Invocation) -> HandlerResult:
     dataview_id = _require_int_positional_at(invocation, 0, "view id")
     document = invocation.load_input() or {}
     edits = _require_field(document, "edits")
-    refuse_existing_file(invocation, output_path)
     with open_service(invocation) as (service, auth):
         dataset_id = _verified_dataset_id(service, invocation, dataview_id, document)
         view = _View(service, dataset_id, dataview_id, project_id)
@@ -201,6 +200,7 @@ def view_explore_panel_export_image(invocation: Invocation) -> HandlerResult:
     output_path = document.get("output_path") or f"explore-card-{dataview_id}.svg"
     if not isinstance(output_path, str):
         raise _refuse('"output_path" must be a file path.')
+    refuse_existing_file(invocation, output_path)
     with open_service(invocation) as (service, auth):
         dataset_id = _verified_dataset_id(service, invocation, dataview_id, document)
         view = _View(service, dataset_id, dataview_id, project_id)

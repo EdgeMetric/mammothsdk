@@ -18,7 +18,7 @@ def refuse_existing_file(invocation: Invocation, path: str | Path) -> None:
     target = Path(path)
     if invocation.overwrite or not (target.exists() or target.is_symlink()):
         return
-    rerun = " ".join(["mammoth", *invocation.command_id.split("."), *invocation.extra_args])
+    rerun = " ".join([*invocation.command_id.split("."), *invocation.extra_args])
     if invocation.input_file and invocation.input_file != "-":
         rerun += f" --input {invocation.input_file}"
     raise CliError(
@@ -27,5 +27,5 @@ def refuse_existing_file(invocation: Invocation, path: str | Path) -> None:
         exit_status=EXIT_CONFLICT,
         hint="Add --overwrite to replace the file, or choose another path with output_path.",
         details={"output_path": str(target)},
-        recovery_commands=[f"{rerun} --overwrite"],
+        recovery_commands=[f"mammoth {rerun} --overwrite"],
     )

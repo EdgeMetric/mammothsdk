@@ -122,6 +122,7 @@ ERROR_SUMMARIES: dict[str, str] = {
     "empties_view": "No row matches, so this step would leave the view empty.",
     "empty_search_query": "The search was empty.",
     "export_already_exists": "An export with that name already exists.",
+    "file_exists": "A file is already at that path, so nothing was written.",
     "incomplete_environment_auth": _S_SIGN_IN,
     "input_file_not_found": _S_NOT_FOUND,
     "input_format_required": _S_BAD_INPUT,

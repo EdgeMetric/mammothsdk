@@ -137,13 +137,19 @@ def test_destructive_commands_exist_to_parametrize_over() -> None:
     assert len(_guarded_commands()) > 150
 
 
-@pytest.mark.parametrize("command_id", [cid for cid, _policy in _guarded_commands()])
+@pytest.mark.parametrize(
+    "command_id",
+    [cid for cid, policy in _guarded_commands() if policy != "confirm_target"],
+)
 def test_a_mismatched_confirm_is_refused_for_every_destructive_command(command_id: str) -> None:
-    from mammoth_cli.runtime.confirm import refuse_mismatched_confirm
+    from mammoth_cli.runtime.confirm import _CONFIRMS_NON_POSITIONAL, refuse_mismatched_confirm
 
     invocation = Invocation(
         command_id=command_id, yes=True, confirm="999999", extra_args=["313432"]
     )
+    if command_id in _CONFIRMS_NON_POSITIONAL:
+        refuse_mismatched_confirm(invocation)  # compared by its handler, against the real target
+        return
     with pytest.raises(CliError) as excinfo:
         refuse_mismatched_confirm(invocation)
     assert excinfo.value.code == "confirmation_target_mismatch"
@@ -151,6 +157,36 @@ def test_a_mismatched_confirm_is_refused_for_every_destructive_command(command_i
     # A matching (or absent) --confirm is let through.
     refuse_mismatched_confirm(replace(invocation, confirm="313432"))
     refuse_mismatched_confirm(replace(invocation, confirm=None))
+
+
+def test_confirm_target_commands_are_not_precompared_with_their_positionals() -> None:
+    """``import-workbook FILE --confirm PROJECT`` confirms a project, not the file path."""
+    from mammoth_cli.runtime.confirm import refuse_mismatched_confirm
+
+    refuse_mismatched_confirm(
+        Invocation(
+            command_id="dashboard.import-workbook",
+            yes=True,
+            confirm="456",
+            extra_args=["/path/x.twb"],
+        )
+    )
+    # a batch whose source_id (from --input) is the confirmed target
+    refuse_mismatched_confirm(
+        Invocation(command_id="batch.create-spec", yes=True, confirm="77", extra_args=["12"])
+    )
+
+
+def test_confirm_target_commands_still_refuse_a_wrong_target_before_any_call() -> None:
+    """The exact comparison moved to enforce_confirmation, which every handler calls first."""
+    from mammoth_cli.runtime.confirm import POLICY_CONFIRM_TARGET, enforce_confirmation
+
+    invocation = Invocation(command_id="dashboard.import-workbook", yes=True, confirm="999")
+    with pytest.raises(CliError) as excinfo:
+        enforce_confirmation(
+            invocation, policy=POLICY_CONFIRM_TARGET, action="import", target="456"
+        )
+    assert excinfo.value.code == "confirmation_target_mismatch"
 
 
 def test_dataset_delete_with_wrong_confirm_makes_no_api_call(

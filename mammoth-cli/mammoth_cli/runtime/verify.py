@@ -175,6 +175,7 @@ def _automation_wording(
     ):
         return
     job_id = data.get("job_id") or data.get("future_id")
+    command: str | None
     if job_id:
         command = f"mammoth job wait {job_id}"
     else:
