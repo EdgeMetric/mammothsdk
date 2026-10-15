@@ -23,7 +23,7 @@ def refuse_existing_file(invocation: Invocation, path: str | Path) -> None:
             code=CODE_INVALID_ARGUMENT,
             message=f"{target} is a directory, not a file path.",
             exit_status=EXIT_USAGE,
-            hint=f"Give a file name inside it, for example output_path \"{target}/export.csv\".",
+            hint=f'Give a file name inside it, for example output_path "{target}/export.csv".',
             details={"output_path": str(target)},
         )
     if invocation.overwrite or not (target.exists() or target.is_symlink()):

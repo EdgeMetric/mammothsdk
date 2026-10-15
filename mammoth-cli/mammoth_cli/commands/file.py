@@ -34,9 +34,9 @@ from mammoth_cli.runtime.confirm import (
     enforce_confirmation,
 )
 from mammoth_cli.runtime.invocation import Invocation
-from mammoth_cli.services.paging import listing_with_paging
 from mammoth_cli.runtime.session import open_service, resolved_project
 from mammoth_cli.services.command_contract import bind_command_inputs
+from mammoth_cli.services.paging import listing_with_paging
 
 HandlerResult = tuple[Any, dict[str, Any]]
 
@@ -264,7 +264,7 @@ def file_upload(invocation: Invocation) -> HandlerResult:
             exit_status=EXIT_USAGE,
             hint=(
                 "Pass one path as the argument (mammoth file upload ./data.csv), or several "
-                "with --input '{\"files\": [\"a.csv\", \"b.csv\"]}'."
+                'with --input \'{"files": ["a.csv", "b.csv"]}\'.'
             ),
         )
     with open_service(invocation) as (service, auth):

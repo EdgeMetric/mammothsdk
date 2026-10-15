@@ -443,7 +443,11 @@ def map_sdk_exception(
             hint="Inspect the job and wait for it to reach a terminal state.",
             details=details,
             retryable=True,
-            recovery_commands=_job_recovery(job_id, profile=profile, project_id=project_id) if job_id is not None else [],
+            recovery_commands=(
+                _job_recovery(job_id, profile=profile, project_id=project_id)
+                if job_id is not None
+                else []
+            ),
         )
 
     if isinstance(exc, MammothJobFailedError):
@@ -459,7 +463,9 @@ def map_sdk_exception(
             hint="Inspect the job response for the failure reason.",
             details=details,
             recovery_commands=(
-                _job_recovery(job_id, profile=profile, project_id=project_id)[:1] if job_id is not None else []
+                _job_recovery(job_id, profile=profile, project_id=project_id)[:1]
+                if job_id is not None
+                else []
             ),
         )
 
@@ -479,7 +485,11 @@ def map_sdk_exception(
             details.setdefault("job_handle", job_id)
         request_id = getattr(exc, "request_id", None)
         method = getattr(exc, "method", None) or details.get("method")
-        recovery = _job_recovery(job_id, profile=profile, project_id=project_id) if job_id is not None else []
+        recovery = (
+            _job_recovery(job_id, profile=profile, project_id=project_id)
+            if job_id is not None
+            else []
+        )
         if details.get("post_submitted"):
             task_id = details.get("task_handle")
             dataview_id = details.get("dataview_id")

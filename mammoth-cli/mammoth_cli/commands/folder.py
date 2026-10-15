@@ -386,9 +386,11 @@ def folder_bulk_delete(invocation: Invocation) -> HandlerResult:
             data = service.call(_symbol(invocation), **kwargs)
             survivors = _folders_still_present(service, project_id, existing)
     results = [
-        {"folder_id": item, "status": "not_found"}
-        if item not in by_open
-        else {"folder_id": item, "status": "failed" if item in survivors else "deleted"}
+        (
+            {"folder_id": item, "status": "not_found"}
+            if item not in by_open
+            else {"folder_id": item, "status": "failed" if item in survivors else "deleted"}
+        )
         for item in folder_ids
     ]
     deleted = [r["folder_id"] for r in results if r["status"] == "deleted"]

@@ -279,8 +279,10 @@ def run(
     # execution, or when the caller explicitly selected agent mode, keep the
     # error contract machine-readable. A human TTY still receives the concise
     # diagnostic intended for interactive troubleshooting.
-    machine_error = output in MACHINE_OUTPUTS or output == "yaml" or (
-        output not in VALID_OUTPUTS and (agent_mode or not sys.stdout.isatty())
+    machine_error = (
+        output in MACHINE_OUTPUTS
+        or output == "yaml"
+        or (output not in VALID_OUTPUTS and (agent_mode or not sys.stdout.isatty()))
     )
     run_log = _open_run_log(command_id, invocation)
 
