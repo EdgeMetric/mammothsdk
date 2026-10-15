@@ -159,3 +159,10 @@ def test_a_view_summary_lists_every_column_when_asked() -> None:
     full = listing.view_summary(_view(1), _dataset(1), 3001, all_columns=True)
     assert "more)" not in full["columns"]
     assert full["columns"].count(":text") == 21
+
+
+def test_a_held_file_reads_need_action_in_a_list_and_a_name_search_like_dataset_get() -> None:
+    record = {"id": 5, "name": "wb.csv", "status": "has_unstructured_data"}
+
+    assert listing.dataset_summary(record)["status"] == "need_action"
+    assert listing.name_hit(record)["status"] == "need_action"
