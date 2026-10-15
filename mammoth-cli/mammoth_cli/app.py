@@ -1153,6 +1153,7 @@ def _execute(invocation: Invocation) -> None:
     # resolving the mutable selected-profile pointer after an interrupt.
     from mammoth_cli.context import profiles
     from mammoth_cli.runtime import executor, validate
+    from mammoth_cli.runtime.compact import COMPACT_COMMANDS, FULL_FLAG, with_compact
     from mammoth_cli.runtime.confirm import refuse_mismatched_confirm
     from mammoth_cli.runtime.dataset_health import with_dataset_health
     from mammoth_cli.runtime.intent_only import refuse_hand_crafted_write
@@ -1164,6 +1165,12 @@ def _execute(invocation: Invocation) -> None:
 
     if invocation.profile is None:
         invocation = replace(invocation, profile=profiles.get_selected(), profile_is_default=True)
+    if invocation.command_id in COMPACT_COMMANDS and FULL_FLAG in invocation.extra_args:
+        invocation = replace(
+            invocation,
+            extra_args=[arg for arg in invocation.extra_args if arg != FULL_FLAG],
+            full_output=True,
+        )
 
     def producer() -> tuple[Any, dict[str, Any]]:
         refuse_hand_crafted_write(invocation.command_id)
@@ -1193,9 +1200,8 @@ def _execute(invocation: Invocation) -> None:
             return _dry_run(handler, invocation)
         data, meta = handler(invocation)
         checked = with_locked_files(with_dataset_health(_apply_verify(invocation, data)))
-        return with_new_data_path(checked), with_next_commands(
-            invocation, checked, with_opens(invocation, checked, meta)
-        )
+        meta = with_next_commands(invocation, checked, with_opens(invocation, checked, meta))
+        return with_compact(invocation, with_new_data_path(checked)), meta
 
     executor.run(
         invocation.command_id,
@@ -1426,6 +1432,13 @@ def _command_help(command_id: str, record: dict[str, Any] | None) -> str | None:
     nested = nested_choices_help(command_id)
     if nested:
         parts.append(nested)
+    from mammoth_cli.runtime.compact import COMPACT_COMMANDS, FULL_FLAG
+
+    if command_id in COMPACT_COMMANDS:
+        parts.append(
+            "The result is compact: ids, checks, verify and a canvas summary. "
+            f"Pass {FULL_FLAG} for the complete response."
+        )
     return "\n\n".join(parts) or None
 
 

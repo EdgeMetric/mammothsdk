@@ -28,6 +28,14 @@ mammoth dashboard get DASHBOARD_ID
 (the same route as `dashboard figure-intent`); an exact `figure` spec with
 `dataview_id` is for a person at the standalone CLI.
 
+The dashboard writes (`figure add`, `figure-intent`, `v3 generate`, `chat edit`,
+`filter add`, `canvas save`, `canvas restore`) return a compact result: ids,
+checks, `verify` and a `canvas_summary` (pages, and each figure's id, kind,
+title and page); `compact.omitted` names what was left out and
+`compact.read_with` reads it (`dashboard canvas get DASHBOARD_ID`). Do not run
+the write again to see more; `--full` on a later run returns the complete
+response.
+
 `v3 generate` waits for the bake (about 30 s) and returns the baked canvas;
 `chat edit` returns `changed` and a one-line `message`. Quote one number from
 the board before you report it done.
