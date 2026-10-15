@@ -3857,6 +3857,10 @@ def view_task_list(invocation: Invocation) -> HandlerResult:
     _forward_optional(document, kwargs, ("dataset_id",))
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), **kwargs)
+    if isinstance(data, dict) and "offset" in data:
+        # The route is never asked for a later page, but echoes ``offset`` equal to its
+        # page size on the first one; this is the first page.
+        data = {**data, "offset": 0}
     return data, _meta(invocation, auth.workspace_id, None)
 
 
