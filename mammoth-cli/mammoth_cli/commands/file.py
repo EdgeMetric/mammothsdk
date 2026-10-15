@@ -259,8 +259,10 @@ def file_upload(invocation: Invocation) -> HandlerResult:
             return data, _meta(invocation, auth.workspace_id, resolved_project(invocation))
         # The SDK waits for the upload job; ``upload_result`` also returns the
         # files the server refused, which the bare id list of ``upload`` drops.
+        target = kwargs.get("append_to_ds_id")
+        rows_before = _dataset_rows(service, target) if target is not None else None
         outcome = service.call(_UPLOAD_RESULT_SYMBOL, **kwargs)
-        data = outcome["dataset_ids"]
+        data = [target] if target is not None and outcome["dataset_ids"] else outcome["dataset_ids"]
         refused = _refused_files(outcome.get("errors"))
         if outcome.get("errors") and not data:
             raise _upload_refused_error(outcome["errors"], refused)
@@ -268,13 +270,26 @@ def file_upload(invocation: Invocation) -> HandlerResult:
         # ambiguous date column lands in ``need_action`` with no view. Report
         # the status the platform holds for each dataset, not an assumed one.
         result = _upload_result(data, lambda dataset_id: _dataset_status(service, dataset_id))
+        if target is not None and data:
+            # The upload made a staging dataset the backend already deleted; the result is
+            # the dataset the rows were appended to.
+            rows_after = _dataset_rows(service, target)
+            result["appended_to"] = target
+            result["staging_dataset_ids"] = list(outcome["dataset_ids"])
+            if rows_before is not None and rows_after is not None:
+                result.update(
+                    rows_before=rows_before,
+                    rows_after=rows_after,
+                    rows_added=rows_after - rows_before,
+                )
         if refused:
             result["warnings"] = [_upload_refused_message(outcome["errors"], refused)]
             result["refused_files"] = refused
         project_id = resolved_project(invocation)
         previewed = 0
         for entry in result["datasets"]:
-            if entry.get("status") != "ready":
+            if entry.get("status") != "ready" or target is not None:
+                # An append lands in a dataset whose views already exist; no preview.
                 continue
             if previewed >= _UPLOAD_PREVIEW_LIMIT:
                 entry["preview_skipped"] = (
@@ -365,6 +380,18 @@ def _upload_refused_error(errors: dict[str, Any], refused: list[str]) -> CliErro
 
 
 _DATASET_GET_SYMBOL = "mammoth.api.datasets.DatasetsAPI.get"
+
+
+def _dataset_rows(service: Any, dataset_id: int) -> int | None:
+    """The dataset's stored row count, or None when it cannot be read."""
+    try:
+        response = service.call(_DATASET_GET_SYMBOL, dataset_id=dataset_id)
+    except CliError:
+        return None
+    dataset = response.get("dataset", response) if isinstance(response, dict) else {}
+    stats = dataset.get("stats") if isinstance(dataset, dict) else None
+    rows = stats.get("row_count") if isinstance(stats, dict) else None
+    return rows if isinstance(rows, int) else None
 
 
 def _dataset_status(service: Any, dataset_id: int) -> tuple[str, dict[str, Any] | None, str | None]:

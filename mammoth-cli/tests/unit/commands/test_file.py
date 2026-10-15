@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -501,3 +502,39 @@ def test_upload_result_names_each_dataset_in_its_health_entry(
     from mammoth_cli.runtime.dataset_health import with_dataset_health
 
     assert with_dataset_health(data)["dataset_health"][0]["name"] == "foo.csv"
+
+
+def test_append_upload_reports_the_target_dataset_not_the_staging_one(
+    isolated_cli_config: object, fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    """Bug bash 2026-10-15: the result named the deleted staging dataset plus a preview_error."""
+    csv = tmp_path / "d11.csv"
+    csv.write_text("day,events\n2026-10-11,3\n")
+    fake_service.responses[_UPLOAD_RESULT] = {"dataset_ids": [313583], "errors": {}}
+
+    def _get(log: list[Any]) -> dict[str, Any]:
+        reads = [kw for sym, kw in log if sym.endswith("DatasetsAPI.get")]
+        rows = 30 if len(reads) == 1 else 33
+        return {"id": 313571, "name": "events", "status": "ready", "stats": {"row_count": rows}}
+
+    fake_service.responses["mammoth.api.datasets.DatasetsAPI.get"] = _get
+    data, _ = file_cmd.file_upload(
+        _inv(
+            "file.upload",
+            extra_args=[str(csv)],
+            input_file=str(_input_doc(tmp_path, {"append_to_ds_id": 313571})),
+        )
+    )
+    assert data["dataset_id"] == 313571
+    assert data["dataset_ids"] == [313571]
+    assert data["appended_to"] == 313571
+    assert data["rows_before"] == 30 and data["rows_after"] == 33 and data["rows_added"] == 3
+    assert "preview_error" not in json.dumps(data)
+    assert 313583 not in [d["id"] for d in data["datasets"]]
+    assert not any(kw.get("dataset_id") == 313583 for _sym, kw in fake_service.call_log)
+
+
+def _input_doc(tmp_path: Path, document: dict[str, Any]) -> Path:
+    doc = tmp_path / "in.json"
+    doc.write_text(json.dumps(document))
+    return doc
