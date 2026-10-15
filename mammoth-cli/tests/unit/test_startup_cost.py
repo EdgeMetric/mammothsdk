@@ -362,3 +362,18 @@ def test_operations_manifest_is_cached_like_the_commands(cache_dir: Path) -> Non
     path.write_text(json.dumps(marker))
     loader.clear_cache()
     assert loader.load_operations() == marker  # a hit, not a YAML parse
+
+
+@pytest.mark.subprocess
+def test_type_system_does_not_import_pydantic() -> None:
+    """Describing types needs no pydantic (~20 ms); it is looked up only if already loaded."""
+    import subprocess
+    import sys
+
+    code = (
+        "import sys; import mammoth_cli.services.type_system as t;"
+        "assert 'pydantic' not in sys.modules;"
+        "assert t._is_model(int) is False; assert 'pydantic' not in sys.modules"
+    )
+    done = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, check=False)
+    assert done.returncode == 0, done.stderr[-300:]
