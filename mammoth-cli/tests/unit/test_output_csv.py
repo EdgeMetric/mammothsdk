@@ -45,3 +45,16 @@ def test_csv_of_a_result_without_rows_fails_loud(data: Any) -> None:
     with pytest.raises(CliError) as caught:
         _csv(data)
     assert caught.value.code == CODE_INVALID_ARGUMENTS
+
+
+def test_csv_writes_a_listing_result_one_line_per_record() -> None:
+    listing = {
+        "datasets": [{"id": 1, "name": "a"}, {"id": 2, "name": "b"}],
+        "dataset_health": [{"dataset_id": 1, "health": "healthy"}],
+        "paging": {"offset": 0},
+    }
+    assert _csv(listing) == [["id", "name"], ["1", "a"], ["2", "b"]]
+
+
+def test_csv_writes_the_only_list_of_records_in_an_unknown_listing() -> None:
+    assert _csv({"things": [{"x": 1}], "total": 1}) == [["x"], ["1"]]
