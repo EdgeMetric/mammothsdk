@@ -10,7 +10,6 @@ from mammoth import MammothClient
 
 client = MammothClient(
     api_token=os.getenv("MAMMOTH_API_TOKEN"),
-    workspace_id=11,
     timeout=60,
     job_timeout=120,
 )
@@ -26,7 +25,7 @@ The client is an async context manager (`async with`). The HTTP session is close
 
 ```python
 async with MammothClient(
-    api_token="mm_...", workspace_id=11
+    api_token="mm_..."
 ) as client:
     client.set_project_id(10)
     view = await client.views.get(1039)
@@ -114,7 +113,7 @@ See [Exceptions](exceptions.md) for the full error hierarchy.
 from mammoth import MammothClient, MammothAPIError, MammothAuthError
 
 try:
-    client = MammothClient(api_token="mm_...", workspace_id=11)
+    client = MammothClient(api_token="mm_...")
     client.set_project_id(10)
     datasets = await client.datasets.list()
 except MammothAuthError:

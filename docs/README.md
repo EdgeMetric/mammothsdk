@@ -20,7 +20,6 @@ from mammoth import MammothClient, Condition, Operator, ColumnType, SetValue
 
 client = MammothClient(
     api_token="mm_your-token",
-    workspace_id=11,
 )
 client.set_project_id(10)
 

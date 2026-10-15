@@ -7,11 +7,12 @@
 | Code | Meaning |
 |---|---|
 | 0 | Success with the command's documented result. |
-| 1 | API, job, or local artifact error. |
+| 1 | API, job, or local artifact error, including a write that did not verify (`status: failed`). A write still running when the wait ends exits 0 with `status: pending`; do not replay it. |
 | 2 | Usage, input, scope, or confirmation failure. |
+| 3 | Partial: a write whose read-back shows only part of it took effect (`status: partial`); inspect `verify` before acting. |
 | 4 | Authentication or authorization failure. |
 | 5 | Resource not found in the requested scope. |
-| 6 | Conflict with current remote state. |
+| 6 | Conflict with current remote state, or `file_exists` when a local output file already exists and `--overwrite` was not given. |
 | 7 | Retryable read/transport condition, or a timed-out known job; inspect the envelope before acting. |
 | 130 | Interrupted; the CLI observed no terminal result. |
 
