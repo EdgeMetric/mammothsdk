@@ -780,10 +780,14 @@ class _EnvelopeGroup(TyperGroup):
         elif report is None:
             error.show()
         else:
-            typer.echo(f"Error: {report.message}", err=True)
             # A no-subcommand error arrives with the help text already on
             # screen, so repeating "run --help" below it would be noise.
             no_args = _NO_ARGS_ERROR is not None and isinstance(error, _NO_ARGS_ERROR)
+            ctx = getattr(error, "ctx", None)
+            if ctx is not None and not no_args:
+                # Click's own usage line first, as its prose error has it.
+                typer.echo(ctx.get_usage(), err=True)
+            typer.echo(f"Error: {report.message}", err=True)
             if report.hint and not no_args:
                 typer.echo(report.hint, err=True)
             for command in report.recovery_commands:

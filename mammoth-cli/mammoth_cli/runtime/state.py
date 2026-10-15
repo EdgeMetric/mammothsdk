@@ -402,7 +402,8 @@ def _data_state(resolved_ids: dict[str, Any], base: Invocation) -> dict[str, Any
     # The data read already fetched the view record; a second read (``view get`` also
     # lists every dashboard) would only repeat it.
     info = read.read_info
-    if info is None:
+    if not info:
+        # Empty when the data read could not fetch the record: read it on its own.
         info = _call_read(_VIEW_GET_COMMAND, view_ids, base)
     rows = page.get("data") if isinstance(page, dict) else None
     sample = [_trim_row(row) for row in (rows or [])[:_SAMPLE_ROW_CAP]]

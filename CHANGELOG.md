@@ -49,6 +49,9 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed (mammoth-cli 2.2.86, team bug bash 2026-10-15)
 
+- `auth login --server-prefix ''` (or any malformed prefix) reports `invalid_server_prefix` first; a non-interactive run said "needs --device" instead.
+- Human-mode usage errors (`-o table`/`plain`) print Click's `Usage:` line again above the error, as before the did-you-mean change.
+- A view write's `state` block reads `view get` when the data read came back without the view record, instead of showing no columns and a null row count.
 - `dataset list` (and the name search) report a real `dataset_health` for every dataset. The list route already returns `status`; the compact summary dropped it for a ready dataset, so every row read `unknown` with a "run mammoth dataset get" hint. Each row now carries `status` (about 18 characters a row); no extra request is made, so big projects list as fast as before.
 - `file upload`: the `dataset_health` entry carries the dataset's `name` (it was `null`), and each uploaded dataset in `datasets` has a `name`.
 - Workspaces and projects are named beside their ids: `auth login` says "Signed in to workspace Filipe Silva (519), project Sales (4460)" and adds `workspace_name` / `project_name`; `auth status --check` adds `workspace_name` and `token_project_name`; the "token is limited to project" errors and the `project list` / `project get` notes name the pinned project. A failed name lookup falls back to the id and never fails the command.

@@ -730,6 +730,14 @@ def test_login_rejects_server_and_suggests_server_prefix() -> None:
     assert "--server-prefix" in error["hint"]
 
 
+def test_a_malformed_server_prefix_is_reported_before_the_login_method() -> None:
+    # Non-interactive, no --device: the bad prefix is still the error, not "pass --device".
+    result = make_runner().invoke(["auth", "login", "--server-prefix", "", "--output", "json"])
+    assert result.exit_code == EXIT_USAGE
+    error = json.loads(result.output)["error"]
+    assert error["code"] == "invalid_server_prefix"
+
+
 @pytest.mark.parametrize("command_id", sorted(BESPOKE))
 def test_every_bespoke_command_rejects_an_unknown_option(command_id: str) -> None:
     path = next(r["command_path"] for r in load_commands() if r["command_id"] == command_id).split()

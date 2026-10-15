@@ -63,13 +63,11 @@ downloads return `download_url`. Ask for a reload on `authentication_failed` onl
 
 ## Find the command for a goal
 
-State the goal in plain words. Start with `mammoth how "GOAL"`: it returns
-the ordered steps (command, purpose, runnable example) for a multi-step goal,
-or the `schema find` matches when no recipe fits (`matched: false`).
+State the goal in plain words;
 `view transform --help` is the Transform menu with one line per task:
 
 ```bash
-mammoth how "blend two files by day"       # ordered steps: upload, view list, join, read back
+mammoth how "blend two files by day"       # ordered steps, multi-step goal
 mammoth schema find "merge two datasets"   # -> view.transform.join
 mammoth view transform --help              # every data transformation
 mammoth schema find "join two datasets; remove duplicates; build a dashboard"   # 1 call, 1 result per goal
@@ -96,8 +94,7 @@ mammoth schema find "join two datasets; remove duplicates; build a dashboard"   
 
 Call a find result (or `suggestions` entry) from its `accepted_fields` and
 `agent_example`. Before concluding the CLI cannot do something the web app
-does, run `mammoth capabilities` (the known gaps, each with the commands to
-use instead; `schema find --unsupported WORDS` narrows it), and check
+does, run `mammoth capabilities` (known gaps) and check
 `view transform --help` and "View settings, and what has no
 command" in [about Mammoth](references/about-mammoth.md). Do not switch to
 the browser, or compute locally, for work the CLI covers; report a real gap
@@ -105,8 +102,7 @@ with the command tried.
 
 ## Several files, one deliverable
 
-Users often upload related files without saying how they relate ("make a
-dashboard from t_a and t_b"). Work it out from the data before building:
+Users often upload related files without saying how they relate. Work it out from the data before building:
 
 1. Upload every file, or find the ones already uploaded. An upload result
    carries a `view` preview of what Mammoth made of it (`view_id`, column
@@ -114,7 +110,7 @@ dashboard from t_a and t_b"). Work it out from the data before building:
    data get VIEW_ID` per view; warnings list numbers/dates stored as text,
    and blanks, each with its fix.
 2. Find the keys. A column in one view whose values appear in a column of
-   the other (`customer_id` and `id`, `order_ref` and `order_no`) is a
+   the other (`customer_id` and `id`) is a
    foreign key; the view with many rows per key is the main one.
 3. Read both key columns, then match the keys: same type (`convert-type`), same
    case and padding (`text`), no blanks (`set-values`, `filter`).
@@ -136,8 +132,7 @@ dashboard from t_a and t_b"). Work it out from the data before building:
    revenue, not a unit price. Fix each `deliverable_check` warning, or say
    why not.
 
-For the defaults that most pipelines use (new column or overwrite, `LEFT`
-joins, date steps), see
+For common pipeline defaults, see
 [transforms](references/recipes/transforms.md#what-most-pipelines-look-like).
 Say what you inferred (which columns you joined on, what you converted) in
 your report. If no column links the files, ask before you combine them.
@@ -146,8 +141,7 @@ your report. If no column links the files, ask before you combine them.
 
 - Ids are positionals; request fields are one `--input '{...}'` document;
   no per-field flags (`project create NAME`, not `--name`).
-- `COMMAND --help` lists input fields with every allowed value (and
-  "Allowed values" for fixed lists inside a field, such as batch `steps[].op`); `schema find WORDS` inlines
+- `COMMAND --help` lists input fields and allowed values; `schema find WORDS` inlines
   `accepted_fields`/`agent_example` for top matches, else `schema get
   ID,ID` (one call; `--input '{"full": true}'` for all
   fields); `schema list`/`schema list view` list families.

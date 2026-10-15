@@ -552,6 +552,10 @@ def _run_login(
             hint=f"Use one of: {', '.join(_STORAGE_MODES)}.",
         )
 
+    if server_prefix is not None:
+        # A malformed prefix is the thing to fix first, ahead of how to sign in.
+        resolve_base_url(server_prefix)
+
     blockers = _prompt_blockers(invocation)
 
     profile_name = invocation.profile or profiles.DEFAULT_PROFILE_NAME
