@@ -138,13 +138,14 @@ associated IDs. Do not assume a table layout or scrape the human renderer.
 
 ## Exit codes
 
-The process exit code mirrors the error class. There is no exit code 3.
+The process exit code mirrors the error class. A write whose read-back does not confirm it exits 1 (`verify.outcome` `failed`) or 3 (`partial`); the envelope is still printed on stdout.
 
 | Code | Meaning |
 |---|---|
 | 0 | Success. |
 | 1 | API error. |
 | 2 | Usage, input, or confirmation failure. |
+| 3 | Write partly applied (`verify.outcome` `partial`). |
 | 4 | Authentication failure. |
 | 5 | Not found. |
 | 6 | Conflict. |

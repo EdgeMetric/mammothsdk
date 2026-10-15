@@ -499,7 +499,7 @@ commands:
   - CT-PARAMETER-RERUN-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: A filter bound to a parameter can stay pending after the call returns; check verify.outcome and run `mammoth view pipeline wait VIEW_ID` before reading the view.
   reviewed_by: primary
   readback:
     command: parameter.get
@@ -539,7 +539,7 @@ commands:
   - CT-PARAMETER-RERUN-ALL-STALE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: A filter bound to a parameter can stay pending after the call returns; check verify.outcome and run `mammoth view pipeline wait VIEW_ID` before reading the view.
   reviewed_by: primary
   readback:
     command: parameter.list
@@ -584,7 +584,7 @@ commands:
   - CT-PARAMETER-UPDATE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: A filter bound to a parameter can stay pending after the call returns; check verify.outcome and run `mammoth view pipeline wait VIEW_ID` before reading the view.
   reviewed_by: primary
   readback:
     command: parameter.get

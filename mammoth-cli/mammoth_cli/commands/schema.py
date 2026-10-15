@@ -2421,8 +2421,9 @@ def get_schema(command_id: str) -> dict[str, Any] | None:
         "agent_example": record["agent_example"],
         "exit_codes": {
             "0": "success",
-            "1": "API or operation failure",
+            "1": "API or operation failure (including a write with verify.outcome failed)",
             "2": "usage, input, or confirmation failure",
+            "3": "write partly applied (verify.outcome partial)",
             "4": "authentication or authorization failure",
             "5": "resource not found",
             "6": "conflict or failed precondition",

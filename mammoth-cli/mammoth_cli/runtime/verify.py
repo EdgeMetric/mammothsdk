@@ -135,6 +135,10 @@ def with_verify(data: Any, invocation: Invocation | None = None) -> Any:
     _apply_downstream_export_check(verify, invocation)
     verify["outcome"] = _outcome(data, verify)
     result = {**data, "verify": verify}
+    if verify["outcome"] in (OUTCOME_FAILED, OUTCOME_PARTIAL) and "status" in data:
+        # A write that did not verify must not read "done" at the top level.
+        verify["reported_status"] = data["status"]
+        result["status"] = verify["outcome"]
     return Revealed(result) if isinstance(data, Revealed) else result
 
 

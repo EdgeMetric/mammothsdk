@@ -309,9 +309,9 @@ def test_project_positional_alias_has_an_explicit_sdk_destination() -> None:
         (
             trash_cmd.trash_list,
             "trash.list",
-            {"type": "S2-TRASH", "limit": 931, "folder_root": "S2-ROOT"},
+            {"type": "dataview", "limit": 931, "folder_root": "S2-ROOT"},
             "mammoth.api.trash.TrashAPI.list",
-            {"project_id": 42, "type": "S2-TRASH", "limit": 931, "folder_root": "S2-ROOT"},
+            {"project_id": 42, "type": "dataview", "limit": 931, "folder_root": "S2-ROOT"},
             [],
         ),
         (
@@ -325,9 +325,9 @@ def test_project_positional_alias_has_an_explicit_sdk_destination() -> None:
         (
             annotation_cmd.annotation_create,
             "annotation.create",
-            {"target_type": "S2-TARGET", "target_id": 941, "body": "S2-BODY"},
+            {"target_type": "dataset", "target_id": 941, "body": "S2-BODY"},
             "mammoth.api.annotations.AnnotationsAPI.create",
-            {"target_type": "S2-TARGET", "target_id": 941, "body": "S2-BODY", "project_id": 42},
+            {"target_type": "dataset", "target_id": 941, "body": "S2-BODY", "project_id": 42},
             [],
         ),
         (

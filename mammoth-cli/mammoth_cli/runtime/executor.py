@@ -18,7 +18,9 @@ from typing import Any
 import typer
 
 from mammoth_cli.errors.envelope import (
+    EXIT_API,
     EXIT_AUTH,
+    EXIT_PARTIAL,
     EXIT_USAGE,
     CliError,
     cancelled_error,
@@ -123,6 +125,21 @@ def _validate_output(output: str) -> None:
             exit_status=EXIT_USAGE,
             hint=f"Use one of: {', '.join(VALID_OUTPUTS)}.",
         )
+
+
+def _verify_exit_status(data: Any) -> int:
+    """Exit code for a write whose read-back says it did not take effect.
+
+    ``verify.outcome`` ``failed`` exits 1 and ``partial`` exits 3; the envelope
+    is still printed so the caller can read what happened.
+    """
+    verify = data.get("verify") if isinstance(data, dict) else None
+    outcome = verify.get("outcome") if isinstance(verify, dict) else None
+    if outcome == "failed":
+        return EXIT_API
+    if outcome == "partial":
+        return EXIT_PARTIAL
+    return 0
 
 
 def emit_success(
@@ -257,6 +274,7 @@ def run(
     # itself is refreshed only after the command has produced its output.
     update = updates.available_update(command_id)
     report_failed = False
+    write_exit = 0
     try:
         _validate_output(output)
         _refuse_if_removed(command_id)
@@ -273,6 +291,7 @@ def run(
         report_failed = (
             command_id == "doctor" and isinstance(data, dict) and data.get("ok") is False
         )
+        write_exit = _verify_exit_status(data)
     except CliError as error:
         running = (
             running_handle(error, command_id)
@@ -311,11 +330,13 @@ def run(
         fail(mapped_error, exc)
         raise typer.Exit(mapped_error.exit_status) from None
     if run_log is not None:
-        run_log.finish(EXIT_AUTH if report_failed else 0)
+        run_log.finish(EXIT_AUTH if report_failed else write_exit)
     updates.refresh_in_background(command_id)
     _sync_skill_installs(command_id, output)
     if report_failed:
         raise typer.Exit(EXIT_AUTH)
+    if write_exit:
+        raise typer.Exit(write_exit)
 
 
 def _sync_skill_installs(command_id: str, output: str) -> None:

@@ -18,6 +18,7 @@ from mammoth_cli.runtime import embedded
 EXIT_OK = 0
 EXIT_API = 1
 EXIT_USAGE = 2
+EXIT_PARTIAL = 3
 EXIT_AUTH = 4
 EXIT_NOT_FOUND = 5
 EXIT_CONFLICT = 6
