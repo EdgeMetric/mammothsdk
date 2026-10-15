@@ -11431,7 +11431,7 @@ operations:
   disposition_reason: User-initiated production operation.
   canonical_command: dataset.definition.list
   alias_of: null
-  sdk_symbol: mammoth.api.datasets.DatasetsAPI.definition_list
+  sdk_symbol: mammoth.api.datasets.DatasetsAPI.list_definitions
   reviewed_by: primary
 - identity: POST /workspaces/{workspace_id}/projects/{project_id}/datasets/{dataset_id}/definitions
   method: POST
@@ -11453,7 +11453,7 @@ operations:
   disposition_reason: User-initiated production operation.
   canonical_command: dataset.definition.add
   alias_of: null
-  sdk_symbol: mammoth.api.datasets.DatasetsAPI.definition_add
+  sdk_symbol: mammoth.api.datasets.DatasetsAPI.add_definition
   reviewed_by: primary
 - identity: DELETE /workspaces/{workspace_id}/projects/{project_id}/datasets/{dataset_id}/definitions/{definition_id}
   method: DELETE
@@ -11475,7 +11475,7 @@ operations:
   disposition_reason: User-initiated production operation.
   canonical_command: dataset.definition.remove
   alias_of: null
-  sdk_symbol: mammoth.api.datasets.DatasetsAPI.definition_remove
+  sdk_symbol: mammoth.api.datasets.DatasetsAPI.remove_definition
   reviewed_by: primary
 - identity: DELETE /workspaces/{workspace_id}/projects/{project_id}/datasets/{dataset_id}/file_settings
   method: DELETE

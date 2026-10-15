@@ -917,88 +917,6 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
-- command_id: workflow.duplicate
-  command_path: workflow duplicate
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - DuplicateWorkflow
-  positionals: []
-  options: []
-  sdk_symbol: mammoth.api.workflows.WorkflowsAPI.duplicate
-  sdk_conversion: Call mammoth.api.workflows.WorkflowsAPI.duplicate with validated request fields.
-  request_model: WorkflowDuplicateRequest
-  result_model: WorkflowDuplicateResult
-  mutation_class: benign_mutation
-  edits_target: false
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_disposable_project
-  live_test: LT-WORKFLOW-DUPLICATE
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth workflow duplicate --help
-  agent_example: mammoth workflow duplicate --output json --no-input
-  unit_tests:
-  - UT-WORKFLOW-DUPLICATE
-  contract_tests:
-  - CT-WORKFLOW-DUPLICATE-HUMAN
-  - CT-WORKFLOW-DUPLICATE-JSON
-  - CT-WORKFLOW-DUPLICATE-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: null
-  reviewed_by: primary
-- command_id: workflow.save-cancel-step
-  command_path: workflow save-cancel-step
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - CancelWorkflowSaveStep
-  positionals:
-  - name: workflow_id
-    type: int
-    required: true
-    metavar: WORKFLOW_ID
-    falls_back_to_field: null
-    help: ID of the workflow.
-  - name: run_id
-    type: str
-    required: true
-    metavar: RUN_ID
-    falls_back_to_field: null
-    help: ID of the run.
-  options: []
-  sdk_symbol: mammoth.api.workflows.WorkflowsAPI.cancel_save_step
-  sdk_conversion: Call mammoth.api.workflows.WorkflowsAPI.cancel_save_step with validated request fields.
-  request_model: WorkflowSaveCancelStepRequest
-  result_model: WorkflowSaveCancelStepResult
-  mutation_class: benign_mutation
-  edits_target: false
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_disposable_project
-  live_test: LT-WORKFLOW-SAVE-CANCEL-STEP
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth workflow save-cancel-step WORKFLOW_ID RUN_ID --help
-  agent_example: mammoth workflow save-cancel-step 123 example --output json --no-input
-  unit_tests:
-  - UT-WORKFLOW-SAVE-CANCEL-STEP
-  contract_tests:
-  - CT-WORKFLOW-SAVE-CANCEL-STEP-HUMAN
-  - CT-WORKFLOW-SAVE-CANCEL-STEP-JSON
-  - CT-WORKFLOW-SAVE-CANCEL-STEP-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: null
-  reviewed_by: primary
 - command_id: workflow.save-undo
   command_path: workflow save-undo
   disposition: command
@@ -1023,19 +941,24 @@ commands:
   sdk_conversion: Call mammoth.api.workflows.WorkflowsAPI.undo_save with validated request fields.
   request_model: WorkflowSaveUndoRequest
   result_model: WorkflowSaveUndoResult
-  mutation_class: benign_mutation
+  mutation_class: "destructive"
   edits_target: false
-  confirmation: none
-  wait_policy: not_async
+  confirmation: "prompt_or_yes"
+  wait_policy: "always_wait"
   pagination_policy: none
   acceptance_evidence: live_disposable_project
+  readback:
+    command: workflow.get
+    ids:
+      workflow_id: positional.0
+    kind: object
   live_test: LT-WORKFLOW-SAVE-UNDO
   live_exemption_reason: null
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth workflow save-undo WORKFLOW_ID RUN_ID --help
-  agent_example: mammoth workflow save-undo 123 example --output json --no-input
+  agent_example: "mammoth workflow save-undo 123 run-abc --yes"
   unit_tests:
   - UT-WORKFLOW-SAVE-UNDO
   contract_tests:
@@ -1044,5 +967,109 @@ commands:
   - CT-WORKFLOW-SAVE-UNDO-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: "Removes what the Save built (datasets, views, steps). Prompts, or pass --yes. Waits for the undo run."
+  reviewed_by: primary
+- command_id: workflow.duplicate
+  command_path: workflow duplicate
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - DuplicateWorkflow
+  positionals:
+  - name: source_workflow_id
+    type: int
+    required: false
+    metavar: SOURCE_WORKFLOW_ID
+    falls_back_to_field: source_workflow_id
+    help: ID of the workflow to copy; or pass 'source_workflow_id' in --input.
+  options: []
+  sdk_symbol: mammoth.api.workflows.WorkflowsAPI.duplicate
+  sdk_conversion: Call mammoth.api.workflows.WorkflowsAPI.duplicate with validated request fields.
+  request_model: WorkflowDuplicateRequest
+  result_model: WorkflowDuplicateResult
+  mutation_class: benign_mutation
+  edits_target: false
+  confirmation: none
+  wait_policy: "always_wait"
+  pagination_policy: none
+  acceptance_evidence: "contract_only_no_disposable_fixture"
+  readback:
+    command: workflow.get
+    ids:
+      workflow_id: result.workflow_id
+    kind: object
+  live_test: null
+  live_exemption_reason: "No disposable fixture covers this write; contract and unit tests cover it."
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth workflow duplicate --help
+  agent_example: "mammoth workflow duplicate 123 --input '{\"name\": \"Copy\", \"dataset_ids\": [456]}'"
+  unit_tests:
+  - UT-WORKFLOW-DUPLICATE
+  contract_tests:
+  - CT-WORKFLOW-DUPLICATE-HUMAN
+  - CT-WORKFLOW-DUPLICATE-JSON
+  - CT-WORKFLOW-DUPLICATE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: "Copies the chosen datasets, with their rows, views and steps, into a new workflow. Automations and outside exports are not copied."
+  reviewed_by: primary
+- command_id: workflow.save-cancel-step
+  command_path: workflow save-cancel-step
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - CancelWorkflowSaveStep
+  positionals:
+  - name: workflow_id
+    type: int
+    required: true
+    metavar: WORKFLOW_ID
+    falls_back_to_field: null
+    help: ID of the workflow.
+  - name: run_id
+    type: str
+    required: true
+    metavar: RUN_ID
+    falls_back_to_field: null
+    help: ID of the Save run (from 'workflow save' or 'workflow get').
+  - name: step
+    type: int
+    required: true
+    metavar: STEP
+    falls_back_to_field: null
+    help: Number of the step to cancel (0 or more).
+  options: []
+  sdk_symbol: mammoth.api.workflows.WorkflowsAPI.cancel_save_step
+  sdk_conversion: Call mammoth.api.workflows.WorkflowsAPI.cancel_save_step with validated request fields.
+  request_model: WorkflowSaveCancelStepRequest
+  result_model: WorkflowSaveCancelStepResult
+  mutation_class: benign_mutation
+  edits_target: false
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: "contract_only_no_disposable_fixture"
+  readback:
+    command: workflow.get
+    ids:
+      workflow_id: positional.0
+    kind: object
+  live_test: null
+  live_exemption_reason: "No disposable fixture covers this write; contract and unit tests cover it."
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth workflow save-cancel-step WORKFLOW_ID RUN_ID STEP --help
+  agent_example: "mammoth workflow save-cancel-step 123 run-abc 2"
+  unit_tests:
+  - UT-WORKFLOW-SAVE-CANCEL-STEP
+  contract_tests:
+  - CT-WORKFLOW-SAVE-CANCEL-STEP-HUMAN
+  - CT-WORKFLOW-SAVE-CANCEL-STEP-JSON
+  - CT-WORKFLOW-SAVE-CANCEL-STEP-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: "Cancels one step of a running Save; steps that need it are skipped. Best effort: a job already started may still finish."
   reviewed_by: primary

@@ -1,6 +1,6 @@
 # Published CLI command catalog
 
-This generated catalog is a lookup table for every command in the published CLI manifest, currently 753; each entry carries its release status line. It is a command-contract index, not an assertion that every backend/OpenAPI operation has a CLI binding. For an exact local CLI contract, run `mammoth schema get COMMAND_ID`; `mammoth capability list` is an API-binding inventory and can omit typed/local CLI routes. For focused workflows, read the [recipes index](recipes/index.md). Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
+This generated catalog is a lookup table for every command in the published CLI manifest, currently 779; each entry carries its release status line. It is a command-contract index, not an assertion that every backend/OpenAPI operation has a CLI binding. For an exact local CLI contract, run `mammoth schema get COMMAND_ID`; `mammoth capability list` is an API-binding inventory and can omit typed/local CLI routes. For focused workflows, read the [recipes index](recipes/index.md). Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
 Load only the applicable domain file:
 
@@ -17,7 +17,7 @@ Load only the applicable domain file:
 - [calc](commands/calc.md) — 1 published commands
 - [capability](commands/capability.md) — 3 published commands
 - [client-app](commands/client-app.md) — 5 published commands
-- [collection](commands/collection.md) — 16 published commands
+- [collection](commands/collection.md) — 21 published commands
 - [completion](commands/completion.md) — 2 published commands
 - [config](commands/config.md) — 4 published commands
 - [connector](commands/connector.md) — 23 published commands
@@ -25,7 +25,9 @@ Load only the applicable domain file:
 - [dashboard-qa](commands/dashboard-qa.md) — 14 published commands
 - [dashboard-template](commands/dashboard-template.md) — 12 published commands
 - [dashboard-style](commands/dashboard-style.md) — 10 published commands
-- [dashboard](commands/dashboard.md) — 108 published commands
+- [dashboard-embed](commands/dashboard-embed.md) — 9 published commands
+- [dashboard-published](commands/dashboard-published.md) — 8 published commands
+- [dashboard](commands/dashboard.md) — 104 published commands
 - [data-app](commands/data-app.md) — 12 published commands
 - [dataset](commands/dataset.md) — 27 published commands
 - [doctor](commands/doctor.md) — 1 published commands
@@ -52,7 +54,7 @@ Load only the applicable domain file:
 - [user](commands/user.md) — 8 published commands
 - [version](commands/version.md) — 1 published commands
 - [view-transform](commands/view-transform.md) — 35 published commands
-- [view](commands/view.md) — 103 published commands
+- [view](commands/view.md) — 106 published commands
 - [webhook](commands/webhook.md) — 7 published commands
-- [workflow](commands/workflow.md) — 20 published commands
-- [workspace](commands/workspace.md) — 31 published commands
+- [workflow](commands/workflow.md) — 23 published commands
+- [workspace](commands/workspace.md) — 33 published commands

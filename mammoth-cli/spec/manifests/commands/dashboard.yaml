@@ -6451,7 +6451,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard email-updates get DASHBOARD_ID --help
-  agent_example: mammoth dashboard email-updates get 123 --output json --no-input
+  agent_example: mammoth dashboard email-updates get 123
   unit_tests:
   - UT-DASHBOARD-EMAIL-UPDATES-GET
   contract_tests:
@@ -6486,7 +6486,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard email-updates list --help
-  agent_example: mammoth dashboard email-updates list --output json --no-input
+  agent_example: mammoth dashboard email-updates list
   unit_tests:
   - UT-DASHBOARD-EMAIL-UPDATES-LIST
   contract_tests:
@@ -6527,7 +6527,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard email-updates me get DASHBOARD_ID --help
-  agent_example: mammoth dashboard email-updates me get 123 --output json --no-input
+  agent_example: mammoth dashboard email-updates me get 123
   unit_tests:
   - UT-DASHBOARD-EMAIL-UPDATES-ME-GET
   contract_tests:
@@ -6562,15 +6562,19 @@ commands:
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
-  acceptance_evidence: contract_only_no_disposable_fixture
+  acceptance_evidence: "contract_only_no_disposable_fixture"
+  readback:
+    command: dashboard.email-updates.me.get
+    ids:
+      dashboard_id: positional.0
+    kind: object
   live_test: null
-  live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
-    fixture in tests/live.
+  live_exemption_reason: "No disposable fixture covers this write; contract and unit tests cover it."
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard email-updates me set DASHBOARD_ID --help
-  agent_example: mammoth dashboard email-updates me set 123 --output json --no-input
+  agent_example: "mammoth dashboard email-updates me set 123 --input '{\"body\": {\"subscribed\": true}}'"
   unit_tests:
   - UT-DASHBOARD-EMAIL-UPDATES-ME-SET
   contract_tests:
@@ -6579,7 +6583,7 @@ commands:
   - CT-DASHBOARD-EMAIL-UPDATES-ME-SET-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: "Turns your own email updates for the dashboard on or off; nobody else's."
   reviewed_by: primary
 - command_id: dashboard.email-updates.set
   command_path: dashboard email-updates set
@@ -6599,20 +6603,24 @@ commands:
   sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.email_updates_set with validated request fields.
   request_model: DashboardEmailUpdatesSetRequest
   result_model: DashboardEmailUpdatesSetResult
-  mutation_class: benign_mutation
+  mutation_class: "external_effect"
   edits_target: false
-  confirmation: none
+  confirmation: "yes_always"
   wait_policy: not_async
   pagination_policy: none
-  acceptance_evidence: contract_only_no_disposable_fixture
+  acceptance_evidence: "contract_only_high_impact"
+  readback:
+    command: dashboard.email-updates.get
+    ids:
+      dashboard_id: positional.0
+    kind: object
   live_test: null
-  live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
-    fixture in tests/live.
+  live_exemption_reason: "Sends or changes outbound mail or access for real people, so it is not run against a live server; contract and unit tests cover it."
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard email-updates set DASHBOARD_ID --help
-  agent_example: mammoth dashboard email-updates set 123 --output json --no-input
+  agent_example: "mammoth dashboard email-updates set 123 --input '{\"body\": {\"enabled\": true, \"timezone\": \"UTC\"}}' --yes"
   unit_tests:
   - UT-DASHBOARD-EMAIL-UPDATES-SET
   contract_tests:
@@ -6621,7 +6629,7 @@ commands:
   - CT-DASHBOARD-EMAIL-UPDATES-SET-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: "Saves the email-update schedule and the people who get the dashboard's headline numbers by mail. Needs --yes. Editors only."
   reviewed_by: primary
 - command_id: dashboard.email-updates.test
   command_path: dashboard email-updates test
@@ -6642,20 +6650,20 @@ commands:
     fields.
   request_model: DashboardEmailUpdatesTestRequest
   result_model: DashboardEmailUpdatesTestResult
-  mutation_class: benign_mutation
+  mutation_class: "external_effect"
   edits_target: false
-  confirmation: none
+  confirmation: "yes_always"
   wait_policy: not_async
   pagination_policy: none
-  acceptance_evidence: contract_only_no_disposable_fixture
+  acceptance_evidence: "contract_only_high_impact"
+  no_readback: Sends one email now; nothing is stored that a read command returns.
   live_test: null
-  live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
-    fixture in tests/live.
+  live_exemption_reason: "Sends or changes outbound mail or access for real people, so it is not run against a live server; contract and unit tests cover it."
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard email-updates test DASHBOARD_ID --help
-  agent_example: mammoth dashboard email-updates test 123 --output json --no-input
+  agent_example: "mammoth dashboard email-updates test 123 --yes"
   unit_tests:
   - UT-DASHBOARD-EMAIL-UPDATES-TEST
   contract_tests:
@@ -6664,7 +6672,7 @@ commands:
   - CT-DASHBOARD-EMAIL-UPDATES-TEST-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: "Sends a real test email update right away. Needs --yes."
   reviewed_by: primary
 - command_id: dashboard.live-chart.audience
   command_path: dashboard live-chart audience
@@ -6685,20 +6693,24 @@ commands:
     fields.
   request_model: DashboardLiveChartAudienceRequest
   result_model: DashboardLiveChartAudienceResult
-  mutation_class: benign_mutation
+  mutation_class: "high_impact"
   edits_target: false
-  confirmation: none
+  confirmation: "confirm_target"
   wait_policy: not_async
   pagination_policy: none
-  acceptance_evidence: contract_only_no_disposable_fixture
+  acceptance_evidence: "contract_only_high_impact"
+  readback:
+    command: dashboard.live-chart.get
+    ids:
+      dashboard_id: positional.0
+    kind: object
   live_test: null
-  live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
-    fixture in tests/live.
+  live_exemption_reason: "Sends or changes outbound mail or access for real people, so it is not run against a live server; contract and unit tests cover it."
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard live-chart audience DASHBOARD_ID --help
-  agent_example: mammoth dashboard live-chart audience 123 --output json --no-input
+  agent_example: "mammoth dashboard live-chart audience 123 --input '{\"body\": {\"params\": {\"audience\": \"workspace\"}}}' --yes --confirm 123"
   unit_tests:
   - UT-DASHBOARD-LIVE-CHART-AUDIENCE
   contract_tests:
@@ -6707,7 +6719,7 @@ commands:
   - CT-DASHBOARD-LIVE-CHART-AUDIENCE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: "Changes who can open the live chart. Pass the new audience in --input. Confirms the dashboard id."
   reviewed_by: primary
 - command_id: dashboard.live-chart.create
   command_path: dashboard live-chart create
@@ -6726,15 +6738,19 @@ commands:
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
-  acceptance_evidence: contract_only_no_disposable_fixture
+  acceptance_evidence: "contract_only_no_disposable_fixture"
+  readback:
+    command: dashboard.live-chart.get
+    ids:
+      dashboard_id: result.dashboard_id
+    kind: object
   live_test: null
-  live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
-    fixture in tests/live.
+  live_exemption_reason: "No disposable fixture covers this write; contract and unit tests cover it."
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard live-chart create --help
-  agent_example: mammoth dashboard live-chart create --output json --no-input
+  agent_example: "mammoth dashboard live-chart create --input '{\"body\": {\"params\": {\"view_id\": 123, \"title\": \"Revenue\", \"figure\": {}}}}'"
   unit_tests:
   - UT-DASHBOARD-LIVE-CHART-CREATE
   contract_tests:
@@ -6743,7 +6759,7 @@ commands:
   - CT-DASHBOARD-LIVE-CHART-CREATE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: "Turns a chart made in an agent chat into a live chart on a dashboard of its own. Creates a dashboard."
   reviewed_by: primary
 - command_id: dashboard.live-chart.get
   command_path: dashboard live-chart get
@@ -6774,7 +6790,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard live-chart get DASHBOARD_ID --help
-  agent_example: mammoth dashboard live-chart get 123 --output json --no-input
+  agent_example: mammoth dashboard live-chart get 123
   unit_tests:
   - UT-DASHBOARD-LIVE-CHART-GET
   contract_tests:
@@ -6814,7 +6830,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard live-chart list SESSION_ID --help
-  agent_example: mammoth dashboard live-chart list example --output json --no-input
+  agent_example: mammoth dashboard live-chart list example
   unit_tests:
   - UT-DASHBOARD-LIVE-CHART-LIST
   contract_tests:
@@ -6849,15 +6865,19 @@ commands:
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
-  acceptance_evidence: contract_only_no_disposable_fixture
+  acceptance_evidence: "contract_only_no_disposable_fixture"
+  readback:
+    command: dashboard.live-chart.usage
+    ids:
+      dashboard_id: positional.0
+    kind: object
   live_test: null
-  live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
-    fixture in tests/live.
+  live_exemption_reason: "No disposable fixture covers this write; contract and unit tests cover it."
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard live-chart placement DASHBOARD_ID --help
-  agent_example: mammoth dashboard live-chart placement 123 --output json --no-input
+  agent_example: "mammoth dashboard live-chart placement 123 --input '{\"body\": {\"params\": {\"dashboard_id\": 456, \"figure_id\": \"fig1\"}}}'"
   unit_tests:
   - UT-DASHBOARD-LIVE-CHART-PLACEMENT
   contract_tests:
@@ -6866,7 +6886,7 @@ commands:
   - CT-DASHBOARD-LIVE-CHART-PLACEMENT-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: "Records where a live chart is shown (an embed or a page)."
   reviewed_by: primary
 - command_id: dashboard.live-chart.usage
   command_path: dashboard live-chart usage
@@ -6897,7 +6917,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard live-chart usage DASHBOARD_ID --help
-  agent_example: mammoth dashboard live-chart usage 123 --output json --no-input
+  agent_example: mammoth dashboard live-chart usage 123
   unit_tests:
   - UT-DASHBOARD-LIVE-CHART-USAGE
   contract_tests:
@@ -6931,7 +6951,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard oembed --help
-  agent_example: mammoth dashboard oembed --output json --no-input
+  agent_example: "mammoth dashboard oembed --input '{\"url\": \"https://app.mammoth.io/dashboards/share/example\"}'"
   unit_tests:
   - UT-DASHBOARD-OEMBED
   contract_tests:

@@ -5178,9 +5178,9 @@ methods:
   signature: 'add_definition(self, dataset_id: ''int'', term: ''str'', definition: ''str'', workspace_id:
     ''int | None'' = None, project_id: ''int | None'' = None) -> ''dict[str, Any]'''
   openapi_operation_ids: []
-  canonical_command: null
+  canonical_command: dataset.definition.add
   alias_of: null
-  no_command_reason: SDK-only helper; no reviewed CLI command.
+  no_command_reason: null
   mutation_class: null
   wait_policy: null
   pagination_policy: null
@@ -5480,9 +5480,9 @@ methods:
   signature: 'list_definitions(self, dataset_id: ''int'', workspace_id: ''int | None'' = None, project_id:
     ''int | None'' = None) -> ''dict[str, Any]'''
   openapi_operation_ids: []
-  canonical_command: null
+  canonical_command: dataset.definition.list
   alias_of: null
-  no_command_reason: SDK-only helper; no reviewed CLI command.
+  no_command_reason: null
   mutation_class: null
   wait_policy: null
   pagination_policy: null
@@ -5506,9 +5506,9 @@ methods:
   signature: 'remove_definition(self, dataset_id: ''int'', definition_id: ''str'', workspace_id: ''int
     | None'' = None, project_id: ''int | None'' = None) -> ''dict[str, Any]'''
   openapi_operation_ids: []
-  canonical_command: null
+  canonical_command: dataset.definition.remove
   alias_of: null
-  no_command_reason: SDK-only helper; no reviewed CLI command.
+  no_command_reason: null
   mutation_class: null
   wait_policy: null
   pagination_policy: null

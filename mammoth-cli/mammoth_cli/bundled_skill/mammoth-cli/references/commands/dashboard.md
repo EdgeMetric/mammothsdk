@@ -322,93 +322,63 @@ Result: `DashboardDuplicateResult`; mutation `benign_mutation`, confirmation `no
 
 Status on release: ran once on CLI 2.0.12 — Dashboard sweep 2026-09-18: exit 0 on release with CLI 2.0.12; result keys: id. duplicated D=52 -> D2=54 Single invocation only; no error-path or variant coverage.
 
-### `dashboard.embed.config.get`
+### `dashboard.email-updates.get`
 
-Run: `mammoth dashboard embed config get`. Exact input fields: `mammoth schema get dashboard.embed.config.get`.
+Run: `mammoth dashboard email-updates get`. Exact input fields: `mammoth schema get dashboard.email-updates.get`.
 
-Example: `mammoth dashboard embed config get 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth dashboard email-updates get 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
-Result: `DashboardEmbedConfigGetResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
-
-Status on release: untried; no live run recorded.
-
-### `dashboard.embed.config.set`
-
-Run: `mammoth dashboard embed config set`. Exact input fields: `mammoth schema get dashboard.embed.config.set`.
-
-Example: `mammoth dashboard embed config set 123 --yes --confirm 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
-
-Result: `DashboardEmbedConfigSetResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+Result: `DashboardEmailUpdatesGetResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
 Status on release: untried; no live run recorded.
 
-### `dashboard.embed.key.rotate`
+### `dashboard.email-updates.list`
 
-Run: `mammoth dashboard embed key rotate`. Exact input fields: `mammoth schema get dashboard.embed.key.rotate`.
+Run: `mammoth dashboard email-updates list`. Exact input fields: `mammoth schema get dashboard.email-updates.list`.
 
-Example: `mammoth dashboard embed key rotate 123 --yes --confirm 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth dashboard email-updates list`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
-Result: `DashboardEmbedKeyRotateResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
-
-Status on release: untried; no live run recorded.
-
-### `dashboard.embed.lifetime.set`
-
-Run: `mammoth dashboard embed lifetime set`. Exact input fields: `mammoth schema get dashboard.embed.lifetime.set`.
-
-Example: `mammoth dashboard embed lifetime set 123 --input '{"token_ttl": 1}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
-
-Result: `DashboardEmbedLifetimeSetResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+Result: `DashboardEmailUpdatesListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
 Status on release: untried; no live run recorded.
 
-### `dashboard.embed.origin.revoke`
+### `dashboard.email-updates.me.get`
 
-Run: `mammoth dashboard embed origin revoke`. Exact input fields: `mammoth schema get dashboard.embed.origin.revoke`.
+Run: `mammoth dashboard email-updates me get`. Exact input fields: `mammoth schema get dashboard.email-updates.me.get`.
 
-Example: `mammoth dashboard embed origin revoke 123 --input '{"origin": "https://example.com"}' --yes --confirm 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth dashboard email-updates me get 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
-Result: `DashboardEmbedOriginRevokeResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
-
-Status on release: untried; no live run recorded.
-
-### `dashboard.embed.preview-token.create`
-
-Run: `mammoth dashboard embed preview-token create`. Exact input fields: `mammoth schema get dashboard.embed.preview-token.create`.
-
-Example: `mammoth dashboard embed preview-token create 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
-
-Result: `DashboardEmbedPreviewTokenCreateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+Result: `DashboardEmailUpdatesMeGetResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
 Status on release: untried; no live run recorded.
 
-### `dashboard.embed.secret.rotate`
+### `dashboard.email-updates.me.set`
 
-Run: `mammoth dashboard embed secret rotate`. Exact input fields: `mammoth schema get dashboard.embed.secret.rotate`.
+Run: `mammoth dashboard email-updates me set`. Exact input fields: `mammoth schema get dashboard.email-updates.me.set`.
 
-Example: `mammoth dashboard embed secret rotate 123 --yes --confirm 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth dashboard email-updates me set 123 --input '{"body": {"subscribed": true}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
-Result: `DashboardEmbedSecretRotateResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
-
-Status on release: untried; no live run recorded.
-
-### `dashboard.embed.usage.get`
-
-Run: `mammoth dashboard embed usage get`. Exact input fields: `mammoth schema get dashboard.embed.usage.get`.
-
-Example: `mammoth dashboard embed usage get 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
-
-Result: `DashboardEmbedUsageGetResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+Result: `DashboardEmailUpdatesMeSetResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
 Status on release: untried; no live run recorded.
 
-### `dashboard.embed.usage.summary`
+### `dashboard.email-updates.set`
 
-Run: `mammoth dashboard embed usage summary`. Exact input fields: `mammoth schema get dashboard.embed.usage.summary`.
+Run: `mammoth dashboard email-updates set`. Exact input fields: `mammoth schema get dashboard.email-updates.set`.
 
-Example: `mammoth dashboard embed usage summary --input '{"dashboard_ids": [1]}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth dashboard email-updates set 123 --input '{"body": {"enabled": true, "timezone": "UTC"}}' --yes`. Illustrative only: append `--yes` after observing an owned target.
 
-Result: `DashboardEmbedUsageSummaryResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+Result: `DashboardEmailUpdatesSetResult`; mutation `external_effect`, confirmation `yes_always`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `dashboard.email-updates.test`
+
+Run: `mammoth dashboard email-updates test`. Exact input fields: `mammoth schema get dashboard.email-updates.test`.
+
+Example: `mammoth dashboard email-updates test 123 --yes`. Illustrative only: append `--yes` after observing an owned target.
+
+Result: `DashboardEmailUpdatesTestResult`; mutation `external_effect`, confirmation `yes_always`, wait policy `not_async`.
 
 Status on release: untried; no live run recorded.
 
@@ -582,6 +552,76 @@ Result: `DashboardListResult`; mutation `read`, confirmation `none`, wait policy
 
 Status on release: ran once on CLI 2.0.12 — Bounded release read succeeded in project 3; empty dashboard list observed. No Full claim: no non-empty dashboard fixture or independent wire oracle. Also: Dashboard sweep 2026-09-18: exit 0 on release with CLI 2.0.12; result keys: list[1]. 1 pre-existing das…
 
+### `dashboard.live-chart.audience`
+
+Run: `mammoth dashboard live-chart audience`. Exact input fields: `mammoth schema get dashboard.live-chart.audience`.
+
+Example: `mammoth dashboard live-chart audience 123 --input '{"body": {"params": {"audience": "workspace"}}}' --yes --confirm 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+
+Result: `DashboardLiveChartAudienceResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `dashboard.live-chart.create`
+
+Run: `mammoth dashboard live-chart create`. Exact input fields: `mammoth schema get dashboard.live-chart.create`.
+
+Example: `mammoth dashboard live-chart create --input '{"body": {"params": {"view_id": 123, "title": "Revenue", "figure": {}}}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `DashboardLiveChartCreateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `dashboard.live-chart.get`
+
+Run: `mammoth dashboard live-chart get`. Exact input fields: `mammoth schema get dashboard.live-chart.get`.
+
+Example: `mammoth dashboard live-chart get 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `DashboardLiveChartGetResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `dashboard.live-chart.list`
+
+Run: `mammoth dashboard live-chart list`. Exact input fields: `mammoth schema get dashboard.live-chart.list`.
+
+Example: `mammoth dashboard live-chart list example`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `DashboardLiveChartListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `dashboard.live-chart.placement`
+
+Run: `mammoth dashboard live-chart placement`. Exact input fields: `mammoth schema get dashboard.live-chart.placement`.
+
+Example: `mammoth dashboard live-chart placement 123 --input '{"body": {"params": {"dashboard_id": 456, "figure_id": "fig1"}}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `DashboardLiveChartPlacementResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `dashboard.live-chart.usage`
+
+Run: `mammoth dashboard live-chart usage`. Exact input fields: `mammoth schema get dashboard.live-chart.usage`.
+
+Example: `mammoth dashboard live-chart usage 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `DashboardLiveChartUsageResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `dashboard.oembed`
+
+Run: `mammoth dashboard oembed`. Exact input fields: `mammoth schema get dashboard.oembed`.
+
+Example: `mammoth dashboard oembed --input '{"url": "https://app.mammoth.io/dashboards/share/example"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `DashboardOembedResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
 ### `dashboard.og-card`
 
 Run: `mammoth dashboard og-card`. Exact input fields: `mammoth schema get dashboard.og-card`.
@@ -709,86 +749,6 @@ Example: `mammoth dashboard published-data-by-url https://example.com/data.csv -
 Result: `DashboardPublishedDataByUrlResult`; mutation `benign_mutation`, confirmation `none`, wait policy `always_wait`.
 
 Status on release: observed blocker — blocked_missing_fixture: backend_code 4DASH004 DASHBOARD_WRONG_ENGINE on /dashboards/url/IuZl5tk5KcEHJWTy4tnhrA/getPublishData, same class of blocker as widget-data: this v3 dashbo. Re-check before relying on it.
-
-### `dashboard.published.canvas`
-
-Run: `mammoth dashboard published canvas`. Exact input fields: `mammoth schema get dashboard.published.canvas`.
-
-Example: `mammoth dashboard published canvas https://example.com/data.csv`. Placeholders are illustrative; resolve IDs and input from observed reads.
-
-Result: `DashboardPublishedCanvasResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
-
-Status on release: ran once on CLI 2.0.14 — dashboard re-verification 2026-09-18: exit 0 on release with CLI 2.0.14. Returned the full published canvas object (dataset.dataview_id=45, pages, meta.figures={}, etc.) for our own published dashboard 56/url IuZl5tk5KcEHJWTy4tnhrA. Confirms publishing via da…
-
-### `dashboard.published.data`
-
-Run: `mammoth dashboard published data`. Exact input fields: `mammoth schema get dashboard.published.data`.
-
-Example: `mammoth dashboard published data https://example.com/data.csv --input '{"body": {"params": {"descriptor_ids": ["resource-123"]}}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
-
-Result: `DashboardPublishedDataResult`; mutation `benign_mutation`, confirmation `none`, wait policy `always_wait`.
-
-Status on release: observed blocker — blocked_missing_fixture: Could not publish dashboard 59 to reach a live published state: `dashboard action 59 {action:publish-presentation}` failed twice with HTTP 500 outcome_unkn. Re-check before relying on it.
-
-### `dashboard.published.og-card`
-
-Run: `mammoth dashboard published og-card`. Exact input fields: `mammoth schema get dashboard.published.og-card`.
-
-Example: `mammoth dashboard published og-card https://example.com/data.csv`. Placeholders are illustrative; resolve IDs and input from observed reads.
-
-Result: `DashboardPublishedOgCardResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
-
-Status on release: untried; no live run recorded.
-
-### `dashboard.published.pdf-artifact`
-
-Run: `mammoth dashboard published pdf-artifact`. Exact input fields: `mammoth schema get dashboard.published.pdf-artifact`.
-
-Example: `mammoth dashboard published pdf-artifact https://example.com/data.csv 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
-
-Result: `DashboardPublishedPdfArtifactResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
-
-Status on release: observed blocker — blocked_missing_fixture: Same as dashboard.pdf-artifact: no real pdf job available; used job 313 (descriptor-data job) as the only real job id in hand and got backend_code 4DASH001. Re-check before relying on it.
-
-### `dashboard.published.pdf.export`
-
-Run: `mammoth dashboard published pdf export`. Exact input fields: `mammoth schema get dashboard.published.pdf.export`.
-
-Example: `mammoth dashboard published pdf export https://example.com/data.csv --input '{"body": {"params": {"data": {}}}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
-
-Result: `DashboardPublishedPdfExportResult`; mutation `benign_mutation`, confirmation `none`, wait policy `always_wait`.
-
-Status on release: observed blocker — backend_error: Got backend_code 4PERM002 PERMISSION_ERROR, "User lacks permission to perform given action" on POST /dashboards/url/IuZl5tk5KcEHJWTy4tnhrA/pdf (403), envelope: {"err. Re-check before relying on it.
-
-### `dashboard.published.share-page`
-
-Run: `mammoth dashboard published share-page`. Exact input fields: `mammoth schema get dashboard.published.share-page`.
-
-Example: `mammoth dashboard published share-page https://example.com/data.csv`. Placeholders are illustrative; resolve IDs and input from observed reads.
-
-Result: `DashboardPublishedSharePageResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
-
-Status on release: ran once on CLI 2.0.14 — dashboard re-verification 2026-09-18: exit 0 on release with CLI 2.0.14. Returned a real rendered HTML share page (text/html, 1319 bytes, sha256 given) with correct og:title/og:image/redirect script pointing at the dashboard's own url slug. Minor cosmetic bac…
-
-### `dashboard.published.video-artifact`
-
-Run: `mammoth dashboard published video-artifact`. Exact input fields: `mammoth schema get dashboard.published.video-artifact`.
-
-Example: `mammoth dashboard published video-artifact https://example.com/data.csv`. Placeholders are illustrative; resolve IDs and input from observed reads.
-
-Result: `DashboardPublishedVideoArtifactResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
-
-Status on release: untried; no live run recorded.
-
-### `dashboard.published.video.export`
-
-Run: `mammoth dashboard published video export`. Exact input fields: `mammoth schema get dashboard.published.video.export`.
-
-Example: `mammoth dashboard published video export https://example.com/data.csv`. Placeholders are illustrative; resolve IDs and input from observed reads.
-
-Result: `DashboardPublishedVideoExportResult`; mutation `benign_mutation`, confirmation `none`, wait policy `always_wait`.
-
-Status on release: observed blocker — backend_error: backend_code 4PERM002 PERMISSION_ERROR, "User lacks permission to perform given action" on POST /dashboards/url/IuZl5tk5KcEHJWTy4tnhrA/video (403). Re-check before relying on it.
 
 ### `dashboard.query`
 

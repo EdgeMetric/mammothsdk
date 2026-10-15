@@ -4104,7 +4104,7 @@ def view_export_rest_fill(invocation: Invocation) -> HandlerResult:
     enforce_confirmation(
         invocation,
         policy=POLICY_YES_ALWAYS,
-        action=f"have Mammoth read {docs_url} to propose REST export settings for view {dataview_id}",
+        action=f"have Mammoth read {docs_url} to propose REST settings for view {dataview_id}",
     )
     kwargs: dict[str, Any] = {
         "dataview_id": dataview_id,

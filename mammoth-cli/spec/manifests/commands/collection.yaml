@@ -736,7 +736,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth collection email-updates get COLLECTION_ID --help
-  agent_example: mammoth collection email-updates get 123 --output json --no-input
+  agent_example: mammoth collection email-updates get 123
   unit_tests:
   - UT-COLLECTION-EMAIL-UPDATES-GET
   contract_tests:
@@ -777,7 +777,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth collection email-updates me get COLLECTION_ID --help
-  agent_example: mammoth collection email-updates me get 123 --output json --no-input
+  agent_example: mammoth collection email-updates me get 123
   unit_tests:
   - UT-COLLECTION-EMAIL-UPDATES-ME-GET
   contract_tests:
@@ -812,14 +812,19 @@ commands:
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
-  acceptance_evidence: live_disposable_project
-  live_test: LT-COLLECTION-EMAIL-UPDATES-ME-SET
-  live_exemption_reason: null
+  acceptance_evidence: "contract_only_no_disposable_fixture"
+  readback:
+    command: collection.email-updates.me.get
+    ids:
+      collection_id: positional.0
+    kind: object
+  live_test: null
+  live_exemption_reason: "No disposable fixture covers this write; contract and unit tests cover it."
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth collection email-updates me set COLLECTION_ID --help
-  agent_example: mammoth collection email-updates me set 123 --output json --no-input
+  agent_example: "mammoth collection email-updates me set 123 --input '{\"subscribed\": true}'"
   unit_tests:
   - UT-COLLECTION-EMAIL-UPDATES-ME-SET
   contract_tests:
@@ -828,7 +833,7 @@ commands:
   - CT-COLLECTION-EMAIL-UPDATES-ME-SET-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: "Turns your own email updates for the collection on or off; nobody else's."
   reviewed_by: primary
 - command_id: collection.email-updates.set
   command_path: collection email-updates set
@@ -849,19 +854,24 @@ commands:
     fields.
   request_model: CollectionEmailUpdatesSetRequest
   result_model: CollectionEmailUpdatesSetResult
-  mutation_class: benign_mutation
+  mutation_class: "external_effect"
   edits_target: false
-  confirmation: none
+  confirmation: "yes_always"
   wait_policy: not_async
   pagination_policy: none
-  acceptance_evidence: live_disposable_project
-  live_test: LT-COLLECTION-EMAIL-UPDATES-SET
-  live_exemption_reason: null
+  acceptance_evidence: "contract_only_high_impact"
+  readback:
+    command: collection.email-updates.get
+    ids:
+      collection_id: positional.0
+    kind: object
+  live_test: null
+  live_exemption_reason: "Sends or changes outbound mail or access for real people, so it is not run against a live server; contract and unit tests cover it."
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth collection email-updates set COLLECTION_ID --help
-  agent_example: mammoth collection email-updates set 123 --output json --no-input
+  agent_example: "mammoth collection email-updates set 123 --input '{\"enabled\": true, \"timezone\": \"UTC\"}' --yes"
   unit_tests:
   - UT-COLLECTION-EMAIL-UPDATES-SET
   contract_tests:
@@ -870,7 +880,7 @@ commands:
   - CT-COLLECTION-EMAIL-UPDATES-SET-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: "Saves the collection's email-update schedule and the phone numbers or people it reaches. Needs --yes. Editors only."
   reviewed_by: primary
 - command_id: collection.email-updates.test
   command_path: collection email-updates test
@@ -891,19 +901,20 @@ commands:
     fields.
   request_model: CollectionEmailUpdatesTestRequest
   result_model: CollectionEmailUpdatesTestResult
-  mutation_class: benign_mutation
+  mutation_class: "external_effect"
   edits_target: false
-  confirmation: none
+  confirmation: "yes_always"
   wait_policy: not_async
   pagination_policy: none
-  acceptance_evidence: live_disposable_project
-  live_test: LT-COLLECTION-EMAIL-UPDATES-TEST
-  live_exemption_reason: null
+  acceptance_evidence: "contract_only_high_impact"
+  no_readback: Sends one email now; nothing is stored that a read command returns.
+  live_test: null
+  live_exemption_reason: "Sends or changes outbound mail or access for real people, so it is not run against a live server; contract and unit tests cover it."
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth collection email-updates test COLLECTION_ID --help
-  agent_example: mammoth collection email-updates test 123 --output json --no-input
+  agent_example: "mammoth collection email-updates test 123 --yes"
   unit_tests:
   - UT-COLLECTION-EMAIL-UPDATES-TEST
   contract_tests:
@@ -912,5 +923,5 @@ commands:
   - CT-COLLECTION-EMAIL-UPDATES-TEST-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: "Sends a real test email update right away. Needs --yes."
   reviewed_by: primary

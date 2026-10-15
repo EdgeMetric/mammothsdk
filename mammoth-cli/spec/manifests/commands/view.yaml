@@ -7151,16 +7151,18 @@ commands:
   mutation_class: external_effect
   edits_target: false
   confirmation: yes_always
-  wait_policy: not_async
+  wait_policy: always_wait
   pagination_policy: none
   acceptance_evidence: contract_only_high_impact
+  no_readback: Proposes settings only; nothing is stored or configured.
   live_test: null
   live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view export rest-fill DATAVIEW_ID --help
-  agent_example: mammoth view export rest-fill 123 --output json --no-input
+  agent_example: 'mammoth view export rest-fill 123 --input ''{"docs_url": "https://api.example.com/docs"}''
+    --yes'
   unit_tests:
   - UT-VIEW-EXPORT-REST-FILL
   contract_tests:
@@ -7169,7 +7171,8 @@ commands:
   - CT-VIEW-EXPORT-REST-FILL-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: Makes Mammoth's server fetch the docs URL and propose REST export settings; nothing
+    is configured or sent. Needs --yes.
   reviewed_by: primary
 - command_id: view.export.runs
   command_path: view export runs
@@ -7212,7 +7215,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view export runs DATAVIEW_ID EXPORT_ID --help
-  agent_example: mammoth view export runs 123 123 123 --output json --no-input
+  agent_example: mammoth view export runs 123 456
   unit_tests:
   - UT-VIEW-EXPORT-RUNS
   contract_tests:
@@ -7230,10 +7233,10 @@ commands:
   operation_ids:
   - GetPanelSummary
   positionals:
-  - name: view_id
+  - name: dataview_id
     type: int
     required: true
-    metavar: VIEW_ID
+    metavar: DATAVIEW_ID
     falls_back_to_field: null
     help: ID of the dataview.
   - name: dataset_id
@@ -7257,8 +7260,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view summary VIEW_ID --help
-  agent_example: mammoth view summary 123 123 --output json --no-input
+  human_example: mammoth view summary DATAVIEW_ID --help
+  agent_example: mammoth view summary 123
   unit_tests:
   - UT-VIEW-SUMMARY
   contract_tests:

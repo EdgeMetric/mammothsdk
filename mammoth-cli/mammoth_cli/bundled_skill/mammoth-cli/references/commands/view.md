@@ -722,6 +722,26 @@ Result: `ViewExportRestResult`; mutation `external_effect`, confirmation `yes_al
 
 Status on release: untried; no live run recorded.
 
+### `view.export.rest-fill`
+
+Run: `mammoth view export rest-fill`. Exact input fields: `mammoth schema get view.export.rest-fill`.
+
+Example: `mammoth view export rest-fill 123 --input '{"docs_url": "https://api.example.com/docs"}' --yes`. Illustrative only: append `--yes` after observing an owned target.
+
+Result: `ViewExportRestFillResult`; mutation `external_effect`, confirmation `yes_always`, wait policy `always_wait`.
+
+Status on release: untried; no live run recorded.
+
+### `view.export.runs`
+
+Run: `mammoth view export runs`. Exact input fields: `mammoth schema get view.export.runs`.
+
+Example: `mammoth view export runs 123 456`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `ViewExportRunsResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
 ### `view.export.sftp`
 
 Run: `mammoth view export sftp`. Exact input fields: `mammoth schema get view.export.sftp`.
@@ -915,6 +935,16 @@ Example: `mammoth view restore 123 456`. Placeholders are illustrative; resolve 
 Result: `ViewRestoreResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
 Status on release: ran once on CLI 2.0.14 — write sweep 2026-09-18: exit 0 on release with CLI 2.0.14. job 349 restore_dataview -> status success (view 72 restored after view.trash). Single invocation only.
+
+### `view.summary`
+
+Run: `mammoth view summary`. Exact input fields: `mammoth schema get view.summary`.
+
+Example: `mammoth view summary 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `ViewSummaryResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
 
 ### `view.task.add`
 

@@ -281,7 +281,7 @@ def workspace_export_hosts_get(invocation: Invocation) -> HandlerResult:
 
 
 def workspace_export_hosts_set(invocation: Invocation) -> HandlerResult:
-    """Set the hosts custom export destinations may send to. High-impact: ``--yes --confirm``.
+    """Set the hosts custom export destinations may send to. High-impact: always needs ``--yes``.
 
     ``restricted`` (true: only ``hosts`` are allowed; false: any host is) and ``hosts`` come
     from ``--input``. The whole policy is replaced, so read it first with
@@ -295,9 +295,8 @@ def workspace_export_hosts_set(invocation: Invocation) -> HandlerResult:
     with open_service(invocation) as (service, auth):
         enforce_confirmation(
             invocation,
-            policy=POLICY_CONFIRM_TARGET,
+            policy=POLICY_YES_ALWAYS,
             action=f"set the export host policy of workspace {auth.workspace_id}",
-            target=str(auth.workspace_id),
         )
         data = service.call(_symbol(invocation), **kwargs)
     return data, _meta(invocation, auth.workspace_id)
