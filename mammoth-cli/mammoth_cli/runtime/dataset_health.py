@@ -139,7 +139,7 @@ def _entry(record: dict[str, Any]) -> dict[str, Any]:
             f"mammoth dataset file-settings get {dataset_id} reads the detected settings; "
             f"send them back with mammoth dataset file-settings update {dataset_id} --input "
             + shlex.quote(_SETTINGS_EXAMPLE)
-            + " -y (adding date_format \"US\" or \"UK\" when dates are ambiguous); "
+            + ' -y (adding date_format "US" or "UK" when dates are ambiguous); '
             f"mammoth dataset broken-rows list {dataset_id} shows the rows that did not fit"
         )
     return entry

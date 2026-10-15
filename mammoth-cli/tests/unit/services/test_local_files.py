@@ -48,3 +48,13 @@ def test_recovery_command_without_scope_flags_is_unchanged(tmp_path: Path) -> No
 def test_a_defaulted_profile_is_not_pinned_into_the_command(tmp_path: Path) -> None:
     error = _refusal(tmp_path, profile="work", profile_is_default=True)
     assert error.recovery_commands == ["mammoth view export csv 7 --overwrite"]
+
+
+def test_a_directory_target_is_a_usage_error_even_with_overwrite(tmp_path: Path) -> None:
+    invocation = Invocation(command_id="view.export.csv", extra_args=["7"], overwrite=True)
+    with pytest.raises(CliError) as excinfo:
+        refuse_existing_file(invocation, tmp_path)
+    assert excinfo.value.code == "invalid_argument"
+    assert excinfo.value.exit_status == 2
+    assert "is a directory" in excinfo.value.message
+    assert "output_path" in (excinfo.value.hint or "")

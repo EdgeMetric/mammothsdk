@@ -30,6 +30,7 @@ from mammoth_cli.errors.envelope import (
     CODE_AUTHENTICATION_FAILED,
     CODE_CONFIRMATION_DECLINED,
     CODE_CONFIRMATION_REQUIRED,
+    EXIT_AUTH,
     EXIT_USAGE,
     CliError,
 )
@@ -716,6 +717,16 @@ def _run_status(invocation: Invocation, *, check: bool) -> tuple[dict[str, Any],
     record = profiles.get_profile(profile_name)
     credential = credentials.load_credential(profile_name)
     has_creds = credential is not None
+    if invocation.profile and record is None and credential is None:
+        # Naming a profile that was never saved is a mistake to report, not a signed-out state.
+        raise CliError(
+            code=CODE_AUTHENTICATION_FAILED,
+            message=f"No profile named '{profile_name}' exists.",
+            exit_status=EXIT_AUTH,
+            hint=f"Sign in with 'mammoth auth login --profile {profile_name}'.",
+            details={"profile": profile_name},
+            recovery_commands=[f"mammoth auth login --profile {profile_name}"],
+        )
 
     if record is not None:
         endpoint = resolve_base_url(record.server_prefix)

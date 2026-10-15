@@ -228,8 +228,8 @@ def test_service_uses_resolved_nondefault_profile_in_job_recovery() -> None:
     assert mapped.details["workspace_id"] == 4
     assert mapped.details["project_id"] == 9
     assert mapped.recovery_commands == [
-        "mammoth job get 44 --profile production",
-        "mammoth job wait 44 --profile production",
+        "mammoth job get 44 --project 9 --profile production",
+        "mammoth job wait 44 --project 9 --profile production",
     ]
 
 
@@ -637,3 +637,13 @@ def test_an_unknown_dataset_or_file_id_is_resource_not_found_like_a_view() -> No
         assert mapped.code == "resource_not_found", code
         assert mapped.exit_status == 5
         assert noun in (mapped.hint or "")
+
+
+def test_job_recovery_commands_keep_the_project_they_ran_in() -> None:
+    mapped = map_sdk_exception(MammothJobTimeoutError(44, 1), project_id=3633)
+
+    assert mapped.recovery_commands == [
+        "mammoth job get 44 --project 3633",
+        "mammoth job wait 44 --project 3633",
+    ]
+    assert mapped.details["resume"] == "mammoth job wait 44 --project 3633"

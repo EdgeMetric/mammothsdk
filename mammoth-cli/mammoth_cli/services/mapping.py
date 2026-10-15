@@ -121,11 +121,14 @@ def _is_known_read(method: object) -> bool:
     return isinstance(method, str) and method.upper() in {"GET", "HEAD", "OPTIONS"}
 
 
-def _job_recovery(job_id: object, *, profile: str | None = None) -> list[str]:
+def _job_recovery(
+    job_id: object, *, profile: str | None = None, project_id: int | None = None
+) -> list[str]:
+    scope = f" --project {project_id}" if isinstance(project_id, int) else ""
     profile_option = f" --profile {shlex.quote(profile)}" if profile else ""
     return [
-        f"mammoth job get {job_id}{profile_option}",
-        f"mammoth job wait {job_id}{profile_option}",
+        f"mammoth job get {job_id}{scope}{profile_option}",
+        f"mammoth job wait {job_id}{scope}{profile_option}",
     ]
 
 
@@ -432,7 +435,7 @@ def map_sdk_exception(
         details.update(_observed_job_fields(details))
         details["waited_seconds"] = details.get("timeout")
         if job_id is not None:
-            details["resume"] = _job_recovery(job_id, profile=profile)[1]
+            details["resume"] = _job_recovery(job_id, profile=profile, project_id=project_id)[1]
         return CliError(
             code="timeout",
             message="The operation did not finish before the timeout.",
@@ -440,7 +443,11 @@ def map_sdk_exception(
             hint="Inspect the job and wait for it to reach a terminal state.",
             details=details,
             retryable=True,
-            recovery_commands=_job_recovery(job_id, profile=profile) if job_id is not None else [],
+            recovery_commands=(
+                _job_recovery(job_id, profile=profile, project_id=project_id)
+                if job_id is not None
+                else []
+            ),
         )
 
     if isinstance(exc, MammothJobFailedError):
@@ -456,7 +463,9 @@ def map_sdk_exception(
             hint="Inspect the job response for the failure reason.",
             details=details,
             recovery_commands=(
-                _job_recovery(job_id, profile=profile)[:1] if job_id is not None else []
+                _job_recovery(job_id, profile=profile, project_id=project_id)[:1]
+                if job_id is not None
+                else []
             ),
         )
 
@@ -476,7 +485,11 @@ def map_sdk_exception(
             details.setdefault("job_handle", job_id)
         request_id = getattr(exc, "request_id", None)
         method = getattr(exc, "method", None) or details.get("method")
-        recovery = _job_recovery(job_id, profile=profile) if job_id is not None else []
+        recovery = (
+            _job_recovery(job_id, profile=profile, project_id=project_id)
+            if job_id is not None
+            else []
+        )
         if details.get("post_submitted"):
             task_id = details.get("task_handle")
             dataview_id = details.get("dataview_id")

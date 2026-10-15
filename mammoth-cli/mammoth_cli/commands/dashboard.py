@@ -1318,16 +1318,21 @@ def dashboard_import_workbook(invocation: Invocation) -> HandlerResult:
 
 def _packaged_row_count(file_path: str) -> int | None:
     """Data rows in the CSV a ``.twbx`` packages (largest one), or None when it has none."""
+    import csv
+    import io
     import zipfile
 
     try:
         with zipfile.ZipFile(file_path) as bundle:
-            sizes = [
-                sum(1 for _ in bundle.open(info)) - 1
-                for info in bundle.infolist()
-                if info.filename.lower().endswith(".csv")
-            ]
-    except (zipfile.BadZipFile, OSError):
+            sizes = []
+            for info in bundle.infolist():
+                if not info.filename.lower().endswith(".csv"):
+                    continue
+                with bundle.open(info) as raw:
+                    # csv, not line counting: a quoted value may hold a line break.
+                    text = io.TextIOWrapper(raw, encoding="utf-8", errors="replace", newline="")
+                    sizes.append(sum(1 for _ in csv.reader(text)) - 1)
+    except (zipfile.BadZipFile, OSError, csv.Error):
         return None
     return max(sizes) if sizes and max(sizes) >= 0 else None
 
