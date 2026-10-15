@@ -24,7 +24,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth user avatar delete --help
-  agent_example: mammoth user avatar delete
+  agent_example: mammoth user avatar delete --yes
   unit_tests:
   - UT-USER-AVATAR-DELETE
   contract_tests:
@@ -111,7 +111,7 @@ commands:
   - current_password
   - new_password
   human_example: mammoth user change-password --help
-  agent_example: mammoth user change-password --input /private/path/request.json
+  agent_example: mammoth user change-password --input /private/path/request.json --yes
   unit_tests:
   - UT-USER-CHANGE-PASSWORD
   contract_tests:
@@ -150,7 +150,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth user delete-account --help
-  agent_example: mammoth user delete-account
+  agent_example: mammoth user delete-account --yes
   unit_tests:
   - UT-USER-DELETE-ACCOUNT
   contract_tests:

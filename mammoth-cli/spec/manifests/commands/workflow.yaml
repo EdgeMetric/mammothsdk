@@ -180,7 +180,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth workflow block auth WORKFLOW_ID BLOCK_ID --help
-  agent_example: 'mammoth workflow block auth 123 456 --input ''{"auth_data": {"name": "Status"}}'''
+  agent_example: 'mammoth workflow block auth 123 456 --input ''{"auth_data": {"name": "Status"}}'' --yes --confirm 123'
   unit_tests:
   - UT-WORKFLOW-BLOCK-AUTH
   contract_tests:
@@ -371,7 +371,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth workflow cleanup --help
-  agent_example: mammoth workflow cleanup
+  agent_example: mammoth workflow cleanup --yes
   unit_tests:
   - UT-WORKFLOW-CLEANUP
   contract_tests:
@@ -462,7 +462,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth workflow delete WORKFLOW_ID --help
-  agent_example: mammoth workflow delete 123
+  agent_example: mammoth workflow delete 123 --yes
   unit_tests:
   - UT-WORKFLOW-DELETE
   contract_tests:

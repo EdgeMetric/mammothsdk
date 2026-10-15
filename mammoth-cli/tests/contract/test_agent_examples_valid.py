@@ -41,6 +41,39 @@ _NOT_SYNTHESIZED = {"auth.login"}
 _RESOLVED_FIELDS = {"dataset_id"}
 
 
+#: ``confirm_target`` commands whose target is not a positional the example can show: it is the
+#: workspace (or the project ids in the request) the CLI resolves at run time. Their example
+#: carries ``--yes``; the refusal names the exact target (``Pass --confirm N``).
+_TARGET_RESOLVED_AT_RUN_TIME = frozenset(
+    {
+        "addon.connector.add",
+        "addon.connector.remove",
+        "addon.storage.add",
+        "addon.storage.remove",
+        "addon.user.add",
+        "addon.user.remove",
+        "billing.invoice.charge",
+        "billing.stripe.cancel",
+        "billing.stripe.checkout-url",
+        "billing.stripe.end-trial",
+        "billing.stripe.portal-url",
+        "billing.stripe.resume",
+        "billing.stripe.retry-payment",
+        "billing.stripe.storage.set",
+        "billing.stripe.sync",
+        "billing.subscription.update",
+        "dataset.bulk-update",
+        "dataset.update",
+        "external-key.create",
+        "project.bulk-delete",
+        "project.bulk-update",
+        "user.change-password",
+        "user.delete-account",
+        "workspace.user.update-batch",
+    }
+)
+
+
 def _strings(value: Any) -> list[str]:
     if isinstance(value, str):
         return [value]
@@ -61,6 +94,18 @@ def example_problems(record: dict[str, Any]) -> list[str]:
     if example.startswith(_HANDOFF):
         return ["the example is a pointer to 'schema get', not a runnable command"]
     tokens = shlex.split(example)
+    policy = record.get("confirmation", "none")
+    if policy != "none":
+        if "--yes" not in tokens:
+            problems.append(f"policy {policy} needs --yes in the example")
+        if policy == "confirm_target" and command_id not in _TARGET_RESOLVED_AT_RUN_TIME:
+            if "--confirm" not in tokens:
+                problems.append("confirm_target needs --confirm TARGET in the example")
+            else:
+                given_target = tokens[tokens.index("--confirm") + 1]
+                positional_tokens = tokens[1 + len(record["command_path"].split()) :]
+                if given_target not in positional_tokens[: positional_tokens.index("--yes")]:
+                    problems.append("--confirm does not equal a positional of the example")
     # The command's own words are not data (``project sample-flow`` is a real command).
     if any(
         _PLACEHOLDER.search(token) for token in tokens[1 + len(record["command_path"].split()) :]

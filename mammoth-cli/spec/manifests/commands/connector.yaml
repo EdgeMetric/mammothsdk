@@ -301,7 +301,7 @@ commands:
   secret_fields:
   - config
   human_example: mammoth connector connection create CONNECTOR_KEY --help
-  agent_example: mammoth connector connection create postgres --input /private/path/request.json
+  agent_example: mammoth connector connection create postgres --input /private/path/request.json --yes
   unit_tests:
   - UT-CONNECTOR-CONNECTION-CREATE
   contract_tests:
@@ -353,7 +353,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth connector connection delete CONNECTOR_KEY CONNECTION_KEY --help
-  agent_example: mammoth connector connection delete postgres prod-warehouse
+  agent_example: mammoth connector connection delete postgres prod-warehouse --yes
   unit_tests:
   - UT-CONNECTOR-CONNECTION-DELETE
   contract_tests:
@@ -543,7 +543,7 @@ commands:
   secret_fields:
   - credentials
   human_example: mammoth connector connection update CONNECTOR_KEY CONNECTION_KEY --help
-  agent_example: mammoth connector connection update postgres prod-warehouse --input /private/path/request.json
+  agent_example: mammoth connector connection update postgres prod-warehouse --input /private/path/request.json --yes
   unit_tests:
   - UT-CONNECTOR-CONNECTION-UPDATE
   contract_tests:
@@ -596,7 +596,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth connector ds-config create CONNECTOR_KEY CONNECTION_KEY --help
-  agent_example: mammoth connector ds-config create postgres prod-warehouse
+  agent_example: mammoth connector ds-config create postgres prod-warehouse --yes
   unit_tests:
   - UT-CONNECTOR-DS-CONFIG-CREATE
   contract_tests:
@@ -655,7 +655,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth connector ds-config delete CONNECTOR_KEY CONNECTION_KEY DS_CONFIG_KEY --help
-  agent_example: mammoth connector ds-config delete postgres prod-warehouse orders-config
+  agent_example: mammoth connector ds-config delete postgres prod-warehouse orders-config --yes
   unit_tests:
   - UT-CONNECTOR-DS-CONFIG-DELETE
   contract_tests:
@@ -709,7 +709,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth connector ds-config delete-all CONNECTOR_KEY CONNECTION_KEY --help
-  agent_example: 'mammoth connector ds-config delete-all postgres prod-warehouse --input ''{"config_ids": ["resource-123"]}'''
+  agent_example: 'mammoth connector ds-config delete-all postgres prod-warehouse --input ''{"config_ids": ["resource-123"]}'' --yes'
   unit_tests:
   - UT-CONNECTOR-DS-CONFIG-DELETE-ALL
   contract_tests:
@@ -866,7 +866,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth connector ds-config update CONNECTOR_KEY CONNECTION_KEY DS_CONFIG_KEY --help
-  agent_example: 'mammoth connector ds-config update postgres prod-warehouse orders-config --input ''{"patch": [{"op": "replace", "path": "query", "value": "SELECT * FROM orders"}]}'''
+  agent_example: 'mammoth connector ds-config update postgres prod-warehouse orders-config --input ''{"patch": [{"op": "replace", "path": "query", "value": "SELECT * FROM orders"}]}'' --yes'
   unit_tests:
   - UT-CONNECTOR-DS-CONFIG-UPDATE
   contract_tests:

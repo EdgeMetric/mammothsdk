@@ -30,7 +30,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth token create --help
-  agent_example: mammoth token create 'Revenue report'
+  agent_example: mammoth token create 'Revenue report' --yes --confirm 'Revenue report'
   unit_tests:
   - UT-CLIENT-APP-CREATE
   contract_tests:
@@ -111,7 +111,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth token revoke CLIENT_KEY --help
-  agent_example: mammoth token revoke web-client
+  agent_example: mammoth token revoke web-client --yes
   unit_tests:
   - UT-CLIENT-APP-DELETE
   contract_tests:

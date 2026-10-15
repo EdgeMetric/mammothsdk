@@ -114,7 +114,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth data-app delete DATA_APP_ID --help
-  agent_example: mammoth data-app delete 123
+  agent_example: mammoth data-app delete 123 --yes
   unit_tests:
   - UT-DATA-APP-DELETE
   contract_tests:
@@ -510,7 +510,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth data-app user remove DATA_APP_ID EMAIL --help
-  agent_example: mammoth data-app user remove 123 analyst@example.com
+  agent_example: mammoth data-app user remove 123 analyst@example.com --yes
   unit_tests:
   - UT-DATA-APP-USER-REMOVE
   contract_tests:

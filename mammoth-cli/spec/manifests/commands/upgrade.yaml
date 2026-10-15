@@ -23,7 +23,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth upgrade --help
-  agent_example: mammoth upgrade
+  agent_example: mammoth upgrade --yes
   unit_tests:
   - UT-UPGRADE
   contract_tests:

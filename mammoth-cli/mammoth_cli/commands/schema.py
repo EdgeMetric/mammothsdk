@@ -1538,7 +1538,17 @@ def runnable_example(
             value = next(item for item in _DISTINCT_IDS if item not in seen)
             given[index] = value
         seen.add(value)
-    return shlex.join([*tokens[:start], *given, *tokens[end:]])
+    rest = tokens[end:]
+    # Whatever a command's manifest policy asks, its example must already answer, so a copied
+    # example runs unattended instead of stopping at ``confirmation_required``. A
+    # ``confirm_target`` command whose target is no positional (the workspace, say) keeps
+    # only ``--yes``; its refusal names the exact ``--confirm`` value.
+    policy = record.get("confirmation")
+    if policy in {"prompt_or_yes", "confirm_target", "yes_always"} and "--yes" not in rest:
+        rest.append("--yes")
+    if policy == "confirm_target" and "--confirm" not in rest and given:
+        rest.extend(["--confirm", given[0]])
+    return shlex.join([*tokens[:start], *given, *rest])
 
 
 def _runnable_example(
@@ -1706,9 +1716,6 @@ def _runnable_example(
                 "--input",
                 json.dumps({"name": "Revenue"}),
                 *_OUTPUT_JSON_NO_INPUT,
-                "--yes",
-                "--confirm",
-                "123",
             ]
         )
     if record["command_id"] == "dashboard.tags.set":

@@ -77,7 +77,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth agent action delete ACTION_ID --help
-  agent_example: mammoth agent action delete resource-123
+  agent_example: mammoth agent action delete resource-123 --yes
   unit_tests:
   - UT-AGENTACTIONDELETE
   contract_tests:
@@ -433,7 +433,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth agent delete AGENT_KEY --help
-  agent_example: mammoth agent delete revenue-assistant
+  agent_example: mammoth agent delete revenue-assistant --yes
   unit_tests:
   - UT-AGENT-DELETE
   contract_tests:
@@ -703,7 +703,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth agent goldens remove AGENT_KEY GOLDEN_ID --help
-  agent_example: mammoth agent goldens remove revenue-assistant 123
+  agent_example: mammoth agent goldens remove revenue-assistant 123 --yes
   unit_tests:
   - UT-AGENT-GOLDENS-REMOVE
   contract_tests:
@@ -971,7 +971,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth agent memory remove AGENT_KEY NOTE_ID --help
-  agent_example: mammoth agent memory remove revenue-assistant 123
+  agent_example: mammoth agent memory remove revenue-assistant 123 --yes
   unit_tests:
   - UT-AGENT-MEMORY-REMOVE
   contract_tests:
@@ -1098,7 +1098,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth agent plan approve SESSION_ID --help
-  agent_example: mammoth agent plan approve resource-123
+  agent_example: mammoth agent plan approve resource-123 --yes
   unit_tests:
   - UT-AGENT-PLAN-APPROVE
   contract_tests:
@@ -1178,7 +1178,7 @@ commands:
   result_model: AgentPlanDiscardResult
   mutation_class: benign_mutation
   edits_target: true
-  confirmation: none
+  confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: contract_only_no_disposable_fixture
@@ -1188,7 +1188,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth agent plan discard SESSION_ID --help
-  agent_example: mammoth agent plan discard resource-123
+  agent_example: mammoth agent plan discard resource-123 --yes
   unit_tests:
   - UT-AGENT-PLAN-DISCARD
   contract_tests:
@@ -1221,7 +1221,7 @@ commands:
   result_model: AgentProjectsClearResult
   mutation_class: benign_mutation
   edits_target: true
-  confirmation: none
+  confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: live_disposable_project
@@ -1232,7 +1232,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth agent projects clear AGENT_KEY --help
-  agent_example: mammoth agent projects clear revenue-assistant
+  agent_example: mammoth agent projects clear revenue-assistant --yes
   unit_tests:
   - UT-AGENT-PROJECTS-CLEAR
   contract_tests:
@@ -1829,7 +1829,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth agent run retry RUN_ID --help
-  agent_example: 'mammoth agent run retry resource-123'
+  agent_example: mammoth agent run retry resource-123 --yes
   unit_tests:
   - UT-AGENT-RUN-RETRY
   contract_tests:
@@ -1922,7 +1922,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth agent scratch clear AGENT_KEY NAME --help
-  agent_example: mammoth agent scratch clear revenue-assistant 'Revenue report'
+  agent_example: mammoth agent scratch clear revenue-assistant 'Revenue report' --yes
   unit_tests:
   - UT-AGENT-SCRATCH-CLEAR
   contract_tests:
@@ -2111,7 +2111,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth agent session delete SESSION_ID --help
-  agent_example: mammoth agent session delete resource-123
+  agent_example: mammoth agent session delete resource-123 --yes
   unit_tests:
   - UT-AGENT-SESSION-DELETE
   contract_tests:

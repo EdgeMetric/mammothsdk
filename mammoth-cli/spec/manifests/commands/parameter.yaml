@@ -77,7 +77,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth parameter delete PARAMETER_ID --help
-  agent_example: mammoth parameter delete 123
+  agent_example: mammoth parameter delete 123 --yes
   unit_tests:
   - UT-PARAMETER-DELETE
   contract_tests:
@@ -293,7 +293,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth parameter group delete GROUP_ID --help
-  agent_example: mammoth parameter group delete 123
+  agent_example: mammoth parameter group delete 123 --yes
   unit_tests:
   - UT-PARAMETER-GROUP-DELETE
   contract_tests:

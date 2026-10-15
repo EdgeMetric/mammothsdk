@@ -119,7 +119,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth annotation delete ANNOTATION_ID --help
-  agent_example: mammoth annotation delete 123
+  agent_example: mammoth annotation delete 123 --yes
   unit_tests:
   - UT-ANNOTATION-DELETE
   contract_tests:

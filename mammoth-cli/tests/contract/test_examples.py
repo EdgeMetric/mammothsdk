@@ -91,4 +91,4 @@ def test_view_optimize_example_names_the_view_then_a_distinct_dataset() -> None:
     record = next(r for r in load_commands() if r["command_id"] == "view.optimize")
     assert [p["metavar"] for p in record["positionals"]] == ["VIEW_ID", "DATASET_ID"]
     assert record["positionals"][1]["required"] is False
-    assert shlex.split(record["agent_example"])[3:] == ["123", "456"]
+    assert shlex.split(record["agent_example"])[3:5] == ["123", "456"]

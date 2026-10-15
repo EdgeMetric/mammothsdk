@@ -260,7 +260,7 @@ def dashboard_tags_list(invocation: Invocation) -> HandlerResult:
 
 
 def dashboard_tags_rename(invocation: Invocation) -> HandlerResult:
-    """Rename a dashboard tag after exact-target confirmation."""
+    """Rename a dashboard tag. A rename is undone by renaming back, so it asks nothing."""
     tag_id = _require_int_positional(invocation, "tag id")
     if tag_id <= 0:
         raise CliError(
@@ -276,12 +276,6 @@ def dashboard_tags_rename(invocation: Invocation) -> HandlerResult:
             message="name must be a non-blank string.",
             exit_status=EXIT_USAGE,
         )
-    enforce_confirmation(
-        invocation,
-        policy=POLICY_CONFIRM_TARGET,
-        action=f"rename dashboard tag {tag_id}",
-        target=str(tag_id),
-    )
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), tag_id=tag_id, name=name)
     return data, _meta(invocation, auth.workspace_id)

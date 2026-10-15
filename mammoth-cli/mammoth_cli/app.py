@@ -1613,7 +1613,7 @@ _ROOT_LEAF_HELP: dict[str, str] = {
     ),
     "upgrade": (
         "Upgrade the mammoth CLI to the latest (or a specified) version from PyPI."
-        "\n\nExample: mammoth upgrade"
+        "\n\nExample: mammoth upgrade --yes"
     ),
     "version": "Example: mammoth version",
 }

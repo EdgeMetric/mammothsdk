@@ -212,7 +212,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth workspace delete --help
-  agent_example: mammoth workspace delete 123
+  agent_example: mammoth workspace delete 123 --yes --confirm 123
   unit_tests:
   - UT-WORKSPACE-DELETE
   contract_tests:
@@ -325,7 +325,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth workspace invite delete --help
-  agent_example: 'mammoth workspace invite delete --input ''{"invite_ids": [1]}'''
+  agent_example: 'mammoth workspace invite delete --input ''{"invite_ids": [1]}'' --yes'
   unit_tests:
   - UT-WORKSPACE-INVITE-DELETE
   contract_tests:
@@ -441,7 +441,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth workspace invite revoke --help
-  agent_example: 'mammoth workspace invite revoke --input ''{"invite_ids": [1]}'''
+  agent_example: 'mammoth workspace invite revoke --input ''{"invite_ids": [1]}'' --yes'
   unit_tests:
   - UT-WORKSPACE-INVITE-REVOKE
   contract_tests:
@@ -480,7 +480,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth workspace invite update-role --help
-  agent_example: 'mammoth workspace invite update-role --input ''{"invite_id": 1, "role": "workspace_member"}'''
+  agent_example: 'mammoth workspace invite update-role --input ''{"invite_id": 1, "role": "workspace_member"}'' --yes'
   unit_tests:
   - UT-WORKSPACE-INVITE-UPDATE-ROLE
   contract_tests:
@@ -564,7 +564,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth workspace oauth-client create --help
-  agent_example: "mammoth workspace oauth-client create 123 --input '{\"name\": \"Revenue report\", \"redirect_uris\": [\"https://example.com/data.csv\"]}'"
+  agent_example: 'mammoth workspace oauth-client create 123 --input ''{"name": "Revenue report", "redirect_uris": ["https://example.com/data.csv"]}'' --yes'
   unit_tests:
   - test_oauth_clients_create_sends_only_the_fields_given
   contract_tests:
@@ -612,7 +612,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth workspace oauth-client delete OAUTH_CLIENT_ID --help
-  agent_example: mammoth workspace oauth-client delete 123 456
+  agent_example: mammoth workspace oauth-client delete 123 456 --yes --confirm 123
   unit_tests:
   - test_oauth_clients_delete_names_the_client_in_the_workspace_path
   contract_tests:
@@ -698,7 +698,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth workspace oauth-client revoke-grant OAUTH_CLIENT_ID --help
-  agent_example: mammoth workspace oauth-client revoke-grant 123 456
+  agent_example: mammoth workspace oauth-client revoke-grant 123 456 --yes --confirm 123
   unit_tests:
   - test_oauth_clients_revoke_grant_hits_the_grant_sub_path
   contract_tests:
@@ -741,7 +741,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth workspace reactivate --help
-  agent_example: mammoth workspace reactivate 123
+  agent_example: mammoth workspace reactivate 123 --yes --confirm 123
   unit_tests:
   - UT-WORKSPACE-REACTIVATE
   contract_tests:
@@ -896,7 +896,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth workspace update --help
-  agent_example: 'mammoth workspace update 123 --input ''{"patches": [{"op": "replace", "path": "name", "value": "Revenue team"}]}'''
+  agent_example: 'mammoth workspace update 123 --input ''{"patches": [{"op": "replace", "path": "name", "value": "Revenue team"}]}'' --yes --confirm 123'
   unit_tests:
   - UT-WORKSPACE-UPDATE
   contract_tests:
@@ -1054,7 +1054,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth workspace user remove USER_ID --help
-  agent_example: mammoth workspace user remove 123
+  agent_example: mammoth workspace user remove 123 --yes
   unit_tests:
   - UT-WORKSPACE-USER-REMOVE
   contract_tests:
@@ -1093,7 +1093,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth workspace user remove-batch --help
-  agent_example: mammoth workspace user remove-batch
+  agent_example: mammoth workspace user remove-batch --yes
   unit_tests:
   - UT-WORKSPACE-USER-REMOVE-BATCH
   contract_tests:
@@ -1138,8 +1138,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth workspace user update USER_ID --help
-  agent_example: 'mammoth workspace user update resource-123 --input ''{"patches": [{"op": "replace", "path":
-    "role", "value": "workspace_member"}]}'''
+  agent_example: 'mammoth workspace user update resource-123 --input ''{"patches": [{"op": "replace", "path": "role", "value": "workspace_member"}]}'' --yes --confirm resource-123'
   unit_tests:
   - UT-WORKSPACE-USER-UPDATE
   contract_tests:
@@ -1179,7 +1178,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth workspace user update-batch --help
-  agent_example: 'mammoth workspace user update-batch --input ''{"patches": [{"name": "Status"}]}'''
+  agent_example: 'mammoth workspace user update-batch --input ''{"patches": [{"name": "Status"}]}'' --yes'
   unit_tests:
   - UT-WORKSPACE-USER-UPDATE-BATCH
   contract_tests:

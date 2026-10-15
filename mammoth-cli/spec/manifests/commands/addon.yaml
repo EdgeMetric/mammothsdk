@@ -24,7 +24,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth addon connector add --help
-  agent_example: 'mammoth addon connector add --input ''{"connector_id": 42}'''
+  agent_example: 'mammoth addon connector add --input ''{"connector_id": 42}'' --yes'
   unit_tests:
   - UT-ADDON-CONNECTOR-ADD
   contract_tests:
@@ -63,7 +63,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth addon connector remove --help
-  agent_example: 'mammoth addon connector remove --input ''{"connector_id": 42}'''
+  agent_example: 'mammoth addon connector remove --input ''{"connector_id": 42}'' --yes'
   unit_tests:
   - UT-ADDON-CONNECTOR-REMOVE
   contract_tests:
@@ -135,7 +135,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth addon storage add --help
-  agent_example: 'mammoth addon storage add --input ''{"additional_storage_gb": 1}'''
+  agent_example: 'mammoth addon storage add --input ''{"additional_storage_gb": 1}'' --yes'
   unit_tests:
   - UT-ADDON-STORAGE-ADD
   contract_tests:
@@ -174,7 +174,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth addon storage remove --help
-  agent_example: 'mammoth addon storage remove --input ''{"removal_storage_gb": 1}'''
+  agent_example: 'mammoth addon storage remove --input ''{"removal_storage_gb": 1}'' --yes'
   unit_tests:
   - UT-ADDON-STORAGE-REMOVE
   contract_tests:
@@ -213,7 +213,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth addon user add --help
-  agent_example: mammoth addon user add
+  agent_example: mammoth addon user add --yes
   unit_tests:
   - UT-ADDON-USER-ADD
   contract_tests:
@@ -252,7 +252,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth addon user remove --help
-  agent_example: 'mammoth addon user remove --input ''{"user_count": 1}'''
+  agent_example: 'mammoth addon user remove --input ''{"user_count": 1}'' --yes'
   unit_tests:
   - UT-ADDON-USER-REMOVE
   contract_tests:

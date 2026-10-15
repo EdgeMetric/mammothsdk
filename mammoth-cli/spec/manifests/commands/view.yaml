@@ -267,7 +267,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view bulk-delete DATASET_ID --help
-  agent_example: 'mammoth view bulk-delete 123 --input ''{"dataview_ids": [1]}'''
+  agent_example: 'mammoth view bulk-delete 123 --input ''{"dataview_ids": [1]}'' --yes'
   unit_tests:
   - UT-VIEW-BULK-DELETE
   contract_tests:
@@ -379,7 +379,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view checkpoint delete VIEW_ID CHECKPOINT_ID --help
-  agent_example: mammoth view checkpoint delete 123 456 789
+  agent_example: mammoth view checkpoint delete 123 456 789 --yes
   unit_tests:
   - UT-VIEW-CHECKPOINT-DELETE
   contract_tests:
@@ -648,7 +648,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view conditional-format delete-all VIEW_ID --help
-  agent_example: 'mammoth view conditional-format delete-all 123 456 --input ''{"rule_id": "bca0ff33bd6f8ed1"}'''
+  agent_example: 'mammoth view conditional-format delete-all 123 456 --input ''{"rule_id": "bca0ff33bd6f8ed1"}'' --yes'
   unit_tests:
   - UT-VIEW-CONDITIONAL-FORMAT-DELETE-ALL
   contract_tests:
@@ -961,7 +961,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view data-check delete VIEW_ID DATA_CHECK_ID --help
-  agent_example: mammoth view data-check delete 123 456 789
+  agent_example: mammoth view data-check delete 123 456 789 --yes
   unit_tests:
   - UT-VIEW-DATA-CHECK-DELETE
   contract_tests:
@@ -1624,7 +1624,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view delete VIEW_ID --help
-  agent_example: mammoth view delete 123 456
+  agent_example: mammoth view delete 123 456 --yes
   unit_tests:
   - UT-VIEW-DELETE
   contract_tests:
@@ -1803,7 +1803,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view derivative delete VIEW_ID DERIVATIVE_ID --help
-  agent_example: mammoth view derivative delete 123 456 789
+  agent_example: mammoth view derivative delete 123 456 789 --yes
   unit_tests:
   - UT-VIEW-DERIVATIVE-DELETE
   contract_tests:
@@ -2043,7 +2043,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view draft discard VIEW_ID --help
-  agent_example: 'mammoth view draft discard 123 --input ''{"dataset_id": 456}'''
+  agent_example: 'mammoth view draft discard 123 --input ''{"dataset_id": 456}'' --yes'
   unit_tests:
   - UT-VIEW-DRAFT-DISCARD
   contract_tests:
@@ -2226,7 +2226,7 @@ commands:
   secret_fields:
   - client_secret
   human_example: mammoth view export azure-blob VIEW_ID --help
-  agent_example: mammoth view export azure-blob 123 456 --input /private/path/request.json
+  agent_example: mammoth view export azure-blob 123 456 --input /private/path/request.json --yes
   unit_tests:
   - UT-VIEW-EXPORT-AZURE-BLOB
   contract_tests:
@@ -2279,7 +2279,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view export bigquery VIEW_ID --help
-  agent_example: 'mammoth view export bigquery 123 456 --input ''{"selected_profile": {}, "selected_identity": {}, "table": "exports"}'''
+  agent_example: 'mammoth view export bigquery 123 456 --input ''{"selected_profile": {}, "selected_identity": {}, "table": "exports"}'' --yes'
   unit_tests:
   - UT-VIEW-EXPORT-BIGQUERY
   contract_tests:
@@ -2325,8 +2325,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view export create DATAVIEW_ID --help
-  agent_example: 'mammoth view export create 123 --input ''{"export_spec": {"DATAVIEW_ID": 1, "handler_type":
-    "postgres", "trigger_type": "none", "run_immediately": true}}'''
+  agent_example: 'mammoth view export create 123 --input ''{"export_spec": {"DATAVIEW_ID": 1, "handler_type": "postgres", "trigger_type": "none", "run_immediately": true}}'' --yes'
   unit_tests:
   - UT-VIEW-EXPORT-CREATE
   contract_tests:
@@ -2476,7 +2475,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view export delete DATAVIEW_ID EXPORT_ID --help
-  agent_example: mammoth view export delete 123 456
+  agent_example: mammoth view export delete 123 456 --yes
   unit_tests:
   - UT-VIEW-EXPORT-DELETE
   contract_tests:
@@ -2530,7 +2529,7 @@ commands:
   secret_fields:
   - password
   human_example: mammoth view export elasticsearch VIEW_ID --help
-  agent_example: mammoth view export elasticsearch 123 456 --input /private/path/request.json
+  agent_example: mammoth view export elasticsearch 123 456 --input /private/path/request.json --yes
   unit_tests:
   - UT-VIEW-EXPORT-ELASTICSEARCH
   contract_tests:
@@ -2583,7 +2582,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view export email VIEW_ID --help
-  agent_example: 'mammoth view export email 123 456 --input ''{"emails": ["recipient@example.com"]}'''
+  agent_example: 'mammoth view export email 123 456 --input ''{"emails": ["recipient@example.com"]}'' --yes'
   unit_tests:
   - UT-VIEW-EXPORT-EMAIL
   contract_tests:
@@ -2638,7 +2637,7 @@ commands:
   secret_fields:
   - password
   human_example: mammoth view export ftp VIEW_ID --help
-  agent_example: mammoth view export ftp 123 456 --input /private/path/request.json
+  agent_example: mammoth view export ftp 123 456 --input /private/path/request.json --yes
   unit_tests:
   - UT-VIEW-EXPORT-FTP
   contract_tests:
@@ -2779,7 +2778,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view export managed-s3 VIEW_ID --help
-  agent_example: 'mammoth view export managed-s3 123 456 --input ''{"file_name": "report.csv"}'''
+  agent_example: 'mammoth view export managed-s3 123 456 --input ''{"file_name": "report.csv"}'' --yes'
   unit_tests:
   - UT-VIEW-EXPORT-MANAGED-S3
   contract_tests:
@@ -2829,7 +2828,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view export live-link VIEW_ID --help
-  agent_example: 'mammoth view export live-link 123 456 --input ''{"file_name": "report_share.csv"}'''
+  agent_example: 'mammoth view export live-link 123 456 --input ''{"file_name": "report_share.csv"}'' --yes'
   unit_tests:
   - UT-VIEW-EXPORT-LIVE-LINK
   contract_tests:
@@ -2883,7 +2882,7 @@ commands:
   secret_fields:
   - password
   human_example: mammoth view export mssql VIEW_ID --help
-  agent_example: mammoth view export mssql 123 456 --input /private/path/request.json
+  agent_example: mammoth view export mssql 123 456 --input /private/path/request.json --yes
   unit_tests:
   - UT-VIEW-EXPORT-MSSQL
   contract_tests:
@@ -2937,7 +2936,7 @@ commands:
   secret_fields:
   - password
   human_example: mammoth view export mysql VIEW_ID --help
-  agent_example: mammoth view export mysql 123 456 --input /private/path/request.json
+  agent_example: mammoth view export mysql 123 456 --input /private/path/request.json --yes
   unit_tests:
   - UT-VIEW-EXPORT-MYSQL
   contract_tests:
@@ -2991,7 +2990,7 @@ commands:
   secret_fields:
   - client_secret
   human_example: mammoth view export onedrive VIEW_ID --help
-  agent_example: mammoth view export onedrive 123 456 --input /private/path/request.json
+  agent_example: mammoth view export onedrive 123 456 --input /private/path/request.json --yes
   unit_tests:
   - UT-VIEW-EXPORT-ONEDRIVE
   contract_tests:
@@ -3045,7 +3044,7 @@ commands:
   secret_fields:
   - password
   human_example: mammoth view export postgres VIEW_ID --help
-  agent_example: mammoth view export postgres 123 456 --input /private/path/request.json
+  agent_example: mammoth view export postgres 123 456 --input /private/path/request.json --yes
   unit_tests:
   - UT-VIEW-EXPORT-POSTGRES
   contract_tests:
@@ -3099,7 +3098,7 @@ commands:
   secret_fields:
   - password
   human_example: mammoth view export powerbi VIEW_ID --help
-  agent_example: mammoth view export powerbi 123 456 --input /private/path/request.json
+  agent_example: mammoth view export powerbi 123 456 --input /private/path/request.json --yes
   unit_tests:
   - UT-VIEW-EXPORT-POWERBI
   contract_tests:
@@ -3144,7 +3143,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view export publish-db DATAVIEW_ID --help
-  agent_example: 'mammoth view export publish-db 123 --input ''{"odbc_type": "postgres", "target_properties": {"name": "Status"}}'''
+  agent_example: 'mammoth view export publish-db 123 --input ''{"odbc_type": "postgres", "target_properties": {"name": "Status"}}'' --yes'
   unit_tests:
   - UT-VIEW-EXPORT-PUBLISH-DB
   contract_tests:
@@ -3189,8 +3188,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view export publish-db-update DATAVIEW_ID --help
-  agent_example: 'mammoth view export publish-db-update 123 --input ''{"patch": [{"op": "replace", "path":
-    "credentials", "value": {"odbc_type": "postgres"}}]}'''
+  agent_example: 'mammoth view export publish-db-update 123 --input ''{"patch": [{"op": "replace", "path": "credentials", "value": {"odbc_type": "postgres"}}]}'' --yes'
   unit_tests:
   - UT-VIEW-EXPORT-PUBLISH-DB-UPDATE
   contract_tests:
@@ -3244,7 +3242,7 @@ commands:
   secret_fields:
   - password
   human_example: mammoth view export redshift VIEW_ID --help
-  agent_example: mammoth view export redshift 123 456 --input /private/path/request.json
+  agent_example: mammoth view export redshift 123 456 --input /private/path/request.json --yes
   unit_tests:
   - UT-VIEW-EXPORT-REDSHIFT
   contract_tests:
@@ -3298,7 +3296,7 @@ commands:
   secret_fields:
   - auth
   human_example: mammoth view export rest VIEW_ID --help
-  agent_example: 'mammoth view export rest 123 456 --input ''{"base_url": "https://api.example", "endpoint_path": "/records"}'''
+  agent_example: 'mammoth view export rest 123 456 --input ''{"base_url": "https://api.example", "endpoint_path": "/records"}'' --yes'
   unit_tests:
   - UT-VIEW-EXPORT-REST
   contract_tests:
@@ -3355,7 +3353,7 @@ commands:
   - private_key
   - passphrase
   human_example: mammoth view export sftp VIEW_ID --help
-  agent_example: 'mammoth view export sftp 123 456 --input ''{"host": "sftp.example", "username": "agent"}'''
+  agent_example: 'mammoth view export sftp 123 456 --input ''{"host": "sftp.example", "username": "agent"}'' --yes'
   unit_tests:
   - UT-VIEW-EXPORT-SFTP
   contract_tests:
@@ -3409,7 +3407,7 @@ commands:
   secret_fields:
   - client_secret
   human_example: mammoth view export sharepoint VIEW_ID --help
-  agent_example: mammoth view export sharepoint 123 456 --input /private/path/request.json
+  agent_example: mammoth view export sharepoint 123 456 --input /private/path/request.json --yes
   unit_tests:
   - UT-VIEW-EXPORT-SHAREPOINT
   contract_tests:
@@ -3463,7 +3461,7 @@ commands:
   secret_fields:
   - token_secret
   human_example: mammoth view export tableau VIEW_ID --help
-  agent_example: mammoth view export tableau 123 456 --input /private/path/request.json
+  agent_example: mammoth view export tableau 123 456 --input /private/path/request.json --yes
   unit_tests:
   - UT-VIEW-EXPORT-TABLEAU
   contract_tests:
@@ -3516,7 +3514,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view export update DATAVIEW_ID EXPORT_ID --help
-  agent_example: 'mammoth view export update 123 456 --input ''{"patches": [{"name": "Status"}]}'''
+  agent_example: 'mammoth view export update 123 456 --input ''{"patches": [{"name": "Status"}]}'' --yes'
   unit_tests:
   - UT-VIEW-EXPORT-UPDATE
   contract_tests:
@@ -4215,7 +4213,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view task delete DATAVIEW_ID TASK_ID --help
-  agent_example: mammoth view task delete 123 456
+  agent_example: mammoth view task delete 123 456 --yes
   unit_tests:
   - UT-VIEW-TASK-DELETE
   contract_tests:
@@ -4938,8 +4936,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view transform delete-columns VIEW_ID --help
-  agent_example: 'mammoth view transform delete-columns 123 --input ''{"columns": ["Status"], "dataset_id":
-    456}'''
+  agent_example: 'mammoth view transform delete-columns 123 --input ''{"columns": ["Status"], "dataset_id": 456}'' --yes'
   unit_tests:
   - UT-VIEW-TRANSFORM-DELETE-COLUMNS
   contract_tests:
@@ -6298,7 +6295,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view version delete VIEW_ID VERSION_ID --help
-  agent_example: mammoth view version delete 123 456 789
+  agent_example: mammoth view version delete 123 456 789 --yes
   unit_tests:
   - UT-VIEW-VERSION-DELETE
   contract_tests:
@@ -6607,7 +6604,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view optimize VIEW_ID --help
-  agent_example: mammoth view optimize 123 456
+  agent_example: mammoth view optimize 123 456 --yes
   unit_tests:
   - UT-VIEW-OPTIMIZE
   contract_tests:

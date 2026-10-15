@@ -35,7 +35,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard action DASHBOARD_ID --help
-  agent_example: 'mammoth dashboard action 123 --input ''{"action": "sync"}'''
+  agent_example: 'mammoth dashboard action 123 --input ''{"action": "sync"}'' --yes'
   unit_tests:
   - UT-DASHBOARD-ACTION
   contract_tests:
@@ -667,7 +667,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard context delete CONTEXT_ID --help
-  agent_example: mammoth dashboard context delete resource-123
+  agent_example: mammoth dashboard context delete resource-123 --yes
   unit_tests:
   - UT-DASHBOARD-CONTEXT-DELETE
   contract_tests:
@@ -954,7 +954,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard delete DASHBOARD_ID --help
-  agent_example: mammoth dashboard delete 123
+  agent_example: mammoth dashboard delete 123 --yes
   unit_tests:
   - UT-DASHBOARD-DELETE
   contract_tests:
@@ -1952,10 +1952,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard pages add DASHBOARD_ID --help
-  agent_example: 'mammoth dashboard pages add 123 --input ''{"body": {"params": {"pages": [{"title": "By
-    region", "focus": {"measure": "Revenue", "dim": "Region", "kpis": [{"field": "Revenue", "agg": "sum",
-    "label": "Revenue"}]}, "charts": [{"kind": "hbar", "title": "Revenue by region", "dim": "Region",
-    "measure": "Revenue", "agg": "sum"}]}]}}}'''
+  agent_example: 'mammoth dashboard pages add 123 --input ''{"body": {"params": {"pages": [{"title": "By region", "focus": {"measure": "Revenue", "dim": "Region", "kpis": [{"field": "Revenue", "agg": "sum", "label": "Revenue"}]}, "charts": [{"kind": "hbar", "title": "Revenue by region", "dim": "Region", "measure": "Revenue", "agg": "sum"}]}]}}}'' --yes --confirm 123'
   unit_tests:
   - UT-DASHBOARD-PAGES-ADD
   contract_tests:
@@ -2622,7 +2619,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard qa comment delete DASHBOARD_ID SESSION_ID COMMENT_ID --help
-  agent_example: mammoth dashboard qa comment delete 123 456 789
+  agent_example: mammoth dashboard qa comment delete 123 456 789 --yes
   unit_tests:
   - UT-DASHBOARD-QA-COMMENT-DELETE
   contract_tests:
@@ -2784,7 +2781,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard qa session delete DASHBOARD_ID SESSION_ID --help
-  agent_example: mammoth dashboard qa session delete 123 456
+  agent_example: mammoth dashboard qa session delete 123 456 --yes
   unit_tests:
   - UT-DASHBOARD-QA-SESSION-DELETE
   contract_tests:
@@ -3482,7 +3479,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard share DASHBOARD_ID --help
-  agent_example: 'mammoth dashboard share 123 --input ''{"type_of_auth": "mammoth"}'''
+  agent_example: 'mammoth dashboard share 123 --input ''{"type_of_auth": "mammoth"}'' --yes'
   unit_tests:
   - UT-DASHBOARD-SHARE
   contract_tests:
@@ -3569,7 +3566,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard signature delete SIGNATURE_ID --help
-  agent_example: mammoth dashboard signature delete resource-123
+  agent_example: mammoth dashboard signature delete resource-123 --yes
   unit_tests:
   - UT-DASHBOARD-SIGNATURE-DELETE
   contract_tests:
@@ -3772,7 +3769,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard style custom delete STYLE_ID --help
-  agent_example: mammoth dashboard style custom delete resource-123
+  agent_example: mammoth dashboard style custom delete resource-123 --yes
   unit_tests:
   - UT-DASHBOARD-STYLE-CUSTOM-DELETE
   contract_tests:
@@ -4165,7 +4162,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard swap-data DASHBOARD_ID --help
-  agent_example: 'mammoth dashboard swap-data 123 --input ''{"body": {"params": {"dataview_id": 1}}}'''
+  agent_example: 'mammoth dashboard swap-data 123 --input ''{"body": {"params": {"dataview_id": 1}}}'' --yes --confirm 123'
   unit_tests:
   - tests/unit/test_swap_data.py::test_swap_data_posts_literal_release_route_and_body
   - mammoth-cli/tests/unit/commands/test_dashboard.py::test_swap_data_dispatches_exact_symbol
@@ -4321,7 +4318,7 @@ commands:
   result_model: DashboardTagsRenameResult
   mutation_class: benign_mutation
   edits_target: true
-  confirmation: confirm_target
+  confirmation: none
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: contract_only_no_disposable_fixture
@@ -4336,7 +4333,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard tags rename TAG_ID --help
-  agent_example: 'mammoth dashboard tags rename 123 --input ''{"name": "Revenue"}'' --yes --confirm 123'
+  agent_example: 'mammoth dashboard tags rename 123 --input ''{"name": "Revenue"}'''
   unit_tests:
   - UT-DASHBOARD-TAGS-RENAME
   contract_tests:
@@ -4514,7 +4511,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard template delete TEMPLATE_ID --help
-  agent_example: mammoth dashboard template delete resource-123
+  agent_example: mammoth dashboard template delete resource-123 --yes
   unit_tests:
   - UT-DASHBOARD-TEMPLATE-DELETE
   contract_tests:
@@ -4838,7 +4835,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard templates use SLUG --help
-  agent_example: 'mammoth dashboard templates use revenue-overview --input ''{"body": {"params": {"project_id": 1}}}'''
+  agent_example: 'mammoth dashboard templates use revenue-overview --input ''{"body": {"params": {"project_id": 1}}}'' --yes --confirm revenue-overview'
   unit_tests:
   - tests/unit/test_template_bindings.py::test_use_template_posts_exact_route
   contract_tests:
@@ -5376,7 +5373,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard template thumbnail clear TEMPLATE_ID --help
-  agent_example: 'mammoth dashboard template thumbnail clear resource-123'
+  agent_example: mammoth dashboard template thumbnail clear resource-123 --yes
   unit_tests:
   - UT-DASHBOARD-TEMPLATE-THUMBNAIL-CLEAR
   contract_tests:
@@ -6070,7 +6067,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard engagement remind DASHBOARD_ID --help
-  agent_example: 'mammoth dashboard engagement remind 123 --input ''{"user_ids": [1]}'''
+  agent_example: 'mammoth dashboard engagement remind 123 --input ''{"user_ids": [1]}'' --yes'
   unit_tests:
   - UT-DASHBOARD-ENGAGEMENT-REMIND
   contract_tests:
@@ -6249,7 +6246,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard own-data accept DASHBOARD_ID --help
-  agent_example: mammoth dashboard own-data accept 123
+  agent_example: mammoth dashboard own-data accept 123 --yes --confirm 123
   unit_tests:
   - UT-DASHBOARD-OWN-DATA-ACCEPT
   contract_tests:

@@ -28,7 +28,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth file bulk-delete --help
-  agent_example: 'mammoth file bulk-delete --input ''{"file_ids": [1]}'''
+  agent_example: 'mammoth file bulk-delete --input ''{"file_ids": [1]}'' --yes'
   unit_tests:
   - UT-FILE-BULK-DELETE
   contract_tests:
@@ -73,7 +73,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth file delete FILE_ID --help
-  agent_example: mammoth file delete 123
+  agent_example: mammoth file delete 123 --yes
   unit_tests:
   - UT-FILE-DELETE
   contract_tests:
@@ -325,7 +325,7 @@ commands:
   secret_fields:
   - password
   human_example: mammoth file set-password FILE_ID --help
-  agent_example: mammoth file set-password 123 --input /private/path/request.json
+  agent_example: mammoth file set-password 123 --input /private/path/request.json --yes --confirm 123
   unit_tests:
   - UT-FILE-SET-PASSWORD
   contract_tests:

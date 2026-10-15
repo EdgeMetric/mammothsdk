@@ -937,7 +937,11 @@ def test_connector_connection_credentials_are_secret_fields_sent_through_a_file(
     assert create["secret_fields"] == ["config"]
     assert update["secret_fields"] == ["credentials"]
     for schema in (create, update):
-        assert schema["agent_example"].endswith("--input /private/path/request.json")
+        assert (
+            schema["agent_example"]
+            .removesuffix(" --yes")
+            .endswith("--input /private/path/request.json")
+        )
 
 
 def test_a_find_points_into_the_families_it_matched() -> None:
