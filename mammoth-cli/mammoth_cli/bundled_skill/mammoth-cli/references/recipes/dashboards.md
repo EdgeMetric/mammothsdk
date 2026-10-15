@@ -185,6 +185,11 @@ not publish: `was_published` stays false until you also run
 `dashboard action` with `publish-data` on a board that was never published
 publishes the presentation instead and says so. `share` and `action` print the
 deliverable check in their confirmation text.
+Auto-publish (`auto_publish: true`) republishes **data refreshes only**. A chat
+edit or any other layout change stays in the draft, and `dashboard get` shows
+`is_publish_presentation_pending: true`, until you run `publish-presentation`.
+After editing a live board with auto-publish on, tell the user the layout
+change is not live yet, and publish only if they asked for it.
 Only then do `dashboard published canvas URL`, `published data URL`,
 `job-by-url URL JOB_ID` and the other `/dashboards/url/...` routes answer;
 before that they return 404 `DASHBOARD_NOT_FOUND`. Legacy widget routes
