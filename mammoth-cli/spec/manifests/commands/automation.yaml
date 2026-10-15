@@ -134,8 +134,9 @@ commands:
   known_restrictions: Immutable ID confirmation.
   reviewed_by: primary
   readback:
-    command: automation.list
-    ids: {}
+    command: automation.get
+    ids:
+      automation_id: positional.0
     kind: object
 - command_id: automation.get
   command_path: automation get

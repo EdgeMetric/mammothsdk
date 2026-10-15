@@ -21,7 +21,7 @@ import json
 import time
 from typing import Any
 
-from mammoth_cli.errors.envelope import CliError
+from mammoth_cli.errors.envelope import CODE_RESOURCE_NOT_FOUND, CliError
 from mammoth_cli.manifest.loader import command_by_id
 from mammoth_cli.output.normalize import Revealed
 from mammoth_cli.runtime.invocation import Invocation
@@ -141,6 +141,15 @@ def _build_state(
         raise ValueError(f"unknown readback kind {kind!r}")
     except Exception as exc:  # noqa: BLE001 -- a read failure must surface, never crash the write
         read_by = _read_by_label(read_command_id, resolved_ids)
+        if (
+            invocation.command_id.endswith(".delete")
+            and isinstance(exc, CliError)
+            and exc.code == CODE_RESOURCE_NOT_FOUND
+            and kind == "object"
+            and resolved_ids
+        ):
+            # Reading the single deleted resource and getting "not found" is proof it is gone.
+            return {"kind": "object", "read_by": read_by, "object": None, "absent": True}
         reason = exc.message if isinstance(exc, CliError) else str(exc)
         return {"kind": "unreadable", "read_by": read_by, "reason": reason or type(exc).__name__}
 

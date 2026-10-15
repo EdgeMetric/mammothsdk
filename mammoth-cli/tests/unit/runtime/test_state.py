@@ -370,8 +370,9 @@ def test_a_staged_draft_step_reports_the_staged_steps_not_unreadable(
     assert result["state"] == {
         "kind": "staged",
         "read_by": "view.task.list 3310",
-        "detail": "Staged in the draft, not run: the live view is unchanged until "
-        "'view draft submit'.",
+        "detail": (
+            "Staged in the draft, not run: the live view is unchanged until " "'view draft submit'."
+        ),
         "live_row_count": 20,
         "steps": [
             {"id": 1, "task": "SELECT", "status": "executed"},
@@ -419,3 +420,45 @@ def test_a_read_back_that_never_gets_data_is_still_unreadable(
 
     assert result["state"]["kind"] == "unreadable"
     assert "no data for pipeline step" in result["state"]["reason"]
+
+
+def _delete_readback(monkeypatch: pytest.MonkeyPatch, error: Exception) -> dict[str, Any]:
+    _patch_record(
+        monkeypatch,
+        {
+            "readback": {
+                "command": "automation.get",
+                "ids": {"automation_id": "positional.0"},
+                "kind": "object",
+            }
+        },
+    )
+
+    def raising_get(invocation: Invocation) -> tuple[dict[str, Any], dict[str, Any]]:
+        raise error
+
+    _patch_handlers(monkeypatch, {"automation.get": raising_get})
+    invocation = _invocation("automation.delete", positionals={"automation_id": 446})
+    invocation = Invocation(**{**invocation.__dict__, "extra_args": ["446"]})
+    return with_state(invocation, {"status": "done", "verify": {"verified": True}})
+
+
+def test_a_delete_read_back_that_is_not_found_proves_the_resource_is_gone(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from mammoth_cli.errors.envelope import CODE_RESOURCE_NOT_FOUND, EXIT_NOT_FOUND, CliError
+
+    missing = CliError(code=CODE_RESOURCE_NOT_FOUND, message="gone", exit_status=EXIT_NOT_FOUND)
+    result = _delete_readback(monkeypatch, missing)
+    assert result["state"]["absent"] is True
+    assert result["verify"]["verified"] is True
+
+
+def test_a_delete_read_back_that_fails_otherwise_is_not_verified(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from mammoth_cli.errors.envelope import CliError
+
+    result = _delete_readback(monkeypatch, CliError(code="api_error", message="boom"))
+    assert result["state"]["kind"] == "unreadable"
+    assert result["verify"]["verified"] is False
