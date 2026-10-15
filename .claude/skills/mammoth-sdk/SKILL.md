@@ -14,7 +14,6 @@ from mammoth import MammothClient, Condition, Operator, ColumnType, SetValue
 
 client = MammothClient(
     api_token="mm_your-token",
-    workspace_id=11,
     base_url="https://app.mammoth.io/api/v2",  # default
 )
 client.set_project_id(10)
@@ -43,7 +42,7 @@ See [references/architecture.md](references/architecture.md) for the full SDK ar
 
 ### MammothClient
 
-Single entry point. Authenticates with an API token (`api_token="mm_..."`, sent as Bearer) or an `api_key`/`api_secret` pair (which needs `workspace_id`). All 42 sub-clients are attributes; the first 24 are below, the rest are listed after the table:
+Single entry point. Authenticates with an API token (`api_token="mm_..."`, sent as Bearer) or an `api_key`/`api_secret` pair (which needs `workspace_id`). Never pass `workspace_id` with `api_token`: the token names the workspace and the client raises `ValueError`. All 42 sub-clients are attributes; the first 24 are below, the rest are listed after the table:
 
 | Attribute | Class | Purpose |
 |-----------|-------|---------|
@@ -250,7 +249,7 @@ from mammoth import DEFAULT_TIMEOUT, DEFAULT_JOB_TIMEOUT, DEFAULT_PIPELINE_TIMEO
 
 # Override per-client:
 client = MammothClient(
-    api_token="mm_...", workspace_id=1,
+    api_token="mm_...",
     timeout=60,       # custom API timeout
     job_timeout=120,  # custom job timeout
     pipeline_timeout=7200,  # custom pipeline wait

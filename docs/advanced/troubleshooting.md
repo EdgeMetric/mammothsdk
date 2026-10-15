@@ -16,7 +16,7 @@ Common issues and their solutions.
 ```python
 # Verify your credentials
 try:
-    client = MammothClient(api_token="mm_...", workspace_id=11)
+    client = MammothClient(api_token="mm_...")
     if await client.test_connection():
         print("Credentials are valid")
 except MammothAuthError:
@@ -83,7 +83,7 @@ except MammothJobFailedError as e:
 **Solution**: Call `client.set_project_id(id)` before performing operations:
 
 ```python
-client = MammothClient(api_token="mm_...", workspace_id=11)
+client = MammothClient(api_token="mm_...")
 client.set_project_id(10)  # Required before most operations
 ```
 

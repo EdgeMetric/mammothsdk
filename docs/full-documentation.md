@@ -596,7 +596,6 @@ from mammoth import MammothClient, Condition, Operator, ColumnType, SetValue
 
 client = MammothClient(
     api_token="mm_your-token",
-    workspace_id=11,
 )
 client.set_project_id(10)
 
@@ -779,7 +778,6 @@ from mammoth import MammothClient
 
 client = MammothClient(
     api_token="mm_your-token",
-    workspace_id=11,  # your workspace ID
 )
 
 # Set the project you want to work with
@@ -801,7 +799,7 @@ The `workspace_id` is required at client creation. The `project_id` must be set 
 >
 >
 > async def main() -> None:
->     async with MammothClient(api_token="mm_your-token", workspace_id=11) as client:
+>     async with MammothClient(api_token="mm_your-token") as client:
 >         client.set_project_id(10)
 >         view = await client.views.get(1039)
 >         print(view.display_names)
@@ -907,7 +905,6 @@ from mammoth import (
 
 client = MammothClient(
     api_token=os.getenv("MAMMOTH_API_TOKEN"),
-    workspace_id=11,
 )
 client.set_project_id(10)
 
@@ -984,7 +981,6 @@ from mammoth import MammothClient
 
 client = MammothClient(
     api_token="mm_your-token",
-    workspace_id=11,
 )
 client.set_project_id(10)
 ```
@@ -1003,7 +999,6 @@ from mammoth import MammothClient
 
 client = MammothClient(
     api_token=os.getenv("MAMMOTH_API_TOKEN"),
-    workspace_id=11,
 )
 ```
 
@@ -1049,7 +1044,6 @@ from mammoth import MammothClient, MammothAuthError
 try:
     client = MammothClient(
         api_token="mm_invalid",
-        workspace_id=1,
     )
     projects = await client.projects.list()
 except MammothAuthError:
@@ -1099,7 +1093,6 @@ from mammoth import MammothClient
 
 client = MammothClient(
     api_token=os.getenv("MAMMOTH_API_TOKEN"),
-    workspace_id=11,
     timeout=60,
     job_timeout=120,
 )
@@ -1371,7 +1364,7 @@ See [Exceptions](#exceptions-reference) for the full error hierarchy.
 from mammoth import MammothClient, MammothAPIError, MammothAuthError
 
 try:
-    client = MammothClient(api_token="mm_...", workspace_id=11)
+    client = MammothClient(api_token="mm_...")
     client.set_project_id(10)
     datasets = await client.datasets.list()
 except MammothAuthError:
@@ -1402,7 +1395,7 @@ Views are created via `client.views.get()` -- not instantiated directly:
 ```python
 from mammoth import MammothClient
 
-client = MammothClient(api_token="mm_...", workspace_id=11)
+client = MammothClient(api_token="mm_...")
 client.set_project_id(10)
 
 view = await client.views.get(1039)
@@ -11841,7 +11834,7 @@ MammothError
 from mammoth import MammothClient, MammothAPIError, MammothAuthError
 
 try:
-    client = MammothClient(api_token="mm_...", workspace_id=11)
+    client = MammothClient(api_token="mm_...")
     client.set_project_id(10)
     view = await client.get_view(1039)
     await view.filter_rows(Condition("Sales", Operator.GTE, 1000))
@@ -12440,7 +12433,6 @@ from mammoth import (
 
 client = MammothClient(
     api_token="mm_your-token",
-    workspace_id=11,
 )
 client.set_project_id(10)
 
@@ -12912,7 +12904,7 @@ from mammoth import (
     ConversionSpec, SortDirection, TextCase,
 )
 
-client = MammothClient(api_token="mm_...", workspace_id=11)
+client = MammothClient(api_token="mm_...")
 client.set_project_id(10)
 
 # 1. Get the view
@@ -16890,7 +16882,6 @@ from mammoth import MammothClient
 
 client = MammothClient(
     api_token=os.getenv("MAMMOTH_API_TOKEN"),
-    workspace_id=11,  # your workspace ID
 )
 
 # Set the project to work in
@@ -17109,7 +17100,6 @@ from mammoth import (
 # 1. Authenticate
 client = MammothClient(
     api_token=os.getenv("MAMMOTH_API_TOKEN"),
-    workspace_id=11,
 )
 client.set_project_id(42)
 
@@ -17172,7 +17162,6 @@ from mammoth import MammothClient, parse_path
 
 client = MammothClient(
     api_token=os.getenv("MAMMOTH_API_TOKEN"),
-    workspace_id=11,
 )
 client.set_project_id(10)
 ```
@@ -17274,7 +17263,6 @@ print(f"Saved to {path}")
 ```python
 async with MammothClient(
     api_token=os.getenv("MAMMOTH_API_TOKEN"),
-    workspace_id=11,
 ) as client:
     client.set_project_id(10)
     view = await client.views.get(1039)
@@ -17323,7 +17311,6 @@ from mammoth import (
 async def main():
     client = MammothClient(
         api_token=os.getenv("MAMMOTH_API_TOKEN"),
-        workspace_id=11,
     )
     client.set_project_id(10)
 
@@ -17389,7 +17376,7 @@ MammothError                     # Base -- catch-all for any SDK error
 from mammoth import MammothClient, MammothAuthError
 
 try:
-    client = MammothClient(api_token="mm_bad", workspace_id=1)
+    client = MammothClient(api_token="mm_bad")
     client.set_project_id(1)
     await client.projects.list()
 except MammothAuthError:
@@ -17539,7 +17526,6 @@ If jobs time out, increase the `job_timeout` on the client:
 ```python
 client = MammothClient(
     api_token="mm_...",
-    workspace_id=11,
     job_timeout=300,  # 5 minutes instead of default 60s
 )
 ```
@@ -17570,7 +17556,6 @@ from mammoth import MammothClient
 
 client = MammothClient(
     api_token="mm_your-token",
-    workspace_id=11,
     base_url="https://app.mammoth.io/api/v2",
     timeout=30,
     job_timeout=60,
@@ -17590,7 +17575,6 @@ If your organization uses a custom Mammoth deployment:
 ```python
 client = MammothClient(
     api_token="mm_...",
-    workspace_id=11,
     base_url="https://your-instance.mammoth.io/api/v2",
 )
 ```
@@ -17806,7 +17790,7 @@ Pull data from an external database and upload to Mammoth:
 import pandas as pd
 from mammoth import MammothClient
 
-client = MammothClient(api_token="mm_...", workspace_id=11)
+client = MammothClient(api_token="mm_...")
 client.set_project_id(10)
 
 # 1. Export from your source database to CSV
@@ -17959,7 +17943,7 @@ Common issues and their solutions.
 ```python
 # Verify your credentials
 try:
-    client = MammothClient(api_token="mm_...", workspace_id=11)
+    client = MammothClient(api_token="mm_...")
     if await client.test_connection():
         print("Credentials are valid")
 except MammothAuthError:
@@ -18026,7 +18010,7 @@ except MammothJobFailedError as e:
 **Solution**: Call `client.set_project_id(id)` before performing operations:
 
 ```python
-client = MammothClient(api_token="mm_...", workspace_id=11)
+client = MammothClient(api_token="mm_...")
 client.set_project_id(10)  # Required before most operations
 ```
 

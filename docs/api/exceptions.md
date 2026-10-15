@@ -32,7 +32,7 @@ MammothError
 from mammoth import MammothClient, MammothAPIError, MammothAuthError
 
 try:
-    client = MammothClient(api_token="mm_...", workspace_id=11)
+    client = MammothClient(api_token="mm_...")
     client.set_project_id(10)
     view = await client.get_view(1039)
     await view.filter_rows(Condition("Sales", Operator.GTE, 1000))
