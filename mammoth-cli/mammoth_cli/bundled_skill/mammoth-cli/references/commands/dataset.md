@@ -156,7 +156,7 @@ Status on release: ran once on CLI 2.0.15 — re-verification 2026-09-18: exit 0
 
 Run: `mammoth dataset file-settings update`. Exact input fields: `mammoth schema get dataset.file-settings.update`.
 
-Example: `mammoth dataset file-settings update 123 --input '{"delimiter": ",", "has_header": true, "initial_skip_count": 1, "quotechar": "\""}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth dataset file-settings update 123 --input '{"delimiter": ",", "has_header": true, "initial_skip_count": 0, "quotechar": "\""}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `DatasetFileSettingsUpdateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `always_wait`.
 

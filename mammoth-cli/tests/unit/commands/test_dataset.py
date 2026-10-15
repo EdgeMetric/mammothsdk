@@ -538,6 +538,18 @@ def test_get_hints_view_create_when_dataset_has_zero_views(
     assert "mammoth view create 2643" in result["hint"]
 
 
+def test_get_need_action_with_zero_views_points_at_file_settings_not_view_create(
+    fake_service: FakeMammothService,
+) -> None:
+    # A need_action dataset has no views because it is waiting for a decision;
+    # `view create` is not the next step.
+    fake_service.responses[_GET] = {"id": 2644, "status": "need_action"}
+    fake_service.responses[_VIEW_LIST] = {"dataviews": []}
+    result, _meta = dataset_cmd.dataset_get(_inv("dataset.get", project=180, extra_args=["2644"]))
+    assert "view create" not in result["hint"]
+    assert "mammoth dataset file-settings get 2644" in result["hint"]
+
+
 def test_batch_data_rejects_invalid_paging_before_service(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:

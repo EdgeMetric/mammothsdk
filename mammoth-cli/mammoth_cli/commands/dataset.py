@@ -860,7 +860,7 @@ def _export_write_hint(data: dict[str, Any]) -> str | None:
     )
 
 
-def _zero_view_hint(dataset_id: int) -> str:
+def _zero_view_hint(dataset_id: int, status: Any = None) -> str:
     """Name the fix for a dataset with no queryable views yet (T1-I-13).
 
     Nothing is queryable until a view exists (transforms, joins, exports and
@@ -868,6 +868,13 @@ def _zero_view_hint(dataset_id: int) -> str:
     dataset-level metadata and never sees a zero view count can conclude "no
     correction needed" while nothing it changed is visible anywhere.
     """
+    if status in ("need_action", "has_unstructured_data"):
+        return (
+            "This dataset has no views yet because it is waiting for a decision "
+            f"(status {status}). Run 'mammoth dataset file-settings get {dataset_id}', then "
+            f"'mammoth dataset file-settings update {dataset_id}' with the settings; a view "
+            "appears once it is ready."
+        )
     return (
         f"This dataset has no views yet; nothing is queryable until one exists. "
         f"Run 'mammoth view create {dataset_id}' to create one."
@@ -891,7 +898,7 @@ def dataset_get(invocation: Invocation) -> HandlerResult:
         view_count = len(views.get("dataviews") or [])
         data = {**data, "view_count": view_count}
         if view_count == 0:
-            zero_hint = _zero_view_hint(dataset_id)
+            zero_hint = _zero_view_hint(dataset_id, data.get("status"))
             hint = f"{hint} {zero_hint}" if hint else zero_hint
     if hint is not None:
         data = {**data, "hint": hint}
