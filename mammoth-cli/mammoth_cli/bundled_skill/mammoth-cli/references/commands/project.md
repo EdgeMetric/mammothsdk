@@ -6,7 +6,7 @@ Every command returns the standard JSON envelope. On nonzero exit, read the erro
 
 Run: `mammoth project bulk-delete`. Exact input fields: `mammoth schema get project.bulk-delete`.
 
-Example: `mammoth project bulk-delete --input '{"project_ids": [1]}'`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth project bulk-delete --input '{"project_ids": [1]}' --yes`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `ProjectBulkDeleteResult`; mutation `destructive`, confirmation `confirm_target`, wait policy `not_async`.
 
@@ -16,7 +16,7 @@ Status on release: ran once on CLI 2.0.14 — write sweep 2026-09-18: exit 0 on 
 
 Run: `mammoth project bulk-update`. Exact input fields: `mammoth schema get project.bulk-update`.
 
-Example: `mammoth project bulk-update --input '{"patch_data": {"patches": [{"op": "add", "path": "role", "value": [{"project_id": 456, "user_roles": [{"user_id": 123, "role": "project_analyst"}]}]}]}}'`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth project bulk-update --input '{"patch_data": {"patches": [{"op": "add", "path": "role", "value": [{"project_id": 456, "user_roles": [{"user_id": 123, "role": "project_analyst"}]}]}]}}' --yes`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `ProjectBulkUpdateResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
 
@@ -76,7 +76,7 @@ Status on release: ran once on CLI an earlier release — Bounded release read i
 
 Run: `mammoth project delete`. Exact input fields: `mammoth schema get project.delete`.
 
-Example: `mammoth project delete 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth project delete 123 --yes --confirm 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `ProjectDeleteResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
 
@@ -116,7 +116,7 @@ Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19
 
 Run: `mammoth project memory add`. Exact input fields: `mammoth schema get project.memory.add`.
 
-Example: `mammoth project memory add 123 --input '{"text": "sample"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth project memory add 123 --input '{"text": "Quarterly revenue summary"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ProjectMemoryAddResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
@@ -136,9 +136,9 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth project memory remove`. Exact input fields: `mammoth schema get project.memory.remove`.
 
-Example: `mammoth project memory remove 123 --input '{"index": 1}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth project memory remove 123 --input '{"index": 1}' --yes`. Illustrative only: append `--yes` after observing an owned target.
 
-Result: `ProjectMemoryRemoveResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+Result: `ProjectMemoryRemoveResult`; mutation `benign_mutation`, confirmation `prompt_or_yes`, wait policy `not_async`.
 
 Status on release: untried; no live run recorded.
 
@@ -226,7 +226,7 @@ Status on release: ran once on CLI 2.0.15 — re-verification 2026-09-18: exit 0
 
 Run: `mammoth project user add`. Exact input fields: `mammoth schema get project.user.add`.
 
-Example: `mammoth project user add 123 --input '{"user_ids": [123], "role": "project_analyst"}'`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth project user add 123 --input '{"user_ids": [123], "role": "project_analyst"}' --yes --confirm 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `ProjectUserAddResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
 
@@ -236,7 +236,7 @@ Status on release: ran once on CLI 2.0.15 — re-verification 2026-09-18: exit 0
 
 Run: `mammoth project user remove`. Exact input fields: `mammoth schema get project.user.remove`.
 
-Example: `mammoth project user remove 123 --input '{"user_ids": ["resource-123"]}'`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth project user remove 123 --input '{"user_ids": ["resource-123"]}' --yes --confirm 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `ProjectUserRemoveResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
 

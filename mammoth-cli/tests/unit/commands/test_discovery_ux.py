@@ -240,10 +240,14 @@ def test_schema_find_without_a_full_match_suggests_near_misses_and_the_menu() ->
     # vocabulary (view.transform.sort's own purpose text) that view.export.
     # dataset's text doesn't carry, so it keeps this a real partial-coverage
     # near miss instead of colliding with that improvement.
-    result = find_schemas("union sort views")
+    result = find_schemas("union sort sheets")
 
-    assert result["matches"] == []
     assert result["total_matches"] == 0
+    # ``matches`` carries the best partial matches, marked, so a script reading it is not empty.
+    assert [m["command_id"] for m in result["matches"]] == [
+        item["command_id"] for item in result["suggestions"]
+    ]
+    assert all(m["partial"] for m in result["matches"])
     suggested = [item["command_id"] for item in result["suggestions"]]
     assert "file.upload" in suggested and "view.export.dataset" in suggested
     assert all(item["matched_terms"] for item in result["suggestions"])

@@ -6,7 +6,7 @@ Every command returns the standard JSON envelope. On nonzero exit, read the erro
 
 Run: `mammoth dashboard qa ask`. Exact input fields: `mammoth schema get dashboard.qa.ask`.
 
-Example: `mammoth dashboard qa ask 123 123 --input '{"body": {"params": {"question": "Summarize revenue by region"}}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth dashboard qa ask 123 456 --input '{"body": {"params": {"question": "Summarize revenue by region"}}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `DashboardQaAskResult`; mutation `benign_mutation`, confirmation `none`, wait policy `always_wait`.
 
@@ -16,7 +16,7 @@ Status on release: ran once on CLI 2.0.12 — Dashboard sweep 2026-09-18: exit 0
 
 Run: `mammoth dashboard qa comment create`. Exact input fields: `mammoth schema get dashboard.qa.comment.create`.
 
-Example: `mammoth dashboard qa comment create 123 123 --input '{"body": {"params": {"body": "sample"}}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth dashboard qa comment create 123 456 --input '{"body": {"params": {"body": "Quarterly revenue summary"}}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `DashboardQaCommentCreateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
@@ -26,7 +26,7 @@ Status on release: ran once on CLI 2.0.12 — Dashboard sweep 2026-09-18: exit 0
 
 Run: `mammoth dashboard qa comment delete`. Exact input fields: `mammoth schema get dashboard.qa.comment.delete`.
 
-Example: `mammoth dashboard qa comment delete 123 123 123`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth dashboard qa comment delete 123 456 789 --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `DashboardQaCommentDeleteResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
 
@@ -36,7 +36,7 @@ Status on release: ran once on CLI 2.0.12 — Dashboard sweep 2026-09-18: exit 0
 
 Run: `mammoth dashboard qa feedback`. Exact input fields: `mammoth schema get dashboard.qa.feedback`.
 
-Example: `mammoth dashboard qa feedback 123 123 123 --input '{"body": {"params": {"rating": "up"}}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth dashboard qa feedback 123 456 789 --input '{"body": {"params": {"rating": "up"}}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `DashboardQaFeedbackResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
@@ -66,7 +66,7 @@ Status on release: ran once on CLI 2.0.12 — Dashboard sweep 2026-09-18: exit 0
 
 Run: `mammoth dashboard qa session delete`. Exact input fields: `mammoth schema get dashboard.qa.session.delete`.
 
-Example: `mammoth dashboard qa session delete 123 123`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth dashboard qa session delete 123 456 --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `DashboardQaSessionDeleteResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
 
@@ -76,7 +76,7 @@ Status on release: ran once on CLI 2.0.12 — Dashboard sweep 2026-09-18: exit 0
 
 Run: `mammoth dashboard qa session fork`. Exact input fields: `mammoth schema get dashboard.qa.session.fork`.
 
-Example: `mammoth dashboard qa session fork 123 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth dashboard qa session fork 123 456`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `DashboardQaSessionForkResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
@@ -86,7 +86,7 @@ Status on release: ran once on CLI 2.0.12 — Dashboard sweep 2026-09-18: exit 0
 
 Run: `mammoth dashboard qa session get`. Exact input fields: `mammoth schema get dashboard.qa.session.get`.
 
-Example: `mammoth dashboard qa session get 123 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth dashboard qa session get 123 456`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `DashboardQaSessionGetResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
@@ -106,7 +106,7 @@ Status on release: ran once on CLI 2.0.12 — Published PyPI CLI 1.1.11 / SDK 0.
 
 Run: `mammoth dashboard qa session rename`. Exact input fields: `mammoth schema get dashboard.qa.session.rename`.
 
-Example: `mammoth dashboard qa session rename 123 123 --input '{"body": {"params": {"title": "Revenue report"}}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth dashboard qa session rename 123 456 --input '{"body": {"params": {"title": "Revenue report"}}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `DashboardQaSessionRenameResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
@@ -116,7 +116,7 @@ Status on release: ran once on CLI 2.0.12 — Dashboard sweep 2026-09-18: exit 0
 
 Run: `mammoth dashboard qa session set-visibility`. Exact input fields: `mammoth schema get dashboard.qa.session.set-visibility`.
 
-Example: `mammoth dashboard qa session set-visibility 123 123 --input '{"body": {"params": {"visibility": "sample"}}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth dashboard qa session set-visibility 123 456 --input '{"body": {"params": {"visibility": "shared"}}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `DashboardQaSessionSetVisibilityResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 

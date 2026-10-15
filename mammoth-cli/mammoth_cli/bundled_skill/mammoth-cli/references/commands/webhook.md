@@ -16,7 +16,7 @@ Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19
 
 Run: `mammoth webhook delete`. Exact input fields: `mammoth schema get webhook.delete`.
 
-Example: `mammoth webhook delete 123`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth webhook delete 123 --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `WebhookDeleteResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
 
@@ -46,7 +46,7 @@ Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19
 
 Run: `mammoth webhook send`. Exact input fields: `mammoth schema get webhook.send`.
 
-Example: `mammoth webhook send --input '{"webhook_uri": "https://example.com/data.csv", "data": {"sample_key": "Status"}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth webhook send --input '{"webhook_uri": "https://example.com/data.csv", "data": {"name": "Status"}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `WebhookSendResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 

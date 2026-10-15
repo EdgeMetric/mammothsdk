@@ -16,7 +16,7 @@ Status on release: observed blocker — backend_error: The CLI gates this GET be
 
 Run: `mammoth billing hosted-page`. Exact input fields: `mammoth schema get billing.hosted-page`.
 
-Example: `mammoth billing hosted-page sample`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth billing hosted-page change_plan --yes --confirm change_plan`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `BillingHostedPageResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
 
@@ -26,7 +26,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth billing invoice charge`. Exact input fields: `mammoth schema get billing.invoice.charge`.
 
-Example: `mammoth billing invoice charge`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth billing invoice charge --yes`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `BillingInvoiceChargeResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
 
@@ -46,7 +46,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth billing stripe cancel`. Exact input fields: `mammoth schema get billing.stripe.cancel`.
 
-Example: `mammoth billing stripe cancel`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth billing stripe cancel --yes`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `BillingStripeCancelResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
 
@@ -56,7 +56,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth billing stripe checkout-url`. Exact input fields: `mammoth schema get billing.stripe.checkout-url`.
 
-Example: `mammoth billing stripe checkout-url --input '{"success_url": "https://example.com/data.csv", "cancel_url": "https://example.com/data.csv"}'`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth billing stripe checkout-url --input '{"success_url": "https://example.com/data.csv", "cancel_url": "https://example.com/data.csv"}' --yes`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `BillingStripeCheckoutUrlResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
 
@@ -66,7 +66,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth billing stripe create`. Exact input fields: `mammoth schema get billing.stripe.create`.
 
-Example: `mammoth billing stripe create 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth billing stripe create 123 --yes --confirm 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `BillingStripeCreateResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
 
@@ -76,7 +76,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth billing stripe end-trial`. Exact input fields: `mammoth schema get billing.stripe.end-trial`.
 
-Example: `mammoth billing stripe end-trial`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth billing stripe end-trial --yes`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `BillingStripeEndTrialResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
 
@@ -106,7 +106,7 @@ Status on release: ran once on CLI 2.0.15 — admin read sweep 2026-09-18: exit 
 
 Run: `mammoth billing stripe payment-method delete`. Exact input fields: `mammoth schema get billing.stripe.payment-method.delete`.
 
-Example: `mammoth billing stripe payment-method delete resource-123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth billing stripe payment-method delete resource-123 --yes --confirm resource-123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `BillingStripePaymentMethodDeleteResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
 
@@ -126,7 +126,7 @@ Status on release: ran once on CLI 2.0.15 — admin read sweep 2026-09-18: exit 
 
 Run: `mammoth billing stripe payment-method set-default`. Exact input fields: `mammoth schema get billing.stripe.payment-method.set-default`.
 
-Example: `mammoth billing stripe payment-method set-default resource-123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth billing stripe payment-method set-default resource-123 --yes --confirm resource-123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `BillingStripePaymentMethodSetDefaultResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
 
@@ -136,7 +136,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth billing stripe portal-url`. Exact input fields: `mammoth schema get billing.stripe.portal-url`.
 
-Example: `mammoth billing stripe portal-url`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth billing stripe portal-url --yes`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `BillingStripePortalUrlResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
 
@@ -166,7 +166,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth billing stripe resume`. Exact input fields: `mammoth schema get billing.stripe.resume`.
 
-Example: `mammoth billing stripe resume`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth billing stripe resume --yes`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `BillingStripeResumeResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
 
@@ -176,7 +176,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth billing stripe retry-payment`. Exact input fields: `mammoth schema get billing.stripe.retry-payment`.
 
-Example: `mammoth billing stripe retry-payment`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth billing stripe retry-payment --yes`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `BillingStripeRetryPaymentResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
 
@@ -196,7 +196,7 @@ Status on release: ran once on CLI 2.0.15 — admin read sweep 2026-09-18: exit 
 
 Run: `mammoth billing stripe storage set`. Exact input fields: `mammoth schema get billing.stripe.storage.set`.
 
-Example: `mammoth billing stripe storage set --input '{"storage_gb": 1}'`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth billing stripe storage set --input '{"storage_gb": 1}' --yes`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `BillingStripeStorageSetResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
 
@@ -206,7 +206,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth billing stripe sync`. Exact input fields: `mammoth schema get billing.stripe.sync`.
 
-Example: `mammoth billing stripe sync`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth billing stripe sync --yes`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `BillingStripeSyncResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
 
@@ -246,7 +246,7 @@ Status on release: ran once on CLI 2.0.15 — admin read sweep 2026-09-18: exit 
 
 Run: `mammoth billing subscription update`. Exact input fields: `mammoth schema get billing.subscription.update`.
 
-Example: `mammoth billing subscription update --input '{"patch": [{"sample_key": "Status"}]}'`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth billing subscription update --input '{"patch": [{"name": "Status"}]}' --yes`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `BillingSubscriptionUpdateResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
 

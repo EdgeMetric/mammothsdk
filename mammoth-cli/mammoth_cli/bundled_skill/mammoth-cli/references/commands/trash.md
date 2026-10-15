@@ -6,7 +6,7 @@ Every command returns the standard JSON envelope. On nonzero exit, read the erro
 
 Run: `mammoth trash add`. Exact input fields: `mammoth schema get trash.add`.
 
-Example: `mammoth trash add --input '{"items": [{"sample_key": "Status"}]}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth trash add --input '{"items": [{"name": "Status"}]}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `TrashAddResult`; mutation `benign_mutation`, confirmation `none`, wait policy `always_wait`.
 
@@ -26,7 +26,7 @@ Status on release: ran once on CLI 1.1.9 — Bounded release read succeeded with
 
 Run: `mammoth trash restore`. Exact input fields: `mammoth schema get trash.restore`.
 
-Example: `mammoth trash restore --input '{"items": [{"sample_key": "Status"}]}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth trash restore --input '{"items": [{"name": "Status"}]}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `TrashRestoreResult`; mutation `benign_mutation`, confirmation `none`, wait policy `always_wait`.
 

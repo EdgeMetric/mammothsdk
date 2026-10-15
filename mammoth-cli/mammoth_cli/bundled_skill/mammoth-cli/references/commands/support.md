@@ -6,7 +6,7 @@ Every command returns the standard JSON envelope. On nonzero exit, read the erro
 
 Run: `mammoth support connector-profile add-connector`. Exact input fields: `mammoth schema get support.connector-profile.add-connector`.
 
-Example: `mammoth support connector-profile add-connector 123 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth support connector-profile add-connector 123 456 --yes --confirm 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `SupportConnectorProfileAddConnectorResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
 
@@ -16,7 +16,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth support connector-profile create`. Exact input fields: `mammoth schema get support.connector-profile.create`.
 
-Example: `mammoth support connector-profile create 'Revenue report'`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth support connector-profile create 'Revenue report' --yes --confirm 'Revenue report'`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `SupportConnectorProfileCreateResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
 
@@ -26,7 +26,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth support connector-profile delete`. Exact input fields: `mammoth schema get support.connector-profile.delete`.
 
-Example: `mammoth support connector-profile delete 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth support connector-profile delete 123 --yes --confirm 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `SupportConnectorProfileDeleteResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
 
@@ -46,7 +46,7 @@ Status on release: ran once on CLI 2.0.15 — admin read sweep 2026-09-18: exit 
 
 Run: `mammoth support connector-profile update`. Exact input fields: `mammoth schema get support.connector-profile.update`.
 
-Example: `mammoth support connector-profile update 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth support connector-profile update 123 --yes --confirm 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `SupportConnectorProfileUpdateResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
 
@@ -56,7 +56,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth support connector create`. Exact input fields: `mammoth schema get support.connector.create`.
 
-Example: `mammoth support connector create 'Revenue report'`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth support connector create 'Revenue report' --yes --confirm 'Revenue report'`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `SupportConnectorCreateResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
 
@@ -66,7 +66,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth support connector delete`. Exact input fields: `mammoth schema get support.connector.delete`.
 
-Example: `mammoth support connector delete 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth support connector delete 123 --yes --confirm 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `SupportConnectorDeleteResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
 
@@ -86,7 +86,7 @@ Status on release: ran once on CLI 2.0.15 — admin read sweep 2026-09-18: exit 
 
 Run: `mammoth support connector update`. Exact input fields: `mammoth schema get support.connector.update`.
 
-Example: `mammoth support connector update 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth support connector update 123 --yes --confirm 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `SupportConnectorUpdateResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
 
@@ -96,7 +96,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth support feature-profile add-feature`. Exact input fields: `mammoth schema get support.feature-profile.add-feature`.
 
-Example: `mammoth support feature-profile add-feature 123 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth support feature-profile add-feature 123 456 --yes --confirm 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `SupportFeatureProfileAddFeatureResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
 
@@ -106,7 +106,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth support feature-profile create`. Exact input fields: `mammoth schema get support.feature-profile.create`.
 
-Example: `mammoth support feature-profile create 'Revenue report'`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth support feature-profile create 'Revenue report' --yes --confirm 'Revenue report'`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `SupportFeatureProfileCreateResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
 
@@ -116,7 +116,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth support feature-profile delete`. Exact input fields: `mammoth schema get support.feature-profile.delete`.
 
-Example: `mammoth support feature-profile delete 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth support feature-profile delete 123 --yes --confirm 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `SupportFeatureProfileDeleteResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
 
@@ -136,7 +136,7 @@ Status on release: ran once on CLI 2.0.15 — admin read sweep 2026-09-18: exit 
 
 Run: `mammoth support feature-profile update`. Exact input fields: `mammoth schema get support.feature-profile.update`.
 
-Example: `mammoth support feature-profile update 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth support feature-profile update 123 --yes --confirm 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `SupportFeatureProfileUpdateResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
 
@@ -146,7 +146,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth support feature create`. Exact input fields: `mammoth schema get support.feature.create`.
 
-Example: `mammoth support feature create 'Revenue report'`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth support feature create 'Revenue report' --yes --confirm 'Revenue report'`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `SupportFeatureCreateResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
 
@@ -156,7 +156,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth support feature delete`. Exact input fields: `mammoth schema get support.feature.delete`.
 
-Example: `mammoth support feature delete 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth support feature delete 123 --yes --confirm 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `SupportFeatureDeleteResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
 
@@ -176,7 +176,7 @@ Status on release: ran once on CLI 2.0.15 — admin read sweep 2026-09-18: exit 
 
 Run: `mammoth support feature update`. Exact input fields: `mammoth schema get support.feature.update`.
 
-Example: `mammoth support feature update 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth support feature update 123 --yes --confirm 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `SupportFeatureUpdateResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
 
@@ -186,7 +186,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth support ownership transfer`. Exact input fields: `mammoth schema get support.ownership.transfer`.
 
-Example: `mammoth support ownership transfer 123 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth support ownership transfer 123 456 --yes --confirm 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `SupportOwnershipTransferResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
 
@@ -196,7 +196,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth support plan archive`. Exact input fields: `mammoth schema get support.plan.archive`.
 
-Example: `mammoth support plan archive 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth support plan archive 123 --yes --confirm 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `SupportPlanArchiveResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
 
@@ -216,7 +216,7 @@ Status on release: ran once on CLI 2.0.15 — admin read sweep 2026-09-18: exit 
 
 Run: `mammoth support plan create`. Exact input fields: `mammoth schema get support.plan.create`.
 
-Example: `mammoth support plan create 'Revenue report' --input '{"monthly_price": 1.0, "is_self_serve": true}'`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth support plan create 'Revenue report' --input '{"monthly_price": 1.0, "is_self_serve": true}' --yes --confirm 'Revenue report'`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `SupportPlanCreateResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
 
@@ -226,7 +226,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth support plan delete`. Exact input fields: `mammoth schema get support.plan.delete`.
 
-Example: `mammoth support plan delete 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth support plan delete 123 --yes --confirm 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `SupportPlanDeleteResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
 
@@ -266,7 +266,7 @@ Status on release: ran once on CLI 2.0.15 — admin read sweep 2026-09-18: exit 
 
 Run: `mammoth support plan storage-option archive`. Exact input fields: `mammoth schema get support.plan.storage-option.archive`.
 
-Example: `mammoth support plan storage-option archive 123 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth support plan storage-option archive 123 456 --yes --confirm 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `SupportPlanStorageOptionArchiveResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
 
@@ -276,7 +276,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth support plan storage-option create`. Exact input fields: `mammoth schema get support.plan.storage-option.create`.
 
-Example: `mammoth support plan storage-option create 123 --input '{"storage_gb": 1, "monthly_price": 1.0, "annual_price": 1.0}'`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth support plan storage-option create 123 --input '{"storage_gb": 1, "monthly_price": 1.0, "annual_price": 1.0}' --yes --confirm 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `SupportPlanStorageOptionCreateResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
 
@@ -296,7 +296,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth support plan storage-option update`. Exact input fields: `mammoth schema get support.plan.storage-option.update`.
 
-Example: `mammoth support plan storage-option update 123 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth support plan storage-option update 123 456 --yes --confirm 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `SupportPlanStorageOptionUpdateResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
 
@@ -306,7 +306,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth support plan unarchive`. Exact input fields: `mammoth schema get support.plan.unarchive`.
 
-Example: `mammoth support plan unarchive 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth support plan unarchive 123 --yes --confirm 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `SupportPlanUnarchiveResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
 
@@ -316,7 +316,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth support plan update`. Exact input fields: `mammoth schema get support.plan.update`.
 
-Example: `mammoth support plan update 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth support plan update 123 --yes --confirm 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `SupportPlanUpdateResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
 
@@ -326,7 +326,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth support plan update-storage-tiers`. Exact input fields: `mammoth schema get support.plan.update-storage-tiers`.
 
-Example: `mammoth support plan update-storage-tiers 123 --input '{"storage_tiers": [{"sample_key": "Status"}]}'`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth support plan update-storage-tiers 123 --input '{"storage_tiers": [{"name": "Status"}]}' --yes --confirm 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `SupportPlanUpdateStorageTiersResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
 
@@ -336,7 +336,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth support subscription create`. Exact input fields: `mammoth schema get support.subscription.create`.
 
-Example: `mammoth support subscription create 123 resource-123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth support subscription create 123 resource-123 --yes --confirm 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `SupportSubscriptionCreateResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
 
@@ -356,7 +356,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth support subscription update`. Exact input fields: `mammoth schema get support.subscription.update`.
 
-Example: `mammoth support subscription update 123 resource-123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth support subscription update 123 resource-123 --yes --confirm 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `SupportSubscriptionUpdateResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
 
@@ -376,7 +376,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth support template canvas`. Exact input fields: `mammoth schema get support.template.canvas`.
 
-Example: `mammoth support template canvas sample`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth support template canvas revenue-overview`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `SupportTemplateCanvasResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
@@ -386,7 +386,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth support template data-preview`. Exact input fields: `mammoth schema get support.template.data-preview`.
 
-Example: `mammoth support template data-preview sample`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth support template data-preview revenue-overview`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `SupportTemplateDataPreviewResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
@@ -396,7 +396,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth support template discard`. Exact input fields: `mammoth schema get support.template.discard`.
 
-Example: `mammoth support template discard sample`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth support template discard revenue-overview --yes --confirm revenue-overview`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `SupportTemplateDiscardResult`; mutation `destructive`, confirmation `confirm_target`, wait policy `not_async`.
 
@@ -406,7 +406,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth support template edit`. Exact input fields: `mammoth schema get support.template.edit`.
 
-Example: `mammoth support template edit sample --input '{"changes": {"sample_key": "Status"}}'`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth support template edit revenue-overview --input '{"changes": {"name": "Status"}}' --yes --confirm revenue-overview`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `SupportTemplateEditResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
 
@@ -416,7 +416,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth support template export`. Exact input fields: `mammoth schema get support.template.export`.
 
-Example: `mammoth support template export sample`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth support template export revenue-overview`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `SupportTemplateExportResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
@@ -426,7 +426,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth support template export-dashboard`. Exact input fields: `mammoth schema get support.template.export-dashboard`.
 
-Example: `mammoth support template export-dashboard 123 --input '{"slug": "sample"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth support template export-dashboard 123 --input '{"slug": "revenue-overview"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `SupportTemplateExportDashboardResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
@@ -436,7 +436,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth support template import`. Exact input fields: `mammoth schema get support.template.import`.
 
-Example: `mammoth support template import template.zip`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth support template import template.zip --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `SupportTemplateImportResult`; mutation `high_impact`, confirmation `yes_always`, wait policy `not_async`.
 
@@ -466,7 +466,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth support template publish`. Exact input fields: `mammoth schema get support.template.publish`.
 
-Example: `mammoth support template publish sample`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth support template publish revenue-overview --yes --confirm revenue-overview`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `SupportTemplatePublishResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
 
@@ -476,7 +476,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth support template retire`. Exact input fields: `mammoth schema get support.template.retire`.
 
-Example: `mammoth support template retire sample`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth support template retire revenue-overview --yes --confirm revenue-overview`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `SupportTemplateRetireResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
 
@@ -496,7 +496,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth support template thumbnail clear`. Exact input fields: `mammoth schema get support.template.thumbnail.clear`.
 
-Example: `mammoth support template thumbnail clear sample`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth support template thumbnail clear revenue-overview --yes --confirm revenue-overview`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `SupportTemplateThumbnailClearResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
 
@@ -506,7 +506,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth support template thumbnail set`. Exact input fields: `mammoth schema get support.template.thumbnail.set`.
 
-Example: `mammoth support template thumbnail set sample card.png`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth support template thumbnail set revenue-overview card.png --yes --confirm revenue-overview`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `SupportTemplateThumbnailSetResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
 
@@ -516,7 +516,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth support template unpublish`. Exact input fields: `mammoth schema get support.template.unpublish`.
 
-Example: `mammoth support template unpublish sample`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth support template unpublish revenue-overview --yes --confirm revenue-overview`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `SupportTemplateUnpublishResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
 
@@ -536,7 +536,7 @@ Status on release: ran once on CLI 2.0.15 — admin read sweep 2026-09-18: exit 
 
 Run: `mammoth support user register`. Exact input fields: `mammoth schema get support.user.register`.
 
-Example: `mammoth support user register analyst@example.com --input '{"first_name": "Revenue report", "last_name": "Revenue report", "verified": true}'`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth support user register analyst@example.com --input '{"first_name": "Revenue report", "last_name": "Revenue report", "verified": true}' --yes --confirm analyst@example.com`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `SupportUserRegisterResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
 
@@ -546,7 +546,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth support user update`. Exact input fields: `mammoth schema get support.user.update`.
 
-Example: `mammoth support user update analyst@example.com --input '{"verified": true}'`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth support user update analyst@example.com --input '{"verified": true}' --yes --confirm analyst@example.com`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `SupportUserUpdateResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
 
@@ -556,7 +556,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth support workspace create`. Exact input fields: `mammoth schema get support.workspace.create`.
 
-Example: `mammoth support workspace create 'Revenue report' --input '{"user_email": "analyst@example.com", "payment_frequency": "sample"}'`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth support workspace create 'Revenue report' --input '{"user_email": "analyst@example.com", "payment_frequency": "monthly"}' --yes --confirm 'Revenue report'`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `SupportWorkspaceCreateResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
 
@@ -566,7 +566,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth support workspace delete`. Exact input fields: `mammoth schema get support.workspace.delete`.
 
-Example: `mammoth support workspace delete 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth support workspace delete 123 --yes --confirm 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `SupportWorkspaceDeleteResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
 
@@ -596,7 +596,7 @@ Status on release: ran once on CLI 2.0.15 — admin read sweep 2026-09-18: exit 
 
 Run: `mammoth support workspace restore-access`. Exact input fields: `mammoth schema get support.workspace.restore-access`.
 
-Example: `mammoth support workspace restore-access 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth support workspace restore-access 123 --yes --confirm 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `SupportWorkspaceRestoreAccessResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
 
@@ -606,7 +606,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth support workspace suspend-access`. Exact input fields: `mammoth schema get support.workspace.suspend-access`.
 
-Example: `mammoth support workspace suspend-access 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth support workspace suspend-access 123 --yes --confirm 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `SupportWorkspaceSuspendAccessResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
 
@@ -616,7 +616,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth support workspace update`. Exact input fields: `mammoth schema get support.workspace.update`.
 
-Example: `mammoth support workspace update 123 --input '{"name": "Revenue report", "payment_frequency": "sample", "plan_id": 1}'`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth support workspace update 123 --input '{"name": "Revenue report", "payment_frequency": "monthly", "plan_id": 1}' --yes --confirm 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `SupportWorkspaceUpdateResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
 
@@ -626,7 +626,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth support workspace user add`. Exact input fields: `mammoth schema get support.workspace.user.add`.
 
-Example: `mammoth support workspace user add 123 --input '{"email": "analyst@example.com", "role": "sample"}'`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth support workspace user add 123 --input '{"email": "analyst@example.com", "role": "workspace_member"}' --yes --confirm 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `SupportWorkspaceUserAddResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
 
@@ -646,7 +646,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth support workspace user remove`. Exact input fields: `mammoth schema get support.workspace.user.remove`.
 
-Example: `mammoth support workspace user remove 123 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth support workspace user remove 123 456 --yes --confirm 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `SupportWorkspaceUserRemoveResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
 
@@ -656,7 +656,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth support workspace user transfer`. Exact input fields: `mammoth schema get support.workspace.user.transfer`.
 
-Example: `mammoth support workspace user transfer 123 123 --input '{"role": "sample"}'`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth support workspace user transfer 123 456 --input '{"role": "workspace_admin"}' --yes --confirm 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `SupportWorkspaceUserTransferResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
 

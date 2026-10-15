@@ -30,7 +30,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth batch bulk-delete DATASET_ID --help
-  agent_example: 'mammoth batch bulk-delete 123 --input ''{"ids": [11, 12]}'''
+  agent_example: 'mammoth batch bulk-delete 123 --input ''{"ids": [11, 12]}'' --yes'
   unit_tests:
   - UT-BATCH-BULK-DELETE
   contract_tests:
@@ -82,7 +82,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth batch create DATASET_ID SOURCE_ID --help
-  agent_example: 'mammoth batch create 123 123 --input ''{"mapping": {"column_1": "column_1"}}'''
+  agent_example: 'mammoth batch create 123 456 --input ''{"mapping": {"column_1": "column_1"}}'''
   unit_tests:
   - UT-BATCH-CREATE
   contract_tests:
@@ -181,7 +181,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth batch delete DATASET_ID BATCH_ID --help
-  agent_example: mammoth batch delete 123 123
+  agent_example: mammoth batch delete 123 456 --yes
   unit_tests:
   - UT-BATCH-DELETE
   contract_tests:
@@ -232,7 +232,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth batch get DATASET_ID BATCH_ID --help
-  agent_example: mammoth batch get 123 123
+  agent_example: mammoth batch get 123 456
   unit_tests:
   - UT-BATCH-GET
   contract_tests:
@@ -313,7 +313,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth batch update DATASET_ID --help
-  agent_example: 'mammoth batch update 123 --input ''{"patch": {"sample_key": "Status"}}'''
+  agent_example: 'mammoth batch update 123 --input ''{"patch": {"name": "Status"}}'''
   unit_tests:
   - UT-BATCH-UPDATE
   contract_tests:

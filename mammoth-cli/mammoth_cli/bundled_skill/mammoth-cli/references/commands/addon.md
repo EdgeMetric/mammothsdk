@@ -6,7 +6,7 @@ Every command returns the standard JSON envelope. On nonzero exit, read the erro
 
 Run: `mammoth addon connector add`. Exact input fields: `mammoth schema get addon.connector.add`.
 
-Example: `mammoth addon connector add --input '{"connector_id": 42}'`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth addon connector add --input '{"connector_id": 42}' --yes`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `AddonConnectorAddResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
 
@@ -16,7 +16,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth addon connector remove`. Exact input fields: `mammoth schema get addon.connector.remove`.
 
-Example: `mammoth addon connector remove --input '{"connector_id": 42}'`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth addon connector remove --input '{"connector_id": 42}' --yes`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `AddonConnectorRemoveResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
 
@@ -36,7 +36,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth addon storage add`. Exact input fields: `mammoth schema get addon.storage.add`.
 
-Example: `mammoth addon storage add --input '{"additional_storage_gb": 1}'`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth addon storage add --input '{"additional_storage_gb": 1}' --yes`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `AddonStorageAddResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
 
@@ -46,7 +46,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth addon storage remove`. Exact input fields: `mammoth schema get addon.storage.remove`.
 
-Example: `mammoth addon storage remove --input '{"removal_storage_gb": 1}'`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth addon storage remove --input '{"removal_storage_gb": 1}' --yes`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `AddonStorageRemoveResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
 
@@ -56,7 +56,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth addon user add`. Exact input fields: `mammoth schema get addon.user.add`.
 
-Example: `mammoth addon user add`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth addon user add --yes`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `AddonUserAddResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
 
@@ -66,7 +66,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth addon user remove`. Exact input fields: `mammoth schema get addon.user.remove`.
 
-Example: `mammoth addon user remove --input '{"user_count": 1}'`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth addon user remove --input '{"user_count": 1}' --yes`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `AddonUserRemoveResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
 

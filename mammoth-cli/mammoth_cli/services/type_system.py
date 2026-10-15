@@ -11,9 +11,10 @@ from pathlib import Path
 from typing import Any, get_args, get_origin
 
 from mammoth import condition as _condition_module
-from pydantic import BaseModel, ValidationError
 
+from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.services.argspec import render_type_name, resolve_type_hints
+from mammoth_cli.services.field_enums import match_choice
 
 _UNIONS = (typing.Union, types.UnionType)
 _CONDITION_TYPES = (
@@ -66,13 +67,44 @@ def _coerce_positive_id(value: Any, path: str) -> int:
     return number
 
 
+def _is_model(annotation: Any) -> bool:
+    """Whether ``annotation`` is a pydantic model class.
+
+    pydantic is imported only when something else already did: a model class
+    cannot exist before that, and the import costs ~20 ms a schema command
+    never needs.
+    """
+    pydantic = sys.modules.get("pydantic")
+    return (
+        pydantic is not None
+        and isinstance(annotation, type)
+        and issubclass(annotation, pydantic.BaseModel)
+    )
+
+
+def _validation_error() -> Any:
+    from pydantic import ValidationError
+
+    return ValidationError
+
+
 class TypeValidationError(ValueError):
     """A JSON value does not conform to its SDK annotation."""
 
-    def __init__(self, path: str, expected: str, value: Any) -> None:
+    def __init__(
+        self,
+        path: str,
+        expected: str,
+        value: Any,
+        *,
+        accepted: list[Any] | None = None,
+        did_you_mean: str | None = None,
+    ) -> None:
         self.path = path
         self.expected = expected
         self.value = value
+        self.accepted = accepted
+        self.did_you_mean = did_you_mean
         super().__init__(f"{path} must be {expected}, got {value!r}")
 
 
@@ -119,11 +151,13 @@ _PARAMETER_BINDING_SCHEMA = {
 
 
 def _condition_schema() -> dict[str, Any]:
+    from mammoth_cli.services.conditions import OPERATOR_NAMES
+
     leaf = {
         "type": "object",
         "properties": {
             "column": {"type": "string", "example": "Status"},
-            "operator": {"type": "string", "example": "EQ"},
+            "operator": {"type": "string", "enum": list(OPERATOR_NAMES), "example": "EQ"},
             "value": {"anyOf": [{"example": "Active"}, _PARAMETER_BINDING_SCHEMA]},
             "case_sensitive": {"type": "boolean"},
             "value_is_column": {"type": "boolean"},
@@ -237,8 +271,8 @@ def json_schema(annotation: Any, field_name: str | None = None) -> dict[str, Any
             dataclass_schema["required"] = required
         dataclass_schema["example"] = sample_value(annotation)
         return dataclass_schema
-    if isinstance(annotation, type) and issubclass(annotation, BaseModel):
-        model_schema = annotation.model_json_schema()
+    if _is_model(annotation):
+        model_schema: dict[str, Any] = annotation.model_json_schema()
         model_schema["example"] = sample_value(annotation)
         return model_schema
     scalar = {str: "string", bool: "boolean", int: "integer", float: "number"}.get(annotation)
@@ -285,7 +319,7 @@ def sample_value(annotation: Any) -> Any:
             for field in fields(annotation)
             if field.default is MISSING and field.default_factory is MISSING
         }
-    if isinstance(annotation, type) and issubclass(annotation, BaseModel):
+    if _is_model(annotation):
         from mammoth_cli.services.openapi_types import sample_from_schema
 
         return sample_from_schema(annotation.model_json_schema())
@@ -311,6 +345,13 @@ def validate_value(value: Any, annotation: Any, path: str) -> Any:
 
         try:
             compile_condition(value)
+        except CliError as error:
+            # A bad operator is the one condition mistake worth its own message:
+            # it names the operator, lists the valid ones and suggests the closest.
+            if error.details and "accepted" in error.details:
+                error.details = {**error.details, "path": path}
+                raise
+            raise TypeValidationError(path, "a valid condition object", value) from error
         except Exception as error:  # noqa: BLE001 - normalized to type-system error
             raise TypeValidationError(path, "a valid condition object", value) from error
         return value
@@ -359,9 +400,12 @@ def validate_value(value: Any, annotation: Any, path: str) -> Any:
             for key, item in value.items()
         }
     if origin is typing.Literal:
-        if value not in args:
-            raise TypeValidationError(path, f"one of {list(args)!r}", value)
-        return value
+        canonical, suggestion = match_choice(value, args)
+        if canonical is None and value not in args:
+            raise TypeValidationError(
+                path, f"one of {list(args)!r}", value, accepted=list(args), did_you_mean=suggestion
+            )
+        return canonical if canonical is not None else value
     if annotation is type(None):
         if value is not None:
             raise TypeValidationError(path, "null", value)
@@ -372,8 +416,12 @@ def validate_value(value: Any, annotation: Any, path: str) -> Any:
         try:
             return annotation(value).value
         except (ValueError, TypeError):
+            values = [m.value for m in annotation]
+            canonical, suggestion = match_choice(value, values)
+            if canonical is not None:
+                return canonical
             raise TypeValidationError(
-                path, f"one of {[m.value for m in annotation]!r}", value
+                path, f"one of {values!r}", value, accepted=values, did_you_mean=suggestion
             ) from None
     if is_dataclass(annotation):
         if not isinstance(value, dict):
@@ -391,12 +439,12 @@ def validate_value(value: Any, annotation: Any, path: str) -> Any:
                 continue
             result[name] = validate_value(value[name], hints.get(name, Any), f"{path}.{name}")
         return result
-    if isinstance(annotation, type) and issubclass(annotation, BaseModel):
+    if _is_model(annotation):
         if not isinstance(value, dict):
             raise TypeValidationError(path, "object", value)
         try:
             annotation.model_validate(value)
-        except ValidationError as error:
+        except _validation_error() as error:
             location = ".".join(str(part) for part in error.errors()[0]["loc"])
             raise TypeValidationError(
                 f"{path}.{location}" if location else path, annotation.__name__, value

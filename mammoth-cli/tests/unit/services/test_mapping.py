@@ -590,3 +590,12 @@ def test_an_expired_key_is_told_apart_from_a_rejected_one() -> None:
     mapped = map_sdk_exception(MammothAuthError("Invalid API credentials"))
 
     assert mapped.code == "authentication_failed"
+
+
+def test_a_rejected_credential_names_the_failing_non_default_profile_in_recovery() -> None:
+    error = MammothAuthError("Token is invalid", endpoint="/workspaces/4/projects", method="GET")
+    mapped = map_sdk_exception(error, workspace_id=4, profile="work")
+    assert mapped.recovery_commands == ["mammoth auth login --profile work"]
+    assert "mammoth auth login --profile work" in (mapped.hint or "")
+    default = map_sdk_exception(error, workspace_id=4, profile="default")
+    assert default.recovery_commands == ["mammoth auth login"]

@@ -221,8 +221,10 @@ def _drawable(entry: dict[str, Any], axis: tuple[str, frozenset[str]] | None) ->
         # A tile bucketed by a date or a dim that bakes ONE total has no series to draw:
         # a bar needs a dim, a trend is a line (UQA-RT10-03).
         return {
-            "error": f"the tile evaluates to one total, not a series by {axis[0]},"
-            " so it draws nothing"
+            "error": (
+                f"the tile evaluates to one total, not a series by {axis[0]},"
+                " so it draws nothing"
+            )
         }
     rows = entry.get("rows")
     if axis is None or not rows:

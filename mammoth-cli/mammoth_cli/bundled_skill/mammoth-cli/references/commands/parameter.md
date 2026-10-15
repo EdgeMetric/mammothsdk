@@ -6,7 +6,7 @@ Every command returns the standard JSON envelope. On nonzero exit, read the erro
 
 Run: `mammoth parameter create`. Exact input fields: `mammoth schema get parameter.create`.
 
-Example: `mammoth parameter create 'Revenue report' --input '{"param_type": "TEXT", "value": "Q3"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth parameter create revenue_report --input '{"param_type": "TEXT", "value": "Q3"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ParameterCreateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
@@ -16,7 +16,7 @@ Status on release: ran once on CLI 2.0.21 — ergonomics sweep 2026-09-19: exit 
 
 Run: `mammoth parameter delete`. Exact input fields: `mammoth schema get parameter.delete`.
 
-Example: `mammoth parameter delete 123`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth parameter delete 123 --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `ParameterDeleteResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
 
@@ -66,7 +66,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth parameter group delete`. Exact input fields: `mammoth schema get parameter.group.delete`.
 
-Example: `mammoth parameter group delete 123`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth parameter group delete 123 --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `ParameterGroupDeleteResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
 

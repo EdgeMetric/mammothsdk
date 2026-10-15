@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -53,6 +54,12 @@ ACTION_CHECKED = "checked"
 ACTION_UPGRADED = "upgraded"
 ACTION_ALREADY_CURRENT = "already_current"
 ACTION_WOULD_UPGRADE = "would_upgrade"
+ACTION_PINNED = "pinned"
+ACTION_UNPINNED = "unpinned"
+#: ``--record-pin none``: the installer put the newest release in place, so drop any pin.
+PIN_NONE = "none"
+
+_PIN_VERSION = re.compile(r"\d+(\.\d+)*")
 
 
 def _tool_root(argv: list[str]) -> str | None:
@@ -322,7 +329,13 @@ def upgrade_action(current: str, latest: str) -> str:
     return ACTION_WOULD_UPGRADE if updates.is_newer(latest, current) else ACTION_ALREADY_CURRENT
 
 
-def perform(invocation: Invocation, *, check: bool, target_version: str | None) -> HandlerResult:
+def perform(
+    invocation: Invocation,
+    *,
+    check: bool,
+    target_version: str | None,
+    record_pin: str | None = None,
+) -> HandlerResult:
     """Report or perform a CLI upgrade.
 
     Args:
@@ -331,6 +344,9 @@ def perform(invocation: Invocation, *, check: bool, target_version: str | None) 
             mode).
         check: When True, report installed vs latest and make no change.
         target_version: An exact version to install, or None for the latest.
+        record_pin: Only note that the install is pinned to this version (the
+            installer's ``--version``), or ``none`` to drop the pin (the installer
+            without ``--version``); installs nothing.
 
     Returns:
         ``(data, meta_extra)`` where ``data`` carries the manager, versions, the
@@ -342,6 +358,39 @@ def perform(invocation: Invocation, *, check: bool, target_version: str | None) 
     """
     manager = detect_manager()
     current = __version__
+
+    if record_pin == PIN_NONE:
+        updates.clear_pin()
+        return (
+            _envelope(
+                manager=manager,
+                current=current,
+                latest=None,
+                target=None,
+                action=ACTION_UNPINNED,
+                command=None,
+            ),
+            {},
+        )
+    if record_pin is not None:
+        if not _PIN_VERSION.fullmatch(record_pin) or not updates.write_pin(record_pin):
+            raise CliError(
+                code="pin_not_recorded",
+                message=f"Could not record the pin for version '{record_pin}'.",
+                exit_status=EXIT_API,
+                hint="Use a plain X.Y.Z version and a writable state directory.",
+            )
+        return (
+            _envelope(
+                manager=manager,
+                current=current,
+                latest=None,
+                target=record_pin,
+                action=ACTION_PINNED,
+                command=None,
+            ),
+            {},
+        )
 
     if check:
         latest = latest_version()
@@ -363,6 +412,7 @@ def perform(invocation: Invocation, *, check: bool, target_version: str | None) 
     if target_version is None:
         latest = latest_version()
         if latest is not None and upgrade_action(current, latest) == ACTION_ALREADY_CURRENT:
+            updates.clear_pin()
             return (
                 _envelope(
                     manager=manager,
@@ -395,6 +445,11 @@ def perform(invocation: Invocation, *, check: bool, target_version: str | None) 
             },
             hint=f"Run it manually to see full output: {' '.join(command)}",
         )
+    # An exact version stays put (auto-update skips it); the latest follows PyPI again.
+    if target_version:
+        updates.write_pin(target_version)
+    else:
+        updates.clear_pin()
     envelope = _envelope(
         manager=manager,
         current=current,
@@ -430,12 +485,16 @@ def upgrade_command(
         help="Upgrade to this exact version instead of the latest.",
         metavar="X.Y.Z",
     ),
+    record_pin: str | None = typer.Option(
+        None, "--record-pin", hidden=True, help="Installer use: record a pin, install nothing."
+    ),
 ) -> None:
     """Upgrade the mammoth CLI to the latest (or a specified) version from PyPI.
 
     Uses the tool that installed the CLI (uv tool, pipx, or pip); never needs
     admin rights. Pass --check for a read-only version report, or a --version to
-    pin an exact release. The upgrade requires --yes in non-interactive mode.
+    pin an exact release; a pinned install is not updated automatically until a plain
+    upgrade moves it to the latest. The upgrade requires --yes in non-interactive mode.
     """
     invocation = go.make_invocation(
         "upgrade",
@@ -455,7 +514,7 @@ def upgrade_command(
     )
 
     def producer() -> tuple[Any, dict[str, Any]]:
-        return perform(invocation, check=check, target_version=version)
+        return perform(invocation, check=check, target_version=version, record_pin=record_pin)
 
     executor.run(
         invocation.command_id,

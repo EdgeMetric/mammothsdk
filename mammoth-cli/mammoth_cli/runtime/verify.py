@@ -61,6 +61,7 @@ CODE_EXPORT_NOT_FOUND = "export_not_found"
 OUTCOME_SETTLED = "settled"
 OUTCOME_PENDING = "pending"
 OUTCOME_FAILED = "failed"
+OUTCOME_PARTIAL = "partial"
 _PENDING_STATES = frozenset({"staged", "processing"})
 
 _FAILURE_STATUSES = frozenset({"error", "failed", "failure"})
@@ -133,8 +134,60 @@ def with_verify(data: Any, invocation: Invocation | None = None) -> Any:
     )
     _apply_downstream_export_check(verify, invocation)
     verify["outcome"] = _outcome(data, verify)
+    _automation_wording(verify, data, invocation)
     result = {**data, "verify": verify}
+    if verify["outcome"] in (OUTCOME_FAILED, OUTCOME_PARTIAL) and "status" in data:
+        # A write that did not verify must not read "done" at the top level.
+        verify["reported_status"] = data["status"]
+        result["status"] = verify["outcome"]
+    elif verify["outcome"] == OUTCOME_PENDING and "status" in data:
+        _mark_pending(result, verify, invocation)
     return Revealed(result) if isinstance(data, Revealed) else result
+
+
+_PENDING_STATUS_WORDS = frozenset({"staged", "processing", "pending"})
+
+
+def _mark_pending(result: dict[str, Any], verify: dict[str, Any], invocation: Any) -> None:
+    """A write still pending after the wait never shows a finished top-level ``status``.
+
+    The exit code stays 0: the change was accepted and must not be replayed. ``status``
+    becomes ``pending`` and ``next_command`` says how to wait for it.
+    """
+    status = result.get("status")
+    if not (isinstance(status, str) and status.lower() in _PENDING_STATUS_WORDS):
+        verify["reported_status"] = status
+        result["status"] = OUTCOME_PENDING
+    if "next_command" not in verify and invocation is not None:
+        view_id = _pipeline_view_id(invocation)
+        if view_id is not None:
+            verify["next_command"] = f"mammoth view pipeline wait {view_id}"
+
+
+def _automation_wording(
+    verify: dict[str, Any], data: dict[str, Any], invocation: Invocation | None
+) -> None:
+    """An automation run that is still going is waited on as a job, not by reading a view."""
+    if (
+        invocation is None
+        or not invocation.command_id.startswith("automation.")
+        or verify["reason"] != _UNSETTLED_REASON
+    ):
+        return
+    job_id = data.get("job_id") or data.get("future_id")
+    command: str | None
+    if job_id:
+        command = f"mammoth job wait {job_id}"
+    else:
+        automation_id = invocation.positional("automation_id")
+        command = f"mammoth automation get {automation_id}" if automation_id else None
+    verify["reason"] = (
+        "the automation run was accepted but has not finished; "
+        + ("wait for the job" if job_id else "check the automation's status")
+        + " before relying on its output"
+    )
+    if command:
+        verify["next_command"] = command
 
 
 def _outcome(data: dict[str, Any], verify: dict[str, Any]) -> str:
@@ -151,7 +204,11 @@ def _outcome(data: dict[str, Any], verify: dict[str, Any]) -> str:
     )
     if unfinished or verify["state"] in _PENDING_STATES or verify["reason"] == _UNSETTLED_REASON:
         return OUTCOME_PENDING
-    return OUTCOME_SETTLED if verify["verified"] else OUTCOME_FAILED
+    if verify["verified"]:
+        return OUTCOME_SETTLED
+    if data.get("partial") is True and data.get("bake_ok") is not False:
+        return OUTCOME_PARTIAL
+    return OUTCOME_FAILED
 
 
 def _removed_nothing(check: dict[str, Any] | None, before: Any, after: Any) -> bool:
@@ -307,6 +364,8 @@ def _verify_and_reason(
         return False, "the pipeline reported an error"
     if data.get("bake_ok") is False:
         return False, "the dashboard did not bake"
+    if data.get("partial") is True:
+        return False, "part of the request was swapped or dropped; see warnings"
     if row_count_attempted:
         # An attempted row count that never came back readable is never
         # reported as a known, verified count -- even when nothing else
@@ -507,7 +566,7 @@ def _broken_downstream_exports(
     return [
         item
         for item in _listing_exports(read_data)
-        if isinstance(item, dict) and item.get("error_info")
+        if isinstance(item, dict) and (item.get("error_info") or item.get("runnable") is False)
     ]
 
 
@@ -562,6 +621,12 @@ def read_export_stamps(service: Any, view_id: int, dataset_id: int) -> dict[int,
 def _export_error_detail(item: dict[str, Any]) -> str:
     """Human-readable ``"export <id> (<handler>): ..."`` line for one broken export."""
     error_info = item.get("error_info")
+    if not error_info and item.get("runnable") is False:
+        handler = f" ({item['handler_type']})" if item.get("handler_type") else ""
+        return (
+            f"export {item.get('id')}{handler} is no longer runnable: its destination keeps "
+            "the old data until the export is fixed or recreated"
+        )
     error_info = error_info if isinstance(error_info, dict) else {}
     # the backend nests the details: error_info.additional_info.{error_code,
     # reference_errors} (live `view export get`, T2-WPP-W2)

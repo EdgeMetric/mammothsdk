@@ -40,3 +40,39 @@ def test_doctor_reports_an_unpinned_token() -> None:
     check = _scope_check(None, selected_project=7)
     assert check["ok"] is True
     assert check["pinned_project_id"] is None
+
+
+def _forbidden() -> CliError:
+    from mammoth_cli.services.mapping import PINNED_PROJECT_HINT
+
+    return CliError(
+        code="authorization_required",
+        message="denied",
+        hint="Ask an administrator. " + PINNED_PROJECT_HINT,
+    )
+
+
+def test_403_hint_drops_the_project_limited_blame_when_the_token_is_not_limited() -> None:
+    from mammoth_cli.runtime.token_scope import qualify_pin_hint
+
+    error = qualify_pin_hint(_forbidden(), lambda: None)
+    assert "limited to one project" not in error.hint
+    assert error.hint == "Ask an administrator."
+
+
+def test_403_hint_names_the_project_when_the_token_is_limited() -> None:
+    from mammoth_cli.runtime.token_scope import qualify_pin_hint
+
+    error = qualify_pin_hint(_forbidden(), lambda: 77)
+    assert "limited to project 77" in error.hint
+    assert error.details["pinned_project_id"] == 77
+
+
+def test_403_hint_is_left_alone_when_the_lookup_fails() -> None:
+    from mammoth_cli.runtime.token_scope import qualify_pin_hint
+
+    def broken() -> int | None:
+        raise RuntimeError("offline")
+
+    original = _forbidden().hint
+    assert qualify_pin_hint(_forbidden(), broken).hint == original

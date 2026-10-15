@@ -9,7 +9,7 @@ from mammoth.exceptions import MammothAPIError
 
 from mammoth_cli.commands import completion as completion_cmd
 from mammoth_cli.commands import doctor as doctor_cmd
-from mammoth_cli.context import credentials, profiles
+from mammoth_cli.context import credentials, oauth, profiles
 from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.services.mapping import map_sdk_exception
@@ -39,6 +39,59 @@ def test_doctor_missing_explicit_profile_scopes_login_recovery(
     data, _meta = doctor_cmd.doctor(_inv("doctor", profile="named"))
     assert data["profile"] == "named"
     assert data["recommendations"] == ["mammoth auth login --profile named"]
+
+
+def _expired_login(*_args: object, **_kwargs: object) -> object:
+    raise oauth.login_expired_error()
+
+
+def _credential_detail(data: dict[str, object]) -> str:
+    checks: list[dict[str, str]] = data["checks"]  # type: ignore[assignment]
+    return next(c["detail"] for c in checks if c["name"] == "credentials")
+
+
+def _store_oauth(profile: str) -> None:
+    profiles.save_profile(profiles.ProfileRecord(name=profile, workspace_id=4))
+    session = credentials.OAuthSession(access="a", refresh="1.r.m", expires_at=1, client_id="cli")
+    credentials.store_credentials(profile, storage="file", oauth=session)
+
+
+@pytest.mark.parametrize(
+    ("profile", "command"),
+    [
+        ("default", "mammoth auth login --profile default"),
+        ("work", "mammoth auth login --profile work"),
+    ],
+)
+def test_doctor_recommends_login_when_the_stored_login_expired(
+    isolated_cli_config: Path, monkeypatch: pytest.MonkeyPatch, profile: str, command: str
+) -> None:
+    _store_oauth(profile)
+    monkeypatch.setattr(doctor_cmd, "resolve_auth", _expired_login)
+    data, _meta = doctor_cmd.doctor(_inv("doctor", profile=profile))
+    names = {c["name"]: c for c in data["checks"]}
+    assert names["endpoint"]["ok"] is False
+    assert names["endpoint"]["detail"] == "login_expired"
+    assert data["recommendations"] == [command]
+
+
+def test_doctor_names_an_oauth_sign_in_not_an_api_token(
+    isolated_cli_config: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _store_oauth("default")
+    monkeypatch.setattr(doctor_cmd, "resolve_auth", _expired_login)
+    data, _meta = doctor_cmd.doctor(_inv("doctor"))
+    assert _credential_detail(data) == "oauth sign-in present"
+
+
+def test_doctor_names_an_api_token_for_a_token_login(
+    isolated_cli_config: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    profiles.save_profile(profiles.ProfileRecord(name="default", workspace_id=4))
+    credentials.store_credentials("default", storage="file", api_token="mm_x")
+    monkeypatch.setattr(doctor_cmd, "resolve_auth", _expired_login)
+    data, _meta = doctor_cmd.doctor(_inv("doctor"))
+    assert _credential_detail(data) == "api token present"
 
 
 def test_doctor_connection_ok_with_fake_service(

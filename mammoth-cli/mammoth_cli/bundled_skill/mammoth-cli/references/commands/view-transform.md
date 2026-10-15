@@ -46,7 +46,7 @@ Status on release: untried; it submits through `view.task.add`, but this transfo
 
 Run: `mammoth view transform bulk-replace`. Exact input fields: `mammoth schema get view.transform.bulk-replace`.
 
-Example: `mammoth view transform bulk-replace 123 --input '{"columns": ["Status"], "mapping": [{"search": ["sample"], "replace": "sample"}], "dataset_id": 456}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth view transform bulk-replace 123 --input '{"columns": ["Status"], "mapping": [{"search": ["N/A"], "replace": "Unknown"}], "dataset_id": 456}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ViewTransformBulkReplaceResult`; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`.
 
@@ -86,7 +86,7 @@ Status on release: ran once on CLI 2.0.40 through `view.task.add` and was read b
 
 Run: `mammoth view transform crosstab`. Exact input fields: `mammoth schema get view.transform.crosstab`.
 
-Example: `mammoth view transform crosstab 123 --input '{"rows": ["sample"], "pivot_column": "Status", "select": {"function": "SUM"}, "dataset_name": "Revenue report", "dataset_id": 456}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth view transform crosstab 123 --input '{"rows": ["Region"], "pivot_column": "Product", "select": {"column": "Revenue", "function": "SUM"}, "dataset_name": "Revenue by region", "dataset_id": 456}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ViewTransformCrosstabResult`; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`.
 
@@ -96,7 +96,7 @@ Status on release: ran once on CLI 2.0.40 through `view.task.add` and was read b
 
 Run: `mammoth view transform date-diff`. Exact input fields: `mammoth schema get view.transform.date-diff`.
 
-Example: `mammoth view transform date-diff 123 --input '{"component": "YEAR", "start": "sample", "end": "sample", "dataset_id": 456}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth view transform date-diff 123 --input '{"component": "YEAR", "start": "Order Date", "end": "Ship Date", "dataset_id": 456}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ViewTransformDateDiffResult`; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`.
 
@@ -106,7 +106,7 @@ Status on release: ran once on CLI 2.0.40 through `view.task.add` and was read b
 
 Run: `mammoth view transform delete-columns`. Exact input fields: `mammoth schema get view.transform.delete-columns`.
 
-Example: `mammoth view transform delete-columns 123 --input '{"columns": ["Status"], "dataset_id": 456}'`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth view transform delete-columns 123 --input '{"columns": ["Status"], "dataset_id": 456}' --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `ViewTransformDeleteColumnsResult`; mutation `reversible_pipeline`, confirmation `prompt_or_yes`, wait policy `always_wait`.
 
@@ -186,7 +186,7 @@ Status on release: ran once on CLI 2.0.40 through `view.task.add` and was read b
 
 Run: `mammoth view transform join`. Exact input fields: `mammoth schema get view.transform.join`.
 
-Example: `mammoth view transform join 123 --input '{"foreign_view": 1, "join_type": "INNER", "on": [{"left": "sample", "right": "sample"}], "select": ["sample"], "dataset_id": 456, "foreign_dataset_id": 457}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth view transform join 123 --input '{"foreign_view": 1, "join_type": "INNER", "on": [{"left": "Customer ID", "right": "Customer ID"}], "select": ["Region"], "dataset_id": 456, "foreign_dataset_id": 457}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ViewTransformJoinResult`; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`.
 
@@ -216,7 +216,7 @@ Status on release: ran once on CLI 2.0.40 through `view.task.add` and was read b
 
 Run: `mammoth view transform lookup`. Exact input fields: `mammoth schema get view.transform.lookup`.
 
-Example: `mammoth view transform lookup 123 --input '{"source": "Status", "lookup_view_id": 1, "key": "Status", "value": "sample", "dataset_id": 456, "lookup_dataset_id": 457}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth view transform lookup 123 --input '{"source": "Customer ID", "lookup_view_id": 1, "key": "Customer ID", "value": "Region", "new_column": "Region", "dataset_id": 456, "lookup_dataset_id": 457}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ViewTransformLookupResult`; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`.
 
@@ -236,7 +236,7 @@ Status on release: ran once on CLI 2.0.40 through `view.task.add` and was read b
 
 Run: `mammoth view transform pivot`. Exact input fields: `mammoth schema get view.transform.pivot`.
 
-Example: `mammoth view transform pivot 123 --input '{"group_by": ["sample"], "aggregations": [{"column": "Status", "function": "SUM"}], "dataset_id": 456}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth view transform pivot 123 --input '{"group_by": ["Region"], "aggregations": [{"column": "Revenue", "function": "SUM"}], "dataset_id": 456}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ViewTransformPivotResult`; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`.
 
@@ -256,7 +256,7 @@ Status on release: ran once on CLI 2.0.40 through `view.task.add` and was read b
 
 Run: `mammoth view transform replace`. Exact input fields: `mammoth schema get view.transform.replace`.
 
-Example: `mammoth view transform replace 123 --input '{"columns": ["Status"], "find": "sample", "replace": "sample", "dataset_id": 456}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth view transform replace 123 --input '{"columns": ["Status"], "find": "N/A", "replace": "Unknown", "dataset_id": 456}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ViewTransformReplaceResult`; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`.
 
@@ -266,7 +266,7 @@ Status on release: ran once on CLI 2.0.40 through `view.task.add` and was read b
 
 Run: `mammoth view transform set-values`. Exact input fields: `mammoth schema get view.transform.set-values`.
 
-Example: `mammoth view transform set-values 123 --input '{"values": [{"value": "sample"}], "existing_column": "Status", "condition": {"column": "Status", "operator": "IS_EMPTY"}, "dataset_id": 456}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth view transform set-values 123 --input '{"values": [{"value": "Unknown"}], "existing_column": "Status", "condition": {"column": "Status", "operator": "IS_EMPTY"}, "dataset_id": 456}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ViewTransformSetValuesResult`; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`.
 
@@ -296,7 +296,7 @@ Status on release: ran once on CLI 2.0.40 through `view.task.add` and was read b
 
 Run: `mammoth view transform split`. Exact input fields: `mammoth schema get view.transform.split`.
 
-Example: `mammoth view transform split 123 --input '{"column": "Status", "delimiter": "sample", "new_columns": [{"name": "Revenue report"}], "dataset_id": 456}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth view transform split 123 --input '{"column": "Status", "delimiter": ",", "new_columns": [{"name": "Revenue report"}], "dataset_id": 456}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ViewTransformSplitResult`; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`.
 

@@ -101,7 +101,7 @@ def test_bulk_replace_runnable_example_includes_the_positional_and_input() -> No
     assert "--output json" not in example
     tokens = shlex.split(example)
     document = json.loads(tokens[tokens.index("--input") + 1])
-    assert document["mapping"] == [{"search": ["sample"], "replace": "sample"}]
+    assert document["mapping"] == [{"search": ["N/A"], "replace": "Unknown"}]
 
 
 def test_optional_positional_command_has_no_required_positional_in_example() -> None:
@@ -896,7 +896,12 @@ def test_find_with_no_full_match_inlines_how_to_call_the_top_suggestions() -> No
     """A long goal rarely matches every word; the top suggestions still carry the
     input fields and an example, so one find is enough to act (no schema get)."""
     result = find_schemas("aggregate rows by date year month and count by result")
-    assert result["matches"] == []
+    # No command carries every word: ``matches`` holds the best partial ones, marked.
+    assert result["total_matches"] == 0
+    assert [m["command_id"] for m in result["matches"]] == [
+        s["command_id"] for s in result["suggestions"]
+    ]
+    assert all(m["partial"] for m in result["matches"]) and result["partial_matches"] is True
     top = result["suggestions"][:3]
     assert "view.data.explore" in [entry["command_id"] for entry in top]
     for entry in top:
@@ -932,7 +937,11 @@ def test_connector_connection_credentials_are_secret_fields_sent_through_a_file(
     assert create["secret_fields"] == ["config"]
     assert update["secret_fields"] == ["credentials"]
     for schema in (create, update):
-        assert schema["agent_example"].endswith("--input /private/path/request.json")
+        assert (
+            schema["agent_example"]
+            .removesuffix(" --yes")
+            .endswith("--input /private/path/request.json")
+        )
 
 
 def test_a_find_points_into_the_families_it_matched() -> None:

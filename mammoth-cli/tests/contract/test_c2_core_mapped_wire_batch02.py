@@ -32,6 +32,7 @@ def _inv(command: str, args: list[str], input_file: str | None = None) -> Invoca
         output="json",
         project=PROJECT,
         no_input=True,
+        yes=True,
         extra_args=args,
         input_file=input_file,
     )

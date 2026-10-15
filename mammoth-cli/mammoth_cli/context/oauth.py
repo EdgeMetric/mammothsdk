@@ -34,7 +34,7 @@ import webbrowser
 from collections.abc import Callable, Iterator
 from dataclasses import dataclass
 
-from mammoth_cli.context import credentials
+from mammoth_cli.context import credentials, profiles
 from mammoth_cli.context.credentials import OAuthSession
 from mammoth_cli.context.endpoint import DEFAULT_SERVER_PREFIX, resolve_base_url
 from mammoth_cli.context.profiles import config_dir
@@ -66,14 +66,15 @@ SLOW_DOWN_STEP_SECONDS = 5
 POLL_MARGIN_SECONDS = 1.0
 
 
-def login_expired_error() -> CliError:
+def login_expired_error(profile: str | None = None) -> CliError:
     """The stable error for a session that can no longer be refreshed."""
+    login = profiles.login_command(profile)
     return CliError(
         code=CODE_LOGIN_EXPIRED,
-        message="Login expired, run `mammoth auth login`.",
+        message=f"Login expired, run `{login}`.",
         exit_status=EXIT_AUTH,
         hint="Your browser sign-in is no longer valid. Sign in again.",
-        recovery_commands=["mammoth auth login"],
+        recovery_commands=[login],
     )
 
 
@@ -191,8 +192,11 @@ def redirect_uri_for(server: _CallbackServer) -> str:
     return f"http://127.0.0.1:{server.server_port}{CALLBACK_PATH}"
 
 
-def wait_for_callback(server: _CallbackServer, timeout: float) -> dict[str, str]:
+def wait_for_callback(
+    server: _CallbackServer, timeout: float, profile: str | None = None
+) -> dict[str, str]:
     """Serve requests until the callback arrives, or raise on timeout."""
+    login = profiles.login_command(profile)
     deadline = time.monotonic() + timeout
     server.timeout = 1.0
     while server.params is None:
@@ -201,14 +205,16 @@ def wait_for_callback(server: _CallbackServer, timeout: float) -> dict[str, str]
                 code=CODE_OAUTH_LOGIN_FAILED,
                 message="Timed out waiting for the browser sign-in.",
                 exit_status=EXIT_AUTH,
-                hint="Run `mammoth auth login` again and approve the request in the browser.",
-                recovery_commands=["mammoth auth login"],
+                hint=f"Run `{login}` again and approve the request in the browser.",
+                recovery_commands=[login],
             )
         server.handle_request()
     return server.params
 
 
-def check_callback(params: dict[str, str], *, state: str, issuer: str) -> str:
+def check_callback(
+    params: dict[str, str], *, state: str, issuer: str, profile: str | None = None
+) -> str:
     """Validate the redirect's ``state`` (and RFC 9207 ``iss``); return the code.
 
     Raises:
@@ -217,23 +223,26 @@ def check_callback(params: dict[str, str], *, state: str, issuer: str) -> str:
     """
     if "error" in params:
         detail = params.get("error_description") or params["error"]
-        raise _login_failed(f"The sign-in was not approved: {detail}")
+        raise _login_failed(f"The sign-in was not approved: {detail}", profile)
     if not secrets.compare_digest(params.get("state", ""), state):
-        raise _login_failed("The sign-in response did not match this login attempt (state).")
+        raise _login_failed(
+            "The sign-in response did not match this login attempt (state).", profile
+        )
     if "iss" in params and params["iss"] != issuer:
-        raise _login_failed("The sign-in response came from an unexpected issuer.")
+        raise _login_failed("The sign-in response came from an unexpected issuer.", profile)
     if not params.get("code"):
-        raise _login_failed("The sign-in response carried no authorization code.")
+        raise _login_failed("The sign-in response carried no authorization code.", profile)
     return params["code"]
 
 
-def _login_failed(message: str) -> CliError:
+def _login_failed(message: str, profile: str | None = None) -> CliError:
+    login = profiles.login_command(profile)
     return CliError(
         code=CODE_OAUTH_LOGIN_FAILED,
         message=message,
         exit_status=EXIT_AUTH,
-        hint="Run `mammoth auth login` again.",
-        recovery_commands=["mammoth auth login"],
+        hint=f"Run `{login}` again.",
+        recovery_commands=[login],
     )
 
 
@@ -328,6 +337,7 @@ def browser_login(
     open_browser: bool,
     say: Callable[[str], None],
     timeout: float = LOGIN_TIMEOUT_SECONDS,
+    profile: str | None = None,
 ) -> OAuthSession:
     """Run one PKCE loopback sign-in and return the resulting session."""
     verifier, challenge = new_pkce_pair()
@@ -346,8 +356,8 @@ def browser_login(
             say("Opening your browser to sign in to Mammoth.")
         say(f"If it does not open, visit:\n  {url}")
         say(f"Waiting for approval on {redirect_uri} ...")
-        params = wait_for_callback(server, timeout)
-    code = check_callback(params, state=state, issuer=base_url)
+        params = wait_for_callback(server, timeout, profile)
+    code = check_callback(params, state=state, issuer=base_url, profile=profile)
     grant = exchange_code(
         base_url, client_id=client_id, code=code, verifier=verifier, redirect_uri=redirect_uri
     )
@@ -402,7 +412,9 @@ def start_device_login(base_url: str, *, client_id: str) -> DeviceChallenge:
     return parse_device_challenge(body)
 
 
-def read_poll(status: int, body: dict[str, object], interval: int) -> TokenGrant | int:
+def read_poll(
+    status: int, body: dict[str, object], interval: int, profile: str | None = None
+) -> TokenGrant | int:
     """Interpret one poll answer.
 
     Returns the tokens once approved, or the seconds to wait before the next
@@ -421,23 +433,30 @@ def read_poll(status: int, body: dict[str, object], interval: int) -> TokenGrant
     if error == "slow_down":
         return interval + SLOW_DOWN_STEP_SECONDS
     if error == "access_denied":
-        raise _login_failed("The sign-in was denied in the browser.")
+        raise _login_failed("The sign-in was denied in the browser.", profile)
     if error == "expired_token":
-        raise device_login_expired_error()
-    raise _login_failed(f"Mammoth refused the sign-in ({error or f'HTTP {status}'}).")
+        raise device_login_expired_error(profile)
+    raise _login_failed(f"Mammoth refused the sign-in ({error or f'HTTP {status}'}).", profile)
 
 
-def device_login_expired_error() -> CliError:
+def device_login_expired_error(profile: str | None = None) -> CliError:
+    login = profiles.login_command(profile, " --device")
     return CliError(
         code=CODE_DEVICE_LOGIN_EXPIRED,
         message="The sign-in code expired before it was approved.",
         exit_status=EXIT_AUTH,
-        hint="Run `mammoth auth login --device` again and approve the new code.",
-        recovery_commands=["mammoth auth login --device"],
+        hint=f"Run `{login}` again and approve the new code.",
+        recovery_commands=[login],
     )
 
 
-def device_login(base_url: str, *, client_id: str, say: Callable[[str], None]) -> OAuthSession:
+def device_login(
+    base_url: str,
+    *,
+    client_id: str,
+    say: Callable[[str], None],
+    profile: str | None = None,
+) -> OAuthSession:
     """Run one device sign-in: print the code, poll until it is approved."""
     challenge = start_device_login(base_url, client_id=client_id)
     say(f"To sign in, open {challenge.verification_uri} on any device and enter:")
@@ -457,11 +476,11 @@ def device_login(base_url: str, *, client_id: str, say: Callable[[str], None]) -
                 "client_id": client_id,
             },
         )
-        step = read_poll(status, body, interval)
+        step = read_poll(status, body, interval, profile)
         if isinstance(step, TokenGrant):
             return session_from_grant(step, client_id)
         interval = step
-    raise device_login_expired_error()
+    raise device_login_expired_error(profile)
 
 
 # --- refresh under a file lock ----------------------------------------------------
@@ -530,7 +549,7 @@ def is_fresh(session: OAuthSession, now: float | None = None) -> bool:
 def _stored_session(profile: str) -> OAuthSession:
     credential = credentials.load_credential(profile)
     if credential is None or credential.oauth is None:
-        raise login_expired_error()
+        raise login_expired_error(profile)
     return credential.oauth
 
 
@@ -588,10 +607,10 @@ def refresh_session(profile: str, base_url: str) -> OAuthSession:
                 raise
         if status in (400, 401):
             _log_refresh(profile, session, status, "login_expired")
-            raise login_expired_error()
+            raise login_expired_error(profile)
         if status != 200:
             _log_refresh(profile, session, status, "failed")
-            raise _login_failed(f"Mammoth refused the refresh (HTTP {status}).")
+            raise _login_failed(f"Mammoth refused the refresh (HTTP {status}).", profile)
         renewed = session_from_grant(_parse_grant(body), session.client_id)
         credentials.replace_oauth_session(profile, renewed)
         _log_refresh(profile, session, status, "renewed")

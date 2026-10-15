@@ -279,3 +279,23 @@ def test_project_id_in_input_names_the_global_option_with_its_value() -> None:
     assert excinfo.value.hint is not None
     assert "--project 4589" in excinfo.value.hint
     assert "after the command" in excinfo.value.hint
+
+
+@pytest.mark.parametrize(
+    ("command_id", "extra"),
+    [
+        ("view.transform.filter", {}),
+        ("view.transform.set-values", {"values": [{"column": "A", "value": 1}]}),
+    ],
+)
+def test_a_wrong_condition_operator_is_named_with_the_valid_ones(
+    command_id: str, extra: dict[str, object]
+) -> None:
+    condition = {"column": "A", "operator": "NOT_EQUALS", "value": 1}
+    with pytest.raises(CliError) as excinfo:
+        validate_input_fields(command_id, {"condition": condition, **extra})
+    error = excinfo.value
+    assert error.code == "invalid_condition"
+    assert error.exit_status == EXIT_USAGE
+    assert "NOT_EQUALS" in error.message and "Did you mean NE?" in error.message
+    assert "NE" in error.details["accepted"]

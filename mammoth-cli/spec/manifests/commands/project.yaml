@@ -24,7 +24,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth project bulk-delete --help
-  agent_example: 'mammoth project bulk-delete --input ''{"project_ids": [1]}'''
+  agent_example: 'mammoth project bulk-delete --input ''{"project_ids": [1]}'' --yes'
   unit_tests:
   - UT-PROJECT-BULK-DELETE
   contract_tests:
@@ -63,8 +63,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth project bulk-update --help
-  agent_example: 'mammoth project bulk-update --input ''{"patch_data": {"patches": [{"op": "add", "path":
-    "role", "value": [{"project_id": 456, "user_roles": [{"user_id": 123, "role": "project_analyst"}]}]}]}}'''
+  agent_example: 'mammoth project bulk-update --input ''{"patch_data": {"patches": [{"op": "add", "path": "role", "value": [{"project_id": 456, "user_roles": [{"user_id": 123, "role": "project_analyst"}]}]}]}}'' --yes'
   unit_tests:
   - UT-PROJECT-BULK-UPDATE
   contract_tests:
@@ -337,7 +336,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth project delete --help
-  agent_example: mammoth project delete 123
+  agent_example: mammoth project delete 123 --yes --confirm 123
   unit_tests:
   - UT-PROJECT-DELETE
   contract_tests:
@@ -389,7 +388,7 @@ commands:
   - CT-PROJECT-GET-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: B01.
+  known_restrictions: Reads one project by id. A token limited to one project can read only that project.
   reviewed_by: primary
 - command_id: project.list
   command_path: project list
@@ -494,7 +493,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth project memory add --help
-  agent_example: 'mammoth project memory add 123 --input ''{"text": "sample"}'''
+  agent_example: 'mammoth project memory add 123 --input ''{"text": "Quarterly revenue summary"}'''
   unit_tests:
   - UT-PROJECT-MEMORY-ADD
   contract_tests:
@@ -530,7 +529,7 @@ commands:
   result_model: ProjectMemoryRemoveResult
   mutation_class: benign_mutation
   edits_target: false
-  confirmation: none
+  confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: contract_only_no_disposable_fixture
@@ -540,7 +539,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth project memory remove --help
-  agent_example: 'mammoth project memory remove 123 --input ''{"index": 1}'''
+  agent_example: 'mammoth project memory remove 123 --input ''{"index": 1}'' --yes'
   unit_tests:
   - UT-PROJECT-MEMORY-REMOVE
   contract_tests:
@@ -760,7 +759,7 @@ commands:
   - CT-PROJECT-RESOURCE-DEPENDENCIES-UPDATE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: Changes the resources the project declares it depends on; views and dashboards that read through a removed dependency can stop resolving data. Read the current set first (`project resource-dependencies`). Needs --yes and --confirm PROJECT_ID.
   reviewed_by: primary
   readback:
     command: project.resource-dependencies
@@ -929,7 +928,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth project user add --help
-  agent_example: 'mammoth project user add 123 --input ''{"user_ids": [123], "role": "project_analyst"}'''
+  agent_example: 'mammoth project user add 123 --input ''{"user_ids": [123], "role": "project_analyst"}'' --yes --confirm 123'
   unit_tests:
   - UT-PROJECT-USER-ADD
   contract_tests:
@@ -974,7 +973,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth project user remove --help
-  agent_example: 'mammoth project user remove 123 --input ''{"user_ids": ["resource-123"]}'''
+  agent_example: 'mammoth project user remove 123 --input ''{"user_ids": ["resource-123"]}'' --yes --confirm 123'
   unit_tests:
   - UT-PROJECT-USER-REMOVE
   contract_tests:
@@ -1026,7 +1025,7 @@ commands:
   - CT-PROJECT-USER-UPDATE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: Changes one project member's role (role plus exactly one of user_id or invite_id); the person gains or loses access at once. Needs --yes.
   reviewed_by: primary
   no_readback: "no CLI read command exposes per-project user role assignments"
 - command_id: project.copy

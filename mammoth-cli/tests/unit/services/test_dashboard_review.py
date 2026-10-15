@@ -128,6 +128,38 @@ def test_upload_hints_name_revenue_before_any_dashboard_and_leave_blanks_out() -
     )
 
 
+def test_unit_price_with_a_numeric_quantity_multiplies_quantity_by_price() -> None:
+    metadata = [
+        {"display_name": "Unit Price", "type": "NUMERIC"},
+        {"display_name": "Quantity", "type": "NUMERIC"},
+    ]
+    (hint,) = upload_hints(81, metadata, [{"Unit Price": 2, "Quantity": 3}], dataset_id=84)
+    assert "add revenue = Quantity * Unit Price" in hint["detail"]
+    assert '"expression": "Quantity * Unit Price"' in hint["fix"]
+
+
+def test_unit_price_with_a_text_quantity_never_multiplies_the_price_by_itself() -> None:
+    metadata = [
+        {"display_name": "Unit Price", "type": "NUMERIC"},
+        {"display_name": "Quantity", "type": "TEXT"},
+    ]
+    rows = [{"Unit Price": 2, "Quantity": "3"}, {"Unit Price": 4, "Quantity": "N/A"}]
+    (hint,) = upload_hints(81, metadata, rows, dataset_id=84)
+    assert "Unit Price * Unit Price" not in hint["detail"]
+    assert "fix" not in hint
+    assert "Quantity is not NUMERIC" in hint["detail"]
+    assert "convert it to NUMERIC first" in hint["detail"]
+
+
+def test_unit_price_alone_is_not_its_own_quantity_on_a_board_review() -> None:
+    profiles = [{"name": "Unit Price", "type": "measure"}]
+    doc = _doc([{"id": "p1", "measure": "Unit Price", "agg": "sum"}], profiles=profiles)
+    warnings = review(doc, 84)
+    assert warnings
+    assert all("Unit Price * Unit Price" not in str(w) for w in warnings)
+    assert all("fix" not in w for w in warnings)
+
+
 def test_a_view_column_the_dashboard_profile_lacks_is_named_with_the_rebuild() -> None:
     board = _doc([])
     view = [*[{"name": p["name"]} for p in _PROFILES], {"name": "revenue", "type": "measure"}]

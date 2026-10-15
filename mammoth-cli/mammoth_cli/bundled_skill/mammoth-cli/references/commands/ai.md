@@ -16,7 +16,7 @@ Status on release: ran once on CLI 2.0.14 — write sweep 2026-09-18: exit 0 on 
 
 Run: `mammoth ai expression generate`. Exact input fields: `mammoth schema get ai.expression.generate`.
 
-Example: `mammoth ai expression generate 123 --input '{"intent": "Summarize revenue by region", "mode": "sample"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth ai expression generate 123 --input '{"intent": "Summarize revenue by region", "mode": "math"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `AiExpressionGenerateResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 

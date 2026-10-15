@@ -32,9 +32,11 @@ mammoth project ensure 'PROJECT NAME'   # active project
 Never proceed if `doctor` fails.
 On a 502, 504 or timeout, `mammoth doctor --input '{"wait": 300}'`
 re-probes that long; continue once it passes. Production is the `app` endpoint; use `release` only
-when named, and check `meta.profile`/`auth status` `endpoint` match. If no profile has credentials, run `mammoth auth login --device` (`--profile NAME`), show the user its
-link and code and wait for it to exit ([auth](references/auth.md)). Run no other login
-method, and never ask for the token in chat or read one from a file/env var. If an envelope carries `meta.update_available`, run its `command` first.
+when named, and check `meta.profile`/`auth status` `endpoint` match. With no credentials,
+run `mammoth auth login --device` (`--profile NAME`), show the user its link and code;
+wait for it to exit ([auth](references/auth.md)); never ask for a token in chat, read one from
+a file/env var, or use another login. If an envelope carries
+`meta.update_available`, run its `command` first unless `--version` is pinned.
 
 Piped stdout is compact JSON with prompts off; if not piped, `export
 MAMMOTH_OUTPUT=json MAMMOTH_NO_INPUT=1` once.
@@ -171,7 +173,7 @@ your report. If no column links the files, ask before you combine them.
   unmatched) means the previous step went wrong; stop and re-inspect it.
 - `column_warnings` on a data read and `join_check` on a join are findings,
   not decoration: fix each the deliverable depends on, or say why kept.
-  `view data get` pages with `{"offset": 51, "limit": 50}`.
+  `view data get` pages with `{"offset": 50, "limit": 50}` (`paging.next_command`).
 - A timeout, exit 7 or interruption does not prove failure; reconcile an
   `outcome_unknown` (`job get`, `view task list`) before replaying.
 - Check an answer with no write against the question (a trend: time

@@ -6,7 +6,7 @@ Every command returns the standard JSON envelope. On nonzero exit, read the erro
 
 Run: `mammoth agent access set`. Exact input fields: `mammoth schema get agent.access.set`.
 
-Example: `mammoth agent access set sample --input '{"role": "member", "propose": true}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth agent access set revenue-assistant --input '{"role": "member", "propose": true}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `AgentAccessSetResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
@@ -16,7 +16,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth agent action delete`. Exact input fields: `mammoth schema get agent.action.delete`.
 
-Example: `mammoth agent action delete resource-123`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth agent action delete resource-123 --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `AgentActionDeleteResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
 
@@ -36,7 +36,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth agent charter get`. Exact input fields: `mammoth schema get agent.charter.get`.
 
-Example: `mammoth agent charter get sample`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth agent charter get revenue-assistant`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `AgentCharterGetResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
@@ -46,7 +46,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth agent charter restore`. Exact input fields: `mammoth schema get agent.charter.restore`.
 
-Example: `mammoth agent charter restore sample 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth agent charter restore revenue-assistant 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `AgentCharterRestoreResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
@@ -56,7 +56,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth agent charter set`. Exact input fields: `mammoth schema get agent.charter.set`.
 
-Example: `mammoth agent charter set sample --input '{"charter": "Watch weekly margin and report the three biggest drops."}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth agent charter set revenue-assistant --input '{"charter": "Watch weekly margin and report the three biggest drops."}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `AgentCharterSetResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
@@ -66,7 +66,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth agent charter versions`. Exact input fields: `mammoth schema get agent.charter.versions`.
 
-Example: `mammoth agent charter versions sample`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth agent charter versions revenue-assistant`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `AgentCharterVersionsResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
@@ -96,7 +96,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth agent delete`. Exact input fields: `mammoth schema get agent.delete`.
 
-Example: `mammoth agent delete sample`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth agent delete revenue-assistant --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `AgentDeleteResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
 
@@ -106,7 +106,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth agent disable`. Exact input fields: `mammoth schema get agent.disable`.
 
-Example: `mammoth agent disable sample`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth agent disable revenue-assistant`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `AgentDisableResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
@@ -116,7 +116,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth agent feedback list`. Exact input fields: `mammoth schema get agent.feedback.list`.
 
-Example: `mammoth agent feedback list sample`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth agent feedback list revenue-assistant`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `AgentFeedbackListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
@@ -126,7 +126,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth agent get`. Exact input fields: `mammoth schema get agent.get`.
 
-Example: `mammoth agent get sample`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth agent get revenue-assistant`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `AgentGetResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
@@ -136,7 +136,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth agent goldens add`. Exact input fields: `mammoth schema get agent.goldens.add`.
 
-Example: `mammoth agent goldens add sample --input '{"question": "Summarize revenue by region", "expected": "sample"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth agent goldens add revenue-assistant --input '{"question": "Summarize revenue by region", "expected": "Quarterly revenue summary"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `AgentGoldensAddResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
@@ -146,7 +146,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth agent goldens list`. Exact input fields: `mammoth schema get agent.goldens.list`.
 
-Example: `mammoth agent goldens list sample`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth agent goldens list revenue-assistant`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `AgentGoldensListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
@@ -156,7 +156,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth agent goldens remove`. Exact input fields: `mammoth schema get agent.goldens.remove`.
 
-Example: `mammoth agent goldens remove sample 123`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth agent goldens remove revenue-assistant 123 --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `AgentGoldensRemoveResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
 
@@ -166,7 +166,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth agent goldens run`. Exact input fields: `mammoth schema get agent.goldens.run`.
 
-Example: `mammoth agent goldens run sample`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth agent goldens run revenue-assistant`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `AgentGoldensRunResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
@@ -176,7 +176,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth agent goldens status`. Exact input fields: `mammoth schema get agent.goldens.status`.
 
-Example: `mammoth agent goldens status sample`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth agent goldens status revenue-assistant`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `AgentGoldensStatusResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
@@ -196,7 +196,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth agent memory add`. Exact input fields: `mammoth schema get agent.memory.add`.
 
-Example: `mammoth agent memory add sample --input '{"name": "Revenue report", "content": "sample"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth agent memory add revenue-assistant --input '{"name": "Revenue report", "content": "Quarterly revenue summary"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `AgentMemoryAddResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
@@ -206,7 +206,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth agent memory list`. Exact input fields: `mammoth schema get agent.memory.list`.
 
-Example: `mammoth agent memory list sample`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth agent memory list revenue-assistant`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `AgentMemoryListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
@@ -216,7 +216,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth agent memory remove`. Exact input fields: `mammoth schema get agent.memory.remove`.
 
-Example: `mammoth agent memory remove sample 123`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth agent memory remove revenue-assistant 123 --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `AgentMemoryRemoveResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
 
@@ -226,7 +226,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth agent message set-request-kind`. Exact input fields: `mammoth schema get agent.message.set-request-kind`.
 
-Example: `mammoth agent message set-request-kind 'Summarize revenue by region' --input '{"request_kind": "sample"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth agent message set-request-kind 'Summarize revenue by region' --input '{"request_kind": "ask"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `AgentMessageSetRequestKindResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
@@ -236,7 +236,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth agent plan approve`. Exact input fields: `mammoth schema get agent.plan.approve`.
 
-Example: `mammoth agent plan approve resource-123`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth agent plan approve resource-123 --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `AgentPlanApproveResult`; mutation `benign_mutation`, confirmation `prompt_or_yes`, wait policy `not_async`.
 
@@ -246,9 +246,9 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth agent plan discard`. Exact input fields: `mammoth schema get agent.plan.discard`.
 
-Example: `mammoth agent plan discard resource-123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth agent plan discard resource-123 --yes`. Illustrative only: append `--yes` after observing an owned target.
 
-Result: `AgentPlanDiscardResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+Result: `AgentPlanDiscardResult`; mutation `benign_mutation`, confirmation `prompt_or_yes`, wait policy `not_async`.
 
 Status on release: untried; no live run recorded.
 
@@ -256,7 +256,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth agent plan edit-proposal`. Exact input fields: `mammoth schema get agent.plan.edit-proposal`.
 
-Example: `mammoth agent plan edit-proposal --input '{"plan_id": "resource-123", "action": "sample", "key": "Status"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth agent plan edit-proposal --input '{"plan_id": "resource-123", "action": "rename", "key": "Status"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `AgentPlanEditProposalResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
@@ -276,9 +276,9 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth agent projects clear`. Exact input fields: `mammoth schema get agent.projects.clear`.
 
-Example: `mammoth agent projects clear sample`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth agent projects clear revenue-assistant --yes`. Illustrative only: append `--yes` after observing an owned target.
 
-Result: `AgentProjectsClearResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+Result: `AgentProjectsClearResult`; mutation `benign_mutation`, confirmation `prompt_or_yes`, wait policy `not_async`.
 
 Status on release: untried; no live run recorded.
 
@@ -286,7 +286,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth agent projects set`. Exact input fields: `mammoth schema get agent.projects.set`.
 
-Example: `mammoth agent projects set sample --input '{"project_ids": [12, 15]}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth agent projects set revenue-assistant --input '{"project_ids": [12, 15]}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `AgentProjectsSetResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
@@ -296,7 +296,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth agent publish`. Exact input fields: `mammoth schema get agent.publish`.
 
-Example: `mammoth agent publish sample`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth agent publish revenue-assistant`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `AgentPublishResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
@@ -386,7 +386,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth agent run retry`. Exact input fields: `mammoth schema get agent.run.retry`.
 
-Example: `mammoth agent run retry resource-123`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth agent run retry resource-123 --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `AgentRunRetryResult`; mutation `benign_mutation`, confirmation `prompt_or_yes`, wait policy `not_async`.
 
@@ -426,7 +426,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth agent run units set`. Exact input fields: `mammoth schema get agent.run.units.set`.
 
-Example: `mammoth agent run units set resource-123 --input '{"step": 1, "kind": "sample", "units": [{"sample_key": "Status"}]}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth agent run units set resource-123 --input '{"step": 1, "kind": "dataset", "units": [{"id": 12, "name": "Sales", "project_id": 3}]}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `AgentRunUnitsSetResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
@@ -436,7 +436,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth agent scratch clear`. Exact input fields: `mammoth schema get agent.scratch.clear`.
 
-Example: `mammoth agent scratch clear sample 'Revenue report'`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth agent scratch clear revenue-assistant 'Revenue report' --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `AgentScratchClearResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
 
@@ -446,7 +446,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth agent scratch get`. Exact input fields: `mammoth schema get agent.scratch.get`.
 
-Example: `mammoth agent scratch get sample 'Revenue report'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth agent scratch get revenue-assistant 'Revenue report'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `AgentScratchGetResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
@@ -456,7 +456,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth agent scratch list`. Exact input fields: `mammoth schema get agent.scratch.list`.
 
-Example: `mammoth agent scratch list sample`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth agent scratch list revenue-assistant`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `AgentScratchListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
@@ -466,7 +466,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth agent scratch set`. Exact input fields: `mammoth schema get agent.scratch.set`.
 
-Example: `mammoth agent scratch set sample 'Revenue report' --input '{"content": "sample"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth agent scratch set revenue-assistant 'Revenue report' --input '{"content": "Quarterly revenue summary"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `AgentScratchSetResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
@@ -476,7 +476,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth agent session delete`. Exact input fields: `mammoth schema get agent.session.delete`.
 
-Example: `mammoth agent session delete resource-123`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth agent session delete resource-123 --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `AgentSessionDeleteResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
 
@@ -506,7 +506,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth agent session set-visibility`. Exact input fields: `mammoth schema get agent.session.set-visibility`.
 
-Example: `mammoth agent session set-visibility resource-123 --input '{"visibility": "sample"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth agent session set-visibility resource-123 --input '{"visibility": "shared"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `AgentSessionSetVisibilityResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
@@ -516,7 +516,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth agent team set`. Exact input fields: `mammoth schema get agent.team.set`.
 
-Example: `mammoth agent team set sample --input '{"team": {"agents": ["margin-watch"], "max_rounds": 4}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth agent team set revenue-assistant --input '{"team": {"agents": ["margin-watch"], "max_rounds": 4}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `AgentTeamSetResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
@@ -536,7 +536,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth agent update`. Exact input fields: `mammoth schema get agent.update`.
 
-Example: `mammoth agent update sample --input '{"name": "Margin watch"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth agent update revenue-assistant --input '{"name": "Margin watch"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `AgentUpdateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 

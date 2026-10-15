@@ -6,7 +6,7 @@ Every command returns the standard JSON envelope. On nonzero exit, read the erro
 
 Run: `mammoth view active-user list`. Exact input fields: `mammoth schema get view.active-user.list`.
 
-Example: `mammoth view active-user list 123 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth view active-user list 123 456`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ViewActiveUserListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
@@ -16,7 +16,7 @@ Status on release: ran once on CLI 1.1.11 — Published PyPI CLI 1.1.11 / SDK 0.
 
 Run: `mammoth view active-user mark`. Exact input fields: `mammoth schema get view.active-user.mark`.
 
-Example: `mammoth view active-user mark 123 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth view active-user mark 123 456`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ViewActiveUserMarkResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
@@ -56,7 +56,7 @@ Status on release: ran once on CLI 2.0.15 — re-verification 2026-09-18: exit 0
 
 Run: `mammoth view analyze`. Exact input fields: `mammoth schema get view.analyze`.
 
-Example: `mammoth view analyze 123 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth view analyze 123 456`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ViewAnalyzeResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
@@ -66,7 +66,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth view bulk-delete`. Exact input fields: `mammoth schema get view.bulk-delete`.
 
-Example: `mammoth view bulk-delete 123 --input '{"dataview_ids": [1]}'`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth view bulk-delete 123 --input '{"dataview_ids": [1]}' --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `ViewBulkDeleteResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
 
@@ -76,7 +76,7 @@ Status on release: ran once on CLI 2.0.14 — write sweep 2026-09-18: exit 0 on 
 
 Run: `mammoth view checkpoint create`. Exact input fields: `mammoth schema get view.checkpoint.create`.
 
-Example: `mammoth view checkpoint create 123 123 --input '{"body": {"checkpoint_name": "Revenue report", "checkpoint_type": "alert", "pinned_to_end": true}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth view checkpoint create 123 456 --input '{"body": {"checkpoint_name": "Revenue report", "checkpoint_type": "alert", "pinned_to_end": true}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ViewCheckpointCreateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
@@ -86,7 +86,7 @@ Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19
 
 Run: `mammoth view checkpoint delete`. Exact input fields: `mammoth schema get view.checkpoint.delete`.
 
-Example: `mammoth view checkpoint delete 123 123 123`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth view checkpoint delete 123 456 789 --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `ViewCheckpointDeleteResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
 
@@ -96,7 +96,7 @@ Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19
 
 Run: `mammoth view checkpoint get`. Exact input fields: `mammoth schema get view.checkpoint.get`.
 
-Example: `mammoth view checkpoint get 123 123 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth view checkpoint get 123 456 789`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ViewCheckpointGetResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
@@ -106,7 +106,7 @@ Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19
 
 Run: `mammoth view checkpoint list`. Exact input fields: `mammoth schema get view.checkpoint.list`.
 
-Example: `mammoth view checkpoint list 123 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth view checkpoint list 123 456`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ViewCheckpointListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
@@ -116,7 +116,7 @@ Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19
 
 Run: `mammoth view checkpoint update`. Exact input fields: `mammoth schema get view.checkpoint.update`.
 
-Example: `mammoth view checkpoint update 123 123 123 --input '{"body": {"patches": [{"op": "command", "path": "approve", "value": null}]}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth view checkpoint update 123 456 789 --input '{"body": {"patches": [{"op": "command", "path": "approve", "value": null}]}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ViewCheckpointUpdateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
@@ -136,7 +136,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth view conditional-format create`. Exact input fields: `mammoth schema get view.conditional-format.create`.
 
-Example: `mammoth view conditional-format create 123 123 --input '{"columns": ["Q1", "Q2", "Q3"], "operator": "<", "value": 55, "color": "red"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth view conditional-format create 123 456 --input '{"columns": ["Q1", "Q2", "Q3"], "operator": "<", "value": 55, "color": "red"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ViewConditionalFormatCreateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
@@ -146,7 +146,7 @@ Status on release: ran once on CLI 2.0.17 — re-verification 2026-09-18 (2.0.16
 
 Run: `mammoth view conditional-format delete-all`. Exact input fields: `mammoth schema get view.conditional-format.delete-all`.
 
-Example: `mammoth view conditional-format delete-all 123 123 --input '{"rule_id": "bca0ff33bd6f8ed1"}'`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth view conditional-format delete-all 123 456 --input '{"rule_id": "bca0ff33bd6f8ed1"}' --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `ViewConditionalFormatDeleteAllResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
 
@@ -156,7 +156,7 @@ Status on release: ran once on CLI 2.0.17 — re-verification 2026-09-18 (2.0.16
 
 Run: `mammoth view conditional-format list`. Exact input fields: `mammoth schema get view.conditional-format.list`.
 
-Example: `mammoth view conditional-format list 123 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth view conditional-format list 123 456`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ViewConditionalFormatListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
@@ -166,7 +166,7 @@ Status on release: ran once on CLI 2.0.17 — re-verification 2026-09-18 (2.0.16
 
 Run: `mammoth view conditional-format update`. Exact input fields: `mammoth schema get view.conditional-format.update`.
 
-Example: `mammoth view conditional-format update 123 123 --input '{"rule": {"sample_key": "Status"}}'`. Discovery only: this command is fail-closed and must not dispatch a request.
+Example: `mammoth view conditional-format update 123 456 --input '{"rule": {"name": "Status"}}'`. Discovery only: this command is fail-closed and must not dispatch a request.
 
 Execution is unavailable for the current contract and returns `unsupported_contract`. Do not infer request fields or retry it; use only a separately typed alternative.
 
@@ -186,7 +186,7 @@ Status on release: ran once on CLI 2.0.18 — golden-data check 2026-09-19 (CLI 
 
 Run: `mammoth view data-check create`. Exact input fields: `mammoth schema get view.data-check.create`.
 
-Example: `mammoth view data-check create 123 123 --input '{"body": {"checks": [{"check_type": "null_percentage", "config": {"column": "Status", "condition": "lt"}}], "name": "Revenue report", "pinned_to_end": true}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth view data-check create 123 456 --input '{"body": {"checks": [{"check_type": "null_percentage", "config": {"column": "Status", "condition": "lt"}}], "name": "Revenue report", "pinned_to_end": true}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ViewDataCheckCreateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
@@ -196,7 +196,7 @@ Status on release: ran once on CLI 2.0.21 — ergonomics sweep 2026-09-19: exit 
 
 Run: `mammoth view data-check delete`. Exact input fields: `mammoth schema get view.data-check.delete`.
 
-Example: `mammoth view data-check delete 123 123 123`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth view data-check delete 123 456 789 --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `ViewDataCheckDeleteResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
 
@@ -206,7 +206,7 @@ Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19
 
 Run: `mammoth view data-check get`. Exact input fields: `mammoth schema get view.data-check.get`.
 
-Example: `mammoth view data-check get 123 123 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth view data-check get 123 456 789`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ViewDataCheckGetResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
@@ -216,7 +216,7 @@ Status on release: ran once on CLI 2.0.21 — ergonomics sweep 2026-09-19: exit 
 
 Run: `mammoth view data-check list`. Exact input fields: `mammoth schema get view.data-check.list`.
 
-Example: `mammoth view data-check list 123 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth view data-check list 123 456`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ViewDataCheckListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
@@ -226,7 +226,7 @@ Status on release: ran once on CLI 2.0.21 — ergonomics sweep 2026-09-19: exit 
 
 Run: `mammoth view data-check update`. Exact input fields: `mammoth schema get view.data-check.update`.
 
-Example: `mammoth view data-check update 123 123 123 --input '{"body": {"patches": [{"op": "command", "path": "disable", "value": null}]}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth view data-check update 123 456 789 --input '{"body": {"patches": [{"op": "command", "path": "disable", "value": null}]}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ViewDataCheckUpdateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
@@ -236,7 +236,7 @@ Status on release: observed blocker — backend_error: PATCH with the schema's d
 
 Run: `mammoth view data aggregate`. Exact input fields: `mammoth schema get view.data.aggregate`.
 
-Example: `mammoth view data aggregate 123 --input '{"group_by": ["Channel"], "aggregations": [{"column": "Spend", "function": "SUM", "as_name": "Total Spend"}]}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth view data aggregate 123 456 --input '{"group_by": ["Channel"], "aggregations": [{"column": "Spend", "function": "SUM", "as_name": "Total Spend"}]}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ViewDataAggregateResult`; mutation `read`, confirmation `none`, wait policy `always_wait`.
 
@@ -266,7 +266,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth view data explore`. Exact input fields: `mammoth schema get view.data.explore`.
 
-Example: `mammoth view data explore 123 Status 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth view data explore 123 Status 456`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ViewDataExploreResult`; mutation `read`, confirmation `none`, wait policy `always_wait`.
 
@@ -306,7 +306,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth view data query`. Exact input fields: `mammoth schema get view.data.query`.
 
-Example: `mammoth view data query 123 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth view data query 123 456`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ViewDataQueryResult`; mutation `read`, confirmation `none`, wait policy `always_wait`.
 
@@ -316,7 +316,7 @@ Status on release: ran once on CLI 2.0.28 — ILG simulation 2026-09-19: exit 0 
 
 Run: `mammoth view delete`. Exact input fields: `mammoth schema get view.delete`.
 
-Example: `mammoth view delete 123 123`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth view delete 123 456 --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `ViewDeleteResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
 
@@ -326,7 +326,7 @@ Status on release: ran once on CLI 2.0.18 — golden-data check 2026-09-19: exit
 
 Run: `mammoth view derivative create`. Exact input fields: `mammoth schema get view.derivative.create`.
 
-Example: `mammoth view derivative create 123 123 --input '{"body": {"param": {"METRIC": {"AS": "total", "EXPRESSION": [{"TYPE": "FUNCTION", "VALUE": {"ARGUMENT": "column_1", "FUNCTION": "SUM"}}]}}}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth view derivative create 123 456 --input '{"body": {"param": {"METRIC": {"AS": "total", "EXPRESSION": [{"TYPE": "FUNCTION", "VALUE": {"ARGUMENT": "column_1", "FUNCTION": "SUM"}}]}}}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ViewDerivativeCreateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
@@ -338,7 +338,7 @@ A METRIC shows as an explore-panel card via `display_properties`; the CLI defaul
 
 Run: `mammoth view derivative data`. Exact input fields: `mammoth schema get view.derivative.data`.
 
-Example: `mammoth view derivative data 123 123 123 --input '{"body": {"limit": null}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth view derivative data 123 456 789 --input '{"body": {"limit": null}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ViewDerivativeDataResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
@@ -348,7 +348,7 @@ Status on release: ran once on CLI 2.0.24 — payload probe 2026-09-19: exit 0 o
 
 Run: `mammoth view derivative delete`. Exact input fields: `mammoth schema get view.derivative.delete`.
 
-Example: `mammoth view derivative delete 123 123 123`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth view derivative delete 123 456 789 --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `ViewDerivativeDeleteResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
 
@@ -358,7 +358,7 @@ Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19
 
 Run: `mammoth view derivative list`. Exact input fields: `mammoth schema get view.derivative.list`.
 
-Example: `mammoth view derivative list 123 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth view derivative list 123 456`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ViewDerivativeListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
@@ -368,7 +368,7 @@ Status on release: ran once on CLI 1.1.11 — Published PyPI CLI 1.1.11 / SDK 0.
 
 Run: `mammoth view derivative update`. Exact input fields: `mammoth schema get view.derivative.update`.
 
-Example: `mammoth view derivative update 123 123 123 --input '{"body": {"patches": [{"op": "replace", "path": "param", "value": {"METRIC": {"AS": "sample", "EXPRESSION": [{"TYPE": "FUNCTION", "VALUE": {"FUNCTION": "SUM"}}]}}}]}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth view derivative update 123 456 789 --input '{"body": {"patches": [{"op": "replace", "path": "param", "value": {"METRIC": {"AS": "Total revenue", "EXPRESSION": [{"TYPE": "FUNCTION", "VALUE": {"FUNCTION": "SUM"}}]}}}]}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ViewDerivativeUpdateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
@@ -388,7 +388,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth view draft command`. Exact input fields: `mammoth schema get view.draft.command`.
 
-Example: `mammoth view draft command 123 --input '{"command": "sample", "dataset_id": 456}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth view draft command 123 --input '{"command": "enter", "dataset_id": 456}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ViewDraftCommandResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
@@ -398,7 +398,7 @@ Status on release: ran once on CLI 2.0.14 — write sweep 2026-09-18: exit 0 on 
 
 Run: `mammoth view draft discard`. Exact input fields: `mammoth schema get view.draft.discard`.
 
-Example: `mammoth view draft discard 123 --input '{"dataset_id": 456}'`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth view draft discard 123 --input '{"dataset_id": 456}' --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `ViewDraftDiscardResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `always_wait`.
 
@@ -448,7 +448,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth view explore-panel edit`. Exact input fields: `mammoth schema get view.explore-panel.edit`.
 
-Example: `mammoth view explore-panel edit 123 --input '{"edits": [{"op": "metric", "card": "Region", "agg": "SUM", "of": "Amount"}]}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth view explore-panel edit 123 456 --input '{"edits": [{"op": "metric", "card": "Region", "agg": "SUM", "of": "Amount"}]}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ViewExplorePanelEditResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
@@ -468,7 +468,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth view explore-panel get`. Exact input fields: `mammoth schema get view.explore-panel.get`.
 
-Example: `mammoth view explore-panel get 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth view explore-panel get 123 456`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ViewExplorePanelGetResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
@@ -478,7 +478,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth view explore-panel set`. Exact input fields: `mammoth schema get view.explore-panel.set`.
 
-Example: `mammoth view explore-panel set 123 --input '{"panel": {"columns": "all"}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth view explore-panel set 123 456 --input '{"panel": {"columns": "all"}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ViewExplorePanelSetResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
@@ -488,7 +488,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth view export azure-blob`. Exact input fields: `mammoth schema get view.export.azure-blob`.
 
-Example: `mammoth view export azure-blob 123 123 --input /private/path/request.json`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth view export azure-blob 123 456 --input /private/path/request.json --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Secret fields: pass the body as `--input FILE` (mode 0600); never inline.
 
@@ -500,7 +500,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth view export bigquery`. Exact input fields: `mammoth schema get view.export.bigquery`.
 
-Example: `mammoth view export bigquery 123 123 --input '{"selected_profile": {}, "selected_identity": {}, "table": "exports"}'`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth view export bigquery 123 456 --input '{"selected_profile": {}, "selected_identity": {}, "table": "exports"}' --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `ViewExportBigqueryResult`; mutation `external_effect`, confirmation `yes_always`, wait policy `returns_job`.
 
@@ -510,7 +510,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth view export create`. Exact input fields: `mammoth schema get view.export.create`.
 
-Example: `mammoth view export create 123 --input '{"export_spec": {"DATAVIEW_ID": 1, "handler_type": "postgres", "trigger_type": "none", "run_immediately": true}}'`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth view export create 123 --input '{"export_spec": {"DATAVIEW_ID": 1, "handler_type": "postgres", "trigger_type": "none", "run_immediately": true}}' --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `ViewExportCreateResult`; mutation `external_effect`, confirmation `yes_always`, wait policy `returns_job`.
 
@@ -530,7 +530,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth view export dataset`. Exact input fields: `mammoth schema get view.export.dataset`.
 
-Example: `mammoth view export dataset 123 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth view export dataset 123 456`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ViewExportDatasetResult`; mutation `benign_mutation`, confirmation `none`, wait policy `always_wait`.
 
@@ -540,7 +540,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth view export delete`. Exact input fields: `mammoth schema get view.export.delete`.
 
-Example: `mammoth view export delete 123 123`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth view export delete 123 456 --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `ViewExportDeleteResult`; mutation `external_effect`, confirmation `yes_always`, wait policy `not_async`.
 
@@ -550,7 +550,7 @@ Status on release: ran once on CLI 2.0.14 — write sweep 2026-09-18: exit 0 on 
 
 Run: `mammoth view export elasticsearch`. Exact input fields: `mammoth schema get view.export.elasticsearch`.
 
-Example: `mammoth view export elasticsearch 123 123 --input /private/path/request.json`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth view export elasticsearch 123 456 --input /private/path/request.json --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Secret fields: pass the body as `--input FILE` (mode 0600); never inline.
 
@@ -562,7 +562,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth view export email`. Exact input fields: `mammoth schema get view.export.email`.
 
-Example: `mammoth view export email 123 123 --input '{"emails": ["recipient@example.com"]}'`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth view export email 123 456 --input '{"emails": ["recipient@example.com"]}' --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `ViewExportEmailResult`; mutation `external_effect`, confirmation `yes_always`, wait policy `returns_job`.
 
@@ -572,7 +572,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth view export ftp`. Exact input fields: `mammoth schema get view.export.ftp`.
 
-Example: `mammoth view export ftp 123 123 --input /private/path/request.json`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth view export ftp 123 456 --input /private/path/request.json --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Secret fields: pass the body as `--input FILE` (mode 0600); never inline.
 
@@ -584,7 +584,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth view export get`. Exact input fields: `mammoth schema get view.export.get`.
 
-Example: `mammoth view export get 123 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth view export get 123 456`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ViewExportGetResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
@@ -594,7 +594,7 @@ Status on release: ran once on CLI 2.0.14 — write sweep 2026-09-18: exit 0 on 
 
 Run: `mammoth view export list`. Exact input fields: `mammoth schema get view.export.list`.
 
-Example: `mammoth view export list 123 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth view export list 123 456`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ViewExportListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
@@ -604,7 +604,7 @@ Status on release: ran once on CLI 2.0.28 — ILG simulation 2026-09-19: exit 0 
 
 Run: `mammoth view export live-link`. Exact input fields: `mammoth schema get view.export.live-link`.
 
-Example: `mammoth view export live-link 123 123 --input '{"file_name": "report_share.csv"}'`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth view export live-link 123 456 --input '{"file_name": "report_share.csv"}' --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `ViewExportLiveLinkResult`; mutation `external_effect`, confirmation `yes_always`, wait policy `always_wait`.
 
@@ -614,7 +614,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth view export managed-s3`. Exact input fields: `mammoth schema get view.export.managed-s3`.
 
-Example: `mammoth view export managed-s3 123 123 --input '{"file_name": "report.csv"}'`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth view export managed-s3 123 456 --input '{"file_name": "report.csv"}' --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `ViewExportManagedS3Result`; mutation `external_effect`, confirmation `yes_always`, wait policy `always_wait`.
 
@@ -624,7 +624,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth view export mssql`. Exact input fields: `mammoth schema get view.export.mssql`.
 
-Example: `mammoth view export mssql 123 123 --input /private/path/request.json`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth view export mssql 123 456 --input /private/path/request.json --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Secret fields: pass the body as `--input FILE` (mode 0600); never inline.
 
@@ -636,7 +636,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth view export mysql`. Exact input fields: `mammoth schema get view.export.mysql`.
 
-Example: `mammoth view export mysql 123 123 --input /private/path/request.json`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth view export mysql 123 456 --input /private/path/request.json --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Secret fields: pass the body as `--input FILE` (mode 0600); never inline.
 
@@ -648,7 +648,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth view export onedrive`. Exact input fields: `mammoth schema get view.export.onedrive`.
 
-Example: `mammoth view export onedrive 123 123 --input /private/path/request.json`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth view export onedrive 123 456 --input /private/path/request.json --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Secret fields: pass the body as `--input FILE` (mode 0600); never inline.
 
@@ -660,7 +660,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth view export postgres`. Exact input fields: `mammoth schema get view.export.postgres`.
 
-Example: `mammoth view export postgres 123 123 --input /private/path/request.json`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth view export postgres 123 456 --input /private/path/request.json --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Secret fields: pass the body as `--input FILE` (mode 0600); never inline.
 
@@ -672,7 +672,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth view export powerbi`. Exact input fields: `mammoth schema get view.export.powerbi`.
 
-Example: `mammoth view export powerbi 123 123 --input /private/path/request.json`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth view export powerbi 123 456 --input /private/path/request.json --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Secret fields: pass the body as `--input FILE` (mode 0600); never inline.
 
@@ -684,7 +684,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth view export publish-db`. Exact input fields: `mammoth schema get view.export.publish-db`.
 
-Example: `mammoth view export publish-db 123 --input '{"odbc_type": "postgres", "target_properties": {"sample_key": "Status"}}'`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth view export publish-db 123 --input '{"odbc_type": "postgres", "target_properties": {"name": "Status"}}' --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `ViewExportPublishDbResult`; mutation `external_effect`, confirmation `yes_always`, wait policy `not_async`.
 
@@ -694,7 +694,7 @@ Status on release: ran once on CLI 2.0.14 — write sweep 2026-09-18: exit 0 on 
 
 Run: `mammoth view export publish-db-update`. Exact input fields: `mammoth schema get view.export.publish-db-update`.
 
-Example: `mammoth view export publish-db-update 123 --input '{"patch": [{"op": "replace", "path": "credentials", "value": {"odbc_type": "postgres"}}]}'`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth view export publish-db-update 123 --input '{"patch": [{"op": "replace", "path": "credentials", "value": {"odbc_type": "postgres"}}]}' --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `ViewExportPublishDbUpdateResult`; mutation `external_effect`, confirmation `yes_always`, wait policy `not_async`.
 
@@ -704,7 +704,7 @@ Status on release: CLI defect fixed, untried since — CLI defect fixed in 2.0.1
 
 Run: `mammoth view export redshift`. Exact input fields: `mammoth schema get view.export.redshift`.
 
-Example: `mammoth view export redshift 123 123 --input /private/path/request.json`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth view export redshift 123 456 --input /private/path/request.json --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Secret fields: pass the body as `--input FILE` (mode 0600); never inline.
 
@@ -716,7 +716,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth view export rest`. Exact input fields: `mammoth schema get view.export.rest`.
 
-Example: `mammoth view export rest 123 123 --input '{"base_url": "https://api.example", "endpoint_path": "/records"}'`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth view export rest 123 456 --input '{"base_url": "https://api.example", "endpoint_path": "/records"}' --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `ViewExportRestResult`; mutation `external_effect`, confirmation `yes_always`, wait policy `returns_job`.
 
@@ -726,7 +726,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth view export sftp`. Exact input fields: `mammoth schema get view.export.sftp`.
 
-Example: `mammoth view export sftp 123 123 --input '{"host": "sftp.example", "username": "agent"}'`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth view export sftp 123 456 --input '{"host": "sftp.example", "username": "agent"}' --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `ViewExportSftpResult`; mutation `external_effect`, confirmation `yes_always`, wait policy `returns_job`.
 
@@ -736,7 +736,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth view export sharepoint`. Exact input fields: `mammoth schema get view.export.sharepoint`.
 
-Example: `mammoth view export sharepoint 123 123 --input /private/path/request.json`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth view export sharepoint 123 456 --input /private/path/request.json --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Secret fields: pass the body as `--input FILE` (mode 0600); never inline.
 
@@ -748,7 +748,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth view export tableau`. Exact input fields: `mammoth schema get view.export.tableau`.
 
-Example: `mammoth view export tableau 123 123 --input /private/path/request.json`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth view export tableau 123 456 --input /private/path/request.json --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Secret fields: pass the body as `--input FILE` (mode 0600); never inline.
 
@@ -760,7 +760,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth view export update`. Exact input fields: `mammoth schema get view.export.update`.
 
-Example: `mammoth view export update 123 123 --input '{"patches": [{"sample_key": "Status"}]}'`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth view export update 123 456 --input '{"patches": [{"name": "Status"}]}' --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `ViewExportUpdateResult`; mutation `external_effect`, confirmation `yes_always`, wait policy `not_async`.
 
@@ -770,7 +770,7 @@ Status on release: ran once on CLI 2.0.14 — write sweep 2026-09-18: exit 0 on 
 
 Run: `mammoth view exportable-config apply`. Exact input fields: `mammoth schema get view.exportable-config.apply`.
 
-Example: `mammoth view exportable-config apply 123 --input-format json --input '{"config": {"tasks": []}}' --yes --confirm 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth view exportable-config apply 123 456 --input-format json --input '{"config": {"tasks": []}}' --yes --confirm 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `ViewExportableConfigApplyResult`; mutation `reversible_pipeline`, confirmation `confirm_target`, wait policy `returns_job`.
 
@@ -780,7 +780,7 @@ Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19
 
 Run: `mammoth view exportable-config get`. Exact input fields: `mammoth schema get view.exportable-config.get`.
 
-Example: `mammoth view exportable-config get 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth view exportable-config get 123 456`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ViewExportableConfigGetResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
@@ -790,7 +790,7 @@ Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19
 
 Run: `mammoth view get`. Exact input fields: `mammoth schema get view.get`.
 
-Example: `mammoth view get 123 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth view get 123 456`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ViewGetResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
@@ -800,7 +800,7 @@ Status on release: ran once on CLI 2.0.21 — ergonomics sweep 2026-09-19: exit 
 
 Run: `mammoth view impact`. Exact input fields: `mammoth schema get view.impact`.
 
-Example: `mammoth view impact 123 123 --input '{"scope": "view"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth view impact 123 456 --input '{"scope": "view"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ViewImpactResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
@@ -820,7 +820,7 @@ Status on release: ran once on CLI 2.0.21 — ergonomics sweep 2026-09-19: exit 
 
 Run: `mammoth view optimize`. Exact input fields: `mammoth schema get view.optimize`.
 
-Example: `mammoth view optimize 123`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth view optimize 123 456 --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `ViewOptimizeResult`; mutation `reversible_pipeline`, confirmation `prompt_or_yes`, wait policy `start_or_wait`.
 
@@ -830,7 +830,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth view parameter-context`. Exact input fields: `mammoth schema get view.parameter-context`.
 
-Example: `mammoth view parameter-context 123 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth view parameter-context 123 456`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ViewParameterContextResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
@@ -870,7 +870,7 @@ Status on release: ran once on CLI 2.0.28 — ILG simulation 2026-09-19: exit 0 
 
 Run: `mammoth view pipeline items-all`. Exact input fields: `mammoth schema get view.pipeline.items-all`.
 
-Example: `mammoth view pipeline items-all 123 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth view pipeline items-all 123 456`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ViewPipelineItemsAllResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
@@ -900,7 +900,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth view preview`. Exact input fields: `mammoth schema get view.preview`.
 
-Example: `mammoth view preview 123 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth view preview 123 456`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ViewPreviewResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
@@ -910,7 +910,7 @@ Status on release: ran once on CLI 2.0.18 — golden-data check 2026-09-19: exit
 
 Run: `mammoth view restore`. Exact input fields: `mammoth schema get view.restore`.
 
-Example: `mammoth view restore 123 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth view restore 123 456`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ViewRestoreResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
@@ -930,7 +930,7 @@ Status on release: ran once on CLI 2.0.40 — golden-data check golden-20260919 
 
 Run: `mammoth view task delete`. Exact input fields: `mammoth schema get view.task.delete`.
 
-Example: `mammoth view task delete 123 123`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth view task delete 123 456 --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `ViewTaskDeleteResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `always_wait`.
 
@@ -940,7 +940,7 @@ Status on release: ran once on CLI 2.0.28 — ILG simulation 2026-09-19: exit 0 
 
 Run: `mammoth view task get`. Exact input fields: `mammoth schema get view.task.get`.
 
-Example: `mammoth view task get 123 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth view task get 123 456`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ViewTaskGetResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
@@ -970,7 +970,7 @@ Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19
 
 Run: `mammoth view task update`. Exact input fields: `mammoth schema get view.task.update`.
 
-Example: `mammoth view task update 123 123 --input '{"task_spec": {"DATAVIEW_ID": 123, "SEQUENCE_NUMBER": 1, "COPY": [{"SOURCE": "column_1", "AS": {"COLUMN": "Copy of column 1", "TYPE": "TEXT", "INTERNAL_NAME": "column_9"}}], "VERSION": 2}, "dataset_id": 456}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth view task update 123 456 --input '{"task_spec": {"DATAVIEW_ID": 123, "SEQUENCE_NUMBER": 1, "COPY": [{"SOURCE": "column_1", "AS": {"COLUMN": "Copy of column 1", "TYPE": "TEXT", "INTERNAL_NAME": "column_9"}}], "VERSION": 2}, "dataset_id": 456}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ViewTaskUpdateResult`; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`.
 
@@ -980,7 +980,7 @@ Status on release: ran once on CLI 2.0.15 — re-verification 2026-09-18: exit 0
 
 Run: `mammoth view trash`. Exact input fields: `mammoth schema get view.trash`.
 
-Example: `mammoth view trash 123 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth view trash 123 456`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ViewTrashResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
@@ -990,7 +990,7 @@ Status on release: ran once on CLI 2.0.14 — write sweep 2026-09-18: exit 0 on 
 
 Run: `mammoth view update`. Exact input fields: `mammoth schema get view.update`.
 
-Example: `mammoth view update 123 123 --input '{"name": "Revenue report"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth view update 123 456 --input '{"name": "Revenue report"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ViewUpdateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
@@ -1010,7 +1010,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth view version apply`. Exact input fields: `mammoth schema get view.version.apply`.
 
-Example: `mammoth view version apply 123 123 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth view version apply 123 456 789`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ViewVersionApplyResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
@@ -1020,7 +1020,7 @@ Status on release: ran once on CLI 2.0.14 — write sweep 2026-09-18: exit 0 on 
 
 Run: `mammoth view version delete`. Exact input fields: `mammoth schema get view.version.delete`.
 
-Example: `mammoth view version delete 123 123 123`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth view version delete 123 456 789 --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `ViewVersionDeleteResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
 
@@ -1030,7 +1030,7 @@ Status on release: ran once on CLI 2.0.14 — write sweep 2026-09-18: exit 0 on 
 
 Run: `mammoth view version get`. Exact input fields: `mammoth schema get view.version.get`.
 
-Example: `mammoth view version get 123 123 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth view version get 123 456 789`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ViewVersionGetResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
@@ -1040,7 +1040,7 @@ Status on release: ran once on CLI 1.1.5 — retained view 46 / parent dataset 2
 
 Run: `mammoth view version list`. Exact input fields: `mammoth schema get view.version.list`.
 
-Example: `mammoth view version list 123 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth view version list 123 456`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ViewVersionListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
@@ -1050,7 +1050,7 @@ Status on release: ran once on CLI 1.1.11 — Published PyPI CLI 1.1.11 / SDK 0.
 
 Run: `mammoth view version update`. Exact input fields: `mammoth schema get view.version.update`.
 
-Example: `mammoth view version update 123 123 123 --input '{"body": {"patches": [{"op": "replace", "path": "name"}]}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth view version update 123 456 789 --input '{"body": {"patches": [{"op": "replace", "path": "name"}]}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ViewVersionUpdateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 

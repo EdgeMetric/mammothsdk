@@ -537,7 +537,7 @@ wheels = [
 
 [[package]]
 name = "mammoth-cli"
-version = "2.2.81"
+version = "2.2.84"
 source = { editable = "." }
 dependencies = [
     { name = "jsonschema" },
@@ -566,7 +566,7 @@ dev = [
 requires-dist = [
     { name = "jsonschema", specifier = ">=4.20" },
     { name = "keyring", specifier = ">=25.7,<26" },
-    { name = "mammoth-io", specifier = ">=0.8.42,<0.9" },
+    { name = "mammoth-io", specifier = ">=0.8.43,<0.9" },
     { name = "platformdirs", specifier = ">=4.10,<5" },
     { name = "pydantic", specifier = ">=2.12.5,<3" },
     { name = "pyyaml", specifier = ">=6,<7" },
@@ -588,15 +588,15 @@ dev = [
 
 [[package]]
 name = "mammoth-io"
-version = "0.8.42"
+version = "0.8.43"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "httpx" },
     { name = "pydantic" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/5e/1e/4270fb49cf287af461708750e93a0eb4de12573774ceaf9f04780b9c0c41/mammoth_io-0.8.42.tar.gz", hash = "sha256:1cbe86eb0d2c9ffbc8ba9d636abd98d2d45c85505990dbbfe450ebf1be263de1", size = 611423, upload-time = "2026-10-13T10:41:19.243Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/dd/d3/49b151f97583079ff5675f573a673bd89dbf47d1d3f5e258eff6c121cf9c/mammoth_io-0.8.43.tar.gz", hash = "sha256:e40ed998b1f0f5f693da331f70b3f98ff9928e5d86d0f0ab0568068d5975cfa5", size = 614776, upload-time = "2026-10-15T07:53:35.945Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/59/6d/9c5edce53cd66f90f8690716d6be640a02931f2bd51bb8e2cadde80c1de0/mammoth_io-0.8.42-py3-none-any.whl", hash = "sha256:2e93c969f0ab616b9143ed147e725c42f51bd9739b0028882cc607fdfb5d0eaa", size = 328601, upload-time = "2026-10-13T10:41:17.03Z" },
+    { url = "https://files.pythonhosted.org/packages/d2/fe/270c8675b10eb1bdd3114d134dc2c50c7bacca3dd8e4a7b0fa3f3ab9568d/mammoth_io-0.8.43-py3-none-any.whl", hash = "sha256:e7f7be8f08029362fe28ed78c4fb49fa97dfe3f5c9f98ae4b395dbb849280a43", size = 328652, upload-time = "2026-10-15T07:53:33.644Z" },
 ]
 
 [[package]]

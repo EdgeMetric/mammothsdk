@@ -8,7 +8,6 @@ from mammoth import MammothClient, Condition, Operator
 # 1. Initialize
 client = MammothClient(
     api_token="mm_your-token",
-    workspace_id=11,
 )
 client.set_project_id(10)
 
@@ -376,7 +375,7 @@ ids = parse_path("https://app.mammoth.io/#/workspaces/11/projects/10/views/1039"
 ## Context Manager
 
 ```python
-async with MammothClient(api_token="mm_...", workspace_id=11) as client:
+async with MammothClient(api_token="mm_...") as client:
     client.set_project_id(10)
     view = await client.views.get(1039)
     await view.filter_rows(Condition("Sales", Operator.GTE, 1000))

@@ -232,7 +232,6 @@ from mammoth import (
 # 1. Authenticate
 client = MammothClient(
     api_token=os.getenv("MAMMOTH_API_TOKEN"),
-    workspace_id=11,
 )
 client.set_project_id(42)
 

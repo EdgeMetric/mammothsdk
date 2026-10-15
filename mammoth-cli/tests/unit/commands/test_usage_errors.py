@@ -83,6 +83,15 @@ def test_equals_form_reports_the_option_not_the_whole_token() -> None:
     assert error["recovery_commands"] == ["mammoth doctor --profile=prod"]
 
 
+def test_an_unsupported_output_value_before_the_command_still_gets_the_envelope() -> None:
+    # ``--profile`` and ``--output`` written first must fail the same way when piped.
+    error = _error(["--output", "xml", "project", "list"])
+
+    assert error["code"] == "usage_error"
+    assert error["details"]["option"] == "--output"
+    assert error["recovery_commands"] == ["mammoth project list --output xml"]
+
+
 def test_a_boolean_global_flag_does_not_swallow_the_command_name() -> None:
     # ``--no-input`` takes no value, so the command must not be consumed as one.
     error = _error(["--no-input", "doctor"])

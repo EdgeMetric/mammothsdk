@@ -36,7 +36,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth collection dashboards add`. Exact input fields: `mammoth schema get collection.dashboards.add`.
 
-Example: `mammoth collection dashboards add 123 --input '{"dashboard_ids": [1]}'`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth collection dashboards add 123 --input '{"dashboard_ids": [1]}' --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `CollectionDashboardsAddResult`; mutation `external_effect`, confirmation `yes_always`, wait policy `not_async`.
 
@@ -46,7 +46,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth collection dashboards remove`. Exact input fields: `mammoth schema get collection.dashboards.remove`.
 
-Example: `mammoth collection dashboards remove 123 123`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth collection dashboards remove 123 456 --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `CollectionDashboardsRemoveResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
 
@@ -56,7 +56,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth collection delete`. Exact input fields: `mammoth schema get collection.delete`.
 
-Example: `mammoth collection delete 123`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth collection delete 123 --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `CollectionDeleteResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
 
@@ -106,7 +106,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth collection job`. Exact input fields: `mammoth schema get collection.job`.
 
-Example: `mammoth collection job 123 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth collection job 123 456`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `CollectionJobResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
@@ -126,7 +126,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth collection members remove`. Exact input fields: `mammoth schema get collection.members.remove`.
 
-Example: `mammoth collection members remove 123 --input '{"email": "analyst@example.com"}'`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth collection members remove 123 --input '{"email": "analyst@example.com"}' --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `CollectionMembersRemoveResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
 
@@ -146,7 +146,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth collection share`. Exact input fields: `mammoth schema get collection.share`.
 
-Example: `mammoth collection share 123 --input '{"emails": ["analyst@example.com"]}'`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth collection share 123 --input '{"emails": ["analyst@example.com"]}' --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `CollectionShareResult`; mutation `external_effect`, confirmation `yes_always`, wait policy `not_async`.
 

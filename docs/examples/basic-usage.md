@@ -10,7 +10,6 @@ from mammoth import MammothClient, parse_path
 
 client = MammothClient(
     api_token=os.getenv("MAMMOTH_API_TOKEN"),
-    workspace_id=11,
 )
 client.set_project_id(10)
 ```
@@ -112,7 +111,6 @@ print(f"Saved to {path}")
 ```python
 async with MammothClient(
     api_token=os.getenv("MAMMOTH_API_TOKEN"),
-    workspace_id=11,
 ) as client:
     client.set_project_id(10)
     view = await client.views.get(1039)
@@ -161,7 +159,6 @@ from mammoth import (
 async def main():
     client = MammothClient(
         api_token=os.getenv("MAMMOTH_API_TOKEN"),
-        workspace_id=11,
     )
     client.set_project_id(10)
 

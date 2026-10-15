@@ -332,6 +332,26 @@ verify_cli() {
     log "installed mammoth-cli $installed"
 }
 
+# A pinned install must stay on its release: the CLI updates itself daily, and
+# only a recorded pin stops that. The installed CLI writes the pin in its own
+# state directory (the installer does not know where that is); a plain install
+# drops any earlier pin. A failure here must not abort an install that worked.
+record_pin() {
+    exe="$BIN_DIR/mammoth"
+    pin="${VERSION:-none}"
+    [ "$LOCAL_SOURCE" -eq 1 ] && return 0
+    if "$exe" upgrade --record-pin "$pin" --output json --no-input >/dev/null 2>&1; then
+        [ -n "$VERSION" ] && log "pinned mammoth-cli $VERSION (automatic updates will skip it)"
+    else
+        if [ -n "$VERSION" ]; then
+            log "warning: could not record the pin; set MAMMOTH_NO_AUTO_UPDATE=1 to keep $VERSION, or run: mammoth upgrade --version $VERSION --yes"
+        else
+            log "warning: could not clear an earlier version pin; run: mammoth upgrade --yes"
+        fi
+    fi
+    return 0
+}
+
 # The skill writes files into the Codex, Claude Code and Cursor config
 # directories, so ask first. --skills-only, --yes and --noninteractive count as
 # consent; with no terminal to ask on (and none of those flags) skip it.
@@ -371,6 +391,7 @@ main() {
             install_cli
         fi
         verify_cli
+        record_pin
         modify_path
     else
         BIN_DIR="$($(command -v uv || echo uv) tool dir --bin 2>/dev/null || echo "$HOME/.local/bin")"
