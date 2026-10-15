@@ -726,7 +726,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth view export rest-fill`. Exact input fields: `mammoth schema get view.export.rest-fill`.
 
-Example: `mammoth view export rest-fill 123 --input '{"docs_url": "https://example.com/data.csv"}' --yes`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth view export rest-fill 123 456 --input '{"docs_url": "https://example.com/data.csv"}' --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `ViewExportRestFillResult`; mutation `external_effect`, confirmation `yes_always`, wait policy `always_wait`.
 

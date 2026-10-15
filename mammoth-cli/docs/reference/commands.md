@@ -6661,11 +6661,12 @@ Total commands: 779.
 **Arguments**
 
 - `DATAVIEW_ID` (int, required) — ID of the dataview.
+- `DATASET_ID` (int, optional) — Exact parent dataset ID; or pass it via the 'dataset_id' input field.
 
 - Mutation class: `external_effect`
 - Confirmation: `yes_always`
 - Backing SDK: `mammoth.api.exports.ExportsAPI.rest_fill`
-- Agent example: `mammoth view export rest-fill 123 --input '{"docs_url": "https://example.com/data.csv"}' --yes`
+- Agent example: `mammoth view export rest-fill 123 456 --input '{"docs_url": "https://example.com/data.csv"}' --yes`
 
 ### `mammoth view export runs`
 
@@ -7858,7 +7859,7 @@ Total commands: 779.
 ### `mammoth workspace export-hosts set`
 
 - Mutation class: `high_impact`
-- Confirmation: `yes_always`
+- Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.exports.ExportsAPI.set_export_hosts`
 - Agent example: `mammoth workspace export-hosts set --input '{"restricted": true}' --yes`
 

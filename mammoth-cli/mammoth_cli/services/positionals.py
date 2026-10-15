@@ -522,6 +522,13 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
     ),
     "view.export.rest-fill": (
         PositionalSpec(name="dataview_id", type=int, required=True, help="ID of the dataview."),
+        PositionalSpec(
+            name="dataset_id",
+            type=int,
+            required=False,
+            falls_back_to_field="dataset_id",
+            help="Exact parent dataset ID; or pass it via the 'dataset_id' input field.",
+        ),
     ),
     "view.summary": (
         PositionalSpec(name="dataview_id", type=int, required=True, help="ID of the dataview."),

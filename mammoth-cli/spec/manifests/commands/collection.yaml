@@ -818,7 +818,7 @@ commands:
     ids:
       collection_id: positional.0
     kind: object
-  live_test: null
+  live_test: None
   live_exemption_reason: "No disposable fixture covers this write; contract and unit tests cover it."
   contract_fixture: null
   required_fixture_guard: null
@@ -865,7 +865,7 @@ commands:
     ids:
       collection_id: positional.0
     kind: object
-  live_test: null
+  live_test: None
   live_exemption_reason: "Sends or changes outbound mail or access for real people, so it is not run against a live server; contract and unit tests cover it."
   contract_fixture: null
   required_fixture_guard: null
@@ -908,7 +908,7 @@ commands:
   pagination_policy: none
   acceptance_evidence: "contract_only_high_impact"
   no_readback: Sends one email now; nothing is stored that a read command returns.
-  live_test: null
+  live_test: None
   live_exemption_reason: "Sends or changes outbound mail or access for real people, so it is not run against a live server; contract and unit tests cover it."
   contract_fixture: null
   required_fixture_guard: null

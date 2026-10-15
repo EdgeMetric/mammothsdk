@@ -7130,49 +7130,6 @@ commands:
     command: view.compare
     ids: {}
     kind: object
-- command_id: view.export.rest-fill
-  command_path: view export rest-fill
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - Suggest
-  positionals:
-  - name: dataview_id
-    type: int
-    required: true
-    metavar: DATAVIEW_ID
-    falls_back_to_field: null
-    help: ID of the dataview.
-  options: []
-  sdk_symbol: mammoth.api.exports.ExportsAPI.rest_fill
-  sdk_conversion: Call mammoth.api.exports.ExportsAPI.rest_fill with validated request fields.
-  request_model: ViewExportRestFillRequest
-  result_model: ViewExportRestFillResult
-  mutation_class: external_effect
-  edits_target: false
-  confirmation: yes_always
-  wait_policy: always_wait
-  pagination_policy: none
-  acceptance_evidence: contract_only_high_impact
-  no_readback: Proposes settings only; nothing is stored or configured.
-  live_test: null
-  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth view export rest-fill DATAVIEW_ID --help
-  agent_example: "mammoth view export rest-fill 123 --input '{\"docs_url\": \"https://example.com/data.csv\"}' --yes"
-  unit_tests:
-  - UT-VIEW-EXPORT-REST-FILL
-  contract_tests:
-  - CT-VIEW-EXPORT-REST-FILL-HUMAN
-  - CT-VIEW-EXPORT-REST-FILL-JSON
-  - CT-VIEW-EXPORT-REST-FILL-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: Makes Mammoth's server fetch the docs URL and propose REST export settings; nothing
-    is configured or sent. Needs --yes.
-  reviewed_by: primary
 - command_id: view.export.runs
   command_path: view export runs
   disposition: command
@@ -7214,7 +7171,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view export runs DATAVIEW_ID EXPORT_ID --help
-  agent_example: "mammoth view export runs 123 456 789"
+  agent_example: mammoth view export runs 123 456 789
   unit_tests:
   - UT-VIEW-EXPORT-RUNS
   contract_tests:
@@ -7260,7 +7217,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view summary DATAVIEW_ID --help
-  agent_example: "mammoth view summary 123 456"
+  agent_example: mammoth view summary 123 456
   unit_tests:
   - UT-VIEW-SUMMARY
   contract_tests:
@@ -7270,4 +7227,52 @@ commands:
   draft_test: null
   undo_test: null
   known_restrictions: null
+  reviewed_by: primary
+- command_id: view.export.rest-fill
+  command_path: view export rest-fill
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - Suggest
+  positionals:
+  - name: dataview_id
+    type: int
+    required: true
+    metavar: DATAVIEW_ID
+    falls_back_to_field: null
+    help: ID of the dataview.
+  - name: dataset_id
+    type: int
+    required: false
+    metavar: DATASET_ID
+    falls_back_to_field: dataset_id
+    help: Exact parent dataset ID; or pass it via the 'dataset_id' input field.
+  options: []
+  sdk_symbol: mammoth.api.exports.ExportsAPI.rest_fill
+  sdk_conversion: Call mammoth.api.exports.ExportsAPI.rest_fill with validated request fields.
+  request_model: ViewExportRestFillRequest
+  result_model: ViewExportRestFillResult
+  mutation_class: external_effect
+  edits_target: false
+  confirmation: yes_always
+  wait_policy: "always_wait"
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  no_readback: Proposes settings only; nothing is stored or configured.
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view export rest-fill DATAVIEW_ID --help
+  agent_example: "mammoth view export rest-fill 123 456 --input '{\"docs_url\": \"https://example.com/data.csv\"}' --yes"
+  unit_tests:
+  - UT-VIEW-EXPORT-REST-FILL
+  contract_tests:
+  - CT-VIEW-EXPORT-REST-FILL-HUMAN
+  - CT-VIEW-EXPORT-REST-FILL-JSON
+  - CT-VIEW-EXPORT-REST-FILL-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: "Makes Mammoth's server fetch the docs URL and propose REST export settings; nothing is configured or sent. Needs --yes."
   reviewed_by: primary

@@ -998,7 +998,7 @@ commands:
     ids:
       workflow_id: result.workflow_id
     kind: object
-  live_test: null
+  live_test: None
   live_exemption_reason: "No disposable fixture covers this write; contract and unit tests cover it."
   contract_fixture: null
   required_fixture_guard: null
@@ -1056,7 +1056,7 @@ commands:
     ids:
       workflow_id: positional.0
     kind: object
-  live_test: null
+  live_test: None
   live_exemption_reason: "No disposable fixture covers this write; contract and unit tests cover it."
   contract_fixture: null
   required_fixture_guard: null

@@ -1300,7 +1300,7 @@ commands:
   result_model: WorkspaceExportHostsSetResult
   mutation_class: "high_impact"
   edits_target: false
-  confirmation: "yes_always"
+  confirmation: "confirm_target"
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: "contract_only_high_impact"
@@ -1308,7 +1308,7 @@ commands:
     command: workspace.export-hosts.get
     ids: {}
     kind: object
-  live_test: null
+  live_test: None
   live_exemption_reason: "Sends or changes outbound mail or access for real people, so it is not run against a live server; contract and unit tests cover it."
   contract_fixture: null
   required_fixture_guard: null
@@ -1323,5 +1323,5 @@ commands:
   - CT-WORKSPACE-EXPORT-HOSTS-SET-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: "Sets which hosts exports may send data to for the whole workspace. Admins only. Needs --yes."
+  known_restrictions: "Sets which hosts exports may send data to for the whole workspace. Admins only. Confirms the workspace id."
   reviewed_by: primary
