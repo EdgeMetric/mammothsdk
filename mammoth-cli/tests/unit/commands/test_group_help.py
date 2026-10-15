@@ -93,3 +93,15 @@ def test_file_and_folder_group_help_say_which_command_does_what() -> None:
     assert "upload-folder" in _GROUP_DESCRIPTIONS["file"]
     assert "project folders" in _GROUP_DESCRIPTIONS["folder"]
     assert "file upload-folder" in _GROUP_DESCRIPTIONS["folder"]
+
+
+def test_help_input_types_keep_their_brackets() -> None:
+    """Bug bash 2026-10-15: ``list[a.B] | list[a.C]`` printed as ``B] | C] |``."""
+    from mammoth_cli.app import _short_type  # noqa: PLC2701
+
+    assert (
+        _short_type("list[mammoth.m.ColumnNameMapping] | list[mammoth.m.ColumnIdMapping] | None")
+        == "list[ColumnNameMapping] | list[ColumnIdMapping] | None"
+    )
+    assert _short_type("mammoth.condition.Condition | None") == "condition"
+    assert _short_type("int") == "int"
