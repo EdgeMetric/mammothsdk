@@ -185,7 +185,10 @@ def _is_gone(record: Any) -> bool:
 
 
 def automation_list(invocation: Invocation) -> HandlerResult:
-    """List the live automations in the active workspace/project (not deleted or trashed)."""
+    """List all automations in the active workspace/project.
+
+    Deleted and trashed automations are left out.
+    """
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation))
     if isinstance(data, list):

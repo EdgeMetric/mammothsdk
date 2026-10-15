@@ -192,12 +192,11 @@ def test_confirm_target_commands_still_refuse_a_wrong_target_before_any_call() -
 def test_dataset_delete_with_wrong_confirm_makes_no_api_call(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    from mammoth_cli import app
-
     # Import the command module first and patch the name it bound: command modules
     # load lazily, so a patch on ``runtime.session`` made before the first import
     # would be captured by the module for the rest of the session.
     import mammoth_cli.commands.dataset  # noqa: F401
+    from mammoth_cli import app
 
     called: list[str] = []
     monkeypatch.setattr(
