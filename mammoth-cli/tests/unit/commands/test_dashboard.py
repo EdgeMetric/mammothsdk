@@ -616,14 +616,34 @@ def test_share_proceeds_with_yes_and_forwards_users(
     dashboard_cmd.dashboard_share(
         _inv("dashboard.share", extra_args=["7"], input_file=doc, yes=True)
     )
-    assert fake_service.call_log[-1] == (
+    assert (
         _SHARE,
         {
             "dashboard_id": 7,
             "type_of_auth": "mammoth",
             "users": [{"email": "a@example.com"}],
         },
+    ) in fake_service.call_log
+
+
+def test_share_reports_the_share_state_the_route_does_not_return(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    """The route answers 200 with no body, so `dashboard share` said `data: null`
+    and the caller could not tell whether the share took (changelog analytics,
+    2026-10-15). It reads the board back and reports its share."""
+    doc = _write_doc(tmp_path, {"type_of_auth": "public"})
+    fake_service.responses[_SHARE] = None
+    fake_service.responses[_GET] = {
+        "id": 7,
+        "was_published": True,
+        "share": {"type_of_auth": "public"},
+    }
+    data, _meta = dashboard_cmd.dashboard_share(
+        _inv("dashboard.share", extra_args=["7"], input_file=doc, yes=True)
     )
+    assert data == {"dashboard_id": 7, "share": {"type_of_auth": "public"}}
+    assert fake_service.call_log[-1][0] == _GET
 
 
 # --- dashboard cancel-generation / restore / trash ------------------------------
