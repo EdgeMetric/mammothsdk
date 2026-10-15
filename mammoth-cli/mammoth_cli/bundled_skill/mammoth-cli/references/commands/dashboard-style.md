@@ -16,7 +16,7 @@ Status on release: ran once on CLI 2.0.12 — Dashboard sweep 2026-09-18: exit 0
 
 Run: `mammoth dashboard style custom delete`. Exact input fields: `mammoth schema get dashboard.style.custom.delete`.
 
-Example: `mammoth dashboard style custom delete resource-123`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth dashboard style custom delete resource-123 --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `DashboardStyleCustomDeleteResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
 
@@ -56,7 +56,7 @@ Status on release: ran once on CLI 2.0.14 — dashboard re-verification 2026-09-
 
 Run: `mammoth dashboard style default set`. Exact input fields: `mammoth schema get dashboard.style.default.set`.
 
-Example: `mammoth dashboard style default set --input '{"body": {"params": {"styleId": "sample"}}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth dashboard style default set --input '{"body": {"params": {"styleId": "default"}}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `DashboardStyleDefaultSetResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 

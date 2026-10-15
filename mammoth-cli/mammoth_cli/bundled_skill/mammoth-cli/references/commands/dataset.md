@@ -6,7 +6,7 @@ Every command returns the standard JSON envelope. On nonzero exit, read the erro
 
 Run: `mammoth dataset batch-data`. Exact input fields: `mammoth schema get dataset.batch-data`.
 
-Example: `mammoth dataset batch-data 123 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth dataset batch-data 123 456`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `DatasetBatchDataResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
@@ -26,7 +26,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth dataset broken-rows resolve`. Exact input fields: `mammoth schema get dataset.broken-rows.resolve`.
 
-Example: `mammoth dataset broken-rows resolve 123 --input '{"op": "add", "batch_id": 1, "rows": [{"line_num": 2, "line": "corrected,line,here"}]}'`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth dataset broken-rows resolve 123 --input '{"op": "add", "batch_id": 1, "rows": [{"line_num": 2, "line": "corrected,line,here"}]}' --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `DatasetBrokenRowsResolveResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
 
@@ -36,7 +36,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth dataset bulk-delete`. Exact input fields: `mammoth schema get dataset.bulk-delete`.
 
-Example: `mammoth dataset bulk-delete --input '{"dataset_ids": [456, 457]}'`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth dataset bulk-delete --input '{"dataset_ids": [456, 457]}' --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `DatasetBulkDeleteResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
 
@@ -46,7 +46,7 @@ Status on release: ran once on CLI 2.0.15 — re-verification 2026-09-18: exit 0
 
 Run: `mammoth dataset bulk-update`. Exact input fields: `mammoth schema get dataset.bulk-update`.
 
-Example: `mammoth dataset bulk-update --input '{"patch_data": {"sample_key": "Status"}}'`. Discovery only: this command is fail-closed and must not dispatch a request.
+Example: `mammoth dataset bulk-update --input '{"patch_data": {"name": "Status"}}' --yes`. Discovery only: this command is fail-closed and must not dispatch a request.
 
 Execution is unavailable for the current contract and returns `unsupported_contract`. Do not infer request fields or retry it; use only a separately typed alternative.
 
@@ -96,7 +96,7 @@ Status on release: ran once on CLI 1.1.10 — Bounded retained-resource read wit
 
 Run: `mammoth dataset definition add`. Exact input fields: `mammoth schema get dataset.definition.add`.
 
-Example: `mammoth dataset definition add 123 --input '{"term": "late", "definition": "delivered more than 5 days after shipped_date"}'`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth dataset definition add 123 --input '{"term": "late", "definition": "delivered more than 5 days after shipped_date"}' --yes --confirm 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `DatasetDefinitionAddResult`; mutation `benign_mutation`, confirmation `confirm_target`, wait policy `not_async`.
 
@@ -116,7 +116,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth dataset definition remove`. Exact input fields: `mammoth schema get dataset.definition.remove`.
 
-Example: `mammoth dataset definition remove 123 a1b2c3d4`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth dataset definition remove 123 a1b2c3d4 --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `DatasetDefinitionRemoveResult`; mutation `benign_mutation`, confirmation `prompt_or_yes`, wait policy `not_async`.
 
@@ -126,7 +126,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth dataset delete`. Exact input fields: `mammoth schema get dataset.delete`.
 
-Example: `mammoth dataset delete 123`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth dataset delete 123 --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `DatasetDeleteResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
 
@@ -146,7 +146,7 @@ Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19
 
 Run: `mammoth dataset file-settings undo`. Exact input fields: `mammoth schema get dataset.file-settings.undo`.
 
-Example: `mammoth dataset file-settings undo 123`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth dataset file-settings undo 123 --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `DatasetFileSettingsUndoResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
 
@@ -156,7 +156,7 @@ Status on release: ran once on CLI 2.0.15 — re-verification 2026-09-18: exit 0
 
 Run: `mammoth dataset file-settings update`. Exact input fields: `mammoth schema get dataset.file-settings.update`.
 
-Example: `mammoth dataset file-settings update 123 --input '{"delimiter": "sample", "has_header": true, "initial_skip_count": 1, "quotechar": "sample"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth dataset file-settings update 123 --input '{"delimiter": ",", "has_header": true, "initial_skip_count": 1, "quotechar": "\""}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `DatasetFileSettingsUpdateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `always_wait`.
 
@@ -266,7 +266,7 @@ Status on release: ran once on CLI 2.0.13 — Haiku e2e 2026-09-18: dataset tras
 
 Run: `mammoth dataset update`. Exact input fields: `mammoth schema get dataset.update`.
 
-Example: `mammoth dataset update --input '{"patch_data": [{"sample_key": "Status"}]}'`. Discovery only: this command is fail-closed and must not dispatch a request.
+Example: `mammoth dataset update --input '{"patch_data": [{"name": "Status"}]}' --yes`. Discovery only: this command is fail-closed and must not dispatch a request.
 
 Execution is unavailable for the current contract and returns `unsupported_contract`. Do not infer request fields or retry it; use only a separately typed alternative.
 

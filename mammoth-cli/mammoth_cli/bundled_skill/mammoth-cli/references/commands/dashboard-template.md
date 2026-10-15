@@ -26,7 +26,7 @@ Status on release: observed blocker — backend_error: POST /dashboards/v3/templ
 
 Run: `mammoth dashboard template delete`. Exact input fields: `mammoth schema get dashboard.template.delete`.
 
-Example: `mammoth dashboard template delete resource-123`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth dashboard template delete resource-123 --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `DashboardTemplateDeleteResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
 
@@ -96,7 +96,7 @@ Status on release: ran once on CLI 2.0.12 — Dashboard sweep 2026-09-18: exit 0
 
 Run: `mammoth dashboard template thumbnail clear`. Exact input fields: `mammoth schema get dashboard.template.thumbnail.clear`.
 
-Example: `mammoth dashboard template thumbnail clear resource-123`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth dashboard template thumbnail clear resource-123 --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `DashboardTemplateThumbnailClearResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
 

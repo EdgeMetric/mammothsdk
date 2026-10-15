@@ -6,7 +6,7 @@ Every command returns the standard JSON envelope. On nonzero exit, read the erro
 
 Run: `mammoth token create`. Exact input fields: `mammoth schema get token.create`.
 
-Example: `mammoth token create 'Revenue report'`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth token create 'Revenue report' --yes --confirm 'Revenue report'`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `ClientAppCreateResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
 
@@ -26,7 +26,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth token revoke`. Exact input fields: `mammoth schema get token.revoke`.
 
-Example: `mammoth token revoke sample`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth token revoke web-client --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `ClientAppDeleteResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
 

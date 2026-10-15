@@ -6,7 +6,7 @@ Every command returns the standard JSON envelope. On nonzero exit, read the erro
 
 Run: `mammoth notification delete`. Exact input fields: `mammoth schema get notification.delete`.
 
-Example: `mammoth notification delete 123`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth notification delete 123 --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `NotificationDeleteResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
 
@@ -16,7 +16,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth notification delete-batch`. Exact input fields: `mammoth schema get notification.delete-batch`.
 
-Example: `mammoth notification delete-batch`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth notification delete-batch --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `NotificationDeleteBatchResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
 
@@ -36,7 +36,7 @@ Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19
 
 Run: `mammoth notification update`. Exact input fields: `mammoth schema get notification.update`.
 
-Example: `mammoth notification update 123 --input '{"patch": [{"sample_key": "Status"}]}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth notification update 123 --input '{"patch": [{"name": "Status"}]}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `NotificationUpdateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
@@ -46,7 +46,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth notification update-batch`. Exact input fields: `mammoth schema get notification.update-batch`.
 
-Example: `mammoth notification update-batch --input '{"patch": [{"sample_key": "Status"}]}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth notification update-batch --input '{"patch": [{"name": "Status"}]}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `NotificationUpdateBatchResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
