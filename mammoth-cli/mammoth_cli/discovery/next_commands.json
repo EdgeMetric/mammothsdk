@@ -1,0 +1,36 @@
+{
+  "_comment": "Suggested next commands after a successful main-flow command, as meta.next_commands. {a|b} takes the first of these that resolves: a dotted path into the result data (datasets.0.id), arg.NAME (a positional), or inv.known_dataset_id. {?a|b} is optional: left out when nothing resolves. A template with a required placeholder that does not resolve is skipped. At most three are returned. A key ending in .* covers every command under that prefix.",
+  "next_commands": {
+    "file.upload": [
+      "{datasets.0.next_command}",
+      "mammoth view data get {datasets.0.view.view_id} {datasets.0.id}",
+      "mammoth view list {appended_to}"
+    ],
+    "view.create": [
+      "mammoth view data get {view_id|id} {?dataset_id|arg.dataset_id}"
+    ],
+    "view.transform.*": [
+      "mammoth view data get {arg.view_id} {?dataset_id|inv.known_dataset_id}"
+    ],
+    "dataset.file-settings.update": [
+      "mammoth job wait {job_id}",
+      "mammoth view list {arg.dataset_id}"
+    ],
+    "dashboard.v3.generate": [
+      "mammoth dashboard get {dashboard_id|id}",
+      "mammoth dashboard figure add {dashboard_id|id} --input '{\"intent\": \"DESCRIBE THE CHART\"}'"
+    ],
+    "dashboard.figure.add": [
+      "mammoth dashboard get {arg.dashboard_id|dashboard_id}"
+    ],
+    "dashboard.figure-intent": [
+      "mammoth dashboard get {arg.dashboard_id|dashboard_id}"
+    ],
+    "dashboard.chat.edit": [
+      "mammoth dashboard get {arg.dashboard_id|dashboard_id}"
+    ],
+    "automation.create": [
+      "mammoth automation get {automation_id|id}"
+    ]
+  }
+}

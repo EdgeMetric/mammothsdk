@@ -166,6 +166,10 @@ def _verify_exit_status(data: Any) -> int:
     return 0
 
 
+#: Output modes a person reads; they get the ``Next:`` line on stderr.
+_HUMAN_OUTPUTS = frozenset({"table", "plain", "csv"})
+
+
 def emit_success(
     command_id: str,
     data: Any,
@@ -179,6 +183,7 @@ def emit_success(
     dataset: dict[str, Any] | None = None,
     view: dict[str, Any] | None = None,
     opens: list[dict[str, Any]] | None = None,
+    next_commands: list[str] | None = None,
 ) -> None:
     """Render one success envelope to stdout.
 
@@ -196,6 +201,9 @@ def emit_success(
         view: ``{"id", "name"}`` of the view a data read came from, if any.
         opens: ``{"kind", "id", "url", "created"}`` of each object a write made or
             changed, if any.
+        next_commands: Ready-to-run commands that usually come next, if any.
+            Human output (table, plain, csv) also prints them as one ``Next:``
+            line on stderr.
     """
     meta = Meta(
         command=command_id.replace(".", " "),
@@ -207,11 +215,14 @@ def emit_success(
         dataset=dataset,
         view=view,
         opens=opens,
+        next_commands=next_commands or None,
     )
     envelope = Result(data=data, meta=meta).to_envelope()
     if embedded.capture(normalize(envelope)):
         return
     render(envelope, output=output)
+    if next_commands and output in _HUMAN_OUTPUTS:
+        sys.stderr.write(f"Next: {'; '.join(next_commands)}\n")
 
 
 def emit_error(error: CliError, *, machine: bool, output: str = "json") -> None:
@@ -279,8 +290,10 @@ def run(
     # execution, or when the caller explicitly selected agent mode, keep the
     # error contract machine-readable. A human TTY still receives the concise
     # diagnostic intended for interactive troubleshooting.
-    machine_error = output in MACHINE_OUTPUTS or output == "yaml" or (
-        output not in VALID_OUTPUTS and (agent_mode or not sys.stdout.isatty())
+    machine_error = (
+        output in MACHINE_OUTPUTS
+        or output == "yaml"
+        or (output not in VALID_OUTPUTS and (agent_mode or not sys.stdout.isatty()))
     )
     run_log = _open_run_log(command_id, invocation)
 

@@ -1158,6 +1158,7 @@ def _execute(invocation: Invocation) -> None:
     from mammoth_cli.runtime.intent_only import refuse_hand_crafted_write
     from mammoth_cli.runtime.locked_files import with_locked_files
     from mammoth_cli.runtime.new_data import with_new_data_path
+    from mammoth_cli.runtime.next_commands import with_next_commands
     from mammoth_cli.runtime.opens import with_opens
     from mammoth_cli.runtime.strict import validate_extra_args
 
@@ -1192,7 +1193,9 @@ def _execute(invocation: Invocation) -> None:
             return _dry_run(handler, invocation)
         data, meta = handler(invocation)
         checked = with_locked_files(with_dataset_health(_apply_verify(invocation, data)))
-        return with_new_data_path(checked), with_opens(invocation, checked, meta)
+        return with_new_data_path(checked), with_next_commands(
+            invocation, checked, with_opens(invocation, checked, meta)
+        )
 
     executor.run(
         invocation.command_id,

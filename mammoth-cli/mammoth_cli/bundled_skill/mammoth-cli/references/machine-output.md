@@ -10,7 +10,11 @@ Compact single-line JSON when stdout is not a terminal (pretty when it is;
 value: `pagination` appears on paged reads, `update_available`
 (`{"current", "latest", "command"}`) when a newer CLI is on PyPI (checked once
 a day, after a command, never blocking). Run its `command` before starting a
-task, not in the middle of one.
+task, not in the middle of one. `next_commands` appears after a main-flow
+command that succeeded (`file upload`, `view create`, a `view transform`,
+`dashboard v3 generate`, `dashboard figure add`, ...): one to three commands
+filled in with this result's ids, usually the read-back. Run them as they are
+when they fit the task; a write that did not verify has none.
 
 ## Error envelope (stderr)
 ```json
