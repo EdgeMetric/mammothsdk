@@ -15,6 +15,7 @@ A spec is one of:
 
 from __future__ import annotations
 
+import difflib
 from functools import cache, reduce
 from typing import Any
 
@@ -75,6 +76,44 @@ def __getattr__(name: str) -> tuple[str, ...]:
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
+#: Names callers commonly guess for an operator, mapped to the real one.
+_OPERATOR_SYNONYMS = {
+    "EQUAL": "EQ",
+    "EQUALS": "EQ",
+    "IS": "EQ",
+    "NOT_EQUAL": "NE",
+    "NOT_EQUALS": "NE",
+    "NEQ": "NE",
+    "GREATER_THAN": "GT",
+    "GREATER": "GT",
+    "LESS_THAN": "LT",
+    "LESS": "LT",
+    "GREATER_THAN_OR_EQUAL": "GTE",
+    "GREATER_OR_EQUAL": "GTE",
+    "LESS_THAN_OR_EQUAL": "LTE",
+    "LESS_OR_EQUAL": "LTE",
+    "IN": "IN_LIST",
+    "NOT_IN": "NOT_IN_LIST",
+    "LIKE": "CONTAINS",
+    "NULL": "IS_EMPTY",
+    "IS_NULL": "IS_EMPTY",
+    "NOT_NULL": "IS_NOT_EMPTY",
+    "IS_NOT_NULL": "IS_NOT_EMPTY",
+    "BETWEEN": "IN_RANGE",
+}
+
+
+def suggest_operator(raw: Any) -> str | None:
+    """The valid operator a mistyped or guessed ``raw`` most likely meant."""
+    if not isinstance(raw, str):
+        return None
+    name = raw.strip().upper().replace(" ", "_").replace("-", "_")
+    if name in _OPERATOR_SYNONYMS:
+        return _OPERATOR_SYNONYMS[name]
+    close = difflib.get_close_matches(name, _operator_names(), n=1, cutoff=0.6)
+    return close[0] if close else None
+
+
 def _resolve_operator(raw: Any) -> str:
     if isinstance(raw, str):
         alias = _operator_aliases().get(raw.strip())
@@ -83,15 +122,21 @@ def _resolve_operator(raw: Any) -> str:
         name = raw.strip().upper()
         if name in _operator_names():
             return name
+    suggestion = suggest_operator(raw)
+    did_you_mean = f" Did you mean {suggestion}?" if suggestion else ""
     raise CliError(
         code="invalid_condition",
-        message=f"Unknown condition operator {raw!r}.",
+        message=f"Unknown condition operator {raw!r}.{did_you_mean}",
         exit_status=EXIT_USAGE,
         hint=(
             "Use one of: " + ", ".join(_operator_names()) + ". Symbols =, !=, >, >=, <, <= are "
             "accepted as aliases. IS_EMPTY / IS_NOT_EMPTY take no value."
         ),
-        details={"operator": raw, "accepted": list(_operator_names())},
+        details={
+            "operator": raw,
+            "accepted": list(_operator_names()),
+            "did_you_mean": suggestion,
+        },
     )
 
 

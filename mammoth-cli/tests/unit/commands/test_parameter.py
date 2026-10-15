@@ -49,6 +49,21 @@ def test_create_requires_name(fake_service: FakeMammothService) -> None:
     assert fake_service.call_log == []
 
 
+@pytest.mark.parametrize("name", ["Revenue report", "1rate", "rate-x", "naïve"])
+def test_create_refuses_a_name_the_server_would_reject(
+    fake_service: FakeMammothService, tmp_path: Path, name: str
+) -> None:
+    doc = tmp_path / "in.json"
+    doc.write_text(json.dumps({"param_type": "TEXT", "value": "x"}), encoding="utf-8")
+    with pytest.raises(CliError) as excinfo:
+        parameter_cmd.parameter_create(
+            _inv("parameter.create", extra_args=[name], input_file=str(doc))
+        )
+    assert excinfo.value.code == "invalid_argument"
+    assert "[A-Za-z_][A-Za-z0-9_]*" in excinfo.value.hint
+    assert fake_service.call_log == []
+
+
 def test_create_requires_param_type(fake_service: FakeMammothService) -> None:
     with pytest.raises(CliError) as excinfo:
         parameter_cmd.parameter_create(_inv("parameter.create", extra_args=["Rate"]))
@@ -59,12 +74,12 @@ def test_create_uses_positional_name_and_input_fields(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
     doc = tmp_path / "in.json"
-    doc.write_text(json.dumps({"param_type": "number", "value": 5}), encoding="utf-8")
+    doc.write_text(json.dumps({"param_type": "NUMERIC", "value": 5}), encoding="utf-8")
     parameter_cmd.parameter_create(
         _inv("parameter.create", extra_args=["Rate"], input_file=str(doc))
     )
     assert fake_service.call_log == [
-        (_CREATE, {"name": "Rate", "param_type": "number", "value": 5})
+        (_CREATE, {"name": "Rate", "param_type": "NUMERIC", "value": 5})
     ]
 
 
@@ -76,7 +91,7 @@ def test_create_forwards_optional_and_project(
         json.dumps(
             {
                 "name": "Rate",
-                "param_type": "number",
+                "param_type": "NUMERIC",
                 "value": 5,
                 "description": "desc",
                 "group_id": 3,
@@ -91,7 +106,7 @@ def test_create_forwards_optional_and_project(
             _CREATE,
             {
                 "name": "Rate",
-                "param_type": "number",
+                "param_type": "NUMERIC",
                 "value": 5,
                 "description": "desc",
                 "group_id": 3,
@@ -106,12 +121,12 @@ def test_create_without_project_omits_project_id(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
     doc = tmp_path / "in.json"
-    doc.write_text(json.dumps({"param_type": "number", "value": 5}), encoding="utf-8")
+    doc.write_text(json.dumps({"param_type": "NUMERIC", "value": 5}), encoding="utf-8")
     parameter_cmd.parameter_create(
         _inv("parameter.create", extra_args=["Rate"], input_file=str(doc))
     )
     assert fake_service.call_log == [
-        (_CREATE, {"name": "Rate", "param_type": "number", "value": 5})
+        (_CREATE, {"name": "Rate", "param_type": "NUMERIC", "value": 5})
     ]
 
 
@@ -347,3 +362,10 @@ def test_group_update_forwards_fields_and_project(
             {"group_id": 3, "name": "New", "color": "#00FF00", "project_id": 180},
         )
     ]
+
+
+def test_schema_publishes_the_parameter_name_pattern() -> None:
+    from mammoth_cli.commands.schema import get_schema
+
+    prop = dict(get_schema("parameter.create")["input_schema"])["properties"]["name"]
+    assert prop["pattern"] == "^[A-Za-z_][A-Za-z0-9_]*$"

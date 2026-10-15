@@ -16,7 +16,7 @@ Status on release: ran once on CLI 2.0.11 — Read-only sweep 2026-09-18: exit 0
 
 Run: `mammoth connector ai chat`. Exact input fields: `mammoth schema get connector.ai.chat`.
 
-Example: `mammoth connector ai chat --input '{"body": {"messages": [{"content": "sample", "role": "user"}]}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth connector ai chat --input '{"body": {"messages": [{"content": "Quarterly revenue summary", "role": "user"}]}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ConnectorAiChatResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
@@ -26,7 +26,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth connector ai history`. Exact input fields: `mammoth schema get connector.ai.history`.
 
-Example: `mammoth connector ai history sample`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth connector ai history prod-warehouse`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ConnectorAiHistoryResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
@@ -76,7 +76,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth connector connection create`. Exact input fields: `mammoth schema get connector.connection.create`.
 
-Example: `mammoth connector connection create sample --input /private/path/request.json`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth connector connection create postgres --input /private/path/request.json --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Secret fields: pass the body as `--input FILE` (mode 0600); never inline.
 
@@ -88,7 +88,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth connector connection delete`. Exact input fields: `mammoth schema get connector.connection.delete`.
 
-Example: `mammoth connector connection delete sample sample`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth connector connection delete postgres prod-warehouse --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `ConnectorConnectionDeleteResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
 
@@ -98,7 +98,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth connector connection get`. Exact input fields: `mammoth schema get connector.connection.get`.
 
-Example: `mammoth connector connection get sample sample`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth connector connection get postgres prod-warehouse`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ConnectorConnectionGetResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
@@ -108,7 +108,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth connector connection list`. Exact input fields: `mammoth schema get connector.connection.list`.
 
-Example: `mammoth connector connection list sample`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth connector connection list postgres`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ConnectorConnectionListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
@@ -118,7 +118,7 @@ Status on release: observed blocker — server_error: see sweep report. Re-check
 
 Run: `mammoth connector connection query`. Exact input fields: `mammoth schema get connector.connection.query`.
 
-Example: `mammoth connector connection query sample sample --input '{"query": "SELECT region, SUM(revenue) FROM data GROUP BY region"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth connector connection query postgres prod-warehouse --input '{"query": "SELECT region, SUM(revenue) FROM data GROUP BY region"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ConnectorConnectionQueryResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
@@ -128,7 +128,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth connector connection update`. Exact input fields: `mammoth schema get connector.connection.update`.
 
-Example: `mammoth connector connection update sample sample --input /private/path/request.json`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth connector connection update postgres prod-warehouse --input /private/path/request.json --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Secret fields: pass the body as `--input FILE` (mode 0600); never inline.
 
@@ -140,7 +140,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth connector ds-config create`. Exact input fields: `mammoth schema get connector.ds-config.create`.
 
-Example: `mammoth connector ds-config create sample sample`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth connector ds-config create postgres prod-warehouse --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `ConnectorDsConfigCreateResult`; mutation `external_effect`, confirmation `yes_always`, wait policy `not_async`.
 
@@ -150,7 +150,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth connector ds-config delete`. Exact input fields: `mammoth schema get connector.ds-config.delete`.
 
-Example: `mammoth connector ds-config delete sample sample sample`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth connector ds-config delete postgres prod-warehouse orders-config --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `ConnectorDsConfigDeleteResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
 
@@ -160,7 +160,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth connector ds-config delete-all`. Exact input fields: `mammoth schema get connector.ds-config.delete-all`.
 
-Example: `mammoth connector ds-config delete-all sample sample --input '{"config_ids": ["resource-123"]}'`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth connector ds-config delete-all postgres prod-warehouse --input '{"config_ids": ["resource-123"]}' --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `ConnectorDsConfigDeleteAllResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
 
@@ -170,7 +170,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth connector ds-config get`. Exact input fields: `mammoth schema get connector.ds-config.get`.
 
-Example: `mammoth connector ds-config get sample sample sample`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth connector ds-config get postgres prod-warehouse orders-config`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ConnectorDsConfigGetResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
@@ -180,7 +180,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth connector ds-config list`. Exact input fields: `mammoth schema get connector.ds-config.list`.
 
-Example: `mammoth connector ds-config list sample sample`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth connector ds-config list postgres prod-warehouse`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ConnectorDsConfigListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
@@ -190,7 +190,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth connector ds-config update`. Exact input fields: `mammoth schema get connector.ds-config.update`.
 
-Example: `mammoth connector ds-config update sample sample sample --input '{"patch": [{"op": "replace", "path": "query", "value": "sample"}]}'`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth connector ds-config update postgres prod-warehouse orders-config --input '{"patch": [{"op": "replace", "path": "query", "value": "SELECT * FROM orders"}]}' --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `ConnectorDsConfigUpdateResult`; mutation `external_effect`, confirmation `yes_always`, wait policy `not_async`.
 
@@ -200,7 +200,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth connector get`. Exact input fields: `mammoth schema get connector.get`.
 
-Example: `mammoth connector get sample`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth connector get postgres`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ConnectorGetResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
@@ -220,7 +220,7 @@ Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19
 
 Run: `mammoth connector query generate`. Exact input fields: `mammoth schema get connector.query.generate`.
 
-Example: `mammoth connector query generate sample sample --input '{"query": "Total sales for January"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth connector query generate postgres prod-warehouse --input '{"query": "Total sales for January"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ConnectorQueryGenerateResult`; mutation `read`, confirmation `none`, wait policy `always_wait`.
 
@@ -230,7 +230,7 @@ Status on release: observed blocker — blocked_missing_fixture: No real connect
 
 Run: `mammoth connector query status`. Exact input fields: `mammoth schema get connector.query.status`.
 
-Example: `mammoth connector query status sample sample`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth connector query status postgres prod-warehouse`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ConnectorQueryStatusResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 

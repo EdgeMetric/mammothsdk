@@ -141,7 +141,9 @@ def test_delete_refuses_parent_discovery(fake_service: FakeMammothService) -> No
 
 def test_delete_forwards_exact_parent_positional(fake_service: FakeMammothService) -> None:
     view_ops_cmd.view_delete(_inv("view.delete", extra_args=["7", "122"], yes=True))
-    assert fake_service.call_log == [(_DELETE, {"view_id": 7, "dataset_id": 122})]
+    # The delete, then the read that confirms the view is gone.
+    assert [symbol for symbol, _ in fake_service.call_log][0] == _DELETE
+    assert fake_service.call_log[0][1] == {"view_id": 7, "dataset_id": 122}
 
 
 def test_delete_forwards_exact_parent_input(
@@ -149,7 +151,9 @@ def test_delete_forwards_exact_parent_input(
 ) -> None:
     doc = _write(tmp_path, {"dataset_id": 122})
     view_ops_cmd.view_delete(_inv("view.delete", extra_args=["7"], input_file=doc, yes=True))
-    assert fake_service.call_log == [(_DELETE, {"view_id": 7, "dataset_id": 122})]
+    # The delete, then the read that confirms the view is gone.
+    assert [symbol for symbol, _ in fake_service.call_log][0] == _DELETE
+    assert fake_service.call_log[0][1] == {"view_id": 7, "dataset_id": 122}
 
 
 def test_delete_uses_typed_resource_parent_without_probe(
@@ -163,7 +167,9 @@ def test_delete_uses_typed_resource_parent_without_probe(
             yes=True,
         )
     )
-    assert fake_service.call_log == [(_DELETE, {"view_id": 7, "dataset_id": 122})]
+    # The delete, then the read that confirms the view is gone.
+    assert [symbol for symbol, _ in fake_service.call_log][0] == _DELETE
+    assert fake_service.call_log[0][1] == {"view_id": 7, "dataset_id": 122}
 
 
 def test_get_rejects_conflicting_explicit_parent_identities(
@@ -306,6 +312,43 @@ def test_transform_add_sql_forwards_query(fake_service: FakeMammothService, tmp_
         _inv("view.transform.add-sql", extra_args=["3"], resource_ref=_parent(3), input_file=doc)
     )
     assert fake_service.view_call_log == [(3, "add_sql", {"dataset_id": 122, "query": "SELECT 1"})]
+
+
+_TASK_LIST = "mammoth.api.pipeline.PipelineAPI.list_tasks"
+
+
+def _unknown_outcome() -> CliError:
+    return CliError(code="outcome_unknown", message="may have committed", exit_status=7)
+
+
+def test_add_sql_whose_readback_fails_is_confirmed_by_the_task_list(
+    fake_service: FakeMammothService, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    listings = iter([[{"id": 1}], [{"id": 1}, {"id": 2}]])
+    monkeypatch.setattr(view_ops_cmd, "_tasks", lambda *_args, **_kwargs: next(listings))
+    fake_service.view_responses[(3, "add_sql")] = _unknown_outcome()
+    doc = _write(tmp_path, {"query": "SELECT 1"})
+    data, _ = view_ops_cmd.view_transform_add_sql(
+        _inv("view.transform.add-sql", extra_args=["3"], resource_ref=_parent(3), input_file=doc)
+    )
+    assert data["status"] == "done"
+    assert data["task_ids"] == [2]
+    assert "confirmed in the task list" in data["warnings"][0]
+
+
+def test_add_sql_unknown_outcome_with_no_new_task_stays_unknown(
+    fake_service: FakeMammothService, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(view_ops_cmd, "_tasks", lambda *_args, **_kwargs: [{"id": 1}])
+    fake_service.view_responses[(3, "add_sql")] = _unknown_outcome()
+    doc = _write(tmp_path, {"query": "SELECT 1"})
+    with pytest.raises(CliError) as excinfo:
+        view_ops_cmd.view_transform_add_sql(
+            _inv(
+                "view.transform.add-sql", extra_args=["3"], resource_ref=_parent(3), input_file=doc
+            )
+        )
+    assert excinfo.value.code == "outcome_unknown"
 
 
 def test_transform_ai_requires_prompt(fake_service: FakeMammothService) -> None:
@@ -738,17 +781,25 @@ def test_transform_generate_sql_says_the_view_is_unchanged(
     # The route returns a validated query and adds no task (release).
     query = 'SELECT "city", COUNT(*) AS n FROM "View 1" GROUP BY "city"'
     fake_service.view_responses[(3, "generate_sql")] = query
+    fake_service.responses[view_ops_cmd._DATAVIEW_GET_SYMBOL] = {"id": 3, "name": "View 1"}
     doc = _write(tmp_path, {"intent": "Count rows per city"})
     data, _ = view_ops_cmd.view_transform_generate_sql(
         _inv(
-            "view.transform.generate-sql", extra_args=["3"], resource_ref=_parent(3), input_file=doc
+            "view.transform.generate-sql",
+            extra_args=["3"],
+            resource_ref=_parent(3),
+            input_file=doc,
+            project=7,
         )
     )
     assert data["sql"] == query
     assert data["applied"] is False
     assert data["apply"].startswith("mammoth view transform add-sql 3 --input '")
-    applied = json.loads(data["apply"].split("--input ", 1)[1].strip("'"))
-    assert applied == {"dataset_id": 122, "query": query}
+    # The apply line binds the view as "view:ID" (not its name) and carries --project.
+    assert data["apply"].endswith("' --project 7")
+    body = data["apply"].split("--input ", 1)[1].rsplit(" --project", 1)[0]
+    applied = json.loads(body.strip("'"))
+    assert applied == {"dataset_id": 122, "query": query.replace('"View 1"', '"view:3"')}
 
 
 def test_transform_generate_sql_forwards(fake_service: FakeMammothService, tmp_path: Path) -> None:
@@ -1591,3 +1642,45 @@ def test_get_names_the_dashboards_built_on_the_view(fake_service: FakeMammothSer
     data, _ = view_ops_cmd.view_get(_inv("view.get", extra_args=["7"]))
 
     assert data["dashboards"] == [{"id": 132, "title": "Sales board"}]
+
+
+def test_view_delete_that_leaves_the_view_is_not_a_success(
+    fake_service: FakeMammothService, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr("mammoth_cli.services.delete_check.time.sleep", lambda _s: None)
+    fake_service.responses["mammoth.api.dataviews.DataviewsAPI.get"] = {"id": 7}
+    with pytest.raises(CliError) as excinfo:
+        view_ops_cmd.view_delete(_inv("view.delete", yes=True, extra_args=["7", "9"], project=180))
+    assert excinfo.value.code == "delete_not_applied"
+
+
+def test_get_reads_the_view_and_the_dashboards_in_one_concurrent_batch(
+    fake_service: FakeMammothService, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    batches: list[list[str]] = []
+    real = fake_service.call_many
+
+    def spy(calls: Any) -> list[Any]:
+        batches.append([symbol for symbol, _kwargs in calls])
+        return real(calls)
+
+    monkeypatch.setattr(fake_service, "call_many", spy)
+    fake_service.responses[_GET] = {"id": 7, "name": "V"}
+    fake_service.responses[_DASHBOARDS_LIST] = [{"id": 1, "title": "B", "sources": [7]}]
+    data, _meta = view_ops_cmd.view_get(_inv("view.get", extra_args=["7"]))
+    assert batches == [[_GET, _DASHBOARDS_LIST]]
+    assert data["dashboards"] == [{"id": 1, "title": "B"}]
+
+
+def test_get_survives_a_failed_dashboards_read_and_raises_a_failed_view_read(
+    fake_service: FakeMammothService,
+) -> None:
+    fake_service.responses[_GET] = {"id": 7, "name": "V"}
+    fake_service.responses[_DASHBOARDS_LIST] = CliError(code="api_error", message="boom")
+    data, _meta = view_ops_cmd.view_get(_inv("view.get", extra_args=["7"]))
+    assert data["id"] == 7 and "dashboards" not in data
+
+    fake_service.responses[_GET] = CliError(code="not_found", message="no view")
+    with pytest.raises(CliError) as excinfo:
+        view_ops_cmd.view_get(_inv("view.get", extra_args=["7"]))
+    assert excinfo.value.code == "not_found"

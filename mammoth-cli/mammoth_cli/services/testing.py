@@ -88,6 +88,10 @@ class FakeMammothService:
             programmed = self.responses[sdk_symbol]
             if isinstance(programmed, Exception):
                 raise programmed
+            if callable(programmed):
+                # A callable sees the call log (this call included) so a test can
+                # change what a read returns after a write, e.g. a delete.
+                return programmed(self.call_log)
             return programmed
         return {}
 

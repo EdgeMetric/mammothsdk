@@ -357,6 +357,10 @@ def _output_mode_from_argv(argv: Sequence[str] | None) -> str:
         elif token.startswith("-o") and len(token) > 2:
             mode = token[2:]
         index += 1
+    if mode not in SELECTABLE_OUTPUTS:
+        # A value the command would reject (``--output xml``) must not turn the
+        # error into prose: judge it by where stdout goes, like the default.
+        mode = OUTPUT_AUTO
     return resolve_output(mode, is_tty=sys.stdout.isatty())
 
 
@@ -941,6 +945,18 @@ def _shared_option_params() -> list[inspect.Parameter]:
             ],
         ),
         opt(
+            "overwrite",
+            False,
+            Annotated[
+                bool,
+                typer.Option(
+                    "--overwrite",
+                    help="Replace a local file the command writes to when it already exists.",
+                    rich_help_panel="Safety",
+                ),
+            ],
+        ),
+        opt(
             "standing",
             False,
             Annotated[
@@ -1079,6 +1095,7 @@ def _execute(invocation: Invocation) -> None:
     # resolving the mutable selected-profile pointer after an interrupt.
     from mammoth_cli.context import profiles
     from mammoth_cli.runtime import executor, validate
+    from mammoth_cli.runtime.confirm import refuse_mismatched_confirm
     from mammoth_cli.runtime.dataset_health import with_dataset_health
     from mammoth_cli.runtime.intent_only import refuse_hand_crafted_write
     from mammoth_cli.runtime.locked_files import with_locked_files
@@ -1094,6 +1111,7 @@ def _execute(invocation: Invocation) -> None:
         validate.validate_invocation(invocation)
         validate_extra_args(invocation.command_id, invocation.extra_args)
         validate.validate_positional_ids(invocation.command_id, invocation.extra_args)
+        refuse_mismatched_confirm(invocation)
         # Admit structured input before resolving a handler or opening a
         # service.  Handlers retain ``load_input`` for compatibility, but it
         # now returns this invocation-local prepared value.
@@ -1607,7 +1625,7 @@ _ROOT_LEAF_HELP: dict[str, str] = {
     ),
     "upgrade": (
         "Upgrade the mammoth CLI to the latest (or a specified) version from PyPI."
-        "\n\nExample: mammoth upgrade"
+        "\n\nExample: mammoth upgrade --yes"
     ),
     "version": "Example: mammoth version",
 }

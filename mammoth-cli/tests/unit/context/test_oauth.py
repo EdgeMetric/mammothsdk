@@ -87,6 +87,26 @@ def test_refresh_without_a_stored_session_says_login_expired(isolated_cli_config
     assert caught.value.code == oauth.CODE_LOGIN_EXPIRED
 
 
+def test_login_expired_for_a_named_profile_names_it_in_the_recovery(
+    isolated_cli_config: Path,
+) -> None:
+    with pytest.raises(CliError) as caught:
+        oauth.refresh_session("work", "https://127.0.0.1:9/api/v2")
+    assert caught.value.recovery_commands == ["mammoth auth login --profile work"]
+    assert "mammoth auth login --profile work" in caught.value.message
+
+
+def test_login_expired_for_the_default_profile_keeps_the_bare_command() -> None:
+    error = oauth.login_expired_error("default")
+    assert error.recovery_commands == ["mammoth auth login"]
+    assert error.message == "Login expired, run `mammoth auth login`."
+
+
+def test_a_device_code_that_expired_for_a_named_profile_reruns_it() -> None:
+    error = oauth.device_login_expired_error("work")
+    assert error.recovery_commands == ["mammoth auth login --profile work --device"]
+
+
 def test_loopback_listener_receives_the_redirect_on_a_random_port() -> None:
     with oauth.loopback_listener() as server:
         uri = oauth.redirect_uri_for(server)

@@ -64,7 +64,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth billing hosted-page --help
-  agent_example: mammoth billing hosted-page sample
+  agent_example: mammoth billing hosted-page change_plan --yes --confirm change_plan
   unit_tests:
   - UT-BILLING-HOSTED-PAGE
   contract_tests:
@@ -73,7 +73,7 @@ commands:
   - CT-BILLING-HOSTED-PAGE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: Creates a hosted billing page URL for object_type (for example change_plan). Nothing changes until someone completes the page. Needs --yes and --confirm TARGET (the refusal prints the exact target).
   reviewed_by: primary
   no_readback: "returns a one-time hosted checkout page URL; nothing persisted to read back"
 - command_id: billing.invoice.charge
@@ -100,7 +100,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth billing invoice charge --help
-  agent_example: mammoth billing invoice charge
+  agent_example: mammoth billing invoice charge --yes
   unit_tests:
   - UT-BILLING-INVOICE-CHARGE
   contract_tests:
@@ -109,7 +109,7 @@ commands:
   - CT-BILLING-INVOICE-CHARGE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: Charges the workspace's open invoice to its saved payment method now; money moves. Read `billing stripe status` first. Needs --yes and --confirm TARGET (the refusal prints the exact target).
   reviewed_by: primary
   readback:
     command: billing.invoice.list
@@ -172,7 +172,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth billing stripe cancel --help
-  agent_example: mammoth billing stripe cancel
+  agent_example: mammoth billing stripe cancel --yes
   unit_tests:
   - UT-BILLING-STRIPE-CANCEL
   contract_tests:
@@ -181,7 +181,7 @@ commands:
   - CT-BILLING-STRIPE-CANCEL-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: Cancels the workspace subscription at the billing provider. Read `billing stripe status` first; `billing stripe resume` reverses a pending cancel. Needs --yes and --confirm TARGET (the refusal prints the exact target).
   reviewed_by: primary
   readback:
     command: billing.stripe.status
@@ -211,8 +211,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth billing stripe checkout-url --help
-  agent_example: 'mammoth billing stripe checkout-url --input ''{"success_url": "https://example.com/data.csv",
-    "cancel_url": "https://example.com/data.csv"}'''
+  agent_example: 'mammoth billing stripe checkout-url --input ''{"success_url": "https://example.com/data.csv", "cancel_url": "https://example.com/data.csv"}'' --yes'
   unit_tests:
   - UT-BILLING-STRIPE-CHECKOUT-URL
   contract_tests:
@@ -221,7 +220,7 @@ commands:
   - CT-BILLING-STRIPE-CHECKOUT-URL-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: Creates a checkout URL (success_url and cancel_url are required); nothing is charged until someone completes it. Needs --yes and --confirm TARGET (the refusal prints the exact target).
   reviewed_by: primary
   no_readback: "returns a one-time Stripe checkout URL; nothing persisted to read back"
 - command_id: billing.stripe.create
@@ -254,7 +253,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth billing stripe create PLAN_ID --help
-  agent_example: mammoth billing stripe create 123
+  agent_example: mammoth billing stripe create 123 --yes --confirm 123
   unit_tests:
   - UT-BILLING-STRIPE-CREATE
   contract_tests:
@@ -293,7 +292,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth billing stripe end-trial --help
-  agent_example: mammoth billing stripe end-trial
+  agent_example: mammoth billing stripe end-trial --yes
   unit_tests:
   - UT-BILLING-STRIPE-END-TRIAL
   contract_tests:
@@ -302,7 +301,7 @@ commands:
   - CT-BILLING-STRIPE-END-TRIAL-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: Ends the workspace's free trial now and starts billing; the CLI cannot undo it. Needs --yes and --confirm TARGET (the refusal prints the exact target).
   reviewed_by: primary
   readback:
     command: billing.stripe.status
@@ -407,7 +406,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth billing stripe payment-method delete PAYMENT_METHOD_ID --help
-  agent_example: mammoth billing stripe payment-method delete resource-123
+  agent_example: mammoth billing stripe payment-method delete resource-123 --yes --confirm resource-123
   unit_tests:
   - UT-BILLING-STRIPE-PAYMENT-METHOD-DELETE
   contract_tests:
@@ -488,7 +487,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth billing stripe payment-method set-default PAYMENT_METHOD_ID --help
-  agent_example: mammoth billing stripe payment-method set-default resource-123
+  agent_example: mammoth billing stripe payment-method set-default resource-123 --yes --confirm resource-123
   unit_tests:
   - UT-BILLING-STRIPE-PAYMENT-METHOD-SET-DEFAULT
   contract_tests:
@@ -527,7 +526,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth billing stripe portal-url --help
-  agent_example: mammoth billing stripe portal-url
+  agent_example: mammoth billing stripe portal-url --yes
   unit_tests:
   - UT-BILLING-STRIPE-PORTAL-URL
   contract_tests:
@@ -536,7 +535,7 @@ commands:
   - CT-BILLING-STRIPE-PORTAL-URL-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: Creates a customer-portal link that grants access to the workspace's billing; do not log or share it. Needs --yes and --confirm TARGET (the refusal prints the exact target).
   reviewed_by: primary
   no_readback: "returns a one-time Stripe customer-portal URL; nothing persisted to read back"
 - command_id: billing.stripe.preview-invoice
@@ -597,7 +596,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth billing stripe retry-payment --help
-  agent_example: mammoth billing stripe retry-payment
+  agent_example: mammoth billing stripe retry-payment --yes
   unit_tests:
   - UT-BILLING-STRIPE-RETRY-PAYMENT
   contract_tests:
@@ -606,7 +605,7 @@ commands:
   - CT-BILLING-STRIPE-RETRY-PAYMENT-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: Retries the failed payment on the workspace's latest invoice; money moves if it succeeds. Needs --yes and --confirm TARGET (the refusal prints the exact target).
   reviewed_by: primary
   readback:
     command: billing.stripe.status
@@ -670,7 +669,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth billing stripe sync --help
-  agent_example: mammoth billing stripe sync
+  agent_example: mammoth billing stripe sync --yes
   unit_tests:
   - UT-BILLING-STRIPE-SYNC
   contract_tests:
@@ -679,7 +678,7 @@ commands:
   - CT-BILLING-STRIPE-SYNC-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: Re-reads the subscription from the billing provider and overwrites Mammoth's copy of plan and status. Needs --yes and --confirm TARGET (the refusal prints the exact target).
   reviewed_by: primary
   readback:
     command: billing.stripe.status
@@ -811,7 +810,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth billing subscription update --help
-  agent_example: 'mammoth billing subscription update --input ''{"patch": [{"sample_key": "Status"}]}'''
+  agent_example: 'mammoth billing subscription update --input ''{"patch": [{"name": "Status"}]}'' --yes'
   unit_tests:
   - UT-BILLING-SUBSCRIPTION-UPDATE
   contract_tests:
@@ -850,7 +849,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth billing stripe resume --help
-  agent_example: mammoth billing stripe resume
+  agent_example: mammoth billing stripe resume --yes
   unit_tests:
   - UT-BILLING-STRIPE-RESUME
   contract_tests:
@@ -925,7 +924,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth billing stripe storage set --help
-  agent_example: 'mammoth billing stripe storage set --input ''{"storage_gb": 1}'''
+  agent_example: 'mammoth billing stripe storage set --input ''{"storage_gb": 1}'' --yes'
   unit_tests:
   - UT-BILLING-STRIPE-STORAGE-SET
   contract_tests:

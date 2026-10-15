@@ -24,8 +24,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth schedule create --help
-  agent_example: 'mammoth schedule create --input ''{"spec": {"rrule": {"frequency": "minutely", "start":
-    "2026-01-01T00:00:00Z"}}}'''
+  agent_example: 'mammoth schedule create --input ''{"spec": {"rrule": {"frequency": "minutely", "start": "2026-01-01T00:00:00Z"}}}'' --yes'
   unit_tests:
   - UT-SCHEDULE-CREATE
   contract_tests:
@@ -34,7 +33,7 @@ commands:
   - CT-SCHEDULE-CREATE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: 'BLOCKED[SCHEDULE_CREATE_NOT_IMPLEMENTED]: the backend answers 5GENR011 NOT_IMPLEMENTED; the command fails with feature_unavailable and makes no API call. Use `mammoth automation create` instead.'
   reviewed_by: primary
   readback:
     command: schedule.get
@@ -71,7 +70,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth schedule delete SCHEDULE_ID --help
-  agent_example: mammoth schedule delete 123
+  agent_example: mammoth schedule delete 123 --yes
   unit_tests:
   - UT-SCHEDULE-DELETE
   contract_tests:
@@ -191,10 +190,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth schedule update SCHEDULE_ID --help
-  agent_example: 'mammoth schedule update 123 --input ''{"patch": [{"op": "replace", "path": "rrule", "value":
-    {"rrule": {"frequency": "minutely", "start": "2026-01-01T00:00:00Z"}, "work_items": [{"name": "pull_cloud_data",
-    "execution_params": {"schedule_type": "moment", "first_pull_at": "now", "on_refresh_action": "replace"},
-    "args": [1]}]}}]}'''
+  agent_example: 'mammoth schedule update 123 --input ''{"patch": [{"op": "replace", "path": "rrule", "value": {"rrule": {"frequency": "minutely", "start": "2026-01-01T00:00:00Z"}, "work_items": [{"name": "pull_cloud_data", "execution_params": {"schedule_type": "moment", "first_pull_at": "now", "on_refresh_action": "replace"}, "args": [1]}]}}]}'' --yes'
   unit_tests:
   - UT-SCHEDULE-UPDATE
   contract_tests:

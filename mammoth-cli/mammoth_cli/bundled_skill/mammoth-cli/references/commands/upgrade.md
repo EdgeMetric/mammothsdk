@@ -6,7 +6,7 @@ Every command returns the standard JSON envelope. On nonzero exit, read the erro
 
 Run: `mammoth upgrade`. Exact input fields: `mammoth schema get upgrade`.
 
-Example: `mammoth upgrade`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth upgrade --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `UpgradeResult`; mutation `external_effect`, confirmation `prompt_or_yes`, wait policy `not_async`.
 

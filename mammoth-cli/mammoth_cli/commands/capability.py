@@ -11,6 +11,7 @@ import re
 from typing import Any
 
 from mammoth_cli.commands.schema import command_scope
+from mammoth_cli.errors.envelope import is_feature_unavailable
 from mammoth_cli.manifest.loader import command_by_id, load_operations
 from mammoth_cli.services.command_contract import resolve_command_contract
 
@@ -49,6 +50,7 @@ def capability_entries() -> list[dict[str, Any]]:
                 "disposition": op["disposition"],
                 "canonical_command": command_id,
                 "command_path": command["command_path"] if command else None,
+                "unavailable": is_feature_unavailable(command_id),
                 "sdk_symbol": op.get("sdk_symbol"),
                 "mutation_class": (
                     resolved.effects
@@ -110,9 +112,7 @@ def _contract_fields(command: dict[str, Any]) -> dict[str, Any]:
         "scope": scope,
         "effects": mutation,
         "preconditions": restrictions,
-        "result": (
-            resolved.result_contract if resolved is not None else command.get("result_model")
-        ),
+        "result": resolved.result_contract if resolved is not None else command.get("result_model"),
         "async": resolved.wait_behavior if resolved is not None else command.get("wait_policy"),
         "verification": command.get("acceptance_evidence"),
         "recovery": recovery,
@@ -156,6 +156,8 @@ def find_capabilities(
                 "sdk_symbol",
             )
         )
+        if entry.get("unavailable"):
+            continue
         candidates = _tokens(text)
         command_id = entry.get("canonical_command")
         command = command_by_id(command_id) if command_id else None

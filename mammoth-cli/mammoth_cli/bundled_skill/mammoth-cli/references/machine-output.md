@@ -32,8 +32,11 @@ result schema; dashboard and transform result fields remain schema-driven.
 {"schema_version":1,"data":{"output_path":"dataview_12_12_export.csv"},"meta":{"command":"view export csv","profile":"expanded-live","workspace_id":4}}
 ```
 
-For pagination, preserve the returned `meta.pagination`/`data.next` cursor and
-request the next page only with fields accepted by that command's schema. For
+For pagination, preserve the returned `meta.pagination` and, on `view data get`,
+`view export list` and `view pipeline items`, the `paging` block: `offset` is
+0-based (`0` is the first page), and `next_command` / `previous_command` are ready
+to run (null at the ends). Request pages only with fields accepted by that
+command's schema. For
 auth, `auth status` reports profile/endpoint/workspace state but never a
 secret. A rejected mutation remains the error envelope above; use its recovery
 command or a read-back, rather than treating a model/result type as success.
@@ -48,14 +51,16 @@ never emit color or progress.
 | code | meaning |
 |---|---|
 | 0 | success |
-| 1 | API, job, or local artifact error |
+| 1 | API, job, or local artifact error; also a write that did not verify (`status: failed`) |
 | 2 | usage / input / confirmation failure |
+| 3 | partial: a write whose read-back shows only part of it (`status: partial`) |
 | 4 | authentication failure |
 | 5 | not found |
-| 6 | conflict |
+| 6 | conflict, or `file_exists` (pass `--overwrite` to replace a local file) |
 | 7 | retryable read/transport or timed-out known job; inspect the envelope |
 | 130 | interrupted |
 
 Branch on the exit code, stable `error.code`, and `details.operation_state`; never
-parse the message. `outcome_unknown` means a mutation may have committed and
+parse the message. A write still running reports `status: pending` with
+`verify.next_command` and exits 0: it was accepted, so wait on it and do not replay it. `outcome_unknown` means a mutation may have committed and
 must be reconciled before replay.

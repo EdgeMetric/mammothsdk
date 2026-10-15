@@ -16,7 +16,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth auth connected-apps revoke`. Exact input fields: `mammoth schema get auth.connected-apps.revoke`.
 
-Example: `mammoth auth connected-apps revoke 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth auth connected-apps revoke 123 --yes --confirm 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `AuthConnectedAppsRevokeResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
 

@@ -6,7 +6,7 @@ Every command returns the standard JSON envelope. On nonzero exit, read the erro
 
 Run: `mammoth external-key create`. Exact input fields: `mammoth schema get external-key.create`.
 
-Example: `mammoth external-key create --input /private/path/request.json`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth external-key create --input /private/path/request.json --yes`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Secret fields: pass the body as `--input FILE` (mode 0600); never inline.
 
@@ -18,7 +18,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth external-key delete`. Exact input fields: `mammoth schema get external-key.delete`.
 
-Example: `mammoth external-key delete 123`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth external-key delete 123 --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `ExternalKeyDeleteResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
 

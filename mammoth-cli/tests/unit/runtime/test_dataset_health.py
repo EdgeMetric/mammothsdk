@@ -73,6 +73,7 @@ def test_a_listed_dataset_with_an_unclassified_status_is_unknown_not_silent() ->
     health = with_dataset_health(data)["dataset_health"]
 
     assert [(h["dataset_id"], h["health"]) for h in health] == [(5, "unknown"), (6, "unknown")]
+    assert all(h["health_reason"] for h in health)
     assert "processing" in health[0]["detail"]
 
 
@@ -116,3 +117,26 @@ def test_a_dataset_get_record_in_need_action_quotes_the_backends_own_words() -> 
     assert "Suggested: Skip preamble rows, row 5 is the header" in entry["detail"]
     assert "delimiter" not in entry["detail"]
     assert entry["fix"].startswith("mammoth dataset interpretation preview 3108 --input ")
+
+
+def test_a_compact_listing_entry_without_status_is_judged_from_its_size() -> None:
+    # `dataset list` drops `status` for a ready dataset; that is not "unknown".
+    data = {"datasets": [{"id": 7, "name": "s.csv", "rows": 120, "cols": 4, "columns": "a:text"}]}
+
+    entry = with_dataset_health(data)["dataset_health"][0]
+
+    assert entry["health"] == "healthy"
+    assert "120 rows" in entry["detail"]
+
+
+def test_a_record_with_nothing_to_judge_by_says_why_it_is_unknown() -> None:
+    entry = with_dataset_health({"datasets": [{"id": 6, "name": "x"}]})["dataset_health"][0]
+
+    assert entry["health"] == "unknown"
+    assert "mammoth dataset get 6" in entry["health_reason"]
+
+
+def test_health_name_falls_back_to_dataset_name() -> None:
+    data = {"id": 3, "dataset_name": "wb.csv", "status": "need_action"}
+
+    assert with_dataset_health(data)["dataset_health"][0]["name"] == "wb.csv"

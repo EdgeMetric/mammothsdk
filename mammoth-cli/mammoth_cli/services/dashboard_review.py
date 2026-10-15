@@ -120,6 +120,19 @@ def _counts_titled_as_rates(canvas: Mapping[str, Any]) -> list[dict[str, Any]]:
     return warnings
 
 
+def _no_quantity_advice(
+    text_quantities: list[str], fallback: str = "chart revenue, not the sum of the price."
+) -> str:
+    """What to say when no numeric quantity column exists to multiply the price by."""
+    if not text_quantities:
+        return fallback
+    return (
+        f"{', '.join(text_quantities)} is not NUMERIC, so there is nothing to multiply the "
+        "price by yet: convert it to NUMERIC first (mammoth view transform convert-type), "
+        "then add revenue = quantity * price and chart its sum."
+    )
+
+
 def _math_fix(view_id: Any, dataset_id: Any, quantity: str, price: str) -> str:
     spec = json.dumps(
         {
@@ -208,8 +221,22 @@ def review(
     money = [
         p["name"] for p in numeric if _MONEY.search(p["name"]) and p["name"] not in unit_prices
     ]
+    # "Unit Price" starts with "unit", so the quantity pattern also matches it:
+    # a price or money column is never the quantity (revenue = price * price).
     quantities = [
-        p["name"] for p in numeric if p.get("semantic") == "count" or _QUANTITY.search(p["name"])
+        p["name"]
+        for p in numeric
+        if (p.get("semantic") == "count" or _QUANTITY.search(p["name"]))
+        and p["name"] not in unit_prices
+        and p["name"] not in money
+    ]
+    # A quantity stored as text ("N/A" in one row) cannot be multiplied yet.
+    text_quantities = [
+        p["name"]
+        for p in profiles
+        if p.get("type") != "measure"
+        and _QUANTITY.search(p["name"])
+        and p["name"] not in unit_prices
     ]
     warnings: list[dict[str, Any]] = []
     shows_money = any(name in measures for name in money + unit_prices)
@@ -229,7 +256,7 @@ def review(
                     + (
                         f"add revenue = {quantities[0]} * {unit_prices[0]}, then chart its sum."
                         if quantities
-                        else "chart revenue, not the sum of the price."
+                        else _no_quantity_advice(text_quantities)
                     )
                 ),
             }
@@ -249,7 +276,7 @@ def review(
                     else (
                         f"Chart the sum of revenue = {quantities[0]} * {summed[0]} instead."
                         if quantities
-                        else "Use avg, or chart revenue instead."
+                        else _no_quantity_advice(text_quantities, "Use avg, or chart revenue.")
                     )
                 )
             ),

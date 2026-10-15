@@ -6,7 +6,7 @@ Every command returns the standard JSON envelope. On nonzero exit, read the erro
 
 Run: `mammoth user avatar delete`. Exact input fields: `mammoth schema get user.avatar.delete`.
 
-Example: `mammoth user avatar delete`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth user avatar delete --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `UserAvatarDeleteResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
 
@@ -26,7 +26,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth user change-password`. Exact input fields: `mammoth schema get user.change-password`.
 
-Example: `mammoth user change-password --input /private/path/request.json`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth user change-password --input /private/path/request.json --yes`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Secret fields: pass the body as `--input FILE` (mode 0600); never inline.
 
@@ -38,7 +38,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth user delete-account`. Exact input fields: `mammoth schema get user.delete-account`.
 
-Example: `mammoth user delete-account`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth user delete-account --yes`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `UserDeleteAccountResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
 

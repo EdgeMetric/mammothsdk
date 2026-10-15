@@ -44,7 +44,7 @@ def test_create_requires_project(fake_service: FakeMammothService) -> None:
 
 def test_create_requires_name(fake_service: FakeMammothService, tmp_path: Path) -> None:
     doc = tmp_path / "in.json"
-    doc.write_text(json.dumps({"code": "1+1", "language": "python"}), encoding="utf-8")
+    doc.write_text(json.dumps({"code": "1+1", "language": "sql"}), encoding="utf-8")
     with pytest.raises(CliError) as excinfo:
         snippet_cmd.snippet_create(_inv("snippet.create", project=180, input_file=str(doc)))
     assert excinfo.value.code == "missing_argument"
@@ -52,7 +52,7 @@ def test_create_requires_name(fake_service: FakeMammothService, tmp_path: Path) 
 
 def test_create_requires_code(fake_service: FakeMammothService, tmp_path: Path) -> None:
     doc = tmp_path / "in.json"
-    doc.write_text(json.dumps({"name": "Snip", "language": "python"}), encoding="utf-8")
+    doc.write_text(json.dumps({"name": "Snip", "language": "sql"}), encoding="utf-8")
     with pytest.raises(CliError) as excinfo:
         snippet_cmd.snippet_create(_inv("snippet.create", project=180, input_file=str(doc)))
     assert excinfo.value.code == "missing_field"
@@ -68,14 +68,14 @@ def test_create_requires_language(fake_service: FakeMammothService, tmp_path: Pa
 
 def test_create_uses_positional_name(fake_service: FakeMammothService, tmp_path: Path) -> None:
     doc = tmp_path / "in.json"
-    doc.write_text(json.dumps({"code": "1+1", "language": "python"}), encoding="utf-8")
+    doc.write_text(json.dumps({"code": "1+1", "language": "sql"}), encoding="utf-8")
     snippet_cmd.snippet_create(
         _inv("snippet.create", project=180, extra_args=["Snip"], input_file=str(doc))
     )
     assert fake_service.call_log == [
         (
             _CREATE,
-            {"name": "Snip", "code": "1+1", "language": "python", "project_id": 180},
+            {"name": "Snip", "code": "1+1", "language": "sql", "project_id": 180},
         )
     ]
 
@@ -87,7 +87,7 @@ def test_create_forwards_optional_fields(fake_service: FakeMammothService, tmp_p
             {
                 "name": "Snip",
                 "code": "1+1",
-                "language": "python",
+                "language": "sql",
                 "description": "desc",
                 "group_id": 9,
                 "scope": "workspace",
@@ -102,7 +102,7 @@ def test_create_forwards_optional_fields(fake_service: FakeMammothService, tmp_p
             {
                 "name": "Snip",
                 "code": "1+1",
-                "language": "python",
+                "language": "sql",
                 "project_id": 180,
                 "description": "desc",
                 "group_id": 9,
@@ -252,7 +252,7 @@ def test_update_requires_at_least_one_field(fake_service: FakeMammothService) ->
 def test_update_forwards_fields(fake_service: FakeMammothService, tmp_path: Path) -> None:
     doc = tmp_path / "in.json"
     doc.write_text(
-        json.dumps({"name": "New", "code": "2+2", "language": "python", "group_id": 4}),
+        json.dumps({"name": "New", "code": "2+2", "language": "sql", "group_id": 4}),
         encoding="utf-8",
     )
     snippet_cmd.snippet_update(_inv("snippet.update", extra_args=["7"], input_file=str(doc)))
@@ -263,7 +263,7 @@ def test_update_forwards_fields(fake_service: FakeMammothService, tmp_path: Path
                 "snippet_id": 7,
                 "name": "New",
                 "code": "2+2",
-                "language": "python",
+                "language": "sql",
                 "group_id": 4,
             },
         )

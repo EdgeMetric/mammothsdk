@@ -16,7 +16,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth automation create`. Exact input fields: `mammoth schema get automation.create`.
 
-Example: `mammoth automation create 'Revenue report' --input '{"description": "sample", "tasks": [{"task_type": "run_data_retrieval"}]}'`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth automation create 'Revenue report' --input '{"description": "Quarterly revenue summary", "tasks": [{"task_type": "run_data_retrieval", "details": {"ds_details": [{"ds_id": 42}]}}]}' --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `AutomationCreateResult`; mutation `external_effect`, confirmation `yes_always`, wait policy `not_async`.
 
@@ -26,7 +26,7 @@ Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19
 
 Run: `mammoth automation delete`. Exact input fields: `mammoth schema get automation.delete`.
 
-Example: `mammoth automation delete 123`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth automation delete 123 --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `AutomationDeleteResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
 
@@ -76,7 +76,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth automation update`. Exact input fields: `mammoth schema get automation.update`.
 
-Example: `mammoth automation update 123 --input '{"patch": [{"op": "replace", "path": "details", "value": "sample"}]}'`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth automation update 123 --input '{"patch": [{"op": "replace", "path": "details", "value": {"name": "Daily revenue export"}}]}' --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `AutomationUpdateResult`; mutation `external_effect`, confirmation `yes_always`, wait policy `not_async`.
 

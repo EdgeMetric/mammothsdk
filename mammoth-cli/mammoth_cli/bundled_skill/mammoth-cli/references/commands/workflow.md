@@ -16,7 +16,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth workflow attach-dataset`. Exact input fields: `mammoth schema get workflow.attach-dataset`.
 
-Example: `mammoth workflow attach-dataset 123 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth workflow attach-dataset 123 456`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `WorkflowAttachDatasetResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
@@ -26,7 +26,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth workflow block add`. Exact input fields: `mammoth schema get workflow.block.add`.
 
-Example: `mammoth workflow block add 123 --input '{"block_type": "sample"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth workflow block add 123 --input '{"block_type": "source"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `WorkflowBlockAddResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
@@ -36,7 +36,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth workflow block auth`. Exact input fields: `mammoth schema get workflow.block.auth`.
 
-Example: `mammoth workflow block auth 123 123 --input '{"auth_data": {"sample_key": "Status"}}'`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth workflow block auth 123 456 --input '{"auth_data": {"name": "Status"}}' --yes --confirm 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `WorkflowBlockAuthResult`; mutation `benign_mutation`, confirmation `confirm_target`, wait policy `not_async`.
 
@@ -46,7 +46,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth workflow block config`. Exact input fields: `mammoth schema get workflow.block.config`.
 
-Example: `mammoth workflow block config 123 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth workflow block config 123 456`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `WorkflowBlockConfigResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
@@ -56,7 +56,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth workflow block type`. Exact input fields: `mammoth schema get workflow.block.type`.
 
-Example: `mammoth workflow block type 123 123 --input '{"connection_type": "sample"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth workflow block type 123 456 --input '{"connection_type": "postgres"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `WorkflowBlockTypeResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
@@ -76,7 +76,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth workflow cleanup`. Exact input fields: `mammoth schema get workflow.cleanup`.
 
-Example: `mammoth workflow cleanup`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth workflow cleanup --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `WorkflowCleanupResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
 
@@ -96,7 +96,7 @@ Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19
 
 Run: `mammoth workflow delete`. Exact input fields: `mammoth schema get workflow.delete`.
 
-Example: `mammoth workflow delete 123`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth workflow delete 123 --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `WorkflowDeleteResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
 

@@ -42,6 +42,7 @@ from mammoth_cli.services.command_contract import (
     resolve_command_contract,
     thaw_contract_metadata,
 )
+from mammoth_cli.services.field_enums import field_enum, match_choice
 from mammoth_cli.services.input_fields import is_closed_zero_input
 from mammoth_cli.services.positionals import resolve_positionals
 from mammoth_cli.services.type_system import TypeValidationError, is_opaque_mapping, validate_value
@@ -146,8 +147,37 @@ def _expected_phrase(expected: str) -> str:
     return f"{'an' if expected[:1].lower() in 'aeiou' else 'a'} {expected}"
 
 
-def _invalid_field_type_error(command_id: str, field: str, value: Any, expected: str) -> CliError:
+def _invalid_field_type_error(
+    command_id: str,
+    field: str,
+    value: Any,
+    expected: str,
+    *,
+    accepted: list[Any] | None = None,
+    did_you_mean: str | None = None,
+) -> CliError:
     command = command_id.replace(".", " ")
+    if accepted:
+        shown = ", ".join(str(item) for item in accepted)
+        suggestion = f" Did you mean {did_you_mean!r}?" if did_you_mean else ""
+        return CliError(
+            code=CODE_INVALID_INPUT_FIELD_TYPE,
+            message=(
+                f"Input field '{field}' for '{command}' must be one of: {shown}; "
+                f"got {value!r}.{suggestion}"
+            ),
+            exit_status=EXIT_USAGE,
+            hint=(
+                f"Use one of: {shown}. Case does not matter. "
+                f"'mammoth schema get {command_id}' lists every field."
+            ),
+            details={
+                "field": field,
+                "expected_type": expected,
+                "accepted": list(accepted),
+                "did_you_mean": did_you_mean,
+            },
+        )
     if expected == "a required field":
         message = f"Input field '{field}' for '{command}' is required."
         hint = f"Add '{field}'; 'mammoth schema get {command_id}' lists every field."
@@ -267,11 +297,29 @@ def _coerce_document_fields(
                     "a value matching the declared schema",
                 ) from None
             continue
+        registered = field_enum(command_id, key)
+        if registered is not None and document[key] is not None:
+            canonical, suggestion = match_choice(document[key], registered)
+            if canonical is None:
+                raise _invalid_field_type_error(
+                    command_id,
+                    key,
+                    document[key],
+                    f"one of {list(registered)!r}",
+                    accepted=list(registered),
+                    did_you_mean=suggestion,
+                )
+            document[key] = canonical
         try:
             document[key] = validate_value(document[key], field.annotation, key)
         except TypeValidationError as error:
             raise _invalid_field_type_error(
-                command_id, error.path, error.value, error.expected
+                command_id,
+                error.path,
+                error.value,
+                error.expected,
+                accepted=error.accepted,
+                did_you_mean=error.did_you_mean,
             ) from None
 
 

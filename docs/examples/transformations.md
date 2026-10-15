@@ -19,7 +19,6 @@ from mammoth import (
 
 client = MammothClient(
     api_token="mm_your-token",
-    workspace_id=11,
 )
 client.set_project_id(10)
 
@@ -491,7 +490,7 @@ from mammoth import (
     ConversionSpec, SortDirection, TextCase,
 )
 
-client = MammothClient(api_token="mm_...", workspace_id=11)
+client = MammothClient(api_token="mm_...")
 client.set_project_id(10)
 
 # 1. Get the view

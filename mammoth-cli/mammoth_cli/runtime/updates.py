@@ -1,4 +1,4 @@
-"""Daily update check, and the automatic update (on by default).
+"""Daily update check, and the automatic update (on for interactive sessions).
 
 The CLI never blocks a command on the network for this. A command reads the
 cached answer (``update-check.json`` in the platform state directory, next to
@@ -19,11 +19,23 @@ What a caller sees:
   will not be installed by itself (auto-update off, or the install failed).
 * one line on stderr in human output modes (never in ``json``/``ndjson``) in
   that same case.
+* auto-install happens only in an interactive session: stdin and stdout are TTYs
+  and no CI variable (``CI``, ``GITHUB_ACTIONS``, ``GITLAB_CI``, ``BUILDKITE``,
+  ``JENKINS_URL``, ``CIRCLECI``, ``TF_BUILD``, ...) is set. In CI, in a pipe or
+  under an agent the check and the hint still run, and the hint stays
+  (``meta.update_available``) because nothing will install the release. The
+  command decides, because the detached updater has no TTY, and passes the answer
+  in ``MAMMOTH_AUTO_UPGRADE_DECIDED``.
+* ``MAMMOTH_AUTO_UPGRADE=1`` forces auto-install on, even in CI or without a TTY.
 * ``MAMMOTH_NO_AUTO_UPDATE=1`` (or ``MAMMOTH_AUTO_UPGRADE=0``) keeps the check
-  and the hint but never installs: set it in CI, containers and agent
-  sandboxes whose installed version must not change.
+  and the hint but never installs, whatever the session.
 * ``MAMMOTH_NO_UPDATE_CHECK=1`` disables the check, the hint and the update.
 * ``upgrade`` and ``doctor`` never start an update.
+* a pinned install is never updated by itself. ``mammoth upgrade --version X``
+  and ``mammoth-install.sh --version X`` record the pin (``pin.json`` next to
+  the cache); a plain ``mammoth upgrade`` (the latest) clears it. While it is
+  set the daily check still runs and ``meta.update_available`` still shows, so
+  the newer release is visible but only an explicit ``mammoth upgrade`` installs it.
 
 ``MAMMOTH_UPDATE_CACHE`` overrides the cache file path (tests and sandboxes).
 """
@@ -46,6 +58,25 @@ from mammoth_cli.runtime import embedded
 DISABLE_ENV = "MAMMOTH_NO_UPDATE_CHECK"
 AUTO_UPGRADE_ENV = "MAMMOTH_AUTO_UPGRADE"
 NO_AUTO_UPDATE_ENV = "MAMMOTH_NO_AUTO_UPDATE"
+#: Set by the command for the detached updater: ``1`` install, ``0`` only record the answer.
+DECIDED_ENV = "MAMMOTH_AUTO_UPGRADE_DECIDED"
+#: Variables CI systems set; any one (not "false"/"0") makes the session non-interactive.
+_CI_ENV = (
+    "CI",
+    "GITHUB_ACTIONS",
+    "GITLAB_CI",
+    "BUILDKITE",
+    "JENKINS_URL",
+    "CIRCLECI",
+    "TF_BUILD",
+    "TRAVIS",
+    "APPVEYOR",
+    "TEAMCITY_VERSION",
+    "BITBUCKET_BUILD_NUMBER",
+    "DRONE",
+    "CODEBUILD_BUILD_ID",
+    "BUILD_BUILDID",
+)
 CACHE_ENV = "MAMMOTH_UPDATE_CACHE"
 
 #: How long a cached PyPI answer is trusted: PyPI is asked at most once a day.
@@ -75,11 +106,48 @@ def enabled() -> bool:
     return not _flag(DISABLE_ENV) and not embedded.active()
 
 
+def in_ci() -> bool:
+    """Whether a common CI system's environment variable is set."""
+    for name in _CI_ENV:
+        value = (os.environ.get(name) or "").strip().lower()
+        if value and value not in _FALSY:
+            return True
+    return False
+
+
+def interactive_session() -> bool:
+    """A person at a terminal: stdin and stdout are TTYs and no CI variable is set.
+
+    Agents, pipes and CI runs fail this, so their installed version does not change
+    under them unless they opt in with ``MAMMOTH_AUTO_UPGRADE=1``.
+    """
+    if in_ci():
+        return False
+    try:
+        return sys.stdin.isatty() and sys.stdout.isatty()
+    except (AttributeError, ValueError):
+        return False
+
+
 def auto_upgrade_enabled() -> bool:
-    """On by default; ``MAMMOTH_NO_AUTO_UPDATE=1`` or ``MAMMOTH_AUTO_UPGRADE=0`` turns it off."""
+    """Whether this run may install a newer release by itself.
+
+    ``MAMMOTH_NO_AUTO_UPDATE=1`` or ``MAMMOTH_AUTO_UPGRADE=0`` always turns it off;
+    ``MAMMOTH_AUTO_UPGRADE=1`` forces it on, even in CI or without a TTY. Otherwise it
+    is on for an interactive session only. The detached updater has no TTY, so the
+    command that starts it decides and passes the answer in ``MAMMOTH_AUTO_UPGRADE_DECIDED``.
+    """
     if not enabled() or _flag(NO_AUTO_UPDATE_ENV):
         return False
-    return (os.environ.get(AUTO_UPGRADE_ENV) or "").strip().lower() not in _FALSY
+    explicit = (os.environ.get(AUTO_UPGRADE_ENV) or "").strip().lower()
+    if explicit in _FALSY:
+        return False
+    if explicit in _TRUTHY:
+        return True
+    decided = (os.environ.get(DECIDED_ENV) or "").strip()
+    if decided in {"0", "1"}:
+        return decided == "1"
+    return interactive_session()
 
 
 def cache_path() -> Path:
@@ -87,6 +155,40 @@ def cache_path() -> Path:
     if override:
         return Path(override).expanduser()
     return Path(platformdirs.user_state_dir("mammoth-cli", "Mammoth")) / "update-check.json"
+
+
+def pin_path() -> Path:
+    return cache_path().with_name("pin.json")
+
+
+def read_pin() -> str | None:
+    """The release this install is pinned to, or None when it follows the latest."""
+    try:
+        document = json.loads(pin_path().read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+    version = document.get("version") if isinstance(document, dict) else None
+    return version if isinstance(version, str) and version else None
+
+
+def write_pin(version: str) -> bool:
+    """Record that this install is pinned to ``version``; False when it cannot be written."""
+    path = pin_path()
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        tmp = path.with_suffix(".tmp")
+        tmp.write_text(json.dumps({"version": version}) + "\n", encoding="utf-8")
+        os.replace(tmp, path)
+    except OSError:
+        return False
+    return True
+
+
+def clear_pin() -> None:
+    try:
+        pin_path().unlink()
+    except OSError:
+        return
 
 
 def _version_key(version: str) -> tuple[int, ...]:
@@ -169,7 +271,7 @@ def available_update(command_id: str | None = None) -> dict[str, Any] | None:
     latest = document.get("latest")
     if not isinstance(latest, str) or not is_newer(latest):
         return None
-    if auto_upgrade_enabled() and document.get("upgrade_failed") != latest:
+    if auto_upgrade_enabled() and read_pin() is None and document.get("upgrade_failed") != latest:
         # The next daily check installs it; a notice would only repeat itself.
         return None
     return {"current": __version__, "latest": latest, "command": UPGRADE_COMMAND}
@@ -244,6 +346,7 @@ def refresh_in_background(command_id: str | None = None) -> None:
     try:
         subprocess.Popen(  # noqa: S603 -- fixed argv, our own module
             [sys.executable, "-m", "mammoth_cli.runtime.updates"],
+            env={**os.environ, DECIDED_ENV: "1" if auto_upgrade_enabled() else "0"},
             stdin=subprocess.DEVNULL,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
@@ -269,9 +372,13 @@ def auto_upgrade(latest: str, run_log: Any = None) -> dict[str, Any] | None:
 
     Returns a record of what happened (also written to ``run_log`` when
     given), or ``None`` when nothing was attempted: auto-update is off,
-    ``latest`` is not newer, or it was already installed. Never raises.
+    ``latest`` is not newer, the install is pinned, or it was already
+    installed. Never raises.
     """
     if not auto_upgrade_enabled() or not is_newer(latest):
+        return None
+    if read_pin() is not None:
+        # A pinned install stays on its release; ``available_update`` still shows the hint.
         return None
     if (read_cache() or {}).get("upgraded_to") == latest:
         return None

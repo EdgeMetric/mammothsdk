@@ -16,7 +16,7 @@ Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19
 
 Run: `mammoth template delete`. Exact input fields: `mammoth schema get template.delete`.
 
-Example: `mammoth template delete 123`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth template delete 123 --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `TemplateDeleteResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
 

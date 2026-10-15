@@ -25,6 +25,7 @@ from mammoth_cli.errors.envelope import (
     CODE_AUTHENTICATION_FAILED,
     CODE_AUTHORIZATION_REQUIRED,
     CODE_CONFLICT,
+    CODE_INTERNAL_ERROR,
     CODE_INVALID_ARGUMENT,
     CODE_INVALID_ARGUMENTS,
     CODE_JOB_FAILED,
@@ -44,6 +45,14 @@ from mammoth_cli.errors.envelope import (
 from mammoth_cli.runtime import embedded
 
 _RETRYABLE_READ_STATUSES = frozenset({408, 425, 429, 502, 503, 504})
+
+#: The sentence that blames a project-limited token; dropped or made specific by
+#: :func:`mammoth_cli.runtime.token_scope.qualify_pin_hint` once the pin is known.
+PINNED_PROJECT_HINT = (
+    "An API token limited to one project gets this in every other "
+    "project, including one it created: pass that project's --project ID, "
+    "or log in with a token created without a project."
+)
 
 
 #: A client app's key is a credential identifier; an envelope never repeats it.
@@ -347,15 +356,16 @@ def map_sdk_exception(
             details=getattr(exc, "details", None),
         )
 
+    login = profiles.login_command(profile)
     if isinstance(exc, MammothAuthError) and _is_token_expired(exc):
         return CliError(
             code=CODE_CLI_KEY_EXPIRED,
-            message="This API key has expired; run `mammoth auth login` to sign in again.",
+            message=f"This API key has expired; run `{login}` to sign in again.",
             exit_status=EXIT_AUTH,
             hint="Sign in again to get a new key.",
             details=_metadata(exc),
             request_id=exc.request_id,
-            recovery_commands=["mammoth auth login"],
+            recovery_commands=[login],
         )
 
     if isinstance(exc, MammothAuthError):
@@ -380,13 +390,13 @@ def map_sdk_exception(
                     if in_app
                     else (
                         "Your sign-in may have expired or been revoked: "
-                        "run `mammoth auth login` again, or check the API token."
+                        f"run `{login}` again, or check the API token."
                     )
                 )
             ),
             details=_metadata(exc),
             request_id=exc.request_id,
-            recovery_commands=[] if in_app else ["mammoth auth login"],
+            recovery_commands=[] if in_app else [login],
         )
 
     if isinstance(exc, MammothPipelineTimeoutError):
@@ -578,27 +588,28 @@ def map_sdk_exception(
                 code=CODE_CLI_KEYS_NEED_BROWSER_SIGN_IN,
                 message=(
                     "This call used an API token, and the server refuses API tokens when "
-                    "creating or listing API keys; run `mammoth auth login` (browser "
+                    f"creating or listing API keys; run `{login}` (browser "
                     "sign-in) and try again."
                 ),
                 exit_status=EXIT_AUTH,
                 hint="Sign in with the browser, not an API token, to manage API keys.",
                 details=details,
                 request_id=request_id,
-                recovery_commands=["mammoth auth login"],
+                recovery_commands=[login],
             )
         if status == 403 and _is_cli_keys_refused(exc):
+            token_login = profiles.login_command(profile, " --method token")
             return CliError(
                 code=CODE_CLI_KEYS_NOT_ALLOWED,
                 message=(
                     "This server doesn't allow CLI-created keys yet; create one in "
-                    "Settings → API keys, then `mammoth auth login --method token`."
+                    f"Settings → API keys, then `{token_login}`."
                 ),
                 exit_status=EXIT_AUTH,
                 hint="A browser sign-in cannot create API keys on this server.",
                 details=details,
                 request_id=request_id,
-                recovery_commands=["mammoth auth login --method token"],
+                recovery_commands=[token_login],
             )
         if status == 403:
             return CliError(
@@ -608,10 +619,7 @@ def map_sdk_exception(
                 hint=(
                     "Check the ids and scope first: a view id given with another dataset's id, "
                     "or an id from a different project, is refused the same way. Then ask an "
-                    "administrator for permission. "
-                    "An API token limited to one project gets this in every other "
-                    "project, including one it created: pass that project's --project ID, "
-                    "or log in with a token created without a project."
+                    "administrator for permission. " + PINNED_PROJECT_HINT
                 ),
                 details=details,
                 request_id=request_id,
@@ -734,9 +742,15 @@ def map_sdk_exception(
             },
         )
 
+    # Not an SDK, transport or validation failure: the CLI itself broke (a rendering fault, a
+    # malformed response, a bug). Say so; "api_error" would send the caller to retry the API.
     return CliError(
-        code=CODE_API_ERROR,
-        message="The Mammoth operation failed unexpectedly.",
+        code=CODE_INTERNAL_ERROR,
+        message=f"The CLI hit an unexpected internal error ({type(exc).__name__}).",
         exit_status=EXIT_API,
-        details={"exception_type": type(exc).__name__},
+        hint=(
+            "This is a bug in the CLI, not in your request or the API. Re-run with --debug to "
+            "print the traceback, and report it with the run log named in log_ref."
+        ),
+        details={"exception_type": type(exc).__name__, "exception_message": str(exc)[:500]},
     )

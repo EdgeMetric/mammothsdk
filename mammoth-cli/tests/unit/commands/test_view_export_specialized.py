@@ -451,6 +451,29 @@ def test_dataset_route_rejects_a_second_export_into_the_same_target(
     assert fake_service.view_call_log == []
 
 
+def test_second_append_export_names_the_requested_mode(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    fake_service.responses[_EXPORTS_LIST] = _exports_page(_internal_dataset_export(42, 1545))
+    with pytest.raises(CliError) as error:
+        view_cmd.view_export_specialized(
+            _inv(
+                "view.export.dataset",
+                project=180,
+                extra_args=["1758", "1544"],
+                input_file=_doc(
+                    tmp_path,
+                    {"dataset_name": "feed", "target_ds_id": 1545, "save_as_mode": "APPEND_TO_DS"},
+                ),
+                yes=True,
+            )
+        )
+    assert error.value.code == "export_already_exists"
+    assert "APPEND_TO_DS" in error.value.message
+    assert "REPLACE_IN_DS" not in error.value.message
+    assert error.value.details["requested_save_as_mode"] == "APPEND_TO_DS"
+
+
 def test_dataset_route_export_guard_matches_target_ds_id_as_int(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:

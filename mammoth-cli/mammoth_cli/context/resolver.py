@@ -83,7 +83,7 @@ class ResolvedAuth:
     token_provider: Callable[[], str] | None = None
 
 
-def not_authenticated_error() -> CliError:
+def not_authenticated_error(profile: str | None = None) -> CliError:
     """Build the stable error for a command with no available credentials."""
     if embedded.active():
         return CliError(
@@ -92,12 +92,16 @@ def not_authenticated_error() -> CliError:
             exit_status=EXIT_AUTH,
             hint=EMBEDDED_AUTH_HINT,
         )
+    login = profiles.login_command(profile)
     return CliError(
         code="not_authenticated",
         message="No Mammoth credentials are available for this command.",
         exit_status=EXIT_AUTH,
-        hint="Log in first: run 'mammoth auth login' (or 'mammoth auth login --input creds.json').",
-        recovery_commands=["mammoth auth login"],
+        hint=(
+            f"Log in first: run '{login}' "
+            f"(or '{profiles.login_command(profile, ' --input creds.json')}')."
+        ),
+        recovery_commands=[login],
     )
 
 
@@ -241,7 +245,7 @@ def resolve_auth(
                 api_token=credential.api_token,
             )
 
-    raise not_authenticated_error()
+    raise not_authenticated_error(profile_name)
 
 
 def resolve_project(invocation: Invocation, profile: ProfileRecord | None) -> int | None:

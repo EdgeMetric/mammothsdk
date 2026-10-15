@@ -58,7 +58,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth workspace delete`. Exact input fields: `mammoth schema get workspace.delete`.
 
-Example: `mammoth workspace delete 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth workspace delete 123 --yes --confirm 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `WorkspaceDeleteResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
 
@@ -88,7 +88,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth workspace invite delete`. Exact input fields: `mammoth schema get workspace.invite.delete`.
 
-Example: `mammoth workspace invite delete --input '{"invite_ids": [1]}'`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth workspace invite delete --input '{"invite_ids": [1]}' --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `WorkspaceInviteDeleteResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
 
@@ -118,7 +118,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth workspace invite revoke`. Exact input fields: `mammoth schema get workspace.invite.revoke`.
 
-Example: `mammoth workspace invite revoke --input '{"invite_ids": [1]}'`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth workspace invite revoke --input '{"invite_ids": [1]}' --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `WorkspaceInviteRevokeResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
 
@@ -128,7 +128,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth workspace invite update-role`. Exact input fields: `mammoth schema get workspace.invite.update-role`.
 
-Example: `mammoth workspace invite update-role --input '{"invite_id": 1, "role": "sample"}'`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth workspace invite update-role --input '{"invite_id": 1, "role": "workspace_member"}' --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `WorkspaceInviteUpdateRoleResult`; mutation `high_impact`, confirmation `yes_always`, wait policy `not_async`.
 
@@ -148,7 +148,7 @@ Status on release: ran once on CLI 2.0.11 — Read-only sweep 2026-09-18: exit 0
 
 Run: `mammoth workspace llm-task`. Exact input fields: `mammoth schema get workspace.llm-task`.
 
-Example: `mammoth workspace llm-task --input '{"task_type": "sample", "params": {"sample_key": "Status"}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth workspace llm-task --input '{"task_type": "run_data_retrieval", "params": {"name": "Status"}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `WorkspaceLlmTaskResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
@@ -158,7 +158,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth workspace oauth-client create`. Exact input fields: `mammoth schema get workspace.oauth-client.create`.
 
-Example: `mammoth workspace oauth-client create 123 --input '{"name": "Revenue report", "redirect_uris": ["https://example.com/data.csv"]}'`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth workspace oauth-client create 123 --input '{"name": "Revenue report", "redirect_uris": ["https://example.com/data.csv"]}' --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `WorkspaceOauthClientCreateResult`; mutation `high_impact`, confirmation `yes_always`, wait policy `not_async`.
 
@@ -168,7 +168,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth workspace oauth-client delete`. Exact input fields: `mammoth schema get workspace.oauth-client.delete`.
 
-Example: `mammoth workspace oauth-client delete 123 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth workspace oauth-client delete 123 456 --yes --confirm 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `WorkspaceOauthClientDeleteResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
 
@@ -188,7 +188,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth workspace oauth-client revoke-grant`. Exact input fields: `mammoth schema get workspace.oauth-client.revoke-grant`.
 
-Example: `mammoth workspace oauth-client revoke-grant 123 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth workspace oauth-client revoke-grant 123 456 --yes --confirm 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `WorkspaceOauthClientRevokeGrantResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
 
@@ -198,7 +198,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth workspace reactivate`. Exact input fields: `mammoth schema get workspace.reactivate`.
 
-Example: `mammoth workspace reactivate 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth workspace reactivate 123 --yes --confirm 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `WorkspaceReactivateResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
 
@@ -218,7 +218,7 @@ Status on release: ran once on CLI 1.1.10 — Bounded release read with publishe
 
 Run: `mammoth workspace segment update`. Exact input fields: `mammoth schema get workspace.segment.update`.
 
-Example: `mammoth workspace segment update --input '{"patch": [{"sample_key": "Status"}]}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth workspace segment update --input '{"patch": [{"name": "Status"}]}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `WorkspaceSegmentUpdateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
@@ -238,7 +238,7 @@ Status on release: ran once on CLI 2.0.11 — Read-only sweep 2026-09-18: exit 0
 
 Run: `mammoth workspace update`. Exact input fields: `mammoth schema get workspace.update`.
 
-Example: `mammoth workspace update 123 --input '{"patches": [{"op": "replace", "path": "name", "value": "sample"}]}'`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth workspace update 123 --input '{"patches": [{"op": "replace", "path": "name", "value": "Revenue team"}]}' --yes --confirm 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `WorkspaceUpdateResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
 
@@ -278,7 +278,7 @@ Status on release: ran once on CLI 2.0.11 — Read-only sweep 2026-09-18: exit 0
 
 Run: `mammoth workspace user remove`. Exact input fields: `mammoth schema get workspace.user.remove`.
 
-Example: `mammoth workspace user remove 123`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth workspace user remove 123 --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `WorkspaceUserRemoveResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
 
@@ -288,7 +288,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth workspace user remove-batch`. Exact input fields: `mammoth schema get workspace.user.remove-batch`.
 
-Example: `mammoth workspace user remove-batch`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth workspace user remove-batch --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `WorkspaceUserRemoveBatchResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
 
@@ -298,7 +298,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth workspace user update`. Exact input fields: `mammoth schema get workspace.user.update`.
 
-Example: `mammoth workspace user update resource-123 --input '{"patches": [{"op": "replace", "path": "role", "value": "workspace_member"}]}'`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth workspace user update resource-123 --input '{"patches": [{"op": "replace", "path": "role", "value": "workspace_member"}]}' --yes --confirm resource-123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `WorkspaceUserUpdateResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
 
@@ -308,7 +308,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth workspace user update-batch`. Exact input fields: `mammoth schema get workspace.user.update-batch`.
 
-Example: `mammoth workspace user update-batch --input '{"patches": [{"sample_key": "Status"}]}'`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth workspace user update-batch --input '{"patches": [{"name": "Status"}]}' --yes`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `WorkspaceUserUpdateBatchResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
 

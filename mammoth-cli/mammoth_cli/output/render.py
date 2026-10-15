@@ -56,7 +56,11 @@ def render(
     elif output == "ndjson":
         _render_ndjson(envelope, stream, legacy=ndjson_legacy)
     elif output == "yaml":
-        yaml.safe_dump(envelope, stream, sort_keys=True, allow_unicode=True)
+        # Dump the JSON form of the envelope. ``safe_dump`` refuses dict and list subclasses (data
+        # rows, schema documents, revealed secrets) that JSON accepts, so a round trip makes
+        # yaml carry exactly what ``--output json`` carries.
+        document = json.loads(json.dumps(envelope, ensure_ascii=False, allow_nan=False))
+        yaml.safe_dump(document, stream, sort_keys=True, allow_unicode=True)
     elif output == "plain":
         _render_plain(envelope.get("data"), stream)
     elif output == "csv":

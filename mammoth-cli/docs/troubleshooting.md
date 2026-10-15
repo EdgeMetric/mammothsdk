@@ -7,11 +7,12 @@
 | Code | Meaning |
 |---|---|
 | 0 | Success with the command's documented result. |
-| 1 | API, job, or local artifact error. |
+| 1 | API, job, or local artifact error, including a write that did not verify (`status: failed`). A write still running when the wait ends exits 0 with `status: pending`; do not replay it. |
 | 2 | Usage, input, scope, or confirmation failure. |
+| 3 | Partial: a write whose read-back shows only part of it took effect (`status: partial`); inspect `verify` before acting. |
 | 4 | Authentication or authorization failure. |
 | 5 | Resource not found in the requested scope. |
-| 6 | Conflict with current remote state. |
+| 6 | Conflict with current remote state, or `file_exists` when a local output file already exists and `--overwrite` was not given. |
 | 7 | Retryable read/transport condition, or a timed-out known job; inspect the envelope before acting. |
 | 130 | Interrupted; the CLI observed no terminal result. |
 
@@ -116,10 +117,11 @@ matching `http` record.
 
 `meta.update_available` in a success envelope (and one stderr line in human
 modes) means a newer `mammoth-cli` is on PyPI and the CLI will not install it by
-itself: auto-update is off (`MAMMOTH_NO_AUTO_UPDATE=1`) or the install failed (see
+itself: auto-update is off (`MAMMOTH_NO_AUTO_UPDATE=1`, or the session is CI or has no TTY), the install is pinned to an exact
+release (`--version`), or the install failed (see
 the `auto_upgrade` records in the run log). The check runs once a day after a
-command, never before it, and `MAMMOTH_NO_UPDATE_CHECK=1` disables it. By default
-the CLI installs the new release itself, after a command, with no prompt (see
+command, never before it, and `MAMMOTH_NO_UPDATE_CHECK=1` disables it. In an interactive
+terminal the CLI installs the new release itself, after a command, with no prompt (see
 [upgrade](upgrade.md)).
 
 ## First diagnostic

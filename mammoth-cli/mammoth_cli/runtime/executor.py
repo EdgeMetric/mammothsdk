@@ -11,16 +11,21 @@ identically for machine output, error shape, and exit code.
 from __future__ import annotations
 
 import sys
+import traceback
 from collections.abc import Callable
 from typing import Any
 
 import typer
 
 from mammoth_cli.errors.envelope import (
+    EXIT_API,
     EXIT_AUTH,
+    EXIT_PARTIAL,
     EXIT_USAGE,
     CliError,
     cancelled_error,
+    feature_unavailable_error,
+    is_feature_unavailable,
     not_available_embedded_error,
 )
 from mammoth_cli.output.envelope import Meta, Result
@@ -75,6 +80,11 @@ EMBEDDED_UNAVAILABLE = frozenset(
 )
 
 
+def _refuse_if_removed(command_id: str) -> None:
+    if is_feature_unavailable(command_id):
+        raise feature_unavailable_error(command_id)
+
+
 def _refuse_if_embedded(command_id: str) -> None:
     if embedded.active() and command_id in EMBEDDED_UNAVAILABLE:
         raise not_available_embedded_error(command_id.replace(".", " "))
@@ -115,6 +125,38 @@ def _validate_output(output: str) -> None:
             exit_status=EXIT_USAGE,
             hint=f"Use one of: {', '.join(VALID_OUTPUTS)}.",
         )
+
+
+def _with_pin_checked(error: CliError, invocation: Invocation | None) -> CliError:
+    """Make a 403's "project-limited token" hint true for this token (one lookup, 403 only)."""
+    if invocation is None:
+        return error
+
+    def lookup() -> int | None:
+        from mammoth_cli.runtime.session import open_service
+        from mammoth_cli.runtime.token_scope import pinned_project
+
+        with open_service(invocation) as (service, _auth):
+            return pinned_project(service)
+
+    from mammoth_cli.runtime.token_scope import qualify_pin_hint
+
+    return qualify_pin_hint(error, lookup)
+
+
+def _verify_exit_status(data: Any) -> int:
+    """Exit code for a write whose read-back says it did not take effect.
+
+    ``verify.outcome`` ``failed`` exits 1 and ``partial`` exits 3; the envelope
+    is still printed so the caller can read what happened.
+    """
+    verify = data.get("verify") if isinstance(data, dict) else None
+    outcome = verify.get("outcome") if isinstance(verify, dict) else None
+    if outcome == "failed":
+        return EXIT_API
+    if outcome == "partial":
+        return EXIT_PARTIAL
+    return 0
 
 
 def emit_success(
@@ -235,18 +277,24 @@ def run(
     )
     run_log = _open_run_log(command_id, invocation)
 
-    def fail(error: CliError) -> None:
+    def fail(error: CliError, cause: BaseException | None = None) -> None:
         if run_log is not None:
             error.log_ref = run_log.ref
-            run_log.finish(error.exit_status, error_code=error.code)
+            run_log.finish(error.exit_status, error_code=error.code, exception=cause)
+        if cause is not None and invocation is not None and invocation.debug:
+            sys.stderr.write(
+                "".join(traceback.format_exception(type(cause), cause, cause.__traceback__))
+            )
         emit_error(error, machine=machine_error, output=output)
 
     # The update notice is read from the daily cache (no network); the cache
     # itself is refreshed only after the command has produced its output.
     update = updates.available_update(command_id)
     report_failed = False
+    write_exit = 0
     try:
         _validate_output(output)
+        _refuse_if_removed(command_id)
         _refuse_if_embedded(command_id)
         if invocation is not None and invocation.dry_run:
             refuse_unsupported_dry_run(command_id)
@@ -260,6 +308,7 @@ def run(
         report_failed = (
             command_id == "doctor" and isinstance(data, dict) and data.get("ok") is False
         )
+        write_exit = _verify_exit_status(data)
     except CliError as error:
         running = (
             running_handle(error, command_id)
@@ -267,7 +316,7 @@ def run(
             else None
         )
         if running is None:
-            fail(error)
+            fail(_with_pin_checked(error, invocation))
             raise typer.Exit(error.exit_status) from None
         # --return-running: a wait that ran out is not a failure; hand back the
         # handle to resume with.
@@ -294,15 +343,19 @@ def run(
         # Bespoke handlers should normally cross the SDK service seam, but a
         # malformed response or filesystem fault must still obey the same
         # machine envelope rather than leaking an implementation traceback.
-        mapped_error = _profile_scope_recovery(map_sdk_exception(exc), profile)
-        fail(mapped_error)
+        mapped_error = _with_pin_checked(
+            _profile_scope_recovery(map_sdk_exception(exc), profile), invocation
+        )
+        fail(mapped_error, exc)
         raise typer.Exit(mapped_error.exit_status) from None
     if run_log is not None:
-        run_log.finish(EXIT_AUTH if report_failed else 0)
+        run_log.finish(EXIT_AUTH if report_failed else write_exit)
     updates.refresh_in_background(command_id)
     _sync_skill_installs(command_id, output)
     if report_failed:
         raise typer.Exit(EXIT_AUTH)
+    if write_exit:
+        raise typer.Exit(write_exit)
 
 
 def _sync_skill_installs(command_id: str, output: str) -> None:

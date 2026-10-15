@@ -1,6 +1,6 @@
 # Command reference
 
-Generated from the reviewed command manifests for mammoth-cli 2.2.80.
+Generated from the reviewed command manifests for mammoth-cli 2.2.84.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
@@ -29,14 +29,14 @@ Total commands: 753.
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.addons.AddonsAPI.add_connector`
-- Agent example: `mammoth addon connector add --input '{"connector_id": 42}'`
+- Agent example: `mammoth addon connector add --input '{"connector_id": 42}' --yes`
 
 ### `mammoth addon connector remove`
 
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.addons.AddonsAPI.remove_connector`
-- Agent example: `mammoth addon connector remove --input '{"connector_id": 42}'`
+- Agent example: `mammoth addon connector remove --input '{"connector_id": 42}' --yes`
 
 ### `mammoth addon list`
 
@@ -50,28 +50,28 @@ Total commands: 753.
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.addons.AddonsAPI.add_storage`
-- Agent example: `mammoth addon storage add --input '{"additional_storage_gb": 1}'`
+- Agent example: `mammoth addon storage add --input '{"additional_storage_gb": 1}' --yes`
 
 ### `mammoth addon storage remove`
 
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.addons.AddonsAPI.remove_storage`
-- Agent example: `mammoth addon storage remove --input '{"removal_storage_gb": 1}'`
+- Agent example: `mammoth addon storage remove --input '{"removal_storage_gb": 1}' --yes`
 
 ### `mammoth addon user add`
 
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.addons.AddonsAPI.add_users`
-- Agent example: `mammoth addon user add`
+- Agent example: `mammoth addon user add --yes`
 
 ### `mammoth addon user remove`
 
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.addons.AddonsAPI.remove_users`
-- Agent example: `mammoth addon user remove --input '{"user_count": 1}'`
+- Agent example: `mammoth addon user remove --input '{"user_count": 1}' --yes`
 
 ## agent
 
@@ -84,7 +84,7 @@ Total commands: 753.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.agent_definitions.AgentDefinitionsAPI.update`
-- Agent example: `mammoth agent access set sample --input '{"role": "member", "propose": true}'`
+- Agent example: `mammoth agent access set revenue-assistant --input '{"role": "member", "propose": true}'`
 
 ### `mammoth agent action delete`
 
@@ -95,7 +95,7 @@ Total commands: 753.
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.agents.AgentsAPI.action_delete`
-- Agent example: `mammoth agent action delete resource-123`
+- Agent example: `mammoth agent action delete resource-123 --yes`
 
 ### `mammoth agent action list`
 
@@ -113,7 +113,7 @@ Total commands: 753.
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.agent_definitions.AgentDefinitionsAPI.get`
-- Agent example: `mammoth agent charter get sample`
+- Agent example: `mammoth agent charter get revenue-assistant`
 
 ### `mammoth agent charter restore`
 
@@ -125,7 +125,7 @@ Total commands: 753.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.agent_definitions.AgentDefinitionsAPI.charter_restore`
-- Agent example: `mammoth agent charter restore sample 123`
+- Agent example: `mammoth agent charter restore revenue-assistant 123`
 
 ### `mammoth agent charter set`
 
@@ -136,7 +136,7 @@ Total commands: 753.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.agent_definitions.AgentDefinitionsAPI.update`
-- Agent example: `mammoth agent charter set sample --input '{"charter": "Watch weekly margin and report the three biggest drops."}'`
+- Agent example: `mammoth agent charter set revenue-assistant --input '{"charter": "Watch weekly margin and report the three biggest drops."}'`
 
 ### `mammoth agent charter versions`
 
@@ -147,7 +147,7 @@ Total commands: 753.
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.agent_definitions.AgentDefinitionsAPI.charter_versions`
-- Agent example: `mammoth agent charter versions sample`
+- Agent example: `mammoth agent charter versions revenue-assistant`
 
 ### `mammoth agent chat`
 
@@ -176,7 +176,7 @@ Total commands: 753.
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.agent_definitions.AgentDefinitionsAPI.delete`
-- Agent example: `mammoth agent delete sample`
+- Agent example: `mammoth agent delete revenue-assistant --yes`
 
 ### `mammoth agent disable`
 
@@ -187,7 +187,7 @@ Total commands: 753.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.agent_definitions.AgentDefinitionsAPI.disable`
-- Agent example: `mammoth agent disable sample`
+- Agent example: `mammoth agent disable revenue-assistant`
 
 ### `mammoth agent feedback list`
 
@@ -198,7 +198,7 @@ Total commands: 753.
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.agent_definitions.AgentDefinitionsAPI.feedback_list`
-- Agent example: `mammoth agent feedback list sample`
+- Agent example: `mammoth agent feedback list revenue-assistant`
 
 ### `mammoth agent get`
 
@@ -209,7 +209,7 @@ Total commands: 753.
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.agent_definitions.AgentDefinitionsAPI.get`
-- Agent example: `mammoth agent get sample`
+- Agent example: `mammoth agent get revenue-assistant`
 
 ### `mammoth agent goldens add`
 
@@ -220,7 +220,7 @@ Total commands: 753.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.agent_definitions.AgentDefinitionsAPI.goldens_add`
-- Agent example: `mammoth agent goldens add sample --input '{"question": "Summarize revenue by region", "expected": "sample"}'`
+- Agent example: `mammoth agent goldens add revenue-assistant --input '{"question": "Summarize revenue by region", "expected": "Quarterly revenue summary"}'`
 
 ### `mammoth agent goldens list`
 
@@ -231,7 +231,7 @@ Total commands: 753.
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.agent_definitions.AgentDefinitionsAPI.goldens_list`
-- Agent example: `mammoth agent goldens list sample`
+- Agent example: `mammoth agent goldens list revenue-assistant`
 
 ### `mammoth agent goldens remove`
 
@@ -243,7 +243,7 @@ Total commands: 753.
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.agent_definitions.AgentDefinitionsAPI.goldens_remove`
-- Agent example: `mammoth agent goldens remove sample 123`
+- Agent example: `mammoth agent goldens remove revenue-assistant 123 --yes`
 
 ### `mammoth agent goldens run`
 
@@ -254,7 +254,7 @@ Total commands: 753.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.agent_definitions.AgentDefinitionsAPI.goldens_run`
-- Agent example: `mammoth agent goldens run sample`
+- Agent example: `mammoth agent goldens run revenue-assistant`
 
 ### `mammoth agent goldens status`
 
@@ -265,7 +265,7 @@ Total commands: 753.
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.agent_definitions.AgentDefinitionsAPI.goldens_status`
-- Agent example: `mammoth agent goldens status sample`
+- Agent example: `mammoth agent goldens status revenue-assistant`
 
 ### `mammoth agent list`
 
@@ -283,7 +283,7 @@ Total commands: 753.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.agent_definitions.AgentDefinitionsAPI.notes_upsert`
-- Agent example: `mammoth agent memory add sample --input '{"name": "Revenue report", "content": "sample"}'`
+- Agent example: `mammoth agent memory add revenue-assistant --input '{"name": "Revenue report", "content": "Quarterly revenue summary"}'`
 
 ### `mammoth agent memory list`
 
@@ -294,7 +294,7 @@ Total commands: 753.
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.agent_definitions.AgentDefinitionsAPI.notes_list`
-- Agent example: `mammoth agent memory list sample`
+- Agent example: `mammoth agent memory list revenue-assistant`
 
 ### `mammoth agent memory remove`
 
@@ -306,7 +306,7 @@ Total commands: 753.
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.agent_definitions.AgentDefinitionsAPI.notes_delete`
-- Agent example: `mammoth agent memory remove sample 123`
+- Agent example: `mammoth agent memory remove revenue-assistant 123 --yes`
 
 ### `mammoth agent message set-request-kind`
 
@@ -317,7 +317,7 @@ Total commands: 753.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.agents.AgentsAPI.message_set_request_kind`
-- Agent example: `mammoth agent message set-request-kind 'Summarize revenue by region' --input '{"request_kind": "sample"}'`
+- Agent example: `mammoth agent message set-request-kind 'Summarize revenue by region' --input '{"request_kind": "ask"}'`
 
 ### `mammoth agent plan approve`
 
@@ -328,7 +328,7 @@ Total commands: 753.
 - Mutation class: `benign_mutation`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.agents.AgentsAPI.plan_approve`
-- Agent example: `mammoth agent plan approve resource-123`
+- Agent example: `mammoth agent plan approve resource-123 --yes`
 
 ### `mammoth agent plan discard`
 
@@ -337,16 +337,16 @@ Total commands: 753.
 - `SESSION_ID` (str, required) — ID of the chat session (from agent session list).
 
 - Mutation class: `benign_mutation`
-- Confirmation: `none`
+- Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.agents.AgentsAPI.plan_discard`
-- Agent example: `mammoth agent plan discard resource-123`
+- Agent example: `mammoth agent plan discard resource-123 --yes`
 
 ### `mammoth agent plan edit-proposal`
 
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.agents.AgentsAPI.plan_edit_proposal`
-- Agent example: `mammoth agent plan edit-proposal --input '{"plan_id": "resource-123", "action": "sample", "key": "Status"}'`
+- Agent example: `mammoth agent plan edit-proposal --input '{"plan_id": "resource-123", "action": "rename", "key": "Status"}'`
 
 ### `mammoth agent plan skip`
 
@@ -367,9 +367,9 @@ Total commands: 753.
 - `AGENT_KEY` (str, required) — Key identifying the agent.
 
 - Mutation class: `benign_mutation`
-- Confirmation: `none`
+- Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.agent_definitions.AgentDefinitionsAPI.update`
-- Agent example: `mammoth agent projects clear sample`
+- Agent example: `mammoth agent projects clear revenue-assistant --yes`
 
 ### `mammoth agent projects set`
 
@@ -380,7 +380,7 @@ Total commands: 753.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.agent_definitions.AgentDefinitionsAPI.update`
-- Agent example: `mammoth agent projects set sample --input '{"project_ids": [12, 15]}'`
+- Agent example: `mammoth agent projects set revenue-assistant --input '{"project_ids": [12, 15]}'`
 
 ### `mammoth agent publish`
 
@@ -391,7 +391,7 @@ Total commands: 753.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.agent_definitions.AgentDefinitionsAPI.publish`
-- Agent example: `mammoth agent publish sample`
+- Agent example: `mammoth agent publish revenue-assistant`
 
 ### `mammoth agent roles`
 
@@ -484,7 +484,7 @@ Total commands: 753.
 - Mutation class: `benign_mutation`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.agents.AgentsAPI.run_retry`
-- Agent example: `mammoth agent run retry resource-123`
+- Agent example: `mammoth agent run retry resource-123 --yes`
 
 ### `mammoth agent run status`
 
@@ -524,7 +524,7 @@ Total commands: 753.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.agents.AgentsAPI.run_units_set`
-- Agent example: `mammoth agent run units set resource-123 --input '{"step": 1, "kind": "sample", "units": [{"sample_key": "Status"}]}'`
+- Agent example: `mammoth agent run units set resource-123 --input '{"step": 1, "kind": "dataset", "units": [{"id": 12, "name": "Sales", "project_id": 3}]}'`
 
 ### `mammoth agent scratch clear`
 
@@ -536,7 +536,7 @@ Total commands: 753.
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.agent_definitions.AgentDefinitionsAPI.notes_delete`
-- Agent example: `mammoth agent scratch clear sample 'Revenue report'`
+- Agent example: `mammoth agent scratch clear revenue-assistant 'Revenue report' --yes`
 
 ### `mammoth agent scratch get`
 
@@ -548,7 +548,7 @@ Total commands: 753.
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.agent_definitions.AgentDefinitionsAPI.notes_list`
-- Agent example: `mammoth agent scratch get sample 'Revenue report'`
+- Agent example: `mammoth agent scratch get revenue-assistant 'Revenue report'`
 
 ### `mammoth agent scratch list`
 
@@ -559,7 +559,7 @@ Total commands: 753.
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.agent_definitions.AgentDefinitionsAPI.notes_list`
-- Agent example: `mammoth agent scratch list sample`
+- Agent example: `mammoth agent scratch list revenue-assistant`
 
 ### `mammoth agent scratch set`
 
@@ -571,7 +571,7 @@ Total commands: 753.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.agent_definitions.AgentDefinitionsAPI.notes_upsert`
-- Agent example: `mammoth agent scratch set sample 'Revenue report' --input '{"content": "sample"}'`
+- Agent example: `mammoth agent scratch set revenue-assistant 'Revenue report' --input '{"content": "Quarterly revenue summary"}'`
 
 ### `mammoth agent session delete`
 
@@ -582,7 +582,7 @@ Total commands: 753.
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.agents.AgentsAPI.session_delete`
-- Agent example: `mammoth agent session delete resource-123`
+- Agent example: `mammoth agent session delete resource-123 --yes`
 
 ### `mammoth agent session list`
 
@@ -611,7 +611,7 @@ Total commands: 753.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.agents.AgentsAPI.session_set_visibility`
-- Agent example: `mammoth agent session set-visibility resource-123 --input '{"visibility": "sample"}'`
+- Agent example: `mammoth agent session set-visibility resource-123 --input '{"visibility": "shared"}'`
 
 ### `mammoth agent team set`
 
@@ -622,7 +622,7 @@ Total commands: 753.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.agent_definitions.AgentDefinitionsAPI.update`
-- Agent example: `mammoth agent team set sample --input '{"team": {"agents": ["margin-watch"], "max_rounds": 4}}'`
+- Agent example: `mammoth agent team set revenue-assistant --input '{"team": {"agents": ["margin-watch"], "max_rounds": 4}}'`
 
 ### `mammoth agent turn cancel`
 
@@ -644,7 +644,7 @@ Total commands: 753.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.agent_definitions.AgentDefinitionsAPI.update`
-- Agent example: `mammoth agent update sample --input '{"name": "Margin watch"}'`
+- Agent example: `mammoth agent update revenue-assistant --input '{"name": "Margin watch"}'`
 
 ## ai
 
@@ -668,7 +668,7 @@ Total commands: 753.
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.ai.AIAPI.expression_generate`
-- Agent example: `mammoth ai expression generate 123 --input '{"intent": "Summarize revenue by region", "mode": "sample"}'`
+- Agent example: `mammoth ai expression generate 123 --input '{"intent": "Summarize revenue by region", "mode": "math"}'`
 
 ### `mammoth ai retention condition`
 
@@ -710,14 +710,14 @@ Total commands: 753.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.annotations.AnnotationsAPI.comment_add`
-- Agent example: `mammoth annotation comment add 123 --input '{"body": "sample"}'`
+- Agent example: `mammoth annotation comment add 123 --input '{"body": "Quarterly revenue summary"}'`
 
 ### `mammoth annotation create`
 
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.annotations.AnnotationsAPI.create`
-- Agent example: `mammoth annotation create --input '{"target_type": "sample", "target_id": 1, "body": "sample"}'`
+- Agent example: `mammoth annotation create --input '{"target_type": "dataview", "target_id": 1, "body": "Quarterly revenue summary"}'`
 
 ### `mammoth annotation delete`
 
@@ -728,7 +728,7 @@ Total commands: 753.
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.annotations.AnnotationsAPI.delete`
-- Agent example: `mammoth annotation delete 123`
+- Agent example: `mammoth annotation delete 123 --yes`
 
 ### `mammoth annotation list`
 
@@ -746,7 +746,7 @@ Total commands: 753.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.annotations.AnnotationsAPI.update`
-- Agent example: `mammoth annotation update 123 --input '{"status": "sample"}'`
+- Agent example: `mammoth annotation update 123 --input '{"status": "resolved"}'`
 
 ## auth
 
@@ -766,7 +766,7 @@ Total commands: 753.
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.user_profile.UserProfileAPI.revoke_connected_app`
-- Agent example: `mammoth auth connected-apps revoke 123`
+- Agent example: `mammoth auth connected-apps revoke 123 --yes --confirm 123`
 
 ### `mammoth auth login`
 
@@ -807,7 +807,7 @@ Total commands: 753.
 - Mutation class: `external_effect`
 - Confirmation: `yes_always`
 - Backing SDK: `mammoth.api.automations.AutomationsAPI.create`
-- Agent example: `mammoth automation create 'Revenue report' --input '{"description": "sample", "tasks": [{"task_type": "run_data_retrieval"}]}'`
+- Agent example: `mammoth automation create 'Revenue report' --input '{"description": "Quarterly revenue summary", "tasks": [{"task_type": "run_data_retrieval", "details": {"ds_details": [{"ds_id": 42}]}}]}' --yes`
 
 ### `mammoth automation delete`
 
@@ -818,7 +818,7 @@ Total commands: 753.
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.automations.AutomationsAPI.delete`
-- Agent example: `mammoth automation delete 123`
+- Agent example: `mammoth automation delete 123 --yes`
 
 ### `mammoth automation get`
 
@@ -869,7 +869,7 @@ Total commands: 753.
 - Mutation class: `external_effect`
 - Confirmation: `yes_always`
 - Backing SDK: `mammoth.api.automations.AutomationsAPI.update`
-- Agent example: `mammoth automation update 123 --input '{"patch": [{"op": "replace", "path": "details", "value": "sample"}]}'`
+- Agent example: `mammoth automation update 123 --input '{"patch": [{"op": "replace", "path": "details", "value": {"name": "Daily revenue export"}}]}' --yes`
 
 ## batch
 
@@ -882,7 +882,7 @@ Total commands: 753.
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.batches.BatchesAPI.bulk_delete`
-- Agent example: `mammoth batch bulk-delete 123 --input '{"ids": [11, 12]}'`
+- Agent example: `mammoth batch bulk-delete 123 --input '{"ids": [11, 12]}' --yes`
 
 ### `mammoth batch create`
 
@@ -894,7 +894,7 @@ Total commands: 753.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.batches.BatchesAPI.create`
-- Agent example: `mammoth batch create 123 123 --input '{"mapping": {"column_1": "column_1"}}'`
+- Agent example: `mammoth batch create 123 456 --input '{"mapping": {"column_1": "column_1"}}'`
 
 ### `mammoth batch create-spec`
 
@@ -917,7 +917,7 @@ Total commands: 753.
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.batches.BatchesAPI.delete`
-- Agent example: `mammoth batch delete 123 123`
+- Agent example: `mammoth batch delete 123 456 --yes`
 
 ### `mammoth batch get`
 
@@ -929,7 +929,7 @@ Total commands: 753.
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.batches.BatchesAPI.get`
-- Agent example: `mammoth batch get 123 123`
+- Agent example: `mammoth batch get 123 456`
 
 ### `mammoth batch list`
 
@@ -951,7 +951,7 @@ Total commands: 753.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.batches.BatchesAPI.update`
-- Agent example: `mammoth batch update 123 --input '{"patch": {"sample_key": "Status"}}'`
+- Agent example: `mammoth batch update 123 --input '{"patch": {"name": "Status"}}'`
 
 ## billing
 
@@ -971,14 +971,14 @@ Total commands: 753.
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.billing.BillingAPI.hosted_page`
-- Agent example: `mammoth billing hosted-page sample`
+- Agent example: `mammoth billing hosted-page change_plan --yes --confirm change_plan`
 
 ### `mammoth billing invoice charge`
 
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.billing.BillingAPI.invoice_charge`
-- Agent example: `mammoth billing invoice charge`
+- Agent example: `mammoth billing invoice charge --yes`
 
 ### `mammoth billing invoice list`
 
@@ -992,14 +992,14 @@ Total commands: 753.
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.billing.BillingAPI.stripe_cancel`
-- Agent example: `mammoth billing stripe cancel`
+- Agent example: `mammoth billing stripe cancel --yes`
 
 ### `mammoth billing stripe checkout-url`
 
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.billing.BillingAPI.stripe_checkout_url`
-- Agent example: `mammoth billing stripe checkout-url --input '{"success_url": "https://example.com/data.csv", "cancel_url": "https://example.com/data.csv"}'`
+- Agent example: `mammoth billing stripe checkout-url --input '{"success_url": "https://example.com/data.csv", "cancel_url": "https://example.com/data.csv"}' --yes`
 
 ### `mammoth billing stripe create`
 
@@ -1010,14 +1010,14 @@ Total commands: 753.
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.billing.BillingAPI.stripe_create`
-- Agent example: `mammoth billing stripe create 123`
+- Agent example: `mammoth billing stripe create 123 --yes --confirm 123`
 
 ### `mammoth billing stripe end-trial`
 
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.billing.BillingAPI.stripe_end_trial`
-- Agent example: `mammoth billing stripe end-trial`
+- Agent example: `mammoth billing stripe end-trial --yes`
 
 ### `mammoth billing stripe get`
 
@@ -1042,7 +1042,7 @@ Total commands: 753.
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.billing.BillingAPI.stripe_payment_method_delete`
-- Agent example: `mammoth billing stripe payment-method delete resource-123`
+- Agent example: `mammoth billing stripe payment-method delete resource-123 --yes --confirm resource-123`
 
 ### `mammoth billing stripe payment-method list`
 
@@ -1060,14 +1060,14 @@ Total commands: 753.
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.billing.BillingAPI.stripe_payment_method_set_default`
-- Agent example: `mammoth billing stripe payment-method set-default resource-123`
+- Agent example: `mammoth billing stripe payment-method set-default resource-123 --yes --confirm resource-123`
 
 ### `mammoth billing stripe portal-url`
 
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.billing.BillingAPI.stripe_portal_url`
-- Agent example: `mammoth billing stripe portal-url`
+- Agent example: `mammoth billing stripe portal-url --yes`
 
 ### `mammoth billing stripe preview-invoice`
 
@@ -1088,14 +1088,14 @@ Total commands: 753.
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.billing.BillingAPI.stripe_resume`
-- Agent example: `mammoth billing stripe resume`
+- Agent example: `mammoth billing stripe resume --yes`
 
 ### `mammoth billing stripe retry-payment`
 
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.billing.BillingAPI.stripe_retry_payment`
-- Agent example: `mammoth billing stripe retry-payment`
+- Agent example: `mammoth billing stripe retry-payment --yes`
 
 ### `mammoth billing stripe status`
 
@@ -1109,14 +1109,14 @@ Total commands: 753.
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.billing.BillingAPI.stripe_storage_update`
-- Agent example: `mammoth billing stripe storage set --input '{"storage_gb": 1}'`
+- Agent example: `mammoth billing stripe storage set --input '{"storage_gb": 1}' --yes`
 
 ### `mammoth billing stripe sync`
 
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.billing.BillingAPI.stripe_sync`
-- Agent example: `mammoth billing stripe sync`
+- Agent example: `mammoth billing stripe sync --yes`
 
 ### `mammoth billing stripe upcoming-invoice`
 
@@ -1144,7 +1144,7 @@ Total commands: 753.
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.billing.BillingAPI.subscription_update`
-- Agent example: `mammoth billing subscription update --input '{"patch": [{"sample_key": "Status"}]}'`
+- Agent example: `mammoth billing subscription update --input '{"patch": [{"name": "Status"}]}' --yes`
 
 ## browse
 
@@ -1279,7 +1279,7 @@ Total commands: 753.
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.clientapps.ClientAppsAPI.create`
-- Agent example: `mammoth client-app create 'Revenue report'`
+- Agent example: `mammoth client-app create 'Revenue report' --yes --confirm 'Revenue report'`
 
 ### `mammoth client-app delete`
 
@@ -1290,7 +1290,7 @@ Total commands: 753.
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.clientapps.ClientAppsAPI.delete`
-- Agent example: `mammoth client-app delete sample`
+- Agent example: `mammoth client-app delete web-client --yes`
 
 ### `mammoth client-app get`
 
@@ -1301,7 +1301,7 @@ Total commands: 753.
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.clientapps.ClientAppsAPI.get`
-- Agent example: `mammoth client-app get sample`
+- Agent example: `mammoth client-app get web-client`
 
 ### `mammoth client-app list`
 
@@ -1319,7 +1319,7 @@ Total commands: 753.
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.clientapps.ClientAppsAPI.update`
-- Agent example: `mammoth client-app update sample --input '{"patch_request": {"patch": [{"op": "replace", "path": "role"}]}}'`
+- Agent example: `mammoth client-app update web-client --input '{"patch_request": {"patch": [{"op": "replace", "path": "role"}]}}' --yes --confirm web-client`
 
 ## collection
 
@@ -1361,7 +1361,7 @@ Total commands: 753.
 - Mutation class: `external_effect`
 - Confirmation: `yes_always`
 - Backing SDK: `mammoth.api.collections.CollectionsAPI.add_dashboards`
-- Agent example: `mammoth collection dashboards add 123 --input '{"dashboard_ids": [1]}'`
+- Agent example: `mammoth collection dashboards add 123 --input '{"dashboard_ids": [1]}' --yes`
 
 ### `mammoth collection dashboards remove`
 
@@ -1373,7 +1373,7 @@ Total commands: 753.
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.collections.CollectionsAPI.remove_dashboard`
-- Agent example: `mammoth collection dashboards remove 123 123`
+- Agent example: `mammoth collection dashboards remove 123 456 --yes`
 
 ### `mammoth collection delete`
 
@@ -1384,7 +1384,7 @@ Total commands: 753.
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.collections.CollectionsAPI.delete`
-- Agent example: `mammoth collection delete 123`
+- Agent example: `mammoth collection delete 123 --yes`
 
 ### `mammoth collection files upload`
 
@@ -1440,7 +1440,7 @@ Total commands: 753.
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.collections.CollectionsAPI.job`
-- Agent example: `mammoth collection job 123 123`
+- Agent example: `mammoth collection job 123 456`
 
 ### `mammoth collection list`
 
@@ -1458,7 +1458,7 @@ Total commands: 753.
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.collections.CollectionsAPI.remove_member`
-- Agent example: `mammoth collection members remove 123 --input '{"email": "analyst@example.com"}'`
+- Agent example: `mammoth collection members remove 123 --input '{"email": "analyst@example.com"}' --yes`
 
 ### `mammoth collection pipeline-changes`
 
@@ -1480,7 +1480,7 @@ Total commands: 753.
 - Mutation class: `external_effect`
 - Confirmation: `yes_always`
 - Backing SDK: `mammoth.api.collections.CollectionsAPI.share`
-- Agent example: `mammoth collection share 123 --input '{"emails": ["analyst@example.com"]}'`
+- Agent example: `mammoth collection share 123 --input '{"emails": ["analyst@example.com"]}' --yes`
 
 ### `mammoth collection update`
 
@@ -1570,7 +1570,7 @@ Total commands: 753.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.connector_ai.ConnectorAIAPI.chat`
-- Agent example: `mammoth connector ai chat --input '{"body": {"messages": [{"content": "sample", "role": "user"}]}}'`
+- Agent example: `mammoth connector ai chat --input '{"body": {"messages": [{"content": "Quarterly revenue summary", "role": "user"}]}}'`
 
 ### `mammoth connector ai history`
 
@@ -1581,7 +1581,7 @@ Total commands: 753.
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.connector_ai.ConnectorAIAPI.history`
-- Agent example: `mammoth connector ai history sample`
+- Agent example: `mammoth connector ai history prod-warehouse`
 
 ### `mammoth connector ai session list`
 
@@ -1624,7 +1624,7 @@ Total commands: 753.
 - Mutation class: `external_effect`
 - Confirmation: `yes_always`
 - Backing SDK: `mammoth.api.connectors.ConnectorsAPI.create_connection`
-- Agent example: `mammoth connector connection create sample --input /private/path/request.json`
+- Agent example: `mammoth connector connection create postgres --input /private/path/request.json --yes`
 
 ### `mammoth connector connection delete`
 
@@ -1636,7 +1636,7 @@ Total commands: 753.
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.connectors.ConnectorsAPI.delete_connection`
-- Agent example: `mammoth connector connection delete sample sample`
+- Agent example: `mammoth connector connection delete postgres prod-warehouse --yes`
 
 ### `mammoth connector connection get`
 
@@ -1648,7 +1648,7 @@ Total commands: 753.
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.connectors.ConnectorsAPI.get_connection`
-- Agent example: `mammoth connector connection get sample sample`
+- Agent example: `mammoth connector connection get postgres prod-warehouse`
 
 ### `mammoth connector connection list`
 
@@ -1659,7 +1659,7 @@ Total commands: 753.
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.connectors.ConnectorsAPI.list_connections`
-- Agent example: `mammoth connector connection list sample`
+- Agent example: `mammoth connector connection list postgres`
 
 ### `mammoth connector connection query`
 
@@ -1671,7 +1671,7 @@ Total commands: 753.
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.connectors.ConnectorsAPI.query_connection`
-- Agent example: `mammoth connector connection query sample sample --input '{"query": "SELECT region, SUM(revenue) FROM data GROUP BY region"}'`
+- Agent example: `mammoth connector connection query postgres prod-warehouse --input '{"query": "SELECT region, SUM(revenue) FROM data GROUP BY region"}'`
 
 ### `mammoth connector connection update`
 
@@ -1683,7 +1683,7 @@ Total commands: 753.
 - Mutation class: `external_effect`
 - Confirmation: `yes_always`
 - Backing SDK: `mammoth.api.connectors.ConnectorsAPI.update_connection`
-- Agent example: `mammoth connector connection update sample sample --input /private/path/request.json`
+- Agent example: `mammoth connector connection update postgres prod-warehouse --input /private/path/request.json --yes`
 
 ### `mammoth connector ds-config create`
 
@@ -1695,7 +1695,7 @@ Total commands: 753.
 - Mutation class: `external_effect`
 - Confirmation: `yes_always`
 - Backing SDK: `mammoth.api.connectors.ConnectorsAPI.create_ds_config`
-- Agent example: `mammoth connector ds-config create sample sample`
+- Agent example: `mammoth connector ds-config create postgres prod-warehouse --yes`
 
 ### `mammoth connector ds-config delete`
 
@@ -1708,7 +1708,7 @@ Total commands: 753.
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.connectors.ConnectorsAPI.delete_ds_config`
-- Agent example: `mammoth connector ds-config delete sample sample sample`
+- Agent example: `mammoth connector ds-config delete postgres prod-warehouse orders-config --yes`
 
 ### `mammoth connector ds-config delete-all`
 
@@ -1720,7 +1720,7 @@ Total commands: 753.
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.connectors.ConnectorsAPI.ds_config_delete_all`
-- Agent example: `mammoth connector ds-config delete-all sample sample --input '{"config_ids": ["resource-123"]}'`
+- Agent example: `mammoth connector ds-config delete-all postgres prod-warehouse --input '{"config_ids": ["resource-123"]}' --yes`
 
 ### `mammoth connector ds-config get`
 
@@ -1733,7 +1733,7 @@ Total commands: 753.
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.connectors.ConnectorsAPI.get_ds_config`
-- Agent example: `mammoth connector ds-config get sample sample sample`
+- Agent example: `mammoth connector ds-config get postgres prod-warehouse orders-config`
 
 ### `mammoth connector ds-config list`
 
@@ -1745,7 +1745,7 @@ Total commands: 753.
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.connectors.ConnectorsAPI.list_ds_configs`
-- Agent example: `mammoth connector ds-config list sample sample`
+- Agent example: `mammoth connector ds-config list postgres prod-warehouse`
 
 ### `mammoth connector ds-config update`
 
@@ -1758,7 +1758,7 @@ Total commands: 753.
 - Mutation class: `external_effect`
 - Confirmation: `yes_always`
 - Backing SDK: `mammoth.api.connectors.ConnectorsAPI.update_ds_config`
-- Agent example: `mammoth connector ds-config update sample sample sample --input '{"patch": [{"op": "replace", "path": "query", "value": "sample"}]}'`
+- Agent example: `mammoth connector ds-config update postgres prod-warehouse orders-config --input '{"patch": [{"op": "replace", "path": "query", "value": "SELECT * FROM orders"}]}' --yes`
 
 ### `mammoth connector get`
 
@@ -1769,7 +1769,7 @@ Total commands: 753.
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.connectors.ConnectorsAPI.get`
-- Agent example: `mammoth connector get sample`
+- Agent example: `mammoth connector get postgres`
 
 ### `mammoth connector list`
 
@@ -1788,7 +1788,7 @@ Total commands: 753.
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.ai.AIAPI.query_gen`
-- Agent example: `mammoth connector query generate sample sample --input '{"query": "Total sales for January"}'`
+- Agent example: `mammoth connector query generate postgres prod-warehouse --input '{"query": "Total sales for January"}'`
 
 ### `mammoth connector query status`
 
@@ -1800,7 +1800,7 @@ Total commands: 753.
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.ai.AIAPI.status`
-- Agent example: `mammoth connector query status sample sample`
+- Agent example: `mammoth connector query status postgres prod-warehouse`
 
 ## context
 
@@ -1847,7 +1847,7 @@ Total commands: 753.
 - Mutation class: `external_effect`
 - Confirmation: `yes_always`
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.action`
-- Agent example: `mammoth dashboard action 123 --input '{"action": "sync"}'`
+- Agent example: `mammoth dashboard action 123 --input '{"action": "sync"}' --yes`
 
 ### `mammoth dashboard analytics`
 
@@ -1880,7 +1880,7 @@ Total commands: 753.
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.assess_pbix`
-- Agent example: `mammoth dashboard assess-pbix sample.pbix`
+- Agent example: `mammoth dashboard assess-pbix Sales.pbix`
 
 ### `mammoth dashboard assess-twb`
 
@@ -1891,7 +1891,7 @@ Total commands: 753.
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.assess_twb`
-- Agent example: `mammoth dashboard assess-twb sample.twb`
+- Agent example: `mammoth dashboard assess-twb Sales.twb`
 
 ### `mammoth dashboard attachment-create`
 
@@ -1902,7 +1902,7 @@ Total commands: 753.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.attachment_create`
-- Agent example: `mammoth dashboard attachment-create sample.pbix`
+- Agent example: `mammoth dashboard attachment-create Sales.pbix`
 
 ### `mammoth dashboard audience digest get`
 
@@ -2071,7 +2071,7 @@ Total commands: 753.
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.context_delete`
-- Agent example: `mammoth dashboard context delete resource-123`
+- Agent example: `mammoth dashboard context delete resource-123 --yes`
 
 ### `mammoth dashboard context extract`
 
@@ -2147,7 +2147,7 @@ Total commands: 753.
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.delete`
-- Agent example: `mammoth dashboard delete 123`
+- Agent example: `mammoth dashboard delete 123 --yes`
 
 ### `mammoth dashboard descriptor-data`
 
@@ -2224,7 +2224,7 @@ Total commands: 753.
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.embed_origin_revoke`
-- Agent example: `mammoth dashboard embed origin revoke 123 --input '{"origin": "sample"}' --yes --confirm 123`
+- Agent example: `mammoth dashboard embed origin revoke 123 --input '{"origin": "https://example.com"}' --yes --confirm 123`
 
 ### `mammoth dashboard embed preview-token create`
 
@@ -2287,7 +2287,7 @@ Total commands: 753.
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.engagement_person`
-- Agent example: `mammoth dashboard engagement person 123 123`
+- Agent example: `mammoth dashboard engagement person 123 456`
 
 ### `mammoth dashboard engagement remind`
 
@@ -2298,7 +2298,7 @@ Total commands: 753.
 - Mutation class: `external_effect`
 - Confirmation: `yes_always`
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.engagement_remind`
-- Agent example: `mammoth dashboard engagement remind 123 --input '{"user_ids": [1]}'`
+- Agent example: `mammoth dashboard engagement remind 123 --input '{"user_ids": [1]}' --yes`
 
 ### `mammoth dashboard exemplar extract`
 
@@ -2338,7 +2338,7 @@ Total commands: 753.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.canvas_save`
-- Agent example: `mammoth dashboard filter add 123 --input '{"field": "sample"}'`
+- Agent example: `mammoth dashboard filter add 123 --input '{"field": "Status"}'`
 
 ### `mammoth dashboard filter list`
 
@@ -2360,7 +2360,7 @@ Total commands: 753.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.canvas_save`
-- Agent example: `mammoth dashboard filter remove 123 --input '{"field": "sample"}'`
+- Agent example: `mammoth dashboard filter remove 123 --input '{"field": "Status"}'`
 
 ### `mammoth dashboard format-preview`
 
@@ -2382,7 +2382,7 @@ Total commands: 753.
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.gallery_get`
-- Agent example: `mammoth dashboard gallery get sample`
+- Agent example: `mammoth dashboard gallery get revenue-overview`
 
 ### `mammoth dashboard gallery list`
 
@@ -2422,7 +2422,7 @@ Total commands: 753.
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.import_workbook`
-- Agent example: `mammoth dashboard import-workbook sample.twbx --project 456 --yes --confirm 456`
+- Agent example: `mammoth dashboard import-workbook Sales.twbx --project 456 --yes --confirm 456`
 
 ### `mammoth dashboard job-by-url`
 
@@ -2463,7 +2463,7 @@ Total commands: 753.
 - Mutation class: `benign_mutation`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.own_data_accept`
-- Agent example: `mammoth dashboard own-data accept 123`
+- Agent example: `mammoth dashboard own-data accept 123 --yes --confirm 123`
 
 ### `mammoth dashboard own-data dismiss`
 
@@ -2529,7 +2529,7 @@ Total commands: 753.
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.add_pages`
-- Agent example: `mammoth dashboard pages add 123 --input '{"body": {"params": {"pages": [{"title": "By region", "focus": {"measure": "Revenue", "dim": "Region", "kpis": [{"field": "Revenue", "agg": "sum", "label": "Revenue"}]}, "charts": [{"kind": "hbar", "title": "Revenue by region", "dim": "Region", "measure": "Revenue", "agg": "sum"}]}]}}}'`
+- Agent example: `mammoth dashboard pages add 123 --input '{"body": {"params": {"pages": [{"title": "By region", "focus": {"measure": "Revenue", "dim": "Region", "kpis": [{"field": "Revenue", "agg": "sum", "label": "Revenue"}]}, "charts": [{"kind": "hbar", "title": "Revenue by region", "dim": "Region", "measure": "Revenue", "agg": "sum"}]}]}}}' --yes --confirm 123`
 
 ### `mammoth dashboard pbix-assess`
 
@@ -2552,7 +2552,7 @@ Total commands: 753.
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.attachment_intent`
-- Agent example: `mammoth dashboard pbix-intent 123 123`
+- Agent example: `mammoth dashboard pbix-intent 123 456`
 
 ### `mammoth dashboard pdf export`
 
@@ -2575,7 +2575,7 @@ Total commands: 753.
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.pdf_artifact`
-- Agent example: `mammoth dashboard pdf-artifact 123 123`
+- Agent example: `mammoth dashboard pdf-artifact 123 456`
 
 ### `mammoth dashboard published canvas`
 
@@ -2687,7 +2687,7 @@ Total commands: 753.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.qa_ask`
-- Agent example: `mammoth dashboard qa ask 123 123 --input '{"body": {"params": {"question": "Summarize revenue by region"}}}'`
+- Agent example: `mammoth dashboard qa ask 123 456 --input '{"body": {"params": {"question": "Summarize revenue by region"}}}'`
 
 ### `mammoth dashboard qa comment create`
 
@@ -2699,7 +2699,7 @@ Total commands: 753.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.qa_comment_create`
-- Agent example: `mammoth dashboard qa comment create 123 123 --input '{"body": {"params": {"body": "sample"}}}'`
+- Agent example: `mammoth dashboard qa comment create 123 456 --input '{"body": {"params": {"body": "Quarterly revenue summary"}}}'`
 
 ### `mammoth dashboard qa comment delete`
 
@@ -2712,7 +2712,7 @@ Total commands: 753.
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.qa_comment_delete`
-- Agent example: `mammoth dashboard qa comment delete 123 123 123`
+- Agent example: `mammoth dashboard qa comment delete 123 456 789 --yes`
 
 ### `mammoth dashboard qa feedback`
 
@@ -2725,7 +2725,7 @@ Total commands: 753.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.qa_feedback`
-- Agent example: `mammoth dashboard qa feedback 123 123 123 --input '{"body": {"params": {"rating": "up"}}}'`
+- Agent example: `mammoth dashboard qa feedback 123 456 789 --input '{"body": {"params": {"rating": "up"}}}'`
 
 ### `mammoth dashboard qa insights`
 
@@ -2759,7 +2759,7 @@ Total commands: 753.
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.qa_session_delete`
-- Agent example: `mammoth dashboard qa session delete 123 123`
+- Agent example: `mammoth dashboard qa session delete 123 456 --yes`
 
 ### `mammoth dashboard qa session fork`
 
@@ -2771,7 +2771,7 @@ Total commands: 753.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.qa_session_fork`
-- Agent example: `mammoth dashboard qa session fork 123 123`
+- Agent example: `mammoth dashboard qa session fork 123 456`
 
 ### `mammoth dashboard qa session get`
 
@@ -2783,7 +2783,7 @@ Total commands: 753.
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.qa_session_get`
-- Agent example: `mammoth dashboard qa session get 123 123`
+- Agent example: `mammoth dashboard qa session get 123 456`
 
 ### `mammoth dashboard qa session list`
 
@@ -2806,7 +2806,7 @@ Total commands: 753.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.qa_session_rename`
-- Agent example: `mammoth dashboard qa session rename 123 123 --input '{"body": {"params": {"title": "Revenue report"}}}'`
+- Agent example: `mammoth dashboard qa session rename 123 456 --input '{"body": {"params": {"title": "Revenue report"}}}'`
 
 ### `mammoth dashboard qa session set-visibility`
 
@@ -2818,7 +2818,7 @@ Total commands: 753.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.qa_session_set_visibility`
-- Agent example: `mammoth dashboard qa session set-visibility 123 123 --input '{"body": {"params": {"visibility": "sample"}}}'`
+- Agent example: `mammoth dashboard qa session set-visibility 123 456 --input '{"body": {"params": {"visibility": "shared"}}}'`
 
 ### `mammoth dashboard qa settings get`
 
@@ -2917,7 +2917,7 @@ Total commands: 753.
 - Mutation class: `external_effect`
 - Confirmation: `yes_always`
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.share`
-- Agent example: `mammoth dashboard share 123 --input '{"type_of_auth": "mammoth"}'`
+- Agent example: `mammoth dashboard share 123 --input '{"type_of_auth": "mammoth"}' --yes`
 
 ### `mammoth dashboard signature create`
 
@@ -2935,7 +2935,7 @@ Total commands: 753.
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.signature_delete`
-- Agent example: `mammoth dashboard signature delete resource-123`
+- Agent example: `mammoth dashboard signature delete resource-123 --yes`
 
 ### `mammoth dashboard signature list`
 
@@ -2978,7 +2978,7 @@ Total commands: 753.
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.style_custom_delete`
-- Agent example: `mammoth dashboard style custom delete resource-123`
+- Agent example: `mammoth dashboard style custom delete resource-123 --yes`
 
 ### `mammoth dashboard style custom list`
 
@@ -3010,7 +3010,7 @@ Total commands: 753.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.style_default_set`
-- Agent example: `mammoth dashboard style default set --input '{"body": {"params": {"styleId": "sample"}}}'`
+- Agent example: `mammoth dashboard style default set --input '{"body": {"params": {"styleId": "default"}}}'`
 
 ### `mammoth dashboard style derive`
 
@@ -3064,7 +3064,7 @@ Total commands: 753.
 - Mutation class: `benign_mutation`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.swap_data`
-- Agent example: `mammoth dashboard swap-data 123 --input '{"body": {"params": {"dataview_id": 1}}}'`
+- Agent example: `mammoth dashboard swap-data 123 --input '{"body": {"params": {"dataview_id": 1}}}' --yes --confirm 123`
 
 ### `mammoth dashboard swap-fit`
 
@@ -3113,9 +3113,9 @@ Total commands: 753.
 - `TAG_ID` (int, required) — ID of the tag.
 
 - Mutation class: `benign_mutation`
-- Confirmation: `confirm_target`
+- Confirmation: `none`
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.rename_tag`
-- Agent example: `mammoth dashboard tags rename 123 --input '{"name": "Revenue"}' --yes --confirm 123`
+- Agent example: `mammoth dashboard tags rename 123 --input '{"name": "Revenue"}'`
 
 ### `mammoth dashboard tags set`
 
@@ -3151,7 +3151,7 @@ Total commands: 753.
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.template_delete`
-- Agent example: `mammoth dashboard template delete resource-123`
+- Agent example: `mammoth dashboard template delete resource-123 --yes`
 
 ### `mammoth dashboard template fit`
 
@@ -3216,7 +3216,7 @@ Total commands: 753.
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.template_thumbnail_clear`
-- Agent example: `mammoth dashboard template thumbnail clear resource-123`
+- Agent example: `mammoth dashboard template thumbnail clear resource-123 --yes`
 
 ### `mammoth dashboard template thumbnail get`
 
@@ -3257,7 +3257,7 @@ Total commands: 753.
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.use_template`
-- Agent example: `mammoth dashboard templates use sample --input '{"body": {"params": {"project_id": 1}}}'`
+- Agent example: `mammoth dashboard templates use revenue-overview --input '{"body": {"params": {"project_id": 1}}}' --yes --confirm revenue-overview`
 
 ### `mammoth dashboard trash`
 
@@ -3350,7 +3350,7 @@ Total commands: 753.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.data_apps.DataAppsAPI.create`
-- Agent example: `mammoth schema get data-app.create`
+- Agent example: `mammoth data-app create --input '{"body": {"name": "Revenue app"}}'`
 
 ### `mammoth data-app delete`
 
@@ -3361,7 +3361,7 @@ Total commands: 753.
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.data_apps.DataAppsAPI.delete`
-- Agent example: `mammoth data-app delete 123`
+- Agent example: `mammoth data-app delete 123 --yes`
 
 ### `mammoth data-app get`
 
@@ -3384,7 +3384,7 @@ Total commands: 753.
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.data_apps.DataAppsAPI.job`
-- Agent example: `mammoth data-app job 123 123`
+- Agent example: `mammoth data-app job 123 456`
 
 ### `mammoth data-app list`
 
@@ -3413,7 +3413,7 @@ Total commands: 753.
 - Mutation class: `external_effect`
 - Confirmation: `yes_always`
 - Backing SDK: `mammoth.api.data_apps.DataAppsAPI.share`
-- Agent example: `mammoth data-app share 123 --input '{"body": {"sample_key": "Status"}}' --yes`
+- Agent example: `mammoth data-app share 123 --input '{"body": {"name": "Status"}}' --yes`
 
 ### `mammoth data-app update`
 
@@ -3424,7 +3424,7 @@ Total commands: 753.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.data_apps.DataAppsAPI.update`
-- Agent example: `mammoth schema get data-app.update`
+- Agent example: `mammoth data-app update 123 --input '{"body": {"name": "Revenue app"}}'`
 
 ### `mammoth data-app upload`
 
@@ -3459,7 +3459,7 @@ Total commands: 753.
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.data_apps.DataAppsAPI.user_remove`
-- Agent example: `mammoth data-app user remove 123 analyst@example.com`
+- Agent example: `mammoth data-app user remove 123 analyst@example.com --yes`
 
 ## dataset
 
@@ -3473,7 +3473,7 @@ Total commands: 753.
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.datasets.DatasetsAPI.get_batch_data`
-- Agent example: `mammoth dataset batch-data 123 123`
+- Agent example: `mammoth dataset batch-data 123 456`
 
 ### `mammoth dataset broken-rows list`
 
@@ -3495,21 +3495,21 @@ Total commands: 753.
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.datasets.DatasetsAPI.resolve_unstructured_rows`
-- Agent example: `mammoth dataset broken-rows resolve 123 --input '{"op": "add", "batch_id": 1, "rows": [{"line_num": 2, "line": "corrected,line,here"}]}'`
+- Agent example: `mammoth dataset broken-rows resolve 123 --input '{"op": "add", "batch_id": 1, "rows": [{"line_num": 2, "line": "corrected,line,here"}]}' --yes`
 
 ### `mammoth dataset bulk-delete`
 
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.datasets.DatasetsAPI.bulk_delete`
-- Agent example: `mammoth dataset bulk-delete --input '{"dataset_ids": [456, 457]}'`
+- Agent example: `mammoth dataset bulk-delete --input '{"dataset_ids": [456, 457]}' --yes`
 
 ### `mammoth dataset bulk-update`
 
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.datasets.DatasetsAPI.bulk_update`
-- Agent example: `mammoth dataset bulk-update --input '{"patch_data": {"sample_key": "Status"}}'`
+- Agent example: `mammoth dataset bulk-update --input '{"patch_data": {"name": "Status"}}' --yes`
 
 ### `mammoth dataset column-stats`
 
@@ -3556,7 +3556,7 @@ Total commands: 753.
 - Mutation class: `benign_mutation`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.datasets.DatasetsAPI.add_definition`
-- Agent example: `mammoth dataset definition add 123 --input '{"term": "late", "definition": "delivered more than 5 days after shipped_date"}'`
+- Agent example: `mammoth dataset definition add 123 --input '{"term": "late", "definition": "delivered more than 5 days after shipped_date"}' --yes --confirm 123`
 
 ### `mammoth dataset definition list`
 
@@ -3579,7 +3579,7 @@ Total commands: 753.
 - Mutation class: `benign_mutation`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.datasets.DatasetsAPI.remove_definition`
-- Agent example: `mammoth dataset definition remove 123 a1b2c3d4`
+- Agent example: `mammoth dataset definition remove 123 a1b2c3d4 --yes`
 
 ### `mammoth dataset delete`
 
@@ -3590,7 +3590,7 @@ Total commands: 753.
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.datasets.DatasetsAPI.delete`
-- Agent example: `mammoth dataset delete 123`
+- Agent example: `mammoth dataset delete 123 --yes`
 
 ### `mammoth dataset file-settings get`
 
@@ -3612,7 +3612,7 @@ Total commands: 753.
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.datasets.DatasetsAPI.file_settings_undo`
-- Agent example: `mammoth dataset file-settings undo 123`
+- Agent example: `mammoth dataset file-settings undo 123 --yes`
 
 ### `mammoth dataset file-settings update`
 
@@ -3623,7 +3623,7 @@ Total commands: 753.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.datasets.DatasetsAPI.file_settings_update`
-- Agent example: `mammoth dataset file-settings update 123 --input '{"delimiter": "sample", "has_header": true, "initial_skip_count": 1, "quotechar": "sample"}'`
+- Agent example: `mammoth dataset file-settings update 123 --input '{"delimiter": ",", "has_header": true, "initial_skip_count": 1, "quotechar": "\""}'`
 
 ### `mammoth dataset find`
 
@@ -3737,7 +3737,7 @@ Total commands: 753.
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.datasets.DatasetsAPI.update`
-- Agent example: `mammoth dataset update --input '{"patch_data": [{"sample_key": "Status"}]}'`
+- Agent example: `mammoth dataset update --input '{"patch_data": [{"name": "Status"}]}' --yes`
 
   **Agent note:** raw patch input is intentionally blocked because its
   backend grammar is not a typed CLI contract. Do not infer an `op`,
@@ -3760,7 +3760,7 @@ Total commands: 753.
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.external_keys.ExternalKeysAPI.create`
-- Agent example: `mammoth external-key create --input /private/path/request.json`
+- Agent example: `mammoth external-key create --input /private/path/request.json --yes`
 
 ### `mammoth external-key delete`
 
@@ -3771,7 +3771,7 @@ Total commands: 753.
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.external_keys.ExternalKeysAPI.delete`
-- Agent example: `mammoth external-key delete 123`
+- Agent example: `mammoth external-key delete 123 --yes`
 
 ### `mammoth external-key get`
 
@@ -3798,7 +3798,7 @@ Total commands: 753.
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.files.FilesAPI.bulk_delete`
-- Agent example: `mammoth file bulk-delete --input '{"file_ids": [1]}'`
+- Agent example: `mammoth file bulk-delete --input '{"file_ids": [1]}' --yes`
 
 ### `mammoth file delete`
 
@@ -3809,7 +3809,7 @@ Total commands: 753.
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.files.FilesAPI.delete`
-- Agent example: `mammoth file delete 123`
+- Agent example: `mammoth file delete 123 --yes`
 
 ### `mammoth file extract-sheets`
 
@@ -3820,7 +3820,7 @@ Total commands: 753.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.files.FilesAPI.extract_sheets`
-- Agent example: `mammoth file extract-sheets 123 --input '{"sheets": ["sample"]}'`
+- Agent example: `mammoth file extract-sheets 123 --input '{"sheets": ["Sheet1"]}'`
 
 ### `mammoth file get`
 
@@ -3849,7 +3849,7 @@ Total commands: 753.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.files.FilesAPI.create_datasets_from_multi_sheet`
-- Agent example: `mammoth file multi-sheet-extract 123 --input '{"tables": [{"sample_key": "Status"}]}'`
+- Agent example: `mammoth file multi-sheet-extract 123 --input '{"tables": [{"name": "Status"}]}'`
 
 ### `mammoth file multi-sheet-preview`
 
@@ -3871,7 +3871,7 @@ Total commands: 753.
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.files.FilesAPI.set_password`
-- Agent example: `mammoth file set-password 123 --input /private/path/request.json`
+- Agent example: `mammoth file set-password 123 --input /private/path/request.json --yes --confirm 123`
 
 ### `mammoth file update`
 
@@ -3882,7 +3882,7 @@ Total commands: 753.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.files.FilesAPI.update`
-- Agent example: `mammoth file update 123 --input '{"patch_request": {"patch": [{"op": "replace", "path": "extract_sheets", "value": "sample"}]}}'`
+- Agent example: `mammoth file update 123 --input '{"patch_request": {"patch": [{"op": "replace", "path": "extract_sheets", "value": "Sheet1"}]}}'`
 
 ### `mammoth file upload`
 
@@ -3913,7 +3913,7 @@ Total commands: 753.
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.folders.FoldersAPI.bulk_delete`
-- Agent example: `mammoth folder bulk-delete`
+- Agent example: `mammoth folder bulk-delete --yes`
 
 ### `mammoth folder create`
 
@@ -3935,7 +3935,7 @@ Total commands: 753.
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.folders.FoldersAPI.delete`
-- Agent example: `mammoth folder delete 123`
+- Agent example: `mammoth folder delete 123 --yes`
 
 ### `mammoth folder find`
 
@@ -4080,14 +4080,14 @@ Total commands: 753.
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.notifications.NotificationsAPI.delete`
-- Agent example: `mammoth notification delete 123`
+- Agent example: `mammoth notification delete 123 --yes`
 
 ### `mammoth notification delete-batch`
 
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.notifications.NotificationsAPI.delete_batch`
-- Agent example: `mammoth notification delete-batch`
+- Agent example: `mammoth notification delete-batch --yes`
 
 ### `mammoth notification list`
 
@@ -4105,14 +4105,14 @@ Total commands: 753.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.notifications.NotificationsAPI.update`
-- Agent example: `mammoth notification update 123 --input '{"patch": [{"sample_key": "Status"}]}'`
+- Agent example: `mammoth notification update 123 --input '{"patch": [{"name": "Status"}]}'`
 
 ### `mammoth notification update-batch`
 
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.notifications.NotificationsAPI.update_batch`
-- Agent example: `mammoth notification update-batch --input '{"patch": [{"sample_key": "Status"}]}'`
+- Agent example: `mammoth notification update-batch --input '{"patch": [{"name": "Status"}]}'`
 
 ## parameter
 
@@ -4125,7 +4125,7 @@ Total commands: 753.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.parameters.ParametersAPI.create`
-- Agent example: `mammoth parameter create 'Revenue report' --input '{"param_type": "TEXT", "value": "Q3"}'`
+- Agent example: `mammoth parameter create revenue_report --input '{"param_type": "TEXT", "value": "Q3"}'`
 
 ### `mammoth parameter delete`
 
@@ -4136,7 +4136,7 @@ Total commands: 753.
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.parameters.ParametersAPI.delete`
-- Agent example: `mammoth parameter delete 123`
+- Agent example: `mammoth parameter delete 123 --yes`
 
 ### `mammoth parameter dependencies`
 
@@ -4191,7 +4191,7 @@ Total commands: 753.
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.parameters.ParametersAPI.group_delete`
-- Agent example: `mammoth parameter group delete 123`
+- Agent example: `mammoth parameter group delete 123 --yes`
 
 ### `mammoth parameter group list`
 
@@ -4261,14 +4261,14 @@ Total commands: 753.
 - Mutation class: `destructive`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.projects.ProjectsAPI.bulk_delete_and_verify`
-- Agent example: `mammoth project bulk-delete --input '{"project_ids": [1]}'`
+- Agent example: `mammoth project bulk-delete --input '{"project_ids": [1]}' --yes`
 
 ### `mammoth project bulk-update`
 
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.projects.ProjectsAPI.bulk_update`
-- Agent example: `mammoth project bulk-update --input '{"patch_data": {"patches": [{"op": "add", "path": "role", "value": [{"project_id": 456, "user_roles": [{"user_id": 123, "role": "project_analyst"}]}]}]}}'`
+- Agent example: `mammoth project bulk-update --input '{"patch_data": {"patches": [{"op": "add", "path": "role", "value": [{"project_id": 456, "user_roles": [{"user_id": 123, "role": "project_analyst"}]}]}]}}' --yes`
 
 ### `mammoth project check`
 
@@ -4337,7 +4337,7 @@ Total commands: 753.
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.projects.ProjectsAPI.delete_and_verify`
-- Agent example: `mammoth project delete 123`
+- Agent example: `mammoth project delete 123 --yes --confirm 123`
 
 ### `mammoth project ensure`
 
@@ -4377,7 +4377,7 @@ Total commands: 753.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.projects.ProjectsAPI.add_agent_memory`
-- Agent example: `mammoth project memory add 123 --input '{"text": "sample"}'`
+- Agent example: `mammoth project memory add 123 --input '{"text": "Quarterly revenue summary"}'`
 
 ### `mammoth project memory list`
 
@@ -4397,9 +4397,9 @@ Total commands: 753.
 - `PROJECT_ID` (int, optional) — ID of the project to act on; defaults to the active project.
 
 - Mutation class: `benign_mutation`
-- Confirmation: `none`
+- Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.projects.ProjectsAPI.remove_agent_memory`
-- Agent example: `mammoth project memory remove 123 --input '{"index": 1}'`
+- Agent example: `mammoth project memory remove 123 --input '{"index": 1}' --yes`
 
 ### `mammoth project needs-attention`
 
@@ -4498,7 +4498,7 @@ Total commands: 753.
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.projects.ProjectsAPI.add_users`
-- Agent example: `mammoth project user add 123 --input '{"user_ids": [123], "role": "project_analyst"}'`
+- Agent example: `mammoth project user add 123 --input '{"user_ids": [123], "role": "project_analyst"}' --yes --confirm 123`
 
 ### `mammoth project user remove`
 
@@ -4509,7 +4509,7 @@ Total commands: 753.
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.projects.ProjectsAPI.remove_users`
-- Agent example: `mammoth project user remove 123 --input '{"user_ids": ["resource-123"]}'`
+- Agent example: `mammoth project user remove 123 --input '{"user_ids": ["resource-123"]}' --yes --confirm 123`
 
 ### `mammoth project user update`
 
@@ -4551,7 +4551,7 @@ Total commands: 753.
 - Mutation class: `external_effect`
 - Confirmation: `yes_always`
 - Backing SDK: `mammoth.api.schedules.SchedulesAPI.create`
-- Agent example: `mammoth schedule create --input '{"spec": {"rrule": {"frequency": "minutely", "start": "2026-01-01T00:00:00Z"}}}'`
+- Agent example: `mammoth schedule create --input '{"spec": {"rrule": {"frequency": "minutely", "start": "2026-01-01T00:00:00Z"}}}' --yes`
 
 ### `mammoth schedule delete`
 
@@ -4562,7 +4562,7 @@ Total commands: 753.
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.schedules.SchedulesAPI.delete`
-- Agent example: `mammoth schedule delete 123`
+- Agent example: `mammoth schedule delete 123 --yes`
 
 ### `mammoth schedule get`
 
@@ -4591,7 +4591,7 @@ Total commands: 753.
 - Mutation class: `external_effect`
 - Confirmation: `yes_always`
 - Backing SDK: `mammoth.api.schedules.SchedulesAPI.update`
-- Agent example: `mammoth schedule update 123 --input '{"patch": [{"op": "replace", "path": "rrule", "value": {"rrule": {"frequency": "minutely", "start": "2026-01-01T00:00:00Z"}, "work_items": [{"name": "pull_cloud_data", "execution_params": {"schedule_type": "moment", "first_pull_at": "now", "on_refresh_action": "replace"}, "args": [1]}]}}]}'`
+- Agent example: `mammoth schedule update 123 --input '{"patch": [{"op": "replace", "path": "rrule", "value": {"rrule": {"frequency": "minutely", "start": "2026-01-01T00:00:00Z"}, "work_items": [{"name": "pull_cloud_data", "execution_params": {"schedule_type": "moment", "first_pull_at": "now", "on_refresh_action": "replace"}, "args": [1]}]}}]}' --yes`
 
 ## schema
 
@@ -4690,7 +4690,7 @@ Total commands: 753.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.snippets.SnippetsAPI.create`
-- Agent example: `mammoth snippet create 'Revenue report' --input '{"code": "sample", "language": "sample"}'`
+- Agent example: `mammoth snippet create 'Revenue report' --input '{"code": "SELECT * FROM orders", "language": "sql"}'`
 
 ### `mammoth snippet delete`
 
@@ -4701,7 +4701,7 @@ Total commands: 753.
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.snippets.SnippetsAPI.delete`
-- Agent example: `mammoth snippet delete 123`
+- Agent example: `mammoth snippet delete 123 --yes`
 
 ### `mammoth snippet dependencies`
 
@@ -4776,7 +4776,7 @@ Total commands: 753.
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.support.SupportAPI.connector_create`
-- Agent example: `mammoth support connector create 'Revenue report'`
+- Agent example: `mammoth support connector create 'Revenue report' --yes --confirm 'Revenue report'`
 
 ### `mammoth support connector delete`
 
@@ -4787,7 +4787,7 @@ Total commands: 753.
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.support.SupportAPI.connector_delete`
-- Agent example: `mammoth support connector delete 123`
+- Agent example: `mammoth support connector delete 123 --yes --confirm 123`
 
 ### `mammoth support connector list`
 
@@ -4805,7 +4805,7 @@ Total commands: 753.
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.support.SupportAPI.connector_update`
-- Agent example: `mammoth support connector update 123`
+- Agent example: `mammoth support connector update 123 --yes --confirm 123`
 
 ### `mammoth support connector-profile add-connector`
 
@@ -4817,7 +4817,7 @@ Total commands: 753.
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.support.SupportAPI.connector_profile_add_connector`
-- Agent example: `mammoth support connector-profile add-connector 123 123`
+- Agent example: `mammoth support connector-profile add-connector 123 456 --yes --confirm 123`
 
 ### `mammoth support connector-profile create`
 
@@ -4828,7 +4828,7 @@ Total commands: 753.
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.support.SupportAPI.connector_profile_create`
-- Agent example: `mammoth support connector-profile create 'Revenue report'`
+- Agent example: `mammoth support connector-profile create 'Revenue report' --yes --confirm 'Revenue report'`
 
 ### `mammoth support connector-profile delete`
 
@@ -4839,7 +4839,7 @@ Total commands: 753.
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.support.SupportAPI.connector_profile_delete`
-- Agent example: `mammoth support connector-profile delete 123`
+- Agent example: `mammoth support connector-profile delete 123 --yes --confirm 123`
 
 ### `mammoth support connector-profile list`
 
@@ -4857,7 +4857,7 @@ Total commands: 753.
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.support.SupportAPI.connector_profile_update`
-- Agent example: `mammoth support connector-profile update 123`
+- Agent example: `mammoth support connector-profile update 123 --yes --confirm 123`
 
 ### `mammoth support feature create`
 
@@ -4868,7 +4868,7 @@ Total commands: 753.
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.support.SupportAPI.feature_create`
-- Agent example: `mammoth support feature create 'Revenue report'`
+- Agent example: `mammoth support feature create 'Revenue report' --yes --confirm 'Revenue report'`
 
 ### `mammoth support feature delete`
 
@@ -4879,7 +4879,7 @@ Total commands: 753.
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.support.SupportAPI.feature_delete`
-- Agent example: `mammoth support feature delete 123`
+- Agent example: `mammoth support feature delete 123 --yes --confirm 123`
 
 ### `mammoth support feature list`
 
@@ -4897,7 +4897,7 @@ Total commands: 753.
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.support.SupportAPI.feature_update`
-- Agent example: `mammoth support feature update 123`
+- Agent example: `mammoth support feature update 123 --yes --confirm 123`
 
 ### `mammoth support feature-profile add-feature`
 
@@ -4909,7 +4909,7 @@ Total commands: 753.
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.support.SupportAPI.feature_profile_add_feature`
-- Agent example: `mammoth support feature-profile add-feature 123 123`
+- Agent example: `mammoth support feature-profile add-feature 123 456 --yes --confirm 123`
 
 ### `mammoth support feature-profile create`
 
@@ -4920,7 +4920,7 @@ Total commands: 753.
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.support.SupportAPI.feature_profile_create`
-- Agent example: `mammoth support feature-profile create 'Revenue report'`
+- Agent example: `mammoth support feature-profile create 'Revenue report' --yes --confirm 'Revenue report'`
 
 ### `mammoth support feature-profile delete`
 
@@ -4931,7 +4931,7 @@ Total commands: 753.
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.support.SupportAPI.feature_profile_delete`
-- Agent example: `mammoth support feature-profile delete 123`
+- Agent example: `mammoth support feature-profile delete 123 --yes --confirm 123`
 
 ### `mammoth support feature-profile list`
 
@@ -4949,7 +4949,7 @@ Total commands: 753.
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.support.SupportAPI.feature_profile_update`
-- Agent example: `mammoth support feature-profile update 123`
+- Agent example: `mammoth support feature-profile update 123 --yes --confirm 123`
 
 ### `mammoth support ownership transfer`
 
@@ -4961,7 +4961,7 @@ Total commands: 753.
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.support.SupportAPI.ownership_transfer`
-- Agent example: `mammoth support ownership transfer 123 123`
+- Agent example: `mammoth support ownership transfer 123 456 --yes --confirm 123`
 
 ### `mammoth support plan archive`
 
@@ -4972,7 +4972,7 @@ Total commands: 753.
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.support.SupportAPI.plan_archive`
-- Agent example: `mammoth support plan archive 123`
+- Agent example: `mammoth support plan archive 123 --yes --confirm 123`
 
 ### `mammoth support plan chargebee-list`
 
@@ -4990,7 +4990,7 @@ Total commands: 753.
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.support.SupportAPI.plan_create`
-- Agent example: `mammoth support plan create 'Revenue report' --input '{"monthly_price": 1.0, "is_self_serve": true}'`
+- Agent example: `mammoth support plan create 'Revenue report' --input '{"monthly_price": 1.0, "is_self_serve": true}' --yes --confirm 'Revenue report'`
 
 ### `mammoth support plan delete`
 
@@ -5001,7 +5001,7 @@ Total commands: 753.
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.support.SupportAPI.plan_delete`
-- Agent example: `mammoth support plan delete 123`
+- Agent example: `mammoth support plan delete 123 --yes --confirm 123`
 
 ### `mammoth support plan get`
 
@@ -5038,7 +5038,7 @@ Total commands: 753.
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.support.SupportAPI.plan_storage_option_archive`
-- Agent example: `mammoth support plan storage-option archive 123 123`
+- Agent example: `mammoth support plan storage-option archive 123 456 --yes --confirm 123`
 
 ### `mammoth support plan storage-option create`
 
@@ -5049,7 +5049,7 @@ Total commands: 753.
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.support.SupportAPI.plan_storage_option_create`
-- Agent example: `mammoth support plan storage-option create 123 --input '{"storage_gb": 1, "monthly_price": 1.0, "annual_price": 1.0}'`
+- Agent example: `mammoth support plan storage-option create 123 --input '{"storage_gb": 1, "monthly_price": 1.0, "annual_price": 1.0}' --yes --confirm 123`
 
 ### `mammoth support plan storage-option list`
 
@@ -5072,7 +5072,7 @@ Total commands: 753.
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.support.SupportAPI.plan_storage_option_update`
-- Agent example: `mammoth support plan storage-option update 123 123`
+- Agent example: `mammoth support plan storage-option update 123 456 --yes --confirm 123`
 
 ### `mammoth support plan unarchive`
 
@@ -5083,7 +5083,7 @@ Total commands: 753.
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.support.SupportAPI.plan_unarchive`
-- Agent example: `mammoth support plan unarchive 123`
+- Agent example: `mammoth support plan unarchive 123 --yes --confirm 123`
 
 ### `mammoth support plan update`
 
@@ -5094,7 +5094,7 @@ Total commands: 753.
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.support.SupportAPI.plan_update`
-- Agent example: `mammoth support plan update 123`
+- Agent example: `mammoth support plan update 123 --yes --confirm 123`
 
 ### `mammoth support plan update-storage-tiers`
 
@@ -5105,7 +5105,7 @@ Total commands: 753.
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.support.SupportAPI.plan_update_storage_tiers`
-- Agent example: `mammoth support plan update-storage-tiers 123 --input '{"storage_tiers": [{"sample_key": "Status"}]}'`
+- Agent example: `mammoth support plan update-storage-tiers 123 --input '{"storage_tiers": [{"name": "Status"}]}' --yes --confirm 123`
 
 ### `mammoth support subscription create`
 
@@ -5117,7 +5117,7 @@ Total commands: 753.
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.support.SupportAPI.subscription_create`
-- Agent example: `mammoth support subscription create 123 resource-123`
+- Agent example: `mammoth support subscription create 123 resource-123 --yes --confirm 123`
 
 ### `mammoth support subscription get`
 
@@ -5140,7 +5140,7 @@ Total commands: 753.
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.support.SupportAPI.subscription_update`
-- Agent example: `mammoth support subscription update 123 resource-123`
+- Agent example: `mammoth support subscription update 123 resource-123 --yes --confirm 123`
 
 ### `mammoth support template audit`
 
@@ -5158,7 +5158,7 @@ Total commands: 753.
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.support.SupportAPI.template_canvas`
-- Agent example: `mammoth support template canvas sample`
+- Agent example: `mammoth support template canvas revenue-overview`
 
 ### `mammoth support template data-preview`
 
@@ -5169,7 +5169,7 @@ Total commands: 753.
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.support.SupportAPI.template_data_preview`
-- Agent example: `mammoth support template data-preview sample`
+- Agent example: `mammoth support template data-preview revenue-overview`
 
 ### `mammoth support template discard`
 
@@ -5180,7 +5180,7 @@ Total commands: 753.
 - Mutation class: `destructive`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.support.SupportAPI.template_discard`
-- Agent example: `mammoth support template discard sample`
+- Agent example: `mammoth support template discard revenue-overview --yes --confirm revenue-overview`
 
 ### `mammoth support template edit`
 
@@ -5191,7 +5191,7 @@ Total commands: 753.
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.support.SupportAPI.template_edit`
-- Agent example: `mammoth support template edit sample --input '{"changes": {"sample_key": "Status"}}'`
+- Agent example: `mammoth support template edit revenue-overview --input '{"changes": {"name": "Status"}}' --yes --confirm revenue-overview`
 
 ### `mammoth support template export`
 
@@ -5202,7 +5202,7 @@ Total commands: 753.
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.support.SupportAPI.template_export`
-- Agent example: `mammoth support template export sample`
+- Agent example: `mammoth support template export revenue-overview`
 
 ### `mammoth support template export-dashboard`
 
@@ -5213,7 +5213,7 @@ Total commands: 753.
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.support.SupportAPI.template_export_dashboard`
-- Agent example: `mammoth support template export-dashboard 123 --input '{"slug": "sample"}'`
+- Agent example: `mammoth support template export-dashboard 123 --input '{"slug": "revenue-overview"}'`
 
 ### `mammoth support template import`
 
@@ -5224,7 +5224,7 @@ Total commands: 753.
 - Mutation class: `high_impact`
 - Confirmation: `yes_always`
 - Backing SDK: `mammoth.api.support.SupportAPI.template_import`
-- Agent example: `mammoth support template import template.zip`
+- Agent example: `mammoth support template import template.zip --yes`
 
 ### `mammoth support template inspect`
 
@@ -5253,7 +5253,7 @@ Total commands: 753.
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.support.SupportAPI.template_publish`
-- Agent example: `mammoth support template publish sample`
+- Agent example: `mammoth support template publish revenue-overview --yes --confirm revenue-overview`
 
 ### `mammoth support template retire`
 
@@ -5264,7 +5264,7 @@ Total commands: 753.
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.support.SupportAPI.template_retire`
-- Agent example: `mammoth support template retire sample`
+- Agent example: `mammoth support template retire revenue-overview --yes --confirm revenue-overview`
 
 ### `mammoth support template snapshots`
 
@@ -5282,7 +5282,7 @@ Total commands: 753.
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.support.SupportAPI.template_thumbnail_clear`
-- Agent example: `mammoth support template thumbnail clear sample`
+- Agent example: `mammoth support template thumbnail clear revenue-overview --yes --confirm revenue-overview`
 
 ### `mammoth support template thumbnail set`
 
@@ -5294,7 +5294,7 @@ Total commands: 753.
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.support.SupportAPI.template_thumbnail_set`
-- Agent example: `mammoth support template thumbnail set sample card.png`
+- Agent example: `mammoth support template thumbnail set revenue-overview card.png --yes --confirm revenue-overview`
 
 ### `mammoth support template unpublish`
 
@@ -5305,7 +5305,7 @@ Total commands: 753.
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.support.SupportAPI.template_unpublish`
-- Agent example: `mammoth support template unpublish sample`
+- Agent example: `mammoth support template unpublish revenue-overview --yes --confirm revenue-overview`
 
 ### `mammoth support user list-all`
 
@@ -5323,7 +5323,7 @@ Total commands: 753.
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.support.SupportAPI.user_register`
-- Agent example: `mammoth support user register analyst@example.com --input '{"first_name": "Revenue report", "last_name": "Revenue report", "verified": true}'`
+- Agent example: `mammoth support user register analyst@example.com --input '{"first_name": "Revenue report", "last_name": "Revenue report", "verified": true}' --yes --confirm analyst@example.com`
 
 ### `mammoth support user update`
 
@@ -5334,7 +5334,7 @@ Total commands: 753.
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.support.SupportAPI.user_update`
-- Agent example: `mammoth support user update analyst@example.com --input '{"verified": true}'`
+- Agent example: `mammoth support user update analyst@example.com --input '{"verified": true}' --yes --confirm analyst@example.com`
 
 ### `mammoth support workspace create`
 
@@ -5345,7 +5345,7 @@ Total commands: 753.
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.support.SupportAPI.workspace_create`
-- Agent example: `mammoth support workspace create 'Revenue report' --input '{"user_email": "analyst@example.com", "payment_frequency": "sample"}'`
+- Agent example: `mammoth support workspace create 'Revenue report' --input '{"user_email": "analyst@example.com", "payment_frequency": "monthly"}' --yes --confirm 'Revenue report'`
 
 ### `mammoth support workspace delete`
 
@@ -5356,7 +5356,7 @@ Total commands: 753.
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.support.SupportAPI.workspace_delete`
-- Agent example: `mammoth support workspace delete 123`
+- Agent example: `mammoth support workspace delete 123 --yes --confirm 123`
 
 ### `mammoth support workspace get`
 
@@ -5385,7 +5385,7 @@ Total commands: 753.
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.support.SupportAPI.workspace_restore_access`
-- Agent example: `mammoth support workspace restore-access 123`
+- Agent example: `mammoth support workspace restore-access 123 --yes --confirm 123`
 
 ### `mammoth support workspace suspend-access`
 
@@ -5396,7 +5396,7 @@ Total commands: 753.
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.support.SupportAPI.workspace_suspend_access`
-- Agent example: `mammoth support workspace suspend-access 123`
+- Agent example: `mammoth support workspace suspend-access 123 --yes --confirm 123`
 
 ### `mammoth support workspace update`
 
@@ -5407,7 +5407,7 @@ Total commands: 753.
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.support.SupportAPI.workspace_update`
-- Agent example: `mammoth support workspace update 123 --input '{"name": "Revenue report", "payment_frequency": "sample", "plan_id": 1}'`
+- Agent example: `mammoth support workspace update 123 --input '{"name": "Revenue report", "payment_frequency": "monthly", "plan_id": 1}' --yes --confirm 123`
 
 ### `mammoth support workspace user add`
 
@@ -5418,7 +5418,7 @@ Total commands: 753.
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.support.SupportAPI.workspace_user_add`
-- Agent example: `mammoth support workspace user add 123 --input '{"email": "analyst@example.com", "role": "sample"}'`
+- Agent example: `mammoth support workspace user add 123 --input '{"email": "analyst@example.com", "role": "workspace_member"}' --yes --confirm 123`
 
 ### `mammoth support workspace user list`
 
@@ -5441,7 +5441,7 @@ Total commands: 753.
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.support.SupportAPI.workspace_user_remove`
-- Agent example: `mammoth support workspace user remove 123 123`
+- Agent example: `mammoth support workspace user remove 123 456 --yes --confirm 123`
 
 ### `mammoth support workspace user transfer`
 
@@ -5453,7 +5453,7 @@ Total commands: 753.
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.support.SupportAPI.workspace_user_transfer`
-- Agent example: `mammoth support workspace user transfer 123 123 --input '{"role": "sample"}'`
+- Agent example: `mammoth support workspace user transfer 123 456 --input '{"role": "workspace_admin"}' --yes --confirm 123`
 
 ## template
 
@@ -5473,7 +5473,7 @@ Total commands: 753.
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.templates.TemplatesAPI.delete`
-- Agent example: `mammoth template delete 123`
+- Agent example: `mammoth template delete 123 --yes`
 
 ### `mammoth template get`
 
@@ -5515,7 +5515,7 @@ Total commands: 753.
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.clientapps.ClientAppsAPI.create`
-- Agent example: `mammoth token create 'Revenue report'`
+- Agent example: `mammoth token create 'Revenue report' --yes --confirm 'Revenue report'`
 
 ### `mammoth token list`
 
@@ -5533,7 +5533,7 @@ Total commands: 753.
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.clientapps.ClientAppsAPI.delete`
-- Agent example: `mammoth token revoke sample`
+- Agent example: `mammoth token revoke web-client --yes`
 
 ## trash
 
@@ -5542,7 +5542,7 @@ Total commands: 753.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.trash.TrashAPI.add`
-- Agent example: `mammoth trash add --input '{"items": [{"sample_key": "Status"}]}'`
+- Agent example: `mammoth trash add --input '{"items": [{"name": "Status"}]}'`
 
 ### `mammoth trash list`
 
@@ -5556,7 +5556,7 @@ Total commands: 753.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.trash.TrashAPI.restore`
-- Agent example: `mammoth trash restore --input '{"items": [{"sample_key": "Status"}]}'`
+- Agent example: `mammoth trash restore --input '{"items": [{"name": "Status"}]}'`
 
 ## upgrade
 
@@ -5565,7 +5565,7 @@ Total commands: 753.
 - Mutation class: `external_effect`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth_cli.commands.upgrade.run`
-- Agent example: `mammoth upgrade`
+- Agent example: `mammoth upgrade --yes`
 
 ## user
 
@@ -5574,7 +5574,7 @@ Total commands: 753.
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.users.UsersAPI.avatar_delete`
-- Agent example: `mammoth user avatar delete`
+- Agent example: `mammoth user avatar delete --yes`
 
 ### `mammoth user avatar upload`
 
@@ -5592,14 +5592,14 @@ Total commands: 753.
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.user_profile.UserProfileAPI.change_password`
-- Agent example: `mammoth user change-password --input /private/path/request.json`
+- Agent example: `mammoth user change-password --input /private/path/request.json --yes`
 
 ### `mammoth user delete-account`
 
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.users.UsersAPI.delete_account`
-- Agent example: `mammoth user delete-account`
+- Agent example: `mammoth user delete-account --yes`
 
 ### `mammoth user get`
 
@@ -5650,7 +5650,7 @@ Total commands: 753.
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dataviews.DataviewsAPI.active_users`
-- Agent example: `mammoth view active-user list 123 123`
+- Agent example: `mammoth view active-user list 123 456`
 
 ### `mammoth view active-user mark`
 
@@ -5662,7 +5662,7 @@ Total commands: 753.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dataviews.DataviewsAPI.mark_active`
-- Agent example: `mammoth view active-user mark 123 123`
+- Agent example: `mammoth view active-user mark 123 456`
 
 ### `mammoth view ai generate-data`
 
@@ -5707,7 +5707,7 @@ Total commands: 753.
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dataviews.DataviewsAPI.analysis`
-- Agent example: `mammoth view analyze 123 123`
+- Agent example: `mammoth view analyze 123 456`
 
 ### `mammoth view bulk-delete`
 
@@ -5718,7 +5718,7 @@ Total commands: 753.
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.dataviews.DataviewsAPI.bulk_delete`
-- Agent example: `mammoth view bulk-delete 123 --input '{"dataview_ids": [1]}'`
+- Agent example: `mammoth view bulk-delete 123 --input '{"dataview_ids": [1]}' --yes`
 
 ### `mammoth view checkpoint create`
 
@@ -5730,7 +5730,7 @@ Total commands: 753.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.checkpoints.CheckpointsAPI.create`
-- Agent example: `mammoth view checkpoint create 123 123 --input '{"body": {"checkpoint_name": "Revenue report", "checkpoint_type": "alert", "pinned_to_end": true}}'`
+- Agent example: `mammoth view checkpoint create 123 456 --input '{"body": {"checkpoint_name": "Revenue report", "checkpoint_type": "alert", "pinned_to_end": true}}'`
 
 ### `mammoth view checkpoint delete`
 
@@ -5743,7 +5743,7 @@ Total commands: 753.
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.checkpoints.CheckpointsAPI.delete`
-- Agent example: `mammoth view checkpoint delete 123 123 123`
+- Agent example: `mammoth view checkpoint delete 123 456 789 --yes`
 
 ### `mammoth view checkpoint get`
 
@@ -5756,7 +5756,7 @@ Total commands: 753.
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.checkpoints.CheckpointsAPI.get`
-- Agent example: `mammoth view checkpoint get 123 123 123`
+- Agent example: `mammoth view checkpoint get 123 456 789`
 
 ### `mammoth view checkpoint list`
 
@@ -5768,7 +5768,7 @@ Total commands: 753.
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.checkpoints.CheckpointsAPI.list`
-- Agent example: `mammoth view checkpoint list 123 123`
+- Agent example: `mammoth view checkpoint list 123 456`
 
 ### `mammoth view checkpoint update`
 
@@ -5781,7 +5781,7 @@ Total commands: 753.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.checkpoints.CheckpointsAPI.update`
-- Agent example: `mammoth view checkpoint update 123 123 123 --input '{"body": {"patches": [{"op": "command", "path": "approve", "value": null}]}}'`
+- Agent example: `mammoth view checkpoint update 123 456 789 --input '{"body": {"patches": [{"op": "command", "path": "approve", "value": null}]}}'`
 
 ### `mammoth view compare`
 
@@ -5800,7 +5800,7 @@ Total commands: 753.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dataviews.DataviewsAPI.conditional_format_create`
-- Agent example: `mammoth view conditional-format create 123 123 --input '{"columns": ["Q1", "Q2", "Q3"], "operator": "<", "value": 55, "color": "red"}'`
+- Agent example: `mammoth view conditional-format create 123 456 --input '{"columns": ["Q1", "Q2", "Q3"], "operator": "<", "value": 55, "color": "red"}'`
 
 ### `mammoth view conditional-format delete-all`
 
@@ -5812,7 +5812,7 @@ Total commands: 753.
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.dataviews.DataviewsAPI.conditional_format_delete`
-- Agent example: `mammoth view conditional-format delete-all 123 123 --input '{"rule_id": "bca0ff33bd6f8ed1"}'`
+- Agent example: `mammoth view conditional-format delete-all 123 456 --input '{"rule_id": "bca0ff33bd6f8ed1"}' --yes`
 
 ### `mammoth view conditional-format list`
 
@@ -5824,7 +5824,7 @@ Total commands: 753.
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dataviews.DataviewsAPI.conditional_format_list`
-- Agent example: `mammoth view conditional-format list 123 123`
+- Agent example: `mammoth view conditional-format list 123 456`
 
 ### `mammoth view conditional-format update`
 
@@ -5836,7 +5836,7 @@ Total commands: 753.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dataviews.DataviewsAPI.conditional_format_update`
-- Agent example: `mammoth view conditional-format update 123 123 --input '{"rule": {"sample_key": "Status"}}'`
+- Agent example: `mammoth view conditional-format update 123 456 --input '{"rule": {"name": "Status"}}'`
 
 ### `mammoth view create`
 
@@ -5859,7 +5859,7 @@ Total commands: 753.
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dataviews.DataviewsAPI.aggregate`
-- Agent example: `mammoth view data aggregate 123 --input '{"group_by": ["Channel"], "aggregations": [{"column": "Spend", "function": "SUM", "as_name": "Total Spend"}]}'`
+- Agent example: `mammoth view data aggregate 123 456 --input '{"group_by": ["Channel"], "aggregations": [{"column": "Spend", "function": "SUM", "as_name": "Total Spend"}]}'`
 
 ### `mammoth view data compare`
 
@@ -5896,7 +5896,7 @@ Total commands: 753.
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dataviews.DataviewsAPI.explore`
-- Agent example: `mammoth view data explore 123 Status 123`
+- Agent example: `mammoth view data explore 123 Status 456`
 
 ### `mammoth view data forecast`
 
@@ -5944,7 +5944,7 @@ Total commands: 753.
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dataviews.DataviewsAPI.query_data`
-- Agent example: `mammoth view data query 123 123`
+- Agent example: `mammoth view data query 123 456`
 
 ### `mammoth view data-check create`
 
@@ -5956,7 +5956,7 @@ Total commands: 753.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.data_checks.DataChecksAPI.create`
-- Agent example: `mammoth view data-check create 123 123 --input '{"body": {"checks": [{"check_type": "null_percentage", "config": {"column": "Status", "condition": "lt"}}], "name": "Revenue report", "pinned_to_end": true}}'`
+- Agent example: `mammoth view data-check create 123 456 --input '{"body": {"checks": [{"check_type": "null_percentage", "config": {"column": "Status", "condition": "lt"}}], "name": "Revenue report", "pinned_to_end": true}}'`
 
 ### `mammoth view data-check delete`
 
@@ -5969,7 +5969,7 @@ Total commands: 753.
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.data_checks.DataChecksAPI.delete`
-- Agent example: `mammoth view data-check delete 123 123 123`
+- Agent example: `mammoth view data-check delete 123 456 789 --yes`
 
 ### `mammoth view data-check get`
 
@@ -5982,7 +5982,7 @@ Total commands: 753.
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.data_checks.DataChecksAPI.get`
-- Agent example: `mammoth view data-check get 123 123 123`
+- Agent example: `mammoth view data-check get 123 456 789`
 
 ### `mammoth view data-check list`
 
@@ -5994,7 +5994,7 @@ Total commands: 753.
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.data_checks.DataChecksAPI.list`
-- Agent example: `mammoth view data-check list 123 123`
+- Agent example: `mammoth view data-check list 123 456`
 
 ### `mammoth view data-check update`
 
@@ -6007,7 +6007,7 @@ Total commands: 753.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.data_checks.DataChecksAPI.update`
-- Agent example: `mammoth view data-check update 123 123 123 --input '{"body": {"patches": [{"op": "command", "path": "disable", "value": null}]}}'`
+- Agent example: `mammoth view data-check update 123 456 789 --input '{"body": {"patches": [{"op": "command", "path": "disable", "value": null}]}}'`
 
 ### `mammoth view delete`
 
@@ -6019,7 +6019,7 @@ Total commands: 753.
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.client.ViewsResource.delete`
-- Agent example: `mammoth view delete 123 123`
+- Agent example: `mammoth view delete 123 456 --yes`
 
 ### `mammoth view derivative create`
 
@@ -6031,7 +6031,7 @@ Total commands: 753.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.derivatives.DerivativesAPI.create`
-- Agent example: `mammoth view derivative create 123 123 --input '{"body": {"param": {"METRIC": {"AS": "total", "EXPRESSION": [{"TYPE": "FUNCTION", "VALUE": {"ARGUMENT": "column_1", "FUNCTION": "SUM"}}]}}}}'`
+- Agent example: `mammoth view derivative create 123 456 --input '{"body": {"param": {"METRIC": {"AS": "total", "EXPRESSION": [{"TYPE": "FUNCTION", "VALUE": {"ARGUMENT": "column_1", "FUNCTION": "SUM"}}]}}}}'`
 
 ### `mammoth view derivative data`
 
@@ -6044,7 +6044,7 @@ Total commands: 753.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.derivatives.DerivativesAPI.data`
-- Agent example: `mammoth view derivative data 123 123 123 --input '{"body": {"limit": null}}'`
+- Agent example: `mammoth view derivative data 123 456 789 --input '{"body": {"limit": null}}'`
 
 ### `mammoth view derivative delete`
 
@@ -6057,7 +6057,7 @@ Total commands: 753.
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.derivatives.DerivativesAPI.delete`
-- Agent example: `mammoth view derivative delete 123 123 123`
+- Agent example: `mammoth view derivative delete 123 456 789 --yes`
 
 ### `mammoth view derivative list`
 
@@ -6069,7 +6069,7 @@ Total commands: 753.
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.derivatives.DerivativesAPI.list`
-- Agent example: `mammoth view derivative list 123 123`
+- Agent example: `mammoth view derivative list 123 456`
 
 ### `mammoth view derivative update`
 
@@ -6082,7 +6082,7 @@ Total commands: 753.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.derivatives.DerivativesAPI.update`
-- Agent example: `mammoth view derivative update 123 123 123 --input '{"body": {"patches": [{"op": "replace", "path": "param", "value": {"METRIC": {"AS": "sample", "EXPRESSION": [{"TYPE": "FUNCTION", "VALUE": {"FUNCTION": "SUM"}}]}}}]}}'`
+- Agent example: `mammoth view derivative update 123 456 789 --input '{"body": {"patches": [{"op": "replace", "path": "param", "value": {"METRIC": {"AS": "Total revenue", "EXPRESSION": [{"TYPE": "FUNCTION", "VALUE": {"FUNCTION": "SUM"}}]}}}]}}'`
 
 ### `mammoth view draft auto-run`
 
@@ -6104,7 +6104,7 @@ Total commands: 753.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.pipeline.PipelineAPI.command`
-- Agent example: `mammoth view draft command 123 --input '{"command": "sample", "dataset_id": 456}'`
+- Agent example: `mammoth view draft command 123 --input '{"command": "enter", "dataset_id": 456}'`
 
 ### `mammoth view draft discard`
 
@@ -6115,7 +6115,7 @@ Total commands: 753.
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.view.View.discard_draft`
-- Agent example: `mammoth view draft discard 123 --input '{"dataset_id": 456}'`
+- Agent example: `mammoth view draft discard 123 --input '{"dataset_id": 456}' --yes`
 
 ### `mammoth view draft enter`
 
@@ -6172,7 +6172,7 @@ Total commands: 753.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dataviews.DataviewsAPI.set_explore_panel`
-- Agent example: `mammoth view explore-panel edit 123 --input '{"edits": [{"op": "metric", "card": "Region", "agg": "SUM", "of": "Amount"}]}'`
+- Agent example: `mammoth view explore-panel edit 123 456 --input '{"edits": [{"op": "metric", "card": "Region", "agg": "SUM", "of": "Amount"}]}'`
 
 ### `mammoth view explore-panel export-image`
 
@@ -6196,7 +6196,7 @@ Total commands: 753.
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dataviews.DataviewsAPI.explore_panel`
-- Agent example: `mammoth view explore-panel get 123`
+- Agent example: `mammoth view explore-panel get 123 456`
 
 ### `mammoth view explore-panel set`
 
@@ -6208,7 +6208,7 @@ Total commands: 753.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dataviews.DataviewsAPI.set_explore_panel`
-- Agent example: `mammoth view explore-panel set 123 --input '{"panel": {"columns": "all"}}'`
+- Agent example: `mammoth view explore-panel set 123 456 --input '{"panel": {"columns": "all"}}'`
 
 ### `mammoth view export azure-blob`
 
@@ -6220,7 +6220,7 @@ Total commands: 753.
 - Mutation class: `external_effect`
 - Confirmation: `yes_always`
 - Backing SDK: `mammoth.view.ViewExport.to_azure_blob`
-- Agent example: `mammoth view export azure-blob 123 123 --input /private/path/request.json`
+- Agent example: `mammoth view export azure-blob 123 456 --input /private/path/request.json --yes`
 
 ### `mammoth view export bigquery`
 
@@ -6232,7 +6232,7 @@ Total commands: 753.
 - Mutation class: `external_effect`
 - Confirmation: `yes_always`
 - Backing SDK: `mammoth.view.ViewExport.to_bigquery`
-- Agent example: `mammoth view export bigquery 123 123 --input '{"selected_profile": {}, "selected_identity": {}, "table": "exports"}'`
+- Agent example: `mammoth view export bigquery 123 456 --input '{"selected_profile": {}, "selected_identity": {}, "table": "exports"}' --yes`
 
 ### `mammoth view export create`
 
@@ -6243,7 +6243,7 @@ Total commands: 753.
 - Mutation class: `external_effect`
 - Confirmation: `yes_always`
 - Backing SDK: `mammoth.api.exports.ExportsAPI.create`
-- Agent example: `mammoth view export create 123 --input '{"export_spec": {"DATAVIEW_ID": 1, "handler_type": "postgres", "trigger_type": "none", "run_immediately": true}}'`
+- Agent example: `mammoth view export create 123 --input '{"export_spec": {"DATAVIEW_ID": 1, "handler_type": "postgres", "trigger_type": "none", "run_immediately": true}}' --yes`
 
 ### `mammoth view export csv`
 
@@ -6266,7 +6266,7 @@ Total commands: 753.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.view.ViewExport.to_dataset`
-- Agent example: `mammoth view export dataset 123 123`
+- Agent example: `mammoth view export dataset 123 456`
 
 ### `mammoth view export delete`
 
@@ -6278,7 +6278,7 @@ Total commands: 753.
 - Mutation class: `external_effect`
 - Confirmation: `yes_always`
 - Backing SDK: `mammoth.api.exports.ExportsAPI.delete`
-- Agent example: `mammoth view export delete 123 123`
+- Agent example: `mammoth view export delete 123 456 --yes`
 
 ### `mammoth view export elasticsearch`
 
@@ -6290,7 +6290,7 @@ Total commands: 753.
 - Mutation class: `external_effect`
 - Confirmation: `yes_always`
 - Backing SDK: `mammoth.view.ViewExport.to_elasticsearch`
-- Agent example: `mammoth view export elasticsearch 123 123 --input /private/path/request.json`
+- Agent example: `mammoth view export elasticsearch 123 456 --input /private/path/request.json --yes`
 
 ### `mammoth view export email`
 
@@ -6302,7 +6302,7 @@ Total commands: 753.
 - Mutation class: `external_effect`
 - Confirmation: `yes_always`
 - Backing SDK: `mammoth.view.ViewExport.to_email`
-- Agent example: `mammoth view export email 123 123 --input '{"emails": ["recipient@example.com"]}'`
+- Agent example: `mammoth view export email 123 456 --input '{"emails": ["recipient@example.com"]}' --yes`
 
 ### `mammoth view export ftp`
 
@@ -6314,7 +6314,7 @@ Total commands: 753.
 - Mutation class: `external_effect`
 - Confirmation: `yes_always`
 - Backing SDK: `mammoth.view.ViewExport.to_ftp`
-- Agent example: `mammoth view export ftp 123 123 --input /private/path/request.json`
+- Agent example: `mammoth view export ftp 123 456 --input /private/path/request.json --yes`
 
 ### `mammoth view export get`
 
@@ -6326,7 +6326,7 @@ Total commands: 753.
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.exports.ExportsAPI.get`
-- Agent example: `mammoth view export get 123 123`
+- Agent example: `mammoth view export get 123 456`
 
 ### `mammoth view export list`
 
@@ -6338,7 +6338,7 @@ Total commands: 753.
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.exports.ExportsAPI.list`
-- Agent example: `mammoth view export list 123 123`
+- Agent example: `mammoth view export list 123 456`
 
 ### `mammoth view export live-link`
 
@@ -6350,7 +6350,7 @@ Total commands: 753.
 - Mutation class: `external_effect`
 - Confirmation: `yes_always`
 - Backing SDK: `mammoth.view.ViewExport.to_live_link`
-- Agent example: `mammoth view export live-link 123 123 --input '{"file_name": "report_share.csv"}'`
+- Agent example: `mammoth view export live-link 123 456 --input '{"file_name": "report_share.csv"}' --yes`
 
 ### `mammoth view export managed-s3`
 
@@ -6362,7 +6362,7 @@ Total commands: 753.
 - Mutation class: `external_effect`
 - Confirmation: `yes_always`
 - Backing SDK: `mammoth.view.ViewExport.to_s3`
-- Agent example: `mammoth view export managed-s3 123 123 --input '{"file_name": "report.csv"}'`
+- Agent example: `mammoth view export managed-s3 123 456 --input '{"file_name": "report.csv"}' --yes`
 
 ### `mammoth view export mssql`
 
@@ -6374,7 +6374,7 @@ Total commands: 753.
 - Mutation class: `external_effect`
 - Confirmation: `yes_always`
 - Backing SDK: `mammoth.view.ViewExport.to_mssql`
-- Agent example: `mammoth view export mssql 123 123 --input /private/path/request.json`
+- Agent example: `mammoth view export mssql 123 456 --input /private/path/request.json --yes`
 
 ### `mammoth view export mysql`
 
@@ -6386,7 +6386,7 @@ Total commands: 753.
 - Mutation class: `external_effect`
 - Confirmation: `yes_always`
 - Backing SDK: `mammoth.view.ViewExport.to_mysql`
-- Agent example: `mammoth view export mysql 123 123 --input /private/path/request.json`
+- Agent example: `mammoth view export mysql 123 456 --input /private/path/request.json --yes`
 
 ### `mammoth view export onedrive`
 
@@ -6398,7 +6398,7 @@ Total commands: 753.
 - Mutation class: `external_effect`
 - Confirmation: `yes_always`
 - Backing SDK: `mammoth.view.ViewExport.to_onedrive`
-- Agent example: `mammoth view export onedrive 123 123 --input /private/path/request.json`
+- Agent example: `mammoth view export onedrive 123 456 --input /private/path/request.json --yes`
 
 ### `mammoth view export postgres`
 
@@ -6410,7 +6410,7 @@ Total commands: 753.
 - Mutation class: `external_effect`
 - Confirmation: `yes_always`
 - Backing SDK: `mammoth.view.ViewExport.to_postgres`
-- Agent example: `mammoth view export postgres 123 123 --input /private/path/request.json`
+- Agent example: `mammoth view export postgres 123 456 --input /private/path/request.json --yes`
 
 ### `mammoth view export powerbi`
 
@@ -6422,7 +6422,7 @@ Total commands: 753.
 - Mutation class: `external_effect`
 - Confirmation: `yes_always`
 - Backing SDK: `mammoth.view.ViewExport.to_powerbi`
-- Agent example: `mammoth view export powerbi 123 123 --input /private/path/request.json`
+- Agent example: `mammoth view export powerbi 123 456 --input /private/path/request.json --yes`
 
 ### `mammoth view export publish-db`
 
@@ -6433,7 +6433,7 @@ Total commands: 753.
 - Mutation class: `external_effect`
 - Confirmation: `yes_always`
 - Backing SDK: `mammoth.api.exports.ExportsAPI.publish_db`
-- Agent example: `mammoth view export publish-db 123 --input '{"odbc_type": "postgres", "target_properties": {"sample_key": "Status"}}'`
+- Agent example: `mammoth view export publish-db 123 --input '{"odbc_type": "postgres", "target_properties": {"name": "Status"}}' --yes`
 
 ### `mammoth view export publish-db-update`
 
@@ -6444,7 +6444,7 @@ Total commands: 753.
 - Mutation class: `external_effect`
 - Confirmation: `yes_always`
 - Backing SDK: `mammoth.api.exports.ExportsAPI.publish_db_update`
-- Agent example: `mammoth view export publish-db-update 123 --input '{"patch": [{"op": "replace", "path": "credentials", "value": {"odbc_type": "postgres"}}]}'`
+- Agent example: `mammoth view export publish-db-update 123 --input '{"patch": [{"op": "replace", "path": "credentials", "value": {"odbc_type": "postgres"}}]}' --yes`
 
 ### `mammoth view export redshift`
 
@@ -6456,7 +6456,7 @@ Total commands: 753.
 - Mutation class: `external_effect`
 - Confirmation: `yes_always`
 - Backing SDK: `mammoth.view.ViewExport.to_redshift`
-- Agent example: `mammoth view export redshift 123 123 --input /private/path/request.json`
+- Agent example: `mammoth view export redshift 123 456 --input /private/path/request.json --yes`
 
 ### `mammoth view export rest`
 
@@ -6468,7 +6468,7 @@ Total commands: 753.
 - Mutation class: `external_effect`
 - Confirmation: `yes_always`
 - Backing SDK: `mammoth.view.ViewExport.to_rest_api`
-- Agent example: `mammoth view export rest 123 123 --input '{"base_url": "https://api.example", "endpoint_path": "/records"}'`
+- Agent example: `mammoth view export rest 123 456 --input '{"base_url": "https://api.example", "endpoint_path": "/records"}' --yes`
 
 ### `mammoth view export sftp`
 
@@ -6480,7 +6480,7 @@ Total commands: 753.
 - Mutation class: `external_effect`
 - Confirmation: `yes_always`
 - Backing SDK: `mammoth.view.ViewExport.to_sftp`
-- Agent example: `mammoth view export sftp 123 123 --input '{"host": "sftp.example", "username": "agent"}'`
+- Agent example: `mammoth view export sftp 123 456 --input '{"host": "sftp.example", "username": "agent"}' --yes`
 
 ### `mammoth view export sharepoint`
 
@@ -6492,7 +6492,7 @@ Total commands: 753.
 - Mutation class: `external_effect`
 - Confirmation: `yes_always`
 - Backing SDK: `mammoth.view.ViewExport.to_sharepoint`
-- Agent example: `mammoth view export sharepoint 123 123 --input /private/path/request.json`
+- Agent example: `mammoth view export sharepoint 123 456 --input /private/path/request.json --yes`
 
 ### `mammoth view export tableau`
 
@@ -6504,7 +6504,7 @@ Total commands: 753.
 - Mutation class: `external_effect`
 - Confirmation: `yes_always`
 - Backing SDK: `mammoth.view.ViewExport.to_tableau`
-- Agent example: `mammoth view export tableau 123 123 --input /private/path/request.json`
+- Agent example: `mammoth view export tableau 123 456 --input /private/path/request.json --yes`
 
 ### `mammoth view export update`
 
@@ -6516,7 +6516,7 @@ Total commands: 753.
 - Mutation class: `external_effect`
 - Confirmation: `yes_always`
 - Backing SDK: `mammoth.api.exports.ExportsAPI.update`
-- Agent example: `mammoth view export update 123 123 --input '{"patches": [{"sample_key": "Status"}]}'`
+- Agent example: `mammoth view export update 123 456 --input '{"patches": [{"name": "Status"}]}' --yes`
 
 ### `mammoth view exportable-config apply`
 
@@ -6528,7 +6528,7 @@ Total commands: 753.
 - Mutation class: `reversible_pipeline`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.dataviews.DataviewsAPI.apply_exportable_config`
-- Agent example: `mammoth view exportable-config apply 123 --input-format json --input '{"config": {"tasks": []}}' --yes --confirm 123`
+- Agent example: `mammoth view exportable-config apply 123 456 --input-format json --input '{"config": {"tasks": []}}' --yes --confirm 123`
 
 ### `mammoth view exportable-config get`
 
@@ -6540,7 +6540,7 @@ Total commands: 753.
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dataviews.DataviewsAPI.get_exportable_config`
-- Agent example: `mammoth view exportable-config get 123`
+- Agent example: `mammoth view exportable-config get 123 456`
 
 ### `mammoth view get`
 
@@ -6552,7 +6552,7 @@ Total commands: 753.
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.client.ViewsResource.get`
-- Agent example: `mammoth view get 123 123`
+- Agent example: `mammoth view get 123 456`
 
 ### `mammoth view impact`
 
@@ -6564,7 +6564,7 @@ Total commands: 753.
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dataviews.DataviewsAPI.delete_impact`
-- Agent example: `mammoth view impact 123 123 --input '{"scope": "view"}'`
+- Agent example: `mammoth view impact 123 456 --input '{"scope": "view"}'`
 
 ### `mammoth view list`
 
@@ -6587,7 +6587,7 @@ Total commands: 753.
 - Mutation class: `reversible_pipeline`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.dataviews.DataviewsAPI.optimize`
-- Agent example: `mammoth view optimize 123`
+- Agent example: `mammoth view optimize 123 456 --yes`
 
 ### `mammoth view parameter-context`
 
@@ -6599,7 +6599,7 @@ Total commands: 753.
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dataviews.DataviewsAPI.parameter_context`
-- Agent example: `mammoth view parameter-context 123 123`
+- Agent example: `mammoth view parameter-context 123 456`
 
 ### `mammoth view pipeline edit`
 
@@ -6644,7 +6644,7 @@ Total commands: 753.
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.pipeline.PipelineAPI.items_all`
-- Agent example: `mammoth view pipeline items-all 123 123`
+- Agent example: `mammoth view pipeline items-all 123 456`
 
 ### `mammoth view pipeline rerun`
 
@@ -6678,7 +6678,7 @@ Total commands: 753.
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dataviews.DataviewsAPI.preview`
-- Agent example: `mammoth view preview 123 123`
+- Agent example: `mammoth view preview 123 456`
 
 ### `mammoth view restore`
 
@@ -6690,7 +6690,7 @@ Total commands: 753.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dataviews.DataviewsAPI.restore`
-- Agent example: `mammoth view restore 123 123`
+- Agent example: `mammoth view restore 123 456`
 
 ### `mammoth view task add`
 
@@ -6722,7 +6722,7 @@ Total commands: 753.
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.pipeline.PipelineAPI.delete_task`
-- Agent example: `mammoth view task delete 123 123`
+- Agent example: `mammoth view task delete 123 456 --yes`
 
 ### `mammoth view task get`
 
@@ -6734,7 +6734,7 @@ Total commands: 753.
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.pipeline.PipelineAPI.get_task`
-- Agent example: `mammoth view task get 123 123`
+- Agent example: `mammoth view task get 123 456`
 
 ### `mammoth view task list`
 
@@ -6777,7 +6777,7 @@ Total commands: 753.
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.pipeline.PipelineAPI.update_task`
-- Agent example: `mammoth view task update 123 123 --input '{"task_spec": {"DATAVIEW_ID": 123, "SEQUENCE_NUMBER": 1, "COPY": [{"SOURCE": "column_1", "AS": {"COLUMN": "Copy of column 1", "TYPE": "TEXT", "INTERNAL_NAME": "column_9"}}], "VERSION": 2}, "dataset_id": 456}'`
+- Agent example: `mammoth view task update 123 456 --input '{"task_spec": {"DATAVIEW_ID": 123, "SEQUENCE_NUMBER": 1, "COPY": [{"SOURCE": "column_1", "AS": {"COLUMN": "Copy of column 1", "TYPE": "TEXT", "INTERNAL_NAME": "column_9"}}], "VERSION": 2}, "dataset_id": 456}'`
 
   **Agent note:** this is an illustrative low-level expert envelope, not
   a guaranteed executable task. `task_spec` is opaque here and its
@@ -6841,7 +6841,7 @@ Total commands: 753.
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
 - Backing SDK: `mammoth.View.bulk_replace`
-- Agent example: `mammoth view transform bulk-replace 123 --input '{"columns": ["Status"], "mapping": [{"search": ["sample"], "replace": "sample"}], "dataset_id": 456}'`
+- Agent example: `mammoth view transform bulk-replace 123 --input '{"columns": ["Status"], "mapping": [{"search": ["N/A"], "replace": "Unknown"}], "dataset_id": 456}'`
 
 ### `mammoth view transform combine-columns`
 
@@ -6885,7 +6885,7 @@ Total commands: 753.
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
 - Backing SDK: `mammoth.View.crosstab`
-- Agent example: `mammoth view transform crosstab 123 --input '{"rows": ["sample"], "pivot_column": "Status", "select": {"function": "SUM"}, "dataset_name": "Revenue report", "dataset_id": 456}'`
+- Agent example: `mammoth view transform crosstab 123 --input '{"rows": ["Region"], "pivot_column": "Product", "select": {"column": "Revenue", "function": "SUM"}, "dataset_name": "Revenue by region", "dataset_id": 456}'`
 
 ### `mammoth view transform date-diff`
 
@@ -6896,7 +6896,7 @@ Total commands: 753.
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
 - Backing SDK: `mammoth.View.date_diff`
-- Agent example: `mammoth view transform date-diff 123 --input '{"component": "YEAR", "start": "sample", "end": "sample", "dataset_id": 456}'`
+- Agent example: `mammoth view transform date-diff 123 --input '{"component": "YEAR", "start": "Order Date", "end": "Ship Date", "dataset_id": 456}'`
 
 ### `mammoth view transform delete-columns`
 
@@ -6907,7 +6907,7 @@ Total commands: 753.
 - Mutation class: `reversible_pipeline`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.View.delete_columns`
-- Agent example: `mammoth view transform delete-columns 123 --input '{"columns": ["Status"], "dataset_id": 456}'`
+- Agent example: `mammoth view transform delete-columns 123 --input '{"columns": ["Status"], "dataset_id": 456}' --yes`
 
 ### `mammoth view transform discard-duplicates`
 
@@ -6995,7 +6995,7 @@ Total commands: 753.
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
 - Backing SDK: `mammoth.View.join`
-- Agent example: `mammoth view transform join 123 --input '{"foreign_view": 1, "join_type": "INNER", "on": [{"left": "sample", "right": "sample"}], "select": ["sample"], "dataset_id": 456, "foreign_dataset_id": 457}'`
+- Agent example: `mammoth view transform join 123 --input '{"foreign_view": 1, "join_type": "INNER", "on": [{"left": "Customer ID", "right": "Customer ID"}], "select": ["Region"], "dataset_id": 456, "foreign_dataset_id": 457}'`
 
 ### `mammoth view transform json-extract`
 
@@ -7028,7 +7028,7 @@ Total commands: 753.
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
 - Backing SDK: `mammoth.View.lookup`
-- Agent example: `mammoth view transform lookup 123 --input '{"source": "Status", "lookup_view_id": 1, "key": "Status", "value": "sample", "dataset_id": 456, "lookup_dataset_id": 457}'`
+- Agent example: `mammoth view transform lookup 123 --input '{"source": "Customer ID", "lookup_view_id": 1, "key": "Customer ID", "value": "Region", "new_column": "Region", "dataset_id": 456, "lookup_dataset_id": 457}'`
 
 ### `mammoth view transform math`
 
@@ -7050,7 +7050,7 @@ Total commands: 753.
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
 - Backing SDK: `mammoth.View.pivot`
-- Agent example: `mammoth view transform pivot 123 --input '{"group_by": ["sample"], "aggregations": [{"column": "Status", "function": "SUM"}], "dataset_id": 456}'`
+- Agent example: `mammoth view transform pivot 123 --input '{"group_by": ["Region"], "aggregations": [{"column": "Revenue", "function": "SUM"}], "dataset_id": 456}'`
 
 ### `mammoth view transform rename-columns`
 
@@ -7072,7 +7072,7 @@ Total commands: 753.
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
 - Backing SDK: `mammoth.View.replace_values`
-- Agent example: `mammoth view transform replace 123 --input '{"columns": ["Status"], "find": "sample", "replace": "sample", "dataset_id": 456}'`
+- Agent example: `mammoth view transform replace 123 --input '{"columns": ["Status"], "find": "N/A", "replace": "Unknown", "dataset_id": 456}'`
 
 ### `mammoth view transform set-values`
 
@@ -7083,7 +7083,7 @@ Total commands: 753.
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
 - Backing SDK: `mammoth.View.set_values`
-- Agent example: `mammoth view transform set-values 123 --input '{"values": [{"value": "sample"}], "existing_column": "Status", "condition": {"column": "Status", "operator": "IS_EMPTY"}, "dataset_id": 456}'`
+- Agent example: `mammoth view transform set-values 123 --input '{"values": [{"value": "Unknown"}], "existing_column": "Status", "condition": {"column": "Status", "operator": "IS_EMPTY"}, "dataset_id": 456}'`
 
 ### `mammoth view transform small-large`
 
@@ -7116,7 +7116,7 @@ Total commands: 753.
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
 - Backing SDK: `mammoth.View.split_column`
-- Agent example: `mammoth view transform split 123 --input '{"column": "Status", "delimiter": "sample", "new_columns": [{"name": "Revenue report"}], "dataset_id": 456}'`
+- Agent example: `mammoth view transform split 123 --input '{"column": "Status", "delimiter": ",", "new_columns": [{"name": "Revenue report"}], "dataset_id": 456}'`
 
 ### `mammoth view transform substring`
 
@@ -7183,7 +7183,7 @@ Total commands: 753.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dataviews.DataviewsAPI.trash`
-- Agent example: `mammoth view trash 123 123`
+- Agent example: `mammoth view trash 123 456`
 
 ### `mammoth view update`
 
@@ -7195,7 +7195,7 @@ Total commands: 753.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dataviews.DataviewsAPI.update`
-- Agent example: `mammoth view update 123 123 --input '{"name": "Revenue report"}'`
+- Agent example: `mammoth view update 123 456 --input '{"name": "Revenue report"}'`
 
 ### `mammoth view variants create`
 
@@ -7219,7 +7219,7 @@ Total commands: 753.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.pipeline_versions.PipelineVersionsAPI.apply`
-- Agent example: `mammoth view version apply 123 123 123`
+- Agent example: `mammoth view version apply 123 456 789`
 
 ### `mammoth view version delete`
 
@@ -7232,7 +7232,7 @@ Total commands: 753.
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.pipeline_versions.PipelineVersionsAPI.delete`
-- Agent example: `mammoth view version delete 123 123 123`
+- Agent example: `mammoth view version delete 123 456 789 --yes`
 
 ### `mammoth view version get`
 
@@ -7245,7 +7245,7 @@ Total commands: 753.
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.pipeline_versions.PipelineVersionsAPI.get`
-- Agent example: `mammoth view version get 123 123 123`
+- Agent example: `mammoth view version get 123 456 789`
 
 ### `mammoth view version list`
 
@@ -7257,7 +7257,7 @@ Total commands: 753.
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.pipeline_versions.PipelineVersionsAPI.list`
-- Agent example: `mammoth view version list 123 123`
+- Agent example: `mammoth view version list 123 456`
 
 ### `mammoth view version update`
 
@@ -7270,7 +7270,7 @@ Total commands: 753.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.pipeline_versions.PipelineVersionsAPI.update`
-- Agent example: `mammoth view version update 123 123 123 --input '{"body": {"patches": [{"op": "replace", "path": "name"}]}}'`
+- Agent example: `mammoth view version update 123 456 789 --input '{"body": {"patches": [{"op": "replace", "path": "name"}]}}'`
 
 ## webhook
 
@@ -7294,7 +7294,7 @@ Total commands: 753.
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.webhooks.WebhooksAPI.delete`
-- Agent example: `mammoth webhook delete 123`
+- Agent example: `mammoth webhook delete 123 --yes`
 
 ### `mammoth webhook get`
 
@@ -7319,7 +7319,7 @@ Total commands: 753.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.webhooks.WebhooksAPI.send_data`
-- Agent example: `mammoth webhook send --input '{"webhook_uri": "https://example.com/data.csv", "data": {"sample_key": "Status"}}'`
+- Agent example: `mammoth webhook send --input '{"webhook_uri": "https://example.com/data.csv", "data": {"name": "Status"}}'`
 
 ### `mammoth webhook send-get`
 
@@ -7362,7 +7362,7 @@ Total commands: 753.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.workflows.WorkflowsAPI.attach_dataset`
-- Agent example: `mammoth workflow attach-dataset 123 123`
+- Agent example: `mammoth workflow attach-dataset 123 456`
 
 ### `mammoth workflow block add`
 
@@ -7373,7 +7373,7 @@ Total commands: 753.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.workflows.WorkflowsAPI.block_add`
-- Agent example: `mammoth workflow block add 123 --input '{"block_type": "sample"}'`
+- Agent example: `mammoth workflow block add 123 --input '{"block_type": "source"}'`
 
 ### `mammoth workflow block auth`
 
@@ -7385,7 +7385,7 @@ Total commands: 753.
 - Mutation class: `benign_mutation`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.workflows.WorkflowsAPI.block_auth`
-- Agent example: `mammoth workflow block auth 123 123 --input '{"auth_data": {"sample_key": "Status"}}'`
+- Agent example: `mammoth workflow block auth 123 456 --input '{"auth_data": {"name": "Status"}}' --yes --confirm 123`
 
 ### `mammoth workflow block config`
 
@@ -7397,7 +7397,7 @@ Total commands: 753.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.workflows.WorkflowsAPI.block_config`
-- Agent example: `mammoth workflow block config 123 123`
+- Agent example: `mammoth workflow block config 123 456`
 
 ### `mammoth workflow block type`
 
@@ -7409,7 +7409,7 @@ Total commands: 753.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.workflows.WorkflowsAPI.block_type`
-- Agent example: `mammoth workflow block type 123 123 --input '{"connection_type": "sample"}'`
+- Agent example: `mammoth workflow block type 123 456 --input '{"connection_type": "postgres"}'`
 
 ### `mammoth workflow canvas`
 
@@ -7427,7 +7427,7 @@ Total commands: 753.
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.workflows.WorkflowsAPI.cleanup`
-- Agent example: `mammoth workflow cleanup`
+- Agent example: `mammoth workflow cleanup --yes`
 
 ### `mammoth workflow create`
 
@@ -7449,7 +7449,7 @@ Total commands: 753.
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.workflows.WorkflowsAPI.delete`
-- Agent example: `mammoth workflow delete 123`
+- Agent example: `mammoth workflow delete 123 --yes`
 
 ### `mammoth workflow from-template`
 
@@ -7588,7 +7588,7 @@ Total commands: 753.
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.workspace.WorkspaceAPI.delete`
-- Agent example: `mammoth workspace delete 123`
+- Agent example: `mammoth workspace delete 123 --yes --confirm 123`
 
 ### `mammoth workspace get`
 
@@ -7613,7 +7613,7 @@ Total commands: 753.
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.workspaces.WorkspacesAPI.invite_delete`
-- Agent example: `mammoth workspace invite delete --input '{"invite_ids": [1]}'`
+- Agent example: `mammoth workspace invite delete --input '{"invite_ids": [1]}' --yes`
 
 ### `mammoth workspace invite list`
 
@@ -7634,14 +7634,14 @@ Total commands: 753.
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.workspaces.WorkspacesAPI.invite_revoke`
-- Agent example: `mammoth workspace invite revoke --input '{"invite_ids": [1]}'`
+- Agent example: `mammoth workspace invite revoke --input '{"invite_ids": [1]}' --yes`
 
 ### `mammoth workspace invite update-role`
 
 - Mutation class: `high_impact`
 - Confirmation: `yes_always`
 - Backing SDK: `mammoth.api.workspaces.WorkspacesAPI.invite_role_update`
-- Agent example: `mammoth workspace invite update-role --input '{"invite_id": 1, "role": "sample"}'`
+- Agent example: `mammoth workspace invite update-role --input '{"invite_id": 1, "role": "workspace_member"}' --yes`
 
 ### `mammoth workspace list`
 
@@ -7655,7 +7655,7 @@ Total commands: 753.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.workspaces.WorkspacesAPI.llm_task`
-- Agent example: `mammoth workspace llm-task --input '{"task_type": "sample", "params": {"sample_key": "Status"}}'`
+- Agent example: `mammoth workspace llm-task --input '{"task_type": "run_data_retrieval", "params": {"name": "Status"}}'`
 
 ### `mammoth workspace oauth-client create`
 
@@ -7666,7 +7666,7 @@ Total commands: 753.
 - Mutation class: `high_impact`
 - Confirmation: `yes_always`
 - Backing SDK: `mammoth.api.oauth_clients.OAuthClientsAPI.create`
-- Agent example: `mammoth workspace oauth-client create 123 --input '{"name": "Revenue report", "redirect_uris": ["https://example.com/data.csv"]}'`
+- Agent example: `mammoth workspace oauth-client create 123 --input '{"name": "Revenue report", "redirect_uris": ["https://example.com/data.csv"]}' --yes`
 
 ### `mammoth workspace oauth-client delete`
 
@@ -7678,7 +7678,7 @@ Total commands: 753.
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.oauth_clients.OAuthClientsAPI.delete`
-- Agent example: `mammoth workspace oauth-client delete 123 123`
+- Agent example: `mammoth workspace oauth-client delete 123 456 --yes --confirm 123`
 
 ### `mammoth workspace oauth-client list`
 
@@ -7701,7 +7701,7 @@ Total commands: 753.
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.oauth_clients.OAuthClientsAPI.revoke_grant`
-- Agent example: `mammoth workspace oauth-client revoke-grant 123 123`
+- Agent example: `mammoth workspace oauth-client revoke-grant 123 456 --yes --confirm 123`
 
 ### `mammoth workspace reactivate`
 
@@ -7712,7 +7712,7 @@ Total commands: 753.
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.workspace.WorkspaceAPI.reactivate`
-- Agent example: `mammoth workspace reactivate 123`
+- Agent example: `mammoth workspace reactivate 123 --yes --confirm 123`
 
 ### `mammoth workspace segment list`
 
@@ -7726,7 +7726,7 @@ Total commands: 753.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.workspaces.WorkspacesAPI.segment_update`
-- Agent example: `mammoth workspace segment update --input '{"patch": [{"sample_key": "Status"}]}'`
+- Agent example: `mammoth workspace segment update --input '{"patch": [{"name": "Status"}]}'`
 
 ### `mammoth workspace storage-breakdown`
 
@@ -7744,7 +7744,7 @@ Total commands: 753.
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.workspace.WorkspaceAPI.update`
-- Agent example: `mammoth workspace update 123 --input '{"patches": [{"op": "replace", "path": "name", "value": "sample"}]}'`
+- Agent example: `mammoth workspace update 123 --input '{"patches": [{"op": "replace", "path": "name", "value": "Revenue team"}]}' --yes --confirm 123`
 
 ### `mammoth workspace user add`
 
@@ -7780,14 +7780,14 @@ Total commands: 753.
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.workspaces.WorkspacesAPI.user_remove`
-- Agent example: `mammoth workspace user remove 123`
+- Agent example: `mammoth workspace user remove 123 --yes`
 
 ### `mammoth workspace user remove-batch`
 
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.workspaces.WorkspacesAPI.user_remove_batch`
-- Agent example: `mammoth workspace user remove-batch`
+- Agent example: `mammoth workspace user remove-batch --yes`
 
 ### `mammoth workspace user update`
 
@@ -7798,11 +7798,11 @@ Total commands: 753.
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.workspace.WorkspaceAPI.update_user`
-- Agent example: `mammoth workspace user update resource-123 --input '{"patches": [{"op": "replace", "path": "role", "value": "workspace_member"}]}'`
+- Agent example: `mammoth workspace user update resource-123 --input '{"patches": [{"op": "replace", "path": "role", "value": "workspace_member"}]}' --yes --confirm resource-123`
 
 ### `mammoth workspace user update-batch`
 
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.workspaces.WorkspacesAPI.user_update_batch`
-- Agent example: `mammoth workspace user update-batch --input '{"patches": [{"sample_key": "Status"}]}'`
+- Agent example: `mammoth workspace user update-batch --input '{"patches": [{"name": "Status"}]}' --yes`

@@ -66,6 +66,7 @@ class Invocation:
     confirm: str | None = None
     dry_run: bool = False
     allow_empty: bool = False
+    overwrite: bool = False
     standing: bool = False
     input_file: str | None = None
     input_format: str | None = None
