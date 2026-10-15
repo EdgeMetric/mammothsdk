@@ -399,3 +399,19 @@ def test_an_explicit_pydantic_plugin_setting_is_kept(monkeypatch: pytest.MonkeyP
     monkeypatch.setattr("sys.argv", ["mammoth", "--version"])
     main()
     assert os.environ["PYDANTIC_DISABLE_PLUGINS"] == "logfire"
+
+
+def test_keyring_backend_does_not_import_importlib_metadata() -> None:
+    """``importlib.metadata`` costs start-up time; the keyring cache loads it only
+    when it reads or writes its record."""
+    import subprocess
+    import sys
+
+    probe = (
+        "import sys, mammoth_cli.context.keyring_backend; "
+        "print('importlib.metadata' in sys.modules)"
+    )
+    out = subprocess.run(
+        [sys.executable, "-c", probe], capture_output=True, text=True, check=True
+    ).stdout
+    assert out.strip() == "False"
